@@ -1,0 +1,12 @@
+# Build artifacts
+target/
+
+# Auto-generated test harnesses from aztec compile
+*_test.nr
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# OS files
+.DS_Store

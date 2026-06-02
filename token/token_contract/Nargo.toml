@@ -1,0 +1,8 @@
+[package]
+name = "token_contract"
+type = "contract"
+compiler_version = ">=1.0.0"
+
+[dependencies]
+aztec = { git = "https://github.com/AztecProtocol/aztec-nr", tag = "v4.3.0", directory = "aztec" }
+balance_set = { git = "https://github.com/AztecProtocol/aztec-nr", tag = "v4.3.0", directory = "balance-set" }
