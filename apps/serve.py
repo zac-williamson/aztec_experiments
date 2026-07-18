@@ -14,9 +14,9 @@ from a cross-origin CDN that doesn't set CORP headers as a fallback.)
 
 Usage:
     python3 serve.py [port]
-    python3 serve.py 8000
+    python3 serve.py 5000
 
-If no port given, defaults to 8000.
+If no port given, defaults to 5000.
 Serves from apps/dist/ directory.
 
 To check if multi-threading is working, open the app and look for
@@ -38,7 +38,7 @@ class COOPCOEPHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
 def main():
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
     # Default to apps/dist relative to this file
     script_dir = os.path.dirname(os.path.abspath(__file__))
     directory = os.path.join(script_dir, 'dist')
