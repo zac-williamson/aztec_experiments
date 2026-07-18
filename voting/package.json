@@ -1,6 +1,0 @@
-{
-  "type": "module",
-  "dependencies": {
-    "@aztec/aztec.js": "^4.3.0"
-  }
-}

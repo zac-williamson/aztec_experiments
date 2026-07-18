@@ -1,7 +1,0 @@
-[package]
-name = "voting_contract"
-type = "contract"
-compiler_version = ">=1.0.0"
-
-[dependencies]
-aztec = { git = "https://github.com/AztecProtocol/aztec-nr", tag = "v4.3.0", directory = "aztec" }

@@ -1,2 +1,0 @@
-[workspace]
-members = ["anon_billboard_contract", "token_contract"]

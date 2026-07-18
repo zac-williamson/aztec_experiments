@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Billboard — Deploy</title>
+<!--STYLES-->
+</head>
+<body>
+
+<h1>Billboard — Deploy</h1>
+<p class="small">Deploy and verify the Billboard contracts on L1 (Ethereum) and L2 (Aztec).</p>
+<p class="small"><b>Loads a 56MB bundle + 1.7MB contract artifact. Be patient.</b></p>
+<p class="small warn">⚠️ <b>Alpha experimental software.</b> Not meant for production use.</p>
+<p class="small" id="threadingInfo"></p>
+
+<div class="card">
+  <h2>Configuration</h2>
+  <label>Contract Deployment Salt (use a number never used before)</label>
+  <input id="contractSalt" value="1006">
+  <input id="secretKey" type="hidden">
+  <input id="salt" type="hidden" value="0">
+  <div id="walletButtonsContainer"></div>
+  <div id="status" class="status-container" style="max-height: 60vh; overflow-y: auto;"></div>
+</div>
+
+<!-- The 58MB bundle -->
+<script src="aztec_bundle.js"></script>
+<!--RPC_CONFIG-->
+<!--HELPERS-->
+<!--ARTIFACT-->
+<!--ETHERS-->
+<!--WALLET_BUTTONS-->
+<!--PORTAL_BYTECODE-->
+<!--ENGINE-->
+<!--APP_ENV-->
+<!--APP-->
+</body>
+</html>
