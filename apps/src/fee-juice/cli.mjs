@@ -15,23 +15,30 @@
 //   node cli.mjs [options]
 //
 // Options:
-//   --eth-for-swap <eth>    ETH amount to swap for AZTEC via Uniswap V3
-//   --amount <aztec>        Target AZTEC amount (if balance is short, swap will happen)
-//   --deposit-all           Deposit ALL AZTEC balance (default: true)
-//   --slippage <pct>        Slippage tolerance for Uniswap swap (default: 5)
-//   --node-url <url>        Aztec node URL
-//   --eth-rpc <url>         Ethereum RPC URL
-//   --aztec-wallet <file>   Path to Aztec wallet.json
-//   --eth-wallet <file>     Path to ETH wallet JSON
-//   --gen-eth-wallet        Generate a new ETH wallet if none exists at the path
-//   --gen-aztec-wallet      Generate a new Aztec wallet if none exists at the path
-//   --gen-aztec-from-eth    Derive Aztec wallet from ETH wallet signature (requires ETH wallet)
-//   --gen-all               Generate both wallets if they don't exist
+//   --action <name>      Action: auto (default), status, scan, deposit, claim
+//   --status              Shortcut for --action status (check L2 fee juice balance)
+//   --scan                Shortcut for --action scan (find existing deposits on L1)
+//   --deposit-only        Shortcut for --action deposit (deposit without claiming)
+//   --reuse-tx <hash>     Target specific L1 tx hash for scan recovery
+//   --eth-for-swap <eth>  ETH amount to swap for AZTEC via Uniswap V3
+//   --amount <aztec>      Target AZTEC amount (if balance is short, swap will happen)
+//   --deposit-all         Deposit ALL AZTEC balance (default: true)
+//   --slippage <pct>      Slippage tolerance for Uniswap swap (default: 5)
+//   --node-url <url>      Aztec node URL
+//   --eth-rpc <url>       Ethereum RPC URL
+//   --aztec-wallet <file> Path to Aztec wallet.json
+//   --eth-wallet <file>   Path to ETH wallet JSON
+//   --gen-eth-wallet      Generate a new ETH wallet if none exists at the path
+//   --gen-aztec-wallet    Generate a new Aztec wallet if none exists at the path
+//   --gen-aztec-from-eth  Derive Aztec wallet from ETH wallet signature (requires ETH wallet)
+//   --gen-all             Generate both wallets if they don't exist
 // ============================================================
 
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const __realProcess = process; // save before bundle overrides it
@@ -68,6 +75,7 @@ const AZTEC_API_KEY = __realProcess.env.AZTEC_API_KEY || rpcConfig.apiKey || '';
 const ETH_RPC_URL = args['eth-rpc'] || 'https://invictus.ambire.com/ethereum';
 const ETH_FOR_SWAP = args['eth-for-swap'] || '';
 const SLIPPAGE = args['slippage'] || '5';
+const ACTION = args['action'] || (args['status'] === 'true' ? 'status' : args['scan'] === 'true' ? 'scan' : args['deposit-only'] === 'true' ? 'deposit' : 'auto');
 const CLAIM_ONLY = args['claim-only'] === 'true';
 const CLAIM_SECRET = args['secret'] || '';
 const CLAIM_AMOUNT = args['amount-wei'] || '';
@@ -233,36 +241,56 @@ async function initCRSNode(a) {
   const SRS_NUM_POINTS = 2 ** 20 + 1;
   const GRUMPKIN_NUM_POINTS = 2 ** 16 + 1;
 
+  // Local CRS cache (same files the web apps use)
+  const CRS_LOCAL_DIR = path.join(PROJECT_ROOT, 'apps', 'dist', 'crs');
+
   log('  Initializing BarretenbergSync (WASM)...', 'info');
   await a.BarretenbergSync.initSingleton();
   const bb = a.BarretenbergSync.getSingleton();
 
-  async function fetchCRS(filename, options = {}) {
+  // Try local cache first, fall back to CDN
+  async function loadCRS(filename, options = {}) {
+    // 1. Local cache
+    const localPath = path.join(CRS_LOCAL_DIR, filename);
+    if (fs.existsSync(localPath)) {
+      const stat = fs.statSync(localPath);
+      const needBytes = options.headers && options.headers.Range
+        ? parseInt(options.headers.Range.split('-')[1]) + 1
+        : stat.size;
+      if (stat.size >= needBytes) {
+        let buf = fs.readFileSync(localPath);
+        if (options.headers && options.headers.Range) {
+          const [start, end] = options.headers.Range.split('=')[1].split('-').map(Number);
+          buf = buf.subarray(start, end + 1);
+        }
+        log('  Loaded ' + filename + ' from local cache.', 'info');
+        return new Uint8Array(buf);
+      }
+      log('  Local ' + filename + ' too small (' + stat.size + ' < ' + needBytes + '), fetching from CDN...', 'warn');
+    }
+    // 2. CDN fallback
     for (const host of CRS_HOSTS) {
       try {
         const res = await fetch(host + '/' + filename, options);
         if (res.ok || res.status === 206) {
           log('  Loaded ' + filename + ' from ' + host + '.', 'info');
-          return res;
+          return new Uint8Array(await res.arrayBuffer());
         }
       } catch (e) {}
     }
-    throw new Error('Could not load ' + filename + ' from CDN');
+    throw new Error('Could not load ' + filename + ' from local cache or CDN');
   }
 
   log('  Loading BN254 G1 data...', 'info');
   const g1End = SRS_NUM_POINTS * 64 - 1;
-  const g1Res = await fetchCRS('g1.dat', { headers: { Range: 'bytes=0-' + g1End } });
-  const g1Data = new Uint8Array(await g1Res.arrayBuffer());
+  const g1Data = await loadCRS('g1.dat', { headers: { Range: 'bytes=0-' + g1End } });
 
   log('  Loading BN254 G2 data...', 'info');
-  const g2Res = await fetchCRS('g2.dat');
-  const g2Data = new Uint8Array(await g2Res.arrayBuffer());
+  const g2Data = await loadCRS('g2.dat');
 
   log('  Loading Grumpkin G1 data...', 'info');
   const grumpkinEnd = GRUMPKIN_NUM_POINTS * 64 - 1;
-  const grumpkinRes = await fetchCRS('grumpkin_g1.dat', { headers: { Range: 'bytes=0-' + grumpkinEnd } });
-  const grumpkinG1Data = new Uint8Array(await grumpkinRes.arrayBuffer());
+  const grumpkinG1Data = await loadCRS('grumpkin_g1.dat', { headers: { Range: 'bytes=0-' + grumpkinEnd } });
 
   log('  Loading SRS into wasm...', 'info');
   bb.srsInitSrs({ pointsBuf: g1Data, numPoints: SRS_NUM_POINTS, g2Point: g2Data });
@@ -452,6 +480,10 @@ async function main() {
   const engineCode = fs.readFileSync(path.join(__dirname, 'engine.js'), 'utf8');
   eval(engineCode);
 
+  // PXE cache (dump/restore IndexedDB between runs)
+  const { dumpPxeCache, restorePxeCache } = require('./pxe-cache.cjs');
+  const PXE_CACHE_DIR = path.join(PROJECT_ROOT, '.pxe-cache');
+
   const env = {
     aztec: a, ethers, log,
     initCRS: () => initCRSNode(a),
@@ -460,6 +492,7 @@ async function main() {
   };
 
   const config = {
+    action: ACTION,
     aztecNodeUrl: AZTEC_NODE_URL,
     aztecApiKey: AZTEC_API_KEY,
     ethRpcUrl: ETH_RPC_URL,
@@ -472,15 +505,63 @@ async function main() {
     depositAmount: CLAIM_AMOUNT,
     depositLeafIndex: CLAIM_LEAF_INDEX,
     dataDirPrefix: 'pxe_fj_cli_',
+    reuseTxHash: args['reuse-tx'] || '',
   };
 
   try {
+    // Derive account address for cache file name
+    const sk = a.Fr.fromHexString(aztecWallet.secretKey);
+    const signingKey = a.deriveSigningKey(sk);
+    const accountContract = new a.SchnorrInitializerlessAccountContract(signingKey);
+    const { publicKeys } = await a.deriveKeys(sk);
+    const accountArtifact = await accountContract.getContractArtifact();
+    const immutablesHash = await accountContract.getImmutablesHash();
+    const saltVal = typeof aztecWallet.salt === 'string' ? parseInt(aztecWallet.salt, 16) : (aztecWallet.salt || 0);
+    const inst = await a.getContractInstanceFromInstantiationParams(accountArtifact, {
+      constructorArtifact: undefined, constructorArgs: undefined,
+      salt: new a.Fr(saltVal), publicKeys, immutablesHash,
+    });
+    const accountAddr = inst.address.toString();
+    const cacheFile = path.join(PXE_CACHE_DIR, accountAddr.slice(0, 16) + '.json');
+
+    // Restore PXE cache before engine runs
+    if (!fs.existsSync(PXE_CACHE_DIR)) fs.mkdirSync(PXE_CACHE_DIR, { recursive: true });
+    const restored = await restorePxeCache(globalThis.indexedDB, cacheFile);
+    if (restored) {
+      log('  PXE cache restored from ' + path.basename(cacheFile), 'success');
+    }
+
     const result = await globalThis.runFeeJuiceFlow(env, config);
+
+    // Dump PXE cache after engine completes
+    const dumped = await dumpPxeCache(globalThis.indexedDB, cacheFile);
+    if (dumped) {
+      log('  PXE cache saved.', 'success');
+    }
+
     if (result.ok) {
       log('', 'success');
-      log('========================================', 'success');
-      log('  COMPLETE: Fee Juice is ready on L2!', 'success');
-      log('========================================', 'success');
+      if (ACTION === 'scan') {
+        if (result.depositInfo) {
+          log('========================================', 'success');
+          log('  Found unclaimed deposit!', 'success');
+          log('  Amount: ' + result.depositInfo.amount + ' wei', 'success');
+          log('  Leaf: ' + result.depositInfo.leafIndex, 'success');
+          log('  TX: ' + result.depositInfo.txHash, 'success');
+          log('  Available: ' + result.depositInfo.available, 'success');
+          log('========================================', 'success');
+        } else {
+          log('  No unclaimed deposits found.', 'warn');
+        }
+      } else if (ACTION === 'status') {
+        log('========================================', 'success');
+        log('  Fee Juice balance: ' + (result.feeJuiceBalance ? (Number(BigInt(result.feeJuiceBalance) * 1000000n / 10n**18n) / 1000000).toFixed(6) : '0') + ' AZTEC', 'success');
+        log('========================================', 'success');
+      } else {
+        log('========================================', 'success');
+        log('  COMPLETE: Fee Juice is ready on L2!', 'success');
+        log('========================================', 'success');
+      }
     } else {
       log('', 'warn');
       log('Flow completed but verification uncertain: ' + result.reason, 'warn');

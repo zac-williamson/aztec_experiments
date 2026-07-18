@@ -117,12 +117,14 @@ aztec/
 │
 ├── apps/                            ← Web apps + CLIs
 │   ├── build.mjs                    ← Build script (combines modules → single-file HTML)
+│   ├── serve.py                     ← Dev server with COOP/COEP headers for multi-threaded WASM
 │   ├── src/
 │   │   ├── fee-juice/               ← Fee Juice app
 │   │   │   ├── template.html
 │   │   │   ├── app.js               ← Thin wrapper (UI → engine)
 │   │   │   ├── engine.js            ← Fee Juice flow logic (swap, deposit, scan, claim)
-│   │   │   └── cli.mjs              ← CLI tool (same engine, Node.js)
+│   │   │   ├── cli.mjs              ← CLI tool (same engine, Node.js)
+│   │   │   └── pxe-cache.cjs        ← IndexedDB dump/restore for CLI PXE caching
 │   │   └── billboard/
 │   │       ├── billboard_artifact.json   ← Compiled L2 contract artifact
 │   │       ├── portal_bytecode.txt       ← Compiled L1 portal bytecode
@@ -134,20 +136,23 @@ aztec/
 │   │       │   ├── engine.js            ← Deploy flow (L2 + L1 + link + cross-check)
 │   │       │   ├── cli.mjs              ← CLI tool
 │   │       │   ├── gen_eth_wallet.mjs   ← ETH wallet generator
-│   │       │   ├── serve.py             ← Local dev server
+│   │       │   ├── serve.py             ← Local dev server (legacy, use apps/serve.py)
 │   │       │   ├── billboard_artifact.json
 │   │       │   └── portal_bytecode.txt
 │   │       └── user/                     ← User app
 │   │           ├── template.html
 │   │           ├── app.js               ← Thin wrapper (UI → engine, live feed)
 │   │           ├── engine.js            ← User flow (deposit, claim, post, withdraw, claim-l1)
-│   │           └── cli.mjs              ← CLI tool
-│   └── dist/                        ← Built single-file apps
-│       ├── fee-juice.html
-│       ├── deploy.html
-│       ├── user.html
-│       ├── aztec_bundle.js          ← Copy of the PXE bundle
-│       └── crs/                     ← CRS files for proving
+│   │           ├── cli.mjs              ← CLI tool
+│   │           └── pxe-cache.cjs        ← IndexedDB dump/restore for CLI PXE caching
+│   ├── dist/                        ← Built single-file apps
+│   │   ├── fee-juice.html
+│   │   ├── deploy.html
+│   │   ├── user.html
+│   │   ├── aztec_bundle.js          ← Copy of the PXE bundle
+│   │   └── crs/                     ← CRS files for proving
+│
+├── .pxe-cache/                     ← CLI PXE cache (IndexedDB dumps, gitignored)
 │
 └── node_modules/                    ← ethers, fake-indexeddb
 ```
@@ -198,20 +203,28 @@ Each recompilation changes the contract class ID (public bytecode commitment), s
 ## CLI usage
 
 ```bash
-# Fee Juice
-cd apps/src/fee-juice
-node cli.mjs --gen-all                          # Generate new wallets
-node cli.mjs --eth-wallet ../../eth_wallet.json # Run the flow
+# Fee Juice (swap ETH→AZTEC, deposit, claim — all in one)
+node apps/src/fee-juice/cli.mjs --gen-all                          # Generate new wallets
+node apps/src/fee-juice/cli.mjs --status --aztec-wallet wallet.json --eth-wallet eth_wallet.json
+node apps/src/fee-juice/cli.mjs --scan --aztec-wallet wallet.json --eth-wallet eth_wallet.json
+node apps/src/fee-juice/cli.mjs --eth-for-swap 0.005 --aztec-wallet wallet.json --eth-wallet eth_wallet.json
 
-# Billboard user
-cd apps/src/billboard/user
-node cli.mjs status   --contract-salt 1006 --aztec-wallet ../../../wallet.json --eth-wallet ../../../eth_wallet.json
-node cli.mjs deposit  --contract-salt 1006 --amount 0.005 --aztec-wallet ../../../wallet.json --eth-wallet ../../../eth_wallet.json
-node cli.mjs post     --contract-salt 1006 --msg "hello world" --aztec-wallet ../../../wallet.json --eth-wallet ../../../eth_wallet.json
-node cli.mjs list     --contract-salt 1006 --aztec-wallet ../../../wallet.json --eth-wallet ../../../eth_wallet.json
-node cli.mjs withdraw --contract-salt 1006 --aztec-wallet ../../../wallet.json --eth-wallet ../../../eth_wallet.json
-node cli.mjs auto     --contract-salt 1006 --amount 0.005 --msg "hello" --aztec-wallet ../../../wallet.json --eth-wallet ../../../eth_wallet.json
+# Billboard user (deposit → claim → post → withdraw → claim-l1)
+node apps/src/billboard/user/cli.mjs status   --contract-salt 1006 --aztec-wallet wallet.json --eth-wallet eth_wallet.json
+node apps/src/billboard/user/cli.mjs deposit  --contract-salt 1006 --amount 0.005 --aztec-wallet wallet.json --eth-wallet eth_wallet.json
+node apps/src/billboard/user/cli.mjs post     --contract-salt 1006 --msg "hello world" --aztec-wallet wallet.json --eth-wallet eth_wallet.json
+node apps/src/billboard/user/cli.mjs list     --contract-salt 1006 --aztec-wallet wallet.json --eth-wallet eth_wallet.json
+node apps/src/billboard/user/cli.mjs withdraw --contract-salt 1006 --aztec-wallet wallet.json --eth-wallet eth_wallet.json
+node apps/src/billboard/user/cli.mjs auto     --contract-salt 1006 --amount 0.005 --msg "hello" --aztec-wallet wallet.json --eth-wallet eth_wallet.json
 ```
+
+### Serving web apps with multi-threaded WASM
+
+```bash
+python3 apps/serve.py [port]  # default: 8000
+```
+
+Sets COOP/COEP headers for `SharedArrayBuffer` (multi-threaded WASM) and serves from `apps/dist/`. Local CRS files in `apps/dist/crs/` are loaded automatically.
 
 ## Key design decisions
 
@@ -226,10 +239,14 @@ The v5 bundle uses the initializerless Schnorr account contract for self-deploym
 ### In-browser PXE (no server, no workers)
 
 The web apps run the full PXE stack entirely in the browser:
-- **IndexedDB store** for PXE state
-- **CRS files** loaded from CDN (one-time download)
-- **Proving** via `bb.js` WASM
+- **IndexedDB store** for PXE state (data directory includes wallet address for isolation)
+- **CRS files** loaded from local files first, falling back to CDN
+- **Proving** via `bb.js` WASM (multi-threaded when COOP/COEP headers are set)
 - **No backend server** — all RPC goes directly to the Aztec node
+
+### CLI PXE cache
+
+Both CLIs dump/restore the in-memory IndexedDB state to `~/.pxe-cache/` between runs, saving ~2-4s on PXE sync. Cache files are keyed by account address.
 
 ### Wallet loading
 
@@ -263,13 +280,7 @@ The shared `wallet-buttons.js` module provides a common wallet UI across all thr
 - [ ] **Surface L1 withdrawal claim in the web UI** — The `claim-l1` action exists in the engine/CLI but the web UI doesn't expose it as a distinct page with Outbox proof input.
 - [ ] **Add "view on explorer" links** for confirmed L2 transactions (e.g. aztecscan.com).
 - [ ] **Show estimated wait time** for epoch proofs in the UI during claim-l1 (~40 min on mainnet).
-- [ ] **Multi-threaded WASM + local trusted setup** for browser apps — Proving is currently single-threaded and slow. Try multi-threaded WASM + local CRS, fall back to single-threaded + CDN.
 - [ ] **Suppress verbose PXE/bundle console output** in the browser — Partially done, but pino logger output still leaks through to the console.
-
-### Autonomous CLI flow
-
-- [ ] **Merge ETH→AZTEC swap + fee juice deposit/claim + billboard flow into one autonomous CLI script** — One of the original project goals. The fee-juice engine already has Uniswap V3 swap logic, but the user CLI doesn't chain it all together.
-- [ ] **Auto-fund fee juice in `auto` action** — If the Aztec account has no fee juice, the `auto` action should swap ETH→AZTEC, deposit, and claim fee juice before proceeding.
 
 ### Testing & robustness
 

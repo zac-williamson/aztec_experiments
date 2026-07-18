@@ -858,7 +858,7 @@
       log('  CRS ready.', 'success');
 
       log('Step 8: Creating PXE...', 'info');
-      const dataDirPrefix = config.dataDirPrefix || 'pxe_fj_';
+      const dataDirPrefix = (config.dataDirPrefix || 'pxe_fj_') + address.toString().slice(0, 16) + '_';
       const storeConfig = { ...l1Contracts, dataDirectory: dataDirPrefix + l1Contracts.rollupAddress };
       const store = await createStore(storeConfig);
       pxe = await a.createPXE(aztecNode, {

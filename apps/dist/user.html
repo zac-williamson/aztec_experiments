@@ -2400,7 +2400,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         // Step 5: Create PXE
         // ============================================================
         log('Step 5: Creating PXE...', 'info');
-        const dataDirPrefix = config.dataDirPrefix || 'pxe_bb_';
+        const dataDirPrefix = (config.dataDirPrefix || 'pxe_bb_') + address.toString().slice(0, 16) + '_';
         const storeConfig = { ...l1Contracts, dataDirectory: dataDirPrefix + l1Contracts.rollupAddress };
         const store = await createStore(storeConfig);
         pxe = await a.createPXE(aztecNode, {
@@ -3379,7 +3379,7 @@ function doNavAction() {
     })
     .catch(e => {
       if (workingDiv && workingDiv.parentNode) workingDiv.remove();
-      if (p.statusId) log('ERROR: ' + (e.stack || e.message || String(e)), 'error', p.statusId);
+      if (p.statusId) log('ERROR: ' + (e.message || String(e)), 'error', p.statusId);
       console.error(e);
       btn.disabled = false;
       btn.classList.remove('working');
@@ -3414,7 +3414,7 @@ function withBtn(btnId, busyText, statusId, action, autoAdvance) {
         }
       },
       (e) => {
-        if (statusId) log('ERROR: ' + (e.stack || e.message || String(e)), 'error', statusId);
+        if (statusId) log('ERROR: ' + (e.message || String(e)), 'error', statusId);
         console.error(e);
       }
     )
@@ -3999,9 +3999,18 @@ async function doDepositPage() {
 
     // Phase 1: Deposit on L1
     log('Making new L1 deposit...', 'info', 'depositStatus');
-    const depResult = await callEngine('deposit', 'depositStatus', {
-      depositAmount: amountStr, contractSalt: salt, dataDirPrefix: 'pxe_bb_',
-    });
+    let depResult;
+    try {
+      depResult = await callEngine('deposit', 'depositStatus', {
+        depositAmount: amountStr, contractSalt: salt, dataDirPrefix: 'pxe_bb_',
+      });
+    } catch (e) {
+      const msg = e.message || String(e);
+      if (/missing revert data|CALL_EXCEPTION|insufficient funds|gas required exceeds/i.test(msg)) {
+        throw new Error('L1 deposit failed: not enough ETH balance for the deposit plus gas fees.');
+      }
+      throw e;
+    }
     const depInfo = depResult.depositInfo;
 
     // Phase 2: Wait for L2 ingest + claim on L2

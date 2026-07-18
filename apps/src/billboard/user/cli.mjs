@@ -41,6 +41,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const __realProcess = process; // save before bundle overrides it
@@ -86,6 +88,9 @@ const AZTEC_WALLET_PATH = args['aztec-wallet'] || path.join(PROJECT_ROOT, 'walle
 const ETH_WALLET_PATH = args['eth-wallet'] || path.join(PROJECT_ROOT, 'eth_wallet.json');
 const PXE_DIR_PREFIX = args['pxe-dir'] || 'pxe_bb_user_';
 
+// PXE cache directory (persists IndexedDB state between CLI runs)
+const PXE_CACHE_DIR = path.join(PROJECT_ROOT, '.pxe-cache');
+
 // Valid actions
 const VALID_ACTIONS = ['status', 'deposit', 'claim', 'post', 'list', 'withdraw', 'claim-l1', 'auto'];
 if (!VALID_ACTIONS.includes(ACTION)) {
@@ -120,6 +125,11 @@ function log(msg, level) {
   const c = COLORS[level] || COLORS.info;
   console.log(`${c}[${new Date().toLocaleTimeString()}] ${msg}${COLORS.reset}`);
 }
+
+// ============================================================
+// PXE cache (dump/restore IndexedDB between runs)
+// ============================================================
+const { dumpPxeCache, restorePxeCache } = require('./pxe-cache.cjs');
 
 // ============================================================
 // Load engine
@@ -269,36 +279,56 @@ async function initCRSNode(a) {
   const SRS_NUM_POINTS = 2 ** 20 + 1;
   const GRUMPKIN_NUM_POINTS = 2 ** 16 + 1;
 
+  // Local CRS cache (same files the web apps use)
+  const CRS_LOCAL_DIR = path.join(PROJECT_ROOT, 'apps', 'dist', 'crs');
+
   log('  Initializing BarretenbergSync (WASM)...', 'info');
   await a.BarretenbergSync.initSingleton();
   const bb = a.BarretenbergSync.getSingleton();
 
-  async function fetchCRS(filename, options = {}) {
+  // Try local cache first, fall back to CDN
+  async function loadCRS(filename, options = {}) {
+    // 1. Local cache
+    const localPath = path.join(CRS_LOCAL_DIR, filename);
+    if (fs.existsSync(localPath)) {
+      const stat = fs.statSync(localPath);
+      const needBytes = options.headers && options.headers.Range
+        ? parseInt(options.headers.Range.split('-')[1]) + 1
+        : stat.size;
+      if (stat.size >= needBytes) {
+        let buf = fs.readFileSync(localPath);
+        if (options.headers && options.headers.Range) {
+          const [start, end] = options.headers.Range.split('=')[1].split('-').map(Number);
+          buf = buf.subarray(start, end + 1);
+        }
+        log('  Loaded ' + filename + ' from local cache.', 'info');
+        return new Uint8Array(buf);
+      }
+      log('  Local ' + filename + ' too small (' + stat.size + ' < ' + needBytes + '), fetching from CDN...', 'warn');
+    }
+    // 2. CDN fallback
     for (const host of CRS_HOSTS) {
       try {
         const res = await fetch(host + '/' + filename, options);
         if (res.ok || res.status === 206) {
           log('  Loaded ' + filename + ' from ' + host + '.', 'info');
-          return res;
+          return new Uint8Array(await res.arrayBuffer());
         }
       } catch (e) {}
     }
-    throw new Error('Could not load ' + filename + ' from CDN');
+    throw new Error('Could not load ' + filename + ' from local cache or CDN');
   }
 
   log('  Loading BN254 G1 data...', 'info');
   const g1End = SRS_NUM_POINTS * 64 - 1;
-  const g1Res = await fetchCRS('g1.dat', { headers: { Range: 'bytes=0-' + g1End } });
-  const g1Data = new Uint8Array(await g1Res.arrayBuffer());
+  const g1Data = await loadCRS('g1.dat', { headers: { Range: 'bytes=0-' + g1End } });
 
   log('  Loading BN254 G2 data...', 'info');
-  const g2Res = await fetchCRS('g2.dat');
-  const g2Data = new Uint8Array(await g2Res.arrayBuffer());
+  const g2Data = await loadCRS('g2.dat');
 
   log('  Loading Grumpkin G1 data...', 'info');
   const grumpkinEnd = GRUMPKIN_NUM_POINTS * 64 - 1;
-  const grumpkinRes = await fetchCRS('grumpkin_g1.dat', { headers: { Range: 'bytes=0-' + grumpkinEnd } });
-  const grumpkinG1Data = new Uint8Array(await grumpkinRes.arrayBuffer());
+  const grumpkinG1Data = await loadCRS('grumpkin_g1.dat', { headers: { Range: 'bytes=0-' + grumpkinEnd } });
 
   log('  Loading SRS into wasm...', 'info');
   bb.srsInitSrs({ pointsBuf: g1Data, numPoints: SRS_NUM_POINTS, g2Point: g2Data });
@@ -404,13 +434,63 @@ async function main() {
   };
 
   try {
+    // Derive account address for cache file name
+    const sk = a.Fr.fromHexString(aztecWallet.secretKey);
+    const signingKey = a.deriveSigningKey(sk);
+    const accountContract = new a.SchnorrInitializerlessAccountContract(signingKey);
+    const { publicKeys } = await a.deriveKeys(sk);
+    const accountArtifact = await accountContract.getContractArtifact();
+    const immutablesHash = await accountContract.getImmutablesHash();
+    const saltVal = typeof aztecWallet.salt === 'string' ? parseInt(aztecWallet.salt, 16) : (aztecWallet.salt || 0);
+    const inst = await a.getContractInstanceFromInstantiationParams(accountArtifact, {
+      constructorArtifact: undefined, constructorArgs: undefined,
+      salt: new a.Fr(saltVal), publicKeys, immutablesHash,
+    });
+    const accountAddr = inst.address.toString();
+    const cacheFile = path.join(PXE_CACHE_DIR, accountAddr.slice(0, 16) + '.json');
+
+    // Restore PXE cache before engine runs
+    if (!fs.existsSync(PXE_CACHE_DIR)) fs.mkdirSync(PXE_CACHE_DIR, { recursive: true });
+    const restored = await restorePxeCache(globalThis.indexedDB, cacheFile);
+    if (restored) {
+      log('  PXE cache restored from ' + path.basename(cacheFile), 'success');
+    }
+
     const result = await globalThis.runBillboardUser(env, config);
+
+    // Dump PXE cache after engine completes
+    const dumped = await dumpPxeCache(globalThis.indexedDB, cacheFile);
+    if (dumped) {
+      log('  PXE cache saved.', 'success');
+    }
+
     log('', 'info');
     log('========================================', 'success');
     log('  Action "' + ACTION + '" completed!', 'success');
     if (result.state) log('  Final state: ' + result.state, 'success');
     log('========================================', 'success');
   } catch (e) {
+    // Try to save cache even on failure (partial sync is still useful)
+    try {
+      if (typeof globalThis.indexedDB !== 'undefined' && globalThis.indexedDB._databases) {
+        const sk = a.Fr.fromHexString(aztecWallet.secretKey);
+        const signingKey = a.deriveSigningKey(sk);
+        const accountContract = new a.SchnorrInitializerlessAccountContract(signingKey);
+        const { publicKeys } = await a.deriveKeys(sk);
+        const accountArtifact = await accountContract.getContractArtifact();
+        const immutablesHash = await accountContract.getImmutablesHash();
+        const saltVal = typeof aztecWallet.salt === 'string' ? parseInt(aztecWallet.salt, 16) : (aztecWallet.salt || 0);
+        const inst = await a.getContractInstanceFromInstantiationParams(accountArtifact, {
+          constructorArtifact: undefined, constructorArgs: undefined,
+          salt: new a.Fr(saltVal), publicKeys, immutablesHash,
+        });
+        const accountAddr = inst.address.toString();
+        const cacheFile = path.join(PXE_CACHE_DIR, accountAddr.slice(0, 16) + '.json');
+        if (!fs.existsSync(PXE_CACHE_DIR)) fs.mkdirSync(PXE_CACHE_DIR, { recursive: true });
+        await dumpPxeCache(globalThis.indexedDB, cacheFile);
+        log('  PXE cache saved (partial).', 'info');
+      }
+    } catch (cacheErr) { /* ignore cache errors on failure path */ }
     log('', 'error');
     log('FAILED: ' + (e.stack || e.message || String(e)), 'error');
     __realProcess.exit(1);

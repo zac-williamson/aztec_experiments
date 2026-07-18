@@ -2577,7 +2577,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       log('  CRS ready.', 'success');
 
       log('Step 8: Creating PXE...', 'info');
-      const dataDirPrefix = config.dataDirPrefix || 'pxe_fj_';
+      const dataDirPrefix = (config.dataDirPrefix || 'pxe_fj_') + address.toString().slice(0, 16) + '_';
       const storeConfig = { ...l1Contracts, dataDirectory: dataDirPrefix + l1Contracts.rollupAddress };
       const store = await createStore(storeConfig);
       pxe = await a.createPXE(aztecNode, {
@@ -2901,7 +2901,7 @@ function doNavAction() {
     })
     .catch(e => {
       if (workingDiv && workingDiv.parentNode) workingDiv.remove();
-      if (p.statusId) log('ERROR: ' + (e.stack || e.message || String(e)), 'error', p.statusId);
+      if (p.statusId) log('ERROR: ' + (e.message || String(e)), 'error', p.statusId);
       console.error(e);
       btn.disabled = false;
       btn.classList.remove('working');
@@ -2936,7 +2936,7 @@ function withBtn(btnId, busyText, statusId, action, autoAdvance) {
         }
       },
       (e) => {
-        if (statusId) log('ERROR: ' + (e.stack || e.message || String(e)), 'error', statusId);
+        if (statusId) log('ERROR: ' + (e.message || String(e)), 'error', statusId);
         console.error(e);
       }
     )

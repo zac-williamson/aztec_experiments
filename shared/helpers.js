@@ -91,7 +91,7 @@ function doNavAction() {
     })
     .catch(e => {
       if (workingDiv && workingDiv.parentNode) workingDiv.remove();
-      if (p.statusId) log('ERROR: ' + (e.stack || e.message || String(e)), 'error', p.statusId);
+      if (p.statusId) log('ERROR: ' + (e.message || String(e)), 'error', p.statusId);
       console.error(e);
       btn.disabled = false;
       btn.classList.remove('working');
@@ -126,7 +126,7 @@ function withBtn(btnId, busyText, statusId, action, autoAdvance) {
         }
       },
       (e) => {
-        if (statusId) log('ERROR: ' + (e.stack || e.message || String(e)), 'error', statusId);
+        if (statusId) log('ERROR: ' + (e.message || String(e)), 'error', statusId);
         console.error(e);
       }
     )

@@ -133,9 +133,18 @@ async function doDepositPage() {
 
     // Phase 1: Deposit on L1
     log('Making new L1 deposit...', 'info', 'depositStatus');
-    const depResult = await callEngine('deposit', 'depositStatus', {
-      depositAmount: amountStr, contractSalt: salt, dataDirPrefix: 'pxe_bb_',
-    });
+    let depResult;
+    try {
+      depResult = await callEngine('deposit', 'depositStatus', {
+        depositAmount: amountStr, contractSalt: salt, dataDirPrefix: 'pxe_bb_',
+      });
+    } catch (e) {
+      const msg = e.message || String(e);
+      if (/missing revert data|CALL_EXCEPTION|insufficient funds|gas required exceeds/i.test(msg)) {
+        throw new Error('L1 deposit failed: not enough ETH balance for the deposit plus gas fees.');
+      }
+      throw e;
+    }
     const depInfo = depResult.depositInfo;
 
     // Phase 2: Wait for L2 ingest + claim on L2
