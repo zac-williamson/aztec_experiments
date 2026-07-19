@@ -44,6 +44,7 @@ window.walletState = window.walletState || {
 
 // Internal state
 let _onReady = null;
+let _onAztecLoad = null;
 let _statusId = 'setupStatus';
 let _ethRpcUrl = DEFAULT_ETH_RPC;
 let _requireEth = true;
@@ -145,6 +146,9 @@ async function _loadAztecWallet(file) {
 
   _wlog('AZTEC wallet loaded' + (address ? ': ' + address.toString() : ''), 'success');
   _updateButtonColors();
+  if (_onAztecLoad) {
+    try { _onAztecLoad(address); } catch(e) { console.error('onAztecLoad callback error:', e); }
+  }
   _checkReady();
 }
 
@@ -317,6 +321,9 @@ async function _setAztecWalletFromSecret(secretKey, salt, filename, label) {
 
   _wlog('Aztec wallet set' + (address ? ': ' + address.toString() : ''), 'success');
   _updateButtonColors();
+  if (_onAztecLoad && address) {
+    try { _onAztecLoad(address); } catch(e) { console.error('onAztecLoad callback error:', e); }
+  }
   _checkReady();
 }
 
@@ -353,6 +360,7 @@ function initWalletButtons(containerId, options) {
   _ethRpcUrl = options.ethRpcUrl || DEFAULT_ETH_RPC;
   _requireEth = options.requireEth !== false;
   _onReady = options.onReady || null;
+  _onAztecLoad = options.onAztecLoad || null;
   _readyFired = false;
 
   const container = document.getElementById(containerId);

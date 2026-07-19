@@ -36,8 +36,8 @@ import {Epoch} from "@aztec/core/libraries/TimeLib.sol";
 contract BillboardPortal {
     using Hash for bytes;
 
-    /// @notice Minimum deposit (0.001 ETH)
-    uint256 public constant MIN_DEPOSIT = 0.001 ether;
+    /// @notice Minimum deposit (set at deploy time)
+    uint256 public immutable MIN_DEPOSIT;
 
     /// @notice The L2 billboard contract address
     bytes32 public immutable L2_CONTRACT;
@@ -62,11 +62,12 @@ contract BillboardPortal {
     event Deposited(address indexed depositor, uint256 amount, bytes32 secretHash, bytes32 key, uint256 index);
     event Withdrawn(address indexed depositor, uint256 amount);
 
-    constructor(address _rollup, bytes32 _l2Contract, uint256 _version) {
+    constructor(address _rollup, bytes32 _l2Contract, uint256 _version, uint256 _minDeposit) {
         ROLLUP = IRollup(_rollup);
         INBOX = IRollup(_rollup).getInbox();
         L2_CONTRACT = _l2Contract;
         VERSION = _version;
+        MIN_DEPOSIT = _minDeposit;
     }
 
     /// @notice Deposit ETH and send an L1->L2 message
@@ -125,6 +126,7 @@ contract BillboardPortal {
 
         // Update deposit record and send ETH
         deposits[msg.sender] = 0;
+        totalDeposited -= amount; // Fix: decrement so re-deposits don't double-count
         (bool ok,) = msg.sender.call{value: amount}("");
         require(ok, "ETH transfer failed");
 

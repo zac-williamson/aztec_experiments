@@ -2,6 +2,12 @@
 
 An anonymous billboard on Aztec v5 mainnet. Users deposit ETH on L1, post messages anonymously on L2, and withdraw their ETH back to L1. Posts are fully anonymous — no sender address appears in public call data, and there is no link to the L1 deposit.
 
+Features:
+- **Censorship mechanism**: A censor (set at deploy time) can flag posts as "immoral". Flagged posts are hidden from the default feed and impose a time-lock penalty on the poster's next post. The censor can transfer rights to another address.
+- **Automated censorship bot**: A local-LLM daemon (`censor-daemon/`) watches the billboard, evaluates posts against the on-chain moderation policy, and automatically flags violations.
+- **Moderation policy**: The censor can set a text moderation policy on-chain (up to 1488 bytes), shown in the UI and CLI. The daemon reads it as the source of truth.
+- **Partial formal verification**: Security properties (rate limits, censorship screening, privacy, deposit safety) are formally verified in Lean 4 / Verity — 70 proven theorems, zero `sorry`s. See [fv/](fv/).
+
 ## Architecture
 
 ```
@@ -36,18 +42,82 @@ L1 (Ethereum)                     L2 (Aztec)
 Posts are rate-limited by a time-lock stored in a private note. The cooldown is inversely proportional to the deposit amount:
 
 ```
-cooldown = 3600 * 0.001 ETH / amount
+cooldown = base_cooldown * min_deposit / amount
 ```
 
+For example with `base_cooldown=3600, min_deposit=0.001`:
 - 0.001 ETH → 3600s cooldown (1 post/hour)
 - 0.005 ETH → 720s cooldown (5 posts/hour)
 - 0.01 ETH → 360s cooldown (10 posts/hour)
 
-Each `post()` advances `min_usable_time` by one cooldown. Posting multiple times in quick succession is possible if enough time has elapsed since the deposit — the lock accumulates, it doesn't reset per post. The deposit→withdraw loop does not help: re-depositing creates a new note with a fresh claim-time lock, identical to simply waiting.
+Each `post()` advances `next_allowed_time` by one cooldown (or more if flagged posts are screened). Posting multiple times in quick succession is possible if enough time has elapsed since the last post — the **save-up rule** (`max_save_up`) allows accumulating up to `max_save_up` posts of credit during dormancy, then spending them in quick succession. The deposit→withdraw loop does not help: re-depositing creates a new note with a fresh claim-time lock, identical to simply waiting.
+
+### Censorship mechanism
+
+A censor (set at deployment time) can flag posts as "immoral" via `declare_immoral(post_index, response)`. Flagged posts are:
+
+1. **Hidden** from the billboard feed by default (user app shows a "View censored posts" link with confirmation dialog)
+2. **Flag-penalized**: when a flagged post is screened during a subsequent `post()` call, the next post's time lock is extended by `cooldown * (K-1)` per flag (K set at deploy time). This is equivalent to making K-1 dummy posts at the same time: screening 1 flagged post costs K total cooldowns (1 base + (K-1) penalty).
+
+**Screening** uses constant-cost Merkle proofs instead of chain walking. Each `post()` call screens 0–2 older posts (the "child" and "grandchild" in the post chain) via `assert_note_existed_by`. A post can only be screened after the **censor window** (default 3600s) has passed since it was created — guaranteeing the censor time to flag it first.
+
+**Withdrawal** requires all real posts to be screened (`last_screened_index >= last_real_post_index`). Users make **dummy posts** (which advance screening without storing content) to screen their last real post before withdrawing. If no real posts exist, only the initial claim-time lock must expire.
+
+The post chain uses a cryptographic link mechanism: each post stores a `prev_link` field computed as `poseidon2_hash_with_separator([inner_note_hash, link_secret], DOM_SEP__POST_LINK)`, where `link_secret` is derived from the poster's nullifier hiding key. This preserves anonymity — no public link between posts is revealed.
+
+The censor can transfer censorship rights to another address via `transfer_censor(new_address)`. The deployer has no post-deployment control over the censor.
+
+### Moderation policy
+
+The censor can set a text moderation policy on-chain via `set_moderation_policy(fields, len)` (up to 1488 bytes, stored as 48 Field values). The policy is readable via `get_moderation_policy()` and is displayed in the user app, censor app, and CLI output. The automated censor daemon reads the on-chain policy as the source of truth for moderation decisions.
 
 See [SECURITY_PROPERTIES.md](SECURITY_PROPERTIES.md) for the full security analysis with line-by-line code references.
 
-## The three apps
+## Automated censorship bot
+
+The `censor-daemon/` directory contains a self-contained daemon that watches the Billboard contract for new posts, runs them through a local LLM (llama.cpp), and automatically flags any that violate the on-chain moderation policy.
+
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
+│  daemon.mjs │────▶│  llama-server │────▶│  Local LLM      │
+│  (orchestr) │     │  (port 5090)  │     │  (Qwen3.5-2B)   │
+└──────┬──────┘     └──────────────┘     └─────────────────┘
+       │
+       │ subprocess (black-box)
+       ▼
+┌─────────────────────────────┐
+│  cli.mjs  list --json        │  → posts[], censorWindow, policy
+│  cli.mjs  declare-immoral    │  → flags post on-chain
+└─────────────────────────────┘
+```
+
+From any state, running `node daemon.mjs` will:
+
+1. **Download + compile llama.cpp** (if not already present)
+2. **Download the model** (~1.4 GB Q4_K_M GGUF, Qwen3.5-2B by default)
+3. **Start llama-server** — local OpenAI-compatible API on `127.0.0.1:5090`
+4. **Read contract config** — fetches the on-chain moderation policy, censor window, and max save-up
+5. **Poll the billboard** — shells out to `cli.mjs list --json` to read all posts
+6. **Moderate each post** — sends the post + policy to the LLM, asks "VIOLATION or OK?"
+7. **Flag violations** — shells out to `cli.mjs declare-immoral` to flag the post on-chain
+
+The daemon is a **thin orchestrator** — it never touches the Aztec SDK directly. All on-chain operations go through the existing user CLI as black-box subprocess calls. It is **censor-window-aware**: it prioritizes posts closest to expiring (oldest first), warns on posts with <5 minutes left, and warns on posts already past the censor window.
+
+Policy resolution order: on-chain policy (from `get_moderation_policy()`) → local `policy.txt` → hardcoded default.
+
+```bash
+# Dry-run (evaluate but don't flag on-chain):
+node censor-daemon/daemon.mjs --dry-run --once
+
+# Live (actually flag violations):
+node censor-daemon/daemon.mjs --poll-interval 30
+```
+
+Tests: 23 unit tests (`test_moderation.mjs`) + 14 integration tests (`test_daemon.mjs`) with mock infrastructure — no network or llama.cpp required. Run `bash censor-daemon/run_tests.sh`.
+
+See [censor-daemon/README.md](censor-daemon/README.md) for full details.
+
+## The four apps
 
 ### 1. Fee Juice (`fee-juice`)
 
@@ -79,7 +149,20 @@ The main user-facing app. Full flow: deposit → claim → post → withdraw →
 4. **Withdraw** — Consumes the DepositNote and sends an L2→L1 message.
 5. **Claim on L1** — After the epoch proof (~40 min on mainnet), consumes the Outbox message to claim ETH on L1.
 
+The billboard feed **hides censored posts by default**. A "View censored posts" link at the bottom shows how many posts are hidden; clicking it opens a confirmation dialog ("These posts have been flagged as immoral by the censor. Are you sure you want to see them?"). Confirming reveals the censored posts with grey styling and a "Hide censored posts" toggle to hide them again.
+
 The `auto` action runs the full flow end-to-end autonomously.
+
+### 4. Censor (`billboard/censor`)
+
+A dedicated app for the censor to manage censorship. No ETH wallet needed — the censor only operates on L2.
+
+1. **Load censor wallet** — Load the censor's Aztec wallet (the one whose address was passed to `init` at deploy time, or the one that received rights via `transfer_censor`).
+2. **Flag posts** — Enter a post index and optional response text, then flag it as immoral. Flagged posts are hidden from the user billboard by default. When a flagged post is later screened during a subsequent post, the poster's next post time lock is extended by (K-1) extra cooldowns per flag.
+3. **Transfer rights** — Transfer censorship authority to another Aztec address.
+4. **View billboard** — The censor sees all posts including flagged ones (with censor response messages).
+
+The censor is set at `init()` time only — the deployer cannot change it after deployment. Only the censor can transfer rights to another address.
 
 ## Directory structure
 
@@ -136,21 +219,50 @@ aztec/
 │   │       │   ├── engine.js            ← Deploy flow (L2 + L1 + link + cross-check)
 │   │       │   ├── cli.mjs              ← CLI tool
 │   │       │   ├── gen_eth_wallet.mjs   ← ETH wallet generator
-│   │       │   ├── serve.py             ← Local dev server (legacy, use apps/serve.py)
+│   │       │   ├── gen_censor_wallet.mjs← Censor Aztec+ETH wallet generator
+│   │       │   ├── gen_user_wallet.mjs  ← User Aztec+ETH wallet generator
 │   │       │   ├── billboard_artifact.json
 │   │       │   └── portal_bytecode.txt
+│   │       ├── censor/                   ← Censor app
+│   │       │   ├── template.html
+│   │       │   ├── app.js               ← Flag posts, transfer rights, view all posts
+│   │       │   ├── engine.js            ← Symlink → user/engine.js (shared engine)
+│   │       │   └── pxe-cache.cjs        ← Symlink → user/pxe-cache.cjs
 │   │       └── user/                     ← User app
 │   │           ├── template.html
-│   │           ├── app.js               ← Thin wrapper (UI → engine, live feed)
-│   │           ├── engine.js            ← User flow (deposit, claim, post, withdraw, claim-l1)
+│   │           ├── app.js               ← Thin wrapper (UI → engine, live feed, censored post hiding)
+│   │           ├── engine.js            ← User flow (deposit, claim, post, withdraw, claim-l1, declare-immoral, transfer-censor)
 │   │           ├── cli.mjs              ← CLI tool
 │   │           └── pxe-cache.cjs        ← IndexedDB dump/restore for CLI PXE caching
 │   ├── dist/                        ← Built single-file apps
 │   │   ├── fee-juice.html
 │   │   ├── deploy.html
 │   │   ├── user.html
+│   │   ├── censor.html
 │   │   ├── aztec_bundle.js          ← Copy of the PXE bundle
 │   │   └── crs/                     ← CRS files for proving
+│
+├── censor-daemon/                  ← Automated censorship bot (local LLM)
+│   ├── daemon.mjs                  ← Orchestrator: llama.cpp setup, polling, flagging
+│   ├── moderation.mjs              ← LLM moderation logic (prompt, verdict parsing)
+│   ├── policy.txt                  ← Default moderation policy (fallback)
+│   ├── test_moderation.mjs         ← Unit tests for moderation parsing (23 tests)
+│   ├── test_daemon.mjs             ← Integration tests with mock infra (14 tests)
+│   ├── run_tests.sh                ← Test runner script
+│   └── README.md                   ← Full daemon documentation
+│
+├── fv/                             ← Formal verification (Lean 4 + Verity)
+│   ├── PLAN.md                     ← Verification plan and status
+│   ├── billboard_aztec_lean/       ← Lean model of L2 Noir contract (51 theorems)
+│   │   └── BillboardAztec.lean
+│   ├── billboard_portal_verity/    ← Verity port of L1 Solidity portal (12 theorems)
+│   │   ├── BillboardPortal.lean
+│   │   ├── Spec.lean, Invariants.lean
+│   │   └── Proofs/Basic.lean
+│   ├── bridge_model/               ← Lean model of L1↔L2 bridge (7 theorems)
+│   │   └── Bridge.lean
+│   └── notes/
+│       └── SECURITY_PROPERTIES_FORMAL.md ← Theorem-by-theorem mapping (P1-P18, I1-I12)
 │
 ├── .pxe-cache/                     ← CLI PXE cache (IndexedDB dumps, gitignored)
 │
@@ -171,11 +283,13 @@ Both the web UI and CLI share the same engine, so any flow that is autonomous in
 
 **Fee Juice**: `status`, `scan`, `deposit`, `claim`, `auto`
 
-**User**: `status`, `deposit`, `claim`, `post`, `list`, `withdraw`, `claim-l1`, `auto`
+**User**: `status`, `deposit`, `claim`, `post`, `list`, `withdraw`, `claim-l1`, `declare-immoral`, `transfer-censor`, `auto`
 
 **Deploy**: `status`, `deploy`
 
 The `auto` action runs the full flow end-to-end: deposit → wait for L2 ingest → claim → post (if message provided) → withdraw → claim-l1.
+
+**Censor daemon**: `daemon.mjs` is not an engine action but a standalone orchestrator that shells out to `cli.mjs list --json` and `cli.mjs declare-immoral` as subprocesses. See [censor-daemon/README.md](censor-daemon/README.md).
 
 ## Building
 
@@ -194,6 +308,14 @@ cd billboard/portal && forge build --use 0.8.33
 cd apps && node build.mjs
 ```
 
+### Building the formal verification proofs
+
+```bash
+cd fv/verity
+export PATH="$HOME/.elan/bin:$PATH"
+lake build   # 2125 jobs, zero sorrys
+```
+
 ### Important: aztec-nr version must match the bundle
 
 The L2 contract's `Nargo.toml` must depend on `aztec-nr` tag `v5.0.0` — the same version the `aztec_bundle.js` was built from. Version mismatches cause standard contract addresses (HandshakeRegistry, AuthRegistry, etc.) baked into the ACIR to differ from those registered in PXE, causing "contract is not registered" errors.
@@ -210,18 +332,28 @@ node apps/src/fee-juice/cli.mjs --scan --aztec-wallet wallet.json --eth-wallet e
 node apps/src/fee-juice/cli.mjs --eth-for-swap 0.005 --aztec-wallet wallet.json --eth-wallet eth_wallet.json
 
 # Billboard user (deposit → claim → post → withdraw → claim-l1)
-node apps/src/billboard/user/cli.mjs status   --contract-salt 1006 --aztec-wallet wallet.json --eth-wallet eth_wallet.json
-node apps/src/billboard/user/cli.mjs deposit  --contract-salt 1006 --amount 0.005 --aztec-wallet wallet.json --eth-wallet eth_wallet.json
-node apps/src/billboard/user/cli.mjs post     --contract-salt 1006 --msg "hello world" --aztec-wallet wallet.json --eth-wallet eth_wallet.json
-node apps/src/billboard/user/cli.mjs list     --contract-salt 1006 --aztec-wallet wallet.json --eth-wallet eth_wallet.json
-node apps/src/billboard/user/cli.mjs withdraw --contract-salt 1006 --aztec-wallet wallet.json --eth-wallet eth_wallet.json
-node apps/src/billboard/user/cli.mjs auto     --contract-salt 1006 --amount 0.005 --msg "hello" --aztec-wallet wallet.json --eth-wallet eth_wallet.json
+node apps/src/billboard/user/cli.mjs status   --contract-salt 2028 --aztec-wallet wallets/user_aztec_wallet.json --eth-wallet wallets/user_eth_wallet.json
+node apps/src/billboard/user/cli.mjs deposit  --contract-salt 2028 --amount 0.002 --aztec-wallet wallets/user_aztec_wallet.json --eth-wallet wallets/user_eth_wallet.json
+node apps/src/billboard/user/cli.mjs post     --contract-salt 2028 --msg "hello world" --aztec-wallet wallets/user_aztec_wallet.json --eth-wallet wallets/user_eth_wallet.json \
+  --censor 0x0035abfebdafd10697b8a9a5de2792715602ff077787ca6cfefdab632547189f --k-multiplier 4
+node apps/src/billboard/user/cli.mjs list     --contract-salt 2028 --aztec-wallet wallets/user_aztec_wallet.json --eth-wallet wallets/user_eth_wallet.json \
+  --censor 0x0035abfebdafd10697b8a9a5de2792715602ff077787ca6cfefdab632547189f --k-multiplier 4
+node apps/src/billboard/user/cli.mjs withdraw --contract-salt 2028 --aztec-wallet wallets/user_aztec_wallet.json --eth-wallet wallets/user_eth_wallet.json \
+  --censor 0x0035abfebdafd10697b8a9a5de2792715602ff077787ca6cfefdab632547189f --k-multiplier 4
+
+# Censor: flag posts and transfer rights
+node apps/src/billboard/user/cli.mjs declare-immoral --contract-salt 2028 --post-index 0 --censor-response "spam" \
+  --censor 0x0035abfebdafd10697b8a9a5de2792715602ff077787ca6cfefdab632547189f --k-multiplier 4 \
+  --censor-wallet wallets/censor_aztec_wallet.json
+node apps/src/billboard/user/cli.mjs transfer-censor --contract-salt 2028 --new-censor 0x... \
+  --censor 0x0035abfebdafd10697b8a9a5de2792715602ff077787ca6cfefdab632547189f --k-multiplier 4 \
+  --censor-wallet wallets/censor_aztec_wallet.json
 ```
 
 ### Serving web apps with multi-threaded WASM
 
 ```bash
-python3 apps/serve.py [port]  # default: 8000
+python3 apps/serve.py [port]  # default: 5000 (project convention)
 ```
 
 Sets COOP/COEP headers for `SharedArrayBuffer` (multi-threaded WASM) and serves from `apps/dist/`. Local CRS files in `apps/dist/crs/` are loaded automatically.
@@ -261,11 +393,57 @@ The shared `wallet-buttons.js` module provides a common wallet UI across all thr
 - **forge** (Foundry, for compiling the Solidity portal)
 - **Node.js** ≥ 24
 - A browser wallet for L1 transactions (in the web UI)
+- **Lean 4 / elan** (only for building formal verification proofs in `fv/`)
+
+## Formal verification (partial)
+
+The `fv/` directory contains a partial formal verification of the billboard's security properties using [Verity](https://veritylang.com) (Lean 4 framework for verified smart contracts) and a standalone Lean model of the L2 contract.
+
+**Build status: 2125 Lean jobs, zero `sorry`s, 70 proven theorems/lemmas.**
+
+### Components
+
+| Component | File | Theorems | Axioms | Status |
+|-----------|------|----------|--------|--------|
+| **L2 model (Lean)** | `fv/billboard_aztec_lean/BillboardAztec.lean` | 51 | 5 | Constant-cost screening model: I1–I12, deposit safety, privacy |
+| **L1 portal (Verity)** | `fv/billboard_portal_verity/` | 12 | 1 | Solidity port rewritten as `verity_contract`, guard proofs + conservation |
+| **Bridge model (Lean)** | `fv/bridge_model/Bridge.lean` | 7 | 2 | Inbox/Outbox no-double-consume, content-hash agreement |
+
+### What's proven
+
+**L2 model** (51 theorems, models the Noir contract's constant-cost screening design from [LATEST_CHANGE.md](LATEST_CHANGE.md)):
+- **I1** — Constant-cost screening: each `post()` screens at most 2 posts (zero axioms)
+- **I3** — Censor window guarantee: posts only screened after `censor_window` expires (zero axioms)
+- **I4** — Monotonic advance: `last_screened` never goes backwards (zero axioms)
+- **I5** — Flag penalty: each flag adds exactly `cooldown × (K-1)` (zero axioms)
+- **I6** — Save-up rule bounds burst posting (zero axioms)
+- **I7** — Withdrawal requires full screening (zero axioms)
+- **I10** — Chain link unforgeability (uses `poseidon2_injective` axiom)
+- **Master safety theorem** (`deposit_safety_master`): withdraw ≤ `T_stop + ⌈N/2⌉ × C × (1+(K-1)×2)` — no permanent lockout
+- **Master privacy theorem** (`post_unlinkability_master`): two posts by same user are indistinguishable from two by different users (constructive proof, zero axioms)
+- **Censor governance**: only censor can flag/transfer/set-policy (proven)
+
+**L1 portal** (7 Verity proofs + 5 stubs): P2 (no double deposit), P3 (withdraw zeroes balance), P4 (no withdraw without deposit), P14 (u128 overflow), conservation of `totalDeposited`.
+
+**Bridge**: no-double-consume for Inbox and Outbox, content-hash agreement axioms (P1/P16).
+
+### Axioms (intentional trust boundaries)
+
+8 axioms total, all at cryptographic/platform trust boundaries:
+- `poseidon2_injective` — hash injectivity (cryptographic assumption)
+- `nhk_app_opacity` — link_secret not derivable from public data (cryptographic)
+- `nullifier_unlinkability` — nullifiers don't reveal owner (Aztec platform property)
+- `deposit/withdraw_hash_agreement` — L1 and L2 agree on content hashes (bridge boundary)
+- `externalCallStubBool_true` — Verity test stub for external calls returns `true`
+
+See [fv/notes/SECURITY_PROPERTIES_FORMAL.md](fv/notes/SECURITY_PROPERTIES_FORMAL.md) for the full theorem-by-theorem mapping, and [fv/PLAN.md](fv/PLAN.md) for the verification plan.
 
 ## TODO
 
-- [ ] **Formally verify the security properties** — The security analysis in [SECURITY_PROPERTIES.md](SECURITY_PROPERTIES.md) is currently a manual review artifact with code references. Formally verify the properties (e.g. with a theorem prover or formal specification) to gain stronger guarantees.
+- [ ] **Strengthen end-to-end FV theorems** — The bridge soundness theorems (P1, P5, P16) and several L2 invariants (I2, I8, I9, I11, I12) are currently stated as `True := by trivial`. Strengthen these to full proofs connecting L1 Verity + L2 Lean + bridge model.
 - [ ] **Replace in-app JSON Ethereum wallet with [OpenLV](http://openlv.sh/)** — The current "Load from JSON" ETH wallet option requires users to manually export and load a private key JSON file. Replace this with OpenLV integration for a more secure, user-friendly wallet connection.
+- [ ] **End-to-end browser test of censor app** — The censor web app (`censor.html`) has been built but not yet tested in a browser. The CLI `declare-immoral` and `transfer-censor` actions have been fully tested on mainnet (salt 2028).
+- [ ] **End-to-end browser test of censored post hiding** — The "View censored posts" confirmation dialog and grey styling have been implemented in the user app but not yet tested in a browser against live mainnet data.
 
 ## AI-recommended TODOs
 
@@ -284,10 +462,9 @@ The shared `wallet-buttons.js` module provides a common wallet UI across all thr
 
 ### Testing & robustness
 
-- [ ] **End-to-end browser test of refactored web apps** — User app (sequential claim checks + yields) and fee-juice app (scan + auto-claim) need full re-testing after the refactoring.
 - [ ] **Add transient RPC retry logic to web apps** — The CLI has this via a `TRANSIENT_RE` regex; the web apps may not.
 - [ ] **Handle multiple deposits to different Aztec addresses from the same ETH wallet** — Fee-juice scan filters by `to` address, but the UX could be clearer about which deposit is being claimed.
 
 ### Misc
 
-- [ ] **Withdraw the current 0.005 ETH deposit on salt 1006** — 5 posts made, deposit still in `postable` state, ready to withdraw when desired.
+- [ ] **Withdraw deposits on old test deployments** — Salts 2025, 2026, 2027, 2028 have deposits that can be withdrawn to recover ETH.

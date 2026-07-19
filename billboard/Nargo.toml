@@ -1,2 +1,2 @@
 [workspace]
-members = ["billboard_contract"]
+members = ["billboard_contract", "billboard_test"]

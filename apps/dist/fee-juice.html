@@ -138,6 +138,98 @@
     padding: 0.05rem 0.4rem; font-weight: 600; font-size: 0.7rem;
   }
   .billboard-post-text { color: #2a2040; }
+  .billboard-post.flagged {
+    background: rgba(194,65,65,0.08); border: 1px solid rgba(194,65,65,0.25);
+  }
+  .billboard-post-text.flagged-text { color: #888; font-style: italic; }
+  /* Censored posts (greyed out, only shown when user opts in) */
+  .billboard-post.censored {
+    background: rgba(127,127,127,0.06); border: 1px solid rgba(127,127,127,0.15);
+    opacity: 0.6;
+  }
+  .billboard-post-text.censored-text { color: #777; font-style: italic; }
+  .censored-divider {
+    height: 1px; background: rgba(127,127,127,0.2); margin: 0.8rem 0;
+  }
+  .censored-toggle {
+    text-align: center; font-size: 0.78rem; color: #888; cursor: pointer;
+    padding: 0.6rem 0; margin-top: 0.4rem; text-decoration: underline;
+  }
+  .censored-toggle:hover { color: #aaa; }
+  /* Moderation policy box */
+  .policy-box {
+    background: rgba(108,75,214,0.05); border: 1px solid rgba(108,75,214,0.15);
+    border-radius: 10px; padding: 0.8rem 1rem; margin-bottom: 0.8rem;
+  }
+  .policy-box h3 { margin: 0 0 0.4rem 0; font-size: 0.85rem; color: #b8a0ff; }
+  .policy-text {
+    font-family: inherit; font-size: 0.82rem; line-height: 1.5; color: #555;
+    white-space: pre-wrap; word-wrap: break-word; margin: 0;
+  }
+  /* Confirmation dialog for viewing censored posts */
+  .censor-confirm-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+    z-index: 10000;
+  }
+  .censor-confirm-dialog {
+    background: #1a1a2e; border: 1px solid #444; border-radius: 12px;
+    padding: 1.5rem; max-width: 400px; width: 90%;
+    color: #e0e0e0;
+  }
+  .censor-confirm-dialog h3 { margin: 0 0 0.5rem; font-size: 1.1rem; color: #fff; }
+  .censor-confirm-dialog .small { color: #ccc; margin-bottom: 1rem; }
+  .censor-confirm-buttons { display: flex; gap: 0.6rem; justify-content: flex-end; }
+  .censor-confirm-buttons button { margin-top: 0; }
+  /* Sudoku challenge */
+  .sudoku-dialog { max-width: 420px; }
+  .sudoku-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 0;
+    margin: 0.5rem auto 1rem;
+    width: 360px;
+    border: 2px solid #666;
+    border-radius: 4px;
+    background: #111;
+  }
+  .sudoku-cell {
+    width: 40px; height: 40px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-family: monospace;
+    border: 1px solid #333;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    outline: none;
+    padding: 0;
+  }
+  .sudoku-cell.given {
+    background: #2a2a4e;
+    color: #fff;
+    font-weight: 700;
+  }
+  .sudoku-cell:focus {
+    background: #1e3a5f;
+    box-shadow: inset 0 0 0 2px #4a9eff;
+  }
+  .sudoku-border-right { border-right: 2px solid #666 !important; }
+  .sudoku-border-bottom { border-bottom: 2px solid #666 !important; }
+  .sudoku-cell.sudoku-conflict {
+    color: #c24141;
+    background: rgba(194,65,65,0.15);
+  }
+  .sudoku-status { text-align: center; min-height: 1.5rem; margin-bottom: 0.5rem; }
+  .sudoku-solved { color: #4ade80; font-weight: 600; font-size: 0.95rem; }
+  .flagged-badge {
+    background: rgba(194,65,65,0.3); color: #c24141; border-radius: 4px;
+    padding: 0.05rem 0.4rem; font-weight: 600; font-size: 0.7rem;
+  }
+  .censor-response {
+    margin-top: 0.4rem; padding: 0.4rem 0.6rem; border-radius: 6px;
+    background: rgba(194,65,65,0.06); font-size: 0.85rem; color: #6a4040;
+    border-left: 3px solid rgba(194,65,65,0.3);
+  }
   .billboard-empty {
     text-align: center; color: #888; font-size: 0.9rem; padding: 2rem 0;
   }
@@ -276,6 +368,7 @@ window.walletState = window.walletState || {
 
 // Internal state
 let _onReady = null;
+let _onAztecLoad = null;
 let _statusId = 'setupStatus';
 let _ethRpcUrl = DEFAULT_ETH_RPC;
 let _requireEth = true;
@@ -377,6 +470,9 @@ async function _loadAztecWallet(file) {
 
   _wlog('AZTEC wallet loaded' + (address ? ': ' + address.toString() : ''), 'success');
   _updateButtonColors();
+  if (_onAztecLoad) {
+    try { _onAztecLoad(address); } catch(e) { console.error('onAztecLoad callback error:', e); }
+  }
   _checkReady();
 }
 
@@ -549,6 +645,9 @@ async function _setAztecWalletFromSecret(secretKey, salt, filename, label) {
 
   _wlog('Aztec wallet set' + (address ? ': ' + address.toString() : ''), 'success');
   _updateButtonColors();
+  if (_onAztecLoad && address) {
+    try { _onAztecLoad(address); } catch(e) { console.error('onAztecLoad callback error:', e); }
+  }
   _checkReady();
 }
 
@@ -585,6 +684,7 @@ function initWalletButtons(containerId, options) {
   _ethRpcUrl = options.ethRpcUrl || DEFAULT_ETH_RPC;
   _requireEth = options.requireEth !== false;
   _onReady = options.onReady || null;
+  _onAztecLoad = options.onAztecLoad || null;
   _readyFired = false;
 
   const container = document.getElementById(containerId);
@@ -2315,8 +2415,8 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     // ============================================================
     let totalAztec = 0n;
     let aztecDecimals = 18;
-    if (action !== 'claim') {
     const token = new ethers.Contract(AZTEC_TOKEN_ADDR, ERC20_ABI, provider);
+    if (action !== 'claim') {
     try { aztecDecimals = await token.decimals(); } catch {}
     log('  AZTEC token decimals: ' + aztecDecimals, 'info');
 
@@ -2566,10 +2666,12 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     const sKey = _setupKey(config);
     const cached = _setupCache.get(sKey);
     let pxe, wallet;
+    let accountManager = null;
     if (cached) {
       log('  Reusing cached PXE/wallet setup.', 'success');
       pxe = cached.pxe;
       wallet = cached.wallet;
+      accountManager = cached.accountManager;
       try { await pxe.sync(); } catch (e) {}
     } else {
       log('Step 7: Initializing CRS...', 'info');
@@ -2617,7 +2719,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
           log('  Claim amount sufficient for fee. Proceeding.', 'success');
         },
       });
-      const accountManager = await a.AccountManager.create(wallet, secretKey, accountContract, { salt: new a.Fr(saltVal) });
+      accountManager = await a.AccountManager.create(wallet, secretKey, accountContract, { salt: new a.Fr(saltVal) });
       wallet._accountManager = accountManager;
       log('  Wallet ready.', 'success');
 
@@ -2634,7 +2736,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       }
 
       // Cache the setup
-      _setupCache.set(sKey, { pxe, wallet });
+      _setupCache.set(sKey, { pxe, wallet, accountManager });
     }
 
     // ============================================================
@@ -3084,26 +3186,28 @@ function extractFieldArray(simResult) {
   });
 }
 
-// Extract a tuple (u128, u64, EthAddress) from get_deposit_info
+// Extract the 7-element array from get_deposit_info:
+// [0] = amount (u128), [1] = l1_depositor (EthAddress), [2] = post_chain_head,
+// [3] = last_screened_link, [4] = last_screened_index (u32),
+// [5] = last_real_post_index (u32), [6] = next_allowed_time (u64)
 function extractDepositInfo(simResult) {
-  // `.simulate()` for utility functions returns { result: [...], ... }
-  // `.simulate()` for private functions returns { result: [...], ... }
-  // Some older code paths may return { value: [...] } or just [...]
   let val = simResult;
   if (simResult && simResult.result !== undefined) val = simResult.result;
   else if (simResult && simResult.value !== undefined) val = simResult.value;
   if (!Array.isArray(val)) {
-    console.warn('[extractDepositInfo] WARNING: val is not an array, simResult keys:', Object.keys(simResult || {}), 'val:', val);
-    return { amount: 0n, minUsableTime: 0n, l1Depositor: '0x0' };
+    return { amount: 0n, nextAllowedTime: 0n, l1Depositor: '0x0', postChainHead: 0n, lastScreenedLink: 0n, lastScreenedIndex: 0n, lastRealPostIndex: 0n };
   }
-  console.warn('[extractDepositInfo] val array:', val.map(v => v?.toString?.()?.slice(0, 20)));
   const amount = BigInt(val[0]?.toString?.() ?? val[0]);
-  const minUsableTime = BigInt(val[1]?.toString?.() ?? val[1]);
-  let depositor = val[2];
+  let depositor = val[1];
   if (depositor && depositor.inner !== undefined) depositor = depositor.inner;
   if (depositor && depositor.toString) depositor = depositor.toString();
   const l1Depositor = '0x' + BigInt(depositor).toString(16).padStart(40, '0');
-  return { amount, minUsableTime, l1Depositor };
+  const postChainHead = BigInt(val[2]?.toString?.() ?? val[2]);
+  const lastScreenedLink = BigInt(val[3]?.toString?.() ?? val[3]);
+  const lastScreenedIndex = BigInt(val[4]?.toString?.() ?? val[4]);
+  const lastRealPostIndex = BigInt(val[5]?.toString?.() ?? val[5]);
+  const nextAllowedTime = BigInt(val[6]?.toString?.() ?? val[6]);
+  return { amount, nextAllowedTime, l1Depositor, postChainHead, lastScreenedLink, lastScreenedIndex, lastRealPostIndex };
 }
 
 // ============================================================

@@ -13,8 +13,8 @@ file has changed and this review is out of date.
 
 | File | sha256 |
 |------|--------|
-| `portal/src/BillboardPortal.sol`        | `e74ea54036c296aceb30e7d731cc536b06d8b4b0a0201aeb104c1909d52d20c6` |
-| `billboard_contract/src/main.nr`        | `f5f427f4687a7f97c91c4c910d2a047c1ad466c8ebf5cb4dde68f0b10c53fa24` |
+| `portal/src/BillboardPortal.sol`        | `ab4f34059ed2151778a4ecccc6d42279060cc667e9c1e3d202ac0083d7018e24` |
+| `billboard_contract/src/main.nr`        | `b19a115ea86a426f3a41f32191baf1238ad58d50932d580a505eceea19c2ed6a` |
 | `billboard_contract/src/lib.nr`         | `a345273b04258f08a1bc0776ef13a91160218dc52522c6d21e82c25eef88a819` |
 
 Repo HEAD at review time: `086abfcfbfd6f2fe00aa1ab0ce7ab360d68c5519`.
@@ -98,17 +98,18 @@ depositor, so the ETH always flows back to that L1 address (`main.nr:267`,
 ## 2. Billboard rate-limit soundness
 
 ### P6 — Depositing 0.001·n ETH yields at most n posts/hour, even via deposit→withdraw loops
-The rate limit is enforced by `DepositNote.min_usable_time`, a u64 timestamp
+The rate limit is enforced by `DepositNote.next_allowed_time`, a u64 timestamp
 stored in a **private** note and updated under ZK proof. Three invariants hold:
 
-1. Every note is created with `min_usable_time = now + cooldown`
-   (`main.nr:157`, claim) or `min_usable_time + cooldown` (`main.nr:210`,
-   post). There is no path that creates a note with a smaller
-   `min_usable_time`.
-2. Every `post` requires `note.min_usable_time <= now` (`main.nr:196-197`) and
-   then advances the lock by exactly `cooldown`.
+1. Every note is created with `next_allowed_time = now + cooldown`
+   (claim_deposit) or `next_allowed_time = effective_old + cooldown * (1 + k * flags)`
+   (post). There is no path that creates a note with a smaller
+   `next_allowed_time`.
+2. Every `post` requires `now >= effective_old` where `effective_old =
+   max(old_next_allowed, now - cooldown * max_save_up)` and then advances
+   the lock to `effective_old + cooldown * (1 + k * flag_count)`.
 3. `cooldown = COOLDOWN_BASE_SECONDS * MIN_DEPOSIT_WEI / amount`
-   (`main.nr:202`, `lib.nr:65-71`), so `cooldown * amount` is the constant
+   (`lib.nr`), so `cooldown * amount` is the constant
    `3600 * 0.001 ether`. The post rate for one note-chain is therefore
    `1/cooldown = amount / (3600·0.001)` per second = `amount/0.001` per hour.
 
@@ -116,15 +117,20 @@ Summed over all of a user's note-chains, total rate = `total_amount / 0.001`
 per hour = n for `0.001·n` ETH. This holds whether the ETH is in one deposit
 (cooldown = 3600/n) or split across addresses (each 0.001 → 1/hr).
 
-**The deposit→withdraw loop does not help.** `withdraw` has no cooldown check
-(`main.nr:259-263`), so you can withdraw immediately, but re-depositing and
-re-claiming produces a new note with `min_usable_time = now + cooldown`
-(`main.nr:157`) — exactly the same state as if you had simply kept the note
-and waited. The claim-time lock, not a withdraw-time lock, is what enforces
-the bound, and every claim pays it. There is no "reset" path.
+**The save-up rule** (`max_save_up`) limits bursting after dormancy: the
+`effective_old` floor at `now - cooldown * max_save_up` means a user can
+accumulate at most `max_save_up` posts of "credit" while dormant, then spend
+them in quick succession — but each burst post still advances the timer by
+`cooldown`, so the long-run average rate is unchanged.
+
+**The deposit→withdraw loop does not help.** `withdraw` checks that all real
+posts have been screened (`last_screened_index >= last_real_post_index`) and
+the initial lock has expired. Re-depositing and re-claiming produces a new
+note with `next_allowed_time = now + cooldown` — exactly the same state as if
+you had simply kept the note and waited. There is no "reset" path.
 
 The bound is tight: a user with `0.001·n` ETH can achieve exactly n posts/hour
-and no more. Note that the per-account one-deposit limit (`BillboardPortal.sol:81`)
+and no more. Note that the per-account one-deposit limit (`BillboardPortal.sol`)
 means splitting requires distinct L1 addresses, each of which must clear its
 own claim lock — the bound is preserved either way.
 
@@ -167,7 +173,7 @@ block's** timestamp, identical for every transaction in the same block, so it
 identifies the block (which is already public) rather than the sender. No
 per-sender nonce, sequence number, or cooldown value is emitted to public
 state. The cooldown is computed privately (`main.nr:202`) and used only to set
-the next note's private `min_usable_time`. The only public artifact of a post
+the next note's private `next_allowed_time`. The only public artifact of a post
 is the message content itself and the `post_count` increment.
 
 Caveat (residual, see §5): the *timing pattern* of a user's posts is still
@@ -256,18 +262,12 @@ convenience views.
 
 ## 5. Residual risks & caveats (not failures, worth knowing)
 
-- **Deployment race on `update_portal` (griefing, not theft).** `update_portal`
-  is `#[external("private")]` with **no access control** (`main.nr:107-109`);
-  `only_self` + `portal_set` make it one-shot but not caller-restricted. A
-  third party who calls it first with a bogus address bricks the contract:
-  `_withdraw_public` would then fail the portal-equality assert (`main.nr:282`)
-  or send the L2→L1 message to a contract with no ETH, so users could never
-  withdraw and their L1 deposits would be stuck in the real portal. The
-  attacker cannot steal funds (the fake portal holds no deposits and the L1
-  content hash binds the original depositor), but they can DoS. Mitigation:
-  deploy L2 and call `update_portal` with the correct portal in the same
-  L2 tx batch before publicizing the contract; or add a deployer-only guard.
-  This is a deployment-time operational hazard, not a steady-state bug.
+- **Deployment race on `update_portal` (griefing, not theft).** FIXED:
+  `update_portal` now checks `self.msg_sender() == deployer` where `deployer`
+  is stored in `init()` via `self.msg_sender()` (`main.nr`). The deployer
+  field is a `PublicMutable<AztecAddress>` read via a constrained historical
+  Merkle proof in the private function. Only the original deployer can set
+  the portal address. `configure_censor` has the same deployer-only guard.
 
 - **`post_count` / `post_data` key is u32 and will wrap.** `post_count` is u32
   (`main.nr:88`) and the storage key is `id * MSG_FIELDS + i` with
@@ -277,13 +277,12 @@ convenience views.
   deposit), so this is a theoretical correctness edge, but the key/country
   type should be `Field` or `u64` for cleanliness.
 
-- **u64 `min_usable_time` wrap is theoretical.** `now + cooldown`
-  (`main.nr:157`) and `min_usable_time + cooldown` (`main.nr:210`) could wrap a
-  u64 only after ~1.8e19 seconds of accumulated lock — unreachable given each
-  post advances real time by ≥1s. If it ever did wrap to a small value, the
-  `min_usable_time <= now` check (`main.nr:197`) would let the user post fast,
-  but the cost to get there is prohibitive. Noted for completeness; not
-  exploitable.
+- **u64 `next_allowed_time` wrap is theoretical.** `now + cooldown`
+  (claim_deposit) and `effective_old + cooldown * (1 + k * flags)` (post)
+  could wrap a u64 only after ~1.8e19 seconds of accumulated lock — unreachable
+  given each post advances real time by ≥1s. If it ever did wrap to a small
+  value, the time-lock check would let the user post fast, but the cost to get
+  there is prohibitive. Noted for completeness; not exploitable.
 
 - **Withdrawal reveals the L1 depositor and amount.** `BillboardPortal` emits
   `Deposited(depositor, amount, secretHash, ...)` (`BillboardPortal.sol:98`)
@@ -303,13 +302,63 @@ convenience views.
   protocol cannot prevent it without hiding post ordering, which a billboard
   cannot do.
 
-- **`totalDeposited` accounting drift.** `totalDeposited += msg.value` on
-  deposit (`BillboardPortal.sol:85`) is never decremented on withdrawal. It
-  over-counts across deposit/withdraw cycles. It is not used for any
-  security-relevant decision (withdrawals read `deposits[msg.sender]`, not the
-  total), so this is a cosmetic accounting bug, not a vulnerability.
+- **`totalDeposited` accounting drift.** FIXED: `totalDeposited` is now
+  decremented on withdrawal (`BillboardPortal.sol`). It correctly tracks
+  the net ETH held by the portal. It is not used for any security-relevant
+  decision (withdrawals read `deposits[msg.sender]`, not the total).
 
 - **Message content is the user's responsibility.** The protocol hides the
   *sender*, not the *content*. A user who signs their post, leaks a known
   plaintext, or posts identifying text deanonymizes themselves. This is
   outside the contract's threat model.
+
+---
+
+## 6. Censor system
+
+The censor system adds a designated censor who can flag posts as "immoral".
+Flagged posts are hidden from the billboard view. When a flagged post is
+screened (during a subsequent `post` call), the flag penalty applies: the
+next post's `next_allowed_time` is extended by `cooldown * (1 + (k-1) * flag_count)`
+instead of just `cooldown`. This means each flagged post screened adds (k-1)
+extra cooldowns, equivalent to making (k-1) dummy posts at the same time.
+The censor has a guaranteed `censor_window`
+(default 3600s) to flag each post before it gets screened.
+
+### P13 — Only the censor can flag posts
+`declare_immoral` checks `self.msg_sender() == censor` where `censor` is a
+`PublicMutable<AztecAddress>`. Set in `init`. The censor can transfer rights
+via `transfer_censor`.
+
+### P14 — Flagged posters cannot dodge the K× cooldown by withdrawing and re-depositing
+Each `post` call screens 0-2 older posts (child + grandchild in the PostNote
+chain). If a screened post was flagged, the flag penalty extends the next
+post's time lock by `(k-1) * cooldown` per flag (total `k * cooldown` including
+the base 1). Since screening is required for withdrawal
+(`last_screened_index >= last_real_post_index`), a flagged poster must make
+at least one more post (or dummy post) to advance screening past the flagged
+post, paying the penalty.
+
+### P15 — Censor cannot permanently lock funds
+Withdrawal requires `last_screened_index >= last_real_post_index` (all real
+posts screened). Screening happens automatically with each post: each `post`
+call screens up to 2 older posts. The censor cannot prevent screening — they
+can only flag posts during the `censor_window`. After screening, a post's flag
+status is final. The user can make dummy posts (which advance screening without
+storing content) to withdraw even if they don't want to post more content.
+If no real posts exist, withdrawal just requires the initial lock to expire.
+
+### P16 — Flagging is append-only (no un-flagging)
+`declare_immoral` asserts `!post_flagged[index]` — a post can only be flagged
+once. There is no mechanism to un-flag. The censor's power is one-way.
+
+### P17 — Censor window guarantees screening opportunity
+A post can only be screened if `post.timestamp <= now - censor_window`.
+This guarantees the censor has at least `censor_window` seconds to flag each
+post before it gets screened. The censor cannot lose a flag opportunity due
+to fast posting — the screening check enforces the window.
+
+### Residual risk — Censor deanonymization
+The censor calls `declare_immoral` as a public function. The censor's Aztec
+address is visible in the transaction. The censor should use a dedicated
+account if they want pseudonymity.

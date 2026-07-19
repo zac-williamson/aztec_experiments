@@ -84,8 +84,8 @@ const GEN_ETH_WALLET = args['gen-eth-wallet'] === 'true' || args['gen-all'] === 
 const GEN_AZTEC_WALLET = args['gen-aztec-wallet'] === 'true' || args['gen-all'] === 'true';
 const GEN_AZTEC_FROM_ETH = args['gen-aztec-from-eth'] === 'true';
 const PROJECT_ROOT = path.join(__dirname, '..', '..', '..');
-const AZTEC_WALLET_PATH = args['aztec-wallet'] || path.join(PROJECT_ROOT, 'wallet.json');
-const ETH_WALLET_PATH = args['eth-wallet'] || path.join(PROJECT_ROOT, 'eth_wallet.json');
+const AZTEC_WALLET_PATH = args['aztec-wallet'] || path.join(PROJECT_ROOT, 'wallets', 'user_aztec_wallet.json');
+const ETH_WALLET_PATH = args['eth-wallet'] || path.join(PROJECT_ROOT, 'wallets', 'user_eth_wallet.json');
 
 // ============================================================
 // Monkey-patch fetch BEFORE loading SDK (adds API key for Aztec RPC)

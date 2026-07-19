@@ -53,6 +53,7 @@ const sharedFiles = {
   ETHERS: loadShared('ethers.min.js'),
   WALLET_BUTTONS: loadShared('wallet-buttons.js'),
   APP_ENV: loadShared('app-env.js'),
+  MODERATION_POLICY: loadShared('moderation-policy.js'),
 };
 
 // RPC config injection script (must run before aztec-lib.js)
@@ -128,6 +129,9 @@ function buildApp(appRelPath) {
   if (sharedFiles.APP_ENV) {
     replacements['<!--APP_ENV-->'] = `<script>\n${sharedFiles.APP_ENV}\n</script>`;
   }
+  if (sharedFiles.MODERATION_POLICY) {
+    replacements['<!--MODERATION_POLICY-->'] = `<script>\n${sharedFiles.MODERATION_POLICY}\n</script>`;
+  }
   if (portalBytecode) {
     const bc = portalBytecode.startsWith('0x') ? portalBytecode : '0x' + portalBytecode;
     replacements['<!--PORTAL_BYTECODE-->'] = `<script>const PORTAL_BYTECODE = "${bc}";\n</script>`;
@@ -141,7 +145,7 @@ function buildApp(appRelPath) {
   }
 
   // Warn about unreplaced placeholders
-  const remaining = html.match(/<!--(STYLES|HELPERS|RPC_CONFIG|AZTEC_LIB|ETHERS|POSEIDON2|WALLET_BUTTONS|APP_ENV|PORTAL_BYTECODE|ARTIFACT|ENGINE|APP)-->/g);
+  const remaining = html.match(/<!--(STYLES|HELPERS|RPC_CONFIG|AZTEC_LIB|ETHERS|POSEIDON2|WALLET_BUTTONS|APP_ENV|MODERATION_POLICY|PORTAL_BYTECODE|ARTIFACT|ENGINE|APP)-->/g);
   if (remaining) {
     console.warn(`Warning: unreplaced placeholders in ${appRelPath}: ${remaining.join(', ')}`);
   }
@@ -156,12 +160,18 @@ function buildApp(appRelPath) {
 // Ensure dist exists
 fs.mkdirSync(DIST, { recursive: true });
 
-// Copy bundle to dist (if not already there)
+// Copy bundle + thread_worker to dist (always overwrite to pick up patches)
 const bundleSrc = path.join(SHARED, 'aztec_bundle.js');
 const bundleDst = path.join(DIST, 'aztec_bundle.js');
-if (fs.existsSync(bundleSrc) && !fs.existsSync(bundleDst)) {
-  console.log('Copying aztec_bundle.js to dist/ (58MB)...');
+if (fs.existsSync(bundleSrc)) {
   fs.copyFileSync(bundleSrc, bundleDst);
+  console.log('Copied aztec_bundle.js to dist/ (' + Math.round(fs.statSync(bundleDst).size/1024/1024) + 'MB)...');
+}
+const threadWorkerSrc = path.join(SHARED, 'thread_worker.js');
+const threadWorkerDst = path.join(DIST, 'thread_worker.js');
+if (fs.existsSync(threadWorkerSrc)) {
+  fs.copyFileSync(threadWorkerSrc, threadWorkerDst);
+  console.log('Copied thread_worker.js to dist/ (' + Math.round(fs.statSync(threadWorkerDst).size/1024) + 'KB)...');
 }
 
 // Ensure CRS files are in dist/crs/

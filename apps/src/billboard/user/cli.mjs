@@ -22,19 +22,31 @@
 //   list        List all messages on the billboard
 //   withdraw    Withdraw on L2 (send L2->L1 message)
 //   claim-l1    Claim ETH on L1 (consume Outbox message)
+//   declare-immoral  Censor flags a post as immoral (requires censor wallet)
+//   transfer-censor   Censor transfers censorship rights to a new address
+//   set-moderation-policy  Censor updates the moderation policy text (requires censor wallet)
 //   auto        Full flow: deposit -> claim -> post -> withdraw -> claim-l1
 //
 // Options:
-//   --contract-salt <num>    Billboard contract deployment salt (default: 1006)
+//   --portal-address <addr>  L1 portal address (REQUIRED — L2 address derived from it)
 //   --amount <eth>           Deposit amount in ETH (for deposit/auto)
+//   --min-deposit <eth>       (deprecated, ignored — derived from chain)
+//   --base-cooldown <sec>      (deprecated, ignored — derived from chain)
 //   --msg <text>             Message to post (for post/auto, alias: --message)
+//   --dummy                   Make a dummy post (advances screening, no content)
 //   --reuse                  Reuse an existing deposit instead of making a new one
 //   --reuse-tx <hash>        Reuse a specific deposit by L1 tx hash
 //   --withdraw-tx <hash>     L2 withdrawal tx hash (for claim-l1, skip scan)
+//   --post-index <num>       Post index to flag (for declare-immoral)
+//   --censor-response <text> Censor's response message (for declare-immoral)
+//   --moderation-policy <text>  Moderation policy text (for set-moderation-policy, or deploy default)
+//   --censor-wallet <file>   Path to censor Aztec wallet JSON (for declare-immoral/transfer-censor)
+//   --new-censor <addr>      New censor address (for transfer-censor)
 //   --node-url <url>         Aztec node URL
 //   --eth-rpc <url>          Ethereum RPC URL
 //   --aztec-wallet <file>    Path to Aztec wallet.json
 //   --eth-wallet <file>      Path to ETH wallet JSON
+//   --json                   Output posts as JSON (for list action, machine-readable)
 //   --pxe-dir <prefix>       PXE data directory prefix (default: pxe_bb_user_)
 // ============================================================
 
@@ -82,17 +94,25 @@ const ACTION = positional[0] || 'status';
 const AZTEC_NODE_URL = args['node-url'] || rpcConfig.nodeUrl || 'https://v5.mainnet.rpc.aztec-labs.com';
 const AZTEC_API_KEY = __realProcess.env.AZTEC_API_KEY || rpcConfig.apiKey || '';
 const ETH_RPC_URL = args['eth-rpc'] || 'https://invictus.ambire.com/ethereum';
-const CONTRACT_SALT = parseInt(args['contract-salt']) || 1006;
+// Defaults match the user UI template
+const PORTAL_ADDRESS = args['portal-address'] || null;
+if (!PORTAL_ADDRESS) {
+  console.error('ERROR: --portal-address <addr> is required.');
+  console.error('The L2 contract address is derived from the portal on chain.');
+  __realProcess.exit(1);
+}
 const PROJECT_ROOT = path.join(__dirname, '..', '..', '..', '..');
-const AZTEC_WALLET_PATH = args['aztec-wallet'] || path.join(PROJECT_ROOT, 'wallet.json');
-const ETH_WALLET_PATH = args['eth-wallet'] || path.join(PROJECT_ROOT, 'eth_wallet.json');
+const AZTEC_WALLET_PATH = args['aztec-wallet'] || path.join(PROJECT_ROOT, 'wallets', 'user_aztec_wallet.json');
+const ETH_WALLET_PATH = args['eth-wallet'] || path.join(PROJECT_ROOT, 'wallets', 'user_eth_wallet.json');
+
+const CENSOR_WALLET_PATH = args['censor-wallet'] || path.join(PROJECT_ROOT, 'wallets', 'censor_aztec_wallet.json');
 const PXE_DIR_PREFIX = args['pxe-dir'] || 'pxe_bb_user_';
 
 // PXE cache directory (persists IndexedDB state between CLI runs)
 const PXE_CACHE_DIR = path.join(PROJECT_ROOT, '.pxe-cache');
 
 // Valid actions
-const VALID_ACTIONS = ['status', 'deposit', 'claim', 'post', 'list', 'withdraw', 'claim-l1', 'auto'];
+const VALID_ACTIONS = ['status', 'deposit', 'claim', 'post', 'list', 'withdraw', 'claim-l1', 'declare-immoral', 'transfer-censor', 'set-moderation-policy', 'auto'];
 if (!VALID_ACTIONS.includes(ACTION)) {
   console.error('Unknown action: ' + ACTION);
   console.error('Valid actions: ' + VALID_ACTIONS.join(', '));
@@ -134,6 +154,12 @@ const { dumpPxeCache, restorePxeCache } = require('./pxe-cache.cjs');
 // ============================================================
 // Load engine
 // ============================================================
+// Load moderation-policy helpers onto globalThis before eval'ing engine
+const _modPolicy = require(path.join(PROJECT_ROOT, 'shared', 'moderation-policy.js'));
+for (const [k, v] of Object.entries(_modPolicy)) {
+  if (typeof v === 'function' || typeof v === 'string' || typeof v === 'number') globalThis[k] = v;
+}
+
 const engineCode = fs.readFileSync(path.join(__dirname, 'engine.js'), 'utf8');
 eval(engineCode);
 
@@ -354,7 +380,7 @@ async function main() {
   log('  Action:       ' + ACTION, 'info');
   log('  Aztec node:   ' + AZTEC_NODE_URL, 'info');
   log('  ETH RPC:      ' + ETH_RPC_URL, 'info');
-  log('  Contract salt: ' + CONTRACT_SALT, 'info');
+  log('  Portal address: ' + PORTAL_ADDRESS, 'info');
   log('', 'info');
 
   // Validate action-specific requirements
@@ -374,8 +400,20 @@ async function main() {
   if (ACTION === 'deposit' || ACTION === 'auto') {
     log('⚠️  Alpha experimental software. Not meant for production use. Max deposit: 0.025 ETH.', 'warn');
   }
-  if (ACTION === 'post' && !args['msg'] && !args['message']) {
-    log('ERROR: --msg <text> required for post', 'error');
+  if (ACTION === 'post' && !args['msg'] && !args['message'] && !args['dummy']) {
+    log('ERROR: --msg <text> required for post (or use --dummy for a dummy post)', 'error');
+    __realProcess.exit(1);
+  }
+  if (ACTION === 'declare-immoral' && args['post-index'] === undefined) {
+    log('ERROR: --post-index <num> required for declare-immoral', 'error');
+    __realProcess.exit(1);
+  }
+  if (ACTION === 'transfer-censor' && !args['new-censor']) {
+    log('ERROR: --new-censor <addr> required for transfer-censor', 'error');
+    __realProcess.exit(1);
+  }
+  if (ACTION === 'set-moderation-policy' && !args['moderation-policy']) {
+    log('ERROR: --moderation-policy <text> required for set-moderation-policy', 'error');
     __realProcess.exit(1);
   }
 
@@ -423,14 +461,24 @@ async function main() {
     action: ACTION,
     aztecNodeUrl: AZTEC_NODE_URL,
     ethRpcUrl: ETH_RPC_URL,
-    contractSalt: CONTRACT_SALT,
+    contractSalt: 0, // not used when portalAddress is provided
+    portalAddress: PORTAL_ADDRESS,
     aztecWallet, ethWallet,
     dataDirPrefix: PXE_DIR_PREFIX,
     depositAmount: args['amount'],
+
     message: args['msg'] || args['message'],
+    isDummy: !!args['dummy'],
     reuse: args['reuse'],
     reuseTxHash: args['reuse-tx'],
     withdrawTxHash: args['withdraw-tx'],
+    postIndex: args['post-index'] !== undefined ? parseInt(args['post-index']) : undefined,
+    censorResponse: args['censor-response'],
+    moderationPolicy: args['moderation-policy'] || undefined,
+    censorWalletPath: CENSOR_WALLET_PATH,
+    newCensor: args['new-censor'] || undefined,
+
+    jsonOutput: !!args['json'],
   };
 
   try {

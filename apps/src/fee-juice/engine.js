@@ -596,8 +596,8 @@
     // ============================================================
     let totalAztec = 0n;
     let aztecDecimals = 18;
-    if (action !== 'claim') {
     const token = new ethers.Contract(AZTEC_TOKEN_ADDR, ERC20_ABI, provider);
+    if (action !== 'claim') {
     try { aztecDecimals = await token.decimals(); } catch {}
     log('  AZTEC token decimals: ' + aztecDecimals, 'info');
 
@@ -847,10 +847,12 @@
     const sKey = _setupKey(config);
     const cached = _setupCache.get(sKey);
     let pxe, wallet;
+    let accountManager = null;
     if (cached) {
       log('  Reusing cached PXE/wallet setup.', 'success');
       pxe = cached.pxe;
       wallet = cached.wallet;
+      accountManager = cached.accountManager;
       try { await pxe.sync(); } catch (e) {}
     } else {
       log('Step 7: Initializing CRS...', 'info');
@@ -898,7 +900,7 @@
           log('  Claim amount sufficient for fee. Proceeding.', 'success');
         },
       });
-      const accountManager = await a.AccountManager.create(wallet, secretKey, accountContract, { salt: new a.Fr(saltVal) });
+      accountManager = await a.AccountManager.create(wallet, secretKey, accountContract, { salt: new a.Fr(saltVal) });
       wallet._accountManager = accountManager;
       log('  Wallet ready.', 'success');
 
@@ -915,7 +917,7 @@
       }
 
       // Cache the setup
-      _setupCache.set(sKey, { pxe, wallet });
+      _setupCache.set(sKey, { pxe, wallet, accountManager });
     }
 
     // ============================================================

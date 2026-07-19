@@ -147,6 +147,9 @@ async function dumpPxeCache(indexedDB, filePath) {
 
   const dump = {};
   for (const name of dbNames) {
+    // Skip Barretenberg's CRS cache DB — it uses a 'keyval' store, not 'data',
+    // and Barretenberg will recreate it fresh when needed.
+    if (name === 'keyval-store') continue;
     dump[name] = await dumpDatabase(indexedDB, name);
   }
 
@@ -207,6 +210,8 @@ async function restorePxeCache(indexedDB, filePath) {
 
   const dump = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   for (const [name, storeData] of Object.entries(dump)) {
+    // Skip Barretenberg's CRS cache DB — let it be recreated fresh.
+    if (name === 'keyval-store') continue;
     await createAndPopulateDatabase(indexedDB, name, storeData);
   }
   return true;

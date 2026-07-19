@@ -3,14 +3,18 @@
 // gen_eth_wallet.mjs — Generate a minimal Ethereum wallet JSON
 // ============================================================
 // Usage: node gen_eth_wallet.mjs [output-file]
-// Default output: eth_wallet.json
+// Default output: wallets/user_eth_wallet.json
 // ============================================================
 
 import { Wallet } from 'ethers';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const outFile = process.argv[2] || 'eth_wallet.json';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = path.join(__dirname, '..', '..', '..', '..');
+
+const outFile = process.argv[2] || path.join(PROJECT_ROOT, 'wallets', 'user_eth_wallet.json');
 const wallet = Wallet.createRandom();
 
 const data = {

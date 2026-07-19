@@ -17,20 +17,12 @@
 <section class="page" id="page-0">
   <div class="card">
     <h2>1. Wallet &amp; Node</h2>
-    <p class="small">Load all three wallets below. Setup runs automatically once all are loaded.</p>
+    <p class="small">Enter the L1 Portal address (from the deploy app), then load your wallets below. The L2 contract address is derived from the portal on chain. Setup runs automatically once all wallets are loaded.</p>
     <input id="secretKey" type="hidden">
     <input id="salt" type="hidden" value="0">
     <input id="nodeUrl" type="hidden" value="https://v5.mainnet.rpc.aztec-labs.com">
-    <label>Contract Deployment Salt (must match the deployer's salt)</label>
-    <input id="contractSalt" value="1006">
-    <label>L1 Rollup Address (auto-filled from node)</label>
-    <input id="rollupAddr" value="">
-    <label>Aztec Rollup Version (auto-filled from node)</label>
-    <input id="version" value="4248422647">
-    <label>L2 Billboard Contract Address (auto-computed from salt)</label>
-    <input id="l2Addr" placeholder="Auto-computed from salt..." readonly>
-    <label>L1 Portal Address (auto-computed from L2 address via CREATE2)</label>
-    <input id="portalAddr" placeholder="Auto-computed from L2 address..." readonly>
+    <label>L1 Portal Address (0x...)</label>
+    <input id="portalAddr" placeholder="0x... (from the deploy app)">
     <div id="walletButtonsContainer"></div>
     <div id="setupStatus" class="status-container"></div>
   </div>
@@ -64,16 +56,46 @@
   <div class="card">
     <h2>3. Post Anonymous Message</h2>
     <div id="postCountdown" class="countdown warn">Loading deposit status...</div>
+    <div id="screeningStatus" class="small"></div>
     <p class="small">Post messages to the billboard. The cooldown depends on your deposit amount: 1 hour &times; (0.001&nbsp;ETH &divide; your deposit). The "Proceed to Withdraw" button below waits for eligibility before advancing.</p>
     <label>Message (text, up to 1023 bytes)</label>
     <textarea id="msgText" rows="4" placeholder="Your anonymous message..."></textarea>
     <button class="secondary" id="postBtn" onclick="doPost()">Post Message</button>
+    <button class="secondary small" id="dummyPostBtn" onclick="doDummyPost()" title="Make a dummy post to advance screening (needed before withdrawal)">Dummy Post (Advance Screening)</button>
     <div id="postStatus" class="status-container"></div>
   </div>
   <div class="card billboard-card">
     <h2>Billboard</h2>
+    <div id="policyBox" class="policy-box" style="display:none;">
+      <h3>Moderation Policy</h3>
+      <pre id="policyText" class="policy-text"></pre>
+    </div>
     <p class="small" id="billboardMeta">Loading messages...</p>
     <div id="billboardFeed" class="billboard-feed"></div>
+  </div>
+  <div class="card" id="censorCard" style="display:none;">
+    <h2>Censor Panel</h2>
+    <p class="small" id="censorStatus">Checking censor status...</p>
+    <div id="censorControls" style="display:none;">
+      <p class="small">Flag a post as immoral. Flagged posts are hidden from the billboard and the poster's cooldown is multiplied by K.</p>
+      <label>Post Index to Flag</label>
+      <input id="censorPostIndex" type="number" min="0" placeholder="0">
+      <label>Censor Response (optional, up to 1023 bytes)</label>
+      <textarea id="censorResponseText" rows="3" placeholder="Why this post is immoral..."></textarea>
+      <button class="secondary" id="declareImmoralBtn" onclick="doDeclareImmoral()">Flag Post as Immoral</button>
+      <hr>
+      <h3>Transfer Censor Rights</h3>
+      <p class="small">Transfer censorship authority to another Aztec address.</p>
+      <label>New Censor Address (0x...)</label>
+      <input id="newCensorAddr" placeholder="0x00...">
+      <button class="secondary" id="transferCensorBtn" onclick="doTransferCensor()">Transfer Rights</button>
+      <hr>
+      <h3>Update Moderation Policy</h3>
+      <p class="small">Update the on-chain policy text. Max 1488 bytes.</p>
+      <textarea id="moderationPolicyInput" rows="6" placeholder="Enter new policy text..."></textarea>
+      <button class="secondary" id="setPolicyBtn" onclick="doSetModerationPolicy()">Update Policy</button>
+    </div>
+    <div id="censorActionStatus" class="status-container"></div>
   </div>
   <div id="proceedStatus" class="status-container"></div>
 </section>
@@ -109,6 +131,7 @@
 <!--ARTIFACT-->
 <!--ETHERS-->
 <!--WALLET_BUTTONS-->
+<!--MODERATION_POLICY-->
 <!--POSEIDON2-->
 <!--PORTAL_BYTECODE-->
 <!--AZTEC_LIB-->

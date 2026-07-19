@@ -34,7 +34,7 @@
   const CREATE2_PROXY = '0x4e59b44847b379578588920cA78FbF26c0B4956C';
 
   const PORTAL_ABI = [
-    "constructor(address rollup, bytes32 l2Contract, uint256 version)",
+    "constructor(address rollup, bytes32 l2Contract, uint256 version, uint256 minDeposit)",
     "function deposit(bytes32 secretHash) payable returns (bytes32, uint256)",
     "function withdraw(uint256 epoch, uint256 numCheckpointsInEpoch, uint256 leafIndex, bytes32[] path)",
     "function deposits(address) view returns (uint256)",
@@ -130,13 +130,35 @@
     });
   }
 
+  // Retry a user-rejected signing/transaction action.
+  // When the user rejects a personal_sign or eth_sendTransaction in their wallet,
+  // ethers throws an error with code ACTION_REJECTED (4001). Instead of crashing,
+  // we log a message and retry indefinitely until the user accepts or cancels the whole flow.
+  const REJECT_RE = /ACTION_REJECTED|user rejected|4001|user-denied|rejected the request/i;
+  async function withUserRetry(fn, label) {
+    for (;;) {
+      try {
+        return await fn();
+      } catch (err) {
+        const msg = err && (err.message || String(err));
+        if (REJECT_RE.test(msg)) {
+          log('  ' + label + ' was rejected in your wallet. Please try again (or accept the request to continue).', 'warn');
+          // Brief pause so we don't hammer the wallet if it auto-rejects
+          await sleep(1500);
+          continue;
+        }
+        throw err;
+      }
+    }
+  }
+
   // Deterministic claim secret for billboard deposits.
   // secret = first 32 bytes of personal_sign(message), where
   //   message = 'Aztec Billboard Deposit Secret\nAddress: <addr>\nNonce: <nonce>'
   // ethSigner.signMessage() replicates personal_sign in both Node.js and browser.
   async function generateSecret(ethSigner, address, nonce) {
     const msg = 'Aztec Billboard Deposit Secret\nAddress: ' + address + '\nNonce: ' + nonce;
-    const sig = await ethSigner.signMessage(msg);
+    const sig = await withUserRetry(() => ethSigner.signMessage(msg), 'Sign deposit secret');
     // Take first 32 bytes and reduce mod p to ensure it's a valid Fr
     const P = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
     const raw = BigInt('0x' + sig.slice(2, 66));
@@ -146,17 +168,24 @@
 
   // Find all deposit events for an address on the portal by scanning L1 logs.
   // Returns array of { amount, secretHash, key, index, txHash, nonce } sorted by index ascending.
+  // Scans newest-to-oldest. Once deposits are found, continues scanning a few more chunks
+  // for any other recent deposits, then stops (avoiding a 2+ minute scan of empty history).
   async function findAllDeposits(ethers, provider, portalAddr, l1Account, log) {
     const paddedAddr = '0x000000000000000000000000' + l1Account.toLowerCase().replace(/^0x/, '');
     log('  Searching for Deposited events from ' + l1Account + '...', 'info');
     log('  Portal: ' + portalAddr, 'info');
 
     const currentBlock = await provider.getBlockNumber();
-    const CHUNK = 5000;
+    const CHUNK = 10000;
     const MAX_LOOKBACK = 200000;
+    const EXTRA_AFTER_FIND = 3; // extra chunks to scan after first find
     let logs = [];
+    let chunksSinceFind = 0;
+    let foundAny = false;
+    let scanned = 0;
     for (let end = currentBlock; end >= Math.max(0, currentBlock - MAX_LOOKBACK); end -= CHUNK) {
       const from = Math.max(0, end - CHUNK + 1);
+      scanned++;
       try {
         const chunk = await provider.getLogs({
           address: portalAddr,
@@ -167,12 +196,20 @@
         if (chunk.length > 0) {
           logs = logs.concat(chunk);
           log('  Found ' + chunk.length + ' event(s) in blocks ' + from + '-' + end, 'info');
+          foundAny = true;
+          chunksSinceFind = 0;
+        } else if (foundAny) {
+          chunksSinceFind++;
+          if (chunksSinceFind >= EXTRA_AFTER_FIND) {
+            log('  No more deposits in recent history. Stopping scan.', 'info');
+            break;
+          }
         }
       } catch (e) {
         log('  Range ' + from + '-' + end + ' failed: ' + (e.message || e).substring(0, 80), 'warn');
       }
     }
-    log('  Total: ' + logs.length + ' deposit event(s).', 'info');
+    log('  Scanned ' + scanned + ' chunk(s), total ' + logs.length + ' deposit event(s).', 'info');
     if (logs.length === 0) return [];
 
     const deposits = [];
@@ -382,14 +419,14 @@
   // ============================================================
   // CREATE2 portal address computation
   // ============================================================
-  function portalCreationBytecode(ethers, portalBytecode, rollup, l2AddrHex, version) {
+  function portalCreationBytecode(ethers, portalBytecode, rollup, l2AddrHex, version, minDeposit) {
     const iface = new ethers.Interface(PORTAL_ABI);
-    const encodedArgs = iface.encodeDeploy([rollup, l2AddrHex, BigInt(version)]);
+    const encodedArgs = iface.encodeDeploy([rollup, l2AddrHex, BigInt(version), BigInt(minDeposit)]);
     return ethers.concat([portalBytecode, encodedArgs]);
   }
 
-  function computePortalAddress(ethers, portalBytecode, l2AddrHex, rollup, version) {
-    const creation = portalCreationBytecode(ethers, portalBytecode, rollup, l2AddrHex, version);
+  function computePortalAddress(ethers, portalBytecode, l2AddrHex, rollup, version, minDeposit) {
+    const creation = portalCreationBytecode(ethers, portalBytecode, rollup, l2AddrHex, version, minDeposit);
     const salt = ethers.getBytes(l2AddrHex);
     const initCodeHash = ethers.keccak256(creation);
     return ethers.getCreate2Address(CREATE2_PROXY, salt, initCodeHash);
@@ -421,14 +458,20 @@
     let val = simResult;
     if (simResult && simResult.result !== undefined) val = simResult.result;
     else if (simResult && simResult.value !== undefined) val = simResult.value;
-    if (!Array.isArray(val)) return { amount: 0n, minUsableTime: 0n, l1Depositor: '0x0' };
+    if (!Array.isArray(val)) return { amount: 0n, nextAllowedTime: 0n, l1Depositor: '0x0', postChainHead: 0n, lastScreenedLink: 0n, lastScreenedIndex: 0n, lastRealPostIndex: 0n };
+    // New format: [amount, l1_depositor, post_chain_head, last_screened_link,
+    //             last_screened_index, last_real_post_index, next_allowed_time]
     const amount = BigInt(val[0]?.toString?.() ?? val[0]);
-    const minUsableTime = BigInt(val[1]?.toString?.() ?? val[1]);
-    let depositor = val[2];
+    let depositor = val[1];
     if (depositor && depositor.inner !== undefined) depositor = depositor.inner;
     if (depositor && depositor.toString) depositor = depositor.toString();
     const l1Depositor = '0x' + BigInt(depositor).toString(16).padStart(40, '0');
-    return { amount, minUsableTime, l1Depositor };
+    const postChainHead = val[2] !== undefined ? BigInt(val[2]?.toString?.() ?? val[2]) : 0n;
+    const lastScreenedLink = val[3] !== undefined ? BigInt(val[3]?.toString?.() ?? val[3]) : 0n;
+    const lastScreenedIndex = val[4] !== undefined ? BigInt(val[4]?.toString?.() ?? val[4]) : 0n;
+    const lastRealPostIndex = val[5] !== undefined ? BigInt(val[5]?.toString?.() ?? val[5]) : 0n;
+    const nextAllowedTime = val[6] !== undefined ? BigInt(val[6]?.toString?.() ?? val[6]) : 0n;
+    return { amount, nextAllowedTime, l1Depositor, postChainHead, lastScreenedLink, lastScreenedIndex, lastRealPostIndex };
   }
 
   // ============================================================
@@ -439,7 +482,7 @@
   function _setupKey(config) {
     return (config.aztecNodeUrl || '') + '|' +
            (config.aztecWallet?.secretKey || '') + '|' +
-           (config.contractSalt || 0);
+           (config.portalAddress || config.contractSalt || 0);
   }
 
   // ============================================================
@@ -518,17 +561,54 @@
     // so the contract address is deterministic — depends only on salt + artifact,
     // not on the deployer's wallet. Aztec CREATE2 equivalent.
     const universalPublicKeys = (await a.deriveKeys(a.Fr.ZERO)).publicKeys;
-    const deployMethod = a.Contract.deploy(/*wallet*/ null, contractArtifact, [], undefined, {
+    // Constructor args must match what deploy used — min_deposit, base_cooldown, censor, k
+    // affect the initialization hash and thus the contract address.
+    const minDepositWei = config.minDepositWei || ethers.parseEther('0.001');
+    const baseCooldown = config.baseCooldown || 3600;
+    const censorAddr = config.censor ? a.AztecAddress.fromFieldUnsafe(a.Fr.fromHexString(config.censor)) : a.AztecAddress.zero();
+    const kMultiplier = config.kMultiplier || 64;
+    // Pack moderation policy into Fields (must match deploy-time args for address computation)
+    const policyText = config.moderationPolicy !== undefined ? config.moderationPolicy : (g.DEFAULT_MODERATION_POLICY || '');
+    const packFn = g.packStringToFields;
+    if (!packFn) throw new Error('packStringToFields not available (load moderation-policy.js)');
+    const { fields: policyFields, len: policyLen } = packFn(policyText);
+    const initArgs = [
+      new a.Fr(BigInt(minDepositWei)),
+      new a.Fr(BigInt(baseCooldown)),
+      censorAddr.toField(),
+      new a.Fr(BigInt(kMultiplier)),
+      new a.Fr(BigInt(config.censorWindow || 3600)),
+      new a.Fr(BigInt(config.maxSaveUp || 16)),
+      policyFields.map(f => new a.Fr(f)),
+      new a.Fr(BigInt(policyLen)),
+    ];
+    const deployMethod = a.Contract.deploy(/*wallet*/ null, contractArtifact, initArgs, undefined, {
       salt: new a.Fr(contractSalt),
       publicKeys: universalPublicKeys,
       universalDeploy: true,
     });
     // getAddress() doesn't need the wallet
-    const l2Addr = await deployMethod.getAddress();
-    const l2AddrHex = l2Addr.toString();
-    log('  L2 billboard: ' + l2AddrHex, 'info');
+    let l2Addr, l2AddrHex;
+    if (config.portalAddress) {
+      // Derive L2 address from the portal's L2_CONTRACT() read on L1
+      log('  Deriving L2 address from portal ' + config.portalAddress + '...', 'info');
+      const _provider = new ethers.JsonRpcProvider(config.ethRpcUrl);
+      const _portal = new ethers.Contract(config.portalAddress, PORTAL_ABI, _provider);
+      const _code = await _provider.getCode(config.portalAddress);
+      if (_code === '0x') throw new Error('No contract deployed at portal address ' + config.portalAddress);
+      const _l2Bytes = await _portal.L2_CONTRACT();
+      l2AddrHex = '0x' + _l2Bytes.slice(2).toLowerCase().padStart(64, '0');
+      l2Addr = a.AztecAddress.fromFieldUnsafe(a.Fr.fromHexString(l2AddrHex));
+      log('  L2 billboard: ' + l2AddrHex + ' (from portal)', 'success');
+    } else {
+      l2Addr = await deployMethod.getAddress();
+      l2AddrHex = l2Addr.toString();
+      log('  L2 billboard: ' + l2AddrHex, 'info');
+    }
 
-    const portalAddr = computePortalAddress(ethers, portalBytecode, l2AddrHex, rollupAddr, version);
+    const portalAddr = config.portalAddress
+      ? config.portalAddress
+      : computePortalAddress(ethers, portalBytecode, l2AddrHex, rollupAddr, version, config.minDepositWei || ethers.parseEther('0.001'));
     log('  L1 portal:    ' + portalAddr, 'info');
 
     // Check if L2 contract is deployed
@@ -539,8 +619,8 @@
       l2Deployed = true;
       log('  Billboard contract IS deployed on L2.', 'success');
     } else {
-      log('  WARNING: Billboard contract NOT deployed on L2 at this salt.', 'warn');
-      log('  The contract must be deployed first (use the deploy CLI).', 'warn');
+      log('  WARNING: Billboard contract NOT deployed on L2 at this address.', 'warn');
+      log('  The contract must be deployed first (use the deploy CLI or aztec-wallet).', 'warn');
     }
 
     // Check portal on L1
@@ -619,14 +699,14 @@
     // ============================================================
     // Decide if we need full PXE setup
     // ============================================================
-    const needsPXE = ['status', 'claim', 'post', 'list', 'withdraw', 'auto'].includes(action);
+    const needsPXE = ['status', 'claim', 'post', 'list', 'withdraw', 'declare-immoral', 'transfer-censor', 'auto'].includes(action);
     const needsCRS = needsPXE;
 
     let pxe = null, wallet = null, contract = null;
 
     if (needsPXE) {
       if (!l2Deployed) {
-        throw new Error('Billboard contract not deployed on L2. Deploy it first (use the deploy CLI with salt ' + contractSalt + ').');
+        throw new Error('Billboard contract not deployed on L2 at ' + l2AddrHex + '. Deploy it first (use the deploy CLI or aztec-wallet).');
       }
       if (feeJuiceBalance === 0n && (action === 'claim' || action === 'post' || action === 'withdraw' || action === 'auto')) {
         log('  WARNING: No Fee Juice! You need some to pay for L2 tx fees.', 'warn');
@@ -722,7 +802,7 @@
         const r = await contract.methods.get_deposit_info(address).simulate({ from: address });
         l2NoteInfo = extractDepositInfo(r);
         if (l2NoteInfo.amount > 0n) {
-          log('  L2 deposit note found: amount=' + l2NoteInfo.amount.toString() + ' wei, minUsableTime=' + l2NoteInfo.minUsableTime.toString(), 'success');
+          log('  L2 deposit note found: amount=' + l2NoteInfo.amount.toString() + ' wei, nextAllowedTime=' + l2NoteInfo.nextAllowedTime.toString(), 'success');
         } else {
           log('  No L2 deposit note found.', 'info');
         }
@@ -770,6 +850,49 @@
     log('  Fee Juice:   ' + toAztec(feeJuiceBalance, 6) + ' AZTEC', 'info');
     if (l2NoteInfo && l2NoteInfo.amount > 0n) {
       log('  L2 note:     ' + l2NoteInfo.amount.toString() + ' wei (' + toEtherStr(l2NoteInfo.amount) + ' ETH)', 'info');
+
+      // Show posts-available info (point 3: CLI shows how many posts you can make and when)
+      try {
+        let baseCooldown = 3600n;
+        let minDepositL2 = ethers.parseEther('0.001');
+        let maxSaveUp = 16;
+        if (contract) {
+          const cdR = await contract.methods.get_base_cooldown().simulate({ from: address });
+          baseCooldown = BigInt(extractInt(cdR));
+          const mdR = await contract.methods.get_min_deposit().simulate({ from: address });
+          minDepositL2 = BigInt(extractInt(mdR));
+          const msuR = await contract.methods.get_max_save_up().simulate({ from: address });
+          maxSaveUp = Number(extractInt(msuR));
+        }
+        const userCd = Number((baseCooldown * minDepositL2) / l2NoteInfo.amount);
+        const l2Now = await getL2Timestamp(a, aztecNode);
+        const nextAllowed = Number(l2NoteInfo.nextAllowedTime);
+        const remaining = nextAllowed - l2Now;
+        if (remaining <= 0) {
+          const postsAvail = Math.min(Math.floor(-remaining / userCd) + 1, maxSaveUp);
+          log('  Posts available: ' + postsAvail + ' (capped at max_save_up=' + maxSaveUp + ')', 'success');
+          log('  Cooldown: ' + userCd + 's per post', 'info');
+        } else {
+          const mm = Math.floor(remaining / 60);
+          const ss = remaining % 60;
+          log('  Posts available: 0 — next post in ' + mm + ':' + String(ss).padStart(2, '0'), 'info');
+          log('  Cooldown: ' + userCd + 's per post (max_save_up=' + maxSaveUp + ')', 'info');
+        }
+        // Show screening status
+        const lastScreened = Number(l2NoteInfo.lastScreenedIndex);
+        const lastReal = Number(l2NoteInfo.lastRealPostIndex);
+        const NO_IDX = 0xFFFFFFFF;
+        if (lastReal !== NO_IDX) {
+          if (lastScreened >= lastReal) {
+            log('  Screening: all posts screened (eligible to withdraw)', 'success');
+          } else {
+            const unscreened = lastReal - lastScreened;
+            log('  Screening: ' + unscreened + ' real post' + (unscreened > 1 ? 's' : '') + ' unscreened — make dummy posts before withdrawal', 'warn');
+          }
+        }
+      } catch (e) {
+        log('  (Could not fetch posts-available info: ' + extractErrorMessage(e).substring(0, 80) + ')', 'warn');
+      }
     }
     log('  L1 deposit:  ' + toEtherStr(portalL1Balance) + ' ETH', 'info');
     log('', 'info');
@@ -791,9 +914,10 @@
       if (!ethSigner) throw new Error('L1 signer required for deposit.');
       if (!portalDeployed) throw new Error('Portal not deployed at ' + portalAddr + '. Check your contract salt.');
 
-      // Check for existing active deposit (contract bans re-deposit)
-      if (portalL1Balance > 0n) {
-        log('  You already have an active deposit: ' + toEtherStr(portalL1Balance) + ' ETH', 'warn');
+      // Check for existing active L2 deposit note (contract bans re-deposit)
+      // Note: L1 portal balance may be non-zero from a previous withdrawn-but-not-yet-claimed deposit
+      if (l2NoteInfo && l2NoteInfo.amount > 0n) {
+        log('  You already have an active L2 deposit: ' + toEtherStr(l2NoteInfo.amount) + ' ETH', 'warn');
         log('  Withdraw your existing deposit first, then re-deposit.', 'warn');
         throw new Error('Already have an active deposit. Withdraw first.');
       }
@@ -801,12 +925,30 @@
       const amountStr = config.depositAmount;
       if (!amountStr) throw new Error('Deposit amount required (use --amount <eth>).');
       const amountWei = ethers.parseEther(amountStr);
-      if (amountWei < ethers.parseEther('0.001')) throw new Error('Amount below minimum (0.001 ETH).');
 
       const portal = new ethers.Contract(portalAddr, PORTAL_ABI, ethSigner);
 
+      // Read min deposit from the portal (deployer-configured)
+      let minDepositWei = ethers.parseEther('0.001');
+      try {
+        minDepositWei = await portal.MIN_DEPOSIT();
+      } catch (e) {}
+      if (amountWei < minDepositWei) throw new Error('Amount below minimum (' + ethers.formatEther(minDepositWei) + ' ETH).');
+
+      // Read base cooldown from the L2 contract (deployer-configured)
+      let baseCooldown = 3600n;
+      let minDepositL2 = ethers.parseEther('0.001');
+      try {
+        if (contract) {
+          const cdResult = await contract.methods.get_base_cooldown().simulate({ from: address });
+          baseCooldown = BigInt(extractInt(cdResult));
+          const mdResult = await contract.methods.get_min_deposit().simulate({ from: address });
+          minDepositL2 = BigInt(extractInt(mdResult));
+        }
+      } catch (e) {}
+
       // Cooldown estimate
-      const cooldownSec = (3600n * ethers.parseEther('0.001')) / amountWei;
+      const cooldownSec = (baseCooldown * minDepositL2) / amountWei;
       log('  Estimated cooldown: ' + cooldownSec.toString() + 's between posts', 'info');
 
       // Generate deterministic claim secret
@@ -824,7 +966,7 @@
       const secretHashBytes = ethers.hexlify(secretHash.toBuffer());
 
       log('Sending deposit tx (' + amountStr + ' ETH)...', 'info');
-      const tx = await portal.deposit(secretHashBytes, { value: amountWei, nonce });
+      const tx = await withUserRetry(() => portal.deposit(secretHashBytes, { value: amountWei, nonce }), 'L1 deposit tx');
       log('  Tx sent: ' + tx.hash, 'info');
       log('  Waiting for confirmation...', 'info');
       const rc = await tx.wait();
@@ -961,7 +1103,7 @@
       log('  Checking deposit note status...', 'info');
       await new Promise(r => setTimeout(r, 0)); // yield to UI thread
 
-      let noteInfo = { amount: 0n, minUsableTime: 0n, l1Depositor: '0x0' };
+      let noteInfo = { amount: 0n, nextAllowedTime: 0n, l1Depositor: '0x0' };
       try {
         const r = await contract.methods.get_deposit_info(address).simulate({ from: address });
         noteInfo = extractDepositInfo(r);
@@ -970,7 +1112,7 @@
       if (noteInfo.amount > 0n) {
         log('  Deposit note already exists on L2!', 'success');
         log('  Amount: ' + noteInfo.amount.toString() + ' wei', 'info');
-        log('  Min usable time: ' + noteInfo.minUsableTime.toString(), 'info');
+        log('  Next allowed time: ' + noteInfo.nextAllowedTime.toString(), 'info');
         log('  No claim needed. You can post or withdraw.', 'success');
         return;
       }
@@ -986,9 +1128,9 @@
       for (let i = 0; i < 30; i++) {
         try {
           await new Promise(r => setTimeout(r, 0)); // yield to UI thread
-          const result = await contract.methods.claim_deposit(
+          const result = await withUserRetry(() => contract.methods.claim_deposit(
             depositorField, amount, secret, leafIndex, portalField
-          ).send({ from: address });
+          ).send({ from: address }), 'Claim deposit tx');
           const receipt = result.receipt;
           log('  TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
           if (receipt.transactionFee !== undefined) {
@@ -1006,7 +1148,7 @@
               const info2 = extractDepositInfo(r2);
               if (info2.amount > 0n) {
                 log('  Deposit note synced! Amount: ' + info2.amount.toString() + ' wei', 'success');
-                log('  Min usable time: ' + info2.minUsableTime.toString(), 'info');
+                log('  Next allowed time: ' + info2.nextAllowedTime.toString(), 'info');
                 break;
               }
             } catch (e) {}
@@ -1027,7 +1169,7 @@
           } catch (e2) {}
 
           if (i < 29) {
-            log('  [' + (i+1) + '/30] Claim failed, retrying in 20s... (' + errMsg.substring(0, 80) + ')', 'warn');
+            log('  [' + (i+1) + '/30] Claim failed, retrying in 20s... (' + errMsg.substring(0, 120) + ')', 'warn');
             await sleep(20000);
           } else {
             // Final failure — check if already withdrawn
@@ -1057,8 +1199,35 @@
     async function doPost() {
       if (!contract) throw new Error('PXE setup required for post.');
 
-      const msgText = config.message;
-      if (!msgText) throw new Error('Message required (use --msg <text>).');
+      const isDummy = !!config.isDummy;
+      const msgText = isDummy ? '' : (config.message || '');
+      if (!isDummy && !msgText) throw new Error('Message required (use --msg <text>).');
+
+      if (isDummy) {
+        log('Making dummy post (advances screening, stores no content)...', 'info');
+        // Pre-flight: check note exists + time lock expired
+        let infoResult = null;
+        for (let i = 0; i < 3; i++) {
+          try {
+            infoResult = await contract.methods.get_deposit_info(address).simulate({ from: address });
+            const { amount } = extractDepositInfo(infoResult);
+            if (amount > 0n) break;
+          } catch (e) {}
+          if (i < 2) await sleep(5000);
+        }
+        if (!infoResult) throw new Error('Could not read deposit info.');
+        const { amount, nextAllowedTime } = extractDepositInfo(infoResult);
+        if (amount === 0n) throw new Error('No deposit note found. Claim a deposit first.');
+        let now = BigInt(await getL2Timestamp(a, aztecNode));
+        if (nextAllowedTime > now) {
+          const waitSec = Number(nextAllowedTime - now);
+          throw new Error('Too early for dummy post. Wait ' + waitSec + ' more seconds.');
+        }
+        log('  Time lock check passed.', 'success');
+        await doDummyPost();
+        log('  Dummy post complete — screening advanced.', 'success');
+        return;
+      }
 
       const encoder = new TextEncoder();
       const bytes = encoder.encode(msgText);
@@ -1086,18 +1255,18 @@
         if (i < 2) await sleep(5000);
       }
       if (!infoResult) throw new Error('Could not read deposit info.');
-      const { amount, minUsableTime } = extractDepositInfo(infoResult);
+      const { amount, nextAllowedTime } = extractDepositInfo(infoResult);
       if (amount === 0n) throw new Error('No deposit note found. Claim a deposit first.');
       let now = BigInt(await getL2Timestamp(a, aztecNode));
-      if (minUsableTime > now) {
-        const waitSec = Number(minUsableTime - now);
+      if (nextAllowedTime > now) {
+        const waitSec = Number(nextAllowedTime - now);
         // In auto mode, wait for the cooldown. Otherwise, throw with a helpful message.
         if (config.action === 'auto') {
           log('  Cooldown: ' + waitSec + 's remaining (~' + Math.ceil(waitSec / 60) + ' min). Waiting...', 'info');
           while (true) {
             const n = BigInt(await getL2Timestamp(a, aztecNode));
-            if (minUsableTime <= n) break;
-            const rem = Number(minUsableTime - n);
+            if (nextAllowedTime <= n) break;
+            const rem = Number(nextAllowedTime - n);
             log('  [' + rem + 's remaining] Waiting for cooldown...', 'info');
             await sleep(Math.min(rem * 1000, 30000));
           }
@@ -1106,11 +1275,32 @@
           throw new Error('Too early to post. Wait ' + waitSec + ' more seconds (~' + Math.ceil(waitSec / 60) + ' min).');
         }
       }
+      log('  Time lock check passed.', 'success');
+
+      // Fetch screening hints (child + grandchild PostNotes for the screening proof)
+      log('  Fetching screening hints...', 'info');
+      let childHint = null, grandchildHint = null;
+      try {
+        const hintsResult = await contract.methods.get_screen_hints(address).simulate({ from: address });
+        let hv = hintsResult;
+        if (hv && hv.result !== undefined) hv = hv.result;
+        if (hv && hv.value !== undefined) hv = hv.value;
+        if (Array.isArray(hv)) {
+          childHint = hv[0];
+          grandchildHint = hv[1];
+        }
+      } catch (e) {
+        throw new Error('Could not fetch screening hints: ' + extractErrorMessage(e));
+      }
+      log('  Screening hints fetched: child=' + (childHint ? 'yes' : 'no') + ', grandchild=' + (grandchildHint ? 'yes' : 'no'), 'info');
       log('  Pre-flight passed.', 'success');
 
-      const result = await contract.methods.post(
-        fields.map(f => new a.Fr(f))
-      ).send({ from: address });
+      const result = await withUserRetry(() => contract.methods.post(
+        fields.map(f => new a.Fr(f)),
+        false, // is_dummy
+        childHint,
+        grandchildHint
+      ).send({ from: address }), 'Post tx');
       const receipt = result.receipt;
       log('  TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
       if (receipt.transactionFee !== undefined) {
@@ -1120,17 +1310,109 @@
     }
 
     // ============================================================
+    // DUMMY POST (internal helper — advances screening without storing content)
+    // ============================================================
+    async function doDummyPost() {
+      if (!contract) throw new Error('PXE setup required for dummy post.');
+
+      // Fetch screening hints
+      let childHint = null, grandchildHint = null;
+      try {
+        const hintsResult = await contract.methods.get_screen_hints(address).simulate({ from: address });
+        let hv = hintsResult;
+        if (hv && hv.result !== undefined) hv = hv.result;
+        if (hv && hv.value !== undefined) hv = hv.value;
+        if (Array.isArray(hv)) {
+          childHint = hv[0];
+          grandchildHint = hv[1];
+        }
+      } catch (e) {
+        throw new Error('Could not fetch screening hints for dummy post: ' + extractErrorMessage(e));
+      }
+
+      const dummyFields = new Array(32).fill(0).map(() => new a.Fr(0));
+      const result = await withUserRetry(() => contract.methods.post(
+        dummyFields,
+        true, // is_dummy = true
+        childHint,
+        grandchildHint
+      ).send({ from: address }), 'Dummy post tx');
+      const receipt = result.receipt;
+      log('  Dummy post TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'info');
+      if (receipt.transactionFee !== undefined) {
+        log('  Fee paid: ' + toAztec(BigInt(receipt.transactionFee), 6) + ' AZTEC', 'info');
+      }
+    }
+
+    // ============================================================
     // LIST action
     // ============================================================
     async function doList() {
       if (!contract) throw new Error('PXE setup required for list.');
 
-      log('Loading posts...', 'info');
+      const jsonOutput = !!config.jsonOutput;
+
+      if (!jsonOutput) log('Loading posts...', 'info');
       const countResult = await contract.methods.get_post_count().simulate({ from: address });
       const count = extractInt(countResult);
-      log('  Post count: ' + count, 'info');
+      if (!jsonOutput) log('  Post count: ' + count, 'info');
 
-      if (count === 0) { log('  No posts yet.', 'info'); return; }
+      // Check censor config
+      let censorAddr = null, kMult = 64;
+      try {
+        const censorResult = await contract.methods.get_censor().simulate({ from: address });
+        let cv = censorResult;
+        if (cv && cv.result !== undefined) cv = cv.result;
+        if (cv && cv.value !== undefined) cv = cv.value;
+        censorAddr = cv && cv.toString ? cv.toString() : (cv ? '0x' + BigInt(cv).toString(16).padStart(64, '0') : null);
+      } catch (e) {}
+      try {
+        const kResult = await contract.methods.get_k_multiplier().simulate({ from: address });
+        kMult = extractInt(kResult);
+      } catch (e) {}
+      const censorActive = censorAddr && !censorAddr.endsWith('0000000000000000000000000000000000000000');
+      if (censorActive && !jsonOutput) log('  Censor: ACTIVE (K=' + kMult + ')', 'warn');
+
+      // Read censor_window and max_save_up
+      let censorWindow = 0, maxSaveUp = 0;
+      try {
+        const cwResult = await contract.methods.get_censor_window().simulate({ from: address });
+        censorWindow = Number(extractInt(cwResult));
+      } catch (e) {}
+      try {
+        const msuResult = await contract.methods.get_max_save_up().simulate({ from: address });
+        maxSaveUp = Number(extractInt(msuResult));
+      } catch (e) {}
+      if (censorWindow > 0 && !jsonOutput) log('  Censor window: ' + censorWindow + 's', 'info');
+      if (maxSaveUp > 0 && !jsonOutput) log('  Max save-up: ' + maxSaveUp, 'info');
+
+      // Read moderation policy from contract
+      let policyText = null;
+      try {
+        const policyResult = await contract.methods.get_moderation_policy().simulate({ from: address });
+        let policyFields = policyResult;
+        let policyLen = 0;
+        if (policyResult && policyResult.result !== undefined) {
+          policyFields = policyResult.result[0] || policyResult.result;
+          policyLen = Number(policyResult.result[1] !== undefined ? policyResult.result[1] : 0);
+        }
+        if (policyLen > 0 && g.unpackFieldsToString) {
+          policyText = g.unpackFieldsToString(policyFields, policyLen);
+          if (policyText && !jsonOutput) {
+            log('  --- Moderation Policy ---', 'info');
+            for (const line of policyText.split('\n')) log('  | ' + line, 'info');
+            log('  -------------------------', 'info');
+          }
+        }
+      } catch (e) {}
+
+      if (count === 0) {
+        if (jsonOutput) { console.log(JSON.stringify({ count: 0, posts: [], censor: censorAddr, kMultiplier: kMult })); }
+        else { log('  No posts yet.', 'info'); }
+        return;
+      }
+
+      const _jsonPosts = [];
 
       for (let i = 0; i < count; i++) {
         try {
@@ -1151,12 +1433,77 @@
             if (bytes[b] === 0) { len = b; break; }
           }
           const msg = new TextDecoder().decode(new Uint8Array(bytes.slice(0, len)));
-          log('  [' + i + '] ' + (msg || '(binary data)'), 'info');
+
+          // Check if flagged
+          let flagged = false;
+          try {
+            const flagResult = await contract.methods.is_post_flagged(BigInt(i)).simulate({ from: address });
+            let fv = flagResult;
+            if (fv && fv.result !== undefined) fv = fv.result;
+            if (fv && fv.value !== undefined) fv = fv.value;
+            flagged = fv && (fv === true || BigInt(fv.toString ? fv.toString() : fv) > 0n);
+          } catch (e) {}
+
+          // Collect censor response and flagged_by for flagged posts
+          let censorResponse = null, flaggedBy = null;
+          if (flagged) {
+            try {
+              const respResult = await contract.methods.get_censor_response(BigInt(i)).simulate({ from: address });
+              const respVals = extractFieldArray(respResult);
+              let rBytes = [];
+              for (let f = 0; f < MSG_FIELDS; f++) {
+                let val = respVals[f];
+                let fieldBytes = [];
+                for (let b = 0; b < 31; b++) {
+                  fieldBytes.unshift(Number(val & 0xffn));
+                  val >>= 8n;
+                }
+                rBytes = rBytes.concat(fieldBytes);
+              }
+              let rLen = rBytes.length;
+              for (let b = 0; b < rBytes.length; b++) {
+                if (rBytes[b] === 0) { rLen = b; break; }
+              }
+              censorResponse = new TextDecoder().decode(new Uint8Array(rBytes.slice(0, rLen)));
+            } catch (e) {}
+            try {
+              const fbResult = await contract.methods.get_post_flagged_by(BigInt(i)).simulate({ from: address });
+              let fbv = fbResult;
+              if (fbv && fbv.result !== undefined) fbv = fbv.result;
+              if (fbv && fbv.value !== undefined) fbv = fbv.value;
+              flaggedBy = fbv?.inner ? fbv.inner.toString() : (fbv?.toString ? fbv.toString() : fbv);
+            } catch (e) {}
+          }
+
+          // Read post timestamp (for censor window calculations)
+          let timestamp = 0;
+          try {
+            const timeResult = await contract.methods.get_post_time(BigInt(i)).simulate({ from: address });
+            timestamp = Number(extractInt(timeResult));
+          } catch (e) {}
+
+          if (jsonOutput) {
+            _jsonPosts.push({ index: i, text: msg || '', flagged, censorResponse, flaggedBy, timestamp });
+          } else if (flagged) {
+            log('  [' + i + '] [FLAGGED] ' + (msg || '(binary data)'), 'warn');
+            if (censorResponse) log('         ↳ Censor: ' + censorResponse, 'warn');
+            if (flaggedBy) log('         ↳ Flagged by: ' + flaggedBy, 'warn');
+          } else {
+            log('  [' + i + '] ' + (msg || '(binary data)'), 'info');
+          }
         } catch (err) {
-          log('  [' + i + '] Error: ' + extractErrorMessage(err), 'error');
+          if (jsonOutput) {
+            _jsonPosts.push({ index: i, text: '', flagged: false, error: extractErrorMessage(err) });
+          } else {
+            log('  [' + i + '] Error: ' + extractErrorMessage(err), 'error');
+          }
         }
       }
-      log('  All ' + count + ' posts loaded.', 'success');
+      if (jsonOutput) {
+        console.log(JSON.stringify({ count, posts: _jsonPosts, censor: censorAddr, kMultiplier: kMult, censorWindow, maxSaveUp, policy: policyText || '' }));
+      } else {
+        log('  All ' + count + ' posts loaded.', 'success');
+      }
     }
 
     // ============================================================
@@ -1180,12 +1527,101 @@
         log('  Could not read deposit note (proceeding anyway): ' + extractErrorMessage(e).substring(0, 80), 'warn');
       }
 
-      // No withdraw time lock — the new contract (salt 1002+) removed it.
-      // The posting cooldown already enforces the rate-limit invariant.
+      // The contract checks withdrawal eligibility based on screening state:
+      //   last_screened_index >= last_real_post_index (all real posts screened)
+      //   OR no real posts → check initial lock (next_allowed_time)
+      // We use the deposit info to pre-flight this for the user.
+      if (noteInfo) {
+        const NO_SCREENED = 0xFFFFFFFFn;
+        const NO_REAL_POST = 0xFFFFFFFFn;
+        const noRealPosts = noteInfo.lastRealPostIndex === NO_REAL_POST;
+        const nothingScreened = noteInfo.lastScreenedIndex === NO_SCREENED;
+        let canWithdraw = false;
+        let waitReason = '';
+        if (noRealPosts) {
+          // No real posts — check initial lock
+          let now = BigInt(await getL2Timestamp(a, aztecNode));
+          if (noteInfo.nextAllowedTime > now) {
+            const waitSec = Number(noteInfo.nextAllowedTime - now);
+            waitReason = 'initial lock: ' + waitSec + 's remaining';
+          } else {
+            canWithdraw = true;
+          }
+        } else if (nothingScreened) {
+          waitReason = 'real posts exist but none screened yet';
+        } else if (noteInfo.lastScreenedIndex >= noteInfo.lastRealPostIndex) {
+          canWithdraw = true;
+        } else {
+          const unscreened = noteInfo.lastRealPostIndex - noteInfo.lastScreenedIndex;
+          waitReason = unscreened.toString() + ' real post(s) not yet screened';
+        }
+
+        if (!canWithdraw) {
+          if (config.action === 'auto') {
+            log('  Withdraw not ready: ' + waitReason + '. Will make dummy posts to advance screening.', 'info');
+            // Read censor_window to know how long to wait before screening is possible
+            let censorWindow = 3600n;
+            try {
+              const cwResult = await contract.methods.get_censor_window().simulate({ from: address });
+              censorWindow = BigInt(extractInt(cwResult));
+            } catch (e) {}
+            // Make dummy posts until screening catches up
+            for (let attempt = 0; attempt < 20; attempt++) {
+              // Wait until next_allowed_time (so we can make a dummy post)
+              let info3 = null;
+              try {
+                const r3 = await contract.methods.get_deposit_info(address).simulate({ from: address });
+                info3 = extractDepositInfo(r3);
+              } catch (e) { break; }
+              if (info3.amount === 0n) { canWithdraw = true; break; }
+              if (info3.lastRealPostIndex === NO_REAL_POST) {
+                let now3 = BigInt(await getL2Timestamp(a, aztecNode));
+                if (info3.nextAllowedTime <= now3) { canWithdraw = true; break; }
+                const waitSec = Number(info3.nextAllowedTime - now3);
+                log('  Waiting ' + waitSec + 's for initial lock to expire...', 'info');
+                await sleep(Math.min(waitSec * 1000 + 5000, 60000));
+                continue;
+              }
+              if (info3.lastScreenedIndex !== NO_SCREENED && info3.lastScreenedIndex >= info3.lastRealPostIndex) {
+                canWithdraw = true; break;
+              }
+              // Need to make a dummy post, but first wait for next_allowed_time
+              let now4 = BigInt(await getL2Timestamp(a, aztecNode));
+              if (info3.nextAllowedTime > now4) {
+                const waitSec = Number(info3.nextAllowedTime - now4);
+                log('  Waiting ' + waitSec + 's for cooldown before dummy post...', 'info');
+                await sleep(Math.min(waitSec * 1000 + 5000, 60000));
+              }
+              // Also wait for censor_window to pass (so child post is old enough to screen)
+              // The child post's timestamp must be <= now - censor_window
+              // We don't know exact child timestamp, but it's the most recent real post
+              // In practice, waiting for next_allowed_time + censor_window should suffice
+              log('  Making dummy post #' + (attempt + 1) + ' to advance screening...', 'info');
+              try {
+                await doDummyPost();
+              } catch (e) {
+                log('  Dummy post failed: ' + extractErrorMessage(e).substring(0, 100), 'warn');
+                // If it's a timing issue, wait and retry
+                await sleep(30000);
+              }
+              // Check if we can withdraw now
+              await sleep(5000);
+            }
+            if (!canWithdraw) throw new Error('Withdraw timed out: could not advance screening with dummy posts. ' + waitReason);
+            log('  Withdraw ready!', 'success');
+          } else {
+            throw new Error('Too early to withdraw: ' + waitReason + '. Make dummy posts to advance screening (use --action post --dummy).');
+          }
+        } else {
+          log('  Withdraw eligibility confirmed.', 'success');
+        }
+      }
 
       log('Withdrawing (sending L2->L1 message)...', 'info');
       const portalField = a.Fr.fromHexString(portalAddr);
-      const result = await contract.methods.withdraw(portalField).send({ from: address });
+
+      // New API: withdraw only needs the portal address (no chain walk)
+      const result = await withUserRetry(() => contract.methods.withdraw(portalField).send({ from: address }), 'Withdraw tx');
       const receipt = result.receipt;
       log('  TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
       if (receipt.transactionFee !== undefined) {
@@ -1378,12 +1814,12 @@
       const portalWithSigner = new ethers.Contract(portalAddr, PORTAL_ABI, ethSigner);
 
       try {
-        const tx = await portalWithSigner.withdraw(
+        const tx = await withUserRetry(() => portalWithSigner.withdraw(
           BigInt(epochNumber),
           BigInt(numCheckpointsInEpoch),
           BigInt(leafIndex),
           pathHex
-        );
+        ), 'L1 withdrawal tx');
         log('  L1 tx sent: ' + tx.hash, 'success');
         log('  Waiting for confirmation...', 'info');
         const rc = await tx.wait();
@@ -1446,6 +1882,299 @@
     }
 
     // ============================================================
+    // Helper: load censor wallet + create censor-bound contract
+    // ============================================================
+    async function _loadCensorWalletAndContract() {
+      let censorWalletJson = config.censorWalletJson || null;
+      if (!censorWalletJson && config.censorWalletPath) {
+        const censorWalletPath = config.censorWalletPath;
+        if (fs.existsSync(censorWalletPath)) {
+          censorWalletJson = JSON.parse(fs.readFileSync(censorWalletPath, 'utf8'));
+          log('Loaded censor wallet from ' + censorWalletPath, 'success');
+        } else {
+          throw new Error('Censor wallet file not found: ' + censorWalletPath);
+        }
+      }
+      if (!censorWalletJson) throw new Error('Censor wallet required.');
+      if (!censorWalletJson.secretKey) throw new Error('Censor wallet JSON missing secretKey.');
+
+      const censorSk = a.Fr.fromHexString(censorWalletJson.secretKey);
+      const censorSigningKey = a.deriveSigningKey(censorSk);
+      const censorAccountContract = new a.SchnorrInitializerlessAccountContract(censorSigningKey);
+      const { publicKeys: censorPublicKeys } = await a.deriveKeys(censorSk);
+      const censorAccountArtifact = await censorAccountContract.getContractArtifact();
+      const censorImmutablesHash = await censorAccountContract.getImmutablesHash();
+      const censorSaltVal = typeof censorWalletJson.salt === 'string' ? parseInt(censorWalletJson.salt, 16) : (censorWalletJson.salt || 0);
+      const censorInstance = await a.getContractInstanceFromInstantiationParams(censorAccountArtifact, {
+        constructorArtifact: undefined, constructorArgs: undefined,
+        salt: new a.Fr(censorSaltVal), publicKeys: censorPublicKeys, immutablesHash: censorImmutablesHash,
+      });
+      const censorPartialAddress = await a.computePartialAddress(censorInstance);
+      const censorAddress = censorInstance.address;
+      log('  Censor address: ' + censorAddress.toString(), 'info');
+
+      log('  Registering censor account with PXE...', 'info');
+      const censorDerivedKeys = await a.deriveKeys(censorSk);
+      await pxe.registerAccount(censorDerivedKeys, censorPartialAddress);
+      await retry(() => pxe.registerContract(censorInstance), 'register-censor', log, 5);
+      log('  Censor account registered.', 'success');
+
+      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk);
+      const censorAccountManager = await a.AccountManager.create(censorWallet, censorSk, censorAccountContract, { salt: new a.Fr(censorSaltVal) });
+      censorWallet._accountManager = censorAccountManager;
+
+      log('  Storing censor signing key capsule...', 'info');
+      const censorSigningPublicKey = await censorAccountContract.getSigningPublicKey();
+      const censorConstructorArtifact = censorAccountArtifact.functions.find(f => f.name === 'constructor');
+      if (censorConstructorArtifact) {
+        const storeCall = new a.ContractFunctionInteraction(
+          censorWallet, censorInstance.address, censorConstructorArtifact,
+          [censorSigningPublicKey.x, censorSigningPublicKey.y]
+        );
+        await storeCall.simulate({ from: censorInstance.address });
+        log('  Censor capsule stored.', 'success');
+      }
+
+      const censorContract = await a.Contract.at(l2Addr, contractArtifact, censorWallet);
+      await pxe.sync();
+      return { censorWallet, censorAddress, censorContract };
+    }
+
+    // ============================================================
+    // SET-MODERATION-POLICY action (censor updates the policy text)
+    // ============================================================
+    async function doSetModerationPolicy() {
+      if (!contract) throw new Error('PXE setup required for set-moderation-policy.');
+
+      const policyText = config.moderationPolicy !== undefined ? config.moderationPolicy : (g.DEFAULT_MODERATION_POLICY || '');
+      if (!policyText || !policyText.trim()) throw new Error('Policy text required (use --moderation-policy <text>).');
+
+      const packFn = g.packStringToFields;
+      if (!packFn) throw new Error('packStringToFields not available (load moderation-policy.js)');
+      const { fields: policyFields, len: policyLen } = packFn(policyText);
+
+      const { censorAddress, censorContract } = await _loadCensorWalletAndContract();
+
+      log('Setting moderation policy (' + policyLen + ' bytes)...', 'info');
+      const result = await withUserRetry(() => censorContract.methods.set_moderation_policy(
+        policyFields.map(f => new a.Fr(f)),
+        new a.Fr(BigInt(policyLen))
+      ).send({ from: censorAddress }), 'Set moderation policy tx');
+      const receipt = result.receipt;
+      log('  TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
+      if (receipt.transactionFee !== undefined) {
+        log('  Fee paid: ' + toAztec(BigInt(receipt.transactionFee), 6) + ' AZTEC', 'info');
+      }
+      log('  Moderation policy updated.', 'success');
+    }
+
+    // ============================================================
+    // DECLARE-IMMORAL action (censor flags a post)
+    // ============================================================
+    async function doDeclareImmoral() {
+      if (!contract) throw new Error('PXE setup required for declare-immoral.');
+
+      const postIndex = config.postIndex;
+      if (postIndex === undefined || postIndex === null) throw new Error('Post index required (use --post-index <num>).');
+      const responseText = config.censorResponse || '';
+
+      // Load censor wallet — accept JSON object (browser) or file path (CLI)
+      let censorWalletJson = config.censorWalletJson || null;
+      if (!censorWalletJson && config.censorWalletPath) {
+        const censorWalletPath = config.censorWalletPath;
+        if (fs.existsSync(censorWalletPath)) {
+          censorWalletJson = JSON.parse(fs.readFileSync(censorWalletPath, 'utf8'));
+          log('Loaded censor wallet from ' + censorWalletPath, 'success');
+        } else {
+          throw new Error('Censor wallet file not found: ' + censorWalletPath);
+        }
+      }
+      if (!censorWalletJson) {
+        throw new Error('Censor wallet required for declare-immoral.');
+      }
+      if (!censorWalletJson.secretKey) throw new Error('Censor wallet JSON missing secretKey.');
+
+      // Derive censor account
+      const censorSk = a.Fr.fromHexString(censorWalletJson.secretKey);
+      const censorSigningKey = a.deriveSigningKey(censorSk);
+      const censorAccountContract = new a.SchnorrInitializerlessAccountContract(censorSigningKey);
+      const { publicKeys: censorPublicKeys } = await a.deriveKeys(censorSk);
+      const censorAccountArtifact = await censorAccountContract.getContractArtifact();
+      const censorImmutablesHash = await censorAccountContract.getImmutablesHash();
+      const censorSaltVal = typeof censorWalletJson.salt === 'string' ? parseInt(censorWalletJson.salt, 16) : (censorWalletJson.salt || 0);
+      const censorInstance = await a.getContractInstanceFromInstantiationParams(censorAccountArtifact, {
+        constructorArtifact: undefined, constructorArgs: undefined,
+        salt: new a.Fr(censorSaltVal), publicKeys: censorPublicKeys, immutablesHash: censorImmutablesHash,
+        });
+      const censorPartialAddress = await a.computePartialAddress(censorInstance);
+      const censorAddress = censorInstance.address;
+      log('  Censor address: ' + censorAddress.toString(), 'info');
+
+      // Register censor account with PXE
+      log('  Registering censor account with PXE...', 'info');
+      const censorDerivedKeys = await a.deriveKeys(censorSk);
+      await pxe.registerAccount(censorDerivedKeys, censorPartialAddress);
+      await retry(() => pxe.registerContract(censorInstance), 'register-censor', log, 5);
+      log('  Censor account registered.', 'success');
+
+      // Create censor wallet
+      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk);
+      const censorAccountManager = await a.AccountManager.create(censorWallet, censorSk, censorAccountContract, { salt: new a.Fr(censorSaltVal) });
+      censorWallet._accountManager = censorAccountManager;
+
+      // Store censor's signing key capsule
+      log('  Storing censor signing key capsule...', 'info');
+      const censorSigningPublicKey = await censorAccountContract.getSigningPublicKey();
+      const censorConstructorArtifact = censorAccountArtifact.functions.find(f => f.name === 'constructor');
+      if (censorConstructorArtifact) {
+        const storeCall = new a.ContractFunctionInteraction(
+          censorWallet, censorInstance.address, censorConstructorArtifact,
+          [censorSigningPublicKey.x, censorSigningPublicKey.y]
+        );
+        await storeCall.simulate({ from: censorInstance.address });
+        log('  Censor capsule stored.', 'success');
+      }
+
+      // Create contract instance bound to censor's wallet
+      const censorContract = await a.Contract.at(l2Addr, contractArtifact, censorWallet);
+
+      // Sync PXE
+      await pxe.sync();
+
+      const encoder = new TextEncoder();
+      const bytes = encoder.encode(responseText);
+      if (bytes.length > MSG_BYTES - 1) throw new Error('Response too long (max ' + (MSG_BYTES - 1) + ' bytes).');
+
+      const padded = new Uint8Array(MSG_FIELDS * 31);
+      padded.set(bytes);
+      const fields = [];
+      for (let i = 0; i < MSG_FIELDS; i++) {
+        let val = 0n;
+        for (let j = 0; j < 31; j++) val = (val << 8n) | BigInt(padded[i * 31 + j]);
+        fields.push(val);
+      }
+
+      log('Declaring post ' + postIndex + ' as immoral...', 'info');
+      if (responseText) log('  Response: "' + responseText.substring(0, 60) + '"', 'info');
+
+      const result = await withUserRetry(() => censorContract.methods.declare_immoral(
+        BigInt(postIndex),
+        fields.map(f => new a.Fr(f))
+      ).send({ from: censorAddress }), 'Declare immoral tx');
+      const receipt = result.receipt;
+      log('  TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
+      if (receipt.transactionFee !== undefined) {
+        log('  Fee paid: ' + toAztec(BigInt(receipt.transactionFee), 6) + ' AZTEC', 'info');
+      }
+      log('  Post ' + postIndex + ' flagged as immoral.', 'success');
+
+      // Verify: read back the flagged_by record
+      try {
+        const flaggedByResult = await contract.methods.get_post_flagged_by(BigInt(postIndex)).simulate({ from: address });
+        let fbv = flaggedByResult;
+        if (fbv && fbv.result !== undefined) fbv = fbv.result;
+        if (fbv && fbv.value !== undefined) fbv = fbv.value;
+        const flaggedBy = fbv?.inner ? fbv.inner.toString() : (fbv?.toString ? fbv.toString() : fbv);
+        log('  Public record: flagged by ' + flaggedBy, 'info');
+      } catch (e) {
+        log('  Could not read flagged_by record: ' + extractErrorMessage(e).substring(0, 80), 'warn');
+      }
+    }
+
+    // ============================================================
+    // TRANSFER-CENSOR action (censor transfers rights to new address)
+    // ============================================================
+    async function doTransferCensor() {
+      if (!contract) throw new Error('PXE setup required for transfer-censor.');
+
+      const newCensorStr = config.newCensor;
+      if (!newCensorStr) throw new Error('New censor address required (use --new-censor <addr>).');
+
+      // Load censor wallet — accept JSON object (browser) or file path (CLI)
+      let censorWalletJson = config.censorWalletJson || null;
+      if (!censorWalletJson && config.censorWalletPath) {
+        const censorWalletPath = config.censorWalletPath;
+        if (fs.existsSync(censorWalletPath)) {
+          censorWalletJson = JSON.parse(fs.readFileSync(censorWalletPath, 'utf8'));
+          log('Loaded censor wallet from ' + censorWalletPath, 'success');
+        } else {
+          throw new Error('Censor wallet file not found: ' + censorWalletPath);
+        }
+      }
+      if (!censorWalletJson) {
+        throw new Error('Censor wallet required for transfer-censor.');
+      }
+      if (!censorWalletJson.secretKey) throw new Error('Censor wallet JSON missing secretKey.');
+
+      // Derive censor account
+      const censorSk = a.Fr.fromHexString(censorWalletJson.secretKey);
+      const censorSigningKey = a.deriveSigningKey(censorSk);
+      const censorAccountContract = new a.SchnorrInitializerlessAccountContract(censorSigningKey);
+      const { publicKeys: censorPublicKeys } = await a.deriveKeys(censorSk);
+      const censorAccountArtifact = await censorAccountContract.getContractArtifact();
+      const censorImmutablesHash = await censorAccountContract.getImmutablesHash();
+      const censorSaltVal = typeof censorWalletJson.salt === 'string' ? parseInt(censorWalletJson.salt, 16) : (censorWalletJson.salt || 0);
+      const censorInstance = await a.getContractInstanceFromInstantiationParams(censorAccountArtifact, {
+        constructorArtifact: undefined, constructorArgs: undefined,
+        salt: new a.Fr(censorSaltVal), publicKeys: censorPublicKeys, immutablesHash: censorImmutablesHash,
+      });
+      const censorPartialAddress = await a.computePartialAddress(censorInstance);
+      const censorAddress = censorInstance.address;
+      log('  Censor address: ' + censorAddress.toString(), 'info');
+
+      // Register censor account with PXE
+      log('  Registering censor account with PXE...', 'info');
+      const censorDerivedKeys = await a.deriveKeys(censorSk);
+      await pxe.registerAccount(censorDerivedKeys, censorPartialAddress);
+      await retry(() => pxe.registerContract(censorInstance), 'register-censor', log, 5);
+      log('  Censor account registered.', 'success');
+
+      // Create censor wallet
+      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk);
+      const censorAccountManager = await a.AccountManager.create(censorWallet, censorSk, censorAccountContract, { salt: new a.Fr(censorSaltVal) });
+      censorWallet._accountManager = censorAccountManager;
+
+      // Store censor's signing key capsule
+      log('  Storing censor signing key capsule...', 'info');
+      const censorSigningPublicKey = await censorAccountContract.getSigningPublicKey();
+      const censorConstructorArtifact = censorAccountArtifact.functions.find(f => f.name === 'constructor');
+      if (censorConstructorArtifact) {
+        const storeCall = new a.ContractFunctionInteraction(
+          censorWallet, censorInstance.address, censorConstructorArtifact,
+          [censorSigningPublicKey.x, censorSigningPublicKey.y]
+        );
+        await storeCall.simulate({ from: censorInstance.address });
+        log('  Censor capsule stored.', 'success');
+      }
+
+      // Create contract instance bound to censor's wallet
+      const censorContract = await a.Contract.at(l2Addr, contractArtifact, censorWallet);
+      await pxe.sync();
+
+      const newCensorAddr = a.AztecAddress.fromFieldUnsafe(a.Fr.fromHexString(newCensorStr));
+      log('Transferring censor rights to ' + newCensorAddr.toString() + '...', 'info');
+
+      const result = await withUserRetry(() => censorContract.methods.transfer_censor(newCensorAddr).send({ from: censorAddress }), 'Transfer censor tx');
+      const receipt = result.receipt;
+      log('  TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
+      if (receipt.transactionFee !== undefined) {
+        log('  Fee paid: ' + toAztec(BigInt(receipt.transactionFee), 6) + ' AZTEC', 'info');
+      }
+
+      // Verify
+      try {
+        const newCensorResult = await contract.methods.get_censor().simulate({ from: address });
+        let ncv = newCensorResult;
+        if (ncv && ncv.result !== undefined) ncv = ncv.result;
+        if (ncv && ncv.value !== undefined) ncv = ncv.value;
+        const newCensorOnChain = ncv?.inner ? ncv.inner.toString() : (ncv?.toString ? ncv.toString() : ncv);
+        log('  New censor on-chain: ' + newCensorOnChain, 'success');
+      } catch (e) {
+        log('  Could not read new censor: ' + extractErrorMessage(e).substring(0, 80), 'warn');
+      }
+    }
+
+    // ============================================================
     // Action dispatch
     // ============================================================
     let result = { ok: true, state: stateStatus };
@@ -1470,6 +2199,12 @@
       await doPost();
     } else if (action === 'list') {
       await doList();
+    } else if (action === 'declare-immoral') {
+      await doDeclareImmoral();
+    } else if (action === 'transfer-censor') {
+      await doTransferCensor();
+    } else if (action === 'set-moderation-policy') {
+      await doSetModerationPolicy();
     } else if (action === 'withdraw') {
       await doWithdraw();
     } else if (action === 'claim-l1') {

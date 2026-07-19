@@ -274,26 +274,28 @@ function extractFieldArray(simResult) {
   });
 }
 
-// Extract a tuple (u128, u64, EthAddress) from get_deposit_info
+// Extract the 7-element array from get_deposit_info:
+// [0] = amount (u128), [1] = l1_depositor (EthAddress), [2] = post_chain_head,
+// [3] = last_screened_link, [4] = last_screened_index (u32),
+// [5] = last_real_post_index (u32), [6] = next_allowed_time (u64)
 function extractDepositInfo(simResult) {
-  // `.simulate()` for utility functions returns { result: [...], ... }
-  // `.simulate()` for private functions returns { result: [...], ... }
-  // Some older code paths may return { value: [...] } or just [...]
   let val = simResult;
   if (simResult && simResult.result !== undefined) val = simResult.result;
   else if (simResult && simResult.value !== undefined) val = simResult.value;
   if (!Array.isArray(val)) {
-    console.warn('[extractDepositInfo] WARNING: val is not an array, simResult keys:', Object.keys(simResult || {}), 'val:', val);
-    return { amount: 0n, minUsableTime: 0n, l1Depositor: '0x0' };
+    return { amount: 0n, nextAllowedTime: 0n, l1Depositor: '0x0', postChainHead: 0n, lastScreenedLink: 0n, lastScreenedIndex: 0n, lastRealPostIndex: 0n };
   }
-  console.warn('[extractDepositInfo] val array:', val.map(v => v?.toString?.()?.slice(0, 20)));
   const amount = BigInt(val[0]?.toString?.() ?? val[0]);
-  const minUsableTime = BigInt(val[1]?.toString?.() ?? val[1]);
-  let depositor = val[2];
+  let depositor = val[1];
   if (depositor && depositor.inner !== undefined) depositor = depositor.inner;
   if (depositor && depositor.toString) depositor = depositor.toString();
   const l1Depositor = '0x' + BigInt(depositor).toString(16).padStart(40, '0');
-  return { amount, minUsableTime, l1Depositor };
+  const postChainHead = BigInt(val[2]?.toString?.() ?? val[2]);
+  const lastScreenedLink = BigInt(val[3]?.toString?.() ?? val[3]);
+  const lastScreenedIndex = BigInt(val[4]?.toString?.() ?? val[4]);
+  const lastRealPostIndex = BigInt(val[5]?.toString?.() ?? val[5]);
+  const nextAllowedTime = BigInt(val[6]?.toString?.() ?? val[6]);
+  return { amount, nextAllowedTime, l1Depositor, postChainHead, lastScreenedLink, lastScreenedIndex, lastRealPostIndex };
 }
 
 // ============================================================

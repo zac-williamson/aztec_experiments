@@ -85,21 +85,54 @@ async function startDeploy() {
   }
 
   const contractSalt = parseInt(document.getElementById('contractSalt').value) || 1;
+  const censorAddrStr = (document.getElementById('censorAddr').value || '').trim();
+  const kMultiplierStr = (document.getElementById('kMultiplier').value || '').trim();
+  const minDepositEth = (document.getElementById('minDepositEth').value || '0.001').trim();
+  const baseCooldown = parseInt(document.getElementById('baseCooldown').value || '3600');
+  const censorWindow = parseInt(document.getElementById('censorWindow')?.value || '3600');
+  const maxSaveUp = parseInt(document.getElementById('maxSaveUp')?.value || '16');
+  const moderationPolicy = (document.getElementById('moderationPolicy') || {}).value || '';
   const ws = window.walletState;
 
   _currentStatusDiv = 'status';
   const env = buildEnv({ pause: pause, portalBytecode: PORTAL_BYTECODE, artifact: BILLBOARD_ARTIFACT });
-  const config = buildConfig(null, {
+  const extraConfig = {
     contractSalt: contractSalt,
     dataDirPrefix: 'pxe_bb_',
-  });
+  };
+  // Only pass censor config if the user provided values
+  if (censorAddrStr) extraConfig.censor = censorAddrStr;
+  if (kMultiplierStr) extraConfig.kMultiplier = parseInt(kMultiplierStr);
+  // Deployer-configurable parameters
+  extraConfig.minDepositWei = ethers.parseEther(minDepositEth);
+  extraConfig.baseCooldown = baseCooldown;
+  extraConfig.censorWindow = censorWindow;
+  extraConfig.maxSaveUp = maxSaveUp;
+  // Moderation policy (empty string => engine uses default)
+  extraConfig.moderationPolicy = moderationPolicy.trim() || undefined;
+  const config = buildConfig(null, extraConfig);
 
   try {
     const result = await runDeploy(env, config);
     log('', 'info', 'status');
     log('All done! Copy these addresses for the user app:', 'success', 'status');
-    log('  L2: ' + result.l2Addr, 'info', 'status');
-    log('  L1: ' + result.portalAddr, 'info', 'status');
+    log('  Salt: ' + (extraConfig.contractSalt || 1), 'info', 'status');
+    log('  L2:   ' + result.l2Addr, 'info', 'status');
+    log('  L1:   ' + result.portalAddr, 'info', 'status');
+
+    // Add a clickable link to the user app with the portal address pre-filled
+    const statusDiv = document.getElementById('status');
+    if (statusDiv) {
+      const linkDiv = document.createElement('div');
+      linkDiv.className = 'status success';
+      linkDiv.style.marginTop = '8px';
+      const a = document.createElement('a');
+      a.href = 'user.html?portal=' + result.portalAddr;
+      a.textContent = 'Open User App (L1 address pre-filled)';
+      a.style.cssText = 'font-size:1.1em; font-weight:bold;';
+      linkDiv.appendChild(a);
+      statusDiv.appendChild(linkDiv);
+    }
   } catch (e) {
     log('', 'error', 'status');
     log('ERROR: ' + (e.stack || e.message || String(e)), 'error', 'status');
@@ -112,11 +145,23 @@ async function startDeploy() {
 // ============================================================
 function waitForBundleThenInit() {
   if (window.__aztec && window.__aztec.createPXE) {
+    // Pre-fill moderation policy textarea with the default policy
+    const policyEl = document.getElementById('moderationPolicy');
+    if (policyEl && !policyEl.value.trim() && window.DEFAULT_MODERATION_POLICY) {
+      policyEl.value = window.DEFAULT_MODERATION_POLICY;
+    }
     initWalletButtons('walletButtonsContainer', {
       statusId: 'status',
       ethRpcUrl: ETH_RPC_URL,
+      onAztecLoad: (address) => {
+        const censorInput = document.getElementById('censorAddr');
+        if (censorInput && !censorInput.value.trim() && address) {
+          censorInput.value = address.toString();
+          log('Auto-filled censor address from loaded wallet: ' + address.toString(), 'info', 'status');
+        }
+      },
       onReady: async () => {
-        await startDeploy();
+        log('Both wallets ready. Click the Deploy button to begin.', 'success', 'status');
       },
     });
   } else {

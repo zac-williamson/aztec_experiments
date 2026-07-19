@@ -15,11 +15,18 @@
 //   node cli.mjs [options]
 //
 // Options:
-//   --contract-salt <num>    Contract deployment salt (default: 1)
+//   --contract-salt <num>    Contract deployment salt (default: 2028)
 //   --node-url <url>         Aztec node URL (default: from rpc-config.json)
 //   --eth-rpc <url>          Ethereum RPC URL
 //   --aztec-wallet <file>    Path to Aztec wallet.json
 //   --eth-wallet <file>      Path to ETH wallet JSON
+//   --censor <addr>          Censor Aztec address (default: 0x0035ab...; use 0x0 to disable)
+//   --k-multiplier <num>     K multiplier for censored cooldown (default: 4)
+//   --min-deposit <eth>      Minimum deposit in ETH (default: 0.002)
+//   --base-cooldown <sec>    Posting cooldown at min deposit in seconds (default: 10)
+//   --censor-window <sec>    Min time censor has to flag a post before screening (default: 3600)
+//   --max-save-up <num>      Max posts that can be saved up for bursting (default: 16)
+//   --moderation-policy <text>  Moderation policy text (default: humorous default)
 // ============================================================
 
 import fs from 'fs';
@@ -54,10 +61,18 @@ const rpcConfig = fs.existsSync(rpcConfigPath) ? JSON.parse(fs.readFileSync(rpcC
 const AZTEC_NODE_URL = args['node-url'] || rpcConfig.nodeUrl || 'https://v5.mainnet.rpc.aztec-labs.com';
 const AZTEC_API_KEY = __realProcess.env.AZTEC_API_KEY || rpcConfig.apiKey || '';
 const ETH_RPC_URL = args['eth-rpc'] || 'https://invictus.ambire.com/ethereum';
-const CONTRACT_SALT = parseInt(args['contract-salt']) || 1;
+// Defaults match the deploy UI template (salt 2028, 0.002 ETH, 10s, K=4, censor set)
+const CONTRACT_SALT = parseInt(args['contract-salt'] || args['salt']) || 2028;
 const PROJECT_ROOT = path.join(__dirname, '..', '..', '..', '..');
-const AZTEC_WALLET_PATH = args['aztec-wallet'] || path.join(PROJECT_ROOT, 'wallet.json');
-const ETH_WALLET_PATH = args['eth-wallet'] || path.join(PROJECT_ROOT, 'eth_wallet.json');
+const AZTEC_WALLET_PATH = args['aztec-wallet'] || path.join(PROJECT_ROOT, 'wallets', 'user_aztec_wallet.json');
+const ETH_WALLET_PATH = args['eth-wallet'] || path.join(PROJECT_ROOT, 'wallets', 'user_eth_wallet.json');
+const CENSOR_ADDR = args['censor'] || '0x0035abfebdafd10697b8a9a5de2792715602ff077787ca6cfefdab632547189f';
+const K_MULTIPLIER = args['k-multiplier'] ? parseInt(args['k-multiplier']) : 4;
+const MIN_DEPOSIT_ETH = args['min-deposit'] || '0.002';
+const BASE_COOLDOWN = args['base-cooldown'] ? parseInt(args['base-cooldown']) : 10;
+const CENSOR_WINDOW = args['censor-window'] ? parseInt(args['censor-window']) : 3600;
+const MAX_SAVE_UP = args['max-save-up'] ? parseInt(args['max-save-up']) : 16;
+const MODERATION_POLICY = args['moderation-policy'] || null; // null = use default
 
 // ============================================================
 // Monkey-patch fetch BEFORE loading SDK (adds API key for Aztec RPC)
@@ -69,34 +84,6 @@ if (AZTEC_API_KEY) {
     if (url && url.includes('aztec-labs.com')) {
       init = init || {};
       init.headers = { ...(init.headers || {}), 'x-aztec-api-key': AZTEC_API_KEY };
-      // Log simulatePublicCalls requests to debug the chonkProof error
-      if (init.body && typeof init.body === 'string' && init.body.includes('chonkProof')) {
-        try {
-          const parsed = JSON.parse(init.body);
-          console.error('[DEBUG RPC] body type:', typeof parsed, Array.isArray(parsed) ? 'array' : '');
-          if (Array.isArray(parsed)) {
-            console.error('[DEBUG RPC] array length:', parsed.length);
-            for (const item of parsed) {
-              console.error('[DEBUG RPC] item method:', item.method, 'params:', item.params ? item.params.length : 0);
-              if (item.params && item.params[0]) {
-                const tx = item.params[0];
-                console.error('[DEBUG] tx keys:', Object.keys(tx));
-                if (tx.data) console.error('[DEBUG] tx.data keys:', Object.keys(tx.data).slice(0,15));
-                console.error('[DEBUG] tx.chonkProof type:', typeof tx.chonkProof);
-                if (typeof tx.chonkProof === 'string') {
-                  console.error('[DEBUG] tx.chonkProof base64 len:', tx.chonkProof.length, 'preview:', tx.chonkProof.substring(0,80));
-                } else if (tx.chonkProof) {
-                  console.error('[DEBUG] tx.chonkProof keys:', Object.keys(tx.chonkProof));
-                  console.error('[DEBUG] tx.chonkProof preview:', JSON.stringify(tx.chonkProof).substring(0, 300));
-                }
-              }
-            }
-          } else {
-            console.error('[DEBUG RPC] keys:', Object.keys(parsed));
-            console.error('[DEBUG RPC] preview:', JSON.stringify(parsed).substring(0, 300));
-          }
-        } catch(e) { console.error('[DEBUG] could not parse body:', e.message); }
-      }
     }
     return origFetch(input, init);
   };
@@ -117,6 +104,14 @@ function log(msg, level) {
 // ============================================================
 // Load engine
 // ============================================================
+// Load moderation-policy helpers onto globalThis before eval'ing engine
+import { createRequire } from 'module';
+const _require = createRequire(import.meta.url);
+const _modPolicy = _require(path.join(PROJECT_ROOT, 'shared', 'moderation-policy.js'));
+for (const [k, v] of Object.entries(_modPolicy)) {
+  if (typeof v === 'function' || typeof v === 'string' || typeof v === 'number') globalThis[k] = v;
+}
+
 const engineCode = fs.readFileSync(path.join(__dirname, 'engine.js'), 'utf8');
 eval(engineCode);
 
@@ -406,6 +401,13 @@ async function main() {
     contractSalt: CONTRACT_SALT,
     aztecWallet, ethWallet,
     dataDirPrefix: 'pxe_bb_cli_',
+    censor: CENSOR_ADDR,
+    kMultiplier: K_MULTIPLIER,
+    minDepositWei: ethers.parseEther(MIN_DEPOSIT_ETH),
+    baseCooldown: BASE_COOLDOWN,
+    censorWindow: CENSOR_WINDOW,
+    maxSaveUp: MAX_SAVE_UP,
+    moderationPolicy: MODERATION_POLICY, // null => engine uses default
   };
 
   try {

@@ -22,7 +22,7 @@
   const CREATE2_PROXY = '0x4e59b44847b379578588920cA78FbF26c0B4956C';
 
   const PORTAL_ABI = [
-    "constructor(address rollup, bytes32 l2Contract, uint256 version)",
+    "constructor(address rollup, bytes32 l2Contract, uint256 version, uint256 minDeposit)",
     "function L2_CONTRACT() view returns (bytes32)",
     "function ROLLUP() view returns (address)",
     "function VERSION() view returns (uint256)",
@@ -99,14 +99,14 @@
   }
 
   // CREATE2 portal address computation
-  function portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, ethers) {
+  function portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, ethers) {
     const iface = new ethers.Interface(portalAbi);
-    const encodedArgs = iface.encodeDeploy([rollup, l2AddrHex, BigInt(version)]);
+    const encodedArgs = iface.encodeDeploy([rollup, l2AddrHex, BigInt(version), BigInt(minDeposit)]);
     return ethers.concat([portalBytecode, encodedArgs]);
   }
 
-  function computePortalAddress(portalBytecode, portalAbi, l2AddrHex, rollup, version, ethers) {
-    const creation = portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, ethers);
+  function computePortalAddress(portalBytecode, portalAbi, l2AddrHex, rollup, version, minDeposit, ethers) {
+    const creation = portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, ethers);
     const salt = ethers.getBytes(l2AddrHex);
     const initCodeHash = ethers.keccak256(creation);
     return ethers.getCreate2Address(CREATE2_PROXY, salt, initCodeHash);
@@ -385,12 +385,39 @@
     // ============================================================
     log('Step 7: Deploying L2 contract...', 'info');
     const contractArtifact = a.loadContractArtifact(artifact);
+    // Constructor args for init(min_deposit, base_cooldown, censor, k,
+    //                          censor_window, max_save_up, policy, policy_len)
+    const minDepositWei = config.minDepositWei || ethers.parseEther('0.001');
+    const baseCooldown = config.baseCooldown || 3600;
+    const censorAddr = config.censor ? a.AztecAddress.fromFieldUnsafe(a.Fr.fromHexString(config.censor)) : a.AztecAddress.zero();
+    const kMultiplier = config.kMultiplier || 64;
+    const censorWindow = config.censorWindow || 3600;
+    const maxSaveUp = config.maxSaveUp || 16;
+    // Moderation policy: pack string into Field array (48 fields, 1488 bytes max)
+    const policyText = config.moderationPolicy !== undefined ? config.moderationPolicy : (g.DEFAULT_MODERATION_POLICY || '');
+    const packFn = g.packStringToFields;
+    if (!packFn) throw new Error('packStringToFields not available (load moderation-policy.js)');
+    const { fields: policyFields, len: policyLen } = packFn(policyText);
+    log('  Min deposit:    ' + ethers.formatEther(minDepositWei) + ' ETH', 'info');
+    log('  Base cooldown:  ' + baseCooldown + 's (' + Math.floor(baseCooldown/60) + ' min)', 'info');
+    log('  Censor:         ' + censorAddr.toString(), 'info');
+    log('  K multiplier:   ' + kMultiplier, 'info');
+    log('  Censor window:  ' + censorWindow + 's', 'info');
+    log('  Max save up:    ' + maxSaveUp, 'info');
+    log('  Policy:         ' + policyLen + ' bytes', 'info');
+    const initArgs = [
+      new a.Fr(BigInt(minDepositWei)),
+      new a.Fr(BigInt(baseCooldown)),
+      censorAddr.toField(),
+      new a.Fr(BigInt(kMultiplier)),
+      new a.Fr(BigInt(censorWindow)),
+      new a.Fr(BigInt(maxSaveUp)),
+      policyFields.map(f => new a.Fr(f)),
+      new a.Fr(BigInt(policyLen)),
+    ];
     // Use universalDeploy + fixed public keys (derived from zero secret key)
-    // so the contract address is deterministic — it depends only on the salt
-    // and the artifact (contract class), NOT on who deploys it. This is the
-    // Aztec equivalent of CREATE2: any wallet can compute the same address.
     const universalPublicKeys = (await a.deriveKeys(a.Fr.ZERO)).publicKeys;
-    const deployMethod = a.Contract.deploy(wallet, contractArtifact, [], undefined, {
+    const deployMethod = a.Contract.deploy(wallet, contractArtifact, initArgs, undefined, {
       salt: new a.Fr(contractSalt),
       publicKeys: universalPublicKeys,
       universalDeploy: true,
@@ -478,7 +505,7 @@
       log('  ETH address: ' + ethSigner.address, 'info');
     }
 
-    const predicted = computePortalAddress(portalBytecode, PORTAL_ABI, l2AddrHex, rollupAddr, version, ethers);
+    const predicted = computePortalAddress(portalBytecode, PORTAL_ABI, l2AddrHex, rollupAddr, version, minDepositWei, ethers);
     log('  Predicted portal address: ' + predicted, 'info');
 
     const provider = ethSigner.provider;
@@ -493,14 +520,14 @@
         log('  CREATE2 proxy not found. Falling back to direct deploy...', 'warn');
         log('  WARNING: address will depend on nonce and is NOT deterministic.', 'warn');
         const factory = new ethers.ContractFactory(PORTAL_ABI, portalBytecode, ethSigner);
-        const contract = await factory.deploy(rollupAddr, l2AddrHex, BigInt(version));
+        const contract = await factory.deploy(rollupAddr, l2AddrHex, BigInt(version), BigInt(minDepositWei));
         log('  Tx sent: ' + contract.deploymentTransaction().hash, 'info');
         await contract.waitForDeployment();
         const addr = await contract.getAddress();
         log('  Portal deployed at ' + addr, 'success');
       } else {
         log('  Deploying via CREATE2 proxy ' + CREATE2_PROXY + '...', 'info');
-        const creation = portalCreationBytecode(portalBytecode, PORTAL_ABI, rollupAddr, l2AddrHex, version, ethers);
+        const creation = portalCreationBytecode(portalBytecode, PORTAL_ABI, rollupAddr, l2AddrHex, version, minDepositWei, ethers);
         const salt = ethers.getBytes(l2AddrHex);
         const data = ethers.concat([salt, creation]);
         const tx = await ethSigner.sendTransaction({ to: CREATE2_PROXY, data, value: 0 });
@@ -572,7 +599,11 @@
     }
 
     // ============================================================
-    // Step 11: Cross-check
+    // Step 11: (Censor is set at init time — no post-deploy configuration)
+    // ============================================================
+
+    // ============================================================
+    // Step 12: Cross-check
     // ============================================================
     log('Step 10: Cross-checking...', 'info');
     let ok = true;
@@ -603,8 +634,9 @@
       log('', 'info');
       log('========================================', 'success');
       log('  Deployment complete!', 'success');
-      log('  L2 contract: ' + l2Addr.toString(), 'success');
-      log('  L1 portal:   ' + predicted, 'success');
+      log('  Salt:         ' + (config.contractSalt || 1), 'success');
+      log('  L2 contract:  ' + l2Addr.toString(), 'success');
+      log('  L1 portal:    ' + predicted, 'success');
       log('========================================', 'success');
     } else {
       throw new Error('Cross-check failed.');
