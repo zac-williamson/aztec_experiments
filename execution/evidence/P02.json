@@ -1,0 +1,202 @@
+{
+  "task_id": "P02",
+  "outcome": "pass",
+  "recorded_at": "2026-09-12T06:02:27.340331+00:00",
+  "source_fingerprint": "88b9f25d618372400a0c5f97641fa45ee2b9283c8d91a5f96c53c6a72d25fa01",
+  "source_inventory": "evidence/P02/source-001.json",
+  "artifacts": [
+    {
+      "path": "evidence/P02/source-001.json",
+      "sha256": "64bbe24157c3711d9b896e9f6bd6d93bb3c3febbe5f859a8305a9590d3af2417"
+    },
+    {
+      "path": "evidence/P02/acceptance.md",
+      "sha256": "c0a43ebb151676397d1c46197fc37fad2b76b6b4ae8a7b91fd4e4e18f0505e70"
+    },
+    {
+      "path": "evidence/P02/review.md",
+      "sha256": "e0b8e41ec3a900507a0a426658370cc3c29a437c9aa9e496e723fff9ea0a15dd"
+    },
+    {
+      "path": "evidence/P02/agent-review.md",
+      "sha256": "abca3251550407cd03a080791b2587b8d3e9d23c5a49b7ed84ac43bc429a6acf"
+    },
+    {
+      "path": "evidence/P02/final-agent-review.md",
+      "sha256": "d9222d633cda0f6e16844604b553011be903d2ad5c93e62288029e3f27f580b6"
+    },
+    {
+      "path": "evidence/P02/official-versions.txt",
+      "sha256": "7a0d51f4969d7f80ba03585804a4285215aaf8dd39aeeea4d7f8754009135957"
+    },
+    {
+      "path": "evidence/P02/noir-dependency-origins.json",
+      "sha256": "a10cbf9ecaaf506824d13d662796a5c69ae00f2480753d2056ce029fbfd36845"
+    },
+    {
+      "path": "evidence/P02/noir-source-lock-check.json",
+      "sha256": "4cd88b9d6de742a6de236499af048cdd089ea8382b86164314fa51cc35988221"
+    },
+    {
+      "path": "evidence/P02/current-network-inputs.md",
+      "sha256": "26e9cd49d340becdd90d454f252730c8eeb2de435e5961fdb1d5c78243c8b7dd"
+    },
+    {
+      "path": "evidence/P02/clean-build-result.json",
+      "sha256": "66b69f2ac4967aeaf520fb19c266f2c1f4229164e2ca031b868b67fd48418ae2"
+    },
+    {
+      "path": "evidence/P02/clean-build-inputs.json",
+      "sha256": "ba983886df1879b74ed1b018340af21f0edc00179917f0da291e53a87675e136"
+    },
+    {
+      "path": "evidence/P02/clean-build-bootstrap.log",
+      "sha256": "9b68d1e868cd471c4743815e74400b2e651ae4fbc390d1ffc1271c3786dfc981"
+    },
+    {
+      "path": "evidence/P02/clean-build.log",
+      "sha256": "243093667cb2a3bffcba4818e02166c76e3d7bc45741fcc5ab00f979d7130831"
+    },
+    {
+      "path": "evidence/P02/clean-build-tests.log",
+      "sha256": "144464d8eef50a8bf8fad03fe9c9a753b3ebafbc2a4c601a3367c5f66afae0c5"
+    },
+    {
+      "path": "evidence/P02/root-build-snapshot.json",
+      "sha256": "42195a5c33f4b5e6ab683f7c13cb92201bb103134511f22af5788fbc92a1f7e5"
+    },
+    {
+      "path": "evidence/P02/clean-build-snapshot.json",
+      "sha256": "42195a5c33f4b5e6ab683f7c13cb92201bb103134511f22af5788fbc92a1f7e5"
+    },
+    {
+      "path": "evidence/P02/build-comparison.log",
+      "sha256": "160f9b831ea70886487ac141535d17a927015fa25d9cdb23e86d1d1ef927cd1e"
+    },
+    {
+      "path": "evidence/P02/docker-clean-result.json",
+      "sha256": "9b0e11c272b4753d75b5f83dec28e9723d167432f8dd63d039426c12da216164"
+    },
+    {
+      "path": "evidence/P02/docker-clean-inputs.json",
+      "sha256": "fd0271e466fde3f0f5d9d6c0ccfe92c1a62acc8063ed01a756c5c0482a351abb"
+    },
+    {
+      "path": "evidence/P02/docker-clean-build.log",
+      "sha256": "0ea58fac2aeb5043bc43598ac9f321c00d9fe7f6427db7a281cc00089e948f1f"
+    },
+    {
+      "path": "evidence/P02/docker-clean-snapshot.json",
+      "sha256": "42195a5c33f4b5e6ab683f7c13cb92201bb103134511f22af5788fbc92a1f7e5"
+    },
+    {
+      "path": "evidence/P02/docker-vs-macos-comparison.log",
+      "sha256": "160f9b831ea70886487ac141535d17a927015fa25d9cdb23e86d1d1ef927cd1e"
+    },
+    {
+      "path": "evidence/P02/docker-image-inspect.json",
+      "sha256": "fbf35950ce065b09b1d404146c492c8a011ffdbc622489083c451fafe1c26cbd"
+    },
+    {
+      "path": "evidence/P02/final-guard-tests.log",
+      "sha256": "e8fef44ebec2b3e96c783fef2de7b3e2495eb7a98edfa8b915d410f2fbdc3439"
+    },
+    {
+      "path": "evidence/P02/final-graph-tests.log",
+      "sha256": "e03e3a07f7ec871c4bf98b0a5324951f3c7b60cfe8a8db2cedd7f15809cabf00"
+    },
+    {
+      "path": "evidence/P02/browser-crs-adapters-smoke.json",
+      "sha256": "13f5506d69f81fd3cec66ad701cbde0620ef3656e7ba72f146c396e57e1ccb29"
+    },
+    {
+      "path": "evidence/P02/browser-crs-adapters-smoke.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/P02/cli-sdk-smoke.json",
+      "sha256": "70768bcb72427179cafd40a12adce09bc4c9d0368fbadfcbb67f29815d0543de"
+    },
+    {
+      "path": "evidence/P02/noir-runner-final.log",
+      "sha256": "43819eed7ad97fed0a6df8c17b8a5b6b786b54b124b3c44deefd61ce6ca8cd4e"
+    },
+    {
+      "path": "evidence/P02/runner-lifecycle-tests.log",
+      "sha256": "c8a932c4c3fc6a28cbf894c3cdac876581033ad2479bd07bbeed5556c5709daf"
+    },
+    {
+      "path": "evidence/P02/moderation-baseline.log",
+      "sha256": "6a2740b6ab1bdaadec4c3cc6b2b6102018793a1ca5a3625c8e482d641678076c"
+    },
+    {
+      "path": "evidence/P02/crs-verification.md",
+      "sha256": "f89256580a06c24e3122218446e87adbb57d5193606d992485ca90b53056756c"
+    },
+    {
+      "path": "evidence/P02/crs-build-tests.log",
+      "sha256": "b19bc262c04b6d9d76123d57399b4d405620e7a9b2167523f1622f6b4eff8829"
+    }
+  ],
+  "criteria": [
+    {
+      "id": "P02-A01",
+      "result": "pass",
+      "summary": "Fresh isolated macOS build and empty-cache disposable Linux build from pinned tools/dependencies completed; four apps and all required artifacts generated.",
+      "artifacts": [
+        "evidence/P02/acceptance.md",
+        "evidence/P02/clean-build-result.json",
+        "evidence/P02/docker-clean-result.json",
+        "evidence/P02/docker-clean-build.log",
+        "evidence/P02/noir-dependency-origins.json"
+      ]
+    },
+    {
+      "id": "P02-A02",
+      "result": "pass",
+      "summary": "All 33 recorded output files match byte-for-byte across directory-isolated macOS builds and empty-cache Linux build; full bytecode/VKs retained.",
+      "artifacts": [
+        "evidence/P02/acceptance.md",
+        "evidence/P02/root-build-snapshot.json",
+        "evidence/P02/clean-build-snapshot.json",
+        "evidence/P02/docker-clean-snapshot.json",
+        "evidence/P02/build-comparison.log",
+        "evidence/P02/docker-vs-macos-comparison.log"
+      ]
+    },
+    {
+      "id": "P02-A03",
+      "result": "pass",
+      "summary": "Pinned source SDK/upstream workers, artifacts and CRS guarded by provenance checks; 105 guard tests pass on macOS, 93 build/data guards on Linux, both real browser CRS adapters and five offline CLI cases pass.",
+      "artifacts": [
+        "evidence/P02/final-guard-tests.log",
+        "evidence/P02/docker-clean-build.log",
+        "evidence/P02/browser-crs-adapters-smoke.json",
+        "evidence/P02/cli-sdk-smoke.json",
+        "evidence/P02/noir-source-lock-check.json"
+      ]
+    },
+    {
+      "id": "P02-A04",
+      "result": "pass",
+      "summary": "59/59 stateful Noir tests pass under the matched TXE/compiler using the repaired bounded runner, whose temporary oracle port closes; existing moderation suites pass. Production defects/compatibility/network clearance are explicitly deferred to their graph gates.",
+      "artifacts": [
+        "evidence/P02/noir-runner-final.log",
+        "evidence/P02/runner-lifecycle-tests.log",
+        "evidence/P02/moderation-baseline.log",
+        "evidence/P02/acceptance.md",
+        "evidence/P02/current-network-inputs.md"
+      ]
+    }
+  ],
+  "review": {
+    "kind": "self-review",
+    "reviewer": "Root integration review with delegated build_verification, artifact_regressions and build_review agent lanes",
+    "summary": "Independent AI lanes found and verified build/runtime defects; root reviewed integrated changes and actual checks. This does not substitute for external audit or production acceptance.",
+    "artifacts": [
+      "evidence/P02/review.md",
+      "evidence/P02/agent-review.md",
+      "evidence/P02/final-agent-review.md"
+    ]
+  }
+}

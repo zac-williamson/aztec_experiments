@@ -1,0 +1,32 @@
+{
+  "node": "24.15.0",
+  "aztec": "5.0.0",
+  "solidity": "0.8.27",
+  "foundry": "1.4.1",
+  "noir": {
+    "version": "1.0.0-beta.22",
+    "commit": "c57152f91260ecdb9faad4efc20abb14b6d2ece7",
+    "assets": {
+      "darwin-arm64": {
+        "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-beta.22/nargo-aarch64-apple-darwin.tar.gz",
+        "sha256": "445dac99258f867b016a05353eac7bf7c1cfee26b98b68cc851bb57ec569a91c"
+      },
+      "linux-arm64": {
+        "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-beta.22/nargo-aarch64-unknown-linux-gnu.tar.gz",
+        "sha256": "9e07b436148bb1e89d12a4d2043e613ea5fd81f7d5518e8104e27298b39c314a"
+      },
+      "darwin-x64": {
+        "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-beta.22/nargo-x86_64-apple-darwin.tar.gz",
+        "sha256": "7361b92813fdbde80f502e8ddd0440a57b05e80d58a58043837d4608da12281f"
+      },
+      "linux-x64": {
+        "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-beta.22/nargo-x86_64-unknown-linux-gnu.tar.gz",
+        "sha256": "384c4fc800905b213e26aabd738a96a4a85b1a76ffc27fb19aeb6d33494a787b"
+      }
+    }
+  },
+  "sources": [
+    "https://install.aztec-labs.com/5.0.0/versions",
+    "https://api.github.com/repos/noir-lang/noir/releases/tags/v1.0.0-beta.22"
+  ]
+}

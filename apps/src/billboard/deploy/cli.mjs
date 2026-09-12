@@ -30,6 +30,8 @@
 // ============================================================
 
 import fs from 'fs';
+import { createHash } from 'node:crypto';
+import BillboardCRS from '../../../../shared/crs-client.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -158,8 +160,7 @@ async function loadAztecSDK() {
   };
 
   const bundlePaths = [
-    path.join(PROJECT_ROOT, 'shared', 'aztec_bundle.js'),
-    path.join(__dirname, 'aztec_bundle.js'),
+    path.join(PROJECT_ROOT, '.build', 'sdk', 'aztec_bundle.js'),
   ];
   let bundleCode = null;
   for (const p of bundlePaths) {
@@ -266,44 +267,19 @@ async function loadAztecSDK() {
 let _crsDone = false;
 async function initCRSNode(a) {
   if (_crsDone) return;
-  const CRS_HOSTS = ["https://crs.aztec-cdn.foundation", "https://crs.aztec-labs.com"];
-  const SRS_NUM_POINTS = 2 ** 20 + 1;
-  const GRUMPKIN_NUM_POINTS = 2 ** 16 + 1;
-
+  const manifest = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, 'crs-manifest.json'), 'utf8'));
   log('  Initializing BarretenbergSync (WASM)...', 'info');
   await a.BarretenbergSync.initSingleton();
-  const bb = a.BarretenbergSync.getSingleton();
-
-  async function fetchCRS(filename, options = {}) {
-    for (const host of CRS_HOSTS) {
-      try {
-        const res = await fetch(host + '/' + filename, options);
-        if (res.ok || res.status === 206) {
-          log('  Loaded ' + filename + ' from ' + host + '.', 'info');
-          return res;
-        }
-      } catch (e) {}
-    }
-    throw new Error('Could not load ' + filename + ' from CDN');
-  }
-
-  log('  Loading BN254 G1 data...', 'info');
-  const g1End = SRS_NUM_POINTS * 64 - 1;
-  const g1Res = await fetchCRS('g1.dat', { headers: { Range: 'bytes=0-' + g1End } });
-  const g1Data = new Uint8Array(await g1Res.arrayBuffer());
-
-  log('  Loading BN254 G2 data...', 'info');
-  const g2Res = await fetchCRS('g2.dat');
-  const g2Data = new Uint8Array(await g2Res.arrayBuffer());
-
-  log('  Loading Grumpkin G1 data...', 'info');
-  const grumpkinEnd = GRUMPKIN_NUM_POINTS * 64 - 1;
-  const grumpkinRes = await fetchCRS('grumpkin_g1.dat', { headers: { Range: 'bytes=0-' + grumpkinEnd } });
-  const grumpkinG1Data = new Uint8Array(await grumpkinRes.arrayBuffer());
-
-  log('  Loading SRS into wasm...', 'info');
-  bb.srsInitSrs({ pointsBuf: g1Data, numPoints: SRS_NUM_POINTS, g2Point: g2Data });
-  bb.srsInitGrumpkinSrs({ pointsBuf: grumpkinG1Data, numPoints: GRUMPKIN_NUM_POINTS });
+  await BillboardCRS.initialize(a.BarretenbergSync.getSingleton(), {
+    manifest,
+    loadLocal: async file => {
+      const localPath = path.join(PROJECT_ROOT, 'apps', 'dist', 'crs', file.name);
+      if (fs.statSync(localPath).size !== file.bytes) throw new Error('Cached CRS size mismatch: ' + file.name);
+      return new Uint8Array(fs.readFileSync(localPath));
+    },
+    sha256: data => createHash('sha256').update(data).digest('hex'),
+    log: (message, level) => log('  ' + message, level),
+  });
   _crsDone = true;
   log('  CRS initialized.', 'success');
 }

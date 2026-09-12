@@ -1,0 +1,20 @@
+✔ successful tests reap the service and remove signal handlers (49.110292ms)
+✔ failed tests remain a failure and reap the service (45.53375ms)
+✔ service death by signal during startup is detected before readiness timeout (22.754042ms)
+✔ readiness deadline terminates a live unready service (102.536708ms)
+✔ a stuck readiness probe is bounded and its service is reaped (52.102208ms)
+✔ timed-out tests and service ignoring SIGTERM are forcibly killed and reaped (327.02375ms)
+✔ SIGTERM during startup produces exit code 143 and reaps children (29.392458ms)
+✔ SIGINT during test execution produces exit code 130 and reaps both children (161.197875ms)
+✔ cancellation immediately after test spawn does not leave an unhandled exit rejection (35.830875ms)
+✔ service death while tests are active aborts and reaps those tests (49.27925ms)
+✔ service spawn failure is surfaced without leaving signal handlers (1.253417ms)
+✔ test spawn failure still reaps its service (33.11675ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 948.911833

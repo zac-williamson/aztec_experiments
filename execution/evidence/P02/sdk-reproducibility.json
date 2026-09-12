@@ -1,0 +1,14 @@
+{
+  "outcome": "pass",
+  "method": "Two separate output directories, exact manifest and all output hash equality",
+  "outputs": {
+    "acvm_js_bg.wasm": "690ea4a93063b6501a395513ceab670637e4e8821e2ed59954c9556a2589b1ed",
+    "aztec_bundle.js": "c40234535381729549accae018bc9aa8f73c888fa6188fd3dd10cfd086dac9f1",
+    "bb-main.worker.js": "568e68dd87fc2bd1cb945422f7a52aa442c661f2c9bb7156307f01d25edce564",
+    "bb-thread.worker.js": "f06a7e630a5d1e3d13353c2c89d3646c19b5a731f0055e49af17c499deae0086",
+    "noirc_abi_wasm_bg.wasm": "e3f967af18e8c24d6a7a4403808bc77cb6ecab3ab86f926874eb13c6a196a846",
+    "sqlite.worker.js": "cb9e8ee99eb6282e28b9f10b5227392b3b85058bde9d8251df437f298b0259b5",
+    "sqlite3-opfs-async-proxy.js": "4ea2bcbd715b0d56089fc871ea241f8c5985d8669d1ddecaab4d56a8da806ce9",
+    "sqlite3.wasm": "e7600bc6d59b1459362c8c2d4686f733e26d58041b3cdc599929661ecfeb21ae"
+  }
+}

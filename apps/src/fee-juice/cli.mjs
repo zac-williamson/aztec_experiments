@@ -35,6 +35,8 @@
 // ============================================================
 
 import fs from 'fs';
+import { createHash } from 'node:crypto';
+import BillboardCRS from '../../../shared/crs-client.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
@@ -149,7 +151,7 @@ async function loadAztecSDK() {
   };
 
   const bundlePaths = [
-    path.join(PROJECT_ROOT, 'shared', 'aztec_bundle.js'),
+    path.join(PROJECT_ROOT, '.build', 'sdk', 'aztec_bundle.js'),
   ];
   let bundleCode = null;
   for (const p of bundlePaths) {
@@ -237,64 +239,19 @@ async function loadAztecSDK() {
 let _crsDone = false;
 async function initCRSNode(a) {
   if (_crsDone) return;
-  const CRS_HOSTS = ["https://crs.aztec-cdn.foundation", "https://crs.aztec-labs.com"];
-  const SRS_NUM_POINTS = 2 ** 20 + 1;
-  const GRUMPKIN_NUM_POINTS = 2 ** 16 + 1;
-
-  // Local CRS cache (same files the web apps use)
-  const CRS_LOCAL_DIR = path.join(PROJECT_ROOT, 'apps', 'dist', 'crs');
-
+  const manifest = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, 'crs-manifest.json'), 'utf8'));
   log('  Initializing BarretenbergSync (WASM)...', 'info');
   await a.BarretenbergSync.initSingleton();
-  const bb = a.BarretenbergSync.getSingleton();
-
-  // Try local cache first, fall back to CDN
-  async function loadCRS(filename, options = {}) {
-    // 1. Local cache
-    const localPath = path.join(CRS_LOCAL_DIR, filename);
-    if (fs.existsSync(localPath)) {
-      const stat = fs.statSync(localPath);
-      const needBytes = options.headers && options.headers.Range
-        ? parseInt(options.headers.Range.split('-')[1]) + 1
-        : stat.size;
-      if (stat.size >= needBytes) {
-        let buf = fs.readFileSync(localPath);
-        if (options.headers && options.headers.Range) {
-          const [start, end] = options.headers.Range.split('=')[1].split('-').map(Number);
-          buf = buf.subarray(start, end + 1);
-        }
-        log('  Loaded ' + filename + ' from local cache.', 'info');
-        return new Uint8Array(buf);
-      }
-      log('  Local ' + filename + ' too small (' + stat.size + ' < ' + needBytes + '), fetching from CDN...', 'warn');
-    }
-    // 2. CDN fallback
-    for (const host of CRS_HOSTS) {
-      try {
-        const res = await fetch(host + '/' + filename, options);
-        if (res.ok || res.status === 206) {
-          log('  Loaded ' + filename + ' from ' + host + '.', 'info');
-          return new Uint8Array(await res.arrayBuffer());
-        }
-      } catch (e) {}
-    }
-    throw new Error('Could not load ' + filename + ' from local cache or CDN');
-  }
-
-  log('  Loading BN254 G1 data...', 'info');
-  const g1End = SRS_NUM_POINTS * 64 - 1;
-  const g1Data = await loadCRS('g1.dat', { headers: { Range: 'bytes=0-' + g1End } });
-
-  log('  Loading BN254 G2 data...', 'info');
-  const g2Data = await loadCRS('g2.dat');
-
-  log('  Loading Grumpkin G1 data...', 'info');
-  const grumpkinEnd = GRUMPKIN_NUM_POINTS * 64 - 1;
-  const grumpkinG1Data = await loadCRS('grumpkin_g1.dat', { headers: { Range: 'bytes=0-' + grumpkinEnd } });
-
-  log('  Loading SRS into wasm...', 'info');
-  bb.srsInitSrs({ pointsBuf: g1Data, numPoints: SRS_NUM_POINTS, g2Point: g2Data });
-  bb.srsInitGrumpkinSrs({ pointsBuf: grumpkinG1Data, numPoints: GRUMPKIN_NUM_POINTS });
+  await BillboardCRS.initialize(a.BarretenbergSync.getSingleton(), {
+    manifest,
+    loadLocal: async file => {
+      const localPath = path.join(PROJECT_ROOT, 'apps', 'dist', 'crs', file.name);
+      if (fs.statSync(localPath).size !== file.bytes) throw new Error('Cached CRS size mismatch: ' + file.name);
+      return new Uint8Array(fs.readFileSync(localPath));
+    },
+    sha256: data => createHash('sha256').update(data).digest('hex'),
+    log: (message, level) => log('  ' + message, level),
+  });
   _crsDone = true;
   log('  CRS initialized.', 'success');
 }
@@ -436,7 +393,7 @@ async function main() {
 
   // Load or generate wallets
   let ethWallet = null, aztecWallet = null;
-  const sdkBundlePath = path.join(PROJECT_ROOT, 'shared', 'aztec_bundle.js');
+  const sdkBundlePath = path.join(PROJECT_ROOT, '.build', 'sdk', 'aztec_bundle.js');
 
   if (fs.existsSync(ETH_WALLET_PATH)) {
     ethWallet = JSON.parse(fs.readFileSync(ETH_WALLET_PATH, 'utf8'));

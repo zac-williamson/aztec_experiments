@@ -6,7 +6,6 @@ target/
 
 # Dependencies
 node_modules/
-package-lock.json
 
 # OS files
 .DS_Store
@@ -27,3 +26,10 @@ billboard/test/*.pid
 # Scratch/tmp files
 tmp_*.mjs
 tmp_*.js
+
+# Reproducible local build outputs and isolated tools
+.build/
+
+# Foundry transient cache and build metadata
+billboard/portal/cache/
+billboard/portal/out/build-info/

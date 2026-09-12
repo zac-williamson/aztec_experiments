@@ -1,0 +1,8 @@
+noir: v1.0.0-beta.22
+foundry: 1.4.1
+node: 24.12.0
+cmake: 3.28.3
+clang: 20.1.8
+zig: 0.15.1
+rustc: 1.85.0
+wasi-sdk: 27.0

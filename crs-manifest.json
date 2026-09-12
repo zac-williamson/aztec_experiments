@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "aztecVersion": "5.0.0",
+  "provenance": {
+    "package": "@aztec/bb.js",
+    "version": "5.0.0",
+    "source": "node_modules/@aztec/bb.js/dest/node/crs/net_crs.js",
+    "sourceSha256": "98182144b264c587733e40e5ed22446d704af132eb36ed0b02b307a99cda4da5",
+    "observedAt": "2026-09-12",
+    "method": "SHA-256 of exact ranged responses downloaded from the primary URLs. These are locally recorded content pins, not a separate publisher checksum attestation.",
+    "pointBudget": "BN254 preserves at least the existing 1048577-point capacity, rounded to the next 131072-point/4MiB compressed chunk. Grumpkin preserves 65537 points. Capacity for production proofs is verified separately."
+  },
+  "files": [
+    {
+      "name": "g1.dat",
+      "url": "https://crs.aztec-cdn.foundation/g1_compressed.dat",
+      "fallbackUrl": "https://crs.aztec-labs.com/g1_compressed.dat",
+      "bytes": 37748736,
+      "numPoints": 1179648,
+      "format": "bn254-g1-compressed-32-byte",
+      "range": {
+        "start": 0,
+        "end": 37748735
+      },
+      "sha256": "8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416"
+    },
+    {
+      "name": "g2.dat",
+      "url": "https://crs.aztec-cdn.foundation/g2.dat",
+      "fallbackUrl": "https://crs.aztec-labs.com/g2.dat",
+      "bytes": 128,
+      "numPoints": 1,
+      "format": "bn254-g2-uncompressed-128-byte",
+      "range": {
+        "start": 0,
+        "end": 127
+      },
+      "sha256": "01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f"
+    },
+    {
+      "name": "grumpkin_g1.dat",
+      "url": "https://crs.aztec-cdn.foundation/grumpkin_g1_v2.dat",
+      "fallbackUrl": "https://crs.aztec-labs.com/grumpkin_g1_v2.dat",
+      "bytes": 4194368,
+      "numPoints": 65537,
+      "format": "grumpkin-g1-v2-uncompressed-64-byte",
+      "range": {
+        "start": 0,
+        "end": 4194367
+      },
+      "sha256": "b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9"
+    }
+  ]
+}

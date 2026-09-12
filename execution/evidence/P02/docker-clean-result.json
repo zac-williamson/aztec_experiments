@@ -1,0 +1,44 @@
+{
+  "outcome": "pass",
+  "recordedAt": "2026-09-12T05:59:28.328795+00:00",
+  "containerExitCode": 0,
+  "startedAt": "2026-09-12T05:55:27Z",
+  "completedAt": "2026-09-12T05:58:53Z",
+  "durationSeconds": 206,
+  "platform": "Linux aarch64 / node:24.15.0-bookworm",
+  "nodeImageDigest": "sha256:f22d6a1f082c02f292e86929b5b0442ac2e5eaf438a5dea9b1566601c3e05940",
+  "verified": [
+    "Foundry 1.4.1 archive checksum and executable version",
+    "Fresh root and portal npm ci with lifecycle scripts disabled",
+    "Fresh checksum-verified Noir compiler download",
+    "Fresh Noir Git repository resolution without host dependency caches",
+    "Pinned Noir dependency content checks",
+    "Fresh contract compilation and forced regeneration of four private verification keys",
+    "Fresh Solidity compiler download and portal compilation",
+    "Source-built SDK and workers",
+    "Fresh verified CRS downloads",
+    "Four assembled browser apps",
+    "Artifact provenance checks",
+    "33-output reproducibility snapshot",
+    "93 build guard tests passed"
+  ],
+  "isolation": "Disposable --rm container; single task-owned /work bind mount; no host home, wallets, Docker socket, compiler caches or published ports; 6GiB memory, 4CPUs, 512-process limit; 900-second timeout.",
+  "limitations": [
+    "This build run does not execute the TXE suite or browser smoke inside Linux; those checks have separate native-host evidence.",
+    "Build success does not establish real proofs, network settlement, audit closure, soak completion or mainnet readiness."
+  ],
+  "artifacts": {
+    "docker-clean-build.log": "0ea58fac2aeb5043bc43598ac9f321c00d9fe7f6427db7a281cc00089e948f1f",
+    "docker-clean-inputs.json": "fd0271e466fde3f0f5d9d6c0ccfe92c1a62acc8063ed01a756c5c0482a351abb",
+    "docker-clean-snapshot.json": "42195a5c33f4b5e6ab683f7c13cb92201bb103134511f22af5788fbc92a1f7e5",
+    "docker-image-inspect.json": "fbf35950ce065b09b1d404146c492c8a011ffdbc622489083c451fafe1c26cbd",
+    "docker-image-pull.log": "1f538c1311918ada46fcb3609cef287f021c9dbed904404a1450e5d508f0e699",
+    "docker-vs-macos-comparison.log": "160f9b831ea70886487ac141535d17a927015fa25d9cdb23e86d1d1ef927cd1e"
+  },
+  "crossPlatformComparison": {
+    "outcome": "pass",
+    "comparedWith": "clean-build-snapshot.json",
+    "matchedOutputs": 33,
+    "method": "Complete recorded file SHA-256 equality, including full Noir/VK and Solidity artifacts, SDK/workers, apps, CRS and manifests; no fields omitted."
+  }
+}

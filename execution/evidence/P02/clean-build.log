@@ -1,0 +1,52 @@
+
+> build
+> npm run build:contracts && npm run build:sdk && npm run build:crs && npm run build:apps
+
+
+> build:contracts
+> node scripts/build-contracts.mjs
+
+Scheme is: ultra_honk, num threads: 12 (mem: 8.45 MiB)
+Transpiling: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/clean-checkout/billboard/target/billboard_contract-Billboard.json -> /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/clean-checkout/billboard/target/billboard_contract-Billboard.json.processing (mem: 8.45 MiB)
+Transpiled: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/clean-checkout/billboard/target/billboard_contract-Billboard.json -> /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/clean-checkout/billboard/target/billboard_contract-Billboard.json.processing (mem: 55.58 MiB)
+Generating verification keys for functions in billboard_contract-Billboard.json.processing (mem: 55.58 MiB)
+Cache directory: /Users/zac/.bb/5.0.0/vk_cache (mem: 55.58 MiB)
+Generating verification key: 1e3284c02b5feba5bb674aaa8ab79210eac6ba152f37838130bd03f8f0efdb44 (mem: 57.08 MiB)
+ChonkComputeVk - deriving Chonk verification key for circuit 'update_portal' (mem: 57.12 MiB)
+Generating verification key: b2c68fb52ff9a1b267b9ba107a9e7686b15147242ffc9bbe43ae6e566263b282 (mem: 59.61 MiB)
+ChonkComputeVk - deriving Chonk verification key for circuit 'withdraw' (mem: 59.61 MiB)
+Generating verification key: de072766dcebb9d0f58fedb583a2c7acb5300306f314b3a9019dc5a44fc3e91e (mem: 74.19 MiB)
+ChonkComputeVk - deriving Chonk verification key for circuit 'claim_deposit' (mem: 76.17 MiB)
+Generating verification key: b767aaabac1d7ecd2bd45e4a4c362814fb5706e5984378a3bb4d82521bc0b170 (mem: 92.19 MiB)
+ChonkComputeVk - deriving Chonk verification key for circuit 'post' (mem: 92.27 MiB)
+ChonkComputeVk - VK derived, size: 5216 bytes (mem: 213.39 MiB)
+ChonkComputeVk - VK derived, size: 5216 bytes (mem: 399.30 MiB)
+ChonkComputeVk - VK derived, size: 5216 bytes (mem: 399.30 MiB)
+ChonkComputeVk - VK derived, size: 5216 bytes (mem: 399.30 MiB)
+Successfully processed: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/clean-checkout/billboard/target/billboard_contract-Billboard.json -> /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/clean-checkout/billboard/target/billboard_contract-Billboard.json.processing (mem: 399.30 MiB)
+Compiling 88 files with Solc 0.8.27
+Solc 0.8.27 finished in 1.32s
+Compiler run successful!
+Built canonical Noir/VK and Solidity artifacts; synchronized all consumers.
+
+> build:sdk
+> node scripts/build-sdk.mjs
+
+(node:8248) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Built pinned SDK and upstream workers: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/clean-checkout/.build/sdk
+
+> build:crs
+> node scripts/build-crs.mjs
+
+Verified CRS g1.dat: 37748736 bytes, SHA-256 8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416
+Verified CRS g2.dat: 128 bytes, SHA-256 01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f
+Verified CRS grumpkin_g1.dat: 4194368 bytes, SHA-256 b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9
+
+> build:apps
+> node apps/build.mjs
+
+Built billboard/censor -> censor.html: 3634KB
+Built billboard/deploy -> deploy.html: 3483KB
+Built billboard/user -> user.html: 3659KB
+Built fee-juice -> fee-juice.html: 690KB

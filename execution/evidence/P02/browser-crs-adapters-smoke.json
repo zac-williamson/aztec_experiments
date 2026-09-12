@@ -1,0 +1,11 @@
+{
+  "outcome": "pass",
+  "browser": "152.0.7977.84",
+  "crs": "verified and initialized through shared library and engine adapter",
+  "legacyBuffer": "01",
+  "exports": 68,
+  "crossOriginIsolated": true,
+  "poseidon": "0x038682aa1cb5ae4e0a3f13da432a95c77c5c111f6f030faf9cad641ce1ed7383",
+  "sqlite": "value",
+  "workers": "initialized and destroyed"
+}

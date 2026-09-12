@@ -43,11 +43,6 @@ function getNodeUrl() {
   return el ? el.value.trim() : '';
 }
 
-// CRS configuration
-const CRS_HOSTS = ["https://crs.aztec-cdn.foundation", "https://crs.aztec-labs.com"];
-const SRS_NUM_POINTS = 2 ** 20 + 1;
-const GRUMPKIN_NUM_POINTS = 2 ** 16 + 1;
-
 // Transient error detection regex (used by multiple retry helpers)
 const TRANSIENT_RE = /temporary internal error|please retry|timeout|fetch|network|connection|ECONNRESET|socket/i;
 
@@ -99,56 +94,17 @@ function wrapWithRetry(obj, label, statusId) {
 // ============================================================
 async function initCRS(statusId) {
   const a = A();
-  const S = statusId;
-
-  log('Initializing CRS (loading SRS data)...', 'info', S);
+  log('Initializing CRS (verifying pinned setup data)...', 'info', statusId);
   await a.BarretenbergSync.initSingleton();
-  const bb = a.BarretenbergSync.getSingleton();
-
-  async function fetchCRS(filename, options = {}) {
-    try {
-      const res = await fetch('crs/' + filename, options);
-      if (res.ok || res.status === 206) {
-        log('  Loaded ' + filename + ' from local file.', 'info', S);
-        return res;
-      }
-      throw new Error('HTTP ' + res.status);
-    } catch (localErr) {
-      log('  Local ' + filename + ' unavailable (' + localErr.message + '), falling back to CDN...', 'warn', S);
-      let lastErr;
-      for (const host of CRS_HOSTS) {
-        try {
-          const res = await fetch(host + '/' + filename, options);
-          if (res.ok || res.status === 206) {
-            log('  Loaded ' + filename + ' from ' + host + '.', 'info', S);
-            return res;
-          }
-          lastErr = new Error('HTTP ' + res.status + ' from ' + host);
-        } catch (e) { lastErr = e; }
-      }
-      throw lastErr;
-    }
-  }
-
-  log('  Loading BN254 G1 data...', 'info', S);
-  const g1End = SRS_NUM_POINTS * 64 - 1;
-  const g1Res = await fetchCRS('g1.dat', { headers: { Range: 'bytes=0-' + g1End } });
-  const g1Data = new Uint8Array(await g1Res.arrayBuffer());
-
-  log('  Loading BN254 G2 data...', 'info', S);
-  const g2Res = await fetchCRS('g2.dat');
-  const g2Data = new Uint8Array(await g2Res.arrayBuffer());
-
-  log('  Loading Grumpkin G1 data...', 'info', S);
-  const grumpkinEnd = GRUMPKIN_NUM_POINTS * 64 - 1;
-  const grumpkinRes = await fetchCRS('grumpkin_g1.dat', { headers: { Range: 'bytes=0-' + grumpkinEnd } });
-  const grumpkinG1Data = new Uint8Array(await grumpkinRes.arrayBuffer());
-
-  log('  Loading BN254 SRS into wasm...', 'info', S);
-  bb.srsInitSrs({ pointsBuf: g1Data, numPoints: SRS_NUM_POINTS, g2Point: g2Data });
-  log('  Loading Grumpkin SRS into wasm...', 'info', S);
-  bb.srsInitGrumpkinSrs({ pointsBuf: grumpkinG1Data, numPoints: GRUMPKIN_NUM_POINTS });
-  log('  CRS initialized.', 'success', S);
+  const crs = window.BillboardCRS;
+  if (!crs) throw new Error('Missing CRS client; rebuild the application');
+  await crs.initialize(a.BarretenbergSync.getSingleton(), {
+    manifest: window.BILLBOARD_CRS_MANIFEST,
+    loadLocal: async file => crs.readResponse(await fetch('crs/' + file.name, { signal: AbortSignal.timeout(120000) }), file),
+    sha256: async data => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', data)), b => b.toString(16).padStart(2, '0')).join(''),
+    log: (message, level) => log('  ' + message, level, statusId),
+  });
+  log('  CRS initialized.', 'success', statusId);
 }
 
 // ============================================================
@@ -496,7 +452,7 @@ async function ensureAztecSetup(state, statusId, opts = {}) {
 
   // Step 3: Init CRS (if not done)
   if (!state.crsInit) {
-    log('Step 3: Initializing CRS (one-time ~68MB download)...', 'info', S);
+    log('Step 3: Initializing CRS (one-time ~42MB download)...', 'info', S);
     await initCRS(S);
     state.crsInit = true;
   } else {

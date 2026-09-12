@@ -1,0 +1,35 @@
+
+> build
+> npm run build:contracts && npm run build:sdk && npm run build:apps
+
+
+> build:contracts
+> node scripts/build-contracts.mjs
+
+Scheme is: ultra_honk, num threads: 12 (mem: 8.45 MiB)
+Transpiling: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/target/billboard_contract-Billboard.json -> /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/target/billboard_contract-Billboard.json.processing (mem: 8.45 MiB)
+Transpiled: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/target/billboard_contract-Billboard.json -> /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/target/billboard_contract-Billboard.json.processing (mem: 54.08 MiB)
+Generating verification keys for functions in billboard_contract-Billboard.json.processing (mem: 54.08 MiB)
+Cache directory: /Users/zac/.bb/5.0.0/vk_cache (mem: 54.08 MiB)
+Verification key already in cache: 1e3284c02b5feba5bb674aaa8ab79210eac6ba152f37838130bd03f8f0efdb44 (mem: 57.55 MiB)
+Verification key already in cache: b2c68fb52ff9a1b267b9ba107a9e7686b15147242ffc9bbe43ae6e566263b282 (mem: 57.56 MiB)
+Verification key already in cache: de072766dcebb9d0f58fedb583a2c7acb5300306f314b3a9019dc5a44fc3e91e (mem: 58.64 MiB)
+Verification key already in cache: b767aaabac1d7ecd2bd45e4a4c362814fb5706e5984378a3bb4d82521bc0b170 (mem: 58.66 MiB)
+Successfully processed: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/target/billboard_contract-Billboard.json -> /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/target/billboard_contract-Billboard.json.processing (mem: 58.66 MiB)
+No files changed, compilation skipped
+Built canonical Noir/VK and Solidity artifacts; synchronized all consumers.
+
+> build:sdk
+> node scripts/build-sdk.mjs
+
+(node:5077) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Built pinned SDK and upstream workers: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/sdk
+
+> build:apps
+> node apps/build.mjs
+
+Built billboard/censor -> censor.html: 3629KB
+Built billboard/deploy -> deploy.html: 3483KB
+Built billboard/user -> user.html: 3655KB
+Built fee-juice -> fee-juice.html: 685KB

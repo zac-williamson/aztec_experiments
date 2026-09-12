@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "objective": "Production-ready release package of Vitalik’s anonymous message board for the explicitly approved compatible Aztec production target.",
+  "objective": "Production-ready release package of Vitalik\u2019s anonymous message board for the explicitly approved compatible Aztec production target.",
   "baseline_commit": "1849967d15d96ab96234091f2fa47d8762a6c06a",
   "execution_state": "running",
   "terminal": "R04",
@@ -68,7 +68,7 @@
       "acceptance": [
         {
           "id": "P01-A01",
-          "description": "Every REQ01–REQ12 has testable invariants, named observers or actors, failure behavior and planned test IDs."
+          "description": "Every REQ01\u2013REQ12 has testable invariants, named observers or actors, failure behavior and planned test IDs."
         },
         {
           "id": "P01-A02",
@@ -94,7 +94,7 @@
       "title": "Pin toolchain and establish clean reproducible builds",
       "phase": "foundation",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "P01"
       ],
@@ -114,7 +114,10 @@
         "apps/",
         "shared/",
         ".github/",
-        "execution/"
+        "execution/",
+        "scripts/",
+        "toolchain.json",
+        "BUILDING.md"
       ],
       "plan": "tasks/P02.md",
       "actions": [
@@ -143,7 +146,7 @@
       "evidence": "evidence/P02.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "Pinned upstream baseline established: clean macOS/Linux builds match33outputs;105guardtests,59Noirtests,realbrowserCRS/workers and5CLIcompatibilitycases pass. See evidence/P02.json. SupportedproductionV5migration remains P04.",
       "priority": 1
     },
     {
@@ -194,7 +197,7 @@
       "acceptance": [
         {
           "id": "P03-A01",
-          "description": "Every B01–B12 finding is linked to a reproducer or explicit evidence limitation and a downstream acceptance test."
+          "description": "Every B01\u2013B12 finding is linked to a reproducer or explicit evidence limitation and a downstream acceptance test."
         },
         {
           "id": "P03-A02",
@@ -245,13 +248,20 @@
         "apps/",
         "shared/",
         "censor-daemon/",
-        "execution/"
+        "execution/",
+        "package.json",
+        "package-lock.json",
+        "toolchain.json",
+        "noir-dependencies.json",
+        "scripts/",
+        "shared/"
       ],
       "plan": "tasks/P04.md",
       "actions": [
+        "Assess and implement migration from the reproducible 5.0.0 baseline to the currently supported compatible V5 release (official 5.1 contract requirements and 5.2 interoperability). Re-pin compiler/prover/SDK and transitive source locks, inspect note selectors and canonical protocol contracts, regenerate artifacts and rerun affected build and baseline checks before freezing interfaces.",
         "Design deposit identity, post identity/public ordering, note ancestry, screening hints and cross-chain message domains together.",
         "Specify fee adapter, receipt/journal states, public feed events and moderation job schema before consumers diverge.",
-        "Write compatibility/migration decisions and executable interface fixtures. Cluster edits to the shared Noir contract into the sequential C01–C06 chain."
+        "Write compatibility/migration decisions and executable interface fixtures. Cluster edits to the shared Noir contract into the sequential C01\u2013C06 chain."
       ],
       "acceptance": [
         {
@@ -269,6 +279,10 @@
         {
           "id": "P04-A04",
           "description": "Recovery and penalty semantics cannot leave active L2 rights after an L1 refund or permit duplicate withdrawal."
+        },
+        {
+          "id": "P04-A05",
+          "description": "The chosen V5 SDK/Noir/prover combination is supported by current official compatibility guidance; migrated note selectors and canonical protocol-contract assumptions are checked, and affected reproducible builds and baseline tests pass. This does not waive target-network clearance."
         }
       ],
       "evidence": "evidence/P04.json",
@@ -571,7 +585,7 @@
         },
         {
           "id": "C06-A04",
-          "description": "Minimums, recipient addresses and initialization are validated; forced ETH is not treated as someone’s deposit; lost-secret limitations are stated."
+          "description": "Minimums, recipient addresses and initialization are validated; forced ETH is not treated as someone\u2019s deposit; lost-secret limitations are stated."
         }
       ],
       "evidence": "evidence/C06.json",
@@ -1703,7 +1717,7 @@
       "title": "Verify current target-network production suitability",
       "phase": "release",
       "kind": "external",
-      "status": "planned",
+      "status": "blocked",
       "depends_on": [
         "P02"
       ],
@@ -1720,7 +1734,7 @@
       "actions": [
         "Check fresh official Aztec security/release guidance and read-only chain/node configuration; distinguish package versions from onchain rollup versions.",
         "Resolve the baseline V5 notice with explicit applicable current guidance; online RPC availability alone is not clearance.",
-        "If V5 is unsuitable, prepare a supported-target migration assessment and obtain the user’s choice before retargeting."
+        "If V5 is unsuitable, prepare a supported-target migration assessment and obtain the user\u2019s choice before retargeting."
       ],
       "acceptance": [
         {
@@ -1738,8 +1752,13 @@
       ],
       "evidence": "evidence/X03.json",
       "evidence_mode": "historical",
-      "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "blocker": {
+        "reason": "Current inspected official V5 incident guidance asks new deployments to pause. No subsequent official clearance was found; local 5.0.0 baseline also requires current V5 compatibility assessment.",
+        "evidence": "evidence/P02/current-network-inputs.md; https://aztec.network/blog/alpha-v5-proving-system-vulnerability",
+        "unblock": "Fresh official evidence lifting the deployment restriction for the exact target, followed by canonical network/registry/version verification; or an explicitly approved supported replacement after compatibility assessment.",
+        "next_action": "Continue internal engineering, complete V5 compatibility work in P04, and refresh X03 before release. Do not infer clearance from a successful local build."
+      },
+      "checkpoint": "External production release gate only; internal work continues.",
       "priority": 31
     },
     {
@@ -1834,7 +1853,7 @@
       "acceptance": [
         {
           "id": "R04-A01",
-          "description": "All graph ancestors are done with valid evidence and all REQ01–REQ12 have final acceptance coverage."
+          "description": "All graph ancestors are done with valid evidence and all REQ01\u2013REQ12 have final acceptance coverage."
         },
         {
           "id": "R04-A02",

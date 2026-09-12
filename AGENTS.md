@@ -19,8 +19,10 @@ evidence that the application is already fixed.
 
 ## Execution agreement
 
-- One implementation work package at a time by default. The graph shows possible
-  concurrency, but does not itself authorize spawning subagents or new tasks.
+- The user explicitly authorized substantial subagent delegation on 2026-09-11.
+  Use bounded parallel implementation, verification and review lanes with disjoint
+  file ownership. Keep dependency gates intact; root integrates and verifies each
+  work package before completion. Record live delegation in execution/delegation.md.
 - Before editing, record the active task and checkpoint in graph.json and status.md.
   Read its prerequisites, acceptance criteria, and relevant source.
 - Resolve uncertainties with small local experiments before relying on them.

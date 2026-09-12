@@ -1,0 +1,139 @@
+[billboard_contract] Running 0 test functions
+[billboard_contract] [0m[32m0 tests passed[0m
+[billboard_test] Running 59 test functions
+[billboard_test] Testing test_censor_window_grandchild_screening ... [0m[31mFAIL
+Failed calling external resolver. ErrorObject { code: ServerError(-32702), message: "ENOENT: no such file or directory, open '/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/target/billboard_contract-Billboard.json'", data: None }
+[0m
+[billboard_test] Testing test_censor_window_hard_invariant ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_censor_window_post_too_young_to_screen ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_cooldown_100x_deposit ... [0m[32mok[0m
+[billboard_test] Testing test_cooldown_10x_deposit ... [0m[32mok[0m
+[billboard_test] Testing test_cooldown_at_min_deposit ... [0m[32mok[0m
+[billboard_test] Testing test_cooldown_halves_when_deposit_doubles ... [0m[32mok[0m
+[billboard_test] Testing test_cooldown_minimum_one_second ... [0m[32mok[0m
+[billboard_test] Testing test_cooldown_no_overflow_at_large_values ... [0m[32mok[0m
+[billboard_test] Testing test_cooldown_truncation ... [0m[32mok[0m
+[billboard_test] Testing test_declare_immoral_censor_passes_auth ... [0m[31mFAIL
+
+error: Test failed with the wrong message. 
+Expected: Invalid post index 
+Got: Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_declare_immoral_fails_when_no_censor ... [0m[31mFAIL
+
+error: Test failed with the wrong message. 
+Expected: Only censor can declare immoral 
+Got: Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_declare_immoral_rejects_non_censor ... [0m[31mFAIL
+
+error: Test failed with the wrong message. 
+Expected: Only censor can declare immoral 
+Got: Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_deposit_msg_hash_deterministic ... [0m[32mok[0m
+[billboard_test] Testing test_deposit_msg_hash_differs_by_amount ... [0m[32mok[0m
+[billboard_test] Testing test_deposit_msg_hash_differs_by_depositor ... [0m[32mok[0m
+[billboard_test] Testing test_dummy_post_advances_screening ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_dummy_post_does_not_store_content ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_flag_penalty_exact_value ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_flag_penalty_two_flags ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_flag_penalty_with_save_up ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_full_flow_declare_immoral_after_post ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_full_flow_deposit_below_minimum ... [0m[31mFAIL
+
+error: Test failed with the wrong message. 
+Expected: Deposit below minimum 
+Got: Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_full_flow_double_flag_fails ... [0m[31mFAIL
+
+error: Test failed with the wrong message. 
+Expected: Already flagged 
+Got: Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_full_flow_first_post ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_full_flow_flag_penalty_post3_too_early ... [0m[31mFAIL
+
+error: Test failed with the wrong message. 
+Expected: Too early to post -- time lock not yet expired 
+Got: Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_full_flow_get_deposit_info ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_full_flow_multiple_posts ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_full_flow_post_too_early ... [0m[31mFAIL
+
+error: Test failed with the wrong message. 
+Expected: Too early to post -- time lock not yet expired 
+Got: Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_full_flow_second_post_screens_first ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_full_flow_second_post_with_flag ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_full_flow_second_post_without_flag ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_get_post_rejects_invalid_id ... [0m[31mFAIL
+
+error: Test failed with the wrong message. 
+Expected: Invalid post id 
+Got: Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_init_default_flag_state ... [0m[31mFAIL
+Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_init_rejects_policy_too_long ... [0m[31mFAIL
+
+error: Test failed with the wrong message. 
+Expected: Policy too long 
+Got: Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_init_rejects_zero_base_cooldown ... [0m[31mFAIL
+
+error: Test failed with the wrong message. 
+Expected: Base cooldown must be > 0 
+Got: Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_init_rejects_zero_censor_window ... [0m[31mFAIL
+
+error: Test failed with the wrong message. 
+Expected: Censor window must be > 0 
+Got: Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_init_rejects_zero_k ... [0m[31mFAIL
+
+error: Test failed with the wrong message. 
+Expected: K must be > 0 
+Got: Failed calling external resolver. client error (Connect)
+[0m
+[billboard_test] Testing test_init_rejects_zero_max_save_up ... [0m[31mFAIL
+
+error: Test failed with the wrong message. 
+Expected: Max save up must be > 0 
+Got: Failed calling external resolver. client error (Connect)
+[0m

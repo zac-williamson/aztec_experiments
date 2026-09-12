@@ -1,0 +1,211 @@
+Sat Sep 12 05:55:27 UTC 2026
+v24.15.0
+Linux 6d7b30d573d8 6.10.14-linuxkit #1 SMP Tue Apr 15 16:00:54 UTC 2025 aarch64 GNU/Linux
+Initial npm, Noir, and Solidity caches are absent.
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  6 67.2M    6 4319k    0     0  3071k      0  0:00:22  0:00:01  0:00:21 3071k 10 67.2M   10 7004k    0     0  2905k      0  0:00:23  0:00:02  0:00:21 2676k 13 67.2M   13 9594k    0     0  2816k      0  0:00:24  0:00:03  0:00:21 2637k 19 67.2M   19 12.9M    0     0  3011k      0  0:00:22  0:00:04  0:00:18 2982k 24 67.2M   24 16.7M    0     0  3161k      0  0:00:21  0:00:05  0:00:16 3193k 30 67.2M   30 20.1M    0     0  3228k      0  0:00:21  0:00:06  0:00:15 3272k 34 67.2M   34 23.0M    0     0  3184k      0  0:00:21  0:00:07  0:00:14 3318k 36 67.2M   36 24.8M    0     0  3025k      0  0:00:22  0:00:08  0:00:14 3168k 39 67.2M   39 26.8M    0     0  2925k      0  0:00:23  0:00:09  0:00:14 2849k 43 67.2M   43 29.3M    0     0  2890k      0  0:00:23  0:00:10  0:00:13 2596k 48 67.2M   48 32.6M    0     0  2930k      0  0:00:23  0:00:11  0:00:12 2548k 54 67.2M   54 36.9M    0     0  3049k      0  0:00:22  0:00:12  0:00:10 2848k 61 67.2M   61 41.1M    0     0  3141k      0  0:00:21  0:00:13  0:00:08 3335k 68 67.2M   68 46.4M    0     0  3299k      0  0:00:20  0:00:14  0:00:06 4002k 76 67.2M   76 51.6M    0     0  3434k      0  0:00:20  0:00:15  0:00:05 4566k 85 67.2M   85 57.6M    0     0  3600k      0  0:00:19  0:00:16  0:00:03 5129k 96 67.2M   96 64.6M    0     0  3802k      0  0:00:18  0:00:17  0:00:01 5672k100 67.2M  100 67.2M    0     0  3882k      0  0:00:17  0:00:17 --:--:-- 6173k
+/tmp/foundry.tar.gz: OK
+forge Version: 1.4.1-v1.4.1
+Commit SHA: cf7746048646f2ecff48246dd61e265e49ab16f0
+Build Timestamp: 2025-10-14T13:49:17.037495111Z (1760449757)
+Build Profile: maxperf
+npm warn deprecated uuid@9.0.1: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+npm warn deprecated prom-client@15.1.3: prom-client has been replaced by @prometheus-io/client
+npm warn deprecated lodash.isequal@4.5.0: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
+npm warn deprecated level-concat-iterator@3.1.0: Superseded by abstract-level (https://github.com/Level/community#faq)
+npm warn deprecated koa-router@13.1.1: Please use @koa/router instead, starting from v9! 
+npm warn deprecated leveldown@6.1.1: Superseded by classic-level (https://github.com/Level/community#faq)
+npm warn deprecated esbuild-plugin-polyfill-node@0.3.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+npm warn deprecated abstract-leveldown@7.2.0: Superseded by abstract-level (https://github.com/Level/community#faq)
+npm warn deprecated @types/chalk@2.2.4: This is a stub types definition. chalk provides its own type definitions, so you do not need this installed.
+npm warn deprecated @libp2p/mplex@10.0.16: Mplex has no flow control - please use @chainsafe/libp2p-yamux instead
+npm warn deprecated glob@11.1.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+
+added 1000 packages in 37s
+npm notice
+npm notice New major version of npm available! 11.12.1 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice
+
+added 2 packages in 2s
+
+> bootstrap:noir
+> node scripts/bootstrap-noir.mjs
+
+Installed and verified pinned Noir compiler.
+
+> build
+> npm run build:contracts && npm run build:sdk && npm run build:crs && npm run build:apps
+
+
+> build:contracts
+> node scripts/build-contracts.mjs
+
+Cloning into '/root/nargo/github.com/AztecProtocol/aztec-nr/v5.0.0'...
+Cloning into '/root/nargo/github.com/noir-lang/poseidon/v0.3.0'...
+Cloning into '/root/nargo/github.com/AztecProtocol/aztec-packages/v5.0.0'...
+Cloning into '/root/nargo/github.com/noir-lang/sha256/v0.3.0'...
+Cloning into '/root/nargo/github.com/noir-lang/keccak256/v0.1.3'...
+Scheme is: ultra_honk, num threads: 12 (mem: 9.15 MiB)
+Transpiling: /work/billboard/target/billboard_contract-Billboard.json -> /work/billboard/target/billboard_contract-Billboard.json.processing (mem: 9.15 MiB)
+Transpiled: /work/billboard/target/billboard_contract-Billboard.json -> /work/billboard/target/billboard_contract-Billboard.json.processing (mem: 45.07 MiB)
+Generating verification keys for functions in billboard_contract-Billboard.json.processing (mem: 45.07 MiB)
+Cache directory: /root/.bb/5.0.0/vk_cache (mem: 45.07 MiB)
+Generating verification key: 1e3284c02b5feba5bb674aaa8ab79210eac6ba152f37838130bd03f8f0efdb44 (mem: 45.07 MiB)
+ChonkComputeVk - deriving Chonk verification key for circuit 'update_portal' (mem: 45.07 MiB)
+Generating verification key: b2c68fb52ff9a1b267b9ba107a9e7686b15147242ffc9bbe43ae6e566263b282 (mem: 51.45 MiB)
+ChonkComputeVk - deriving Chonk verification key for circuit 'withdraw' (mem: 51.70 MiB)
+Generating verification key: de072766dcebb9d0f58fedb583a2c7acb5300306f314b3a9019dc5a44fc3e91e (mem: 63.77 MiB)
+ChonkComputeVk - deriving Chonk verification key for circuit 'claim_deposit' (mem: 63.77 MiB)
+Generating verification key: b767aaabac1d7ecd2bd45e4a4c362814fb5706e5984378a3bb4d82521bc0b170 (mem: 84.57 MiB)
+ChonkComputeVk - deriving Chonk verification key for circuit 'post' (mem: 84.95 MiB)
+ChonkComputeVk - VK derived, size: 5216 bytes (mem: 400.30 MiB)
+ChonkComputeVk - VK derived, size: 5216 bytes (mem: 426.93 MiB)
+ChonkComputeVk - VK derived, size: 5216 bytes (mem: 426.93 MiB)
+ChonkComputeVk - VK derived, size: 5216 bytes (mem: 426.93 MiB)
+Successfully processed: /work/billboard/target/billboard_contract-Billboard.json -> /work/billboard/target/billboard_contract-Billboard.json.processing (mem: 426.93 MiB)
+Compiling 88 files with Solc 0.8.27
+Solc 0.8.27 finished in 1.03s
+Compiler run successful!
+Built canonical Noir/VK and Solidity artifacts; synchronized all consumers.
+
+> build:sdk
+> node scripts/build-sdk.mjs
+
+(node:252) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Built pinned SDK and upstream workers: /work/.build/sdk
+
+> build:crs
+> node scripts/build-crs.mjs
+
+Verified CRS g1.dat: 37748736 bytes, SHA-256 8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416
+Verified CRS g2.dat: 128 bytes, SHA-256 01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f
+Verified CRS grumpkin_g1.dat: 4194368 bytes, SHA-256 b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9
+
+> build:apps
+> node apps/build.mjs
+
+Built billboard/censor -> censor.html: 3633KB
+Built billboard/deploy -> deploy.html: 3488KB
+Built billboard/user -> user.html: 3658KB
+Built fee-juice -> fee-juice.html: 688KB
+
+> check:artifacts
+> node scripts/check-artifacts.mjs
+
+{
+  "noirSha256": "220d518654932e81b40cd99ff341db206959c8db086398ed28071fa416fbafd9",
+  "portalBytecodeSha256": "1bb7bcdf935de0d1d639a9f07ca19cb719d69095b8a14b0897e7f54cdcbeb9c5"
+}
+Recorded 33 exact output hashes in .build/docker-output-snapshot.json
+
+> test:build
+> node --test scripts/test-artifacts.mjs scripts/test-sdk-manifest.mjs scripts/test-noir-dependencies.mjs scripts/test-crs-build.mjs scripts/test-crs-consumers.mjs
+
+✔ matching synthetic artifacts and recorded sources pass (6.188916ms)
+✔ stale deploy Noir copy is rejected (3.049667ms)
+✔ stale censor Noir copy is rejected (1.54ms)
+✔ missing verification key is rejected even when all consumer copies agree (1.602125ms)
+✔ empty private function set is rejected even when all consumer copies agree (3.148ms)
+✔ only public functions is rejected even when all consumer copies agree (2.359583ms)
+✔ untranspiled artifact is rejected even when all consumer copies agree (2.714625ms)
+✔ truthy non-boolean transpilation marker is rejected even when all consumer copies agree (4.083583ms)
+✔ stale portal bytecode is rejected: apps/src/billboard/portal_bytecode.txt (3.118709ms)
+✔ stale portal bytecode is rejected: apps/src/billboard/deploy/portal_bytecode.txt (1.430208ms)
+✔ portal source drift is rejected by embedded compiler provenance (1.363084ms)
+✔ missing Solidity source provenance is rejected (1.417125ms)
+✔ string-encoded Solidity metadata remains supported (1.36125ms)
+✔ Noir source drift requires a rebuild (1.659625ms)
+✔ Noir dependency declaration drift requires a rebuild (5.96525ms)
+✔ root dependency lock drift requires a rebuild (4.521417ms)
+✔ portal dependency lock drift requires a rebuild (2.498209ms)
+✔ compiler configuration drift requires a rebuild (1.825458ms)
+✔ toolchain pins drift requires a rebuild (1.675125ms)
+✔ contract builder drift requires a rebuild (2.062166ms)
+✔ Noir debug-path normalizer drift requires a rebuild (1.293875ms)
+✔ Noir dependency verifier drift requires a rebuild (1.685334ms)
+✔ Noir dependency pins drift requires a rebuild (1.95725ms)
+✔ new Noir source omitted from the old manifest requires a rebuild (1.606292ms)
+✔ contract manifest input hash tampering is rejected (1.678584ms)
+✔ contract manifest noir hash tampering is rejected (1.681833ms)
+✔ contract manifest portal hash tampering is rejected (2.422166ms)
+✔ synchronized altered Noir artifacts still fail the recorded build hash (1.362875ms)
+✔ synchronized altered portal bytecode still fails the recorded build hash (1.784542ms)
+✔ accepts the exact pinned partial response and requests identity encoding (10.723458ms)
+✔ rejects ignored Range (0.368584ms)
+✔ rejects wrong range (0.17775ms)
+✔ rejects oversized stream (0.15775ms)
+✔ rejects truncated stream (0.20575ms)
+✔ rejects checksum mismatch (0.218625ms)
+✔ falls back only to another response matching the same content pin (0.457208ms)
+✔ all verified local bytes reach SRS with the pinned v5 point counts (17.732916ms)
+✔ old uncompressed-size local BN254 data is rejected before any prover call (0.813917ms)
+✔ corrupt same-size cache and CDN bytes cannot initialize SRS (23.738667ms)
+✔ bad local cache and bad first CDN fall back only to hash-verified second CDN bytes (15.137084ms)
+✔ g1.dat uses the official v5 CDN filename and exact range (22.857083ms)
+✔ grumpkin_g1.dat uses the official v5 CDN filename and exact range (15.578ms)
+✔ missing manifest is rejected before any data request (0.199625ms)
+✔ old point count is rejected before any data request (0.101917ms)
+✔ old Grumpkin filename is rejected before any data request (0.416292ms)
+✔ unexpected network destination is rejected before any data request (0.188833ms)
+✔ duplicate file is rejected before any data request (0.112583ms)
+✔ invalid range is rejected before any data request (0.102ms)
+✔ truncated body cannot be loaded (0.181ms)
+✔ oversized body cannot be loaded (0.106625ms)
+✔ oversized content length cannot be loaded (0.383167ms)
+✔ HTTP failure cannot be loaded (0.070417ms)
+✔ empty successful response cannot be loaded (0.076ms)
+✔ oversized streamed response is cancelled instead of reading remaining bytes (0.359792ms)
+✔ BN254 initialization rejection prevents Grumpkin initialization (14.307583ms)
+✔ unexpected BN254 response cannot be reported as initialized (14.618875ms)
+✔ unexpected Grumpkin response cannot be reported as initialized (15.535666ms)
+✔ browser loading uses the same checks with Web Crypto SHA-256 (22.476083ms)
+✔ matching trees and artifact embedded sources pass (2.373375ms)
+✔ macro change absent from file_map still fails the full tree check (1.061917ms)
+✔ new and missing tree sources cannot pass (1.257875ms)
+✔ local or transitive manifest changes fail (0.732917ms)
+✔ changed, missing, new and conflicting artifact sources fail (0.779292ms)
+✔ absolute and traversal source paths fail closed (0.583125ms)
+✔ complete synthetic SDK manifest passes (6.132958ms)
+✔ stale lockfile is rejected (2.600625ms)
+✔ stale build script is rejected (1.996416ms)
+✔ stale SDK entry source is rejected (2.727375ms)
+✔ stale imported dependency source is rejected (2.457708ms)
+✔ stale toolchain helper is rejected (1.783333ms)
+✔ stale runtime asset source is rejected (1.705459ms)
+✔ stale bundle output is rejected (1.978333ms)
+✔ stale worker output is rejected (1.928625ms)
+✔ stale runtime asset output is rejected (2.734834ms)
+✔ protocol version mismatch is rejected (2.42125ms)
+✔ omitting required inputs entry shared/sdk-entry.mjs is rejected (1.810125ms)
+✔ omitting required inputs entry node_modules/@aztec/noir-acvm_js/web/acvm_js_bg.wasm is rejected (1.565625ms)
+✔ omitting required outputs entry sqlite.worker.js is rejected (2.596334ms)
+✔ omitting required outputs entry sqlite3.wasm is rejected (1.759417ms)
+✔ runtime asset output cannot differ from its source even with a refreshed output hash (2.407292ms)
+✔ manifest inputs path confinement rejects ../outside.js (2.691709ms)
+✔ manifest inputs path confinement rejects /outside.js (2.569625ms)
+✔ manifest inputs path confinement rejects shared/../outside.js (5.932334ms)
+✔ manifest inputs path confinement rejects shared\outside.js (3.373625ms)
+✔ manifest outputs path confinement rejects ../outside.js (1.816667ms)
+✔ manifest outputs path confinement rejects /outside.js (1.769833ms)
+✔ manifest outputs path confinement rejects nested/worker.js (1.6645ms)
+✔ manifest outputs path confinement rejects ..\outside.js (1.738792ms)
+✔ inputs symlink cannot escape its allowed directory (6.819292ms)
+✔ outputs symlink cannot escape its allowed directory (4.210417ms)
+✔ invalid manifest structure is rejected (2.897459ms)
+✔ malformed manifest digest is rejected (2.204208ms)
+✔ missing worker file is rejected rather than silently omitted (2.661333ms)
+ℹ tests 93
+ℹ suites 0
+ℹ pass 93
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 222.906292
+Sat Sep 12 05:58:53 UTC 2026

@@ -293,20 +293,24 @@ The `auto` action runs the full flow end-to-end: deposit → wait for L2 ingest 
 
 ## Building
 
+Use [BUILDING.md](BUILDING.md) for the pinned installation, clean build, baseline
+checks and reproducibility procedure. The build regenerates the SDK, upstream
+workers, verification keys, Noir consumer artifacts and Solidity bytecode.
+
 ```bash
-# 1. Compile L2 contract (aztec compile transpiles public ACIR → AVM bytecode + adds VKs)
-cd billboard && aztec compile
-
-# 2. Build the artifact (computes VKs with chonkComputeVk, packages bytecode)
-cd apps/src/billboard && node build_artifact.mjs
-cp billboard_artifact.json deploy/billboard_artifact.json
-
-# 3. Compile L1 portal (if portal_bytecode.txt needs updating)
-cd billboard/portal && forge build --use 0.8.33
-
-# 4. Build all dapps (combines modules into single-file HTML)
-cd apps && node build.mjs
+nvm install
+nvm use
+npm ci --ignore-scripts
+npm ci --prefix billboard/portal --ignore-scripts
+# Install Foundry v1.4.1 as described in BUILDING.md.
+npm run bootstrap:noir
+npm run build
+npm run test:build
+npm run test:noir
 ```
+
+Build success is a development gate. Production readiness is tracked separately
+in [execution/graph.json](execution/graph.json) and remains incomplete.
 
 ### Building the formal verification proofs
 

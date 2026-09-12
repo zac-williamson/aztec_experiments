@@ -22,7 +22,7 @@ async function loadAztecSDK() {
   }
   if (!globalThis.self) globalThis.self = globalThis;
 
-  const bundlePath = path.join(PROJECT_ROOT, 'shared', 'aztec_bundle.js');
+  const bundlePath = path.join(PROJECT_ROOT, '.build', 'sdk', 'aztec_bundle.js');
   const bundleCode = fs.readFileSync(bundlePath, 'utf8');
   const bundleFn = new Function(bundleCode + '; return __aztec;');
   return bundleFn();

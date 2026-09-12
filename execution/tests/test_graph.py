@@ -17,6 +17,11 @@ spec.loader.exec_module(graph)
 class GraphTests(unittest.TestCase):
     def setUp(self):
         self.g = graph.read_json(BASE / "graph.json")
+        # Test a prepared fixture regardless of the live project checkpoint.
+        self.g["execution_state"] = "awaiting_start"
+        for node in self.g["nodes"]:
+            node["status"] = "planned"
+            node.pop("blocker", None)
         self.now = datetime(2026, 9, 11, 20, tzinfo=timezone.utc)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)

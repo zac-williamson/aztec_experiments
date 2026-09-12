@@ -1,0 +1,50 @@
+name: Pinned build and baseline checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24.15.0'
+      - uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
+        with:
+          version: v1.4.1
+          cache: false
+      - name: Install locked dependencies and verified Noir compiler
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm ci --prefix billboard/portal --ignore-scripts --no-audit --no-fund
+          npm run bootstrap:noir
+          npx --no-install playwright install --with-deps chromium
+      - name: Build from clean generated directories
+        run: |
+          node -e "const fs = require('node:fs'); for (const p of ['billboard/target', 'billboard/portal/out', 'billboard/portal/cache', '.build/sdk', '.build/contracts-manifest.json']) fs.rmSync(p, {recursive:true, force:true}); fs.rmSync('apps/dist', {recursive:true, force:true});"
+          npm run build
+          node scripts/check-reproducibility.mjs snapshot "$RUNNER_TEMP/build-first.json"
+      - name: Rebuild and compare every recorded byte
+        run: |
+          node -e "const fs = require('node:fs'); for (const p of ['billboard/target', 'billboard/portal/out', 'billboard/portal/cache', '.build/sdk', '.build/contracts-manifest.json']) fs.rmSync(p, {recursive:true, force:true}); fs.rmSync('apps/dist', {recursive:true, force:true});"
+          npm run build
+          node scripts/check-reproducibility.mjs snapshot "$RUNNER_TEMP/build-second.json"
+          node scripts/check-reproducibility.mjs compare "$RUNNER_TEMP/build-first.json" "$RUNNER_TEMP/build-second.json"
+      - name: Artifact guards and baseline application tests
+        run: |
+          npm run check:artifacts
+          npm run test:build
+          npm run test:noir
+          npm run test:moderation
+          npm run test:sdk-browser
+          npm run test:cli-sdk
+          python3 -m unittest discover -s execution/tests -v
+          python3 execution/graph.py validate

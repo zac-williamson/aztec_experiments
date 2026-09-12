@@ -57,7 +57,7 @@ if [ "$MODE" = "all" ] || [ "$MODE" = "--noir-only" ]; then
     echo ""
 
     cd "$BILLBOARD_DIR"
-    if aztec test 2>&1; then
+    if (cd "$PROJECT_ROOT" && npm run test:noir) 2>&1; then
         echo -e "  ${GREEN}✓ Noir tests passed${NC}"
         TOTAL_PASS=$((TOTAL_PASS + 1))
     else

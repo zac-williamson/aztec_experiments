@@ -25,30 +25,43 @@
 // within a project like billboard/).
 
 import fs from 'fs';
+import { createHash } from 'node:crypto';
+import { checkSdk } from '../scripts/check-sdk.mjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { checkArtifacts } from '../scripts/check-artifacts.mjs';
+import { assertNodeVersion } from '../scripts/toolchain.mjs';
+
+assertNodeVersion();
+checkArtifacts();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SHARED = path.join(__dirname, '..', 'shared');
 const SRC = path.join(__dirname, 'src');
 const DIST = path.join(__dirname, 'dist');
+const SDK = path.join(__dirname, '..', '.build', 'sdk');
+const sdkManifestPath = path.join(SDK, 'sdk-manifest.json');
+if (!fs.existsSync(sdkManifestPath)) throw new Error('Build the pinned SDK first: npm run build:sdk');
 
 // Load global shared files
 function loadShared(name) {
-  const p = path.join(SHARED, name);
+  const p = name === 'ethers.min.js' ? path.join(__dirname, '../node_modules/ethers/dist/ethers.umd.min.js') : path.join(SHARED, name);
   return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : null;
 }
 
 // Load RPC config (node URL + API key) and inject as a global
 const rpcConfig = (() => {
-  const p = path.join(SHARED, 'rpc-config.json');
+  // Browser configuration is public. Never silently embed the legacy committed credential.
+  const p = process.env.BILLBOARD_RPC_CONFIG || path.join(SHARED, 'rpc-config.example.json');
   return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : null;
 })();
 
+const crsManifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../crs-manifest.json'), 'utf8'));
 const sharedFiles = {
   STYLES: loadShared('styles.css'),
   HELPERS: loadShared('helpers.js'),
   AZTEC_LIB: loadShared('aztec-lib.js'),
+  CRS_CLIENT: loadShared('crs-client.js'),
   POSEIDON2: loadShared('poseidon2.js'),
   ETHERS: loadShared('ethers.min.js'),
   WALLET_BUTTONS: loadShared('wallet-buttons.js'),
@@ -57,9 +70,8 @@ const sharedFiles = {
 };
 
 // RPC config injection script (must run before aztec-lib.js)
-const rpcConfigScript = rpcConfig
-  ? `<script>window.RPC_CONFIG = ${JSON.stringify(rpcConfig)};</script>`
-  : '';
+if (!sharedFiles.CRS_CLIENT) throw new Error('Missing shared CRS client');
+const rpcConfigScript = `<script>window.RPC_CONFIG = ${JSON.stringify(rpcConfig)};window.BILLBOARD_CRS_MANIFEST = ${JSON.stringify(crsManifest)};\n${sharedFiles.CRS_CLIENT}\n</script>`;
 
 // Look for a resource file in the app dir, then parent dir
 function loadResource(appDir, filename) {
@@ -118,6 +130,7 @@ function buildApp(appRelPath) {
     replacements['<!--ETHERS-->'] = `<script>\n${sharedFiles.ETHERS}\n</script>`;
   }
   if (sharedFiles.AZTEC_LIB) {
+    if (!sharedFiles.CRS_CLIENT) throw new Error('Missing shared CRS client');
     replacements['<!--AZTEC_LIB-->'] = `<script>\n${sharedFiles.AZTEC_LIB}\n</script>`;
   }
   if (sharedFiles.POSEIDON2) {
@@ -147,7 +160,7 @@ function buildApp(appRelPath) {
   // Warn about unreplaced placeholders
   const remaining = html.match(/<!--(STYLES|HELPERS|RPC_CONFIG|AZTEC_LIB|ETHERS|POSEIDON2|WALLET_BUTTONS|APP_ENV|MODERATION_POLICY|PORTAL_BYTECODE|ARTIFACT|ENGINE|APP)-->/g);
   if (remaining) {
-    console.warn(`Warning: unreplaced placeholders in ${appRelPath}: ${remaining.join(', ')}`);
+    throw new Error(`Unreplaced placeholders in ${appRelPath}: ${remaining.join(', ')}`);
   }
 
   // Output filename = last component of the path
@@ -160,34 +173,18 @@ function buildApp(appRelPath) {
 // Ensure dist exists
 fs.mkdirSync(DIST, { recursive: true });
 
-// Copy bundle + thread_worker to dist (always overwrite to pick up patches)
-const bundleSrc = path.join(SHARED, 'aztec_bundle.js');
-const bundleDst = path.join(DIST, 'aztec_bundle.js');
-if (fs.existsSync(bundleSrc)) {
-  fs.copyFileSync(bundleSrc, bundleDst);
-  console.log('Copied aztec_bundle.js to dist/ (' + Math.round(fs.statSync(bundleDst).size/1024/1024) + 'MB)...');
+// Copy source-built SDK, actual upstream worker entrypoints, and runtime WASM assets.
+const sdkManifest = checkSdk(path.resolve(__dirname, '..'), SDK);
+for (const filename of Object.keys(sdkManifest.outputs)) {
+  fs.copyFileSync(path.join(SDK, filename), path.join(DIST, filename));
 }
-const threadWorkerSrc = path.join(SHARED, 'thread_worker.js');
-const threadWorkerDst = path.join(DIST, 'thread_worker.js');
-if (fs.existsSync(threadWorkerSrc)) {
-  fs.copyFileSync(threadWorkerSrc, threadWorkerDst);
-  console.log('Copied thread_worker.js to dist/ (' + Math.round(fs.statSync(threadWorkerDst).size/1024) + 'KB)...');
-}
+fs.copyFileSync(sdkManifestPath, path.join(DIST, 'sdk-manifest.json'));
 
-// Ensure CRS files are in dist/crs/
-const crsSrc = path.join(DIST, 'crs');
-if (fs.existsSync(crsSrc)) {
-  // Already there
-} else {
-  // Try copying from billboard dist
-  const bbCrs = path.join(__dirname, '..', 'billboard', 'app', 'dist', 'crs');
-  if (fs.existsSync(bbCrs)) {
-    console.log('Copying CRS files to dist/crs/...');
-    fs.mkdirSync(crsSrc, { recursive: true });
-    for (const f of fs.readdirSync(bbCrs)) {
-      fs.copyFileSync(path.join(bbCrs, f), path.join(crsSrc, f));
-    }
-  }
+// Proving assets must be generated and match the pinned source manifest.
+for (const asset of crsManifest.files) {
+  if (path.basename(asset.name) !== asset.name) throw new Error('Invalid CRS asset path');
+  const bytes = fs.readFileSync(path.join(DIST, 'crs', asset.name));
+  if (bytes.length !== asset.bytes || createHash('sha256').update(bytes).digest('hex') !== asset.sha256) throw new Error(`CRS asset changed: ${asset.name}; run npm run build:crs`);
 }
 
 // Get app paths from command line args, or scan src/ recursively for template.html

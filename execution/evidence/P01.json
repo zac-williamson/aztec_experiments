@@ -18,19 +18,19 @@
       "sha256": "dd12f3b50759bd78c11b387b01bb7de00537cd9662eef305e08e78f9038399f9"
     },
     {
-      "path": "product-spec.md",
+      "path": "evidence/P01/product-spec.md",
       "sha256": "cbded0e44564bb1c7d318148bfa383b1cc798cec1d4c9009fd2241a60db5d7c1"
     },
     {
-      "path": "risk-register.md",
+      "path": "evidence/P01/risk-register.md",
       "sha256": "63a7f7c7625efc22d80718ec2e48a6764527b56af3165726f69f08b89fa54df6"
     },
     {
-      "path": "requirements.md",
+      "path": "evidence/P01/requirements.md",
       "sha256": "74be13c72bae9467f220d9d8c50c90c5785b63cbf78c54c9424dffc3c30423f2"
     },
     {
-      "path": "decisions.md",
+      "path": "evidence/P01/decisions.md",
       "sha256": "caecffcaeeb078f1149a7c6313f8911f17b0b1c21a5812da2faf8f8968488b1f"
     }
   ],
@@ -41,7 +41,7 @@
       "summary": "Twelve-row matrix names actors, invariants, failure behavior, scenario IDs and implementation owners.",
       "artifacts": [
         "evidence/P01/acceptance.md",
-        "product-spec.md",
+        "evidence/P01/product-spec.md",
         "evidence/P01/review.md"
       ]
     },
@@ -51,7 +51,7 @@
       "summary": "Eight state transitions and precise economic/privacy defaults define behavior; external owner/budget/policy/target decisions have explicit gates.",
       "artifacts": [
         "evidence/P01/acceptance.md",
-        "product-spec.md",
+        "evidence/P01/product-spec.md",
         "evidence/P01/review.md"
       ]
     },
@@ -61,7 +61,7 @@
       "summary": "Predeclared scale/history, browser, quality, recovery and 336-hour soak budgets are recorded before candidate measurements.",
       "artifacts": [
         "evidence/P01/acceptance.md",
-        "product-spec.md",
+        "evidence/P01/product-spec.md",
         "evidence/P01/review.md"
       ]
     },
@@ -71,7 +71,7 @@
       "summary": "Fresh local identities, secret handling, independent audit and production authorization boundaries are documented.",
       "artifacts": [
         "evidence/P01/acceptance.md",
-        "product-spec.md",
+        "evidence/P01/product-spec.md",
         "evidence/P01/review.md"
       ]
     }

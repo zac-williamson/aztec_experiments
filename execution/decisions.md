@@ -30,3 +30,14 @@ commercial or policy decision. P01 validates them and records material changes.
 Each new entry records: date, task ID, choice, alternatives, evidence, impact on
 requirements and acceptance tests, and whether user input is required or received.
 Do not reinterpret elapsed time or a missing reply as approval.
+
+## 2026-09-11 — P02 discovery: baseline version versus production compatibility
+
+The reproducible foundation preserves upstream 5.0.0 to establish trustworthy
+baseline builds and tests. Current official guidance requires 5.1.0 changes for
+contract developers and describes 5.2.0 as compatible maintenance. P04 now owns
+the explicit supported-V5 upgrade and reruns before interface freeze. This remains
+within the requested V5 target; a V6 retarget would require a separate assessment
+and user decision. The live incident notice leaves X03 blocked for release while
+internal engineering continues. Sources and exact unknowns are recorded in
+`evidence/P02/current-network-inputs.md`.

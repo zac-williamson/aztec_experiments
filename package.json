@@ -1,6 +1,46 @@
 {
   "dependencies": {
-    "ethers": "^6.17.0",
-    "fake-indexeddb": "^6.2.5"
+    "@aztec/accounts": "5.0.0",
+    "@aztec/aztec.js": "5.0.0",
+    "@aztec/bb.js": "5.0.0",
+    "@aztec/entrypoints": "5.0.0",
+    "@aztec/foundation": "5.0.0",
+    "@aztec/kv-store": "5.0.0",
+    "@aztec/protocol-contracts": "5.0.0",
+    "@aztec/pxe": "5.0.0",
+    "@aztec/standard-contracts": "5.0.0",
+    "@aztec/stdlib": "5.0.0",
+    "@aztec/wallet-sdk": "5.0.0",
+    "ethers": "6.17.0",
+    "fake-indexeddb": "6.2.5"
+  },
+  "devDependencies": {
+    "@aztec/aztec": "5.0.0",
+    "@aztec/cli": "5.0.0",
+    "@aztec/cli-wallet": "5.0.0",
+    "@aztec/txe": "5.0.0",
+    "esbuild": "0.25.12",
+    "esbuild-plugin-polyfill-node": "0.3.0",
+    "playwright": "1.58.2"
+  },
+  "name": "aztec-anonymous-billboard",
+  "private": true,
+  "engines": {
+    "node": ">=24.12.0 <25"
+  },
+  "scripts": {
+    "build:sdk": "node scripts/build-sdk.mjs",
+    "test:moderation": "bash censor-daemon/run_tests.sh",
+    "graph:validate": "python3 execution/graph.py validate",
+    "bootstrap:noir": "node scripts/bootstrap-noir.mjs",
+    "build:contracts": "node scripts/build-contracts.mjs",
+    "build:apps": "node apps/build.mjs",
+    "check:artifacts": "node scripts/check-artifacts.mjs",
+    "build": "npm run build:contracts && npm run build:sdk && npm run build:crs && npm run build:apps",
+    "test:sdk-browser": "node scripts/test-sdk-browser.mjs --with-crs",
+    "test:noir": "node scripts/test-noir.mjs",
+    "test:build": "node --test scripts/test-artifacts.mjs scripts/test-sdk-manifest.mjs scripts/test-noir-dependencies.mjs scripts/test-crs-build.mjs scripts/test-crs-consumers.mjs scripts/test-process-lifecycle.mjs",
+    "build:crs": "node scripts/build-crs.mjs",
+    "test:cli-sdk": "node scripts/test-cli-sdk.mjs"
   }
 }
