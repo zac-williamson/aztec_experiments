@@ -6,10 +6,10 @@ the package scheduler; this ledger records bounded agent assignments within it.
 
 | Package / lane | Agent | File ownership | Acceptance contribution | State |
 |---|---|---|---|---|
-| P02 integration | root | Existing build scripts, dependencies, source artifacts, graph/evidence | Clean builds and integration; final gate ownership | active |
-| P02 build verification | build_verification | BUILDING.md, .github/workflows/build.yml, scripts/check-reproducibility.mjs | P02-A01/A02; clean build instructions and CI | active |
-| P02 artifact regressions | artifact_regressions | scripts/test-artifacts.mjs, scripts/tests/ | P02-A03; discriminating stale artifact tests | active |
-| P02 review | build_review | execution/evidence/P02/agent-review.md only; source read-only | Independent AI code review; root dispositions required | active |
+| P02 integration | root | Existing build scripts, dependencies, source artifacts, graph/evidence | Clean builds and integration; final gate ownership | completed and integrated at b1e75fe |
+| P02 build verification | build_verification | BUILDING.md, .github/workflows/build.yml, scripts/check-reproducibility.mjs | P02-A01/A02; clean build instructions and CI | completed and integrated at b1e75fe |
+| P02 artifact regressions | artifact_regressions | scripts/test-artifacts.mjs, scripts/tests/ | P02-A03; discriminating stale artifact tests | completed and integrated at b1e75fe |
+| P02 review | build_review | execution/evidence/P02/agent-review.md only; source read-only | Independent AI code review; root dispositions required | completed and integrated at b1e75fe |
 
 Agents report changed files, executed checks, failures and unresolved assumptions.
 Root reviews and integrates results, reruns affected acceptance checks, and hashes
@@ -56,3 +56,33 @@ active until the integrated clean builds and affected tests pass.
 X03 is blocked solely as an external production-release gate under the currently
 inspected official notice. P04 includes the required current V5 compatibility
 upgrade. Neither condition stops unrelated internal implementation.
+
+## M01 assignments
+
+| Lane | Agent | Write ownership |
+|---|---|---|
+| Signer command interface and daemon integration | build_verification | censor-daemon/daemon.mjs, new signer module(s), daemon integration tests |
+| Verdict schema and adversarial boundary tests | artifact_regressions | censor-daemon/moderation.mjs, test_moderation.mjs, new signer/verdict regression tests |
+| Model isolation and operator instructions | build_review | new model container/runtime files, model isolation tests, censor-daemon/README.md |
+| Integration | root | graph/evidence, package/test entry points, final review and targeted fixes after ownership handoff |
+
+All lanes coordinate explicit interfaces. Model output is bounded data; trusted
+configuration fixes the executable, operation, wallet path and destination. The
+model runtime must lack signer filesystem/environment access; simply separating
+JavaScript modules does not satisfy this requirement. Runtime/model version and
+quality acceptance remain additional M03 work.
+
+## M01 integration checkpoint
+
+Root integrated 155 parser/signer/daemon/wallet checks and five offline SDK smoke
+cases, all passed. Wallet authority now excludes unrelated user wallets for censor
+operations. Administrative policy engine initialization remains M02 work.
+`artifact_regressions` independently reviews the wallet boundary;
+`build_verification` independently reviews the model runtime implemented by
+`build_review`. Actual Docker isolation uses disposable fixtures, no real wallets.
+CI now invokes this profile separately; hosted CI execution remains unobserved.
+
+M01 completed after all three implementation handoffs and two cross-reviews.
+Actual isolation tests passed after cleanup, gateway and disconnect fixes; root
+bound current source and all four criteria to evidence/M01.json. The next graph
+package is P03; deployment readiness is still incomplete.

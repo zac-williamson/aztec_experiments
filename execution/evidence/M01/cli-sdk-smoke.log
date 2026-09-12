@@ -1,0 +1,72 @@
+
+> test:cli-sdk
+> node scripts/test-cli-sdk.mjs
+
+{
+  "outcome": "pass",
+  "node": "24.15.0",
+  "sdkSha256": "ae248aa5234c1a2a497e5cf2fa9973b3747c1d2a2a530fd0d7810d1784de1603",
+  "scope": "Named functions extracted from real CLI sources; no main(), remote RPC, pre-existing wallets, persisted wallet files, or transactions. Account derivation and hashing use the actual built SDK.",
+  "sourceHashes": {
+    "apps/src/billboard/user/cli.mjs": "b5427265bd24284d9ad7d7ebc25809f0802bdbb9bc8e3aee18796090a2d5a26b",
+    "apps/src/billboard/deploy/cli.mjs": "2fd9b07d9f554bff2f4d880a5e2b46221e9460dd2efd5dc1387649af57e26e28",
+    "apps/src/fee-juice/cli.mjs": "2a140271e8239c2e0a79018eea258cb9a9f2e4e9b52851e93fb0250090ad70ff",
+    "shared/aztec-lib.js": "b867434132547ab82ffb401b9f7af9b2e0167d73909b7634e2a0901ca4355ea2"
+  },
+  "results": [
+    {
+      "lane": "user",
+      "outcome": "pass",
+      "extractedFunction": "loadAztecSDK",
+      "functionSha256": "8616e19ad8004bc0d4728611b2ee9df37ff968557e5af31e10b3f83078593f68",
+      "exports": 68,
+      "poseidon": "0x038682aa1cb5ae4e0a3f13da432a95c77c5c111f6f030faf9cad641ce1ed7383",
+      "disposableAddress": "0x18da8265b21410b21a5dd4f638281162a8cd01ac41870a11cd134d821c6558e1",
+      "bufferCompatibility": "pass",
+      "networkRequests": 0,
+      "filesystemWrites": 0
+    },
+    {
+      "lane": "deploy",
+      "outcome": "pass",
+      "extractedFunction": "loadAztecSDK",
+      "functionSha256": "bc3aa74762ac94b6e59f95b43789ad5fc6ec81b0e98bbe6d6d486a25fd54d080",
+      "exports": 68,
+      "poseidon": "0x038682aa1cb5ae4e0a3f13da432a95c77c5c111f6f030faf9cad641ce1ed7383",
+      "disposableAddress": "0x18da8265b21410b21a5dd4f638281162a8cd01ac41870a11cd134d821c6558e1",
+      "bufferCompatibility": "pass",
+      "networkRequests": 0,
+      "filesystemWrites": 0
+    },
+    {
+      "lane": "fee",
+      "outcome": "pass",
+      "extractedFunction": "loadAztecSDK",
+      "functionSha256": "a2bf914b9aa1b9e811390bda546285a4ad90640fc3debabf0041216a0486477a",
+      "exports": 68,
+      "poseidon": "0x038682aa1cb5ae4e0a3f13da432a95c77c5c111f6f030faf9cad641ce1ed7383",
+      "disposableAddress": "0x18da8265b21410b21a5dd4f638281162a8cd01ac41870a11cd134d821c6558e1",
+      "bufferCompatibility": "pass",
+      "networkRequests": 0,
+      "filesystemWrites": 0
+    },
+    {
+      "lane": "randomGenerator",
+      "outcome": "pass",
+      "extractedFunction": "generateAztecWallet",
+      "functionSha256": "9953527055cf2e259603753a4b817805c7b97b34bea65b85b13241f1baeffea6",
+      "addressDerived": true,
+      "memoryOnlyWrites": 1,
+      "networkRequests": 0
+    },
+    {
+      "lane": "signatureGenerator",
+      "outcome": "pass",
+      "extractedFunction": "generateAztecFromEth",
+      "functionSha256": "e3f89cadd32fd46c5f9d72771b76161dbcca14d54747d7475c77ea5524d024f5",
+      "addressDerived": true,
+      "memoryOnlyWrites": 2,
+      "networkRequests": 0
+    }
+  ]
+}

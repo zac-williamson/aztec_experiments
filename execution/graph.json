@@ -857,7 +857,7 @@
       "title": "Remove shell interpretation and isolate moderation signing",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "P02"
       ],
@@ -870,7 +870,8 @@
       "scope": [
         "censor-daemon/",
         "apps/src/billboard/user/",
-        "execution/"
+        "execution/",
+        ".github/workflows/build.yml"
       ],
       "plan": "tasks/M01.md",
       "actions": [
@@ -899,7 +900,7 @@
       "evidence": "evidence/M01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "155 integrated boundary tests, two actual Docker isolation tests and five offline CLI SDK cases passed; source/evidence hashed with delegated cross-review. Durable jobs, real receipt semantics, model qualification and production-host verification remain downstream.",
       "priority": 2
     },
     {
@@ -952,7 +953,7 @@
       "evidence": "evidence/M02.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "After prerequisites, persist/reconcile jobs and current policy. M01 review also found set-moderation-policy absent from engine needsPXE action list; repair and exercise actual policy initialization, including empty boards.",
       "priority": 16
     },
     {

@@ -1,166 +1,85 @@
-# Auto-Censor Daemon
+# Moderation daemon
 
-A self-contained daemon that watches the Billboard contract for new posts, runs them through a local LLM (llama.cpp), and automatically flags any that violate the moderation policy.
+The daemon reads Billboard posts, asks a local model for a bounded moderation verdict, and passes accepted violations to a host-side signer. The signer fixes its CLI, wallet, portal and node configuration at startup. Model output supplies only a validated violation decision and reason. The post index comes from the validated post list; the model cannot select an executable, wallet or transaction destination.
 
-## What it does
+## Runtime prerequisites
 
-From any state, running `node daemon.mjs` will:
-
-1. **Download + compile llama.cpp** (if not already present) — clones `ggml.org/llama.cpp` and builds `llama-server` with cmake
-2. **Download the model** (if not already present) — fetches a ~1.4 GB Q4_K_M GGUF (Qwen3.5-2B by default)
-3. **Start llama-server** — local OpenAI-compatible API on `127.0.0.1:5090`
-4. **Read contract config** — fetches the on-chain moderation policy, censor window, and max save-up from the contract via `cli.mjs list --json`
-5. **Poll the billboard** — shells out to `cli.mjs list --json` to read all posts
-6. **Moderate each post** — sends the post + policy to the LLM, asks "VIOLATION or OK?"
-7. **Flag violations** — shells out to `cli.mjs declare-immoral` to flag the post on-chain
-
-The daemon is a **thin orchestrator** — it never touches the Aztec SDK directly. All on-chain operations go through the existing user CLI as black-box subprocess calls.
-
-## Censor window awareness
-
-The contract has a `censor_window` parameter (default 3600s) that gives the censor a bounded time to flag each post before screening locks in its flag status. The daemon uses this to:
-
-- **Prioritize posts by urgency** — unflagged posts closest to expiring (oldest first) are processed first
-- **Warn on expiring posts** — posts with <5 minutes left in the censor window get a `⏰` warning
-- **Warn on past-window posts** — posts already past the censor window get a `⚠️` warning (flagging is still attempted but may be too late to affect screening)
-
-Post timestamps are read from the contract's `get_post_time()` view function (included in the `list --json` output).
-
-## Policy resolution
-
-The daemon reads the moderation policy in priority order:
-
-1. **On-chain policy** (from `get_moderation_policy()` via `list --json` output) — the source of truth set by the censor
-2. **Local policy file** (`policy.txt` or `--policy <file>`) — fallback when the contract has no policy
-3. **Hardcoded default** — last resort
-
-## Quick start
+- Use the repository's pinned Node.js 24.15.0 and built CLI dependencies (see `../BUILDING.md`).
+- Use Docker Engine 28 or newer with Linux containers and support for bridge gateway mode `isolated`. The runtime checks the resulting profile and fails closed if it differs.
+- Supply a reviewed, locally available image pinned by `@sha256:…`, containing a CPU-compatible `/app/llama-server`. It must support the flags below and serve `/health` and OpenAI-compatible `/v1/chat/completions` on port 8080. Image provenance and actual model compatibility/quality remain the M03 acceptance work; no production LLM image is endorsed here yet.
+- Supply one local GGUF file and its trusted SHA-256. Keep that file immutable while the daemon runs and readable by container UID 65532. The daemon hashes it before startup and mounts only that file read-only. Calculating a hash of an untrusted download alone does not establish model provenance.
+- The transport uses the pinned Node image below, also available locally. Images and weights are not downloaded or compiled automatically.
 
 ```bash
-# Dry-run (evaluate posts but don't flag on-chain):
-node daemon.mjs \
-  --portal-address 0x4e3f4b4373692D0169A71D29a45754A7EE9D06ea \
-  --censor-wallet ../wallets/censor_aztec_wallet.json \
-  --policy policy.txt \
-  --dry-run --once
-
-# Live (actually flag violations):
-node daemon.mjs \
-  --portal-address 0x4e3f4b4373692D0169A71D29a45754A7EE9D06ea \
-  --censor-wallet ../wallets/censor_aztec_wallet.json \
-  --poll-interval 30
+docker pull docker.io/library/node@sha256:f22d6a1f082c02f292e86929b5b0442ac2e5eaf438a5dea9b1566601c3e05940
 ```
+
+## Local evaluation
+
+After setting the variables to your reviewed model inputs and disposable local deployment, run from the repository root:
+
+```bash
+node censor-daemon/daemon.mjs \
+  --portal-address "$LOCAL_PORTAL_ADDRESS" \
+  --node-url "$LOCAL_AZTEC_NODE_URL" \
+  --censor-wallet "$DISPOSABLE_CENSOR_WALLET" \
+  --model-image "$REVIEWED_MODEL_IMAGE_WITH_DIGEST" \
+  --model "$LOCAL_GGUF_FILE" \
+  --model-sha256 "$TRUSTED_MODEL_SHA256" \
+  --dry-run --once
+```
+
+Dry-run evaluates posts without submitting flags. The wallet file must still exist because signer configuration is validated at startup. This example is for an existing disposable local deployment; it neither provisions a wallet nor deploys contracts. Live flagging requires a configured deployment and funded censor account and is a separate operator action.
+
+## Isolation boundary
+
+`model-runtime.mjs` supervises two uniquely named containers and two networks:
+
+1. The model attaches only to an internal IPv4 bridge in `isolated` gateway mode, without a bridge gateway, default route, external DNS or published ports. IPv6 is disabled. Its only host bind mount is the specified GGUF file.
+2. A small Node transport joins the internal model network and a separate bridge. Only its port 8080 is published at `127.0.0.1:<llama-port>`. Its sole host bind mount is `model-runtime-proxy.cjs`.
+
+Both containers run as UID/GID 65532, with a read-only root, all capabilities dropped, no privilege escalation, private process namespaces, a 128-process limit, CPU/memory limits, and a 256 MiB `noexec,nosuid` temporary filesystem. Image defaults plus `HOME=/tmp` are their complete environment. No signer wallet, workspace directory, host Docker socket, host process namespace or inherited host secret environment is provided. The runtime inspects and verifies these properties before and after startup.
+
+The transport sees public post/policy data and model verdicts, never wallet material. It forwards only `GET /health` and `POST /v1/chat/completions` to the fixed internal `model:8080` service. It rejects CONNECT, absolute URLs and other routes, caps requests at 64 KiB and replies at 1 MiB, and enforces a 120-second total deadline. It forwards no upstream redirect or cookie headers. A request cannot choose a remote destination. The transport has a network route outside the model network, so its small fixed-route implementation is part of the trusted boundary.
+
+Docker documents why an ordinary internal bridge still permits access to host bridge services, and why `isolated` gateway mode removes that bridge address: [Docker gateway modes](https://docs.docker.com/engine/network/port-publishing/#gateway-modes). Tests here demonstrated the profile and a blocked controlled host endpoint on Docker Desktop for macOS; repeat the isolation suite on the intended production host. This is not assurance against a compromised host administrator, Docker daemon, container kernel or malicious changes to trusted transport/signing code.
+
+Normal exit, startup errors, SIGINT and SIGTERM trigger removal of both owned containers and networks. Cleanup attempts every owned resource and reports aggregate failures. `--skip-bootstrap` and `--keep-server` are unsupported; there is no production option to substitute an arbitrary external model endpoint or start a native model process with signer access. Test-only programmatic runtime injection is not reachable through production CLI flags or environment variables.
 
 ## Options
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--portal-address` | (required) | L1 portal contract address |
-| `--censor-wallet` | ../wallets/censor_aztec_wallet.json | Censor wallet JSON |
-| `--policy` | policy.txt | Moderation policy text file (fallback if contract has none) |
-| `--node-url` | (from rpc-config.json) | Aztec node URL |
-| `--llama-port` | 5090 | Port for llama-server |
-| `--poll-interval` | 30 | Seconds between polls |
-| `--from` | 0 | Start processing from this post index |
-| `--ctx-size` | 4096 | LLM context size |
-| `--threads` | 4 | LLM threads |
-| `--model` | (default URL) | GGUF model URL or local path |
-| `--dry-run` | false | Evaluate but don't flag |
-| `--once` | false | Process current posts and exit |
-| `--keep-server` | false | Don't kill llama-server on exit |
-| `--skip-bootstrap` | false | Skip llama.cpp compile/model download (for testing) |
-| `--cli` | (auto) | Path to cli.mjs |
+| Option | Default | Purpose |
+| --- | --- | --- |
+| `--portal-address` | Required | L1 portal fixed for this process |
+| `--censor-wallet` | `wallets/censor_aztec_wallet.json` | Existing host-side censor wallet |
+| `--node-url` | `http://127.0.0.1:5080` | Aztec node fixed for this process |
+| `--model-image` | Required | Reviewed local image with immutable digest |
+| `--model` | Required | Local GGUF file |
+| `--model-sha256` | Required | Trusted 64-character lowercase SHA-256 |
+| `--llama-port` | `5090` | Loopback transport port, 1024–65535 |
+| `--threads` | `4` | Model threads and CPU limit, 1–16 |
+| `--ctx-size` | `4096` | Context size, 512–32768 |
+| `--policy` | `censor-daemon/policy.txt` | Local policy fallback |
+| `--poll-interval` | `30` | Poll interval in seconds, 1–3600 |
+| `--from` | `0` | Starting post index |
+| `--cli` | `apps/src/billboard/user/cli.mjs` | Trusted CLI path fixed at startup |
+| `--dry-run` | Off | Evaluate without submitting flags |
+| `--once` | Off | Exit after one polling iteration |
 
-## Architecture
+Model memory is currently limited to 4096 MiB; the transport gets 512 MiB and one CPU. M03 must benchmark an actual pinned model within those bounds before release. The daemon currently resolves on-chain policy at startup with a local/default fallback; durable retry/recovery and policy freshness are separate M02 work and are not established by this isolation change.
 
-```
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
-│  daemon.mjs │────▶│  llama-server │────▶│  Local LLM      │
-│  (orchestr) │     │  (port 5090)  │     │  (Qwen3.5-2B)   │
-└──────┬──────┘     └──────────────┘     └─────────────────┘
-       │
-       │ subprocess (black-box)
-       ▼
-┌─────────────────────────────┐
-│  cli.mjs                    │
-│  list --json                │  → posts[], censorWindow, policy
-│  declare-immoral --post-N   │  → flags post on-chain
-└─────────────────────────────┘
-       │
-       ▼  Aztec network (L2)
-```
+## Tests
 
-### Module structure
-
-- **`daemon.mjs`** — orchestration: llama.cpp setup, model download, llama-server management, polling loop, censor window awareness, CLI wrapper
-- **`moderation.mjs`** — LLM moderation logic (prompt construction, verdict parsing, LLM API call with `enable_thinking: false` for Qwen3.x models). Isomorphic — can be imported by daemon or test scripts.
-- **`test_moderation.mjs`** — unit tests for `parseVerdict` and prompt building (23 tests, no network required)
-- **`test_daemon.mjs`** — integration tests for daemon orchestration (14 tests, uses mock llama-server + mock CLI)
-
-## Moderation logic
-
-The LLM is prompted with:
-- **System**: "You are a moderation bot for an anonymous billboard. Check if the post breaks any listed rule."
-- **User**: The policy rules + the post + "Does this post break any rule? Answer with ONLY: VIOLATION - <rule number> - <why> or OK"
-- **Thinking disabled**: The request includes `chat_template_kwargs: { enable_thinking: false }` which makes Qwen3.x models output a direct answer instead of spending tokens on reasoning. This field is ignored by non-Qwen models.
-- The response is parsed by `parseVerdict()` which scans from end for a line containing `VIOLATION` or `OK`.
-- **Conservative default**: if no clear signal is found, the post is NOT flagged.
-- Thinking models: if `content` is empty, falls back to `reasoning_content`.
-
-### Model recommendations
-
-- **Qwen3.5-2B** (default, 1.4GB Q4_K_M) — best accuracy/speed tradeoff. With `enable_thinking: false`, gets ~90% accuracy on test cases and responds in ~3s per post.
-- **MiniCPM5-1B** (688MB) — faster but less accurate. Struggles with multi-step reasoning (e.g., counting letters in country names). Use for simple policies only.
-- **Larger models** (3B+) — better accuracy but slower inference and larger download. Use if the policy is complex.
-
-## Requirements
-
-- **Node.js** >= 18 (for `fetch` support)
-- **cmake** + **g++** (for building llama.cpp)
-- **git**, **curl** or **wget** (for downloads)
-- The censor's Aztec wallet must have FeeJuice to pay for `declare_immoral` transactions
-
-## Testing
+Run with the pinned Node on `PATH`:
 
 ```bash
-# Run all daemon tests (no network, no llama.cpp required):
 bash censor-daemon/run_tests.sh
-
-# Or individually:
-node censor-daemon/test_moderation.mjs   # 23 unit tests
-node censor-daemon/test_daemon.mjs       # 14 integration tests
+# Include the actual Docker boundary tests:
+bash censor-daemon/run_tests.sh --with-docker
+# Or run only the Docker suite:
+node --test censor-daemon/model-runtime.test.mjs
 ```
 
-### Test coverage
+The default runner covers moderation, signer, daemon and wallet-command validation with mock infrastructure. The Docker suite requires Docker and the pinned Node image and executes a harmless probe under the actual model isolation profile. It uses newly created dummy secret fixtures, verifies a host listener is reachable from the transport but denied to the model, checks filesystem/environment/socket restrictions, tests weakened profile rejection and transport input bounds, and removes its own resources. Neither suite uses an existing wallet, downloads an LLM, proves moderation quality, or submits network transactions.
 
-**Unit tests** (`test_moderation.mjs`, 23 tests):
-- `parseVerdict`: simple VIOLATION/OK, thinking model outputs, case insensitivity, reason truncation, "scan from end" ordering, NOT A VIOLATION/NO VIOLATION handling, empty/random text defaults, markdown formatting
-- Prompt building: system prompt, user prompt with policy + post, empty posts, posts with quotes
-
-**Integration tests** (`test_daemon.mjs`, 14 tests):
-- Dry-run violation detection and OK verdicts
-- Skipping already-flagged and empty posts
-- Thinking model fallback (reasoning_content)
-- Multiple posts with mixed verdicts
-- Missing `--portal-address` validation
-- `--from` index skipping
-- Non-dry-run actually calls `declare-immoral`
-- **Policy from contract** (on-chain policy takes priority)
-- **Policy fallback** to local file when contract has none
-- **Censor window warnings** (past window, about to expire)
-- **Urgency-based prioritization** (oldest unflagged posts first)
-
-## Files
-
-```
-censor-daemon/
-├── daemon.mjs              — daemon orchestrator (~500 lines)
-├── moderation.mjs          — LLM moderation logic (testable module)
-├── policy.txt              — default moderation policy (fallback)
-├── test_moderation.mjs     — unit tests for moderation parsing (23 tests)
-├── test_daemon.mjs         — integration tests with mock infra (14 tests)
-├── run_tests.sh            — test runner script
-├── README.md               — this file
-├── llama.cpp/              — cloned + compiled (auto-generated, gitignored)
-└── models/                 — downloaded GGUF models (auto-generated, gitignored)
-```
+The runtime API is `startModelRuntime({image, modelPath, modelSha256, port, threads, ctxSize})`, returning `{port, containerId, proxyId, inspect, stop}`. Callers must await `stop()` on exit. The probe helper is solely for isolation testing.

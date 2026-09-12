@@ -51,6 +51,7 @@
 // ============================================================
 
 import fs from 'fs';
+import { loadCliWalletInputs } from './wallet-inputs.mjs';
 import { createHash } from 'node:crypto';
 import BillboardCRS from '../../../../shared/crs-client.js';
 import path from 'path';
@@ -93,7 +94,7 @@ const rpcConfigPath = path.join(__dirname, '..', '..', '..', '..', 'shared', 'rp
 const rpcConfig = fs.existsSync(rpcConfigPath) ? JSON.parse(fs.readFileSync(rpcConfigPath, 'utf8')) : {};
 
 const ACTION = positional[0] || 'status';
-const AZTEC_NODE_URL = args['node-url'] || rpcConfig.nodeUrl || 'https://v5.mainnet.rpc.aztec-labs.com';
+const AZTEC_NODE_URL = args['node-url'] || rpcConfig.nodeUrl || 'http://127.0.0.1:5080';
 const AZTEC_API_KEY = __realProcess.env.AZTEC_API_KEY || rpcConfig.apiKey || '';
 const ETH_RPC_URL = args['eth-rpc'] || 'https://invictus.ambire.com/ethereum';
 // Defaults match the user UI template
@@ -373,21 +374,11 @@ async function main() {
     __realProcess.exit(1);
   }
 
-  // Load wallets
-  let ethWallet = null, aztecWallet = null;
-  if (fs.existsSync(ETH_WALLET_PATH)) {
-    ethWallet = JSON.parse(fs.readFileSync(ETH_WALLET_PATH, 'utf8'));
-    log('ETH wallet: ' + ethWallet.address, 'success');
-  } else {
-    log('No ETH wallet at ' + ETH_WALLET_PATH, 'warn');
-  }
-  if (fs.existsSync(AZTEC_WALLET_PATH)) {
-    aztecWallet = JSON.parse(fs.readFileSync(AZTEC_WALLET_PATH, 'utf8'));
-    log('Aztec wallet: ' + (aztecWallet.address || '(no address)'), 'success');
-  } else {
-    log('No Aztec wallet at ' + AZTEC_WALLET_PATH, 'warn');
-    __realProcess.exit(1);
-  }
+  const { ethWallet, aztecWallet, censorWalletJson } = loadCliWalletInputs({
+    action: ACTION, explicitCensorWallet: Object.hasOwn(args, 'censor-wallet'),
+    censorWalletPath: CENSOR_WALLET_PATH, aztecWalletPath: AZTEC_WALLET_PATH, ethWalletPath: ETH_WALLET_PATH,
+  });
+  log(censorWalletJson ? 'Using only the configured censor wallet.' : 'User wallet loaded.', 'success');
 
   // Load SDK from bundle
   log('Loading Aztec SDK (bundle)...', 'info');
@@ -432,6 +423,7 @@ async function main() {
     censorResponse: args['censor-response'],
     moderationPolicy: args['moderation-policy'] || undefined,
     censorWalletPath: CENSOR_WALLET_PATH,
+    censorWalletJson,
     newCensor: args['new-censor'] || undefined,
 
     jsonOutput: !!args['json'],

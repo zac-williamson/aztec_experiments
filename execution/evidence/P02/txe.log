@@ -577,3 +577,4 @@
 [22:32:41.554] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.004763292000046931s {"blockNumber":5,"successfulCount":1,"failedCount":0,"duration":0.004763292000046931,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":1984,"l2Gas":529900},"totalSizeInBytes":1984,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
 [22:32:41.584] INFO: txe:top_level_context Created block 6 with timestamp 1789194762
 [22:32:42.165] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.026385542000003624s {"blockNumber":7,"successfulCount":1,"failedCount":0,"duration":0.026385542000003624,"rate":45331606.22585792,"totalPublicGas":{"daGas":2176,"l2Gas":1196099},"totalBlockGas":{"daGas":3552,"l2Gas":1922849},"totalSizeInBytes":3552,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[23:08:36.026] INFO: txe:rpc Received SIGTERM.

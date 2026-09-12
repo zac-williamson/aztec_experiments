@@ -4,8 +4,9 @@
 //
 // Tests the daemon's orchestration logic (post processing, CLI
 // wrapping, verdict handling) using:
-//   - A mock llama-server (HTTP server on port 5095)
-//   - A mock cli.mjs (shell script that returns canned responses)
+//   - A mock llama-server on an OS-assigned loopback port
+//   - A mock Node CLI with disposable wallet/configuration fixtures
+//   - An explicit imported test harness; production has no isolation bypass
 //
 // Does NOT require:
 //   - Real llama.cpp compilation
@@ -17,6 +18,7 @@
 // ============================================================
 
 import fs from 'fs';
+import os from 'node:os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import http from 'http';
@@ -24,6 +26,10 @@ import { spawn } from 'child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
+const TEST_ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'billboard-daemon-tests-'));
+const MOCK_WALLET = path.join(TEST_ROOT, 'disposable-wallet.json');
+fs.writeFileSync(MOCK_WALLET, '{}');
+process.once('exit', () => fs.rmSync(TEST_ROOT, { recursive: true, force: true }));
 
 let pass = 0;
 let fail = 0;
@@ -60,7 +66,7 @@ class MockLlamaServer {
   }
 
   start() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       this.server = http.createServer((req, res) => {
         let body = '';
         req.on('data', chunk => body += chunk);
@@ -75,13 +81,13 @@ class MockLlamaServer {
             const postText = parsed.messages?.find(m => m.role === 'user')?.content || '';
             const userPrompt = postText;
             // Extract the post text from the prompt
-            const postMatch = userPrompt.match(/Post:\s*"([\s\S]*)"/);
-            const actualPost = postMatch ? postMatch[1] : '';
+            const actualPost = JSON.parse(userPrompt.slice(userPrompt.indexOf('\n') + 1)).post;
             this.requests.push(actualPost);
             const resp = this.responses(actualPost);
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
               choices: [{
+                finish_reason: resp.finish_reason || 'stop',
                 message: {
                   content: resp.content || '',
                   reasoning_content: resp.reasoning_content || '',
@@ -94,7 +100,8 @@ class MockLlamaServer {
           res.end('not found');
         });
       });
-      this.server.listen(this.port, '127.0.0.1', resolve);
+      this.server.once('error', reject);
+      this.server.listen(0, '127.0.0.1', () => { this.port = this.server.address().port; resolve(); });
     });
   }
 
@@ -115,6 +122,8 @@ class MockCli {
     this.behavior = behavior; // { posts: [...], flagCalls: [] }
     this.flagCalls = [];
     this.listCalls = 0;
+    this.callsFile = this.scriptPath + '.calls.jsonl';
+    fs.writeFileSync(this.callsFile, '');
     this._writeScript();
   }
 
@@ -124,6 +133,7 @@ class MockCli {
 const fs = require('fs');
 const args = process.argv.slice(2);
 const action = args[0];
+fs.appendFileSync(${JSON.stringify(this.callsFile)}, JSON.stringify(args) + \"\\n\");
 
 if (action === 'list' && args.includes('--json')) {
   process.stdout.write(JSON.stringify({
@@ -136,6 +146,7 @@ if (action === 'list' && args.includes('--json')) {
     policy: ${JSON.stringify(this.behavior.policy || '')}
   }));
 } else if (action === 'declare-immoral') {
+  if (${JSON.stringify(this.behavior.flagExit || 0)}) process.exit(${JSON.stringify(this.behavior.flagExit || 0)});
   const idx = args[args.indexOf('--post-index') + 1];
   const resp = args[args.indexOf('--censor-response') + 1];
   process.stderr.write("Flagging post " + idx + " with: " + resp + "\\n");
@@ -149,7 +160,10 @@ if (action === 'list' && args.includes('--json')) {
     fs.chmodSync(this.scriptPath, 0o755);
   }
 
+  calls() { return fs.readFileSync(this.callsFile, 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line)); }
+
   cleanup() {
+    try { fs.unlinkSync(this.callsFile); } catch {}
     try { fs.unlinkSync(this.scriptPath); } catch {}
   }
 }
@@ -157,21 +171,32 @@ if (action === 'list' && args.includes('--json')) {
 // ============================================================
 // Run daemon as subprocess with mock infra (async, non-blocking)
 // ============================================================
-function runDaemon(args, timeoutMs = 30000) {
+function runDaemon(args, timeoutMs = 30000, { production = false } = {}) {
+  // Explicit test-only harness injects mock runtime. Production has no CLI/env
+  // bypass for model isolation, and this harness uses only disposable fixtures.
+  const productionArgs = [];
+  for (let i = 0; i < args.length; i++) {
+    if (!production && args[i] === '--skip-bootstrap') continue;
+    if (!production && args[i] === '--model') { i++; continue; }
+    productionArgs.push(args[i]);
+  }
+  const moduleUrl = new URL('./daemon.mjs', import.meta.url).href;
+  const harness = `import {runDaemon} from ${JSON.stringify(moduleUrl)};
+    await runDaemon(process.argv.slice(1), {startRuntime: async config => ({port:config.port, stop:async()=>{}})});`;
   return new Promise((resolve) => {
-    const child = spawn('node', [path.join(__dirname, 'daemon.mjs'), ...args], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      timeout: timeoutMs,
+    const childArgs = production ? [path.join(__dirname, 'daemon.mjs'), ...productionArgs] : ['--input-type=module', '-e', harness, '--', ...productionArgs];
+    const child = spawn(process.execPath, childArgs, {
+      stdio: ['ignore', 'pipe', 'pipe'], timeout: timeoutMs, killSignal: 'SIGKILL',
     });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (d) => { stdout += d.toString(); });
     child.stderr.on('data', (d) => { stderr += d.toString(); });
-    child.on('exit', (code) => {
-      resolve({ stdout, stderr, exitCode: code || 0 });
+    child.on('close', (code, signal) => {
+      resolve({ stdout, stderr, exitCode: code === null ? 1 : code, signal });
     });
-    child.on('error', (e) => {
-      resolve({ stdout, stderr: stderr + e.message, exitCode: 1 });
+    child.on('error', (error) => {
+      resolve({ stdout, stderr: stderr + error.message, exitCode: 1 });
     });
   });
 }
@@ -182,8 +207,8 @@ function runDaemon(args, timeoutMs = 30000) {
 async function main() {
   console.log('=== Daemon Integration Tests (with mock infra) ===\n');
 
-  const MOCK_PORT = 5095;
-  const MOCK_CLI = path.join(__dirname, 'test_mock_cli.cjs');
+  const MOCK_PORT = 0;
+  const MOCK_CLI = path.join(TEST_ROOT, 'test_mock_cli.cjs');
 
   // Test 1: Dry-run mode with violation
   await test('dry-run flags violation in output but does not call declare-immoral', async () => {
@@ -198,10 +223,10 @@ async function main() {
 
     try {
       const result = await runDaemon([
-        '--portal-address', '0x1234',
-        '--censor-wallet', '/dev/null',
+        '--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET,
         '--cli', MOCK_CLI,
-        '--llama-port', String(MOCK_PORT),
+        '--llama-port', String(mockServer.port),
         '--dry-run',
         '--once',
         '--skip-bootstrap',
@@ -214,6 +239,7 @@ async function main() {
         'output should mention VIOLATION or DRY RUN');
       assertTrue(result.stdout.includes('DRY RUN') || result.stdout.includes('Would flag'),
         'dry-run should indicate it would flag');
+      assertFalse(mockCli.calls().some(args => args[0] === 'declare-immoral'), 'dry-run must not execute a flag');
     } finally {
       await mockServer.stop();
       mockCli.cleanup();
@@ -233,10 +259,10 @@ async function main() {
 
     try {
       const result = await runDaemon([
-        '--portal-address', '0x1234',
-        '--censor-wallet', '/dev/null',
+        '--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET,
         '--cli', MOCK_CLI,
-        '--llama-port', String(MOCK_PORT),
+        '--llama-port', String(mockServer.port),
         '--dry-run',
         '--once',
         '--skip-bootstrap',
@@ -266,10 +292,10 @@ async function main() {
 
     try {
       const result = await runDaemon([
-        '--portal-address', '0x1234',
-        '--censor-wallet', '/dev/null',
+        '--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET,
         '--cli', MOCK_CLI,
-        '--llama-port', String(MOCK_PORT),
+        '--llama-port', String(mockServer.port),
         '--dry-run',
         '--once',
         '--skip-bootstrap',
@@ -299,10 +325,10 @@ async function main() {
 
     try {
       const result = await runDaemon([
-        '--portal-address', '0x1234',
-        '--censor-wallet', '/dev/null',
+        '--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET,
         '--cli', MOCK_CLI,
-        '--llama-port', String(MOCK_PORT),
+        '--llama-port', String(mockServer.port),
         '--dry-run',
         '--once',
         '--skip-bootstrap',
@@ -320,7 +346,7 @@ async function main() {
   });
 
   // Test 5: Thinking model with reasoning_content fallback
-  await test('handles thinking model (content empty, reasoning_content has verdict)', async () => {
+  await test('reasoning-only model output is an observable failure and cannot flag', async () => {
     const posts = [
       { index: 0, text: 'Buy watches cheap', flagged: false },
     ];
@@ -333,18 +359,19 @@ async function main() {
 
     try {
       const result = await runDaemon([
-        '--portal-address', '0x1234',
-        '--censor-wallet', '/dev/null',
+        '--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET,
         '--cli', MOCK_CLI,
-        '--llama-port', String(MOCK_PORT),
+        '--llama-port', String(mockServer.port),
         '--dry-run',
         '--once',
         '--skip-bootstrap',
         '--model', path.join(__dirname, 'test_dummy_model.gguf'),
       ]);
 
-      assertTrue(result.stdout.includes('VIOLATION'),
-        'should detect violation from reasoning_content');
+      assertTrue(result.exitCode !== 0, 'reasoning-only output must remain unresolved');
+      assertFalse(result.stdout.includes('Would flag'), 'reasoning text cannot authorize a flag');
+      assertTrue(result.stdout.includes('moderation/signing error'), 'unresolved response must be observable');
     } finally {
       await mockServer.stop();
       mockCli.cleanup();
@@ -367,10 +394,10 @@ async function main() {
 
     try {
       const result = await runDaemon([
-        '--portal-address', '0x1234',
-        '--censor-wallet', '/dev/null',
+        '--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET,
         '--cli', MOCK_CLI,
-        '--llama-port', String(MOCK_PORT),
+        '--llama-port', String(mockServer.port),
         '--dry-run',
         '--once',
         '--skip-bootstrap',
@@ -390,9 +417,9 @@ async function main() {
   // Test 7: Missing --portal-address fails
   await test('missing --portal-address exits with error', async () => {
     const result = await runDaemon([
-      '--censor-wallet', '/dev/null',
+      '--censor-wallet', MOCK_WALLET,
       '--cli', MOCK_CLI,
-      '--llama-port', String(MOCK_PORT),
+      '--llama-port', '5090',
       '--dry-run',
       '--once',
     ]);
@@ -415,10 +442,10 @@ async function main() {
 
     try {
       const result = await runDaemon([
-        '--portal-address', '0x1234',
-        '--censor-wallet', '/dev/null',
+        '--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET,
         '--cli', MOCK_CLI,
-        '--llama-port', String(MOCK_PORT),
+        '--llama-port', String(mockServer.port),
         '--dry-run',
         '--once',
         '--from', '2',
@@ -449,10 +476,10 @@ async function main() {
 
     try {
       const result = await runDaemon([
-        '--portal-address', '0x1234',
-        '--censor-wallet', '/dev/null',
+        '--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET,
         '--cli', MOCK_CLI,
-        '--llama-port', String(MOCK_PORT),
+        '--llama-port', String(mockServer.port),
         '--once',
         '--skip-bootstrap',
         '--model', path.join(__dirname, 'test_dummy_model.gguf'),
@@ -462,6 +489,7 @@ async function main() {
         'should flag post in non-dry-run mode');
       assertTrue(result.stdout.includes('flagged'),
         'should confirm flagging');
+      assertEqual(mockCli.calls().filter(args => args[0] === 'declare-immoral').length, 1, 'one actual mock flag call');
     } finally {
       await mockServer.stop();
       mockCli.cleanup();
@@ -480,10 +508,10 @@ async function main() {
 
     try {
       const result = await runDaemon([
-        '--portal-address', '0x1234',
-        '--censor-wallet', '/dev/null',
+        '--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET,
         '--cli', MOCK_CLI,
-        '--llama-port', String(MOCK_PORT),
+        '--llama-port', String(mockServer.port),
         '--dry-run',
         '--once',
         '--skip-bootstrap',
@@ -511,15 +539,15 @@ async function main() {
     await mockServer.start();
 
     // Create a temporary policy file
-    const tmpPolicy = path.join(__dirname, 'test_tmp_policy.txt');
+    const tmpPolicy = path.join(TEST_ROOT, 'test_tmp_policy.txt');
     fs.writeFileSync(tmpPolicy, 'Local fallback policy: no spam');
 
     try {
       const result = await runDaemon([
-        '--portal-address', '0x1234',
-        '--censor-wallet', '/dev/null',
+        '--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET,
         '--cli', MOCK_CLI,
-        '--llama-port', String(MOCK_PORT),
+        '--llama-port', String(mockServer.port),
         '--policy', tmpPolicy,
         '--dry-run',
         '--once',
@@ -548,10 +576,10 @@ async function main() {
 
     try {
       const result = await runDaemon([
-        '--portal-address', '0x1234',
-        '--censor-wallet', '/dev/null',
+        '--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET,
         '--cli', MOCK_CLI,
-        '--llama-port', String(MOCK_PORT),
+        '--llama-port', String(mockServer.port),
         '--dry-run',
         '--once',
         '--skip-bootstrap',
@@ -578,10 +606,10 @@ async function main() {
 
     try {
       const result = await runDaemon([
-        '--portal-address', '0x1234',
-        '--censor-wallet', '/dev/null',
+        '--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET,
         '--cli', MOCK_CLI,
-        '--llama-port', String(MOCK_PORT),
+        '--llama-port', String(mockServer.port),
         '--dry-run',
         '--once',
         '--skip-bootstrap',
@@ -609,10 +637,10 @@ async function main() {
 
     try {
       await runDaemon([
-        '--portal-address', '0x1234',
-        '--censor-wallet', '/dev/null',
+        '--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET,
         '--cli', MOCK_CLI,
-        '--llama-port', String(MOCK_PORT),
+        '--llama-port', String(mockServer.port),
         '--dry-run',
         '--once',
         '--skip-bootstrap',
@@ -629,6 +657,44 @@ async function main() {
       await mockServer.stop();
       mockCli.cleanup();
     }
+  });
+
+  await test('model cannot add a destination, operation or post index to a verdict', async () => {
+    const mockCli = new MockCli(MOCK_CLI, { posts: [{ index: 0, text: 'A post', flagged: false }] });
+    const mockServer = new MockLlamaServer(0, () => ({ content: JSON.stringify({
+      isViolation: true, reason: 'Spam', operation: 'transfer-censor', postIndex: 123,
+      destination: '0x' + 'ff'.repeat(20),
+    }) }));
+    await mockServer.start();
+    try {
+      const result = await runDaemon(['--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET, '--cli', MOCK_CLI,
+        '--llama-port', String(mockServer.port), '--once']);
+      assertTrue(result.exitCode !== 0, 'malformed verdict must fail observably');
+      assertTrue(result.stdout.includes('INVALID_VERDICT'), 'expected structured error code');
+      assertFalse(mockCli.calls().some(args => args[0] !== 'list'), 'model cannot authorize any operation');
+    } finally { await mockServer.stop(); mockCli.cleanup(); }
+  });
+
+  await test('failed signing is not reported as a completed successful job', async () => {
+    const mockCli = new MockCli(MOCK_CLI, { posts: [{ index: 0, text: 'Spam', flagged: false }], flagExit: 7 });
+    const mockServer = new MockLlamaServer(0, () => ({ content: 'VIOLATION - 1 - Spam' }));
+    await mockServer.start();
+    try {
+      const result = await runDaemon(['--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET, '--cli', MOCK_CLI,
+        '--llama-port', String(mockServer.port), '--once']);
+      assertTrue(result.exitCode !== 0, 'signing failure must cause unsuccessful one-shot exit');
+      assertFalse(result.stdout.includes('Post #0 flagged.'), 'failed signing cannot be logged as successful');
+      assertTrue(result.stdout.includes('Signer declare-immoral failed (7)'), 'bounded failure status must be observable');
+    } finally { await mockServer.stop(); mockCli.cleanup(); }
+  });
+
+  await test('production CLI cannot bypass model isolation with skip-bootstrap', async () => {
+    const result = await runDaemon(['--portal-address', '0x' + '12'.repeat(20),
+      '--censor-wallet', MOCK_WALLET, '--skip-bootstrap', '--once'], 30000, { production: true });
+    assertTrue(result.exitCode !== 0, 'unsupported isolation bypass must fail');
+    assertTrue(result.stdout.includes('managed isolated model runtime'), 'operator receives migration guidance');
   });
 
   console.log(`\n=== Results ===`);
