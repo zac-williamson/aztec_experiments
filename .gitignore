@@ -33,3 +33,6 @@ tmp_*.js
 # Foundry transient cache and build metadata
 billboard/portal/cache/
 billboard/portal/out/build-info/
+
+# Default Foundry compile may emit test-only artifacts; regression outputs use .build.
+billboard/portal/out/PortalArtifactRegression.t.sol/

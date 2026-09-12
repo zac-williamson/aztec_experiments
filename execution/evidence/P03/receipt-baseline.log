@@ -1,0 +1,20 @@
+✔ control: pending then successful mined receipt resolves and confirms once (10.071625ms)
+✔ B09 baseline bug: actual SDK reverted execution resolves and is logged as confirmed (0.613583ms)
+✔ B09 baseline bug: dropped transaction also resolves as confirmed (0.580666ms)
+✔ historical app_logic_reverted-shaped fixture still takes the same unsafe branch (0.4585ms)
+✔ control: unknown status rejected by SDK schema remains an observable RPC error (2.692583ms)
+✔ control: malformed receipt missing its predicate rejects instead of confirming (0.5535ms)
+✔ control: perpetually pending receipts time out without confirmation (0.50475ms)
+✔ control: perpetually missing receipts time out without confirmation (0.390375ms)
+✔ control: transient receipt lookup retries without proving or submitting again (0.746583ms)
+✔ B09 baseline bug: already-submitted retry handling also confirms a reverted receipt (0.474458ms)
+✔ control: pre-prove rejection prevents both proving and submission (0.412875ms)
+✔ control: proving failure prevents submission and confirmation (0.379166ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 251.876958

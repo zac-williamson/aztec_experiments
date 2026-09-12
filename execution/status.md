@@ -1,9 +1,11 @@
 # Checkpoint
 
 - Phase: EXECUTING with delegated agent lanes.
-- Completed: P01, P02 and M01, with hashed acceptance evidence and agent review.
+- Completed: P01, P02, M01 and P03, with hashed acceptance evidence and agent review.
 - M01 verified: 155 integrated boundary checks, two actual Docker isolation tests, five offline SDK cases, and delegated cross-review.
-- Next: P03 — maintainable failure reproductions and regression harness.
+- P03 verified: 62 Noir, 155 moderation, 14 boundary, nine portal, 105 build and 29 graph checks.
+- Next: P04 — supported V5 compatibility and interface freeze.
+- M01 committed locally as 824bc33.
 - P02 verified: empty-cache Linux and isolated macOS builds; 33 identical outputs; 105 guard checks; 59 Noir tests; both real browser CRS paths; five offline CLI compatibility cases.
 - P03 reproduction mapping is prepared; no P03 completion is claimed.
 - X03 is blocked for production release under current official V5 guidance; internal work continues.

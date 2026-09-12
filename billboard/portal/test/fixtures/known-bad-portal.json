@@ -1,0 +1,12 @@
+{
+  "purpose": "Known-bad historical deployment bytecode. Test fixture only, never deploy in production.",
+  "source": "Historical review/portal-probes/src/PortalArtifactProbe.t.sol bundled() hex literal",
+  "historicalProbeSha256": "76e6f61692a55bd77ad5c19e84b5de59f6cc61a09e8a834103e65c4e21409b6a",
+  "creationBytecodeBytes": 3202,
+  "creationBytecodeSha256": "b990b437bf38a28a3f4606685d6d04cfb2e458773dbe7b4c60906c31ff253fcd",
+  "fixtureFileSha256": "4352f08b2d0e0db853058269fc5dfae7af1be14808a30fec6d9624689a304099",
+  "observedDefects": [
+    "Constructor ignores configured minimum; MIN_DEPOSIT remains 0.001 ETH",
+    "Withdrawal clears individual deposit but leaves totalDeposited unchanged"
+  ]
+}

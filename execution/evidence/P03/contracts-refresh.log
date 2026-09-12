@@ -1,0 +1,58 @@
+
+> build:contracts
+> node scripts/build-contracts.mjs
+
+Scheme is: ultra_honk, num threads: 12 (mem: 8.45 MiB)
+Transpiling: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/target/billboard_contract-Billboard.json -> /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/target/billboard_contract-Billboard.json.processing (mem: 8.45 MiB)
+Transpiled: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/target/billboard_contract-Billboard.json -> /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/target/billboard_contract-Billboard.json.processing (mem: 53.94 MiB)
+Generating verification keys for functions in billboard_contract-Billboard.json.processing (mem: 53.94 MiB)
+Cache directory: /Users/zac/.bb/5.0.0/vk_cache (mem: 53.94 MiB)
+Generating verification key: 1e3284c02b5feba5bb674aaa8ab79210eac6ba152f37838130bd03f8f0efdb44 (mem: 55.62 MiB)
+ChonkComputeVk - deriving Chonk verification key for circuit 'update_portal' (mem: 55.64 MiB)
+Generating verification key: b2c68fb52ff9a1b267b9ba107a9e7686b15147242ffc9bbe43ae6e566263b282 (mem: 59.52 MiB)
+ChonkComputeVk - deriving Chonk verification key for circuit 'withdraw' (mem: 61.09 MiB)
+Generating verification key: de072766dcebb9d0f58fedb583a2c7acb5300306f314b3a9019dc5a44fc3e91e (mem: 70.88 MiB)
+ChonkComputeVk - deriving Chonk verification key for circuit 'claim_deposit' (mem: 71.19 MiB)
+Generating verification key: b767aaabac1d7ecd2bd45e4a4c362814fb5706e5984378a3bb4d82521bc0b170 (mem: 89.56 MiB)
+ChonkComputeVk - deriving Chonk verification key for circuit 'post' (mem: 89.80 MiB)
+ChonkComputeVk - VK derived, size: 5216 bytes (mem: 215.39 MiB)
+ChonkComputeVk - VK derived, size: 5216 bytes (mem: 397.05 MiB)
+ChonkComputeVk - VK derived, size: 5216 bytes (mem: 397.05 MiB)
+ChonkComputeVk - VK derived, size: 5216 bytes (mem: 397.05 MiB)
+Successfully processed: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/target/billboard_contract-Billboard.json -> /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/target/billboard_contract-Billboard.json.processing (mem: 397.05 MiB)
+Compiling 1 files with Solc 0.8.27
+Solc 0.8.27 finished in 1.31s
+Compiler run successful!
+note[screaming-snake-case-immutable]: immutables should use SCREAMING_SNAKE_CASE
+  --> test/PortalArtifactRegression.t.sol:35:39
+   |
+35 |     AccountingInbox private immutable inbox = new AccountingInbox();
+   |                                       ^^^^^
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#screaming-snake-case-immutable
+
+note[screaming-snake-case-immutable]: immutables should use SCREAMING_SNAKE_CASE
+  --> test/PortalArtifactRegression.t.sol:36:40
+   |
+36 |     AccountingOutbox private immutable outbox = new AccountingOutbox();
+   |                                        ^^^^^^
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#screaming-snake-case-immutable
+
+note[screaming-snake-case-const]: constants should use SCREAMING_SNAKE_CASE
+  --> test/PortalArtifactRegression.t.sol:42:42
+   |
+42 |     VmPortalRegression internal constant vm = VmPortalRegression(address(uint160(uint256(keccak256("hevm cheat code")))));
+   |                                          ^^
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#screaming-snake-case-const
+
+note[unsafe-cheatcode]: usage of unsafe cheatcodes that can perform dangerous operations
+  --> test/PortalArtifactRegression.t.sol:54:38
+   |
+54 |         bytes memory text = bytes(vm.readFile(filename));
+   |                                      ^^^^^^^^
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#unsafe-cheatcode
+
+Built canonical Noir/VK and Solidity artifacts; synchronized all consumers.

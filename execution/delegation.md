@@ -86,3 +86,30 @@ M01 completed after all three implementation handoffs and two cross-reviews.
 Actual isolation tests passed after cleanup, gateway and disconnect fixes; root
 bound current source and all four criteria to evidence/M01.json. The next graph
 package is P03; deployment readiness is still incomplete.
+
+## P03 assignments (after M01 commit824bc33)
+
+| Lane | Agent | Ownership |
+|---|---|---|
+| Actual portal bytecode/accounting and bad fixture | build_review | billboard/portal/test/, necessary test fixtures/config, P03 portal evidence |
+| Actual Noir note-history boundary | build_verification | billboard Noir test module only, P03 Noir evidence |
+| Actual wallet receipt regressions | artifact_regressions | shared wallet test seam if required, scripts/test-receipt-baseline.mjs, P03 receipt evidence |
+| Integration and regression mapping | root | graph, B01-B12 matrix, historical inert shell construction fixture/tests, final checks/review |
+
+These tests distinguish present failures from fixed controls; baseline defect
+observations are not claims of production correctness. No real funds, existing
+wallets or external attack targets are used. New extraction should preserve actual
+behavior and avoid source slicing. Root coordinates any necessary source ownership
+changes and tests affected generated assets before integrating them.
+
+P03 history lane update: build_verification stopped with an automated content
+flag before editing tests (recorded in history-lane-interruption.md). Root assumed
+its test ownership and is running bounded local note-history controls. The portal
+lane completed nine tests and now independently reviews the shell/receipt harness.
+Receipt implementation continues in artifact_regressions. No article was removed.
+
+P03 integration complete: portal9, shell/receipt14, Noir62, moderation155 and
+build105 checks passed. Independent AI reviews cover root shell/history and
+receipt code. Known-bad outcomes remain assigned to repair nodes. Root preserved
+actual source/evidence hashes and prepares the local checkpoint; P04 compatibility
+research is preparation only, not a completed migration.

@@ -73,11 +73,19 @@ npm run check:artifacts
 npm run test:build
 npm run test:noir
 npm run test:moderation
+node --test scripts/test-shell-baseline.mjs scripts/test-receipt-baseline.mjs
+(cd billboard/portal && FOUNDRY_PROFILE=regression forge test --offline -vv)
 npx --no-install playwright install chromium
 npm run test:sdk-browser
 python3 -m unittest discover -s execution/tests -v
 python3 execution/graph.py validate
 ```
+
+The receipt, history and historical portal regressions preserve observed baseline
+defects beside normal controls. Passing an explicit known-bad observation does
+not mean the defect is repaired. Their source-bound evidence and repair gates
+are mapped in `execution/evidence/P03/finding-matrix.md`. The EVM tests mock bridge
+calls only for accounting and use separate `.build/portal-tests` outputs.
 
 On Linux, `npx --no-install playwright install --with-deps chromium` also installs
 browser system dependencies and may require system package permissions. For an

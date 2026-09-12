@@ -154,7 +154,7 @@
       "title": "Establish failure reproductions and baseline regression harness",
       "phase": "foundation",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "P02"
       ],
@@ -186,7 +186,12 @@
         "billboard/",
         "censor-daemon/",
         "apps/",
-        "execution/"
+        "execution/",
+        "shared/",
+        "scripts/",
+        ".github/workflows/build.yml",
+        "BUILDING.md",
+        ".gitignore"
       ],
       "plan": "tasks/P03.md",
       "actions": [
@@ -215,7 +220,7 @@
       "evidence": "evidence/P03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "Accepted source-bound regression evidence:62Noir,155moderation,14shell/receipt,9portal,105build,29graph. B01\u2013B12 mapped, actual receipt/history failures retained for W03/C04; no production readiness claimed.",
       "priority": 3
     },
     {
@@ -487,7 +492,7 @@
       "evidence": "evidence/C04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "P03 adds actual TXE first-page control and 17-post missing-child/next-post regression. Verify measured results and replace known-bad assertions when implementing full history lookup; production PXE ordering,32/1000 histories and multiple deposits remain required.",
       "priority": 9
     },
     {
@@ -799,7 +804,7 @@
       "evidence": "evidence/W03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "P03 actual shared-wallet sendTx with SDK5 receipt classes resolves reverted and dropped outcomes as confirmed. Success requires executionResult plus inclusion/finality semantics, not obsolete status-only checks. Replace known-bad regression assertions and exercise all four duplicated engine consumers.",
       "priority": 14
     },
     {

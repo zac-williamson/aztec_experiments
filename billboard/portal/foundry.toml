@@ -11,3 +11,15 @@ remappings = [
     "@aztec-blob-lib/=node_modules/@aztec/l1-artifacts/l1-contracts/src/core/libraries/rollup/",
     "@oz/=node_modules/@aztec/l1-artifacts/l1-contracts/lib/openzeppelin-contracts/contracts/",
 ]
+
+# Maintained EVM regressions read only deployment bytes and the bad baseline.
+# Keep their outputs separate from release artifacts.
+[profile.regression]
+test = "test"
+out = "../../.build/portal-tests/out"
+cache_path = "../../.build/portal-tests/cache"
+fs_permissions = [
+    { access = "read", path = "test/fixtures" },
+    { access = "read", path = "../../apps/src/billboard/portal_bytecode.txt" },
+    { access = "read", path = "../../apps/src/billboard/deploy/portal_bytecode.txt" },
+]

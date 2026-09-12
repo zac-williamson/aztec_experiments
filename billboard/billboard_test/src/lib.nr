@@ -1399,3 +1399,53 @@ unconstrained fn test_save_up_prevents_excessive_burst() {
         Billboard::at(contract_address).post(msg_with(999), false, child_f, gc_f),
     );
 }
+
+// P03: real note-history boundary controls. These are local TXE executions,
+// not a claim about full PXE ordering or production proof generation.
+pub unconstrained fn setup_regular_history(length: u32) -> (TestEnvironment, AztecAddress, AztecAddress, u64) {
+    let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    for i in 0..length {
+        env.mine_block_at(deposit_time + (i as u64 + 1) * (BASE_COOLDOWN + CENSOR_WINDOW + 1));
+        let (child, grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.call_private(owner, Billboard::at(contract_address).post(msg_with(i as Field + 1), false, child, grandchild));
+    }
+    let count = env.view_public(Billboard::at(contract_address).get_post_count());
+    assert(count == length, f"History setup expected {length}, got {count}");
+    (env, contract_address, owner, deposit_time)
+}
+
+#[test]
+unconstrained fn test_history_first_page_control() {
+    let (mut env, contract_address, owner, _deposit_time) = setup_regular_history(16);
+    let (child, _grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+    assert(child.is_some(), "Last note in first page must be discoverable");
+    let hinted = child.unwrap_unchecked();
+    let index = hinted.note.post_index;
+    assert(index == 15, f"Expected first-page last child15, got {index}");
+}
+
+#[test]
+unconstrained fn test_history_known_bad_missing_child_after_first_page() {
+    let (mut env, contract_address, owner, _deposit_time) = setup_regular_history(17);
+    let notes = env.execute_utility(Billboard::at(contract_address).get_post_notes(owner));
+    for i in 0..16 {
+        assert(notes[i].is_some(), "First history page must be full");
+        let note = notes[i].unwrap_unchecked();
+        let index = note.note.post_index;
+        assert(index == i, f"Measured TXE first-page index expected {i}, got {index}");
+    }
+    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner));
+    assert(info[4] == 15, "Previous child must actually have been screened");
+    assert(info[5] == 16, "The seventeenth real post must exist");
+    let (child, grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+    assert(child.is_none(), "Known-bad control: next required child is omitted by first page");
+    assert(grandchild.is_none(), "No grandchild expected without child");
+}
+
+#[test(should_fail_with = "Child note required for screening")]
+unconstrained fn test_history_known_bad_next_post_cannot_progress() {
+    let (mut env, contract_address, owner, deposit_time) = setup_regular_history(17);
+    env.mine_block_at(deposit_time + 18 * (BASE_COOLDOWN + CENSOR_WINDOW + 1));
+    let (child, grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+    env.call_private(owner, Billboard::at(contract_address).post(msg_with(18), false, child, grandchild));
+}

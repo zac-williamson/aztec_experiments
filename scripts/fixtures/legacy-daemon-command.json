@@ -1,0 +1,9 @@
+{
+  "revision": "1849967d15d96ab96234091f2fa47d8762a6c06a",
+  "source": "censor-daemon/daemon.mjs",
+  "segment": "cliBaseArgs and runCli, through before fetchPosts",
+  "source_sha256": "a72e66600f2c9acb6bf1bb9b9fc4012f9a964f75f7fc14bcfeac5e6d01584b49",
+  "segment_sha256": "bf17fcf9c3b275b39d919234b3522b4596a638c2517270f3387be4d2416e19c8",
+  "fixture_sha256": "503c892d8102c525b2d2b1463729b35ba66151174da532d5bd209dad803d1865",
+  "adaptation": "Verbatim function bodies inside factory with injected capture; no subprocess import/default runner. Test never invokes a shell."
+}

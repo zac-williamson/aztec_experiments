@@ -44,6 +44,8 @@ jobs:
           npm run test:build
           npm run test:noir
           npm run test:moderation
+          node --test scripts/test-shell-baseline.mjs scripts/test-receipt-baseline.mjs
+          (cd billboard/portal && FOUNDRY_PROFILE=regression forge test --offline -vv)
           npm run test:sdk-browser
           npm run test:cli-sdk
           python3 -m unittest discover -s execution/tests -v
