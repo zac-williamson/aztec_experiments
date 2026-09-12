@@ -2,7 +2,7 @@
   "schema_version": 1,
   "objective": "Production-ready release package of Vitalik’s anonymous message board for the explicitly approved compatible Aztec production target.",
   "baseline_commit": "1849967d15d96ab96234091f2fa47d8762a6c06a",
-  "execution_state": "awaiting_start",
+  "execution_state": "running",
   "terminal": "R04",
   "requirements": [
     "REQ01",
@@ -38,7 +38,7 @@
       "title": "Establish invariants, privacy model and acceptance budgets",
       "phase": "foundation",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [],
       "requirements": [
         "REQ01",
@@ -86,7 +86,7 @@
       "evidence": "evidence/P01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "Specification and test matrix reviewed; evidence/P01.json records documentary acceptance, not application correctness.",
       "priority": 0
     },
     {

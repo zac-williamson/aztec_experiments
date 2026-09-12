@@ -1,6 +1,6 @@
 # Execution plan
 
-**State: prepared; application execution has not started.**
+**State: execution started by the user. See graph.json and status.md for current progress.**
 
 The user can reply **start**. The agent then follows AGENTS.md, validates this
 graph, and begins `P01`. The objective is a production-ready release package of
