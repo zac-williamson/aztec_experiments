@@ -1,0 +1,61 @@
+=== Censor Daemon Tests ===
+
+--- Unit tests: moderation parsing (test_moderation.mjs) ---
+=== parseVerdict tests ===
+  ✓ simple VIOLATION with rule number and reason
+  ✓ simple OK
+  ✓ VIOLATION at end after thinking reasoning
+  ✓ OK at end after thinking reasoning
+  ✓ NOT A VIOLATION is treated as OK
+  ✓ NO VIOLATION is treated as OK
+  ✓ VIOLATION without reason defaults to policy message
+  ✓ empty text defaults to OK (conservative)
+  ✓ random text without VIOLATION or OK defaults to OK
+  ✓ VIOLATION with extra whitespace
+  ✓ multiple lines, VIOLATION is last
+  ✓ VIOLATION appears before OK — OK wins (scanned from end)
+  ✓ OK appears before VIOLATION — VIOLATION wins (scanned from end)
+  ✓ reason is truncated to 200 chars
+  ✓ case insensitive VIOLATION
+  ✓ case insensitive OK
+
+=== prompt building tests ===
+  ✓ buildSystemPrompt mentions specific rules
+  ✓ buildUserPrompt includes policy and post text
+  ✓ buildUserPrompt handles empty post
+  ✓ buildUserPrompt handles post with quotes
+
+=== integration-style tests (parseVerdict on realistic LLM outputs) ===
+  ✓ thinking model output with reasoning_content style
+  ✓ thinking model output that concludes OK
+  ✓ model output with markdown formatting
+
+=== Results ===
+  Passed: 23
+  Failed: 0
+  ✓ Moderation unit tests passed
+
+--- Integration tests: daemon orchestration (test_daemon.mjs) ---
+=== Daemon Integration Tests (with mock infra) ===
+
+  ✓ dry-run flags violation in output but does not call declare-immoral
+  ✓ dry-run with OK verdict does not flag
+  ✓ skips already-flagged posts
+  ✓ skips empty posts
+  ✓ handles thinking model (content empty, reasoning_content has verdict)
+  ✓ processes multiple posts with mixed verdicts
+  ✓ missing --portal-address exits with error
+  ✓ --from skips earlier posts
+  ✓ non-dry-run calls declare-immoral via CLI
+  ✓ reads policy from contract output
+  ✓ falls back to local policy file when contract policy is empty
+  ✓ warns on posts past the censor window
+  ✓ warns on posts about to expire in censor window
+  ✓ processes oldest unflagged posts first (censor window urgency)
+
+=== Results ===
+  Passed: 14
+  Failed: 0
+  ✓ Daemon integration tests passed
+
+=== All daemon tests passed ===

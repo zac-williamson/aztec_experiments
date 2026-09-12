@@ -1,0 +1,1859 @@
+{
+  "schema_version": 1,
+  "objective": "Production-ready release package of Vitalik’s anonymous message board for the explicitly approved compatible Aztec production target.",
+  "baseline_commit": "1849967d15d96ab96234091f2fa47d8762a6c06a",
+  "execution_state": "awaiting_start",
+  "terminal": "R04",
+  "requirements": [
+    "REQ01",
+    "REQ02",
+    "REQ03",
+    "REQ04",
+    "REQ05",
+    "REQ06",
+    "REQ07",
+    "REQ08",
+    "REQ09",
+    "REQ10",
+    "REQ11",
+    "REQ12"
+  ],
+  "findings": [
+    "B01",
+    "B02",
+    "B03",
+    "B04",
+    "B05",
+    "B06",
+    "B07",
+    "B08",
+    "B09",
+    "B10",
+    "B11",
+    "B12"
+  ],
+  "nodes": [
+    {
+      "id": "P01",
+      "title": "Establish invariants, privacy model and acceptance budgets",
+      "phase": "foundation",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [],
+      "requirements": [
+        "REQ01",
+        "REQ02",
+        "REQ03",
+        "REQ04",
+        "REQ05",
+        "REQ06",
+        "REQ07",
+        "REQ08",
+        "REQ09",
+        "REQ10",
+        "REQ11",
+        "REQ12"
+      ],
+      "findings": [],
+      "scope": [
+        "execution/",
+        "SECURITY_PROPERTIES.md"
+      ],
+      "plan": "tasks/P01.md",
+      "actions": [
+        "Read the baseline report, SECURITY_PROPERTIES.md and decisions.md; turn the user journeys into explicit state transitions and actor/observer assumptions.",
+        "Adopt reversible defaults from decisions.md; ask only material unresolved product questions while continuing independent work. Record a requirement-to-test design and risk register.",
+        "Set workload, recovery, latency, fee and moderation quality budgets before candidate measurements. Identify audit and production-owner inputs early."
+      ],
+      "acceptance": [
+        {
+          "id": "P01-A01",
+          "description": "Every REQ01–REQ12 has testable invariants, named observers or actors, failure behavior and planned test IDs."
+        },
+        {
+          "id": "P01-A02",
+          "description": "Escrow, exit/penalty, moderation trust and privacy semantics are explicit; material unanswered choices are recorded and only their dependent work is blocked."
+        },
+        {
+          "id": "P01-A03",
+          "description": "Workload includes at least 10 simultaneous authors, 1,000 lifetime posts per account and repeated deposit cycles; soak minimum is 14 consecutive days."
+        },
+        {
+          "id": "P01-A04",
+          "description": "Test-only identities, no secret logging, independent audit scope and deployment authorization boundaries are documented."
+        }
+      ],
+      "evidence": "evidence/P01.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 0
+    },
+    {
+      "id": "P02",
+      "title": "Pin toolchain and establish clean reproducible builds",
+      "phase": "foundation",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "P01"
+      ],
+      "requirements": [
+        "REQ01",
+        "REQ12"
+      ],
+      "findings": [
+        "B02",
+        "B10",
+        "B11"
+      ],
+      "scope": [
+        "package.json",
+        ".gitignore",
+        "billboard/",
+        "apps/",
+        "shared/",
+        ".github/",
+        "execution/"
+      ],
+      "plan": "tasks/P02.md",
+      "actions": [
+        "Inspect current upstream release manifests and official network documentation. Record compiler, prover, SDK, node, rollup and L1 dependency identifiers separately. Preserve the original source baseline.",
+        "Pin dependencies and produce a supported source-to-browser SDK build, worker patches, VKs and all contract artifacts. Repair default paths and machine-specific tool references; track required lockfiles.",
+        "Create documented clean build/test entry points and CI with no dependency on prior /tmp files, developer caches, bundled stale artifacts or a user wallet."
+      ],
+      "acceptance": [
+        {
+          "id": "P02-A01",
+          "description": "A fresh checkout builds all app and contract artifacts from pinned source inputs with documented toolchain installation."
+        },
+        {
+          "id": "P02-A02",
+          "description": "Two clean builds match deterministic outputs; justified nondeterministic metadata is separated and checked without masking bytecode/VK differences."
+        },
+        {
+          "id": "P02-A03",
+          "description": "The SDK/worker bundle has reproducible source and pinned patches; stale local censor artifacts and invalid default artifact paths are detected."
+        },
+        {
+          "id": "P02-A04",
+          "description": "Baseline test commands run under the matching supported toolchain; remaining failures are classified as product failures or environment blockers with raw evidence."
+        }
+      ],
+      "evidence": "evidence/P02.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 1
+    },
+    {
+      "id": "P03",
+      "title": "Establish failure reproductions and baseline regression harness",
+      "phase": "foundation",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "P02"
+      ],
+      "requirements": [
+        "REQ02",
+        "REQ03",
+        "REQ04",
+        "REQ05",
+        "REQ06",
+        "REQ07",
+        "REQ08",
+        "REQ11"
+      ],
+      "findings": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "B06",
+        "B07",
+        "B08",
+        "B09",
+        "B10",
+        "B11",
+        "B12"
+      ],
+      "scope": [
+        "billboard/",
+        "censor-daemon/",
+        "apps/",
+        "execution/"
+      ],
+      "plan": "tasks/P03.md",
+      "actions": [
+        "Port relevant historical probes into maintainable tests; do not assume the source-slicing diagnostics survive refactors.",
+        "Run the full existing Noir, Solidity and daemon suites. Reproduce high-priority findings in isolated tests and classify each result honestly.",
+        "For note substitution, real fee observability and counter contention, build discriminating experiments; record uncertainty rather than claiming unrun exploits."
+      ],
+      "acceptance": [
+        {
+          "id": "P03-A01",
+          "description": "Every B01–B12 finding is linked to a reproducer or explicit evidence limitation and a downstream acceptance test."
+        },
+        {
+          "id": "P03-A02",
+          "description": "The existing 59 Noir tests and moderation tests are attempted under the pinned toolchain; no missing stateful tests are counted as passing."
+        },
+        {
+          "id": "P03-A03",
+          "description": "Known-bad portal artifacts, reverted receipts, shell argument construction and fixed history limits are detected by regression checks."
+        },
+        {
+          "id": "P03-A04",
+          "description": "Test execution uses isolated local dependencies, fresh identities, and no real-fund or third-party attack targets."
+        }
+      ],
+      "evidence": "evidence/P03.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 3
+    },
+    {
+      "id": "P04",
+      "title": "Freeze contract and service interfaces for coordinated implementation",
+      "phase": "foundation",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "P03"
+      ],
+      "requirements": [
+        "REQ02",
+        "REQ03",
+        "REQ04",
+        "REQ05",
+        "REQ07",
+        "REQ08",
+        "REQ09"
+      ],
+      "findings": [
+        "B03",
+        "B05",
+        "B06",
+        "B07",
+        "B08"
+      ],
+      "scope": [
+        "billboard/",
+        "apps/",
+        "shared/",
+        "censor-daemon/",
+        "execution/"
+      ],
+      "plan": "tasks/P04.md",
+      "actions": [
+        "Design deposit identity, post identity/public ordering, note ancestry, screening hints and cross-chain message domains together.",
+        "Specify fee adapter, receipt/journal states, public feed events and moderation job schema before consumers diverge.",
+        "Write compatibility/migration decisions and executable interface fixtures. Cluster edits to the shared Noir contract into the sequential C01–C06 chain."
+      ],
+      "acceptance": [
+        {
+          "id": "P04-A01",
+          "description": "An interface specification defines all serialized IDs, message hashes, authorization checks, note owner/slot/contract bindings and schema versions."
+        },
+        {
+          "id": "P04-A02",
+          "description": "Concurrent posting does not reserve a privately read global counter; per-deposit history remains distinguishable for one account."
+        },
+        {
+          "id": "P04-A03",
+          "description": "Wallet, feed, moderation and deployment consumers share versioned fixtures and agree on failure/retry semantics."
+        },
+        {
+          "id": "P04-A04",
+          "description": "Recovery and penalty semantics cannot leave active L2 rights after an L1 refund or permit duplicate withdrawal."
+        }
+      ],
+      "evidence": "evidence/P04.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 4
+    },
+    {
+      "id": "C01",
+      "title": "Authenticate deposits and domain-separate bridge messages",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "P04"
+      ],
+      "requirements": [
+        "REQ02"
+      ],
+      "findings": [
+        "B03"
+      ],
+      "scope": [
+        "billboard/billboard_contract/",
+        "billboard/billboard_test/",
+        "billboard/portal/"
+      ],
+      "plan": "tasks/C01.md",
+      "actions": [
+        "Authenticate claims against the configured nonzero portal using the supported private/historical storage mechanism and enforce completed wiring.",
+        "Implement the agreed deposit identity and message domain separation in L1 and L2; preserve single-active-deposit and nullifier guarantees.",
+        "Add adversarial tests before integrating changed ABIs."
+      ],
+      "acceptance": [
+        {
+          "id": "C01-A01",
+          "description": "Valid intended collateral creates exactly the permitted posting rights."
+        },
+        {
+          "id": "C01-A02",
+          "description": "Wrong portal, actor, chain/version, amount, secret and uninitialized configuration are rejected."
+        },
+        {
+          "id": "C01-A03",
+          "description": "Repeated claim and withdrawal messages cannot create rights twice or withdraw twice; deposit identities agree across L1/L2."
+        },
+        {
+          "id": "C01-A04",
+          "description": "Existing deposit flows and new negative tests pass without bypassing message consumption or proof constraints."
+        }
+      ],
+      "evidence": "evidence/C01.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 6
+    },
+    {
+      "id": "C02",
+      "title": "Bind screening to authentic owner and deposit ancestry",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "C01"
+      ],
+      "requirements": [
+        "REQ03"
+      ],
+      "findings": [
+        "B05"
+      ],
+      "scope": [
+        "billboard/billboard_contract/",
+        "billboard/billboard_test/"
+      ],
+      "plan": "tasks/C02.md",
+      "actions": [
+        "Constrain supplied note contract, owner, storage slot and deposit-chain identity explicitly where the framework requires it.",
+        "Validate child/grandchild links, timestamps and indices as state transitions of this board.",
+        "Reproduce foreign-note and old-chain cases; preserve the distinction between inclusion and authorization in comments and invariants."
+      ],
+      "acceptance": [
+        {
+          "id": "C02-A01",
+          "description": "Foreign-contract, wrong-owner, wrong-slot and fabricated chain notes cannot advance screening."
+        },
+        {
+          "id": "C02-A02",
+          "description": "Two deposits belonging to the same Aztec account cannot substitute history for each other; old deposit roots are rejected."
+        },
+        {
+          "id": "C02-A03",
+          "description": "Screened progress cannot pass an unscreened real post or accept a note with invalid time/index relationships."
+        },
+        {
+          "id": "C02-A04",
+          "description": "Legitimate child/grandchild and dummy-post screening works under the matching Noir test environment."
+        }
+      ],
+      "evidence": "evidence/C02.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 7
+    },
+    {
+      "id": "C03",
+      "title": "Remove global-counter contention from posting",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "C02"
+      ],
+      "requirements": [
+        "REQ04"
+      ],
+      "findings": [
+        "B06"
+      ],
+      "scope": [
+        "billboard/billboard_contract/",
+        "billboard/billboard_test/",
+        "apps/src/billboard/user/"
+      ],
+      "plan": "tasks/C03.md",
+      "actions": [
+        "Implement independent post identities from P04 and separate public ordering from private proof preparation.",
+        "Update posting and screening clients and event fixtures together.",
+        "Test simultaneous authors and remaining state-conflict retry conditions."
+      ],
+      "acceptance": [
+        {
+          "id": "C03-A01",
+          "description": "At least 10 authors preparing from the same anchor can post without a shared-counter equality bottleneck."
+        },
+        {
+          "id": "C03-A02",
+          "description": "Public posts have stable unique identities and ordering semantics; moderation addresses the intended post."
+        },
+        {
+          "id": "C03-A03",
+          "description": "State conflicts trigger refreshed state and a new proof where necessary, never blind resending of a stale proof."
+        },
+        {
+          "id": "C03-A04",
+          "description": "Dummy screening/exit transactions are not starved by the removed global counter dependency."
+        }
+      ],
+      "evidence": "evidence/C03.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 8
+    },
+    {
+      "id": "C04",
+      "title": "Retrieve complete screening history",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "C03"
+      ],
+      "requirements": [
+        "REQ04"
+      ],
+      "findings": [
+        "B07"
+      ],
+      "scope": [
+        "billboard/billboard_contract/",
+        "billboard/billboard_test/",
+        "apps/src/billboard/user/"
+      ],
+      "plan": "tasks/C04.md",
+      "actions": [
+        "Replace first-page-only note lookup with required-link selection or complete bounded pagination.",
+        "Partition or qualify history by deposit identity and make lookup recoverable after reload.",
+        "Measure cost on long histories; add fixtures well beyond the old 16-note boundary."
+      ],
+      "acceptance": [
+        {
+          "id": "C04-A01",
+          "description": "Required hints are found when they lie beyond positions 16, 32 and 1,000 under supported PXE ordering."
+        },
+        {
+          "id": "C04-A02",
+          "description": "At least 1,000 lifetime posts and multiple deposits for one account preserve screening and exit."
+        },
+        {
+          "id": "C04-A03",
+          "description": "Lookup has bounded resource use per page and no arbitrary lifetime-history cutoff."
+        },
+        {
+          "id": "C04-A04",
+          "description": "Missing, duplicate and stale hints produce recoverable explicit errors and never skip authentication checks."
+        }
+      ],
+      "evidence": "evidence/C04.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 9
+    },
+    {
+      "id": "C05",
+      "title": "Enforce penalty, cooldown and arithmetic invariants",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "C04"
+      ],
+      "requirements": [
+        "REQ05"
+      ],
+      "findings": [
+        "B08"
+      ],
+      "scope": [
+        "billboard/billboard_contract/",
+        "billboard/billboard_test/",
+        "billboard/portal/"
+      ],
+      "plan": "tasks/C05.md",
+      "actions": [
+        "Implement P01 penalty-survival and usable-exit semantics, including the no-real-post and newly-screened cases.",
+        "Bound economic parameters and intermediate multiplication/time arithmetic across field/integer conversions.",
+        "Use boundary, property and bridge-cycle tests rather than only nominal examples."
+      ],
+      "acceptance": [
+        {
+          "id": "C05-A01",
+          "description": "A flagged user cannot erase a required penalty through withdrawal and redeposit under the agreed model."
+        },
+        {
+          "id": "C05-A02",
+          "description": "Unflagged and fully eligible users can exit; unscreened posts and invalid timing cannot bypass the model."
+        },
+        {
+          "id": "C05-A03",
+          "description": "Zero, maximum, overflow, truncation and multi-flag cases have explicit checked behavior."
+        },
+        {
+          "id": "C05-A04",
+          "description": "Cooldown, save-up and penalty results match the specification across generated boundary inputs."
+        }
+      ],
+      "evidence": "evidence/C05.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 10
+    },
+    {
+      "id": "C06",
+      "title": "Harden escrow accounting and design safe recovery",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "C05"
+      ],
+      "requirements": [
+        "REQ02",
+        "REQ05",
+        "REQ10"
+      ],
+      "findings": [
+        "B02",
+        "B11"
+      ],
+      "scope": [
+        "billboard/portal/",
+        "billboard/billboard_contract/",
+        "billboard/billboard_test/",
+        "execution/"
+      ],
+      "plan": "tasks/C06.md",
+      "actions": [
+        "Ensure liabilities match deposits and withdrawals, use appropriate checks-effects-interactions and validate canonical bridge configuration.",
+        "Reject normal unsolicited ETH; test forced ETH separately from credited collateral.",
+        "Implement a constrained pause/exit/migration and recoverable operation design. If a refund cannot safely invalidate claims, document the limit and resolve any required product change before implementing it."
+      ],
+      "acceptance": [
+        {
+          "id": "C06-A01",
+          "description": "Deposit and withdrawal accounting conserves credited liabilities; stale aggregate accounting is covered by tests."
+        },
+        {
+          "id": "C06-A02",
+          "description": "Canonical and adversarial bridge dependencies cannot double-withdraw through reentrancy or replay."
+        },
+        {
+          "id": "C06-A03",
+          "description": "Recovery, pause and migration preserve valid exits and cannot combine refunded collateral with live posting rights."
+        },
+        {
+          "id": "C06-A04",
+          "description": "Minimums, recipient addresses and initialization are validated; forced ETH is not treated as someone’s deposit; lost-secret limitations are stated."
+        }
+      ],
+      "evidence": "evidence/C06.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 11
+    },
+    {
+      "id": "A01",
+      "title": "Regenerate and verify every release artifact",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "C06",
+        "P02"
+      ],
+      "requirements": [
+        "REQ01"
+      ],
+      "findings": [
+        "B02",
+        "B10",
+        "B11"
+      ],
+      "scope": [
+        "apps/",
+        "shared/",
+        "billboard/",
+        ".github/",
+        "execution/release/"
+      ],
+      "plan": "tasks/A01.md",
+      "actions": [
+        "Rebuild final contract bytecode, Noir artifacts and VKs through P02; update every deploy/user/censor consumer.",
+        "Emit a source-to-artifact manifest and check ABI/configuration agreement.",
+        "Add CI that detects old artifact copies and consumer drift."
+      ],
+      "acceptance": [
+        {
+          "id": "A01-A01",
+          "description": "All consumers use the canonical current artifact set; current init/policy/hint APIs agree."
+        },
+        {
+          "id": "A01-A02",
+          "description": "Locally deployed generated portal enforces a non-default minimum and decrements liabilities on withdrawal."
+        },
+        {
+          "id": "A01-A03",
+          "description": "Build provenance covers compiler/SDK/prover, source hashes, runtime bytecode, VKs, workers, WASM and CRS inputs."
+        },
+        {
+          "id": "A01-A04",
+          "description": "CI fails when an old bundled portal or stale censor artifact is substituted."
+        }
+      ],
+      "evidence": "evidence/A01.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 12
+    },
+    {
+      "id": "W01",
+      "title": "Implement and evaluate private or shared sponsored fees",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "P04"
+      ],
+      "requirements": [
+        "REQ06",
+        "REQ10"
+      ],
+      "findings": [
+        "B01"
+      ],
+      "scope": [
+        "apps/",
+        "shared/",
+        "billboard/",
+        "execution/"
+      ],
+      "plan": "tasks/W01.md",
+      "actions": [
+        "Compare currently supported fee mechanisms against the threat model; prototype with fresh test-only accounts.",
+        "Implement the selected shared/private route and prevent silent fallback to a public per-user fee payer.",
+        "Add sponsor budgeting, abuse limits, replenishment/outage interfaces and correlation-aware logging."
+      ],
+      "acceptance": [
+        {
+          "id": "W01-A01",
+          "description": "Ordinary posting does not expose a reusable author account as public fee payer; funding does not recreate that linkage."
+        },
+        {
+          "id": "W01-A02",
+          "description": "Fee/RPC/operator observations are captured and assessed against the declared privacy model."
+        },
+        {
+          "id": "W01-A03",
+          "description": "Sponsor exhaustion or unsupported fees fail explicitly without falling back to an identity-revealing route."
+        },
+        {
+          "id": "W01-A04",
+          "description": "Rate/budget controls and metrics work with no new author-identity collection; actual production funding remains an operator input."
+        }
+      ],
+      "evidence": "evidence/W01.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 5
+    },
+    {
+      "id": "W02",
+      "title": "Secure wallet keys, secrets and recovery",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "W01",
+        "C06"
+      ],
+      "requirements": [
+        "REQ06",
+        "REQ07"
+      ],
+      "findings": [],
+      "scope": [
+        "apps/src/billboard/",
+        "apps/src/fee-juice/",
+        "shared/"
+      ],
+      "plan": "tasks/W02.md",
+      "actions": [
+        "Review wallet integration and signature-derived key assumptions; choose the supported existing-wallet or reviewed embedded-wallet route.",
+        "Remove claim-secret and key logs; isolate storage and minimize metadata.",
+        "Implement export/restore and recovery UX with fresh fixtures and no production keys."
+      ],
+      "acceptance": [
+        {
+          "id": "W02-A01",
+          "description": "No claim secret, private key or sensitive signing material appears in application/daemon logs or public evidence."
+        },
+        {
+          "id": "W02-A02",
+          "description": "Wallet backup and restore recover authorized access with clear warnings and no accidental key overwrite."
+        },
+        {
+          "id": "W02-A03",
+          "description": "Chain/account switching and concurrent tabs cannot cross-wire wallets or contract instances."
+        },
+        {
+          "id": "W02-A04",
+          "description": "Privacy and recovery descriptions match actual key management and documented lost-secret limits."
+        }
+      ],
+      "evidence": "evidence/W02.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 13
+    },
+    {
+      "id": "W03",
+      "title": "Implement trustworthy receipts and resumable transaction journal",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "W02",
+        "A01"
+      ],
+      "requirements": [
+        "REQ07"
+      ],
+      "findings": [
+        "B09"
+      ],
+      "scope": [
+        "apps/src/billboard/",
+        "apps/src/fee-juice/",
+        "shared/"
+      ],
+      "plan": "tasks/W03.md",
+      "actions": [
+        "Model each deposit, claim, post, flag, screen, withdrawal and L1-claim stage with durable IDs and validated receipts.",
+        "Handle pending, success, revert, drop, unknown and reorganized outcomes explicitly.",
+        "Recover after long absence using persisted provenance and complete event queries rather than a 500-block window."
+      ],
+      "acceptance": [
+        {
+          "id": "W03-A01",
+          "description": "Application reverts never show success or complete moderation jobs."
+        },
+        {
+          "id": "W03-A02",
+          "description": "Reload/crash at every stage resumes without duplicate deposit, claim, post or withdrawal."
+        },
+        {
+          "id": "W03-A03",
+          "description": "Long-absent withdrawal recovery works beyond 500 blocks without requiring an unstored transaction hash."
+        },
+        {
+          "id": "W03-A04",
+          "description": "Stale proofs are regenerated where required; RPC timeouts and reorgs reconcile durable state instead of guessing success."
+        }
+      ],
+      "evidence": "evidence/W03.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 14
+    },
+    {
+      "id": "F01",
+      "title": "Build incremental public feed with reorg recovery",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "C03"
+      ],
+      "requirements": [
+        "REQ04",
+        "REQ09"
+      ],
+      "findings": [],
+      "scope": [
+        "apps/",
+        "shared/",
+        "services/",
+        "execution/"
+      ],
+      "plan": "tasks/F01.md",
+      "actions": [
+        "Use stable post IDs/events to provide wallet-free public reads and incremental pagination.",
+        "Implement bounded RPC queries, checkpoints and reorg reconciliation; define retention and caching.",
+        "Integrate the feed with user reads and moderation input without full-history polling."
+      ],
+      "acceptance": [
+        {
+          "id": "F01-A01",
+          "description": "Public feed loads without wallet creation, private account access or proving assets."
+        },
+        {
+          "id": "F01-A02",
+          "description": "Pagination has no duplicates or missing posts across updates and checkpoint recovery."
+        },
+        {
+          "id": "F01-A03",
+          "description": "Reorgs roll back/reconcile indexed state; RPC work scales with changes rather than full history per poll."
+        },
+        {
+          "id": "F01-A04",
+          "description": "Retention and public-data caching are documented and cannot expose private note/account data."
+        }
+      ],
+      "evidence": "evidence/F01.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 15
+    },
+    {
+      "id": "M01",
+      "title": "Remove shell interpretation and isolate moderation signing",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "P02"
+      ],
+      "requirements": [
+        "REQ08"
+      ],
+      "findings": [
+        "B04"
+      ],
+      "scope": [
+        "censor-daemon/",
+        "apps/src/billboard/user/",
+        "execution/"
+      ],
+      "plan": "tasks/M01.md",
+      "actions": [
+        "Replace shell command concatenation with argument-array execution and validate a bounded structured verdict.",
+        "Separate model processing from the least-privilege signer interface; restrict allowed operations and inputs.",
+        "Add adversarial data tests with no real shell execution or real wallets."
+      ],
+      "acceptance": [
+        {
+          "id": "M01-A01",
+          "description": "Quotes, backticks, substitutions, newlines and oversized model text remain inert argument data or are rejected."
+        },
+        {
+          "id": "M01-A02",
+          "description": "The model cannot choose an arbitrary command, signer operation, wallet path or transaction destination."
+        },
+        {
+          "id": "M01-A03",
+          "description": "Malformed/unavailable model responses have explicit safe behavior and observable errors."
+        },
+        {
+          "id": "M01-A04",
+          "description": "Existing moderation tests and new process-boundary tests pass; signer secrets are outside model execution access."
+        }
+      ],
+      "evidence": "evidence/M01.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 2
+    },
+    {
+      "id": "M02",
+      "title": "Make moderation jobs durable and deadline-aware",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "M01",
+        "F01",
+        "W03"
+      ],
+      "requirements": [
+        "REQ07",
+        "REQ08"
+      ],
+      "findings": [
+        "B12"
+      ],
+      "scope": [
+        "censor-daemon/",
+        "apps/src/billboard/",
+        "services/"
+      ],
+      "plan": "tasks/M02.md",
+      "actions": [
+        "Persist per-post jobs, cursor, leases and transaction receipts; prevent overlapping poller work.",
+        "Retry failed flags according to confirmed outcome and deadline, not merely CLI exit status.",
+        "Refresh versioned onchain policy including empty-board behavior; consume incremental feed."
+      ],
+      "acceptance": [
+        {
+          "id": "M02-A01",
+          "description": "A failed or reverted flag remains retryable and cannot be skipped by cursor advancement."
+        },
+        {
+          "id": "M02-A02",
+          "description": "Crashes and competing workers cannot lose jobs or cause uncontrolled duplicate signing."
+        },
+        {
+          "id": "M02-A03",
+          "description": "Policy changes and empty boards use the intended current policy/window without silent stale fallback."
+        },
+        {
+          "id": "M02-A04",
+          "description": "Backlog and censor-window alerts identify impending missed duties; retry budgets and permanent failures are explicit."
+        }
+      ],
+      "evidence": "evidence/M02.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 16
+    },
+    {
+      "id": "M03",
+      "title": "Evaluate moderation quality and define human review operations",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "M02"
+      ],
+      "requirements": [
+        "REQ08",
+        "REQ10"
+      ],
+      "findings": [],
+      "scope": [
+        "censor-daemon/",
+        "execution/",
+        "docs/"
+      ],
+      "plan": "tasks/M03.md",
+      "actions": [
+        "Pin real model/software and policy versions, then evaluate the P01 corpus and thresholds.",
+        "Test multilingual content, ambiguous policy, prompt injection, false positives and overload.",
+        "Document human review, UI hiding versus irreversible flags, succession and escalation; do not invent unflag capability."
+      ],
+      "acceptance": [
+        {
+          "id": "M03-A01",
+          "description": "The actual pinned model meets predeclared measured quality and response-time budgets on a retained evaluation corpus."
+        },
+        {
+          "id": "M03-A02",
+          "description": "Adversarial content cannot expand signer authority and false-positive/negative results are reported separately."
+        },
+        {
+          "id": "M03-A03",
+          "description": "Policy, review/appeal limitations and censor succession procedures are consistent with contract behavior."
+        },
+        {
+          "id": "M03-A04",
+          "description": "Operational workload fits the censor window or produces a documented unresolved capacity issue rather than a passing claim."
+        }
+      ],
+      "evidence": "evidence/M03.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 17
+    },
+    {
+      "id": "D01",
+      "title": "Build fail-closed deployment and configuration verification",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "A01",
+        "W01",
+        "C06"
+      ],
+      "requirements": [
+        "REQ01",
+        "REQ02",
+        "REQ10",
+        "REQ12"
+      ],
+      "findings": [
+        "B11"
+      ],
+      "scope": [
+        "apps/src/billboard/deploy/",
+        "billboard/portal/",
+        "shared/",
+        "execution/release/",
+        "scripts/"
+      ],
+      "plan": "tasks/D01.md",
+      "actions": [
+        "Repair missing-CREATE2 behavior by tracking the actual address or refusing unsupported deployment; never link a discarded prediction.",
+        "Create environment manifests and verify code, addresses, chain/rollup IDs, Inbox/Outbox, minimums, policy and censor before irreversible linking or deposits.",
+        "Rehearse locally with bad configuration and unreadable RPC states."
+      ],
+      "acceptance": [
+        {
+          "id": "D01-A01",
+          "description": "Missing CREATE2 infrastructure cannot cause wrong-address linking; actual deployed runtime and address are verified."
+        },
+        {
+          "id": "D01-A02",
+          "description": "Any unreadable or mismatched critical configuration fails deployment closed before enabling deposits."
+        },
+        {
+          "id": "D01-A03",
+          "description": "L1 and L2 minimums, actors, versions, policy and censor agree with a signed/reviewable manifest."
+        },
+        {
+          "id": "D01-A04",
+          "description": "Deployment is repeatable or explicitly resumes known state; interrupted wiring cannot be mistaken for a ready board."
+        }
+      ],
+      "evidence": "evidence/D01.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 18
+    },
+    {
+      "id": "U01",
+      "title": "Complete user flows and production hosting configuration",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "W03",
+        "F01",
+        "M03",
+        "D01"
+      ],
+      "requirements": [
+        "REQ06",
+        "REQ07",
+        "REQ09"
+      ],
+      "findings": [],
+      "scope": [
+        "apps/",
+        "shared/",
+        "deploy/",
+        "docs/"
+      ],
+      "plan": "tasks/U01.md",
+      "actions": [
+        "Complete deposit-to-withdraw UX, status/error/recovery flows, public reading, moderation explanations and supported-browser detection.",
+        "Replace development serving with reproducible HTTPS hosting configuration, cross-origin isolation and reliable worker/assets.",
+        "Review untrusted content/DOM/error rendering, accessibility, credential exposure and telemetry defaults."
+      ],
+      "acceptance": [
+        {
+          "id": "U01-A01",
+          "description": "Core journeys are usable without a CLI; public reading works before wallet connection."
+        },
+        {
+          "id": "U01-A02",
+          "description": "Untrusted posts, model text and error messages render safely; core flows support keyboard use and clear status."
+        },
+        {
+          "id": "U01-A03",
+          "description": "HTTPS, security headers, worker loading and cross-origin isolation work for the actual built release."
+        },
+        {
+          "id": "U01-A04",
+          "description": "Unsupported proving environments are detected honestly; no browser-delivered credential is assumed secret and privacy claims match REQ06."
+        }
+      ],
+      "evidence": "evidence/U01.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 19
+    },
+    {
+      "id": "O01",
+      "title": "Implement observability, incident and recovery runbooks",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "D01",
+        "M03",
+        "U01"
+      ],
+      "requirements": [
+        "REQ08",
+        "REQ10"
+      ],
+      "findings": [],
+      "scope": [
+        "censor-daemon/",
+        "services/",
+        "deploy/",
+        "docs/",
+        "execution/"
+      ],
+      "plan": "tasks/O01.md",
+      "actions": [
+        "Instrument liabilities/balance, sponsor balance, transaction failures, feed lag, signer health and moderation deadlines without secret/identity leakage.",
+        "Write executable operator runbooks for deploy, pause/exit, sponsor outage, RPC failover, policy/censor changes, credential rotation and recovery.",
+        "Provide restricted configuration templates and staging alerts; preserve original attribution and license requirements."
+      ],
+      "acceptance": [
+        {
+          "id": "O01-A01",
+          "description": "Injected failures trigger the intended alerts with actionable diagnosis and no private data."
+        },
+        {
+          "id": "O01-A02",
+          "description": "Liability monitoring distinguishes credited escrow from forced ETH and detects drift."
+        },
+        {
+          "id": "O01-A03",
+          "description": "Runbooks reproduce deployment/recovery/rotation with test-only identities and record rollback/exit limitations."
+        },
+        {
+          "id": "O01-A04",
+          "description": "Provider credentials previously exposed in source are identified without reproducing their values; production replacement/restriction is required in O02."
+        }
+      ],
+      "evidence": "evidence/O01.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 20
+    },
+    {
+      "id": "T01",
+      "title": "Verify contract invariants and adversarial proof cases",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "C06",
+        "A01"
+      ],
+      "requirements": [
+        "REQ02",
+        "REQ03",
+        "REQ04",
+        "REQ05",
+        "REQ11"
+      ],
+      "findings": [
+        "B03",
+        "B05",
+        "B06",
+        "B07",
+        "B08"
+      ],
+      "scope": [
+        "billboard/",
+        "fv/",
+        "SECURITY_PROPERTIES.md",
+        "execution/"
+      ],
+      "plan": "tasks/T01.md",
+      "actions": [
+        "Run complete stateful Noir and Solidity suites, fuzz state transitions and test all new adversarial cases.",
+        "Replace or explicitly retire vacuous formal claims; pin the formal environment and connect meaningful invariants to actual code assumptions.",
+        "Rerun relevant external specifications if available, preserving specification/model scope and never counting GOOD rules as universal proof."
+      ],
+      "acceptance": [
+        {
+          "id": "T01-A01",
+          "description": "All intended stateful Noir and Solidity behavior passes, including wrong-origin notes, replay, economic boundaries and concurrent posting."
+        },
+        {
+          "id": "T01-A02",
+          "description": "Bridge conservation and screening invariants describe reachable transitions and can fail for an intentionally bad model."
+        },
+        {
+          "id": "T01-A03",
+          "description": "Formal tooling and assumptions are reproducible; no True propositions or missing fee metadata are presented as security assurance."
+        },
+        {
+          "id": "T01-A04",
+          "description": "Remaining uncertainty is listed for independent review, with no unexecuted proof counted as complete."
+        }
+      ],
+      "evidence": "evidence/T01.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 21
+    },
+    {
+      "id": "T02",
+      "title": "Demonstrate full bridge journey with real proofs",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "T01",
+        "W03",
+        "M02",
+        "D01",
+        "F01"
+      ],
+      "requirements": [
+        "REQ02",
+        "REQ03",
+        "REQ04",
+        "REQ05",
+        "REQ07",
+        "REQ08",
+        "REQ11"
+      ],
+      "findings": [],
+      "scope": [
+        "billboard/test/",
+        "apps/",
+        "censor-daemon/",
+        "execution/"
+      ],
+      "plan": "tasks/T02.md",
+      "actions": [
+        "Create a proof-enabled L1/L2 environment with verified real-proofs setting and fresh test-only users; then use a suitable public testnet where available.",
+        "Exercise deposit, claim, post, flag, screen, withdraw and L1 claim; repeat for unflagged/no-post and redeposit cases.",
+        "Retain sanitized transaction receipts, configurations, timings and exact artifact provenance."
+      ],
+      "acceptance": [
+        {
+          "id": "T02-A01",
+          "description": "The full journey completes with actual proof generation and verification; --prover none and mocked Inbox/Outbox do not satisfy this gate."
+        },
+        {
+          "id": "T02-A02",
+          "description": "Balances, liabilities, notes, public posts and flags match the expected transition at each stage."
+        },
+        {
+          "id": "T02-A03",
+          "description": "Wrong portal/note/replay cases fail under proof-enabled execution and cannot create false client success."
+        },
+        {
+          "id": "T02-A04",
+          "description": "Public-testnet compatibility is demonstrated for the intended stack or remains explicitly blocked pending a suitable test environment."
+        }
+      ],
+      "evidence": "evidence/T02.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 22
+    },
+    {
+      "id": "T03",
+      "title": "Verify end-to-end privacy and funding footprint",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "T02",
+        "U01",
+        "W01"
+      ],
+      "requirements": [
+        "REQ06",
+        "REQ07",
+        "REQ11"
+      ],
+      "findings": [
+        "B01"
+      ],
+      "scope": [
+        "apps/",
+        "shared/",
+        "execution/"
+      ],
+      "plan": "tasks/T03.md",
+      "actions": [
+        "Observe full fresh-user journeys as chain observer, RPC operator, sponsor and frontend host under the P01 threat model.",
+        "Inspect fee/funding addresses, logs, request metadata, storage, timing and reuse across posts and deposits.",
+        "Publish a precise privacy statement and regression checks for preventable linkage."
+      ],
+      "acceptance": [
+        {
+          "id": "T03-A01",
+          "description": "No reusable public author fee-payer or funding linkage remains in the supported anonymous posting flow."
+        },
+        {
+          "id": "T03-A02",
+          "description": "RPC/host/sponsor correlation limits are documented with measured traces and configured minimization."
+        },
+        {
+          "id": "T03-A03",
+          "description": "Fee exhaustion, recovery and fallback paths preserve the promised privacy behavior."
+        },
+        {
+          "id": "T03-A04",
+          "description": "User-facing privacy claims are reviewed against actual evidence, including content/timing and small anonymity-set limitations."
+        }
+      ],
+      "evidence": "evidence/T03.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 23
+    },
+    {
+      "id": "T04",
+      "title": "Run browser, recovery, concurrency and load matrix",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "T02",
+        "U01",
+        "O01"
+      ],
+      "requirements": [
+        "REQ04",
+        "REQ07",
+        "REQ08",
+        "REQ09",
+        "REQ10",
+        "REQ11"
+      ],
+      "findings": [],
+      "scope": [
+        "apps/",
+        "billboard/test/",
+        "censor-daemon/",
+        "execution/"
+      ],
+      "plan": "tasks/T04.md",
+      "actions": [
+        "Test the agreed current browser/device matrix and supported wallet routes with reproducible hardware/network metadata.",
+        "Run the required 10-author and 1,000-lifetime-post workloads, long absence, repeated deposits and withdrawal during traffic.",
+        "Inject reorgs, RPC delays/outages, crash/reload, duplicate submissions, signer failure and sponsor exhaustion."
+      ],
+      "acceptance": [
+        {
+          "id": "T04-A01",
+          "description": "All promised browser journeys pass and unsupported cases are accurately detected; mobile reading is usable."
+        },
+        {
+          "id": "T04-A02",
+          "description": "Required workloads meet predeclared budgets without history truncation, silent job loss or persistent exit starvation."
+        },
+        {
+          "id": "T04-A03",
+          "description": "Every interrupted stage can reconcile and resume without duplicate collateral movement or false success."
+        },
+        {
+          "id": "T04-A04",
+          "description": "Failure drills produce correct user/operator outcomes and measured recovery within agreed budgets."
+        }
+      ],
+      "evidence": "evidence/T04.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 24
+    },
+    {
+      "id": "R01",
+      "title": "Freeze review candidate and prepare independent audit packet",
+      "phase": "release",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "T01",
+        "T03",
+        "T04",
+        "M03"
+      ],
+      "requirements": [
+        "REQ01",
+        "REQ11"
+      ],
+      "findings": [],
+      "scope": [
+        "execution/",
+        "docs/",
+        ".github/"
+      ],
+      "plan": "tasks/R01.md",
+      "actions": [
+        "Freeze one reproducible code/artifact snapshot and collect architecture, threat model, prior findings and test evidence.",
+        "Prepare bounded Aztec/Noir and Solidity review scope, known uncertainties, reviewer setup and remediation workflow.",
+        "Provide a concrete packet before asking for reviewer access or procurement authorization."
+      ],
+      "acceptance": [
+        {
+          "id": "R01-A01",
+          "description": "The review packet names exact source/artifact hashes and reproducible setup instructions."
+        },
+        {
+          "id": "R01-A02",
+          "description": "Every baseline finding is dispositioned with evidence and all residual risks are visible."
+        },
+        {
+          "id": "R01-A03",
+          "description": "Review scope includes fee privacy, note authentication, bridge/recovery/economics, wallet and moderation boundaries."
+        },
+        {
+          "id": "R01-A04",
+          "description": "The candidate has no unexplained failing mandatory internal tests."
+        }
+      ],
+      "evidence": "evidence/R01.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 25
+    },
+    {
+      "id": "X01",
+      "title": "Obtain independent Aztec and Solidity review",
+      "phase": "release",
+      "kind": "external",
+      "status": "planned",
+      "depends_on": [
+        "R01"
+      ],
+      "requirements": [
+        "REQ11"
+      ],
+      "findings": [],
+      "scope": [
+        "execution/evidence/",
+        "execution/decisions.md"
+      ],
+      "plan": "tasks/X01.md",
+      "actions": [
+        "Obtain the user-provided independent reviewer or explicit authorization for engagement using R01 packet.",
+        "Record actual reviewer identity, scope, reviewed revision, methodology, limitations and findings.",
+        "If unavailable, record the external dependency and continue unaffected internal work; do not substitute agent self-review."
+      ],
+      "acceptance": [
+        {
+          "id": "X01-A01",
+          "description": "An independent qualified reviewer covers the documented Aztec/Noir and Solidity scope on the candidate."
+        },
+        {
+          "id": "X01-A02",
+          "description": "The actual report and its revision/hash are retained, including limitations and severity dispositions."
+        },
+        {
+          "id": "X01-A03",
+          "description": "Findings are actionable and mapped to requirements and remediation work; absence of a reviewer remains incomplete."
+        }
+      ],
+      "evidence": "evidence/X01.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 26
+    },
+    {
+      "id": "R02",
+      "title": "Remediate independent findings and prepare final candidate",
+      "phase": "release",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "X01"
+      ],
+      "requirements": [
+        "REQ01",
+        "REQ02",
+        "REQ03",
+        "REQ04",
+        "REQ05",
+        "REQ06",
+        "REQ07",
+        "REQ08",
+        "REQ09",
+        "REQ10",
+        "REQ11"
+      ],
+      "findings": [],
+      "scope": [
+        "billboard/",
+        "apps/",
+        "shared/",
+        "censor-daemon/",
+        "services/",
+        "deploy/",
+        "docs/",
+        "fv/",
+        "execution/"
+      ],
+      "plan": "tasks/R02.md",
+      "actions": [
+        "Create bounded child work packages for audit findings where needed; record new dependencies without losing original acceptance.",
+        "Fix findings, add discriminating regressions, rebuild artifacts and rerun affected earlier checks.",
+        "Freeze the resulting candidate and prepare a change-by-change reviewer response."
+      ],
+      "acceptance": [
+        {
+          "id": "R02-A01",
+          "description": "No critical/high finding or required-invariant violation remains unresolved."
+        },
+        {
+          "id": "R02-A02",
+          "description": "Each repair has regression evidence and traceability to the reviewed finding."
+        },
+        {
+          "id": "R02-A03",
+          "description": "Final artifacts match final source; all post-audit changes and residual lower risks are disclosed for closure."
+        },
+        {
+          "id": "R02-A04",
+          "description": "Prior acceptance affected by remediation is explicitly rerun or queued in T05, never assumed unchanged."
+        }
+      ],
+      "evidence": "evidence/R02.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 27
+    },
+    {
+      "id": "X02",
+      "title": "Obtain independent audit closure for final source",
+      "phase": "release",
+      "kind": "external",
+      "status": "planned",
+      "depends_on": [
+        "R02"
+      ],
+      "requirements": [
+        "REQ11"
+      ],
+      "findings": [],
+      "scope": [
+        "execution/evidence/",
+        "execution/release/"
+      ],
+      "plan": "tasks/X02.md",
+      "actions": [
+        "Submit the concrete remediation diff and final snapshot to the independent reviewer through an authorized channel.",
+        "Record reviewed fixes and disposition of every post-audit change, including any later soak fixes.",
+        "Bind closure evidence to the exact application fingerprint; reopen closure after application changes."
+      ],
+      "acceptance": [
+        {
+          "id": "X02-A01",
+          "description": "Independent closure accepts all critical/high fixes and dispositions every residual finding."
+        },
+        {
+          "id": "X02-A02",
+          "description": "The final source and artifact set are covered by the original audit plus reviewed changes."
+        },
+        {
+          "id": "X02-A03",
+          "description": "The closure report is authentic, retained and tied to the current application fingerprint."
+        }
+      ],
+      "evidence": "evidence/X02.json",
+      "evidence_mode": "current",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 30
+    },
+    {
+      "id": "T05",
+      "title": "Reverify all acceptance criteria on the final candidate",
+      "phase": "release",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "R02"
+      ],
+      "requirements": [
+        "REQ01",
+        "REQ02",
+        "REQ03",
+        "REQ04",
+        "REQ05",
+        "REQ06",
+        "REQ07",
+        "REQ08",
+        "REQ09",
+        "REQ10",
+        "REQ11"
+      ],
+      "findings": [],
+      "scope": [
+        "billboard/test/",
+        "apps/",
+        "censor-daemon/",
+        "execution/",
+        ".github/"
+      ],
+      "plan": "tasks/T05.md",
+      "actions": [
+        "Rebuild and run the full required suite on the final candidate, including proof-enabled journey, privacy, browsers, workload and recovery.",
+        "Create release/acceptance-matrix.json linking every acceptance criterion of every completed historical internal package to fresh check artifacts and hashes.",
+        "Create release/manifest.json with exact source fingerprint, toolchain/configuration and all distributable artifact paths/hashes; verify each file."
+      ],
+      "acceptance": [
+        {
+          "id": "T05-A01",
+          "description": "Every completed historical internal task criterion is reaffirmed against the current source in the machine-checked acceptance matrix."
+        },
+        {
+          "id": "T05-A02",
+          "description": "All required real-proof, privacy, contract, browser, workload and recovery tests pass on that same candidate."
+        },
+        {
+          "id": "T05-A03",
+          "description": "The release manifest covers actual distributables and all hashes verify; no developer-only or stale artifact is substituted."
+        },
+        {
+          "id": "T05-A04",
+          "description": "No secret material enters the release package or its evidence."
+        }
+      ],
+      "evidence": "evidence/T05.json",
+      "evidence_mode": "current",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 28
+    },
+    {
+      "id": "T06",
+      "title": "Complete 14-day soak and operator failure drills",
+      "phase": "release",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "T05",
+        "O01"
+      ],
+      "requirements": [
+        "REQ04",
+        "REQ07",
+        "REQ08",
+        "REQ10",
+        "REQ11"
+      ],
+      "findings": [],
+      "scope": [
+        "execution/evidence/",
+        "execution/release/",
+        "docs/"
+      ],
+      "plan": "tasks/T06.md",
+      "actions": [
+        "Run representative proof-enabled testnet operation for 14 consecutive actual days with the required workload and recorded monitoring coverage.",
+        "Exercise sponsor exhaustion, RPC failure, key/censor rotation, queue restart and recovery drills using test-only identities.",
+        "Record start/end timestamps and metrics; material application changes require a new candidate and renewed affected gates/soak."
+      ],
+      "acceptance": [
+        {
+          "id": "T06-A01",
+          "description": "At least 336 elapsed hours of representative operation are evidenced with continuous coverage and explicit incident accounting."
+        },
+        {
+          "id": "T06-A02",
+          "description": "No unexplained lost jobs, unrecoverable user state, privacy regression or collateral discrepancy remains."
+        },
+        {
+          "id": "T06-A03",
+          "description": "Recovery and rotation drills meet predeclared budgets and the runbooks reproduce observed outcomes."
+        },
+        {
+          "id": "T06-A04",
+          "description": "The soaked application fingerprint equals the current release candidate."
+        }
+      ],
+      "evidence": "evidence/T06.json",
+      "evidence_mode": "current",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 29
+    },
+    {
+      "id": "X03",
+      "title": "Verify current target-network production suitability",
+      "phase": "release",
+      "kind": "external",
+      "status": "planned",
+      "depends_on": [
+        "P02"
+      ],
+      "requirements": [
+        "REQ01",
+        "REQ12"
+      ],
+      "findings": [],
+      "scope": [
+        "execution/evidence/",
+        "execution/release/"
+      ],
+      "plan": "tasks/X03.md",
+      "actions": [
+        "Check fresh official Aztec security/release guidance and read-only chain/node configuration; distinguish package versions from onchain rollup versions.",
+        "Resolve the baseline V5 notice with explicit applicable current guidance; online RPC availability alone is not clearance.",
+        "If V5 is unsuitable, prepare a supported-target migration assessment and obtain the user’s choice before retargeting."
+      ],
+      "acceptance": [
+        {
+          "id": "X03-A01",
+          "description": "Official current guidance supports the intended production exposure and addresses the baseline network-security concern."
+        },
+        {
+          "id": "X03-A02",
+          "description": "The exact target chain, rollup, bridge addresses and supported SDK/compiler/prover combination agree with the candidate manifest."
+        },
+        {
+          "id": "X03-A03",
+          "description": "The observations and guidance were checked within seven days of final sign-off; any retargeting has an explicit user decision."
+        }
+      ],
+      "evidence": "evidence/X03.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 31
+    },
+    {
+      "id": "O02",
+      "title": "Confirm operator ownership and production configuration",
+      "phase": "release",
+      "kind": "external",
+      "status": "planned",
+      "depends_on": [
+        "O01",
+        "D01"
+      ],
+      "requirements": [
+        "REQ10",
+        "REQ12"
+      ],
+      "findings": [],
+      "scope": [
+        "execution/evidence/",
+        "execution/release/",
+        "docs/"
+      ],
+      "plan": "tasks/O02.md",
+      "actions": [
+        "Present completed runbooks, restricted configuration templates and sponsor/hosting estimates to the user.",
+        "Collect named operator and incident ownership, final moderation policy, approved budgets and production configuration references without storing secrets.",
+        "Confirm exposed credentials are revoked/replaced/restricted through authorized owner action; do not treat source deletion as revocation."
+      ],
+      "acceptance": [
+        {
+          "id": "O02-A01",
+          "description": "Named owners accept moderation, sponsor funding, incident response and deployment responsibilities."
+        },
+        {
+          "id": "O02-A02",
+          "description": "Final policy, limits, provider restrictions and configuration are consistent with the tested product assumptions."
+        },
+        {
+          "id": "O02-A03",
+          "description": "Previously exposed credentials are demonstrably replaced/restricted for production; no secret is in the release evidence."
+        },
+        {
+          "id": "O02-A04",
+          "description": "Operational handover is complete without claiming an unperformed production deployment."
+        }
+      ],
+      "evidence": "evidence/O02.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 32
+    },
+    {
+      "id": "R04",
+      "title": "Sign off the production-ready release package",
+      "phase": "release",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "T05",
+        "T06",
+        "X02",
+        "X03",
+        "O02"
+      ],
+      "requirements": [
+        "REQ01",
+        "REQ02",
+        "REQ03",
+        "REQ04",
+        "REQ05",
+        "REQ06",
+        "REQ07",
+        "REQ08",
+        "REQ09",
+        "REQ10",
+        "REQ11",
+        "REQ12"
+      ],
+      "findings": [],
+      "scope": [
+        "execution/release/",
+        "execution/evidence/",
+        "docs/"
+      ],
+      "plan": "tasks/R04.md",
+      "actions": [
+        "Run graph validation and final release checks against one source/artifact manifest; verify all ancestors, fresh network evidence, audit closure and soak binding.",
+        "Produce the release dossier: source, reproducible build, deployable assets, acceptance matrix, risk dispositions, audited changes and operator handover.",
+        "Report production readiness only if every gate passes. Keep actual mainnet deployment as a separate explicitly authorized operation."
+      ],
+      "acceptance": [
+        {
+          "id": "R04-A01",
+          "description": "All graph ancestors are done with valid evidence and all REQ01–REQ12 have final acceptance coverage."
+        },
+        {
+          "id": "R04-A02",
+          "description": "Final tests, audit closure and soak bind to the same current application fingerprint; all release artifact hashes verify."
+        },
+        {
+          "id": "R04-A03",
+          "description": "No unresolved critical/high issue or violation of required anonymity/collateral invariants remains; residual risks have explicit dispositions."
+        },
+        {
+          "id": "R04-A04",
+          "description": "The complete reproducible release package and deployment/runbook handover exist; current network and operator requirements are satisfied."
+        }
+      ],
+      "evidence": "evidence/R04.json",
+      "evidence_mode": "current",
+      "blocker": null,
+      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "priority": 33
+    }
+  ]
+}

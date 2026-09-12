@@ -1,0 +1,12 @@
+{
+  "commit": "1849967d15d96ab96234091f2fa47d8762a6c06a",
+  "checked_at_utc": "2026-09-11T22:52:12.025348+00:00",
+  "portal_original_source_commit": "9681e5a2ba",
+  "committed_source_hash": "0x2e009480e52be2ad03760473f7f86fcb5ca21537930235f31102e3e722fe7efa",
+  "current_source_hash": "0xe96dc1a341f02a2fe780a66c3b7ea3e14d94ad8129445cfa3d1ebe2414915ad7",
+  "committed_constructor_inputs": 3,
+  "current_constructor_inputs": 4,
+  "bundled_bytecode_matches_committed_artifact": true,
+  "report_portal_matches_current": true,
+  "report_noir_matches_current": true
+}

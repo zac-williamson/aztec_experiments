@@ -1,0 +1,23 @@
+    const secretHashBigInt = await computeSecretHashBundle(a, secretBigInt);
+    const secretHash = frToHex(secretHashBigInt);
+
+    // Sanity: secretHash must be < field modulus (254 bits)
+    const topByte = parseInt(secretHash.slice(2, 4), 16);
+    if ((topByte & 0xc0) !== 0) {
+      throw new Error('Derived secretHash is > 254 bits (rare statistical fluke). Send any tx to bump your nonce and try again.');
+    }
+
+    log('  Claim secret: ' + secret, 'info');
+    log('  Secret hash:  ' + secretHash, 'info');
+
+    // 5c: Deposit (pinned nonce)
+    const aztecRecipient = address.toString();
+    const aztecRecipientHex = '0x' + BigInt(aztecRecipient).toString(16).padStart(64, '0');
+    log('  Recipient: ' + aztecRecipient, 'info');
+
+    log('  Sending deposit tx (pinned nonce ' + depNonce + ')...', 'info');
+    const tx = await portal.depositToAztecPublic(aztecRecipientHex, depositAmount, secretHash, { nonce: depNonce });
+    log('  Deposit tx sent: ' + tx.hash, 'info');
+    log('  Waiting for L1 confirmation...', 'info');
+
+    const startTime = Date.now();

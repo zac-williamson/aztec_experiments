@@ -1,0 +1,255 @@
+takes an object of state variables to update or a function which returns an object of state variables.
+
+). If you meant to render a collection of children, use an array instead.
+
+React.Children.only expected to receive a single React element child.
+
+forceFrameRate takes a positive int between 0 and 125, forcing frame rates higher than 125 fps is not supported
+
+ for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+
+ for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+
+^[:A-Z_a-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD][:A-Z_a-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD\\-.0-9\\u00B7\\u0300-\\u036F\\u203F-\\u2040]*$
+
+animationIterationCount aspectRatio borderImageOutset borderImageSlice borderImageWidth boxFlex boxFlexGroup boxOrdinalGroup columnCount columns flex flexGrow flexPositive flexShrink flexNegative flexOrder gridArea gridRow gridRowEnd gridRowSpan gridRowStart gridColumn gridColumnEnd gridColumnSpan gridColumnStart fontWeight lineClamp lineHeight opacity order orphans scale tabSize widows zIndex zoom fillOpacity floodOpacity stopOpacity strokeDasharray strokeDashoffset strokeMiterlimit strokeOpacity strokeWidth MozAnimationIterationCount MozBoxFlex MozBoxFlexGroup MozLineClamp msAnimationIterationCount msFlex msZoom msFlexGrow msFlexNegative msFlexOrder msFlexPositive msFlexShrink msGridColumn msGridColumnSpan msGridRow msGridRowSpan WebkitAnimationIterationCount WebkitBoxFlex WebKitBoxFlexGroup WebkitBoxOrdinalGroup WebkitColumnCount WebkitColumns WebkitFlex WebkitFlexGrow WebkitFlexPositive WebkitFlexShrink WebkitLineClamp
+
+javascript:throw new Error('React has blocked a javascript: URL as a security precaution.')
+
+abort auxClick beforeToggle cancel canPlay canPlayThrough click close contextMenu copy cut drag dragEnd dragEnter dragExit dragLeave dragOver dragStart drop durationChange emptied encrypted ended error gotPointerCapture input invalid keyDown keyPress keyUp load loadedData loadedMetadata loadStart lostPointerCapture mouseDown mouseMove mouseOut mouseOver mouseUp paste pause play playing pointerCancel pointerDown pointerMove pointerOut pointerOver pointerUp progress rateChange reset resize seeked seeking stalled submit suspend timeUpdate touchCancel touchEnd touchStart volumeChange scroll toggle touchMove waiting wheel
+
+change click focusin focusout input keydown keyup selectionchange
+
+focusout contextmenu dragend focusin keydown keyup mousedown mouseup selectionchange
+
+compositionend focusout keydown keypress keyup mousedown
+
+compositionstart focusout keydown keypress keyup mousedown
+
+compositionupdate focusout keydown keypress keyup mousedown
+
+abort canplay canplaythrough durationchange emptied encrypted ended error loadeddata loadedmetadata loadstart pause play playing progress ratechange resize seeked seeking stalled suspend timeupdate volumechange waiting
+
+beforetoggle cancel close invalid load scroll scrollend toggle
+
+javascript:throw new Error('A React form was unexpectedly submitted. If you called form.submit() manually, consider using form.requestSubmit() instead. If you\\'re trying to use event.stopPropagation() in a submit event handler, consider also calling event.preventDefault().')
+
+link[rel="stylesheet"][data-precedence],style[data-precedence]
+
+mousedown mouseup touchcancel touchend touchstart auxclick dblclick pointercancel pointerdown pointerup dragend dragstart drop compositionend compositionstart keydown keypress keyup input textInput copy cut paste click change contextmenu reset
+
+https://github.com/Certora/AutoProver/tree/5b9193b5c90d383bc54f7340b79935b68b5e9991
+
+https://github.com/Certora/AutoProver/blob/5b9193b5c90d383bc54f7340b79935b68b5e9991/README.md
+
+https://github.com/Certora/AutoProver/blob/5b9193b5c90d383bc54f7340b79935b68b5e9991/composer/pipeline/core.py
+
+https://github.com/Certora/AutoProver/blob/5b9193b5c90d383bc54f7340b79935b68b5e9991/composer/spec/source/prover.py
+
+https://github.com/Certora/aztec_experiments/blob/shelly/certora-specs/billboard/portal/src/BillboardPortal.sol
+
+https://github.com/Certora/aztec_experiments/blob/shelly/certora-specs/billboard/billboard_contract/src/main.nr
+
+https://github.com/Certora/aztec_experiments/blob/shelly/certora-specs/certora/autospec_Deposit_Management.spec
+
+https://github.com/Certora/aztec_experiments/blob/shelly/certora-specs/certora/autospec_Withdrawal_Management.spec
+
+https://github.com/Certora/aztec_experiments/blob/shelly/certora-specs/certora/invariants.spec
+
+https://github.com/Certora/aztec_experiments/blob/shelly/certora-specs/certora/ap_report/report.json
+
+https://github.com/Certora/aztec_experiments/blob/shelly/certora-specs/certora/confs/invariants.conf
+
+A caller-supplied L1 address can potentially mint an L2 DepositNote without staked ETH.
+
+claim_deposit passes its portal parameter directly into consume_l1_to_l2_message without comparing it to storage.portal_address. An attacker may be able to enqueue their own message, claim an arbitrary amount on L2, and bypass the deposit-based posting rate limit. This does not directly unlock L1 ETH: withdrawals still read deposits[msg.sender].
+
+Read the portal from storage, remove the caller-supplied portal parameter, and add a Noir test proving a non-portal sender cannot claim.
+
+main.nr:279–289 · _withdraw_public validates the stored portal
+
+Deposits in the L1/L2 minimum gap can be accepted and then locked forever.
+
+L1 enforces MIN_DEPOSIT while L2 independently enforces min_deposit. If the L1 value is lower, ETH is accepted and recorded but claim_deposit rejects the message. No DepositNote means no withdrawal leaf, so the funds remain locked. The raw zero-minimum impact was overstated; this mismatch is the consequential issue.
+
+Make the deployment invariant explicit: L1 MIN_DEPOSIT must be at least the L2 min_deposit, and derive both from one configured value.
+
+The constructor accepts an invalid L2 actor and keeps accepting ETH.
+
+_l2Contract is stored without validation. Inbox bounds-checks the actor but does not prove it is the deployed Billboard contract, so a typo can let deposits succeed while no real L2 contract can produce the matching withdrawal leaf. There is no pause or rescue path.
+
+Reject the zero actor, validate deployment wiring against the rollup, and make the deploy script fail before accepting funds.
+
+The current ordering relies on the Outbox never re-entering withdraw().
+
+withdraw() calls outbox.consume before clearing the deposit record. A maliciously configured Outbox could re-enter while the record is still non-zero. The canonical vendored Outbox makes no external calls, so this is defensive hardening rather than a demonstrated production exploit.
+
+Apply checks-effects-interactions: clear the record and accounting before consume. A failed consume reverts the whole transaction and restores state.
+
+Equal depositor/amount pairs are indistinguishable across deposit cycles.
+
+The withdrawal content commits to depositor and amount but not a note identifier. This is not exploitable in the current one-active-deposit design: the L1 gate and zeroing step keep the funded record one-to-one with the leaf. It becomes a hidden dependency if concurrent or partial deposits are added.
+
+Document the dependency, or add a unique deposit ID to the L1 message, L2 note, and L2→L1 commitment in lockstep.
+
+Bare transfers are credited to nothing and cannot be withdrawn.
+
+The empty payable receive function accepts ETH without increasing deposits or totalDeposited. The portal has no sweep or owner, so that balance is permanently stranded. Forced sends can bypass receive() and remain a separate edge case.
+
+Delete receive() or revert normal unsolicited transfers. Do not add a privileged sweep solely for this issue unless it is separately governed and escrow-protected.
+
+An abandoned or unclaimable deposit can permanently trap ETH.
+
+A deposit can remain active forever if the user loses the claim secret, never claims, or the message cannot produce a settled Outbox leaf. The same address is then blocked from depositing again. The vendored Inbox has no L1 cancellation path.
+
+Document the irreversibility; if product requirements allow, add a delayed, depositor-only recovery path with a re-proved accounting invariant.
+
+Premise false: the cached Inbox is immutable and cannot diverge in the modeled deployment.
+
+version_and_bridge_wiring_never_cross_checked_with_rollup
+
+The rule depends on an unconstrained ghost; the real version mismatch fails closed at the Inbox.
+
+The raw violation is model-driven, not a current exploit; the underlying coupling is retained as L-04.
+
+The cluster duplicates one root cause and overstates the impact; L1/L2 minimum mismatch is the real lock-up risk.
+
+The first pass maps the contracts, actors, state changes and bridge calls before anyone writes a rule.
+
+Harnesses, compiler settings and external-contract behavior define the version of the system that gets checked.
+
+The analysis turns the design into invariants, safety rules and attack cases, then removes duplicates and rules Certora cannot express.
+
+The working specification is edited, run, and compared with counterexamples. Anything skipped or left unresolved stays in the record.
+
+ETH enters the portal, the caller’s amount is recorded, and only then is an Inbox message sent.
+
+The L2 contract consumes the message and turns its bound address + amount into a private DepositNote.
+
+The note carries the posting right. The message can be public without exposing the sender or deposit amount.
+
+The Outbox proof must match the caller, the configured L2 actor, the chain, and the stored amount before ETH leaves.
+
+Contracts, design notes, actors, state changes and bridge calls
+
+Harnesses, compiler settings and external-contract behavior
+
+Prover results, counterexamples, skipped work and scope gaps
+
+A language model drafts the properties and Certora checks them. The model is not the proof.
+
+No. It means that one CVL rule held under its harness, summaries, configuration and assumptions.
+
+No. It can only check the properties that were written and the behavior included in the harness.
+
+The generated rule was violated under the modeled scene. It is evidence to investigate, not automatically a confirmed vulnerability.
+
+A human found the issue while checking scope or cross-layer behavior, but the checked-in Certora run did not prove it.
+
+The harness, external summaries, skipped work and the counterexample behind each BAD rule.
+
+The L2 message consumer currently trusts a caller-supplied portal address.
+
+Read the canonical portal from L2 storage and remove the redundant caller-controlled parameter.
+
+A message from any non-portal L1 sender is rejected before a DepositNote is written.
+
+- self.context.consume_l1_to_l2_message(content, [secret], portal, message_leaf_index);
+
++ let stored_portal = self.storage.portal_address.read();
+
++ self.context.consume_l1_to_l2_message(content, [secret], stored_portal, message_leaf_index);
+
+Outbox.consume runs while the caller’s deposit is still active.
+
+Apply checks-effects-interactions, add nonReentrant, then consume the Outbox and pay the caller.
+
+A reentrant Outbox cannot produce a second payout or mutate cleared accounting.
+
+Two independent minimums can accept ETH on L1 and reject it on L2.
+
+Derive both values from one deployment setting, or enforce MIN_DEPOSIT >= L2 min_deposit in the deploy step.
+
+Every L1-accepted deposit satisfies the L2 claim predicate; the gap is unreachable.
+
++    require(_minDeposit > 0, "min deposit must be > 0");
+
++ // Deploy-time invariant: L1 MIN_DEPOSIT >= L2 min_deposit.
+
+A wrong L2 actor can fail open while a wrong version fails closed.
+
+Reject invalid actor/minimum values at deployment and cross-check version and bridge wiring before accepting funds.
+
+A misconfigured portal cannot accept a deposit that has no possible L2 withdrawal path.
+
+constructor(address _rollup, bytes32 _l2Contract, uint256 _version, uint256 _minDeposit) {
+
++    require(_l2Contract != bytes32(0), "l2 contract unset");
+
++    require(_minDeposit > 0, "min deposit must be > 0");
+
++    require(IRollup(_rollup).getVersion() == _version, "version mismatch");
+
+hash(depositor, amount) cannot distinguish equal deposits from one address.
+
+Add a depositId to the L1 message, L2 note and L2→L1 withdrawal commitment.
+
+Equal depositor/amount pairs produce distinct withdrawal commitments.
+
+receive() accepts ETH without creating a deposit record.
+
+Revert ordinary unsolicited transfers. Do not add a privileged sweep solely for this issue.
+
+Bare transfers revert; escrow accounting remains unchanged.
+
++ receive() external payable { revert UnsolicitedEther(); }
+
+// Forced sends remain a separate, unpreventable edge case.
+
+Bridge drift or liveness failure can strand valid deposits.
+
+Pause on drift and define a constrained recovery or migration path.
+
+New deposits stop safely; recovery cannot redirect another user’s escrow.
+
+// Recovery must return only the original depositor’s escrow.
+
+M20 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5
+
+A plain-English account of the BillboardPortal review: how deposits move between Ethereum and Aztec, which rules failed, and which findings held up after a second look.
+
+The raw report contains eight BAD rules. After checking the code and the model, this review keeps seven findings and rejects several original explanations.
+
+AutoProver takes a contract, a design document and a set of assumptions, then turns them into CVL rules for Certora to check. The important part is the gap between the code and the model.
+
+The run starts with the repository and ends with rules, counterexamples and a list of things the setup could not establish.
+
+Follow one deposit from L1 to L2 and back. The movable diagram shows where the review has direct visibility and where it relies on bridge behavior.
+
+This is exhaustive rule checking within a chosen harness—not a handful of tests. Change the harness or external summaries and the result can change too.
+
+ An external contract marked NONDET is an assumption in the setup, not a statement about the live bridge.
+
+The raw report had eight BAD rules. This list keeps the issues that remain meaningful after checking the code, the harness and the cross-layer assumptions.
+
+These rules stay in the evidence trail, but the code review rejects their original impact or treats them as setup artefacts.
+
+These are proposed changes, not merged patches. Each one comes with a property to check again.
+
+ pin the portal → reconcile minimums → validate constructor wiring → clear withdrawal state → reject stray ETH → decide on recovery and note IDs.
+
+Useful evidence, but not a self-contained security verdict.
+
+The report records Certora verdicts, rather than treating model confidence as evidence.
+
+Harnesses and external summaries define the proof world.
+
+The cache key does not include the entire Solidity tree.
+
+Cloud/API and PostgreSQL infrastructure are part of the run.
+
+“The useful output is not the green check. It is the boundary around the green check.”
+
+Use these to separate what was checked from what was inferred during review.
+
+Which parts of the bridge are facts about Aztec — and which parts are assumptions supplied to the Prover?

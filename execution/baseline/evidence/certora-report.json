@@ -1,0 +1,1179 @@
+{
+  "schema_version": "3.0",
+  "backend": "prover",
+  "contract_name": "BillboardPortal",
+  "run_timestamp_utc": "2026-08-04T17:07:15.829289+00:00",
+  "prover_links": {
+    "Deposit Management": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df",
+    "Withdrawal Management": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8",
+    "Structural Invariants": "https://prover.certora.com/output/60724/298c4158b2a64121831e26699faae9e5?anonymousKey=b39b8f1cf25eaaf48323d6bf55e3dcf0367641ed"
+  },
+  "properties": [
+    {
+      "sort": "invariant",
+      "description": "At all times, totalDeposited equals the sum of deposits[a] over all addresses a. Any deposit path that adds to one without the other (or that increments totalDeposited by an amount different from the amount recorded in the caller's slot) breaks the portal's accounting and, on the withdraw side, can make totalDeposited underflow or permanently over-report liabilities.",
+      "title": "total_deposited_equals_sum_of_deposits",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "autospec_Deposit_Management.spec",
+          "total_deposited_equals_sum_of_deposits"
+        ]
+      ]
+    },
+    {
+      "sort": "invariant",
+      "description": "address(this).balance >= totalDeposited (equivalently, >= the sum of all deposits[] entries) at all times: every recorded deposit must be fully backed by ETH actually held by the portal, so any set of depositors can be paid the exact amount recorded for them.",
+      "title": "portal_balance_covers_recorded_deposits",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "autospec_Deposit_Management.spec",
+          "portal_balance_covers_recorded_deposits"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "deposit() must revert whenever msg.value < MIN_DEPOSIT, i.e. no deposit record may ever be created with an amount below the configured minimum.",
+      "title": "deposit_rejects_below_minimum",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "autospec_Deposit_Management.spec",
+          "deposit_revert_characteristic"
+        ],
+        [
+          "autospec_Deposit_Management.spec",
+          "nonzero_deposit_at_least_min_deposit"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "deposit() must revert whenever msg.value > type(uint128).max, since the amount is bridged into an L2 u128 note field; accepting a larger value would let the L1-recorded amount differ from the L2-claimable amount by truncation.",
+      "title": "deposit_rejects_amount_exceeding_uint128",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "autospec_Deposit_Management.spec",
+          "deposit_revert_characteristic"
+        ],
+        [
+          "autospec_Deposit_Management.spec",
+          "deposit_fits_in_uint128"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "deposit() must revert whenever deposits[msg.sender] != 0, so that an address can never hold more than one active deposit at a time and can never overwrite/extend an existing record.",
+      "title": "deposit_rejects_when_active_deposit_exists",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "autospec_Deposit_Management.spec",
+          "deposit_revert_characteristic"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "On a successful deposit(), deposits[msg.sender] becomes exactly msg.value (its prior value having been 0) and totalDeposited increases by exactly msg.value; no other storage-visible deposit amount changes.",
+      "title": "deposit_records_exact_msg_value",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "autospec_Deposit_Management.spec",
+          "deposit_records_exact_msg_value"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "A successful deposit() leaves deposits[x] unchanged for every x != msg.sender. More generally, deposits[x] may only change in a transaction where msg.sender == x, so no third party can occupy, inflate, or clear another address's deposit slot (occupying it would deny that address the ability to deposit; clearing it would strand the funds).",
+      "title": "deposit_does_not_touch_other_accounts",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "BillboardPortal.sol",
+          "deposit_does_not_touch_other_accounts"
+        ],
+        [
+          "autospec_Deposit_Management.spec",
+          "deposit_records_exact_msg_value"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "After any successful deposit(), deposits[msg.sender] must be nonzero, so that a subsequent deposit() by the same caller reverts. The single-active-deposit rate limit must be armed by every accepted deposit, with no accepted amount that leaves the slot indistinguishable from 'no deposit'.",
+      "title": "deposit_lock_actually_engages",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "autospec_Deposit_Management.spec",
+          "deposit_lock_actually_engages"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "A successful deposit() must perform exactly one INBOX.sendL2Message call, with the recipient L2Actor equal to (L2_CONTRACT, VERSION) and the secretHash argument equal to the caller-supplied _secretHash verbatim. Sending to a different actor/version, or altering the secret hash, would make the message unclaimable by the depositor or claimable by an unintended L2 contract.",
+      "title": "inbox_message_arguments_wellformed",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "autospec_Deposit_Management.spec",
+          "inbox_message_arguments_wellformed"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "The content passed to the Inbox must be the deposit message hash over (depositor = msg.sender encoded as bytes32 of its uint160 value, amount = the exact value written into deposits[msg.sender]). Consequently no caller can produce a claimable message crediting an address other than itself, and the amount claimable on L2 can never exceed or fall below the amount recorded on L1.",
+      "title": "content_hash_binds_caller_and_recorded_amount",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "autospec_Deposit_Management.spec",
+          "content_hash_binds_caller_and_recorded_amount"
+        ],
+        [
+          "BillboardPortal.sol",
+          "deposit_record_content_is_canonical_claim_message"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "deposit() must commit all its storage mutations (deposits[msg.sender], totalDeposited) before making the external INBOX.sendL2Message call, so that a reentrant call originating from that external callee (the INBOX address is whatever the externally supplied ROLLUP returned at construction) cannot observe deposits[msg.sender] == 0 and obtain two active deposit records or two claimable L1->L2 messages for a single ETH payment, nor leave totalDeposited inconsistent with the sum of deposits.",
+      "title": "deposit_reentrancy_cannot_double_credit",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "autospec_Deposit_Management.spec",
+          "deposit_reentrancy_cannot_double_credit"
+        ]
+      ]
+    },
+    {
+      "sort": "attack_vector",
+      "description": "MIN_DEPOSIT is taken unchecked from the constructor. If it is 0, a caller can call deposit() with msg.value == 0 an unbounded number of times: deposits[msg.sender] stays 0 so the one-active-deposit check never triggers, yet each call enqueues a fresh claim_deposit L1->L2 message. That yields unlimited zero-amount L2 DepositNotes, defeating the deposit-based posting rate limit / spam protection at no cost.",
+      "title": "zero_minimum_deposit_bypasses_rate_limit",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "autospec_Deposit_Management.spec",
+          "zero_minimum_deposit_bypasses_rate_limit"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "deposit(_secretHash) must NOT revert whenever the caller's precondition set is satisfied: deposits[msg.sender] == 0 and MIN_DEPOSIT <= msg.value <= type(uint128).max (assuming the Inbox accepts the well-formed message). In particular, no unrelated portal state — the magnitude of totalDeposited, the number/size of other addresses' deposit records, the amount of ETH already held by the portal, or whether msg.sender is a contract — may cause an otherwise-valid deposit to fail, and no third party's transaction may put the portal into a state where a valid deposit reverts. This is the completeness counterpart to the three mandated revert conditions; a violation means the sole entry point of the bridge can be denied to honest users (griefing / permanent DoS) even though the design admits the deposit.",
+      "title": "deposit_succeeds_for_valid_inputs",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "autospec_Deposit_Management.spec",
+          "deposit_revert_characteristic"
+        ]
+      ]
+    },
+    {
+      "sort": "attack_vector",
+      "description": "The Inbox address is snapshotted once at construction (INBOX = ROLLUP.getInbox()) and never refreshed, whereas the withdrawal path re-reads ROLLUP.getOutbox() dynamically on every call. The rollup holds its inbox address in mutable storage (rollupStore.config.inbox), so the inbox the rollup actually consumes can diverge from the portal's cached INBOX. After such a divergence deposit() still succeeds — it accepts the ETH and writes deposits[msg.sender] — but the L1->L2 message is enqueued in an inbox that is never consumed, so no L2 DepositNote can ever be created, no L2->L1 withdraw message can ever be produced, and withdraw() can never succeed: the depositor's ETH is permanently locked while the L1 record advertises a claimable deposit. Checkable form: every successful deposit must occur in a state where INBOX == ROLLUP.getInbox() (or the message target must be resolved dynamically).",
+      "title": "stale_cached_inbox_orphans_deposits",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "autospec_Deposit_Management.spec",
+          "stale_cached_inbox_orphans_deposits"
+        ]
+      ]
+    },
+    {
+      "sort": "attack_vector",
+      "description": "withdraw() pays out with a raw msg.sender.call{value: amount}(\"\"), handing control to the depositor while the withdraw frame is still live and after deposits[caller] has been zeroed — so deposit()'s 'one active deposit' guard is trivially satisfiable from inside that callback. Any deposit- or withdraw-side bookkeeping performed at or after the value-transfer point can therefore clobber or double-count the nested deposit: the nested deposit's record could be reset to 0 (or to a stale amount) while its ETH remains in the portal and a claimable claim_deposit message for it already exists on L2 (stranded ETH / an L2 note with no matching L1 record, making the eventual withdraw content hash unreconstructable), or totalDeposited could drift from the sum of deposits[]. The required property is that a deposit accepted inside a nested call must be recorded exactly as if it had occurred top-level, and must survive completion of the enclosing call. This is a different call graph from reentrancy originating in INBOX.sendL2Message inside deposit().",
+      "title": "cross_function_reentrancy_deposit_during_withdraw_callback",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "autospec_Deposit_Management.spec",
+          "cross_function_reentrancy_deposit_during_withdraw_callback"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "Creation of a deposit record and emission of the L1->L2 claim message must be inseparable, in BOTH directions, over the contract's whole method surface: (a) any execution in which deposits[a] increases from 0 to v must, within that same execution, perform exactly one INBOX.sendL2Message whose content equals sha256ToField(abi.encodeWithSignature(\"claim_deposit(bytes32,uint256)\", bytes32(uint256(uint160(a))), v)); and (b) the portal must never call INBOX.sendL2Message in an execution that does not create exactly such a record -- in particular receive()/fallback, withdraw(), and any other entry point must neither credit deposits[] / increase totalDeposited nor enqueue a claim_deposit message. Violating (a) means ETH is accepted and recorded but no L2 DepositNote can ever be created, so no L2->L1 withdraw message can ever exist and the depositor's ETH is permanently locked; violating (b) means a claimable L2 DepositNote (i.e. posting rights in the rate-limited billboard) exists with no ETH staked behind it, or a credit is created that bypassed the MIN_DEPOSIT / uint128 / one-active-deposit validation.",
+      "title": "deposit_record_and_l1_to_l2_message_are_paired",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "BillboardPortal.sol",
+          "deposit_record_implies_inbox_message"
+        ],
+        [
+          "BillboardPortal.sol",
+          "deposit_record_content_is_canonical_claim_message"
+        ],
+        [
+          "autospec_Deposit_Management.spec",
+          "inbox_message_implies_deposit_record"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "The single-active-deposit gate must be re-armed only against cross-chain proof: deposits[a] may only decrease in a call made by a itself that successfully consumes an Outbox L2->L1 message whose content binds (a, exactly the amount being cleared) and that transfers exactly that amount of ETH to a; and any such decrease must go to exactly 0, never to another nonzero value. No other execution path may clear or reduce a deposit record. If the slot could be cleared without proof that the corresponding L2 DepositNote had been destroyed, a single L1 address could hold several simultaneous L2 DepositNotes backed by one ETH stake, multiplying its posting allowance and defeating the deposit-based rate limit; conversely, clearing a record without the matching payout strands the depositor's ETH in the portal forever.",
+      "title": "deposit_slot_only_cleared_by_proven_l2_withdrawal",
+      "component": "Deposit Management",
+      "rule_refs": [
+        [
+          "BillboardPortal.sol",
+          "deposit_slot_only_cleared_by_proven_l2_withdrawal"
+        ]
+      ]
+    },
+    {
+      "sort": "invariant",
+      "description": "At every observable state (including states visible during reentrant calls), totalDeposited equals the sum of deposits[a] over all addresses a. In particular withdraw() must decrement totalDeposited by exactly the amount it zeroes out of deposits[msg.sender], and must not clobber a deposit re-established by the caller during the ETH-transfer callback.",
+      "title": "total_deposited_equals_sum_of_deposits",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "total_deposited_equals_sum_of_deposits"
+        ]
+      ]
+    },
+    {
+      "sort": "invariant",
+      "description": "address(this).balance >= totalDeposited always holds: the portal always holds at least as much ETH as the sum of all recorded deposits, so a depositor's withdrawal can never fail for lack of funds.",
+      "title": "portal_solvency",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "portal_solvency"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "withdraw() must revert whenever deposits[msg.sender] == 0, regardless of the (_epoch, _numCheckpointsInEpoch, _leafIndex, _path) arguments supplied.",
+      "title": "withdraw_reverts_without_active_deposit",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "withdraw_reverts_without_active_deposit"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "A successful withdraw() transfers exactly the pre-call value of deposits[msg.sender] wei, to msg.sender only. The paid amount must never be derivable from calldata, and no ETH may be sent to any other address during the call.",
+      "title": "withdraw_pays_exactly_recorded_deposit",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "withdraw_pays_exactly_recorded_deposit"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "A successful withdraw() sets deposits[msg.sender] to 0 (unless the caller itself re-deposits reentrantly during the transfer) and decreases totalDeposited by exactly the amount transferred.",
+      "title": "withdraw_clears_record_and_accounting",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "withdraw_clears_record_and_accounting"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "withdraw() must not modify deposits[u] for any u != msg.sender, and must not modify any contract state other than deposits[msg.sender] and totalDeposited.",
+      "title": "withdraw_isolated_to_caller_state",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "withdraw_isolated_to_caller_state"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "The message passed to outbox.consume() must always be sender = (L2_CONTRACT, VERSION), recipient = (address(this), block.chainid), and content = sha256ToField(abi.encodePacked(bytes32(uint256(uint160(msg.sender)))), amount)) where amount == deposits[msg.sender]. No caller-supplied input may influence the sender, recipient, or content fields.",
+      "title": "consumed_message_bound_to_caller_and_amount",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "consumed_message_bound_to_caller_and_amount"
+        ],
+        [
+          "autospec_Withdrawal_Management.spec",
+          "consumed_message_content_bound_to_caller_and_amount"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "If outbox.consume() reverts (no root inserted for the epoch/checkpoint depth, leaf already nullified, invalid Merkle path, wrong recipient/chainId/version), the entire withdraw() reverts: no ETH leaves the contract and deposits/totalDeposited are unchanged.",
+      "title": "consume_failure_reverts_whole_withdrawal",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "consume_failure_reverts_whole_withdrawal"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "If the ETH transfer to msg.sender fails (call returns false), the whole transaction must revert, leaving deposits[msg.sender] at its original non-zero value and totalDeposited unchanged, so the withdrawal can be retried.",
+      "title": "failed_eth_transfer_reverts_withdrawal",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "failed_eth_transfer_reverts_withdrawal"
+        ],
+        [
+          "autospec_Withdrawal_Management.spec",
+          "successful_withdraw_performs_one_successful_transfer"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "The same Outbox leaf can fund at most one payout: a second withdraw() by the same caller with identical (_epoch, _numCheckpointsInEpoch, _leafIndex, _path) must revert, either because deposits[msg.sender] is now zero or because the leaf is already nullified in the Outbox.",
+      "title": "no_double_consumption_of_same_leaf",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "no_double_consumption_of_same_leaf"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "A caller B must not be able to complete a withdrawal using the epoch/leafIndex/path data of depositor A's L2->L1 message: because the reconstructed content is bound to msg.sender, front-running or copying another depositor's proof data must not yield a payout to B.",
+      "title": "withdrawal_proof_not_stealable_by_other_caller",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "withdrawal_proof_not_stealable_by_other_caller"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "Over the contract's lifetime, the cumulative wei paid out by withdraw() to any address never exceeds the cumulative wei that address supplied through deposit(); no caller can extract more ETH than they put in.",
+      "title": "per_address_payout_bounded_by_deposits",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "per_address_payout_bounded_by_deposits"
+        ],
+        [
+          "BillboardPortal.sol",
+          "deposit_record_growth_is_funded_by_owner"
+        ]
+      ]
+    },
+    {
+      "sort": "attack_vector",
+      "description": "The payout uses msg.sender.call{value: amount}(\"\") with all gas forwarded, and deposits[msg.sender] is zero at that moment, so the callee can reenter deposit() (or withdraw()). Any state write ordered after this call — or an accounting update that assumes deposits[msg.sender] is still zero on return — would let a reentrant deposit be erased or double-counted, desyncing totalDeposited from the deposits mapping or enabling a second payout for the same record.",
+      "title": "reentrancy_via_unbounded_gas_eth_transfer",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "reentrancy_via_unbounded_gas_eth_transfer"
+        ]
+      ]
+    },
+    {
+      "sort": "attack_vector",
+      "description": "outbox.consume() is an external call to an address resolved dynamically and unvalidated via ROLLUP.getOutbox(), and it happens BEFORE deposits[msg.sender] is cleared. A replaced, zero, or malicious Outbox could reenter withdraw() while the deposit record is still non-zero, or accept a forged/never-settled message, allowing ETH payout without a genuine proved L2->L1 withdrawal; additionally the Outbox's nullifier bitmap does not carry across Outbox instances, so a leaf already consumed on one instance is replayable against a new one.",
+      "title": "untrusted_dynamic_outbox_before_state_clear",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "untrusted_dynamic_outbox_before_state_clear"
+        ],
+        [
+          "autospec_Withdrawal_Management.spec",
+          "malicious_outbox_reentrancy_is_reachable"
+        ],
+        [
+          "autospec_Withdrawal_Management.spec",
+          "malicious_outbox_double_payout_witness"
+        ],
+        [
+          "autospec_Withdrawal_Management.spec",
+          "untrusted_outbox_cannot_exceed_recorded_deposit"
+        ]
+      ]
+    },
+    {
+      "sort": "attack_vector",
+      "description": "The message content commits only to (depositor, amount) with no nonce, epoch, or note identifier, so all Outbox leaves for the same depositor and amount are interchangeable. A stale or duplicated leaf produced in an earlier deposit cycle (e.g. via two Outbox roots for one epoch, or a re-inserted root) can be used to satisfy a later withdrawal, decoupling the burn of the L2 DepositNote from the L1 payout — a depositor could recover their ETH while still holding live L2 posting rights, bypassing the deposit-based rate limit.",
+      "title": "content_lacks_nonce_binding_to_specific_note",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "content_lacks_nonce_binding_to_specific_note"
+        ]
+      ]
+    },
+    {
+      "sort": "attack_vector",
+      "description": "deposits[u] can only be reduced by u's own successful withdraw(); there is no admin rescue, no alternative recipient parameter, and receive() credits nothing. A depositor who cannot produce a matching Outbox leaf (deposit never claimed on L2, note lost, chainId change, Outbox/rollup migration) or whose account reverts on plain ETH receipt has their ETH permanently locked, and directly-sent ETH is unrecoverable.",
+      "title": "no_rescue_path_permanently_locks_deposits",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "no_rescue_path_permanently_locks_deposits"
+        ],
+        [
+          "BillboardPortal.sol",
+          "deposit_record_reducible_only_by_owner_withdraw"
+        ],
+        [
+          "autospec_Withdrawal_Management.spec",
+          "withdrawal_always_available_to_depositor"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "No wei may leave the portal in a transaction in which no Outbox message consumption succeeded: every successful withdraw() must perform exactly one successful outbox.consume() call, and the number of successful consume() calls must equal the number of ETH payouts made by withdraw(). In particular there must be no code path (conditional branch, early return, or a consume dispatched to a target that silently succeeds) on which the portal transfers deposits[msg.sender] without a completed consumption of the reconstructed message.",
+      "title": "payout_requires_exactly_one_message_consumption",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "BillboardPortal.sol",
+          "payout_requires_exactly_one_message_consumption"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "withdraw() must revert only if (i) deposits[msg.sender] == 0, (ii) the outbox.consume() call reverts, or (iii) the ETH transfer to msg.sender returns false. No other condition may block a withdrawal: no admin/pause/timelock gate, no dependence on totalDeposited (e.g. an arithmetic failure of the totalDeposited decrement must not be reachable for a legitimate withdrawal), and no sequence of transactions by accounts other than msg.sender may turn a withdraw() that would have succeeded into one that reverts or that pays a different amount.",
+      "title": "withdraw_has_no_extra_revert_conditions",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "withdraw_has_no_extra_revert_conditions"
+        ]
+      ]
+    },
+    {
+      "sort": "safety_property",
+      "description": "deposits[u] may only transition from 0 to a fresh non-zero deposit amount, or from a non-zero amount to 0. No function may change a non-zero deposits[u] into a different non-zero value (no partial withdrawal, no top-up, no rewrite). This guarantees that the amount committed in the L1->L2 deposit message — the amount the L2 DepositNote holds and later hashes into the L2->L1 withdrawal content — is exactly the amount the portal reads back when reconstructing the Outbox message content at withdrawal time.",
+      "title": "deposit_record_never_mutates_between_nonzero_values",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "BillboardPortal.sol",
+          "deposit_record_never_mutates_between_nonzero_values"
+        ]
+      ]
+    },
+    {
+      "sort": "invariant",
+      "description": "Every non-zero deposits[u] lies in [MIN_DEPOSIT, type(uint128).max]. The upper bound is required for withdrawability: the L2 contract carries the deposit amount as a u128 and hashes it into the L2->L1 content, so a recorded amount outside the u128 range could never be matched by any Outbox leaf and the ETH would be permanently unwithdrawable. The lower bound pins the record to an amount that a valid deposit could actually have created.",
+      "title": "deposit_record_representable_in_l2_encoding",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "deposit_record_representable_in_l2_encoding"
+        ]
+      ]
+    },
+    {
+      "sort": "attack_vector",
+      "description": "Whether a withdrawal can ever be consumed is decided entirely by fields the portal builds from unvalidated configuration: it stamps message.sender = (L2_CONTRACT, VERSION), where VERSION is a free constructor parameter, and the Outbox rejects any message whose sender.version differs from the Outbox's own immutable VERSION. The portal never cross-checks VERSION (or the L2 sender identity) against the Outbox it will actually call, and it is asymmetric about bridge resolution: INBOX is captured once at construction from ROLLUP.getInbox(), while the Outbox is re-resolved per call via ROLLUP.getOutbox(). Consequences: (a) a deploy-time VERSION mismatch leaves deposit() accepting ETH indefinitely while every withdraw() reverts inside the Outbox version check, permanently locking all deposits with no failure signal at deposit time; (b) after a rollup/version migration, getOutbox() returns an Outbox of a different version while deposits keep being routed through the cached old INBOX (old L2 instance), so already-recorded deposits become structurally unwithdrawable yet new deposits are still accepted. A correct implementation should validate the version/bridge wiring against the rollup (or pin the Outbox the same way the Inbox is pinned) so that every accepted deposit corresponds to a withdrawal message the queried Outbox will accept, and/or stop accepting deposits once the withdrawal leg is no longer consumable.",
+      "title": "version_and_bridge_wiring_never_cross_checked_with_rollup",
+      "component": "Withdrawal Management",
+      "rule_refs": [
+        [
+          "autospec_Withdrawal_Management.spec",
+          "version_and_bridge_wiring_never_cross_checked_with_rollup"
+        ]
+      ]
+    },
+    {
+      "sort": "invariant",
+      "description": "The storage variable `totalDeposited` is always exactly equal to the sum of `deposits[a]` over all addresses `a` (tracked with a ghost sum updated on every write to the `deposits` mapping).",
+      "title": "total_deposited_equals_sum_of_deposits",
+      "component": "Structural Invariants",
+      "rule_refs": [
+        [
+          "invariants.spec",
+          "total_deposited_equals_sum_of_deposits"
+        ]
+      ]
+    },
+    {
+      "sort": "invariant",
+      "description": "For every address `a`, if `deposits[a] != 0` then `deposits[a] >= MIN_DEPOSIT` (every recorded active deposit respects the immutable minimum deposit threshold).",
+      "title": "nonzero_deposit_at_least_min_deposit",
+      "component": "Structural Invariants",
+      "rule_refs": [
+        [
+          "invariants.spec",
+          "nonzero_deposit_at_least_min_deposit"
+        ]
+      ]
+    },
+    {
+      "sort": "invariant",
+      "description": "For every address `a`, `deposits[a] <= type(uint128).max` (each recorded deposit amount fits in 128 bits, as enforced at deposit time).",
+      "title": "deposit_fits_in_uint128",
+      "component": "Structural Invariants",
+      "rule_refs": [
+        [
+          "invariants.spec",
+          "deposit_fits_in_uint128"
+        ]
+      ]
+    },
+    {
+      "sort": "invariant",
+      "description": "The portal's ETH balance always covers its recorded liabilities: `address(this).balance >= totalDeposited`.",
+      "title": "portal_solvent_wrt_total_deposited",
+      "component": "Structural Invariants",
+      "rule_refs": [
+        [
+          "invariants.spec",
+          "portal_solvent_wrt_total_deposited"
+        ]
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "name": "deposit_does_not_touch_other_accounts",
+      "spec_file": "BillboardPortal.sol",
+      "outcome": "GOOD",
+      "line": 57,
+      "duration_seconds": 7.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "deposit_record_content_is_canonical_claim_message",
+      "spec_file": "BillboardPortal.sol",
+      "outcome": "GOOD",
+      "line": 78,
+      "duration_seconds": 8.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "deposit_record_growth_is_funded_by_owner",
+      "spec_file": "BillboardPortal.sol",
+      "outcome": "GOOD",
+      "line": 57,
+      "duration_seconds": 12.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "deposit_record_implies_inbox_message",
+      "spec_file": "BillboardPortal.sol",
+      "outcome": "GOOD",
+      "line": 57,
+      "duration_seconds": 8.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "deposit_record_never_mutates_between_nonzero_values",
+      "spec_file": "BillboardPortal.sol",
+      "outcome": "GOOD",
+      "line": 57,
+      "duration_seconds": 15.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "deposit_record_reducible_only_by_owner_withdraw",
+      "spec_file": "BillboardPortal.sol",
+      "outcome": "GOOD",
+      "line": 57,
+      "duration_seconds": 14.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "deposit_slot_only_cleared_by_proven_l2_withdrawal",
+      "spec_file": "BillboardPortal.sol",
+      "outcome": "GOOD",
+      "line": 57,
+      "duration_seconds": 6.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "payout_requires_exactly_one_message_consumption",
+      "spec_file": "BillboardPortal.sol",
+      "outcome": "GOOD",
+      "line": 57,
+      "duration_seconds": 15.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "content_hash_binds_caller_and_recorded_amount",
+      "spec_file": "autospec_Deposit_Management.spec",
+      "outcome": "GOOD",
+      "line": 451,
+      "duration_seconds": 9.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "cross_function_reentrancy_deposit_during_withdraw_callback",
+      "spec_file": "autospec_Deposit_Management.spec",
+      "outcome": "GOOD",
+      "line": 564,
+      "duration_seconds": 8.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "deposit_fits_in_uint128",
+      "spec_file": "autospec_Deposit_Management.spec",
+      "outcome": "GOOD",
+      "line": 271,
+      "duration_seconds": 5.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "deposit_lock_actually_engages",
+      "spec_file": "autospec_Deposit_Management.spec",
+      "outcome": "BAD",
+      "line": 389,
+      "duration_seconds": 1.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "deposit_records_exact_msg_value",
+      "spec_file": "autospec_Deposit_Management.spec",
+      "outcome": "GOOD",
+      "line": 330,
+      "duration_seconds": 7.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "deposit_reentrancy_cannot_double_credit",
+      "spec_file": "autospec_Deposit_Management.spec",
+      "outcome": "GOOD",
+      "line": 489,
+      "duration_seconds": 4.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "deposit_revert_characteristic",
+      "spec_file": "autospec_Deposit_Management.spec",
+      "outcome": "GOOD",
+      "line": 299,
+      "duration_seconds": 7.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "inbox_message_arguments_wellformed",
+      "spec_file": "autospec_Deposit_Management.spec",
+      "outcome": "GOOD",
+      "line": 413,
+      "duration_seconds": 4.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "inbox_message_implies_deposit_record",
+      "spec_file": "autospec_Deposit_Management.spec",
+      "outcome": "BAD",
+      "line": 680,
+      "duration_seconds": 26.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "nonzero_deposit_at_least_min_deposit",
+      "spec_file": "autospec_Deposit_Management.spec",
+      "outcome": "GOOD",
+      "line": 268,
+      "duration_seconds": 10.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "portal_balance_covers_recorded_deposits",
+      "spec_file": "autospec_Deposit_Management.spec",
+      "outcome": "GOOD",
+      "line": 249,
+      "duration_seconds": 8.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "stale_cached_inbox_orphans_deposits",
+      "spec_file": "autospec_Deposit_Management.spec",
+      "outcome": "BAD",
+      "line": 549,
+      "duration_seconds": 2.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "total_deposited_equals_sum_of_deposits",
+      "spec_file": "autospec_Deposit_Management.spec",
+      "outcome": "GOOD",
+      "line": 243,
+      "duration_seconds": 7.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "zero_minimum_deposit_bypasses_rate_limit",
+      "spec_file": "autospec_Deposit_Management.spec",
+      "outcome": "BAD",
+      "line": 522,
+      "duration_seconds": 1.0,
+      "prover_link": "https://prover.certora.com/output/60724/16944da6cfbf4478b9217e5d6fbecc7b?anonymousKey=104b5b6f6c2ce727a42906ad489014d82a6455df"
+    },
+    {
+      "name": "consume_failure_reverts_whole_withdrawal",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 641,
+      "duration_seconds": 10.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "consumed_message_bound_to_caller_and_amount",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 588,
+      "duration_seconds": 11.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "consumed_message_content_bound_to_caller_and_amount",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 611,
+      "duration_seconds": 23.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "content_lacks_nonce_binding_to_specific_note",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "BAD",
+      "line": 949,
+      "duration_seconds": 2.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "deposit_record_representable_in_l2_encoding",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 407,
+      "duration_seconds": 14.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "failed_eth_transfer_reverts_withdrawal",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 674,
+      "duration_seconds": 11.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "malicious_outbox_double_payout_witness",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 884,
+      "duration_seconds": 3.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "malicious_outbox_reentrancy_is_reachable",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 859,
+      "duration_seconds": 3.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "no_double_consumption_of_same_leaf",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 723,
+      "duration_seconds": 23.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "no_rescue_path_permanently_locks_deposits",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "BAD",
+      "line": 984,
+      "duration_seconds": 15.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "per_address_payout_bounded_by_deposits",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 426,
+      "duration_seconds": 13.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "portal_solvency",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 382,
+      "duration_seconds": 12.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "reentrancy_via_unbounded_gas_eth_transfer",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 777,
+      "duration_seconds": 11.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "successful_withdraw_performs_one_successful_transfer",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 703,
+      "duration_seconds": 11.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "total_deposited_equals_sum_of_deposits",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 367,
+      "duration_seconds": 12.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "untrusted_dynamic_outbox_before_state_clear",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "BAD",
+      "line": 842,
+      "duration_seconds": 3.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "untrusted_outbox_cannot_exceed_recorded_deposit",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 893,
+      "duration_seconds": 21.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "version_and_bridge_wiring_never_cross_checked_with_rollup",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "BAD",
+      "line": 1166,
+      "duration_seconds": 1.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "withdraw_clears_record_and_accounting",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 515,
+      "duration_seconds": 12.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "withdraw_has_no_extra_revert_conditions",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 1057,
+      "duration_seconds": 20.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "withdraw_isolated_to_caller_state",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 558,
+      "duration_seconds": 13.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "withdraw_pays_exactly_recorded_deposit",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 481,
+      "duration_seconds": 13.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "withdraw_reverts_without_active_deposit",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 468,
+      "duration_seconds": 10.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "withdrawal_always_available_to_depositor",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 1022,
+      "duration_seconds": null,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "withdrawal_proof_not_stealable_by_other_caller",
+      "spec_file": "autospec_Withdrawal_Management.spec",
+      "outcome": "GOOD",
+      "line": 744,
+      "duration_seconds": 24.0,
+      "prover_link": "https://prover.certora.com/output/60724/22f004b5e817473da58665bb4f5c28c4?anonymousKey=74e2409dbb74c378eedad083ad5d581842e696e8"
+    },
+    {
+      "name": "deposit_fits_in_uint128",
+      "spec_file": "invariants.spec",
+      "outcome": "GOOD",
+      "line": 70,
+      "duration_seconds": 9.0,
+      "prover_link": "https://prover.certora.com/output/60724/298c4158b2a64121831e26699faae9e5?anonymousKey=b39b8f1cf25eaaf48323d6bf55e3dcf0367641ed"
+    },
+    {
+      "name": "nonzero_deposit_at_least_min_deposit",
+      "spec_file": "invariants.spec",
+      "outcome": "GOOD",
+      "line": 64,
+      "duration_seconds": 10.0,
+      "prover_link": "https://prover.certora.com/output/60724/298c4158b2a64121831e26699faae9e5?anonymousKey=b39b8f1cf25eaaf48323d6bf55e3dcf0367641ed"
+    },
+    {
+      "name": "portal_solvent_wrt_total_deposited",
+      "spec_file": "invariants.spec",
+      "outcome": "GOOD",
+      "line": 76,
+      "duration_seconds": 9.0,
+      "prover_link": "https://prover.certora.com/output/60724/298c4158b2a64121831e26699faae9e5?anonymousKey=b39b8f1cf25eaaf48323d6bf55e3dcf0367641ed"
+    },
+    {
+      "name": "total_deposited_equals_sum_of_deposits",
+      "spec_file": "invariants.spec",
+      "outcome": "GOOD",
+      "line": 58,
+      "duration_seconds": 9.0,
+      "prover_link": "https://prover.certora.com/output/60724/298c4158b2a64121831e26699faae9e5?anonymousKey=b39b8f1cf25eaaf48323d6bf55e3dcf0367641ed"
+    }
+  ],
+  "groups": [
+    {
+      "slug": "general",
+      "title": "General",
+      "description": "All properties.",
+      "status": "BAD",
+      "members": [
+        [
+          "Deposit Management",
+          "total_deposited_equals_sum_of_deposits"
+        ],
+        [
+          "Deposit Management",
+          "portal_balance_covers_recorded_deposits"
+        ],
+        [
+          "Deposit Management",
+          "deposit_rejects_below_minimum"
+        ],
+        [
+          "Deposit Management",
+          "deposit_rejects_amount_exceeding_uint128"
+        ],
+        [
+          "Deposit Management",
+          "deposit_rejects_when_active_deposit_exists"
+        ],
+        [
+          "Deposit Management",
+          "deposit_records_exact_msg_value"
+        ],
+        [
+          "Deposit Management",
+          "deposit_does_not_touch_other_accounts"
+        ],
+        [
+          "Deposit Management",
+          "deposit_lock_actually_engages"
+        ],
+        [
+          "Deposit Management",
+          "inbox_message_arguments_wellformed"
+        ],
+        [
+          "Deposit Management",
+          "content_hash_binds_caller_and_recorded_amount"
+        ],
+        [
+          "Deposit Management",
+          "deposit_reentrancy_cannot_double_credit"
+        ],
+        [
+          "Deposit Management",
+          "zero_minimum_deposit_bypasses_rate_limit"
+        ],
+        [
+          "Deposit Management",
+          "deposit_succeeds_for_valid_inputs"
+        ],
+        [
+          "Deposit Management",
+          "stale_cached_inbox_orphans_deposits"
+        ],
+        [
+          "Deposit Management",
+          "cross_function_reentrancy_deposit_during_withdraw_callback"
+        ],
+        [
+          "Deposit Management",
+          "deposit_record_and_l1_to_l2_message_are_paired"
+        ],
+        [
+          "Deposit Management",
+          "deposit_slot_only_cleared_by_proven_l2_withdrawal"
+        ],
+        [
+          "Withdrawal Management",
+          "total_deposited_equals_sum_of_deposits"
+        ],
+        [
+          "Withdrawal Management",
+          "portal_solvency"
+        ],
+        [
+          "Withdrawal Management",
+          "withdraw_reverts_without_active_deposit"
+        ],
+        [
+          "Withdrawal Management",
+          "withdraw_pays_exactly_recorded_deposit"
+        ],
+        [
+          "Withdrawal Management",
+          "withdraw_clears_record_and_accounting"
+        ],
+        [
+          "Withdrawal Management",
+          "withdraw_isolated_to_caller_state"
+        ],
+        [
+          "Withdrawal Management",
+          "consumed_message_bound_to_caller_and_amount"
+        ],
+        [
+          "Withdrawal Management",
+          "consume_failure_reverts_whole_withdrawal"
+        ],
+        [
+          "Withdrawal Management",
+          "failed_eth_transfer_reverts_withdrawal"
+        ],
+        [
+          "Withdrawal Management",
+          "no_double_consumption_of_same_leaf"
+        ],
+        [
+          "Withdrawal Management",
+          "withdrawal_proof_not_stealable_by_other_caller"
+        ],
+        [
+          "Withdrawal Management",
+          "per_address_payout_bounded_by_deposits"
+        ],
+        [
+          "Withdrawal Management",
+          "reentrancy_via_unbounded_gas_eth_transfer"
+        ],
+        [
+          "Withdrawal Management",
+          "untrusted_dynamic_outbox_before_state_clear"
+        ],
+        [
+          "Withdrawal Management",
+          "content_lacks_nonce_binding_to_specific_note"
+        ],
+        [
+          "Withdrawal Management",
+          "no_rescue_path_permanently_locks_deposits"
+        ],
+        [
+          "Withdrawal Management",
+          "payout_requires_exactly_one_message_consumption"
+        ],
+        [
+          "Withdrawal Management",
+          "withdraw_has_no_extra_revert_conditions"
+        ],
+        [
+          "Withdrawal Management",
+          "deposit_record_never_mutates_between_nonzero_values"
+        ],
+        [
+          "Withdrawal Management",
+          "deposit_record_representable_in_l2_encoding"
+        ],
+        [
+          "Withdrawal Management",
+          "version_and_bridge_wiring_never_cross_checked_with_rollup"
+        ],
+        [
+          "Structural Invariants",
+          "total_deposited_equals_sum_of_deposits"
+        ],
+        [
+          "Structural Invariants",
+          "nonzero_deposit_at_least_min_deposit"
+        ],
+        [
+          "Structural Invariants",
+          "deposit_fits_in_uint128"
+        ],
+        [
+          "Structural Invariants",
+          "portal_solvent_wrt_total_deposited"
+        ]
+      ]
+    }
+  ],
+  "skipped": [],
+  "gave_up_components": [],
+  "coverage": {
+    "total_properties": 42,
+    "total_rules": 51,
+    "total_groups": 1,
+    "properties_per_group_min": 42,
+    "properties_per_group_max": 42,
+    "property_coverage_complete": true,
+    "properties_in_no_group": [],
+    "rules_spanning_multiple_groups": [],
+    "skipped_count": 0,
+    "gave_up_component_count": 0,
+    "dropped_orphan_rules": 6,
+    "warnings": [
+      "FALLBACK GROUPING APPLIED"
+    ]
+  }
+}
