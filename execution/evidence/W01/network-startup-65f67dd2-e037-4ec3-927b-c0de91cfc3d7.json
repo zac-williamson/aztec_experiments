@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "startedAt": "2026-09-14T10:52:50.308Z",
+  "node": "24.21.0",
+  "aztec": "5.2.0",
+  "bcryptoBackend": "js",
+  "profile": "disposable local startup only",
+  "l1Host": "127.0.0.1",
+  "inheritedNetworkOrWalletConfiguration": false,
+  "inputs": {
+    "scripts/test-fee-network.mjs": "4cd1328ff29621b65292d49a5b0c5b7065e8d6560bf57f9cc1162d789bb5348b",
+    "scripts/fee-network-worker.mjs": "d6166784495f4ee31ca62b687600abdd60a6c1c7cfbb31edfc065309968a9fe1",
+    "scripts/process-lifecycle.mjs": "5942900254592770094e5117cb5d9db29c6e41a14e1d72d0d00dae345ef3c2b3",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "node_modules/@aztec/aztec/dest/local-network/local-network.js": "3b6270748a6c06b56fe6124fae6ae0adc1f9386f2dc151f366eb36d3973d9590",
+    "node_modules/@aztec/aztec-node/dest/factory.js": "8bc25151488dcabab7b865beeaef4ff296d54dcc960e9d72fc481d3a1cdf845a",
+    "node_modules/@aztec/p2p/dest/msg_validators/tx_validator/allowed_public_setup.js": "02e0c68b8979d840f75fe36106e8e2aad26b39188c9564a41c74615e264b600a"
+  },
+  "children": {
+    "service": {
+      "pid": 81563,
+      "closed": true,
+      "code": 0,
+      "signal": null
+    },
+    "tests": {
+      "pid": 81565,
+      "closed": true,
+      "code": null,
+      "signal": "SIGTERM"
+    }
+  },
+  "outcome": "fail",
+  "error": "Test command timed out",
+  "diagnosticTail": "W01_RESULT {\"profile\":\"disposable-fee-mechanism\",\"realVerifier\":false,\"realProofs\":false,\"syntheticEpochSettlement\":false,\"outcome\":\"fail\",\"stage\":\"verify-node\",\"error\":\"Expected values to be strictly equal:\\n+ actual - expected\\n\\n+ undefined\\n- false\\n\",\"nodeStopped\":true}\n",
+  "temporaryDirectoryRemoved": true,
+  "finishedAt": "2026-09-14T10:55:50.692Z",
+  "limitations": [
+    "Mock L1 verifier and disabled private proof generation; no genuine proof acceptance.",
+    "No sponsorship, fee debit, funding privacy or production readiness is demonstrated by startup."
+  ]
+}

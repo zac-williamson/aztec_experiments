@@ -1,0 +1,3 @@
+# Initial compile attempt
+
+2026-09-14: `.build/toolchain/nargo compile --workspace --silence-warnings --program-dir billboard/fee-fixture` exited101 immediately in workspace sandbox. Nargo reported `Failed to lock git dependencies cache: Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }` at `tooling/nargo_toml/src/lib.rs:437`. No contract compilation or test outcome was produced. The installed dependency cache is outside writable workspace; scoped cache-access escalation is authorized for the next attempt. This is an environment permission failure, not a product finding.

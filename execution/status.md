@@ -5,6 +5,8 @@
 - Node24.21 and seven dependency overrides are qualified; all57 protected Aztec/Noir lock entries are unchanged.
 - Final npm scans report zero high/critical entries; lower-severity findings and embedded-tooling limits remain explicitly recorded. D01-A05 and T05-A05 require tested release controls.
 - Verified candidate: `688484e2afcbd2536a95baeb5e37e0fb68ceb9c4b6c17ccbc1cbcd0ba2054824`.
-- Next: commit A02 locally, then implement W01 fee privacy using the prepared restricted-sponsor feasibility experiment.
+- A02 committed locally as `6d9a655`. Active: W01 restricted-sponsor feasibility fixture and disposable local observation harness.
+- W01 fixture compiles;26 pure constraint checks pass. Focused contract checks exercise admission/configuration and real delegated authorization; complete sponsorship/replay remain unverified because TXE begins after the fee-election setup phase.
+- Local node startup and graceful cleanup pass: isolated chain31337, disabled peer networking and no extra public setup functions. The pinned publisher discarded a slasher watcher unsubscribe; the local harness now retains and invokes it, drains its polling work and exits normally. Failed diagnostics remain recorded. Next: actual PXE sponsor composition and debit/replay observations.
 - X03 remains blocked for production release. Real proofs, external audit, operator acceptance and14-day soak remain mandatory. The application is not production-ready.
 - No publishing, paid services, production wallets or real funds used.

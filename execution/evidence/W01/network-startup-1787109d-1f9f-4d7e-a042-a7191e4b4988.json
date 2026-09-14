@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "startedAt": "2026-09-14T11:20:45.551Z",
+  "node": "24.21.0",
+  "aztec": "5.2.0",
+  "bcryptoBackend": "js",
+  "profile": "disposable local startup only",
+  "l1Host": "127.0.0.1",
+  "inheritedNetworkOrWalletConfiguration": false,
+  "inputs": {
+    "scripts/test-fee-network.mjs": "afc296a575f32c25572fabfb64996a43ebe1df6f86db7139ab08ad04278e5c03",
+    "scripts/fee-network-worker.mjs": "f011c1ae706ca247657d97e50c3a272f6044971cdf78d13793f116c6a1e1109d",
+    "scripts/process-lifecycle.mjs": "5942900254592770094e5117cb5d9db29c6e41a14e1d72d0d00dae345ef3c2b3",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "node_modules/@aztec/aztec/dest/local-network/local-network.js": "3b6270748a6c06b56fe6124fae6ae0adc1f9386f2dc151f366eb36d3973d9590",
+    "node_modules/@aztec/aztec-node/dest/factory.js": "8bc25151488dcabab7b865beeaef4ff296d54dcc960e9d72fc481d3a1cdf845a",
+    "node_modules/@aztec/p2p/dest/msg_validators/tx_validator/allowed_public_setup.js": "02e0c68b8979d840f75fe36106e8e2aad26b39188c9564a41c74615e264b600a"
+  },
+  "children": {
+    "service": {
+      "pid": 85096,
+      "closed": true,
+      "code": 0,
+      "signal": null
+    },
+    "tests": {
+      "pid": 85097,
+      "closed": true,
+      "code": 0,
+      "signal": null
+    }
+  },
+  "observation": {
+    "startedAt": "2026-09-14T11:20:48.082Z",
+    "profile": "disposable-fee-mechanism",
+    "realVerifier": false,
+    "realProofs": false,
+    "syntheticEpochSettlement": false,
+    "outcome": "pass",
+    "l1ChainId": 31337,
+    "rollupVersion": 451488510,
+    "extraPublicSetupFunctions": 0,
+    "p2pEnabled": false,
+    "blockNumber": "0",
+    "aztecHttpServerStarted": false,
+    "nodeStopped": true,
+    "validatorLoopRunningAfterNodeStop": false,
+    "validatorLoopRunningAfterExplicitStop": false,
+    "resourcesAfterNodeStop": [
+      "PipeWrap",
+      "PipeWrap",
+      "Timeout"
+    ],
+    "slasherSubscriptionsStopped": 2,
+    "provingSingletonsStopped": true,
+    "resourcesAfterSingletonStop": [
+      "PipeWrap",
+      "PipeWrap"
+    ],
+    "remainingReferencedTimers": [
+      [
+        "    at emitInitNative (node:internal/async_hooks:207:43)",
+        "    at emitInitScript (node:internal/async_hooks:514:3)",
+        "    at initAsyncResource (node:internal/timers:209:5)",
+        "    at new Timeout (node:internal/timers:259:5)",
+        "    at setTimeout (node:timers:125:19)",
+        "    at file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/foundation/dest/sleep/index.js:39:25",
+        "    at new Promise (<anonymous>)",
+        "    at InterruptibleSleep.sleep (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/foundation/dest/sleep/index.js:38:32)",
+        "    at poll (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/foundation/dest/promise/running-promise.js:66:51)"
+      ]
+    ],
+    "remainingRunningLoops": [],
+    "finishedAt": "2026-09-14T11:20:55.789Z"
+  },
+  "outcome": "pass",
+  "temporaryDirectoryRemoved": true,
+  "finishedAt": "2026-09-14T11:20:56.704Z",
+  "limitations": [
+    "Mock L1 verifier and disabled private proof generation; no genuine proof acceptance.",
+    "No sponsorship, fee debit, funding privacy or production readiness is demonstrated by startup."
+  ]
+}

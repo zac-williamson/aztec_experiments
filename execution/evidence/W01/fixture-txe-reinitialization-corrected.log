@@ -1,0 +1,26 @@
+{"mode":"txe","stagedWorkspace":".build/W01-fee-fixture","sourceHashes":{"Nargo.toml":"faeb35cc458fcefe85bf1b1704b6a7d8dc0de6cc8f6a6c432cbb92441580c76e","application/Nargo.toml":"76043b99a28dedab1103cb0de7adec88c9b7d99cdd9d8d94285e10147275da3c","application/src/main.nr":"fe14fbb3402527c7a5a5989318fc368b459580048b809f3fc629f46e9b35035c","common/Nargo.toml":"264f2ad699297dc4b0aa63fd0f075c9767f70608d1bae5ffde2acd262dfba1eb","common/src/lib.nr":"05bf7abe137977adf54668077741adbf2723b0ea9c8d6543de5d21fc54092ba9","common/src/tests.nr":"08966015613ca6792dd6f419ae8632e59fc419d301502dada57338a8280d0d09","nested/Nargo.toml":"cd0f3dbf31ed9d88e18b84d13d8af159652efe7e335cc9b6d236dac51f09ac10","nested/src/main.nr":"c8c6c219e9cb846a54f34fdef4648823b4dcff6a339361cd6b1b4d2cf9e78827","sponsor/Nargo.toml":"f26bfffe6e4f8fab58c1fbe50b235f10dfdd5c7326b896b9ce27a486c812576d","sponsor/src/main.nr":"969a96ff9f47125a16c1a09008ca32344e31ae97de7b265e5ac56edcce3899fb","tests/Nargo.toml":"ab2c4c7304c5d1c2483cd763ab5ed2d82dd78942051dae95c1f47c898daee179","tests/src/lib.nr":"5ef6431d78a4c9f24db21f41f924d99d6a06d6b72eb6a1754c8043aefb6b46f6"}}
+{"fixtureProcess":"service","pid":83815}
+[12:09:26.032] INFO: txe:rpc Setting up TXE...
+[12:09:26.034] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[12:09:26.315] INFO: txe:rpc TXE listening on port 52166
+{"fixtureProcess":"tests","pid":83829}
+[fee_tests] Running 1 test function
+[12:09:30.737] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[12:09:30.738] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[12:09:30.740] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-3TG7HQ/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 12 threads (ephemeral=true).
+[12:09:30.755] INFO: txe_node Aztec Node version: txe
+[12:09:30.755] INFO: txe_node Aztec Node started on chain 0x1
+[12:09:30.776] INFO: txe:top_level_context Created block 1 with timestamp 1789384170
+[12:09:31.008] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.007509082999999919s {"blockNumber":2,"successfulCount":1,"failedCount":0,"duration":0.007509082999999919,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":832,"l2Gas":499700},"totalSizeInBytes":832,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[12:09:31.196] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.00555054199999995s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.00555054199999995,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":832,"l2Gas":499700},"totalSizeInBytes":832,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[12:09:31.255] INFO: txe:top_level_context Created block 4 with timestamp 1789384170
+[12:09:31.316] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.011390207999999803s {"blockNumber":5,"successfulCount":1,"failedCount":0,"duration":0.011390207999999803,"rate":16225866.990313364,"totalPublicGas":{"daGas":224,"l2Gas":184816},"totalBlockGas":{"daGas":224,"l2Gas":184816},"totalSizeInBytes":352,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[12:09:31.377] INFO: txe:top_level_context Created block 6 with timestamp 1789384170
+[12:09:31.436] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.009180999999999585s {"blockNumber":7,"successfulCount":1,"failedCount":0,"duration":0.009180999999999585,"rate":20121446.46552754,"totalPublicGas":{"daGas":224,"l2Gas":184735},"totalBlockGas":{"daGas":224,"l2Gas":184735},"totalSizeInBytes":352,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[12:09:31.504] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.01625525000000016s {"blockNumber":8,"successfulCount":1,"failedCount":0,"duration":0.01625525000000016,"rate":36507958.96710258,"totalPublicGas":{"daGas":1056,"l2Gas":593446},"totalBlockGas":{"daGas":1056,"l2Gas":593446},"totalSizeInBytes":1184,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[12:09:31.558] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.007458875000000262s {"blockNumber":9,"successfulCount":1,"failedCount":0,"duration":0.007458875000000262,"rate":876807829.5989368,"totalPublicGas":{"daGas":786432,"l2Gas":6540000},"totalBlockGas":{"daGas":786432,"l2Gas":6540000},"totalSizeInBytes":128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[12:09:31.560] WARN: txe:top_level_context Could not find function artifact in contract RestrictedSponsor for function '0x911809e8' when enriching error callstack
+[fee_tests] Testing reject_policy_reinitialization ... [0m[32mok[0m
+[fee_tests] [0m[32m1 test passed[0m
+[12:09:31.618] INFO: txe:rpc Received SIGTERM.
+{"mode":"txe","outcome":"pass","scope":"Restricted sponsor feasibility fixture; no real-proof or mainnet claim"}

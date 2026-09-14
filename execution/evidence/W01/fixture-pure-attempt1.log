@@ -1,0 +1,29 @@
+[fee_common] Running 26 test functions
+[fee_common] Testing tests::reject_policy_empty_window ... [0m[32mok[0m
+[fee_common] Testing tests::reject_l2_price ... [0m[32mok[0m
+[fee_common] Testing tests::reject_da_priority ... [0m[32mok[0m
+[fee_common] Testing tests::reject_l2_gas ... [0m[32mok[0m
+[fee_common] Testing tests::reject_da_gas ... [0m[32mok[0m
+[fee_common] Testing tests::reject_early ... [0m[32mok[0m
+[fee_common] Testing tests::reject_expired ... [0m[32mok[0m
+[fee_common] Testing tests::reject_da_price ... [0m[32mok[0m
+[fee_common] Testing tests::reject_policy_oversized_price ... [0m[32mok[0m
+[fee_common] Testing tests::reject_policy_budget ... [0m[32mok[0m
+[fee_common] Testing tests::reject_l2_priority ... [0m[32mok[0m
+[fee_common] Testing tests::reject_out_of_batch ... [0m[32mok[0m
+[fee_common] Testing tests::reject_priority_total ... [0m[32mok[0m
+[fee_common] Testing tests::reject_teardown_da ... [0m[32mok[0m
+[fee_common] Testing tests::reject_teardown_total ... [0m[32mok[0m
+[fee_common] Testing tests::reject_wrong_owner ... [0m[32mok[0m
+[fee_common] Testing tests::reject_wrong_chain ... [0m[32mok[0m
+[fee_common] Testing tests::reject_ticket_total ... [0m[32mok[0m
+[fee_common] Testing tests::reject_wrong_sponsor ... [0m[32mok[0m
+[fee_common] Testing tests::reject_wrong_sibling ... [0m[32mok[0m
+[fee_common] Testing tests::reject_teardown_l2 ... [0m[32mok[0m
+[fee_common] Testing tests::reject_wrong_version ... [0m[32mok[0m
+[fee_common] Testing tests::reject_wrong_blind ... [0m[32mok[0m
+[fee_common] Testing tests::reject_zero_owner ... [0m[32mok[0m
+[fee_common] Testing tests::valid_both_coupons ... [0m[32mok[0m
+[fee_common] Testing tests::valid_exact_gas_budget_and_time_boundaries ... [0m[32mok[0m
+[fee_common] [0m[32m26 tests passed[0m
+{"mode":"pure","outcome":"pass","scope":"Restricted sponsor feasibility fixture; no real-proof or mainnet claim"}

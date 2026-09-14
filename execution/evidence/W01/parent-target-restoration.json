@@ -1,0 +1,6 @@
+{
+  "reason": "Fixture compile selected parent workspace; restore ignored processed target from verified canonical artifact without changing source or tracked copy.",
+  "target": "billboard/target/billboard_contract-Billboard.json",
+  "beforeSha256": "8029f923b7cbf438a4948f8f76dd3ea883776854b49e766803961a308e9dcdd9",
+  "restoredSha256": "b4931723f93a2ab710119f05d8f79b99b3a382e55327a7bc6a82d46e685ea6fc"
+}

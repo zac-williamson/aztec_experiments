@@ -670,7 +670,7 @@
       "title": "Implement and evaluate private or shared sponsored fees",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "P04"
       ],
@@ -685,7 +685,9 @@
         "apps/",
         "shared/",
         "billboard/",
-        "execution/"
+        "execution/",
+        "scripts/",
+        "package.json"
       ],
       "plan": "tasks/W01.md",
       "actions": [
@@ -714,7 +716,7 @@
       "evidence": "evidence/W01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "Restricted sponsor fixture compiled and reviewed:26 pure checks plus focused actual-authwit controls. TXE cannot elect setup fee payer; full sponsorship unverified. Local default-setup startup and graceful cleanup pass after retaining publisher event unsubscribe. Next: fresh-account PXE composition, sponsor debit and ticket replay; then production route/issuer integration.",
       "priority": 5
     },
     {

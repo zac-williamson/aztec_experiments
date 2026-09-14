@@ -1,0 +1,60 @@
+Scheme is: ultra_honk, num threads: 12 (mem: 8.45 MiB)
+Transpiling: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/W01-fee-fixture/target/fee_target-FeeTarget.json -> /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/W01-fee-fixture/target/fee_target-FeeTarget.json.processing (mem: 8.45 MiB)
+Transpiled: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/W01-fee-fixture/target/fee_target-FeeTarget.json -> /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/W01-fee-fixture/target/fee_target-FeeTarget.json.processing (mem: 22.75 MiB)
+Generating verification keys for functions in fee_target-FeeTarget.json.processing (mem: 22.75 MiB)
+Cache directory: /Users/zac/.bb/5.2.0/vk_cache (mem: 22.75 MiB)
+Generating verification key: 578a9fc55114064c2b553f69a9575dc4e0cb885f63c6197e6a6285d2c3642182 (mem: 25.77 MiB)
+ChonkComputeVk - deriving Chonk verification key for circuit 'delegated' (mem: 25.78 MiB)
+ChonkComputeVk - VK derived, size: 5216 bytes (mem: 41.22 MiB)
+Successfully processed: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/W01-fee-fixture/target/fee_target-FeeTarget.json -> /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/W01-fee-fixture/target/fee_target-FeeTarget.json.processing (mem: 41.75 MiB)
+file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/check-noir-dependencies.mjs:30
+  if (changed.length) throw new Error(`${label} changed, missing, or unexpected:\n${changed.join('\n')}`);
+                            ^
+
+Error: Embedded Noir dependency sources changed, missing, or unexpected:
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/authwit/auth.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/note_existence_request.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/note.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/ephemeral.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/aztec/compute_note_hash_and_nullifier.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/utility.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/notes.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/constrained_delivery.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mode.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/resolved_tagging_strategy.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_secret_source.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messaging.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_metadata.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/utils.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_l1_to_l2_membership_witness.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_membership_witness.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/key_validation_request.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/keys.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/notes.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/offchain_effect.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/resolve_tagging_strategy.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/storage.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/map.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/public_immutable.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/array/collapse.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr
+dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/with_hash.nr
+dependencies/github.com/AztecProtocol/aztec-packages/v5.2.0/noir-projects/noir-protocol-circuits/crates/types/src/storage/map.nr
+dependencies/github.com/noir-lang/sha256/v0.3.0/src/sha256.nr
+    at compare (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/check-noir-dependencies.mjs:30:29)
+    at checkNoirEmbeddedSources (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/check-noir-dependencies.mjs:77:3)
+    at processArtifact (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/build-contracts.mjs:25:5)
+    at file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/billboard/fee-fixture/run.mjs:50:32
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.21.0

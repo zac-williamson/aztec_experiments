@@ -1,0 +1,12 @@
+[package]
+name = "fee_tests"
+type = "lib"
+authors = [""]
+compiler_version = ">=1.0.0"
+
+[dependencies]
+aztec = { git = "https://github.com/AztecProtocol/aztec-nr", tag = "v5.2.0", directory = "aztec" }
+fee_common = { path = "../common" }
+fee_target = { path = "../application" }
+fee_sponsor = { path = "../sponsor" }
+fee_nested = { path = "../nested" }

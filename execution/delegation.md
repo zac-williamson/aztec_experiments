@@ -257,3 +257,12 @@ Docker init for the retry; no test requirement was relaxed. All containers and
 staging copies were removed. Independent source/applicability reviews and root
 final integration are bound in A02 evidence. After the user's model-setting
 change, only the verification lane was resumed; completed reviews were reused.
+
+## W01 bounded implementation
+
+Build_review owns a minimal Noir sponsor/delegated-operation fixture and its
+constraint tests under billboard/fee-fixture, plus W01 evidence. Root owns the
+disposable local network/client observation harness, graph and integration. Heavy
+work is serialized; remaining agents stay idle until independent review is needed.
+The fixture must establish API/constraint feasibility before production ABI or
+issuer service implementation. No existing wallets or real funds are used.
