@@ -1,0 +1,1017 @@
+{
+  "recordedAt": "2026-09-14T10:07:34.984082+00:00",
+  "scope": "Final post-Jaeger exact-lock residuals; no execution exclusion implied",
+  "packages": [
+    {
+      "package": "@aztec/archiver",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/archiver",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/blob-client",
+        "@aztec/telemetry-client"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/aztec",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/aztec",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/aztec-node",
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/bot",
+        "@aztec/cli",
+        "@aztec/node-lib",
+        "@aztec/p2p",
+        "@aztec/p2p-bootstrap",
+        "@aztec/prover-client",
+        "@aztec/prover-node",
+        "@aztec/pxe",
+        "@aztec/sequencer-client",
+        "@aztec/telemetry-client",
+        "@aztec/txe",
+        "@aztec/validator-ha-signer",
+        "@aztec/wallets",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/aztec-node",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/aztec-node",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/node-keystore",
+        "@aztec/node-lib",
+        "@aztec/p2p",
+        "@aztec/prover-client",
+        "@aztec/prover-node",
+        "@aztec/sequencer-client",
+        "@aztec/simulator",
+        "@aztec/slasher",
+        "@aztec/telemetry-client",
+        "@aztec/validator-client",
+        "@aztec/validator-ha-signer",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/bb-prover",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/bb-prover",
+          "version": "5.2.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@aztec/simulator",
+        "@aztec/telemetry-client",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/blob-client",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/blob-client",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/telemetry-client"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/bot",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/bot",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/telemetry-client",
+        "@aztec/wallets"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/cli",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/cli",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/bb-prover",
+        "@aztec/node-keystore",
+        "@aztec/node-lib",
+        "@aztec/p2p",
+        "@aztec/sequencer-client",
+        "@aztec/slasher",
+        "@aztec/wallets",
+        "@aztec/world-state",
+        "@ethersproject/wallet"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/cli-wallet",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/cli-wallet",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/cli",
+        "@aztec/pxe",
+        "@aztec/wallet-sdk"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/node-keystore",
+      "severity": "low",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/node-keystore",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@ethersproject/wallet"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/node-lib",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/node-lib",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/p2p",
+        "@aztec/prover-client",
+        "@aztec/sequencer-client",
+        "@aztec/simulator",
+        "@aztec/telemetry-client",
+        "@aztec/validator-client",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/p2p",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/p2p",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/simulator",
+        "@aztec/telemetry-client"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/p2p-bootstrap",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/p2p-bootstrap",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/p2p",
+        "@aztec/telemetry-client"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/prover-client",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/prover-client",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/bb-prover",
+        "@aztec/simulator",
+        "@aztec/telemetry-client",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/prover-node",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/prover-node",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/node-keystore",
+        "@aztec/node-lib",
+        "@aztec/p2p",
+        "@aztec/prover-client",
+        "@aztec/sequencer-client",
+        "@aztec/simulator",
+        "@aztec/telemetry-client",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/pxe",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/pxe",
+          "version": "5.2.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@aztec/bb-prover",
+        "@aztec/simulator"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/sequencer-client",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/sequencer-client",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/node-keystore",
+        "@aztec/p2p",
+        "@aztec/prover-client",
+        "@aztec/simulator",
+        "@aztec/slasher",
+        "@aztec/telemetry-client",
+        "@aztec/validator-client",
+        "@aztec/validator-ha-signer",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/simulator",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/simulator",
+          "version": "5.2.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@aztec/telemetry-client",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/slasher",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/slasher",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/telemetry-client"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/telemetry-client",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/telemetry-client",
+          "version": "5.2.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/exporter-logs-otlp-http",
+        "@opentelemetry/exporter-metrics-otlp-http",
+        "@opentelemetry/exporter-trace-otlp-http",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/resource-detector-gcp",
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-logs",
+        "@opentelemetry/sdk-metrics",
+        "@opentelemetry/sdk-trace-node"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/txe",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/txe",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/aztec-node",
+        "@aztec/bb-prover",
+        "@aztec/pxe",
+        "@aztec/simulator",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/validator-client",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/validator-client",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/blob-client",
+        "@aztec/node-keystore",
+        "@aztec/p2p",
+        "@aztec/prover-client",
+        "@aztec/simulator",
+        "@aztec/slasher",
+        "@aztec/telemetry-client",
+        "@aztec/validator-ha-signer"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/validator-ha-signer",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/validator-ha-signer",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/telemetry-client"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/wallet-sdk",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/wallet-sdk",
+          "version": "5.2.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@aztec/pxe"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/wallets",
+      "severity": "moderate",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/wallets",
+          "version": "5.2.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@aztec/pxe",
+        "@aztec/wallet-sdk"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@aztec/world-state",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/world-state",
+          "version": "5.2.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@aztec/telemetry-client"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@ethersproject/abstract-provider",
+      "severity": "low",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/abstract-provider",
+          "version": "5.8.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@ethersproject/transactions"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@ethersproject/abstract-signer",
+      "severity": "low",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/abstract-signer",
+          "version": "5.8.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-provider"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@ethersproject/hash",
+      "severity": "low",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/hash",
+          "version": "5.8.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-signer"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@ethersproject/hdnode",
+      "severity": "low",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/hdnode",
+          "version": "5.8.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-signer",
+        "@ethersproject/signing-key",
+        "@ethersproject/transactions",
+        "@ethersproject/wordlists"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@ethersproject/json-wallets",
+      "severity": "low",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/json-wallets",
+          "version": "5.8.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-signer",
+        "@ethersproject/hdnode",
+        "@ethersproject/transactions"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@ethersproject/signing-key",
+      "severity": "low",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/signing-key",
+          "version": "5.8.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "elliptic"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@ethersproject/transactions",
+      "severity": "low",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/transactions",
+          "version": "5.8.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@ethersproject/signing-key"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@ethersproject/wallet",
+      "severity": "low",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/wallet",
+          "version": "5.8.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-provider",
+        "@ethersproject/abstract-signer",
+        "@ethersproject/hash",
+        "@ethersproject/hdnode",
+        "@ethersproject/json-wallets",
+        "@ethersproject/signing-key",
+        "@ethersproject/transactions",
+        "@ethersproject/wordlists"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@ethersproject/wordlists",
+      "severity": "low",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/wordlists",
+          "version": "5.8.0",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        "@ethersproject/hash"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@opentelemetry/core",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/core",
+          "version": "1.30.1",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/exporter-logs-otlp-http/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/exporter-metrics-otlp-http/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/exporter-trace-otlp-http/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/otlp-exporter-base/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/otlp-transformer/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-logs/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-base/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        {
+          "source": 1153174,
+          "name": "@opentelemetry/core",
+          "dependency": "@opentelemetry/core",
+          "title": "OpenTelemetry Core: Unbounded memory allocation in W3C Baggage propagation",
+          "url": "https://github.com/advisories/GHSA-8988-4f7v-96qf",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-770"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": "<2.8.0"
+        }
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@opentelemetry/exporter-logs-otlp-http",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-logs-otlp-http",
+          "version": "0.55.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/otlp-transformer",
+        "@opentelemetry/sdk-logs"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@opentelemetry/exporter-metrics-otlp-http",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-metrics-otlp-http",
+          "version": "0.55.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/otlp-transformer",
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-metrics"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@opentelemetry/exporter-trace-otlp-http",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-trace-otlp-http",
+          "version": "0.55.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/otlp-transformer",
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-trace-base"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@opentelemetry/otlp-exporter-base",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/otlp-exporter-base",
+          "version": "0.55.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/otlp-transformer"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@opentelemetry/otlp-transformer",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/otlp-transformer",
+          "version": "0.55.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-logs",
+        "@opentelemetry/sdk-metrics",
+        "@opentelemetry/sdk-trace-base"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@opentelemetry/propagator-b3",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/propagator-b3",
+          "version": "1.30.1",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@opentelemetry/core"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@opentelemetry/resource-detector-gcp",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/resource-detector-gcp",
+          "version": "0.32.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@opentelemetry/resources",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-metrics-otlp-http/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/exporter-trace-otlp-http/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/otlp-transformer/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/resources",
+          "version": "1.30.1",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-logs/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-base/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@opentelemetry/core"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@opentelemetry/sdk-logs",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/sdk-logs",
+          "version": "0.55.0",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@opentelemetry/sdk-metrics",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-metrics-otlp-http/node_modules/@opentelemetry/sdk-metrics",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/otlp-transformer/node_modules/@opentelemetry/sdk-metrics",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-metrics",
+          "version": "1.30.1",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@opentelemetry/sdk-trace-base",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-base",
+          "version": "1.28.0",
+          "lockDevOnly": false
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-node/node_modules/@opentelemetry/sdk-trace-base",
+          "version": "1.30.1",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "@opentelemetry/sdk-trace-node",
+      "severity": "moderate",
+      "production": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-node",
+          "version": "1.30.1",
+          "lockDevOnly": false
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/propagator-b3",
+        "@opentelemetry/sdk-trace-base"
+      ],
+      "fixAvailable": false
+    },
+    {
+      "package": "elliptic",
+      "severity": "low",
+      "production": false,
+      "nodes": [
+        {
+          "path": "node_modules/elliptic",
+          "version": "6.6.1",
+          "lockDevOnly": true
+        }
+      ],
+      "via": [
+        {
+          "source": 1112030,
+          "name": "elliptic",
+          "dependency": "elliptic",
+          "title": "Elliptic Uses a Cryptographic Primitive with a Risky Implementation",
+          "url": "https://github.com/advisories/GHSA-848j-6mx2-7j84",
+          "severity": "low",
+          "cwe": [
+            "CWE-1240"
+          ],
+          "cvss": {
+            "score": 5.6,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L"
+          },
+          "range": "<=6.6.1"
+        }
+      ],
+      "fixAvailable": false
+    }
+  ]
+}

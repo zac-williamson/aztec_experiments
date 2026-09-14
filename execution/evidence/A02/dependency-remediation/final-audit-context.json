@@ -1,0 +1,71 @@
+{
+  "recordedAt": "2026-09-14T09:57:38.455851+00:00",
+  "node": "24.21.0",
+  "undici": "7.29.1",
+  "npm": "11.19.0",
+  "lockAndManifestHashesUnchanged": {
+    "package.json": "4762fa6f2dbb2f5259cc1644a853620c5ab00ccf8d5a9c4b04f1a3341fb943d7",
+    "package-lock.json": "76ca167b648fb88a3fce3e0ebe799fbf9454fd07ac7cb292e267dba9f9a3e6b7"
+  },
+  "reports": [
+    {
+      "label": "final-audit-all",
+      "startedAt": "2026-09-14T09:57:35.273678+00:00",
+      "endedAt": "2026-09-14T09:57:38.455050+00:00",
+      "command": [
+        "<REPOSITORY>/.build/A02-node/node-v24.21.0-darwin-arm64/bin/npm",
+        "audit",
+        "--json",
+        "--package-lock-only",
+        "--ignore-scripts",
+        "--registry=https://registry.npmjs.org",
+        "--cache=<REPOSITORY>/.build/A02-audit-cache",
+        "--userconfig=<REPOSITORY>/.build/A02-audit-cache/empty-user.npmrc",
+        "--globalconfig=<REPOSITORY>/.build/A02-audit-cache/empty-global.npmrc",
+        "--fetch-retries=0",
+        "--fetch-timeout=90000"
+      ],
+      "exitCode": 1,
+      "validAdvisoryReport": true,
+      "counts": {
+        "info": 0,
+        "low": 11,
+        "moderate": 36,
+        "high": 2,
+        "critical": 0,
+        "total": 49
+      },
+      "classification": "advisory inventory"
+    },
+    {
+      "label": "final-audit-production",
+      "startedAt": "2026-09-14T09:57:35.275270+00:00",
+      "endedAt": "2026-09-14T09:57:36.728986+00:00",
+      "command": [
+        "<REPOSITORY>/.build/A02-node/node-v24.21.0-darwin-arm64/bin/npm",
+        "audit",
+        "--json",
+        "--package-lock-only",
+        "--ignore-scripts",
+        "--registry=https://registry.npmjs.org",
+        "--cache=<REPOSITORY>/.build/A02-audit-cache",
+        "--userconfig=<REPOSITORY>/.build/A02-audit-cache/empty-user.npmrc",
+        "--globalconfig=<REPOSITORY>/.build/A02-audit-cache/empty-global.npmrc",
+        "--fetch-retries=0",
+        "--fetch-timeout=90000",
+        "--omit=dev"
+      ],
+      "exitCode": 1,
+      "validAdvisoryReport": true,
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 18,
+        "high": 2,
+        "critical": 0,
+        "total": 20
+      },
+      "classification": "advisory inventory"
+    }
+  ]
+}

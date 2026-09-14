@@ -1,10 +1,10 @@
 # Checkpoint
 
-- Phase: P04 completed; selecting the next graph package.
-- Completed: P01, P02, M01, P03 and P04 with hashed evidence and AI cross-review.
-- P04:91 bound evidence files;34 exact native/Linux outputs;171 build and69 interface checks; both real browser consumers;22 Noir fixtures,7 Solidity fixtures,9 portal regressions,5 CLI lanes and62 Noir/TXE tests passed.
-- P04 source fingerprint:750cb4c1df4c99b7140e252bf987b66ac39ced85ee48632d8c1f6e74e4b103cc.
-- Prior failed attempts remain recorded; all task-owned test processes are cleaned up.
-- Next: A02 dependency advisory remediation (priority4); W01 fee design and C01 contracts remain planned.
-- X03 remains blocked for production release; real proofs, external review, operator acceptance and14-day soak remain mandatory.
+- Completed: P01, P02, M01, P03, P04 and A02.
+- A02 accepted with213 hashed evidence artifacts. Native and clean Linux qualification passed; all34 generated outputs match exactly. All test containers and temporary staging copies were removed.
+- Node24.21 and seven dependency overrides are qualified; all57 protected Aztec/Noir lock entries are unchanged.
+- Final npm scans report zero high/critical entries; lower-severity findings and embedded-tooling limits remain explicitly recorded. D01-A05 and T05-A05 require tested release controls.
+- Verified candidate: `688484e2afcbd2536a95baeb5e37e0fb68ceb9c4b6c17ccbc1cbcd0ba2054824`.
+- Next: commit A02 locally, then implement W01 fee privacy using the prepared restricted-sponsor feasibility experiment.
+- X03 remains blocked for production release. Real proofs, external audit, operator acceptance and14-day soak remain mandatory. The application is not production-ready.
 - No publishing, paid services, production wallets or real funds used.

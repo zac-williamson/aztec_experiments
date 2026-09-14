@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-09-14T10:07:34.986096+00:00",
+  "sha256": {
+    "JaegerPropagator-1.30.1.before.js.gz": "24c6c3f8c2b6ae02c788c1ecf8b4f4b4242ee1616281a0eb6bd37b5657351537",
+    "audit-all.json": "5e23cdeffb4a01e1eacc1804793e1bbc77137e0b5535ed091ba0055db26517d6",
+    "audit-all.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "audit-context.json": "627251175853d73448f1be3c4f37426367933cd3cd4a7cca7075d72a6ed33db7",
+    "audit-production.json": "64719bc48fb425b7fcc5cddca5226e3ae6c2557f6970aff121e5d3de6a1079ba",
+    "audit-production.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "decision.json": "98a88d6227f3f2c921c35de2ae3d00c536bdbb869be4d76b0a0439cfc15bbaff",
+    "install-context.json": "875541e309f2ac539039c5919ff2d98ff8cf1c08089050292c19e4c4f3b58e2a",
+    "install.stderr": "fdc61c497c3c98df2b990bf7638b59ca39e6876016d70df7c869647d61ab9134",
+    "install.stdout": "6959680d8051ef3955ecf5fee1f86dbef57492743316ddc177a3f0bb14659780",
+    "lock-delta.json": "2e760988bad2948f5bbc21a81abd2ec9ce97c75b696d0401ea188783e022498f",
+    "package-lock.before.json.gz": "ad052b93c6263972ddbb53511e9f3dbf7abdf9213178f225f728389592e031dd",
+    "package.before.json": "981d1674b936fc2eeae1b0a110ed692089ea4bc394d43e4805af9d9421175f5c",
+    "residual-inventory.json": "802aa742972ba22687211a65b3745ed2ce27bfa5afd6ab8e36fb5d1faf00671d",
+    "resolution.json": "222572ce08ba45278fe40588f2edede0cb92e1cc021c60eb244e774979aa03a1"
+  }
+}

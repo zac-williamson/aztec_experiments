@@ -1,0 +1,5 @@
+
+> bootstrap:noir
+> node scripts/bootstrap-noir.mjs
+
+Installed and verified pinned Noir compiler.

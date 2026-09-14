@@ -1,0 +1,15 @@
+{
+  "archive": "/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/A02-clean-linux-source.tar",
+  "sha256": "e4ed8f3d5dde46448ec3a715cc130dfb334760723dd1909f0f3e5eef2d6b8b12",
+  "sourceFileCount": 151,
+  "archiveFileCount": 154,
+  "directoryCount": 35,
+  "metadataPolicy": {
+    "uid": 0,
+    "gid": 0,
+    "directories": "0755",
+    "files": "0644 or0755 if source executable",
+    "symlinks": "preserved targets",
+    "mtime": 0
+  }
+}

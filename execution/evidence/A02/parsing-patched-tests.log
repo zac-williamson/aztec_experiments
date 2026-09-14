@@ -1,0 +1,18 @@
+✔ qs enforces the same comma-array limit for plain and bracket keys (1.910208ms)
+✔ qs safely round-trips a parsed non-callable constructor.isBuffer value (0.924458ms)
+✔ uuid v3 rejects out-of-bounds writes before changing the buffer (0.75575ms)
+✔ uuid v3 preserves surrounding bytes for a valid offset write (0.174417ms)
+✔ uuid v5 rejects out-of-bounds writes before changing the buffer (0.176417ms)
+✔ uuid v5 preserves surrounding bytes for a valid offset write (0.07825ms)
+✔ uuid v6 rejects out-of-bounds writes before changing the buffer (0.350708ms)
+✔ uuid v6 preserves surrounding bytes for a valid offset write (0.06525ms)
+✔ gaxios resolves the supported CommonJS uuid v4 interface (2.015958ms)
+✔ teeny-request resolves the supported CommonJS uuid v4 interface (0.754625ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 91.1615

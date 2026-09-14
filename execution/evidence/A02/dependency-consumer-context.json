@@ -1,0 +1,58 @@
+{
+  "recordedAt": "2026-09-14T10:02:44.336481+00:00",
+  "outcome": "pass_28_scoped_consumer_checks_residual_decision_pending",
+  "node": "24.21.0",
+  "embeddedUndici": "7.29.1",
+  "command": ".build/A02-node/node-v24.21.0-darwin-arm64/bin/node --test --test-concurrency=1 scripts/test-dependency-transport.mjs scripts/test-dependency-telemetry.mjs scripts/test-dependency-temporary-files.mjs",
+  "exitCode": 0,
+  "tests": 28,
+  "passed": 28,
+  "failed": 0,
+  "skipped": 0,
+  "durationMs": 5366.012875,
+  "sourceHashes": {
+    "scripts/test-dependency-transport.mjs": "ff2b3ebd4da63ce2de685918091736d6191ac834178e82ced0b0879156f2ae06",
+    "scripts/test-dependency-telemetry.mjs": "8cf28a641185f06055108bec40498bcfa4ab8abd9b550992a5eda05c62b5d45e",
+    "scripts/test-dependency-temporary-files.mjs": "933d413da2db9db16936f4ba0c1147168366bff8b5222992d3ee05e2df04c221",
+    "package.json": "981d1674b936fc2eeae1b0a110ed692089ea4bc394d43e4805af9d9421175f5c",
+    "package-lock.json": "76ca167b648fb88a3fce3e0ebe799fbf9454fd07ac7cb292e267dba9f9a3e6b7",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    ".nvmrc": "73fb1b615e2043a933be1c0895cde4358036acc28d785692509b822aa53c761f",
+    "node_modules/@aztec/foundation/dest/json-rpc/client/undici.js": "109061b38f04b17a0fd668542e916ab6c2fec2a48c4316107a7df24a06d19f96",
+    "node_modules/undici/package.json": "a5c7791bf6fa19f9555ad4f8eb0ff2537cd8b7f63606d9b69746efe1c75aec92",
+    "node_modules/ws/package.json": "584ce6e7516587ba249dc910b0c04e2753f6b3f451fc3a5bc324f7735bdacc71",
+    "node_modules/ws/lib/receiver.js": "4879edbf8e48d04d09783cf9c04b5e25f5a448247bb01279438ded2899747220",
+    "node_modules/isows/_esm/index.js": "26fd1c10b92dcc6ab13d5b8bea349a9ddd435d2e63f199a3f699b4a5b182eb3e",
+    "node_modules/viem/_esm/utils/rpc/webSocket.js": "b1f94c6ec8b03a3ff22ff8556f87697b026a17b99536e32a59ea1cfaa38b6304",
+    "node_modules/@aztec/telemetry-client/dest/start.js": "816125d852576427ce9704b6f62afc44fc66588d8fe248387d616a8ef5bc1a5a",
+    "node_modules/@aztec/telemetry-client/dest/otel.js": "0592ace09ed6a6ef000d3a895ddc7395502aac2587e9e877504fcf06f6951387",
+    "node_modules/@opentelemetry/propagator-jaeger/package.json": "a8faf0139450cd200f4339dcfde53ff068ae3551d7b7aff6e30c183858774014",
+    "node_modules/@opentelemetry/propagator-jaeger/build/src/JaegerPropagator.js": "fafa383f09c92c28eebc4f5b9ac77312750dbd57836d8c6dd8aa0f5cc4abb643",
+    "node_modules/@opentelemetry/core/package.json": "b36bc2618e2b2af8480ee82ca8dd089920e38d6eb3a68614dc49332a8db9da2e",
+    "node_modules/@opentelemetry/core/build/src/baggage/propagation/W3CBaggagePropagator.js": "86a596cb73dc0fdaf53571c90cf80bd466b5d896002fa4122ce9ff25b4980c6d",
+    "node_modules/@opentelemetry/host-metrics/build/src/stats/si.js": "67d55065fbf5dba95cc61be73ac892a7e9a1193ec10f57fe2bcdf27619526548",
+    "node_modules/systeminformation/package.json": "0823f6c79ab007b77536a14f0a812e683121faf8263a3e462a8eb662952c9cf3",
+    "node_modules/systeminformation/lib/network.js": "e719ec1f8a5cbb757eb04a40c5879eef70f0ae3d01e080674a6ee1348b2d9d4d",
+    "node_modules/external-editor/main/index.js": "fe3404ae4ae4ae093efef613723fa2107377c70b7f736c75652b55a437945450",
+    "node_modules/tmp/package.json": "58dddc0fa17fbd6f4329189ffcd66d7c4a6c0487896accaf4e9853ba7462df2c",
+    "node_modules/tmp/lib/tmp.js": "4feb19536bb9994e08382a6a7547d947eecd99defbb4d949791fd705ab848713"
+  },
+  "evidence": {
+    "dependency-consumer-tests-initial.log": "91862b2bc81219c9fc96d3582870fce822fa5737ffcb0511ae604c43cfe1a064",
+    "dependency-consumer-tests-scoped.log": "304aa1ffee76f837c9e2c1efc6d5c9c6ed0e81cb0cc8d1cbe8c47f42a37222ee",
+    "dependency-consumer-tests-final.log": "2c02da052244b5de1945b02644eb3268fe215545e241a083258d5b0798d5f9d0"
+  },
+  "dispositions": [
+    "Initial sandbox listeners failed EPERM; scoped loopback permission allowed the same tests.",
+    "Initial valid temporary-file assertion compared macOS /var and canonical /private/var aliases; fixture now canonicalizes its own disposable root. Test-path error, not dependency failure.",
+    "Corrected scoped test25passed; final3extra transport controls bring total28.",
+    "Installed Jaeger1.30.1 direct/preinstalled-global throw controls deliberately retain known bad behavior as reachability boundaries. Root evaluating narrow compatible fix; do not call these safe-package assertions."
+  ],
+  "limitations": [
+    "No remote targets, existing wallets, funds, DoS-sized inputs or hostile host-state changes.",
+    "Actual HostMetrics network details were not printed, only shape asserted.",
+    "No node_modules/production-source edits; test hooks are isolated in-memory and restored.",
+    "TLS,reconnect/backpressure,proof journeys and every future service configuration unqualified.",
+    "Root broader build/browser and residual advisory decisions pending."
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "reviewedAt": "2026-09-14T10:41:17.332499+00:00",
+  "reviewer": "root integration, independent of build verification implementation lane",
+  "linuxStages": 19,
+  "allStagesPassed": true,
+  "wholeOutputsMatched": 34,
+  "ownedContainerAbsent": true,
+  "evidenceExtractionPassed": true,
+  "sourceFingerprint": "688484e2afcbd2536a95baeb5e37e0fb68ceb9c4b6c17ccbc1cbcd0ba2054824",
+  "limits": "AI integration/source review does not replace external audit. Earlier partial/failed attempts remain historical; final pass uses retry2."
+}

@@ -1,0 +1,7 @@
+{
+  "recordedAt": "2026-09-14T10:00:12.102473+00:00",
+  "beforePackageSha256": "4762fa6f2dbb2f5259cc1644a853620c5ab00ccf8d5a9c4b04f1a3341fb943d7",
+  "afterPackageSha256": "981d1674b936fc2eeae1b0a110ed692089ea4bc394d43e4805af9d9421175f5c",
+  "unchangedLockSha256": "76ca167b648fb88a3fce3e0ebe799fbf9454fd07ac7cb292e267dba9f9a3e6b7",
+  "script": "node --test scripts/test-dependency-*.mjs"
+}

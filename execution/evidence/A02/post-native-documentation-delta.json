@@ -1,0 +1,8 @@
+{
+  "observedAt": "2026-09-14T10:20:20.552169+00:00",
+  "path": "BUILDING.md",
+  "beforeSha256": "eab87a3ae3282acaac1bb4c8219759d5a330aa9b25109877e91a2df41b3ff7d1",
+  "afterSha256": "272de393e1dbc2ec68028ecf69f7a769ae5231c56efa5ee98f0aa4401b0b2f31",
+  "change": "Add existing maintained npm run test:dependencies command to manual verification block; CI already exercised it.",
+  "authorization": "Root approved documentation-only delta after successful native source attestation; no runtime source or test semantics changed."
+}

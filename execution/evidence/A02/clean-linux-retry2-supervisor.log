@@ -1,0 +1,99 @@
+{
+  "schema": 1,
+  "containerName": "billboard-a02-clean-retry2-9385264777",
+  "image": "docker.io/library/node@sha256:6dac556d980b7f0e5498d08f08cee0ca67798b4ad6c23964a9214920e67758d0",
+  "startedAt": "2026-09-14T10:32:19.267933+00:00",
+  "timeoutSeconds": 6600,
+  "filesystem": "Container writable layer; no bind mounts, volumes, host home, socket, or exposed ports",
+  "sourceArchiveSha256": "47b9f3fac4e54e1e5e307d7f3da2e4241860f896025ff82c768e659db2b794fa",
+  "attachExitCode": 0,
+  "durationSeconds": 421.8,
+  "containerState": {
+    "Status": "exited",
+    "Running": false,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 0,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-09-14T10:32:19.945173921Z",
+    "FinishedAt": "2026-09-14T10:39:21.461291505Z"
+  },
+  "containerRunOutcome": "pass",
+  "evidenceExtraction": {
+    "command": [
+      "docker",
+      "cp",
+      "billboard-a02-clean-retry2-9385264777:/work/.build/linux-retry-evidence/.",
+      "/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/A02/clean-linux-retry2-container-evidence"
+    ],
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "missingEvidenceFiles": [],
+  "comparison": {
+    "reference": "execution/evidence/A02/native-qualification/outputs-after-checks.json",
+    "referenceSha256": "c49ea5ff5915322e3ce58a03cf11309be6c5f1280df69289957cd772938f32bc",
+    "matchedOutputCount": 34,
+    "outcome": "pass"
+  },
+  "evidenceFileHashes": {
+    "artifacts.log": "6b4f994a3d6ff72af61b2fce6df032b5f67faf8171a77059c09b5afe125c27b0",
+    "build-tests.log": "43113e8ae78fff79b02b7af77a1cdda4f9e56c34eec8184c3685e0d2885f83a0",
+    "build.log": "1f9d80f1617a8f084033d9816bfbac020c7290b83abeabb9d00a7d65e86afce3",
+    "cli-sdk.log": "8b8d490e50e206e278db7d395225d4b1d35ad9113b966de3114021a777c6bfc7",
+    "dependency-tests.log": "699adeaa66c7b51e8eb84f1a598296f4d51773205155104b556d4237424dc29c",
+    "foundry.log": "02413010336b782da536f6a31a7533c73330189b8a0d7989c3aa304e245b3079",
+    "fresh-environment.log": "1a1dcf18608f9561280f18c139ebda63621c1601d369e87e63d445b1369f1c6c",
+    "interface-tests.log": "eaee8ded8f8b8c0706c9ae1476417b2f6c4b5d578bd5c121b6d0b94c8503ec80",
+    "noir-bootstrap.log": "9b68d1e868cd471c4743815e74400b2e651ae4fbc390d1ffc1271c3786dfc981",
+    "noir-interface.log": "649092633ba721bee55bd5f50a6703b74b752251de4deaa9d2f751e2076b9246",
+    "noir-tests.log": "83c983a7c58baee571e82d4d34ada4d76d8ac672dcbf0484c3b292f66443ba1c",
+    "npm-portal.log": "4aaef3acc3c4b16766abf61c4f4aa2d3bd413e2fe822d3edd6cfa9d7e7334efa",
+    "npm-root.log": "f4b7b7ba1f0dcb55d15e10798c624b2ebbbce06b4874d3787335b982febf82d2",
+    "npm-timing/2026-09-14T10_32_32_865Z-timing.json": "54f7e897d7bd61670615f664f9cb2526dbd37b5c39f36241a23015d94e4ccb56",
+    "output-after-tests.json": "c49ea5ff5915322e3ce58a03cf11309be6c5f1280df69289957cd772938f32bc",
+    "output-after-tests.log": "973cbe9a00199d353f0def773c13ad234787f62ffc30d0afe0d9d5a717aa95e6",
+    "output-compare.log": "f4d408eb50c94dbec094815f99e4766c72eb76fea9dd3f0ab77ce918c560baaa",
+    "output-snapshot.json": "c49ea5ff5915322e3ce58a03cf11309be6c5f1280df69289957cd772938f32bc",
+    "output-snapshot.log": "1fbdc3f5416b5d257f1f1a3e9596d470cd99916a6501faacd0081dfa5b4879b6",
+    "portal-regressions.log": "a3a038588cf7b191cf58b4f81e487ed46ffc7bdc074bf03493d8ff7256973d50",
+    "solidity-interface.log": "b6eeadcb8a3b734e471706c926c0f86ae1760969f7b3e256b83a54ae8d92ca9c",
+    "source-after.json": "265fe52c10799d8281af5d83038380369922b6fc07efd06764cda5de8c8ea521",
+    "source-before.json": "265fe52c10799d8281af5d83038380369922b6fc07efd06764cda5de8c8ea521",
+    "source-permissions.log": "abde8a733d3a366491435338560ff391527dde9b9f66d542c21d96feab028e41",
+    "steps.json": "03f85879abeaa8524a01bbbd2b3577a48a33681104d30007fd8b63ac8c91fd1c"
+  },
+  "evidenceDisposition": "pass",
+  "cleanup": {
+    "command": [
+      "docker",
+      "rm",
+      "-f",
+      "billboard-a02-clean-retry2-9385264777"
+    ],
+    "exitCode": 0,
+    "stdout": "billboard-a02-clean-retry2-9385264777\n",
+    "stderr": ""
+  },
+  "absenceCheck": {
+    "command": [
+      "docker",
+      "ps",
+      "-a",
+      "--filter",
+      "name=^/billboard-a02-clean-retry2-9385264777$",
+      "--format",
+      "{{.Names}}"
+    ],
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "ownedContainerAbsent": true,
+  "outcome": "pass",
+  "completedAt": "2026-09-14T10:39:22.551948+00:00"
+}

@@ -1,0 +1,13 @@
+{
+  "node": "24.21.0",
+  "embeddedUndici": "7.29.1",
+  "scope": "Export and UUID v4 call checks, not complete consumer qualification",
+  "checks": {
+    "uuidV4BothParents": true,
+    "tmpNameSync": "function",
+    "undiciAgent": "function",
+    "systeminformationDeepNetworkStats": "function",
+    "qsParse": "function",
+    "wsWebSocket": "function"
+  }
+}

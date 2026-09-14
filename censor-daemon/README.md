@@ -4,14 +4,14 @@ The daemon reads Billboard posts, asks a local model for a bounded moderation ve
 
 ## Runtime prerequisites
 
-- Use the repository's pinned Node.js 24.15.0 and built CLI dependencies (see `../BUILDING.md`).
+- Use the repository's pinned Node.js 24.21.0 and built CLI dependencies (see `../BUILDING.md`).
 - Use Docker Engine 28 or newer with Linux containers and support for bridge gateway mode `isolated`. The runtime checks the resulting profile and fails closed if it differs.
 - Supply a reviewed, locally available image pinned by `@sha256:…`, containing a CPU-compatible `/app/llama-server`. It must support the flags below and serve `/health` and OpenAI-compatible `/v1/chat/completions` on port 8080. Image provenance and actual model compatibility/quality remain the M03 acceptance work; no production LLM image is endorsed here yet.
 - Supply one local GGUF file and its trusted SHA-256. Keep that file immutable while the daemon runs and readable by container UID 65532. The daemon hashes it before startup and mounts only that file read-only. Calculating a hash of an untrusted download alone does not establish model provenance.
 - The transport uses the pinned Node image below, also available locally. Images and weights are not downloaded or compiled automatically.
 
 ```bash
-docker pull docker.io/library/node@sha256:f22d6a1f082c02f292e86929b5b0442ac2e5eaf438a5dea9b1566601c3e05940
+docker pull docker.io/library/node@sha256:6dac556d980b7f0e5498d08f08cee0ca67798b4ad6c23964a9214920e67758d0
 ```
 
 ## Local evaluation

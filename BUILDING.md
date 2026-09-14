@@ -6,11 +6,25 @@ and current evidence are recorded in `execution/graph.json` and `execution/evide
 
 ## Install the pinned tools
 
-Use Node **24.15.0**, Git, Python 3, and a POSIX shell on macOS or Linux. Native
+Use Node **24.21.0**, Git, Python 3, and a POSIX shell on macOS or Linux. Native
 compiler and prover binaries are selected for arm64 or x64. Windows requires a
 compatible Linux environment. Install Node with your normal version manager; for
 an existing nvm installation, `nvm install && nvm use` reads `.nvmrc`. The build
-rejects another Node version, including Node 25.
+rejects another Node version, including Node 25. This runtime includes Undici
+**7.29.1**; updating npm dependencies alone does not update Node’s embedded HTTP
+client. The [official Node release](https://nodejs.org/en/blog/release/v24.21.0)
+links platform archives and publisher checksums. For a workspace-only installation,
+download the matching archive and `SHASUMS256.txt` from that release, verify its
+SHA-256 before extraction or execution, and put the extracted `bin` directory first
+in `PATH`. No global Node installation needs to change. The recorded macOS arm64
+archive verification is `execution/evidence/A02/node-runtime-preflight.json`;
+that preflight alone is not integrated compatibility or production qualification.
+
+The moderation transport proxy and Docker isolation fixture use the same immutable
+official `node:24.21.0-bookworm` image in CI and `censor-daemon/model-runtime.mjs`.
+Its multi-platform digest and verified Linux arm64/amd64 configuration records are
+in `execution/evidence/A02/node-container-registry.json`. Image provenance and
+Node version checks do not constitute an audit of all Debian packages in the image.
 
 Install Foundry **1.4.1** from the [official release](https://github.com/foundry-rs/foundry/releases/tag/v1.4.1).
 With an existing official `foundryup` installation, run `foundryup --install v1.4.1`.
@@ -71,6 +85,7 @@ the pinned toolchain.
 npm run build
 npm run check:artifacts
 npm run test:build
+npm run test:dependencies
 npm run test:noir
 npm run test:moderation
 node --test scripts/test-shell-baseline.mjs scripts/test-receipt-baseline.mjs

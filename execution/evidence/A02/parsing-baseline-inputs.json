@@ -1,0 +1,22 @@
+{
+  "recordedAt": "2026-09-14T09:57:05.766332+00:00",
+  "purpose": "Tiny local discriminating regression controls against the actual previous locked qs/uuid package bytes; no remote targets or large inputs. No lifecycle scripts executed. Ancillary imports may resolve current root dependencies.",
+  "packages": [
+    {
+      "name": "qs",
+      "version": "6.15.3",
+      "source": "https://registry.npmjs.org/qs/-/qs-6.15.3.tgz",
+      "integrity": "sha512-O9gl3zCl5h5blw1KGUzQKhA5oUXSl8rwUIM5o0S3nCXMliSvy5Dzx7/DJcI+SwgICv+IneSZwhBh1oSyEHA71A==",
+      "bytes": 71213,
+      "directory": ".build/A02-baselines/qs"
+    },
+    {
+      "name": "uuid",
+      "version": "9.0.1",
+      "source": "https://registry.npmjs.org/uuid/-/uuid-9.0.1.tgz",
+      "integrity": "sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==",
+      "bytes": 23487,
+      "directory": ".build/A02-baselines/uuid"
+    }
+  ]
+}

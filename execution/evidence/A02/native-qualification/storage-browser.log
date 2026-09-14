@@ -1,0 +1,17 @@
+{
+  "outcome": "pass",
+  "browser": "152.0.7977.84",
+  "aztecVersion": "5.2.0",
+  "bundleSha256": "5f4b360ff3bbbef4707ea67f435e35487b7356f15833c6260e38b30a18a7da41",
+  "retained": "survives-page-reload",
+  "isolation": [
+    "chain",
+    "rollup",
+    "account-suffix",
+    "namespace",
+    "schema"
+  ],
+  "remainingAfterCleanup": [],
+  "pxeSchema": 13,
+  "limits": "Real browser IndexedDB using actual built SDK adapter, disposable sentinel records only; no PXE sync, real wallet, remote RPC or proof."
+}

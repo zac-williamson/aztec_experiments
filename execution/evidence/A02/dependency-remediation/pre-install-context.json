@@ -1,0 +1,28 @@
+{
+  "recordedAt": "2026-09-14T09:53:09.426648+00:00",
+  "oldLockSha256": "339461947185a2bf4a2ef7d0dc3ff56b771f56822b5b04905eead26b6643bf0e",
+  "oldLockArchive": "package-lock.before.json.gz",
+  "requestedOverrides": {
+    "systeminformation": "5.31.7",
+    "ws": "8.21.0",
+    "undici": "6.28.1",
+    "tmp": "0.2.6",
+    "qs": "6.16.0",
+    "uuid": "11.1.1"
+  },
+  "sourceReadSha256": {
+    "node_modules/gaxios/build/src/gaxios.js": "9a9988f38306d08faaa73aa0316ed0c6eed519ef8cfd3561273a45249eaf94b2",
+    "node_modules/teeny-request/build/src/index.js": "8b1dfbf48df1a4a5019c25bb8ff328aec9f831cfed603107c067bd15d4a8af65",
+    "node_modules/external-editor/main/index.js": "fe3404ae4ae4ae093efef613723fa2107377c70b7f736c75652b55a437945450",
+    "node_modules/@aztec/foundation/dest/json-rpc/client/undici.js": "109061b38f04b17a0fd668542e916ab6c2fec2a48c4316107a7df24a06d19f96",
+    "node_modules/@opentelemetry/host-metrics/build/src/stats/si.js": "67d55065fbf5dba95cc61be73ac892a7e9a1193ec10f57fe2bcdf27619526548"
+  },
+  "qualificationNotes": {
+    "uuid": "Only current parents gaxios/teeny-request require uuid and call v4() with no arguments. Require CJS v4 export in 11.1.1; full parent multipart controls still required.",
+    "tmp": "ExternalEditor calls tmpNameSync(options), writes file and cleans it up. Crosses declared 0.x range; actual fixture required.",
+    "undici": "Foundation Agent/request POST uses body.arrayBuffer/text and response headers; crosses ^5.28.5, full transport qualification required.",
+    "systeminformation": "HostMetrics 0.36.2 pins 5.23.8 and deep-imports networkStats(); exact deep import must remain.",
+    "ws": "Viem exact 8.18.3 plus root8.21.0; unify on 8.21.0 without changing viem or Aztec.",
+    "qs": "co-body^6.5.2 supports6.16; express~6.15.1 constraint crossed narrowly, parser controls required."
+  }
+}

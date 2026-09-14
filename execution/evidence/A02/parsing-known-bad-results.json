@@ -1,0 +1,21 @@
+{
+  "outcome": "known-bad-controls-confirmed",
+  "node": "v24.21.0",
+  "qsVersion": "6.15.3",
+  "uuidVersion": "9.0.1",
+  "qsCommaLimitBypassed": true,
+  "qsNonCallableIsBufferThrows": true,
+  "uuidCases": [
+    {
+      "method": "v3",
+      "outOfBoundsRejected": false,
+      "partialWriteObserved": true
+    },
+    {
+      "method": "v5",
+      "outOfBoundsRejected": false,
+      "partialWriteObserved": true
+    }
+  ],
+  "probeSha256": "70fc1729136404d301455a6e01ee3ab11bf9abacfe927c8139e9fd908b6435e0"
+}

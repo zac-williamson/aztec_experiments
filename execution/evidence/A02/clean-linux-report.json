@@ -1,0 +1,203 @@
+{
+  "outcome": "incomplete",
+  "run": "execution/evidence/A02/clean-linux-run.json",
+  "sourceAttestation": "execution/evidence/A02/clean-linux-final-attestation.json",
+  "containerName": "billboard-a02-clean-55cbce9c3a",
+  "stageResults": [
+    {
+      "step": "fresh-environment",
+      "command": [
+        "bash",
+        "-ceu",
+        "node --version\nuname -a\ntest \"$(node --version)\" = 'v24.21.0'\ntest \"$(uname -m)\" = 'aarch64'\nfor absent in /root/nargo /root/.svm /root/.npm /work/node_modules /work/billboard/portal/node_modules /work/shared/rpc-config.json /work/billboard/target /work/apps/dist /work/.build/crs-cache /work/.build/toolchain; do test ! -e \"$absent\"; done\nprintf 'Fresh dependency caches and generated outputs confirmed absent.\\n'\n"
+      ],
+      "timeoutSeconds": 30,
+      "startedAt": "2026-09-14T10:21:06.447318+00:00",
+      "pid": 7,
+      "exitCode": 0,
+      "cleanup": {
+        "signals": [],
+        "parentReaped": true,
+        "groupAbsent": true
+      },
+      "durationSeconds": 0.01,
+      "completedAt": "2026-09-14T10:21:06.458690+00:00"
+    },
+    {
+      "step": "source-permissions",
+      "command": [
+        "python3",
+        "-c",
+        "import os,json,pathlib,hashlib,uuid\nroot=pathlib.Path('/work');inv=json.loads((root/'clean-source-inventory.json').read_text())\nassert os.getuid()==0 and os.getgid()==0\nfor name,expected in inv['sourceInputs'].items():assert hashlib.sha256((root/name).read_bytes()).hexdigest()==expected,name\nfor name,target in inv['sourceSymlinks'].items():assert str((root/name).readlink())==target,name\npaths={root}\nfor name in inv['sourceInputs']:\n for p in (root/name).parents:\n  if p==root:break\n  paths.add(p)\ncreated=[]\nfor name in ['.build/toolchain','.build/crs-cache','billboard/target','billboard/portal/cache']:\n p=root/name;missing=[];current=p\n while not current.exists():missing.append(current);current=current.parent\n p.mkdir(parents=True,exist_ok=True);created.extend(reversed(missing));paths.add(p)\nresults=[]\ntry:\n for p in sorted(paths):\n  s=p.stat();assert s.st_uid==0 and s.st_gid==0,str(p)\n  probe=p/('ownership-write-probe-'+uuid.uuid4().hex)\n  try:\n   with probe.open('xb') as stream:stream.write(b'probe')\n  finally:probe.unlink(missing_ok=True)\n  results.append({'path':str(p),'uid':s.st_uid,'gid':s.st_gid,'mode':oct(s.st_mode & 0o777),'write':'pass'})\nfinally:\n for p in sorted(set(created),key=lambda x:len(x.parts),reverse=True):p.rmdir()\nassert all(not p.exists() for p in created)\nprint(json.dumps({'effectiveUid':os.getuid(),'effectiveGid':os.getgid(),'verifiedSourceFiles':len(inv['sourceInputs']),'verifiedSymlinks':len(inv['sourceSymlinks']),'directoryChecks':results,'createdProbeDirectoriesRemoved':all(not p.exists() for p in created)}))\n"
+      ],
+      "timeoutSeconds": 60,
+      "startedAt": "2026-09-14T10:21:06.458925+00:00",
+      "pid": 12,
+      "exitCode": 0,
+      "cleanup": {
+        "signals": [],
+        "parentReaped": true,
+        "groupAbsent": true
+      },
+      "durationSeconds": 0.08,
+      "completedAt": "2026-09-14T10:21:06.536773+00:00"
+    },
+    {
+      "step": "foundry",
+      "command": [
+        "bash",
+        "-ceu",
+        "curl --fail --location --show-error --max-time 180 https://github.com/foundry-rs/foundry/releases/download/v1.4.1/foundry_v1.4.1_linux_arm64.tar.gz --output /tmp/foundry.tar.gz\nprintf 'e0128a2e8168f9852175dfdc7eef5bfbbd864931c231ad1a428d30340614622e  /tmp/foundry.tar.gz\\n' | sha256sum --check -\nmkdir -p /opt/foundry\ntar -xzf /tmp/foundry.tar.gz -C /opt/foundry\nforge --version\n"
+      ],
+      "timeoutSeconds": 240,
+      "startedAt": "2026-09-14T10:21:06.537025+00:00",
+      "pid": 13,
+      "exitCode": 0,
+      "cleanup": {
+        "signals": [],
+        "parentReaped": true,
+        "groupAbsent": true
+      },
+      "durationSeconds": 57.71,
+      "completedAt": "2026-09-14T10:22:04.242185+00:00"
+    },
+    {
+      "step": "npm-root",
+      "command": [
+        "npm",
+        "ci",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund",
+        "--timing"
+      ],
+      "timeoutSeconds": 900,
+      "startedAt": "2026-09-14T10:22:04.243704+00:00",
+      "pid": 22,
+      "exitCode": 0,
+      "cleanup": {
+        "signals": [],
+        "parentReaped": true,
+        "groupAbsent": true
+      },
+      "durationSeconds": 34.96,
+      "completedAt": "2026-09-14T10:22:39.206252+00:00"
+    },
+    {
+      "step": "npm-portal",
+      "command": [
+        "npm",
+        "ci",
+        "--prefix",
+        "billboard/portal",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "timeoutSeconds": 180,
+      "startedAt": "2026-09-14T10:22:39.207114+00:00",
+      "pid": 46,
+      "exitCode": 0,
+      "cleanup": {
+        "signals": [],
+        "parentReaped": true,
+        "groupAbsent": true
+      },
+      "durationSeconds": 1.78,
+      "completedAt": "2026-09-14T10:22:40.991331+00:00"
+    },
+    {
+      "step": "noir-bootstrap",
+      "command": [
+        "npm",
+        "run",
+        "bootstrap:noir"
+      ],
+      "timeoutSeconds": 240,
+      "startedAt": "2026-09-14T10:22:40.991636+00:00",
+      "pid": 58,
+      "exitCode": 0,
+      "cleanup": {
+        "signals": [],
+        "parentReaped": true,
+        "groupAbsent": true
+      },
+      "durationSeconds": 4.93,
+      "completedAt": "2026-09-14T10:22:45.926444+00:00"
+    },
+    {
+      "step": "build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "timeoutSeconds": 900,
+      "startedAt": "2026-09-14T10:22:45.926773+00:00",
+      "pid": 88,
+      "exitCode": 0,
+      "cleanup": {
+        "signals": [
+          "SIGTERM",
+          "SIGKILL"
+        ],
+        "parentReaped": true,
+        "groupAbsent": false
+      },
+      "cleanupFailed": true,
+      "durationSeconds": 253.05,
+      "completedAt": "2026-09-14T10:26:59.021311+00:00"
+    }
+  ],
+  "buildCommandExitCode": 0,
+  "blockingObservation": {
+    "signals": [
+      "SIGTERM",
+      "SIGKILL"
+    ],
+    "parentReaped": true,
+    "groupAbsent": false
+  },
+  "noTimeout": true,
+  "oomKilled": false,
+  "allAvailableEvidenceExtracted": true,
+  "requiredLaterEvidenceAbsent": [
+    "source-after.json",
+    "output-snapshot.json",
+    "output-after-tests.json",
+    "output-compare.log"
+  ],
+  "ownedContainerRemoved": true,
+  "unperformed": [
+    "artifact guards",
+    "output snapshots and comparison",
+    "dependency tests",
+    "build tests",
+    "interface tests",
+    "Noir interface fixture",
+    "Solidity interface fixture",
+    "portal regressions",
+    "CLI SDK",
+    "full Noir/TXE"
+  ],
+  "qualifications": [
+    "Build command returned0 but qualification stopped on observable surviving process group after SIGTERM/SIGKILL.",
+    "No retained /proc or process-state snapshot establishes whether the group contained running descendants or orphan zombies; cause unresolved.",
+    "No fresh Linux output equality or post-build test pass claimed.",
+    "Native qualification remains a separate successful run.",
+    "No repeated build or automatic retry performed."
+  ],
+  "evidenceHashes": {
+    "clean-linux-container-evidence/build.log": "6b18d20141d7c48acc0851819a249c3554cb3e303c39e7feae97beed38040dc1",
+    "clean-linux-container-evidence/foundry.log": "5afb495ca1b12f91fdbccaf4e6651fee54d1cd096d94b642c471093b59e14930",
+    "clean-linux-container-evidence/fresh-environment.log": "5ff5655d2ae7b51d1be3fa41806a41db43f6488245bf9e69f75f4599ccf27c6b",
+    "clean-linux-container-evidence/noir-bootstrap.log": "9b68d1e868cd471c4743815e74400b2e651ae4fbc390d1ffc1271c3786dfc981",
+    "clean-linux-container-evidence/npm-portal.log": "65c731cd02e19c79f6f5a3e84a4dd64a49acd6c47d2ee551d7cc9da191e8c96c",
+    "clean-linux-container-evidence/npm-root.log": "b48ee790956fcd2dbf1fbea96186b462fb53233534fb58f3483484edfc69c037",
+    "clean-linux-container-evidence/npm-timing/2026-09-14T10_22_04_311Z-timing.json": "f386c9c64e21c0ae1b234adaff79913a5cd369d505c83530f2565b8a6611cec8",
+    "clean-linux-container-evidence/source-after-failure.json": "265fe52c10799d8281af5d83038380369922b6fc07efd06764cda5de8c8ea521",
+    "clean-linux-container-evidence/source-before.json": "265fe52c10799d8281af5d83038380369922b6fc07efd06764cda5de8c8ea521",
+    "clean-linux-container-evidence/source-permissions.log": "abde8a733d3a366491435338560ff391527dde9b9f66d542c21d96feab028e41",
+    "clean-linux-container-evidence/steps.json": "78d02eb3daa5674dadddf6ec9523fe161b301836a3aaeffd6524c95200c8a575"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "sourceFiles": 151,
+  "symlinks": 2,
+  "changedFromNative": [
+    "BUILDING.md"
+  ],
+  "deltaFile": "execution/evidence/A02/post-native-documentation-delta.json",
+  "nativeReferenceSha256": "c49ea5ff5915322e3ce58a03cf11309be6c5f1280df69289957cd772938f32bc",
+  "sourceInputSha256": "41e8c0b661910e3c34ff5f5301544fe460cf6a1c5c6623482b3d7ae5c03245d3",
+  "helperHashes": {
+    "run.sh": "81dc968a4a910f15144f70b44d5cdc0a1943717308d33864cb7ceb36ea284572",
+    "steps.py": "29725e00b6ac16b0be04b22d59098d9ec53b78bf99108dbbe51665c0180919e1",
+    "stage_source.py": "7e3266c276749043398bc51fc0cb675243799ea8c2bea405d840bd925d637f14",
+    "pack.py": "afebdc867f8d5695e287765773f39d363acb12bf2376478f947d45af982e7f8b",
+    "launch.py": "ffbb3dc44a04820157192f01c5992a5b182d6e69b699b3cfdbacbb8b477a70c2"
+  },
+  "sourceSetUnchanged": true,
+  "unexpectedChanges": []
+}

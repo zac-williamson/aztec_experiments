@@ -1,0 +1,58 @@
+{
+  "node": "24.21.0",
+  "scope": "Actual Node entry resolution; manifests read upward from resolved entries. Behavioral qualification separately assigned.",
+  "priorProbeError": "Initial metadata probe requested API package.json as an exported subpath and received ERR_PACKAGE_PATH_NOT_EXPORTED. Corrected to resolve actual public entry then read its enclosing package metadata; no dependency/API change.",
+  "result": {
+    "base": {
+      "@opentelemetry/api": {
+        "entry": "node_modules/@opentelemetry/api/build/src/index.js",
+        "path": "node_modules/@opentelemetry/api/package.json",
+        "version": "1.9.1"
+      },
+      "@opentelemetry/core": {
+        "entry": "node_modules/@opentelemetry/core/build/src/index.js",
+        "path": "node_modules/@opentelemetry/core/package.json",
+        "version": "1.30.1"
+      },
+      "@opentelemetry/propagator-jaeger": {
+        "entry": "node_modules/@opentelemetry/propagator-jaeger/build/src/index.js",
+        "path": "node_modules/@opentelemetry/propagator-jaeger/package.json",
+        "version": "2.9.0"
+      }
+    },
+    "sdk": {
+      "@opentelemetry/api": {
+        "entry": "node_modules/@opentelemetry/api/build/src/index.js",
+        "path": "node_modules/@opentelemetry/api/package.json",
+        "version": "1.9.1"
+      },
+      "@opentelemetry/core": {
+        "entry": "node_modules/@opentelemetry/core/build/src/index.js",
+        "path": "node_modules/@opentelemetry/core/package.json",
+        "version": "1.30.1"
+      },
+      "@opentelemetry/propagator-jaeger": {
+        "entry": "node_modules/@opentelemetry/propagator-jaeger/build/src/index.js",
+        "path": "node_modules/@opentelemetry/propagator-jaeger/package.json",
+        "version": "2.9.0"
+      }
+    },
+    "jaeger": {
+      "@opentelemetry/api": {
+        "entry": "node_modules/@opentelemetry/api/build/src/index.js",
+        "path": "node_modules/@opentelemetry/api/package.json",
+        "version": "1.9.1"
+      },
+      "@opentelemetry/core": {
+        "entry": "node_modules/@opentelemetry/propagator-jaeger/node_modules/@opentelemetry/core/build/src/index.js",
+        "path": "node_modules/@opentelemetry/propagator-jaeger/node_modules/@opentelemetry/core/package.json",
+        "version": "2.9.0"
+      },
+      "@opentelemetry/propagator-jaeger": {
+        "entry": "node_modules/@opentelemetry/propagator-jaeger/build/src/index.js",
+        "path": "node_modules/@opentelemetry/propagator-jaeger/package.json",
+        "version": "2.9.0"
+      }
+    }
+  }
+}

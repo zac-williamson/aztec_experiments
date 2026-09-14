@@ -1,0 +1,43 @@
+{
+  "observedAt": "2026-09-14T09:59:24.519120+00:00",
+  "ownedSource": {
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    ".nvmrc": "73fb1b615e2043a933be1c0895cde4358036acc28d785692509b822aa53c761f",
+    ".github/workflows/build.yml": "91fc7c8940443e593064170c85db5768ff8b119adecc805c6ed4e84ba0e62b19",
+    "BUILDING.md": "eab87a3ae3282acaac1bb4c8219759d5a330aa9b25109877e91a2df41b3ff7d1",
+    "censor-daemon/model-runtime.mjs": "c2ac8effbcf464debcff6b11dc485a2f1fbd678961f6dc6f2d188b573e6f69e0",
+    "censor-daemon/README.md": "7e5f3cfdda8a6fd370b564e226c810a38493c410b16c2d975f90d0fe07e1a55d"
+  },
+  "preflightEvidence": [
+    "execution/evidence/A02/node-runtime-preflight.json",
+    "execution/evidence/A02/node-v24.21.0-SHASUMS256.txt",
+    "execution/evidence/A02/node-container-registry.json",
+    "execution/evidence/A02/node-container-index.json",
+    "execution/evidence/A02/node-container-config-arm64.json",
+    "execution/evidence/A02/node-container-config-amd64.json",
+    "execution/evidence/A02/node-container-Dockerfile.txt"
+  ],
+  "checks": {
+    "nativeArchiveChecksum": "pass before extraction/execution",
+    "archiveMemberConfinement": "pass",
+    "nativeRuntimeVersion": "24.21.0",
+    "nativeEmbeddedUndici": "7.29.1",
+    "pinnedToolchainGuard": "pass",
+    "officialImageManifestAndConfigs": "pass; not executed",
+    "unchangedPins": {
+      "aztec": "5.2.0",
+      "noir": "1.0.0-beta.25",
+      "foundry": "1.4.1",
+      "solidity": "0.8.27"
+    }
+  },
+  "pending": [
+    "integrated rebuilt artifact checks",
+    "affected build/SDK/native/browser/Noir/moderation suites",
+    "actual two-container Docker isolation with new pinned image",
+    "independent clean Linux full-output comparison",
+    "fresh final advisory inventory and independent disposition"
+  ],
+  "executionLimits": "No heavy tests, full builds, Docker pulls or containers launched in this preflight. Root controls serialized heavy slot.",
+  "ciFollowup": "Added maintained npm run test:dependencies after initial preflight; recipe/source fingerprints refreshed."
+}

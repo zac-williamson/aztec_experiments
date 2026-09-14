@@ -26,7 +26,7 @@
   "name": "aztec-anonymous-billboard",
   "private": true,
   "engines": {
-    "node": ">=24.12.0 <25"
+    "node": ">=24.21.0 <25"
   },
   "scripts": {
     "build:sdk": "node scripts/build-sdk.mjs",
@@ -41,6 +41,16 @@
     "test:noir": "node scripts/test-noir.mjs",
     "test:build": "node --test scripts/test-artifacts.mjs scripts/test-sdk-manifest.mjs scripts/test-noir-dependencies.mjs scripts/test-crs-build.mjs scripts/test-crs-consumers.mjs scripts/test-process-lifecycle.mjs",
     "build:crs": "node scripts/build-crs.mjs",
-    "test:cli-sdk": "node scripts/test-cli-sdk.mjs"
+    "test:cli-sdk": "node scripts/test-cli-sdk.mjs",
+    "test:dependencies": "node --test scripts/test-dependency-*.mjs"
+  },
+  "overrides": {
+    "systeminformation": "5.31.7",
+    "ws": "8.21.0",
+    "undici": "6.28.1",
+    "tmp": "0.2.7",
+    "qs": "6.16.0",
+    "uuid": "11.1.1",
+    "@opentelemetry/propagator-jaeger": "2.9.0"
   }
 }

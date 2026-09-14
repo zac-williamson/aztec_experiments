@@ -1,0 +1,164 @@
+✔ actual telemetry noop in isolated runtime (574.365875ms)
+✖ actual telemetry enabled-w3c in isolated runtime (348.936458ms)
+✔ actual telemetry direct-jaeger-control in isolated runtime (373.231417ms)
+✔ actual telemetry preexisting-propagator-control in isolated runtime (333.1375ms)
+✔ actual telemetry host-metrics-network in isolated runtime (102.029541ms)
+✖ actual external-editor resolves patched tmp and preserves its supported API (3.695958ms)
+✔ tmp and actual editor reject prefix traversal without touching sibling files (4.280083ms)
+✔ tmp and actual editor reject postfix traversal without touching sibling files (1.909708ms)
+✔ tmp and actual editor reject directory traversal without touching sibling files (1.945125ms)
+✔ tmp and actual editor reject template traversal without touching sibling files (1.466125ms)
+✔ tmp and actual editor reject non-string prefix without touching sibling files (1.462792ms)
+✔ tmp and actual editor reject array prefix without touching sibling files (2.598875ms)
+✔ tmp and actual editor reject Buffer postfix without touching sibling files (1.47825ms)
+✔ tmp and actual editor reject coercible prefix with false includes without touching sibling files (1.616292ms)
+✔ tmp and actual editor reject coercible template without touching sibling files (1.878375ms)
+✔ tmp resolves directory symlinks before containment; all paths are disposable (1.72525ms)
+✔ tmp fileSync supported descriptor/write/cleanup behavior (1.489459ms)
+✔ Foundation resolves the qualified Undici Agent from the actual consumer (1.12125ms)
+✖ real Foundation POST preserves path, gzip threshold, response and optional cookie API (4.585292ms)
+✖ Foundation HTTP/gzip/JSON errors release the single connection for a subsequent request (2.357125ms)
+✖ Foundation stalled headers hit Agent timeout and cleanly recover (0.266208ms)
+✔ actual isows/viem resolver uses patched package fallback and qualified Node native WebSocket (2.010375ms)
+✖ native-selected-isows bounded echo and close control (0.511125ms)
+✖ patched-ws bounded echo and close control (0.258959ms)
+✖ actual viem JSON-RPC subscription and malformed-message error controls (0.292ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 17
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2076.108292
+
+✖ failing tests:
+
+test at scripts/test-dependency-telemetry.mjs:111:5
+✖ actual telemetry enabled-w3c in isolated runtime (348.936458ms)
+  Error: Command failed: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/A02-node/node-v24.21.0-darwin-arm64/bin/node /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/scripts/test-dependency-telemetry.mjs enabled-w3c
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+  
+      at genericNodeError (node:internal/errors:986:15)
+      at wrappedFn (node:internal/errors:540:14)
+      at ChildProcess.exithandler (node:child_process:417:12)
+      at ChildProcess.emit (node:events:514:28)
+      at maybeClose (node:internal/child_process:1141:16)
+      at Socket.<anonymous> (node:internal/child_process:498:11)
+      at Socket.emit (node:events:514:28)
+      at Pipe.<anonymous> (node:net:362:12) {
+    code: 1,
+    killed: false,
+    signal: null,
+    cmd: '/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/A02-node/node-v24.21.0-darwin-arm64/bin/node /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/scripts/test-dependency-telemetry.mjs enabled-w3c',
+    stdout: '',
+    stderr: "Error: listen EPERM: operation not permitted 127.0.0.1\n    at Server.setupListenHandle [as _listen2] (node:net:2306:21)\n    at listenInCluster (node:net:2437:12)\n    at node:net:2666:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {\n  code: 'EPERM',\n  errno: -1,\n  syscall: 'listen',\n  address: '127.0.0.1'\n}\n"
+  }
+
+test at scripts/test-dependency-temporary-files.mjs:23:1
+✖ actual external-editor resolves patched tmp and preserves its supported API (3.695958ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '/private/var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/dependency-tmp-Edlkcc/inside'
+  - '/var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/dependency-tmp-Edlkcc/inside'
+  
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-dependency-temporary-files.mjs:28:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '/private/var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/dependency-tmp-Edlkcc/inside',
+    expected: '/var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/dependency-tmp-Edlkcc/inside',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test-dependency-transport.mjs:38:1
+✖ real Foundation POST preserves path, gzip threshold, response and optional cookie API (4.585292ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/test-dependency-transport.mjs:65:1
+✖ Foundation HTTP/gzip/JSON errors release the single connection for a subsequent request (2.357125ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/test-dependency-transport.mjs:89:1
+✖ Foundation stalled headers hit Agent timeout and cleanly recover (0.266208ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/test-dependency-transport.mjs:119:3
+✖ native-selected-isows bounded echo and close control (0.511125ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/test-dependency-transport.mjs:119:3
+✖ patched-ws bounded echo and close control (0.258959ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/test-dependency-transport.mjs:133:1
+✖ actual viem JSON-RPC subscription and malformed-message error controls (0.292ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }

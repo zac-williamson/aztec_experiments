@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const execute = promisify(execFile);
 const docker = async args => (await execute('docker', args, { encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024 })).stdout.trim();
 const imagePattern = /^[a-zA-Z0-9][a-zA-Z0-9./_:-]*@sha256:[a-f0-9]{64}$/;
-export const PROBE_IMAGE = 'docker.io/library/node@sha256:f22d6a1f082c02f292e86929b5b0442ac2e5eaf438a5dea9b1566601c3e05940';
+export const PROBE_IMAGE = 'docker.io/library/node@sha256:6dac556d980b7f0e5498d08f08cee0ca67798b4ad6c23964a9214920e67758d0';
 
 export async function hashModel(filename) {
   const hash = createHash('sha256');

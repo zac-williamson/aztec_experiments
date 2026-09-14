@@ -1,0 +1,14 @@
+{
+  "observedAt": "2026-09-14T10:22:09.840860+00:00",
+  "containerName": "billboard-a02-clean-55cbce9c3a",
+  "exitCode": 0,
+  "stdout": "{\"node\":\"24.21.0\",\"undici\":\"7.29.1\",\"openssl\":\"3.5.8\",\"platform\":\"linux\",\"arch\":\"arm64\"}\n",
+  "stderr": "",
+  "runtime": {
+    "node": "24.21.0",
+    "undici": "7.29.1",
+    "openssl": "3.5.8",
+    "platform": "linux",
+    "arch": "arm64"
+  }
+}

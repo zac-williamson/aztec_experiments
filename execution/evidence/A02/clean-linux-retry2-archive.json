@@ -1,0 +1,15 @@
+{
+  "archive": "/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/A02-clean-linux-retry2-source.tar",
+  "sha256": "47b9f3fac4e54e1e5e307d7f3da2e4241860f896025ff82c768e659db2b794fa",
+  "sourceFileCount": 151,
+  "archiveFileCount": 154,
+  "directoryCount": 35,
+  "metadataPolicy": {
+    "uid": 0,
+    "gid": 0,
+    "directories": "0755",
+    "files": "0644 or0755 if source executable",
+    "symlinks": "preserved targets",
+    "mtime": 0
+  }
+}

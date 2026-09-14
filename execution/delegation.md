@@ -223,3 +223,37 @@ Build_review completed both actualbrowser checks; build_verification completed
 source/output hashes. Artifact_regressions independently verified the finalrecord,
 all90pre-review artifacthashes andrawoutcomes; root boundthatreview asthe91startifact.
 P04 isdone. AllP04heavy workended; A02read-onlyinventory preparation isready.
+
+## A02 execution lanes —2026-09-14
+
+- Build_review owns package.json/package-lock.json and narrowdependencyupdates,
+  exactversion/advisory reports; allAztecpackages remain5.2.
+- Build_verification owns toolchain.json,.nvmrc,CI runtimepin,BUILDING.md and an
+  isolatedworkspace Node24.21 runtime; itprepares affectedbuild qualification.
+- Artifact_regressions owns new focusednative dependencybehavior tests under scripts/
+  and independent advisory applicability review, initiallywithout runningheavytests.
+- Root owns graph, integration, serialverification and finaladvisorydisposition.
+
+No successfulP04test isrelabelled asA02acceptance. Dependency/runtimechanges will
+rebindaffectedbuild inputs andrequirecurrentconsumerchecks beforeclosingA02.
+
+## A02 frozen candidate qualification
+
+Build_verification owns serial native qualification on151 attested source files and
+two links, with existing host caches recorded; Linux remains held for the native
+output reference. Build_review independently reviews runtime pins, root parser
+controls and the isolated Linux recipe. Artifact_regressions independently reviews
+remaining advisory applicability and precise release treatment after completing
+31 consumer controls. Root owns graph transitions, final disposition and integration.
+No large duplicate native checkout is created. The Linux helper must require
+evidence extraction and verified owned-container cleanup before reporting success.
+
+## A02 accepted after bounded verification
+
+Native qualification and clean Linux retry2 passed; root independently compared
+all34 output hashes and raw stage/cleanup results. The first Linux build succeeded
+but process cleanup failed. A tiny actual zombie-reaping diagnostic justified
+Docker init for the retry; no test requirement was relaxed. All containers and
+staging copies were removed. Independent source/applicability reviews and root
+final integration are bound in A02 evidence. After the user's model-setting
+change, only the verification lane was resumed; completed reviews were reused.

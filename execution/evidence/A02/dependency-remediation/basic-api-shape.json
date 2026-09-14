@@ -1,0 +1,16 @@
+{
+  "node": "24.15.0",
+  "scope": "Basic export and UUID v4 call checks only; does not qualify complete consumers",
+  "checks": {
+    "uuidCommonJSV4Parents": [
+      "gaxios",
+      "teeny-request"
+    ],
+    "tmpNameSync": "function",
+    "undiciAgent": "function",
+    "undiciRequest": "function",
+    "systeminformationDeepNetworkStats": "function",
+    "qsParse": "function",
+    "wsWebSocket": "function"
+  }
+}

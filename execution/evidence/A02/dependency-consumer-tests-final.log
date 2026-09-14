@@ -1,0 +1,36 @@
+✔ actual telemetry noop in isolated runtime (481.19975ms)
+✔ actual telemetry enabled-w3c in isolated runtime (787.796667ms)
+✔ actual telemetry direct-jaeger-control in isolated runtime (290.772542ms)
+✔ actual telemetry preexisting-propagator-control in isolated runtime (332.849583ms)
+✔ actual telemetry host-metrics-network in isolated runtime (88.4255ms)
+✔ actual external-editor resolves patched tmp and preserves its supported API (9.013166ms)
+✔ tmp and actual editor reject prefix traversal without touching sibling files (3.663167ms)
+✔ tmp and actual editor reject postfix traversal without touching sibling files (1.777583ms)
+✔ tmp and actual editor reject directory traversal without touching sibling files (2.355542ms)
+✔ tmp and actual editor reject template traversal without touching sibling files (1.57575ms)
+✔ tmp and actual editor reject non-string prefix without touching sibling files (1.721834ms)
+✔ tmp and actual editor reject array prefix without touching sibling files (1.282333ms)
+✔ tmp and actual editor reject Buffer postfix without touching sibling files (1.116083ms)
+✔ tmp and actual editor reject coercible prefix with false includes without touching sibling files (1.120042ms)
+✔ tmp and actual editor reject coercible template without touching sibling files (1.333333ms)
+✔ tmp resolves directory symlinks before containment; all paths are disposable (1.441291ms)
+✔ tmp fileSync supported descriptor/write/cleanup behavior (1.239625ms)
+✔ Foundation resolves the qualified Undici Agent from the actual consumer (1.04425ms)
+✔ real Foundation POST preserves path, gzip threshold, response and optional cookie API (23.242917ms)
+✔ Foundation HTTP/gzip/JSON errors release the single connection for a subsequent request (7.578625ms)
+✔ Foundation stalled headers hit Agent timeout and cleanly recover (979.194417ms)
+✔ Foundation stalled response body hits Agent timeout and recovers (1001.532416ms)
+✔ actual isows/viem resolver uses patched package fallback and qualified Node native WebSocket (1.877583ms)
+✔ actual isows selects ws when native WebSocket is absent in a fresh isolated runtime (50.702833ms)
+✔ patched ws fragment bound distinguishes two accepted bytes from three rejected bytes (1.303833ms)
+✔ native-selected-isows bounded echo and close control (13.940167ms)
+✔ patched-ws bounded echo and close control (3.480917ms)
+✔ actual viem JSON-RPC subscription and malformed-message error controls (5.360875ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5366.012875

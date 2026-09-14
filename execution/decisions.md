@@ -84,3 +84,40 @@ The source-bound Node24.15/explicit5.2 WASM experiment initialized all1,179,648 
 P04 adopts build-derived G1 to address the observed initialization blocker. Schema2 keeps all three existing input pins and adds a required derived asset/provenance entry binding full input/G2/5.2 WASM content. Build and runtime must hash-check the complete derived bytes; the upstream uncompressed API's first-two-points check alone is insufficient. Runtime prefers the verified local derived asset and may fall back only to the existing verified compressed source. Format drives exact response validation (empty for uncompressed, full decompressed length for compressed). No point reduction, generic mutable cache trust, remote URL reinterpretation or relaxed cryptographic check is allowed.
 
 Build output comparison includes the additional asset. Independent clean Linux derivation and both actual browser consumers must qualify before P04 completion. Prior native33-output matches remain historical evidence for their recorded inputs; the new candidate requires updated output/source binding. The64MiB remote-download limit remains; the72MiB fixed derived output has a separate bound.
+
+## A02 patched dependency/runtime qualification —2026-09-14
+
+Fresh exact-lock audits preserve the84total/46production package-entry inventory.
+Root selects qualification of narrow publisher-patched dependency versions and
+Node24.21.0, whose embeddedUndici7.29.1 cannot be patched through npm overrides.
+TheAztec5.2/Noirbeta.25 stack stays matched. A02scope nowincludes exactruntimepins,
+CI andbuilddocumentation; actualSDK/native transport/telemetry checks and
+reproducibility must pass beforeacceptance. Majortransitive changes require explicit
+parent-constraint/API review. Any asserted unreachability remains source/configuration
+bound and independentlyreviewed; all external releasegates remain mandatory.
+
+A02 also covers the Node-based model-isolation probe image because CI and
+`censor-daemon/model-runtime.mjs` share that immutable dependency. Update their
+verified image digest together and rerun the existing isolation/boundary checks;
+this does not authorize weakening the sandbox or changing model behavior.
+
+A02 qualifies Jaeger2.9.0 with its own nestedcore2.9, keeping the otherOTel1.30
+components andAztec5.2 pins. Publisherpackage/source inspection confirms unchanged
+TextMapPropagator/API1.x boundary and shared tracing-suppression contextkey.
+This explicitly overrides the oldSDK exactJaeger1.30 parent constraint; actual
+parent registration, valid/malformed propagation, suppression andglobal/noop
+controls must pass. The knownbad preinstalledJaeger case remains baselineevidence;
+a clean-start-only exclusion is not used to close this high-severity finding.
+
+## A02 residual treatment and mandatory release controls
+
+The final exact-lock inventory retains eight older OTel core paths and developer
+elliptic, plus a separately recorded embedded-TXE scope limitation. A02 does not
+assert these are all patched or universally unreachable. Its explicit treatment
+is recorded in evidence/A02/residual-release-register.json. D01 now depends on
+A02 and must implement and test supported startup/propagation and operator/tooling
+boundaries under D01-A05. T05-A05 requires actual final package inventories, fresh
+advisories, tested controls and independent dispositions bound into release
+manifests. R01 carries the full inventory into external review. These are open
+release requirements, not implemented controls or waived findings. Ordinary local
+engineering with disposable test identities may continue while they remain open.

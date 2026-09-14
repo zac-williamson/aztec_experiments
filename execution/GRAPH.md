@@ -48,6 +48,7 @@ flowchart TD
     A01 --> D01
     W01 --> D01
     C06 --> D01
+    A02 --> D01
     U01["U01: Complete user flows and production hosting configuration"]
     W03 --> U01
     F01 --> U01
@@ -128,7 +129,7 @@ flowchart TD
 | [M01](tasks/M01.md) | Remove shell interpretation and isolate moderation signing | P02 | internal |
 | [M02](tasks/M02.md) | Make moderation jobs durable and deadline-aware | M01, F01, W03 | internal |
 | [M03](tasks/M03.md) | Evaluate moderation quality and define human review operations | M02 | internal |
-| [D01](tasks/D01.md) | Build fail-closed deployment and configuration verification | A01, W01, C06 | internal |
+| [D01](tasks/D01.md) | Build fail-closed deployment and configuration verification | A01, W01, C06, A02 | internal |
 | [U01](tasks/U01.md) | Complete user flows and production hosting configuration | W03, F01, M03, D01 | internal |
 | [O01](tasks/O01.md) | Implement observability, incident and recovery runbooks | D01, M03, U01 | internal |
 | [T01](tasks/T01.md) | Verify contract invariants and adversarial proof cases | C06, A01 | internal |

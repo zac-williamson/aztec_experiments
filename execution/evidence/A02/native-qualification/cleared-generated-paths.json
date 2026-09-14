@@ -1,0 +1,8 @@
+[
+  "billboard/target",
+  "billboard/portal/out",
+  "billboard/portal/cache",
+  ".build/sdk",
+  ".build/contracts-manifest.json",
+  "apps/dist"
+]

@@ -1,0 +1,19 @@
+{
+  "startedAt": "2026-09-14T09:56:50.495057+00:00",
+  "endedAt": "2026-09-14T09:56:51.555153+00:00",
+  "command": [
+    "<USER_HOME>/.nvm/versions/node/v24.15.0/bin/npm",
+    "install",
+    "--ignore-scripts",
+    "--no-audit",
+    "--no-fund",
+    "--registry=https://registry.npmjs.org",
+    "--cache=<REPOSITORY>/.build/A02-audit-cache",
+    "--userconfig=<REPOSITORY>/.build/A02-audit-cache/empty-user.npmrc",
+    "--globalconfig=<REPOSITORY>/.build/A02-audit-cache/empty-global.npmrc",
+    "--fetch-retries=0",
+    "--fetch-timeout=90000"
+  ],
+  "exitCode": 0,
+  "timeoutSeconds": 600
+}

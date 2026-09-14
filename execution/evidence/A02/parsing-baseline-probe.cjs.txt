@@ -1,0 +1,17 @@
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const {createHash} = require('node:crypto');
+const qs = require(path.join(__dirname, 'qs'));
+const uuid = require(path.join(__dirname, 'uuid'));
+const result = qs.parse('items[]=one,two,three,four', {comma:true,arrayLimit:3,throwOnLimitExceeded:true});
+assert.equal(result.items.flat().length,4);
+assert.throws(()=>qs.stringify(qs.parse('item[constructor][isBuffer]=ordinary-text',{plainObjects:true})),TypeError);
+const uuidCases=[];
+for(const name of ['v3','v5']) {
+ const output=new Uint8Array(8).fill(0xa5);
+ assert.doesNotThrow(()=>uuid[name]('www.example.com',uuid[name].DNS,output,0));
+ assert.notDeepEqual(output,new Uint8Array(8).fill(0xa5));
+ uuidCases.push({method:name,outOfBoundsRejected:false,partialWriteObserved:true});
+}
+console.log(JSON.stringify({outcome:'known-bad-controls-confirmed',node:process.version,qsVersion:require('./qs/package.json').version,uuidVersion:require('./uuid/package.json').version,qsCommaLimitBypassed:true,qsNonCallableIsBufferThrows:true,uuidCases,probeSha256:createHash('sha256').update(fs.readFileSync(__filename)).digest('hex')},null,2));

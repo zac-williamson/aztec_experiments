@@ -1,0 +1,2804 @@
+{
+  "recordedAt": "2026-09-14T09:59:08.714185+00:00",
+  "method": "Final exact-lock reports; paths and parent constraints from same-day preparation, every residual node/version rechecked against final lock. No runtime exclusion accepted by this inventory.",
+  "packages": [
+    {
+      "package": "@aztec/archiver",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/archiver",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/archiver"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/cli",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/node-lib",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/txe",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/blob-client",
+        "@aztec/telemetry-client"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/aztec",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/aztec",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "<root>",
+              "relationship": "devDependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/aztec-node",
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/bot",
+        "@aztec/cli",
+        "@aztec/node-lib",
+        "@aztec/p2p",
+        "@aztec/p2p-bootstrap",
+        "@aztec/prover-client",
+        "@aztec/prover-node",
+        "@aztec/pxe",
+        "@aztec/sequencer-client",
+        "@aztec/telemetry-client",
+        "@aztec/txe",
+        "@aztec/validator-ha-signer",
+        "@aztec/wallets",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/aztec-node",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/aztec-node",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/aztec-node"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/txe",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/node-keystore",
+        "@aztec/node-lib",
+        "@aztec/p2p",
+        "@aztec/prover-client",
+        "@aztec/prover-node",
+        "@aztec/sequencer-client",
+        "@aztec/simulator",
+        "@aztec/slasher",
+        "@aztec/telemetry-client",
+        "@aztec/validator-client",
+        "@aztec/validator-ha-signer",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/bb-prover",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/bb-prover",
+          "version": "5.2.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/bb-prover"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/node-lib",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/pxe",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/sequencer-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/txe",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/simulator",
+        "@aztec/telemetry-client",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/blob-client",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/blob-client",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/blob-client"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/archiver",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/node-lib",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/sequencer-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/validator-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/telemetry-client"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/bot",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/bot",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/bot"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/telemetry-client",
+        "@aztec/wallets"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/cli",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/cli",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "<root>",
+              "relationship": "devDependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/cli-wallet",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/bb-prover",
+        "@aztec/node-keystore",
+        "@aztec/node-lib",
+        "@aztec/p2p",
+        "@aztec/sequencer-client",
+        "@aztec/slasher",
+        "@aztec/wallets",
+        "@aztec/world-state",
+        "@ethersproject/wallet"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/cli-wallet",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/cli-wallet",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli-wallet"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "<root>",
+              "relationship": "devDependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/cli",
+        "@aztec/pxe",
+        "@aztec/wallet-sdk"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/node-keystore",
+      "severity": "low",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/node-keystore",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@aztec/node-keystore"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/cli",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/sequencer-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/validator-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/wallet"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/node-lib",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/node-lib",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/node-lib"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/cli",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/p2p",
+        "@aztec/prover-client",
+        "@aztec/sequencer-client",
+        "@aztec/simulator",
+        "@aztec/telemetry-client",
+        "@aztec/validator-client",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/p2p",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/p2p",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/p2p"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/cli",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/node-lib",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/p2p-bootstrap",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/sequencer-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/validator-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/simulator",
+        "@aztec/telemetry-client"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/p2p-bootstrap",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/p2p-bootstrap",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/p2p-bootstrap"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/p2p",
+        "@aztec/telemetry-client"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/prover-client",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/prover-client",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/prover-client"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/node-lib",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/sequencer-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/validator-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/bb-prover",
+        "@aztec/simulator",
+        "@aztec/telemetry-client",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/prover-node",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/prover-node",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/prover-node"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/node-keystore",
+        "@aztec/node-lib",
+        "@aztec/p2p",
+        "@aztec/prover-client",
+        "@aztec/sequencer-client",
+        "@aztec/simulator",
+        "@aztec/telemetry-client",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/pxe",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/pxe",
+          "version": "5.2.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/pxe"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "<root>",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/cli-wallet",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/txe",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/wallet-sdk",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/wallets",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/bb-prover",
+        "@aztec/simulator"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/sequencer-client",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/sequencer-client",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/sequencer-client"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/cli",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/node-lib",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/node-keystore",
+        "@aztec/p2p",
+        "@aztec/prover-client",
+        "@aztec/simulator",
+        "@aztec/slasher",
+        "@aztec/telemetry-client",
+        "@aztec/validator-client",
+        "@aztec/validator-ha-signer",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/simulator",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/simulator",
+          "version": "5.2.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/simulator"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/txe",
+            "@aztec/simulator"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/bb-prover",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/node-lib",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/p2p",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/pxe",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/sequencer-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/txe",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/validator-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/telemetry-client",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/slasher",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/slasher",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@aztec/slasher"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/cli",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/sequencer-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/validator-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/telemetry-client"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/telemetry-client",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/telemetry-client",
+          "version": "5.2.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/archiver",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/bb-prover",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/blob-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/bot",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/node-lib",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/p2p",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/p2p-bootstrap",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/sequencer-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/simulator",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/slasher",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/validator-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/validator-ha-signer",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/world-state",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/exporter-logs-otlp-http",
+        "@opentelemetry/exporter-metrics-otlp-http",
+        "@opentelemetry/exporter-trace-otlp-http",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/resource-detector-gcp",
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-logs",
+        "@opentelemetry/sdk-metrics",
+        "@opentelemetry/sdk-trace-node"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/txe",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/txe",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/txe"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "<root>",
+              "relationship": "devDependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/aztec-node",
+        "@aztec/bb-prover",
+        "@aztec/pxe",
+        "@aztec/simulator",
+        "@aztec/world-state"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/validator-client",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/validator-client",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/aztec-node",
+            "@aztec/validator-client"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/node-lib",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/sequencer-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/blob-client",
+        "@aztec/node-keystore",
+        "@aztec/p2p",
+        "@aztec/prover-client",
+        "@aztec/simulator",
+        "@aztec/slasher",
+        "@aztec/telemetry-client",
+        "@aztec/validator-ha-signer"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/validator-ha-signer",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/validator-ha-signer",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/validator-ha-signer"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/sequencer-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/validator-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/telemetry-client"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/wallet-sdk",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/wallet-sdk",
+          "version": "5.2.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/wallet-sdk"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/cli-wallet",
+            "@aztec/wallet-sdk"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "<root>",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/cli-wallet",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/wallets",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/pxe"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/wallets",
+      "severity": "moderate",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/wallets",
+          "version": "5.2.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/wallets"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/bot",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/cli",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/pxe",
+        "@aztec/wallet-sdk"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@aztec/world-state",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/world-state",
+          "version": "5.2.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/world-state"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/world-state"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/aztec",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/aztec-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/bb-prover",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/cli",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/node-lib",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/prover-node",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/sequencer-client",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/simulator",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/txe",
+              "relationship": "dependencies",
+              "declaredRange": "5.2.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/telemetry-client"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@ethersproject/abstract-provider",
+      "severity": "low",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/abstract-provider",
+          "version": "5.8.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/abstract-provider"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@ethersproject/abstract-signer",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            },
+            {
+              "packagePath": "node_modules/@ethersproject/wallet",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/transactions"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@ethersproject/abstract-signer",
+      "severity": "low",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/abstract-signer",
+          "version": "5.8.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/abstract-signer"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@ethersproject/hash",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            },
+            {
+              "packagePath": "node_modules/@ethersproject/hdnode",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            },
+            {
+              "packagePath": "node_modules/@ethersproject/json-wallets",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            },
+            {
+              "packagePath": "node_modules/@ethersproject/wallet",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-provider"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@ethersproject/hash",
+      "severity": "low",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/hash",
+          "version": "5.8.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/hash"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@ethersproject/wallet",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            },
+            {
+              "packagePath": "node_modules/@ethersproject/wordlists",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-signer"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@ethersproject/hdnode",
+      "severity": "low",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/hdnode",
+          "version": "5.8.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/hdnode"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@ethersproject/json-wallets",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            },
+            {
+              "packagePath": "node_modules/@ethersproject/wallet",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-signer",
+        "@ethersproject/signing-key",
+        "@ethersproject/transactions",
+        "@ethersproject/wordlists"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@ethersproject/json-wallets",
+      "severity": "low",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/json-wallets",
+          "version": "5.8.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/json-wallets"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@ethersproject/wallet",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-signer",
+        "@ethersproject/hdnode",
+        "@ethersproject/transactions"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@ethersproject/signing-key",
+      "severity": "low",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/signing-key",
+          "version": "5.8.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/signing-key"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@ethersproject/hdnode",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            },
+            {
+              "packagePath": "node_modules/@ethersproject/transactions",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            },
+            {
+              "packagePath": "node_modules/@ethersproject/wallet",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "elliptic"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@ethersproject/transactions",
+      "severity": "low",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/transactions",
+          "version": "5.8.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/transactions"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@ethersproject/abstract-provider",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            },
+            {
+              "packagePath": "node_modules/@ethersproject/hdnode",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            },
+            {
+              "packagePath": "node_modules/@ethersproject/json-wallets",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            },
+            {
+              "packagePath": "node_modules/@ethersproject/wallet",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/signing-key"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@ethersproject/wallet",
+      "severity": "low",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/wallet",
+          "version": "5.8.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/cli",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            },
+            {
+              "packagePath": "node_modules/@aztec/node-keystore",
+              "relationship": "dependencies",
+              "declaredRange": "^5.7.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-provider",
+        "@ethersproject/abstract-signer",
+        "@ethersproject/hash",
+        "@ethersproject/hdnode",
+        "@ethersproject/json-wallets",
+        "@ethersproject/signing-key",
+        "@ethersproject/transactions",
+        "@ethersproject/wordlists"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@ethersproject/wordlists",
+      "severity": "low",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/wordlists",
+          "version": "5.8.0",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/wordlists"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@ethersproject/hdnode",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            },
+            {
+              "packagePath": "node_modules/@ethersproject/wallet",
+              "relationship": "dependencies",
+              "declaredRange": "^5.8.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/hash"
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    },
+    {
+      "package": "@opentelemetry/core",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/core",
+          "version": "1.30.1",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/core"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/telemetry-client",
+              "relationship": "dependencies",
+              "declaredRange": "^1.28.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/propagator-b3",
+              "relationship": "dependencies",
+              "declaredRange": "1.30.1"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/propagator-jaeger",
+              "relationship": "dependencies",
+              "declaredRange": "1.30.1"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/resource-detector-gcp",
+              "relationship": "dependencies",
+              "declaredRange": "^1.0.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/resources",
+              "relationship": "dependencies",
+              "declaredRange": "1.30.1"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/sdk-metrics",
+              "relationship": "dependencies",
+              "declaredRange": "1.30.1"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/sdk-trace-node",
+              "relationship": "dependencies",
+              "declaredRange": "1.30.1"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/sdk-trace-node/node_modules/@opentelemetry/sdk-trace-base",
+              "relationship": "dependencies",
+              "declaredRange": "1.30.1"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/exporter-logs-otlp-http/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/core"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-logs-otlp-http",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/exporter-metrics-otlp-http/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http",
+            "@opentelemetry/core"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-metrics-otlp-http",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-metrics-otlp-http/node_modules/@opentelemetry/resources",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-metrics-otlp-http/node_modules/@opentelemetry/sdk-metrics",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/exporter-trace-otlp-http/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/core"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-trace-otlp-http",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-trace-otlp-http/node_modules/@opentelemetry/resources",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/otlp-exporter-base/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/otlp-exporter-base",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/otlp-exporter-base",
+            "@opentelemetry/core"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/otlp-exporter-base",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/otlp-transformer/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer",
+            "@opentelemetry/core"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/otlp-transformer",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/otlp-transformer/node_modules/@opentelemetry/resources",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/otlp-transformer/node_modules/@opentelemetry/sdk-metrics",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-logs/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-logs",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-logs",
+            "@opentelemetry/core"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/sdk-logs",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/sdk-logs/node_modules/@opentelemetry/resources",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-base/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/sdk-trace-base",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/sdk-trace-base",
+            "@opentelemetry/core"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/sdk-trace-base",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/sdk-trace-base/node_modules/@opentelemetry/resources",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        {
+          "source": 1153174,
+          "name": "@opentelemetry/core",
+          "dependency": "@opentelemetry/core",
+          "title": "OpenTelemetry Core: Unbounded memory allocation in W3C Baggage propagation",
+          "url": "https://github.com/advisories/GHSA-8988-4f7v-96qf",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-770"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": "<2.8.0"
+        }
+      ],
+      "fixAvailable": false,
+      "disposition": "Pending independent OTel applicability/compatibility review"
+    },
+    {
+      "package": "@opentelemetry/exporter-logs-otlp-http",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-logs-otlp-http",
+          "version": "0.55.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/telemetry-client",
+              "relationship": "dependencies",
+              "declaredRange": "^0.55.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/otlp-transformer",
+        "@opentelemetry/sdk-logs"
+      ],
+      "fixAvailable": false,
+      "disposition": "Pending independent OTel applicability/compatibility review"
+    },
+    {
+      "package": "@opentelemetry/exporter-metrics-otlp-http",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-metrics-otlp-http",
+          "version": "0.55.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/telemetry-client",
+              "relationship": "dependencies",
+              "declaredRange": "^0.55.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/otlp-transformer",
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-metrics"
+      ],
+      "fixAvailable": false,
+      "disposition": "Pending independent OTel applicability/compatibility review"
+    },
+    {
+      "package": "@opentelemetry/exporter-trace-otlp-http",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-trace-otlp-http",
+          "version": "0.55.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/telemetry-client",
+              "relationship": "dependencies",
+              "declaredRange": "^0.55.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/otlp-transformer",
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-trace-base"
+      ],
+      "fixAvailable": false,
+      "disposition": "Pending independent OTel applicability/compatibility review"
+    },
+    {
+      "package": "@opentelemetry/otlp-exporter-base",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/otlp-exporter-base",
+          "version": "0.55.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/otlp-exporter-base"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/otlp-exporter-base"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/telemetry-client",
+              "relationship": "dependencies",
+              "declaredRange": "^0.55.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-logs-otlp-http",
+              "relationship": "dependencies",
+              "declaredRange": "0.55.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-metrics-otlp-http",
+              "relationship": "dependencies",
+              "declaredRange": "0.55.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-trace-otlp-http",
+              "relationship": "dependencies",
+              "declaredRange": "0.55.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/otlp-transformer"
+      ],
+      "fixAvailable": false,
+      "disposition": "Pending independent OTel applicability/compatibility review"
+    },
+    {
+      "package": "@opentelemetry/otlp-transformer",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/otlp-transformer",
+          "version": "0.55.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-logs-otlp-http",
+              "relationship": "dependencies",
+              "declaredRange": "0.55.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-metrics-otlp-http",
+              "relationship": "dependencies",
+              "declaredRange": "0.55.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-trace-otlp-http",
+              "relationship": "dependencies",
+              "declaredRange": "0.55.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/otlp-exporter-base",
+              "relationship": "dependencies",
+              "declaredRange": "0.55.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-logs",
+        "@opentelemetry/sdk-metrics",
+        "@opentelemetry/sdk-trace-base"
+      ],
+      "fixAvailable": false,
+      "disposition": "Pending independent OTel applicability/compatibility review"
+    },
+    {
+      "package": "@opentelemetry/propagator-b3",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/propagator-b3",
+          "version": "1.30.1",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node",
+            "@opentelemetry/propagator-b3"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node",
+            "@opentelemetry/propagator-b3"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/sdk-trace-node",
+              "relationship": "dependencies",
+              "declaredRange": "1.30.1"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core"
+      ],
+      "fixAvailable": false,
+      "disposition": "Pending independent OTel applicability/compatibility review"
+    },
+    {
+      "package": "@opentelemetry/propagator-jaeger",
+      "severity": "high",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/propagator-jaeger",
+          "version": "1.30.1",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node",
+            "@opentelemetry/propagator-jaeger"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node",
+            "@opentelemetry/propagator-jaeger"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/sdk-trace-node",
+              "relationship": "dependencies",
+              "declaredRange": "1.30.1"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        {
+          "source": 1124011,
+          "name": "@opentelemetry/propagator-jaeger",
+          "dependency": "@opentelemetry/propagator-jaeger",
+          "title": "OpenTelemetry JavaScript: Denial of service in `JaegerPropagator` via unhandled exception on a malformed header",
+          "url": "https://github.com/advisories/GHSA-45rx-2jwx-cxfr",
+          "severity": "high",
+          "cwe": [
+            "CWE-248"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<2.9.0"
+        }
+      ],
+      "fixAvailable": false,
+      "disposition": "Pending independent OTel applicability/compatibility review"
+    },
+    {
+      "package": "@opentelemetry/resource-detector-gcp",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/resource-detector-gcp",
+          "version": "0.32.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/resource-detector-gcp"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/resource-detector-gcp"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/telemetry-client",
+              "relationship": "dependencies",
+              "declaredRange": "^0.32.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources"
+      ],
+      "fixAvailable": false,
+      "disposition": "Pending independent OTel applicability/compatibility review"
+    },
+    {
+      "package": "@opentelemetry/resources",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-metrics-otlp-http/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http",
+            "@opentelemetry/resources"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http",
+            "@opentelemetry/resources"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-metrics-otlp-http",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-metrics-otlp-http/node_modules/@opentelemetry/sdk-metrics",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/exporter-trace-otlp-http/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/resources"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/resources"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-trace-otlp-http",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/otlp-transformer/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer",
+            "@opentelemetry/resources"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer",
+            "@opentelemetry/resources"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/otlp-transformer",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/otlp-transformer/node_modules/@opentelemetry/sdk-metrics",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/resources",
+          "version": "1.30.1",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/resources"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/resources"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/telemetry-client",
+              "relationship": "dependencies",
+              "declaredRange": "^1.28.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/resource-detector-gcp",
+              "relationship": "dependencies",
+              "declaredRange": "^1.10.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/sdk-metrics",
+              "relationship": "dependencies",
+              "declaredRange": "1.30.1"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/sdk-trace-node/node_modules/@opentelemetry/sdk-trace-base",
+              "relationship": "dependencies",
+              "declaredRange": "1.30.1"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-logs/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-logs",
+            "@opentelemetry/resources"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-logs",
+            "@opentelemetry/resources"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/sdk-logs",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-base/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/sdk-trace-base",
+            "@opentelemetry/resources"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/sdk-trace-base",
+            "@opentelemetry/resources"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/sdk-trace-base",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core"
+      ],
+      "fixAvailable": false,
+      "disposition": "Pending independent OTel applicability/compatibility review"
+    },
+    {
+      "package": "@opentelemetry/sdk-logs",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/sdk-logs",
+          "version": "0.55.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-logs"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-logs"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/telemetry-client",
+              "relationship": "dependencies",
+              "declaredRange": "^0.55.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-logs-otlp-http",
+              "relationship": "dependencies",
+              "declaredRange": "0.55.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/otlp-transformer",
+              "relationship": "dependencies",
+              "declaredRange": "0.55.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources"
+      ],
+      "fixAvailable": false,
+      "disposition": "Pending independent OTel applicability/compatibility review"
+    },
+    {
+      "package": "@opentelemetry/sdk-metrics",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-metrics-otlp-http/node_modules/@opentelemetry/sdk-metrics",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http",
+            "@opentelemetry/sdk-metrics"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http",
+            "@opentelemetry/sdk-metrics"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-metrics-otlp-http",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/otlp-transformer/node_modules/@opentelemetry/sdk-metrics",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer",
+            "@opentelemetry/sdk-metrics"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer",
+            "@opentelemetry/sdk-metrics"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/otlp-transformer",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-metrics",
+          "version": "1.30.1",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-metrics"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-metrics"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/telemetry-client",
+              "relationship": "dependencies",
+              "declaredRange": "^1.28.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources"
+      ],
+      "fixAvailable": false,
+      "disposition": "Pending independent OTel applicability/compatibility review"
+    },
+    {
+      "package": "@opentelemetry/sdk-trace-base",
+      "severity": "moderate",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-base",
+          "version": "1.28.0",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/sdk-trace-base"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/sdk-trace-base"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/exporter-trace-otlp-http",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            },
+            {
+              "packagePath": "node_modules/@opentelemetry/otlp-transformer",
+              "relationship": "dependencies",
+              "declaredRange": "1.28.0"
+            }
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-node/node_modules/@opentelemetry/sdk-trace-base",
+          "version": "1.30.1",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node",
+            "@opentelemetry/sdk-trace-base"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node",
+            "@opentelemetry/sdk-trace-base"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@opentelemetry/sdk-trace-node",
+              "relationship": "dependencies",
+              "declaredRange": "1.30.1"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources"
+      ],
+      "fixAvailable": false,
+      "disposition": "Pending independent OTel applicability/compatibility review"
+    },
+    {
+      "package": "@opentelemetry/sdk-trace-node",
+      "severity": "high",
+      "inProductionAudit": true,
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-node",
+          "version": "1.30.1",
+          "lockDevOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@aztec/telemetry-client",
+              "relationship": "dependencies",
+              "declaredRange": "^1.28.0"
+            }
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/propagator-b3",
+        "@opentelemetry/propagator-jaeger",
+        "@opentelemetry/sdk-trace-base"
+      ],
+      "fixAvailable": false,
+      "disposition": "Pending independent OTel applicability/compatibility review"
+    },
+    {
+      "package": "elliptic",
+      "severity": "low",
+      "inProductionAudit": false,
+      "nodes": [
+        {
+          "path": "node_modules/elliptic",
+          "version": "6.6.1",
+          "lockDevOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/signing-key",
+            "elliptic"
+          ],
+          "immediateParents": [
+            {
+              "packagePath": "node_modules/@ethersproject/signing-key",
+              "relationship": "dependencies",
+              "declaredRange": "6.6.1"
+            }
+          ]
+        }
+      ],
+      "via": [
+        {
+          "source": 1112030,
+          "name": "elliptic",
+          "dependency": "elliptic",
+          "title": "Elliptic Uses a Cryptographic Primitive with a Risky Implementation",
+          "url": "https://github.com/advisories/GHSA-848j-6mx2-7j84",
+          "severity": "low",
+          "cwe": [
+            "CWE-1240"
+          ],
+          "cvss": {
+            "score": 5.6,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L"
+          },
+          "range": "<=6.6.1"
+        }
+      ],
+      "fixAvailable": false,
+      "disposition": "Inherited/advisory tooling entry; trace via to OTel or elliptic before final disposition"
+    }
+  ]
+}

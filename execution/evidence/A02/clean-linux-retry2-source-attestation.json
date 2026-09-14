@@ -1,0 +1,15 @@
+{
+  "sourceFiles": 151,
+  "symlinks": 2,
+  "identicalToFirstLinuxCandidate": true,
+  "sourceInputSha256": "6d8c4f5e6fd55c307a3027b9365bd6398219a0c6a9cc032f2cd3f467ac15c23c",
+  "native34ReferenceSha256": "c49ea5ff5915322e3ce58a03cf11309be6c5f1280df69289957cd772938f32bc",
+  "helperHashes": {
+    "run.sh": "81dc968a4a910f15144f70b44d5cdc0a1943717308d33864cb7ceb36ea284572",
+    "steps.py": "bda3a8f052efc0590b6f2886638f73b74c6a45f596f7857aa66235f4b8cec4de",
+    "stage_source.py": "30baadc438701305c4c12209bf9b87a251eefa45cce60d877acf473e594e5092",
+    "pack.py": "afebdc867f8d5695e287765773f39d363acb12bf2376478f947d45af982e7f8b",
+    "launch.py": "01d3f9765112778ce14a6d6554460dd5b60ba6b363be7be617cb8e04dc75218c"
+  },
+  "unexpectedSourceChanges": []
+}

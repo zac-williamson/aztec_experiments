@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '24.15.0'
+          node-version: '24.21.0'
       - uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
         with:
           version: v1.4.1
@@ -42,6 +42,7 @@ jobs:
         run: |
           npm run check:artifacts
           npm run test:build
+          npm run test:dependencies
           npm run test:noir
           npm run test:moderation
           node --test scripts/test-shell-baseline.mjs scripts/test-receipt-baseline.mjs
@@ -56,5 +57,5 @@ jobs:
           python3 execution/graph.py validate
       - name: Model process isolation with disposable fixtures
         run: |
-          docker pull docker.io/library/node@sha256:f22d6a1f082c02f292e86929b5b0442ac2e5eaf438a5dea9b1566601c3e05940
+          docker pull docker.io/library/node@sha256:6dac556d980b7f0e5498d08f08cee0ca67798b4ad6c23964a9214920e67758d0
           node --test censor-daemon/model-runtime.test.mjs

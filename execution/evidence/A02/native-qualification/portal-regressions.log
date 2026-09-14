@@ -1,0 +1,21 @@
+No files changed, compilation skipped
+
+Ran 3 tests for test/PortalArtifactRegression.t.sol:PortalSourceControlTest
+[PASS] testConfiguredMinimumRejectsBelowAndAcceptsExact() (gas: 946574)
+[PASS] testRedepositDoesNotDoubleCountWithdrawnFunds() (gas: 1008867)
+[PASS] testWithdrawalClearsIndividualAndReducesAggregateLiabilities() (gas: 1013945)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 1.78ms (4.42ms CPU time)
+
+Ran 3 tests for test/PortalArtifactRegression.t.sol:PortalKnownBadFixtureTest
+[PASS] testKnownBadFixtureAcceptsDepositBelowConfiguredMinimum() (gas: 2101828)
+[PASS] testKnownBadFixtureLeavesAggregateAfterRefund() (gas: 2180176)
+[PASS] testKnownBadFixtureRejectedByProductionArtifactGuard() (gas: 1190598)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 4.86ms (13.66ms CPU time)
+
+Ran 3 tests for test/PortalArtifactRegression.t.sol:PortalGeneratedArtifactTest
+[PASS] testConfiguredMinimumRejectsBelowAndAcceptsExact() (gas: 3417902)
+[PASS] testRedepositDoesNotDoubleCountWithdrawnFunds() (gas: 3477890)
+[PASS] testWithdrawalClearsIndividualAndReducesAggregateLiabilities() (gas: 3483042)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 7.69ms (22.15ms CPU time)
+
+Ran 3 test suites in 8.21ms (14.33ms CPU time): 9 tests passed, 0 failed, 0 skipped (9 total tests)

@@ -1,0 +1,28 @@
+docker.io/library/node@sha256:6dac556d980b7f0e5498d08f08cee0ca67798b4ad6c23964a9214920e67758d0: Pulling from library/node
+db86109db3a8: Pulling fs layer
+742d423df6ec: Pulling fs layer
+e68580adf604: Pulling fs layer
+eb3e739d0611: Pulling fs layer
+a6ea372f47c0: Pulling fs layer
+9873f9cf3f97: Pulling fs layer
+8884c66a6999: Pulling fs layer
+7fea2228218a: Pulling fs layer
+eb3e739d0611: Download complete
+8884c66a6999: Download complete
+e68580adf604: Download complete
+7fea2228218a: Download complete
+a6ea372f47c0: Download complete
+db86109db3a8: Download complete
+742d423df6ec: Download complete
+db86109db3a8: Pull complete
+7fea2228218a: Pull complete
+742d423df6ec: Pull complete
+9873f9cf3f97: Download complete
+9873f9cf3f97: Pull complete
+8884c66a6999: Pull complete
+a6ea372f47c0: Pull complete
+eb3e739d0611: Pull complete
+e68580adf604: Pull complete
+Digest: sha256:6dac556d980b7f0e5498d08f08cee0ca67798b4ad6c23964a9214920e67758d0
+Status: Downloaded newer image for node@sha256:6dac556d980b7f0e5498d08f08cee0ca67798b4ad6c23964a9214920e67758d0
+docker.io/library/node@sha256:6dac556d980b7f0e5498d08f08cee0ca67798b4ad6c23964a9214920e67758d0
