@@ -1,0 +1,190 @@
+// TEST ONLY: disposable local L1 deposit and genuine private claim. Parent owns all process/resource limits.
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+import {parseEventLogs} from 'viem';
+import {Contract} from '@aztec/aztec.js/contracts';
+import {Barretenberg,BackendType} from '@aztec/bb.js';
+import {DomainSeparator,L1_TO_L2_MSG_TREE_HEIGHT} from '@aztec/constants';
+import {Fr} from '@aztec/foundation/curves/bn254';
+import {EthAddress} from '@aztec/foundation/eth-address';
+import {poseidon2HashWithSeparator} from '@aztec/foundation/crypto/poseidon';
+import {sha256ToField} from '@aztec/foundation/crypto/sha256';
+import {loadContractArtifact} from '@aztec/stdlib/abi';
+import {computeSecretHash} from '@aztec/stdlib/hash';
+import {L1Actor,L2Actor,L1ToL2Message} from '@aztec/stdlib/messaging';
+import {TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
+import {EmbeddedWallet} from '@aztec/wallets/embedded';
+import {encodeEscrowCommitment} from '../shared/protocol-commitments.mjs';
+import {contractInputs} from './artifact-provenance.mjs';
+import {ROOT,assertNodeVersion,assertAztecPackages} from './toolchain.mjs';
+const BOARD='apps/src/billboard/billboard_artifact.json';
+const PORTAL='billboard/portal/out/BillboardPortal.sol/BillboardPortal.json';
+const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
+const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const integer=value=>BigInt(value.toString());
+const included=receipt=>[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(receipt.status)
+  &&receipt.executionResult===TxExecutionResult.SUCCESS&&receipt.blockNumber!=null&&receipt.blockHash!=null;
+
+async function artifacts(preparation,ready){
+  const bytes=await fs.readFile(path.join(ROOT,'.build/contracts-manifest.json')),manifest=JSON.parse(bytes);
+  assert.equal(sha(bytes),preparation.artifactHashes['.build/contracts-manifest.json']);
+  assert.deepEqual(contractInputs(ROOT),manifest.inputs);
+  const boardBytes=await fs.readFile(path.join(ROOT,BOARD)),portalBytes=await fs.readFile(path.join(ROOT,PORTAL));
+  assert.equal(sha(boardBytes),manifest.noir);assert.equal(sha(boardBytes),preparation.artifactHashes[BOARD]);
+  assert.equal(sha(portalBytes),ready.artifactHashes[PORTAL]);
+  const portal=JSON.parse(portalBytes);assert.equal(sha(portal.bytecode.object),manifest.portal);
+  const board=loadContractArtifact(JSON.parse(boardBytes));
+  assert(board.storageLayout.deposits?.slot instanceof Fr,'Generated deposit storage slot missing');
+  return {board,portal,hashes:{[BOARD]:sha(boardBytes),[PORTAL]:sha(portalBytes),'.build/contracts-manifest.json':sha(bytes)}};
+}
+
+/** Result's enumerable fields are evidence-safe. `claim` is nonenumerable, in-memory only,
+ * and includes private note/identity/secret material for a later no-post withdrawal.
+ * Owns one ephemeral PXE wallet; caller owns sequencer/node/prover shutdown.
+ */
+export async function depositAndClaimC01({node,preparation,instance,l1Client,ready,settlement,directory,rpcUrl,dateProvider}){
+  let stage='preflight',wallet,sequencer,previousSequencerConfig;
+  const observation={passed:false,scope:'local real deposit and genuine private claim with ordinary checkpoint inclusion',
+    syntheticMessages:false,syntheticProofs:false,claimEpochProofAccepted:false};
+  const mark=name=>{stage=name;process.stdout.write(`C01_DEPOSIT_STAGE ${name}\n`);};
+  const mine=async()=>{
+    await l1Client.request({method:'evm_mine',params:[]});
+    const block=await l1Client.getBlock();
+    if(Number(block.timestamp)>dateProvider.nowInSeconds())dateProvider.setTime(Number(block.timestamp)*1000);
+    await pause(1000);
+  };
+  try{
+    assertNodeVersion();assertAztecPackages();assert(settlement.passed&&settlement.activation?.depositsEnabled);
+    assert(ready.passed&&ready.readyEmitted);assert(path.isAbsolute(directory));
+    const url=new URL(rpcUrl);assert.equal(url.protocol,'http:');assert.equal(url.hostname,'127.0.0.1');
+    assert(!url.username&&!url.password);assert.equal(await l1Client.getChainId(),31337);assert(l1Client.account);
+    const info=await node.getNodeInfo();assert.equal(Number(info.l1ChainId),31337);
+    assert.equal((await node.getConfig()).realProofs,true);
+    assert.equal(instance.address.toString(),ready.boardAddress);assert(instance.deployer.equals(preparation.account.address));
+    const checked=await artifacts(preparation,ready),portalAddress=ready.portalAddress.toLowerCase();
+    const read=(functionName,args=[],blockNumber)=>l1Client.readContract({address:portalAddress,abi:checked.portal.abi,functionName,args,
+      ...(blockNumber===undefined?{}:{blockNumber})});
+    assert.equal(await read('depositsEnabled'),true);
+    assert.equal(integer(await read('L1_CHAIN_ID')),31337n);
+    assert.equal(integer(await read('VERSION')),BigInt(info.rollupVersion));
+    assert.equal((await read('L2_CONTRACT')).toLowerCase(),instance.address.toString().toLowerCase());
+    assert.equal((await read('CONFIG_HASH')).toLowerCase(),ready.configHash.toLowerCase());
+    const rollupAddress=(await read('ROLLUP')).toLowerCase();
+    assert.equal(rollupAddress,info.l1ContractAddresses.rollupAddress.toString().toLowerCase());
+    const native={backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1};
+    for(const key of ['backend','bbPath','threads'])assert.equal(Barretenberg.getSingleton().options[key],native[key]);
+    mark('reopen-claim-wallet');
+    wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
+    const account=preparation.account;
+    const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'c01-disposable');
+    assert(manager.address.equals(account.address));await wallet.registerContract(instance,checked.board);await wallet.pxe.sync();
+    const board=Contract.at(instance.address,checked.board,wallet);
+    const amount=integer(await read('MIN_DEPOSIT'));assert(amount>0n&&amount<=integer(await read('MAX_DEPOSIT')));
+    const depositor=l1Client.account.address.toLowerCase();
+    const before=await read('getDeposit',[depositor]);assert.equal(integer(before[0]),0n);assert.equal(integer(before[1]),0n);
+    const previousNonce=integer(await read('lastDepositNonce',[depositor])),totalBefore=integer(await read('totalDeposited'));
+    let secret;do{secret=Fr.random();}while(secret.isZero());
+    const secretHash=await computeSecretHash(secret);assert(!secretHash.isZero());
+    mark('deposit-real-l1');
+    const depositHash=await l1Client.writeContract({address:portalAddress,abi:checked.portal.abi,functionName:'deposit',
+      args:[secretHash.toString()],value:amount});
+    const depositReceipt=await l1Client.waitForTransactionReceipt({hash:depositHash,timeout:60000});
+    assert.equal(depositReceipt.status,'success');
+    const events=parseEventLogs({abi:checked.portal.abi,eventName:'Deposited',strict:true,
+      logs:depositReceipt.logs.filter(log=>log.address.toLowerCase()===portalAddress)});
+    assert.equal(events.length,1);const receipt=events[0].args;
+    assert.equal(receipt.depositor.toLowerCase(),depositor);assert.equal(receipt.amount,amount);
+    assert.equal(receipt.nonce,previousNonce+1n);assert.equal(receipt.secretHash.toLowerCase(),secretHash.toString());
+    const scope={l1ChainId:'31337',rollupAddress,rollupVersion:String(info.rollupVersion),boardAddress:instance.address.toString(),portalAddress};
+    const content=sha256ToField([Buffer.from(encodeEscrowCommitment('claim',scope,
+      {depositor,depositNonce:String(receipt.nonce),amount:String(amount)}))]);
+    const message=new L1ToL2Message(new L1Actor(EthAddress.fromString(portalAddress),31337),
+      new L2Actor(instance.address,Number(info.rollupVersion)),content,secretHash,new Fr(receipt.index));
+    assert.equal(message.hash().toString(),receipt.key.toLowerCase());
+    const chain=await poseidon2HashWithSeparator([Fr.ONE,instance.address,account.address,content,secret],0x42420101);
+    assert(!chain.isZero());
+    const canonicalDeposit=async()=>{
+      const current=await l1Client.getTransactionReceipt({hash:depositHash});assert.equal(current.status,'success');
+      assert.equal(current.blockHash,depositReceipt.blockHash);assert.equal(current.blockNumber,depositReceipt.blockNumber);
+      assert.equal((await l1Client.getBlock({blockNumber:current.blockNumber})).hash,current.blockHash);
+      const active=await read('getDeposit',[depositor]);assert.deepEqual(active,[receipt.nonce,amount]);
+      assert.equal(integer(await read('totalDeposited')),totalBefore+amount);
+    };
+    await canonicalDeposit();
+    Object.assign(observation,{depositTxHash:depositHash,depositBlock:String(depositReceipt.blockNumber),depositNonce:String(receipt.nonce),
+      amount:String(amount),inboxMessageKey:receipt.key,messageContentChecked:true,artifactHashes:checked.hashes});
+    sequencer=node.getSequencer();assert(sequencer,'Ordinary sequencer required');
+    const sequencerConfig=sequencer.getSequencer().getConfig();
+    previousSequencerConfig={minTxsPerBlock:sequencerConfig.minTxsPerBlock,
+      buildCheckpointIfEmpty:sequencerConfig.buildCheckpointIfEmpty};
+    sequencer.updateConfig({minTxsPerBlock:0,buildCheckpointIfEmpty:true});
+    mark('wait-real-inbox-anchor');
+    let anchor,witness;const membershipDeadline=Date.now()+120000;
+    while(Date.now()<membershipDeadline){
+      await canonicalDeposit();await wallet.pxe.sync();anchor=await wallet.pxe.getSyncedBlockHeader();
+      witness=await node.getL1ToL2MessageMembershipWitness(anchor.getBlockNumber(),message.hash());
+      if(witness)break;await mine();
+    }
+    assert(witness,'Real Inbox membership timed out');assert.equal(witness[0],receipt.index);
+    assert.equal(witness[1].pathSize,L1_TO_L2_MSG_TREE_HEIGHT);
+    let computedRoot=message.hash(),cursor=witness[0];
+    for(const sibling of witness[1].toFields()){
+      computedRoot=await poseidon2HashWithSeparator(cursor&1n?[sibling,computedRoot]:[computedRoot,sibling],DomainSeparator.MERKLE_HASH);
+      cursor>>=1n;
+    }
+    assert.equal(cursor,0n);assert(computedRoot.equals(anchor.state.l1ToL2MessageTree.root));
+    const canonicalAnchor=await node.getBlock(anchor.getBlockNumber());assert(canonicalAnchor);
+    assert.equal(canonicalAnchor.hash.toString(),(await anchor.hash()).toString());
+    mark('prove-real-claim');
+    const payload=await board.methods.claim_deposit(EthAddress.fromString(depositor),amount,receipt.nonce,secret,new Fr(receipt.index)).request();
+    const fee=await wallet.completeFeeOptions({from:account.address,feePayer:payload.feePayer});
+    const request=await wallet.createTxExecutionRequestFromPayloadAndFee(payload,account.address,fee);
+    const proven=await wallet.pxe.proveTx(request,{scopes:wallet.scopesFrom(account.address,[],undefined),
+      senderForTags:wallet.senderForTagsFrom(account.address,undefined)});
+    assert(!proven.chonkProof.isEmpty());const tx=await proven.toTx();
+    assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer(),'Claim changed selected anchor');
+    await canonicalDeposit();assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),canonicalAnchor.hash.toString());
+    assert.equal((await node.isValidTx(tx)).result,'valid');
+    mark('include-real-claim');await node.sendTx(tx);
+    let claimReceipt;const inclusionDeadline=Date.now()+120000;
+    while(Date.now()<inclusionDeadline){
+      claimReceipt=await node.getTxReceipt(tx.getTxHash());if(included(claimReceipt))break;
+      assert.notEqual(claimReceipt.status,TxStatus.DROPPED);await mine();
+    }
+    assert(included(claimReceipt),'Claim checkpoint inclusion timed out or failed');
+    assert.equal((await node.getBlock(claimReceipt.blockNumber)).hash.toString(),claimReceipt.blockHash.toString());
+    await canonicalDeposit();await wallet.pxe.sync();mark('check-delivered-deposit-note');
+    const logical=(await board.methods.get_deposit_info(account.address,chain).simulate({from:account.address})).result;
+    assert(Array.isArray(logical)&&logical.length===11);const fields=logical.map(integer);
+    const base=integer((await board.methods.get_base_cooldown().simulate({from:account.address})).result);
+    const nextAllowed=integer(anchor.globalVariables.timestamp)+base; // Deposited exactly MIN_DEPOSIT.
+    assert.deepEqual(fields,[1n,chain.toBigInt(),receipt.nonce,amount,BigInt(depositor),0n,0n,0n,0n,0n,nextAllowed]);
+    // This is a test-only diagnostic read. The application continues to use its typed logical utility.
+    const packed=await wallet.pxe.debug.getNotes({contractAddress:instance.address,owner:account.address,
+      storageSlot:checked.board.storageLayout.deposits.slot,scopes:[account.address]});
+    const notes=packed.filter(note=>note.txHash.equals(tx.getTxHash()));assert.equal(notes.length,1);
+    assert.equal(notes[0].note.items.length,8);
+    assert.deepEqual(notes[0].note.items.map(integer),[1n+(receipt.nonce<<32n),chain.toBigInt(),amount,BigInt(depositor),0n,0n,0n,nextAllowed]);
+    assert(notes[0].owner.equals(account.address)&&notes[0].contractAddress.equals(instance.address));
+    assert.deepEqual((await artifacts(preparation,ready)).hashes,checked.hashes);
+    Object.assign(observation,{passed:true,claimTxHash:tx.getTxHash().toString(),claimBlock:String(claimReceipt.blockNumber),
+      claimStatus:claimReceipt.status,executionResult:claimReceipt.executionResult,fee:String(claimReceipt.transactionFee),
+      proofSha256:sha(proven.chonkProof.toBuffer()),anchorBlock:Number(anchor.getBlockNumber()),
+      membershipRootChecked:true,logicalFieldCount:11,physicalFieldCount:8,exactDeliveredNoteChecked:true,
+      nextRequired:'Wait eligibility; prove/include no-post exit, then genuinely settle its covering epoch and withdraw L1.'});
+    Object.defineProperty(observation,'claim',{enumerable:false,value:{scope,secret,secretHash,depositChainId:chain,
+      depositor,depositNonce:receipt.nonce,amount,content,message,logicalFields:fields,nextAllowedTime:nextAllowed,
+      claimReceipt,tx,instance}});
+    return observation;
+  }catch(error){
+    const failure=new Error(`C01_DEPOSIT_FAILED:${stage}:${error?.name??'Error'}`);
+    failure.depositObservation={...observation,passed:false,stage,errorClass:error?.name??'Error'};throw failure;
+  }finally{
+    try{if(sequencer&&previousSequencerConfig)sequencer.updateConfig(previousSequencerConfig);}
+    finally{if(wallet){try{await wallet.stop();observation.walletStopped=true;}
+      catch{observation.passed=false;const failure=new Error('C01_DEPOSIT_WALLET_CLEANUP_FAILED');
+        failure.depositObservation={...observation,walletStopped:false};throw failure;}}}
+  }
+}

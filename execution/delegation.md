@@ -315,3 +315,16 @@ one genuine settlement experiment under the900s/8GiB supervisor. The reused
 build_review agent owns only the application deployment activation API fix,
 its focused behavioral test and review. No generated bundles or frozen proof
 harness inputs may be edited during that run; no second heavy process is allowed.
+
+Activation fix integrated and committed0d82197. Root owns source authentication
+and next native runtime qualification. The sole build_review lane owns only
+build-c01-avm.mjs and its review, preparing the bounded native build supervisor;
+no agent build execution.
+
+Root owns paused cache inventory, documentation and later serial runtime checks.
+The reused build_review agent owns only build-c01-avm.mjs and c01-avm-runtime.mjs
+for minimal provenance-bound incremental continuation. No agent heavy runs.
+
+Native builder and loader frozen for root continuation. build_review now owns
+only new c01-deposit-flow.mjs and its review, preparing real deposit/claim without
+execution. Root owns integrated build/proof runs; no concurrent heavy work.

@@ -1,0 +1,32 @@
+{
+  "scope": "Independent read-only snapshot during corrected native build",
+  "rootPid": 58180,
+  "totalRssKiB": 555840,
+  "members": [
+    {
+      "pid": 58180,
+      "ppid": 56989,
+      "group": 58180,
+      "rssKiB": 8416
+    },
+    {
+      "pid": 58183,
+      "ppid": 58180,
+      "group": 58180,
+      "rssKiB": 8096
+    },
+    {
+      "pid": 59499,
+      "ppid": 58183,
+      "group": 59499,
+      "rssKiB": 409504
+    },
+    {
+      "pid": 59509,
+      "ppid": 58183,
+      "group": 59509,
+      "rssKiB": 129824
+    }
+  ],
+  "observed": "Both compiler-created process groups are included in the actual OwnedBuildTree sample. This snapshot is not the run peak or build acceptance."
+}

@@ -1,0 +1,29 @@
+{
+  "passed": false,
+  "sourceRun": "execution/evidence/C01/avm-native-build-26a51ce7-e550-4e43-893f-715144306872.json",
+  "finding": "Ninja compiler children use separate process groups; original group-only sampling and cleanup omit them",
+  "observedProcessTree": [
+    {
+      "pid": 55225,
+      "ppid": 54035,
+      "pgid": 55225,
+      "program": "cmake"
+    },
+    {
+      "pid": 55229,
+      "ppid": 55225,
+      "pgid": 55225,
+      "program": "ninja"
+    },
+    {
+      "pid": 56362,
+      "ppid": 55229,
+      "pgid": 56362,
+      "program": "clang++",
+      "rssKiB": 625584
+    }
+  ],
+  "rootCleanup": "Supervisor54035 interrupted. Compiler56362 had already exited; remaining compiler56412 matched exact owned temporary build path and was terminated separately. Original report group cleanup does not establish descendant cleanup.",
+  "next": "Repair supervisor to discover descendant PPIDs and remember owned process groups; test separate-group child cleanup before retrying.",
+  "rootFollowupObservedOwnedCompilersAbsent": true
+}

@@ -98,3 +98,29 @@ terminated the stalled parent after506927ms once native work was idle. Peak
 or portal activation. RPC errors after SIGTERM are shutdown consequences.
 Official release metadata lists one full AVM asset, amd64 Linux, SHA256
 e573e15e0d808a751df001893e1fa87d4cbde0dafd3bd74e4f6c9ee8af1eb05d.
+
+Native AVM preparation: official C++ source authentication passes2577regular
+files plus5exact documentation symlinks. Initial build attempts failed on source
+symlink accounting, upstream source-directory Yarn installation, then stale
+Homebrew sysroot. A verified temporary source copy and local LLVM20/Xcode SDK
+wrappers resolve those configuration issues without cached/global changes.
+The first compile exposed Ninja detached compiler groups, so its original
+group-only memory/cleanup claim is invalid; root separately removed an orphan.
+The repaired descendant tracker passes2real-process controls, including orphan
+retention and64MiB allocation accounting. A new25min/two-job/8GiB native build
+is in progress. Read-only observation confirms both actual compiler groups are
+counted. The proof harness now reuses that tested tracker, requires qualified
+full-AVM manifests for settlement, checks runtime AVM capability, rehashes the
+binary and manifest after execution, and retains inputs if cleanup is uncertain.
+These harness changes are syntax/source reviewed; integrated qualification awaits
+the pending native build. Historical reports remain unchanged.
+
+## Full native AVM runtime qualified
+
+Native build4fc836ce passed (573210ms,2405728KiB peak descendant RSS); full
+source/copy/tool identity and cleanup are recorded. Native runtime/node check
+5e8d1b83 passed (21972ms,719296KiB), AVM enabled, genuine verifier and BlobLib
+identity retained. Source-build placeholder version remains unmodified. Original
+25-minute deadline and interrupted restoration experiments remain failures.
+Deposit/claim and no-post exit helpers are source-reviewed preparations only.
+Next: actual full epoch proof and finalized portal activation.

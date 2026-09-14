@@ -7,6 +7,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { ROOT, assertNodeVersion, assertAztecPackages } from './toolchain.mjs';
+import { OwnedBuildTree } from './build-c01-avm.mjs';
+import { resolveC01AvmRuntime } from './c01-avm-runtime.mjs';
 const SELF = fileURLToPath(import.meta.url);
 const DEADLINE_MS = process.argv.includes('--settle') ? 900000 : 300000;
 const RSS_LIMIT_KIB = 8 * 1024 * 1024;
@@ -14,30 +16,18 @@ const execFileAsync = promisify(execFile);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function fingerprints() {
   const result = {};
-  for (const name of ['scripts/test-c01-real-network.mjs','scripts/c01-real-deployment.mjs',
+  for (const name of ['scripts/test-c01-real-network.mjs','scripts/build-c01-avm.mjs','scripts/c01-avm-runtime.mjs','scripts/c01-real-deployment.mjs',
     'scripts/c01-settle-ready.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/c01-acvm-wasm-cli.mjs','scripts/c01-check-production-blob.mjs','scripts/c01-production-forge.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
     'node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js']) {
     result[name] = sha(await fs.readFile(path.join(ROOT, name)));
   }
   return result;
 }
-function groupExists(pid) {
-  try { process.kill(-pid, 0); return true; } catch (error) { if (error.code === 'ESRCH') return false; if (error.code === 'EPERM') return true; throw error; }
-}
+const ownedTrees=new Map();
+function treeFor(pid){if(!ownedTrees.has(pid))ownedTrees.set(pid,new OwnedBuildTree(pid));return ownedTrees.get(pid);}
+async function groupExists(pid){return (await treeFor(pid).sample()).members.length>0;}
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-async function cleanGroup(pid) {
-  for (const signal of ['SIGTERM', 'SIGKILL']) {
-    if (!groupExists(pid)) return;
-    try { process.kill(-pid, signal); } catch (error) {
-      // A macOS exiting/corpse process can briefly deny signalling. It still
-      // counts as present until an actual ESRCH probe; never claim cleanup on EPERM.
-      if (!['ESRCH','EPERM'].includes(error.code)) throw error;
-    }
-    const until = Date.now() + 3000;
-    while (Date.now() < until && groupExists(pid)) await pause(50);
-  }
-  assert(!groupExists(pid), 'Owned proof process group remains alive');
-}
+async function cleanGroup(pid){await treeFor(pid).cleanup();}
 async function worker(directory) {
   let stage='startup', anvil, identity;
   let diagnostics='';
@@ -55,6 +45,14 @@ async function worker(directory) {
     const version=await execFileAsync(anvilPath,['--version'],{timeout:10000});
     assert(version.stdout.includes(pins.foundry));
     assert((await execFileAsync(process.env.FORGE_BIN,['--version'],{timeout:10000})).stdout.includes(pins.foundry));
+    if(process.env.C01_USE_AVM==='true'){
+      mark('check-full-avm-runtime');
+      const executable=path.join(directory,'bb-one-thread');
+      const help=await execFileAsync(executable,['--help'],{timeout:10000,maxBuffer:65536});
+      assert(help.stdout.includes('Aztec Virtual Machine (AVM): enabled'),'Runtime lacks genuine AVM capability');
+      const version=await execFileAsync(executable,['--version'],{timeout:10000,maxBuffer:4096});
+      output.avmRuntime={enabled:true,version:version.stdout.trim(),scope:'native executable capability only; no proof acceptance'};
+    }
     const {Wallet}=await import('ethers');
     identity=Wallet.createRandom();
     const net=await import('node:net');
@@ -152,7 +150,7 @@ async function parent() {
   // Short private path keeps native Unix socket names below macOS sockaddr_un limits.
   const directory = await fs.mkdtemp('/private/tmp/c01-real-network-');
   const report = { schemaVersion: 1, profile: settle ? 'genuine epoch settlement and Ready activation attempt' : readyFlow ? 'genuine Ready proof and ordinary inclusion' : boardInclude ? 'genuine board proof and ordinary inclusion' : boardProof ? 'genuine board client proof' : startNode ? 'real verifier deployment and node startup' : 'direct real-verifier local protocol deployment only',
-    startedAt: new Date().toISOString(), deadlineMs: DEADLINE_MS, passed: false, testsApplicationOrEpoch: boardProof, rssLimitKiB:RSS_LIMIT_KIB, rssSampleIntervalMs:1000, rssMethod:'sampled owned process-group RSS; not OS allocation limit', rssSamples:[], peakGroupRSSKiB:0 };
+    startedAt: new Date().toISOString(), deadlineMs: DEADLINE_MS, passed: false, testsApplicationOrEpoch: boardProof, rssLimitKiB:RSS_LIMIT_KIB, rssSampleIntervalMs:1000, rssMethod:'sampled PPID descendant tree with remembered process identities/groups; not OS allocation limit', rssSamples:[], peakTreeRSSKiB:0 };
   let child, finished, timer, outerTimer, killPromise, rssTimer, rssPending;
   let childClosed=false,stopSampling=false;
   const interruptHandlers = [];
@@ -167,8 +165,12 @@ async function parent() {
       const bytes=await fs.readFile(path.join(ROOT,'apps/dist/crs',entry.name));assert.equal(bytes.length,entry.bytes);assert.equal(sha(bytes),entry.sha256);
       await fs.writeFile(path.join(crs,name),bytes,{flag:'wx',mode:0o400});report.setup.push({name,sha256:entry.sha256,bytes:entry.bytes});
     }
-    const bb=path.join(ROOT,'node_modules/@aztec/bb.js/build/arm64-macos/bb');
-    assert.equal(sha(await fs.readFile(bb)),'208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031');
+    const avm=process.env.C01_AVM_MANIFEST?await resolveC01AvmRuntime(process.env.C01_AVM_MANIFEST):undefined;
+    assert(!settle||avm,'Genuine epoch run requires a qualified full AVM build manifest');
+    const bb=avm?.binaryPath??path.join(ROOT,'node_modules/@aztec/bb.js/build/arm64-macos/bb');
+    const binarySha=sha(await fs.readFile(bb));
+    assert.equal(binarySha,avm?.provenance.binarySha256??'208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031');
+    report.avmRuntime=avm?.provenance??null;report.binarySha256=binarySha;
     assert(!bb.includes("'"));
     await fs.writeFile(path.join(directory,'bb-one-thread'),"#!/bin/sh\nHARDWARE_CONCURRENCY=1 exec '"+bb+"' \"$@\"\n",{flag:'wx',mode:0o700});
     await fs.mkdir(path.join(directory,'acvm'),{mode:0o700});
@@ -190,7 +192,7 @@ async function parent() {
     const started = performance.now();
     child = spawn('/usr/bin/sandbox-exec', ['-f', profile, '/usr/bin/time', '-l', '-o', resources,
       process.execPath, SELF, '--worker', directory], { cwd: ROOT, detached: true,
-      env: {HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'warn',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',NODE_BACKEND:'js',FORGE_BIN:path.join(ROOT,'scripts/c01-production-forge.mjs'),C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,C01_START_NODE:String(startNode),C01_BOARD_PROOF:String(boardProof),C01_BOARD_INCLUDE:String(boardInclude),C01_READY:String(readyFlow),C01_SETTLE:String(settle),FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
+      env: {HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'warn',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',NODE_BACKEND:'js',FORGE_BIN:path.join(ROOT,'scripts/c01-production-forge.mjs'),C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,C01_START_NODE:String(startNode),C01_BOARD_PROOF:String(boardProof),C01_BOARD_INCLUDE:String(boardInclude),C01_READY:String(readyFlow),C01_SETTLE:String(settle),C01_USE_AVM:String(!!avm),FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
       stdio: ['ignore', 'pipe', 'pipe'] });
     report.pid = child.pid; report.stages = [];
     let stderrBuffer='';
@@ -207,22 +209,13 @@ async function parent() {
     async function sampleRSS() {
       if (stopSampling) return;
       try {
-        const { stdout } = await execFileAsync('/bin/ps', ['-axo', 'pid=,pgid=,rss='],
-          { encoding: 'utf8', timeout: 2000, maxBuffer: 4 * 1024 * 1024 });
-        const members = [];
-        for (const line of stdout.trim().split('\n')) {
-          const fields = line.trim().split(/\s+/);
-          assert(fields.length === 3 && fields.every(value => /^\d+$/.test(value)), 'Unexpected resource sample format');
-          const [pid, group, rssKiB] = fields.map(Number);
-          if (group === child.pid) members.push({ pid, rssKiB });
-        }
+        const {members,rssKiB}=await treeFor(child.pid).sample();
         if (!members.length) {
           // A normal exit may race the final sample. A live group without resource data is a failure.
-          if (groupExists(child.pid)) throw new Error('Owned live group has no RSS sample');
+          if (await groupExists(child.pid)) throw new Error('Owned live group has no RSS sample');
         } else {
-          const rssKiB = members.reduce((sum, item) => sum + item.rssKiB, 0);
           report.rssSamples.push({ elapsedMs: Math.round(performance.now() - started), rssKiB, members });
-          report.peakGroupRSSKiB = Math.max(report.peakGroupRSSKiB, rssKiB);
+          report.peakTreeRSSKiB = Math.max(report.peakTreeRSSKiB, rssKiB);
           if (rssKiB >= RSS_LIMIT_KIB) stop('rss-limit');
         }
       } catch (error) {
@@ -272,7 +265,7 @@ async function parent() {
     if(settle){try{report.settlementProgress=JSON.parse(await fs.readFile(path.join(directory,'settlement-progress.json'),'utf8'));}catch{}}
     if (killPromise) await killPromise;
     if (child.pid) await cleanGroup(child.pid);
-    report.processGroupAbsent = !child.pid || !groupExists(child.pid);
+    report.processGroupAbsent = !child.pid || !await groupExists(child.pid);report.descendantTreeAbsent=report.processGroupAbsent;
     report.derivedSetup=[];
     for(const entry of report.setup){
       const bytes=await fs.readFile(path.join(crs,entry.name));
@@ -283,17 +276,27 @@ async function parent() {
       }else assert.equal(sha(bytes),entry.sha256);
     }
     if(settle)assert.equal(sha(await fs.readFile(path.join(crs,report.epochSetup.compressed.name))),report.epochSetup.compressed.sha256);
+    assert.equal(sha(await fs.readFile(bb)),binarySha,'Prover binary changed during run');
+    if(avm){const after=await resolveC01AvmRuntime(process.env.C01_AVM_MANIFEST);assert.deepEqual(after.provenance,avm.provenance);}
     assert.deepEqual(await fingerprints(), report.sourceHashes);
     report.passed = report.exit.code === 0 && !report.stopReason && report.worker?.passed === true && report.processGroupAbsent && report.rssSamples.length>0 && !report.rssSamplingError;
   } catch (error) { report.failure = { errorClass: error?.name ?? 'UnknownError', code: error?.code ?? null, location: error?.stack?.split('\n').filter(line=>line.trimStart().startsWith('at ')).slice(0, 3).join('\n') ?? null }; }
   finally {
     clearTimeout(timer);clearTimeout(outerTimer);stopSampling=true;clearTimeout(rssTimer);if(rssPending)await rssPending;
     for (const [signal, handler] of interruptHandlers) process.removeListener(signal, handler);
-    try { if (child?.pid) await cleanGroup(child.pid); report.processGroupAbsent = !child?.pid || !groupExists(child.pid); }
-    catch (error) { report.passed = false; report.cleanupErrorClass = error.name; }
-    try { await fs.rm(directory, { recursive: true, force: true }); report.temporaryDirectoryRemoved = true; }
-    catch (error) { report.passed = false; report.temporaryDirectoryRemoved = false; report.directoryCleanupErrorClass = error.name; }
-    if(settle){await fs.rm(path.join(ROOT,'.build/C01-epoch-crs'),{recursive:true,force:true});report.temporaryEpochSetupRemoved=true;}
+    try { if (child?.pid) await cleanGroup(child.pid); report.processGroupAbsent = !child?.pid || !await groupExists(child.pid);report.descendantTreeAbsent=report.processGroupAbsent; }
+    catch (error) { report.passed = false; report.descendantTreeAbsent=false;report.processGroupAbsent=false;report.cleanupErrorClass = error.name; }
+    if(report.descendantTreeAbsent===true&&!report.cleanupErrorClass){
+      try { await fs.rm(directory, { recursive: true, force: true }); report.temporaryDirectoryRemoved = true; }
+      catch (error) { report.passed = false; report.temporaryDirectoryRemoved = false; report.directoryCleanupErrorClass = error.name; }
+      if(settle){
+        try{await fs.rm(path.join(ROOT,'.build/C01-epoch-crs'),{recursive:true,force:true});report.temporaryEpochSetupRemoved=true;}
+        catch(error){report.passed=false;report.temporaryEpochSetupRemoved=false;report.epochSetupCleanupErrorClass=error.name;}
+      }
+    }else{
+      report.passed=false;report.temporaryDirectoryRemoved=false;report.retainedTemporaryDirectory=directory;
+      if(settle){report.temporaryEpochSetupRemoved=false;report.retainedEpochSetup=path.join(ROOT,'.build/C01-epoch-crs');}
+    }
     report.finishedAt = new Date().toISOString();
     await fs.writeFile(evidence, JSON.stringify(report, null, 2) + '\n');
     console.log(JSON.stringify({ evidence, passed: report.passed, profile: report.profile }));

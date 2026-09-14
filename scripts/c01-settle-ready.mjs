@@ -74,6 +74,16 @@ export async function settleC01Ready({node,config,dateProvider,ready,readyInclus
       group.lastCheckpoint=Number(cp.number);
     }
     const prover=node.getProverNode();assert(prover);
+    async function checkpointHealth(){
+      observation.checkpoints=[];
+      for(const item of observation.epochs){
+        for(const checkpoint of await prover.getCheckpointStore().listForEpoch(EpochNumber(item.epoch))){
+          observation.checkpoints.push({epoch:item.epoch,number:Number(checkpoint.checkpoint.number),failed:checkpoint.isFailed(),cancelled:checkpoint.isCancelled()});
+        }
+      }
+      await progress();
+      assert(!observation.checkpoints.some(item=>item.failed),'GENUINE_CHECKPOINT_SUBTREE_FAILED');
+    }
     await progress('start-prover');await prover.start();observation.proverStarted=true;
     for(const group of observation.epochs){
       await progress('await-canonical-checkpoints');
@@ -85,7 +95,7 @@ export async function settleC01Ready({node,config,dateProvider,ready,readyInclus
       group.scheduling=existing?'existing-automatic-session':'startProof';
       await progress('await-proof-publication');
       while(Number(await rollup.getProvenCheckpointNumber())<group.lastCheckpoint){
-        observation.jobs=await prover.getJobs();await progress();
+        observation.jobs=await prover.getJobs();await checkpointHealth();await progress();
         const job=observation.jobs.find(job=>job.uuid===group.jobId);
         assert(!job||!failed.has(job.status),'GENUINE_EPOCH_JOB_FAILED');
         await tick();

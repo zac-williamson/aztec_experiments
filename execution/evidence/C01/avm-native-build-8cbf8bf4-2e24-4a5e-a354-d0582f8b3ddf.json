@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "8cbf8bf4-2e24-4a5e-a354-d0582f8b3ddf",
+  "passed": false,
+  "scope": "native AVM build only; no proof qualification",
+  "sourceRoot": "/Users/zac/nargo/github.com/AztecProtocol/aztec-packages/v5.2.0/barretenberg/cpp",
+  "commit": "49a592109ec4f18d79212b43d621891aaf36f7b6",
+  "archiveSha256": "8963060f6f30ffff69825c4aeaa861d6b4e3b2c60faa522f5fc59e8075fe1c0b",
+  "startedAt": "2026-09-14T17:47:36.628Z",
+  "deadlineMs": 900000,
+  "rssLimitKiB": 8388608,
+  "buildJobs": 1,
+  "sampling": "macOS ps summed RSS of owned detached process group, approximately every second; fail closed on sampling error",
+  "stages": [],
+  "peakGroupRssKiB": 0,
+  "sourceUnchanged": false,
+  "cleanup": {
+    "processGroupsAbsent": true,
+    "temporaryTreeRemoved": true
+  },
+  "failure": {
+    "stage": "preflight",
+    "errorClass": "AssertionError",
+    "code": "ERR_ASSERTION",
+    "message": "Source symlinks are forbidden"
+  },
+  "deadlineReached": false,
+  "interrupted": false,
+  "dependencies": [],
+  "elapsedMs": 29
+}

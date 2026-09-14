@@ -1,0 +1,26 @@
+# Explicit local AVM build continuation
+
+The original `avm-native-build-9dcc10ad-f850-4cc1-81b6-26a14f8078e5.json` remains a failed deadline-limited build. Its SHA-256 is `0aec1262f8fe157a095b3eeb5ab59e7b69564cbcb64d77942084864655adeacd`. It reports descendant cleanup and temporary-tree removal. It is not a successful binary qualification.
+
+Root captured the build tree, refreshed it while the observed owned Ninja/compiler groups were stopped, and removed unlogged compiled outputs. The exact resulting snapshot manifest is `execution/evidence/C01/avm-incremental-snapshot.json`, SHA-256 `d452091c2a9719810a2cf2df0976ede912e43124dd2011261f9b9e8c06d1b546`. Its 8,083 entries bind regular-file contents and symlink targets. The capture method is a recorded local operational observation, not an independent reproducible build or a proof of arbitrary cache provenance.
+
+The only added builder option is `--resume-qualified-snapshot`. It accepts that one pinned snapshot and original failed run, requires `/private/tmp/c01-avm-build-ZLmqE7` absent, restores there with `fs.cp` using `preserveTimestamps` and `verbatimSymlinks`, and checks the complete restored inventory before build operations. It independently checks all authenticated upstream source files and symlinks. Original compiler/build tool hashes, wrappers, SDK path and compiler default-config metadata must agree. The original CMake configuration is rerun at its unchanged absolute paths, then Ninja continues the same target. Actual incremental reuse remains to be observed; no success follows merely from restoring timestamps.
+
+The continuation receives its own UUID, evidence file, 25-minute deadline, two compiler jobs and the unchanged 8 GiB sampled descendant RSS limit. Existing process-tree handling is unchanged. Any successful output records the snapshot and failed-run hashes, verified inventories and preserved original failure. Final checks rehash the historical evidence; cleanup and source invariants remain mandatory. The runtime loader pins the revised builder and validates the exact resumed-provenance object and both evidence files before accepting its binary hash and compile settings. It does not rename the native version placeholder or claim proof qualification.
+
+Frozen source SHA-256:
+
+- `scripts/build-c01-avm.mjs`: `75e336b2138a33dc6a3ceee081dbd6dcf8510de67a6a070c2b79df8eafd85154`
+- `scripts/c01-avm-runtime.mjs`: `8635d3a15a9d103d22be5a711fbb2a6573b5e375c97a63afb0c5ba15acac6828`
+
+Both files passed `node --check` using the project-pinned Node 24.21.0. Root separately reports the actual detached-process supervisor regressions 2/2 and graph tests 29/29. No build, binary execution, proof, download, or fabricated successful manifest was performed in this implementation lane. Root owns the subsequent bounded run and outcome.
+
+## First restore failure and narrow correction
+
+Root's first continuation `d14c` failed before compilation with `ERR_FS_CP_EEXIST`: `fs.cp` rejected the already-created root while `errorOnExist` was enabled. The owned temporary directory was cleaned. The correction retains exclusive root creation and copies each snapshot entry to an absent child path, preserving the same timestamp, symlink and no-overwrite options. Both syntax checks passed again; no heavy run was performed in this lane.
+
+Superseding source hashes: builder `a11df64e502d57193db35cfb00df45dbd9e3a6a652d2c589cd181aa407c8e46f`; loader `313d51286d4e3d4a8dd553c7fb25d965b01a4672107f7acf684e89cc5c3836ee`. The earlier hashes above describe the failed restore attempt and are retained as history.
+
+Root then stopped continuation `8937b12c` after observing that Node `fs.cp` rounds nanosecond mtimes and invalidates otherwise valid Ninja dependency stamps. Cleanup succeeded. Root independently checked native `cp` preserves the actual nanoseconds and the saved Ninja dependency timestamp is valid. The restore now invokes `/bin/cp -cRp cache/. directory/` with an argument array, clean PATH/LC_ALL, a 30-second timeout and 64 KiB output bound. Exclusive destination creation and both full byte/link inventories remain. No compiler or proof was launched by this lane. Final syntax-checked builder SHA: `faa2928e9de60906c00d0e21e2e68782be273992498bff315cab863fa4e28ae2`; corresponding loader SHA: `7f2f4423ebfaba5781e65395541f515cdc804fcd0a35e007a232ff61d1b37a3d`.
+
+The next attempt exposed a separate reconfiguration issue: pinned `cmake/tracy.cmake` unconditionally executes a git fetch/reset at configure time, touching unchanged headers. FetchContent disconnected options cannot control that direct command. On root's instruction, resumed builds now reuse the exact snapshot's successful configuration instead of explicitly rerunning it. `configurationReuse` binds the snapshot CMakeCache/build.ninja hashes and original successful configure-stage hash; the loader requires those values and seven actual current stages, with no fabricated configure pass. Ordinary Ninja-triggered reconfiguration remains possible for actual changes. The cold build still configures normally. Superseding syntax-checked builder SHA `3a5afbcf52579873209ead4ffe14e9efa15076e0553b0171892dda405a580195`; loader SHA `fb88ea7ce846ef127e55ee2c84ab5b15ac06051aee9fcc7f58086ae847202076`.
