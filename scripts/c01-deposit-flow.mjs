@@ -12,7 +12,8 @@ import {EthAddress} from '@aztec/foundation/eth-address';
 import {poseidon2HashWithSeparator} from '@aztec/foundation/crypto/poseidon';
 import {sha256ToField} from '@aztec/foundation/crypto/sha256';
 import {loadContractArtifact} from '@aztec/stdlib/abi';
-import {computeSecretHash} from '@aztec/stdlib/hash';
+import {computeSecretHash,siloNullifier} from '@aztec/stdlib/hash';
+import {NoteStatus} from '@aztec/stdlib/note';
 import {L1Actor,L2Actor,L1ToL2Message} from '@aztec/stdlib/messaging';
 import {TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
 import {EmbeddedWallet} from '@aztec/wallets/embedded';
@@ -44,17 +45,17 @@ async function artifacts(preparation,ready){
  * and includes private note/identity/secret material for a later no-post withdrawal.
  * Owns one ephemeral PXE wallet; caller owns sequencer/node/prover shutdown.
  */
-export async function depositAndClaimC01({node,preparation,instance,l1Client,ready,settlement,directory,rpcUrl,dateProvider}){
+export async function depositAndClaimC01({node,preparation,instance,l1Client,ready,settlement,directory,rpcUrl,dateProvider,mineL1,reportStage}){
   let stage='preflight',wallet,sequencer,previousSequencerConfig;
   const observation={passed:false,scope:'local real deposit and genuine private claim with ordinary checkpoint inclusion',
     syntheticMessages:false,syntheticProofs:false,claimEpochProofAccepted:false};
-  const mark=name=>{stage=name;process.stdout.write(`C01_DEPOSIT_STAGE ${name}\n`);};
-  const mine=async()=>{
+  const mark=name=>{stage=name;reportStage?.('claim:'+name);process.stdout.write(`C01_DEPOSIT_STAGE ${name}\n`);};
+  const mine=mineL1??(async()=>{
     await l1Client.request({method:'evm_mine',params:[]});
     const block=await l1Client.getBlock();
     if(Number(block.timestamp)>dateProvider.nowInSeconds())dateProvider.setTime(Number(block.timestamp)*1000);
     await pause(1000);
-  };
+  });
   try{
     assertNodeVersion();assertAztecPackages();assert(settlement.passed&&settlement.activation?.depositsEnabled);
     assert(ready.passed&&ready.readyEmitted);assert(path.isAbsolute(directory));
@@ -150,10 +151,14 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer(),'Claim changed selected anchor');
     await canonicalDeposit();assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),canonicalAnchor.hash.toString());
     assert.equal((await node.isValidTx(tx)).result,'valid');
+    Object.assign(observation,{claimTxHash:tx.getTxHash().toString(),proofSha256:sha(proven.chonkProof.toBuffer()),nodeValidation:'valid',inclusionSnapshots:[]});
     mark('include-real-claim');await node.sendTx(tx);
     let claimReceipt;const inclusionDeadline=Date.now()+120000;
     while(Date.now()<inclusionDeadline){
-      claimReceipt=await node.getTxReceipt(tx.getTxHash());if(included(claimReceipt))break;
+      claimReceipt=await node.getTxReceipt(tx.getTxHash());
+      const l1=await l1Client.getBlock();
+      observation.inclusionSnapshots.push({status:claimReceipt.status,executionResult:claimReceipt.executionResult??null,blockNumber:claimReceipt.blockNumber??null,l1Block:String(l1.number),l1Timestamp:String(l1.timestamp),nodeTime:dateProvider.nowInSeconds()});
+      if(included(claimReceipt))break;
       assert.notEqual(claimReceipt.status,TxStatus.DROPPED);await mine();
     }
     assert(included(claimReceipt),'Claim checkpoint inclusion timed out or failed');
@@ -171,6 +176,62 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     assert.equal(notes[0].note.items.length,8);
     assert.deepEqual(notes[0].note.items.map(integer),[1n+(receipt.nonce<<32n),chain.toBigInt(),amount,BigInt(depositor),0n,0n,0n,nextAllowed]);
     assert(notes[0].owner.equals(account.address)&&notes[0].contractAddress.equals(instance.address));
+    mark('reject-real-claim-replay');
+    const replayAnchor=await wallet.pxe.getSyncedBlockHeader();
+    assert(Number(replayAnchor.getBlockNumber())>=Number(claimReceipt.blockNumber));
+    const replayBlock=await node.getBlock(replayAnchor.getBlockNumber());assert(replayBlock);
+    assert.equal(replayBlock.hash.toString(),(await replayAnchor.hash()).toString());
+    const innerNullifier=await poseidon2HashWithSeparator([message.hash(),secret],DomainSeparator.MESSAGE_NULLIFIER);
+    const messageNullifier=await siloNullifier(instance.address,innerNullifier);
+    const effect=await node.getTxEffect(tx.getTxHash());assert(effect?.data);
+    assert.equal(Number(effect.l2BlockNumber),Number(claimReceipt.blockNumber));
+    assert.equal(effect.l2BlockHash.toString(),claimReceipt.blockHash.toString());
+    assert.equal(effect.data.nullifiers.filter(item=>item.equals(messageNullifier)).length,1);
+    const spent=await node.getNullifierMembershipWitness(replayAnchor.getBlockNumber(),messageNullifier);
+    assert(spent,'Claim message nullifier not present at replay anchor');
+    assert.equal(spent.leafPreimage.getKey(),messageNullifier.toBigInt());
+    const stillInInbox=await node.getL1ToL2MessageMembershipWitness(replayAnchor.getBlockNumber(),message.hash());
+    assert(stillInInbox,'Consumed message must still exist in Inbox');assert.equal(stillInInbox[0],receipt.index);
+    const activeFilter={contractAddress:instance.address,owner:account.address,status:NoteStatus.ACTIVE,
+      storageSlot:checked.board.storageLayout.deposits.slot,scopes:[account.address]};
+    const activeBefore=(await wallet.pxe.debug.getNotes(activeFilter)).filter(note=>note.note.items[1]?.equals(chain));
+    assert.equal(activeBefore.length,1);assert(activeBefore[0].txHash.equals(tx.getTxHash()));
+    const replayPayload=await board.methods.claim_deposit(EthAddress.fromString(depositor),amount,receipt.nonce,secret,new Fr(receipt.index)).request();
+    const replayFee=await wallet.completeFeeOptions({from:account.address,feePayer:replayPayload.feePayer});
+    // BaseWallet injects a fresh random account txNonce; this is not resending the original tx.
+    const replayRequest=await wallet.createTxExecutionRequestFromPayloadAndFee(replayPayload,account.address,replayFee);
+    assert.notDeepEqual(replayRequest.toBuffer(),request.toBuffer(),'Replay reused the original account request');
+    let replayRejected=false;
+    try{
+      await wallet.pxe.proveTx(replayRequest,{scopes:wallet.scopesFrom(account.address,[],undefined),
+        senderForTags:wallet.senderForTagsFrom(account.address,undefined)});
+    }catch(error){
+      // Inspect only in memory. Never retain SDK error/witness contents in observations.
+      const expected=`No non-nullified L1 to L2 message found for message hash ${message.hash().toString()}`;
+      let cause=error;const seen=new Set();
+      for(let i=0;cause&&i<8&&!seen.has(cause);i++){
+        seen.add(cause);
+        if(typeof cause.message==='string'&&cause.message.includes(expected)){replayRejected=true;break;}
+        cause=cause.cause;
+      }
+    }
+    assert(replayRejected,'Replay did not fail specifically for the consumed claim message');
+    assert.deepEqual((await wallet.pxe.getSyncedBlockHeader()).toBuffer(),replayAnchor.toBuffer());
+    assert.equal((await node.getBlock(replayAnchor.getBlockNumber())).hash.toString(),replayBlock.hash.toString());
+    await wallet.pxe.sync();
+    const afterReplay=(await board.methods.get_deposit_info(account.address,chain).simulate({from:account.address})).result;
+    assert.deepEqual(afterReplay.map(integer),fields);
+    const activeAfter=(await wallet.pxe.debug.getNotes(activeFilter)).filter(note=>note.note.items[1]?.equals(chain));
+    assert.equal(activeAfter.length,1);assert(activeAfter[0].txHash.equals(tx.getTxHash()));
+    assert(activeAfter[0].siloedNullifier.equals(activeBefore[0].siloedNullifier));
+    assert.deepEqual(activeAfter[0].note.items.map(integer),activeBefore[0].note.items.map(integer));
+    const refreshedClaim=await node.getTxReceipt(tx.getTxHash());assert(included(refreshedClaim));
+    assert.equal(refreshedClaim.blockHash.toString(),claimReceipt.blockHash.toString());
+    assert.equal((await node.getBlock(refreshedClaim.blockNumber)).hash.toString(),refreshedClaim.blockHash.toString());
+    await canonicalDeposit();
+    observation.replay={rejected:true,reason:'consumed-claim-message',freshAccountRequest:true,
+      originalMessageNullifierChecked:true,originalInboxLeafPresent:true,originalNoteUnchanged:true,
+      noSecondNote:true,stage:'PXE witness generation; no second proof accepted or transaction sent'};
     assert.deepEqual((await artifacts(preparation,ready)).hashes,checked.hashes);
     Object.assign(observation,{passed:true,claimTxHash:tx.getTxHash().toString(),claimBlock:String(claimReceipt.blockNumber),
       claimStatus:claimReceipt.status,executionResult:claimReceipt.executionResult,fee:String(claimReceipt.transactionFee),

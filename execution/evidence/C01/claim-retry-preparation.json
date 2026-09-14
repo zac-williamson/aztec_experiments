@@ -1,0 +1,41 @@
+{
+  "recordedAt": "2026-09-14T20:20:30.383310+00:00",
+  "scope": "Integrated local harness repair and acceptance controls; genuine bridge retry pending",
+  "sourceHashes": {
+    "scripts/c01-client-mining.mjs": "d19213ffa3ea5bef301344e2d84c59d45852fe7aa508b4ba6232cd6d48b664ca",
+    "scripts/test-c01-client-mining.mjs": "07127138eec124496ee6de340a2541b06335238409c816a7be655d8b983cc261",
+    "scripts/c01-bridge-flow.mjs": "1e6e426784cf357dc22e9b358a545f8dde7f32b7b2ff19e076d4fdf78fdf16c5",
+    "scripts/c01-deposit-flow.mjs": "3aa97b38c080d35193f2fd27944915356cc58e3cb2d02290cc4473df6cac6230",
+    "scripts/c01-exit-flow.mjs": "f182749daaa7712fd4572d7e0eff90a884c255e78e005b4bb54261e0b1348595",
+    "scripts/test-c01-real-network.mjs": "d90739e7c5b251c970693cc4559e55954390ca29f36ef3aa0ff54ca163f7141e",
+    "billboard/billboard_test/src/c01.nr": "7da6795e594a42907af38e415c9763f7805b521aa7b7936945a137d67db6e608",
+    "apps/src/billboard/billboard_artifact.json": "da32fe8a2fd91a2e908416d47165796128425a65044074e9ea03d0008208ee0c",
+    ".build/contracts-manifest.json": "e38acd02d4ae33fe13c2ba060f5618e84023525cc6f8900e42ead1962e602243"
+  },
+  "checks": {
+    "contractBuild": {
+      "passed": true,
+      "log": "build-negative-controls-final.log"
+    },
+    "noir": {
+      "passed": true,
+      "count": 103,
+      "log": "noir-full-negative-controls.log"
+    },
+    "clientArtifact": {
+      "passed": true,
+      "count": 53,
+      "log": "client-artifact-negative-controls.log"
+    },
+    "miningLifecycle": {
+      "passed": true,
+      "count": 1,
+      "log": "client-mining-runtime.log"
+    }
+  },
+  "limitations": [
+    "Full genuine bridge and claim replay not yet passed",
+    "Source-reviewed mining-gap hypothesis; exact prior EVM publication failure unknown",
+    "Historical warning and failed build logs preserved; no checks suppressed"
+  ]
+}

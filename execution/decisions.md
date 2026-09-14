@@ -186,3 +186,22 @@ exit settlement. Client proofs run while the sole server agent is idle and stopp
 through its actual lifecycle; resume polling for genuine exit proofs. No proof,
 message-consumption or finality constraints are overridden. Reuse authenticated
 epoch setup only after full-byte and all129-chunk verification.
+
+## C01 claim inclusion retry: ordinary continuous L1 mining
+
+The full bridge attempt c40e5544 passed real Ready activation, L1 deposit, private
+claim proving and normal node validation, then timed out on checkpoint inclusion.
+Logs record previous-L1-block timeout, failed slot107 publication and parent prune.
+Exact EVM failure was not retained, so this is not an established application flaw.
+The test paused its manual mining during wallet/proof work while the SDK clock
+continued advancing. Use one ordinary loopback L1 mining loop through client work,
+including inclusion; helpers await that loop instead of mining twice. Stop and
+await it before server settlement. Do not change slot expiry, proof constraints,
+finality or resource bounds. Runtime tests verify mining during work and cessation
+on normal/error exits, including RPC failure. The full retry must establish
+whether this resolves inclusion; safe timing/receipt diagnostics are retained.
+
+The reviewed replay control checks the actually consumed message nullifier and
+rejects a fresh account request specifically for that consumed message. Two TXE
+controls change the depositor and an in-range amount independently. These are
+additional acceptance tests; their mere implementation does not close C01.

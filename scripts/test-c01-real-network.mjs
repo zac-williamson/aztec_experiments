@@ -17,7 +17,7 @@ const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function fingerprints() {
   const result = {};
   for (const name of ['scripts/test-c01-real-network.mjs','scripts/build-c01-avm.mjs','scripts/c01-avm-runtime.mjs','scripts/c01-proof-progress.mjs','scripts/c01-real-deployment.mjs',
-    'scripts/c01-settle-ready.mjs','scripts/c01-settle-message.mjs','scripts/c01-bridge-flow.mjs','scripts/c01-deposit-flow.mjs','scripts/c01-exit-flow.mjs','scripts/c01-withdraw-l1.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/c01-acvm-wasm-cli.mjs','scripts/c01-check-production-blob.mjs','scripts/c01-production-forge.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
+    'scripts/c01-settle-ready.mjs','scripts/c01-settle-message.mjs','scripts/c01-bridge-flow.mjs','scripts/c01-client-mining.mjs','scripts/c01-deposit-flow.mjs','scripts/c01-exit-flow.mjs','scripts/c01-withdraw-l1.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/c01-acvm-wasm-cli.mjs','scripts/c01-check-production-blob.mjs','scripts/c01-production-forge.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
     'node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js']) {
     result[name] = sha(await fs.readFile(path.join(ROOT, name)));
   }
@@ -234,7 +234,7 @@ async function parent() {
       output += bytes.toString();
       for (;;) { const end = output.indexOf('\n'); if (end < 0) break;
         const line = output.slice(0, end); output = output.slice(end + 1);
-        try { const item = JSON.parse(line); if (typeof item.stage === 'string') report.stages.push(item); }
+        try { const item = JSON.parse(line); if (typeof item.stage === 'string') {report.stages.push(item);console.log(JSON.stringify(item));} }
         catch { stop('unexpected-worker-output'); }
       }
     });
@@ -255,7 +255,7 @@ async function parent() {
     if(settle){
       // Preserve error categories, never arbitrary serialized prover inputs/witnesses.
       report.sanitizedStderr=stderrBuffer.split('\n').flatMap(line=>{
-        try{const item=JSON.parse(line);return [JSON.stringify({level:item.level,module:item.module,message:String(item.msg??'').split('\n')[0].replace(/[A-Za-z0-9+/=_-]{32,}/g,'[long value]').slice(0,500)})];}catch{return [];}
+        try{const item=JSON.parse(line);return [JSON.stringify({level:item.level,module:item.module,timing:Object.fromEntries(['targetSlot','startOfTargetSlotTs','nowInSeconds','previousL1BlockTs','waitDeadlineTs','latestBlockTs','blockNumber','status','transactionHash','slotNumber','number'].filter(key=>typeof item[key]==='number'||(typeof item[key]==='string'&&/^(?:[0-9]+|0x[0-9a-f]{64}|success|reverted)$/.test(item[key]))).map(key=>[key,item[key]])),message:String(item.msg??'').split('\n')[0].replace(/[A-Za-z0-9+/=_-]{32,}/g,'[long value]').slice(0,500)})];}catch{return [];}
       }).join('\n');
     }
     clearTimeout(timer); report.elapsedMs = Math.round(performance.now() - started);

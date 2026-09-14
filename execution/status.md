@@ -30,10 +30,12 @@ The full native AVM prover is built and qualified. Earlier lightweight-prover an
 time-budget failures remain recorded; they are superseded by the successful run,
 not relabelled as successes. Local commit37ff4e3 preserves native qualification.
 
-Root is integrating the prepared deposit, private claim, no-post exit and L1 refund
-helpers. The next fresh full-journey run permits60minutes overall and8GiB memory,
-with client and server proofs serialized. The reused review agent checks the
-orchestration independently. Those remaining journey steps are not yet verified.
+The first full journey repeated genuine Ready activation and accepted a real L1
+deposit. Its private claim proof passed normal node validation, but checkpoint
+inclusion timed out after a local publisher failure. No refund pass is claimed.
+The run took21.4minutes, peaked at6.5GiB, and cleaned all owned processes/data.
+Root and the reused review agent are investigating publisher/mining timing;
+reviewed replay and content-mismatch controls are being added before retry.
 Authenticated bridge acceptance remains open; no user decision is needed.
 
 ## Release work still required
@@ -45,3 +47,7 @@ Production publishing, paid services and real-fund transactions are not authoriz
 
 Execution remains one active package, one bounded delegated lane, and serial
 heavy runs. The graph validates35 packages and141 criteria; six packages are done.
+
+Latest retry preparation:103/103 Noir checks and53/53 client/artifact checks pass.
+Continuous-mining lifecycle checks pass on actual disposable Anvil. The next
+full journey includes actual consumed-claim replay rejection.

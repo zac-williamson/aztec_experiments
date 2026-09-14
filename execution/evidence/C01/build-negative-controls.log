@@ -1,0 +1,29 @@
+[31mThe application panicked (crashed).[0m
+Message:  [36mFailed to lock git dependencies cache: Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }[0m
+Location: [35mtooling/nargo_toml/src/lib.rs[0m:[35m437[0m
+
+This is a bug. We may have already fixed this in newer versions of Nargo so try searching for similar issues at https://github.com/noir-lang/noir/issues/.
+If there isn't an open issue for this bug, consider opening one at https://github.com/noir-lang/noir/issues/new?labels=bug&template=bug_report.yml
+node:internal/errors:986
+  const err = new Error(message);
+              ^
+
+Error: Command failed: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/toolchain/nargo compile --force --silence-warnings
+    at genericNodeError (node:internal/errors:986:15)
+    at wrappedFn (node:internal/errors:540:14)
+    at checkExecSyncError (node:child_process:942:11)
+    at execFileSync (node:child_process:978:15)
+    at buildContracts (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/build-contracts.mjs:37:3)
+    at file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/build-contracts.mjs:69:81
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  status: 101,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 81975,
+  stdout: null,
+  stderr: null
+}
+
+Node.js v24.21.0

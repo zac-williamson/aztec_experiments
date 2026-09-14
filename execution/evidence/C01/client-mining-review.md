@@ -1,0 +1,28 @@
+# Serialized client-phase L1 mining review
+
+Read-only source review; no test, proof, browser or network execution. Reviewed SHA-256 values:
+
+- `scripts/c01-client-mining.mjs`: `e168de4f8abc0798d9985df222ec5967969bffdc5016caa7fbdce92b817ac9ed`
+- `scripts/c01-bridge-flow.mjs`: `93354e9b2fa7083414d51f0e355721c7001f480bf6797a0bbaa7b1a717571204`
+- `scripts/c01-deposit-flow.mjs`: `3324a63ac99bef55a3b6b41a1cc8b0daf482c4f5cfaa661c19d5e2888107e72f`
+- `scripts/c01-exit-flow.mjs`: `034d3aae2153179571c95ce2f081dca7dd751a3bf2ac7ad8e912c81524f942c1`
+
+One API correction reported to root: `getBlock({cacheTime:0})` is unsupported by installed viem `actions/public/getBlock.ts`. Unlike `getBlockNumber`, getBlock does not accept or inspect `cacheTime`; JavaScript silently ignores it. Use `getBlock({blockTag:'latest'})` or no arguments. The installed latest-tag branch already sends `eth_getBlockByNumber` with `dedupe:false` and has no getBlock cache, so removing the unsupported key preserves fresh reads rather than weakening them.
+
+The lifetime and integration address the diagnosed mining gap: the bridge starts one ordinary L1 loop before opening the claim wallet, retains it through deposit, Inbox waiting, genuine claim proof/admission/inclusion and the complete exit wallet/proof/inclusion flow. The callbacks passed as `mineL1` wait for the next successful iteration; they do not issue a second mine. The stand-alone helper fallback remains available but is unused in this integrated path. The loop sleeps after each serialized mine/read, so RPC latency lengthens cadence rather than causing overlapping requests or catch-up bursts.
+
+Clock semantics agree with installed TestDateProvider (`foundation/src/timer/date.ts`): time advances with real wall time plus its offset. The loop records positive clock lead over observed L1 and moves the provider forward only to an actual mined timestamp. It does not invent slot timestamps, warp the L1 clock, freeze only one component, or change publisher/parent-checkpoint constraints. Observed cadence and clock lead must still be qualified by the next genuine run.
+
+Cleanup review: stop sets `active=false`, interrupts the current sleep, then awaits the loop. An in-flight mine/read may finish once, but no new iteration starts, and the bridge does not resume server proving/settlement until that awaited stop completes. Both RPC calls have the dedicated transport's 5-second timeout and no retries. Initial-tick failure prevents work; later mining failure rejects the next tick or is checked after work/finally, preventing passing evidence. A failure during an already-running long proof does not cancel that proof immediately; the parent still owns the whole-run deadline/native cleanup. `state.stopped=true` reflects actual loop return, not merely a requested stop. The old wake callback becoming stale after a completed sleep is harmless because it only resolves an already-settled promise/clears its own timer.
+
+No additional launch blocker found in this bounded review. Source includes the earlier exact stopped-agent status guard, and parent fingerprints include the new mining module. No passing runtime outcome or proof assurance is implied by source review.
+
+## Final integration disposition
+
+The unsupported viem option was corrected to explicit `blockTag:'latest'`. Final reviewed hashes: mining `d19213ffa3ea5bef301344e2d84c59d45852fe7aa508b4ba6232cd6d48b664ca`; bridge `1e6e426784cf357dc22e9b358a545f8dde7f32b7b2ff19e076d4fdf78fdf16c5`; deposit `3aa97b38c080d35193f2fd27944915356cc58e3cb2d02290cc4473df6cac6230`; exit `f182749daaa7712fd4572d7e0eff90a884c255e78e005b4bb54261e0b1348595`; parent `d90739e7c5b251c970693cc4559e55954390ca29f36ef3aa0ff54ca163f7141e`; C01 Noir tests `7da6795e594a42907af38e415c9763f7805b521aa7b7936945a137d67db6e608`.
+
+Read the maintained `test-c01-client-mining.mjs` and root-produced `client-mining-runtime.log`: one test passed, zero failures/skips. It uses actual disposable zero-account Anvil, verifies at least two blocks arrive during work that never calls tick, verifies no additional mining after normal or thrown-work return, and terminates Anvil mid-work to require a mining failure plus stopped loop. Cleanup asserts child exit. The test substitutes a simple date-provider object, so it qualifies loop/cleanup behavior, not full production sequencer timing or actual TestDateProvider integration. This reviewer did not rerun it.
+
+Applied replay/content negatives match the prepared patch: exact consumed-message nullifier and canonical effect, original Inbox membership, a fresh account request, precise rejection category, and unchanged sole active note/L1 receipt. This reviewer authored that patch, so this disposition is integration review rather than independent assurance of its design. Full genuine replay execution remains pending. The two direct Noir negatives change only a nonzero depositor or an otherwise valid amount, leaving the actual consumption path active.
+
+Diagnostic additions preserve validation order: claim/exit proof hash and tx hash are recorded only after genuine proof and normal node admission; per-poll snapshots contain only receipt status/result/block number, L1 block/time and node time. Stage callbacks carry fixed helper stage labels through the parent's existing JSON emitter. The parent log projection retains only named numeric or tightly formatted public receipt/timing fields, with existing message redaction and bounded capture. It does not expose witnesses, requests, private identity or secret values. No additional source-review blocker found; current full Noir/build/genuine bridge results must be recorded separately by root.

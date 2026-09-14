@@ -126,6 +126,21 @@ unconstrained fn c01_claim_rejects_changed_receipt_nonce() {
     let leaf=env.send_l1_to_l2_message(content,SECRET,EthAddress::from_field(PORTAL),board);
     env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,2,SECRET,leaf));
 }
+#[test(should_fail_with="No L1 to L2 message found")]
+unconstrained fn c01_claim_rejects_changed_nonzero_depositor() {
+    let (mut env,board,owner)=bound_setup();
+    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),1,MINIMUM);
+    let leaf=env.send_l1_to_l2_message(content,SECRET,EthAddress::from_field(PORTAL),board);
+    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR+1),MINIMUM,1,SECRET,leaf));
+}
+#[test(should_fail_with="No L1 to L2 message found")]
+unconstrained fn c01_claim_rejects_changed_in_range_amount() {
+    let (mut env,board,owner)=bound_setup();
+    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),1,MINIMUM);
+    let leaf=env.send_l1_to_l2_message(content,SECRET,EthAddress::from_field(PORTAL),board);
+    assert(MINIMUM+1 <= MAXIMUM);
+    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM+1,1,SECRET,leaf));
+}
 #[test(should_fail_with="Deposit above maximum")]
 unconstrained fn c01_claim_rejects_amount_above_configuration() {
     let (mut env,board,owner)=bound_setup();

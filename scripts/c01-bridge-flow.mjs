@@ -4,6 +4,7 @@ import {depositAndClaimC01} from './c01-deposit-flow.mjs';
 import {proveAndIncludeC01Exit} from './c01-exit-flow.mjs';
 import {settleC01Message} from './c01-settle-message.mjs';
 import {withdrawC01L1} from './c01-withdraw-l1.mjs';
+import {withC01ClientMining} from './c01-client-mining.mjs';
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 export async function completeC01Bridge({node,config,dateProvider,l1Client,directory,rollupAddress,
@@ -24,11 +25,13 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
     assert(settlement.passed&&settlement.activation?.depositsEnabled);
     // Supported lifecycle pauses polling without changing circuits or proof results.
     mark('pause-server-agent-for-client-proofs');await stopIdleAgent();
-    const common={node,preparation,instance,l1Client,directory,rpcUrl:config.l1RpcUrls[0],dateProvider};
-    mark('real-deposit-and-claim');
-    observation.claim=await depositAndClaimC01({...common,ready,settlement});assert(observation.claim.passed);
-    mark('real-no-post-exit');
-    observation.exit=await proveAndIncludeC01Exit({...common,claimResult:observation.claim});assert(observation.exit.passed);
+    await withC01ClientMining({rpcUrl:config.l1RpcUrls[0],dateProvider,observation},async mineL1=>{
+      const common={node,preparation,instance,l1Client,directory,rpcUrl:config.l1RpcUrls[0],dateProvider,mineL1,reportStage:mark};
+      mark('real-deposit-and-claim');
+      observation.claim=await depositAndClaimC01({...common,ready,settlement});assert(observation.claim.passed);
+      mark('real-no-post-exit');
+      observation.exit=await proveAndIncludeC01Exit({...common,claimResult:observation.claim});assert(observation.exit.passed);
+    });
     mark('resume-server-agent-for-exit-settlement');agent.start();assert(agent.isRunning());paused=false;
     observation.exitSettlement=await settleC01Message({node,config,dateProvider,l1Client,directory,rollupAddress,
       txHash:observation.exit.txHash,expectedLeaf:observation.exit.expectedExitLeaf,kind:'exit',

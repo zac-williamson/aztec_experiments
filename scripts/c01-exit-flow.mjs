@@ -33,16 +33,16 @@ async function artifact(preparation){
 /** Same disposable in-memory identity as the preceding claim. Only enumerable fields may be logged.
  * The parent owns the native proof deadline/resource supervisor and node/prover shutdown.
  */
-export async function proveAndIncludeC01Exit({node,preparation,instance,claimResult,l1Client,directory,rpcUrl,dateProvider}){
+export async function proveAndIncludeC01Exit({node,preparation,instance,claimResult,l1Client,directory,rpcUrl,dateProvider,mineL1,reportStage}){
   let wallet,sequencer,previousConfig,stage='preflight';
   const observation={passed:false,scope:'genuine no-post L2 withdrawal and ordinary checkpoint inclusion',
     syntheticProofs:false,syntheticSettlement:false,exitEpochProofAccepted:false,l1Withdrawn:false};
-  const mark=name=>{stage=name;process.stdout.write(`C01_EXIT_STAGE ${name}\n`);};
-  const mine=async()=>{
+  const mark=name=>{stage=name;reportStage?.('exit:'+name);process.stdout.write(`C01_EXIT_STAGE ${name}\n`);};
+  const mine=mineL1??(async()=>{
     await l1Client.request({method:'evm_mine',params:[]});const block=await l1Client.getBlock();
     if(Number(block.timestamp)>dateProvider.nowInSeconds())dateProvider.setTime(Number(block.timestamp)*1000);
     await sleep(1000);
-  };
+  });
   try{
     assertNodeVersion();assertAztecPackages();assert(claimResult.passed&&claimResult.exactDeliveredNoteChecked);
     const claim=claimResult.claim;assert(claim&&claim.instance.address.equals(instance.address));
@@ -111,10 +111,14 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
     assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer());
     assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),anchorBlock.hash.toString());
     assert.equal((await node.isValidTx(tx)).result,'valid');
+    Object.assign(observation,{txHash:tx.getTxHash().toString(),proofSha256:sha(proven.chonkProof.toBuffer()),nodeValidation:'valid',inclusionSnapshots:[]});
     mark('include-real-withdrawal');await node.sendTx(tx);
     let receipt;const inclusionDeadline=Date.now()+120000;
     while(Date.now()<inclusionDeadline){
-      receipt=await node.getTxReceipt(tx.getTxHash());if(included(receipt))break;
+      receipt=await node.getTxReceipt(tx.getTxHash());
+      const l1=await l1Client.getBlock();
+      observation.inclusionSnapshots.push({status:receipt.status,executionResult:receipt.executionResult??null,blockNumber:receipt.blockNumber??null,l1Block:String(l1.number),l1Timestamp:String(l1.timestamp),nodeTime:dateProvider.nowInSeconds()});
+      if(included(receipt))break;
       assert.notEqual(receipt.status,TxStatus.DROPPED);await mine();
     }
     assert(included(receipt),'Exit checkpoint inclusion failed or timed out');
