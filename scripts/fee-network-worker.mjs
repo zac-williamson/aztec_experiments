@@ -44,6 +44,8 @@ const key = process.env.W01_TEST_L1_KEY;
 assert.match(key, /^0x[0-9a-f]{64}$/);
 const directory = process.env.W01_TEST_DIRECTORY;
 assert(directory && path.isAbsolute(directory));
+const mode = process.env.W01_TEST_MODE ?? 'startup';
+assert(['startup', 'compose'].includes(mode));
 let node;
 let stage = 'configuration';
 const result = { startedAt: new Date().toISOString(), profile: 'disposable-fee-mechanism', realVerifier: false, realProofs: false, syntheticEpochSettlement: false };
@@ -63,8 +65,17 @@ try {
     aztecEpochDuration: 4, aztecProofSubmissionEpochs: 2,
     skipOrphanProposedBlockPruning: true,
   };
+  let preparation;
+  let compositionModule;
+  if (mode === 'compose') {
+    stage = 'prepare-composition';
+    compositionModule = await import('./fee-composition.mjs');
+    preparation = await compositionModule.prepareFeeComposition();
+    preparation.exerciseAllCoupons = process.env.W01_TEST_ALL_COUPONS === 'true';
+    result.fixtureArtifactHashes = preparation.artifactHashes;
+  }
   stage = 'genesis';
-  const { genesisArchiveRoot, genesis, fundingNeeded } = await getGenesisValues([]);
+  const { genesisArchiveRoot, genesis, fundingNeeded } = await getGenesisValues(preparation?.fundingAddresses ?? []);
   stage = 'deploy-local-l1';
   await deployContractsToL1(config, key, { genesisArchiveRoot, feeJuicePortalInitialBalance: fundingNeeded });
   stage = 'start-node';
@@ -79,7 +90,13 @@ try {
   assert.equal(connectivity.enabled, false);
   assert.equal(connectivity.connectedPeers, 0);
   Object.assign(result, { outcome: 'pass', l1ChainId: Number(info.l1ChainId), rollupVersion: Number(info.rollupVersion), extraPublicSetupFunctions: 0, p2pEnabled: false, blockNumber: String(await node.getBlockNumber()), aztecHttpServerStarted: false });
+  if (mode === 'compose') {
+    stage = 'sponsor-composition';
+    result.composition = await compositionModule.runFeeComposition(node, preparation);
+    assert.equal(result.composition.outcome, 'pass');
+  }
 } catch (error) {
+  if (error.compositionObservations) result.composition = error.compositionObservations;
   Object.assign(result, { outcome: 'fail', stage, error: String(error.message).replaceAll(key, '[disposable key]') });
   process.exitCode = 1;
 } finally {

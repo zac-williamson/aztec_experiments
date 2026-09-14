@@ -266,3 +266,9 @@ disposable local network/client observation harness, graph and integration. Heav
 work is serialized; remaining agents stay idle until independent review is needed.
 The fixture must establish API/constraint feasibility before production ABI or
 issuer service implementation. No existing wallets or real funds are used.
+
+The fixture and verified local lifecycle harness are committed as30c8099.
+Build_review now owns scripts/fee-composition.mjs: fresh accounts, deployment,
+root sponsor payment and explicit balance/replay observations. Root owns parent
+supervision and worker integration, runs the composed check and reviews evidence.
+Only this one delegated lane is active; heavy checks remain serial.

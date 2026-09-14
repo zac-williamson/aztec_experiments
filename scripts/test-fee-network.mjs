@@ -11,6 +11,10 @@ import { ROOT, assertNodeVersion, assertAztecPackages, pins } from './toolchain.
 import { runWithService } from './process-lifecycle.mjs';
 
 assertNodeVersion(); assertAztecPackages();
+const compose = process.argv.includes('--compose');
+const allCoupons = process.argv.includes('--all-coupons');
+assert(process.argv.slice(2).every(arg => ['--compose', '--all-coupons'].includes(arg)), 'Unknown test option');
+assert(!allCoupons || compose, '--all-coupons requires --compose');
 const anvil = process.env.ANVIL || path.join(os.homedir(), '.foundry/bin/anvil');
 assert(execFileSync(anvil, ['--version'], { encoding: 'utf8', timeout: 10000 }).includes(pins.foundry));
 const forge = path.join(path.dirname(anvil), 'forge');
@@ -26,17 +30,18 @@ const rpc = `http://127.0.0.1:${port}`;
 // npm dependencies were installed with lifecycle scripts disabled. Select the
 // published bcrypto JavaScript backend explicitly for this local-only fixture.
 const env = { PATH: `${path.dirname(process.execPath)}:/usr/bin:/bin`, HOME: directory, TMPDIR: directory, LANG: 'C.UTF-8', NODE_ENV: 'test', LOG_LEVEL: 'silent', NODE_BACKEND: 'js', FORGE_BIN: forge };
-const report = { schema: 1, startedAt: new Date().toISOString(), node: process.versions.node, aztec: pins.aztec, bcryptoBackend: 'js', profile: 'disposable local startup only', l1Host: '127.0.0.1', inheritedNetworkOrWalletConfiguration: false, inputs: {}, children: {} };
+const report = { schema: 1, startedAt: new Date().toISOString(), node: process.versions.node, aztec: pins.aztec, bcryptoBackend: 'js', profile: compose ? 'disposable sponsor composition' : 'disposable local startup only', l1Host: '127.0.0.1', inheritedNetworkOrWalletConfiguration: false, inputs: {}, children: {} };
 for (const name of ['scripts/test-fee-network.mjs', 'scripts/fee-network-worker.mjs', 'scripts/process-lifecycle.mjs', 'package-lock.json', 'toolchain.json', 'node_modules/@aztec/aztec/dest/local-network/local-network.js', 'node_modules/@aztec/aztec-node/dest/factory.js', 'node_modules/@aztec/p2p/dest/msg_validators/tx_validator/allowed_public_setup.js']) {
   report.inputs[name] = createHash('sha256').update(fs.readFileSync(path.join(ROOT, name))).digest('hex');
 }
+if (compose) report.inputs['scripts/fee-composition.mjs'] = createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'scripts/fee-composition.mjs'))).digest('hex');
 let output = '';
 const redact = value => String(value).replaceAll(identity.privateKey, '[disposable key]').replaceAll(identity.privateKey.slice(2), '[disposable key]').replaceAll(identity.mnemonic.phrase, '[disposable mnemonic]');
 try {
   await runWithService({
     service: { command: anvil, args: ['--host', '127.0.0.1', '--port', String(port), '--chain-id', '31337', '--mnemonic', identity.mnemonic.phrase, '--silent'], options: { cwd: directory, env, stdio: 'ignore' } },
-    tests: { command: process.execPath, args: [path.join(ROOT, 'scripts/fee-network-worker.mjs')], options: { cwd: directory, env: { ...env, W01_TEST_L1_RPC: rpc, W01_TEST_L1_KEY: identity.privateKey, W01_TEST_DIRECTORY: directory }, stdio: ['ignore', 'pipe', 'pipe'] } },
-    readyTimeoutMs: 15000, testTimeoutMs: 60000, terminationGraceMs: 5000,
+    tests: { command: process.execPath, args: [path.join(ROOT, 'scripts/fee-network-worker.mjs')], options: { cwd: directory, env: { ...env, W01_TEST_L1_RPC: rpc, W01_TEST_L1_KEY: identity.privateKey, W01_TEST_DIRECTORY: directory, W01_TEST_MODE: compose ? 'compose' : 'startup', W01_TEST_ALL_COUPONS: String(allCoupons) }, stdio: ['ignore', 'pipe', 'pipe'] } },
+    readyTimeoutMs: 15000, testTimeoutMs: compose ? 300000 : 60000, terminationGraceMs: 5000,
     probe: async () => {
       try {
         const response = await fetch(rpc, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_accounts', params: [] }), signal: AbortSignal.timeout(750) });
@@ -57,6 +62,11 @@ try {
   assert.equal(report.observation.nodeStopped, true);
   assert.equal(report.observation.provingSingletonsStopped, true);
   assert.deepEqual(report.observation.remainingRunningLoops, []);
+  if (compose) assert.equal(report.observation.composition?.outcome, 'pass');
+  if (allCoupons) {
+    assert.equal(report.observation.composition.sponsored.length, 2);
+    assert.equal(report.observation.composition.replay?.rejected, true);
+  }
   report.outcome = 'pass';
 } catch (error) {
   report.outcome = 'fail'; report.error = redact(error.message);
@@ -72,8 +82,8 @@ try {
   }
   report.temporaryDirectoryRemoved = !fs.existsSync(directory);
   report.finishedAt = new Date().toISOString();
-  report.limitations = ['Mock L1 verifier and disabled private proof generation; no genuine proof acceptance.', 'No sponsorship, fee debit, funding privacy or production readiness is demonstrated by startup.'];
-  const destination = path.join(ROOT, 'execution/evidence/W01', `network-startup-${randomUUID()}.json`);
+  report.limitations = ['Mock L1 verifier and disabled private proof generation; no genuine proof acceptance.', compose ? 'Synthetic genesis funding; no production funding privacy, issuer or release qualification.' : 'No sponsorship, fee debit, funding privacy or production readiness is demonstrated by startup.'];
+  const destination = path.join(ROOT, 'execution/evidence/W01', `network-${compose ? 'composition' : 'startup'}-${randomUUID()}.json`);
   fs.mkdirSync(path.dirname(destination), { recursive: true });
   fs.writeFileSync(destination, JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify({ outcome: report.outcome, evidence: path.relative(ROOT, destination), error: report.error }));

@@ -716,7 +716,7 @@
       "evidence": "evidence/W01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Restricted sponsor fixture compiled and reviewed:26 pure checks plus focused actual-authwit controls. TXE cannot elect setup fee payer; full sponsorship unverified. Local default-setup startup and graceful cleanup pass after retaining publisher event unsubscribe. Next: fresh-account PXE composition, sponsor debit and ticket replay; then production route/issuer integration.",
+      "checkpoint": "Local root sponsor composition passes: two unfunded authors, two successful effects, nonzero receipt-matched sponsor debits, fresh-action replay rejected on exact derived coupon nullifier. Fixture/lifecycle committed30c8099; composition evidence abbbd8bb. Next: paid public-revert coupon consumption and inclusion expiry, then production ABI/issuer/funding/outage integration. Mock proofs/proposed inclusion do not qualify release.",
       "priority": 5
     },
     {
