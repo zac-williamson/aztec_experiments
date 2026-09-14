@@ -112,7 +112,7 @@ export async function proveC01BoardDeployment(node, preparation, { rollupAddress
     Object.assign(observation, { passed: true, artifactHashes: preparation.artifactHashes, clientProverBackend: options.backend,
       threads: 1, nodeValidation: validation.result, txHash: tx.getTxHash().toString(), boardAddress: instance.address.toString(),
       proofBytes: proofBytes.length, proofSha256: sha(proofBytes), feePayerBalance: balance.toString(),
-      nextRequired: 'Submit this exact in-memory tx, observe inclusion, then genuine covering epoch acceptance before Ready activation.' });
+      nextRequired: 'Submit this exact in-memory tx, observe inclusion, then use official test settlement before local Ready activation.' });
     result = observation;
     // Parent can continue with exact objects, but JSON evidence cannot accidentally serialize them.
     Object.defineProperties(result, { tx: { value: tx, enumerable: false }, instance: { value: instance, enumerable: false } });

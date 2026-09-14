@@ -16,10 +16,7 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
     txPublicSetupAllowListExtend:[],sequencerPublisherPrivateKeys:[new SecretValue(privateKey)],
     validatorPrivateKeys:new SecretValue([privateKey]),coinbase:EthAddress.fromString(address),
     allowEphemeralSigningProtection:true,realProofs:true,useAutomineSequencer:false,automineEnableProveEpoch:false,
-    enableProverNode:true,proverAgentCount:1,proverNodeMaxPendingJobs:1,proverNodeMaxParallelBlocksPerEpoch:1,
-    proverBrokerMaxEpochsToKeepResultsFor:64,
-    proverNodeDisableProofPublish:false,proverPublisherPrivateKeys:[new SecretValue(privateKey)],
-    acvmBinaryPath:path.join(ROOT,'scripts/c01-acvm-wasm-cli.mjs'),acvmWorkingDirectory:process.env.C01_ACVM_ROOT,
+    enableProverNode:false,proverAgentCount:0,
     bbBinaryPath:path.join(directory,'bb-one-thread'),bbWorkingDirectory:path.join(directory,'bb-work'),
     bbChonkVerifyMaxBatch:1,bbChonkVerifyConcurrency:1,bbIVCConcurrency:1,numConcurrentIVCVerifiers:1,
   };
@@ -34,19 +31,17 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
   }
   const dateProvider=new TestDateProvider({warn(){}});
 
-  const observation={passed:false,scope:'real node and prover startup only; no transactions'};
+  const observation={passed:false,scope:'application node with transaction verification; no network prover'};
   try{
     node=await createAztecNodeService(nodeConfig,{telemetry:await initTelemetryClient({}),blobClient:createBlobClient(),dateProvider},{genesis,dontStartSequencer:true,dontStartProverNode:include});
     assert.equal((await node.getConfig()).realProofs,true);
     const actual=node.config; // installed admin API omits static startup settings; inspect constructed service config.
-    for(const key of ['realProofs','enableProverNode'])assert.equal(actual[key],true);
-    for(const key of ['useAutomineSequencer','automineEnableProveEpoch','proverNodeDisableProofPublish'])assert.equal(actual[key],false);
-    assert(node.getProverNode(),'Actual prover subsystem absent');
-    assert.equal(node.getProverNode().getProver().getProvingJobSource().maxEpochsToKeepResultsFor,64);
-    observation.brokerRetentionEpochs=64;
+    assert.equal(actual.realProofs,true);assert.equal(actual.enableProverNode,false);
+    for(const key of ['useAutomineSequencer','automineEnableProveEpoch'])assert.equal(actual[key],false);
+    assert(!node.getProverNode(),'Application tests must not create a network prover');
     assert(node.getSequencer(),'Ordinary sequencer absent');assert(!node.getAutomineSequencer());
     const info=await node.getNodeInfo();assert.equal(Number(info.l1ChainId),31337);
-    observation.realProofs=true;observation.proverSubsystemCreated=true;
+    observation.realProofs=true;observation.proverSubsystemCreated=false;
     observation.ordinarySequencerConstructed=true;observation.sequencerStarted=false;
     observation.rollupVersion=Number(info.rollupVersion);
     if(preparation){
@@ -68,13 +63,13 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
           assert(effect.data.l2ToL1Msgs.some(message=>message.toString()===observation.ready.expectedReadyLeaf),'Expected Ready message not emitted');
           observation.ready.readyEmitted=true;observation.ready.bindingSubmitted=true;
           observation.ready.scope='genuine binding proof, normal node validation, successful checkpoint inclusion and exact emitted Ready leaf';
-          observation.ready.nextRequired='Genuine covering epoch proof and finalized Outbox activation';
+          observation.ready.nextRequired='Controlled Outbox settlement and application portal activation';
           if(process.env.C01_SETTLE==='true'){
-            mark('settle-ready-proof');
+            mark('settle-ready-test-message');
             const {settleC01Ready}=await import('./c01-settle-ready.mjs');
             observation.settlement=await settleC01Ready({node,config:nodeConfig,dateProvider,ready:observation.ready,readyInclusion:observation.readyInclusion,l1Client:deployment.l1Client,directory,rollupAddress:deployment.l1ContractAddresses.rollupAddress});
             assert(observation.settlement.passed);
-            observation.ready.portalActivated=true;observation.ready.epochProofAccepted=true;
+            observation.ready.portalActivated=true;observation.ready.epochProofAccepted=false;observation.ready.controlledSettlement=true;
             if(process.env.C01_BRIDGE==='true'){
               const {completeC01Bridge}=await import('./c01-bridge-flow.mjs');
               observation.bridge=await completeC01Bridge({node,config:nodeConfig,dateProvider,l1Client:deployment.l1Client,
@@ -84,7 +79,7 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
             }
           }
         }
-        observation.sequencerStarted=true;observation.scope=observation.bridge?.passed?'genuine finalized activation, deposit, private claim, no-post exit and L1 refund':observation.settlement?.passed?'genuine epoch settlement, finalized Ready membership and enabled portal':'genuine client proof and ordinary checkpoint inclusion; no epoch proof acceptance';observation.epochSchedulingStarted=process.env.C01_SETTLE==='true';observation.idleProverAgentCreated=true;}
+        observation.sequencerStarted=true;observation.scope=observation.bridge?.passed?'application proofs, controlled settlement, deposit/claim/exit/refund':observation.settlement?.passed?'controlled Ready settlement and enabled portal':'genuine client proof and ordinary checkpoint inclusion; no epoch proof acceptance';observation.epochSchedulingStarted=false;observation.idleProverAgentCreated=false;}
 
     }
     observation.passed=true;

@@ -303,7 +303,7 @@
       "title": "Authenticate deposits and domain-separate bridge messages",
       "phase": "engineering",
       "kind": "internal",
-      "status": "active",
+      "status": "done",
       "depends_on": [
         "P04"
       ],
@@ -332,7 +332,7 @@
         "Correct the P04 logical-note storage assumption against the actual eight-field V5 note limit. Preserve all eleven logical values using canonical typed subfield packing; qualify actual creation, constrained delivery, selection and nullification, not packing alone.",
         "Use the specified ceiling cooldown and checked initial eligibility for newly claimed rights; C05 retains full penalty, burst, boundary and finite-exit qualification.",
         "Update only the affected ABI consumers and generated artifacts together, including deploy/claim/receipt/exit arguments. Record the exact configuration ABI and storage choice before implementation; broader wallet recovery and UI remain downstream.",
-        "Build the minimum real authenticated Ready/deposit/claim/no-post-exit harness needed for C01 acceptance; distinguish actual Inbox/Outbox verification from rollup proof acceptance, and keep unobserved real-proof criteria incomplete."
+        "Test Ready/deposit/claim/no-post-exit/refund with genuine application transaction proofs and official accelerated local epoch/Outbox settlement controls. Verify application message authentication, canonical inclusion, note lifecycle, portal consumption and balances. Do not generate protocol epoch proofs or require a local network prover."
       ],
       "acceptance": [
         {
@@ -359,7 +359,7 @@
       "evidence": "evidence/C01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Run879494b1 accepted covering exit proof at checkpoint11 but timed out waiting finality before refund; cleanup confirmed. Prepare fresh45min exit/75min overall retry; unchanged application/proof/resource checks. Preserve failure and verify actual refund before closure.",
+      "checkpoint": "Application bridge passed264255ms, peak1643648KiB: genuine transaction proofs, official controlled Outbox settlement, actual refund/accounting/replay and cleanup.107 Noir/29 Solidity/53 client tests passed. User-directed application testing boundary replaces network proving; C02 ready with unapplied reviewed drafts.",
       "priority": 6
     },
     {

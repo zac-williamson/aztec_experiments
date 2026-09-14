@@ -1,11 +1,10 @@
-// TEST ONLY: genuine finalized Outbox consumption and local escrow accounting. No epoch scheduling.
+// TEST ONLY: real application Outbox consumption/accounting after official controlled settlement.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {parseEventLogs,ContractFunctionRevertedError} from 'viem';
 import {RollupContract} from '@aztec/ethereum/contracts/rollup';
-import {RollupAbi} from '@aztec/l1-artifacts/RollupAbi';
 import {Fr} from '@aztec/foundation/curves/bn254';
 import {EthAddress} from '@aztec/foundation/eth-address';
 import {sha256ToField} from '@aztec/foundation/crypto/sha256';
@@ -21,13 +20,14 @@ const included=receipt=>[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZE
 
 export async function withdrawC01L1({node,preparation,ready,exitResult,settlement,l1Client,rpcUrl}){
   let stage='preflight';
-  const observation={passed:false,scope:'local finalized genuine Outbox exit and L1 escrow withdrawal',syntheticSettlement:false};
+  const observation={passed:false,scope:'application Outbox consumption and L1 escrow withdrawal with controlled settlement',syntheticSettlement:true};
   const mark=name=>{stage=name;process.stdout.write(`C01_L1_WITHDRAW_STAGE ${name}\n`);};
   try{
     assertNodeVersion();assertAztecPackages();
     assert(exitResult.passed&&exitResult.exitEmitted&&exitResult.exactNoteNullifierEmitted&&exitResult.activeNoteAbsent);
-    assert(settlement.passed&&settlement.finalized&&Array.isArray(settlement.proofReceipts));
-    assert(settlement.proofReceipts.length>0&&settlement.proofReceipts.length<=128);
+    assert(settlement.passed&&settlement.testControlled===true);
+    assert.deepEqual(settlement.proofReceipts,[]);
+    assert(!node.getProverNode());
     const exit=exitResult.exit;assert(exit?.tx&&exit.claim);const claim=exit.claim;
     const url=new URL(rpcUrl);assert.equal(url.protocol,'http:');assert.equal(url.hostname,'127.0.0.1');
     assert(!url.username&&!url.password);assert.equal(await l1Client.getChainId(),31337);
@@ -66,32 +66,14 @@ export async function withdrawC01L1({node,preparation,ready,exitResult,settlemen
       assert.equal(block.hash.toString(),receipt.blockHash.toString());
       const target=Number(block.checkpointNumber);assert(Number.isSafeInteger(target)&&target>0);
       assert(Number(settlement.targetCheckpoint)>=target,'Settlement observation does not cover exit');
-      const tips=await node.getChainTips();assert(Number(tips.finalized.block.number)>=Number(receipt.blockNumber));
-      const finalized=await l1Client.getBlock({blockTag:'finalized'});assert(finalized.number!=null&&finalized.hash);
-      assert(Number(await rollup.getProvenCheckpointNumber({blockNumber:finalized.number}))>=target);
-      let covering;
-      for(const record of settlement.proofReceipts){
-        if(BigInt(record.checkpointNumber)<BigInt(target))continue;
-        const proof=await l1Client.getTransactionReceipt({hash:record.txHash});assert.equal(proof.status,'success');
-        assert.equal(String(proof.blockNumber),record.blockNumber);assert.equal(proof.blockHash,record.blockHash);
-        assert.equal((await l1Client.getBlock({blockNumber:proof.blockNumber})).hash,proof.blockHash);
-        assert(proof.blockNumber<=finalized.number,'Covering proof receipt is not finalized');
-        const events=parseEventLogs({abi:RollupAbi,eventName:'L2ProofVerified',strict:true,
-          logs:proof.logs.filter(log=>log.address.toLowerCase()===rollupAddress)});
-        assert(events.some(event=>BigInt(event.args.checkpointNumber)===BigInt(record.checkpointNumber)
-          &&BigInt(event.args.checkpointNumber)>=BigInt(target)),'Actual covering L2ProofVerified event missing');
-        covering={txHash:proof.transactionHash,blockNumber:String(proof.blockNumber),blockHash:proof.blockHash,
-          checkpointNumber:record.checkpointNumber};break;
-      }
-      assert(covering,'No canonical finalized covering proof receipt');
+      assert(Number(await rollup.getProvenCheckpointNumber())>=target,'Test settlement does not cover exit');
       const effect=await node.getTxEffect(exit.tx.getTxHash());assert(effect?.data);
       assert.equal(Number(effect.l2BlockNumber),Number(receipt.blockNumber));assert.equal(effect.l2BlockHash.toString(),receipt.blockHash.toString());
       assert.equal(effect.data.l2ToL1Msgs.filter(message=>message.equals(leaf)).length,1);
-      return {targetCheckpoint:target,exitBlock:String(receipt.blockNumber),exitBlockHash:receipt.blockHash.toString(),covering,
-        finalized:{l1Block:String(finalized.number),l1Hash:finalized.hash,l2Block:Number(tips.finalized.block.number),
-          scope:'actual Anvil finalized tag; not Ethereum economic finality'}};
+      return {targetCheckpoint:target,exitBlock:String(receipt.blockNumber),exitBlockHash:receipt.blockHash.toString(),
+        testControlled:true,networkProofs:false};
     }
-    mark('verify-covering-proof-and-finality');Object.assign(observation,await finality());
+    mark('verify-application-exit-and-test-settlement');Object.assign(observation,await finality());
     mark('resolve-genuine-exit-membership');
     const witness=await node.getL2ToL1MembershipWitness(exit.tx.getTxHash(),leaf);assert(witness,'Actual Outbox membership unavailable');
     const args=[BigInt(witness.epochNumber),BigInt(witness.numCheckpointsInEpoch),witness.leafIndex,

@@ -142,7 +142,7 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
       anchorBlock:Number(anchor.getBlockNumber()),eligibilityChecked:true,proofSha256:sha(proven.chonkProof.toBuffer()),
       expectedExitContent:content.toString(),expectedExitLeaf:leaf.toString(),exitEmitted:true,
       exactNoteNullifierEmitted:true,activeNoteAbsent:true,logicalNoteAbsent:true,
-      nextRequired:'Genuine covering epoch proof, finalized Outbox witness, and actual L1 portal withdrawal/accounting.'});
+      nextRequired:'Official test Outbox settlement and actual L1 portal withdrawal/accounting.'});
     Object.defineProperty(observation,'exit',{enumerable:false,value:{tx,claim,instance,receipt,content,leaf}});
     return observation;
   }catch(error){

@@ -1,0 +1,235 @@
+--- a/billboard/billboard_test/src/lib.nr
++++ b/billboard/billboard_test/src/lib.nr
+@@ -1,5 +1,6 @@
+ mod c01;
+ mod compact_note;
++mod c02;
+ 
+ // ============================================================
+ // Billboard — Noir unit tests (run with `aztec test`)
+--- /dev/null
++++ b/billboard/billboard_test/src/c02.nr
+@@ -0,0 +1,223 @@
++// C02 draft: actual TXE note-tree inclusion, never a mocked membership boolean.
++use aztec::history::note::assert_note_existed_by;
++use aztec::note::{HintedNote, lifecycle::create_note, note_getter_options::NoteStatus};
++use aztec::protocol::address::AztecAddress;
++use aztec::test::helpers::test_environment::{TestEnvironment, PrivateContextOptions};
++use billboard_contract::Billboard;
++use billboard_contract::Billboard::PostNote;
++use crate::{setup_with_deposit, test_chain};
++
++global AMOUNT: u128 = 1_000_000_000_000_000;
++
++fn content() -> [Field; 32] {
++    let mut result = [0; 32];
++    result[0] = 65;
++    result
++}
++
++unconstrained fn included(env: TestEnvironment, board: AztecAddress, hint: HintedNote<PostNote>) {
++    env.private_context_opts(PrivateContextOptions::new().at_contract_address(board), |context| {
++        let confirmed = assert_note_existed_by(context.anchor_block_header, hint);
++        assert_eq(confirmed.note, hint.note);
++        assert_eq(confirmed.owner, hint.owner);
++        assert_eq(confirmed.contract_address, hint.contract_address);
++        assert_eq(confirmed.storage_slot, hint.storage_slot);
++    });
++}
++
++// Creates real note-tree effects in a TEST context, then discovers the actual
++// settled metadata. This is artificial issuance, not a production mint path.
++// Lookup by fresh randomness avoids accidentally selecting the legitimate note
++// when the injected note has identical content and shares its owner/slot.
++unconstrained fn insert_fixture(
++    env: TestEnvironment, contract: AztecAddress, owner: AztecAddress,
++    slot: Field, note: PostNote,
++) -> HintedNote<PostNote> {
++    let message = env.private_context_opts(
++        PrivateContextOptions::new().at_contract_address(contract),
++        |context| create_note(context, owner, slot, note),
++    );
++    let randomness = message.new_note.randomness;
++    env.discover_note_at(contract, message);
++    let candidates = env.utility_context_at(contract, |_| {
++        aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
++            Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
++        )
++    });
++    let mut result = Option::none();
++    let mut matches: u32 = 0;
++    for candidate in candidates {
++        if candidate.is_some() {
++            let value = candidate.unwrap_unchecked();
++            if value.randomness == randomness {
++                matches += 1;
++                result = Option::some(value);
++            }
++        }
++    }
++    assert_eq(matches, 1, "Fixture must select exactly its inserted note");
++    let hint = result.unwrap_unchecked();
++    assert_eq(hint.note, note);
++    assert_eq(hint.owner, owner);
++    assert_eq(hint.contract_address, contract);
++    assert_eq(hint.storage_slot, slot);
++    hint
++}
++
++unconstrained fn one_post() -> (TestEnvironment, AztecAddress, AztecAddress, Field, u64, HintedNote<PostNote>) {
++    let (mut env, board, owner, _censor, deposit_time) = setup_with_deposit(AMOUNT);
++    let chain = test_chain(board, owner, AMOUNT);
++    env.mine_block_at(deposit_time + 3601);
++    env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::none(), Option::none()));
++    let (child, grandchild) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
++    assert(child.is_some());
++    assert(grandchild.is_none());
++    let hint = child.unwrap_unchecked();
++    assert_eq(hint.note.sequence, 1);
++    assert_eq(hint.note.deposit_chain_id, chain);
++    (env, board, owner, chain, deposit_time, hint)
++}
++
++// kind 0/1/2 changes only inclusion origin; 3/4/5 changes one typed field;
++// kind 6 creates identical content with new randomness, hence a different head.
++unconstrained fn substituted_child(kind: u8) {
++    let (mut env, board, owner, chain, deposit_time, original) = one_post();
++    let other_owner = env.create_light_account();
++    let contract = if kind == 0 {
++        env.deploy("@billboard_contract/Billboard").without_initializer()
++    } else { board };
++    let note_owner = if kind == 1 { other_owner } else { owner };
++    let slot = if kind == 2 { original.storage_slot + 1000 } else { original.storage_slot };
++    let mut note = original.note;
++    if kind == 3 { note.schema_version = 2; }
++    if kind == 4 { note.deposit_chain_id = chain + 1; }
++    if kind == 5 { note.sequence = 2; }
++    let replacement = insert_fixture(env, contract, note_owner, slot, note);
++    // This must succeed before the expected application authorization failure.
++    included(env, board, replacement);
++    env.mine_block_at(deposit_time + 7202);
++    env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
++}
++
++#[test]
++unconstrained fn c02_matching_included_child_advances_exactly_one() {
++    let (mut env, board, owner, chain, deposit_time, original) = one_post();
++    included(env, board, original);
++    let before = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
++    assert_eq(before[6], 1);
++    assert_eq(before[8], 0);
++    env.mine_block_at(deposit_time + 7202);
++    env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(original), Option::none()));
++    let after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
++    assert_eq(after[1], chain);
++    assert_eq(after[6], 2);
++    assert_eq(after[8], 1);
++    assert_eq(after[7], before[5]);
++}
++
++#[test(should_fail_with = "C02 wrong contract")]
++unconstrained fn c02_included_foreign_contract_rejected() { substituted_child(0); }
++#[test(should_fail_with = "C02 wrong owner")]
++unconstrained fn c02_included_wrong_owner_rejected() { substituted_child(1); }
++#[test(should_fail_with = "C02 wrong slot")]
++unconstrained fn c02_included_wrong_slot_rejected() { substituted_child(2); }
++#[test(should_fail_with = "C02 wrong schema")]
++unconstrained fn c02_included_wrong_schema_rejected() { substituted_child(3); }
++#[test(should_fail_with = "C02 wrong chain")]
++unconstrained fn c02_included_other_chain_rejected() { substituted_child(4); }
++#[test(should_fail_with = "C02 child sequence")]
++unconstrained fn c02_included_sequence_gap_rejected() { substituted_child(5); }
++#[test(should_fail_with = "C02 child head")]
++unconstrained fn c02_included_same_content_different_head_rejected() { substituted_child(6); }
++
++#[test(should_fail_with = "C02 unexpected grandchild")]
++unconstrained fn c02_head_cannot_have_duplicate_grandchild() {
++    let (mut env, board, owner, chain, deposit_time, original) = one_post();
++    included(env, board, original);
++    env.mine_block_at(deposit_time + 7202);
++    env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(original), Option::some(original)));
++}
++
++#[test(should_fail_with = "C02 unexpected hints")]
++unconstrained fn c02_no_history_rejects_included_unused_hint() {
++    let (mut env, board, owner, _censor, deposit_time) = setup_with_deposit(AMOUNT);
++    let chain = test_chain(board, owner, AMOUNT);
++    let hint = insert_fixture(env, board, owner, 1000, PostNote {
++        schema_version: 1, deposit_chain_id: chain, sequence: 1, post_id: 0,
++        anchor_timestamp: deposit_time, previous_link: 0, is_dummy: true,
++    });
++    included(env, board, hint);
++    env.mine_block_at(deposit_time + 3601);
++    env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(hint), Option::none()));
++}
++
++// A 2x deposit gives 1800s cooldown against the configured 3600s censor
++// window. Two real posts leave child1 unscreened and head2 authentic; at the
++// third eligibility boundary child1 is still young by exactly one second.
++unconstrained fn young_pair(wrong_owner: bool) {
++    let amount = AMOUNT * 2;
++    let (mut env, board, owner, _censor, deposit_time) = setup_with_deposit(amount);
++    let chain = test_chain(board, owner, amount);
++    env.mine_block_at(deposit_time + 1801);
++    env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::none(), Option::none()));
++    let (first, none) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
++    assert(first.is_some()); assert(none.is_none());
++    env.mine_block_at(deposit_time + 3600);
++    env.call_private(owner, Billboard::at(board).post(chain, content(), false, first, Option::none()));
++    let (child_opt, second_opt) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
++    assert(child_opt.is_some()); assert(second_opt.is_some());
++    let child = child_opt.unwrap_unchecked();
++    let original_second = second_opt.unwrap_unchecked();
++    assert_eq(child.note.sequence, 1); assert_eq(original_second.note.sequence, 2);
++    let before = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
++    assert_eq(before[6], 2); assert_eq(before[8], 0);
++    let second = if wrong_owner {
++        let other_owner = env.create_light_account();
++        insert_fixture(env, board, other_owner, original_second.storage_slot, original_second.note)
++    } else { original_second };
++    included(env, board, child);
++    included(env, board, second);
++    env.mine_block_at(deposit_time + 5400);
++    env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(child), Option::some(second)));
++    let after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
++    assert_eq(after[6], 3);
++    assert_eq(after[8], 0, "A young child must not advance either candidate");
++    assert_eq(after[7], before[7]);
++}
++
++#[test]
++unconstrained fn c02_valid_young_pair_remains_unscreened() { young_pair(false); }
++#[test(should_fail_with = "C02 wrong owner")]
++unconstrained fn c02_young_child_does_not_hide_wrong_owner_second_hint() { young_pair(true); }
++
++// The pre-C03 public API still permits flagging a dummy's counter slot. This
++// control proves C02 ignores that flag and uses inclusion, not the real-post
++// censor delay, while leaving the later removal of dummy public slots to C03.
++#[test]
++unconstrained fn c02_included_young_dummy_advances_without_flag_penalty() {
++    let amount = AMOUNT * 2;
++    let (mut env, board, owner, censor, deposit_time) = setup_with_deposit(amount);
++    let chain = test_chain(board, owner, amount);
++    env.mine_block_at(deposit_time + 1801);
++    env.call_private(owner, Billboard::at(board).post(chain, [0; 32], true, Option::none(), Option::none()));
++    let (child_opt, second) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
++    assert(child_opt.is_some()); assert(second.is_none());
++    let child = child_opt.unwrap_unchecked();
++    assert(child.note.is_dummy);
++    assert_eq(child.note.post_id, 0);
++    included(env, board, child);
++    env.call_public(censor, Billboard::at(board).declare_immoral(0, [0; 32]));
++    assert(env.view_public(Billboard::at(board).is_post_flagged(0)));
++    let before = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
++    assert_eq(before[6], 1); assert_eq(before[8], 0); assert_eq(before[9], 0);
++    assert_eq(before[10], (deposit_time + 3600) as Field);
++    env.mine_block_at(deposit_time + 3600);
++    assert(child.note.anchor_timestamp + 3600 > env.last_block_timestamp());
++    env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(child), Option::none()));
++    let after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
++    assert_eq(after[6], 2);
++    assert_eq(after[8], 1, "Included dummy must advance without a censor wait");
++    assert_eq(after[7], before[5]);
++    assert_eq(after[9], 2);
++    assert_eq(after[10], (deposit_time + 5400) as Field, "Dummy flag must not add a penalty");
++}

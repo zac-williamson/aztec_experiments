@@ -43,7 +43,10 @@
     "build:crs": "node scripts/build-crs.mjs",
     "test:cli-sdk": "node scripts/test-cli-sdk.mjs",
     "test:dependencies": "node --test scripts/test-dependency-*.mjs",
-    "test:c01-clients": "node --test scripts/test-c01-user.mjs scripts/test-c01-deploy-activation.mjs scripts/test-artifacts.mjs"
+    "test:c01-clients": "node --test scripts/test-c01-user.mjs scripts/test-c01-deploy-activation.mjs scripts/test-artifacts.mjs",
+    "test:application:bridge": "node scripts/test-c01-application.mjs --bridge",
+    "test:application:unit": "npm run test:c01-clients && npm run test:noir && npm run test:portal",
+    "test:portal": "cd billboard/portal && FOUNDRY_PROFILE=regression forge test --offline"
   },
   "overrides": {
     "systeminformation": "5.31.7",

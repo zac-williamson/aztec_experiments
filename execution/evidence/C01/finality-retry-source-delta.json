@@ -1,0 +1,11 @@
+{
+  "previous": "999d8e784679f3c8b42edf0570ffc90459f62c06d694b8a1011ca2b0ab826a2f",
+  "current": "c26f66e22047dff0c55490e98c1440dcdafc5686db2dc6138f96a4f2668a2e7d",
+  "changedPaths": [
+    "scripts/c01-settle-message.mjs",
+    "scripts/test-c01-real-network.mjs"
+  ],
+  "applicationAndTestSourcesUnchanged": true,
+  "scope": "Only explicit test time allowances changed; previous 103+4 Noir,29 portal,53 client results remain applicable to unchanged application and tests. Fresh genuine full journey still required.",
+  "syntaxChecks": "Both changed Node modules pass node --check"
+}

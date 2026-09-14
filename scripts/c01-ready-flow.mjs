@@ -107,7 +107,7 @@ export async function prepareAndProveC01Ready({ node, preparation, instance, dep
     assert.deepEqual((await checkedArtifacts(preparation)).artifactHashes, artifacts.artifactHashes);
     Object.assign(observation, { passed: true, txHash: tx.getTxHash().toString(), nodeValidation: validation.result,
       proofSha256: sha(proven.chonkProof.toBuffer()), expectedReadyContent: content.toString(), expectedReadyLeaf: leaf.toString(),
-      nextRequired: 'Include exact binding tx; require SUCCESS and actual Ready leaf, genuine covering epoch proof/L1 Outbox root and finalized observation before activate.' });
+      nextRequired: 'Include exact binding tx; require SUCCESS and actual Ready leaf, official test settlement of the emitted message before local portal activation.' });
     result = observation;
     Object.defineProperties(result, { tx: { value: tx, enumerable: false }, instance: { value: instance, enumerable: false } });
   } catch (error) {

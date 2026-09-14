@@ -351,3 +351,11 @@ no downstream implementation or application source edits during the active run.
 build_review completed C02 read-only preparation and C01 closure coverage review.
 No additional C01 defect was identified; genuine covering exit proof/refund and
 final cleanup/source checks remain required. Agent idle; root supervises sole run.
+
+Fresh C01 run: session15403, q4COio, source97a15c8. Root drafts C02 production
+patch under execution/evidence/C02/; build_review owns tests-draft.patch and
+notes only. Both remain unapplied until C01 closes; no parallel heavy checks.
+
+C02 draft preparation complete: root production-draft.patch; build_review first
+13 tests, second8 history tests, metadata/API review; all unapplied and unverified.
+Agent idle. Root continues sole C01 genuine run and will apply only after closure.

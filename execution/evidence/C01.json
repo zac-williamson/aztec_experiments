@@ -1,0 +1,128 @@
+{
+  "task_id": "C01",
+  "outcome": "pass",
+  "recorded_at": "2026-09-14T22:37:31.025581+00:00",
+  "source_fingerprint": "e255f2ae8ef9551196b71a6f097f3f926081a86617e98d3d42e49e9e457ac5e5",
+  "source_inventory": "evidence/C01/source-application-final.json",
+  "artifacts": [
+    {
+      "path": "evidence/C01/source-application-final.json",
+      "sha256": "2637c17b120694a5933ee0c72757e5ebcdddc1872d82dbffb41b072107d75b58"
+    },
+    {
+      "path": "evidence/C01/source-application-harness.json",
+      "sha256": "fb56fcae33415f5b64d73796f57948240c93233c3c2dbc14d8e5c4fd465c114c"
+    },
+    {
+      "path": "evidence/C01/acceptance-current.md",
+      "sha256": "a6b25b803c0584f4f977ef545eaf011f1a8efe08364be3754f5ed20d60dfe6a9"
+    },
+    {
+      "path": "evidence/C01/application-harness-review.md",
+      "sha256": "5586fbad369b9237e59017f6ad262014c7e6b740a8ecf99aab431b33ced58c21"
+    },
+    {
+      "path": "evidence/C01/application-c2a64fc6-366e-4460-aad3-dc8424ddf3af.json",
+      "sha256": "616a149b559b64a689b2985b024dfb6982ab7e09a763feb6cb1da0e828c6aed1"
+    },
+    {
+      "path": "evidence/C01/application-results.json",
+      "sha256": "b7b3bc821e300fbe7484794d029ae1a0f393600f882d932da5a5c025a1770a5c"
+    },
+    {
+      "path": "evidence/C01/application-unit-suite.log",
+      "sha256": "0156d46e2608d3b13cf6ccebedd77adfa94adcbeefc9261be8a6207b78e1fc6b"
+    },
+    {
+      "path": "evidence/C01/application-refactor-client-tests.log",
+      "sha256": "285ea329fe57d352a2cbf609e322f1ac1c65e1039662f9e7a41966b1992d97a5"
+    },
+    {
+      "path": "evidence/C01/application-graph-tests.log",
+      "sha256": "a7c01edb0b03ae0b1e2e996ec84fef9c48ea915366f6a7183821a7ba073a727d"
+    },
+    {
+      "path": "evidence/C01/closure-coverage-review.md",
+      "sha256": "ebf224d02117b33d1941f473eab1802a7579041983fef5e125da3f4dd3a5c22a"
+    },
+    {
+      "path": "evidence/C01/noir-auth-final-review.md",
+      "sha256": "b6cd18e32e7ce1e85cda8019097f17c4e2d21ac435e903ca27e084118e2aa07e"
+    },
+    {
+      "path": "evidence/C01/portal-final-current.json",
+      "sha256": "1dafe7edf615452a4909a9cf9619c0341dd60b7d75f769e063eb31eaf985e35b"
+    },
+    {
+      "path": "evidence/C01/txe-scope-review.md",
+      "sha256": "58b4c7394524f5344805440dd724869943be032ba3ff2d1ba1a2c269c4f603bd"
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C01-A01",
+      "result": "pass",
+      "summary": "Actual L1 deposit and genuine private claim create exactly one correctly scoped eight-field note with the eleven-field logical view; initial eligibility and bounds pass TXE controls.",
+      "artifacts": [
+        "evidence/C01/application-c2a64fc6-366e-4460-aad3-dc8424ddf3af.json",
+        "evidence/C01/application-unit-suite.log",
+        "evidence/C01/application-harness-review.md",
+        "evidence/C01/acceptance-current.md"
+      ]
+    },
+    {
+      "id": "C01-A02",
+      "result": "pass",
+      "summary": "107 Noir and29 Solidity tests cover configured portal/recipient/chain/version, depositor, amount, nonce, secret and binding authority rejection. TXE/test-root fixtures exercise application constraints, not network proofs.",
+      "artifacts": [
+        "evidence/C01/application-c2a64fc6-366e-4460-aad3-dc8424ddf3af.json",
+        "evidence/C01/application-unit-suite.log",
+        "evidence/C01/application-harness-review.md",
+        "evidence/C01/acceptance-current.md"
+      ]
+    },
+    {
+      "id": "C01-A03",
+      "result": "pass",
+      "summary": "Actual consumed-message replay rejects, original note is nullified, actual portal withdrawal clears the receipt and aggregate liability, exact balances reconcile including gas, and repeat refund rejects. Cross-language identities and portal rollback/redeposit controls pass.",
+      "artifacts": [
+        "evidence/C01/application-c2a64fc6-366e-4460-aad3-dc8424ddf3af.json",
+        "evidence/C01/application-unit-suite.log",
+        "evidence/C01/application-harness-review.md",
+        "evidence/C01/acceptance-current.md"
+      ]
+    },
+    {
+      "id": "C01-A04",
+      "result": "pass",
+      "summary": "Complete application flow passed in264255ms with genuine client proofs, ordinary node validation/inclusion and official SDK accelerated Outbox settlement. Network proving is deliberately outside the user-directed application test boundary; no network proof receipt or economic finality claimed.",
+      "artifacts": [
+        "evidence/C01/application-c2a64fc6-366e-4460-aad3-dc8424ddf3af.json",
+        "evidence/C01/application-unit-suite.log",
+        "evidence/C01/application-harness-review.md",
+        "evidence/C01/acceptance-current.md"
+      ]
+    },
+    {
+      "id": "C01-A05",
+      "result": "pass",
+      "summary": "Actual claim delivery/retrieval and exit nullification preserve eight physical fields and eleven logical values; canonical width, packing and selector regressions pass in the107-test Noir suite.",
+      "artifacts": [
+        "evidence/C01/application-c2a64fc6-366e-4460-aad3-dc8424ddf3af.json",
+        "evidence/C01/application-unit-suite.log",
+        "evidence/C01/application-harness-review.md",
+        "evidence/C01/acceptance-current.md"
+      ]
+    }
+  ],
+  "review": {
+    "kind": "self-review",
+    "reviewer": "Root integration with build_review AI review",
+    "summary": "Reviewed application constraints, actual refund/accounting/replay, honest official controlled settlement boundary, source-bound post-run wording-only changes and cleanup. External audit and final release verification remain separate.",
+    "artifacts": [
+      "evidence/C01/application-harness-review.md",
+      "evidence/C01/closure-coverage-review.md",
+      "evidence/C01/noir-auth-final-review.md"
+    ]
+  }
+}

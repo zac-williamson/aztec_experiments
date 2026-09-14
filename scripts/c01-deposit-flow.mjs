@@ -237,7 +237,7 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
       claimStatus:claimReceipt.status,executionResult:claimReceipt.executionResult,fee:String(claimReceipt.transactionFee),
       proofSha256:sha(proven.chonkProof.toBuffer()),anchorBlock:Number(anchor.getBlockNumber()),
       membershipRootChecked:true,logicalFieldCount:11,physicalFieldCount:8,exactDeliveredNoteChecked:true,
-      nextRequired:'Wait eligibility; prove/include no-post exit, then genuinely settle its covering epoch and withdraw L1.'});
+      nextRequired:'Wait eligibility; prove/include no-post exit, then use official test Outbox settlement and withdraw L1.'});
     Object.defineProperty(observation,'claim',{enumerable:false,value:{scope,secret,secretHash,depositChainId:chain,
       depositor,depositNonce:receipt.nonce,amount,content,message,logicalFields:fields,nextAllowedTime:nextAllowed,
       claimReceipt,tx,instance}});

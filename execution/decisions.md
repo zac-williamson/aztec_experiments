@@ -234,3 +234,26 @@ a failed run. Following budget-contingency-review.md, the next fresh experiment
 allows45minutes exit and75minutes overall, with Ready20minutes unchanged. No
 proof, finality, protocol window, memory or thread constraint changes. Ephemeral
 chain state was cleaned, so repeat the complete journey using reverified setup.
+
+## C01 activation timing variance
+
+Run ae52b32c reached the unchanged20-minute Ready limit with the first real
+epoch accepted and the second checkpoint root still processing; no proof failure
+was reported. Peak6679232KiB and complete owned cleanup were recorded. A read-only
+CPU snapshot showed the worker using a full core; no exact cause of timing
+variation is established. Preserve this timeout. The next fresh run permits
+40minutes Ready,45minutes exit,100minutes overall (50minutes for Ready-only mode).
+These stage budgets remain below the local64-epoch proof window of3072seconds;
+the actual protocol still enforces expiry. Memory8GiB, one agent/thread, genuine
+proofs and finality checks remain unchanged. No deadline was extended live.
+
+## User correction: application test boundary
+
+The user explicitly directs testing application transactions with genuine proofs
+and official accelerated local epoch/Outbox settlement controls. This supersedes
+the earlier agent-imposed C01 requirement to generate network epoch proofs locally.
+Test the actual portal, message contents, membership consumption, nullifiers and
+accounting; trust the protocol settlement test fixture at that boundary. Label
+controlled settlement honestly. No server prover/native AVM build/epoch CRS is
+required. Application integration has a hard deadline below10minutes. Release
+network verification and independent application audit remain separate gates.

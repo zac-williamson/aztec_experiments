@@ -54,6 +54,14 @@ evidence that the application is already fixed.
   network identity and test data, and check provider terms and tool permissions.
   Never promote a local test configuration into production.
 
+## Application testing boundary
+
+Use TESTING.md. Prove application transactions normally. Use official local
+epoch/Outbox settlement test controls; do not build or run a network prover to
+qualify application changes. The retired full-network C01 harness is not a gate.
+Keep test runs below ten minutes, and report failures instead of extending long
+protocol-proving deadlines. This is the user-directed testing architecture.
+
 ## Completion
 
 `R04` is the terminal production-readiness gate. It cannot be completed until all

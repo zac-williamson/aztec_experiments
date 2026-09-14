@@ -1,12 +1,12 @@
-// TEST ONLY: genuine message settlement followed by actual local portal activation.
+// TEST ONLY: controlled message settlement followed by actual local portal activation.
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import {readFile} from 'node:fs/promises';
-import {settleC01Message} from './c01-settle-message.mjs';
+import {settleC01Message} from './c01-settle-application-message.mjs';
 import {ROOT} from './toolchain.mjs';
 
 export async function settleC01Ready({node,config,dateProvider,ready,readyInclusion,l1Client,directory,rollupAddress}){
-  let stage='preflight';const observation={passed:false,scope:'genuine epoch settlement and local portal activation'};
+  let stage='preflight';const observation={passed:false,scope:'controlled test settlement and local portal activation'};
   try{
     assert(ready.passed&&ready.readyEmitted&&readyInclusion.passed);
     assert.equal(ready.txHash,readyInclusion.txHash);
@@ -28,7 +28,7 @@ export async function settleC01Ready({node,config,dateProvider,ready,readyInclus
     assert.equal((await l1Client.getBlock({blockNumber:receipt.blockNumber})).hash,receipt.blockHash);
     assert.equal(await enabled(),true);
     observation.activation={txHash:hash,blockNumber:String(receipt.blockNumber),blockHash:receipt.blockHash,depositsEnabled:true};
-    observation.scope='genuine epoch settlement, finalized Ready membership and enabled portal';
+    observation.scope='controlled test settlement, test-controlled Ready membership and enabled portal';
     observation.passed=true;return observation;
   }catch(error){
     error.settlementObservation??={...observation,passed:false,failure:{stage,errorClass:error.name}};
