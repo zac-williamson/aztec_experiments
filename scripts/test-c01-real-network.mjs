@@ -10,7 +10,7 @@ import { ROOT, assertNodeVersion, assertAztecPackages } from './toolchain.mjs';
 import { OwnedBuildTree } from './build-c01-avm.mjs';
 import { resolveC01AvmRuntime } from './c01-avm-runtime.mjs';
 const SELF = fileURLToPath(import.meta.url);
-const DEADLINE_MS = process.argv.includes('--bridge') ? 3600000 : process.argv.includes('--settle') ? 1500000 : 300000;
+const DEADLINE_MS = process.argv.includes('--bridge') ? 4500000 : process.argv.includes('--settle') ? 1500000 : 300000;
 const RSS_LIMIT_KIB = 8 * 1024 * 1024;
 const execFileAsync = promisify(execFile);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');

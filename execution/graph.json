@@ -359,7 +359,7 @@
       "evidence": "evidence/C01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Retry8a92f555 passed claim/note/replay/exit helper assertions but exit aggregation stalled: default broker retention1 discarded epoch26 work when epoch28 queued. Stopped supervisor deliberately; cleanup confirmed. Set/assert local retention64 to match proof window, add actual broker scheduling regression and four binding negatives, rebuild/retest, then rerun full bridge. Refund remains open.",
+      "checkpoint": "Run879494b1 accepted covering exit proof at checkpoint11 but timed out waiting finality before refund; cleanup confirmed. Prepare fresh45min exit/75min overall retry; unchanged application/proof/resource checks. Preserve failure and verify actual refund before closure.",
       "priority": 6
     },
     {

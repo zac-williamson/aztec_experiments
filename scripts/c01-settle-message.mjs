@@ -22,7 +22,7 @@ export async function settleC01Message({node,config,dateProvider,l1Client,direct
   const searchFrom=BigInt(proofSearchFromBlock);assert(searchFrom>=0n);
   const success=receipt=>[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(receipt.status)
     &&receipt.executionResult===TxExecutionResult.SUCCESS&&receipt.blockNumber!=null&&receipt.blockHash!=null;
-  const deadlineMs=kind==='exit'?1800000:1200000;
+  const deadlineMs=kind==='exit'?2700000:1200000;
   const observation={passed:false,scope:'disposable real-verifier message settlement; no portal mutation',kind,
     deadlineMs,syntheticSettlement:false,jobs:[],epochs:[],proofReceipts:[]};
   const started=Date.now(),deadline=started+deadlineMs;

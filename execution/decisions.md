@@ -223,3 +223,14 @@ startup and settlement. This changes local work retention only, not proof,
 message, expiry or finality validation. Add an actual in-memory broker scheduling
 regression contrasting1 and64; no simulated proof result counts as cryptographic
 evidence. Future runtime configuration must assess retention versus proof lag.
+
+## C01 measured complete-exit budget
+
+Run879494b1 produced all four genuine exit epoch proofs, with successful
+canonical L2ProofVerified receipt covering checkpoint11. Its30-minute exit
+deadline fired during the actual finalized-tag wait, before refund. The50.3-minute
+whole run stayed below8GiB and cleaned all owned processes/setup. Preserve it as
+a failed run. Following budget-contingency-review.md, the next fresh experiment
+allows45minutes exit and75minutes overall, with Ready20minutes unchanged. No
+proof, finality, protocol window, memory or thread constraint changes. Ephemeral
+chain state was cleaned, so repeat the complete journey using reverified setup.

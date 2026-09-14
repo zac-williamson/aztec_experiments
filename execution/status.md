@@ -17,17 +17,18 @@ decision is needed for the current local work.
 
 ## Current work
 
-The latest journey stalled before Ethereum refund settlement. Its local prover
+The previous journey stalled before Ethereum refund settlement. Its local prover
 kept only one prior epoch of jobs and discarded the oldest pending work. This was
 reproduced with the actual broker. Retention now matches the local64-epoch proof
 window, with explicit runtime checks; both old/fixed scheduling controls passed.
 The stalled run was stopped and all owned processes and temporary data cleaned.
 
-The next fresh full journey must pass genuine exit settlement and actual L1
-refund/accounting, including rejection of a repeated refund. It remains bounded
-to60minutes and8GiB with one native proof agent. Continuous ordinary L1 mining
-through client proving has already resolved the earlier claim-inclusion failure.
-No final refund or whole-journey pass is claimed yet.
+The fresh run accepted all four exit epoch proofs, including checkpoint11. Its
+30-minute exit deadline fired during the finalized-tag wait, before refund.
+All owned processes and temporary setup were cleaned. No refund pass is claimed.
+The next fresh run allows45minutes exit and75minutes overall, with unchanged
+20-minute Ready,8GiB memory and single-thread limits. Application bytes and all
+proof/finality constraints remain unchanged.
 
 ## Remaining release work
 

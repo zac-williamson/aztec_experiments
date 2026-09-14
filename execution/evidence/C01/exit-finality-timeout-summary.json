@@ -1,0 +1,64 @@
+{
+  "passed": false,
+  "elapsedMs": 3020953,
+  "peakTreeRSSKiB": 7966464,
+  "exit": {
+    "code": 1,
+    "signal": null
+  },
+  "processGroupAbsent": true,
+  "descendantTreeAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "temporaryEpochSetupRemoved": true,
+  "source": "execution/evidence/C01/real-network-879494b1-2ae3-42f9-b573-8092332a9fb8.json",
+  "failure": {
+    "stage": "await-actual-finalized-tag",
+    "errorClass": "Error",
+    "reason": "SETTLEMENT_DEADLINE"
+  },
+  "epochs": [
+    {
+      "epoch": 25,
+      "firstCheckpoint": 3,
+      "lastCheckpoint": 3,
+      "jobId": "73471774-ad0b-48e9-a7d7-ec6fdcaffa78",
+      "scheduling": "existing-automatic-session",
+      "provenCheckpoint": 3
+    },
+    {
+      "epoch": 26,
+      "firstCheckpoint": 4,
+      "lastCheckpoint": 7,
+      "jobId": "31755b12-45d1-46e6-90a3-a90432b0a7dc",
+      "scheduling": "startProof",
+      "provenCheckpoint": 7
+    },
+    {
+      "epoch": 27,
+      "firstCheckpoint": 8,
+      "lastCheckpoint": 10,
+      "jobId": "3c3cb7ee-8065-4915-8cac-df16c9c1cd91",
+      "scheduling": "startProof",
+      "provenCheckpoint": 10
+    },
+    {
+      "epoch": 28,
+      "firstCheckpoint": 11,
+      "lastCheckpoint": 11,
+      "jobId": "c1e0a877-b90c-4caf-abaf-43def107d686",
+      "scheduling": "startProof",
+      "provenCheckpoint": 11
+    }
+  ],
+  "proofReceipts": [
+    {
+      "txHash": "0x9f687f813cd959d9a4558733033e31dc38d1c335e8134ff0d951d9124940422a",
+      "blockNumber": "3006",
+      "blockHash": "0x13a47e13563dc93539f37d47b8b2739fe29169bd5274fa6d6e78b9b39f664bc2",
+      "checkpointNumber": "11"
+    }
+  ],
+  "claimPassed": true,
+  "exitPassed": true,
+  "refundAttempted": false
+}
