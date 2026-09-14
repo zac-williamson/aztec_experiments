@@ -53,7 +53,7 @@ export function buildContracts() {
   execFileSync(forge, ['build'], { cwd: portalDir, stdio: 'inherit' });
   const portal = JSON.parse(fs.readFileSync(path.join(portalDir, 'out/BillboardPortal.sol/BillboardPortal.json'), 'utf8'));
   const constructor = portal.abi.find(f => f.type === 'constructor');
-  if (constructor?.inputs.length !== 4 || !portal.bytecode?.object || !portal.deployedBytecode?.object) {
+  if (constructor?.inputs.length !== 6 || !portal.bytecode?.object || !portal.deployedBytecode?.object) {
     throw new Error('Portal artifact is incomplete or has unexpected constructor ABI');
   }
   for (const relative of ['portal_bytecode.txt', 'deploy/portal_bytecode.txt']) {

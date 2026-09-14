@@ -7,6 +7,12 @@ import {IOutbox} from "@aztec/core/interfaces/messagebridge/IOutbox.sol";
 import {DataStructures} from "@aztec/core/libraries/DataStructures.sol";
 import {Epoch} from "@aztec/core/libraries/TimeLib.sol";
 
+interface LegacyPortal {
+    function MIN_DEPOSIT() external view returns(uint256);
+    function deposits(address) external view returns(uint256);
+    function totalDeposited() external view returns(uint256);
+}
+
 interface VmPortalRegression {
     function deal(address account, uint256 balance) external;
     function prank(address caller) external;
@@ -61,11 +67,18 @@ abstract contract PortalFixtures {
     }
 
     function deployCreationCode(bytes memory creationCode, uint256 minimum) internal returns (BillboardPortal) {
-        bytes memory initCode = abi.encodePacked(creationCode, abi.encode(address(new AccountingRollup()), L2, VERSION, minimum));
+        bytes memory initCode = abi.encodePacked(creationCode, abi.encode(address(new AccountingRollup()), L2, VERSION, minimum, uint256(type(uint96).max), bytes32(uint256(123))));
         address deployed;
         assembly { deployed := create(0, add(initCode, 32), mload(initCode)) }
         require(deployed != address(0), "Creation bytecode deployment failed");
-        return BillboardPortal(payable(deployed));
+        BillboardPortal portal = BillboardPortal(payable(deployed));
+        portal.activate(0, 0, 0, new bytes32[](0)); // Permissive accounting fixture only.
+        return portal;
+    }
+
+    function amountOf(BillboardPortal portal, address depositor) internal view returns (uint128) {
+        (, uint128 amount) = portal.getDeposit(depositor);
+        return amount;
     }
 
     function depositAs(BillboardPortal portal, address depositor, uint256 amount) internal {
@@ -92,10 +105,10 @@ abstract contract PortalAccountingProperties is PortalFixtures {
         vm.expectRevert(abi.encodeWithSignature("Error(string)", "Below min deposit"));
         vm.prank(ALICE);
         portal.deposit{value: minimum - 1}(bytes32(0));
-        require(portal.deposits(ALICE) == 0 && portal.totalDeposited() == 0, "Rejected deposit changed liabilities");
+        require(amountOf(portal, ALICE) == 0 && portal.totalDeposited() == 0, "Rejected deposit changed liabilities");
         require(address(portal).balance == 0, "Rejected deposit retained ETH");
         depositAs(portal, ALICE, minimum);
-        require(portal.deposits(ALICE) == minimum, "Exact minimum deposit not recorded");
+        require(amountOf(portal, ALICE) == minimum, "Exact minimum deposit not recorded");
         require(portal.totalDeposited() == minimum && address(portal).balance == minimum, "Exact minimum accounting wrong");
     }
 
@@ -105,11 +118,11 @@ abstract contract PortalAccountingProperties is PortalFixtures {
         depositAs(portal, BOB, 3 ether);
         require(portal.totalDeposited() == 5 ether && address(portal).balance == 5 ether, "Initial liabilities wrong");
         withdrawAs(portal, ALICE);
-        require(portal.deposits(ALICE) == 0 && ALICE.balance == 2 ether, "First individual refund wrong");
-        require(portal.deposits(BOB) == 3 ether, "Other depositor changed");
+        require(amountOf(portal, ALICE) == 0 && ALICE.balance == 2 ether, "First individual refund wrong");
+        require(amountOf(portal, BOB) == 3 ether, "Other depositor changed");
         require(portal.totalDeposited() == 3 ether && address(portal).balance == 3 ether, "Aggregate did not decrease");
         withdrawAs(portal, BOB);
-        require(portal.deposits(BOB) == 0 && BOB.balance == 3 ether, "Second individual refund wrong");
+        require(amountOf(portal, BOB) == 0 && BOB.balance == 3 ether, "Second individual refund wrong");
         require(portal.totalDeposited() == 0 && address(portal).balance == 0, "Final liabilities not zero");
     }
 
@@ -118,14 +131,16 @@ abstract contract PortalAccountingProperties is PortalFixtures {
         depositAs(portal, ALICE, 2 ether);
         withdrawAs(portal, ALICE);
         depositAs(portal, ALICE, 3 ether);
-        require(portal.deposits(ALICE) == 3 ether, "Redeposit not recorded");
+        require(amountOf(portal, ALICE) == 3 ether, "Redeposit not recorded");
         require(portal.totalDeposited() == 3 ether && address(portal).balance == 3 ether, "Redeposit double-counted");
     }
 }
 
 contract PortalSourceControlTest is PortalAccountingProperties {
     function deploy(uint256 minimum) internal override returns (BillboardPortal) {
-        return new BillboardPortal(address(new AccountingRollup()), L2, VERSION, minimum);
+        BillboardPortal portal = new BillboardPortal(address(new AccountingRollup()), L2, VERSION, minimum, type(uint96).max, bytes32(uint256(123)));
+        portal.activate(0, 0, 0, new bytes32[](0));
+        return portal;
     }
 }
 
@@ -152,14 +167,19 @@ contract PortalKnownBadFixtureTest is PortalFixtures {
         bytes memory creationCode = readCreationCode("test/fixtures/known-bad-portal.hex");
         require(sha256(creationCode) == hex"b990b437bf38a28a3f4606685d6d04cfb2e458773dbe7b4c60906c31ff253fcd", "Known-bad fixture hash changed");
         require(keccak256(creationCode) != keccak256(type(BillboardPortal).creationCode), "Bad fixture unexpectedly equals source");
-        return deployCreationCode(creationCode, minimum);
+        // Historical constructor and selector ABI retained solely for the pinned bad bytes.
+        bytes memory initCode = abi.encodePacked(creationCode, abi.encode(address(new AccountingRollup()), L2, VERSION, minimum));
+        address deployed;
+        assembly { deployed := create(0, add(initCode, 32), mload(initCode)) }
+        require(deployed != address(0), "Historical deployment failed");
+        return BillboardPortal(payable(deployed));
     }
 
     function testKnownBadFixtureAcceptsDepositBelowConfiguredMinimum() public {
         BillboardPortal bad = knownBad(2 ether);
         require(bad.MIN_DEPOSIT() == 0.001 ether, "Expected historical hardcoded minimum");
         depositAs(bad, ALICE, 1 ether);
-        require(bad.deposits(ALICE) == 1 ether, "Expected below-configured-minimum deposit to be accepted");
+        require(LegacyPortal(address(bad)).deposits(ALICE) == 1 ether, "Expected below-configured-minimum deposit to be accepted");
         require(bad.MIN_DEPOSIT() != 2 ether, "Known bad unexpectedly meets minimum invariant");
     }
 
@@ -168,8 +188,8 @@ contract PortalKnownBadFixtureTest is PortalFixtures {
         depositAs(bad, ALICE, 2 ether);
         depositAs(bad, BOB, 3 ether);
         withdrawAs(bad, ALICE);
-        require(bad.deposits(ALICE) == 0 && ALICE.balance == 2 ether, "Historical individual refund changed");
+        require(LegacyPortal(address(bad)).deposits(ALICE) == 0 && ALICE.balance == 2 ether, "Historical individual refund changed");
         require(bad.totalDeposited() == 5 ether && address(bad).balance == 3 ether, "Expected historical stale aggregate");
-        require(bad.totalDeposited() != bad.deposits(ALICE) + bad.deposits(BOB), "Known bad unexpectedly meets aggregate invariant");
+        require(bad.totalDeposited() != LegacyPortal(address(bad)).deposits(ALICE) + LegacyPortal(address(bad)).deposits(BOB), "Known bad unexpectedly meets aggregate invariant");
     }
 }

@@ -1,0 +1,164 @@
+{"profile":"C01 consistent-scope TXE","chain":1,"version":1,"originalPublicVersion":2,"realProofs":false,"port":54338}
+[14:03:39.016] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[billboard_contract] Running 0 test functions
+[billboard_contract] [0m[32m0 tests passed[0m
+[billboard_test] Running 37 test functions
+[14:03:47.483] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[14:03:47.485] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[14:03:47.491] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-NkZ2cj/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[14:03:47.511] INFO: txe_node Aztec Node version: txe
+[14:03:47.511] INFO: txe_node Aztec Node started on chain 0x1
+[14:03:47.536] INFO: txe:top_level_context Created block 1 with timestamp 1789391027
+[14:03:47.667] INFO: txe:top_level_context Created block 2 with timestamp 1789391027
+[14:03:47.836] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.06659491700000035s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.06659491700000035,"rate":48656671.49941763,"totalPublicGas":{"daGas":4000,"l2Gas":3240287},"totalBlockGas":{"daGas":4000,"l2Gas":3240287},"totalSizeInBytes":4128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:03:48.093] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.021403040999999574s {"blockNumber":4,"successfulCount":1,"failedCount":0,"duration":0.021403040999999574,"rate":53268832.218749784,"totalPublicGas":{"daGas":192,"l2Gas":1140115},"totalBlockGas":{"daGas":320,"l2Gas":1730915},"totalSizeInBytes":320,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:03:48.138] INFO: txe:top_level_context Created block 5 with timestamp 1789391027
+[14:03:48.417] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.007495874999998705s {"blockNumber":6,"successfulCount":1,"failedCount":0,"duration":0.007495874999998705,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":1984,"l2Gas":529900},"totalSizeInBytes":1984,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[billboard_test] Testing c01::c01_claim_delivers_exact_v1_receipt_and_initial_eligibility ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_claim_rejects_amount_above_configuration ... [0m[32mok[0m
+[14:03:51.490] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[14:03:51.491] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-BPYI0p/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[14:03:51.505] INFO: txe_node Aztec Node version: txe
+[14:03:51.505] INFO: txe_node Aztec Node started on chain 0x1
+[14:03:51.524] INFO: txe:top_level_context Created block 1 with timestamp 1789391031
+[14:03:51.571] INFO: txe:top_level_context Created block 2 with timestamp 1789391031
+[14:03:51.667] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.05619954099999996s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.05619954099999996,"rate":57656823.21142093,"totalPublicGas":{"daGas":4000,"l2Gas":3240287},"totalBlockGas":{"daGas":4000,"l2Gas":3240287},"totalSizeInBytes":4128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:03:51.859] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.020436916999999083s {"blockNumber":4,"successfulCount":1,"failedCount":0,"duration":0.020436916999999083,"rate":55787034.80569262,"totalPublicGas":{"daGas":192,"l2Gas":1140115},"totalBlockGas":{"daGas":320,"l2Gas":1730915},"totalSizeInBytes":320,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[billboard_test] Testing c01::c01_claim_rejects_changed_receipt_nonce ... [0m[32mok[0m
+[14:03:54.554] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[14:03:54.556] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-uWVFeG/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[14:03:54.570] INFO: txe_node Aztec Node version: txe
+[14:03:54.570] INFO: txe_node Aztec Node started on chain 0x1
+[14:03:54.588] INFO: txe:top_level_context Created block 1 with timestamp 1789391034
+[14:03:54.637] INFO: txe:top_level_context Created block 2 with timestamp 1789391034
+[14:03:54.735] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.056192415999998045s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.056192415999998045,"rate":57664133.89308822,"totalPublicGas":{"daGas":4000,"l2Gas":3240287},"totalBlockGas":{"daGas":4000,"l2Gas":3240287},"totalSizeInBytes":4128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:03:54.929] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.02055870799999684s {"blockNumber":4,"successfulCount":1,"failedCount":0,"duration":0.02055870799999684,"rate":55456549.11778382,"totalPublicGas":{"daGas":192,"l2Gas":1140115},"totalBlockGas":{"daGas":320,"l2Gas":1730915},"totalSizeInBytes":320,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:03:54.971] INFO: txe:top_level_context Created block 5 with timestamp 1789391034
+[billboard_test] Testing c01::c01_claim_rejects_unbound_portal ... [0m[32mok[0m
+[14:03:57.605] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[14:03:57.608] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-PO1Sjt/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[14:03:57.622] INFO: txe_node Aztec Node version: txe
+[14:03:57.622] INFO: txe_node Aztec Node started on chain 0x1
+[14:03:57.640] INFO: txe:top_level_context Created block 1 with timestamp 1789391037
+[14:03:57.687] INFO: txe:top_level_context Created block 2 with timestamp 1789391037
+[14:03:57.782] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.05520100000000093s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.05520100000000093,"rate":58699788.047317,"totalPublicGas":{"daGas":4000,"l2Gas":3240287},"totalBlockGas":{"daGas":4000,"l2Gas":3240287},"totalSizeInBytes":4128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:03:57.825] INFO: txe:top_level_context Created block 4 with timestamp 1789391037
+[14:04:00.438] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[14:04:00.439] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-143j8y/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[14:04:00.453] INFO: txe_node Aztec Node version: txe
+[14:04:00.453] INFO: txe_node Aztec Node started on chain 0x1
+[14:04:00.472] INFO: txe:top_level_context Created block 1 with timestamp 1789391040
+[14:04:00.519] INFO: txe:top_level_context Created block 2 with timestamp 1789391040
+[14:04:00.616] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.05554437499999767s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.05554437499999767,"rate":58336906.302395806,"totalPublicGas":{"daGas":4000,"l2Gas":3240287},"totalBlockGas":{"daGas":4000,"l2Gas":3240287},"totalSizeInBytes":4128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:04:00.791] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.021209125000001224s {"blockNumber":4,"successfulCount":1,"failedCount":0,"duration":0.021209125000001224,"rate":53755871.588287316,"totalPublicGas":{"daGas":192,"l2Gas":1140115},"totalBlockGas":{"daGas":320,"l2Gas":1730915},"totalSizeInBytes":320,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:04:00.834] INFO: txe:top_level_context Created block 5 with timestamp 1789391040
+[billboard_test] Testing c01::c01_claim_rejects_wrong_nonzero_secret ... [0m[32mok[0m
+[14:04:03.419] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[14:04:03.420] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-vdXdCZ/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[14:04:03.433] INFO: txe_node Aztec Node version: txe
+[14:04:03.433] INFO: txe_node Aztec Node started on chain 0x1
+[14:04:03.450] INFO: txe:top_level_context Created block 1 with timestamp 1789391043
+[14:04:03.497] INFO: txe:top_level_context Created block 2 with timestamp 1789391043
+[14:04:03.592] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.05588000000000102s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.05588000000000102,"rate":57986524.695775606,"totalPublicGas":{"daGas":4000,"l2Gas":3240287},"totalBlockGas":{"daGas":4000,"l2Gas":3240287},"totalSizeInBytes":4128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:04:03.766] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.020187207999999374s {"blockNumber":4,"successfulCount":1,"failedCount":0,"duration":0.020187207999999374,"rate":56477101.73690365,"totalPublicGas":{"daGas":192,"l2Gas":1140115},"totalBlockGas":{"daGas":320,"l2Gas":1730915},"totalSizeInBytes":320,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:04:03.812] INFO: txe:top_level_context Created block 5 with timestamp 1789391043
+[billboard_test] Testing c01::c01_claim_rejects_wrong_portal_origin ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_claim_rejects_wrong_recipient_envelope ... [0m[32mok[0m
+[14:04:06.403] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[14:04:06.404] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-xO2eLF/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[14:04:06.417] INFO: txe_node Aztec Node version: txe
+[14:04:06.417] INFO: txe_node Aztec Node started on chain 0x1
+[14:04:06.434] INFO: txe:top_level_context Created block 1 with timestamp 1789391046
+[14:04:06.480] INFO: txe:top_level_context Created block 2 with timestamp 1789391046
+[14:04:06.574] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.05454870799999844s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.05454870799999844,"rate":59401718.55216246,"totalPublicGas":{"daGas":4000,"l2Gas":3240287},"totalBlockGas":{"daGas":4000,"l2Gas":3240287},"totalSizeInBytes":4128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:04:06.741] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.019626459000002795s {"blockNumber":4,"successfulCount":1,"failedCount":0,"duration":0.019626459000002795,"rate":58090713.15410679,"totalPublicGas":{"daGas":192,"l2Gas":1140115},"totalBlockGas":{"daGas":320,"l2Gas":1730915},"totalSizeInBytes":320,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:04:06.781] INFO: txe:top_level_context Created block 5 with timestamp 1789391046
+[billboard_test] Testing c01::c01_claim_rejects_zero_secret ... [0m[32mok[0m
+[14:04:09.325] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[14:04:09.326] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-8h33VI/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[14:04:09.339] INFO: txe_node Aztec Node version: txe
+[14:04:09.339] INFO: txe_node Aztec Node started on chain 0x1
+[14:04:09.356] INFO: txe:top_level_context Created block 1 with timestamp 1789391049
+[14:04:09.402] INFO: txe:top_level_context Created block 2 with timestamp 1789391049
+[14:04:09.505] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.056230417000006125s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.056230417000006125,"rate":57625163.974858075,"totalPublicGas":{"daGas":4000,"l2Gas":3240287},"totalBlockGas":{"daGas":4000,"l2Gas":3240287},"totalSizeInBytes":4128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:04:09.675] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.01986358299999847s {"blockNumber":4,"successfulCount":1,"failedCount":0,"duration":0.01986358299999847,"rate":57397248.019155845,"totalPublicGas":{"daGas":192,"l2Gas":1140115},"totalBlockGas":{"daGas":320,"l2Gas":1730915},"totalSizeInBytes":320,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:04:12.891] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[14:04:12.892] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-oNEEW7/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[14:04:12.905] INFO: txe_node Aztec Node version: txe
+[14:04:12.905] INFO: txe_node Aztec Node started on chain 0x1
+[14:04:12.923] INFO: txe:top_level_context Created block 1 with timestamp 1789391052
+[14:04:12.971] INFO: txe:top_level_context Created block 2 with timestamp 1789391052
+[14:04:13.068] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.05697649999999703s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.05697649999999703,"rate":56870586.996396214,"totalPublicGas":{"daGas":4000,"l2Gas":3240287},"totalBlockGas":{"daGas":4000,"l2Gas":3240287},"totalSizeInBytes":4128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:04:13.245] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.020023999999997613s {"blockNumber":4,"successfulCount":1,"failedCount":0,"duration":0.020023999999997613,"rate":56937425.089898914,"totalPublicGas":{"daGas":192,"l2Gas":1140115},"totalBlockGas":{"daGas":320,"l2Gas":1730915},"totalSizeInBytes":320,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:04:13.293] INFO: txe:top_level_context Created block 5 with timestamp 1789391052
+[14:04:13.553] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.005943791000005149s {"blockNumber":6,"successfulCount":1,"failedCount":0,"duration":0.005943791000005149,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":1984,"l2Gas":529900},"totalSizeInBytes":1984,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[billboard_test] Testing c01::c01_claim_replay_cannot_mint_right_for_second_owner ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_cooldown_ceiling_and_maximum_boundaries ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_cooldown_rejects_above_u32 ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_cooldown_rejects_above_u96 ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_cooldown_rejects_zero_amount ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_frozen_claim_boundary_vector ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_frozen_claim_vector ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_frozen_config_vector ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_frozen_exit_vector ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_frozen_ready_vector ... [0m[32mok[0m
+[14:04:38.532] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[14:04:38.534] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-m9PqsT/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[14:04:38.548] INFO: txe_node Aztec Node version: txe
+[14:04:38.548] INFO: txe_node Aztec Node started on chain 0x1
+[14:04:38.567] INFO: txe:top_level_context Created block 1 with timestamp 1789391078
+[14:04:38.626] INFO: txe:top_level_context Created block 2 with timestamp 1789391078
+[14:04:38.677] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.011131083000000217s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.011131083000000217,"rate":11307525.062924923,"totalPublicGas":{"daGas":0,"l2Gas":125865},"totalBlockGas":{"daGas":0,"l2Gas":125865},"totalSizeInBytes":128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:04:38.680] WARN: txe:top_level_context Could not find function artifact in contract Billboard for function '0x8f3f1c4d' when enriching error callstack
+[billboard_test] Testing c01::c01_init_rejects_wrong_configured_chain ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_init_rejects_wrong_configured_rollup_version ... [0m[32mok[0m
+[14:04:41.161] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[14:04:41.162] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-3sIILm/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[14:04:41.175] INFO: txe_node Aztec Node version: txe
+[14:04:41.175] INFO: txe_node Aztec Node started on chain 0x1
+[14:04:41.193] INFO: txe:top_level_context Created block 1 with timestamp 1789391081
+[14:04:41.251] INFO: txe:top_level_context Created block 2 with timestamp 1789391081
+[14:04:41.307] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.009407250000003841s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.009407250000003841,"rate":13383720.003183564,"totalPublicGas":{"daGas":0,"l2Gas":125904},"totalBlockGas":{"daGas":0,"l2Gas":125904},"totalSizeInBytes":128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:04:41.310] WARN: txe:top_level_context Could not find function artifact in contract Billboard for function '0x8f3f1c4d' when enriching error callstack
+[billboard_test] Testing c01::c01_time_rejects_horizon_crossing ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_time_rejects_out_of_range_anchor ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_utf8_rejects_hidden_suffix ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_utf8_rejects_noncanonical_field ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_utf8_rejects_nul ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_utf8_rejects_overlong_lead ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_utf8_rejects_scalar_above_unicode_maximum ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_utf8_rejects_surrogate ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_utf8_rejects_truncation ... [0m[32mok[0m
+[billboard_test] Testing c01::c01_utf8_valid_scalar_and_field_crossing_controls ... [0m[32mok[0m
+[billboard_test] Testing compact_note::c01_compact_asymmetric_sequences_do_not_swap ... [0m[32mok[0m
+[billboard_test] Testing compact_note::c01_compact_exact_maximum_fields_and_generated_selectors ... [0m[32mok[0m
+[billboard_test] Testing compact_note::c01_compact_metadata_rejects_truncation_above128 ... [0m[32mok[0m
+[billboard_test] Testing compact_note::c01_compact_metadata_rejects_unused_bit96 ... [0m[32mok[0m
+[14:05:21.106] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[14:05:21.108] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-KGYQlS/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[14:05:21.121] INFO: txe_node Aztec Node version: txe
+[14:05:21.121] INFO: txe_node Aztec Node started on chain 0x1
+[14:05:21.138] INFO: txe:top_level_context Created block 1 with timestamp 1789391121
+[14:05:21.192] INFO: txe:top_level_context Created block 2 with timestamp 1789391121
+[14:05:21.287] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.054628292000008516s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.054628292000008516,"rate":59315180.4929119,"totalPublicGas":{"daGas":4000,"l2Gas":3240287},"totalBlockGas":{"daGas":4000,"l2Gas":3240287},"totalSizeInBytes":4128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:05:21.455] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.019516959000000497s {"blockNumber":4,"successfulCount":1,"failedCount":0,"duration":0.019516959000000497,"rate":58416631.40246239,"totalPublicGas":{"daGas":192,"l2Gas":1140115},"totalBlockGas":{"daGas":320,"l2Gas":1730915},"totalSizeInBytes":320,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:05:21.496] INFO: txe:top_level_context Created block 5 with timestamp 1789391121
+[14:05:21.731] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.005465374999999767s {"blockNumber":6,"successfulCount":1,"failedCount":0,"duration":0.005465374999999767,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":1984,"l2Gas":529900},"totalSizeInBytes":1984,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:05:22.206] INFO: txe:top_level_context Created block 7 with timestamp 1789394722
+[14:05:22.392] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.005072541000001365s {"blockNumber":8,"successfulCount":1,"failedCount":0,"duration":0.005072541000001365,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":256,"l2Gas":477200},"totalSizeInBytes":256,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[billboard_test] Testing compact_note::c01_compact_note_lifecycle_claim_deliver_select_burn ... [0m[32mok[0m
+[14:05:25.350] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[14:05:25.352] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-WfJ47y/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[14:05:25.365] INFO: txe_node Aztec Node version: txe
+[14:05:25.365] INFO: txe_node Aztec Node started on chain 0x1
+[14:05:25.383] INFO: txe:top_level_context Created block 1 with timestamp 1789391125
+[14:05:25.433] INFO: txe:top_level_context Created block 2 with timestamp 1789391125
+[14:05:25.529] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.05610720899999433s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.05610720899999433,"rate":57751705.31117182,"totalPublicGas":{"daGas":4000,"l2Gas":3240287},"totalBlockGas":{"daGas":4000,"l2Gas":3240287},"totalSizeInBytes":4128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:05:25.701] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.02037699999999313s {"blockNumber":4,"successfulCount":1,"failedCount":0,"duration":0.02037699999999313,"rate":55951072.2874017,"totalPublicGas":{"daGas":192,"l2Gas":1140115},"totalBlockGas":{"daGas":320,"l2Gas":1730915},"totalSizeInBytes":320,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:05:25.743] INFO: txe:top_level_context Created block 5 with timestamp 1789391125
+[14:05:25.972] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.005564749999990454s {"blockNumber":6,"successfulCount":1,"failedCount":0,"duration":0.005564749999990454,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":1984,"l2Gas":529900},"totalSizeInBytes":1984,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[14:05:26.014] INFO: txe:top_level_context Created block 7 with timestamp 1789394726
+[14:05:26.217] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.005049832999997307s {"blockNumber":8,"successfulCount":1,"failedCount":0,"duration":0.005049832999997307,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":256,"l2Gas":477200},"totalSizeInBytes":256,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[billboard_test] Testing compact_note::c01_compact_second_burn_rejected ... [0m[32mok[0m
+[billboard_test] Testing compact_note::c01_compact_sequences_reject_unused_bit192 ... [0m[32mok[0m
+[billboard_test] [0m[32m37 tests passed[0m

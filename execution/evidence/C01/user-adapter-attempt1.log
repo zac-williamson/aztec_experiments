@@ -1,0 +1,60 @@
+✔ browser actual module persists ciphertext and interoperates with Node AES-GCM (8.386417ms)
+✔ browser actual custody rejects wrong wallet, ciphertext corruption and moved scope (2.9725ms)
+✔ browser save observes transaction abort and never reports durable success (2.016959ms)
+✖ actual engine codec matches frozen claim, boundary, exit and Ready-domain separation (1.920667ms)
+✖ actual public deposit flow saves and reads back before send; returns event receipt nonce without secret (1.031041ms)
+✖ actual deposit flow fails closed for missing store, failed durability and disabled portal (0.432625ms)
+✖ actual deposit flow fails closed for mismatched read-back and existing receipt (0.424125ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 3
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 367.656417
+
+✖ failing tests:
+
+test at scripts/test-c01-user.mjs:67:1
+✖ actual engine codec matches frozen claim, boundary, exit and Ready-domain separation (1.920667ms)
+  TypeError: AztecAddress.fromString is not a function
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-c01-user.mjs:71:110)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test-c01-user.mjs:106:1
+✖ actual public deposit flow saves and reads back before send; returns event receipt nonce without secret (1.031041ms)
+  TypeError: AztecAddress.fromString is not a function
+      at depositHarness (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-c01-user.mjs:77:30)
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-c01-user.mjs:107:11)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test-c01-user.mjs:111:1
+✖ actual deposit flow fails closed for missing store, failed durability and disabled portal (0.432625ms)
+  TypeError: AztecAddress.fromString is not a function
+      at depositHarness (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-c01-user.mjs:77:30)
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-c01-user.mjs:113:13)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test-c01-user.mjs:116:1
+✖ actual deposit flow fails closed for mismatched read-back and existing receipt (0.424125ms)
+  TypeError: AztecAddress.fromString is not a function
+      at depositHarness (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-c01-user.mjs:77:30)
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-c01-user.mjs:117:11)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

@@ -1,0 +1,9 @@
+{
+  "outcome": "pass",
+  "allPackageBytesAndManifestsUnchanged": true,
+  "added": [],
+  "removed": [
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_viewer_options.nr"
+  ],
+  "reason": "Supported10-note page removes constant-failing16-note assertion path from compiler debug file map."
+}

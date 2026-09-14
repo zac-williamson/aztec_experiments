@@ -105,6 +105,8 @@ async function startDeploy() {
   if (kMultiplierStr) extraConfig.kMultiplier = parseInt(kMultiplierStr);
   // Deployer-configurable parameters
   extraConfig.minDepositWei = ethers.parseEther(minDepositEth);
+  extraConfig.maxDepositWei = ethers.parseEther(document.getElementById('maxDepositEth').value.trim());
+  extraConfig.readyTxHash = document.getElementById('readyTxHash').value.trim() || undefined;
   extraConfig.baseCooldown = baseCooldown;
   extraConfig.censorWindow = censorWindow;
   extraConfig.maxSaveUp = maxSaveUp;

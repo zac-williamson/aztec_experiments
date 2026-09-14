@@ -23,6 +23,8 @@
 //   --censor <addr>          Censor Aztec address (default: 0x0035ab...; use 0x0 to disable)
 //   --k-multiplier <num>     K multiplier for censored cooldown (default: 4)
 //   --min-deposit <eth>      Minimum deposit in ETH (default: 0.002)
+//   --max-deposit <eth>      Required maximum deposit in ETH
+//   --ready-tx <hash>        Original binding transaction to resume Ready activation
 //   --base-cooldown <sec>    Posting cooldown at min deposit in seconds (default: 10)
 //   --censor-window <sec>    Min time censor has to flag a post before screening (default: 3600)
 //   --max-save-up <num>      Max posts that can be saved up for bursting (default: 16)
@@ -380,6 +382,8 @@ async function main() {
     censor: CENSOR_ADDR,
     kMultiplier: K_MULTIPLIER,
     minDepositWei: ethers.parseEther(MIN_DEPOSIT_ETH),
+    maxDepositWei: args['max-deposit'] ? ethers.parseEther(args['max-deposit']) : undefined,
+    readyTxHash: args['ready-tx'],
     baseCooldown: BASE_COOLDOWN,
     censorWindow: CENSOR_WINDOW,
     maxSaveUp: MAX_SAVE_UP,

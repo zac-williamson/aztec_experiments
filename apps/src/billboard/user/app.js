@@ -22,12 +22,112 @@ function _portalAddr() {
   const v = (document.getElementById('portalAddr') || {}).value || '';
   return v.trim();
 }
+// Minimal local custody for V1 claim secrets; backup/export and wallet recovery remain W02.
+// AES-GCM encrypts at rest. It cannot protect an unlocked wallet against malicious page code.
+function makeClaimSecretStore(walletSecret) {
+  const encoder = new TextEncoder();
+  const hex = bytes => Array.from(bytes, b => b.toString(16).padStart(2,'0')).join('');
+  const unhex = text => Uint8Array.from(text.match(/../g) || [], pair => parseInt(pair,16));
+  if (!/^0x[0-9a-fA-F]{64}$/.test(walletSecret || '') || BigInt(walletSecret) === 0n) throw new Error('A loaded wallet key is required for claim-secret custody.');
+  const prefix = encoder.encode('AZTEC_BB_CLAIM_STORE_KEY_V1\0');
+  const input = new Uint8Array(prefix.length + 32); input.set(prefix); input.set(unhex(walletSecret.slice(2)),prefix.length);
+  const keyPromise = crypto.subtle.digest('SHA-256',input).then(bytes => crypto.subtle.importKey('raw',bytes,'AES-GCM',false,['encrypt','decrypt']));
+  function aad(scope,secretHash) {
+    const fields=['l1ChainId','rollupAddress','rollupVersion','boardAddress','portalAddress','depositor'];
+    if (!scope || Object.keys(scope).length!==6 || fields.some(name => typeof scope[name]!=='string')) throw new Error('Invalid claim-secret scope.');
+    for (const name of ['l1ChainId','rollupVersion']) {
+      if (!/^[1-9][0-9]*$/.test(scope[name]) || BigInt(scope[name]) >= (1n << (name==='l1ChainId'?64n:32n))) throw new Error('Invalid claim-secret network scope.');
+    }
+    for (const name of ['rollupAddress','portalAddress','depositor']) {
+      if (!/^0x[0-9a-f]{40}$/.test(scope[name]) || BigInt(scope[name])===0n) throw new Error('Invalid claim-secret actor.');
+    }
+    if (!/^0x[0-9a-f]{64}$/.test(scope.boardAddress) || BigInt(scope.boardAddress)===0n ||
+        !/^0x[0-9a-f]{64}$/.test(secretHash)) throw new Error('Invalid claim-secret identifier.');
+    return JSON.stringify(['AZTEC_BB_CLAIM_STORE_V1',...fields.map(name=>scope[name]),secretHash]);
+  }
+  function validateRecord(record,secretHash) {
+    const modulus=21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+    if (!record || Object.keys(record).sort().join(',')!=='schemaVersion,secret,secretHash' || record.schemaVersion!==1 ||
+        record.secretHash!==secretHash || !/^0x[0-9a-f]{64}$/.test(record.secret) || BigInt(record.secret)<=0n || BigInt(record.secret)>=modulus) {
+      throw new Error('Invalid saved claim-secret record.');
+    }
+    return record;
+  }
+  async function open() {
+    return new Promise((resolve,reject)=>{
+      const request=indexedDB.open('aztec-billboard-claim-secrets-v1',1);
+      let rejected=false;
+      request.onupgradeneeded=()=>request.result.createObjectStore('records');
+      request.onerror=()=>{rejected=true;reject(new Error('Cannot open local claim-secret storage.'));};
+      request.onblocked=()=>{rejected=true;reject(new Error('Local claim-secret storage is blocked by another page.'));};
+      request.onsuccess=()=>{if(rejected)request.result.close();else resolve(request.result);};
+    });
+  }
+  async function readEnvelope(storageKey) {
+    const db=await open();
+    try {
+      return await new Promise((resolve,reject)=>{
+        const tx=db.transaction('records','readonly'); const req=tx.objectStore('records').get(storageKey);
+        tx.oncomplete=()=>resolve(req.result);
+        tx.onabort=tx.onerror=()=>reject(new Error('Cannot read local claim-secret storage.'));
+      });
+    } finally { db.close(); }
+  }
+  async function load(scope,secretHash) {
+    const storageKey=aad(scope,secretHash); const envelope=await readEnvelope(storageKey);
+    if (envelope===undefined) return null;
+    if (!envelope || Object.keys(envelope).sort().join(',')!=='ciphertext,iv,schemaVersion' || envelope.schemaVersion!==1 ||
+        !/^[0-9a-f]{24}$/.test(envelope.iv) || !/^[0-9a-f]{32,2048}$/.test(envelope.ciphertext) || envelope.ciphertext.length%2) throw new Error('Invalid encrypted claim-secret envelope.');
+    try {
+      const plaintext=await crypto.subtle.decrypt({name:'AES-GCM',iv:unhex(envelope.iv),additionalData:encoder.encode(storageKey),tagLength:128},
+        await keyPromise,unhex(envelope.ciphertext));
+      return validateRecord(JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(plaintext)),secretHash);
+    } catch (_) { throw new Error('Cannot authenticate the saved claim secret with this wallet and scope.'); }
+  }
+  return {
+    load,
+    async save(scope,record) {
+      validateRecord(record,record?.secretHash);
+      const storageKey=aad(scope,record.secretHash);
+      const existing=await load(scope,record.secretHash);
+      if (existing) {
+        if (existing.secret!==record.secret) throw new Error('A different claim secret already occupies this record.');
+        return;
+      }
+      const iv=crypto.getRandomValues(new Uint8Array(12));
+      const plaintext=encoder.encode(JSON.stringify({schemaVersion:1,secretHash:record.secretHash,secret:record.secret}));
+      const ciphertext=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:encoder.encode(storageKey),tagLength:128},await keyPromise,plaintext);
+      const db=await open();
+      try {
+        await new Promise((resolve,reject)=>{
+          // Completion of a strict durable transaction, not merely request success.
+          const tx=db.transaction('records','readwrite',{durability:'strict'});
+          tx.objectStore('records').add({schemaVersion:1,iv:hex(iv),ciphertext:hex(new Uint8Array(ciphertext))},storageKey);
+          tx.oncomplete=()=>resolve();
+          tx.onabort=tx.onerror=()=>reject(new Error('Claim-secret storage did not commit. Deposit has not been sent.'));
+        });
+      } finally { db.close(); }
+      const restored=await load(scope,record.secretHash);
+      if (!restored || restored.secret!==record.secret) throw new Error('Claim-secret storage read-back failed.');
+    },
+  };
+}
+
+async function readCurrentDeposit() {
+  if (!_handles?.contract) throw new Error('Billboard wallet is not connected.');
+  const info=await readBillboardDepositInfo(_handles.contract,_handles.address,_handles.depositChainId);
+  if (info.amount>0n) _handles.depositChainId=info.depositChainId;
+  return info;
+}
+
 // Helper: build common config for engine calls
 // Uses portalAddress only; L2 address is derived from the portal on chain.
 function _commonConfig() {
   const c = {
     portalAddress: _portalAddr(),
     dataDirPrefix: 'pxe_bb_',
+    depositChainId: _handles?.depositChainId,
+    claimSecretStore: makeClaimSecretStore(window.walletState?.aztec?.secretKey),
   };
   // If the loaded Aztec wallet IS the censor, pass its JSON for declare-immoral/transfer-censor
   const ws = window.walletState;
@@ -133,7 +233,6 @@ async function doDepositPage() {
     if (!amountStr) { highlightMissing(['depositAmount']); throw new Error('Enter an amount.'); }
     const amountEth = parseFloat(amountStr);
     if (isNaN(amountEth) || amountEth <= 0) { highlightMissing(['depositAmount']); throw new Error('Invalid amount.'); }
-    if (amountEth > 0.025) { highlightMissing(['depositAmount']); throw new Error('Maximum deposit is 0.025 ETH. This is alpha experimental software, not for production use.'); }
 
     // Phase 1: Deposit on L1
     log('Making new L1 deposit...', 'info', 'depositStatus');
@@ -203,8 +302,8 @@ function startPostCountdown() {
   let timeOffset = 0;
   let currentCooldown = 0;
   let currentMaxSaveUp = 16;
-  let lastScreenedIndex = 0xFFFFFFFF;
-  let lastRealPostIndex = 0xFFFFFFFF;
+  let lastScreenedIndex = 0;
+  let lastRealPostIndex = 0;
 
   async function fetchData() {
     if (!_handles || !_handles.contract) {
@@ -213,8 +312,8 @@ function startPostCountdown() {
       return;
     }
     try {
-      const result = await _handles.contract.methods.get_deposit_info(_handles.address).simulate({ from: _handles.address });
-      const { amount, nextAllowedTime: nat, lastScreenedIndex: lsi, lastRealPostIndex: lrpi } = extractDepositInfo(result);
+      const result = await readCurrentDeposit();
+      const { amount, nextAllowedTime: nat, lastScreenedIndex: lsi, lastRealPostIndex: lrpi } = result;
       if (amount === 0n) {
         el.textContent = 'No deposit note found. Claim a deposit first.';
         el.className = 'countdown warn';
@@ -236,7 +335,7 @@ function startPostCountdown() {
         const msuResult = await _handles.contract.methods.get_max_save_up().simulate({ from: _handles.address });
         maxSaveUp = Number(extractInt(msuResult));
       } catch (e) {}
-      currentCooldown = Number(COOLDOWN_BASE * MIN_DEPOSIT / amount);
+      currentCooldown = Number((COOLDOWN_BASE * MIN_DEPOSIT + amount - 1n) / amount);
       if (currentCooldown < 1) currentCooldown = 1;
       currentMaxSaveUp = maxSaveUp;
       const l2Time = await getL2Timestamp(_handles.aztecNode);
@@ -260,8 +359,8 @@ function startPostCountdown() {
     // Check screening status element
     const scrEl = document.getElementById('screeningStatus');
     if (scrEl) {
-      const NO_IDX = 0xFFFFFFFF;
-      if (lastRealPostIndex === NO_IDX || lastRealPostIndex === 0xFFFFFFFF) {
+      const NO_IDX = 0;
+      if (lastRealPostIndex === NO_IDX) {
         scrEl.textContent = '';
         scrEl.className = 'small';
       } else if (lastScreenedIndex >= lastRealPostIndex) {
@@ -738,8 +837,8 @@ async function doProceedToWithdraw() {
   const maxAttempts = 72;
   for (let i = 0; i < maxAttempts; i++) {
     try {
-      const result = await _handles.contract.methods.get_deposit_info(_handles.address).simulate({ from: _handles.address });
-      const { amount } = extractDepositInfo(result);
+      const result = await readCurrentDeposit();
+      const { amount } = result;
 
       if (amount === 0n) {
         let pxeBlock = '?', nodeBlock = '?';

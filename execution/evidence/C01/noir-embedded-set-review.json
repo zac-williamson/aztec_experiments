@@ -1,0 +1,15 @@
+{
+  "outcome": "pass",
+  "reason": "Only reachable embedded source set changes; all package bytes and local manifests equal the previously origin-verified inventory. No dependency version/source update.",
+  "oldLockSha256": "2ecbc7e0e2bb14ac890f554ef38a7713b1a27e16e0dee0324bd600aff3db50ba",
+  "added": [
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_viewer_options.nr",
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/storage.nr",
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/public_immutable.nr",
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/comparison.nr",
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/with_hash.nr",
+    "dependencies/github.com/AztecProtocol/aztec-packages/v5.2.0/noir-projects/noir-protocol-circuits/crates/types/src/address/eth_address.nr"
+  ],
+  "removed": [],
+  "changedExisting": []
+}

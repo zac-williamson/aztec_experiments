@@ -274,28 +274,42 @@ function extractFieldArray(simResult) {
   });
 }
 
-// Extract the 7-element array from get_deposit_info:
-// [0] = amount (u128), [1] = l1_depositor (EthAddress), [2] = post_chain_head,
-// [3] = last_screened_link, [4] = last_screened_index (u32),
-// [5] = last_real_post_index (u32), [6] = next_allowed_time (u64)
+// Decode the single V1 note layout. Malformed results are errors, not an empty wallet.
 function extractDepositInfo(simResult) {
-  let val = simResult;
-  if (simResult && simResult.result !== undefined) val = simResult.result;
-  else if (simResult && simResult.value !== undefined) val = simResult.value;
-  if (!Array.isArray(val)) {
-    return { amount: 0n, nextAllowedTime: 0n, l1Depositor: '0x0', postChainHead: 0n, lastScreenedLink: 0n, lastScreenedIndex: 0n, lastRealPostIndex: 0n };
+  const val = simResult?.result ?? simResult?.value ?? simResult;
+  if (!Array.isArray(val) || val.length !== 11) throw new Error('Invalid V1 deposit note');
+  const words = val.map(value => BigInt(value?.inner?.toString?.() ?? value?.toString?.() ?? value));
+  const modulus = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+  if (words.some(value => value < 0n || value >= modulus)) throw new Error('Noncanonical deposit Field');
+  const [schemaVersion, depositChainId, depositNonce, amount, depositor, postChainHead,
+    headSequence, lastScreenedLink, lastScreenedIndex, lastRealPostIndex, nextAllowedTime] = words;
+  const empty = words.every(value => value === 0n);
+  if (!empty && (schemaVersion !== 1n || depositChainId === 0n || depositNonce === 0n || depositNonce >= 1n << 64n ||
+      amount === 0n || amount >= 1n << 96n || depositor === 0n || depositor >= 1n << 160n ||
+      headSequence >= 1n << 64n || lastScreenedIndex > headSequence || lastRealPostIndex > headSequence ||
+      nextAllowedTime > (1n << 63n) - 1n)) throw new Error('Invalid V1 deposit fields');
+  return { schemaVersion, depositChainId, depositNonce, amount, nextAllowedTime,
+    l1Depositor: '0x' + depositor.toString(16).padStart(40, '0'), postChainHead,
+    headSequence, lastScreenedLink, lastScreenedIndex, lastRealPostIndex };
+}
+
+// Never silently choose the first unrelated right. Full wallet selection/recovery is W02.
+async function readBillboardDepositInfo(contract, owner, selectedChain) {
+  let chain = selectedChain == null ? null : BigInt(selectedChain.toString());
+  if (chain === null) {
+    const result = await contract.methods.get_deposit_ids(owner, 0).simulate({ from: owner });
+    const values = result?.result ?? result?.value ?? result;
+    if (!Array.isArray(values) || values.length !== 10) throw new Error('Invalid deposit discovery response');
+    const ids = values.map(value => BigInt(value.toString())).filter(value => value !== 0n);
+    if (ids.length > 1) throw new Error('Multiple deposit rights: select a depositChainId');
+    if (ids.length === 0) return extractDepositInfo(Array(11).fill(0n));
+    chain = ids[0];
   }
-  const amount = BigInt(val[0]?.toString?.() ?? val[0]);
-  let depositor = val[1];
-  if (depositor && depositor.inner !== undefined) depositor = depositor.inner;
-  if (depositor && depositor.toString) depositor = depositor.toString();
-  const l1Depositor = '0x' + BigInt(depositor).toString(16).padStart(40, '0');
-  const postChainHead = BigInt(val[2]?.toString?.() ?? val[2]);
-  const lastScreenedLink = BigInt(val[3]?.toString?.() ?? val[3]);
-  const lastScreenedIndex = BigInt(val[4]?.toString?.() ?? val[4]);
-  const lastRealPostIndex = BigInt(val[5]?.toString?.() ?? val[5]);
-  const nextAllowedTime = BigInt(val[6]?.toString?.() ?? val[6]);
-  return { amount, nextAllowedTime, l1Depositor, postChainHead, lastScreenedLink, lastScreenedIndex, lastRealPostIndex };
+  if (chain === 0n) throw new Error('Deposit identity must be nonzero');
+  const result = await contract.methods.get_deposit_info(owner, chain).simulate({ from: owner });
+  const info = extractDepositInfo(result);
+  if (info.amount !== 0n && info.depositChainId !== chain) throw new Error('Deposit identity mismatch');
+  return info;
 }
 
 // ============================================================
@@ -323,15 +337,15 @@ function toAztec(bi, decimals = 4) {
 const CREATE2_PROXY = '0x4e59b44847b379578588920cA78FbF26c0B4956C';
 
 // Build the full creation bytecode (init code) for the portal: linked bytecode + encoded constructor args
-function portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version) {
+function portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, maxDeposit, configHash) {
   const iface = new ethers.Interface(portalAbi);
-  const encodedArgs = iface.encodeDeploy([rollup, l2AddrHex, BigInt(version)]);
+  const encodedArgs = iface.encodeDeploy([rollup, l2AddrHex, BigInt(version), BigInt(minDeposit), BigInt(maxDeposit), configHash]);
   return ethers.concat([portalBytecode, encodedArgs]); // Uint8Array
 }
 
 // Compute the CREATE2 address of the portal (off-chain, no tx needed)
-function computePortalAddress(portalBytecode, portalAbi, l2AddrHex, rollup, version) {
-  const creation = portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version);
+function computePortalAddress(portalBytecode, portalAbi, l2AddrHex, rollup, version, minDeposit, maxDeposit, configHash) {
+  const creation = portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, maxDeposit, configHash);
   const salt = ethers.getBytes(l2AddrHex); // 32 bytes
   const initCodeHash = ethers.keccak256(creation);
   return ethers.getCreate2Address(CREATE2_PROXY, salt, initCodeHash);
@@ -340,11 +354,11 @@ function computePortalAddress(portalBytecode, portalAbi, l2AddrHex, rollup, vers
 // Deploy via the CREATE2 proxy. Returns { address, tx, alreadyDeployed }.
 // If the proxy is not present on the current chain, returns { fallback: true }
 // and the caller should deploy directly via ContractFactory.
-async function create2DeployPortal(signer, portalBytecode, portalAbi, l2AddrHex, rollup, version) {
+async function create2DeployPortal(signer, portalBytecode, portalAbi, l2AddrHex, rollup, version, minDeposit, maxDeposit, configHash) {
   const provider = signer.provider;
-  const creation = portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version);
+  const creation = portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, maxDeposit, configHash);
   const salt = ethers.getBytes(l2AddrHex);
-  const predicted = computePortalAddress(portalBytecode, portalAbi, l2AddrHex, rollup, version);
+  const predicted = computePortalAddress(portalBytecode, portalAbi, l2AddrHex, rollup, version, minDeposit, maxDeposit, configHash);
 
   // Check if portal already exists at the predicted address
   const existingCode = await provider.getCode(predicted);
@@ -363,3 +377,6 @@ async function create2DeployPortal(signer, portalBytecode, portalAbi, l2AddrHex,
   const tx = await signer.sendTransaction({ to: CREATE2_PROXY, data, value: 0 });
   return { address: predicted, tx, alreadyDeployed: false };
 }
+
+// Explicit exports also support the CLI's CommonJS loading of this shared script.
+Object.assign(globalThis, { extractDepositInfo, readBillboardDepositInfo });

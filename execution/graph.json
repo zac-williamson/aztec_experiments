@@ -303,7 +303,7 @@
       "title": "Authenticate deposits and domain-separate bridge messages",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "P04"
       ],
@@ -320,7 +320,8 @@
         "apps/src/billboard/",
         "shared/",
         "scripts/",
-        "execution/"
+        "execution/",
+        "noir-dependencies.json"
       ],
       "plan": "tasks/C01.md",
       "actions": [
@@ -328,6 +329,7 @@
         "Implement the agreed deposit identity and message domain separation in L1 and L2; preserve single-active-deposit and nullifier guarantees.",
         "Add adversarial tests before integrating changed ABIs.",
         "Adopt the single V1 note layout and make the minimum coherent constructor, selector, query and carry-forward changes across existing operations; record still-pending C02\u2013C05 semantics without introducing a second legacy path.",
+        "Correct the P04 logical-note storage assumption against the actual eight-field V5 note limit. Preserve all eleven logical values using canonical typed subfield packing; qualify actual creation, constrained delivery, selection and nullification, not packing alone.",
         "Use the specified ceiling cooldown and checked initial eligibility for newly claimed rights; C05 retains full penalty, burst, boundary and finite-exit qualification.",
         "Update only the affected ABI consumers and generated artifacts together, including deploy/claim/receipt/exit arguments. Record the exact configuration ABI and storage choice before implementation; broader wallet recovery and UI remain downstream.",
         "Build the minimum real authenticated Ready/deposit/claim/no-post-exit harness needed for C01 acceptance; distinguish actual Inbox/Outbox verification from rollup proof acceptance, and keep unobserved real-proof criteria incomplete."
@@ -348,12 +350,16 @@
         {
           "id": "C01-A04",
           "description": "Existing deposit flows and new negative tests pass without bypassing message consumption or proof constraints."
+        },
+        {
+          "id": "C01-A05",
+          "description": "The corrected V1 storage note fits the unmodified V5 eight-field limit; canonical packing rejects over-width inputs, generated selectors locate the intended fields, and actual note creation, constrained delivery, retrieval and nullification pass. The eleven-field logical wallet view remains exact."
         }
       ],
       "evidence": "evidence/C01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "Authenticated V1 implementation checkpoint verified: Noir101/101, portal29/29, client/artifact41/41, app build and offline CLI pass. Compact note lifecycle/two-receipt selection pass. Genuine native padding proof/corruption control passed (~5s,551MB maxRSS); not application/epoch assurance. Next: nontrivial BaseParity capacity and actual real-proof bridge/deploy integration; C01 acceptance remains incomplete.",
       "priority": 6
     },
     {
@@ -670,9 +676,10 @@
       "title": "Implement and evaluate private or shared sponsored fees",
       "phase": "engineering",
       "kind": "internal",
-      "status": "active",
+      "status": "planned",
       "depends_on": [
-        "P04"
+        "P04",
+        "C03"
       ],
       "requirements": [
         "REQ06",
@@ -716,7 +723,7 @@
       "evidence": "evidence/W01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Local sponsor success, exact debit/replay and paid public-revert consumption pass (commits1a58f50,6485e15). Prepared unchanged coupon1 now fails actual admission solely on expiry after validation slot crosses deadline; canonicalanchor and balances unchanged. Next queued-expiry builder check, then production ABI/issuer/funding/outage integration. Mock proofs/proposed inclusion only; W01 remains incomplete.",
+      "checkpoint": "Mechanism feasibility passed and committed throughdb1e55c: actual local sponsor debit, exact coupon replay, paid revert, admission+builder expiry. Production integration waits for C03 (C01 fresh deposit schema, C02 owner/ancestry, C03 stable post IDs). All W01 criteria retained; resume against fresh delegated ABI afterC03. Requalify later C04\u2013C06 effects before release.",
       "priority": 5
     },
     {

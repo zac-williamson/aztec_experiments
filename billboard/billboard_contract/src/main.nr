@@ -4,7 +4,7 @@ use aztec::macros::aztec;
 
 #[aztec]
 pub contract Billboard {
-    use crate::lib::{compute_cooldown, get_deposit_msg_hash, get_withdraw_msg_hash};
+    use crate::lib::{ReceiptMetadata, SequenceState, compute_cooldown, checked_time_add, deposit_chain_id, post_link, get_ready_msg_hash, get_deposit_msg_hash, get_withdraw_msg_hash};
 
     use aztec::{
         history::{note::assert_note_existed_by, storage::public_storage_historical_read},
@@ -18,17 +18,18 @@ pub contract Billboard {
         note::{
             note_getter_options::{NoteGetterOptions, NoteStatus},
             note_viewer_options::NoteViewerOptions,
-            note_interface::NoteHash,
+            note_interface::{NoteHash, NoteProperties},
             HintedNote,
             NoteMessage,
         },
         protocol::{
             address::{AztecAddress, EthAddress},
-            hash::poseidon2_hash_with_separator,
-            traits::{Deserialize, FromField, Packable, Serialize, ToField},
+                        traits::{Deserialize, FromField, Packable, Serialize, ToField},
         },
-        state_vars::{Map, Owned, PrivateSet, PublicMutable, StateVariable},
+        state_vars::{Map, Owned, PrivateSet, PublicImmutable, PublicMutable, StateVariable},
     };
+
+    use aztec::utils::comparison::Comparator;
 
     // ============================================================
     // Constants
@@ -49,16 +50,6 @@ pub contract Billboard {
     /// Used by get_screen_hints to search for child/grandchild.
     global MAX_HINT_NOTES: u32 = 16;
 
-    /// Custom domain separator for post-chain links.
-    /// link = poseidon2_hash_with_separator([inner_note_hash, link_secret], DOM_SEP__POST_LINK)
-    global DOM_SEP__POST_LINK: u32 = 3141592653;
-
-    /// Sentinel value for "no real post yet" in last_real_post_index.
-    global NO_REAL_POST: u32 = 0xFFFFFFFF;
-
-    /// Sentinel value for "nothing screened yet" in last_screened_index.
-    global NO_SCREENED: u32 = 0xFFFFFFFF;
-
     // ============================================================
     // Note type: PostNote — append-only chain anchor
     // ============================================================
@@ -75,42 +66,77 @@ pub contract Billboard {
     // link binds to the specific note's hash (which includes random randomness).
     //
     // is_dummy: dummy posts advance the chain and screen normally, but don't
-    // store message content and don't update last_real_post_index. Used for
+    // store message content and don't update last_real_sequence. Used for
     // withdrawal (make dummy posts until screening catches up).
     #[derive(Deserialize, Eq, Serialize, Packable)]
     #[note]
     pub struct PostNote {
-        pub post_index: u32,
-        pub timestamp: u64,
-        pub prev_link: Field,
+        pub schema_version: u32,
+        pub deposit_chain_id: Field,
+        pub sequence: u64,
+        pub post_id: Field,
+        pub anchor_timestamp: u64,
+        pub previous_link: Field,
         pub is_dummy: bool,
     }
 
-    // ============================================================
-    // Note type: DepositNote
-    // ============================================================
-    // The deposit note tracks the user's posting state:
-    //   post_chain_head: link to the most recent PostNote (or SENTINEL)
-    //   last_screened_link: link to the last screened PostNote (or SENTINEL)
-    //   last_screened_index: post_index of last screened post (NO_SCREENED if none)
-    //   last_real_post_index: post_index of last non-dummy post (NO_REAL_POST if none)
-    //   next_allowed_time: earliest time the next post is allowed (save-up + cooldown)
-    //
-    // The screening mechanism: each post() call screens 0-2 older posts
-    // (child and grandchild of last_screened). Posts are only screened once
-    // — once last_screened advances past them, their flag status is final.
-    // The censor has a guaranteed censor_window to flag each post before it
-    // gets screened.
     #[derive(Deserialize, Eq, Serialize, Packable)]
     #[note]
     pub struct DepositNote {
+        pub receipt: ReceiptMetadata,
+        pub deposit_chain_id: Field,
         pub amount: u128,
         pub l1_depositor: EthAddress,
-        pub post_chain_head: Field,
-        pub last_screened_link: Field,
-        pub last_screened_index: u32,
-        pub last_real_post_index: u32,
+        pub head_link: Field,
+        pub screened_link: Field,
+        pub sequences: SequenceState,
         pub next_allowed_time: u64,
+    }
+
+    impl DepositNote {
+        fn logical_fields(self) -> [Field; 11] {
+            [self.receipt.schema_version as Field, self.deposit_chain_id, self.receipt.deposit_nonce as Field,
+                self.amount as Field, self.l1_depositor.to_field(), self.head_link,
+                self.sequences.head_sequence as Field, self.screened_link, self.sequences.screened_sequence as Field,
+                self.sequences.last_real_sequence as Field, self.next_allowed_time as Field]
+        }
+    }
+
+    #[derive(Eq, Packable)]
+    pub struct Config {
+        pub l1_chain_id: u64,
+        pub rollup_address: EthAddress,
+        pub rollup_version: u32,
+        pub min_deposit: u128,
+        pub max_deposit: u128,
+        pub base_cooldown: u32,
+        pub k_multiplier: u16,
+        pub censor_window: u32,
+        pub max_save_up: u16,
+        pub deployer: AztecAddress,
+    }
+
+    impl Config {
+        fn hash(self, board: AztecAddress) -> Field {
+            crate::lib::get_config_hash(self.l1_chain_id, self.rollup_address, board, self.rollup_version,
+                self.min_deposit, self.max_deposit, self.base_cooldown, self.k_multiplier,
+                self.censor_window, self.max_save_up)
+        }
+        fn validate(self, chain: Field, version: Field) {
+            self.rollup_address.validate();
+            assert(self.rollup_address.to_field() != 0, "Zero rollup");
+            assert(self.deployer.to_field() != 0, "Zero deployer");
+            assert(self.l1_chain_id > 0, "Zero chain");
+            assert(self.rollup_version > 0, "Zero rollup version");
+            assert(chain == self.l1_chain_id as Field, "Wrong chain");
+            assert(version == self.rollup_version as Field, "Wrong rollup version");
+            assert(self.min_deposit > 0, "Min deposit must be > 0");
+            assert((self.max_deposit >= self.min_deposit) & (self.max_deposit <= 0xffffffffffffffffffffffff), "Invalid maximum deposit");
+            assert(self.base_cooldown > 0, "Base cooldown must be > 0");
+            assert(self.k_multiplier > 0, "K must be > 0");
+            assert(self.censor_window > 0, "Censor window must be > 0");
+            assert(self.max_save_up > 0, "Max save up must be > 0");
+        }
     }
 
     // ============================================================
@@ -119,28 +145,15 @@ pub contract Billboard {
 
     #[storage]
     struct Storage<Context> {
-        portal_address: PublicMutable<EthAddress, Context>,
-        portal_set: PublicMutable<bool, Context>,
+        portal_address: PublicImmutable<EthAddress, Context>,
+        config: PublicImmutable<Config, Context>,
         deposits: Owned<PrivateSet<DepositNote, Context>, Context>,
         /// Append-only post chain — one PrivateSet per account.
         /// PostNotes are never nullified; they serve as historical anchors.
         posts: Owned<PrivateSet<PostNote, Context>, Context>,
         post_count: PublicMutable<u32, Context>,
         post_data: Map<u32, PublicMutable<Field, Context>, Context>,
-        // Deployer-configurable parameters (set in init)
-        deployer: PublicMutable<AztecAddress, Context>,
-        min_deposit: PublicMutable<u128, Context>,
-        base_cooldown: PublicMutable<u64, Context>,
-        // Censor & screening parameters
         censor: PublicMutable<AztecAddress, Context>,
-        k_multiplier: PublicMutable<u64, Context>,
-        /// Censor window in seconds: minimum time the censor has to flag a post
-        /// before it gets screened. Posts younger than censor_window cannot be
-        /// screened yet.
-        censor_window: PublicMutable<u64, Context>,
-        /// Maximum number of posts that can be "saved up" — limits how many
-        /// posts can be made in quick succession after returning from dormancy.
-        max_save_up: PublicMutable<u64, Context>,
         // Post metadata (public)
         post_time: Map<u32, PublicMutable<u64, Context>, Context>,
         post_flagged: Map<u32, PublicMutable<bool, Context>, Context>,
@@ -161,58 +174,45 @@ pub contract Billboard {
     #[external("public")]
     #[initializer]
     fn init(
-        min_deposit: u128,
-        base_cooldown: u64,
-        censor: AztecAddress,
-        k: u64,
-        censor_window: u64,
-        max_save_up: u64,
-        policy: [Field; POLICY_FIELDS],
-        policy_len: u32,
+        l1_chain_id: u64, rollup_address: EthAddress, rollup_version: u32,
+        min_deposit: u128, max_deposit: u128, base_cooldown: u32,
+        censor: AztecAddress, k: u16, censor_window: u32, max_save_up: u16,
+        policy: [Field; POLICY_FIELDS], policy_len: u32,
     ) {
-        assert(min_deposit > 0, "Min deposit must be > 0");
-        assert(base_cooldown > 0, "Base cooldown must be > 0");
-        assert(k > 0, "K must be > 0");
-        assert(censor_window > 0, "Censor window must be > 0");
-        assert(max_save_up > 0, "Max save up must be > 0");
-        assert(policy_len <= MAX_POLICY_BYTES, "Policy too long");
-        self.storage.post_count.write(0);
-        self.storage.portal_set.write(false);
-        self.storage.deployer.write(self.msg_sender());
-        self.storage.min_deposit.write(min_deposit);
-        self.storage.base_cooldown.write(base_cooldown);
+        let config = Config { l1_chain_id, rollup_address, rollup_version, min_deposit,
+            max_deposit, base_cooldown, k_multiplier: k, censor_window, max_save_up,
+            deployer: self.msg_sender() };
+        config.validate(self.context.chain_id(), self.context.version());
+        assert(censor.to_field() != 0, "Zero censor");
+        crate::lib::validate_policy(policy, policy_len);
+        self.storage.config.initialize(config);
         self.storage.censor.write(censor);
-        self.storage.k_multiplier.write(k);
-        self.storage.censor_window.write(censor_window);
-        self.storage.max_save_up.write(max_save_up);
         self.storage.policy_len.write(policy_len);
-        for i in 0..POLICY_FIELDS {
-            self.storage.policy_data.at(i).write(policy[i]);
-        }
+        for i in 0..POLICY_FIELDS { self.storage.policy_data.at(i).write(policy[i]); }
     }
-
-    // ============================================================
-    // update_portal -- deployer only (griefing fix)
-    // ============================================================
 
     #[external("private")]
     fn update_portal(portal: EthAddress) {
-        let header = self.context.get_anchor_block_header();
-        let address = self.context.this_address();
-        let deployer_slot = self.storage.deployer.get_storage_slot();
-        let deployer_field = public_storage_historical_read(header, deployer_slot, address);
-        let deployer = AztecAddress::from_field(deployer_field);
-        assert(self.msg_sender().to_field() == deployer.to_field(), "Only deployer can set portal");
+        let config = self.storage.config.read();
+        config.validate(self.context.chain_id(), self.context.version());
+        assert(self.msg_sender() == config.deployer, "Only deployer can set portal");
+        portal.validate();
+        assert(portal.to_field() != 0, "Zero portal");
         self.enqueue_self._set_portal_public(portal);
     }
 
     #[external("public")]
     #[only_self]
     fn _set_portal_public(portal: EthAddress) {
-        let already_set = self.storage.portal_set.read();
-        assert(!already_set, "Portal address already set -- immutable");
-        self.storage.portal_address.write(portal);
-        self.storage.portal_set.write(true);
+        portal.validate();
+        assert(portal.to_field() != 0, "Zero portal");
+        assert(!self.storage.portal_address.is_initialized(), "Portal address already set -- immutable");
+        let config = self.storage.config.read();
+        config.validate(self.context.chain_id(), self.context.version());
+        self.storage.portal_address.initialize(portal);
+        let content = get_ready_msg_hash(config.l1_chain_id, portal, self.address,
+            config.rollup_version, config.hash(self.address));
+        self.context.message_portal(portal, content);
     }
 
     // ============================================================
@@ -239,7 +239,7 @@ pub contract Billboard {
         let sender = self.msg_sender();
         assert(sender.to_field() != AztecAddress::zero().to_field(), "No censor configured");
         assert(sender.to_field() == censor.to_field(), "Only censor can set policy");
-        assert(policy_len <= MAX_POLICY_BYTES, "Policy too long");
+        crate::lib::validate_policy(policy, policy_len);
         self.storage.policy_len.write(policy_len);
         for i in 0..POLICY_FIELDS {
             self.storage.policy_data.at(i).write(policy[i]);
@@ -275,39 +275,31 @@ pub contract Billboard {
     // ============================================================
 
     #[external("private")]
-    fn claim_deposit(
-        depositor: EthAddress,
-        amount: u128,
-        secret: Field,
-        message_leaf_index: Field,
-        portal: EthAddress,
-    ) {
+    fn claim_deposit(depositor: EthAddress, amount: u128, deposit_nonce: u64, secret: Field, message_leaf_index: Field) {
         let sender = self.msg_sender();
         let now = self.context.get_anchor_block_header().timestamp();
-
-        let content = get_deposit_msg_hash(depositor, amount);
+        let config = self.storage.config.read();
+        config.validate(self.context.chain_id(), self.context.version());
+        let portal = self.storage.portal_address.read();
+        portal.validate();
+        depositor.validate();
+        assert(portal.to_field() != 0, "Zero portal");
+        assert(sender.to_field() != 0, "Zero owner");
+        assert(depositor.to_field() != 0, "Zero depositor");
+        assert(deposit_nonce > 0, "Zero deposit nonce");
+        assert(secret != 0, "Zero claim secret");
+        assert(amount >= config.min_deposit, "Deposit below minimum");
+        assert(amount <= config.max_deposit, "Deposit above maximum");
+        let content = get_deposit_msg_hash(config.l1_chain_id, portal, self.address,
+            config.rollup_version, depositor, deposit_nonce, amount);
         self.context.consume_l1_to_l2_message(content, [secret], portal, message_leaf_index);
-
-        let header = self.context.get_anchor_block_header();
-        let addr = self.context.this_address();
-        let cd_slot = self.storage.base_cooldown.get_storage_slot();
-        let md_slot = self.storage.min_deposit.get_storage_slot();
-        let base_cooldown: u64 = (public_storage_historical_read(header, cd_slot, addr)) as u64;
-        let min_deposit: u128 = (public_storage_historical_read(header, md_slot, addr)) as u128;
-
-        assert(amount >= min_deposit, "Deposit below minimum");
-
-        let cooldown = compute_cooldown(amount, base_cooldown, min_deposit);
-
-        let note = DepositNote {
-            amount: amount,
-            l1_depositor: depositor,
-            post_chain_head: SENTINEL,
-            last_screened_link: SENTINEL,
-            last_screened_index: NO_SCREENED,
-            last_real_post_index: NO_REAL_POST,
-            next_allowed_time: now + cooldown,
-        };
+        let chain = deposit_chain_id(self.address, sender, content, secret);
+        assert(chain != 0, "Zero deposit identity");
+        let cooldown = compute_cooldown(amount, config.base_cooldown as u64, config.min_deposit);
+        let note = DepositNote { receipt: ReceiptMetadata { schema_version: 1, deposit_nonce }, deposit_chain_id: chain,
+            amount, l1_depositor: depositor, head_link: 0, screened_link: 0,
+            sequences: SequenceState { head_sequence: 0, screened_sequence: 0, last_real_sequence: 0 },
+            next_allowed_time: checked_time_add(now, cooldown) };
         self.storage.deposits.at(sender).insert(note).deliver(MessageDelivery::onchain_constrained());
     }
 
@@ -339,6 +331,7 @@ pub contract Billboard {
 
     #[external("private")]
     fn post(
+        deposit_chain_id: Field,
         msg: [Field; MSG_FIELDS],
         is_dummy: bool,
         child: Option<HintedNote<PostNote>>,
@@ -350,26 +343,19 @@ pub contract Billboard {
         let addr = self.context.this_address();
 
         // --- Pop the deposit note ---
-        let options = NoteGetterOptions::<DepositNote, 7, Field, Field>::new().set_limit(1);
+        let options = NoteGetterOptions::<DepositNote, 8, Field, Field>::new()
+            .select(DepositNote::properties().deposit_chain_id, Comparator.EQ, deposit_chain_id).set_limit(1);
         let notes = self.storage.deposits.at(sender).pop_notes(options);
         assert(notes.len() > 0, "No deposit note found -- claim a deposit first");
         let dep_note = notes.get_unchecked(0);
+        assert((dep_note.receipt.schema_version == 1) & (dep_note.deposit_chain_id == deposit_chain_id) & (deposit_chain_id != 0), "Invalid deposit identity");
 
-        // --- Read config parameters ---
-        let cd_slot = self.storage.base_cooldown.get_storage_slot();
-        let md_slot = self.storage.min_deposit.get_storage_slot();
-        let base_cooldown_val: u64 = (public_storage_historical_read(header, cd_slot, addr)) as u64;
-        let min_deposit_val: u128 = (public_storage_historical_read(header, md_slot, addr)) as u128;
-        let cooldown = compute_cooldown(dep_note.amount, base_cooldown_val, min_deposit_val);
-
-        let k_slot = self.storage.k_multiplier.get_storage_slot();
-        let k: u64 = (public_storage_historical_read(header, k_slot, addr)) as u64;
-
-        let cw_slot = self.storage.censor_window.get_storage_slot();
-        let censor_window: u64 = (public_storage_historical_read(header, cw_slot, addr)) as u64;
-
-        let ms_slot = self.storage.max_save_up.get_storage_slot();
-        let max_save_up: u64 = (public_storage_historical_read(header, ms_slot, addr)) as u64;
+        let config = self.storage.config.read();
+        config.validate(self.context.chain_id(), self.context.version());
+        let cooldown = compute_cooldown(dep_note.amount, config.base_cooldown as u64, config.min_deposit);
+        let k = config.k_multiplier as u64;
+        let censor_window = config.censor_window as u64;
+        let max_save_up = config.max_save_up as u64;
 
         // --- Get link_secret (app-siloed nullifier hiding key) ---
         let owner_npk_m_hash = get_public_keys(sender).npk_m_hash;
@@ -377,13 +363,13 @@ pub contract Billboard {
 
         // --- Screen posts (child and grandchild) ---
         let mut flag_count: u64 = 0;
-        let mut new_last_screened_link = dep_note.last_screened_link;
-        let mut new_last_screened_index = dep_note.last_screened_index;
+        let mut new_screened_link = dep_note.screened_link;
+        let mut new_screened_sequence = dep_note.sequences.screened_sequence;
 
         // Screening is needed if there are unscreened posts:
         //   last_screened != head AND head != SENTINEL (posts exist)
-        let need_screening = (dep_note.last_screened_link != dep_note.post_chain_head)
-            & (dep_note.post_chain_head != SENTINEL);
+        let need_screening = (dep_note.screened_link != dep_note.head_link)
+            & (dep_note.head_link != SENTINEL);
 
         // Censor window threshold: posts older than this can be screened
         let screen_threshold: u64 = if now >= censor_window { now - censor_window } else { 0 };
@@ -400,32 +386,29 @@ pub contract Billboard {
                 child_confirmed.storage_slot,
                 child_confirmed.randomness,
             );
-            let child_link = poseidon2_hash_with_separator(
-                [child_inner_hash, link_secret],
-                DOM_SEP__POST_LINK,
-            );
+            let child_link = post_link(self.address, sender, deposit_chain_id, child_confirmed.note.sequence, child_inner_hash, link_secret);
             assert(
-                child_confirmed.note.prev_link == dep_note.last_screened_link,
+                child_confirmed.note.previous_link == dep_note.screened_link,
                 "Child does not link to last_screened",
             );
 
             // Can only screen if child is older than censor_window
-            if child_confirmed.note.timestamp <= screen_threshold {
+            if child_confirmed.note.anchor_timestamp <= screen_threshold {
                 // Screen child — check flag status
-                let child_flag_slot = self.storage.post_flagged.at(child_confirmed.note.post_index).get_storage_slot();
+                let child_flag_slot = self.storage.post_flagged.at(child_confirmed.note.post_id as u32).get_storage_slot();
                 let child_flagged = public_storage_historical_read(header, child_flag_slot, addr);
                 if child_flagged == 1 {
                     flag_count += 1;
                 }
-                new_last_screened_link = child_link;
-                new_last_screened_index = child_confirmed.note.post_index;
+                new_screened_link = child_link;
+                new_screened_sequence = child_confirmed.note.sequence;
 
                 // --- Check if grandchild is needed and available ---
                 // Grandchild is exempt if:
                 //   (i) child is the head (no grandchild exists), OR
                 //   (ii) grandchild would be too young to screen (but we still provide it
                 //        and the circuit checks its timestamp)
-                let child_is_head = child_link == dep_note.post_chain_head;
+                let child_is_head = child_link == dep_note.head_link;
 
                 if !child_is_head {
                     // Verify and screen grandchild
@@ -438,24 +421,21 @@ pub contract Billboard {
                         gc_confirmed.storage_slot,
                         gc_confirmed.randomness,
                     );
-                    let gc_link = poseidon2_hash_with_separator(
-                        [gc_inner_hash, link_secret],
-                        DOM_SEP__POST_LINK,
-                    );
+                    let gc_link = post_link(self.address, sender, deposit_chain_id, gc_confirmed.note.sequence, gc_inner_hash, link_secret);
                     assert(
-                        gc_confirmed.note.prev_link == child_link,
+                        gc_confirmed.note.previous_link == child_link,
                         "Grandchild does not link to child",
                     );
 
                     // Can only screen grandchild if old enough
-                    if gc_confirmed.note.timestamp <= screen_threshold {
-                        let gc_flag_slot = self.storage.post_flagged.at(gc_confirmed.note.post_index).get_storage_slot();
+                    if gc_confirmed.note.anchor_timestamp <= screen_threshold {
+                        let gc_flag_slot = self.storage.post_flagged.at(gc_confirmed.note.post_id as u32).get_storage_slot();
                         let gc_flagged = public_storage_historical_read(header, gc_flag_slot, addr);
                         if gc_flagged == 1 {
                             flag_count += 1;
                         }
-                        new_last_screened_link = gc_link;
-                        new_last_screened_index = gc_confirmed.note.post_index;
+                        new_screened_link = gc_link;
+                        new_screened_sequence = gc_confirmed.note.sequence;
                     }
                 }
             }
@@ -497,12 +477,10 @@ pub contract Billboard {
         let post_id: u32 = post_id_field as u32;
 
         // --- Create the new PostNote and compute its link ---
-        let post_note = PostNote {
-            post_index: post_id,
-            timestamp: now,
-            prev_link: dep_note.post_chain_head,
-            is_dummy: is_dummy,
-        };
+        let sequence = dep_note.sequences.head_sequence + 1;
+        let post_note = PostNote { schema_version: 1, deposit_chain_id, sequence,
+            post_id: post_id as Field, anchor_timestamp: now,
+            previous_link: dep_note.head_link, is_dummy };
 
         let post_msg = self.storage.posts.at(sender).insert(post_note);
         let new_note = post_msg.get_new_note();
@@ -511,28 +489,29 @@ pub contract Billboard {
             new_note.storage_slot,
             new_note.randomness,
         );
-        let new_link = poseidon2_hash_with_separator([inner_hash, link_secret], DOM_SEP__POST_LINK);
+        let new_link = post_link(self.address, sender, deposit_chain_id, sequence, inner_hash, link_secret);
 
         NoteMessage::new(new_note, self.context).deliver(MessageDelivery::onchain_constrained());
 
         // --- Enqueue public call to store the post ---
         self.enqueue_self._post_public(msg, now, post_id, is_dummy);
 
-        // --- Update last_real_post_index (only for non-dummy posts) ---
+        // --- Update last_real_sequence (only for non-dummy posts) ---
         let new_last_real = if is_dummy {
-            dep_note.last_real_post_index
+            dep_note.sequences.last_real_sequence
         } else {
-            post_id
+            sequence
         };
 
         // --- Re-insert deposit note with updated state ---
         let new_deposit = DepositNote {
+            receipt: dep_note.receipt, deposit_chain_id,
+            sequences: SequenceState { head_sequence: sequence, screened_sequence: new_screened_sequence,
+                last_real_sequence: new_last_real },
             amount: dep_note.amount,
             l1_depositor: dep_note.l1_depositor,
-            post_chain_head: new_link,
-            last_screened_link: new_last_screened_link,
-            last_screened_index: new_last_screened_index,
-            last_real_post_index: new_last_real,
+            head_link: new_link,
+            screened_link: new_screened_link,
             next_allowed_time: new_next_allowed,
         };
         self.storage.deposits.at(sender).insert(new_deposit).deliver(MessageDelivery::onchain_constrained());
@@ -558,48 +537,32 @@ pub contract Billboard {
     // ============================================================
     //
     // Withdrawal is allowed when all real posts have been screened:
-    //   last_screened_index >= last_real_post_index
+    //   screened_sequence >= last_real_sequence
     // If no real posts exist, just check the initial lock (next_allowed_time).
     // To withdraw after posting, make dummy posts until screening catches up.
 
     #[external("private")]
-    fn withdraw(portal: EthAddress) {
+    fn withdraw(deposit_chain_id: Field) {
         let sender = self.msg_sender();
         let now = self.context.get_anchor_block_header().timestamp();
-
-        let options = NoteGetterOptions::<DepositNote, 7, Field, Field>::new().set_limit(1);
+        let config = self.storage.config.read();
+        config.validate(self.context.chain_id(), self.context.version());
+        let portal = self.storage.portal_address.read();
+        portal.validate();
+        assert(portal.to_field() != 0, "Zero portal");
+        let options = NoteGetterOptions::<DepositNote, 8, Field, Field>::new()
+            .select(DepositNote::properties().deposit_chain_id, Comparator.EQ, deposit_chain_id).set_limit(1);
         let notes = self.storage.deposits.at(sender).pop_notes(options);
         assert(notes.len() > 0, "No deposit note found");
-        let dep_note = notes.get_unchecked(0);
-
-        let no_real_posts = dep_note.last_real_post_index == NO_REAL_POST;
-        let nothing_screened = dep_note.last_screened_index == NO_SCREENED;
-
-        if no_real_posts {
-            // No real posts — just check the initial lock
-            assert(
-                now >= dep_note.next_allowed_time,
-                "Too early to withdraw -- initial lock not expired",
-            );
-        } else if nothing_screened {
-            // Real posts exist but none screened yet
-            assert(false, "Too early to withdraw -- not all posts screened");
-        } else {
-            assert(
-                dep_note.last_screened_index >= dep_note.last_real_post_index,
-                "Too early to withdraw -- not all posts screened",
-            );
-        }
-
-        let content = get_withdraw_msg_hash(dep_note.l1_depositor, dep_note.amount);
-        self.enqueue_self._withdraw_public(portal, content);
-    }
-
-    #[external("public")]
-    #[only_self]
-    fn _withdraw_public(portal: EthAddress, content: Field) {
-        let stored_portal = self.storage.portal_address.read();
-        assert(portal.to_field() == stored_portal.to_field(), "Wrong portal address");
+        let deposit = notes.get_unchecked(0);
+        assert((deposit.receipt.schema_version == 1) & (deposit.deposit_chain_id == deposit_chain_id) & (deposit_chain_id != 0), "Invalid deposit identity");
+        assert((deposit.receipt.deposit_nonce > 0) & (deposit.amount >= config.min_deposit) & (deposit.amount <= config.max_deposit), "Invalid deposit receipt");
+        deposit.l1_depositor.validate();
+        assert(deposit.l1_depositor.to_field() != 0, "Zero depositor");
+        assert(deposit.sequences.screened_sequence >= deposit.sequences.last_real_sequence, "Too early to withdraw -- not all posts screened");
+        assert(now >= deposit.next_allowed_time, "Too early to withdraw -- time lock not expired");
+        let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+            config.rollup_version, deposit.l1_depositor, deposit.receipt.deposit_nonce, deposit.amount);
         self.context.message_portal(portal, content);
     }
 
@@ -661,37 +624,37 @@ pub contract Billboard {
     #[external("public")]
     #[view]
     fn get_k_multiplier() -> pub u64 {
-        self.storage.k_multiplier.read()
+        self.storage.config.read().k_multiplier as u64
     }
 
     #[external("public")]
     #[view]
     fn get_censor_window() -> pub u64 {
-        self.storage.censor_window.read()
+        self.storage.config.read().censor_window as u64
     }
 
     #[external("public")]
     #[view]
     fn get_max_save_up() -> pub u64 {
-        self.storage.max_save_up.read()
+        self.storage.config.read().max_save_up as u64
     }
 
     #[external("public")]
     #[view]
     fn get_deployer() -> pub AztecAddress {
-        self.storage.deployer.read()
+        self.storage.config.read().deployer
     }
 
     #[external("public")]
     #[view]
     fn get_min_deposit() -> pub u128 {
-        self.storage.min_deposit.read()
+        self.storage.config.read().min_deposit
     }
 
     #[external("public")]
     #[view]
     fn get_base_cooldown() -> pub u64 {
-        self.storage.base_cooldown.read()
+        self.storage.config.read().base_cooldown as u64
     }
 
     #[external("public")]
@@ -703,7 +666,7 @@ pub contract Billboard {
     #[external("public")]
     #[view]
     fn is_portal_set() -> pub bool {
-        self.storage.portal_set.read()
+        self.storage.portal_address.is_initialized()
     }
 
     /// Returns the moderation policy as packed Fields and its byte length.
@@ -718,39 +681,37 @@ pub contract Billboard {
         (policy, self.storage.policy_len.read())
     }
 
-    /// Returns details of the first deposit note for an account as a Field array:
-    /// [0] = amount (u128 as Field)
-    /// [1] = l1_depositor (EthAddress as Field)
-    /// [2] = post_chain_head (Field link, or SENTINEL)
-    /// [3] = last_screened_link (Field link, or SENTINEL)
-    /// [4] = last_screened_index (u32 as Field, NO_SCREENED if nothing screened)
-    /// [5] = last_real_post_index (u32 as Field, NO_REAL_POST if no real posts)
-    /// [6] = next_allowed_time (u64 as Field)
-    /// Returns all-zeros if no note exists.
+    #[external("public")]
+    #[view]
+    fn get_config_hash() -> pub Field { self.storage.config.read().hash(self.address) }
+
+    #[external("public")]
+    #[view]
+    fn get_max_deposit() -> pub u128 { self.storage.config.read().max_deposit }
+
+    /// Local wallet discovery only. Pagination is explicit; private spends select an exact ID.
     #[external("utility")]
-    unconstrained fn get_deposit_info(owner: AztecAddress) -> pub [Field; 7] {
-        let options = NoteViewerOptions::<DepositNote, 7>::new().set_limit(1);
+    unconstrained fn get_deposit_ids(owner: AztecAddress, page_offset: u32) -> pub [Field; 10] {
+        let options = NoteViewerOptions::<DepositNote, 8>::new().set_limit(10).set_offset(page_offset);
         let notes = self.storage.deposits.at(owner).view_notes(options);
-        if notes.len() == 0 {
-            [0, 0, SENTINEL, SENTINEL, NO_SCREENED as Field, NO_REAL_POST as Field, 0]
-        } else {
-            let note = notes.get_unchecked(0);
-            [
-                note.amount as Field,
-                note.l1_depositor.to_field(),
-                note.post_chain_head,
-                note.last_screened_link,
-                note.last_screened_index as Field,
-                note.last_real_post_index as Field,
-                note.next_allowed_time as Field,
-            ]
-        }
+        let mut ids = [0; 10];
+        for i in 0..10 { if i < notes.len() { ids[i] = notes.get_unchecked(i).deposit_chain_id; } }
+        ids
+    }
+
+    /// Exact V1 serialization, selected by private deposit identity.
+    #[external("utility")]
+    unconstrained fn get_deposit_info(owner: AztecAddress, deposit_chain_id: Field) -> pub [Field; 11] {
+        let options = NoteViewerOptions::<DepositNote, 8>::new()
+            .select(DepositNote::properties().deposit_chain_id, Comparator.EQ, deposit_chain_id).set_limit(1);
+        let notes = self.storage.deposits.at(owner).view_notes(options);
+        if notes.len() == 0 { [0; 11] } else { notes.get_unchecked(0).logical_fields() }
     }
 
     /// Returns the child and grandchild HintedNotes for screening.
     /// The frontend calls this and passes the results to post().
     ///
-    /// - child: the PostNote whose prev_link == last_screened_link
+    /// - child: the PostNote whose prev_link == screened_link
     /// - grandchild: the PostNote whose prev_link == child_link (or None
     ///   if child is the head or no grandchild exists)
     ///
@@ -758,10 +719,11 @@ pub contract Billboard {
     /// or no posts exist).
     #[external("utility")]
     unconstrained fn get_screen_hints(
-        owner: AztecAddress,
+        owner: AztecAddress, deposit_chain_id: Field,
     ) -> pub (Option<HintedNote<PostNote>>, Option<HintedNote<PostNote>>) {
         // 1. Get deposit note
-        let dep_options = NoteViewerOptions::<DepositNote, 7>::new().set_limit(1);
+        let dep_options = NoteViewerOptions::<DepositNote, 8>::new()
+            .select(DepositNote::properties().deposit_chain_id, Comparator.EQ, deposit_chain_id).set_limit(1);
         let dep_notes = self.storage.deposits.at(owner).view_notes(dep_options);
 
         let mut child = Option::none();
@@ -778,8 +740,8 @@ pub contract Billboard {
         let mut dep_note_last_screened: Field = SENTINEL;
         if !done {
             let dep_note = dep_notes.get_unchecked(0);
-            dep_note_head = dep_note.post_chain_head;
-            dep_note_last_screened = dep_note.last_screened_link;
+            dep_note_head = dep_note.head_link;
+            dep_note_last_screened = dep_note.screened_link;
             // Screening not needed if last_screened == head or no posts
             if (dep_note_last_screened == dep_note_head) | (dep_note_head == SENTINEL) {
                 done = true;
@@ -818,7 +780,7 @@ pub contract Billboard {
                 NoteStatus.ACTIVE,
             );
 
-            // 5. Find child (whose prev_link == last_screened_link)
+            // 5. Find child (whose prev_link == screened_link)
             let mut child_link: Field = 0;
 
             for i in 0..MAX_HINT_NOTES {
@@ -826,16 +788,13 @@ pub contract Billboard {
                     let maybe = opt_notes[i];
                     if maybe.is_some() {
                         let hinted = maybe.unwrap_unchecked();
-                        if hinted.note.prev_link == dep_note_last_screened {
+                        if (hinted.note.deposit_chain_id == deposit_chain_id) & (hinted.note.previous_link == dep_note_last_screened) {
                             let inner_hash = hinted.note.compute_note_hash(
                                 hinted.owner,
                                 hinted.storage_slot,
                                 hinted.randomness,
                             );
-                            child_link = poseidon2_hash_with_separator(
-                                [inner_hash, link_secret],
-                                DOM_SEP__POST_LINK,
-                            );
+                            child_link = post_link(self.address, owner, deposit_chain_id, hinted.note.sequence, inner_hash, link_secret);
                             child = Option::some(hinted);
                         }
                     }
@@ -854,7 +813,7 @@ pub contract Billboard {
                         let maybe = opt_notes[i];
                         if maybe.is_some() {
                             let hinted = maybe.unwrap_unchecked();
-                            if hinted.note.prev_link == child_link {
+                            if (hinted.note.deposit_chain_id == deposit_chain_id) & (hinted.note.previous_link == child_link) {
                                 grandchild = Option::some(hinted);
                             }
                         }

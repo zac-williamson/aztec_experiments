@@ -4,140 +4,108 @@ pragma solidity >=0.8.27;
 import {IRollup} from "@aztec/core/interfaces/IRollup.sol";
 import {IInbox} from "@aztec/core/interfaces/messagebridge/IInbox.sol";
 import {IOutbox} from "@aztec/core/interfaces/messagebridge/IOutbox.sol";
-import {Hash} from "@aztec/core/libraries/crypto/Hash.sol";
+import {Constants} from "@aztec/core/libraries/ConstantsGen.sol";
 import {DataStructures} from "@aztec/core/libraries/DataStructures.sol";
 import {Epoch} from "@aztec/core/libraries/TimeLib.sol";
+import {ReentrancyGuard} from "@oz/utils/ReentrancyGuard.sol";
+import {PortalMessages} from "./PortalMessages.sol";
 
-/// @title BillboardPortal
-/// @notice L1 portal for the anonymous billboard. Accepts ETH deposits,
-///         sends L1->L2 messages, and processes L2->L1 withdrawal messages.
-///
-/// Deposit flow:
-///   1. User calls deposit(secretHash) with ETH (any amount >= 0.001 ETH)
-///   2. Portal records the deposit and sends an L1->L2 message
-///   3. On L2, the user calls Billboard.claim_deposit() to consume the
-///      message and create a private DepositNote
-///
-/// Withdrawal flow:
-///   1. On L2, user calls Billboard.withdraw() which consumes the note
-///      and sends an L2->L1 message with content = hash(depositor, amount)
-///   2. After the epoch proof is submitted, the user calls withdraw()
-///      on this portal to consume the Outbox message and claim ETH
-///   3. The portal reads the amount from deposits[msg.sender] -- the user
-///      does NOT supply the amount. The L2->L1 message content includes
-///      the amount, so the portal cryptographically verifies the amount
-///      matches.
-///
-/// Security:
-///   - One active deposit per L1 address (can't deposit if already have one)
-///   - Withdraw amount is NOT user-supplied -- comes from deposits[msg.sender]
-///   - L2->L1 message includes amount in content hash, preventing amount forgery
-///   - After withdrawal, deposits[msg.sender] is set to 0, allowing re-deposit
-contract BillboardPortal {
-    using Hash for bytes;
-
-    /// @notice Minimum deposit (set at deploy time)
+/// @notice Fresh V1 ETH escrow. Deposits require an authenticated Ready message.
+/// @dev No administrator refund/sweep or legacy receipt path. Forced ETH is surplus.
+contract BillboardPortal is ReentrancyGuard {
     uint256 public immutable MIN_DEPOSIT;
-
-    /// @notice The L2 billboard contract address
+    uint256 public immutable MAX_DEPOSIT;
     bytes32 public immutable L2_CONTRACT;
-
-    /// @notice The Aztec rollup contract
     IRollup public immutable ROLLUP;
-
-    /// @notice The inbox for sending L1->L2 messages
     IInbox public immutable INBOX;
-
-    /// @notice The Aztec version
+    IOutbox public immutable OUTBOX;
     uint256 public immutable VERSION;
+    uint256 public immutable L1_CHAIN_ID;
+    bytes32 public immutable CONFIG_HASH;
 
-    /// @notice Deposits per user: depositor => amount
-    /// @dev A non-zero value means the user has an active deposit.
-    ///      Set to 0 on withdrawal, allowing re-deposit.
-    mapping(address => uint256) public deposits;
-
-    /// @notice Total ETH deposited (for accounting)
+    struct Receipt { uint64 nonce; uint128 amount; }
+    mapping(address => Receipt) public activeDeposit;
+    mapping(address => uint64) public lastDepositNonce;
     uint256 public totalDeposited;
+    bool public depositsEnabled;
 
-    event Deposited(address indexed depositor, uint256 amount, bytes32 secretHash, bytes32 key, uint256 index);
-    event Withdrawn(address indexed depositor, uint256 amount);
+    event Activated(bytes32 indexed configHash);
+    event Deposited(address indexed depositor, uint64 nonce, uint128 amount, bytes32 secretHash, bytes32 key, uint256 index);
+    event Withdrawn(address indexed depositor, uint64 nonce, uint128 amount);
 
-    constructor(address _rollup, bytes32 _l2Contract, uint256 _version, uint256 _minDeposit) {
-        ROLLUP = IRollup(_rollup);
-        INBOX = IRollup(_rollup).getInbox();
-        L2_CONTRACT = _l2Contract;
-        VERSION = _version;
-        MIN_DEPOSIT = _minDeposit;
+    constructor(address rollup, bytes32 board, uint256 version, uint256 minDeposit, uint256 maxDeposit, bytes32 configHash) {
+        require(rollup.code.length > 0, "Invalid rollup");
+        require(uint256(board) > 0 && uint256(board) < Constants.P, "Invalid board");
+        require(version > 0 && version <= type(uint32).max, "Invalid version");
+        require(block.chainid > 0 && block.chainid <= type(uint64).max, "Invalid chain");
+        require(minDeposit > 0 && minDeposit <= maxDeposit && maxDeposit <= type(uint96).max, "Invalid deposit bounds");
+        require(uint256(configHash) > 0 && uint256(configHash) < Constants.P, "Invalid config hash");
+        IInbox inbox = IRollup(rollup).getInbox();
+        IOutbox outbox = IRollup(rollup).getOutbox();
+        require(address(inbox).code.length > 0 && address(outbox).code.length > 0, "Invalid bridge");
+        ROLLUP = IRollup(rollup);
+        INBOX = inbox;
+        OUTBOX = outbox;
+        L2_CONTRACT = board;
+        VERSION = version;
+        L1_CHAIN_ID = block.chainid;
+        MIN_DEPOSIT = minDeposit;
+        MAX_DEPOSIT = maxDeposit;
+        CONFIG_HASH = configHash;
     }
 
-    /// @notice Deposit ETH and send an L1->L2 message
-    /// @param _secretHash Hash of the claim secret (computed as poseidon2(secret) with domain separator)
-    /// @return key The message key in the Inbox
-    /// @return index The leaf index in the Inbox tree
-    /// @dev Reverts if the user already has an active deposit (deposits[msg.sender] > 0)
-    function deposit(bytes32 _secretHash) external payable returns (bytes32 key, uint256 index) {
+    /// @notice Any relayer may present Ready; no permission can bypass Outbox verification.
+    function activate(uint256 epoch, uint256 checkpointCount, uint256 leafIndex, bytes32[] calldata path) external nonReentrant {
+        require(!depositsEnabled, "Already activated");
+        _consume(PortalMessages.ready(L1_CHAIN_ID, address(this), L2_CONTRACT, VERSION, CONFIG_HASH),
+            epoch, checkpointCount, leafIndex, path);
+        depositsEnabled = true;
+        emit Activated(CONFIG_HASH);
+    }
+
+    function deposit(bytes32 secretHash) external payable nonReentrant returns (bytes32 key, uint256 index) {
+        require(block.chainid == L1_CHAIN_ID, "Chain changed");
+        require(depositsEnabled, "Deposits disabled");
         require(msg.value >= MIN_DEPOSIT, "Below min deposit");
-        require(msg.value <= type(uint128).max, "Amount too large");
-        // Enforce one active deposit per address
-        require(deposits[msg.sender] == 0, "Already have an active deposit");
-
-        // Record the deposit
-        deposits[msg.sender] = msg.value;
-        totalDeposited += msg.value;
-
-        // Send L1->L2 message
-        DataStructures.L2Actor memory actor = DataStructures.L2Actor(L2_CONTRACT, VERSION);
-
-        // Content hash matches what the L2 contract computes in get_deposit_msg_hash():
-        //   sha256ToField(abi.encodeWithSignature("claim_deposit(bytes32,uint256)", depositor, amount))
-        bytes32 contentHash = Hash.sha256ToField(
-            abi.encodeWithSignature("claim_deposit(bytes32,uint256)", bytes32(uint256(uint160(msg.sender))), msg.value)
-        );
-
-        (key, index) = INBOX.sendL2Message(actor, contentHash, _secretHash);
-
-        emit Deposited(msg.sender, msg.value, _secretHash, key, index);
+        require(msg.value <= MAX_DEPOSIT, "Above max deposit");
+        require(uint256(secretHash) > 0 && uint256(secretHash) < Constants.P, "Invalid secret hash");
+        require(activeDeposit[msg.sender].nonce == 0, "Already have an active deposit");
+        uint64 nonce = lastDepositNonce[msg.sender] + 1; // Checked overflow: never reuse nonce zero.
+        uint128 amount = uint128(msg.value); // Constructor caps MAX_DEPOSIT at u96.
+        lastDepositNonce[msg.sender] = nonce;
+        activeDeposit[msg.sender] = Receipt(nonce, amount);
+        totalDeposited += amount;
+        (key, index) = INBOX.sendL2Message(DataStructures.L2Actor(L2_CONTRACT, VERSION),
+            PortalMessages.receipt(false, L1_CHAIN_ID, address(this), L2_CONTRACT, VERSION, msg.sender, nonce, amount), secretHash);
+        emit Deposited(msg.sender, nonce, amount, secretHash, key, index);
     }
 
-    /// @notice Withdraw ETH by consuming an L2->L1 message
-    /// @dev The amount is NOT a parameter -- it comes from deposits[msg.sender].
-    ///      The L2->L1 message content includes the amount (as a hash), so the
-    ///      portal cryptographically verifies the amount matches.
-    /// @param _epoch The epoch containing the L2->L1 message
-    /// @param _numCheckpointsInEpoch Number of checkpoints in the epoch
-    /// @param _leafIndex The leaf index in the Outbox tree
-    /// @param _path The sibling path for the Merkle proof
-    function withdraw(uint256 _epoch, uint256 _numCheckpointsInEpoch, uint256 _leafIndex, bytes32[] calldata _path) external {
-        uint256 amount = deposits[msg.sender];
-        require(amount > 0, "No active deposit");
+    /// @dev All effects and Outbox consumption revert if bridge verification or payment fails.
+    function withdraw(uint256 epoch, uint256 checkpointCount, uint256 leafIndex, bytes32[] calldata path) external nonReentrant {
+        Receipt memory receipt = activeDeposit[msg.sender];
+        require(receipt.nonce != 0, "No active deposit");
+        delete activeDeposit[msg.sender];
+        totalDeposited -= receipt.amount;
+        _consume(PortalMessages.receipt(true, L1_CHAIN_ID, address(this), L2_CONTRACT, VERSION,
+            msg.sender, receipt.nonce, receipt.amount), epoch, checkpointCount, leafIndex, path);
+        (bool ok,) = msg.sender.call{value: receipt.amount}("");
+        require(ok, "ETH transfer failed");
+        emit Withdrawn(msg.sender, receipt.nonce, receipt.amount);
+    }
 
-        // Construct the L2->L1 message with amount in content hash
-        // Content = sha256ToField(abi.encodePacked(depositor_as_bytes32, amount))
-        // This matches L2's get_withdraw_msg_hash(depositor, amount)
+    function _consume(bytes32 content, uint256 epoch, uint256 checkpointCount, uint256 leafIndex, bytes32[] calldata path) private {
+        require(block.chainid == L1_CHAIN_ID, "Chain changed");
         DataStructures.L2ToL1Msg memory message = DataStructures.L2ToL1Msg({
             sender: DataStructures.L2Actor(L2_CONTRACT, VERSION),
-            recipient: DataStructures.L1Actor(address(this), block.chainid),
-            content: Hash.sha256ToField(abi.encodePacked(bytes32(uint256(uint160(msg.sender))), amount))
+            recipient: DataStructures.L1Actor(address(this), L1_CHAIN_ID), content: content
         });
-
-        // Consume the Outbox message (reverts if not found or already consumed)
-        IOutbox outbox = ROLLUP.getOutbox();
-        outbox.consume(message, Epoch.wrap(_epoch), _numCheckpointsInEpoch, _leafIndex, _path);
-
-        // Update deposit record and send ETH
-        deposits[msg.sender] = 0;
-        totalDeposited -= amount; // Fix: decrement so re-deposits don't double-count
-        (bool ok,) = msg.sender.call{value: amount}("");
-        require(ok, "ETH transfer failed");
-
-        emit Withdrawn(msg.sender, amount);
+        OUTBOX.consume(message, Epoch.wrap(epoch), checkpointCount, leafIndex, path);
     }
 
-    /// @notice Get the deposit amount for a user
-    function getDeposit(address user) external view returns (uint256) {
-        return deposits[user];
+    function getDeposit(address depositor) external view returns (uint64 nonce, uint128 amount) {
+        Receipt memory receipt = activeDeposit[depositor];
+        return (receipt.nonce, receipt.amount);
     }
 
-    /// @notice Fallback to receive ETH (not used, but good practice)
-    receive() external payable {}
+    receive() external payable { revert("Unsolicited ETH"); }
 }

@@ -22,16 +22,16 @@
   const CREATE2_PROXY = '0x4e59b44847b379578588920cA78FbF26c0B4956C';
 
   const PORTAL_ABI = [
-    "constructor(address rollup, bytes32 l2Contract, uint256 version, uint256 minDeposit)",
+    "constructor(address rollup, bytes32 board, uint256 version, uint256 minDeposit, uint256 maxDeposit, bytes32 configHash)",
     "function L2_CONTRACT() view returns (bytes32)",
     "function ROLLUP() view returns (address)",
     "function VERSION() view returns (uint256)",
+    "function L1_CHAIN_ID() view returns (uint256)",
     "function MIN_DEPOSIT() view returns (uint256)",
-    "function totalDeposited() view returns (uint256)",
-    "function deposits(address) view returns (uint256)",
-    "function getDeposit(address) view returns (uint256)",
-    "event Deposited(address indexed depositor, uint256 amount, bytes32 secretHash, bytes32 key, uint256 index)",
-    "event Withdrawn(address indexed depositor, uint256 amount)",
+    "function MAX_DEPOSIT() view returns (uint256)",
+    "function CONFIG_HASH() view returns (bytes32)",
+    "function depositsEnabled() view returns (bool)",
+    "function activate(uint256 epoch, uint256 checkpointCount, uint256 leafIndex, bytes32[] path)",
   ];
 
   // ============================================================
@@ -99,14 +99,14 @@
   }
 
   // CREATE2 portal address computation
-  function portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, ethers) {
+  function portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, maxDeposit, configHash, ethers) {
     const iface = new ethers.Interface(portalAbi);
-    const encodedArgs = iface.encodeDeploy([rollup, l2AddrHex, BigInt(version), BigInt(minDeposit)]);
+    const encodedArgs = iface.encodeDeploy([rollup, l2AddrHex, BigInt(version), BigInt(minDeposit), BigInt(maxDeposit), configHash]);
     return ethers.concat([portalBytecode, encodedArgs]);
   }
 
-  function computePortalAddress(portalBytecode, portalAbi, l2AddrHex, rollup, version, minDeposit, ethers) {
-    const creation = portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, ethers);
+  function computePortalAddress(portalBytecode, portalAbi, l2AddrHex, rollup, version, minDeposit, maxDeposit, configHash, ethers) {
+    const creation = portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, maxDeposit, configHash, ethers);
     const salt = ethers.getBytes(l2AddrHex);
     const initCodeHash = ethers.keccak256(creation);
     return ethers.getCreate2Address(CREATE2_PROXY, salt, initCodeHash);
@@ -294,7 +294,7 @@
     const rawNode = a.createAztecNodeClient(nodeUrl);
     const aztecNode = wrapWithRetry(rawNode, 'node', log);
     const nodeInfo = await aztecNode.getNodeInfo();
-    log('  Chain ID: ' + nodeInfo.chainId, 'info');
+    log('  Chain ID: ' + nodeInfo.l1ChainId, 'info');
     log('  Rollup version: ' + nodeInfo.rollupVersion, 'info');
 
     const l1Contracts = await aztecNode.getL1ContractAddresses();
@@ -387,9 +387,12 @@
     const contractArtifact = a.loadContractArtifact(artifact);
     // Constructor args for init(min_deposit, base_cooldown, censor, k,
     //                          censor_window, max_save_up, policy, policy_len)
-    const minDepositWei = config.minDepositWei || ethers.parseEther('0.001');
+    const minDepositWei = config.minDepositWei ?? ethers.parseEther('0.001');
+    if (config.maxDepositWei == null) throw new Error('Maximum deposit must be configured for this fresh deployment');
+    const maxDepositWei = BigInt(config.maxDepositWei);
     const baseCooldown = config.baseCooldown || 3600;
-    const censorAddr = config.censor ? a.AztecAddress.fromFieldUnsafe(a.Fr.fromHexString(config.censor)) : a.AztecAddress.zero();
+    if (!config.censor || BigInt(config.censor) === 0n) throw new Error('A nonzero censor must be configured');
+    const censorAddr = a.AztecAddress.fromFieldUnsafe(a.Fr.fromHexString(config.censor));
     const kMultiplier = config.kMultiplier || 64;
     const censorWindow = config.censorWindow || 3600;
     const maxSaveUp = config.maxSaveUp || 16;
@@ -406,7 +409,8 @@
     log('  Max save up:    ' + maxSaveUp, 'info');
     log('  Policy:         ' + policyLen + ' bytes', 'info');
     const initArgs = [
-      new a.Fr(BigInt(minDepositWei)),
+      BigInt(nodeInfo.l1ChainId), a.EthAddress.fromString(rollupAddr), BigInt(version),
+      new a.Fr(BigInt(minDepositWei)), new a.Fr(maxDepositWei),
       new a.Fr(BigInt(baseCooldown)),
       censorAddr.toField(),
       new a.Fr(BigInt(kMultiplier)),
@@ -472,13 +476,21 @@
     const l2Contract = await a.Contract.at(l2Addr, contractArtifact, wallet);
     log('  Contract registered with PXE.', 'success');
 
-    // Check if portal is already set
-    let portalAlreadySet = false;
-    try {
-      const portalSetVal = await aztecNode.getPublicStorageAt('latest', l2Addr, new a.Fr(2n));
-      portalAlreadySet = portalSetVal && !portalSetVal.isZero();
-      log('  Portal set on L2: ' + (portalAlreadySet ? 'yes' : 'no'), 'info');
-    } catch (e) { /* non-critical */ }
+    const scalar = result => { const value = result?.result ?? result?.value ?? result; return BigInt((value?.inner ?? value).toString()); };
+    const readPortal = async () => ethers.getAddress('0x' + scalar(await l2Contract.methods.get_portal().simulate({ from: address })).toString(16).padStart(40, '0'));
+    const portalState = await l2Contract.methods.is_portal_set().simulate({ from: address });
+    const portalAlreadySet = (portalState?.result ?? portalState?.value ?? portalState) === true;
+    const wordHash = (label, words) => {
+      const bytes = ethers.AbiCoder.defaultAbiCoder().encode(['bytes32', ...words.map(() => 'uint256')],
+        [ethers.encodeBytes32String(label), ...words]);
+      return '0x' + (BigInt(ethers.sha256(bytes)) >> 8n).toString(16).padStart(64, '0');
+    };
+    const configHash = wordHash('AZTEC_BB_CONFIG_V1', [1n, BigInt(nodeInfo.l1ChainId), BigInt(rollupAddr),
+      BigInt(l2Addr.toString()), BigInt(version), BigInt(minDepositWei), maxDepositWei,
+      BigInt(baseCooldown), BigInt(kMultiplier), BigInt(censorWindow), BigInt(maxSaveUp)]);
+    if (scalar(await l2Contract.methods.get_config_hash().simulate({ from: address })) !== BigInt(configHash)) {
+      throw new Error('Deployed board configuration differs from requested configuration');
+    }
 
     // ============================================================
     // Step 9: Deploy L1 portal (or verify if exists)
@@ -505,10 +517,11 @@
       log('  ETH address: ' + ethSigner.address, 'info');
     }
 
-    const predicted = computePortalAddress(portalBytecode, PORTAL_ABI, l2AddrHex, rollupAddr, version, minDepositWei, ethers);
+    let predicted = portalAlreadySet ? await readPortal() : computePortalAddress(portalBytecode, PORTAL_ABI, l2AddrHex, rollupAddr, version, minDepositWei, maxDepositWei, configHash, ethers);
     log('  Predicted portal address: ' + predicted, 'info');
 
     const provider = ethSigner.provider;
+    if ((await provider.getNetwork()).chainId !== BigInt(nodeInfo.l1ChainId)) throw new Error('L1 signer and Aztec node chain mismatch');
     const existingCode = await provider.getCode(predicted);
 
     if (existingCode !== '0x') {
@@ -520,14 +533,15 @@
         log('  CREATE2 proxy not found. Falling back to direct deploy...', 'warn');
         log('  WARNING: address will depend on nonce and is NOT deterministic.', 'warn');
         const factory = new ethers.ContractFactory(PORTAL_ABI, portalBytecode, ethSigner);
-        const contract = await factory.deploy(rollupAddr, l2AddrHex, BigInt(version), BigInt(minDepositWei));
+        const contract = await factory.deploy(rollupAddr, l2AddrHex, BigInt(version), BigInt(minDepositWei), maxDepositWei, configHash);
         log('  Tx sent: ' + contract.deploymentTransaction().hash, 'info');
         await contract.waitForDeployment();
         const addr = await contract.getAddress();
+        predicted = addr;
         log('  Portal deployed at ' + addr, 'success');
       } else {
         log('  Deploying via CREATE2 proxy ' + CREATE2_PROXY + '...', 'info');
-        const creation = portalCreationBytecode(portalBytecode, PORTAL_ABI, rollupAddr, l2AddrHex, version, minDepositWei, ethers);
+        const creation = portalCreationBytecode(portalBytecode, PORTAL_ABI, rollupAddr, l2AddrHex, version, minDepositWei, maxDepositWei, configHash, ethers);
         const salt = ethers.getBytes(l2AddrHex);
         const data = ethers.concat([salt, creation]);
         const tx = await ethSigner.sendTransaction({ to: CREATE2_PROXY, data, value: 0 });
@@ -539,109 +553,53 @@
       }
     }
 
-    // Verify portal
-    const portal = new ethers.Contract(predicted, PORTAL_ABI, provider);
-    try {
-      const l2FromL1 = await portal.L2_CONTRACT();
-      log('  L2_CONTRACT in portal: ' + l2FromL1, 'info');
-      const minDeposit = await portal.MIN_DEPOSIT();
-      log('  Min deposit: ' + ethers.formatEther(minDeposit) + ' ETH', 'info');
-    } catch (e) {
-      log('  Warning: could not verify portal: ' + extractErrorMessage(e), 'warn');
-    }
+    const portal = new ethers.Contract(predicted, PORTAL_ABI, ethSigner);
+    const values = await Promise.all([portal.L2_CONTRACT(), portal.ROLLUP(), portal.VERSION(),
+      portal.L1_CHAIN_ID(), portal.MIN_DEPOSIT(), portal.MAX_DEPOSIT(), portal.CONFIG_HASH()]);
+    const expected = [BigInt(l2AddrHex), BigInt(rollupAddr), BigInt(version), BigInt(nodeInfo.l1ChainId),
+      BigInt(minDepositWei), maxDepositWei, BigInt(configHash)];
+    if (values.some((value, index) => BigInt(value) !== expected[index])) throw new Error('Portal configuration mismatch');
 
-    // ============================================================
-    // Step 10: Link — call update_portal() on L2
-    // ============================================================
-    log('Step 9: Linking portal on L2...', 'info');
-
+    let readyTxHash = config.readyTxHash || null;
     if (portalAlreadySet) {
-      // Check if it's set to the correct address
-      try {
-        const portalAddrVal = await aztecNode.getPublicStorageAt('latest', l2Addr, new a.Fr(1n));
-        const currentPortal = '0x' + portalAddrVal.toBigInt().toString(16).padStart(40, '0');
-        log('  Portal already set on L2: ' + currentPortal, 'info');
-        if (currentPortal.toLowerCase() === predicted.toLowerCase()) {
-          log('  Portal already set correctly! Skipping update_portal().', 'success');
-        } else {
-          throw new Error('Portal already set to a DIFFERENT address (' + currentPortal + '). ' +
-            'Redeploy L2 with a different contract salt.');
+      if ((await readPortal()).toLowerCase() !== predicted.toLowerCase()) throw new Error('Board is bound to another portal');
+    } else {
+      const result = await l2Contract.methods.update_portal(a.EthAddress.fromString(predicted)).send({ from: address });
+      readyTxHash = result.receipt.txHash.toString();
+      log('Portal binding transaction: ' + readyTxHash, 'info');
+      if ((await readPortal()).toLowerCase() !== predicted.toLowerCase()) throw new Error('Portal binding did not persist');
+    }
+
+    if (!await portal.depositsEnabled()) {
+      if (!readyTxHash) throw new Error('Portal awaits Ready proof: provide the original readyTxHash to resume activation');
+      const ready = wordHash('AZTEC_BB_READY_V1', [1n, BigInt(nodeInfo.l1ChainId), BigInt(predicted),
+        BigInt(l2AddrHex), BigInt(version), BigInt(configHash)]);
+      // Canonical protocol envelope: 32-byte sender/version, 20-byte recipient, 32-byte chain/content.
+      const leaf = a.sha256ToField([l2Addr.toBuffer(), new a.Fr(BigInt(version)).toBuffer(),
+        a.EthAddress.fromString(predicted).toBuffer(), new a.Fr(BigInt(nodeInfo.l1ChainId)).toBuffer(),
+        new a.Fr(BigInt(ready)).toBuffer()]);
+      const hash = a.TxHash.fromString(readyTxHash);
+      const receipt = await aztecNode.getTxReceipt(hash);
+      if (receipt.blockNumber == null) throw new Error('Ready transaction is not included');
+      const deadline = Date.now() + 15 * 60 * 1000;
+      let witness = null;
+      while (Date.now() < deadline) {
+        const tips = await aztecNode.getL2Tips();
+        if (Number(tips.finalized.block.number) >= Number(receipt.blockNumber)) {
+          witness = await aztecNode.getL2ToL1MembershipWitness(hash, leaf);
+          if (witness) break;
         }
-      } catch (e) {
-        if (/DIFFERENT|immutable/i.test(e.message)) throw e;
-        log('  Could not pre-check portal: ' + extractErrorMessage(e), 'warn');
+        log('Waiting for finalized Ready proof; deposits remain disabled.', 'info');
+        await sleep(15000);
       }
-    } else {
-      log('  Calling update_portal(' + predicted + ') on L2...', 'info');
-      const portalField = a.Fr.fromHexString(predicted);
-      const interaction = l2Contract.methods.update_portal(portalField);
-
-      try {
-        const result = await interaction.send({ from: address });
-        log('  TX confirmed! Block: ' + result.receipt.blockNumber, 'success');
-        log('  L1 portal address stored on L2 contract.', 'success');
-      } catch (err) {
-        if (/already set|immutable/i.test(err.message || '')) {
-          log('  Portal was already set in a previous run.', 'warn');
-          try {
-            const portalAddrVal = await aztecNode.getPublicStorageAt('latest', l2Addr, new a.Fr(1n));
-            const currentPortal = '0x' + portalAddrVal.toBigInt().toString(16).padStart(40, '0');
-            if (currentPortal.toLowerCase() === predicted.toLowerCase()) {
-              log('  Portal already set correctly! No action needed.', 'success');
-            } else {
-              throw new Error('Portal already set to a DIFFERENT address (' + currentPortal + ').');
-            }
-          } catch (e2) {
-            if (/DIFFERENT|immutable/i.test(e2.message)) throw e2;
-          }
-        } else { throw err; }
-      }
+      if (!witness) throw new Error('Ready proof not finalized within this run; resume with readyTxHash ' + readyTxHash);
+      const tx = await portal.activate(BigInt(witness.epochNumber), BigInt(witness.numCheckpointsInEpoch),
+        BigInt(witness.leafIndex), witness.siblingPath.toBufferArray().map(bytes => ethers.hexlify(bytes)));
+      const activation = await tx.wait();
+      if (activation.status !== 1 || !await portal.depositsEnabled()) throw new Error('Portal activation failed');
     }
+    log('Board and portal are linked; authenticated Ready enabled deposits.', 'success');
 
-    // ============================================================
-    // Step 11: (Censor is set at init time — no post-deploy configuration)
-    // ============================================================
-
-    // ============================================================
-    // Step 12: Cross-check
-    // ============================================================
-    log('Step 10: Cross-checking...', 'info');
-    let ok = true;
-
-    // L1 → L2
-    try {
-      const l2FromL1 = await portal.L2_CONTRACT();
-      const l2Norm = '0x' + l2AddrHex.toLowerCase().replace(/^0x/, '').padStart(64, '0');
-      const l1Norm = '0x' + l2FromL1.toLowerCase().replace(/^0x/, '').padStart(64, '0');
-      if (l2Norm === l1Norm) log('  OK: L1 portal points to correct L2 contract.', 'success');
-      else { log('  MISMATCH! L1 points to ' + l2FromL1 + ' but L2 is ' + l2AddrHex, 'error'); ok = false; }
-    } catch (e) { log('  Cannot read L1 portal: ' + extractErrorMessage(e), 'error'); ok = false; }
-
-    // L2 → L1
-    try {
-      const portalAddrVal = await aztecNode.getPublicStorageAt('latest', l2Addr, new a.Fr(1n));
-      const portalFromL2 = '0x' + portalAddrVal.toBigInt().toString(16).padStart(40, '0');
-      if (portalFromL2 === '0x0000000000000000000000000000000000000000') {
-        log('  Portal not yet set on L2.', 'warn'); ok = false;
-      } else if (portalFromL2.toLowerCase() === predicted.toLowerCase()) {
-        log('  OK: L2 contract points to correct L1 portal.', 'success');
-      } else {
-        log('  MISMATCH! L2 points to ' + portalFromL2 + ' but L1 portal is ' + predicted, 'error'); ok = false;
-      }
-    } catch (e) { log('  Cannot read L2 portal from node: ' + extractErrorMessage(e), 'warn'); }
-
-    if (ok) {
-      log('', 'info');
-      log('========================================', 'success');
-      log('  Deployment complete!', 'success');
-      log('  Salt:         ' + (config.contractSalt || 1), 'success');
-      log('  L2 contract:  ' + l2Addr.toString(), 'success');
-      log('  L1 portal:    ' + predicted, 'success');
-      log('========================================', 'success');
-    } else {
-      throw new Error('Cross-check failed.');
-    }
-
-    return { l2Addr: l2Addr.toString(), portalAddr: predicted };
+    return { l2Addr: l2Addr.toString(), portalAddr: predicted, readyTxHash, configHash };
   };
 })();

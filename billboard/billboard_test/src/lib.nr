@@ -1,3 +1,6 @@
+mod c01;
+mod compact_note;
+
 // ============================================================
 // Billboard — Noir unit tests (run with `aztec test`)
 // ============================================================
@@ -17,15 +20,16 @@
 // ============================================================
 
 use aztec::protocol::address::{AztecAddress, EthAddress};
-use aztec::protocol::traits::ToField;
+use aztec::protocol::traits::{ToField, FromField};
 use aztec::test::helpers::test_environment::TestEnvironment;
 use billboard_contract::Billboard;
-use billboard_contract::lib::{compute_cooldown, get_deposit_msg_hash, get_withdraw_msg_hash};
+use billboard_contract::lib::{compute_cooldown, get_deposit_msg_hash, get_withdraw_msg_hash, deposit_chain_id};
 
 // ============================================================
 // Test constants
 // ============================================================
 global MIN_DEPOSIT: u128 = 1_000_000_000_000_000; // 0.001 ETH
+global MAX_DEPOSIT: u128 = 100_000_000_000_000_000_000;
 global BASE_COOLDOWN: u64 = 3600;
 global K: u64 = 4;
 global CENSOR_WINDOW: u64 = 3600; // 1 hour
@@ -37,15 +41,15 @@ global TEST_SECRET: Field = 0xdeadbeef;
 global TEST_PORTAL: Field = 0xaabbccdd;
 global DEPOSITOR_ADDR: Field = 0x12345678;
 
-/// Empty policy (all zeros, length 0) used by default in tests.
-fn empty_policy() -> [Field; POLICY_FIELDS] {
-    [0; POLICY_FIELDS]
+/// Valid one-byte V1 policy used by default in tests.
+fn default_policy() -> [Field; POLICY_FIELDS] {
+    policy_with_byte(65).0
 }
 
 /// Build a policy with a single ASCII byte in the first field (for round-trip tests).
 fn policy_with_byte(b: u8) -> ([Field; POLICY_FIELDS], u32) {
     let mut p = [0; POLICY_FIELDS];
-    p[0] = b as Field;
+    p[0] = (b as Field) * 0x1000000000000000000000000000000000000000000000000000000000000;
     (p, 1)
 }
 
@@ -61,12 +65,18 @@ fn msg_with(value: Field) -> [Field; MSG_FIELDS] {
 
 // ============================================================
 // Setup helpers
+
+pub fn test_chain(board: AztecAddress, owner: AztecAddress, amount: u128) -> Field {
+    let content = get_deposit_msg_hash(1, EthAddress::from_field(TEST_PORTAL), board, 1,
+        EthAddress::from_field(DEPOSITOR_ADDR), 1, amount);
+    deposit_chain_id(board, owner, content, TEST_SECRET)
+}
 // ============================================================
 pub unconstrained fn setup_with_censor(censor: AztecAddress) -> (TestEnvironment, AztecAddress, AztecAddress, AztecAddress) {
     let mut env = TestEnvironment::new();
     let deployer = env.create_light_account();
     let initializer = Billboard::interface().init(
-        MIN_DEPOSIT, BASE_COOLDOWN, censor, K, CENSOR_WINDOW, MAX_SAVE_UP, empty_policy(), 0,
+        1, EthAddress::from_field(0x1111), 1, MIN_DEPOSIT, MAX_DEPOSIT, (BASE_COOLDOWN) as u32, censor, (K) as u16, (CENSOR_WINDOW) as u32, (MAX_SAVE_UP) as u16, default_policy(), 1,
     );
     let contract_address =
         env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
@@ -78,7 +88,7 @@ pub unconstrained fn setup() -> (TestEnvironment, AztecAddress, AztecAddress, Az
     let censor = env.create_light_account();
     let deployer = env.create_light_account();
     let initializer = Billboard::interface().init(
-        MIN_DEPOSIT, BASE_COOLDOWN, censor, K, CENSOR_WINDOW, MAX_SAVE_UP, empty_policy(), 0,
+        1, EthAddress::from_field(0x1111), 1, MIN_DEPOSIT, MAX_DEPOSIT, (BASE_COOLDOWN) as u32, censor, (K) as u16, (CENSOR_WINDOW) as u32, (MAX_SAVE_UP) as u16, default_policy(), 1,
     );
     let contract_address =
         env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
@@ -94,20 +104,21 @@ pub unconstrained fn setup_with_deposit(amount: u128) -> (TestEnvironment, Aztec
     let deployer = env.create_light_account();
 
     let initializer = Billboard::interface().init(
-        MIN_DEPOSIT, BASE_COOLDOWN, censor, K, CENSOR_WINDOW, MAX_SAVE_UP, empty_policy(), 0,
+        1, EthAddress::from_field(0x1111), 1, MIN_DEPOSIT, MAX_DEPOSIT, (BASE_COOLDOWN) as u32, censor, (K) as u16, (CENSOR_WINDOW) as u32, (MAX_SAVE_UP) as u16, default_policy(), 1,
     );
     let contract_address =
         env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
 
     let portal = EthAddress::from_field(TEST_PORTAL);
+    env.call_private(deployer, Billboard::at(contract_address).update_portal(portal));
     let depositor = EthAddress::from_field(DEPOSITOR_ADDR);
-    let content = get_deposit_msg_hash(depositor, amount);
+    let content = get_deposit_msg_hash(1, EthAddress::from_field(TEST_PORTAL), contract_address, 1, depositor, 1, amount);
     let leaf_index = env.send_l1_to_l2_message(content, TEST_SECRET, portal, contract_address);
 
     let deposit_time = env.last_block_timestamp();
     env.call_private(
         owner,
-        Billboard::at(contract_address).claim_deposit(depositor, amount, TEST_SECRET, leaf_index, portal),
+        Billboard::at(contract_address).claim_deposit(depositor, amount, 1, TEST_SECRET, leaf_index),
     );
 
     (env, contract_address, owner, censor, deposit_time)
@@ -121,7 +132,7 @@ pub unconstrained fn setup_with_deposit_and_portal(amount: u128) -> (TestEnviron
     let deployer = env.create_light_account();
 
     let initializer = Billboard::interface().init(
-        MIN_DEPOSIT, BASE_COOLDOWN, censor, K, CENSOR_WINDOW, MAX_SAVE_UP, empty_policy(), 0,
+        1, EthAddress::from_field(0x1111), 1, MIN_DEPOSIT, MAX_DEPOSIT, (BASE_COOLDOWN) as u32, censor, (K) as u16, (CENSOR_WINDOW) as u32, (MAX_SAVE_UP) as u16, default_policy(), 1,
     );
     let contract_address =
         env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
@@ -131,13 +142,13 @@ pub unconstrained fn setup_with_deposit_and_portal(amount: u128) -> (TestEnviron
     env.call_private(deployer, Billboard::at(contract_address).update_portal(portal));
 
     let depositor = EthAddress::from_field(DEPOSITOR_ADDR);
-    let content = get_deposit_msg_hash(depositor, amount);
+    let content = get_deposit_msg_hash(1, EthAddress::from_field(TEST_PORTAL), contract_address, 1, depositor, 1, amount);
     let leaf_index = env.send_l1_to_l2_message(content, TEST_SECRET, portal, contract_address);
 
     let deposit_time = env.last_block_timestamp();
     env.call_private(
         owner,
-        Billboard::at(contract_address).claim_deposit(depositor, amount, TEST_SECRET, leaf_index, portal),
+        Billboard::at(contract_address).claim_deposit(depositor, amount, 1, TEST_SECRET, leaf_index),
     );
 
     (env, contract_address, owner, censor, deposit_time)
@@ -196,36 +207,36 @@ unconstrained fn test_cooldown_no_overflow_at_large_values() {
 
 #[test]
 unconstrained fn test_deposit_msg_hash_deterministic() {
-    let h1 = get_deposit_msg_hash(EthAddress::from_field(0x1234), 1_000);
-    let h2 = get_deposit_msg_hash(EthAddress::from_field(0x1234), 1_000);
+    let h1 = get_deposit_msg_hash(1, EthAddress::from_field(TEST_PORTAL), AztecAddress::from_field(2), 2, EthAddress::from_field(0x1234), 1, 1_000);
+    let h2 = get_deposit_msg_hash(1, EthAddress::from_field(TEST_PORTAL), AztecAddress::from_field(2), 2, EthAddress::from_field(0x1234), 1, 1_000);
     assert(h1 == h2, "Same inputs must produce same hash");
 }
 
 #[test]
 unconstrained fn test_deposit_msg_hash_differs_by_amount() {
-    let h1 = get_deposit_msg_hash(EthAddress::from_field(0x1234), 1_000);
-    let h2 = get_deposit_msg_hash(EthAddress::from_field(0x1234), 2_000);
+    let h1 = get_deposit_msg_hash(1, EthAddress::from_field(TEST_PORTAL), AztecAddress::from_field(2), 2, EthAddress::from_field(0x1234), 1, 1_000);
+    let h2 = get_deposit_msg_hash(1, EthAddress::from_field(TEST_PORTAL), AztecAddress::from_field(2), 2, EthAddress::from_field(0x1234), 1, 2_000);
     assert(h1 != h2, "Different amounts must produce different hashes");
 }
 
 #[test]
 unconstrained fn test_deposit_msg_hash_differs_by_depositor() {
-    let h1 = get_deposit_msg_hash(EthAddress::from_field(0x1234), 1_000);
-    let h2 = get_deposit_msg_hash(EthAddress::from_field(0x5678), 1_000);
+    let h1 = get_deposit_msg_hash(1, EthAddress::from_field(TEST_PORTAL), AztecAddress::from_field(2), 2, EthAddress::from_field(0x1234), 1, 1_000);
+    let h2 = get_deposit_msg_hash(1, EthAddress::from_field(TEST_PORTAL), AztecAddress::from_field(2), 2, EthAddress::from_field(0x5678), 1, 1_000);
     assert(h1 != h2, "Different depositors must produce different hashes");
 }
 
 #[test]
 unconstrained fn test_withdraw_msg_hash_deterministic() {
-    let h1 = get_withdraw_msg_hash(EthAddress::from_field(0x1234), 1_000);
-    let h2 = get_withdraw_msg_hash(EthAddress::from_field(0x1234), 1_000);
+    let h1 = get_withdraw_msg_hash(1, EthAddress::from_field(TEST_PORTAL), AztecAddress::from_field(2), 2, EthAddress::from_field(0x1234), 1, 1_000);
+    let h2 = get_withdraw_msg_hash(1, EthAddress::from_field(TEST_PORTAL), AztecAddress::from_field(2), 2, EthAddress::from_field(0x1234), 1, 1_000);
     assert(h1 == h2, "Same inputs must produce same hash");
 }
 
 #[test]
 unconstrained fn test_withdraw_msg_hash_differs_from_deposit_hash() {
-    let wh = get_withdraw_msg_hash(EthAddress::from_field(0x1234), 1_000);
-    let dh = get_deposit_msg_hash(EthAddress::from_field(0x1234), 1_000);
+    let wh = get_withdraw_msg_hash(1, EthAddress::from_field(TEST_PORTAL), AztecAddress::from_field(2), 2, EthAddress::from_field(0x1234), 1, 1_000);
+    let dh = get_deposit_msg_hash(1, EthAddress::from_field(TEST_PORTAL), AztecAddress::from_field(2), 2, EthAddress::from_field(0x1234), 1, 1_000);
     assert(wh != dh, "Deposit and withdraw hashes must differ");
 }
 
@@ -282,7 +293,7 @@ unconstrained fn test_init_rejects_zero_min_deposit() {
     let censor = env.create_light_account();
     let deployer = env.create_light_account();
     let initializer = Billboard::interface().init(
-        0, BASE_COOLDOWN, censor, K, CENSOR_WINDOW, MAX_SAVE_UP, empty_policy(), 0,
+        1, EthAddress::from_field(0x1111), 1, 0, MAX_DEPOSIT, (BASE_COOLDOWN) as u32, censor, (K) as u16, (CENSOR_WINDOW) as u32, (MAX_SAVE_UP) as u16, default_policy(), 1,
     );
     env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
 }
@@ -293,7 +304,7 @@ unconstrained fn test_init_rejects_zero_base_cooldown() {
     let censor = env.create_light_account();
     let deployer = env.create_light_account();
     let initializer = Billboard::interface().init(
-        MIN_DEPOSIT, 0, censor, K, CENSOR_WINDOW, MAX_SAVE_UP, empty_policy(), 0,
+        1, EthAddress::from_field(0x1111), 1, MIN_DEPOSIT, MAX_DEPOSIT, (0) as u32, censor, (K) as u16, (CENSOR_WINDOW) as u32, (MAX_SAVE_UP) as u16, default_policy(), 1,
     );
     env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
 }
@@ -304,7 +315,7 @@ unconstrained fn test_init_rejects_zero_k() {
     let censor = env.create_light_account();
     let deployer = env.create_light_account();
     let initializer = Billboard::interface().init(
-        MIN_DEPOSIT, BASE_COOLDOWN, censor, 0, CENSOR_WINDOW, MAX_SAVE_UP, empty_policy(), 0,
+        1, EthAddress::from_field(0x1111), 1, MIN_DEPOSIT, MAX_DEPOSIT, (BASE_COOLDOWN) as u32, censor, (0) as u16, (CENSOR_WINDOW) as u32, (MAX_SAVE_UP) as u16, default_policy(), 1,
     );
     env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
 }
@@ -315,7 +326,7 @@ unconstrained fn test_init_rejects_zero_censor_window() {
     let censor = env.create_light_account();
     let deployer = env.create_light_account();
     let initializer = Billboard::interface().init(
-        MIN_DEPOSIT, BASE_COOLDOWN, censor, K, 0, MAX_SAVE_UP, empty_policy(), 0,
+        1, EthAddress::from_field(0x1111), 1, MIN_DEPOSIT, MAX_DEPOSIT, (BASE_COOLDOWN) as u32, censor, (K) as u16, (0) as u32, (MAX_SAVE_UP) as u16, default_policy(), 1,
     );
     env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
 }
@@ -326,7 +337,7 @@ unconstrained fn test_init_rejects_zero_max_save_up() {
     let censor = env.create_light_account();
     let deployer = env.create_light_account();
     let initializer = Billboard::interface().init(
-        MIN_DEPOSIT, BASE_COOLDOWN, censor, K, CENSOR_WINDOW, 0, empty_policy(), 0,
+        1, EthAddress::from_field(0x1111), 1, MIN_DEPOSIT, MAX_DEPOSIT, (BASE_COOLDOWN) as u32, censor, (K) as u16, (CENSOR_WINDOW) as u32, (0) as u16, default_policy(), 1,
     );
     env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
 }
@@ -358,12 +369,12 @@ unconstrained fn test_transfer_censor_rejects_zero_address() {
     env.call_public(censor, Billboard::at(contract_address).transfer_censor(AztecAddress::zero()));
 }
 
-#[test(should_fail_with = "Only censor can transfer rights")]
+#[test(should_fail_with = "Zero censor")]
 unconstrained fn test_transfer_censor_fails_when_no_censor() {
     let mut env = TestEnvironment::new();
     let deployer = env.create_light_account();
     let initializer = Billboard::interface().init(
-        MIN_DEPOSIT, BASE_COOLDOWN, AztecAddress::zero(), K, CENSOR_WINDOW, MAX_SAVE_UP, empty_policy(), 0,
+        1, EthAddress::from_field(0x1111), 1, MIN_DEPOSIT, MAX_DEPOSIT, (BASE_COOLDOWN) as u32, AztecAddress::zero(), (K) as u16, (CENSOR_WINDOW) as u32, (MAX_SAVE_UP) as u16, default_policy(), 1,
     );
     let contract_address =
         env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
@@ -391,12 +402,12 @@ unconstrained fn test_declare_immoral_rejects_non_censor() {
     env.call_public(attacker, Billboard::at(contract_address).declare_immoral(0, empty_msg()));
 }
 
-#[test(should_fail_with = "Only censor can declare immoral")]
+#[test(should_fail_with = "Zero censor")]
 unconstrained fn test_declare_immoral_fails_when_no_censor() {
     let mut env = TestEnvironment::new();
     let deployer = env.create_light_account();
     let initializer = Billboard::interface().init(
-        MIN_DEPOSIT, BASE_COOLDOWN, AztecAddress::zero(), K, CENSOR_WINDOW, MAX_SAVE_UP, empty_policy(), 0,
+        1, EthAddress::from_field(0x1111), 1, MIN_DEPOSIT, MAX_DEPOSIT, (BASE_COOLDOWN) as u32, AztecAddress::zero(), (K) as u16, (CENSOR_WINDOW) as u32, (MAX_SAVE_UP) as u16, default_policy(), 1,
     );
     let contract_address =
         env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
@@ -425,27 +436,27 @@ unconstrained fn test_get_post_rejects_invalid_id() {
 // ============================================================
 
 #[test]
-unconstrained fn test_init_sets_empty_policy() {
+unconstrained fn test_init_sets_default_policy() {
     let (env, contract_address, _deployer, _censor) = setup();
     let (_policy, len) = env.view_public(Billboard::at(contract_address).get_moderation_policy());
-    assert(len == 0, f"Expected policy_len=0, got {len}");
+    assert(len == 1, f"Expected policy_len=1, got {len}");
 }
 
 #[test]
-unconstrained fn test_init_sets_nonempty_policy() {
+unconstrained fn test_init_sets_nondefault_policy() {
     let mut env = TestEnvironment::new();
     let censor = env.create_light_account();
     let deployer = env.create_light_account();
     let (policy, policy_len) = policy_with_byte(65); // 'A'
     let initializer = Billboard::interface().init(
-        MIN_DEPOSIT, BASE_COOLDOWN, censor, K, CENSOR_WINDOW, MAX_SAVE_UP, policy, policy_len,
+        1, EthAddress::from_field(0x1111), 1, MIN_DEPOSIT, MAX_DEPOSIT, (BASE_COOLDOWN) as u32, censor, (K) as u16, (CENSOR_WINDOW) as u32, (MAX_SAVE_UP) as u16, policy, policy_len,
     );
     let contract_address =
         env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
     let (stored_policy, stored_len) = env.view_public(Billboard::at(contract_address).get_moderation_policy());
     assert(stored_len == 1, f"Expected policy_len=1, got {stored_len}");
     let p0 = stored_policy[0];
-    assert(p0 == 65, f"Expected policy[0]=65, got {p0}");
+    assert(p0 == policy_with_byte(65).0[0], f"Expected policy[0]=65, got {p0}");
 }
 
 #[test]
@@ -456,7 +467,7 @@ unconstrained fn test_set_moderation_policy_by_censor() {
     let (stored_policy, stored_len) = env.view_public(Billboard::at(contract_address).get_moderation_policy());
     assert(stored_len == 1, f"Expected policy_len=1, got {stored_len}");
     let p0 = stored_policy[0];
-    assert(p0 == 66, f"Expected policy[0]=66, got {p0}");
+    assert(p0 == policy_with_byte(66).0[0], f"Expected policy[0]=66, got {p0}");
 }
 
 #[test(should_fail_with = "Only censor can set policy")]
@@ -467,12 +478,12 @@ unconstrained fn test_set_moderation_policy_rejects_non_censor() {
     env.call_public(attacker, Billboard::at(contract_address).set_moderation_policy(new_policy, new_len));
 }
 
-#[test(should_fail_with = "Only censor can set policy")]
+#[test(should_fail_with = "Zero censor")]
 unconstrained fn test_set_moderation_policy_fails_when_no_censor() {
     let mut env = TestEnvironment::new();
     let deployer = env.create_light_account();
     let initializer = Billboard::interface().init(
-        MIN_DEPOSIT, BASE_COOLDOWN, AztecAddress::zero(), K, CENSOR_WINDOW, MAX_SAVE_UP, empty_policy(), 0,
+        1, EthAddress::from_field(0x1111), 1, MIN_DEPOSIT, MAX_DEPOSIT, (BASE_COOLDOWN) as u32, AztecAddress::zero(), (K) as u16, (CENSOR_WINDOW) as u32, (MAX_SAVE_UP) as u16, default_policy(), 1,
     );
     let contract_address =
         env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
@@ -487,7 +498,7 @@ unconstrained fn test_init_rejects_policy_too_long() {
     let censor = env.create_light_account();
     let deployer = env.create_light_account();
     let initializer = Billboard::interface().init(
-        MIN_DEPOSIT, BASE_COOLDOWN, censor, K, CENSOR_WINDOW, MAX_SAVE_UP, empty_policy(), 1489,
+        1, EthAddress::from_field(0x1111), 1, MIN_DEPOSIT, MAX_DEPOSIT, (BASE_COOLDOWN) as u32, censor, (K) as u16, (CENSOR_WINDOW) as u32, (MAX_SAVE_UP) as u16, default_policy(), 1489,
     );
     env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
 }
@@ -495,7 +506,7 @@ unconstrained fn test_init_rejects_policy_too_long() {
 #[test(should_fail_with = "Policy too long")]
 unconstrained fn test_set_moderation_policy_rejects_too_long() {
     let (mut env, contract_address, _deployer, censor) = setup();
-    env.call_public(censor, Billboard::at(contract_address).set_moderation_policy(empty_policy(), 1489));
+    env.call_public(censor, Billboard::at(contract_address).set_moderation_policy(default_policy(), 1489));
 }
 
 // ============================================================
@@ -510,19 +521,20 @@ unconstrained fn test_set_moderation_policy_rejects_too_long() {
 unconstrained fn test_full_flow_first_post() {
     // Claim deposit → wait cooldown → first post (no screening needed)
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     let post_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post_time);
 
     // First post: no prior posts, so no screening hints needed
     let (child, grandchild) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     assert(child.is_none(), "No child expected for first post");
     assert(grandchild.is_none(), "No grandchild expected for first post");
 
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(42), false, child, grandchild),
+        Billboard::at(contract_address).post(chain, msg_with(42), false, child, grandchild),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -539,12 +551,13 @@ unconstrained fn test_full_flow_first_post() {
 #[test(should_fail_with = "Too early to post -- time lock not yet expired")]
 unconstrained fn test_full_flow_post_too_early() {
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
     env.mine_block_at(deposit_time + 100);
     let (child, grandchild) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(42), false, child, grandchild),
+        Billboard::at(contract_address).post(chain, msg_with(42), false, child, grandchild),
     );
 }
 
@@ -555,18 +568,19 @@ unconstrained fn test_full_flow_deposit_below_minimum() {
     let owner = env.create_light_account();
     let deployer = env.create_light_account();
     let initializer = Billboard::interface().init(
-        MIN_DEPOSIT, BASE_COOLDOWN, censor, K, CENSOR_WINDOW, MAX_SAVE_UP, empty_policy(), 0,
+        1, EthAddress::from_field(0x1111), 1, MIN_DEPOSIT, MAX_DEPOSIT, (BASE_COOLDOWN) as u32, censor, (K) as u16, (CENSOR_WINDOW) as u32, (MAX_SAVE_UP) as u16, default_policy(), 1,
     );
     let contract_address =
         env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
     let portal = EthAddress::from_field(TEST_PORTAL);
     let depositor = EthAddress::from_field(DEPOSITOR_ADDR);
+    env.call_private(deployer, Billboard::at(contract_address).update_portal(portal));
     let small_amount: u128 = MIN_DEPOSIT / 2;
-    let content = get_deposit_msg_hash(depositor, small_amount);
+    let content = get_deposit_msg_hash(1, EthAddress::from_field(TEST_PORTAL), contract_address, 1, depositor, 1, small_amount);
     let leaf_index = env.send_l1_to_l2_message(content, TEST_SECRET, portal, contract_address);
     env.call_private(
         owner,
-        Billboard::at(contract_address).claim_deposit(depositor, small_amount, TEST_SECRET, leaf_index, portal),
+        Billboard::at(contract_address).claim_deposit(depositor, small_amount, 1, TEST_SECRET, leaf_index),
     );
 }
 
@@ -574,15 +588,16 @@ unconstrained fn test_full_flow_deposit_below_minimum() {
 unconstrained fn test_full_flow_second_post_screens_first() {
     // Post 1 → wait censor_window + cooldown → post 2 (screens post 1)
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     // Post 1
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child1, gc1) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
     );
 
     // Post 2: need to wait cooldown AND censor_window so post 1 can be screened
@@ -597,14 +612,14 @@ unconstrained fn test_full_flow_second_post_screens_first() {
     // Get screening hints — should find child (post 0) but no grandchild
     // (child is the head, since only 1 post exists)
     let (child2, grandchild2) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     assert(child2.is_some(), "Child expected for second post");
     // child is the head, so no grandchild
     assert(grandchild2.is_none(), "No grandchild expected when child is head");
 
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(200), false, child2, grandchild2),
+        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, grandchild2),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -619,14 +634,15 @@ unconstrained fn test_full_flow_second_post_screens_first() {
 unconstrained fn test_full_flow_declare_immoral_after_post() {
     // Post → censor flags it → verify flag state
     let (mut env, contract_address, owner, censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     let post_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post_time);
     let (child, gc) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child, gc),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child, gc),
     );
 
     // Censor flags post 0
@@ -646,12 +662,13 @@ unconstrained fn test_full_flow_declare_immoral_after_post() {
 #[test(should_fail_with = "Already flagged")]
 unconstrained fn test_full_flow_double_flag_fails() {
     let (mut env, contract_address, owner, censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
     env.mine_block_at(deposit_time + BASE_COOLDOWN + 1);
     let (child, gc) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child, gc),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child, gc),
     );
     env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, msg_with(1)));
     env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, msg_with(2)));
@@ -664,15 +681,16 @@ unconstrained fn test_full_flow_second_post_with_flag() {
     // Screening happens at post2 time. Post0 is screened if post0.timestamp <= now - censor_window.
     // So we need to wait censor_window after post1, then flag, then wait cooldown.
     let (mut env, contract_address, owner, censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     // Post 1
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child1, gc1) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
     );
 
     // Flag post 0 (can be done any time after post 0 exists)
@@ -688,14 +706,14 @@ unconstrained fn test_full_flow_second_post_with_flag() {
     env.mine_block_at(post2_time);
 
     let (child2, grandchild2) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     assert(child2.is_some(), "Child expected");
     // child is the head (only 1 prior post), so no grandchild
     assert(grandchild2.is_none(), "No grandchild expected");
 
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(200), false, child2, grandchild2),
+        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, grandchild2),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -707,14 +725,15 @@ unconstrained fn test_full_flow_flag_penalty_post3_too_early() {
     // Post1 → flag post0 → post2 (screens, finds flag) → post3 too early → fail
     // The flag penalty from screening during post2 extends post3's time lock.
     let (mut env, contract_address, owner, censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child1, gc1) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
     );
 
     env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, msg_with(999)));
@@ -723,10 +742,10 @@ unconstrained fn test_full_flow_flag_penalty_post3_too_early() {
     let post2_time = deposit_time + 2 * BASE_COOLDOWN + 1;
     env.mine_block_at(post2_time);
     let (child2, gc2) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(200), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, gc2),
     );
 
     // Post 3 too early — flag penalty extended next_allowed.
@@ -737,10 +756,10 @@ unconstrained fn test_full_flow_flag_penalty_post3_too_early() {
     let too_early = deposit_time + 6 * BASE_COOLDOWN - 1;
     env.mine_block_at(too_early);
     let (child3, gc3) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(300), false, child3, gc3),
+        Billboard::at(contract_address).post(chain, msg_with(300), false, child3, gc3),
     );
 }
 
@@ -751,15 +770,16 @@ unconstrained fn test_full_flow_flag_penalty_post3_too_early() {
 #[test]
 unconstrained fn test_flag_penalty_exact_value() {
     let (mut env, contract_address, owner, censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     // Post 1 (index 0)
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child1, gc1) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
     );
 
     // Flag post 0
@@ -769,16 +789,16 @@ unconstrained fn test_flag_penalty_exact_value() {
     let post2_time = deposit_time + 2 * BASE_COOLDOWN + 1;
     env.mine_block_at(post2_time);
     let (child2, gc2) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(200), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, gc2),
     );
 
     // After post2: effective_old = deposit_time + 2*cooldown (old_next_allowed)
     // new_next_allowed = effective_old + cooldown * (1 + (K-1)*1) = deposit_time + 2*cooldown + K*cooldown
-    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner));
-    let next_allowed = info[6] as u64;
+    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
+    let next_allowed = info[10] as u64;
     let expected = deposit_time + 2 * BASE_COOLDOWN + K * BASE_COOLDOWN;
     assert(next_allowed == expected, f"Expected next_allowed={expected} (2+K)*cd, got {next_allowed}");
 }
@@ -789,15 +809,16 @@ unconstrained fn test_flag_penalty_exact_value() {
 #[test]
 unconstrained fn test_flag_penalty_with_save_up() {
     let (mut env, contract_address, owner, censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     // Post 1 (index 0)
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child1, gc1) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
     );
 
     // Flag post 0
@@ -808,10 +829,10 @@ unconstrained fn test_flag_penalty_with_save_up() {
     env.mine_block_at(dormant_time);
 
     let (child2, gc2) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(200), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, gc2),
     );
 
     // save_up_floor = dormant_time - cooldown * max_save_up = dormant_time - 57600
@@ -823,8 +844,8 @@ unconstrained fn test_flag_penalty_with_save_up() {
     // So effective_old = deposit_time + 46001 (save_up floor dominates)
     // new_next_allowed = effective_old + cooldown * (1 + (K-1)*1) = effective_old + K*cooldown
     //   = deposit_time + 46001 + 4*3600 = deposit_time + 46001 + 14400 = deposit_time + 60401
-    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner));
-    let next_allowed = info[6] as u64;
+    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
+    let next_allowed = info[10] as u64;
     let save_up_floor = dormant_time - BASE_COOLDOWN * MAX_SAVE_UP;
     let expected = save_up_floor + K * BASE_COOLDOWN;
     assert(next_allowed == expected, f"Expected next_allowed={expected}, got {next_allowed}");
@@ -837,25 +858,26 @@ unconstrained fn test_flag_penalty_with_save_up() {
 #[test]
 unconstrained fn test_flag_penalty_two_flags() {
     let (mut env, contract_address, owner, censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     // Post 1 (index 0)
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child1, gc1) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
     );
 
     // Post 2 (index 1) — post0 too young to screen
     let post2_time = deposit_time + 2 * BASE_COOLDOWN;
     env.mine_block_at(post2_time);
     let (child2, gc2) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(200), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, gc2),
     );
 
     // Flag both posts
@@ -868,19 +890,19 @@ unconstrained fn test_flag_penalty_two_flags() {
     let post3_time = deposit_time + 3 * BASE_COOLDOWN + 1;
     env.mine_block_at(post3_time);
     let (child3, gc3) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     assert(child3.is_some(), "Child expected");
     assert(gc3.is_some(), "Grandchild expected");
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(300), false, child3, gc3),
+        Billboard::at(contract_address).post(chain, msg_with(300), false, child3, gc3),
     );
 
     // effective_old = deposit_time + 3*cooldown (old_next_allowed)
     // flag_count = 2, penalty_multiplier = 1 + (K-1)*2 = 1 + 6 = 7
     // new_next_allowed = deposit_time + 3*cooldown + 7*cooldown = deposit_time + 10*cooldown
-    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner));
-    let next_allowed = info[6] as u64;
+    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
+    let next_allowed = info[10] as u64;
     let expected = deposit_time + 3 * BASE_COOLDOWN + (1 + 2 * (K - 1)) * BASE_COOLDOWN;
     assert(next_allowed == expected, f"Expected next_allowed={expected}, got {next_allowed}");
 }
@@ -889,14 +911,15 @@ unconstrained fn test_flag_penalty_two_flags() {
 unconstrained fn test_full_flow_second_post_without_flag() {
     // No flag → second post only needs base_cooldown after post1
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child1, gc1) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
     );
 
     // earliest = post1_time + 3600 (no flags)
@@ -904,10 +927,10 @@ unconstrained fn test_full_flow_second_post_without_flag() {
     env.mine_block_at(post2_time);
 
     let (child2, gc2) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(200), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, gc2),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -918,21 +941,22 @@ unconstrained fn test_full_flow_second_post_without_flag() {
 unconstrained fn test_full_flow_get_deposit_info() {
     // After claiming, get_deposit_info should return deposit details
     let (env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
-    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner));
+    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
 
     // [amount, l1_depositor, post_chain_head, last_screened_link,
     //  last_screened_index, last_real_post_index, next_allowed_time]
-    let amt = info[0];
+    let amt = info[3];
     assert(amt == MIN_DEPOSIT as Field, f"Expected amount={MIN_DEPOSIT}, got {amt}");
     let expected_next = (deposit_time + BASE_COOLDOWN) as Field;
-    let next_allowed = info[6];
+    let next_allowed = info[10];
     assert(next_allowed == expected_next, f"Expected next_allowed_time={expected_next}, got {next_allowed}");
     // post_chain_head = SENTINEL = 0
-    let chain_head = info[2];
+    let chain_head = info[5];
     assert(chain_head == 0, f"Expected post_chain_head=0 (SENTINEL), got {chain_head}");
     // last_screened_link = SENTINEL = 0
-    let last_scr = info[3];
+    let last_scr = info[7];
     assert(last_scr == 0, f"Expected last_screened_link=0 (SENTINEL), got {last_scr}");
 }
 
@@ -940,16 +964,17 @@ unconstrained fn test_full_flow_get_deposit_info() {
 unconstrained fn test_full_flow_multiple_posts() {
     // Post 3 times without flags — each post screens the previous one
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     let mut current_time = deposit_time + BASE_COOLDOWN + 1;
 
     for i in 0..3 {
         env.mine_block_at(current_time);
         let (child, gc) =
-            env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+            env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
         env.call_private(
             owner,
-            Billboard::at(contract_address).post(msg_with((i + 1) as Field), false, child, gc),
+            Billboard::at(contract_address).post(chain, msg_with((i + 1) as Field), false, child, gc),
         );
 
         let count = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -976,15 +1001,16 @@ unconstrained fn test_censor_window_post_too_young_to_screen() {
     // Post1 → post2 quickly (post1 too young to screen) →
     // post3 later (screens both post1 and post2 via child+grandchild)
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     // Post 1
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child1, gc1) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
     );
 
     // Post 2 at the exact time-lock boundary.
@@ -996,22 +1022,22 @@ unconstrained fn test_censor_window_post_too_young_to_screen() {
     env.mine_block_at(post2_time);
 
     let (child2, grandchild2) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     // child = post1, but post1.timestamp = post1_time > post2_time - censor_window
     // So child is too young — screening is skipped
     // The post still succeeds (screening is best-effort, not required)
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(200), false, child2, grandchild2),
+        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, grandchild2),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
     assert(count == 2, f"Expected count=2, got {count}");
 
     // Verify deposit info shows last_screened hasn't advanced
-    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner));
+    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
     // last_screened_link should still be SENTINEL (0) — nothing screened
-    let last_scr = info[3];
+    let last_scr = info[7];
     assert(last_scr == 0, f"Expected last_screened_link=0 (nothing screened), got {last_scr}");
 }
 
@@ -1019,25 +1045,26 @@ unconstrained fn test_censor_window_post_too_young_to_screen() {
 unconstrained fn test_censor_window_grandchild_screening() {
     // Post1 → post2 (post1 too young) → wait → post3 (screens post1=child + post2=grandchild)
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     // Post 1
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child1, gc1) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
     );
 
     // Post 2 at the exact time-lock boundary (post1 too young to screen)
     let post2_time = deposit_time + 2 * BASE_COOLDOWN;
     env.mine_block_at(post2_time);
     let (child2, gc2) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(200), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, gc2),
     );
 
     // Post 3 — wait long enough for both post1 and post2 to be screenable.
@@ -1049,7 +1076,7 @@ unconstrained fn test_censor_window_grandchild_screening() {
     env.mine_block_at(post3_time);
 
     let (child3, grandchild3) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     // child = post1 (prev_link == SENTINEL == last_screened)
     assert(child3.is_some(), "Child expected");
     // grandchild = post2 (prev_link == child_link)
@@ -1057,16 +1084,16 @@ unconstrained fn test_censor_window_grandchild_screening() {
 
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(300), false, child3, grandchild3),
+        Billboard::at(contract_address).post(chain, msg_with(300), false, child3, grandchild3),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
     assert(count == 3, f"Expected count=3, got {count}");
 
     // Verify last_screened has advanced to post2 (index 1)
-    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner));
-    let last_screened_idx = info[4] as u32;
-    assert(last_screened_idx == 1, f"Expected last_screened_index=1, got {last_screened_idx}");
+    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
+    let last_screened_idx = info[8] as u32;
+    assert(last_screened_idx == 2, f"Expected last_screened_index=1, got {last_screened_idx}");
 }
 
 /// Verify the hard invariant: when a post goes onchain, the censor has at least
@@ -1080,15 +1107,16 @@ unconstrained fn test_censor_window_grandchild_screening() {
 #[test]
 unconstrained fn test_censor_window_hard_invariant() {
     let (mut env, contract_address, owner, censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     // Post 1 at time T
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child1, gc1) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
     );
 
     // Flag post 0 well within the censor window (at T + 1)
@@ -1103,18 +1131,18 @@ unconstrained fn test_censor_window_hard_invariant() {
     let post2_time = deposit_time + 2 * BASE_COOLDOWN;
     env.mine_block_at(post2_time);
     let (child2, gc2) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(200), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, gc2),
     );
 
     // Verify post0 was NOT screened (too young)
-    let info2 = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner));
-    let last_scr2 = info2[4] as u32;
-    assert(last_scr2 == 0xFFFFFFFF, f"Post0 should not be screened yet, got last_screened={last_scr2}");
+    let info2 = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
+    let last_scr2 = info2[8] as u32;
+    assert(last_scr2 == 0, f"Post0 should not be screened yet, got last_screened={last_scr2}");
     // next_allowed should be just effective_old + cooldown (no flag penalty)
-    let next2 = info2[6] as u64;
+    let next2 = info2[10] as u64;
     let expected_next2 = deposit_time + 3 * BASE_COOLDOWN; // effective_old=2*cd + cd
     assert(next2 == expected_next2, f"Expected next={expected_next2} (no penalty), got {next2}");
 
@@ -1128,21 +1156,21 @@ unconstrained fn test_censor_window_hard_invariant() {
     let post3_time = deposit_time + 3 * BASE_COOLDOWN + 1;
     env.mine_block_at(post3_time);
     let (child3, gc3) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     assert(child3.is_some(), "Child expected");
     assert(gc3.is_some(), "Grandchild expected");
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(300), false, child3, gc3),
+        Billboard::at(contract_address).post(chain, msg_with(300), false, child3, gc3),
     );
 
     // Now post0 WAS screened (flag counted). Verify penalty applied.
-    let info3 = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner));
-    let last_scr3 = info3[4] as u32;
-    assert(last_scr3 == 1, f"Both posts screened, last_screened should be 1, got {last_scr3}");
+    let info3 = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
+    let last_scr3 = info3[8] as u32;
+    assert(last_scr3 == 2, f"Both posts screened, last_screened should be 1, got {last_scr3}");
     // effective_old = deposit_time + 3*cooldown (old_next_allowed)
     // new_next = effective_old + K*cooldown = deposit_time + (3+K)*cooldown
-    let next3 = info3[6] as u64;
+    let next3 = info3[10] as u64;
     let expected_next3 = deposit_time + (3 + K) * BASE_COOLDOWN;
     assert(next3 == expected_next3, f"Expected next={expected_next3} (with penalty), got {next3}");
 }
@@ -1155,16 +1183,17 @@ unconstrained fn test_censor_window_hard_invariant() {
 unconstrained fn test_dummy_post_does_not_store_content() {
     // Dummy post should increment post_count but not store message content
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     let post_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post_time);
     let (child, gc) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
 
     // Post a dummy
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(42), true, child, gc),
+        Billboard::at(contract_address).post(chain, msg_with(42), true, child, gc),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -1182,77 +1211,80 @@ unconstrained fn test_dummy_post_does_not_store_content() {
     assert(s0 == 0, f"Expected msg[0]=0 for dummy, got {s0}");
 
     // last_real_post_index should still be NO_REAL_POST
-    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner));
-    let last_real = info[5] as u32;
-    assert(last_real == 0xFFFFFFFF, f"Expected last_real_post_index=NO_REAL_POST, got {last_real}");
+    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
+    let last_real = info[9] as u32;
+    assert(last_real == 0, f"Expected last_real_post_index=NO_REAL_POST, got {last_real}");
 }
 
 #[test]
 unconstrained fn test_dummy_post_advances_screening() {
     // Post1 (real) → dummy posts to advance screening → withdraw
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     // Post 1 (real)
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child1, gc1) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
     );
 
     // Post 2 (dummy) — screens post 1
     let post2_time = post1_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post2_time);
     let (child2, gc2) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(empty_msg(), true, child2, gc2),
+        Billboard::at(contract_address).post(chain, empty_msg(), true, child2, gc2),
     );
 
     // Verify screening advanced
-    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner));
-    let last_screened = info[4] as u32;
-    assert(last_screened == 0, f"Expected last_screened_index=0, got {last_screened}");
-    let last_real = info[5] as u32;
-    assert(last_real == 0, f"Expected last_real_post_index=0, got {last_real}");
+    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
+    let last_screened = info[8] as u32;
+    assert(last_screened == 1, f"Expected last_screened_index=0, got {last_screened}");
+    let last_real = info[9] as u32;
+    assert(last_real == 1, f"Expected last_real_post_index=0, got {last_real}");
 }
 
 // ============================================================
 // Withdrawal tests
 // ============================================================
 
-#[test(should_fail_with = "Too early to withdraw -- initial lock not expired")]
+#[test(should_fail_with = "Too early to withdraw -- time lock not expired")]
 unconstrained fn test_withdraw_no_posts_too_early() {
     // Claim deposit → try to withdraw before initial lock → fail
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     // Try to withdraw before cooldown
     env.mine_block_at(deposit_time + 100);
 
     let portal = EthAddress::from_field(TEST_PORTAL);
-    env.call_private(owner, Billboard::at(contract_address).withdraw(portal));
+    env.call_private(owner, Billboard::at(contract_address).withdraw(chain));
 }
 
 #[test(should_fail_with = "Too early to withdraw -- not all posts screened")]
 unconstrained fn test_withdraw_unscreened_real_posts() {
     // Post1 (real) → try to withdraw before screening catches up → fail
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child, gc) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child, gc),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child, gc),
     );
 
     // Try to withdraw — post 0 hasn't been screened yet
     let portal = EthAddress::from_field(TEST_PORTAL);
-    env.call_private(owner, Billboard::at(contract_address).withdraw(portal));
+    env.call_private(owner, Billboard::at(contract_address).withdraw(chain));
 }
 
 /// Verify: withdraw succeeds after making a dummy post to screen the last real post.
@@ -1260,42 +1292,45 @@ unconstrained fn test_withdraw_unscreened_real_posts() {
 #[test]
 unconstrained fn test_withdraw_succeeds_after_dummy_post() {
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit_and_portal(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     // Post 1 (real, index 0)
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child1, gc1) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
     );
 
     // Post 2 (dummy) — screens post 0
     let post2_time = post1_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post2_time);
     let (child2, gc2) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(empty_msg(), true, child2, gc2),
+        Billboard::at(contract_address).post(chain, empty_msg(), true, child2, gc2),
     );
 
     // Verify last_screened >= last_real_post (withdrawal eligibility)
-    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner));
-    let last_screened = info[4] as u32;
-    let last_real = info[5] as u32;
-    assert(last_screened == 0, f"Expected last_screened=0, got {last_screened}");
-    assert(last_real == 0, f"Expected last_real=0, got {last_real}");
+    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
+    let last_screened = info[8] as u32;
+    let last_real = info[9] as u32;
+    assert(last_screened == 1, f"Expected last_screened=0, got {last_screened}");
+    assert(last_real == 1, f"Expected last_real=0, got {last_real}");
     assert(last_screened >= last_real, "Should be eligible to withdraw");
 
+    // Screening does not waive the remaining cooldown debt.
+    env.mine_block_at(info[10] as u64);
     // Withdraw should succeed
     let portal = EthAddress::from_field(TEST_PORTAL);
-    env.call_private(owner, Billboard::at(contract_address).withdraw(portal));
+    env.call_private(owner, Billboard::at(contract_address).withdraw(chain));
 
     // Verify deposit note is consumed
-    let info2 = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner));
-    let amt = info2[0];
+    let info2 = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
+    let amt = info2[3];
     assert(amt == 0, "Deposit note should be consumed after withdraw");
 }
 
@@ -1308,15 +1343,16 @@ unconstrained fn test_save_up_allows_burst_after_dormancy() {
     // After dormancy, user can make ~max_save_up+1 posts in quick succession
     // because the save-up floor resets the timer.
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     // Post 1
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child, gc) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(1), false, child, gc),
+        Billboard::at(contract_address).post(chain, msg_with(1), false, child, gc),
     );
 
     // Go dormant for a very long time
@@ -1329,10 +1365,10 @@ unconstrained fn test_save_up_allows_burst_after_dormancy() {
     // earliest = (dormant_time - 57600) + 3600 = dormant_time - 54000
     // dormant_time > earliest, so post succeeds
     let (child2, gc2) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(2), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, msg_with(2), false, child2, gc2),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -1346,10 +1382,10 @@ unconstrained fn test_save_up_allows_burst_after_dormancy() {
     // dormant_time + 1 > earliest, so post succeeds
     env.mine_block_at(dormant_time + 1);
     let (child3, gc3) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(3), false, child3, gc3),
+        Billboard::at(contract_address).post(chain, msg_with(3), false, child3, gc3),
     );
 
     let count2 = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -1362,15 +1398,16 @@ unconstrained fn test_save_up_prevents_excessive_burst() {
     // Each post sets next_allowed = effective_old + cooldown.
     // After max_save_up+1 posts, the save-up floor no longer helps.
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
     // Post 1
     let post1_time = deposit_time + BASE_COOLDOWN + 1;
     env.mine_block_at(post1_time);
     let (child, gc) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(1), false, child, gc),
+        Billboard::at(contract_address).post(chain, msg_with(1), false, child, gc),
     );
 
     // Go dormant
@@ -1382,10 +1419,10 @@ unconstrained fn test_save_up_prevents_excessive_burst() {
         let t = dormant_time + i;
         env.mine_block_at(t);
         let (child_i, gc_i) =
-            env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+            env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
         env.call_private(
             owner,
-            Billboard::at(contract_address).post(msg_with((i + 2) as Field), false, child_i, gc_i),
+            Billboard::at(contract_address).post(chain, msg_with((i + 2) as Field), false, child_i, gc_i),
         );
     }
 
@@ -1393,10 +1430,10 @@ unconstrained fn test_save_up_prevents_excessive_burst() {
     let t_fail = dormant_time + MAX_SAVE_UP + 1;
     env.mine_block_at(t_fail);
     let (child_f, gc_f) =
-        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+        env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(msg_with(999), false, child_f, gc_f),
+        Billboard::at(contract_address).post(chain, msg_with(999), false, child_f, gc_f),
     );
 }
 
@@ -1404,10 +1441,11 @@ unconstrained fn test_save_up_prevents_excessive_burst() {
 // not a claim about full PXE ordering or production proof generation.
 pub unconstrained fn setup_regular_history(length: u32) -> (TestEnvironment, AztecAddress, AztecAddress, u64) {
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
     for i in 0..length {
         env.mine_block_at(deposit_time + (i as u64 + 1) * (BASE_COOLDOWN + CENSOR_WINDOW + 1));
-        let (child, grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
-        env.call_private(owner, Billboard::at(contract_address).post(msg_with(i as Field + 1), false, child, grandchild));
+        let (child, grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
+        env.call_private(owner, Billboard::at(contract_address).post(chain, msg_with(i as Field + 1), false, child, grandchild));
     }
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
     assert(count == length, f"History setup expected {length}, got {count}");
@@ -1417,27 +1455,29 @@ pub unconstrained fn setup_regular_history(length: u32) -> (TestEnvironment, Azt
 #[test]
 unconstrained fn test_history_first_page_control() {
     let (mut env, contract_address, owner, _deposit_time) = setup_regular_history(16);
-    let (child, _grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
+    let (child, _grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     assert(child.is_some(), "Last note in first page must be discoverable");
     let hinted = child.unwrap_unchecked();
-    let index = hinted.note.post_index;
+    let index = hinted.note.post_id;
     assert(index == 15, f"Expected first-page last child15, got {index}");
 }
 
 #[test]
 unconstrained fn test_history_known_bad_missing_child_after_first_page() {
     let (mut env, contract_address, owner, _deposit_time) = setup_regular_history(17);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
     let notes = env.execute_utility(Billboard::at(contract_address).get_post_notes(owner));
     for i in 0..16 {
         assert(notes[i].is_some(), "First history page must be full");
         let note = notes[i].unwrap_unchecked();
-        let index = note.note.post_index;
-        assert(index == i, f"Measured TXE first-page index expected {i}, got {index}");
+        let index = note.note.post_id;
+        assert(index == i as Field, f"Measured TXE first-page index expected {i}, got {index}");
     }
-    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner));
-    assert(info[4] == 15, "Previous child must actually have been screened");
-    assert(info[5] == 16, "The seventeenth real post must exist");
-    let (child, grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
+    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
+    assert(info[8] == 16, "Previous child must actually have been screened");
+    assert(info[9] == 17, "The seventeenth real post must exist");
+    let (child, grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     assert(child.is_none(), "Known-bad control: next required child is omitted by first page");
     assert(grandchild.is_none(), "No grandchild expected without child");
 }
@@ -1445,7 +1485,8 @@ unconstrained fn test_history_known_bad_missing_child_after_first_page() {
 #[test(should_fail_with = "Child note required for screening")]
 unconstrained fn test_history_known_bad_next_post_cannot_progress() {
     let (mut env, contract_address, owner, deposit_time) = setup_regular_history(17);
+    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
     env.mine_block_at(deposit_time + 18 * (BASE_COOLDOWN + CENSOR_WINDOW + 1));
-    let (child, grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner));
-    env.call_private(owner, Billboard::at(contract_address).post(msg_with(18), false, child, grandchild));
+    let (child, grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
+    env.call_private(owner, Billboard::at(contract_address).post(chain, msg_with(18), false, child, grandchild));
 }

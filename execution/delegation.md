@@ -272,3 +272,16 @@ Build_review now owns scripts/fee-composition.mjs: fresh accounts, deployment,
 root sponsor payment and explicit balance/replay observations. Root owns parent
 supervision and worker integration, runs the composed check and reviews evidence.
 Only this one delegated lane is active; heavy checks remain serial.
+
+## C01 bounded implementation — 2026-09-14
+
+Root owns Noir contract/helpers, affected ABI consumers, integration and graph.
+Build_review owns portal source/tests and C01 portal evidence; exact constructor
+and receipt handoff is recorded in evidence/C01/implementation-checkpoint.md.
+Only this delegated lane is resumed. Heavy checks are coordinated serially.
+Neither permissive mocks nor canonical bridge tests alone close real-proof gates.
+
+C01 continuation: earlier portal/client ownership is released. Root owns all
+contract and consumer integration. The sole reused agent owns only
+`scripts/test-c01-native-proof.mjs` and its harness review, preparing a bounded
+local proof plumbing experiment without running it. All other agents remain idle.

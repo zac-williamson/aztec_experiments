@@ -51,6 +51,7 @@
 // ============================================================
 
 import fs from 'fs';
+import { createClaimSecretStore } from './claim-secret-store.mjs';
 import { loadCliWalletInputs } from './wallet-inputs.mjs';
 import { createHash } from 'node:crypto';
 import BillboardCRS from '../../../../shared/crs-client.js';
@@ -163,6 +164,7 @@ for (const [k, v] of Object.entries(_modPolicy)) {
   if (typeof v === 'function' || typeof v === 'string' || typeof v === 'number') globalThis[k] = v;
 }
 
+require(path.join(PROJECT_ROOT, 'shared', 'helpers.js'));
 const engineCode = fs.readFileSync(path.join(__dirname, 'engine.js'), 'utf8');
 eval(engineCode);
 
@@ -426,6 +428,9 @@ async function main() {
     censorWalletJson,
     newCensor: args['new-censor'] || undefined,
 
+    depositChainId: args['deposit-chain-id'],
+    claimSecretStore: aztecWallet && ['deposit', 'claim', 'auto'].includes(ACTION)
+      ? createClaimSecretStore(path.join(path.dirname(path.resolve(AZTEC_WALLET_PATH)), 'claim-secrets-v1'), aztecWallet.secretKey) : undefined,
     jsonOutput: !!args['json'],
   };
 

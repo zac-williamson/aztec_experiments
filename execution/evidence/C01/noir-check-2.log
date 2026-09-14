@@ -1,0 +1,2313 @@
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:566:5
+    │
+566 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:567:5
+    │
+567 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:572:5
+    │
+572 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:573:5
+    │
+573 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:583:5
+    │
+583 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:584:5
+    │
+584 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:589:5
+    │
+589 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:590:5
+    │
+590 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:595:5
+    │
+595 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:596:5
+    │
+596 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:601:5
+    │
+601 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:602:5
+    │
+602 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:611:5
+    │
+611 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:612:5
+    │
+612 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:617:5
+    │
+617 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:618:5
+    │
+618 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:623:5
+    │
+623 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:624:5
+    │
+624 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:629:5
+    │
+629 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:630:5
+    │
+630 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:635:5
+    │
+635 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:636:5
+    │
+636 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:641:5
+    │
+641 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:642:5
+    │
+642 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:647:5
+    │
+647 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:648:5
+    │
+648 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:653:5
+    │
+653 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:654:5
+    │
+654 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:659:5
+    │
+659 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:660:5
+    │
+660 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:667:5
+    │
+667 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:668:5
+    │
+668 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:677:5
+    │
+677 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:678:5
+    │
+678 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:681:5
+    │
+681 │     #[external("public")]
+    │     ---------------------
+    │
+
+error: Attribute function `view` is not in scope
+    ┌─ billboard_contract/src/main.nr:682:5
+    │
+682 │     #[view]
+    │     -------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:686:5
+    │
+686 │     #[external("utility")]
+    │     ----------------------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:703:5
+    │
+703 │     #[external("utility")]
+    │     ----------------------
+    │
+
+error: Attribute function `external` is not in scope
+    ┌─ billboard_contract/src/main.nr:813:5
+    │
+813 │     #[external("utility")]
+    │     ----------------------
+    │
+
+error: Bitwise operations are invalid on Field types. Try casting the operands to a sized integer type first.
+    ┌─ billboard_contract/src/main.nr:5:1
+    │
+  5 │ #[aztec]
+    │ -------- While running this function attribute
+    ·
+343 │         assert(dep_note.schema_version == 1 & dep_note.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                                           -----------------------------
+    │
+
+error: Types in a binary operation should match, but found u32 and Field
+    ┌─ billboard_contract/src/main.nr:5:1
+    │
+  5 │ #[aztec]
+    │ -------- While running this function attribute
+    ·
+343 │         assert(dep_note.schema_version == 1 & dep_note.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                                        --
+    │
+
+error: Bitwise operations are invalid on Field types. Try casting the operands to a sized integer type first.
+    ┌─ billboard_contract/src/main.nr:5:1
+    │
+  5 │ #[aztec]
+    │ -------- While running this function attribute
+    ·
+343 │         assert(dep_note.schema_version == 1 & dep_note.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                                                                            -----------------------------------
+    │
+
+error: Types in a binary operation should match, but found bool and Field
+    ┌─ billboard_contract/src/main.nr:5:1
+    │
+  5 │ #[aztec]
+    │ -------- While running this function attribute
+    ·
+343 │         assert(dep_note.schema_version == 1 & dep_note.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                ----------------------------------------------------------------------------------------------------
+    │
+
+error: assert expects 1 or 2 parameters but 0 were given
+    ┌─ billboard_contract/src/main.nr:5:1
+    │
+  5 │ #[aztec]
+    │ -------- While running this function attribute
+    ·
+551 │         assert(dep.schema_version == 1 & dep.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │         ----------
+    │
+
+error: Type () has no member named schema_version
+    ┌─ billboard_contract/src/main.nr:5:1
+    │
+  5 │ #[aztec]
+    │ -------- While running this function attribute
+    ·
+551 │         assert(dep.schema_version == 1 & dep.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                    --------------
+    │
+
+error: Bitwise operations are invalid on Field types. Try casting the operands to a sized integer type first.
+    ┌─ billboard_contract/src/main.nr:5:1
+    │
+  5 │ #[aztec]
+    │ -------- While running this function attribute
+    ·
+551 │         assert(dep.schema_version == 1 & dep.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                                                                  -----------------------------------
+    │
+
+error: Types in a binary operation should match, but found bool and Field
+    ┌─ std/meta/expr.nr:228:18
+    │
+228 │         quote { $self }
+    │                  ----
+    │
+    ┌─ billboard_contract/src/main.nr:5:1
+    │
+  5 │ #[aztec]
+    │ -------- While running this function attribute
+    │
+
+error: Could not resolve 'MSG_FIELDS' in path
+    ┌─ billboard_contract/src/main.nr:574:41
+    │
+574 │     fn get_post(id: u32) -> pub [Field; MSG_FIELDS] {
+    │                                         ----------
+    │
+
+error: Could not resolve 'AztecAddress' in path
+    ┌─ billboard_contract/src/main.nr:597:44
+    │
+597 │     fn get_post_flagged_by(id: u32) -> pub AztecAddress {
+    │                                            ------------
+    │
+
+error: Could not resolve 'MSG_FIELDS' in path
+    ┌─ billboard_contract/src/main.nr:603:52
+    │
+603 │     fn get_censor_response(id: u32) -> pub [Field; MSG_FIELDS] {
+    │                                                    ----------
+    │
+
+error: Could not resolve 'AztecAddress' in path
+    ┌─ billboard_contract/src/main.nr:613:28
+    │
+613 │     fn get_censor() -> pub AztecAddress {
+    │                            ------------
+    │
+
+error: Could not resolve 'AztecAddress' in path
+    ┌─ billboard_contract/src/main.nr:637:30
+    │
+637 │     fn get_deployer() -> pub AztecAddress {
+    │                              ------------
+    │
+
+error: Could not resolve 'EthAddress' in path
+    ┌─ billboard_contract/src/main.nr:655:28
+    │
+655 │     fn get_portal() -> pub EthAddress {
+    │                            ----------
+    │
+
+error: Could not resolve 'POLICY_FIELDS' in path
+    ┌─ billboard_contract/src/main.nr:669:48
+    │
+669 │     fn get_moderation_policy() -> pub ([Field; POLICY_FIELDS], u32) {
+    │                                                -------------
+    │
+
+error: Could not resolve 'AztecAddress' in path
+    ┌─ billboard_contract/src/main.nr:687:46
+    │
+687 │     unconstrained fn get_deposit_info(owner: AztecAddress, deposit_chain_id: Field) -> pub [Field; 11] {
+    │                                              ------------
+    │
+
+error: Could not resolve 'AztecAddress' in path
+    ┌─ billboard_contract/src/main.nr:705:16
+    │
+705 │         owner: AztecAddress, deposit_chain_id: Field,
+    │                ------------
+    │
+
+error: Could not resolve 'HintedNote' in path
+    ┌─ billboard_contract/src/main.nr:706:22
+    │
+706 │     ) -> pub (Option<HintedNote<PostNote>>, Option<HintedNote<PostNote>>) {
+    │                      ----------
+    │
+
+error: Could not resolve 'HintedNote' in path
+    ┌─ billboard_contract/src/main.nr:706:52
+    │
+706 │     ) -> pub (Option<HintedNote<PostNote>>, Option<HintedNote<PostNote>>) {
+    │                                                    ----------
+    │
+
+error: Could not resolve 'AztecAddress' in path
+    ┌─ billboard_contract/src/main.nr:814:44
+    │
+814 │     unconstrained fn get_post_notes(owner: AztecAddress) -> pub [Option<HintedNote<PostNote>>; MAX_HINT_NOTES] {
+    │                                            ------------
+    │
+
+error: Could not resolve 'HintedNote' in path
+    ┌─ billboard_contract/src/main.nr:814:73
+    │
+814 │     unconstrained fn get_post_notes(owner: AztecAddress) -> pub [Option<HintedNote<PostNote>>; MAX_HINT_NOTES] {
+    │                                                                         ----------
+    │
+
+error: Could not resolve 'MAX_HINT_NOTES' in path
+    ┌─ billboard_contract/src/main.nr:814:96
+    │
+814 │     unconstrained fn get_post_notes(owner: AztecAddress) -> pub [Option<HintedNote<PostNote>>; MAX_HINT_NOTES] {
+    │                                                                                                --------------
+    │
+
+error: unnecessary pub keyword on return type for function get_post_count
+    ┌─ billboard_contract/src/main.nr:568:28
+    │
+568 │     fn get_post_count() -> pub u32 {
+    │                            --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:569:9
+    │
+569 │         self.storage.post_count.read()
+    │         ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_post
+    ┌─ billboard_contract/src/main.nr:574:29
+    │
+574 │     fn get_post(id: u32) -> pub [Field; MSG_FIELDS] {
+    │                             --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:575:21
+    │
+575 │         assert(id < self.storage.post_count.read(), "Invalid post id");
+    │                     ---- not found in this scope
+    │
+
+error: Could not resolve 'MSG_FIELDS' in path
+    ┌─ billboard_contract/src/main.nr:576:30
+    │
+576 │         let mut msg: [Field; MSG_FIELDS] = [0; MSG_FIELDS];
+    │                              ----------
+    │
+
+error: Could not resolve 'MSG_FIELDS' in path
+    ┌─ billboard_contract/src/main.nr:576:48
+    │
+576 │         let mut msg: [Field; MSG_FIELDS] = [0; MSG_FIELDS];
+    │                                                ----------
+    │
+
+error: cannot find `MSG_FIELDS` in this scope
+    ┌─ billboard_contract/src/main.nr:577:21
+    │
+577 │         for i in 0..MSG_FIELDS {
+    │                     ---------- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:578:22
+    │
+578 │             msg[i] = self.storage.post_data.at(id * MSG_FIELDS + i).read();
+    │                      ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_post_time
+    ┌─ billboard_contract/src/main.nr:585:34
+    │
+585 │     fn get_post_time(id: u32) -> pub u64 {
+    │                                  --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:586:9
+    │
+586 │         self.storage.post_time.at(id).read()
+    │         ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function is_post_flagged
+    ┌─ billboard_contract/src/main.nr:591:36
+    │
+591 │     fn is_post_flagged(id: u32) -> pub bool {
+    │                                    --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:592:9
+    │
+592 │         self.storage.post_flagged.at(id).read()
+    │         ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_post_flagged_by
+    ┌─ billboard_contract/src/main.nr:597:40
+    │
+597 │     fn get_post_flagged_by(id: u32) -> pub AztecAddress {
+    │                                        --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:598:9
+    │
+598 │         self.storage.post_flagged_by.at(id).read()
+    │         ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_censor_response
+    ┌─ billboard_contract/src/main.nr:603:40
+    │
+603 │     fn get_censor_response(id: u32) -> pub [Field; MSG_FIELDS] {
+    │                                        --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: Could not resolve 'MSG_FIELDS' in path
+    ┌─ billboard_contract/src/main.nr:604:30
+    │
+604 │         let mut msg: [Field; MSG_FIELDS] = [0; MSG_FIELDS];
+    │                              ----------
+    │
+
+error: Could not resolve 'MSG_FIELDS' in path
+    ┌─ billboard_contract/src/main.nr:604:48
+    │
+604 │         let mut msg: [Field; MSG_FIELDS] = [0; MSG_FIELDS];
+    │                                                ----------
+    │
+
+error: cannot find `MSG_FIELDS` in this scope
+    ┌─ billboard_contract/src/main.nr:605:21
+    │
+605 │         for i in 0..MSG_FIELDS {
+    │                     ---------- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:606:22
+    │
+606 │             msg[i] = self.storage.censor_response.at(id * MSG_FIELDS + i).read();
+    │                      ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_censor
+    ┌─ billboard_contract/src/main.nr:613:24
+    │
+613 │     fn get_censor() -> pub AztecAddress {
+    │                        --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:614:9
+    │
+614 │         self.storage.censor.read()
+    │         ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_k_multiplier
+    ┌─ billboard_contract/src/main.nr:619:30
+    │
+619 │     fn get_k_multiplier() -> pub u64 {
+    │                              --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:620:9
+    │
+620 │         self.storage.config.read().k_multiplier as u64
+    │         ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_censor_window
+    ┌─ billboard_contract/src/main.nr:625:31
+    │
+625 │     fn get_censor_window() -> pub u64 {
+    │                               --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:626:9
+    │
+626 │         self.storage.config.read().censor_window as u64
+    │         ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_max_save_up
+    ┌─ billboard_contract/src/main.nr:631:29
+    │
+631 │     fn get_max_save_up() -> pub u64 {
+    │                             --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:632:9
+    │
+632 │         self.storage.config.read().max_save_up as u64
+    │         ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_deployer
+    ┌─ billboard_contract/src/main.nr:637:26
+    │
+637 │     fn get_deployer() -> pub AztecAddress {
+    │                          --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:638:9
+    │
+638 │         self.storage.config.read().deployer
+    │         ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_min_deposit
+    ┌─ billboard_contract/src/main.nr:643:29
+    │
+643 │     fn get_min_deposit() -> pub u128 {
+    │                             --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:644:9
+    │
+644 │         self.storage.config.read().min_deposit
+    │         ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_base_cooldown
+    ┌─ billboard_contract/src/main.nr:649:31
+    │
+649 │     fn get_base_cooldown() -> pub u64 {
+    │                               --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:650:9
+    │
+650 │         self.storage.config.read().base_cooldown as u64
+    │         ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_portal
+    ┌─ billboard_contract/src/main.nr:655:24
+    │
+655 │     fn get_portal() -> pub EthAddress {
+    │                        --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:656:9
+    │
+656 │         self.storage.portal_address.read()
+    │         ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function is_portal_set
+    ┌─ billboard_contract/src/main.nr:661:27
+    │
+661 │     fn is_portal_set() -> pub bool {
+    │                           --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:662:9
+    │
+662 │         self.storage.portal_address.is_initialized()
+    │         ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_moderation_policy
+    ┌─ billboard_contract/src/main.nr:669:35
+    │
+669 │     fn get_moderation_policy() -> pub ([Field; POLICY_FIELDS], u32) {
+    │                                   --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: Could not resolve 'POLICY_FIELDS' in path
+    ┌─ billboard_contract/src/main.nr:670:33
+    │
+670 │         let mut policy: [Field; POLICY_FIELDS] = [0; POLICY_FIELDS];
+    │                                 -------------
+    │
+
+error: Could not resolve 'POLICY_FIELDS' in path
+    ┌─ billboard_contract/src/main.nr:670:54
+    │
+670 │         let mut policy: [Field; POLICY_FIELDS] = [0; POLICY_FIELDS];
+    │                                                      -------------
+    │
+
+error: cannot find `POLICY_FIELDS` in this scope
+    ┌─ billboard_contract/src/main.nr:671:21
+    │
+671 │         for i in 0..POLICY_FIELDS {
+    │                     ------------- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:672:25
+    │
+672 │             policy[i] = self.storage.policy_data.at(i).read();
+    │                         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:674:18
+    │
+674 │         (policy, self.storage.policy_len.read())
+    │                  ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_config_hash
+    ┌─ billboard_contract/src/main.nr:679:29
+    │
+679 │     fn get_config_hash() -> pub Field { self.storage.config.read().hash(self.address) }
+    │                             --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:679:41
+    │
+679 │     fn get_config_hash() -> pub Field { self.storage.config.read().hash(self.address) }
+    │                                         ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_max_deposit
+    ┌─ billboard_contract/src/main.nr:683:29
+    │
+683 │     fn get_max_deposit() -> pub u128 { self.storage.config.read().max_deposit }
+    │                             --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:683:40
+    │
+683 │     fn get_max_deposit() -> pub u128 { self.storage.config.read().max_deposit }
+    │                                        ---- not found in this scope
+    │
+
+error: unnecessary pub keyword on return type for function get_deposit_info
+    ┌─ billboard_contract/src/main.nr:687:88
+    │
+687 │     unconstrained fn get_deposit_info(owner: AztecAddress, deposit_chain_id: Field) -> pub [Field; 11] {
+    │                                                                                        --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: Could not resolve 'DepositNote' in path
+    ┌─ billboard_contract/src/main.nr:688:43
+    │
+688 │         let options = NoteViewerOptions::<DepositNote, 11>::new()
+    │                                           -----------
+    │
+
+error: Could not resolve 'NoteViewerOptions' in path
+    ┌─ billboard_contract/src/main.nr:688:23
+    │
+688 │         let options = NoteViewerOptions::<DepositNote, 11>::new()
+    │                       -----------------
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:690:21
+    │
+690 │         let notes = self.storage.deposits.at(owner).view_notes(options);
+    │                     ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:691:12
+    │
+691 │         if notes.len() == 0 { [0; 11] } else { notes.get_unchecked(0).pack() }
+    │            ----- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:691:48
+    │
+691 │         if notes.len() == 0 { [0; 11] } else { notes.get_unchecked(0).pack() }
+    │                                                ----- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: unnecessary pub keyword on return type for function get_screen_hints
+    ┌─ billboard_contract/src/main.nr:706:10
+    │
+706 │     ) -> pub (Option<HintedNote<PostNote>>, Option<HintedNote<PostNote>>) {
+    │          --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: Could not resolve 'DepositNote' in path
+    ┌─ billboard_contract/src/main.nr:708:47
+    │
+708 │         let dep_options = NoteViewerOptions::<DepositNote, 11>::new()
+    │                                               -----------
+    │
+
+error: Could not resolve 'NoteViewerOptions' in path
+    ┌─ billboard_contract/src/main.nr:708:27
+    │
+708 │         let dep_options = NoteViewerOptions::<DepositNote, 11>::new()
+    │                           -----------------
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:710:25
+    │
+710 │         let dep_notes = self.storage.deposits.at(owner).view_notes(dep_options);
+    │                         ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:717:12
+    │
+717 │         if dep_notes.len() == 0 {
+    │            --------- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: cannot find `SENTINEL` in this scope
+    ┌─ billboard_contract/src/main.nr:722:40
+    │
+722 │         let mut dep_note_head: Field = SENTINEL;
+    │                                        -------- not found in this scope
+    │
+
+error: cannot find `SENTINEL` in this scope
+    ┌─ billboard_contract/src/main.nr:723:49
+    │
+723 │         let mut dep_note_last_screened: Field = SENTINEL;
+    │                                                 -------- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:725:28
+    │
+725 │             let dep_note = dep_notes.get_unchecked(0);
+    │                            --------- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:726:38
+    │
+726 │             dep_note_head = dep_note.head_link;
+    │                                      --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:727:47
+    │
+727 │             dep_note_last_screened = dep_note.screened_link;
+    │                                               ------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `SENTINEL` in this scope
+    ┌─ billboard_contract/src/main.nr:729:78
+    │
+729 │             if (dep_note_last_screened == dep_note_head) | (dep_note_head == SENTINEL) {
+    │                                                                              -------- not found in this scope
+    │
+
+error: cannot find `try_get_public_keys` in this scope
+    ┌─ billboard_contract/src/main.nr:737:28
+    │
+737 │             let maybe_pk = try_get_public_keys(owner);
+    │                            ------------------- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:738:16
+    │
+738 │             if maybe_pk.is_none() {
+    │                -------- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: cannot find `get_nhk_app` in this scope
+    ┌─ billboard_contract/src/main.nr:741:31
+    │
+741 │                 link_secret = get_nhk_app(maybe_pk.unwrap_unchecked().npk_m_hash);
+    │                               ----------- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:741:43
+    │
+741 │                 link_secret = get_nhk_app(maybe_pk.unwrap_unchecked().npk_m_hash);
+    │                                           -------- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:747:29
+    │
+747 │             let post_slot = self.storage.posts.at(owner).storage_slot;
+    │                             ---- not found in this scope
+    │
+
+error: Could not resolve 'PostNote' in path
+    ┌─ billboard_contract/src/main.nr:748:63
+    │
+748 │             let opt_notes = aztec::oracle::notes::get_notes::<PostNote, 0, MAX_HINT_NOTES>(
+    │                                                               --------
+    │
+
+error: Could not resolve 'MAX_HINT_NOTES' in path
+    ┌─ billboard_contract/src/main.nr:748:76
+    │
+748 │             let opt_notes = aztec::oracle::notes::get_notes::<PostNote, 0, MAX_HINT_NOTES>(
+    │                                                                            --------------
+    │
+
+error: Could not resolve 'oracle' in path
+    ┌─ billboard_contract/src/main.nr:748:36
+    │
+748 │             let opt_notes = aztec::oracle::notes::get_notes::<PostNote, 0, MAX_HINT_NOTES>(
+    │                                    ------
+    │
+
+error: cannot find `MAX_HINT_NOTES` in this scope
+    ┌─ billboard_contract/src/main.nr:761:17
+    │
+761 │                 MAX_HINT_NOTES,
+    │                 -------------- not found in this scope
+    │
+
+error: cannot find `NoteStatus` in this scope
+    ┌─ billboard_contract/src/main.nr:763:17
+    │
+763 │                 NoteStatus.ACTIVE,
+    │                 ---------- not found in this scope
+    │
+
+error: cannot find `MAX_HINT_NOTES` in this scope
+    ┌─ billboard_contract/src/main.nr:769:25
+    │
+769 │             for i in 0..MAX_HINT_NOTES {
+    │                         -------------- not found in this scope
+    │
+
+error: Type annotations required before indexing this array or vector
+    ┌─ billboard_contract/src/main.nr:771:33
+    │
+771 │                     let maybe = opt_notes[i];
+    │                                 --------- Type annotations needed before this point, can't decide if this is an array or vector
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:772:24
+    │
+772 │                     if maybe.is_some() {
+    │                        ----- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:773:38
+    │
+773 │                         let hinted = maybe.unwrap_unchecked();
+    │                                      ----- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:774:35
+    │
+774 │                         if hinted.note.deposit_chain_id == deposit_chain_id & hinted.note.previous_link == dep_note_last_screened {
+    │                                   ---- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:774:86
+    │
+774 │                         if hinted.note.deposit_chain_id == deposit_chain_id & hinted.note.previous_link == dep_note_last_screened {
+    │                                                                                      ---- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Types in a binary operation should match, but found bool and Field
+    ┌─ billboard_contract/src/main.nr:774:105
+    │
+774 │                         if hinted.note.deposit_chain_id == deposit_chain_id & hinted.note.previous_link == dep_note_last_screened {
+    │                                                                                                         --
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:775:53
+    │
+775 │                             let inner_hash = hinted.note.compute_note_hash(
+    │                                                     ---- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `post_link` in this scope
+    ┌─ billboard_contract/src/main.nr:780:42
+    │
+780 │                             child_link = post_link(self.address, owner, deposit_chain_id, hinted.note.sequence, inner_hash, link_secret);
+    │                                          --------- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:780:52
+    │
+780 │                             child_link = post_link(self.address, owner, deposit_chain_id, hinted.note.sequence, inner_hash, link_secret);
+    │                                                    ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:780:98
+    │
+780 │                             child_link = post_link(self.address, owner, deposit_chain_id, hinted.note.sequence, inner_hash, link_secret);
+    │                                                                                                  ---- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `MAX_HINT_NOTES` in this scope
+    ┌─ billboard_contract/src/main.nr:794:29
+    │
+794 │                 for i in 0..MAX_HINT_NOTES {
+    │                             -------------- not found in this scope
+    │
+
+error: Type annotations required before indexing this array or vector
+    ┌─ billboard_contract/src/main.nr:796:37
+    │
+796 │                         let maybe = opt_notes[i];
+    │                                     --------- Type annotations needed before this point, can't decide if this is an array or vector
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:797:28
+    │
+797 │                         if maybe.is_some() {
+    │                            ----- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:798:42
+    │
+798 │                             let hinted = maybe.unwrap_unchecked();
+    │                                          ----- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:799:39
+    │
+799 │                             if hinted.note.deposit_chain_id == deposit_chain_id & hinted.note.previous_link == child_link {
+    │                                       ---- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:799:90
+    │
+799 │                             if hinted.note.deposit_chain_id == deposit_chain_id & hinted.note.previous_link == child_link {
+    │                                                                                          ---- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Types in a binary operation should match, but found bool and Field
+    ┌─ billboard_contract/src/main.nr:799:109
+    │
+799 │                             if hinted.note.deposit_chain_id == deposit_chain_id & hinted.note.previous_link == child_link {
+    │                                                                                                             --
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:712:25
+    │
+712 │         let mut child = Option::none();
+    │                         ------------ Could not determine the type of the generic argument `T` declared on the struct `Option`
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:713:30
+    │
+713 │         let mut grandchild = Option::none();
+    │                              ------------ Could not determine the type of the generic argument `T` declared on the struct `Option`
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:749:17
+    │
+749 │                 Option::some(owner),
+    │                 ------------ Could not determine the type of the generic argument `T` declared on the struct `Option`
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:752:17
+    │
+752 │                 [],
+    │                 -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:753:17
+    │
+753 │                 [],
+    │                 -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:754:17
+    │
+754 │                 [],
+    │                 -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:755:17
+    │
+755 │                 [],
+    │                 -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:756:17
+    │
+756 │                 [],
+    │                 -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:757:17
+    │
+757 │                 [],
+    │                 -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:758:17
+    │
+758 │                 [],
+    │                 -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:759:17
+    │
+759 │                 [],
+    │                 -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:760:17
+    │
+760 │                 [],
+    │                 -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:770:20
+    │
+770 │                 if child.is_none() {
+    │                    ------------- Could not determine the type of the generic argument `T` declared on the struct `Option`
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:781:37
+    │
+781 │                             child = Option::some(hinted);
+    │                                     ------------ Could not determine the type of the generic argument `T` declared on the struct `Option`
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:789:28
+    │
+789 │             let no_child = child.is_none();
+    │                            ------------- Could not determine the type of the generic argument `T` declared on the struct `Option`
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:795:24
+    │
+795 │                     if grandchild.is_none() {
+    │                        ------------------ Could not determine the type of the generic argument `T` declared on the struct `Option`
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:800:46
+    │
+800 │                                 grandchild = Option::some(hinted);
+    │                                              ------------ Could not determine the type of the generic argument `T` declared on the struct `Option`
+    │
+
+error: unnecessary pub keyword on return type for function get_post_notes
+    ┌─ billboard_contract/src/main.nr:814:61
+    │
+814 │     unconstrained fn get_post_notes(owner: AztecAddress) -> pub [Option<HintedNote<PostNote>>; MAX_HINT_NOTES] {
+    │                                                             --- unnecessary pub return type
+    │
+    = The `pub` keyword only has effects on arguments to the entry-point function of a program. Thus, adding it to other function parameters can be deceiving and should be removed
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:815:25
+    │
+815 │         let post_slot = self.storage.posts.at(owner).storage_slot;
+    │                         ---- not found in this scope
+    │
+
+error: Could not resolve 'PostNote' in path
+    ┌─ billboard_contract/src/main.nr:816:43
+    │
+816 │         aztec::oracle::notes::get_notes::<PostNote, 0, MAX_HINT_NOTES>(
+    │                                           --------
+    │
+
+error: Could not resolve 'MAX_HINT_NOTES' in path
+    ┌─ billboard_contract/src/main.nr:816:56
+    │
+816 │         aztec::oracle::notes::get_notes::<PostNote, 0, MAX_HINT_NOTES>(
+    │                                                        --------------
+    │
+
+error: Could not resolve 'oracle' in path
+    ┌─ billboard_contract/src/main.nr:816:16
+    │
+816 │         aztec::oracle::notes::get_notes::<PostNote, 0, MAX_HINT_NOTES>(
+    │                ------
+    │
+
+error: cannot find `MAX_HINT_NOTES` in this scope
+    ┌─ billboard_contract/src/main.nr:829:13
+    │
+829 │             MAX_HINT_NOTES,
+    │             -------------- not found in this scope
+    │
+
+error: cannot find `NoteStatus` in this scope
+    ┌─ billboard_contract/src/main.nr:831:13
+    │
+831 │             NoteStatus.ACTIVE,
+    │             ---------- not found in this scope
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:817:13
+    │
+817 │             Option::some(owner),
+    │             ------------ Could not determine the type of the generic argument `T` declared on the struct `Option`
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:820:13
+    │
+820 │             [],
+    │             -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:821:13
+    │
+821 │             [],
+    │             -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:822:13
+    │
+822 │             [],
+    │             -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:823:13
+    │
+823 │             [],
+    │             -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:824:13
+    │
+824 │             [],
+    │             -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:825:13
+    │
+825 │             [],
+    │             -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:826:13
+    │
+826 │             [],
+    │             -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:827:13
+    │
+827 │             [],
+    │             -- Could not determine the type of the array
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:828:13
+    │
+828 │             [],
+    │             -- Could not determine the type of the array
+    │
+
+error: Expected a '::' but found '='
+    ┌─ billboard_contract/src/main.nr:550:17
+    │
+550 │         let dep = notes.get_unchecked(0);
+    │                 -
+    │
+
+error: Expected an identifier but found '='
+    ┌─ billboard_contract/src/main.nr:550:17
+    │
+550 │         let dep = notes.get_unchecked(0);
+    │                 -
+    │
+
+error: Expected a pattern but found '='
+    ┌─ billboard_contract/src/main.nr:550:17
+    │
+550 │         let dep = notes.get_unchecked(0);
+    │                 -
+    │
+
+error: Expected a '::' but found '.'
+    ┌─ billboard_contract/src/main.nr:551:19
+    │
+551 │         assert(dep.schema_version == 1 & dep.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                   -
+    │
+
+error: Expected an identifier but found '.'
+    ┌─ billboard_contract/src/main.nr:551:19
+    │
+551 │         assert(dep.schema_version == 1 & dep.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                   -
+    │
+
+error: Expected an expression but found '.'
+    ┌─ billboard_contract/src/main.nr:551:19
+    │
+551 │         assert(dep.schema_version == 1 & dep.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                   -
+    │
+
+error: Expected a '::' but found '.'
+    ┌─ billboard_contract/src/main.nr:551:45
+    │
+551 │         assert(dep.schema_version == 1 & dep.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                                             -
+    │
+
+error: Expected an identifier but found '.'
+    ┌─ billboard_contract/src/main.nr:551:45
+    │
+551 │         assert(dep.schema_version == 1 & dep.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                                             -
+    │
+
+error: Expected an expression but found '.'
+    ┌─ billboard_contract/src/main.nr:551:45
+    │
+551 │         assert(dep.schema_version == 1 & dep.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                                             -
+    │
+
+error: Expected a statement but found '.'
+    ┌─ billboard_contract/src/main.nr:551:45
+    │
+551 │         assert(dep.schema_version == 1 & dep.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                                             -
+    │
+
+error: Expected a statement but found ','
+    ┌─ billboard_contract/src/main.nr:551:106
+    │
+551 │         assert(dep.schema_version == 1 & dep.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                                                                                                          -
+    │
+
+error: Expected a statement but found ')'
+    ┌─ billboard_contract/src/main.nr:551:134
+    │
+551 │         assert(dep.schema_version == 1 & dep.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                                                                                                                                      -
+    │
+
+error: Expected a statement but found 'assert'
+    ┌─ billboard_contract/src/main.nr:552:9
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │         ------
+    │
+
+error: Expected a statement but found 'assert'
+    ┌─ billboard_contract/src/main.nr:552:9
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │         ------
+    │
+
+error: Expected a ; separating these two statements
+    ┌─ billboard_contract/src/main.nr:551:42
+    │
+551 │         assert(dep.schema_version == 1 & dep.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                                          ---
+    │
+
+error: Expected a ; separating these two statements
+    ┌─ billboard_contract/src/main.nr:551:105
+    │
+551 │         assert(dep.schema_version == 1 & dep.deposit_chain_id == deposit_chain_id & deposit_chain_id != 0, "Invalid deposit identity");
+    │                                                                                                         -
+    │
+
+error: Expected an item but found 'assert'
+    ┌─ billboard_contract/src/main.nr:552:9
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │         ------
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_contract/src/main.nr:552:15
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │               -
+    │
+
+error: Expected an item but found 'dep'
+    ┌─ billboard_contract/src/main.nr:552:16
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                ---
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:552:19
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                   -
+    │
+
+error: Expected an item but found 'deposit_nonce'
+    ┌─ billboard_contract/src/main.nr:552:20
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                    -------------
+    │
+
+error: Expected an item but found '>'
+    ┌─ billboard_contract/src/main.nr:552:34
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                  -
+    │
+
+error: Expected an item but found '0'
+    ┌─ billboard_contract/src/main.nr:552:36
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                    -
+    │
+
+error: Expected an item but found '&'
+    ┌─ billboard_contract/src/main.nr:552:38
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                      -
+    │
+
+error: Expected an item but found 'dep'
+    ┌─ billboard_contract/src/main.nr:552:40
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                        ---
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:552:43
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                           -
+    │
+
+error: Expected an item but found 'amount'
+    ┌─ billboard_contract/src/main.nr:552:44
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                            ------
+    │
+
+error: Expected an item but found '>='
+    ┌─ billboard_contract/src/main.nr:552:51
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                   --
+    │
+
+error: Expected an item but found 'config'
+    ┌─ billboard_contract/src/main.nr:552:54
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                      ------
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:552:60
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                            -
+    │
+
+error: Expected an item but found 'min_deposit'
+    ┌─ billboard_contract/src/main.nr:552:61
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                             -----------
+    │
+
+error: Expected an item but found '&'
+    ┌─ billboard_contract/src/main.nr:552:73
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                                         -
+    │
+
+error: Expected an item but found 'dep'
+    ┌─ billboard_contract/src/main.nr:552:75
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                                           ---
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:552:78
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                                              -
+    │
+
+error: Expected an item but found 'amount'
+    ┌─ billboard_contract/src/main.nr:552:79
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                                               ------
+    │
+
+error: Expected an item but found '<='
+    ┌─ billboard_contract/src/main.nr:552:86
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                                                      --
+    │
+
+error: Expected an item but found 'config'
+    ┌─ billboard_contract/src/main.nr:552:89
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                                                         ------
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:552:95
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                                                               -
+    │
+
+error: Expected an item but found 'max_deposit'
+    ┌─ billboard_contract/src/main.nr:552:96
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                                                                -----------
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_contract/src/main.nr:552:107
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                                                                           -
+    │
+
+error: Expected an item but found '"Invalid deposit receipt"'
+    ┌─ billboard_contract/src/main.nr:552:109
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                                                                             -------------------------
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_contract/src/main.nr:552:134
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                                                                                                      -
+    │
+
+error: Expected an item but found ';'
+    ┌─ billboard_contract/src/main.nr:552:135
+    │
+552 │         assert(dep.deposit_nonce > 0 & dep.amount >= config.min_deposit & dep.amount <= config.max_deposit, "Invalid deposit receipt");
+    │                                                                                                                                       -
+    │
+
+error: Expected an item but found 'dep'
+    ┌─ billboard_contract/src/main.nr:553:9
+    │
+553 │         dep.l1_depositor.validate();
+    │         ---
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:553:12
+    │
+553 │         dep.l1_depositor.validate();
+    │            -
+    │
+
+error: Expected an item but found 'l1_depositor'
+    ┌─ billboard_contract/src/main.nr:553:13
+    │
+553 │         dep.l1_depositor.validate();
+    │             ------------
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:553:25
+    │
+553 │         dep.l1_depositor.validate();
+    │                         -
+    │
+
+error: Expected an item but found 'validate'
+    ┌─ billboard_contract/src/main.nr:553:26
+    │
+553 │         dep.l1_depositor.validate();
+    │                          --------
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_contract/src/main.nr:553:34
+    │
+553 │         dep.l1_depositor.validate();
+    │                                  -
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_contract/src/main.nr:553:35
+    │
+553 │         dep.l1_depositor.validate();
+    │                                   -
+    │
+
+error: Expected an item but found ';'
+    ┌─ billboard_contract/src/main.nr:553:36
+    │
+553 │         dep.l1_depositor.validate();
+    │                                    -
+    │
+
+error: Expected an item but found 'assert'
+    ┌─ billboard_contract/src/main.nr:554:9
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │         ------
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_contract/src/main.nr:554:15
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │               -
+    │
+
+error: Expected an item but found 'dep'
+    ┌─ billboard_contract/src/main.nr:554:16
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │                ---
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:554:19
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │                   -
+    │
+
+error: Expected an item but found 'l1_depositor'
+    ┌─ billboard_contract/src/main.nr:554:20
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │                    ------------
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:554:32
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │                                -
+    │
+
+error: Expected an item but found 'to_field'
+    ┌─ billboard_contract/src/main.nr:554:33
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │                                 --------
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_contract/src/main.nr:554:41
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │                                         -
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_contract/src/main.nr:554:42
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │                                          -
+    │
+
+error: Expected an item but found '!='
+    ┌─ billboard_contract/src/main.nr:554:44
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │                                            --
+    │
+
+error: Expected an item but found '0'
+    ┌─ billboard_contract/src/main.nr:554:47
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │                                               -
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_contract/src/main.nr:554:48
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │                                                -
+    │
+
+error: Expected an item but found '"Zero depositor"'
+    ┌─ billboard_contract/src/main.nr:554:50
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │                                                  ----------------
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_contract/src/main.nr:554:66
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │                                                                  -
+    │
+
+error: Expected an item but found ';'
+    ┌─ billboard_contract/src/main.nr:554:67
+    │
+554 │         assert(dep.l1_depositor.to_field() != 0, "Zero depositor");
+    │                                                                   -
+    │
+
+error: Expected an item but found 'assert'
+    ┌─ billboard_contract/src/main.nr:555:9
+    │
+555 │         assert(dep.screened_sequence >= dep.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │         ------
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_contract/src/main.nr:555:15
+    │
+555 │         assert(dep.screened_sequence >= dep.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │               -
+    │
+
+error: Expected an item but found 'dep'
+    ┌─ billboard_contract/src/main.nr:555:16
+    │
+555 │         assert(dep.screened_sequence >= dep.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │                ---
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:555:19
+    │
+555 │         assert(dep.screened_sequence >= dep.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │                   -
+    │
+
+error: Expected an item but found 'screened_sequence'
+    ┌─ billboard_contract/src/main.nr:555:20
+    │
+555 │         assert(dep.screened_sequence >= dep.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │                    -----------------
+    │
+
+error: Expected an item but found '>='
+    ┌─ billboard_contract/src/main.nr:555:38
+    │
+555 │         assert(dep.screened_sequence >= dep.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │                                      --
+    │
+
+error: Expected an item but found 'dep'
+    ┌─ billboard_contract/src/main.nr:555:41
+    │
+555 │         assert(dep.screened_sequence >= dep.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │                                         ---
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:555:44
+    │
+555 │         assert(dep.screened_sequence >= dep.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │                                            -
+    │
+
+error: Expected an item but found 'last_real_sequence'
+    ┌─ billboard_contract/src/main.nr:555:45
+    │
+555 │         assert(dep.screened_sequence >= dep.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │                                             ------------------
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_contract/src/main.nr:555:63
+    │
+555 │         assert(dep.screened_sequence >= dep.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │                                                               -
+    │
+
+error: Expected an item but found '"Too early to withdraw -- not all posts screened"'
+    ┌─ billboard_contract/src/main.nr:555:65
+    │
+555 │         assert(dep.screened_sequence >= dep.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │                                                                 -------------------------------------------------
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_contract/src/main.nr:555:114
+    │
+555 │         assert(dep.screened_sequence >= dep.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │                                                                                                                  -
+    │
+
+error: Expected an item but found ';'
+    ┌─ billboard_contract/src/main.nr:555:115
+    │
+555 │         assert(dep.screened_sequence >= dep.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │                                                                                                                   -
+    │
+
+error: Expected an item but found 'assert'
+    ┌─ billboard_contract/src/main.nr:556:9
+    │
+556 │         assert(now >= dep.next_allowed_time, "Too early to withdraw -- time lock not expired");
+    │         ------
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_contract/src/main.nr:556:15
+    │
+556 │         assert(now >= dep.next_allowed_time, "Too early to withdraw -- time lock not expired");
+    │               -
+    │
+
+error: Expected an item but found 'now'
+    ┌─ billboard_contract/src/main.nr:556:16
+    │
+556 │         assert(now >= dep.next_allowed_time, "Too early to withdraw -- time lock not expired");
+    │                ---
+    │
+
+error: Expected an item but found '>='
+    ┌─ billboard_contract/src/main.nr:556:20
+    │
+556 │         assert(now >= dep.next_allowed_time, "Too early to withdraw -- time lock not expired");
+    │                    --
+    │
+
+error: Expected an item but found 'dep'
+    ┌─ billboard_contract/src/main.nr:556:23
+    │
+556 │         assert(now >= dep.next_allowed_time, "Too early to withdraw -- time lock not expired");
+    │                       ---
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:556:26
+    │
+556 │         assert(now >= dep.next_allowed_time, "Too early to withdraw -- time lock not expired");
+    │                          -
+    │
+
+error: Expected an item but found 'next_allowed_time'
+    ┌─ billboard_contract/src/main.nr:556:27
+    │
+556 │         assert(now >= dep.next_allowed_time, "Too early to withdraw -- time lock not expired");
+    │                           -----------------
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_contract/src/main.nr:556:44
+    │
+556 │         assert(now >= dep.next_allowed_time, "Too early to withdraw -- time lock not expired");
+    │                                            -
+    │
+
+error: Expected an item but found '"Too early to withdraw -- time lock not expired"'
+    ┌─ billboard_contract/src/main.nr:556:46
+    │
+556 │         assert(now >= dep.next_allowed_time, "Too early to withdraw -- time lock not expired");
+    │                                              ------------------------------------------------
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_contract/src/main.nr:556:94
+    │
+556 │         assert(now >= dep.next_allowed_time, "Too early to withdraw -- time lock not expired");
+    │                                                                                              -
+    │
+
+error: Expected an item but found ';'
+    ┌─ billboard_contract/src/main.nr:556:95
+    │
+556 │         assert(now >= dep.next_allowed_time, "Too early to withdraw -- time lock not expired");
+    │                                                                                               -
+    │
+
+error: Expected an item but found 'let'
+    ┌─ billboard_contract/src/main.nr:557:9
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │         ---
+    │
+
+error: Expected an item but found 'content'
+    ┌─ billboard_contract/src/main.nr:557:13
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │             -------
+    │
+
+error: Expected an item but found '='
+    ┌─ billboard_contract/src/main.nr:557:21
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                     -
+    │
+
+error: Expected an item but found 'get_withdraw_msg_hash'
+    ┌─ billboard_contract/src/main.nr:557:23
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                       ---------------------
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_contract/src/main.nr:557:44
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                            -
+    │
+
+error: Expected an item but found 'config'
+    ┌─ billboard_contract/src/main.nr:557:45
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                             ------
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:557:51
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                   -
+    │
+
+error: Expected an item but found 'l1_chain_id'
+    ┌─ billboard_contract/src/main.nr:557:52
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                    -----------
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_contract/src/main.nr:557:63
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                               -
+    │
+
+error: Expected an item but found 'portal'
+    ┌─ billboard_contract/src/main.nr:557:65
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                                 ------
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_contract/src/main.nr:557:71
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                                       -
+    │
+
+error: Expected an item but found 'self'
+    ┌─ billboard_contract/src/main.nr:557:73
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                                         ----
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:557:77
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                                             -
+    │
+
+error: Expected an item but found 'address'
+    ┌─ billboard_contract/src/main.nr:557:78
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                                              -------
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_contract/src/main.nr:557:85
+    │
+557 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                                                     -
+    │
+
+error: Expected an item but found 'config'
+    ┌─ billboard_contract/src/main.nr:558:13
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │             ------
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:558:19
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                   -
+    │
+
+error: Expected an item but found 'rollup_version'
+    ┌─ billboard_contract/src/main.nr:558:20
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                    --------------
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_contract/src/main.nr:558:34
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                                  -
+    │
+
+error: Expected an item but found 'dep'
+    ┌─ billboard_contract/src/main.nr:558:36
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                                    ---
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:558:39
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                                       -
+    │
+
+error: Expected an item but found 'l1_depositor'
+    ┌─ billboard_contract/src/main.nr:558:40
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                                        ------------
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_contract/src/main.nr:558:52
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                                                    -
+    │
+
+error: Expected an item but found 'dep'
+    ┌─ billboard_contract/src/main.nr:558:54
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                                                      ---
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:558:57
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                                                         -
+    │
+
+error: Expected an item but found 'deposit_nonce'
+    ┌─ billboard_contract/src/main.nr:558:58
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                                                          -------------
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_contract/src/main.nr:558:71
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                                                                       -
+    │
+
+error: Expected an item but found 'dep'
+    ┌─ billboard_contract/src/main.nr:558:73
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                                                                         ---
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:558:76
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                                                                            -
+    │
+
+error: Expected an item but found 'amount'
+    ┌─ billboard_contract/src/main.nr:558:77
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                                                                             ------
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_contract/src/main.nr:558:83
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                                                                                   -
+    │
+
+error: Expected an item but found ';'
+    ┌─ billboard_contract/src/main.nr:558:84
+    │
+558 │             config.rollup_version, dep.l1_depositor, dep.deposit_nonce, dep.amount);
+    │                                                                                    -
+    │
+
+error: Expected an item but found 'self'
+    ┌─ billboard_contract/src/main.nr:559:9
+    │
+559 │         self.context.message_portal(portal, content);
+    │         ----
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:559:13
+    │
+559 │         self.context.message_portal(portal, content);
+    │             -
+    │
+
+error: Expected an item but found 'context'
+    ┌─ billboard_contract/src/main.nr:559:14
+    │
+559 │         self.context.message_portal(portal, content);
+    │              -------
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_contract/src/main.nr:559:21
+    │
+559 │         self.context.message_portal(portal, content);
+    │                     -
+    │
+
+error: Expected an item but found 'message_portal'
+    ┌─ billboard_contract/src/main.nr:559:22
+    │
+559 │         self.context.message_portal(portal, content);
+    │                      --------------
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_contract/src/main.nr:559:36
+    │
+559 │         self.context.message_portal(portal, content);
+    │                                    -
+    │
+
+error: Expected an item but found 'portal'
+    ┌─ billboard_contract/src/main.nr:559:37
+    │
+559 │         self.context.message_portal(portal, content);
+    │                                     ------
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_contract/src/main.nr:559:43
+    │
+559 │         self.context.message_portal(portal, content);
+    │                                           -
+    │
+
+error: Expected an item but found 'content'
+    ┌─ billboard_contract/src/main.nr:559:45
+    │
+559 │         self.context.message_portal(portal, content);
+    │                                             -------
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_contract/src/main.nr:559:52
+    │
+559 │         self.context.message_portal(portal, content);
+    │                                                    -
+    │
+
+error: Expected an item but found ';'
+    ┌─ billboard_contract/src/main.nr:559:53
+    │
+559 │         self.context.message_portal(portal, content);
+    │                                                     -
+    │
+
+error: Expected an item but found '}'
+    ┌─ billboard_contract/src/main.nr:834:1
+    │
+834 │ }
+    │ -
+    │
+
+Aborting due to 321 previous errors

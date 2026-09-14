@@ -1,0 +1,49 @@
+Compiling 1 files with Solc 0.8.27
+Solc 0.8.27 finished in 2.87s
+Compiler run successful with warnings:
+Warning (5159): "selfdestruct" has been deprecated. Note that, starting from the Cancun hard fork, the underlying opcode no longer deletes the code and data associated with an account and only transfers its Ether to the beneficiary, unless executed in the same transaction in which the contract was created (see EIP-6780). Any use in newly deployed contracts is strongly discouraged even if the new behavior is taken into account. Future changes to the EVM might further reduce the functionality of the opcode.
+  --> test/PortalV1.t.sol:71:76:
+   |
+71 | contract ForceSurplus { constructor(address payable destination) payable { selfdestruct(destination); } }
+   |                                                                            ^^^^^^^^^^^^
+
+
+Ran 3 tests for test/PortalArtifactRegression.t.sol:PortalSourceControlTest
+[PASS] testConfiguredMinimumRejectsBelowAndAcceptsExact() (gas: 1464702)
+[PASS] testRedepositDoesNotDoubleCountWithdrawnFunds() (gas: 1507557)
+[PASS] testWithdrawalClearsIndividualAndReducesAggregateLiabilities() (gas: 1536209)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 6.03ms (7.45ms CPU time)
+
+Ran 4 tests for test/PortalCodecVectors.t.sol:PortalCodecVectorsTest
+[PASS] test_claim() (gas: 1639)
+[PASS] test_claim_boundary() (gas: 1617)
+[PASS] test_exit() (gas: 1586)
+[PASS] test_ready() (gas: 1548)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 6.08ms (4.46ms CPU time)
+
+Ran 16 tests for test/PortalV1.t.sol:PortalV1Test
+[PASS] testBridgeActorsArePinnedDespiteRollupGetterChanges() (gas: 405002)
+[PASS] testCanonicalExitRefundAndRedepositRejectOldProof() (gas: 550597)
+[PASS] testCanonicalInboxMessageMatchesScopedReceiptAndEnvelope() (gas: 253630)
+[PASS] testConstructorAcceptsMaximumSupportedScalarBounds() (gas: 1083462)
+[PASS] testConstructorRejectsInvalidScopeAndEconomicBounds() (gas: 657942)
+[PASS] testDisabledUntilCanonicalReadyAndActivationCannotRepeat() (gas: 289900)
+[PASS] testEachExitReceiptWordIsAuthenticatedAndFailureRollsBack() (gas: 468805)
+[PASS] testEveryReadyWordIsAuthenticatedByCanonicalOutbox() (gas: 284438)
+[PASS] testInboxFailureRollsBackNonceReceiptValueAndTotal() (gas: 1457603)
+[PASS] testInvalidBridgeAndChangedChainReject() (gas: 254188)
+[PASS] testMinMaxSecretAndActiveReceiptBounds() (gas: 404732)
+[PASS] testNonceOverflowFailsClosed() (gas: 1243179)
+[PASS] testRefundReentrancyBlockedAndEffectsPrecedeCallback() (gas: 709077)
+[PASS] testRejectUnsolicitedEtherAndKeepForcedSurplusSeparate() (gas: 352332)
+[PASS] testRejectedRefundRollsBackCanonicalConsumptionThenRetrySucceeds() (gas: 746831)
+[PASS] testWrongReadyEnvelopeAndMerkleProofReject() (gas: 261062)
+Suite result: ok. 16 passed; 0 failed; 0 skipped; finished in 6.09ms (11.78ms CPU time)
+
+Ran 3 tests for test/PortalArtifactRegression.t.sol:PortalKnownBadFixtureTest
+[PASS] testKnownBadFixtureAcceptsDepositBelowConfiguredMinimum() (gas: 2103324)
+[PASS] testKnownBadFixtureLeavesAggregateAfterRefund() (gas: 2181674)
+[PASS] testKnownBadFixtureRejectedByProductionArtifactGuard() (gas: 1191837)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 8.23ms (15.36ms CPU time)
+
+Ran 4 test suites in 12.95ms (26.43ms CPU time): 26 tests passed, 0 failed, 0 skipped (26 total tests)
