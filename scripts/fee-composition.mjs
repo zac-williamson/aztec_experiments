@@ -178,7 +178,8 @@ export async function runFeeComposition(node, preparation, localContext = {}) {
       const payload = await sponsor.methods.sponsor(author1.address, 1, blinds[1], leaves[0], 5, nonce).request(options);
       const { runFeeExpiry } = await import('./fee-expiry.mjs');
       result.expiry = await runFeeExpiry({ node, wallet, payload, options, sponsorAddress: sponsor.address,
-        authorAddresses: authors.map(author => author.address), deadline: policy.valid_until, ...localContext });
+        authorAddresses: authors.map(author => author.address), deadline: policy.valid_until, ...localContext,
+        queueBeforeExpiry: p.exerciseQueuedExpiry === true });
       assert.equal(BigInt((await target.methods.get_total().simulate({ from: NO_FROM, fee: { gasSettings } })).result), 3n, 'Expired action changed counter');
     }
     if (p.exerciseAllCoupons === true) {

@@ -1,0 +1,204 @@
+{
+  "schema": 1,
+  "startedAt": "2026-09-14T11:59:32.169Z",
+  "node": "24.21.0",
+  "aztec": "5.2.0",
+  "bcryptoBackend": "js",
+  "profile": "disposable sponsor composition",
+  "l1Host": "127.0.0.1",
+  "inheritedNetworkOrWalletConfiguration": false,
+  "inputs": {
+    "scripts/test-fee-network.mjs": "62a96b9bce75a24c35b6393ed053efbc828e1daa64610d420b98d37e053e7096",
+    "scripts/fee-network-worker.mjs": "ffeefb69ac922a0bbaa3c3b18ace4d1950a245e41493150fbf00c7b465c647b4",
+    "scripts/process-lifecycle.mjs": "5942900254592770094e5117cb5d9db29c6e41a14e1d72d0d00dae345ef3c2b3",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "node_modules/@aztec/aztec/dest/local-network/local-network.js": "3b6270748a6c06b56fe6124fae6ae0adc1f9386f2dc151f366eb36d3973d9590",
+    "node_modules/@aztec/aztec-node/dest/factory.js": "8bc25151488dcabab7b865beeaef4ff296d54dcc960e9d72fc481d3a1cdf845a",
+    "node_modules/@aztec/p2p/dest/msg_validators/tx_validator/allowed_public_setup.js": "02e0c68b8979d840f75fe36106e8e2aad26b39188c9564a41c74615e264b600a",
+    "scripts/fee-composition.mjs": "913c3bcec72a8bee5f5e4bba647adc0a3c762f4b467a5a5a44b03b9837c77b3b",
+    "scripts/fee-expiry.mjs": "c12168b99b2bc663999b9234ad9906d1ea815ec5c6deb0fd252dd2d73b7ce708"
+  },
+  "children": {
+    "service": {
+      "pid": 90516,
+      "closed": true,
+      "code": 0,
+      "signal": null
+    },
+    "tests": {
+      "pid": 90517,
+      "closed": true,
+      "code": 0,
+      "signal": null
+    }
+  },
+  "observation": {
+    "startedAt": "2026-09-14T11:59:35.324Z",
+    "profile": "disposable-fee-mechanism",
+    "realVerifier": false,
+    "realProofs": false,
+    "syntheticEpochSettlement": false,
+    "fixtureArtifactHashes": {
+      "sponsor": "0768d4548d3f5791a9224289729bb235bacea139e54aefe12ff3ee0014ebcad1",
+      "target": "8c1af942d191667714e515534ddc5c6e8213a4e3c115711d7372c4df5e34ca05"
+    },
+    "outcome": "pass",
+    "l1ChainId": 31337,
+    "rollupVersion": 3941798514,
+    "extraPublicSetupFunctions": 0,
+    "p2pEnabled": false,
+    "blockNumber": "0",
+    "aztecHttpServerStarted": false,
+    "composition": {
+      "profile": "disposable-fee-mechanism",
+      "realProofs": false,
+      "realVerifier": false,
+      "requestedInclusion": "proposed",
+      "productionFinalityQualified": false,
+      "receipts": [
+        {
+          "stage": "deploy-sponsor",
+          "txHash": "0x1b599bbcbe5ba6f69991e5c668bfc1750398b173ff09411a4ad5e6c543874e3f",
+          "status": "proposed",
+          "executionResult": "success",
+          "blockNumber": "1",
+          "transactionFee": "1095268418431600000"
+        },
+        {
+          "stage": "deploy-target",
+          "txHash": "0x1ddb594ae266704e6c1a2e91d50d40ff061c01bb9d472595501ba5ac6c49d1ff",
+          "status": "proposed",
+          "executionResult": "success",
+          "blockNumber": "2",
+          "transactionFee": "1095171217613500000"
+        },
+        {
+          "stage": "configure-two-coupons",
+          "txHash": "0x14f2529e3de4e0fd5aed104abf29bc51af64652c4a8c6825bc35707f7f5931fa",
+          "status": "proposed",
+          "executionResult": "success",
+          "blockNumber": "3",
+          "transactionFee": "1421107160884600000"
+        }
+      ],
+      "sponsored": [
+        {
+          "index": 0,
+          "txHash": "0x001f49500c6845b6e463d292ae7a944d01a4e86891d07c59965826b9944baf67",
+          "status": "proposed",
+          "executionResult": "success",
+          "blockNumber": "4",
+          "transactionFee": "826773358617200000",
+          "sponsorBefore": "10000000000000000000000",
+          "sponsorAfter": "9999173226641382800000",
+          "sponsorDebit": "826773358617200000",
+          "authorBalances": [
+            "0",
+            "0"
+          ],
+          "adminBalanceUnchanged": true,
+          "total": "3"
+        }
+      ],
+      "policy": {
+        "ticketCount": 2,
+        "ticketFeeCap": "15854678896990440000",
+        "totalFeeCap": "31709357793980880000",
+        "validUntil": "1789387871",
+        "maxDaGas": 55882,
+        "maxL2Gas": 6540000,
+        "maxFeeDa": "0",
+        "maxFeeL2": "2424262828286"
+      },
+      "expiry": {
+        "profile": "disposable-fee-mechanism",
+        "realProofs": false,
+        "realVerifier": false,
+        "qualification": "queued transaction rejected by actual local builder after expiration; not a mined/proven expiry test",
+        "queueBeforeExpiry": true,
+        "txHash": "0x2cf06a9b8a8cbdc1a9d3832211307b9477f4165ec2aa7c188983f90a27e497e2",
+        "serializedTxSha256": "b54d8158fb5e6a8cd39870b33627a5e060489b6351003ff221a13f6a40e9ca59",
+        "deadline": "1789387871",
+        "capturedExpiration": "1789387871",
+        "anchorBlockNumber": "4",
+        "anchorTimestamp": "1789387727",
+        "anchorHash": "0x0884b28f2426cc6fc27129733fe2156f19a3ecf8638c8f07a8598d9f498399ad",
+        "l2TipHash": "0x0884b28f2426cc6fc27129733fe2156f19a3ecf8638c8f07a8598d9f498399ad",
+        "preWarpValidation": "valid",
+        "preWarpValidationTimestamp": "1789387727",
+        "builderFailures": [
+          {
+            "txHash": "0x2cf06a9b8a8cbdc1a9d3832211307b9477f4165ec2aa7c188983f90a27e497e2",
+            "error": "Error: Tx failed preprocess validation: Invalid expiration timestamp",
+            "exactExpirationFailure": true
+          }
+        ],
+        "preWarpReceiptStatus": "pending",
+        "slotDuration": "72",
+        "postWarpValidationTimestamp": "1789387943",
+        "postWarpPausedReceiptStatus": "pending",
+        "builderExpirationRejected": true,
+        "builderProducedBlock": false,
+        "outcome": "pass",
+        "l1Before": "1789387727",
+        "l1After": "1789387944",
+        "unchangedPreparedTransaction": true,
+        "anchorStillCanonical": true,
+        "l2TipUnchanged": true,
+        "postWarpValidation": "invalid",
+        "rejected": true,
+        "rejection": "Invalid expiration timestamp",
+        "actualSubmissionRejected": true,
+        "receiptStatus": "dropped",
+        "sponsorBefore": "9999173226641382800000",
+        "sponsorAfter": "9999173226641382800000",
+        "sponsorDebit": "0",
+        "authorBalances": [
+          "0",
+          "0"
+        ],
+        "noMinedReceipt": true
+      },
+      "outcome": "pass",
+      "sponsorAddress": "0x1f4a562631a2fa39084af7f8777d32253ed87e4858ddf721277bc20722ea17c8",
+      "targetAddress": "0x224719aedf1ee3a3c80ab8d3a230efa79d8fa2144c19e7cff150f848d803b781",
+      "authorsStartedAndRemainedUnfunded": true,
+      "remainingQualification": [
+        "second coupon",
+        "consumed coupon replay",
+        "real proofs",
+        "production finality",
+        "public-revert coupon burn",
+        "expiry at inclusion",
+        "issuer/RPC/funding correlation assessment"
+      ],
+      "walletStopped": true
+    },
+    "nodeStopped": true,
+    "validatorLoopRunningAfterNodeStop": false,
+    "validatorLoopRunningAfterExplicitStop": false,
+    "resourcesAfterNodeStop": [
+      "PipeWrap",
+      "PipeWrap",
+      "Timeout"
+    ],
+    "slasherSubscriptionsStopped": 2,
+    "provingSingletonsStopped": true,
+    "resourcesAfterSingletonStop": [
+      "PipeWrap",
+      "PipeWrap"
+    ],
+    "remainingRunningLoops": [],
+    "finishedAt": "2026-09-14T11:59:57.657Z"
+  },
+  "outcome": "fail",
+  "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ undefined\n- true\n",
+  "diagnosticTail": "W01_STAGE create-wallet\nW01_STAGE register-fresh-accounts\nW01_STAGE deploy-sponsor\nW01_STAGE deploy-target\nW01_STAGE configure-two-coupons\nW01_STAGE sponsor-ticket-0\nW01_STAGE verify-ticket-0\nW01_STAGE reject-expired-prepared-ticket\nW01_STAGE expiry-validate-inputs\nW01_STAGE expiry-private-execution-and-prove\nW01_STAGE expiry-pre-warp-validity\nW01_STAGE expiry-queue-before-deadline\nW01_STAGE expiry-advance-disposable-l1\nW01_STAGE expiry-post-warp-admission\nW01_STAGE expiry-resume-and-build-queued\nW01_RESULT {\"startedAt\":\"2026-09-14T11:59:35.324Z\",\"profile\":\"disposable-fee-mechanism\",\"realVerifier\":false,\"realProofs\":false,\"syntheticEpochSettlement\":false,\"fixtureArtifactHashes\":{\"sponsor\":\"0768d4548d3f5791a9224289729bb235bacea139e54aefe12ff3ee0014ebcad1\",\"target\":\"8c1af942d191667714e515534ddc5c6e8213a4e3c115711d7372c4df5e34ca05\"},\"outcome\":\"pass\",\"l1ChainId\":31337,\"rollupVersion\":3941798514,\"extraPublicSetupFunctions\":0,\"p2pEnabled\":false,\"blockNumber\":\"0\",\"aztecHttpServerStarted\":false,\"composition\":{\"profile\":\"disposable-fee-mechanism\",\"realProofs\":false,\"realVerifier\":false,\"requestedInclusion\":\"proposed\",\"productionFinalityQualified\":false,\"receipts\":[{\"stage\":\"deploy-sponsor\",\"txHash\":\"0x1b599bbcbe5ba6f69991e5c668bfc1750398b173ff09411a4ad5e6c543874e3f\",\"status\":\"proposed\",\"executionResult\":\"success\",\"blockNumber\":\"1\",\"transactionFee\":\"1095268418431600000\"},{\"stage\":\"deploy-target\",\"txHash\":\"0x1ddb594ae266704e6c1a2e91d50d40ff061c01bb9d472595501ba5ac6c49d1ff\",\"status\":\"proposed\",\"executionResult\":\"success\",\"blockNumber\":\"2\",\"transactionFee\":\"1095171217613500000\"},{\"stage\":\"configure-two-coupons\",\"txHash\":\"0x14f2529e3de4e0fd5aed104abf29bc51af64652c4a8c6825bc35707f7f5931fa\",\"status\":\"proposed\",\"executionResult\":\"success\",\"blockNumber\":\"3\",\"transactionFee\":\"1421107160884600000\"}],\"sponsored\":[{\"index\":0,\"txHash\":\"0x001f49500c6845b6e463d292ae7a944d01a4e86891d07c59965826b9944baf67\",\"status\":\"proposed\",\"executionResult\":\"success\",\"blockNumber\":\"4\",\"transactionFee\":\"826773358617200000\",\"sponsorBefore\":\"10000000000000000000000\",\"sponsorAfter\":\"9999173226641382800000\",\"sponsorDebit\":\"826773358617200000\",\"authorBalances\":[\"0\",\"0\"],\"adminBalanceUnchanged\":true,\"total\":\"3\"}],\"policy\":{\"ticketCount\":2,\"ticketFeeCap\":\"15854678896990440000\",\"totalFeeCap\":\"31709357793980880000\",\"validUntil\":\"1789387871\",\"maxDaGas\":55882,\"maxL2Gas\":6540000,\"maxFeeDa\":\"0\",\"maxFeeL2\":\"2424262828286\"},\"expiry\":{\"profile\":\"disposable-fee-mechanism\",\"realProofs\":false,\"realVerifier\":false,\"qualification\":\"queued transaction rejected by actual local builder after expiration; not a mined/proven expiry test\",\"queueBeforeExpiry\":true,\"txHash\":\"0x2cf06a9b8a8cbdc1a9d3832211307b9477f4165ec2aa7c188983f90a27e497e2\",\"serializedTxSha256\":\"b54d8158fb5e6a8cd39870b33627a5e060489b6351003ff221a13f6a40e9ca59\",\"deadline\":\"1789387871\",\"capturedExpiration\":\"1789387871\",\"anchorBlockNumber\":\"4\",\"anchorTimestamp\":\"1789387727\",\"anchorHash\":\"0x0884b28f2426cc6fc27129733fe2156f19a3ecf8638c8f07a8598d9f498399ad\",\"l2TipHash\":\"0x0884b28f2426cc6fc27129733fe2156f19a3ecf8638c8f07a8598d9f498399ad\",\"preWarpValidation\":\"valid\",\"preWarpValidationTimestamp\":\"1789387727\",\"builderFailures\":[{\"txHash\":\"0x2cf06a9b8a8cbdc1a9d3832211307b9477f4165ec2aa7c188983f90a27e497e2\",\"error\":\"Error: Tx failed preprocess validation: Invalid expiration timestamp\",\"exactExpirationFailure\":true}],\"preWarpReceiptStatus\":\"pending\",\"slotDuration\":\"72\",\"postWarpValidationTimestamp\":\"1789387943\",\"postWarpPausedReceiptStatus\":\"pending\",\"builderExpirationRejected\":true,\"builderProducedBlock\":false,\"outcome\":\"pass\",\"l1Before\":\"1789387727\",\"l1After\":\"1789387944\",\"unchangedPreparedTransaction\":true,\"anchorStillCanonical\":true,\"l2TipUnchanged\":true,\"postWarpValidation\":\"invalid\",\"rejected\":true,\"rejection\":\"Invalid expiration timestamp\",\"actualSubmissionRejected\":true,\"receiptStatus\":\"dropped\",\"sponsorBefore\":\"9999173226641382800000\",\"sponsorAfter\":\"9999173226641382800000\",\"sponsorDebit\":\"0\",\"authorBalances\":[\"0\",\"0\"],\"noMinedReceipt\":true},\"outcome\":\"pass\",\"sponsorAddress\":\"0x1f4a562631a2fa39084af7f8777d32253ed87e4858ddf721277bc20722ea17c8\",\"targetAddress\":\"0x224719aedf1ee3a3c80ab8d3a230efa79d8fa2144c19e7cff150f848d803b781\",\"authorsStartedAndRemainedUnfunded\":true,\"remainingQualification\":[\"second coupon\",\"consumed coupon replay\",\"real proofs\",\"production finality\",\"public-revert coupon burn\",\"expiry at inclusion\",\"issuer/RPC/funding correlation assessment\"],\"walletStopped\":true},\"nodeStopped\":true,\"validatorLoopRunningAfterNodeStop\":false,\"validatorLoopRunningAfterExplicitStop\":false,\"resourcesAfterNodeStop\":[\"PipeWrap\",\"PipeWrap\",\"Timeout\"],\"slasherSubscriptionsStopped\":2,\"provingSingletonsStopped\":true,\"resourcesAfterSingletonStop\":[\"PipeWrap\",\"PipeWrap\"],\"remainingRunningLoops\":[],\"finishedAt\":\"2026-09-14T11:59:57.657Z\"}\n",
+  "temporaryDirectoryRemoved": true,
+  "finishedAt": "2026-09-14T11:59:58.731Z",
+  "limitations": [
+    "Mock L1 verifier and disabled private proof generation; no genuine proof acceptance.",
+    "Synthetic genesis funding; no production funding privacy, issuer or release qualification."
+  ]
+}

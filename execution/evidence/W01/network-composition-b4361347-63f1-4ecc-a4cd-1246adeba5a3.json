@@ -1,0 +1,202 @@
+{
+  "schema": 1,
+  "startedAt": "2026-09-14T12:00:37.505Z",
+  "node": "24.21.0",
+  "aztec": "5.2.0",
+  "bcryptoBackend": "js",
+  "profile": "disposable sponsor composition",
+  "l1Host": "127.0.0.1",
+  "inheritedNetworkOrWalletConfiguration": false,
+  "inputs": {
+    "scripts/test-fee-network.mjs": "baadb574fb57bced3f8f1bd5599e3976bb768cba251b62386482e48b939f458b",
+    "scripts/fee-network-worker.mjs": "ffeefb69ac922a0bbaa3c3b18ace4d1950a245e41493150fbf00c7b465c647b4",
+    "scripts/process-lifecycle.mjs": "5942900254592770094e5117cb5d9db29c6e41a14e1d72d0d00dae345ef3c2b3",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "node_modules/@aztec/aztec/dest/local-network/local-network.js": "3b6270748a6c06b56fe6124fae6ae0adc1f9386f2dc151f366eb36d3973d9590",
+    "node_modules/@aztec/aztec-node/dest/factory.js": "8bc25151488dcabab7b865beeaef4ff296d54dcc960e9d72fc481d3a1cdf845a",
+    "node_modules/@aztec/p2p/dest/msg_validators/tx_validator/allowed_public_setup.js": "02e0c68b8979d840f75fe36106e8e2aad26b39188c9564a41c74615e264b600a",
+    "scripts/fee-composition.mjs": "913c3bcec72a8bee5f5e4bba647adc0a3c762f4b467a5a5a44b03b9837c77b3b",
+    "scripts/fee-expiry.mjs": "c12168b99b2bc663999b9234ad9906d1ea815ec5c6deb0fd252dd2d73b7ce708"
+  },
+  "children": {
+    "service": {
+      "pid": 90695,
+      "closed": true,
+      "code": 0,
+      "signal": null
+    },
+    "tests": {
+      "pid": 90696,
+      "closed": true,
+      "code": 0,
+      "signal": null
+    }
+  },
+  "observation": {
+    "startedAt": "2026-09-14T12:00:40.292Z",
+    "profile": "disposable-fee-mechanism",
+    "realVerifier": false,
+    "realProofs": false,
+    "syntheticEpochSettlement": false,
+    "fixtureArtifactHashes": {
+      "sponsor": "0768d4548d3f5791a9224289729bb235bacea139e54aefe12ff3ee0014ebcad1",
+      "target": "8c1af942d191667714e515534ddc5c6e8213a4e3c115711d7372c4df5e34ca05"
+    },
+    "outcome": "pass",
+    "l1ChainId": 31337,
+    "rollupVersion": 3382207515,
+    "extraPublicSetupFunctions": 0,
+    "p2pEnabled": false,
+    "blockNumber": "0",
+    "aztecHttpServerStarted": false,
+    "composition": {
+      "profile": "disposable-fee-mechanism",
+      "realProofs": false,
+      "realVerifier": false,
+      "requestedInclusion": "proposed",
+      "productionFinalityQualified": false,
+      "receipts": [
+        {
+          "stage": "deploy-sponsor",
+          "txHash": "0x0a95c3b0a25e044447164dcd631659e2d3b2c6bf30a86d1b7c8b2e1d73b65dd8",
+          "status": "proposed",
+          "executionResult": "success",
+          "blockNumber": "1",
+          "transactionFee": "1095268418431600000"
+        },
+        {
+          "stage": "deploy-target",
+          "txHash": "0x1eebaca2d945df756e76d8df29151023d49027150d1ab6829ec88ef4f55ce18a",
+          "status": "proposed",
+          "executionResult": "success",
+          "blockNumber": "2",
+          "transactionFee": "1095171217613500000"
+        },
+        {
+          "stage": "configure-two-coupons",
+          "txHash": "0x18d5475d7ac247d320cdb5037080a30f49e53244c81d7de73f514794739e0604",
+          "status": "proposed",
+          "executionResult": "success",
+          "blockNumber": "3",
+          "transactionFee": "1421107160884600000"
+        }
+      ],
+      "sponsored": [
+        {
+          "index": 0,
+          "txHash": "0x27ea45c346da79e8802f785f1bf6e3af6e25e23a5c141da1cdb63570a1ed1e35",
+          "status": "proposed",
+          "executionResult": "success",
+          "blockNumber": "4",
+          "transactionFee": "826773358617200000",
+          "sponsorBefore": "10000000000000000000000",
+          "sponsorAfter": "9999173226641382800000",
+          "sponsorDebit": "826773358617200000",
+          "authorBalances": [
+            "0",
+            "0"
+          ],
+          "adminBalanceUnchanged": true,
+          "total": "3"
+        }
+      ],
+      "policy": {
+        "ticketCount": 2,
+        "ticketFeeCap": "15854678896990440000",
+        "totalFeeCap": "31709357793980880000",
+        "validUntil": "1789387936",
+        "maxDaGas": 55882,
+        "maxL2Gas": 6540000,
+        "maxFeeDa": "0",
+        "maxFeeL2": "2424262828286"
+      },
+      "expiry": {
+        "profile": "disposable-fee-mechanism",
+        "realProofs": false,
+        "realVerifier": false,
+        "qualification": "queued transaction rejected by actual local builder after expiration; not a mined/proven expiry test",
+        "queueBeforeExpiry": true,
+        "txHash": "0x08ec2d34d6117378e823b8485cfb0cf7887a515ec6ec150b765db4f7ed3bab7c",
+        "serializedTxSha256": "f64fd3454dd552d019e7ff2864c53a8506498d1c888802d5e16a956df37334db",
+        "deadline": "1789387936",
+        "capturedExpiration": "1789387936",
+        "anchorBlockNumber": "4",
+        "anchorTimestamp": "1789387792",
+        "anchorHash": "0x15800a660b8e6b1487f917f039d04695534be5973a5ebed9e6f3f39f4973977e",
+        "l2TipHash": "0x15800a660b8e6b1487f917f039d04695534be5973a5ebed9e6f3f39f4973977e",
+        "preWarpValidation": "valid",
+        "preWarpValidationTimestamp": "1789387792",
+        "builderFailures": [
+          {
+            "txHash": "0x08ec2d34d6117378e823b8485cfb0cf7887a515ec6ec150b765db4f7ed3bab7c",
+            "error": "Error: Tx failed preprocess validation: Invalid expiration timestamp",
+            "exactExpirationFailure": true
+          }
+        ],
+        "preWarpReceiptStatus": "pending",
+        "slotDuration": "72",
+        "postWarpValidationTimestamp": "1789388008",
+        "postWarpPausedReceiptStatus": "pending",
+        "builderExpirationRejected": true,
+        "builderProducedBlock": false,
+        "outcome": "pass",
+        "l1Before": "1789387792",
+        "l1After": "1789388009",
+        "unchangedPreparedTransaction": true,
+        "anchorStillCanonical": true,
+        "l2TipUnchanged": true,
+        "postWarpValidation": "invalid",
+        "rejected": true,
+        "rejection": "Invalid expiration timestamp",
+        "actualSubmissionRejected": true,
+        "receiptStatus": "dropped",
+        "sponsorBefore": "9999173226641382800000",
+        "sponsorAfter": "9999173226641382800000",
+        "sponsorDebit": "0",
+        "authorBalances": [
+          "0",
+          "0"
+        ],
+        "noMinedReceipt": true
+      },
+      "outcome": "pass",
+      "sponsorAddress": "0x1b0d38abd4ed8737067811d98ccf3280589f8d85746d94349b1355aaaeff3ba4",
+      "targetAddress": "0x040896fbe00d19922e3fde87162c2ba3446e2fc6aed229e19a607f0499fad486",
+      "authorsStartedAndRemainedUnfunded": true,
+      "remainingQualification": [
+        "second coupon",
+        "consumed coupon replay",
+        "real proofs",
+        "production finality",
+        "public-revert coupon burn",
+        "expiry at inclusion",
+        "issuer/RPC/funding correlation assessment"
+      ],
+      "walletStopped": true
+    },
+    "nodeStopped": true,
+    "validatorLoopRunningAfterNodeStop": false,
+    "validatorLoopRunningAfterExplicitStop": false,
+    "resourcesAfterNodeStop": [
+      "PipeWrap",
+      "PipeWrap",
+      "Timeout"
+    ],
+    "slasherSubscriptionsStopped": 2,
+    "provingSingletonsStopped": true,
+    "resourcesAfterSingletonStop": [
+      "PipeWrap",
+      "PipeWrap"
+    ],
+    "remainingRunningLoops": [],
+    "finishedAt": "2026-09-14T12:01:01.698Z"
+  },
+  "outcome": "pass",
+  "temporaryDirectoryRemoved": true,
+  "finishedAt": "2026-09-14T12:01:01.923Z",
+  "limitations": [
+    "Mock L1 verifier and disabled private proof generation; no genuine proof acceptance.",
+    "Synthetic genesis funding; no production funding privacy, issuer or release qualification."
+  ]
+}

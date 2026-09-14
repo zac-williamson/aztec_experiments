@@ -13,9 +13,10 @@ import { runWithService } from './process-lifecycle.mjs';
 assertNodeVersion(); assertAztecPackages();
 const compose = process.argv.includes('--compose');
 const publicRevert = process.argv.includes('--public-revert');
-const expiry = process.argv.includes('--expiry');
+const queuedExpiry = process.argv.includes('--queued-expiry');
+const expiry = process.argv.includes('--expiry') || queuedExpiry;
 const allCoupons = process.argv.includes('--all-coupons') || publicRevert;
-assert(process.argv.slice(2).every(arg => ['--compose', '--all-coupons', '--public-revert', '--expiry'].includes(arg)), 'Unknown test option');
+assert(process.argv.slice(2).every(arg => ['--compose', '--all-coupons', '--public-revert', '--expiry', '--queued-expiry'].includes(arg)), 'Unknown test option');
 assert(!allCoupons || compose, '--all-coupons requires --compose');
 assert(!expiry || (compose && !allCoupons), '--expiry requires --compose and an unused second coupon');
 const anvil = process.env.ANVIL || path.join(os.homedir(), '.foundry/bin/anvil');
@@ -44,7 +45,7 @@ const redact = value => String(value).replaceAll(identity.privateKey, '[disposab
 try {
   await runWithService({
     service: { command: anvil, args: ['--host', '127.0.0.1', '--port', String(port), '--chain-id', '31337', '--mnemonic', identity.mnemonic.phrase, '--silent'], options: { cwd: directory, env, stdio: 'ignore' } },
-    tests: { command: process.execPath, args: [path.join(ROOT, 'scripts/fee-network-worker.mjs')], options: { cwd: directory, env: { ...env, W01_TEST_L1_RPC: rpc, W01_TEST_L1_KEY: identity.privateKey, W01_TEST_DIRECTORY: directory, W01_TEST_MODE: compose ? 'compose' : 'startup', W01_TEST_ALL_COUPONS: String(allCoupons), W01_TEST_PUBLIC_REVERT: String(publicRevert), W01_TEST_EXPIRY: String(expiry) }, stdio: ['ignore', 'pipe', 'pipe'] } },
+    tests: { command: process.execPath, args: [path.join(ROOT, 'scripts/fee-network-worker.mjs')], options: { cwd: directory, env: { ...env, W01_TEST_L1_RPC: rpc, W01_TEST_L1_KEY: identity.privateKey, W01_TEST_DIRECTORY: directory, W01_TEST_MODE: compose ? 'compose' : 'startup', W01_TEST_ALL_COUPONS: String(allCoupons), W01_TEST_PUBLIC_REVERT: String(publicRevert), W01_TEST_EXPIRY: String(expiry), W01_TEST_QUEUED_EXPIRY: String(queuedExpiry) }, stdio: ['ignore', 'pipe', 'pipe'] } },
     readyTimeoutMs: 15000, testTimeoutMs: compose ? 300000 : 60000, terminationGraceMs: 5000,
     probe: async () => {
       try {
@@ -76,6 +77,7 @@ try {
     assert.equal(report.observation.composition.replay.afterPublicRevert, true);
   }
   if (expiry) assert.equal(report.observation.composition.expiry?.rejected, true);
+  if (queuedExpiry) assert.equal(report.observation.composition.expiry.builderExpirationRejected, true);
   report.outcome = 'pass';
 } catch (error) {
   report.outcome = 'fail'; report.error = redact(error.message);

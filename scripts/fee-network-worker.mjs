@@ -74,6 +74,7 @@ try {
     preparation.exerciseAllCoupons = process.env.W01_TEST_ALL_COUPONS === 'true';
     preparation.exercisePublicRevert = process.env.W01_TEST_PUBLIC_REVERT === 'true';
     preparation.exerciseExpiry = process.env.W01_TEST_EXPIRY === 'true';
+    preparation.exerciseQueuedExpiry = process.env.W01_TEST_QUEUED_EXPIRY === 'true';
     result.fixtureArtifactHashes = preparation.artifactHashes;
   }
   stage = 'genesis';

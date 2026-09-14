@@ -1,4 +1,4 @@
-// Test-only admission-expiry check on the disposable local network; no protocol/state overrides.
+// Test-only admission/queued-expiry check on the disposable local network; no protocol/state overrides.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { NO_FROM } from '@aztec/aztec.js/account';
@@ -11,13 +11,19 @@ const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const safeError = error => `${error?.name || 'Error'}: ${String(error?.message || 'unknown failure').split('\n')[0].replace(/0x[0-9a-fA-F]{16,}/g, '[hex]').slice(0, 240)}`;
 
 /** Wallet/node lifecycle belongs to the caller. Never returns or logs the prepared Tx or its witnesses. */
-export async function runFeeExpiry({ node, wallet, payload, options, sponsorAddress, authorAddresses, deadline, l1Rpc, dateProvider }) {
+export async function runFeeExpiry({ node, wallet, payload, options, sponsorAddress, authorAddresses, deadline, l1Rpc, dateProvider, queueBeforeExpiry = false }) {
   let stage = 'expiry-validate-inputs';
+  let automine, originalDropDescriptor, dropWrapped = false, resumeRequired = false;
+  const builderFailures = [];
   const observations = { profile: 'disposable-fee-mechanism', realProofs: false, realVerifier: false,
-    qualification: 'submission expiration against next-slot timestamp; not a mined/proven expiry test' };
+    qualification: queueBeforeExpiry
+      ? 'queued transaction rejected by actual local builder after expiration; not a mined/proven expiry test'
+      : 'submission expiration against next-slot timestamp; not a mined/proven expiry test',
+    queueBeforeExpiry };
   const mark = value => { stage = value; console.log(`W01_STAGE ${value}`); };
   try {
     mark(stage);
+    assert.equal(typeof queueBeforeExpiry, 'boolean', 'Invalid queue mode');
     const rpc = new URL(l1Rpc);
     assert.equal(rpc.protocol, 'http:');
     assert.equal(rpc.hostname, '127.0.0.1');
@@ -76,6 +82,33 @@ export async function runFeeExpiry({ node, wallet, payload, options, sponsorAddr
       anchorHash: anchorHash.toString(), l2TipHash: tipHash.toString(), preWarpValidation: validBefore.result,
       preWarpValidationTimestamp: String(node.epochCache.getEpochAndSlotInNextL1Slot().ts) });
 
+    if (queueBeforeExpiry) {
+      mark('expiry-queue-before-deadline');
+      automine = node.getAutomineSequencer();
+      assert(automine && typeof automine.dropFailedTxsFromP2P === 'function', 'Actual automine failure observer unavailable');
+      // Observe the real failure path, forwarding its original arguments and result unchanged.
+      // Only public transaction hashes and bounded error text are retained.
+      originalDropDescriptor = Object.getOwnPropertyDescriptor(automine, 'dropFailedTxsFromP2P');
+      const originalDrop = automine.dropFailedTxsFromP2P;
+      automine.dropFailedTxsFromP2P = async function (failures) {
+        for (const failure of failures) {
+          builderFailures.push({ txHash: failure.tx.getTxHash().toString(), error: safeError(failure.error),
+            exactExpirationFailure: failure.error?.message === 'Tx failed preprocess validation: Invalid expiration timestamp' });
+        }
+        return await originalDrop.call(this, failures);
+      };
+      dropWrapped = true;
+      observations.builderFailures = builderFailures;
+      resumeRequired = true;
+      await node.pauseSequencer();
+      await node.sendTx(tx);
+      const queued = await node.getTxReceipt(txHash);
+      assert.equal(queued.status, TxStatus.PENDING, 'Valid transaction did not enter the paused mempool');
+      assert(!queued.isMined(), 'Queued transaction was unexpectedly mined');
+      observations.preWarpReceiptStatus = queued.status;
+      await assertCanonicalAnchorAndUnchangedTip();
+    }
+
     mark('expiry-advance-disposable-l1');
     // This mines an L1 block and updates this same injected clock. It does not build an L2 checkpoint.
     // Admission uses the L2 slot-start timestamp corresponding to the next L1
@@ -104,6 +137,21 @@ export async function runFeeExpiry({ node, wallet, payload, options, sponsorAddr
       rejected = true;
     }
     assert(rejected, 'Actual expired submission was accepted');
+    if (queueBeforeExpiry) {
+      const stillQueued = await node.getTxReceipt(txHash);
+      assert.equal(stillQueued.status, TxStatus.PENDING, 'Queued transaction disappeared before builder qualification');
+      observations.postWarpPausedReceiptStatus = stillQueued.status;
+      mark('expiry-resume-and-build-queued');
+      await node.resumeSequencer();
+      resumeRequired = false;
+      const built = await automine.buildIfPending();
+      assert.equal(built, undefined, 'Expired-only queue unexpectedly produced a block');
+      const testedFailures = builderFailures.filter(failure => failure.txHash === txHash.toString());
+      assert(testedFailures.length > 0, 'Actual builder did not report the tested queued transaction');
+      assert(testedFailures.every(failure => failure.exactExpirationFailure), 'Builder rejection has another cause');
+      observations.builderExpirationRejected = true;
+      observations.builderProducedBlock = false;
+    }
     const receipt = await node.getTxReceipt(txHash);
     assert.equal(receipt.status, TxStatus.DROPPED, 'Expired submission became pending or included');
     assert(!receipt.isMined(), 'Expired transaction was mined');
@@ -123,5 +171,19 @@ export async function runFeeExpiry({ node, wallet, payload, options, sponsorAddr
     sanitized.expiryStage = stage;
     sanitized.expiryObservations = observations;
     throw sanitized;
+  } finally {
+    if (dropWrapped) {
+      if (originalDropDescriptor) Object.defineProperty(automine, 'dropFailedTxsFromP2P', originalDropDescriptor);
+      else delete automine.dropFailedTxsFromP2P;
+    }
+    if (resumeRequired) {
+      try { await node.resumeSequencer(); }
+      catch (error) {
+        const cleanupError = new Error(`Fee expiry cleanup: ${safeError(error)}`);
+        cleanupError.expiryStage = 'expiry-cleanup';
+        cleanupError.expiryObservations = observations;
+        throw cleanupError;
+      }
+    }
   }
 }
