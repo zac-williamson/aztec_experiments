@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "startedAt": "2026-09-14T11:49:07.617Z",
+  "node": "24.21.0",
+  "aztec": "5.2.0",
+  "bcryptoBackend": "js",
+  "profile": "disposable sponsor composition",
+  "l1Host": "127.0.0.1",
+  "inheritedNetworkOrWalletConfiguration": false,
+  "inputs": {
+    "scripts/test-fee-network.mjs": "fd7bfd5ee964e564f027748ccb3db25d1aef6f2746b7293d387b997572351569",
+    "scripts/fee-network-worker.mjs": "d1c669edda0ad9b8757bbd854d4a68a5e987eda92d284e149d3453022ac0639d",
+    "scripts/process-lifecycle.mjs": "5942900254592770094e5117cb5d9db29c6e41a14e1d72d0d00dae345ef3c2b3",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "node_modules/@aztec/aztec/dest/local-network/local-network.js": "3b6270748a6c06b56fe6124fae6ae0adc1f9386f2dc151f366eb36d3973d9590",
+    "node_modules/@aztec/aztec-node/dest/factory.js": "8bc25151488dcabab7b865beeaef4ff296d54dcc960e9d72fc481d3a1cdf845a",
+    "node_modules/@aztec/p2p/dest/msg_validators/tx_validator/allowed_public_setup.js": "02e0c68b8979d840f75fe36106e8e2aad26b39188c9564a41c74615e264b600a",
+    "scripts/fee-composition.mjs": "90366bb5144eb2a91dc47f1ec3ffe3efa5afe4165638dbfddb14777ba806f6b2",
+    "scripts/fee-expiry.mjs": "ac9dbee420a24292e382648755f83f9497cfa797d22ecb335ad30d11c69e02b1"
+  },
+  "children": {
+    "service": {
+      "pid": 88986,
+      "closed": true,
+      "code": 0,
+      "signal": null
+    },
+    "tests": {
+      "pid": 88987,
+      "closed": true,
+      "code": 1,
+      "signal": null
+    }
+  },
+  "outcome": "fail",
+  "error": "Test command exited unexpectedly: 1",
+  "diagnosticTail": "W01_STAGE create-wallet\nW01_STAGE register-fresh-accounts\nW01_STAGE deploy-sponsor\nW01_STAGE deploy-target\nW01_STAGE configure-two-coupons\nW01_STAGE sponsor-ticket-0\nW01_RESULT {\"startedAt\":\"2026-09-14T11:49:10.542Z\",\"profile\":\"disposable-fee-mechanism\",\"realVerifier\":false,\"realProofs\":false,\"syntheticEpochSettlement\":false,\"fixtureArtifactHashes\":{\"sponsor\":\"0768d4548d3f5791a9224289729bb235bacea139e54aefe12ff3ee0014ebcad1\",\"target\":\"8c1af942d191667714e515534ddc5c6e8213a4e3c115711d7372c4df5e34ca05\"},\"outcome\":\"fail\",\"l1ChainId\":31337,\"rollupVersion\":4195360635,\"extraPublicSetupFunctions\":0,\"p2pEnabled\":false,\"blockNumber\":\"0\",\"aztecHttpServerStarted\":false,\"composition\":{\"profile\":\"disposable-fee-mechanism\",\"realProofs\":false,\"realVerifier\":false,\"requestedInclusion\":\"proposed\",\"productionFinalityQualified\":false,\"receipts\":[{\"stage\":\"deploy-sponsor\",\"txHash\":\"0x1e703de039f538439da512c30c6fbce51966756ebf8db574a126f819e8546559\",\"status\":\"proposed\",\"executionResult\":\"success\",\"blockNumber\":\"1\",\"transactionFee\":\"1095268418431600000\"},{\"stage\":\"deploy-target\",\"txHash\":\"0x1a8004551b979b7d88a6976dd8355b367acf6cb5a0c4bed13d26bf074e3c04a7\",\"status\":\"proposed\",\"executionResult\":\"success\",\"blockNumber\":\"2\",\"transactionFee\":\"1095171217613500000\"},{\"stage\":\"configure-two-coupons\",\"txHash\":\"0x198033a75c4c9b8d128e967ba4342a003fb4ebb9d654468fdeff455c0cefb925\",\"status\":\"proposed\",\"executionResult\":\"success\",\"blockNumber\":\"3\",\"transactionFee\":\"1421107160884600000\"}],\"sponsored\":[],\"policy\":{\"ticketCount\":2,\"ticketFeeCap\":\"15854678896990440000\",\"totalFeeCap\":\"31709357793980880000\",\"validUntil\":\"1789387246\",\"maxDaGas\":55882,\"maxL2Gas\":6540000,\"maxFeeDa\":\"0\",\"maxFeeL2\":\"2424262828286\"},\"walletStopped\":true},\"stage\":\"sponsor-composition\",\"error\":\"Fee composition sponsor-ticket-0: AssertionError: maxFeesPerGas.feePerL2Gas must be greater than or equal to gasFees.feePerL2Gas, but got maxFeesPerGas.feePerL2Gas=128926212123 and gasFees.feePerL2Gas=1200010100000\",\"nodeStopped\":true,\"validatorLoopRunningAfterNodeStop\":false,\"validatorLoopRunningAfterExplicitStop\":false,\"resourcesAfterNodeStop\":[\"PipeWrap\",\"PipeWrap\",\"Timeout\"],\"slasherSubscriptionsStopped\":2,\"provingSingletonsStopped\":true,\"resourcesAfterSingletonStop\":[\"PipeWrap\",\"PipeWrap\"],\"remainingRunningLoops\":[],\"finishedAt\":\"2026-09-14T11:49:31.432Z\"}\n",
+  "temporaryDirectoryRemoved": true,
+  "finishedAt": "2026-09-14T11:49:32.180Z",
+  "limitations": [
+    "Mock L1 verifier and disabled private proof generation; no genuine proof acceptance.",
+    "Synthetic genesis funding; no production funding privacy, issuer or release qualification."
+  ]
+}

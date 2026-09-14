@@ -73,6 +73,7 @@ try {
     preparation = await compositionModule.prepareFeeComposition();
     preparation.exerciseAllCoupons = process.env.W01_TEST_ALL_COUPONS === 'true';
     preparation.exercisePublicRevert = process.env.W01_TEST_PUBLIC_REVERT === 'true';
+    preparation.exerciseExpiry = process.env.W01_TEST_EXPIRY === 'true';
     result.fixtureArtifactHashes = preparation.artifactHashes;
   }
   stage = 'genesis';
@@ -81,7 +82,8 @@ try {
   await deployContractsToL1(config, key, { genesisArchiveRoot, feeJuicePortalInitialBalance: fundingNeeded });
   stage = 'start-node';
   const telemetry = await initTelemetryClient({});
-  node = await createAztecNodeService(config, { telemetry, blobClient: createBlobClient(), dateProvider: new TestDateProvider() }, { genesis });
+  const dateProvider = new TestDateProvider();
+  node = await createAztecNodeService(config, { telemetry, blobClient: createBlobClient(), dateProvider }, { genesis });
   stage = 'verify-node';
   const info = await node.getNodeInfo();
   const actual = await node.getConfig();
@@ -93,7 +95,7 @@ try {
   Object.assign(result, { outcome: 'pass', l1ChainId: Number(info.l1ChainId), rollupVersion: Number(info.rollupVersion), extraPublicSetupFunctions: 0, p2pEnabled: false, blockNumber: String(await node.getBlockNumber()), aztecHttpServerStarted: false });
   if (mode === 'compose') {
     stage = 'sponsor-composition';
-    result.composition = await compositionModule.runFeeComposition(node, preparation);
+    result.composition = await compositionModule.runFeeComposition(node, preparation, { dateProvider, l1Rpc: rpc.href });
     assert.equal(result.composition.outcome, 'pass');
   }
 } catch (error) {

@@ -716,7 +716,7 @@
       "evidence": "evidence/W01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Local sponsor success/debit/replay passed and committed1a58f50. V2 paid public revert also passes: sponsor charged, effect reverted, same coupon cannot replay (exact nullifier match). Mock proofs/proposed inclusion only. Next expiry using prepared valid anchor across deadline, then production ABI/issuer/funding/outage integration.",
+      "checkpoint": "Local sponsor success, exact debit/replay and paid public-revert consumption pass (commits1a58f50,6485e15). Prepared unchanged coupon1 now fails actual admission solely on expiry after validation slot crosses deadline; canonicalanchor and balances unchanged. Next queued-expiry builder check, then production ABI/issuer/funding/outage integration. Mock proofs/proposed inclusion only; W01 remains incomplete.",
       "priority": 5
     },
     {

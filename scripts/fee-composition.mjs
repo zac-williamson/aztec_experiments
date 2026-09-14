@@ -57,7 +57,7 @@ export async function prepareFeeComposition() {
 }
 
 /** Owns its EmbeddedWallet lifecycle. Node lifecycle remains with the caller. */
-export async function runFeeComposition(node, preparation) {
+export async function runFeeComposition(node, preparation, localContext = {}) {
   const p = preparation;
   let wallet, stage = 'create-wallet', failure;
   const result = { profile: 'disposable-fee-mechanism', realProofs: false, realVerifier: false,
@@ -110,8 +110,9 @@ export async function runFeeComposition(node, preparation) {
     ], 0x57463031)));
     const root = await poseidon2HashWithSeparator(leaves, DomainSeparator.MERKLE_HASH);
     const header = (await node.getBlockData('latest')).header;
+    const expiryWindow = p.exerciseExpiry === true ? BigInt(await node.rollupContract.getSlotDuration()) * 4n : 3600n;
     const policy = {
-      root, target: target.address, epoch, valid_from: 0n, valid_until: header.globalVariables.timestamp + 3600n,
+      root, target: target.address, epoch, valid_from: 0n, valid_until: header.globalVariables.timestamp + expiryWindow,
       max_da_gas: gasLimits.daGas, max_l2_gas: gasLimits.l2Gas, max_teardown_da: 0, max_teardown_l2: 0,
       max_fee_da: maxFees.feePerDaGas, max_fee_l2: maxFees.feePerL2Gas, max_priority_da: 0n, max_priority_l2: 0n,
       max_fee_per_ticket: ticketLimit, epoch_budget: ticketLimit * 2n,
@@ -154,18 +155,31 @@ export async function runFeeComposition(node, preparation) {
           { ...options, wait: { ...wait, dontThrowOnRevert: true } });
       } else sent = await interaction.send(options);
       const receipt = observedReceipt(sent.receipt, expectPublicRevert ? TxExecutionResult.REVERTED : TxExecutionResult.SUCCESS);
+      result.pendingVerification = { index, ...receipt };
+      mark(`verify-ticket-${index}`);
       const after = await getFeeJuiceBalance(sponsor.address, node);
       assert(before > after, 'Sponsor was not debited');
       assert.equal(before - after, sent.receipt.transactionFee, 'Sponsor debit differs from receipt fee');
       assert(before - after <= ticketLimit, 'Ticket fee cap exceeded');
       assert.equal(await getFeeJuiceBalance(admin.address, node), adminBefore, 'Admin paid for author transaction');
       for (const author of authors) assert.equal(await getFeeJuiceBalance(author.address, node), 0n, 'Author fee balance changed');
-      const total = (await target.methods.get_total().simulate({ from: NO_FROM })).result;
+      const total = (await target.methods.get_total().simulate({ from: NO_FROM, fee: { gasSettings } })).result;
       assert.equal(BigInt(total), index === 0 || expectPublicRevert ? 3n : 8n, 'Delegated effect mismatch');
       result.sponsored.push({ index, ...receipt, sponsorBefore: String(before), sponsorAfter: String(after),
         sponsorDebit: String(before - after), authorBalances: ['0', '0'], adminBalanceUnchanged: true, total: String(total),
         ...(expectPublicRevert ? { publicRevert: true, controlledPublicRejectionObserved: true,
           receiptIncludesRevertReason: typeof sent.receipt.error === 'string' } : {}) });
+      delete result.pendingVerification;
+    }
+    if (p.exerciseExpiry === true) {
+      mark('reject-expired-prepared-ticket');
+      const nonce = Fr.random();
+      const options = await optionsFor(1, 5, nonce);
+      const payload = await sponsor.methods.sponsor(author1.address, 1, blinds[1], leaves[0], 5, nonce).request(options);
+      const { runFeeExpiry } = await import('./fee-expiry.mjs');
+      result.expiry = await runFeeExpiry({ node, wallet, payload, options, sponsorAddress: sponsor.address,
+        authorAddresses: authors.map(author => author.address), deadline: policy.valid_until, ...localContext });
+      assert.equal(BigInt((await target.methods.get_total().simulate({ from: NO_FROM, fee: { gasSettings } })).result), 3n, 'Expired action changed counter');
     }
     if (p.exerciseAllCoupons === true) {
     mark('reject-consumed-ticket-with-fresh-authwit');
@@ -193,11 +207,12 @@ export async function runFeeComposition(node, preparation) {
     }
     assert(replayRejected, 'Consumed coupon was accepted');
     assert.equal(await getFeeJuiceBalance(sponsor.address, node), beforeReplay, 'Rejected replay debited sponsor');
-    assert.equal(BigInt((await target.methods.get_total().simulate({ from: NO_FROM })).result), p.exercisePublicRevert === true ? 3n : 8n);
+    assert.equal(BigInt((await target.methods.get_total().simulate({ from: NO_FROM, fee: { gasSettings } })).result), p.exercisePublicRevert === true ? 3n : 8n);
     }
     Object.assign(result, { outcome: 'pass', sponsorAddress: sponsor.address.toString(), targetAddress: target.address.toString(),
       authorsStartedAndRemainedUnfunded: true, remainingQualification: [...(p.exerciseAllCoupons === true ? [] : ['second coupon', 'consumed coupon replay']), 'real proofs', 'production finality', ...(p.exercisePublicRevert === true ? [] : ['public-revert coupon burn']), 'expiry at inclusion', 'issuer/RPC/funding correlation assessment'] });
   } catch (error) {
+    if (error.expiryObservations) result.expiry = error.expiryObservations;
     failure = new Error(`Fee composition ${stage}: ${safeError(error)}`);
     failure.compositionStage = stage;
   } finally {
