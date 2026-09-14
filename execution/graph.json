@@ -716,7 +716,7 @@
       "evidence": "evidence/W01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Local root sponsor composition passes: two unfunded authors, two successful effects, nonzero receipt-matched sponsor debits, fresh-action replay rejected on exact derived coupon nullifier. Fixture/lifecycle committed30c8099; composition evidence abbbd8bb. Next: paid public-revert coupon consumption and inclusion expiry, then production ABI/issuer/funding/outage integration. Mock proofs/proposed inclusion do not qualify release.",
+      "checkpoint": "Local sponsor success/debit/replay passed and committed1a58f50. V2 paid public revert also passes: sponsor charged, effect reverted, same coupon cannot replay (exact nullifier match). Mock proofs/proposed inclusion only. Next expiry using prepared valid anchor across deadline, then production ABI/issuer/funding/outage integration.",
       "priority": 5
     },
     {

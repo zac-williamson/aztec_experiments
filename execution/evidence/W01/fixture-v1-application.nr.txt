@@ -33,7 +33,6 @@ pub contract FeeTarget {
     #[external("public")]
     #[only_self]
     fn _record(value: u32) {
-        assert(value > 0, "fixture requested public revert");
         self.storage.total.write(self.storage.total.read() + value as u64);
     }
 

@@ -135,3 +135,12 @@ unconstrained fn configured_policy_round_trip() {
     let (env,_admin,_owner0,_owner1,sponsor,_target,policy,_a,_b)=setup();
     assert(env.view_public(RestrictedSponsor::at(sponsor).get_policy())==policy);
 }
+
+// The real owner authorizes value0, and private delegated execution succeeds.
+// Only the enqueued public application call rejects; this TXE case does not sponsor fees.
+#[test(should_fail_with="fixture requested public revert")]
+unconstrained fn actual_delegated_public_revert() {
+    let (env,owner,caller,target)=delegated_setup();
+    add_private_authwit_from_call(env,owner,caller,FeeTarget::at(target).delegated(owner,0,1));
+    env.call_private(owner,fee_nested::NestedCaller::at(caller).forward(target,owner,0,1));
+}

@@ -72,6 +72,7 @@ try {
     compositionModule = await import('./fee-composition.mjs');
     preparation = await compositionModule.prepareFeeComposition();
     preparation.exerciseAllCoupons = process.env.W01_TEST_ALL_COUPONS === 'true';
+    preparation.exercisePublicRevert = process.env.W01_TEST_PUBLIC_REVERT === 'true';
     result.fixtureArtifactHashes = preparation.artifactHashes;
   }
   stage = 'genesis';

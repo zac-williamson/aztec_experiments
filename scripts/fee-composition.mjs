@@ -17,14 +17,15 @@ import { computeAppNullifierHidingKey, deriveMasterNullifierHidingSecretKey } fr
 import { deriveStorageSlotInMap, siloNullifier } from '@aztec/stdlib/hash';
 import { TxStatus, TxExecutionResult } from '@aztec/stdlib/tx';
 import { EmbeddedWallet } from '@aztec/wallets/embedded';
+import { BaseWallet } from '@aztec/wallet-sdk/base-wallet';
 import { ROOT, assertNodeVersion, assertAztecPackages } from './toolchain.mjs';
 
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const wait = { timeout: 45, interval: 0.2, waitForStatus: TxStatus.PROPOSED };
 const safeError = error => `${error?.name || 'Error'}: ${String(error?.message || 'unknown failure').split('\n')[0].replace(/0x[0-9a-fA-F]{16,}/g, '[hex]').slice(0, 300)}`;
-function observedReceipt(receipt) {
+function observedReceipt(receipt, expectedExecution = TxExecutionResult.SUCCESS) {
   assert([TxStatus.PROPOSED, TxStatus.CHECKPOINTED, TxStatus.PROVEN, TxStatus.FINALIZED].includes(receipt.status), 'Receipt is not included');
-  assert.equal(receipt.executionResult, TxExecutionResult.SUCCESS, 'Execution did not succeed');
+  assert.equal(receipt.executionResult, expectedExecution, 'Unexpected execution result');
   return { txHash: receipt.txHash.toString(), status: receipt.status, executionResult: receipt.executionResult,
     blockNumber: String(receipt.blockNumber), transactionFee: String(receipt.transactionFee) };
 }
@@ -32,7 +33,7 @@ function observedReceipt(receipt) {
 /** Secret-bearing preparation stays in memory. Serialize artifactHashes only, never this object. */
 export async function prepareFeeComposition() {
   assertNodeVersion(); assertAztecPackages();
-  const context = JSON.parse(fs.readFileSync(path.join(ROOT, 'execution/evidence/W01/fixture-context.json')));
+  const context = JSON.parse(fs.readFileSync(path.join(ROOT, 'execution/evidence/W01/fixture-context-v2.json')));
   for (const [relative, expected] of Object.entries(context.sources)) {
     assert.equal(sha(fs.readFileSync(path.join(ROOT, relative))), expected, `Fixture source drift: ${relative}`);
   }
@@ -133,10 +134,26 @@ export async function runFeeComposition(node, preparation) {
       mark(`sponsor-ticket-${index}`);
       const before = await getFeeJuiceBalance(sponsor.address, node);
       const adminBefore = await getFeeJuiceBalance(admin.address, node);
-      const value = index === 0 ? 3 : 5, nonce = new Fr(index + 1);
-      const sent = await sponsor.methods.sponsor(authors[index].address, index, blinds[index], leaves[1 - index], value, nonce)
-        .send(await optionsFor(index, value, nonce));
-      const receipt = observedReceipt(sent.receipt);
+      const expectPublicRevert = index === 1 && p.exercisePublicRevert === true;
+      const value = index === 0 ? 3 : expectPublicRevert ? 0 : 5, nonce = new Fr(index + 1);
+      const interaction = sponsor.methods.sponsor(authors[index].address, index, blinds[index], leaves[1 - index], value, nonce);
+      const options = await optionsFor(index, value, nonce);
+      let sent;
+      if (expectPublicRevert) {
+        let controlledRejection = false;
+        try { await interaction.simulate(options); }
+        catch (error) {
+          if (!String(error?.message).includes('fixture requested public revert')) throw error;
+          controlledRejection = true;
+        }
+        assert(controlledRejection, 'Expected public application guard did not reject');
+        // Skip only EmbeddedWallet's public UX preflight. The actual private
+        // execution, kernel request, node validation and fee enforcement remain.
+        await wallet.pxe.sync();
+        sent = await BaseWallet.prototype.sendTx.call(wallet, await interaction.request(options),
+          { ...options, wait: { ...wait, dontThrowOnRevert: true } });
+      } else sent = await interaction.send(options);
+      const receipt = observedReceipt(sent.receipt, expectPublicRevert ? TxExecutionResult.REVERTED : TxExecutionResult.SUCCESS);
       const after = await getFeeJuiceBalance(sponsor.address, node);
       assert(before > after, 'Sponsor was not debited');
       assert.equal(before - after, sent.receipt.transactionFee, 'Sponsor debit differs from receipt fee');
@@ -144,22 +161,26 @@ export async function runFeeComposition(node, preparation) {
       assert.equal(await getFeeJuiceBalance(admin.address, node), adminBefore, 'Admin paid for author transaction');
       for (const author of authors) assert.equal(await getFeeJuiceBalance(author.address, node), 0n, 'Author fee balance changed');
       const total = (await target.methods.get_total().simulate({ from: NO_FROM })).result;
-      assert.equal(BigInt(total), index === 0 ? 3n : 8n, 'Delegated effect mismatch');
+      assert.equal(BigInt(total), index === 0 || expectPublicRevert ? 3n : 8n, 'Delegated effect mismatch');
       result.sponsored.push({ index, ...receipt, sponsorBefore: String(before), sponsorAfter: String(after),
-        sponsorDebit: String(before - after), authorBalances: ['0', '0'], adminBalanceUnchanged: true, total: String(total) });
+        sponsorDebit: String(before - after), authorBalances: ['0', '0'], adminBalanceUnchanged: true, total: String(total),
+        ...(expectPublicRevert ? { publicRevert: true, controlledPublicRejectionObserved: true,
+          receiptIncludesRevertReason: typeof sent.receipt.error === 'string' } : {}) });
     }
     if (p.exerciseAllCoupons === true) {
     mark('reject-consumed-ticket-with-fresh-authwit');
+    const replayIndex = p.exercisePublicRevert === true ? 1 : 0;
+    const replayAuthor = authors[replayIndex];
     const beforeReplay = await getFeeJuiceBalance(sponsor.address, node);
-    const claimSlot = await deriveStorageSlotInMap(p.artifacts.sponsor.storageLayout.claims.slot, new Fr(0));
-    const nhk = await computeAppNullifierHidingKey(deriveMasterNullifierHidingSecretKey(author0.secret), sponsor.address);
+    const claimSlot = await deriveStorageSlotInMap(p.artifacts.sponsor.storageLayout.claims.slot, new Fr(replayIndex));
+    const nhk = await computeAppNullifierHidingKey(deriveMasterNullifierHidingSecretKey(replayAuthor.secret), sponsor.address);
     const expectedCouponNullifier = await siloNullifier(sponsor.address, await poseidon2HashWithSeparator(
-      [nhk, claimSlot, author0.address], DomainSeparator.SINGLE_USE_CLAIM_NULLIFIER));
+      [nhk, claimSlot, replayAuthor.address], DomainSeparator.SINGLE_USE_CLAIM_NULLIFIER));
     let replayRejected = false;
     try {
       // Fresh action authwit: rejection must be the consumed coupon, not old action authorization.
-      await sponsor.methods.sponsor(author0.address, 0, blinds[0], leaves[1], 9, new Fr(3))
-        .send(await optionsFor(0, 9, new Fr(3)));
+      await sponsor.methods.sponsor(replayAuthor.address, replayIndex, blinds[replayIndex], leaves[1 - replayIndex], 9, new Fr(3))
+        .send(await optionsFor(replayIndex, 9, new Fr(3)));
     } catch (error) {
       const message = String(error?.message || '');
       const collision = message.match(/duplicate siloed nullifier\s+(0x[0-9a-f]+)/i);
@@ -167,14 +188,15 @@ export async function runFeeComposition(node, preparation) {
       assert(Fr.fromString(collision[1]).equals(expectedCouponNullifier), 'Replay failed on a different nullifier');
       replayRejected = true;
       result.replay = { rejected: true, rejection: safeError(error), freshActionAuthwit: true,
+        afterPublicRevert: p.exercisePublicRevert === true,
         couponNullifierMatched: true, publicCouponNullifier: expectedCouponNullifier.toString() };
     }
     assert(replayRejected, 'Consumed coupon was accepted');
     assert.equal(await getFeeJuiceBalance(sponsor.address, node), beforeReplay, 'Rejected replay debited sponsor');
-    assert.equal(BigInt((await target.methods.get_total().simulate({ from: NO_FROM })).result), 8n);
+    assert.equal(BigInt((await target.methods.get_total().simulate({ from: NO_FROM })).result), p.exercisePublicRevert === true ? 3n : 8n);
     }
     Object.assign(result, { outcome: 'pass', sponsorAddress: sponsor.address.toString(), targetAddress: target.address.toString(),
-      authorsStartedAndRemainedUnfunded: true, remainingQualification: [...(p.exerciseAllCoupons === true ? [] : ['second coupon', 'consumed coupon replay']), 'real proofs', 'production finality', 'public-revert coupon burn', 'expiry at inclusion', 'issuer/RPC/funding correlation assessment'] });
+      authorsStartedAndRemainedUnfunded: true, remainingQualification: [...(p.exerciseAllCoupons === true ? [] : ['second coupon', 'consumed coupon replay']), 'real proofs', 'production finality', ...(p.exercisePublicRevert === true ? [] : ['public-revert coupon burn']), 'expiry at inclusion', 'issuer/RPC/funding correlation assessment'] });
   } catch (error) {
     failure = new Error(`Fee composition ${stage}: ${safeError(error)}`);
     failure.compositionStage = stage;

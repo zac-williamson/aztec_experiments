@@ -1,0 +1,23 @@
+{"mode":"txe","stagedWorkspace":".build/W01-fee-fixture","sourceHashes":{"Nargo.toml":"faeb35cc458fcefe85bf1b1704b6a7d8dc0de6cc8f6a6c432cbb92441580c76e","application/Nargo.toml":"76043b99a28dedab1103cb0de7adec88c9b7d99cdd9d8d94285e10147275da3c","application/src/main.nr":"23b13163e57bb6d2e2131151d6e0287fc1c80c710806ff50476cf6ad988ad070","common/Nargo.toml":"264f2ad699297dc4b0aa63fd0f075c9767f70608d1bae5ffde2acd262dfba1eb","common/src/lib.nr":"05bf7abe137977adf54668077741adbf2723b0ea9c8d6543de5d21fc54092ba9","common/src/tests.nr":"08966015613ca6792dd6f419ae8632e59fc419d301502dada57338a8280d0d09","nested/Nargo.toml":"cd0f3dbf31ed9d88e18b84d13d8af159652efe7e335cc9b6d236dac51f09ac10","nested/src/main.nr":"c8c6c219e9cb846a54f34fdef4648823b4dcff6a339361cd6b1b4d2cf9e78827","sponsor/Nargo.toml":"f26bfffe6e4f8fab58c1fbe50b235f10dfdd5c7326b896b9ce27a486c812576d","sponsor/src/main.nr":"969a96ff9f47125a16c1a09008ca32344e31ae97de7b265e5ac56edcce3899fb","tests/Nargo.toml":"ab2c4c7304c5d1c2483cd763ab5ed2d82dd78942051dae95c1f47c898daee179","tests/src/lib.nr":"0f089c8ef664200d950a650528e288f2481e3929fcd51c15ab2c7438c689c732"}}
+{"fixtureProcess":"service","pid":87243}
+[12:36:57.458] INFO: txe:rpc Setting up TXE...
+[12:36:57.459] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+{"fixtureProcess":"tests","pid":87245}
+[12:36:57.744] INFO: txe:rpc TXE listening on port 56504
+[fee_tests] Running 1 test function
+[12:37:01.980] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[12:37:01.981] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[12:37:01.983] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-cNOMOi/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 12 threads (ephemeral=true).
+[12:37:01.998] INFO: txe_node Aztec Node version: txe
+[12:37:01.999] INFO: txe_node Aztec Node started on chain 0x1
+[12:37:02.021] INFO: txe:top_level_context Created block 1 with timestamp 1789385821
+[12:37:02.232] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.008085250000000087s {"blockNumber":2,"successfulCount":1,"failedCount":0,"duration":0.008085250000000087,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":832,"l2Gas":499700},"totalSizeInBytes":832,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[12:37:02.294] INFO: txe:top_level_context Created block 3 with timestamp 1789385821
+[12:37:02.356] INFO: txe:top_level_context Created block 4 with timestamp 1789385821
+[12:37:02.418] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.01141545799999949s {"blockNumber":5,"successfulCount":1,"failedCount":0,"duration":0.01141545799999949,"rate":16182881.142395535,"totalPublicGas":{"daGas":224,"l2Gas":184735},"totalBlockGas":{"daGas":224,"l2Gas":184735},"totalSizeInBytes":352,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[fee_tests] Testing actual_delegated_authwit_valid_effect ... [0m[32mok[0m
+[fee_tests] [0m[32m1 test passed[0m
+[12:37:02.739] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.007953292000000146s {"blockNumber":6,"successfulCount":1,"failedCount":0,"duration":0.007953292000000146,"rate":4598347.45159606,"totalPublicGas":{"daGas":64,"l2Gas":36572},"totalBlockGas":{"daGas":224,"l2Gas":658172},"totalSizeInBytes":224,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[12:37:02.793] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.0065206659999994376s {"blockNumber":7,"successfulCount":1,"failedCount":0,"duration":0.0065206659999994376,"rate":898987.9254665866,"totalPublicGas":{"daGas":0,"l2Gas":5862},"totalBlockGas":{"daGas":0,"l2Gas":5862},"totalSizeInBytes":128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[12:37:02.849] INFO: txe:rpc Received SIGTERM.
+{"mode":"txe","outcome":"pass","scope":"Restricted sponsor feasibility fixture; no real-proof or mainnet claim"}

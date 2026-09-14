@@ -1,0 +1,122 @@
+{
+  "date": "2026-09-14",
+  "node": "24.21.0",
+  "aztec": "5.2.0",
+  "noir": "1.0.0-beta.25",
+  "noirCommit": "75061fab15986eedee4e7d9104ff87dd9fa4ca10",
+  "compilerSha256": "4e6e7cebf0c96a59b1993f6ff63e4f473be79a311f85009b2408854fd3e02a35",
+  "noirDependencyLockSha256": "2ecbc7e0e2bb14ac890f554ef38a7713b1a27e16e0dee0324bd600aff3db50ba",
+  "txePhaseSource": {
+    "path": "node_modules/@aztec/txe/src/oracle/txe_oracle_top_level_context.ts",
+    "sha256": "e9156cc2117292551b2990d7e531b6da9b33dc6e18fc82883846713a530a921c",
+    "lines": "481-485"
+  },
+  "sources": {
+    "billboard/fee-fixture/.gitignore": "306fd52e74fca6746e12acc750f232de15e71da917756a1270d74c91f5eb7368",
+    "billboard/fee-fixture/Nargo.toml": "faeb35cc458fcefe85bf1b1704b6a7d8dc0de6cc8f6a6c432cbb92441580c76e",
+    "billboard/fee-fixture/README.md": "65fbc640e66250e263ae47d436fabfd89235087f333db28fe34bda00a2029f06",
+    "billboard/fee-fixture/application/Nargo.toml": "76043b99a28dedab1103cb0de7adec88c9b7d99cdd9d8d94285e10147275da3c",
+    "billboard/fee-fixture/application/src/main.nr": "23b13163e57bb6d2e2131151d6e0287fc1c80c710806ff50476cf6ad988ad070",
+    "billboard/fee-fixture/common/Nargo.toml": "264f2ad699297dc4b0aa63fd0f075c9767f70608d1bae5ffde2acd262dfba1eb",
+    "billboard/fee-fixture/common/src/lib.nr": "05bf7abe137977adf54668077741adbf2723b0ea9c8d6543de5d21fc54092ba9",
+    "billboard/fee-fixture/common/src/tests.nr": "08966015613ca6792dd6f419ae8632e59fc419d301502dada57338a8280d0d09",
+    "billboard/fee-fixture/nested/Nargo.toml": "cd0f3dbf31ed9d88e18b84d13d8af159652efe7e335cc9b6d236dac51f09ac10",
+    "billboard/fee-fixture/nested/src/main.nr": "c8c6c219e9cb846a54f34fdef4648823b4dcff6a339361cd6b1b4d2cf9e78827",
+    "billboard/fee-fixture/run.mjs": "3c0afd13f45720eb343848d407e383f6d009908b1995f9ee56c13c8b523bc020",
+    "billboard/fee-fixture/sponsor/Nargo.toml": "f26bfffe6e4f8fab58c1fbe50b235f10dfdd5c7326b896b9ce27a486c812576d",
+    "billboard/fee-fixture/sponsor/src/main.nr": "969a96ff9f47125a16c1a09008ca32344e31ae97de7b265e5ac56edcce3899fb",
+    "billboard/fee-fixture/tests/Nargo.toml": "ab2c4c7304c5d1c2483cd763ab5ed2d82dd78942051dae95c1f47c898daee179",
+    "billboard/fee-fixture/tests/src/lib.nr": "0f089c8ef664200d950a650528e288f2481e3929fcd51c15ab2c7438c689c732"
+  },
+  "artifacts": {
+    "billboard/fee-fixture/target/fee_nested-NestedCaller.json": {
+      "sha256": "7df7346cfc210f115b395beec1a927db86ac420b368ffe31491b4b95b09d7a2c",
+      "bytes": 1205708,
+      "transpiled": true,
+      "privateFunctions": [
+        {
+          "name": "attempt",
+          "verificationKeyPresent": true
+        },
+        {
+          "name": "forward",
+          "verificationKeyPresent": true
+        }
+      ]
+    },
+    "billboard/fee-fixture/target/fee_sponsor-RestrictedSponsor.json": {
+      "sha256": "0768d4548d3f5791a9224289729bb235bacea139e54aefe12ff3ee0014ebcad1",
+      "bytes": 1519638,
+      "transpiled": true,
+      "privateFunctions": [
+        {
+          "name": "sponsor",
+          "verificationKeyPresent": true
+        }
+      ]
+    },
+    "billboard/fee-fixture/target/fee_target-FeeTarget.json": {
+      "sha256": "8c1af942d191667714e515534ddc5c6e8213a4e3c115711d7372c4df5e34ca05",
+      "bytes": 1470091,
+      "transpiled": true,
+      "privateFunctions": [
+        {
+          "name": "delegated",
+          "verificationKeyPresent": true
+        }
+      ]
+    }
+  },
+  "logs": {
+    "fixture-v2-compile.log": "d7fd8fa2db46d4505c11be8c0851a3b889946bc86d6179fdfa029405f689fe11",
+    "fixture-v2-processing.log": "47e0f4b80254883c34e6430f185112314f91b6f70f809101dc803c539965d5e4",
+    "fixture-v2-delegated-valid.log": "9f2ffd34da19d62f405e3584d14f14c379495488f922559a7b9ce145f40f1462",
+    "fixture-v2-public-revert.log": "b8d514888007ae7dc014503405263e2d0409a1b1ac380f02d1e4b1b1cecc534a"
+  },
+  "results": {
+    "compile": "pass",
+    "processing": "pass",
+    "positiveDelegatedControl": {
+      "passed": 1,
+      "failed": 0
+    },
+    "publicRevertControl": {
+      "passed": 1,
+      "failed": 0
+    },
+    "unchangedPureConstraints": "Not rerun; common/src files unchanged from v1 26/26 evidence.",
+    "paidPublicRevert": "Not yet tested; these TXE controls use no fee sponsorship. Genuine local PXE/network run owned by root."
+  },
+  "processChecks": [
+    {
+      "log": "fixture-v2-delegated-valid.log",
+      "role": "service",
+      "pid": 87243,
+      "presentAtEvidenceCapture": false
+    },
+    {
+      "log": "fixture-v2-delegated-valid.log",
+      "role": "tests",
+      "pid": 87245,
+      "presentAtEvidenceCapture": false
+    },
+    {
+      "log": "fixture-v2-public-revert.log",
+      "role": "service",
+      "pid": 87257,
+      "presentAtEvidenceCapture": false
+    },
+    {
+      "log": "fixture-v2-public-revert.log",
+      "role": "tests",
+      "pid": 87258,
+      "presentAtEvidenceCapture": false
+    }
+  ],
+  "sourceDeltaAfterInitialFocusedRun": "V2 adds only value>0 public _record assertion plus a real-authwit/zero-value public rejection test. Original v1 records retained; no production board ABI changes.",
+  "fixtureRevision": 2,
+  "previousContext": {
+    "path": "execution/evidence/W01/fixture-context.json",
+    "sha256": "9fe1833df0478eb3cba7109c3fbd86d760dc73e12a9bf02207831b2526478fa4"
+  }
+}

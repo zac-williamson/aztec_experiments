@@ -12,8 +12,9 @@ import { runWithService } from './process-lifecycle.mjs';
 
 assertNodeVersion(); assertAztecPackages();
 const compose = process.argv.includes('--compose');
-const allCoupons = process.argv.includes('--all-coupons');
-assert(process.argv.slice(2).every(arg => ['--compose', '--all-coupons'].includes(arg)), 'Unknown test option');
+const publicRevert = process.argv.includes('--public-revert');
+const allCoupons = process.argv.includes('--all-coupons') || publicRevert;
+assert(process.argv.slice(2).every(arg => ['--compose', '--all-coupons', '--public-revert'].includes(arg)), 'Unknown test option');
 assert(!allCoupons || compose, '--all-coupons requires --compose');
 const anvil = process.env.ANVIL || path.join(os.homedir(), '.foundry/bin/anvil');
 assert(execFileSync(anvil, ['--version'], { encoding: 'utf8', timeout: 10000 }).includes(pins.foundry));
@@ -40,7 +41,7 @@ const redact = value => String(value).replaceAll(identity.privateKey, '[disposab
 try {
   await runWithService({
     service: { command: anvil, args: ['--host', '127.0.0.1', '--port', String(port), '--chain-id', '31337', '--mnemonic', identity.mnemonic.phrase, '--silent'], options: { cwd: directory, env, stdio: 'ignore' } },
-    tests: { command: process.execPath, args: [path.join(ROOT, 'scripts/fee-network-worker.mjs')], options: { cwd: directory, env: { ...env, W01_TEST_L1_RPC: rpc, W01_TEST_L1_KEY: identity.privateKey, W01_TEST_DIRECTORY: directory, W01_TEST_MODE: compose ? 'compose' : 'startup', W01_TEST_ALL_COUPONS: String(allCoupons) }, stdio: ['ignore', 'pipe', 'pipe'] } },
+    tests: { command: process.execPath, args: [path.join(ROOT, 'scripts/fee-network-worker.mjs')], options: { cwd: directory, env: { ...env, W01_TEST_L1_RPC: rpc, W01_TEST_L1_KEY: identity.privateKey, W01_TEST_DIRECTORY: directory, W01_TEST_MODE: compose ? 'compose' : 'startup', W01_TEST_ALL_COUPONS: String(allCoupons), W01_TEST_PUBLIC_REVERT: String(publicRevert) }, stdio: ['ignore', 'pipe', 'pipe'] } },
     readyTimeoutMs: 15000, testTimeoutMs: compose ? 300000 : 60000, terminationGraceMs: 5000,
     probe: async () => {
       try {
@@ -66,6 +67,10 @@ try {
   if (allCoupons) {
     assert.equal(report.observation.composition.sponsored.length, 2);
     assert.equal(report.observation.composition.replay?.rejected, true);
+  }
+  if (publicRevert) {
+    assert.equal(report.observation.composition.sponsored[1].executionResult, 'reverted');
+    assert.equal(report.observation.composition.replay.afterPublicRevert, true);
   }
   report.outcome = 'pass';
 } catch (error) {
