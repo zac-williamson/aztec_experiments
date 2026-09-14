@@ -128,6 +128,9 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
       if(witness)break;await mine();
     }
     assert(witness,'Real Inbox membership timed out');assert.equal(witness[0],receipt.index);
+    // Empty checkpoints are only needed to make the Inbox message available.
+    // Restore ordinary transaction-driven production before expensive client proving.
+    sequencer.updateConfig(previousSequencerConfig);
     assert.equal(witness[1].pathSize,L1_TO_L2_MSG_TREE_HEIGHT);
     let computedRoot=message.hash(),cursor=witness[0];
     for(const sibling of witness[1].toFields()){
@@ -180,7 +183,7 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     return observation;
   }catch(error){
     const failure=new Error(`C01_DEPOSIT_FAILED:${stage}:${error?.name??'Error'}`);
-    failure.depositObservation={...observation,passed:false,stage,errorClass:error?.name??'Error'};throw failure;
+    failure.depositObservation={...observation,passed:false,stage,errorClass:error?.name??'Error',location:error?.stack?.split('\n').filter(line=>line.trimStart().startsWith('at ')).slice(0,3).join('\n')};throw failure;
   }finally{
     try{if(sequencer&&previousSequencerConfig)sequencer.updateConfig(previousSequencerConfig);}
     finally{if(wallet){try{await wallet.stop();observation.walletStopped=true;}

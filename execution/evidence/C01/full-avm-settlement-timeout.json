@@ -1,0 +1,19 @@
+{
+  "evidence": "real-network-f0e76cb8-adb2-4276-bac6-800bfb49eb69.json",
+  "result": "No accepted proof before helper deadline",
+  "settlementMs": 600002,
+  "totalMs": 768414,
+  "peakTreeRssKiB": 5520176,
+  "failedCheckpointsReported": false,
+  "acceptedProofReceipts": 0,
+  "allOwnedDescendantsAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "nextExperiment": {
+    "settlementDeadlineMs": 1200000,
+    "parentDeadlineMs": 1500000,
+    "rssLimitKiB": 8388608,
+    "agents": 1,
+    "nativeThreads": 1
+  },
+  "limitation": "Active native CPU work observed; timeout does not prove eventual success or sufficient overall capacity."
+}

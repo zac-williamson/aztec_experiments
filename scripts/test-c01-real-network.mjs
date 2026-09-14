@@ -10,14 +10,14 @@ import { ROOT, assertNodeVersion, assertAztecPackages } from './toolchain.mjs';
 import { OwnedBuildTree } from './build-c01-avm.mjs';
 import { resolveC01AvmRuntime } from './c01-avm-runtime.mjs';
 const SELF = fileURLToPath(import.meta.url);
-const DEADLINE_MS = process.argv.includes('--settle') ? 900000 : 300000;
+const DEADLINE_MS = process.argv.includes('--bridge') ? 3600000 : process.argv.includes('--settle') ? 1500000 : 300000;
 const RSS_LIMIT_KIB = 8 * 1024 * 1024;
 const execFileAsync = promisify(execFile);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function fingerprints() {
   const result = {};
-  for (const name of ['scripts/test-c01-real-network.mjs','scripts/build-c01-avm.mjs','scripts/c01-avm-runtime.mjs','scripts/c01-real-deployment.mjs',
-    'scripts/c01-settle-ready.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/c01-acvm-wasm-cli.mjs','scripts/c01-check-production-blob.mjs','scripts/c01-production-forge.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
+  for (const name of ['scripts/test-c01-real-network.mjs','scripts/build-c01-avm.mjs','scripts/c01-avm-runtime.mjs','scripts/c01-proof-progress.mjs','scripts/c01-real-deployment.mjs',
+    'scripts/c01-settle-ready.mjs','scripts/c01-settle-message.mjs','scripts/c01-bridge-flow.mjs','scripts/c01-deposit-flow.mjs','scripts/c01-exit-flow.mjs','scripts/c01-withdraw-l1.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/c01-acvm-wasm-cli.mjs','scripts/c01-check-production-blob.mjs','scripts/c01-production-forge.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
     'node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js']) {
     result[name] = sha(await fs.readFile(path.join(ROOT, name)));
   }
@@ -125,7 +125,7 @@ async function worker(directory) {
       assert(output.node.passed);
     }
     output.passed=true;
-  }catch(error){if(error.deploymentObservation)output.deployment=error.deploymentObservation;if(error.boardObservation)output.board=error.boardObservation;if(error.readyObservation)output.ready=error.readyObservation;if(error.settlementObservation)output.settlement=error.settlementObservation;output.failure={stage,errorClass:error.name,code:error.code??null,location:error.stack?.split('\n').filter(l=>l.trimStart().startsWith('at ')).slice(0,3).join('\n')};}
+  }catch(error){if(error.deploymentObservation)output.deployment=error.deploymentObservation;if(error.boardObservation)output.board=error.boardObservation;if(error.readyObservation)output.ready=error.readyObservation;if(error.settlementObservation)output.settlement=error.settlementObservation;if(error.bridgeObservation)output.bridge=error.bridgeObservation;output.failure={stage,errorClass:error.name,code:error.code??null,location:error.stack?.split('\n').filter(l=>l.trimStart().startsWith('at ')).slice(0,3).join('\n')};}
   finally{
     if(anvil){anvil.kill('SIGTERM');output.anvilExit=await Promise.race([anvilClosed,pause(3000).then(()=>null)]);if(!output.anvilExit){anvil.kill('SIGKILL');output.anvilExit=await Promise.race([anvilClosed,pause(3000).then(()=>null)]);}if(!output.anvilExit)output.passed=false;}
     try{const {Barretenberg,BarretenbergSync}=await import('@aztec/bb.js');await Barretenberg.destroySingleton();BarretenbergSync.destroySingleton();output.singletonsStopped=true;}catch{output.passed=false;}
@@ -138,8 +138,9 @@ async function parent() {
   assertNodeVersion(); assertAztecPackages();
   assert.equal(process.platform, 'darwin', 'This bounded no-network profile is qualified for macOS only');
   assert.equal(process.arch, 'arm64', 'This harness pins the installed arm64 BB binary');
-  assert(process.argv.length===2||(process.argv.length===3&&['--node','--board-proof','--include','--ready','--settle'].includes(process.argv[2])),'Unsupported harness arguments');
-  const settle=process.argv[2]==='--settle';
+  assert(process.argv.length===2||(process.argv.length===3&&['--node','--board-proof','--include','--ready','--settle','--bridge'].includes(process.argv[2])),'Unsupported harness arguments');
+  const bridge=process.argv[2]==='--bridge';
+  const settle=bridge||process.argv[2]==='--settle';
   const readyFlow=process.argv[2]==='--ready'||settle;
   const boardInclude=process.argv[2]==='--include'||readyFlow;
   const boardProof=process.argv[2]==='--board-proof'||boardInclude;
@@ -149,7 +150,7 @@ async function parent() {
   await fs.mkdir(path.join(ROOT, '.build'), { recursive: true });
   // Short private path keeps native Unix socket names below macOS sockaddr_un limits.
   const directory = await fs.mkdtemp('/private/tmp/c01-real-network-');
-  const report = { schemaVersion: 1, profile: settle ? 'genuine epoch settlement and Ready activation attempt' : readyFlow ? 'genuine Ready proof and ordinary inclusion' : boardInclude ? 'genuine board proof and ordinary inclusion' : boardProof ? 'genuine board client proof' : startNode ? 'real verifier deployment and node startup' : 'direct real-verifier local protocol deployment only',
+  const report = { schemaVersion: 1, profile: bridge ? 'genuine Ready activation, deposit, private claim, no-post exit and L1 refund attempt' : settle ? 'genuine epoch settlement and Ready activation attempt' : readyFlow ? 'genuine Ready proof and ordinary inclusion' : boardInclude ? 'genuine board proof and ordinary inclusion' : boardProof ? 'genuine board client proof' : startNode ? 'real verifier deployment and node startup' : 'direct real-verifier local protocol deployment only',
     startedAt: new Date().toISOString(), deadlineMs: DEADLINE_MS, passed: false, testsApplicationOrEpoch: boardProof, rssLimitKiB:RSS_LIMIT_KIB, rssSampleIntervalMs:1000, rssMethod:'sampled PPID descendant tree with remembered process identities/groups; not OS allocation limit', rssSamples:[], peakTreeRSSKiB:0 };
   let child, finished, timer, outerTimer, killPromise, rssTimer, rssPending;
   let childClosed=false,stopSampling=false;
@@ -174,7 +175,7 @@ async function parent() {
     assert(!bb.includes("'"));
     await fs.writeFile(path.join(directory,'bb-one-thread'),"#!/bin/sh\nHARDWARE_CONCURRENCY=1 exec '"+bb+"' \"$@\"\n",{flag:'wx',mode:0o700});
     await fs.mkdir(path.join(directory,'acvm'),{mode:0o700});
-    report.startNode=startNode;report.boardProof=boardProof;report.settle=settle;
+    report.startNode=startNode;report.boardProof=boardProof;report.settle=settle;report.bridge=bridge;
     if(settle){
       const source=path.join(ROOT,'.build/C01-epoch-crs');
       const epochManifest=JSON.parse(await fs.readFile(path.join(source,'manifest.json'),'utf8'));
@@ -192,7 +193,7 @@ async function parent() {
     const started = performance.now();
     child = spawn('/usr/bin/sandbox-exec', ['-f', profile, '/usr/bin/time', '-l', '-o', resources,
       process.execPath, SELF, '--worker', directory], { cwd: ROOT, detached: true,
-      env: {HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'warn',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',NODE_BACKEND:'js',FORGE_BIN:path.join(ROOT,'scripts/c01-production-forge.mjs'),C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,C01_START_NODE:String(startNode),C01_BOARD_PROOF:String(boardProof),C01_BOARD_INCLUDE:String(boardInclude),C01_READY:String(readyFlow),C01_SETTLE:String(settle),C01_USE_AVM:String(!!avm),FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
+      env: {HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'warn',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',NODE_BACKEND:'js',FORGE_BIN:path.join(ROOT,'scripts/c01-production-forge.mjs'),C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,C01_START_NODE:String(startNode),C01_BOARD_PROOF:String(boardProof),C01_BOARD_INCLUDE:String(boardInclude),C01_READY:String(readyFlow),C01_SETTLE:String(settle),C01_BRIDGE:String(bridge),C01_USE_AVM:String(!!avm),FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
       stdio: ['ignore', 'pipe', 'pipe'] });
     report.pid = child.pid; report.stages = [];
     let stderrBuffer='';
@@ -262,7 +263,11 @@ async function parent() {
     report.nativeTimeRaw = await fs.readFile(resources, 'utf8').catch(() => null);
     try { report.worker = JSON.parse(await fs.readFile(path.join(directory, 'worker-result.json'), 'utf8')); }
     catch (error) { report.workerReadError = { errorClass:error.name, code:error.code ?? null }; }
-    if(settle){try{report.settlementProgress=JSON.parse(await fs.readFile(path.join(directory,'settlement-progress.json'),'utf8'));}catch{}}
+    if(settle){
+      for(const [kind,key] of [['ready','settlementProgress'],['exit','exitSettlementProgress']]){
+        try{report[key]=JSON.parse(await fs.readFile(path.join(directory,`settlement-${kind}-progress.json`),'utf8'));}catch{}
+      }
+    }
     if (killPromise) await killPromise;
     if (child.pid) await cleanGroup(child.pid);
     report.processGroupAbsent = !child.pid || !await groupExists(child.pid);report.descendantTreeAbsent=report.processGroupAbsent;

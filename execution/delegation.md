@@ -328,3 +328,7 @@ for minimal provenance-bound incremental continuation. No agent heavy runs.
 Native builder and loader frozen for root continuation. build_review now owns
 only new c01-deposit-flow.mjs and its review, preparing real deposit/claim without
 execution. Root owns integrated build/proof runs; no concurrent heavy work.
+
+Ready settlement passed. Root owns full-journey parent/node integration and the
+sole heavy run. Reused build_review owns only bridge-orchestration-review.md,
+reviewing Ready wrapper and agent lifecycle against actual pinned SDK source.

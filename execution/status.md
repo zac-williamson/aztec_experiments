@@ -11,7 +11,7 @@ user decision is needed for the current local work.
 - Fresh local deployment of the actual board passes a genuine client proof,
   ordinary node verification and successful checkpoint inclusion.
 - Portal binding also passes a genuine client proof and inclusion, emitting the
-  exact expected activation message. This does not yet enable deposits.
+  exact expected activation message. A subsequent genuine settlement test enabled deposits.
 - The deployment app now uses the supported finality API and rejects unsuccessful
   or stale receipts. Current client/artifact checks pass53/53; its page is rebuilt.
 - Local commit0d82197 saves these changes and their evidence. Earlier application
@@ -19,24 +19,22 @@ user decision is needed for the current local work.
 
 ## Current work: complete the real bridge journey
 
-The full epoch proof failed because the installed lightweight prover lacks public
-VM proving support. No epoch proof, finalized bridge activation, real deposit
-claim or real no-post exit is claimed. The failed run stopped after507seconds,
-peaked below5GiB sampled process RSS, and cleaned its processes and temporary data.
+Genuine epoch settlement and portal activation passed in the disposable local
+network. Both proof receipts were accepted by the real Ethereum verifier; the
+actual local finalized tag and Outbox membership were checked before enabling
+deposits. The run took18.5minutes and peaked at7.8GiB sampled process memory.
+Owned processes and temporary data were cleaned. This does not qualify Ethereum
+mainnet economic finality or production timing.
 
-The full native AVM prover now builds successfully from the authenticated release
-source. A preserved incremental build completed in9.6minutes with about2.3GiB
-peak compiler memory. Original failed attempts remain recorded. The full prover
-then passed real-verifier local node startup in22seconds with AVM support enabled.
-All owned build/node processes and temporary directories were cleaned.
+The full native AVM prover is built and qualified. Earlier lightweight-prover and
+time-budget failures remain recorded; they are superseded by the successful run,
+not relabelled as successes. Local commit37ff4e3 preserves native qualification.
 
-The actual deposit/claim and no-post withdrawal helpers are prepared and reviewed
-against the pinned SDK, but have not executed. The next run will retry genuine
-epoch settlement with the full prover and temporary authenticated setup.
-
-Next: qualify the resulting full prover, then resume genuine epoch settlement,
-finalized portal activation, deposit/claim and withdrawal checks. Internal task
-C01 tracks this authenticated deposit and bridge work; its acceptance remains open.
+Root is integrating the prepared deposit, private claim, no-post exit and L1 refund
+helpers. The next fresh full-journey run permits60minutes overall and8GiB memory,
+with client and server proofs serialized. The reused review agent checks the
+orchestration independently. Those remaining journey steps are not yet verified.
+Authenticated bridge acceptance remains open; no user decision is needed.
 
 ## Release work still required
 

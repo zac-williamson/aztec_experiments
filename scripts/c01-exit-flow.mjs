@@ -91,6 +91,9 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
       await mine();
     }
     assert(integer(anchor.globalVariables.timestamp)>=claim.nextAllowedTime,'No-post eligibility wait timed out');
+    // Eligibility now has a usable anchor. Restore ordinary transaction-driven
+    // production before client proving; the submitted exit supplies the required tx.
+    sequencer.updateConfig(previousConfig);
     assert.deepEqual(await logical(),claim.logicalFields,'Claimed note changed before exit');
     const anchorBlock=await node.getBlock(anchor.getBlockNumber());assert(anchorBlock);
     assert.equal(anchorBlock.hash.toString(),(await anchor.hash()).toString());
@@ -140,7 +143,7 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
     return observation;
   }catch(error){
     const failure=new Error(`C01_EXIT_FAILED:${stage}:${error?.name??'Error'}`);
-    failure.exitObservation={...observation,passed:false,stage,errorClass:error?.name??'Error'};throw failure;
+    failure.exitObservation={...observation,passed:false,stage,errorClass:error?.name??'Error',location:error?.stack?.split('\n').filter(line=>line.trimStart().startsWith('at ')).slice(0,3).join('\n')};throw failure;
   }finally{
     try{if(sequencer&&previousConfig)sequencer.updateConfig(previousConfig);}
     finally{if(wallet){try{await wallet.stop();observation.walletStopped=true;}

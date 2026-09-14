@@ -359,7 +359,7 @@
       "evidence": "evidence/C01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Full native AVM build4fc836ce passed,573210ms/2405728KiB, source/cleanup checked; full runtime real-node startup5e8d1b83 passed21972ms. Root prepares temporary CRS then genuine epoch settlement. Real deposit/claim and no-post exit helpers prepared/source-reviewed only. No epoch/deposit/exit acceptance yet.",
+      "checkpoint": "Genuine Ready settlement and portal activation passed (962b9b9d). Full deposit, claim, no-post exit and refund harness integrated; source review and 60-minute, 8GiB supervised real-proof run next. Client/server proofs serialized. Acceptance remains open.",
       "priority": 6
     },
     {

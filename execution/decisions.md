@@ -165,3 +165,24 @@ installed ProverNode.startProof API is acceptable only with actual verifier-back
 L1 acceptance and canonical finalized Outbox consumption. No proven-tip/root or
 finality override is permitted. Prepare at most129 complete4MiB BN254 compressed
 chunks, all pinned to the exact executable; remove temporary setup after testing.
+
+## C01 measured full-prover time budget
+
+The first full-AVM settlement run (f0e76cb8) reached the600-second helper deadline
+with no reported checkpoint failure, no accepted L1 proof, and peak sampled
+descendant RSS5520176KiB. Native work was observed CPU-active. Original failure
+and cleanup evidence remain unchanged. Next local experiment permits1200seconds
+for settlement and1500seconds overall, with the same single proof agent, one
+native thread and8GiB limit. This is a new run, not a retrospective extension.
+Temporary authenticated CRS bytes may be reused only after the existing full-file
+and129-chunk checks; no trust in unverified cached inputs is introduced.
+
+## C01 full bridge qualification budget and serialization
+
+Ready settlement962b9b9d passed with actual proof receipts, finalized membership
+and portal activation in18.5minutes, peak8172880KiB below the8GiB bound. The next
+fresh full journey permits60minutes overall,20minutes Ready settlement and30minutes
+exit settlement. Client proofs run while the sole server agent is idle and stopped
+through its actual lifecycle; resume polling for genuine exit proofs. No proof,
+message-consumption or finality constraints are overridden. Reuse authenticated
+epoch setup only after full-byte and all129-chunk verification.

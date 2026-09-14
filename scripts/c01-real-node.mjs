@@ -1,4 +1,4 @@
-// TEST ONLY: genuine proof-verifying node startup; no transactions or epoch acceptance.
+// TEST ONLY: disposable genuine-verifier node and explicitly selected bridge qualification.
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import {createAztecNodeService} from '@aztec/aztec-node';
@@ -72,9 +72,16 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
             observation.settlement=await settleC01Ready({node,config:nodeConfig,dateProvider,ready:observation.ready,readyInclusion:observation.readyInclusion,l1Client:deployment.l1Client,directory,rollupAddress:deployment.l1ContractAddresses.rollupAddress});
             assert(observation.settlement.passed);
             observation.ready.portalActivated=true;observation.ready.epochProofAccepted=true;
+            if(process.env.C01_BRIDGE==='true'){
+              const {completeC01Bridge}=await import('./c01-bridge-flow.mjs');
+              observation.bridge=await completeC01Bridge({node,config:nodeConfig,dateProvider,l1Client:deployment.l1Client,
+                directory,rollupAddress:deployment.l1ContractAddresses.rollupAddress,preparation,
+                instance:observation.board.instance,ready:observation.ready,settlement:observation.settlement,mark});
+              assert(observation.bridge.passed);
+            }
           }
         }
-        observation.sequencerStarted=true;observation.scope=observation.settlement?.passed?'genuine epoch settlement, finalized Ready membership and enabled portal':'genuine client proof and ordinary checkpoint inclusion; no epoch proof acceptance';observation.epochSchedulingStarted=process.env.C01_SETTLE==='true';observation.idleProverAgentCreated=true;}
+        observation.sequencerStarted=true;observation.scope=observation.bridge?.passed?'genuine finalized activation, deposit, private claim, no-post exit and L1 refund':observation.settlement?.passed?'genuine epoch settlement, finalized Ready membership and enabled portal':'genuine client proof and ordinary checkpoint inclusion; no epoch proof acceptance';observation.epochSchedulingStarted=process.env.C01_SETTLE==='true';observation.idleProverAgentCreated=true;}
 
     }
     observation.passed=true;
