@@ -1,0 +1,345 @@
+{
+  "outcome": "fail",
+  "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:62445/\", waiting until \"load\"\u001b[22m\n",
+  "navigationTimeoutMsPerConsumer": 30000,
+  "evaluationTimeoutMsPerConsumer": 120000,
+  "isolation": "Fresh browser process and disposable profile per consumer",
+  "consumers": [
+    {
+      "consumer": "shared-library",
+      "outcome": "fail",
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:62445/\", waiting until \"load\"\u001b[22m\n",
+      "deadlineExceeded": false,
+      "faults": [],
+      "evaluationMs": null
+    }
+  ],
+  "sourceHashes": {
+    ".build/sdk/aztec_bundle.js": "5f4b360ff3bbbef4707ea67f435e35487b7356f15833c6260e38b30a18a7da41",
+    "scripts/test-sdk-browser.mjs": "ae0a5de7e8ab542e9f37e46b4cee5670f2c083b4552c8925ccb1daeb34c6e0e3",
+    "crs-manifest.json": "4927de3e03d69f4e640a841f9421dd0b93819b5e3d42c142d12ee079d5a402be",
+    "shared/crs-client.js": "d2f05e23a00be052861eab920d8e1673767028256fceb825d1c7ee70b91e193a",
+    "shared/aztec-lib.js": "48709adc526606a4388e9a00f6384275cd711c1e61e9e0bb170bfacbdb64b83d",
+    "shared/app-env.js": "f8c49f34eff4d9ace2558315361240eadee1a270ce8865b85de182db7afbf345"
+  },
+  "stages": [
+    {
+      "elapsedMs": 29,
+      "stage": "http-server",
+      "state": "listening"
+    },
+    {
+      "elapsedMs": 43,
+      "consumer": "shared-library",
+      "stage": "browser-launch",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 15652,
+      "consumer": "shared-library",
+      "stage": "browser-launch",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 15653,
+      "consumer": "shared-library",
+      "stage": "page-create",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 25621,
+      "consumer": "shared-library",
+      "stage": "page-create",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 25658,
+      "consumer": "shared-library",
+      "stage": "expose-function",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 26320,
+      "consumer": "shared-library",
+      "stage": "expose-function",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 26321,
+      "consumer": "shared-library",
+      "stage": "install-readiness-markers",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 26362,
+      "consumer": "shared-library",
+      "stage": "install-readiness-markers",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 26364,
+      "consumer": "shared-library",
+      "stage": "navigation",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 26436,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/"
+    },
+    {
+      "elapsedMs": 26450,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 1,
+      "path": "/",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 26592,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 1,
+      "path": "/",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 3384,
+      "durationMs": 143
+    },
+    {
+      "elapsedMs": 27408,
+      "consumer": "shared-library",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/",
+      "status": 200
+    },
+    {
+      "elapsedMs": 27994,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 2,
+      "path": "/aztec_bundle.js",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 28011,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 3,
+      "path": "/crs-client.js",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 28024,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 4,
+      "path": "/aztec-lib.js",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 28062,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 5,
+      "path": "/app-env.js",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 28236,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 3,
+      "path": "/crs-client.js",
+      "state": "file-read-completed",
+      "bodyBytes": 7428,
+      "durationMs": 225
+    },
+    {
+      "elapsedMs": 28237,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 3,
+      "path": "/crs-client.js",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 7428,
+      "durationMs": 226
+    },
+    {
+      "elapsedMs": 28238,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 4,
+      "path": "/aztec-lib.js",
+      "state": "file-read-completed",
+      "bodyBytes": 38208,
+      "durationMs": 214
+    },
+    {
+      "elapsedMs": 28239,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 4,
+      "path": "/aztec-lib.js",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 38208,
+      "durationMs": 214
+    },
+    {
+      "elapsedMs": 28252,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 5,
+      "path": "/app-env.js",
+      "state": "file-read-completed",
+      "bodyBytes": 6553,
+      "durationMs": 190
+    },
+    {
+      "elapsedMs": 28253,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 5,
+      "path": "/app-env.js",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 6553,
+      "durationMs": 190
+    },
+    {
+      "elapsedMs": 29575,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 2,
+      "path": "/aztec_bundle.js",
+      "state": "file-read-completed",
+      "bodyBytes": 50130889,
+      "durationMs": 1581
+    },
+    {
+      "elapsedMs": 29865,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/aztec_bundle.js"
+    },
+    {
+      "elapsedMs": 29865,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/crs-client.js"
+    },
+    {
+      "elapsedMs": 29866,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/aztec-lib.js"
+    },
+    {
+      "elapsedMs": 29866,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/app-env.js"
+    },
+    {
+      "elapsedMs": 29928,
+      "consumer": "shared-library",
+      "stage": "script.sdk",
+      "state": "before-script",
+      "browserElapsedMs": 1391
+    },
+    {
+      "elapsedMs": 29938,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/"
+    },
+    {
+      "elapsedMs": 31351,
+      "consumer": "shared-library",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/crs-client.js",
+      "status": 200
+    },
+    {
+      "elapsedMs": 31352,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/crs-client.js"
+    },
+    {
+      "elapsedMs": 31354,
+      "consumer": "shared-library",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/app-env.js",
+      "status": 200
+    },
+    {
+      "elapsedMs": 31354,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/app-env.js"
+    },
+    {
+      "elapsedMs": 31354,
+      "consumer": "shared-library",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/aztec-lib.js",
+      "status": 200
+    },
+    {
+      "elapsedMs": 31354,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/aztec-lib.js"
+    },
+    {
+      "elapsedMs": 37430,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 2,
+      "path": "/aztec_bundle.js",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 50130889,
+      "durationMs": 9435
+    },
+    {
+      "elapsedMs": 41949,
+      "consumer": "shared-library",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/aztec_bundle.js",
+      "status": 200
+    },
+    {
+      "elapsedMs": 41958,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/aztec_bundle.js"
+    },
+    {
+      "elapsedMs": 59308,
+      "consumer": "shared-library",
+      "stage": "browser",
+      "state": "disconnected",
+      "deadlineExceeded": false
+    }
+  ]
+}

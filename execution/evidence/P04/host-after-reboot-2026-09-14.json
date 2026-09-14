@@ -1,0 +1,19 @@
+{
+  "observedAt": "2026-09-14T09:33:54.940487+00:00",
+  "context": "User reports reboot and freeing memory; fresh observation, no old process IDs reused.",
+  "load": {
+    "exitCode": 0,
+    "output": "{ 3.32 3.53 3.50 }",
+    "error": ""
+  },
+  "swap": {
+    "exitCode": 0,
+    "output": "vm.swapusage: total = 9216.00M  used = 7787.19M  free = 1428.81M  (encrypted)",
+    "error": ""
+  },
+  "memory": {
+    "exitCode": 0,
+    "output": "25769803776",
+    "error": ""
+  }
+}

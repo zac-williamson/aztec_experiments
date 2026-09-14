@@ -1,0 +1,41 @@
+{"command": ["npm", "run", "build:crs"]}
+
+> build:crs
+> node scripts/build-crs.mjs
+
+Verified CRS g1.dat: 37748736 bytes, SHA-256 8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416
+Verified CRS g2.dat: 128 bytes, SHA-256 01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f
+Verified CRS grumpkin_g1.dat: 4194368 bytes, SHA-256 b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9
+{"command": ["npm", "run", "build:apps"]}
+
+> build:apps
+> node apps/build.mjs
+
+Built billboard/censor -> censor.html: 3678KB
+Built billboard/deploy -> deploy.html: 3534KB
+Built billboard/user -> user.html: 3703KB
+Built fee-juice -> fee-juice.html: 689KB
+{"command": ["npm", "run", "check:artifacts"]}
+
+> check:artifacts
+> node scripts/check-artifacts.mjs
+
+{
+  "noirSha256": "ffc4e95ec0caf1f56cf95bce68286ec9f806eb18cb5eaf5e0843cf66145980ce",
+  "portalBytecodeSha256": "1bb7bcdf935de0d1d639a9f07ca19cb719d69095b8a14b0897e7f54cdcbeb9c5"
+}
+{"command": ["node", "scripts/check-reproducibility.mjs", "snapshot", "../../execution/evidence/P04/clean-native-output-hashes.json"]}
+Recorded 33 exact output hashes in ../../execution/evidence/P04/clean-native-output-hashes.json
+{"command": ["node", "scripts/check-reproducibility.mjs", "compare", "../../execution/evidence/P04/root-output-hashes-final.json", "../../execution/evidence/P04/clean-native-output-hashes.json"]}
+file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/check-reproducibility.mjs:62
+  if (differences.length) throw new Error(`Build outputs differ:\n${differences.join('\n')}`);
+                                ^
+
+Error: Build outputs differ:
+billboard/portal/out/BillboardPortal.sol/BillboardPortal.json
+    at file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/check-reproducibility.mjs:62:33
+    at ModuleJob.run (node:internal/modules/esm/module_job:437:25)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.15.0

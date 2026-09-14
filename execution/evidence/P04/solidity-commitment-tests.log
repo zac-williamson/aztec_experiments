@@ -1,0 +1,15 @@
+Compiling 3 files with Solc 0.8.27
+Solc 0.8.27 finished in 83.86ms
+Compiler run successful!
+
+Ran 7 tests for test/ProtocolCommitmentVectors.t.sol:ProtocolCommitmentVectors
+[PASS] test_claim() (gas: 1755)
+[PASS] test_claim_boundary() (gas: 1733)
+[PASS] test_config() (gas: 1786)
+[PASS] test_exit() (gas: 1756)
+[PASS] test_policy() (gas: 1452)
+[PASS] test_policy_unicode() (gas: 1454)
+[PASS] test_ready() (gas: 1603)
+Suite result: ok. 7 passed; 0 failed; 0 skipped; finished in 3.46ms (5.38ms CPU time)
+
+Ran 1 test suite in 9.16ms (3.46ms CPU time): 7 tests passed, 0 failed, 0 skipped (7 total tests)

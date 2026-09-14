@@ -1,15 +1,10 @@
 # Checkpoint
 
-- Phase: EXECUTING with delegated agent lanes.
-- Completed: P01, P02, M01 and P03, with hashed acceptance evidence and agent review.
-- M01 verified: 155 integrated boundary checks, two actual Docker isolation tests, five offline SDK cases, and delegated cross-review.
-- P03 verified: 62 Noir, 155 moderation, 14 boundary, nine portal, 105 build and 29 graph checks.
-- Next: P04 — supported V5 compatibility and interface freeze.
-- M01 committed locally as 824bc33.
-- P02 verified: empty-cache Linux and isolated macOS builds; 33 identical outputs; 105 guard checks; 59 Noir tests; both real browser CRS paths; five offline CLI compatibility cases.
-- P03 reproduction mapping is prepared; no P03 completion is claimed.
-- X03 is blocked for production release under current official V5 guidance; internal work continues.
-- P04 now includes required current supported-V5 compatibility migration from the upstream 5.0.0 baseline.
-- No live deployment, real funds, production wallets, external outreach or paid services used.
-
-P02 committed locally as b1e75fe. Narrow explicit staging excluded the unchanged legacy credential configuration after automatic approval review rejected broad staging. No credential was found in the changed files.
+- Phase: P04 completed; selecting the next graph package.
+- Completed: P01, P02, M01, P03 and P04 with hashed evidence and AI cross-review.
+- P04:91 bound evidence files;34 exact native/Linux outputs;171 build and69 interface checks; both real browser consumers;22 Noir fixtures,7 Solidity fixtures,9 portal regressions,5 CLI lanes and62 Noir/TXE tests passed.
+- P04 source fingerprint:750cb4c1df4c99b7140e252bf987b66ac39ced85ee48632d8c1f6e74e4b103cc.
+- Prior failed attempts remain recorded; all task-owned test processes are cleaned up.
+- Next: A02 dependency advisory remediation (priority4); W01 fee design and C01 contracts remain planned.
+- X03 remains blocked for production release; real proofs, external review, operator acceptance and14-day soak remain mandatory.
+- No publishing, paid services, production wallets or real funds used.

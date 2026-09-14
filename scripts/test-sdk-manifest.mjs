@@ -25,6 +25,8 @@ function fixture(t) {
     'toolchain.json': '{"aztec":"5.0.0"}',
     'scripts/toolchain.mjs': '// synthetic toolchain',
     'shared/sdk-entry.mjs': '// synthetic SDK entry',
+    'shared/sdk-store.mjs': '// synthetic storage adapter',
+    'node_modules/@aztec/pxe/dest/storage/metadata.js': '// synthetic PXE schema',
     'node_modules/fixture-module/index.js': '// synthetic imported module',
     'node_modules/@aztec/noir-acvm_js/web/acvm_js_bg.wasm': 'synthetic acvm asset',
     'node_modules/@aztec/noir-noirc_abi/web/noirc_abi_wasm_bg.wasm': 'synthetic abi asset',
@@ -65,6 +67,8 @@ for (const [label, filename, error] of [
   ['lockfile', 'package-lock.json', /SDK lockfile changed/],
   ['build script', 'scripts/build-sdk.mjs', /SDK build script changed/],
   ['SDK entry source', 'shared/sdk-entry.mjs', /SDK input changed/],
+  ['storage adapter source', 'shared/sdk-store.mjs', /SDK input changed/],
+  ['PXE schema source', 'node_modules/@aztec/pxe/dest/storage/metadata.js', /SDK input changed/],
   ['imported dependency source', 'node_modules/fixture-module/index.js', /SDK input changed/],
   ['toolchain helper', 'scripts/toolchain.mjs', /SDK input changed/],
   ['runtime asset source', 'node_modules/@aztec/noir-acvm_js/web/acvm_js_bg.wasm', /SDK input changed/],
@@ -85,7 +89,7 @@ test('protocol version mismatch is rejected', t => {
   assert.throws(() => checkSdk(f.root), /protocol version differs/);
 });
 
-for (const [section, name] of [['inputs', 'shared/sdk-entry.mjs'], ['inputs', 'node_modules/@aztec/noir-acvm_js/web/acvm_js_bg.wasm'], ['outputs', 'sqlite.worker.js'], ['outputs', 'sqlite3.wasm']]) {
+for (const [section, name] of [['inputs', 'shared/sdk-entry.mjs'], ['inputs', 'shared/sdk-store.mjs'], ['inputs', 'node_modules/@aztec/pxe/dest/storage/metadata.js'], ['inputs', 'node_modules/@aztec/noir-acvm_js/web/acvm_js_bg.wasm'], ['outputs', 'sqlite.worker.js'], ['outputs', 'sqlite3.wasm']]) {
   test(`omitting required ${section} entry ${name} is rejected`, t => {
     const f = fixture(t);
     delete f.manifest[section][name]; f.save();

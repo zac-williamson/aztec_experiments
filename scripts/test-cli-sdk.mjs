@@ -105,9 +105,17 @@ async function child(lane) {
   assert.equal(raw.copy(destination), 8);
   assert.equal(raw.equals(destination), true);
   assert.equal(Buffer.from(raw).toString('hex'), '0102030405060708');
+  const storeConfig = { l1ChainId: 1, rollupAddress: '0x' + '12'.repeat(20),
+    accountAddress: identity.address.toString(), dataDirectory: 'pxe_disposable_cli_smoke' };
+  const store = await a.openPXEStore(storeConfig);
+  await store.openMap('fixture').set('sentinel', 'retained-in-process');
+  await store.close();
+  const reopened = await a.openPXEStore(storeConfig);
+  assert.equal(await reopened.openMap('fixture').getAsync('sentinel'), 'retained-in-process');
+  await reopened.delete();
   assert.deepEqual(networkRequests, []);
   assert.equal(writes.length, 0);
-  return { lane, outcome: 'pass', extractedFunction: 'loadAztecSDK', functionSha256: sha(loader.code), exports: Object.keys(a).length, poseidon: hashed, disposableAddress: identity.address.toString(), bufferCompatibility: 'pass', networkRequests: 0, filesystemWrites: 0 };
+  return { lane, outcome: 'pass', extractedFunction: 'loadAztecSDK', functionSha256: sha(loader.code), exports: Object.keys(a).length, poseidon: hashed, disposableAddress: identity.address.toString(), bufferCompatibility: 'pass', storage: 'actual bundled adapter opened, reopened and deleted in process-local fake-indexeddb', networkRequests: 0, filesystemWrites: 0 };
 }
 
 if (process.argv[2] === '--child') {

@@ -5,7 +5,7 @@
 //
 // Uses ONLY the browser bundle (aztec_bundle.js) for all Aztec
 // functionality — no npm Aztec SDK needed. The bundle provides
-// createPXE, createAztecNodeClient, createIndexedDBStore, all
+// createPXE, createAztecNodeClient, openPXEStore, all
 // crypto (WASM-based), and all contract classes.
 //
 // IndexedDB is polyfilled with fake-indexeddb so the bundle's
@@ -121,7 +121,7 @@ eval(engineCode);
 // Load Aztec SDK from the browser bundle (WASM, no native binary)
 // ============================================================
 // The bundle provides everything: createPXE, createAztecNodeClient,
-// createIndexedDBStore, BarretenbergSync (WASM), Contract, DeployMethod,
+// openPXEStore, BarretenbergSync (WASM), Contract, DeployMethod,
 // account contracts, Fr, poseidon2Hash, sha256ToField, etc.
 //
 // We keep the bundle's Buffer polyfill (don't restore native Buffer) to
@@ -285,12 +285,12 @@ async function initCRSNode(a) {
 }
 
 // ============================================================
-// Store creation (Node.js: use bundle's createIndexedDBStore with fake-indexeddb)
+// Store creation (Node.js: use bundle's openPXEStore with fake-indexeddb)
 // ============================================================
 function createStoreNode(a) {
   return async (config) => {
-    // Same as browser: createIndexedDBStore uses globalThis.indexedDB (fake-indexeddb)
-    return a.createIndexedDBStore('pxe_data', config);
+    // Same as browser: openPXEStore uses globalThis.indexedDB (fake-indexeddb)
+    return a.openPXEStore(config);
   };
 }
 

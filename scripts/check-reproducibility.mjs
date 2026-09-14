@@ -36,7 +36,7 @@ function snapshot() {
   apps(path.join(ROOT, 'apps/src'));
   // Provisioned CRS files are content-pinned and restored by build:crs. Include
   // all bytes and their copied manifest in exact output comparisons.
-  for (const name of ['g1.dat', 'g2.dat', 'grumpkin_g1.dat']) files.add(`apps/dist/crs/${name}`);
+  for (const name of ['g1.dat', 'g2.dat', 'grumpkin_g1.dat', 'g1_uncompressed.dat']) files.add(`apps/dist/crs/${name}`);
   return { schema: 1, algorithm: 'sha256', files: Object.fromEntries(
     [...files].sort().map(name => [name, sha(fs.readFileSync(path.join(ROOT, name)))])
   ) };

@@ -1,0 +1,14 @@
+{
+  "recordedAt": "2026-09-12T08:58:06.036135+00:00",
+  "inputCount": 145,
+  "rootSourceDifferences": [],
+  "referenceSha256": "3a7e401052453cf271f84defd528ad0a42e7f9cfa5365429fef61b52f35e3cd7",
+  "containerBefore": {
+    "differences": [],
+    "count": 145
+  },
+  "containerAfterFailure": {
+    "differences": [],
+    "count": 145
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "recordedAt": "2026-09-12T07:26:51.111506+00:00",
+  "reason": "Root-requested CRS client version correction and wrong-SDK-version negative test; applied during fresh Noir dependency resolution before apps/guards.",
+  "files": {
+    "shared/crs-client.js": {
+      "previousSha256": "b0626d46fdeb51e45466655c05042b478c970dea6c45b73d7dcc8b0e84f7b2c9",
+      "currentSha256": "4b448da1a3476ab4a4afff709297d5c1d03849ecda392662b0e2dcdfe3310860"
+    },
+    "scripts/test-crs-consumers.mjs": {
+      "previousSha256": "0c20ead844f0c4ed0569c0b63c0f60075b445893f01761182f273a7488fd823e",
+      "currentSha256": "c6833b098ee708deafd8a9409f3da801c6d35572982404903a7f6f33d052153c"
+    }
+  }
+}

@@ -10,7 +10,7 @@ export const SDK_ASSETS = [
   ['node_modules/@aztec/sqlite3mc-wasm/vendor/jswasm/sqlite3-opfs-async-proxy.js', 'sqlite3-opfs-async-proxy.js'],
 ];
 const requiredOutputs = ['aztec_bundle.js', 'bb-main.worker.js', 'bb-thread.worker.js', 'sqlite.worker.js', ...SDK_ASSETS.map(([, output]) => output)];
-const requiredInputs = ['shared/sdk-entry.mjs', 'scripts/toolchain.mjs', 'toolchain.json', ...SDK_ASSETS.map(([input]) => input)];
+const requiredInputs = ['shared/sdk-entry.mjs', 'shared/sdk-store.mjs', 'node_modules/@aztec/pxe/dest/storage/metadata.js', 'scripts/toolchain.mjs', 'toolchain.json', ...SDK_ASSETS.map(([input]) => input)];
 const sha = data => createHash('sha256').update(data).digest('hex');
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 

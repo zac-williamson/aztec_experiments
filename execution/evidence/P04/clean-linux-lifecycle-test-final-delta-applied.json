@@ -1,0 +1,10 @@
+{
+  "recordedAt": "2026-09-12T07:39:50.536832+00:00",
+  "reason": "Final root-authorized review-lane test-only readiness/budget correction; build guard execution not yet observed.",
+  "files": {
+    "scripts/test-process-lifecycle.mjs": {
+      "previousSha256": "9ba72fc3f78c98f6d377e7a2b53e3325db7d4f09adc457d842d4f4b8b8a4535d",
+      "currentSha256": "f77955aae2cef9c879d60aa5b86aa11690717fa5b2f02e10060087c76cc226de"
+    }
+  }
+}

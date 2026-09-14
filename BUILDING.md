@@ -28,7 +28,7 @@ npm run bootstrap:noir
 Both npm lockfiles are required. Do not substitute `npm install` in release or CI
 builds. The compiler bootstrap verifies the archive's SHA-256 and the executable's
 version and commit before use. `toolchain.json` records the pins and official
-download sources. The native Aztec **5.0.0** prover and test service come from the
+download sources. The native Aztec **5.2.0** prover and test service come from the
 locked npm dependencies; a globally installed Aztec CLI is unnecessary. An initial
 build needs network access for npm, official compiler downloads, Noir Git
 dependencies, the Solidity compiler, and content-pinned CRS assets. A preexisting developer cache is not a
@@ -74,9 +74,14 @@ npm run test:build
 npm run test:noir
 npm run test:moderation
 node --test scripts/test-shell-baseline.mjs scripts/test-receipt-baseline.mjs
-(cd billboard/portal && FOUNDRY_PROFILE=regression forge test --offline -vv)
+node --test scripts/test-sdk-storage.mjs scripts/test-protocol-schema.mjs scripts/test-protocol-commitments.mjs
 npx --no-install playwright install chromium
+node scripts/test-sdk-storage-browser.mjs
+node scripts/fixtures/noir-interface-v1/run.mjs
+node scripts/fixtures/solidity-interface-v1/run.mjs
+(cd billboard/portal && FOUNDRY_PROFILE=regression forge test --offline -vv)
 npm run test:sdk-browser
+npm run test:cli-sdk
 python3 -m unittest discover -s execution/tests -v
 python3 execution/graph.py validate
 ```
@@ -97,7 +102,7 @@ funding, a remote RPC, or a Docker daemon.
 The build compiles Noir, transpiles its artifact, generates all private-function
 verification keys, compiles the Solidity portal, synchronizes consumer artifacts,
 builds the browser SDK and its actual worker entry points, provisions checksum-verified
-CRS data from official URLs, and assembles the apps
+CRS data from official URLs, derives a pinned uncompressed BN254 asset, and assembles the apps
 in `apps/dist`. Dependency, artifact, and SDK manifests detect stale inputs or
 consumer copies. Noir diagnostic source paths are normalized during artifact
 generation so machine-specific checkout/cache locations do not affect the output;
@@ -148,9 +153,26 @@ on Ubuntu; its presence is not evidence that a hosted run has passed.
 | Output comparison | Exact equality of recorded generated outputs, manifests, and provisioned CRS files | Independent security review or proof validity |
 
 `crs-manifest.json` pins official URLs, ranges, byte counts, point counts, and
-SHA-256 values. `npm run build:crs` restores `apps/dist/crs` from verified cached
-bytes or bounded official downloads; the app build rejects files that differ from
-the manifest. The default browser smoke test initializes the provisioned data in
+SHA-256 values. Its derived G1 entry also binds the compressed input, G2 and the
+exact pinned 5.2 WASM used to derive the full uncompressed representation.
+`npm run build:crs` restores the three downloaded assets from verified cached
+bytes or bounded official downloads, then restores or derives the additional
+72 MiB `g1_uncompressed.dat`. The 64 MiB download cap remains separate from this
+fixed derived-output size. A cold build performs the derivation; repeat builds
+may reuse only complete, hash-verified output. To independently reproduce the
+derivation, remove both the generated derived file and its content-addressed
+entry in `.build/crs-cache` before rebuilding.
+
+The app build and output comparison include the entire derived file. The runtime
+prefers that locally served file after verifying its complete size and SHA-256.
+If it is missing or corrupt, the runtime can use only the existing verified
+compressed local/CDN data. The two formats preserve the same 1,179,648 points;
+neither substitutes the prover's first-two-points check for full-content hashing.
+The actual prover response must match the selected input format. G2 and Grumpkin
+remain unchanged. The additional file increases distribution size; browser time,
+memory and actual proof capacity still need representative product qualification.
+
+The default browser smoke test initializes the provisioned data in
 the actual WASM prover. This establishes format and initialization compatibility,
 not proof validity or sufficient capacity for every production workload. The CRS
 hashes are recorded content pins verified against official downloads, not a

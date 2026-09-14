@@ -1,0 +1,14 @@
+✔ matching trees and artifact embedded sources pass (3.106541ms)
+✔ macro change absent from file_map still fails the full tree check (1.809958ms)
+✔ new and missing tree sources cannot pass (2.692959ms)
+✔ local or transitive manifest changes fail (2.392041ms)
+✔ changed, missing, new and conflicting artifact sources fail (1.939708ms)
+✔ absolute and traversal source paths fail closed (1.671166ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 54.643458

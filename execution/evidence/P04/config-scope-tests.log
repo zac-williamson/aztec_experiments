@@ -1,0 +1,21 @@
+✔ config: independent ABI encoding and actual SDK hash agree (3.905333ms)
+✔ ready: independent ABI encoding and actual SDK hash agree (1.882792ms)
+✔ claim: independent ABI encoding and actual SDK hash agree (5.256708ms)
+✔ exit: independent ABI encoding and actual SDK hash agree (0.544875ms)
+✔ claim-boundary: independent ABI encoding and actual SDK hash agree (0.758042ms)
+✔ policy: independent ABI encoding and actual SDK hash agree (0.317375ms)
+✔ policy-unicode: independent ABI encoding and actual SDK hash agree (0.238958ms)
+✔ claim and exit domains prevent interchangeable commitments (0.434041ms)
+✔ configuration computes before the portal exists and keeps the known commitment (0.415292ms)
+✔ configuration rejects full portal scope and any extra or missing scope field (0.274083ms)
+✔ pre-portal scope still validates canonical network integers and nonzero addresses (0.142125ms)
+✔ service policy identity commits its exact content and deployed board (0.853209ms)
+✔ encoding rejects ambiguous or out-of-range collateral/policy inputs (0.224ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 313.44025

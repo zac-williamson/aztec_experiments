@@ -1,0 +1,26 @@
+✔ one fixture set agrees on post, historical policy, deadline and deployment scope (0.849042ms)
+✔ cross-consumer envelope rejects changed l1ChainId (0.225375ms)
+✔ cross-consumer envelope rejects changed rollupAddress (0.057333ms)
+✔ cross-consumer envelope rejects changed rollupVersion (0.048042ms)
+✔ cross-consumer envelope rejects changed boardAddress (0.056292ms)
+✔ cross-consumer envelope rejects changed portalAddress (0.050666ms)
+✔ public post cannot acquire private linking field depositChainId (0.064667ms)
+✔ public post cannot acquire private linking field depositNonce (0.036625ms)
+✔ public post cannot acquire private linking field depositor (0.04175ms)
+✔ public post cannot acquire private linking field owner (0.070167ms)
+✔ public post cannot acquire private linking field accountAddress (0.042542ms)
+✔ publication order and independent post identity are separate (0.083666ms)
+✔ wire numbers and identities are lossless and canonical (0.129667ms)
+✔ UTF-8 limits reject excess bytes and malformed surrogate data (0.107833ms)
+✔ job identity changes with policy/model revisions; a submitted job needs transaction evidence (0.153291ms)
+✔ fixture dispositions preserve separate inclusion and execution outcomes (0.0715ms)
+✔ actual SDK receipt classes cannot confirm dropped or reverted execution (0.123208ms)
+✔ reviewed actor, policy and time bounds agree with the contract specification (0.176834ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 223.846875

@@ -1,0 +1,6 @@
+{"mode":"uncompressed","stage":"wasm-instance","state":"started"}
+{"mode":"uncompressed","stage":"wasm-instance","state":"completed","durationMs":403}
+{"mode":"uncompressed","stage":"bn254-initialize","state":"started"}
+{"mode":"uncompressed","stage":"bn254-initialize","state":"completed","durationMs":1873}
+{"mode":"uncompressed","stage":"grumpkin-initialize","state":"started"}
+{"mode":"uncompressed","stage":"grumpkin-initialize","state":"completed","durationMs":115}

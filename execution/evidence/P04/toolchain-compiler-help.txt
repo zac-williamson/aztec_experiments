@@ -1,0 +1,47 @@
+Compile the program and its secret execution trace into ACIR format
+
+Usage: nargo compile [OPTIONS]
+
+Options:
+      --package <PACKAGE>
+          The name of the package to run the command on. By default run on the first one found moving up along the ancestors of the current directory
+
+      --workspace
+          Run on all packages in the workspace
+
+      --force
+          Force a full recompilation
+
+      --print-acir
+          Display the ACIR for compiled circuit, including the Brillig bytecode
+
+      --deny-warnings
+          Treat all warnings as errors
+
+      --silence-warnings
+          Suppress warnings
+
+      --debug-comptime-in-file <DEBUG_COMPTIME_IN_FILE>
+          Enable printing results of comptime evaluation: provide a path suffix for the module to debug, e.g. "`package_name/src/main.nr`"
+
+      --skip-underconstrained-check
+          Flag to turn off the compiler check for under constrained values. Warning: This can improve compilation speed but can also lead to correctness errors. This check should always be run on production code
+
+      --skip-brillig-constraints-check
+          Flag to turn off the compiler check for missing Brillig call constraints. Warning: This can improve compilation speed but can also lead to correctness errors. This check should always be run on production code
+
+      --inliner-aggressiveness <INLINER_AGGRESSIVENESS>
+          Setting to decide on an inlining strategy for Brillig functions. A more aggressive inliner should generate larger programs but more optimized A less aggressive inliner should generate smaller programs
+          
+          [default: 9223372036854775807]
+
+  -Z, --unstable-features <UNSTABLE_FEATURES>
+          Unstable features to enable for this current build.
+          
+          If non-empty, it disables unstable features required in crate manifests.
+
+      --no-unstable-features
+          Disable any unstable features required in crate manifests
+
+  -h, --help
+          Print help (see a summary with '-h')

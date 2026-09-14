@@ -113,3 +113,113 @@ build105 checks passed. Independent AI reviews cover root shell/history and
 receipt code. Known-bad outcomes remain assigned to repair nodes. Root preserved
 actual source/evidence hashes and prepares the local checkpoint; P04 compatibility
 research is preparation only, not a completed migration.
+
+## P04 assignments (after P03 commit 5432fc6)
+
+| Lane | Agent | Ownership |
+|---|---|---|
+| Matched dependency/toolchain and Noir origin pins | build_verification | package manifests/locks, toolchain.json, Noir manifests/lock, provenance helpers as needed |
+| SDK storage compatibility and consumer adaptation | artifact_regressions | shared SDK/storage adapters, affected CLI/browser consumers and adapter tests |
+| Contract interface design and fixture review | build_review | execution/interface-spec.md, execution/evidence/P04/interface-design.md; source read-only |
+| Integration | root | graph, service schema fixtures, build manifests, integrated verification and review |
+
+Pinned version compatibility does not lift the X03 production deployment pause.
+No protocol retarget, production transaction, existing wallet or paid service is
+used. Note/receipt defects retain their later implementation gates; P04 freezes
+interfaces and validates the supported tooling combination before those edits.
+
+P04 user clarification: no deployed board versions; backward compatibility is
+not required. All three agents were steered to fresh-deployment interfaces. The
+storage lane removes legacy migration/compatibility paths while retaining scoped
+new-store persistence. Historical fixtures remain diagnostic evidence only.
+
+## P04 final integration and verification
+
+- artifact_regressions completed fresh-store adaptation, real browser persistence,
+  actual Noir packing/selectors and cross-language commitment fixtures. It fixed
+  the pre-portal configuration API ordering issue and now reviews shared service
+  semantics independently.
+- build_verification completed matched5.2 locks, official source verification,
+  diagnostic accounting and advisory inventory. It now runs an empty-cache Linux
+  build with a disposable pinned container and no user wallet or home mounts.
+- build_review completed contract design and independent fixture review. It now
+  runs a fresh native macOS dependency/build lane; shared verified compiler caches
+  are recorded explicitly.
+- Root integrated shared protocol validators, Solidity fixtures, service handoff,
+  CI checks and final root test suites. Application inputs are frozen while both
+  clean builds compare33outputs against root-output-hashes.json.
+
+These are separate actual agents and checks, not simulated roles. Their reviews
+remain AI review; external cryptographic review and production evidence are later
+mandatory gates. Dependency advisories are assigned to A02 and compiler diagnostic
+qualifications to final proof/review gates, rather than being silently waived.
+
+P04 blocked checkpoint: all three delegated lanes have returned. Native builds
+match all 33 recorded outputs and pass 110 guards. Linux installed and compiled
+fresh dependencies but stalled during SDK bundling; only seven contract outputs
+are verified. Docker cannot confirm cleanup of the owned test container. Browser
+diagnosis and a separately bounded consumer run preserve actual initialization
+timeouts. Root retains P04 as blocked pending Docker recovery approval and renewed
+verification. No pass record, commit, production claim or background retry is made.
+
+## Authorized recovery and serial verification
+
+The user approved restarting Docker and continuing. Root performed the restart
+and verified both engine health and absence of the old test container.
+Build_review owns one unchanged browser qualification retry; build_verification
+prepares a fresh isolated Linux retry and waits for browser completion. Expensive
+runs are serialized. Artifact_regressions prepares dependency advisory options
+read-only for A02. Root integrates results, maintains gates and owns acceptance.
+
+Current recovery checkpoint: browser retry failed at navigation before SDK evaluation; its failure is retained. Build_verification is executing the isolated no-mount Linux retry. Build_review completed the read-only CRS startup options and now reviews the navigation harness. Artifact_regressions completed A02 dependency preparation and now prepares the C01 implementation handoff read-only. These preparations do not bypass P04. Root confirmed removal of only the two obsolete task-owned build copies after preserving evidence and retry recipes.
+
+P04 format experiment: build_review owns one600-second actual pinned5.2 WASM compressed/uncompressed comparison, writing only ignored derived data and evidence. Build_verification holds Linux retry2 before launch because build inputs may change. Artifact_regressions rechecks current official V5 clearance read-only. Root owns the adoption decision, source scope, integration and graph; no production CRS format has changed yet.
+
+## P04 derived setup implementation
+
+- build_verification owns build-crs, bounded derivation helper, schema2 manifest, build guards, app asset verification and exact-output comparator. No heavy build until integration.
+- build_review owns runtime CRS selection/verification and consumer regressions; compressed fallback remains checked, and response shape is selected by authenticated format.
+- artifact_regressions finishes current official V5 clearance recheck, then is available for independent cross-review.
+- Root owns adoption, graph, integration, source/evidence renewal and serial actual browser/Linux qualification.
+
+The experiment preserved every point and pin; observed Node timing motivates the change but does not prove browser performance. New full-output comparisons include derived data and invalidate any attempt to reuse the old33-file comparison as current acceptance.
+
+Frozen candidate verification: build_verification is running Linux retry2 against147attested sourcefiles and34outputs. Build_review completed read-only SDK startup attribution; lazy-provider/code-splitting work is handed to U01/T04, without changing the candidate during verification. Artifact_regressions completed independent derived-CRS review and linked the171-test integrated pass. Root supervises evidence/cleanup and the outstanding browser qualification.
+
+Latest checkpoint: retry2 stopped at portal-install EACCES and was cleaned up.
+Build_verification reproduced and fixed archive ownership without relaxing
+container restrictions; retry3 passed source, link, fresh-cache and40 writable
+directory checks, both dependency installations and compiler bootstrap. It owns
+the supervised full build,34-output comparison, remaining suites and cleanup.
+Artifact_regressions completed C01 real-proof environment preparation and now
+audits P04 criterion-to-evidence coverage read-only. Build_review is idle after
+the SDK startup review. Root integrates the acceptance ledger and supervises the
+remaining browser check; heavy runs remain serial and application inputs frozen.
+
+Completed verification run: retry3's fresh Linux build passed and all34 full
+outputs exactly match root. Its171 build and69 interface/baseline tests passed;
+the additional Noir fixture stopped at its120-second deadline after10 of22 cases,
+with later suites not reached. Build_verification extracted evidence, confirmed
+unchanged147 source inputs/two links, and removed the owned container. Root
+recorded post-cleanup9.3GiB swap/competing workloads, retained P04 as blocked,
+and did not repeat heavy checks under unchanged conditions. Artifact_regressions
+is completing the criterion/evidence audit; all independent preparations remain
+preparations, not downstream acceptance. No heavy work is running in this task.
+
+## Resume after user reboot —2026-09-14
+
+The user explicitly resumed checks and graph execution after restarting the Mac.
+Build_review owns one bounded actual browser qualification on current frozen inputs.
+Build_verification prepares focused remaining contract checks and waits for root
+to release the next heavy slot; the completed34-output clean build is retained.
+Artifact_regressions independently reconciles source/evidence and prepares closure
+coverage. Root owns status, integration, final acceptance and next-package selection.
+No old process IDs are acted on and no large clean-build copies are recreated.
+
+## P04 accepted —2026-09-14
+
+Build_review completed both actualbrowser checks; build_verification completed
+22Noir/7Solidity/9portal/5CLI/62Noir-TXE focused nativechecks withcleanup andunchanged
+source/output hashes. Artifact_regressions independently verified the finalrecord,
+all90pre-review artifacthashes andrawoutcomes; root boundthatreview asthe91startifact.
+P04 isdone. AllP04heavy workended; A02read-onlyinventory preparation isready.

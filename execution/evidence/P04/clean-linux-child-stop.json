@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "containerName": "billboard-p04-clean-7003ab9801",
+  "requestedAt": "2026-09-12T07:51:54.547335+00:00",
+  "scope": "Terminate esbuild by exact process name inside this owned build container only; no host process signal.",
+  "result": {
+    "outcome": "exec_timeout20s"
+  },
+  "completedAt": "2026-09-12T07:52:14.594049+00:00"
+}

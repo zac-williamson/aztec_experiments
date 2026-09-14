@@ -1,0 +1,65 @@
+{
+  "recordedAt": "2026-09-12T09:43:38.840059+00:00",
+  "containerName": "billboard-p04-fixed-copy-4c69f4f2",
+  "commands": [
+    {
+      "command": [
+        "docker",
+        "create",
+        "--name",
+        "billboard-p04-fixed-copy-4c69f4f2",
+        "--memory",
+        "256m",
+        "--cpus",
+        "1",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--workdir",
+        "/work",
+        "--entrypoint",
+        "python3",
+        "docker.io/library/node@sha256:f22d6a1f082c02f292e86929b5b0442ac2e5eaf438a5dea9b1566601c3e05940",
+        "-c",
+        "import os,json,pathlib,hashlib,uuid\nroot=pathlib.Path('/work');inv=json.loads((root/'clean-source-inventory.json').read_text())\nassert os.getuid()==0 and os.getgid()==0\nfor name,expected in inv['sourceInputs'].items():assert hashlib.sha256((root/name).read_bytes()).hexdigest()==expected,name\nfor name,target in inv['sourceSymlinks'].items():assert str((root/name).readlink())==target,name\npaths={root}\nfor name in inv['sourceInputs']:\n for p in (root/name).parents:\n  if p==root:break\n  paths.add(p)\ncreated=[]\nfor name in ['.build/toolchain','.build/crs-cache','billboard/target','billboard/portal/cache']:\n p=root/name;missing=[];current=p\n while not current.exists():missing.append(current);current=current.parent\n p.mkdir(parents=True,exist_ok=True);created.extend(reversed(missing));paths.add(p)\nresults=[]\ntry:\n for p in sorted(paths):\n  s=p.stat();assert s.st_uid==0 and s.st_gid==0,str(p)\n  probe=p/('ownership-write-probe-'+uuid.uuid4().hex)\n  try:\n   with probe.open('xb') as stream:stream.write(b'probe')\n  finally:probe.unlink(missing_ok=True)\n  results.append({'path':str(p),'uid':s.st_uid,'gid':s.st_gid,'mode':oct(s.st_mode & 0o777),'write':'pass'})\nfinally:\n for p in sorted(set(created),key=lambda x:len(x.parts),reverse=True):p.rmdir()\nassert all(not p.exists() for p in created)\nprint(json.dumps({'effectiveUid':os.getuid(),'effectiveGid':os.getgid(),'verifiedSourceFiles':len(inv['sourceInputs']),'verifiedSymlinks':len(inv['sourceSymlinks']),'directoryChecks':results,'createdProbeDirectoriesRemoved':all(not p.exists() for p in created)}))\n"
+      ],
+      "exitCode": 0,
+      "stdout": "b4c01d7ca3630b42bd110c26ea901f0dd1d75c0d5d829ed9808026cb2d81efd7\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "docker",
+        "cp",
+        "-",
+        "billboard-p04-fixed-copy-4c69f4f2:/work"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "docker",
+        "start",
+        "-a",
+        "billboard-p04-fixed-copy-4c69f4f2"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"effectiveUid\": 0, \"effectiveGid\": 0, \"verifiedSourceFiles\": 147, \"verifiedSymlinks\": 2, \"directoryChecks\": [{\"path\": \"/work\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/.build/crs-cache\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/.build/toolchain\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/.github\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/.github/workflows\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/apps\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/apps/src\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/apps/src/billboard\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/apps/src/billboard/censor\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/apps/src/billboard/deploy\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/apps/src/billboard/user\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/apps/src/fee-juice\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/billboard\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/billboard/billboard_contract\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/billboard/billboard_contract/src\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/billboard/billboard_test\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/billboard/billboard_test/src\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/billboard/portal\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/billboard/portal/cache\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/billboard/portal/src\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/billboard/portal/test\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/billboard/portal/test/fixtures\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/billboard/target\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/billboard/test\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/censor-daemon\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/execution\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/execution/interface-fixtures\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/fv\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/fv/billboard_aztec_lean\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/fv/billboard_portal_verity\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/fv/billboard_portal_verity/Proofs\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/fv/bridge_model\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/fv/notes\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/scripts\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/scripts/fixtures\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/scripts/fixtures/noir-interface-v1\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/scripts/fixtures/noir-interface-v1/src\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/scripts/fixtures/solidity-interface-v1\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/scripts/fixtures/solidity-interface-v1/test\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}, {\"path\": \"/work/shared\", \"uid\": 0, \"gid\": 0, \"mode\": \"0o755\", \"write\": \"pass\"}], \"createdProbeDirectoriesRemoved\": true}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "docker",
+        "rm",
+        "-f",
+        "billboard-p04-fixed-copy-4c69f4f2"
+      ],
+      "exitCode": 0,
+      "stdout": "billboard-p04-fixed-copy-4c69f4f2\n",
+      "stderr": ""
+    }
+  ]
+}

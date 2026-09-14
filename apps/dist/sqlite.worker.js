@@ -12193,16 +12193,62 @@ var sqlite3_default = sqlite3InitModule;
 
 // node_modules/@aztec/sqlite3mc-wasm/dest/index.js
 var SQLITE3_WASM_URL = new URL("./sqlite3.wasm", import.meta.url);
-var sqlite3InitModule2 = (...args) => {
-  const g = globalThis;
-  const state = g.sqlite3InitModuleState ??= Object.assign(/* @__PURE__ */ Object.create(null), {
-    debugModule: () => {
-    }
+function sqlite3InitModule2(options = {}) {
+  return new Promise((resolve, reject) => {
+    const instantiateWasm = options.instantiateWasm ?? (options.wasmBinary ? wasmBinaryInstantiator(options.wasmBinary, reject) : urlInstantiator(options.locateFile ?? defaultLocateFile, reject));
+    const callOptions = {
+      ...options,
+      instantiateWasm
+    };
+    installInitModuleState(callOptions);
+    sqlite3_default(callOptions).then(resolve, reject);
   });
-  state.emscriptenLocateFile = (path, prefix) => path === "sqlite3.wasm" ? SQLITE3_WASM_URL.href : new URL(path, prefix || import.meta.url).href;
-  return sqlite3_default(...args);
-};
-var dest_default = sqlite3InitModule2;
+}
+function wasmBinaryInstantiator(wasmBinary, onFailure) {
+  return (imports, onSuccess) => {
+    void WebAssembly.instantiate(wasmBinary, imports).then(({ instance, module }) => onSuccess(instance, module), (error) => onFailure(instantiationError("wasmBinary", error)));
+    return {};
+  };
+}
+function urlInstantiator(locate, onFailure) {
+  return (imports, onSuccess) => {
+    const url = locate("sqlite3.wasm", "");
+    const streaming = WebAssembly.instantiateStreaming ? WebAssembly.instantiateStreaming(fetch(url, {
+      credentials: "same-origin"
+    }), imports).catch(() => fetchAndInstantiate(url, imports)) : fetchAndInstantiate(url, imports);
+    void streaming.then(({ instance, module }) => onSuccess(instance, module), (error) => onFailure(instantiationError(url, error)));
+    return {};
+  };
+}
+async function fetchAndInstantiate(url, imports) {
+  const response = await fetch(url, {
+    credentials: "same-origin"
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} ${response.statusText}`.trimEnd());
+  }
+  return WebAssembly.instantiate(await response.arrayBuffer(), imports);
+}
+function instantiationError(source, cause) {
+  const detail = cause instanceof Error ? cause.message : String(cause);
+  return new Error(`sqlite3 wasm instantiation failed (${source}): ${detail}`, {
+    cause
+  });
+}
+function installInitModuleState(options) {
+  const urlParams = globalThis.location?.href ? new URL(globalThis.location.href).searchParams : new URLSearchParams();
+  const debugModule = urlParams.has("sqlite3.debugModule") ? (...args) => console.warn("sqlite3.debugModule:", ...args) : () => {
+  };
+  globalThis.sqlite3InitModuleState = Object.assign(/* @__PURE__ */ Object.create(null), {
+    debugModule,
+    wasmFilename: "sqlite3.wasm",
+    emscriptenLocateFile: options.locateFile ?? defaultLocateFile,
+    emscriptenInstantiateWasm: options.instantiateWasm
+  });
+}
+function defaultLocateFile(path, prefix) {
+  return path === "sqlite3.wasm" ? SQLITE3_WASM_URL.href : new URL(path, prefix || import.meta.url).href;
+}
 
 // node_modules/@aztec/kv-store/dest/sqlite-opfs/errors.js
 var SqliteEncryptionError = class extends Error {
@@ -12223,6 +12269,9 @@ function isDecryptFailureMessage(message) {
   return SQLITE3MC_DECRYPT_ERROR_PATTERNS.some((p) => p.test(message));
 }
 
+// node_modules/@aztec/kv-store/dest/sqlite-opfs/pool_lock.js
+var DEFAULT_SAH_POOL_DIRECTORY = ".aztec-kv";
+
 // node_modules/@aztec/kv-store/dest/sqlite-opfs/worker.js
 var SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS data (
@@ -12238,7 +12287,6 @@ var SCHEMA_SQL = `
   CREATE UNIQUE INDEX IF NOT EXISTS idx_container_key_count ON data(container, key, key_count);
   CREATE UNIQUE INDEX IF NOT EXISTS idx_container_key_hash ON data(container, key, hash);
 `;
-var DEFAULT_SAH_POOL_DIRECTORY = ".aztec-kv";
 var SAH_POOL_VFS_NAME = "aztec-kv-opfs";
 var MC_SAH_POOL_VFS_NAME = `multipleciphers-${SAH_POOL_VFS_NAME}`;
 var sqlite3;
@@ -12246,7 +12294,7 @@ var pool;
 var db;
 var dbPath;
 async function ensurePool(directory) {
-  const s = sqlite3 ??= await dest_default();
+  const s = sqlite3 ??= await sqlite3InitModule2();
   if (!pool) {
     pool = await s.installOpfsSAHPoolVfs({
       name: SAH_POOL_VFS_NAME,
@@ -12264,7 +12312,7 @@ function applyEncryptionKey(conn, key) {
   key.fill(0);
 }
 async function handleInit(dbName, ephemeral, directory, encryptionKey) {
-  const s = sqlite3 ??= await dest_default();
+  const s = sqlite3 ??= await sqlite3InitModule2();
   if (encryptionKey !== void 0 && ephemeral) {
     throw new SqliteEncryptionError("encryption_not_supported_for_ephemeral", "encryptionKey is not supported for ephemeral (:memory:) stores");
   }
@@ -12288,9 +12336,17 @@ async function handleInit(dbName, ephemeral, directory, encryptionKey) {
   runSql(SCHEMA_SQL);
 }
 function handleClose() {
-  db?.close();
-  db = void 0;
-  dbPath = void 0;
+  try {
+    db?.close();
+  } finally {
+    db = void 0;
+    dbPath = void 0;
+    releasePool();
+  }
+}
+function releasePool() {
+  pool?.pauseVfs();
+  pool = void 0;
 }
 async function handleExport() {
   if (!db || !dbPath) {
@@ -12314,6 +12370,9 @@ function handleDeleteDb(dbName) {
   try {
     pool.unlink(path);
   } catch {
+  }
+  if (!db) {
+    releasePool();
   }
 }
 function requireDb() {
@@ -12420,11 +12479,18 @@ self.onmessage = async (ev) => {
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    const encryptionCode = detectEncryptionCode(req, err, message);
+    if (req.type === "init") {
+      try {
+        handleClose();
+      } catch {
+      }
+    }
     respond({
       type: "err",
       id: req.id,
       message,
-      encryptionCode: detectEncryptionCode(req, err, message)
+      encryptionCode
     });
   }
 };

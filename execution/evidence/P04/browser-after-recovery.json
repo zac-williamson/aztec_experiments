@@ -1,0 +1,51 @@
+{
+  "outcome": "fail",
+  "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:54616/\", waiting until \"load\"\u001b[22m\n",
+  "evaluationTimeoutMsPerConsumer": 120000,
+  "isolation": "Fresh browser process and disposable profile per consumer",
+  "consumers": [
+    {
+      "consumer": "shared-library",
+      "outcome": "fail",
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:54616/\", waiting until \"load\"\u001b[22m\n",
+      "deadlineExceeded": false,
+      "faults": [],
+      "evaluationMs": null
+    }
+  ],
+  "sourceHashes": {
+    ".build/sdk/aztec_bundle.js": "5f4b360ff3bbbef4707ea67f435e35487b7356f15833c6260e38b30a18a7da41",
+    "scripts/test-sdk-browser.mjs": "057b86fb66d71a642fcd6143d9cc369cf4eab9b119221d89cdd4509ff560af01",
+    "crs-manifest.json": "485de34aa39dde1a5683921ce6c4f614774f64bc453568300020a36d776c3891",
+    "shared/crs-client.js": "4b448da1a3476ab4a4afff709297d5c1d03849ecda392662b0e2dcdfe3310860",
+    "shared/aztec-lib.js": "48709adc526606a4388e9a00f6384275cd711c1e61e9e0bb170bfacbdb64b83d",
+    "shared/app-env.js": "f8c49f34eff4d9ace2558315361240eadee1a270ce8865b85de182db7afbf345"
+  },
+  "stages": [
+    {
+      "elapsedMs": 100,
+      "consumer": "shared-library",
+      "stage": "browser-launch",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 21155,
+      "consumer": "shared-library",
+      "stage": "browser-launch",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 48854,
+      "consumer": "shared-library",
+      "stage": "navigation",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 81985,
+      "consumer": "shared-library",
+      "stage": "browser",
+      "state": "disconnected",
+      "deadlineExceeded": false
+    }
+  ]
+}

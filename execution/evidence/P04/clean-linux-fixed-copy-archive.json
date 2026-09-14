@@ -1,0 +1,15 @@
+{
+  "archive": "/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-copy-fixed.tar",
+  "sha256": "adac9609646d5c68fd463fda708ffc5471f68baa3f057047f22e5b4abdb3e71a",
+  "sourceFileCount": 147,
+  "archiveFileCount": 150,
+  "directoryCount": 35,
+  "metadataPolicy": {
+    "uid": 0,
+    "gid": 0,
+    "directories": "0755",
+    "files": "0644 or0755 if source executable",
+    "symlinks": "preserved targets",
+    "mtime": 0
+  }
+}

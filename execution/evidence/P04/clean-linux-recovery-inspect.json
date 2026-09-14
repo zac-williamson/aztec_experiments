@@ -1,0 +1,7 @@
+{
+  "recordedAt": "2026-09-12T07:44:28.131755+00:00",
+  "containerName": "billboard-p04-clean-7003ab9801",
+  "exitCode": 0,
+  "stdout": "{\"Status\":\"running\",\"Running\":true,\"Paused\":false,\"Restarting\":false,\"OOMKilled\":false,\"Dead\":false,\"Pid\":868,\"ExitCode\":0,\"Error\":\"\",\"StartedAt\":\"2026-09-12T07:22:14.935717429Z\",\"FinishedAt\":\"0001-01-01T00:00:00Z\"}\n",
+  "stderr": ""
+}

@@ -45,6 +45,10 @@ jobs:
           npm run test:noir
           npm run test:moderation
           node --test scripts/test-shell-baseline.mjs scripts/test-receipt-baseline.mjs
+          node --test scripts/test-sdk-storage.mjs scripts/test-protocol-schema.mjs scripts/test-protocol-commitments.mjs
+          node scripts/test-sdk-storage-browser.mjs
+          node scripts/fixtures/noir-interface-v1/run.mjs
+          node scripts/fixtures/solidity-interface-v1/run.mjs
           (cd billboard/portal && FOUNDRY_PROFILE=regression forge test --offline -vv)
           npm run test:sdk-browser
           npm run test:cli-sdk

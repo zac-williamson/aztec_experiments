@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "files": {
+    "package.json": "0b570702c1a305b9e73caf72be2a40b32c5a0d771bedc2e35813fab2dfb3975b",
+    "package-lock.json": "339461947185a2bf4a2ef7d0dc3ff56b771f56822b5b04905eead26b6643bf0e",
+    "billboard/portal/package.json": "0aa6fa352eed133a270069921b1a816042528c186bb454febf7b36aa317d47ad",
+    "billboard/portal/package-lock.json": "d3493375a4401807217b0d2961aff547de6e6c3af3d6649d30f824044dc89fa7",
+    "toolchain.json": "485b063cea351d865fdef19bee7ad870f8ae0f12d3aaff5c191015ae54db814c",
+    "billboard/billboard_contract/Nargo.toml": "5c83d4f5a566a53ff7b2880c48ace29609939afac8069f349a89862a59626b28",
+    "billboard/billboard_test/Nargo.toml": "440dff561e0876794d1949b1cff633e945cbd14494b9ee87ea906c7099d095f2",
+    "noir-dependencies.json": "2ecbc7e0e2bb14ac890f554ef38a7713b1a27e16e0dee0324bd600aff3db50ba",
+    "scripts/prepare-noir-lock.py": "897e83d6c486e96a325fbeeb1333fc888b3eedf4607ba0bff694fc0c98c9759d",
+    "scripts/verify-noir-origins.py": "dc9b3a72fd17cc9bb9108da7c287e6dbd3cfafbfb440b42f56d99f35239c78f4"
+  }
+}

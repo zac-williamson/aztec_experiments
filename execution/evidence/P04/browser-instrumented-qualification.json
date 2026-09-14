@@ -1,0 +1,732 @@
+{
+  "outcome": "fail",
+  "error": "page.evaluate: Target page, context or browser has been closed",
+  "navigationTimeoutMsPerConsumer": 30000,
+  "evaluationTimeoutMsPerConsumer": 120000,
+  "isolation": "Fresh browser process and disposable profile per consumer",
+  "consumers": [
+    {
+      "consumer": "shared-library",
+      "outcome": "fail",
+      "error": "page.evaluate: Target page, context or browser has been closed",
+      "deadlineExceeded": true,
+      "faults": [],
+      "evaluationMs": 121510
+    }
+  ],
+  "sourceHashes": {
+    ".build/sdk/aztec_bundle.js": "5f4b360ff3bbbef4707ea67f435e35487b7356f15833c6260e38b30a18a7da41",
+    "scripts/test-sdk-browser.mjs": "f04f5dd9877bab5f07a4409976fb6f4733bf2b983b5b5734f58764d66a01d743",
+    "crs-manifest.json": "485de34aa39dde1a5683921ce6c4f614774f64bc453568300020a36d776c3891",
+    "shared/crs-client.js": "4b448da1a3476ab4a4afff709297d5c1d03849ecda392662b0e2dcdfe3310860",
+    "shared/aztec-lib.js": "48709adc526606a4388e9a00f6384275cd711c1e61e9e0bb170bfacbdb64b83d",
+    "shared/app-env.js": "f8c49f34eff4d9ace2558315361240eadee1a270ce8865b85de182db7afbf345"
+  },
+  "stages": [
+    {
+      "elapsedMs": 20,
+      "stage": "http-server",
+      "state": "listening"
+    },
+    {
+      "elapsedMs": 25,
+      "consumer": "shared-library",
+      "stage": "browser-launch",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 9022,
+      "consumer": "shared-library",
+      "stage": "browser-launch",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 9035,
+      "consumer": "shared-library",
+      "stage": "page-create",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 23950,
+      "consumer": "shared-library",
+      "stage": "page-create",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 23958,
+      "consumer": "shared-library",
+      "stage": "expose-function",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 25296,
+      "consumer": "shared-library",
+      "stage": "expose-function",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 25296,
+      "consumer": "shared-library",
+      "stage": "install-readiness-markers",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 25462,
+      "consumer": "shared-library",
+      "stage": "install-readiness-markers",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 25463,
+      "consumer": "shared-library",
+      "stage": "navigation",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 25711,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/"
+    },
+    {
+      "elapsedMs": 25983,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 1,
+      "path": "/",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 26018,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 1,
+      "path": "/",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 2763,
+      "durationMs": 35
+    },
+    {
+      "elapsedMs": 26474,
+      "consumer": "shared-library",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/",
+      "status": 200
+    },
+    {
+      "elapsedMs": 26924,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 2,
+      "path": "/aztec_bundle.js",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 27224,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 3,
+      "path": "/crs-client.js",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 27226,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 4,
+      "path": "/aztec-lib.js",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 27227,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 5,
+      "path": "/app-env.js",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 27258,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 4,
+      "path": "/aztec-lib.js",
+      "state": "file-read-completed",
+      "bodyBytes": 38208,
+      "durationMs": 32
+    },
+    {
+      "elapsedMs": 27259,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 4,
+      "path": "/aztec-lib.js",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 38208,
+      "durationMs": 33
+    },
+    {
+      "elapsedMs": 27259,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 5,
+      "path": "/app-env.js",
+      "state": "file-read-completed",
+      "bodyBytes": 6553,
+      "durationMs": 33
+    },
+    {
+      "elapsedMs": 27260,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 5,
+      "path": "/app-env.js",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 6553,
+      "durationMs": 33
+    },
+    {
+      "elapsedMs": 27260,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 3,
+      "path": "/crs-client.js",
+      "state": "file-read-completed",
+      "bodyBytes": 4887,
+      "durationMs": 36
+    },
+    {
+      "elapsedMs": 27267,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 3,
+      "path": "/crs-client.js",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 4887,
+      "durationMs": 44
+    },
+    {
+      "elapsedMs": 27587,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/aztec_bundle.js"
+    },
+    {
+      "elapsedMs": 27587,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/crs-client.js"
+    },
+    {
+      "elapsedMs": 27587,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/aztec-lib.js"
+    },
+    {
+      "elapsedMs": 27600,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/app-env.js"
+    },
+    {
+      "elapsedMs": 27913,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 2,
+      "path": "/aztec_bundle.js",
+      "state": "file-read-completed",
+      "bodyBytes": 50130889,
+      "durationMs": 990
+    },
+    {
+      "elapsedMs": 28111,
+      "consumer": "shared-library",
+      "stage": "script.sdk",
+      "state": "before-script",
+      "browserElapsedMs": 1445
+    },
+    {
+      "elapsedMs": 28127,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/"
+    },
+    {
+      "elapsedMs": 29405,
+      "consumer": "shared-library",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/crs-client.js",
+      "status": 200
+    },
+    {
+      "elapsedMs": 29411,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/crs-client.js"
+    },
+    {
+      "elapsedMs": 29412,
+      "consumer": "shared-library",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/app-env.js",
+      "status": 200
+    },
+    {
+      "elapsedMs": 29412,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/app-env.js"
+    },
+    {
+      "elapsedMs": 29418,
+      "consumer": "shared-library",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/aztec-lib.js",
+      "status": 200
+    },
+    {
+      "elapsedMs": 29418,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/aztec-lib.js"
+    },
+    {
+      "elapsedMs": 34465,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 2,
+      "path": "/aztec_bundle.js",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 50130889,
+      "durationMs": 7542
+    },
+    {
+      "elapsedMs": 38879,
+      "consumer": "shared-library",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/aztec_bundle.js",
+      "status": 200
+    },
+    {
+      "elapsedMs": 38880,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/aztec_bundle.js"
+    },
+    {
+      "elapsedMs": 52852,
+      "consumer": "shared-library",
+      "stage": "script.sdk",
+      "state": "script-load",
+      "browserElapsedMs": 27161
+    },
+    {
+      "elapsedMs": 52867,
+      "consumer": "shared-library",
+      "stage": "script.sdk",
+      "state": "after-script",
+      "browserElapsedMs": 27246
+    },
+    {
+      "elapsedMs": 52867,
+      "consumer": "shared-library",
+      "stage": "script.crs-client",
+      "state": "before-script",
+      "browserElapsedMs": 27248
+    },
+    {
+      "elapsedMs": 52892,
+      "consumer": "shared-library",
+      "stage": "script.crs-client",
+      "state": "script-load",
+      "browserElapsedMs": 27269
+    },
+    {
+      "elapsedMs": 52896,
+      "consumer": "shared-library",
+      "stage": "script.crs-client",
+      "state": "after-script",
+      "browserElapsedMs": 27270
+    },
+    {
+      "elapsedMs": 52897,
+      "consumer": "shared-library",
+      "stage": "script.shared-library",
+      "state": "before-script",
+      "browserElapsedMs": 27270
+    },
+    {
+      "elapsedMs": 52900,
+      "consumer": "shared-library",
+      "stage": "script.shared-library",
+      "state": "script-load",
+      "browserElapsedMs": 27271
+    },
+    {
+      "elapsedMs": 52900,
+      "consumer": "shared-library",
+      "stage": "script.shared-library",
+      "state": "after-script",
+      "browserElapsedMs": 27271
+    },
+    {
+      "elapsedMs": 52926,
+      "consumer": "shared-library",
+      "stage": "script.engine-adapter",
+      "state": "before-script",
+      "browserElapsedMs": 27274
+    },
+    {
+      "elapsedMs": 52927,
+      "consumer": "shared-library",
+      "stage": "script.engine-adapter",
+      "state": "script-load",
+      "browserElapsedMs": 27275
+    },
+    {
+      "elapsedMs": 52927,
+      "consumer": "shared-library",
+      "stage": "script.engine-adapter",
+      "state": "after-script",
+      "browserElapsedMs": 27275
+    },
+    {
+      "elapsedMs": 53244,
+      "consumer": "shared-library",
+      "stage": "script.document",
+      "state": "dom-content-loaded",
+      "browserElapsedMs": 27602
+    },
+    {
+      "elapsedMs": 53282,
+      "consumer": "shared-library",
+      "stage": "script.document",
+      "state": "load",
+      "browserElapsedMs": 27660
+    },
+    {
+      "elapsedMs": 53284,
+      "consumer": "shared-library",
+      "stage": "navigation",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 53530,
+      "consumer": "shared-library",
+      "stage": "sync-prover-init",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 53830,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 6,
+      "path": "/favicon.ico",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 53840,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 6,
+      "path": "/favicon.ico",
+      "state": "file-read-failed"
+    },
+    {
+      "elapsedMs": 53844,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 6,
+      "path": "/favicon.ico",
+      "state": "response-finished",
+      "status": 404,
+      "bodyBytes": 9,
+      "durationMs": 14
+    },
+    {
+      "elapsedMs": 56537,
+      "consumer": "shared-library",
+      "stage": "sync-prover-init",
+      "state": "completed",
+      "durationMs": 3047
+    },
+    {
+      "elapsedMs": 56577,
+      "consumer": "shared-library",
+      "stage": "shared-crs-adapter",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 56616,
+      "consumer": "shared-library",
+      "stage": "crs-1.load.g1.dat",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 56657,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 7,
+      "path": "/crs/g1.dat",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 56657,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/crs/g1.dat"
+    },
+    {
+      "elapsedMs": 57207,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 7,
+      "path": "/crs/g1.dat",
+      "state": "file-read-completed",
+      "bodyBytes": 37748736,
+      "durationMs": 550
+    },
+    {
+      "elapsedMs": 57272,
+      "consumer": "shared-library",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/crs/g1.dat",
+      "status": 200
+    },
+    {
+      "elapsedMs": 57694,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 7,
+      "path": "/crs/g1.dat",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 37748736,
+      "durationMs": 1037
+    },
+    {
+      "elapsedMs": 57893,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/crs/g1.dat"
+    },
+    {
+      "elapsedMs": 57894,
+      "consumer": "shared-library",
+      "stage": "crs-1.load.g1.dat",
+      "state": "completed",
+      "durationMs": 1263
+    },
+    {
+      "elapsedMs": 57953,
+      "consumer": "shared-library",
+      "stage": "crs-1.sha256.37748736",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 58200,
+      "consumer": "shared-library",
+      "stage": "crs-1.sha256.37748736",
+      "state": "completed",
+      "durationMs": 255
+    },
+    {
+      "elapsedMs": 58235,
+      "consumer": "shared-library",
+      "stage": "crs-1.load.g2.dat",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 58266,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 8,
+      "path": "/crs/g2.dat",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 58273,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/crs/g2.dat"
+    },
+    {
+      "elapsedMs": 58281,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 8,
+      "path": "/crs/g2.dat",
+      "state": "file-read-completed",
+      "bodyBytes": 128,
+      "durationMs": 15
+    },
+    {
+      "elapsedMs": 58282,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 8,
+      "path": "/crs/g2.dat",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 128,
+      "durationMs": 16
+    },
+    {
+      "elapsedMs": 58302,
+      "consumer": "shared-library",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/crs/g2.dat",
+      "status": 200
+    },
+    {
+      "elapsedMs": 58302,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/crs/g2.dat"
+    },
+    {
+      "elapsedMs": 58303,
+      "consumer": "shared-library",
+      "stage": "crs-1.load.g2.dat",
+      "state": "completed",
+      "durationMs": 78
+    },
+    {
+      "elapsedMs": 58341,
+      "consumer": "shared-library",
+      "stage": "crs-1.sha256.128",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 58382,
+      "consumer": "shared-library",
+      "stage": "crs-1.sha256.128",
+      "state": "completed",
+      "durationMs": 45
+    },
+    {
+      "elapsedMs": 58448,
+      "consumer": "shared-library",
+      "stage": "crs-1.load.grumpkin_g1.dat",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 58491,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 9,
+      "path": "/crs/grumpkin_g1.dat",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 58501,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/crs/grumpkin_g1.dat"
+    },
+    {
+      "elapsedMs": 58590,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 9,
+      "path": "/crs/grumpkin_g1.dat",
+      "state": "file-read-completed",
+      "bodyBytes": 4194368,
+      "durationMs": 99
+    },
+    {
+      "elapsedMs": 58627,
+      "consumer": "shared-library",
+      "stage": "http",
+      "requestId": 9,
+      "path": "/crs/grumpkin_g1.dat",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 4194368,
+      "durationMs": 136
+    },
+    {
+      "elapsedMs": 58674,
+      "consumer": "shared-library",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/crs/grumpkin_g1.dat",
+      "status": 200
+    },
+    {
+      "elapsedMs": 59100,
+      "consumer": "shared-library",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/crs/grumpkin_g1.dat"
+    },
+    {
+      "elapsedMs": 59101,
+      "consumer": "shared-library",
+      "stage": "crs-1.load.grumpkin_g1.dat",
+      "state": "completed",
+      "durationMs": 647
+    },
+    {
+      "elapsedMs": 59176,
+      "consumer": "shared-library",
+      "stage": "crs-1.sha256.4194368",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 59245,
+      "consumer": "shared-library",
+      "stage": "crs-1.sha256.4194368",
+      "state": "completed",
+      "durationMs": 90
+    },
+    {
+      "elapsedMs": 59293,
+      "consumer": "shared-library",
+      "stage": "crs-1.srsInitSrs",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 173298,
+      "consumer": "shared-library",
+      "stage": "evaluation",
+      "state": "deadline-exceeded",
+      "timeoutMs": 120000
+    },
+    {
+      "elapsedMs": 176947,
+      "consumer": "shared-library",
+      "stage": "browser",
+      "state": "disconnected",
+      "deadlineExceeded": true
+    }
+  ]
+}

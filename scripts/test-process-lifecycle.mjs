@@ -16,8 +16,10 @@ function fixture(overrides = {}) {
   const options = {
     service: command(idle), tests: command('process.exit(0)'),
     probe: () => ready,
-    pollMs: 10, readyTimeoutMs: 2000, probeTimeoutMs: 500,
-    testTimeoutMs: 2000, terminationGraceMs: 100, killWaitMs: 1000,
+    // Ordinary process startup is not a latency benchmark. Explicit timeout
+    // scenarios below retain their shorter tested deadlines.
+    pollMs: 10, readyTimeoutMs: 10000, probeTimeoutMs: 500,
+    testTimeoutMs: 10000, terminationGraceMs: 100, killWaitMs: 1000,
     signalSource: signals,
     ...overrides,
     onSpawn: (role, child) => {
@@ -53,9 +55,19 @@ test('failed tests remain a failure and reap the service', async () => {
 });
 
 test('service death by signal during startup is detected before readiness timeout', async () => {
-  const f = fixture({ service: command("process.kill(process.pid, 'SIGTERM')"), readyTimeoutMs: 5000 });
-  const start = Date.now();
+  let start;
+  const f = fixture({
+    service: command("process.on('message', () => process.kill(process.pid, 'SIGTERM')); " + idle),
+    probe: () => false,
+    onSpawn: (role, child) => child.once('message', message => {
+      if (role === 'service' && message === 'ready') {
+        start = Date.now();
+        child.send('terminate');
+      }
+    }),
+  });
   await assert.rejects(runWithService(f.options), /Test service exited unexpectedly: SIGTERM/);
+  assert.equal(typeof start, 'number', 'service startup must be acknowledged before measuring exit detection');
   assert.ok(Date.now() - start < 2000);
   assert.equal(f.children.length, 1);
   f.assertReaped();
@@ -73,11 +85,49 @@ test('a stuck readiness probe is bounded and its service is reaped', async () =>
   f.assertReaped();
 });
 
-test('timed-out tests and service ignoring SIGTERM are forcibly killed and reaped', async () => {
-  const f = fixture({ service: command(stubborn), tests: command(stubborn), testTimeoutMs: 200 });
-  await assert.rejects(runWithService(f.options), /Test command timed out/);
-  f.assertReaped();
-  for (const { child } of f.children) assert.equal(child.signalCode, 'SIGKILL');
+test('timed-out tests and service ignoring SIGTERM are forcibly killed and reaped', async t => {
+  // Child startup is real and can be slow under concurrent compiler load. Hold
+  // the lifecycle clock until both IPC acknowledgments prove their SIGTERM
+  // handlers are installed, then exercise the actual timeout/kill path.
+  const realSetTimeout = globalThis.setTimeout;
+  const realClearTimeout = globalThis.clearTimeout;
+  let serviceReady, testsReady;
+  const serviceStarted = new Promise(resolve => { serviceReady = resolve; });
+  const testsStarted = new Promise(resolve => { testsReady = resolve; });
+  const f = fixture({
+    service: command(stubborn), tests: command(stubborn), testTimeoutMs: 200,
+    probe: () => serviceStarted,
+    onSpawn: (role, child) => child.once('message', message => {
+      if (message === 'ready') (role === 'service' ? serviceReady : testsReady)(true);
+    }),
+  });
+  let watchdog;
+  const deadline = new Promise((_, reject) => {
+    watchdog = realSetTimeout(() => reject(new Error('Stubborn-child readiness/teardown exceeded 10 seconds')), 10000);
+  });
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const running = runWithService(f.options);
+  // Observe rejection immediately while waiting for the real child messages.
+  running.catch(() => {});
+  try {
+    await Promise.race([Promise.all([serviceStarted, testsStarted]), deadline]);
+    t.mock.timers.tick(200);
+    // Allow the rejected timeout to enter teardown and install the grace timer.
+    await new Promise(resolve => setImmediate(resolve));
+    t.mock.timers.tick(100);
+    await Promise.race([assert.rejects(running, /Test command timed out/), deadline]);
+    f.assertReaped();
+    for (const { child } of f.children) assert.equal(child.signalCode, 'SIGKILL');
+  } finally {
+    realClearTimeout(watchdog);
+    t.mock.timers.reset();
+    // Keep a failed startup assertion from leaving a real disposable child alive.
+    for (const { child } of f.children) {
+      if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+    }
+    f.options.signalSource.emit('SIGTERM');
+    await running.catch(() => {});
+  }
 });
 
 test('SIGTERM during startup produces exit code 143 and reaps children', async () => {

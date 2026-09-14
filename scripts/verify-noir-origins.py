@@ -63,9 +63,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True)
     parser.add_argument("--download-dir")
+    parser.add_argument("--lock", help="Candidate lock to verify; defaults to the active repository lock")
     args = parser.parse_args()
     root = pathlib.Path(__file__).resolve().parent.parent
-    lock_bytes = (root / "noir-dependencies.json").read_bytes()
+    lock_bytes = (pathlib.Path(args.lock) if args.lock else root / "noir-dependencies.json").read_bytes()
     lock = json.loads(lock_bytes)
     repos = {}
     for name, package in lock["packages"].items():

@@ -1,0 +1,4 @@
+
+> test:sdk-browser
+> node scripts/test-sdk-browser.mjs --with-crs
+

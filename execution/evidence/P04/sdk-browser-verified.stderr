@@ -1,0 +1,8 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.evaluate: Target page, context or browser has been closed
+    at /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/scripts/test-sdk-browser.mjs:47:29
+
+Node.js v24.15.0

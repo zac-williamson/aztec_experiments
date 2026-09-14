@@ -1,0 +1,15 @@
+{
+  "recordedAt": "2026-09-12T10:01:25.651883+00:00",
+  "command": [
+    "docker",
+    "exec",
+    "billboard-p04-retry3-c0230f6b75",
+    "tail",
+    "-n",
+    "14",
+    "/work/.build/linux-retry-evidence/build.log"
+  ],
+  "exitCode": 0,
+  "stdout": "> node scripts/build-crs.mjs\n\nVerified CRS g1.dat: 37748736 bytes, SHA-256 8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416\nVerified CRS g2.dat: 128 bytes, SHA-256 01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f\nVerified CRS grumpkin_g1.dat: 4194368 bytes, SHA-256 b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9\nVerified derived CRS g1_uncompressed.dat: 75497472 bytes, SHA-256 2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac\n\n> build:apps\n> node apps/build.mjs\n\nBuilt billboard/censor -> censor.html: 3681KB\nBuilt billboard/deploy -> deploy.html: 3537KB\nBuilt billboard/user -> user.html: 3706KB\nBuilt fee-juice -> fee-juice.html: 692KB\n",
+  "stderr": ""
+}

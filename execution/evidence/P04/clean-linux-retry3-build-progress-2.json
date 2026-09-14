@@ -1,0 +1,32 @@
+{
+  "recordedAt": "2026-09-12T09:58:41.170074+00:00",
+  "checks": [
+    {
+      "command": [
+        "docker",
+        "exec",
+        "billboard-p04-retry3-c0230f6b75",
+        "tail",
+        "-n",
+        "12",
+        "/work/.build/linux-retry-evidence/build.log"
+      ],
+      "exitCode": 0,
+      "stdout": "Generating verification keys for functions in billboard_contract-Billboard.json.processing (mem: 45.85 MiB)\nCache directory: /root/.bb/5.2.0/vk_cache (mem: 45.85 MiB)\nGenerating verification key: f82e66cef403b07d3fd7bde286f9751e767737ad8aa995b1201ace882ba27ce8 (mem: 45.85 MiB)\nChonkComputeVk - deriving Chonk verification key for circuit 'update_portal' (mem: 45.85 MiB)\nGenerating verification key: 54afe28c572cf5d2fa8ac643f24a785a06d3f095bea3f3c87058724c7fde5284 (mem: 49.75 MiB)\nChonkComputeVk - deriving Chonk verification key for circuit 'withdraw' (mem: 49.88 MiB)\nGenerating verification key: f97a18830fb435a4b9ae53077190e602ee7cc5ac7097c46dd7e92dff09b3c71a (mem: 75.65 MiB)\nChonkComputeVk - deriving Chonk verification key for circuit 'claim_deposit' (mem: 75.65 MiB)\nGenerating verification key: ff5061a7b72d8991f7cb5a21fecd577437a55411700b48b39b9fe705c2feb31e (mem: 91.27 MiB)\nChonkComputeVk - deriving Chonk verification key for circuit 'post' (mem: 91.65 MiB)\nChonkComputeVk - VK derived, size: 5216 bytes (mem: 398.78 MiB)\nChonkComputeVk - VK derived, size: 5216 bytes (mem: 419.62 MiB)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "docker",
+        "exec",
+        "billboard-p04-retry3-c0230f6b75",
+        "ps",
+        "-eo",
+        "pid,ppid,pcpu,rss,etime,args"
+      ],
+      "exitCode": 0,
+      "stdout": "  PID  PPID %CPU   RSS     ELAPSED COMMAND\n    1     0  0.4 15248       12:24 python3 clean-steps.py\n   82     1  0.2 64700       05:50 npm run build\n   93    82  0.0  1292       05:49 sh -c npm run build:contracts && npm run build:sdk && npm run build:crs && npm run build:apps\n   94    93  0.2 64668       05:49 npm run build:contracts\n  105    94  0.0  1228       05:49 sh -c node scripts/build-contracts.mjs\n  106   105  0.1 62388       05:49 node scripts/build-contracts.mjs\n  182   106  135 445436      00:26 /work/node_modules/@aztec/bb.js/build/arm64-linux/bb aztec_process --force -i /work/billboard/target/billboard_contract-Billboard.json -o /work/billboard/target/billboard_contract-Billboard.json.processing\n  213     0  2.8  3524       00:02 ps -eo pid,ppid,pcpu,rss,etime,args\n",
+      "stderr": ""
+    }
+  ]
+}

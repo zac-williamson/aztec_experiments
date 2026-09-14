@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { assertNodeVersion, assertAztecPackages } from './toolchain.mjs';
+import { assertNodeVersion, assertAztecPackages, pins } from './toolchain.mjs';
 
 assertNodeVersion();
 assertAztecPackages();
@@ -77,7 +77,7 @@ const outputs = {};
 const emitted = [...new Set([...Object.keys(main.metafile.outputs), ...Object.keys(workers.metafile.outputs)].map(filename => path.basename(filename)).concat(assets.map(([, dest]) => dest)))].sort();
 for (const name of emitted) outputs[name] = sha(await fs.readFile(path.join(out, name)));
 await fs.writeFile(path.join(out, 'sdk-manifest.json'), JSON.stringify({
-  aztecVersion: '5.0.0', lockfile: sha(await fs.readFile(path.join(root, 'package-lock.json'))),
+  aztecVersion: pins.aztec, lockfile: sha(await fs.readFile(path.join(root, 'package-lock.json'))),
   buildScript: sha(await fs.readFile(fileURLToPath(import.meta.url))), inputs: inputHashes, outputs,
 }, null, 2) + '\n');
 console.log(`Built pinned SDK and upstream workers: ${out}`);

@@ -30,6 +30,7 @@ import { checkSdk } from '../scripts/check-sdk.mjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { checkArtifacts } from '../scripts/check-artifacts.mjs';
+import { validateCrsManifest } from '../scripts/build-crs.mjs';
 import { assertNodeVersion } from '../scripts/toolchain.mjs';
 
 assertNodeVersion();
@@ -56,7 +57,7 @@ const rpcConfig = (() => {
   return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : null;
 })();
 
-const crsManifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../crs-manifest.json'), 'utf8'));
+const crsManifest = validateCrsManifest(JSON.parse(fs.readFileSync(path.join(__dirname, '../crs-manifest.json'), 'utf8')));
 const sharedFiles = {
   STYLES: loadShared('styles.css'),
   HELPERS: loadShared('helpers.js'),
@@ -181,7 +182,7 @@ for (const filename of Object.keys(sdkManifest.outputs)) {
 fs.copyFileSync(sdkManifestPath, path.join(DIST, 'sdk-manifest.json'));
 
 // Proving assets must be generated and match the pinned source manifest.
-for (const asset of crsManifest.files) {
+for (const asset of [...crsManifest.files, crsManifest.derivedG1]) {
   if (path.basename(asset.name) !== asset.name) throw new Error('Invalid CRS asset path');
   const bytes = fs.readFileSync(path.join(DIST, 'crs', asset.name));
   if (bytes.length !== asset.bytes || createHash('sha256').update(bytes).digest('hex') !== asset.sha256) throw new Error(`CRS asset changed: ${asset.name}; run npm run build:crs`);

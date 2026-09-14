@@ -1,0 +1,14 @@
+{
+  "startedAt": "2026-09-14T09:35:10.024961+00:00",
+  "command": [
+    "/Users/zac/.nvm/versions/node/v24.15.0/bin/node",
+    "scripts/test-sdk-browser.mjs",
+    "--with-crs"
+  ],
+  "timeoutSeconds": 600,
+  "pid": 64992,
+  "exitCode": 0,
+  "outerTimeout": false,
+  "elapsedSeconds": 5.83817041607108,
+  "finishedAt": "2026-09-14T09:35:15.863155+00:00"
+}

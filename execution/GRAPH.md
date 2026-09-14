@@ -79,6 +79,7 @@ flowchart TD
     T03 --> R01
     T04 --> R01
     M03 --> R01
+    A02 --> R01
     X01["X01: Obtain independent Aztec and Solidity review"]
     R01 --> X01
     R02["R02: Remediate independent findings and prepare final candidate"]
@@ -101,6 +102,8 @@ flowchart TD
     X02 --> R04
     X03 --> R04
     O02 --> R04
+    A02["A02: Resolve production dependency advisories"]
+    P04 --> A02
 ```
 
 ## Work packages
@@ -132,7 +135,7 @@ flowchart TD
 | [T02](tasks/T02.md) | Demonstrate full bridge journey with real proofs | T01, W03, M02, D01, F01 | internal |
 | [T03](tasks/T03.md) | Verify end-to-end privacy and funding footprint | T02, U01, W01 | internal |
 | [T04](tasks/T04.md) | Run browser, recovery, concurrency and load matrix | T02, U01, O01 | internal |
-| [R01](tasks/R01.md) | Freeze review candidate and prepare independent audit packet | T01, T03, T04, M03 | internal |
+| [R01](tasks/R01.md) | Freeze review candidate and prepare independent audit packet | T01, T03, T04, M03, A02 | internal |
 | [X01](tasks/X01.md) | Obtain independent Aztec and Solidity review | R01 | external |
 | [R02](tasks/R02.md) | Remediate independent findings and prepare final candidate | X01 | internal |
 | [X02](tasks/X02.md) | Obtain independent audit closure for final source | R02 | external |
@@ -141,3 +144,4 @@ flowchart TD
 | [X03](tasks/X03.md) | Verify current target-network production suitability | P02 | external |
 | [O02](tasks/O02.md) | Confirm operator ownership and production configuration | O01, D01 | external |
 | [R04](tasks/R04.md) | Sign off the production-ready release package | T05, T06, X02, X03, O02 | internal |
+| [A02](tasks/A02.md) | Resolve production dependency advisories | P04 | internal |

@@ -465,8 +465,10 @@ async function ensureAztecSetup(state, statusId, opts = {}) {
   // which runs entirely on the main thread without Workers.
   log('Step 4: Creating in-browser PXE...', 'info', S);
   const l1Contracts = await aztecNode.getL1ContractAddresses();
-  const store = await a.createIndexedDBStore('pxe_data', {
+  const store = await a.openPXEStore({
     ...l1Contracts,
+    l1ChainId: nodeInfo.l1ChainId,
+    accountAddress: address.toString(),
     dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
   });
   const pxe = await a.createPXE(aztecNode, {

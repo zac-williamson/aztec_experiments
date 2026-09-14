@@ -1,0 +1,343 @@
+
+> test:build
+> node --test scripts/test-artifacts.mjs scripts/test-sdk-manifest.mjs scripts/test-noir-dependencies.mjs scripts/test-crs-build.mjs scripts/test-crs-consumers.mjs scripts/test-process-lifecycle.mjs
+
+✔ matching synthetic artifacts and recorded sources pass (306.669958ms)
+✔ stale deploy Noir copy is rejected (345.973958ms)
+✔ stale censor Noir copy is rejected (339.778041ms)
+✔ missing verification key is rejected even when all consumer copies agree (122.381667ms)
+✔ empty private function set is rejected even when all consumer copies agree (233.321125ms)
+✔ only public functions is rejected even when all consumer copies agree (123.303417ms)
+✔ untranspiled artifact is rejected even when all consumer copies agree (238.547208ms)
+✔ truthy non-boolean transpilation marker is rejected even when all consumer copies agree (124.38675ms)
+✔ stale portal bytecode is rejected: apps/src/billboard/portal_bytecode.txt (122.251833ms)
+✔ stale portal bytecode is rejected: apps/src/billboard/deploy/portal_bytecode.txt (250.249416ms)
+✔ portal source drift is rejected by embedded compiler provenance (189.102334ms)
+✔ missing Solidity source provenance is rejected (178.090209ms)
+✔ string-encoded Solidity metadata remains supported (168.139875ms)
+✔ Noir source drift requires a rebuild (110.341375ms)
+✔ Noir dependency declaration drift requires a rebuild (279.79325ms)
+✔ root dependency lock drift requires a rebuild (219.083667ms)
+✔ portal dependency lock drift requires a rebuild (211.747209ms)
+✔ compiler configuration drift requires a rebuild (169.152ms)
+✔ toolchain pins drift requires a rebuild (229.20975ms)
+✔ contract builder drift requires a rebuild (172.661417ms)
+✔ Noir debug-path normalizer drift requires a rebuild (227.199583ms)
+✔ Noir dependency verifier drift requires a rebuild (125.518333ms)
+✔ Noir dependency pins drift requires a rebuild (337.889167ms)
+✔ new Noir source omitted from the old manifest requires a rebuild (307.519167ms)
+✔ contract manifest input hash tampering is rejected (115.573125ms)
+✔ contract manifest noir hash tampering is rejected (188ms)
+✔ contract manifest portal hash tampering is rejected (152.970791ms)
+✔ synchronized altered Noir artifacts still fail the recorded build hash (80.6385ms)
+✔ synchronized altered portal bytecode still fails the recorded build hash (175.468792ms)
+✔ accepts the exact pinned partial response and requests identity encoding (595.663875ms)
+✔ rejects ignored Range (10.417375ms)
+✔ rejects wrong range (0.874834ms)
+✔ rejects oversized stream (163.390875ms)
+✔ rejects truncated stream (5.370917ms)
+✔ rejects checksum mismatch (25.814584ms)
+✔ falls back only to another response matching the same content pin (1.476667ms)
+✖ all verified local bytes reach SRS with the pinned v5 point counts (119.855167ms)
+✖ old uncompressed-size local BN254 data is rejected before any prover call (20.146916ms)
+✖ corrupt same-size cache and CDN bytes cannot initialize SRS (1.236ms)
+✖ bad local cache and bad first CDN fall back only to hash-verified second CDN bytes (0.247958ms)
+✖ g1.dat uses the official v5 CDN filename and exact range (1.324125ms)
+✖ grumpkin_g1.dat uses the official v5 CDN filename and exact range (1.204542ms)
+✔ missing manifest is rejected before any data request (26.286ms)
+✔ old point count is rejected before any data request (0.3265ms)
+✔ old Grumpkin filename is rejected before any data request (0.202917ms)
+✔ unexpected network destination is rejected before any data request (1.15175ms)
+✔ duplicate file is rejected before any data request (0.393792ms)
+✔ invalid range is rejected before any data request (0.245125ms)
+✔ truncated body cannot be loaded (330.743916ms)
+✔ oversized body cannot be loaded (15.864542ms)
+✔ oversized content length cannot be loaded (1.964583ms)
+✔ HTTP failure cannot be loaded (5.378ms)
+✔ empty successful response cannot be loaded (0.288833ms)
+✔ oversized streamed response is cancelled instead of reading remaining bytes (1.967458ms)
+✖ BN254 initialization rejection prevents Grumpkin initialization (58.423833ms)
+✖ unexpected BN254 response cannot be reported as initialized (0.555625ms)
+✖ unexpected Grumpkin response cannot be reported as initialized (0.557833ms)
+✖ browser loading uses the same checks with Web Crypto SHA-256 (32.286334ms)
+✔ matching trees and artifact embedded sources pass (182.5835ms)
+✔ macro change absent from file_map still fails the full tree check (53.548708ms)
+✔ new and missing tree sources cannot pass (117.82425ms)
+✔ local or transitive manifest changes fail (34.591875ms)
+✔ changed, missing, new and conflicting artifact sources fail (162.386209ms)
+✔ absolute and traversal source paths fail closed (11.096375ms)
+✔ successful tests reap the service and remove signal handlers (1649.740459ms)
+✔ failed tests remain a failure and reap the service (1463.541916ms)
+✔ service death by signal during startup is detected before readiness timeout (559.416875ms)
+✔ readiness deadline terminates a live unready service (117.273791ms)
+✔ a stuck readiness probe is bounded and its service is reaped (91.618917ms)
+✖ timed-out tests and service ignoring SIGTERM are forcibly killed and reaped (708.140667ms)
+✔ SIGTERM during startup produces exit code 143 and reaps children (405.899ms)
+✔ SIGINT during test execution produces exit code 130 and reaps both children (961.693042ms)
+✔ cancellation immediately after test spawn does not leave an unhandled exit rejection (358.275083ms)
+✔ service death while tests are active aborts and reaps those tests (897.064041ms)
+✔ service spawn failure is surfaced without leaving signal handlers (26.166125ms)
+✔ test spawn failure still reaps its service (862.925375ms)
+✔ complete synthetic SDK manifest passes (866.858791ms)
+✔ stale lockfile is rejected (379.518209ms)
+✔ stale build script is rejected (124.948958ms)
+✔ stale SDK entry source is rejected (232.223541ms)
+✔ stale storage adapter source is rejected (453.909667ms)
+✔ stale PXE schema source is rejected (407.5485ms)
+✔ stale imported dependency source is rejected (337.142458ms)
+✔ stale toolchain helper is rejected (224.170167ms)
+✔ stale runtime asset source is rejected (271.01875ms)
+✔ stale bundle output is rejected (350.550583ms)
+✔ stale worker output is rejected (240.206833ms)
+✔ stale runtime asset output is rejected (264.14ms)
+✔ protocol version mismatch is rejected (273.408625ms)
+✔ omitting required inputs entry shared/sdk-entry.mjs is rejected (202.970916ms)
+✔ omitting required inputs entry shared/sdk-store.mjs is rejected (134.602583ms)
+✔ omitting required inputs entry node_modules/@aztec/pxe/dest/storage/metadata.js is rejected (165.840041ms)
+✔ omitting required inputs entry node_modules/@aztec/noir-acvm_js/web/acvm_js_bg.wasm is rejected (279.7385ms)
+✔ omitting required outputs entry sqlite.worker.js is rejected (253.460791ms)
+✔ omitting required outputs entry sqlite3.wasm is rejected (233.987167ms)
+✔ runtime asset output cannot differ from its source even with a refreshed output hash (190.625792ms)
+✔ manifest inputs path confinement rejects ../outside.js (290.193208ms)
+✔ manifest inputs path confinement rejects /outside.js (338.101375ms)
+✔ manifest inputs path confinement rejects shared/../outside.js (220.740167ms)
+✔ manifest inputs path confinement rejects shared\outside.js (203.671666ms)
+✔ manifest outputs path confinement rejects ../outside.js (312.705875ms)
+✔ manifest outputs path confinement rejects /outside.js (496.124167ms)
+✔ manifest outputs path confinement rejects nested/worker.js (278.188458ms)
+✔ manifest outputs path confinement rejects ..\outside.js (200.786375ms)
+✔ inputs symlink cannot escape its allowed directory (322.812958ms)
+✔ outputs symlink cannot escape its allowed directory (138.93725ms)
+✔ invalid manifest structure is rejected (143.642208ms)
+✔ malformed manifest digest is rejected (604.922125ms)
+✔ missing worker file is rejected rather than silently omitted (425.067375ms)
+ℹ tests 109
+ℹ suites 0
+ℹ pass 98
+ℹ fail 11
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11593.190083
+
+✖ failing tests:
+
+test at scripts/test-crs-consumers.mjs:39:1
+✖ all verified local bytes reach SRS with the pinned v5 point counts (119.855167ms)
+  Error: Missing or incompatible build-pinned CRS manifest
+      at validateManifest (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:13:13)
+      at loadVerified (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:58:19)
+      at Object.initialize (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:90:35)
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:41:13)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.start (node:internal/test_runner/test:1096:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17)
+
+test at scripts/test-crs-consumers.mjs:49:1
+✖ old uncompressed-size local BN254 data is rejected before any prover call (20.146916ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /No verified CRS data/. Input:
+  
+  'Error: Missing or incompatible build-pinned CRS manifest'
+  
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:51:3)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: Missing or incompatible build-pinned CRS manifest
+        at validateManifest (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:13:13)
+        at loadVerified (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:58:19)
+        at Object.initialize (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:90:35)
+        at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:51:28)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1201:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+        at Test.postRun (node:internal/test_runner/test:1330:19)
+        at Test.run (node:internal/test_runner/test:1258:12)
+        at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3),
+    expected: /No verified CRS data/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/test-crs-consumers.mjs:58:1
+✖ corrupt same-size cache and CDN bytes cannot initialize SRS (1.236ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /SHA-256 mismatch/. Input:
+  
+  'Error: Missing or incompatible build-pinned CRS manifest'
+  
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:60:3)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: Missing or incompatible build-pinned CRS manifest
+        at validateManifest (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:13:13)
+        at loadVerified (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:58:19)
+        at Object.initialize (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:90:35)
+        at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:60:28)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1201:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+        at Test.postRun (node:internal/test_runner/test:1330:19)
+        at Test.run (node:internal/test_runner/test:1258:12)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:831:7),
+    expected: /SHA-256 mismatch/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/test-crs-consumers.mjs:67:1
+✖ bad local cache and bad first CDN fall back only to hash-verified second CDN bytes (0.247958ms)
+  Error: Missing or incompatible build-pinned CRS manifest
+      at validateManifest (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:13:13)
+      at Object.loadVerified (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:58:19)
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:69:13)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7)
+
+test at scripts/test-crs-consumers.mjs:86:3
+✖ g1.dat uses the official v5 CDN filename and exact range (1.324125ms)
+  Error: Missing or incompatible build-pinned CRS manifest
+      at validateManifest (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:13:13)
+      at Object.loadVerified (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:58:19)
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:88:15)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7)
+
+test at scripts/test-crs-consumers.mjs:86:3
+✖ grumpkin_g1.dat uses the official v5 CDN filename and exact range (1.204542ms)
+  Error: Missing or incompatible build-pinned CRS manifest
+      at validateManifest (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:13:13)
+      at Object.loadVerified (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:58:19)
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:88:15)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7)
+
+test at scripts/test-crs-consumers.mjs:137:1
+✖ BN254 initialization rejection prevents Grumpkin initialization (58.423833ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /prover rejected setup/. Input:
+  
+  'Error: Missing or incompatible build-pinned CRS manifest'
+  
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:140:3)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: Missing or incompatible build-pinned CRS manifest
+        at validateManifest (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:13:13)
+        at loadVerified (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:58:19)
+        at Object.initialize (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:90:35)
+        at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:140:28)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1201:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+        at Test.postRun (node:internal/test_runner/test:1330:19)
+        at Test.run (node:internal/test_runner/test:1258:12)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:831:7),
+    expected: /prover rejected setup/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/test-crs-consumers.mjs:144:1
+✖ unexpected BN254 response cannot be reported as initialized (0.555625ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Unexpected BN254/. Input:
+  
+  'Error: Missing or incompatible build-pinned CRS manifest'
+  
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:147:3)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: Missing or incompatible build-pinned CRS manifest
+        at validateManifest (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:13:13)
+        at loadVerified (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:58:19)
+        at Object.initialize (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:90:35)
+        at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:147:28)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1201:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+        at Test.postRun (node:internal/test_runner/test:1330:19)
+        at Test.run (node:internal/test_runner/test:1258:12)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:831:7),
+    expected: /Unexpected BN254/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/test-crs-consumers.mjs:151:1
+✖ unexpected Grumpkin response cannot be reported as initialized (0.557833ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Unexpected Grumpkin/. Input:
+  
+  'Error: Missing or incompatible build-pinned CRS manifest'
+  
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:154:3)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: Missing or incompatible build-pinned CRS manifest
+        at validateManifest (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:13:13)
+        at loadVerified (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:58:19)
+        at Object.initialize (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/P04-clean-native/shared/crs-client.js:90:35)
+        at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:154:28)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1201:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+        at Test.postRun (node:internal/test_runner/test:1330:19)
+        at Test.run (node:internal/test_runner/test:1258:12)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:831:7),
+    expected: /Unexpected Grumpkin/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/test-crs-consumers.mjs:157:1
+✖ browser loading uses the same checks with Web Crypto SHA-256 (32.286334ms)
+  Error: Missing or incompatible build-pinned CRS manifest
+      at validateManifest (evalmachine.<anonymous>:13:13)
+      at Object.loadVerified (evalmachine.<anonymous>:58:19)
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-crs-consumers.mjs:161:45)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7)
+
+test at scripts/test-process-lifecycle.mjs:76:1
+✖ timed-out tests and service ignoring SIGTERM are forcibly killed and reaped (708.140667ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'SIGTERM'
+  - 'SIGKILL'
+        ^
+  
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-process-lifecycle.mjs:80:46)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'SIGTERM',
+    expected: 'SIGKILL',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

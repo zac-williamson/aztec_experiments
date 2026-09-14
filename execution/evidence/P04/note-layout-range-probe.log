@@ -1,0 +1,79 @@
+
+node:internal/errors:985
+  const err = new Error(message);
+              ^
+
+Error: Command failed: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/toolchain/nargo test --program-dir /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/scripts/fixtures/noir-interface-v1 --deny-warnings
+
+
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execFileSync (node:child_process:961:15)
+    at file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/fixtures/noir-interface-v1/run.mjs:16:16
+    at ModuleJob.run (node:internal/modules/esm/module_job:437:25)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  status: 1,
+  signal: null,
+  output: [
+    null,
+    '[billboard_note_layout_v1] Running 11 test functions\n' +
+      '[billboard_note_layout_v1] Testing unpack_rejects_noncanonical_boolean ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+      '[billboard_note_layout_v1] Testing unpack_rejects_u32_overflow ... \x1B[0m\x1B[31mFAIL\n' +
+      'error: Test passed when it should have failed\n' +
+      '\x1B[0m\n' +
+      '[billboard_note_layout_v1] Testing unpack_rejects_u64_overflow ... \x1B[0m\x1B[31mFAIL\n' +
+      'error: Test passed when it should have failed\n' +
+      '\x1B[0m\n' +
+      '[billboard_note_layout_v1] Testing post_seven_fields_exact_order_and_roundtrip ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+      '[billboard_note_layout_v1] Testing unpack_rejects_u128_overflow ... \x1B[0m\x1B[31mFAIL\n' +
+      'error: Test passed when it should have failed\n' +
+      '\x1B[0m\n' +
+      '[billboard_note_layout_v1] Testing deposit_generated_selectors_match_every_packed_field ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+      '[billboard_note_layout_v1] Testing post_generated_selectors_match_every_packed_field ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+      '[billboard_note_layout_v1] Testing explicit_eth_address_validation_rejects_overwidth_unpack ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+      '[billboard_note_layout_v1] Testing deposit_eleven_fields_exact_order_and_roundtrip ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+      '[billboard_note_layout_v1] Testing full_scalar_widths_roundtrip_without_sharing_fields ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+      '[billboard_note_layout_v1] Testing raw_eth_address_unpack_does_not_validate_address_range ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+      '\n' +
+      '[billboard_note_layout_v1] Failures:\n' +
+      '     unpack_rejects_u32_overflow\n' +
+      '     unpack_rejects_u64_overflow\n' +
+      '     unpack_rejects_u128_overflow\n' +
+      '\n' +
+      '[billboard_note_layout_v1] \x1B[0m\x1B[32m8 tests passed, \x1B[0m\x1B[31m3 tests failed\n' +
+      '\x1B[0m',
+    '\n'
+  ],
+  pid: 28398,
+  stdout: '[billboard_note_layout_v1] Running 11 test functions\n' +
+    '[billboard_note_layout_v1] Testing unpack_rejects_noncanonical_boolean ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+    '[billboard_note_layout_v1] Testing unpack_rejects_u32_overflow ... \x1B[0m\x1B[31mFAIL\n' +
+    'error: Test passed when it should have failed\n' +
+    '\x1B[0m\n' +
+    '[billboard_note_layout_v1] Testing unpack_rejects_u64_overflow ... \x1B[0m\x1B[31mFAIL\n' +
+    'error: Test passed when it should have failed\n' +
+    '\x1B[0m\n' +
+    '[billboard_note_layout_v1] Testing post_seven_fields_exact_order_and_roundtrip ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+    '[billboard_note_layout_v1] Testing unpack_rejects_u128_overflow ... \x1B[0m\x1B[31mFAIL\n' +
+    'error: Test passed when it should have failed\n' +
+    '\x1B[0m\n' +
+    '[billboard_note_layout_v1] Testing deposit_generated_selectors_match_every_packed_field ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+    '[billboard_note_layout_v1] Testing post_generated_selectors_match_every_packed_field ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+    '[billboard_note_layout_v1] Testing explicit_eth_address_validation_rejects_overwidth_unpack ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+    '[billboard_note_layout_v1] Testing deposit_eleven_fields_exact_order_and_roundtrip ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+    '[billboard_note_layout_v1] Testing full_scalar_widths_roundtrip_without_sharing_fields ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+    '[billboard_note_layout_v1] Testing raw_eth_address_unpack_does_not_validate_address_range ... \x1B[0m\x1B[32mok\x1B[0m\n' +
+    '\n' +
+    '[billboard_note_layout_v1] Failures:\n' +
+    '     unpack_rejects_u32_overflow\n' +
+    '     unpack_rejects_u64_overflow\n' +
+    '     unpack_rejects_u128_overflow\n' +
+    '\n' +
+    '[billboard_note_layout_v1] \x1B[0m\x1B[32m8 tests passed, \x1B[0m\x1B[31m3 tests failed\n' +
+    '\x1B[0m',
+  stderr: '\n'
+}
+
+Node.js v24.15.0

@@ -41,3 +41,46 @@ within the requested V5 target; a V6 retarget would require a separate assessmen
 and user decision. The live incident notice leaves X03 blocked for release while
 internal engineering continues. Sources and exact unknowns are recorded in
 `evidence/P02/current-network-inputs.md`.
+
+## Fresh deployment scope (explicit user clarification)
+
+The user confirmed there are no deployed message-board versions and backward
+compatibility is not important. P04 and later packages target a fresh deployment:
+no legacy board ABI support, old database migration or compatibility aliases are
+required. Historical bad fixtures remain regression evidence, not supported runtime
+versions. Current Aztec V5 protocol compatibility and backup/recovery for newly
+created wallets remain requirements. Do not delete unrelated local data.
+
+## Docker recovery authorization
+
+The user replied “yes keep going” to the explicit request to restart Docker
+Desktop, with notice that it interrupts all running containers. This authorizes
+that restart and continued engineering. It does not authorize deleting unrelated
+containers, data or images. Verification will run serially after recovery.
+
+## Fresh-deployment recovery scope clarification
+
+The user stated there are no deployed board versions and backward compatibility is unnecessary. C06 now explicitly covers recovery of the new deployment, with any supported deposit pause preserving claims/exits. It does not require a legacy or live-right migration facility. The P04 interface prohibition on refunds that leave active L2 rights remains mandatory; lost-secret and unavailable-protocol limitations remain explicit. This removes stale plan wording, not a collateral safety requirement.
+
+## C01 coherent fresh-schema staging
+
+Read-only preparation found that changing claims to the final 11-field DepositNote also changes existing post/withdraw/query constructors. C01 owns the minimum coherent V1 schema, field carry-forward, selector/query and affected ABI-consumer changes, plus the specified ceiling calculation for initial eligibility. There will be one fresh ABI and note layout. C02–C05 retain their actual authentication, contention, full-history and penalty acceptance; carrying fields does not satisfy those gates. C01 scope now explicitly includes affected app/shared consumers and test tooling. Exact initialization ABI/storage selection is recorded before its implementation.
+
+C01 also requires a real authenticated Ready/deposit/claim/no-post-exit harness for its bridge criteria. Permissive mocks, inserted test messages or a locally installed Outbox root alone do not establish rollup proof acceptance. If that environment cannot be run, acceptance remains incomplete. D01 still owns the operator deployment workflow; C06 owns broader escrow/reentrancy/recovery qualification.
+
+The read-only `evidence/C01/proof-environment-preparation.md` identifies the
+installed convenience local-network helper's fake verifier and synthetic epoch
+settlement. C01 will explicitly deploy/check the genuine verifier, configure real
+server proving, and observe accepted proof publication through finalized L1 state
+and canonical Outbox consumption. Wallet proving alone is insufficient. Disposable
+test funding and a no-post exit do not create a dependency on completed W01/C06.
+Published network-prover hardware guidance is not a measured local minimum;
+capacity and runtime must be established by a bounded experiment when C01 begins.
+
+## P04 derived setup adoption
+
+The source-bound Node24.15/explicit5.2 WASM experiment initialized all1,179,648 BN254 points from the existing compressed setup in118.910s and the full derived representation in1.873s, in separate fresh processes. The output is75,497,472bytes with SHA-256 `2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac`. G2/Grumpkin and capacity are unchanged. This is one Node measurement, not browser or production performance evidence; measured process peak memory was higher for the uncompressed path.
+
+P04 adopts build-derived G1 to address the observed initialization blocker. Schema2 keeps all three existing input pins and adds a required derived asset/provenance entry binding full input/G2/5.2 WASM content. Build and runtime must hash-check the complete derived bytes; the upstream uncompressed API's first-two-points check alone is insufficient. Runtime prefers the verified local derived asset and may fall back only to the existing verified compressed source. Format drives exact response validation (empty for uncompressed, full decompressed length for compressed). No point reduction, generic mutable cache trust, remote URL reinterpretation or relaxed cryptographic check is allowed.
+
+Build output comparison includes the additional asset. Independent clean Linux derivation and both actual browser consumers must qualify before P04 completion. Prior native33-output matches remain historical evidence for their recorded inputs; the new candidate requires updated output/source binding. The64MiB remote-download limit remains; the72MiB fixed derived output has a separate bound.

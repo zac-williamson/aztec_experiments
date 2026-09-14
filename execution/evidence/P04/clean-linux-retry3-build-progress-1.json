@@ -1,0 +1,15 @@
+{
+  "recordedAt": "2026-09-12T09:56:01.072565+00:00",
+  "command": [
+    "docker",
+    "exec",
+    "billboard-p04-retry3-c0230f6b75",
+    "tail",
+    "-n",
+    "18",
+    "/work/.build/linux-retry-evidence/build.log"
+  ],
+  "exitCode": 0,
+  "stdout": "\n> build\n> npm run build:contracts && npm run build:sdk && npm run build:crs && npm run build:apps\n\n\n> build:contracts\n> node scripts/build-contracts.mjs\n\nCloning into '/root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0'...\nCloning into '/root/nargo/github.com/noir-lang/poseidon/v0.3.0'...\nCloning into '/root/nargo/github.com/AztecProtocol/aztec-packages/v5.2.0'...\n",
+  "stderr": ""
+}

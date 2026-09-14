@@ -1,0 +1,41 @@
+✔ config: independent ABI encoding and actual SDK hash agree (49.126042ms)
+✔ ready: independent ABI encoding and actual SDK hash agree (14.558542ms)
+✔ claim: independent ABI encoding and actual SDK hash agree (12.05425ms)
+✔ exit: independent ABI encoding and actual SDK hash agree (20.761041ms)
+✔ claim-boundary: independent ABI encoding and actual SDK hash agree (10.632541ms)
+✔ policy: independent ABI encoding and actual SDK hash agree (7.013166ms)
+✔ policy-unicode: independent ABI encoding and actual SDK hash agree (5.042959ms)
+✔ claim and exit domains prevent interchangeable commitments (5.093625ms)
+✔ configuration computes before the portal exists and keeps the known commitment (3.2225ms)
+✔ configuration rejects full portal scope and any extra or missing scope field (0.797333ms)
+✔ pre-portal scope still validates canonical network integers and nonzero addresses (0.655459ms)
+✔ service policy identity commits its exact content and deployed board (9.003667ms)
+✔ encoding rejects ambiguous or out-of-range collateral/policy inputs (0.507042ms)
+✔ feed positions retain actual SDK transaction and within-transaction log indexes (10.222958ms)
+✔ feed cursors reject absent, ambiguous or out-of-range transaction ordering (7.032084ms)
+✔ one fixture set agrees on post, historical policy, deadline and deployment scope (9.240375ms)
+✔ cross-consumer envelope rejects changed l1ChainId (0.313292ms)
+✔ cross-consumer envelope rejects changed rollupAddress (0.177417ms)
+✔ cross-consumer envelope rejects changed rollupVersion (13.709375ms)
+✔ cross-consumer envelope rejects changed boardAddress (0.360542ms)
+✔ cross-consumer envelope rejects changed portalAddress (0.1365ms)
+✔ public post cannot acquire private linking field depositChainId (0.227417ms)
+✔ public post cannot acquire private linking field depositNonce (0.287ms)
+✔ public post cannot acquire private linking field depositor (0.123917ms)
+✔ public post cannot acquire private linking field owner (0.078292ms)
+✔ public post cannot acquire private linking field accountAddress (0.074375ms)
+✔ publication order and independent post identity are separate (0.279875ms)
+✔ wire numbers and identities are lossless and canonical (0.729542ms)
+✔ UTF-8 limits reject excess bytes and malformed surrogate data (0.263583ms)
+✔ job identity changes with policy/model revisions; a submitted job needs transaction evidence (0.326667ms)
+✔ fixture dispositions preserve separate inclusion and execution outcomes (0.181416ms)
+✔ actual SDK receipt classes cannot confirm dropped or reverted execution (7.221958ms)
+✔ reviewed actor, policy and time bounds agree with the contract specification (1.066084ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9982.330208

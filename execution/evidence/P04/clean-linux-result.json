@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-09-12T07:54:07.255608+00:00",
+  "outcome": "incomplete_environment",
+  "containerName": "billboard-p04-clean-7003ab9801",
+  "containerStopped": null,
+  "containerStoppedMeaning": "Unknown current state; last inspected running and no successful stop observed.",
+  "reference": "root-clean-output-hashes.json",
+  "referenceSha256": "3a7e401052453cf271f84defd528ad0a42e7f9cfa5365429fef61b52f35e3cd7",
+  "sourceFilesAttested": 145,
+  "sourceDiscrepancies": [
+    [
+      "root",
+      "scripts/test-sdk-browser.mjs"
+    ]
+  ],
+  "linuxNoirArchiveSha256": "4e86553af99e87c047bae40f1315234709e8d815f6158f3b8a00bf68f512a2b7",
+  "steps": {
+    "image_runtime_platform_and_empty_initial_caches": "pass",
+    "foundry_archive_checksum_and_version": "pass",
+    "root_npm_ci_ignore_scripts": "pass",
+    "portal_npm_ci_ignore_scripts": "pass",
+    "noir_bootstrap_checksum_version_commit": "pass",
+    "noir_compile_with_security_checks_enabled": "completed_with_26_constraint_coverage_diagnostics",
+    "recursive_noir_source_content_checks": "pass",
+    "four_private_verification_keys_generated": "pass",
+    "solidity_portal_compilation": "pass",
+    "seven_contract_outputs_full_byte_comparison": "pass",
+    "sdk_build": "started_no_completion_observed",
+    "crs_provisioning": "not_reached",
+    "apps_assembly": "not_reached",
+    "full_33_output_snapshot_and_comparison": "not_reached",
+    "build_guard_suite": "not_reached",
+    "shell_receipt_storage_schema_commitment_checks": "not_reached",
+    "noir_solidity_interface_fixtures": "not_reached",
+    "portal_regression_suite": "not_reached",
+    "cli_sdk_smoke": "not_reached",
+    "full_noir_txe_suite": "not_reached",
+    "linux_browser_tests": "not_planned",
+    "model_container_isolation_tests": "not_planned"
+  },
+  "qualifications": [
+    "Initial wrapper hit its1200s wall limit. Separate300s recovery observer also timed out; actual containerexit was never observed.",
+    "SDK service consumed CPU without output progress; Docker pause/inspect initiallyHTTP500 and later remove/exec failures were observed. Specific root cause (resource contention, bind mount I/O, runtime state, or application/build issue) not established.",
+    "No host home, wallet, dependency/compiler cache or Docker socket mounted; only task-owned source directory, no ports; actual restrictions captured.",
+    "26 compiler diagnostics retain source-review qualifications; no checker disabled.",
+    "All seven completed contract outputs, including full Solidity metadata and Noir/VKs, match the clean native reference. Remaining26 outputs not compared.",
+    "No proof generation/verification, network transactions, production deployment or live-wallet use.",
+    "No new build may start until root completes browser diagnosis and authorizes serialized retry.",
+    "Final root comparison found later root-only scripts/test-sdk-browser.mjs diagnostic changes. That script was not run in this Linux attempt; copy is not claimed identical to the latest entire root tree."
+  ],
+  "unblock": "Restore Docker responsiveness and confirm task-owned stalled container removal; then run a serialized fresh Linux build under controlled load. Diagnose bind-mount I/O before switching to a Docker-owned output volume, and preserve exact output/source hashing.",
+  "evidenceHashes": {
+    "clean-linux-inputs.json": "0bb25faba2198d399203abe0e00865594371702ebd9a798bb834d01ca152f5bd",
+    "clean-linux-final-inputs.json": "198fd272ac541d277330083869089edbc1b8e848be220b83deb41008d2fe35ec",
+    "clean-linux-final-delta-applied.json": "c426dfac87f7dd3388b0ea30e691526a6d0aba19af2f38a368fc5cbf1595a0cf",
+    "clean-linux-crs-consumer-delta-applied.json": "9ad4eb1ec85936fdaa054f1f4b2301067b04acb4db072d4cc76198cb2cb56ee5",
+    "clean-linux-lifecycle-test-final-delta-applied.json": "e11a472b79fd36f5861e5e1f545eecfd021e48fbb0ad05135424cb458531bdb9",
+    "clean-linux-container-inspect.json": "efcad9209b8b9150982b13481006aadc3f2839a4ae1a617b92eb520ba9ba7e7e",
+    "clean-linux-run.json": "1237b7f97626c18588263bf2357558def13ef4c18c6a47efa99cc09123c2a946",
+    "clean-linux-recovered-result.json": "c587c572c0d49b876da2c93904579ac737b80ae1ebfdbbb7e5309fcc207d3020",
+    "clean-linux-requested-stop.json": "cce2649fd5b2bb077f9999d2d4dd332413ed12d56db0991e5f0d9d3b19b68322",
+    "clean-linux-child-stop.json": "a57971cf1204d6972586d6fb96a8f4e5c83f688bf6d16e9a4c23ad78a0066cb1",
+    "clean-linux-contract-comparison.json": "4541c4aabfdfe56a2168de0252dc623a9476c51e38a25421e1265586feefeb97",
+    "clean-linux-contract-checkpoint.json": "22f6178b7764f476af49a89dfdaaf17d21b936491671963524ffcf4425617538",
+    "clean-linux-build.log": "57c59c96f62f74feace2afda411f61852e89741cf54637b86e588bfee09615db",
+    "clean-linux-recovered-full.log": "57c59c96f62f74feace2afda411f61852e89741cf54637b86e588bfee09615db",
+    "clean-linux-reference-snapshot.json": "3a7e401052453cf271f84defd528ad0a42e7f9cfa5365429fef61b52f35e3cd7"
+  },
+  "compilerDiagnosticOccurrences": 26,
+  "report": "clean-linux-report.md",
+  "reportSha256": "9ea54c3f314baad7243c8e6c462c59199d150dca61cb8c15d9aac5a0fbc221f4"
+}

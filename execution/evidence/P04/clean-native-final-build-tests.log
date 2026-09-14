@@ -1,0 +1,178 @@
+
+> test:build
+> node --test scripts/test-artifacts.mjs scripts/test-sdk-manifest.mjs scripts/test-noir-dependencies.mjs scripts/test-crs-build.mjs scripts/test-crs-consumers.mjs scripts/test-process-lifecycle.mjs
+
+✔ matching synthetic artifacts and recorded sources pass (607.254292ms)
+✔ stale deploy Noir copy is rejected (745.484583ms)
+✔ stale censor Noir copy is rejected (318.566917ms)
+✔ missing verification key is rejected even when all consumer copies agree (757.285333ms)
+✔ empty private function set is rejected even when all consumer copies agree (244.819333ms)
+✔ only public functions is rejected even when all consumer copies agree (617.050791ms)
+✔ untranspiled artifact is rejected even when all consumer copies agree (346.758459ms)
+✔ truthy non-boolean transpilation marker is rejected even when all consumer copies agree (815.814791ms)
+✔ stale portal bytecode is rejected: apps/src/billboard/portal_bytecode.txt (495.753959ms)
+✔ stale portal bytecode is rejected: apps/src/billboard/deploy/portal_bytecode.txt (353.488667ms)
+✔ portal source drift is rejected by embedded compiler provenance (916.880375ms)
+✔ missing Solidity source provenance is rejected (1247.023333ms)
+✔ string-encoded Solidity metadata remains supported (753.652875ms)
+✔ Noir source drift requires a rebuild (522.251209ms)
+✔ Noir dependency declaration drift requires a rebuild (708.330375ms)
+✔ root dependency lock drift requires a rebuild (615.348ms)
+✔ portal dependency lock drift requires a rebuild (593.164167ms)
+✔ compiler configuration drift requires a rebuild (903.22225ms)
+✔ toolchain pins drift requires a rebuild (69.310625ms)
+✔ contract builder drift requires a rebuild (610.088875ms)
+✔ Noir debug-path normalizer drift requires a rebuild (700.295459ms)
+✔ Noir dependency verifier drift requires a rebuild (537.529584ms)
+✔ Noir dependency pins drift requires a rebuild (1001.053042ms)
+✔ new Noir source omitted from the old manifest requires a rebuild (550.547291ms)
+✔ contract manifest input hash tampering is rejected (1204.225375ms)
+✔ contract manifest noir hash tampering is rejected (726.006ms)
+✔ contract manifest portal hash tampering is rejected (1326.83075ms)
+✔ synchronized altered Noir artifacts still fail the recorded build hash (637.124916ms)
+✔ synchronized altered portal bytecode still fails the recorded build hash (1190.862875ms)
+✔ accepts the exact pinned partial response and requests identity encoding (1917.654792ms)
+✔ rejects ignored Range (1.503708ms)
+✔ rejects wrong range (31.7645ms)
+✔ rejects oversized stream (0.535708ms)
+✔ rejects truncated stream (0.781542ms)
+✔ rejects checksum mismatch (156.326416ms)
+✔ falls back only to another response matching the same content pin (122.698584ms)
+✔ all verified local bytes reach SRS with the pinned v5 point counts (1617.293291ms)
+✔ old uncompressed-size local BN254 data is rejected before any prover call (24.400958ms)
+✔ corrupt same-size cache and CDN bytes cannot initialize SRS (1988.630458ms)
+✔ bad local cache and bad first CDN fall back only to hash-verified second CDN bytes (1261.597833ms)
+✔ g1.dat uses the official v5 CDN filename and exact range (2071.726375ms)
+✔ grumpkin_g1.dat uses the official v5 CDN filename and exact range (941.713375ms)
+✔ missing manifest is rejected before any data request (37.720667ms)
+✔ different SDK release is rejected before any data request (0.4825ms)
+✔ old point count is rejected before any data request (0.79125ms)
+✔ old Grumpkin filename is rejected before any data request (69.4345ms)
+✔ unexpected network destination is rejected before any data request (0.507791ms)
+✔ duplicate file is rejected before any data request (0.381ms)
+✔ invalid range is rejected before any data request (0.178916ms)
+✔ truncated body cannot be loaded (0.639334ms)
+✔ oversized body cannot be loaded (1.298875ms)
+✔ oversized content length cannot be loaded (51.748167ms)
+✔ HTTP failure cannot be loaded (0.258292ms)
+✔ empty successful response cannot be loaded (0.177791ms)
+✔ oversized streamed response is cancelled instead of reading remaining bytes (21.7845ms)
+✔ BN254 initialization rejection prevents Grumpkin initialization (854.194459ms)
+✔ unexpected BN254 response cannot be reported as initialized (758.06825ms)
+✔ unexpected Grumpkin response cannot be reported as initialized (473.938625ms)
+✔ browser loading uses the same checks with Web Crypto SHA-256 (1266.8515ms)
+✔ matching trees and artifact embedded sources pass (501.042459ms)
+✔ macro change absent from file_map still fails the full tree check (355.992041ms)
+✔ new and missing tree sources cannot pass (465.072875ms)
+✔ local or transitive manifest changes fail (138.696958ms)
+✔ changed, missing, new and conflicting artifact sources fail (180.498458ms)
+✔ absolute and traversal source paths fail closed (118.617458ms)
+✖ successful tests reap the service and remove signal handlers (2189.38ms)
+✖ failed tests remain a failure and reap the service (2335.357ms)
+✖ service death by signal during startup is detected before readiness timeout (2237.020875ms)
+✔ readiness deadline terminates a live unready service (307.295208ms)
+✔ a stuck readiness probe is bounded and its service is reaped (197.548042ms)
+✔ timed-out tests and service ignoring SIGTERM are forcibly killed and reaped (3051.563959ms)
+✔ SIGTERM during startup produces exit code 143 and reaps children (1174.179208ms)
+✔ SIGINT during test execution produces exit code 130 and reaps both children (3629.017625ms)
+✔ cancellation immediately after test spawn does not leave an unhandled exit rejection (1687.988708ms)
+✔ service death while tests are active aborts and reaps those tests (3420.607709ms)
+✔ service spawn failure is surfaced without leaving signal handlers (91.823375ms)
+✔ test spawn failure still reaps its service (2006.488458ms)
+✔ complete synthetic SDK manifest passes (1968.694917ms)
+✔ stale lockfile is rejected (611.985708ms)
+✔ stale build script is rejected (1099.842334ms)
+✔ stale SDK entry source is rejected (910.666791ms)
+✔ stale storage adapter source is rejected (876.946041ms)
+✔ stale PXE schema source is rejected (913.313333ms)
+✔ stale imported dependency source is rejected (921.159834ms)
+✔ stale toolchain helper is rejected (491.2835ms)
+✔ stale runtime asset source is rejected (641.691209ms)
+✔ stale bundle output is rejected (740.527917ms)
+✔ stale worker output is rejected (344.185333ms)
+✔ stale runtime asset output is rejected (720.33ms)
+✔ protocol version mismatch is rejected (418.446792ms)
+✔ omitting required inputs entry shared/sdk-entry.mjs is rejected (722.637875ms)
+✔ omitting required inputs entry shared/sdk-store.mjs is rejected (934.423792ms)
+✔ omitting required inputs entry node_modules/@aztec/pxe/dest/storage/metadata.js is rejected (673.220417ms)
+✔ omitting required inputs entry node_modules/@aztec/noir-acvm_js/web/acvm_js_bg.wasm is rejected (895.602167ms)
+✔ omitting required outputs entry sqlite.worker.js is rejected (1332.834084ms)
+✔ omitting required outputs entry sqlite3.wasm is rejected (947.374042ms)
+✔ runtime asset output cannot differ from its source even with a refreshed output hash (828.252958ms)
+✔ manifest inputs path confinement rejects ../outside.js (1216.858333ms)
+✔ manifest inputs path confinement rejects /outside.js (962.275917ms)
+✔ manifest inputs path confinement rejects shared/../outside.js (628.868292ms)
+✔ manifest inputs path confinement rejects shared\outside.js (895.362167ms)
+✔ manifest outputs path confinement rejects ../outside.js (1109.47225ms)
+✔ manifest outputs path confinement rejects /outside.js (1037.366125ms)
+✔ manifest outputs path confinement rejects nested/worker.js (1387.757542ms)
+✔ manifest outputs path confinement rejects ..\outside.js (1594.474125ms)
+✔ inputs symlink cannot escape its allowed directory (715.865666ms)
+✔ outputs symlink cannot escape its allowed directory (1497.45975ms)
+✔ invalid manifest structure is rejected (635.263ms)
+✔ malformed manifest digest is rejected (625.967958ms)
+✔ missing worker file is rejected rather than silently omitted (457.367667ms)
+ℹ tests 110
+ℹ suites 0
+ℹ pass 107
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 35328.566541
+
+✖ failing tests:
+
+test at scripts/test-process-lifecycle.mjs:42:1
+✖ successful tests reap the service and remove signal handlers (2189.38ms)
+  Error: Test service readiness timed out
+      at runWithService (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/process-lifecycle.mjs:90:33)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processTimers (node:internal/timers:538:9)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-process-lifecycle.mjs:44:3)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+
+test at scripts/test-process-lifecycle.mjs:49:1
+✖ failed tests remain a failure and reap the service (2335.357ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Test command exited unexpectedly: 7/. Input:
+  
+  'Error: Test service readiness timed out'
+  
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-process-lifecycle.mjs:51:3)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: Test service readiness timed out
+        at runWithService (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/process-lifecycle.mjs:90:33)
+        at runNextTicks (node:internal/process/task_queues:65:5)
+        at process.processTimers (node:internal/timers:538:9)
+        at async waitForActual (node:assert:646:5)
+        at async strict.rejects (node:assert:769:25)
+        at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-process-lifecycle.mjs:51:3)
+        at async Test.run (node:internal/test_runner/test:1208:7)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:831:7),
+    expected: /Test command exited unexpectedly: 7/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/test-process-lifecycle.mjs:55:1
+✖ service death by signal during startup is detected before readiness timeout (2237.020875ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(Date.now() - start < 2000)
+  
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/.build/P04-clean-native/scripts/test-process-lifecycle.mjs:59:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -1,0 +1,10 @@
+✔ non-ending HTTP error response is cancelled before rejection (317.89225ms)
+✔ HTTP error response remains the rejection reason when cancellation fails (2.125291ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2208.427291

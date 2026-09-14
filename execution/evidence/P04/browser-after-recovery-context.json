@@ -1,0 +1,19 @@
+{
+  "recordedAt": "2026-09-12T08:42:31.009938+00:00",
+  "authorization": "Root confirmed recovery and authorized one retry; no new Linux build during qualification. Stop on failure, no automatic retry.",
+  "recoveryEvidence": "execution/evidence/P04/docker-restart-check.json",
+  "recoveryEvidenceSha256": "f4458427d303969adf0410244d522b08b1717e58156db5fd1c25ce8f5a6e0936",
+  "command": "PATH=/Users/zac/.nvm/versions/node/v24.15.0/bin:/usr/bin:/bin CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' node scripts/test-sdk-browser.mjs --with-crs",
+  "node": "24.15.0",
+  "sourceSha256": "057b86fb66d71a642fcd6143d9cc369cf4eab9b119221d89cdd4509ff560af01",
+  "evaluationTimeoutMsPerConsumer": 120000,
+  "isolation": "Fresh Chromium process and disposable profile per consumer",
+  "notChanged": [
+    "test source",
+    "production source",
+    "point counts",
+    "CRS assets",
+    "evaluation budgets"
+  ],
+  "causeAttribution": "No cause inferred from recovery or timings alone."
+}

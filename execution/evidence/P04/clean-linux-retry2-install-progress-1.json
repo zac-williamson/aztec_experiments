@@ -1,0 +1,15 @@
+{
+  "recordedAt": "2026-09-12T09:29:43.451927+00:00",
+  "command": [
+    "docker",
+    "exec",
+    "billboard-p04-retry2-999bc8ad24",
+    "tail",
+    "-n",
+    "15",
+    "/work/.build/linux-retry-evidence/npm-root.log"
+  ],
+  "exitCode": 0,
+  "stdout": "npm timing reifyNode:node_modules/@aws-sdk/credential-provider-web-identity Completed in 106332ms\nnpm timing reifyNode:node_modules/wordwrapjs/node_modules/typical Completed in 106397ms\nnpm timing reifyNode:node_modules/send/node_modules/debug Completed in 106479ms\nnpm timing reifyNode:node_modules/http-errors/node_modules/depd Completed in 106473ms\nnpm timing reifyNode:node_modules/@inquirer/core/node_modules/wrap-ansi Completed in 106474ms\nnpm timing reifyNode:node_modules/@types/request/node_modules/form-data Completed in 106637ms\nnpm timing reifyNode:node_modules/@babel/helper-compilation-targets/node_modules/semver Completed in 106661ms\nnpm timing reifyNode:node_modules/@ethersproject/basex Completed in 106768ms\nnpm timing reifyNode:node_modules/@ethersproject/keccak256 Completed in 107363ms\nnpm timing reifyNode:node_modules/@ethersproject/rlp Completed in 107442ms\nnpm timing reifyNode:node_modules/@babel/helper-compilation-targets Completed in 107513ms\nnpm timing reifyNode:node_modules/@babel/helper-compilation-targets/node_modules/lru-cache Completed in 107768ms\nnpm timing reifyNode:node_modules/test-exclude/node_modules/emoji-regex Completed in 107834ms\nnpm timing reifyNode:node_modules/stream-to-it Completed in 107835ms\nnpm timing reifyNode:node_modules/@ethersproject/wallet Completed in 107972ms\n",
+  "stderr": ""
+}

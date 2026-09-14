@@ -1,0 +1,65 @@
+{"browserSmoke":{"elapsedMs":29,"stage":"http-server","state":"listening"}}
+{"browserSmoke":{"elapsedMs":43,"consumer":"shared-library","stage":"browser-launch","state":"started"}}
+{"browserSmoke":{"elapsedMs":15652,"consumer":"shared-library","stage":"browser-launch","state":"completed"}}
+{"browserSmoke":{"elapsedMs":15653,"consumer":"shared-library","stage":"page-create","state":"started"}}
+{"browserSmoke":{"elapsedMs":25621,"consumer":"shared-library","stage":"page-create","state":"completed"}}
+{"browserSmoke":{"elapsedMs":25658,"consumer":"shared-library","stage":"expose-function","state":"started"}}
+{"browserSmoke":{"elapsedMs":26320,"consumer":"shared-library","stage":"expose-function","state":"completed"}}
+{"browserSmoke":{"elapsedMs":26321,"consumer":"shared-library","stage":"install-readiness-markers","state":"started"}}
+{"browserSmoke":{"elapsedMs":26362,"consumer":"shared-library","stage":"install-readiness-markers","state":"completed"}}
+{"browserSmoke":{"elapsedMs":26364,"consumer":"shared-library","stage":"navigation","state":"started"}}
+{"browserSmoke":{"elapsedMs":26436,"consumer":"shared-library","stage":"browser-request","state":"started","path":"/"}}
+{"browserSmoke":{"elapsedMs":26450,"consumer":"shared-library","stage":"http","requestId":1,"path":"/","state":"request-received"}}
+{"browserSmoke":{"elapsedMs":26592,"consumer":"shared-library","stage":"http","requestId":1,"path":"/","state":"response-finished","status":200,"bodyBytes":3384,"durationMs":143}}
+{"browserSmoke":{"elapsedMs":27408,"consumer":"shared-library","stage":"browser-response","state":"headers","path":"/","status":200}}
+{"browserSmoke":{"elapsedMs":27994,"consumer":"shared-library","stage":"http","requestId":2,"path":"/aztec_bundle.js","state":"request-received"}}
+{"browserSmoke":{"elapsedMs":28011,"consumer":"shared-library","stage":"http","requestId":3,"path":"/crs-client.js","state":"request-received"}}
+{"browserSmoke":{"elapsedMs":28024,"consumer":"shared-library","stage":"http","requestId":4,"path":"/aztec-lib.js","state":"request-received"}}
+{"browserSmoke":{"elapsedMs":28062,"consumer":"shared-library","stage":"http","requestId":5,"path":"/app-env.js","state":"request-received"}}
+{"browserSmoke":{"elapsedMs":28236,"consumer":"shared-library","stage":"http","requestId":3,"path":"/crs-client.js","state":"file-read-completed","bodyBytes":7428,"durationMs":225}}
+{"browserSmoke":{"elapsedMs":28237,"consumer":"shared-library","stage":"http","requestId":3,"path":"/crs-client.js","state":"response-finished","status":200,"bodyBytes":7428,"durationMs":226}}
+{"browserSmoke":{"elapsedMs":28238,"consumer":"shared-library","stage":"http","requestId":4,"path":"/aztec-lib.js","state":"file-read-completed","bodyBytes":38208,"durationMs":214}}
+{"browserSmoke":{"elapsedMs":28239,"consumer":"shared-library","stage":"http","requestId":4,"path":"/aztec-lib.js","state":"response-finished","status":200,"bodyBytes":38208,"durationMs":214}}
+{"browserSmoke":{"elapsedMs":28252,"consumer":"shared-library","stage":"http","requestId":5,"path":"/app-env.js","state":"file-read-completed","bodyBytes":6553,"durationMs":190}}
+{"browserSmoke":{"elapsedMs":28253,"consumer":"shared-library","stage":"http","requestId":5,"path":"/app-env.js","state":"response-finished","status":200,"bodyBytes":6553,"durationMs":190}}
+{"browserSmoke":{"elapsedMs":29575,"consumer":"shared-library","stage":"http","requestId":2,"path":"/aztec_bundle.js","state":"file-read-completed","bodyBytes":50130889,"durationMs":1581}}
+{"browserSmoke":{"elapsedMs":29865,"consumer":"shared-library","stage":"browser-request","state":"started","path":"/aztec_bundle.js"}}
+{"browserSmoke":{"elapsedMs":29865,"consumer":"shared-library","stage":"browser-request","state":"started","path":"/crs-client.js"}}
+{"browserSmoke":{"elapsedMs":29866,"consumer":"shared-library","stage":"browser-request","state":"started","path":"/aztec-lib.js"}}
+{"browserSmoke":{"elapsedMs":29866,"consumer":"shared-library","stage":"browser-request","state":"started","path":"/app-env.js"}}
+{"browserSmoke":{"elapsedMs":29928,"consumer":"shared-library","stage":"script.sdk","state":"before-script","browserElapsedMs":1391}}
+{"browserSmoke":{"elapsedMs":29938,"consumer":"shared-library","stage":"browser-request","state":"finished","path":"/"}}
+{"browserSmoke":{"elapsedMs":31351,"consumer":"shared-library","stage":"browser-response","state":"headers","path":"/crs-client.js","status":200}}
+{"browserSmoke":{"elapsedMs":31352,"consumer":"shared-library","stage":"browser-request","state":"finished","path":"/crs-client.js"}}
+{"browserSmoke":{"elapsedMs":31354,"consumer":"shared-library","stage":"browser-response","state":"headers","path":"/app-env.js","status":200}}
+{"browserSmoke":{"elapsedMs":31354,"consumer":"shared-library","stage":"browser-request","state":"finished","path":"/app-env.js"}}
+{"browserSmoke":{"elapsedMs":31354,"consumer":"shared-library","stage":"browser-response","state":"headers","path":"/aztec-lib.js","status":200}}
+{"browserSmoke":{"elapsedMs":31354,"consumer":"shared-library","stage":"browser-request","state":"finished","path":"/aztec-lib.js"}}
+{"browserSmoke":{"elapsedMs":37430,"consumer":"shared-library","stage":"http","requestId":2,"path":"/aztec_bundle.js","state":"response-finished","status":200,"bodyBytes":50130889,"durationMs":9435}}
+{"browserSmoke":{"elapsedMs":41949,"consumer":"shared-library","stage":"browser-response","state":"headers","path":"/aztec_bundle.js","status":200}}
+{"browserSmoke":{"elapsedMs":41958,"consumer":"shared-library","stage":"browser-request","state":"finished","path":"/aztec_bundle.js"}}
+{"browserSmoke":{"elapsedMs":59308,"consumer":"shared-library","stage":"browser","state":"disconnected","deadlineExceeded":false}}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:62445/", waiting until "load"[22m
+
+    at qualifyConsumer (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/scripts/test-sdk-browser.mjs:131:16)
+    at async file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-sdk-browser.mjs:221:20 {
+  name: 'TimeoutError',
+  consumerResult: {
+    consumer: 'shared-library',
+    outcome: 'fail',
+    error: 'page.goto: Timeout 30000ms exceeded.\n' +
+      'Call log:\n' +
+      '\x1B[2m  - navigating to "http://127.0.0.1:62445/", waiting until "load"\x1B[22m\n',
+    deadlineExceeded: false,
+    faults: [],
+    evaluationMs: null
+  }
+}
+
+Node.js v24.15.0

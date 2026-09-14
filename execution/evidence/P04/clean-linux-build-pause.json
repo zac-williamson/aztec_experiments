@@ -1,0 +1,8 @@
+{
+  "containerName": "billboard-p04-clean-7003ab9801",
+  "pausedAt": "2026-09-12T07:23:12.441866+00:00",
+  "paused": true,
+  "reason": "Root revoked output freeze after discovering stale CRS manifest version; pause before build instead of bypassing source guard.",
+  "resumedAt": "2026-09-12T07:24:23.247125+00:00",
+  "resumeReason": "Four final allowlisted source deltas applied and corrected root-output-hashes-final.json captured."
+}

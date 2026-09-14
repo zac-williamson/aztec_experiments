@@ -1,0 +1,15 @@
+{
+  "recordedAt": "2026-09-12T09:50:53.849570+00:00",
+  "command": [
+    "docker",
+    "exec",
+    "billboard-p04-retry3-c0230f6b75",
+    "tail",
+    "-n",
+    "10",
+    "/work/.build/linux-retry-evidence/npm-root.log"
+  ],
+  "exitCode": 0,
+  "stdout": "npm timing reifyNode:node_modules/@aztec/foundation Completed in 192730ms\nnpm timing reifyNode:node_modules/ox Completed in 193014ms\nnpm timing reifyNode:node_modules/@aztec/noir-contracts.js Completed in 196206ms\nnpm timing reifyNode:node_modules/zod Completed in 197675ms\nnpm timing reifyNode:node_modules/ethers Completed in 210770ms\nnpm timing reifyNode:node_modules/@aztec/noir-test-contracts.js Completed in 210902ms\nnpm timing reifyNode:node_modules/@aztec/stdlib Completed in 217985ms\nnpm timing reifyNode:node_modules/@aztec/noir-protocol-circuits-types Completed in 218340ms\nnpm timing reifyNode:node_modules/@sinclair/typebox Completed in 221600ms\nnpm timing reifyNode:node_modules/@smithy/core Completed in 225331ms\n",
+  "stderr": ""
+}

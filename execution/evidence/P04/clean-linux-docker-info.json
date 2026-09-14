@@ -1,0 +1,10 @@
+{
+  "ServerVersion": "28.1.1",
+  "OperatingSystem": "Docker Desktop",
+  "OSType": "linux",
+  "Architecture": "aarch64",
+  "MemTotal": 8217751552,
+  "NCPU": 12,
+  "Driver": "overlayfs",
+  "CgroupVersion": "2"
+}

@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "packages": [
+    {
+      "package": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec",
+      "previousFiles": 238,
+      "currentFiles": 238,
+      "changedFiles": [
+        "Nargo.toml",
+        "src/context/private_context.nr",
+        "src/contract_self/contract_self_private.nr",
+        "src/history/note.nr",
+        "src/history/note/test.nr",
+        "src/history/nullifier/test.nr",
+        "src/keys/ephemeral.nr",
+        "src/macros/aztec/compute_note_hash_and_nullifier.nr",
+        "src/macros/dispatch.nr",
+        "src/macros/events.nr",
+        "src/macros/notes.nr",
+        "src/macros/oracle_testing.nr",
+        "src/macros/utils.nr",
+        "src/messages/delivery/handshake.nr",
+        "src/messages/discovery/mod.nr",
+        "src/messages/encryption/aes128.nr",
+        "src/messages/processing/log_retrieval_response.nr",
+        "src/messages/processing/mod.nr",
+        "src/messages/processing/offchain/mod.nr",
+        "src/messages/processing/offchain/reception.nr",
+        "src/note/note_getter.nr",
+        "src/note/note_getter/test.nr",
+        "src/note/note_getter_options.nr",
+        "src/note/note_interface.nr",
+        "src/note/note_viewer_options.nr",
+        "src/oracle/message_processing.nr",
+        "src/oracle/mod.nr",
+        "src/oracle/tx_resolution.nr",
+        "src/oracle/version.nr",
+        "src/partial_notes/fsm.nr",
+        "src/standard_addresses.nr",
+        "src/state_vars/private_immutable.nr",
+        "src/state_vars/private_immutable/test.nr",
+        "src/state_vars/private_mutable.nr",
+        "src/state_vars/private_mutable/test.nr",
+        "src/state_vars/single_use_claim.nr",
+        "src/state_vars/single_use_claim/test.nr",
+        "src/test/helpers/test_environment.nr",
+        "src/test/helpers/test_environment/test/accounts.nr",
+        "src/test/helpers/txe_oracles.nr"
+      ]
+    },
+    {
+      "package": "dependencies/github.com/AztecProtocol/aztec-packages/v5.2.0/noir-projects/noir-protocol-circuits/crates/serde",
+      "previousFiles": 7,
+      "currentFiles": 7,
+      "changedFiles": []
+    },
+    {
+      "package": "dependencies/github.com/AztecProtocol/aztec-packages/v5.2.0/noir-projects/noir-protocol-circuits/crates/types",
+      "previousFiles": 142,
+      "currentFiles": 142,
+      "changedFiles": [
+        "src/blob_data/tx_effect.nr",
+        "src/constants.nr",
+        "src/constants_tests.nr"
+      ]
+    },
+    {
+      "package": "dependencies/github.com/noir-lang/keccak256/v0.1.3",
+      "previousFiles": 6,
+      "currentFiles": 6,
+      "changedFiles": []
+    },
+    {
+      "package": "dependencies/github.com/noir-lang/poseidon/v0.3.0",
+      "previousFiles": 10,
+      "currentFiles": 10,
+      "changedFiles": []
+    },
+    {
+      "package": "dependencies/github.com/noir-lang/sha256/v0.3.0",
+      "previousFiles": 10,
+      "currentFiles": 10,
+      "changedFiles": []
+    }
+  ]
+}

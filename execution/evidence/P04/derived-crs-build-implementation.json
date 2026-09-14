@@ -1,0 +1,28 @@
+{
+  "recordedAt": "2026-09-12T09:18:06.972196+00:00",
+  "sourceHashes": {
+    "scripts/build-crs.mjs": "7690ba2f0e983e6329fada97ac5a05479bb38cf44da122c6b7f6560bfec8f178",
+    "scripts/derive-crs-worker.mjs": "9f05e64330534d86bcf57e3149116c5be30a1d798495b11d2da18538ebb1a7f8",
+    "scripts/derive-crs-process.mjs": "15cd61d8fab0f59d97e14d9846ecb747491da5f2858963354a11b7b8b696e322",
+    "scripts/test-crs-build.mjs": "bda7955498ca2097671742df922f23a3e9fe906ef879b1b5db2a1230e5dcec06",
+    "crs-manifest.json": "4927de3e03d69f4e640a841f9421dd0b93819b5e3d42c142d12ee079d5a402be",
+    "apps/build.mjs": "7dc87738832541b0f393c67b01673b0279e7c8029f8b50d1d85fa6934679fcd5",
+    "scripts/check-reproducibility.mjs": "c83683b064335548d6cf058ffc1a9d369aba5853eff791ba1d40ca792fd13885"
+  },
+  "originalSourceFilesUnchangedFromHead": true,
+  "focusedTests": {
+    "command": "Node24.15.0 --test scripts/test-crs-build.mjs",
+    "passed": 33,
+    "failed": 0,
+    "log": "execution/evidence/P04/derived-crs-build-tests.log"
+  },
+  "notRun": [
+    "Full derivation by the new worker",
+    "Full build",
+    "Linux rebuild",
+    "Browser consumer verification"
+  ],
+  "wasmHashMeaning": "SHA-256 of compressed barretenberg-threads.wasm.gz bytes, not the decompressed WASM",
+  "outputByteComparison": "Added entire g1_uncompressed.dat to comparator; expected inventory increases33to34files",
+  "sourceValidation": "Exact bytes, point counts, formats and official primary/fallback URLs match runtime for all3sourceassets; original pins unchanged."
+}

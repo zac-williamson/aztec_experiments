@@ -1,0 +1,43 @@
+{
+  "recordedAt": "2026-09-12T09:24:45.311022+00:00",
+  "previousReference": "execution/evidence/P04/root-clean-output-hashes.json",
+  "currentReference": "execution/evidence/P04/derived-crs-root-output-hashes.json",
+  "previousReferenceSha256": "3a7e401052453cf271f84defd528ad0a42e7f9cfa5365429fef61b52f35e3cd7",
+  "currentReferenceSha256": "f0f24b0338535d0e20c7b290155fad29f6bf7ccfa0222380b85350039e3cfb30",
+  "previousCount": 33,
+  "currentCount": 34,
+  "unchangedCount": 28,
+  "changes": [
+    {
+      "path": "apps/dist/censor.html",
+      "before": "d9a2e7d2a1f3b061e94f315bcadd3eebcbc9d8f41da3ad87a7b44c980e6e6c37",
+      "after": "d1b922fc78841b03ca833dfff5d26bf6137844857aa53064590d6a5c6ce472f9"
+    },
+    {
+      "path": "apps/dist/crs/crs-manifest.json",
+      "before": "485de34aa39dde1a5683921ce6c4f614774f64bc453568300020a36d776c3891",
+      "after": "4927de3e03d69f4e640a841f9421dd0b93819b5e3d42c142d12ee079d5a402be"
+    },
+    {
+      "path": "apps/dist/crs/g1_uncompressed.dat",
+      "before": null,
+      "after": "2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac"
+    },
+    {
+      "path": "apps/dist/deploy.html",
+      "before": "fe4c5da51818efedd439dac4e5bf837e322603ef8b7e0a2dadadd368f47c2619",
+      "after": "d356c4d28a30e3d73c8565c862f7aa1bdc542d31e22c22e941c894eb0067948e"
+    },
+    {
+      "path": "apps/dist/fee-juice.html",
+      "before": "31a0553cdab31a707345a9068236c0ec112cdae551c4ac9d8690de080e0651fe",
+      "after": "d2024b308a8d3df93310069f9a4e85b11b434ea006b9f7739fe203f87bf922bc"
+    },
+    {
+      "path": "apps/dist/user.html",
+      "before": "c2d00df98d7dee4c7af6c16a34018236b65c9c1d6894f48bab359c4eadec6b92",
+      "after": "3627ee7a5ebec9cd42f2e153163093c3db029b9531b17197bde0669052a81452"
+    }
+  ],
+  "qualification": "New CRS/runtime assets and HTML regenerated; full integrated guard suite passed. Independent cleanLinux and actualbrowser qualification remain pending."
+}

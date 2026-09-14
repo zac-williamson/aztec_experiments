@@ -1,0 +1,29 @@
+{
+  "recordedAt": "2026-09-12T08:48:19.883201+00:00",
+  "previousRecipePreserved": ".build/P04-linux-retry-tools/prior-recipe",
+  "environmentChanges": [
+    "Docker Desktop restarted by parent with user authorization; prior failure cause unresolved.",
+    "No host bind mount; container writable layer holds source, dependencies, caches and outputs.",
+    "Container memory limit lowered from 6GiB to 3GiB and CPU quota from four to two.",
+    "GOMAXPROCS=2 supplied to limit Go-based esbuild work.",
+    "Serial run; parent reports no simultaneous heavy project jobs."
+  ],
+  "parentReportedHostPressure": {
+    "physicalRAMGiB": 24,
+    "swapUsedGiB": 10.7,
+    "load": 36,
+    "freeDiskGiB": 18
+  },
+  "reference": "execution/evidence/P04/root-clean-output-hashes.json",
+  "referenceSha256": "3a7e401052453cf271f84defd528ad0a42e7f9cfa5365429fef61b52f35e3cd7",
+  "helpers": {
+    ".build/P04-linux-retry-tools/copy.py": "b34aea0a87e7a24633f83261000dbb88a716bb7b68f96b0b90d874278cc40e82",
+    ".build/P04-linux-retry-tools/launch.py": "5f8925677b773cab85f39cec332d9e9b02e4a9e2f613026ca324d06db588c6aa",
+    ".build/P04-linux-retry-tools/prior-recipe/copy.py": "e007d151883cf80adc3b7fd488a2f92172d35e8b265a981bcf3e1e01bb0f8375",
+    ".build/P04-linux-retry-tools/prior-recipe/launch.py": "5b66ef7131036a824ebe911e8f1c476144801a5ebd1771a48c9104f8a0deabaf",
+    ".build/P04-linux-retry-tools/prior-recipe/observe.py": "a750191404f81d458af5237b422257d31cd201c51af32dde3fa53339ee283b82",
+    ".build/P04-linux-retry-tools/prior-recipe/run.sh": "2a4b40198b20d84436afc52398004d1875521927e39485de0827c255124a9c73",
+    ".build/P04-linux-retry-tools/run.sh": "81dc968a4a910f15144f70b44d5cdc0a1943717308d33864cb7ceb36ea284572",
+    ".build/P04-linux-retry-tools/steps.py": "e5f9e07f2443c0211052c9b9b605853af6c6f48c18f8b7450accd3d23c719c23"
+  }
+}

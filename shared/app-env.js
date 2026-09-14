@@ -101,7 +101,7 @@ function makeInitCRS() {
 // ============================================================
 function makeCreateStore() {
   return async function createStore(config) {
-    return window.__aztec.createIndexedDBStore('pxe_data', config);
+    return window.__aztec.openPXEStore(config);
   };
 }
 

@@ -1,0 +1,8 @@
+{
+  "recordedAt": "2026-09-12T08:55:05.296037+00:00",
+  "removed": [
+    ".build/P04-clean-linux",
+    ".build/P04-clean-native"
+  ],
+  "reason": "Task-owned disposable source/build copies; results, input hashes and rerun recipes retained. Stale Docker container confirmed absent after authorized restart. No authoritative source or unrelated data removed."
+}

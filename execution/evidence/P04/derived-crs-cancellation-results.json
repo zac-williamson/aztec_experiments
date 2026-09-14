@@ -1,0 +1,25 @@
+{
+  "recordedAt": "2026-09-12T09:21:35.544101+00:00",
+  "finding": "Rejected HTTP status left a non-ending response body active while fallback could start.",
+  "change": "Best-effort cancel rejected response body before throwing original HTTP status error.",
+  "command": "/Users/zac/.nvm/versions/node/v24.15.0/bin/node --test --test-name-pattern='HTTP error response' scripts/test-crs-consumers.mjs",
+  "result": {
+    "exitCode": 0,
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skipped": 0
+  },
+  "coverage": [
+    "Non-ending404body is cancelled before rejection",
+    "Cancellation rejection preserves original503status error"
+  ],
+  "sourceHashes": {
+    "shared/crs-client.js": "d2f05e23a00be052861eab920d8e1673767028256fceb825d1c7ee70b91e193a",
+    "scripts/test-crs-consumers.mjs": "96978940e6f709757272a6ac80db603d5d418961b9e11be19d0110a98c2e2e85",
+    "execution/evidence/P04/derived-crs-cancellation-tests.log": "05d301e0b3c2e8e9f897bfcc5bf35416a95609c0f306036a0f835b20fd63a252"
+  },
+  "priorEvidence": "derived-crs-consumer-results.json and derived-crs-consumer-tests.log remain unchanged historical56-test evidence for their recorded pre-correction source hashes.",
+  "pending": "Full58-test consumer suite and integrated browser/build verification must be renewed for current hashes; only the2targeted tests were run while root cold derivation was active.",
+  "limits": "Synthetic response stream tests; no new prover/browser/performance run."
+}

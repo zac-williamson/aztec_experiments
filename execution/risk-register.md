@@ -20,3 +20,19 @@ P01: none of the implementation findings below is closed by writing the specific
 
 Each update records date, task, severity/impact, evidence, owner, next action and
 disposition. Never close a risk because an unrelated test count increased.
+
+## P04 additional dependency and compiler qualifications
+
+N01 (additional risk, owned by A02): the exact 5.2 lock reports 84 total and 46 production-tree npm advisories. Exact
+paths/severities are preserved in P04 evidence. A02 owns fixes/treatment and blocks
+R01 audit-candidate freeze; no automatic dependency override or release waiver.
+
+The matched compiler emitted 26 manual-constraint diagnostics in 12 upstream
+locations. Source review found local/context/kernel checks and intentional random
+padding, but no item is declared a proven false positive. T01/T02/T03/T05 and
+R01/X01 must reconcile relevant adverse proof/privacy cases and independent
+disposition against actual final artifacts. Details are in compiler-diagnostic-review.md.
+
+## 2026-09-12 X03 official-guidance refresh
+
+The bounded delegated primary-source recheck found no explicit later clearance lifting the August7 V5 deployment pause. The August17 package5.2 interoperability statement is separate from incident closure. See evidence/X03/clearance-recheck-2026-09-12.md for inspected sources/dates and limits. X03 remains a production-release blocker; local engineering continues. Final network state and fresh clearance still require verification.

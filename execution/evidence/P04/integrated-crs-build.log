@@ -1,0 +1,13 @@
+
+> build:crs
+> node scripts/build-crs.mjs
+
+file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/build-crs.mjs:75
+  if (manifest.schemaVersion !== 1 || manifest.aztecVersion !== pins.aztec) throw new Error('CRS manifest version mismatch');
+                                                                                  ^
+
+Error: CRS manifest version mismatch
+    at buildCrs (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/build-crs.mjs:75:83)
+    at async file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/build-crs.mjs:108:3
+
+Node.js v24.15.0

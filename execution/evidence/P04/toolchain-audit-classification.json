@@ -1,0 +1,3911 @@
+{
+  "schema": 1,
+  "allDependencies": {
+    "info": 0,
+    "low": 14,
+    "moderate": 62,
+    "high": 8,
+    "critical": 0,
+    "total": 84
+  },
+  "omitDev": {
+    "info": 0,
+    "low": 0,
+    "moderate": 39,
+    "high": 7,
+    "critical": 0,
+    "total": 46
+  },
+  "interpretation": "Production means npm omit-dev reachability, not browser bundle inclusion or proof of exploitable application paths. Paths are shortest dependency/optionalDependency paths resolved from the npm lock; peer edges omitted. Effects propagated through dependencies differ from direct advisory objects.",
+  "vulnerabilities": [
+    {
+      "package": "@aztec/accounts",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": true,
+      "range": "<=0.0.8-commit.a2d1860fe9 || 0.26.1 - 0.26.3 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/accounts",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/accounts"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/accounts"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/aztec.js",
+        "@aztec/entrypoints",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/stdlib"
+      ],
+      "effects": [
+        "@aztec/cli"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/accounts",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/archiver",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || 0.20.0 - 0.22.0 || >=0.44.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/archiver",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/archiver"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/blob-client",
+        "@aztec/blob-lib",
+        "@aztec/constants",
+        "@aztec/epoch-cache",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/protocol-contracts",
+        "@aztec/standard-contracts",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/viem"
+      ],
+      "effects": [
+        "@aztec/cli",
+        "@aztec/txe"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/aztec",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": true,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/aztec",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/accounts",
+        "@aztec/archiver",
+        "@aztec/aztec-node",
+        "@aztec/aztec.js",
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/bot",
+        "@aztec/builder",
+        "@aztec/cli",
+        "@aztec/constants",
+        "@aztec/entrypoints",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/node-lib",
+        "@aztec/noir-contracts.js",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/p2p",
+        "@aztec/p2p-bootstrap",
+        "@aztec/protocol-contracts",
+        "@aztec/prover-client",
+        "@aztec/prover-node",
+        "@aztec/pxe",
+        "@aztec/sequencer-client",
+        "@aztec/standard-contracts",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/txe",
+        "@aztec/validator-ha-signer",
+        "@aztec/viem",
+        "@aztec/wallets",
+        "@aztec/world-state"
+      ],
+      "effects": [],
+      "suggestedFix": false
+    },
+    {
+      "package": "@aztec/aztec-node",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || 0.17.0 - 0.22.0 || 0.31.0 - 0.41.0 || >=0.44.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/aztec-node",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/aztec-node"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/blob-lib",
+        "@aztec/constants",
+        "@aztec/epoch-cache",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/node-keystore",
+        "@aztec/node-lib",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/p2p",
+        "@aztec/protocol-contracts",
+        "@aztec/prover-client",
+        "@aztec/prover-node",
+        "@aztec/sequencer-client",
+        "@aztec/simulator",
+        "@aztec/slasher",
+        "@aztec/standard-contracts",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/validator-client",
+        "@aztec/validator-ha-signer",
+        "@aztec/viem",
+        "@aztec/world-state"
+      ],
+      "effects": [
+        "@aztec/txe"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/aztec.js",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": true,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/aztec.js",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/aztec.js"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/aztec.js"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/constants",
+        "@aztec/entrypoints",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/protocol-contracts",
+        "@aztec/standard-contracts",
+        "@aztec/stdlib",
+        "@aztec/viem"
+      ],
+      "effects": [
+        "@aztec/noir-contracts.js",
+        "@aztec/noir-test-contracts.js",
+        "@aztec/sequencer-client",
+        "@aztec/txe"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/bb-prover",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.44.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/bb-prover",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/bb-prover"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/constants",
+        "@aztec/foundation",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/simulator",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/world-state"
+      ],
+      "effects": [
+        "@aztec/prover-node",
+        "@aztec/pxe",
+        "@aztec/sequencer-client"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/pxe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/blob-client",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/blob-client",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/blob-client"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/blob-lib",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/viem"
+      ],
+      "effects": [
+        "@aztec/archiver",
+        "@aztec/aztec",
+        "@aztec/aztec-node",
+        "@aztec/node-lib",
+        "@aztec/prover-node",
+        "@aztec/sequencer-client",
+        "@aztec/validator-client"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/blob-lib",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/blob-lib",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/stdlib",
+            "@aztec/blob-lib"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/archiver",
+            "@aztec/blob-lib"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/constants",
+        "@aztec/foundation"
+      ],
+      "effects": [
+        "@aztec/archiver",
+        "@aztec/ethereum",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/prover-client",
+        "@aztec/prover-node",
+        "@aztec/sequencer-client"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/bot",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || 0.67.1-devnet || >=0.68.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/bot",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/bot"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/accounts",
+        "@aztec/aztec.js",
+        "@aztec/entrypoints",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/noir-contracts.js",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/noir-test-contracts.js",
+        "@aztec/protocol-contracts",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/viem",
+        "@aztec/wallets"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "@aztec/builder",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/builder",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/builder"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/builder"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/foundation",
+        "@aztec/stdlib"
+      ],
+      "effects": [
+        "@aztec/pxe"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/pxe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/cli",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": true,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.75.0-commit.c03ba01a2a4122e43e90d5133ba017e54b90e9d2",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/cli",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/accounts",
+        "@aztec/archiver",
+        "@aztec/aztec.js",
+        "@aztec/bb-prover",
+        "@aztec/constants",
+        "@aztec/entrypoints",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/node-keystore",
+        "@aztec/node-lib",
+        "@aztec/noir-contracts.js",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/noir-test-contracts.js",
+        "@aztec/p2p",
+        "@aztec/protocol-contracts",
+        "@aztec/sequencer-client",
+        "@aztec/slasher",
+        "@aztec/stdlib",
+        "@aztec/viem",
+        "@aztec/wallets",
+        "@aztec/world-state",
+        "@ethersproject/wallet"
+      ],
+      "effects": [],
+      "suggestedFix": {
+        "name": "@aztec/cli",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/cli-wallet",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": true,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/cli-wallet",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli-wallet"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/accounts",
+        "@aztec/aztec.js",
+        "@aztec/cli",
+        "@aztec/entrypoints",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/noir-contracts.js",
+        "@aztec/pxe",
+        "@aztec/standard-contracts",
+        "@aztec/stdlib",
+        "@aztec/wallet-sdk",
+        "inquirer"
+      ],
+      "effects": [],
+      "suggestedFix": {
+        "name": "@aztec/cli-wallet",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/constants",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=3.0.0-canary.a9708bd",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/constants",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/aztec.js",
+            "@aztec/constants"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/constants"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/foundation"
+      ],
+      "effects": [
+        "@aztec/archiver",
+        "@aztec/aztec-node",
+        "@aztec/aztec.js",
+        "@aztec/bb-prover",
+        "@aztec/blob-lib",
+        "@aztec/cli",
+        "@aztec/entrypoints",
+        "@aztec/ethereum",
+        "@aztec/key-store",
+        "@aztec/kv-store",
+        "@aztec/node-lib",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/p2p",
+        "@aztec/protocol-contracts",
+        "@aztec/prover-client",
+        "@aztec/prover-node",
+        "@aztec/pxe",
+        "@aztec/sequencer-client",
+        "@aztec/simulator",
+        "@aztec/stdlib",
+        "@aztec/txe",
+        "@aztec/validator-client",
+        "@aztec/world-state"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/entrypoints",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": true,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/entrypoints",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/entrypoints"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/entrypoints"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/constants",
+        "@aztec/foundation",
+        "@aztec/protocol-contracts",
+        "@aztec/standard-contracts",
+        "@aztec/stdlib"
+      ],
+      "effects": [
+        "@aztec/accounts",
+        "@aztec/aztec",
+        "@aztec/aztec.js",
+        "@aztec/bot",
+        "@aztec/cli",
+        "@aztec/cli-wallet"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli-wallet",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/epoch-cache",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/epoch-cache",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/archiver",
+            "@aztec/epoch-cache"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/stdlib",
+        "@aztec/viem"
+      ],
+      "effects": [
+        "@aztec/archiver",
+        "@aztec/aztec-node",
+        "@aztec/p2p",
+        "@aztec/prover-node",
+        "@aztec/sequencer-client"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/ethereum",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || 0.76.0 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/ethereum",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/accounts",
+            "@aztec/ethereum"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/ethereum"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/blob-lib",
+        "@aztec/constants",
+        "@aztec/foundation",
+        "@aztec/viem"
+      ],
+      "effects": [
+        "@aztec/accounts",
+        "@aztec/kv-store",
+        "@aztec/p2p",
+        "@aztec/validator-ha-signer"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/foundation",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": true,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/foundation",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/foundation"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/foundation"
+          ]
+        }
+      ],
+      "via": [
+        "undici"
+      ],
+      "effects": [
+        "@aztec/accounts",
+        "@aztec/archiver",
+        "@aztec/aztec",
+        "@aztec/aztec-node",
+        "@aztec/aztec.js",
+        "@aztec/bb-prover",
+        "@aztec/blob-lib",
+        "@aztec/bot",
+        "@aztec/builder",
+        "@aztec/cli",
+        "@aztec/cli-wallet",
+        "@aztec/constants",
+        "@aztec/entrypoints",
+        "@aztec/epoch-cache",
+        "@aztec/ethereum",
+        "@aztec/key-store",
+        "@aztec/kv-store",
+        "@aztec/native",
+        "@aztec/node-keystore",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/p2p",
+        "@aztec/p2p-bootstrap",
+        "@aztec/protocol-contracts",
+        "@aztec/prover-client",
+        "@aztec/prover-node",
+        "@aztec/pxe",
+        "@aztec/sequencer-client",
+        "@aztec/simulator",
+        "@aztec/standard-contracts",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/txe",
+        "@aztec/validator-client",
+        "@aztec/validator-ha-signer",
+        "@aztec/wallet-sdk",
+        "@aztec/wallets",
+        "@aztec/world-state"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli-wallet",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/key-store",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || 0.16.8 - 0.22.0 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/key-store",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/key-store"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/txe",
+            "@aztec/key-store"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/constants",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/stdlib"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "@aztec/kv-store",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": true,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/kv-store",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/kv-store"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/kv-store"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/constants",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/native",
+        "@aztec/stdlib"
+      ],
+      "effects": [
+        "@aztec/archiver",
+        "@aztec/aztec-node",
+        "@aztec/blob-client",
+        "@aztec/bot",
+        "@aztec/key-store",
+        "@aztec/p2p",
+        "@aztec/prover-node",
+        "@aztec/pxe",
+        "@aztec/slasher",
+        "@aztec/validator-ha-signer",
+        "@aztec/world-state"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/native",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/native",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/kv-store",
+            "@aztec/native"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/kv-store",
+            "@aztec/native"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/foundation"
+      ],
+      "effects": [
+        "@aztec/prover-node",
+        "@aztec/simulator",
+        "@aztec/world-state"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/node-keystore",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/node-keystore",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@aztec/node-keystore"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/stdlib",
+        "@aztec/viem",
+        "@ethersproject/wallet"
+      ],
+      "effects": [
+        "@aztec/aztec-node",
+        "@aztec/prover-node",
+        "@aztec/sequencer-client",
+        "@aztec/validator-client"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/node-lib",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/node-lib",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/node-lib"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/constants",
+        "@aztec/epoch-cache",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/p2p",
+        "@aztec/protocol-contracts",
+        "@aztec/prover-client",
+        "@aztec/sequencer-client",
+        "@aztec/simulator",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/validator-client",
+        "@aztec/world-state"
+      ],
+      "effects": [
+        "@aztec/aztec",
+        "@aztec/aztec-node",
+        "@aztec/cli",
+        "@aztec/prover-node"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/noir-contracts.js",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/noir-contracts.js",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/noir-contracts.js"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/aztec.js"
+      ],
+      "effects": [
+        "@aztec/cli-wallet",
+        "@aztec/p2p"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli-wallet",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/noir-protocol-circuits-types",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || 0.76.0 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/noir-protocol-circuits-types",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/noir-protocol-circuits-types"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/noir-protocol-circuits-types"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/blob-lib",
+        "@aztec/constants",
+        "@aztec/foundation",
+        "@aztec/stdlib"
+      ],
+      "effects": [
+        "@aztec/archiver",
+        "@aztec/aztec-node",
+        "@aztec/sequencer-client",
+        "@aztec/simulator",
+        "@aztec/validator-client"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/noir-test-contracts.js",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/noir-test-contracts.js",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/bot",
+            "@aztec/noir-test-contracts.js"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/aztec.js"
+      ],
+      "effects": [
+        "@aztec/cli"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/p2p",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || 0.17.0 - 0.22.0 || >=0.44.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/p2p",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/p2p"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/constants",
+        "@aztec/epoch-cache",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/noir-contracts.js",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/protocol-contracts",
+        "@aztec/simulator",
+        "@aztec/standard-contracts",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client"
+      ],
+      "effects": [
+        "@aztec/prover-node"
+      ],
+      "suggestedFix": true
+    },
+    {
+      "package": "@aztec/p2p-bootstrap",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/p2p-bootstrap",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/p2p-bootstrap"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/p2p",
+        "@aztec/telemetry-client"
+      ],
+      "effects": [
+        "@aztec/aztec"
+      ],
+      "suggestedFix": false
+    },
+    {
+      "package": "@aztec/protocol-contracts",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": true,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/protocol-contracts",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/protocol-contracts"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/protocol-contracts"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/constants",
+        "@aztec/foundation",
+        "@aztec/stdlib"
+      ],
+      "effects": [
+        "@aztec/entrypoints",
+        "@aztec/validator-client",
+        "@aztec/wallets"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/protocol-contracts",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/prover-client",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.44.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/prover-client",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/prover-client"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/bb-prover",
+        "@aztec/blob-lib",
+        "@aztec/constants",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/protocol-contracts",
+        "@aztec/simulator",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/world-state"
+      ],
+      "effects": [
+        "@aztec/aztec-node",
+        "@aztec/node-lib",
+        "@aztec/sequencer-client",
+        "@aztec/validator-client"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/prover-node",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/prover-node",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/prover-node"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/archiver",
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/blob-lib",
+        "@aztec/constants",
+        "@aztec/epoch-cache",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/native",
+        "@aztec/node-keystore",
+        "@aztec/node-lib",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/p2p",
+        "@aztec/protocol-contracts",
+        "@aztec/prover-client",
+        "@aztec/sequencer-client",
+        "@aztec/simulator",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/viem",
+        "@aztec/world-state"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "@aztec/pxe",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": true,
+      "range": "<=0.0.8-commit.a2d1860fe9 || 0.16.8 - 0.22.0 || >=0.44.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/pxe",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/pxe"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/bb-prover",
+        "@aztec/builder",
+        "@aztec/constants",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/key-store",
+        "@aztec/kv-store",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/protocol-contracts",
+        "@aztec/simulator",
+        "@aztec/standard-contracts",
+        "@aztec/stdlib",
+        "@aztec/viem"
+      ],
+      "effects": [],
+      "suggestedFix": {
+        "name": "@aztec/pxe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/sequencer-client",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.44.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/sequencer-client",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/sequencer-client"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/aztec.js",
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/blob-lib",
+        "@aztec/constants",
+        "@aztec/epoch-cache",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/node-keystore",
+        "@aztec/noir-contracts.js",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/p2p",
+        "@aztec/protocol-contracts",
+        "@aztec/prover-client",
+        "@aztec/simulator",
+        "@aztec/slasher",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/validator-client",
+        "@aztec/validator-ha-signer",
+        "@aztec/viem",
+        "@aztec/world-state"
+      ],
+      "effects": [
+        "@aztec/aztec",
+        "@aztec/cli"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/simulator",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.44.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/simulator",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/simulator"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/txe",
+            "@aztec/simulator"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/constants",
+        "@aztec/foundation",
+        "@aztec/native",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/protocol-contracts",
+        "@aztec/standard-contracts",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/world-state"
+      ],
+      "effects": [
+        "@aztec/p2p",
+        "@aztec/txe"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/slasher",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/slasher",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@aztec/slasher"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/epoch-cache",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/viem"
+      ],
+      "effects": [
+        "@aztec/aztec-node",
+        "@aztec/sequencer-client",
+        "@aztec/validator-client"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/standard-contracts",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": true,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/standard-contracts",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/standard-contracts"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/standard-contracts"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/foundation",
+        "@aztec/stdlib"
+      ],
+      "effects": [
+        "@aztec/archiver",
+        "@aztec/aztec",
+        "@aztec/aztec-node",
+        "@aztec/aztec.js",
+        "@aztec/cli-wallet",
+        "@aztec/entrypoints",
+        "@aztec/p2p",
+        "@aztec/pxe",
+        "@aztec/simulator",
+        "@aztec/txe",
+        "@aztec/wallets"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli-wallet",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/stdlib",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": true,
+      "range": "<=0.0.8-commit.a2d1860fe9 || >=0.80.0",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/stdlib",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/stdlib"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/stdlib"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/blob-lib",
+        "@aztec/constants",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/viem",
+        "@google-cloud/storage"
+      ],
+      "effects": [],
+      "suggestedFix": {
+        "name": "@aztec/stdlib",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/telemetry-client",
+      "severity": "high",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/telemetry-client",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/foundation",
+        "@aztec/stdlib",
+        "@aztec/viem",
+        "@opentelemetry/core",
+        "@opentelemetry/exporter-logs-otlp-http",
+        "@opentelemetry/exporter-metrics-otlp-http",
+        "@opentelemetry/exporter-trace-otlp-http",
+        "@opentelemetry/host-metrics",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/resource-detector-gcp",
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-logs",
+        "@opentelemetry/sdk-metrics",
+        "@opentelemetry/sdk-trace-node"
+      ],
+      "effects": [
+        "@aztec/archiver",
+        "@aztec/aztec",
+        "@aztec/aztec-node",
+        "@aztec/bb-prover",
+        "@aztec/blob-client",
+        "@aztec/bot",
+        "@aztec/node-lib",
+        "@aztec/p2p",
+        "@aztec/p2p-bootstrap",
+        "@aztec/prover-client",
+        "@aztec/prover-node",
+        "@aztec/sequencer-client",
+        "@aztec/simulator",
+        "@aztec/slasher",
+        "@aztec/validator-client",
+        "@aztec/validator-ha-signer",
+        "@aztec/world-state"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/txe",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": true,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/txe",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/txe"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/accounts",
+        "@aztec/archiver",
+        "@aztec/aztec-node",
+        "@aztec/aztec.js",
+        "@aztec/bb-prover",
+        "@aztec/constants",
+        "@aztec/foundation",
+        "@aztec/key-store",
+        "@aztec/kv-store",
+        "@aztec/protocol-contracts",
+        "@aztec/pxe",
+        "@aztec/simulator",
+        "@aztec/standard-contracts",
+        "@aztec/stdlib",
+        "@aztec/world-state"
+      ],
+      "effects": [],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/validator-client",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/validator-client",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/aztec-node",
+            "@aztec/validator-client"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/blob-client",
+        "@aztec/blob-lib",
+        "@aztec/constants",
+        "@aztec/epoch-cache",
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/node-keystore",
+        "@aztec/noir-protocol-circuits-types",
+        "@aztec/p2p",
+        "@aztec/protocol-contracts",
+        "@aztec/prover-client",
+        "@aztec/simulator",
+        "@aztec/slasher",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/validator-ha-signer",
+        "@aztec/viem"
+      ],
+      "effects": [
+        "@aztec/sequencer-client"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/validator-ha-signer",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/validator-ha-signer",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/validator-ha-signer"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/ethereum",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client"
+      ],
+      "effects": [
+        "@aztec/aztec",
+        "@aztec/aztec-node",
+        "@aztec/sequencer-client",
+        "@aztec/validator-client"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/viem",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/viem",
+          "version": "2.38.2",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/aztec.js",
+            "viem"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "viem"
+          ]
+        }
+      ],
+      "via": [
+        "ws"
+      ],
+      "effects": [
+        "@aztec/archiver",
+        "@aztec/aztec",
+        "@aztec/aztec-node",
+        "@aztec/aztec.js",
+        "@aztec/blob-client",
+        "@aztec/bot",
+        "@aztec/cli",
+        "@aztec/epoch-cache",
+        "@aztec/ethereum",
+        "@aztec/node-keystore",
+        "@aztec/prover-node",
+        "@aztec/pxe",
+        "@aztec/sequencer-client",
+        "@aztec/slasher",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client",
+        "@aztec/validator-client"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/wallet-sdk",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": true,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/wallet-sdk",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/wallet-sdk"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/cli-wallet",
+            "@aztec/wallet-sdk"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/aztec.js",
+        "@aztec/constants",
+        "@aztec/entrypoints",
+        "@aztec/foundation",
+        "@aztec/pxe",
+        "@aztec/stdlib"
+      ],
+      "effects": [
+        "@aztec/cli-wallet"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli-wallet",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/wallets",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/wallets",
+          "version": "5.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/wallets"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/accounts",
+        "@aztec/aztec.js",
+        "@aztec/entrypoints",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/protocol-contracts",
+        "@aztec/pxe",
+        "@aztec/standard-contracts",
+        "@aztec/stdlib",
+        "@aztec/wallet-sdk"
+      ],
+      "effects": [
+        "@aztec/bot",
+        "@aztec/cli"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@aztec/world-state",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.0.8-commit.a2d1860fe9 || 0.21.0 - 0.22.0 || >=0.50.1",
+      "nodes": [
+        {
+          "path": "node_modules/@aztec/world-state",
+          "version": "5.2.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/world-state"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/world-state"
+          ]
+        }
+      ],
+      "via": [
+        "@aztec/constants",
+        "@aztec/foundation",
+        "@aztec/kv-store",
+        "@aztec/native",
+        "@aztec/protocol-contracts",
+        "@aztec/stdlib",
+        "@aztec/telemetry-client"
+      ],
+      "effects": [
+        "@aztec/aztec-node",
+        "@aztec/bb-prover",
+        "@aztec/prover-client",
+        "@aztec/prover-node",
+        "@aztec/sequencer-client",
+        "@aztec/simulator",
+        "@aztec/txe"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@ethersproject/abstract-provider",
+      "severity": "low",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/abstract-provider",
+          "version": "5.8.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/abstract-provider"
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/transactions"
+      ],
+      "effects": [
+        "@ethersproject/abstract-signer"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@ethersproject/abstract-signer",
+      "severity": "low",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/abstract-signer",
+          "version": "5.8.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/abstract-signer"
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-provider"
+      ],
+      "effects": [
+        "@ethersproject/hash"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@ethersproject/hash",
+      "severity": "low",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "5.0.6 - 5.8.0",
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/hash",
+          "version": "5.8.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/hash"
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-signer"
+      ],
+      "effects": [
+        "@ethersproject/wallet",
+        "@ethersproject/wordlists"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@ethersproject/hdnode",
+      "severity": "low",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/hdnode",
+          "version": "5.8.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/hdnode"
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-signer",
+        "@ethersproject/signing-key",
+        "@ethersproject/transactions",
+        "@ethersproject/wordlists"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "@ethersproject/json-wallets",
+      "severity": "low",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/json-wallets",
+          "version": "5.8.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/json-wallets"
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-signer",
+        "@ethersproject/hdnode",
+        "@ethersproject/transactions"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "@ethersproject/signing-key",
+      "severity": "low",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "<=5.8.0",
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/signing-key",
+          "version": "5.8.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/signing-key"
+          ]
+        }
+      ],
+      "via": [
+        "elliptic"
+      ],
+      "effects": [
+        "@ethersproject/hdnode",
+        "@ethersproject/transactions",
+        "@ethersproject/wallet"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@ethersproject/transactions",
+      "severity": "low",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "<=5.8.0",
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/transactions",
+          "version": "5.8.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/transactions"
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/signing-key"
+      ],
+      "effects": [
+        "@ethersproject/abstract-provider",
+        "@ethersproject/json-wallets"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@ethersproject/wallet",
+      "severity": "low",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "<=5.8.0",
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/wallet",
+          "version": "5.8.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet"
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/abstract-provider",
+        "@ethersproject/abstract-signer",
+        "@ethersproject/hash",
+        "@ethersproject/hdnode",
+        "@ethersproject/json-wallets",
+        "@ethersproject/signing-key",
+        "@ethersproject/transactions",
+        "@ethersproject/wordlists"
+      ],
+      "effects": [
+        "@aztec/cli"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@ethersproject/wordlists",
+      "severity": "low",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "5.0.8 - 5.8.0",
+      "nodes": [
+        {
+          "path": "node_modules/@ethersproject/wordlists",
+          "version": "5.8.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/wordlists"
+          ]
+        }
+      ],
+      "via": [
+        "@ethersproject/hash"
+      ],
+      "effects": [
+        "@ethersproject/hdnode"
+      ],
+      "suggestedFix": true
+    },
+    {
+      "package": "@google-cloud/storage",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "2.2.0 - 2.5.0 || 5.19.0 - 8.0.0",
+      "nodes": [
+        {
+          "path": "node_modules/@google-cloud/storage",
+          "version": "7.22.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/stdlib",
+            "@google-cloud/storage"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/stdlib",
+            "@google-cloud/storage"
+          ]
+        }
+      ],
+      "via": [
+        "retry-request",
+        "teeny-request"
+      ],
+      "effects": [
+        "@aztec/stdlib"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/stdlib",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@inquirer/editor",
+      "severity": "low",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "<=4.2.15",
+      "nodes": [
+        {
+          "path": "node_modules/@inquirer/editor",
+          "version": "2.2.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli-wallet",
+            "inquirer",
+            "@inquirer/prompts",
+            "@inquirer/editor"
+          ]
+        }
+      ],
+      "via": [
+        "external-editor"
+      ],
+      "effects": [
+        "@inquirer/prompts"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli-wallet",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@inquirer/prompts",
+      "severity": "low",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "<=6.0.1",
+      "nodes": [
+        {
+          "path": "node_modules/@inquirer/prompts",
+          "version": "5.5.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli-wallet",
+            "inquirer",
+            "@inquirer/prompts"
+          ]
+        }
+      ],
+      "via": [
+        "@inquirer/editor"
+      ],
+      "effects": [
+        "inquirer"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli-wallet",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@opentelemetry/core",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<2.8.0",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/core",
+          "version": "1.30.1",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/core"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/exporter-logs-otlp-http/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/core"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/exporter-metrics-otlp-http/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http",
+            "@opentelemetry/core"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/exporter-trace-otlp-http/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/core"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/otlp-exporter-base/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/otlp-exporter-base",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/otlp-exporter-base",
+            "@opentelemetry/core"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/otlp-transformer/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer",
+            "@opentelemetry/core"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-logs/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-logs",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-logs",
+            "@opentelemetry/core"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-base/node_modules/@opentelemetry/core",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/sdk-trace-base",
+            "@opentelemetry/core"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/sdk-trace-base",
+            "@opentelemetry/core"
+          ]
+        }
+      ],
+      "via": [
+        {
+          "source": 1153174,
+          "name": "@opentelemetry/core",
+          "dependency": "@opentelemetry/core",
+          "title": "OpenTelemetry Core: Unbounded memory allocation in W3C Baggage propagation",
+          "url": "https://github.com/advisories/GHSA-8988-4f7v-96qf",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-770"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": "<2.8.0"
+        }
+      ],
+      "effects": [
+        "@aztec/telemetry-client",
+        "@opentelemetry/exporter-logs-otlp-http",
+        "@opentelemetry/exporter-metrics-otlp-http",
+        "@opentelemetry/exporter-trace-otlp-http",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/otlp-transformer",
+        "@opentelemetry/propagator-b3",
+        "@opentelemetry/propagator-jaeger",
+        "@opentelemetry/resource-detector-gcp",
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-logs",
+        "@opentelemetry/sdk-metrics",
+        "@opentelemetry/sdk-trace-base",
+        "@opentelemetry/sdk-trace-node"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "@opentelemetry/exporter-logs-otlp-http",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.218.0",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-logs-otlp-http",
+          "version": "0.55.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http"
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/otlp-transformer",
+        "@opentelemetry/sdk-logs"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "@opentelemetry/exporter-metrics-otlp-http",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.218.0",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-metrics-otlp-http",
+          "version": "0.55.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http"
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/otlp-transformer",
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-metrics"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "@opentelemetry/exporter-trace-otlp-http",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.218.0",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-trace-otlp-http",
+          "version": "0.55.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http"
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/otlp-transformer",
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-trace-base"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "@opentelemetry/host-metrics",
+      "severity": "high",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.15.0 || 0.35.2 - 0.38.0",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/host-metrics",
+          "version": "0.36.2",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/host-metrics"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/host-metrics"
+          ]
+        }
+      ],
+      "via": [
+        "systeminformation"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "@opentelemetry/otlp-exporter-base",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.218.0",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/otlp-exporter-base",
+          "version": "0.55.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/otlp-exporter-base"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/otlp-exporter-base"
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/otlp-transformer"
+      ],
+      "effects": [
+        "@opentelemetry/exporter-metrics-otlp-http",
+        "@opentelemetry/exporter-trace-otlp-http"
+      ],
+      "suggestedFix": true
+    },
+    {
+      "package": "@opentelemetry/otlp-transformer",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.218.0",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/otlp-transformer",
+          "version": "0.55.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer"
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-logs",
+        "@opentelemetry/sdk-metrics",
+        "@opentelemetry/sdk-trace-base"
+      ],
+      "effects": [
+        "@opentelemetry/exporter-metrics-otlp-http",
+        "@opentelemetry/exporter-trace-otlp-http",
+        "@opentelemetry/otlp-exporter-base"
+      ],
+      "suggestedFix": true
+    },
+    {
+      "package": "@opentelemetry/propagator-b3",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "0.19.1-alpha.11 - 2.7.1",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/propagator-b3",
+          "version": "1.30.1",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node",
+            "@opentelemetry/propagator-b3"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node",
+            "@opentelemetry/propagator-b3"
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "@opentelemetry/propagator-jaeger",
+      "severity": "high",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=2.8.0",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/propagator-jaeger",
+          "version": "1.30.1",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node",
+            "@opentelemetry/propagator-jaeger"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node",
+            "@opentelemetry/propagator-jaeger"
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        {
+          "source": 1124011,
+          "name": "@opentelemetry/propagator-jaeger",
+          "dependency": "@opentelemetry/propagator-jaeger",
+          "title": "OpenTelemetry JavaScript: Denial of service in `JaegerPropagator` via unhandled exception on a malformed header",
+          "url": "https://github.com/advisories/GHSA-45rx-2jwx-cxfr",
+          "severity": "high",
+          "cwe": [
+            "CWE-248"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<2.9.0"
+        }
+      ],
+      "effects": [
+        "@opentelemetry/sdk-trace-node"
+      ],
+      "suggestedFix": true
+    },
+    {
+      "package": "@opentelemetry/resource-detector-gcp",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.33.1",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/resource-detector-gcp",
+          "version": "0.32.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/resource-detector-gcp"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/resource-detector-gcp"
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "@opentelemetry/resources",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "0.8.0 - 2.7.1",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-metrics-otlp-http/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http",
+            "@opentelemetry/resources"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http",
+            "@opentelemetry/resources"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/exporter-trace-otlp-http/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/resources"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/resources"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/otlp-transformer/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer",
+            "@opentelemetry/resources"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer",
+            "@opentelemetry/resources"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/resources",
+          "version": "1.30.1",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/resources"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/resources"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-logs/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-logs",
+            "@opentelemetry/resources"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-logs",
+            "@opentelemetry/resources"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-base/node_modules/@opentelemetry/resources",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/sdk-trace-base",
+            "@opentelemetry/resources"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/sdk-trace-base",
+            "@opentelemetry/resources"
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core"
+      ],
+      "effects": [
+        "@opentelemetry/resource-detector-gcp"
+      ],
+      "suggestedFix": true
+    },
+    {
+      "package": "@opentelemetry/sdk-logs",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=0.218.0",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/sdk-logs",
+          "version": "0.55.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-logs"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-logs"
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources"
+      ],
+      "effects": [
+        "@opentelemetry/otlp-transformer"
+      ],
+      "suggestedFix": true
+    },
+    {
+      "package": "@opentelemetry/sdk-metrics",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=2.7.1",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/exporter-metrics-otlp-http/node_modules/@opentelemetry/sdk-metrics",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http",
+            "@opentelemetry/sdk-metrics"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-metrics-otlp-http",
+            "@opentelemetry/sdk-metrics"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/otlp-transformer/node_modules/@opentelemetry/sdk-metrics",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer",
+            "@opentelemetry/sdk-metrics"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-logs-otlp-http",
+            "@opentelemetry/otlp-transformer",
+            "@opentelemetry/sdk-metrics"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-metrics",
+          "version": "1.30.1",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-metrics"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-metrics"
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources"
+      ],
+      "effects": [
+        "@opentelemetry/exporter-metrics-otlp-http",
+        "@opentelemetry/otlp-transformer"
+      ],
+      "suggestedFix": true
+    },
+    {
+      "package": "@opentelemetry/sdk-trace-base",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=2.7.1",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-base",
+          "version": "1.28.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/sdk-trace-base"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/exporter-trace-otlp-http",
+            "@opentelemetry/sdk-trace-base"
+          ]
+        },
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-node/node_modules/@opentelemetry/sdk-trace-base",
+          "version": "1.30.1",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node",
+            "@opentelemetry/sdk-trace-base"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node",
+            "@opentelemetry/sdk-trace-base"
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/resources"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "@opentelemetry/sdk-trace-node",
+      "severity": "high",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=2.7.1",
+      "nodes": [
+        {
+          "path": "node_modules/@opentelemetry/sdk-trace-node",
+          "version": "1.30.1",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/sdk-trace-node"
+          ]
+        }
+      ],
+      "via": [
+        "@opentelemetry/core",
+        "@opentelemetry/propagator-b3",
+        "@opentelemetry/propagator-jaeger",
+        "@opentelemetry/sdk-trace-base"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "elliptic",
+      "severity": "low",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "*",
+      "nodes": [
+        {
+          "path": "node_modules/elliptic",
+          "version": "6.6.1",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli",
+            "@ethersproject/wallet",
+            "@ethersproject/signing-key",
+            "elliptic"
+          ]
+        }
+      ],
+      "via": [
+        {
+          "source": 1112030,
+          "name": "elliptic",
+          "dependency": "elliptic",
+          "title": "Elliptic Uses a Cryptographic Primitive with a Risky Implementation",
+          "url": "https://github.com/advisories/GHSA-848j-6mx2-7j84",
+          "severity": "low",
+          "cwe": [
+            "CWE-1240"
+          ],
+          "cvss": {
+            "score": 5.6,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L"
+          },
+          "range": "<=6.6.1"
+        }
+      ],
+      "effects": [
+        "@ethersproject/signing-key"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "express",
+      "severity": "moderate",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "4.22.2",
+      "nodes": [
+        {
+          "path": "node_modules/express",
+          "version": "4.22.2",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/blob-client",
+            "express"
+          ]
+        }
+      ],
+      "via": [
+        "qs"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "external-editor",
+      "severity": "low",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": ">=1.1.1",
+      "nodes": [
+        {
+          "path": "node_modules/external-editor",
+          "version": "3.1.0",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli-wallet",
+            "inquirer",
+            "@inquirer/prompts",
+            "@inquirer/editor",
+            "external-editor"
+          ]
+        }
+      ],
+      "via": [
+        "tmp"
+      ],
+      "effects": [
+        "@inquirer/editor"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli-wallet",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "gaxios",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "6.4.0 - 6.7.1",
+      "nodes": [
+        {
+          "path": "node_modules/gaxios",
+          "version": "6.7.1",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/stdlib",
+            "@google-cloud/storage",
+            "gaxios"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/stdlib",
+            "@google-cloud/storage",
+            "gaxios"
+          ]
+        }
+      ],
+      "via": [
+        "uuid"
+      ],
+      "effects": [],
+      "suggestedFix": true
+    },
+    {
+      "package": "inquirer",
+      "severity": "low",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "10.0.0 - 11.1.0",
+      "nodes": [
+        {
+          "path": "node_modules/inquirer",
+          "version": "10.2.2",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli-wallet",
+            "inquirer"
+          ]
+        }
+      ],
+      "via": [
+        "@inquirer/prompts"
+      ],
+      "effects": [
+        "@aztec/cli-wallet"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli-wallet",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "qs",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "2.2.5 - 6.15.3",
+      "nodes": [
+        {
+          "path": "node_modules/qs",
+          "version": "6.15.3",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/foundation",
+            "koa-bodyparser",
+            "co-body",
+            "qs"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/blob-client",
+            "express",
+            "qs"
+          ]
+        }
+      ],
+      "via": [
+        {
+          "source": 1158506,
+          "name": "qs",
+          "dependency": "qs",
+          "title": "qs array-limit bypass via bracket-key comma parsing",
+          "url": "https://github.com/advisories/GHSA-x5fp-wj9c-mxmx",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-770"
+          ],
+          "cvss": {
+            "score": 3.7,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": ">=6.14.2 <=6.15.3"
+        },
+        {
+          "source": 1158507,
+          "name": "qs",
+          "dependency": "qs",
+          "title": "qs: Denial of Service via Attacker Controlled isBuffer",
+          "url": "https://github.com/advisories/GHSA-4mjr-xmp4-gh2g",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-248",
+            "CWE-703"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": ">=2.2.5 <6.16.0"
+        }
+      ],
+      "effects": [
+        "express"
+      ],
+      "suggestedFix": true
+    },
+    {
+      "package": "retry-request",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "7.0.0 - 7.0.2",
+      "nodes": [
+        {
+          "path": "node_modules/retry-request",
+          "version": "7.0.2",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/stdlib",
+            "@google-cloud/storage",
+            "retry-request"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/stdlib",
+            "@google-cloud/storage",
+            "retry-request"
+          ]
+        }
+      ],
+      "via": [
+        "teeny-request"
+      ],
+      "effects": [
+        "@google-cloud/storage"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/stdlib",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "systeminformation",
+      "severity": "high",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=5.31.6",
+      "nodes": [
+        {
+          "path": "node_modules/systeminformation",
+          "version": "5.23.8",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/pxe",
+            "@aztec/bb-prover",
+            "@aztec/telemetry-client",
+            "@opentelemetry/host-metrics",
+            "systeminformation"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/telemetry-client",
+            "@opentelemetry/host-metrics",
+            "systeminformation"
+          ]
+        }
+      ],
+      "via": [
+        {
+          "source": 1111529,
+          "name": "systeminformation",
+          "dependency": "systeminformation",
+          "title": "systeminformation has a Command Injection vulnerability in fsSize() function on Windows",
+          "url": "https://github.com/advisories/GHSA-wphj-fx3q-84ch",
+          "severity": "high",
+          "cwe": [
+            "CWE-78"
+          ],
+          "cvss": {
+            "score": 8.1,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+          },
+          "range": "<5.27.14"
+        },
+        {
+          "source": 1113329,
+          "name": "systeminformation",
+          "dependency": "systeminformation",
+          "title": "Command Injection via Unsanitized `locate` Output in `versions()` \u2014 systeminformation",
+          "url": "https://github.com/advisories/GHSA-5vv4-hvf7-2h46",
+          "severity": "high",
+          "cwe": [
+            "CWE-78"
+          ],
+          "cvss": {
+            "score": 8.8,
+            "vectorString": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H"
+          },
+          "range": "<=5.30.7"
+        },
+        {
+          "source": 1113330,
+          "name": "systeminformation",
+          "dependency": "systeminformation",
+          "title": "Systeminformation has a Command Injection via unsanitized interface parameter in wifi.js retry path",
+          "url": "https://github.com/advisories/GHSA-9c88-49p5-5ggf",
+          "severity": "high",
+          "cwe": [
+            "CWE-78"
+          ],
+          "cvss": {
+            "score": 8.4,
+            "vectorString": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+          },
+          "range": "<5.30.8"
+        },
+        {
+          "source": 1120162,
+          "name": "systeminformation",
+          "dependency": "systeminformation",
+          "title": "Systeminformation vulnerable to Linux command injection in networkInterfaces() via unsanitized NetworkManager connection profile name",
+          "url": "https://github.com/advisories/GHSA-hvx9-hwr7-wjj9",
+          "severity": "high",
+          "cwe": [
+            "CWE-78"
+          ],
+          "cvss": {
+            "score": 7.8,
+            "vectorString": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"
+          },
+          "range": ">=4.17.0 <=5.31.5"
+        },
+        {
+          "source": 1123570,
+          "name": "systeminformation",
+          "dependency": "systeminformation",
+          "title": "systeminformation: OS command injection in networkInterfaces() via interfaces(5) source-directive path on Linux",
+          "url": "https://github.com/advisories/GHSA-5xpp-75jx-m839",
+          "severity": "high",
+          "cwe": [
+            "CWE-78"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<=5.31.6"
+        }
+      ],
+      "effects": [
+        "@opentelemetry/host-metrics"
+      ],
+      "suggestedFix": true
+    },
+    {
+      "package": "teeny-request",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "3.9.1 - 9.0.0",
+      "nodes": [
+        {
+          "path": "node_modules/teeny-request",
+          "version": "9.0.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/stdlib",
+            "@google-cloud/storage",
+            "teeny-request"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/stdlib",
+            "@google-cloud/storage",
+            "teeny-request"
+          ]
+        }
+      ],
+      "via": [
+        "uuid"
+      ],
+      "effects": [
+        "@google-cloud/storage",
+        "retry-request"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/stdlib",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "tmp",
+      "severity": "high",
+      "npmProductionReachable": false,
+      "isDirect": false,
+      "range": "<=0.2.5",
+      "nodes": [
+        {
+          "path": "node_modules/tmp",
+          "version": "0.0.33",
+          "devOnly": true,
+          "shortestRuntimeDependencyPath": null,
+          "shortestDevDependencyPath": [
+            "@aztec/cli-wallet",
+            "inquirer",
+            "@inquirer/prompts",
+            "@inquirer/editor",
+            "external-editor",
+            "tmp"
+          ]
+        }
+      ],
+      "via": [
+        {
+          "source": 1109537,
+          "name": "tmp",
+          "dependency": "tmp",
+          "title": "tmp allows arbitrary temporary file / directory write via symbolic link `dir` parameter",
+          "url": "https://github.com/advisories/GHSA-52f5-9888-hmc6",
+          "severity": "low",
+          "cwe": [
+            "CWE-59"
+          ],
+          "cvss": {
+            "score": 2.5,
+            "vectorString": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:L/A:N"
+          },
+          "range": "<=0.2.3"
+        },
+        {
+          "source": 1120654,
+          "name": "tmp",
+          "dependency": "tmp",
+          "title": "tmp has Path Traversal via unsanitized prefix/postfix that enables directory escape",
+          "url": "https://github.com/advisories/GHSA-ph9p-34f9-6g65",
+          "severity": "high",
+          "cwe": [
+            "CWE-22"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<0.2.6"
+        }
+      ],
+      "effects": [
+        "external-editor"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli-wallet",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "undici",
+      "severity": "high",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<=6.27.0",
+      "nodes": [
+        {
+          "path": "node_modules/undici",
+          "version": "5.29.0",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/foundation",
+            "undici"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/foundation",
+            "undici"
+          ]
+        }
+      ],
+      "via": [
+        {
+          "source": 1112496,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion",
+          "url": "https://github.com/advisories/GHSA-g9mf-h72j-4rw9",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-770"
+          ],
+          "cvss": {
+            "score": 5.9,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<6.23.0"
+        },
+        {
+          "source": 1114594,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "Undici has an HTTP Request/Response Smuggling issue",
+          "url": "https://github.com/advisories/GHSA-2mjp-6q6p-2qxm",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-444"
+          ],
+          "cvss": {
+            "score": 6.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L"
+          },
+          "range": "<6.24.0"
+        },
+        {
+          "source": 1114638,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression",
+          "url": "https://github.com/advisories/GHSA-vrm6-8vpv-qv8q",
+          "severity": "high",
+          "cwe": [
+            "CWE-409"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<6.24.0"
+        },
+        {
+          "source": 1114640,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation",
+          "url": "https://github.com/advisories/GHSA-v9p9-hfj2-hcw8",
+          "severity": "high",
+          "cwe": [
+            "CWE-248"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<6.24.0"
+        },
+        {
+          "source": 1114642,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "Undici has CRLF Injection in undici via `upgrade` option",
+          "url": "https://github.com/advisories/GHSA-4992-7rv2-5pvq",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-93"
+          ],
+          "cvss": {
+            "score": 4.6,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N"
+          },
+          "range": "<6.24.0"
+        },
+        {
+          "source": 1121242,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "undici vulnerable to HTTP header injection via Set-Cookie percent-decoding",
+          "url": "https://github.com/advisories/GHSA-p88m-4jfj-68fv",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-93"
+          ],
+          "cvss": {
+            "score": 5.9,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N"
+          },
+          "range": "<6.27.0"
+        },
+        {
+          "source": 1121245,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "undici WebSocket client vulnerable to denial of service via fragment count bypass",
+          "url": "https://github.com/advisories/GHSA-vxpw-j846-p89q",
+          "severity": "high",
+          "cwe": [
+            "CWE-400",
+            "CWE-770"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<6.27.0"
+        },
+        {
+          "source": 1121255,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "undici vulnerable to Set-Cookie SameSite attribute downgrade via permissive substring matching",
+          "url": "https://github.com/advisories/GHSA-g8m3-5g58-fq7m",
+          "severity": "low",
+          "cwe": [
+            "CWE-183"
+          ],
+          "cvss": {
+            "score": 3.7,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N"
+          },
+          "range": "<6.27.0"
+        },
+        {
+          "source": 1130716,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "undici vulnerable to downstream response desynchronization via retry interceptor",
+          "url": "https://github.com/advisories/GHSA-8xcm-r25x-g524",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-444"
+          ],
+          "cvss": {
+            "score": 4.8,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N"
+          },
+          "range": "<6.28.0"
+        },
+        {
+          "source": 1130727,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "undici vulnerable to CRLF Injection via blob-like body 'type' property",
+          "url": "https://github.com/advisories/GHSA-m8rv-5g2x-5cg5",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-93"
+          ],
+          "cvss": {
+            "score": 4.2,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:L/A:N"
+          },
+          "range": "<6.28.0"
+        },
+        {
+          "source": 1130732,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields",
+          "url": "https://github.com/advisories/GHSA-v3r7-h72x-cjcm",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-74"
+          ],
+          "cvss": {
+            "score": 4.8,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N"
+          },
+          "range": "<6.28.0"
+        },
+        {
+          "source": 1137243,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "undici vulnerable to HTTP response queue poisoning via keep-alive socket reuse",
+          "url": "https://github.com/advisories/GHSA-35p6-xmwp-9g52",
+          "severity": "low",
+          "cwe": [
+            "CWE-367"
+          ],
+          "cvss": {
+            "score": 3.7,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N"
+          },
+          "range": "<6.27.0"
+        }
+      ],
+      "effects": [
+        "@aztec/foundation"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/cli-wallet",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "uuid",
+      "severity": "moderate",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "<11.1.1",
+      "nodes": [
+        {
+          "path": "node_modules/uuid",
+          "version": "9.0.1",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/stdlib",
+            "@google-cloud/storage",
+            "gaxios",
+            "uuid"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "@aztec/stdlib",
+            "@google-cloud/storage",
+            "gaxios",
+            "uuid"
+          ]
+        }
+      ],
+      "via": [
+        {
+          "source": 1119441,
+          "name": "uuid",
+          "dependency": "uuid",
+          "title": "uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided",
+          "url": "https://github.com/advisories/GHSA-w5hq-g745-h8pq",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-787",
+            "CWE-1285"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+          },
+          "range": "<11.1.1"
+        }
+      ],
+      "effects": [
+        "gaxios",
+        "teeny-request"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/stdlib",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "package": "ws",
+      "severity": "high",
+      "npmProductionReachable": true,
+      "isDirect": false,
+      "range": "8.0.0 - 8.20.1",
+      "nodes": [
+        {
+          "path": "node_modules/viem/node_modules/ws",
+          "version": "8.18.3",
+          "devOnly": false,
+          "shortestRuntimeDependencyPath": [
+            "@aztec/aztec.js",
+            "viem",
+            "ws"
+          ],
+          "shortestDevDependencyPath": [
+            "@aztec/aztec",
+            "viem",
+            "ws"
+          ]
+        }
+      ],
+      "via": [
+        {
+          "source": 1119108,
+          "name": "ws",
+          "dependency": "ws",
+          "title": "ws: Uninitialized memory disclosure",
+          "url": "https://github.com/advisories/GHSA-58qx-3vcg-4xpx",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-908"
+          ],
+          "cvss": {
+            "score": 4.4,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+          },
+          "range": ">=8.0.0 <8.20.1"
+        },
+        {
+          "source": 1123259,
+          "name": "ws",
+          "dependency": "ws",
+          "title": "ws: Memory exhaustion DoS from tiny fragments and data chunks",
+          "url": "https://github.com/advisories/GHSA-96hv-2xvq-fx4p",
+          "severity": "high",
+          "cwe": [
+            "CWE-400",
+            "CWE-770",
+            "CWE-1050"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=8.0.0 <8.21.0"
+        }
+      ],
+      "effects": [
+        "@aztec/viem"
+      ],
+      "suggestedFix": {
+        "name": "@aztec/txe",
+        "version": "0.79.0",
+        "isSemVerMajor": true
+      }
+    }
+  ],
+  "diagnosticLimit": "npm explain for eight high-severity packages exhausted its 4 GiB V8 heap. Its empty output is not evidence; bounded breadth-first traversal of package-lock.json supplies paths instead."
+}

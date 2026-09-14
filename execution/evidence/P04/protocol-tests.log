@@ -1,0 +1,36 @@
+✔ config: independent ABI encoding and actual SDK hash agree (3.533791ms)
+✔ ready: independent ABI encoding and actual SDK hash agree (1.83275ms)
+✔ claim: independent ABI encoding and actual SDK hash agree (0.84275ms)
+✔ exit: independent ABI encoding and actual SDK hash agree (0.794333ms)
+✔ claim-boundary: independent ABI encoding and actual SDK hash agree (4.055625ms)
+✔ policy: independent ABI encoding and actual SDK hash agree (0.407792ms)
+✔ policy-unicode: independent ABI encoding and actual SDK hash agree (0.252667ms)
+✔ claim and exit domains prevent interchangeable commitments (0.378667ms)
+✔ service policy identity commits its exact content and deployed board (0.800459ms)
+✔ encoding rejects ambiguous or out-of-range collateral/policy inputs (0.297875ms)
+✔ one fixture set agrees on post, historical policy, deadline and deployment scope (0.7965ms)
+✔ cross-consumer envelope rejects changed l1ChainId (0.213792ms)
+✔ cross-consumer envelope rejects changed rollupAddress (0.056708ms)
+✔ cross-consumer envelope rejects changed rollupVersion (0.049584ms)
+✔ cross-consumer envelope rejects changed boardAddress (0.047208ms)
+✔ cross-consumer envelope rejects changed portalAddress (0.0425ms)
+✔ public post cannot acquire private linking field depositChainId (0.1565ms)
+✔ public post cannot acquire private linking field depositNonce (0.072083ms)
+✔ public post cannot acquire private linking field depositor (0.054542ms)
+✔ public post cannot acquire private linking field owner (0.07575ms)
+✔ public post cannot acquire private linking field accountAddress (0.050667ms)
+✔ publication order and independent post identity are separate (0.107417ms)
+✔ wire numbers and identities are lossless and canonical (0.151917ms)
+✔ UTF-8 limits reject excess bytes and malformed surrogate data (0.108875ms)
+✔ job identity changes with policy/model revisions; a submitted job needs transaction evidence (0.18575ms)
+✔ fixture dispositions preserve separate inclusion and execution outcomes (0.087917ms)
+✔ actual SDK receipt classes cannot confirm dropped or reverted execution (0.126958ms)
+✔ reviewed actor, policy and time bounds agree with the contract specification (0.209167ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 389.786167

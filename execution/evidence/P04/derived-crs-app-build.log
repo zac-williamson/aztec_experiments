@@ -1,0 +1,8 @@
+
+> build:apps
+> node apps/build.mjs
+
+Built billboard/censor -> censor.html: 3681KB
+Built billboard/deploy -> deploy.html: 3537KB
+Built billboard/user -> user.html: 3706KB
+Built fee-juice -> fee-juice.html: 692KB

@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 1,
-  "aztecVersion": "5.0.0",
+  "schemaVersion": 2,
+  "aztecVersion": "5.2.0",
   "provenance": {
     "package": "@aztec/bb.js",
-    "version": "5.0.0",
+    "version": "5.2.0",
     "source": "node_modules/@aztec/bb.js/dest/node/crs/net_crs.js",
     "sourceSha256": "98182144b264c587733e40e5ed22446d704af132eb36ed0b02b307a99cda4da5",
     "observedAt": "2026-09-12",
@@ -50,5 +50,21 @@
       },
       "sha256": "b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9"
     }
-  ]
+  ],
+  "derivedG1": {
+    "name": "g1_uncompressed.dat",
+    "bytes": 75497472,
+    "numPoints": 1179648,
+    "format": "bn254-g1-uncompressed-64-byte",
+    "sha256": "2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac",
+    "derivation": {
+      "method": "bb-srs-init-v1",
+      "packageVersion": "5.2.0",
+      "inputName": "g1.dat",
+      "inputSha256": "8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416",
+      "g2Sha256": "01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f",
+      "wasmSource": "node_modules/@aztec/bb.js/dest/node/barretenberg_wasm/barretenberg-threads.wasm.gz",
+      "wasmSha256": "9106f6164e4714a87ce1cf13ceac4d22109767a16e6fb997f1af7e7fcc81ae45"
+    }
+  }
 }

@@ -1,0 +1,6 @@
+{"mode":"derive","stage":"wasm-instance","state":"started"}
+{"mode":"derive","stage":"wasm-instance","state":"completed","durationMs":861}
+{"mode":"derive","stage":"bn254-initialize","state":"started"}
+{"mode":"derive","stage":"bn254-initialize","state":"completed","durationMs":118910}
+{"mode":"derive","stage":"grumpkin-initialize","state":"started"}
+{"mode":"derive","stage":"grumpkin-initialize","state":"completed","durationMs":141}

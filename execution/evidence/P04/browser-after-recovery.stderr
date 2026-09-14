@@ -1,0 +1,28 @@
+{"browserSmoke":{"elapsedMs":100,"consumer":"shared-library","stage":"browser-launch","state":"started"}}
+{"browserSmoke":{"elapsedMs":21155,"consumer":"shared-library","stage":"browser-launch","state":"completed"}}
+{"browserSmoke":{"elapsedMs":48854,"consumer":"shared-library","stage":"navigation","state":"started"}}
+{"browserSmoke":{"elapsedMs":81985,"consumer":"shared-library","stage":"browser","state":"disconnected","deadlineExceeded":false}}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:54616/", waiting until "load"[22m
+
+    at qualifyConsumer (/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/scripts/test-sdk-browser.mjs:72:16)
+    at async file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-sdk-browser.mjs:153:20 {
+  name: 'TimeoutError',
+  consumerResult: {
+    consumer: 'shared-library',
+    outcome: 'fail',
+    error: 'page.goto: Timeout 30000ms exceeded.\n' +
+      'Call log:\n' +
+      '\x1B[2m  - navigating to "http://127.0.0.1:54616/", waiting until "load"\x1B[22m\n',
+    deadlineExceeded: false,
+    faults: [],
+    evaluationMs: null
+  }
+}
+
+Node.js v24.15.0

@@ -1,0 +1,43 @@
+{
+  "observedAt": "2026-09-12T09:26:49.303711+00:00",
+  "load": "{ 13.47 17.36 20.15 }",
+  "swap": "vm.swapusage: total = 9216.00M  used = 7737.00M  free = 1479.00M  (encrypted)",
+  "processes": [
+    {
+      "pid": 37672,
+      "cpu": 98.5,
+      "rssMiB": 2764.2,
+      "executable": "/Users/zac/Library/Application Support/Steam/steamapps/common/Hearts of Iron IV/hoi4.app/Contents/MacOS/hoi4"
+    },
+    {
+      "pid": 58950,
+      "cpu": 91.2,
+      "rssMiB": 510.3,
+      "executable": "nargo"
+    },
+    {
+      "pid": 602,
+      "cpu": 58.6,
+      "rssMiB": 128.2,
+      "executable": "/System/Library/CoreServices/Finder.app/Contents/MacOS/Finder"
+    },
+    {
+      "pid": 9787,
+      "cpu": 28.3,
+      "rssMiB": 404.4,
+      "executable": "/Applications/Studio 2.0/Studio.app/Contents/MacOS/Studio"
+    },
+    {
+      "pid": 61743,
+      "cpu": 24.2,
+      "rssMiB": 16.6,
+      "executable": "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python"
+    },
+    {
+      "pid": 402,
+      "cpu": 23.0,
+      "rssMiB": 118.8,
+      "executable": "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+    }
+  ]
+}

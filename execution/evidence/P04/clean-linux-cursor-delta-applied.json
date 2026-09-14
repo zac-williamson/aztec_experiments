@@ -1,0 +1,19 @@
+{
+  "recordedAt": "2026-09-12T07:23:32.310070+00:00",
+  "reason": "Independent review found missing actual SDK transaction index; only non-bundled schema/test/service-fixture inputs changed. Final affected tests must rerun on these exact bytes.",
+  "files": {
+    "shared/protocol-schema.mjs": {
+      "previousSha256": "4429d8e3cd0310a5b040041f7a848c7b59a61352144e7bb120cf9737caa4a71e",
+      "currentSha256": "996ad92705b563cea6a4972d475f4600a8acb5ab92801671f50fda6c4cdfe4b2"
+    },
+    "scripts/test-protocol-schema.mjs": {
+      "previousSha256": "21c7d127d49095f4d39541f272742136878174d59bee9c5a460a26d594bec7ca",
+      "currentSha256": "e270d3f326330daea5be267b822c1dcded6b02f14ab01e20962bddd5f50817d4"
+    },
+    "execution/interface-fixtures/service-v1.json": {
+      "previousSha256": "f88f92e077b8f13d6e85a615aa39f4a10b0667758715bf374fd4ec68fffcf4dc",
+      "currentSha256": "227e07da682a7fac808d9d5e509eca5654b2870a77a453458d9a8a30407de77a"
+    }
+  },
+  "testsRequired": "Run frozen schema/protocol interface tests in the clean container before final qualification."
+}

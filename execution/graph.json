@@ -228,7 +228,7 @@
       "title": "Freeze contract and service interfaces for coordinated implementation",
       "phase": "foundation",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "P03"
       ],
@@ -259,7 +259,9 @@
         "toolchain.json",
         "noir-dependencies.json",
         "scripts/",
-        "shared/"
+        "BUILDING.md",
+        ".github/workflows/build.yml",
+        "crs-manifest.json"
       ],
       "plan": "tasks/P04.md",
       "actions": [
@@ -293,7 +295,7 @@
       "evidence": "evidence/P04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "Accepted2026-09-14: frozenV1 interfaces and supported5.2 foundation; all34 cleanLinux outputs matchnative,171build/69interface guards, bothactualbrowser consumers,22Noirlayout/7Solidity/9portal/5CLI/62Noir-TXE passed.91 hashed artifacts and independentAIclosure review. Production runtime fixes/externalgates remain downstream.",
       "priority": 4
     },
     {
@@ -314,13 +316,21 @@
       "scope": [
         "billboard/billboard_contract/",
         "billboard/billboard_test/",
-        "billboard/portal/"
+        "billboard/portal/",
+        "apps/src/billboard/",
+        "shared/",
+        "scripts/",
+        "execution/"
       ],
       "plan": "tasks/C01.md",
       "actions": [
         "Authenticate claims against the configured nonzero portal using the supported private/historical storage mechanism and enforce completed wiring.",
         "Implement the agreed deposit identity and message domain separation in L1 and L2; preserve single-active-deposit and nullifier guarantees.",
-        "Add adversarial tests before integrating changed ABIs."
+        "Add adversarial tests before integrating changed ABIs.",
+        "Adopt the single V1 note layout and make the minimum coherent constructor, selector, query and carry-forward changes across existing operations; record still-pending C02\u2013C05 semantics without introducing a second legacy path.",
+        "Use the specified ceiling cooldown and checked initial eligibility for newly claimed rights; C05 retains full penalty, burst, boundary and finite-exit qualification.",
+        "Update only the affected ABI consumers and generated artifacts together, including deploy/claim/receipt/exit arguments. Record the exact configuration ABI and storage choice before implementation; broader wallet recovery and UI remain downstream.",
+        "Build the minimum real authenticated Ready/deposit/claim/no-post-exit harness needed for C01 acceptance; distinguish actual Inbox/Outbox verification from rollup proof acceptance, and keep unobserved real-proof criteria incomplete."
       ],
       "acceptance": [
         {
@@ -519,7 +529,8 @@
       "actions": [
         "Implement P01 penalty-survival and usable-exit semantics, including the no-real-post and newly-screened cases.",
         "Bound economic parameters and intermediate multiplication/time arithmetic across field/integer conversions.",
-        "Use boundary, property and bridge-cycle tests rather than only nominal examples."
+        "Use boundary, property and bridge-cycle tests rather than only nominal examples.",
+        "Check near-horizon timestamp arithmetic: reject new screening/cooldown obligations that exceed the supported executable timestamp domain; preserve finite exit instead of merely fitting the u64 wire representation."
       ],
       "acceptance": [
         {
@@ -573,7 +584,7 @@
       "actions": [
         "Ensure liabilities match deposits and withdrawals, use appropriate checks-effects-interactions and validate canonical bridge configuration.",
         "Reject normal unsolicited ETH; test forced ETH separately from credited collateral.",
-        "Implement a constrained pause/exit/migration and recoverable operation design. If a refund cannot safely invalidate claims, document the limit and resolve any required product change before implementing it."
+        "Implement recovery for this fresh deployment and document any supported deposit pause; preserve valid exits. Do not add legacy deployment or live-right migration. No refund may leave active L2 posting rights; state lost-secret and protocol-unavailability limits explicitly."
       ],
       "acceptance": [
         {
@@ -586,7 +597,7 @@
         },
         {
           "id": "C06-A03",
-          "description": "Recovery, pause and migration preserve valid exits and cannot combine refunded collateral with live posting rights."
+          "description": "Recovery and any supported deposit pause preserve valid exits and cannot combine refunded collateral with live posting rights; legacy and live-right migration are outside the fresh-deployment scope."
         },
         {
           "id": "C06-A04",
@@ -730,7 +741,8 @@
       "actions": [
         "Review wallet integration and signature-derived key assumptions; choose the supported existing-wallet or reviewed embedded-wallet route.",
         "Remove claim-secret and key logs; isolate storage and minimize metadata.",
-        "Implement export/restore and recovery UX with fresh fixtures and no production keys."
+        "Implement export/restore and recovery UX with fresh fixtures and no production keys.",
+        "Replace legacy shared/rpc-config.json CLI fallback with explicit validated fresh-deployment network configuration; preserve unrelated local files. See P04 consumer-routing-review.md."
       ],
       "acceptance": [
         {
@@ -935,7 +947,8 @@
       "actions": [
         "Persist per-post jobs, cursor, leases and transaction receipts; prevent overlapping poller work.",
         "Retry failed flags according to confirmed outcome and deadline, not merely CLI exit status.",
-        "Refresh versioned onchain policy including empty-board behavior; consume incremental feed."
+        "Refresh versioned onchain policy including empty-board behavior; consume incremental feed.",
+        "Implement the single exact modelVersion SHA-256 transcript and fixtures from service-interface-spec.md; M03 verifies running image/weights/prompt/configuration against that content identity."
       ],
       "acceptance": [
         {
@@ -1041,7 +1054,8 @@
       "actions": [
         "Repair missing-CREATE2 behavior by tracking the actual address or refusing unsupported deployment; never link a discarded prediction.",
         "Create environment manifests and verify code, addresses, chain/rollup IDs, Inbox/Outbox, minimums, policy and censor before irreversible linking or deposits.",
-        "Rehearse locally with bad configuration and unreadable RPC states."
+        "Rehearse locally with bad configuration and unreadable RPC states.",
+        "Replace legacy shared/rpc-config.json CLI fallback with explicit validated fresh-deployment network configuration; preserve unrelated local files. See P04 consumer-routing-review.md."
       ],
       "acceptance": [
         {
@@ -1095,7 +1109,10 @@
       "actions": [
         "Complete deposit-to-withdraw UX, status/error/recovery flows, public reading, moderation explanations and supported-browser detection.",
         "Replace development serving with reproducible HTTPS hosting configuration, cross-origin isolation and reliable worker/assets.",
-        "Review untrusted content/DOM/error rendering, accessibility, credential exposure and telemetry defaults."
+        "Review untrusted content/DOM/error rendering, accessibility, credential exposure and telemetry defaults.",
+        "Measure and address cold browser proving-data initialization: P04 observed 109.6 seconds for 1,179,648 BN254 points on one host during other verification work. Qualify representative startup/proving latency and capacity with actual workloads; separate smoke-test budgets do not establish production performance.",
+        "Evaluate supported lazy PXE providers and deliberate ESM code splitting for the50MB SDK bundle; P04 source review attributes most text to circuit/contract artifacts. Preserve explicit readiness, asset integrity, worker routing and CLI consumers; do not assume changing an import alone removes eager payloads.",
+        "Before adopting lazy artifact fetches, assess whether path/timing differences expose operation type or correlate authors to public posts under A01/T03; use an appropriate grouping/prefetch strategy and verify actual request footprints."
       ],
       "acceptance": [
         {
@@ -1208,7 +1225,8 @@
       "actions": [
         "Run complete stateful Noir and Solidity suites, fuzz state transitions and test all new adversarial cases.",
         "Replace or explicitly retire vacuous formal claims; pin the formal environment and connect meaningful invariants to actual code assumptions.",
-        "Rerun relevant external specifications if available, preserving specification/model scope and never counting GOOD rules as universal proof."
+        "Rerun relevant external specifications if available, preserving specification/model scope and never counting GOOD rules as universal proof.",
+        "Reconcile P04 compiler-diagnostic-review.md against the final emitted application/protocol artifacts. Preserve all 26 original locations and require the relevant adverse proof/privacy cases and independent disposition; do not suppress the checks or treat source reasoning as proof."
       ],
       "acceptance": [
         {
@@ -1267,7 +1285,8 @@
       "actions": [
         "Create a proof-enabled L1/L2 environment with verified real-proofs setting and fresh test-only users; then use a suitable public testnet where available.",
         "Exercise deposit, claim, post, flag, screen, withdraw and L1 claim; repeat for unflagged/no-post and redeposit cases.",
-        "Retain sanitized transaction receipts, configurations, timings and exact artifact provenance."
+        "Retain sanitized transaction receipts, configurations, timings and exact artifact provenance.",
+        "Reconcile P04 compiler-diagnostic-review.md against the final emitted application/protocol artifacts. Preserve all 26 original locations and require the relevant adverse proof/privacy cases and independent disposition; do not suppress the checks or treat source reasoning as proof."
       ],
       "acceptance": [
         {
@@ -1321,7 +1340,8 @@
       "actions": [
         "Observe full fresh-user journeys as chain observer, RPC operator, sponsor and frontend host under the P01 threat model.",
         "Inspect fee/funding addresses, logs, request metadata, storage, timing and reuse across posts and deposits.",
-        "Publish a precise privacy statement and regression checks for preventable linkage."
+        "Publish a precise privacy statement and regression checks for preventable linkage.",
+        "Reconcile P04 compiler-diagnostic-review.md against the final emitted application/protocol artifacts. Preserve all 26 original locations and require the relevant adverse proof/privacy cases and independent disposition; do not suppress the checks or treat source reasoning as proof."
       ],
       "acceptance": [
         {
@@ -1377,7 +1397,9 @@
       "actions": [
         "Test the agreed current browser/device matrix and supported wallet routes with reproducible hardware/network metadata.",
         "Run the required 10-author and 1,000-lifetime-post workloads, long absence, repeated deposits and withdrawal during traffic.",
-        "Inject reorgs, RPC delays/outages, crash/reload, duplicate submissions, signer failure and sponsor exhaustion."
+        "Inject reorgs, RPC delays/outages, crash/reload, duplicate submissions, signer failure and sponsor exhaustion.",
+        "Measure and address cold browser proving-data initialization: P04 observed 109.6 seconds for 1,179,648 BN254 points on one host during other verification work. Qualify representative startup/proving latency and capacity with actual workloads; separate smoke-test budgets do not establish production performance.",
+        "Measure cold SDK delivery/parse/readiness separately from SRS initialization on supported hosts. Reconcile any lazy-loading/code-splitting change with full output manifests, worker paths and actual browser journeys; retain source-bound timeout failures as diagnostic evidence."
       ],
       "acceptance": [
         {
@@ -1413,7 +1435,8 @@
         "T01",
         "T03",
         "T04",
-        "M03"
+        "M03",
+        "A02"
       ],
       "requirements": [
         "REQ01",
@@ -1429,7 +1452,8 @@
       "actions": [
         "Freeze one reproducible code/artifact snapshot and collect architecture, threat model, prior findings and test evidence.",
         "Prepare bounded Aztec/Noir and Solidity review scope, known uncertainties, reviewer setup and remediation workflow.",
-        "Provide a concrete packet before asking for reviewer access or procurement authorization."
+        "Provide a concrete packet before asking for reviewer access or procurement authorization.",
+        "Reconcile P04 compiler-diagnostic-review.md against the final emitted application/protocol artifacts. Preserve all 26 original locations and require the relevant adverse proof/privacy cases and independent disposition; do not suppress the checks or treat source reasoning as proof."
       ],
       "acceptance": [
         {
@@ -1476,7 +1500,8 @@
       "actions": [
         "Obtain the user-provided independent reviewer or explicit authorization for engagement using R01 packet.",
         "Record actual reviewer identity, scope, reviewed revision, methodology, limitations and findings.",
-        "If unavailable, record the external dependency and continue unaffected internal work; do not substitute agent self-review."
+        "If unavailable, record the external dependency and continue unaffected internal work; do not substitute agent self-review.",
+        "Reconcile P04 compiler-diagnostic-review.md against the final emitted application/protocol artifacts. Preserve all 26 original locations and require the relevant adverse proof/privacy cases and independent disposition; do not suppress the checks or treat source reasoning as proof."
       ],
       "acceptance": [
         {
@@ -1639,7 +1664,8 @@
       "actions": [
         "Rebuild and run the full required suite on the final candidate, including proof-enabled journey, privacy, browsers, workload and recovery.",
         "Create release/acceptance-matrix.json linking every acceptance criterion of every completed historical internal package to fresh check artifacts and hashes.",
-        "Create release/manifest.json with exact source fingerprint, toolchain/configuration and all distributable artifact paths/hashes; verify each file."
+        "Create release/manifest.json with exact source fingerprint, toolchain/configuration and all distributable artifact paths/hashes; verify each file.",
+        "Reconcile P04 compiler-diagnostic-review.md against the final emitted application/protocol artifacts. Preserve all 26 original locations and require the relevant adverse proof/privacy cases and independent disposition; do not suppress the checks or treat source reasoning as proof."
       ],
       "acceptance": [
         {
@@ -1759,8 +1785,8 @@
       "evidence": "evidence/X03.json",
       "evidence_mode": "historical",
       "blocker": {
-        "reason": "Current inspected official V5 incident guidance asks new deployments to pause. No subsequent official clearance was found; local 5.0.0 baseline also requires current V5 compatibility assessment.",
-        "evidence": "evidence/P02/current-network-inputs.md; https://aztec.network/blog/alpha-v5-proving-system-vulnerability",
+        "reason": "Official V5 incident guidance still asks new deployments to pause in the bounded2026-09-12 recheck. No subsequent applicable official clearance was found. Package5.2 interoperability guidance does not establish incident closure or live target agreement.",
+        "evidence": "evidence/X03/clearance-recheck-2026-09-12.md",
         "unblock": "Fresh official evidence lifting the deployment restriction for the exact target, followed by canonical network/registry/version verification; or an explicitly approved supported replacement after compatibility assessment.",
         "next_action": "Continue internal engineering, complete V5 compatibility work in P04, and refresh X03 before release. Do not infer clearance from a successful local build."
       },
@@ -1879,6 +1905,61 @@
       "blocker": null,
       "checkpoint": "Not started. Read the task plan and verify prerequisites.",
       "priority": 33
+    },
+    {
+      "id": "A02",
+      "title": "Resolve production dependency advisories",
+      "phase": "engineering",
+      "kind": "internal",
+      "status": "planned",
+      "depends_on": [
+        "P04"
+      ],
+      "requirements": [
+        "REQ01",
+        "REQ07",
+        "REQ11"
+      ],
+      "findings": [],
+      "scope": [
+        "package.json",
+        "package-lock.json",
+        "billboard/portal/",
+        "scripts/",
+        "shared/",
+        "apps/",
+        "execution/"
+      ],
+      "plan": "tasks/A02.md",
+      "actions": [
+        "Use P04 toolchain-audit-classification.json and fresh publisher advisories to identify affected exact installed dependency paths and runtime reachability.",
+        "Apply compatible patched dependencies or supported replacements without silently mixing Aztec release artifacts or running unreviewed automatic fixes.",
+        "For any remaining advisory, document exact preconditions and controls; unresolved reachable high/critical vulnerabilities block release. Obtain independent disposition for exclusions.",
+        "Regenerate affected reproducible artifacts and rerun behavior/compatibility tests; bind the final lock and advisory inventory into the audit packet."
+      ],
+      "acceptance": [
+        {
+          "id": "A02-A01",
+          "description": "Fresh exact-lock advisory inventory records direct/transitive paths, production/build context and evidence-based reachability."
+        },
+        {
+          "id": "A02-A02",
+          "description": "No known reachable high/critical runtime advisory remains without a verified fix; any asserted exclusion is documented for independent review."
+        },
+        {
+          "id": "A02-A03",
+          "description": "Dependency changes preserve supported Aztec compatibility, reproducible outputs and affected application tests."
+        },
+        {
+          "id": "A02-A04",
+          "description": "Residual lower-severity or tooling advisories have explicit treatment and final audit/release manifest references; none are silently ignored."
+        }
+      ],
+      "evidence": "evidence/A02.json",
+      "evidence_mode": "historical",
+      "blocker": null,
+      "checkpoint": "Additional risk N01 (risk-register.md): P04 exact-lock advisories require fixes/treatment after compatible build. Baseline B01\u2013B12 catalog remains immutable.",
+      "priority": 4
     }
   ]
 }

@@ -1,0 +1,10 @@
+{
+  "recordedAt": "2026-09-12T07:31:49.811348+00:00",
+  "reason": "Root-authorized review-lane test-only readiness/race correction, copied before build guard execution; production lifecycle unchanged.",
+  "files": {
+    "scripts/test-process-lifecycle.mjs": {
+      "previousSha256": "6ce94abe0d935444c9f1ab488708c5dad49656be54c83195e58bccd9ecfaeb59",
+      "currentSha256": "9ba72fc3f78c98f6d377e7a2b53e3325db7d4f09adc457d842d4f4b8b8a4535d"
+    }
+  }
+}
