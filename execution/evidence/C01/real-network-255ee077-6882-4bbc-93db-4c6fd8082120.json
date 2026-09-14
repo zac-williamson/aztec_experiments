@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "profile": "direct real-verifier local protocol deployment only",
+  "startedAt": "2026-09-14T16:39:57.640Z",
+  "deadlineMs": 300000,
+  "passed": false,
+  "testsApplicationOrEpoch": false,
+  "rssLimitKiB": 8388608,
+  "rssSampleIntervalMs": 1000,
+  "rssMethod": "sampled owned process-group RSS; not OS allocation limit",
+  "rssSamples": [
+    {
+      "elapsedMs": 28,
+      "rssKiB": 3968,
+      "members": [
+        {
+          "pid": 39874,
+          "rssKiB": 3968
+        }
+      ]
+    },
+    {
+      "elapsedMs": 1055,
+      "rssKiB": 201920,
+      "members": [
+        {
+          "pid": 39874,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 39876,
+          "rssKiB": 181488
+        },
+        {
+          "pid": 39879,
+          "rssKiB": 19232
+        }
+      ]
+    },
+    {
+      "elapsedMs": 2178,
+      "rssKiB": 222240,
+      "members": [
+        {
+          "pid": 39874,
+          "rssKiB": 1168
+        },
+        {
+          "pid": 39876,
+          "rssKiB": 203984
+        },
+        {
+          "pid": 39879,
+          "rssKiB": 17088
+        }
+      ]
+    },
+    {
+      "elapsedMs": 3285,
+      "rssKiB": 331104,
+      "members": [
+        {
+          "pid": 39874,
+          "rssKiB": 496
+        },
+        {
+          "pid": 39876,
+          "rssKiB": 202896
+        },
+        {
+          "pid": 39879,
+          "rssKiB": 17024
+        },
+        {
+          "pid": 39885,
+          "rssKiB": 76320
+        },
+        {
+          "pid": 39886,
+          "rssKiB": 34368
+        }
+      ]
+    },
+    {
+      "elapsedMs": 4313,
+      "rssKiB": 75408,
+      "members": [
+        {
+          "pid": 39874,
+          "rssKiB": 496
+        },
+        {
+          "pid": 39876,
+          "rssKiB": 74912
+        }
+      ]
+    },
+    {
+      "elapsedMs": 5340,
+      "rssKiB": 75472,
+      "members": [
+        {
+          "pid": 39874,
+          "rssKiB": 496
+        },
+        {
+          "pid": 39876,
+          "rssKiB": 74976
+        }
+      ]
+    },
+    {
+      "elapsedMs": 6365,
+      "rssKiB": 73264,
+      "members": [
+        {
+          "pid": 39874,
+          "rssKiB": 496
+        },
+        {
+          "pid": 39876,
+          "rssKiB": 72768
+        }
+      ]
+    }
+  ],
+  "peakGroupRSSKiB": 331104,
+  "sourceHashes": {
+    "scripts/test-c01-real-network.mjs": "243b980c5c25f82b2c009d1da0910b45a4dc2c30827474009c189efccdf0b2af",
+    "scripts/c01-real-deployment.mjs": "716ae8d4eddfdddffb7c05347ea88baeef86fe780fb308d6898e1dabe6cf07f7",
+    "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js": "f84940700d4fe17c4bb94fb27199085fb057c567ff745e90c21352cd47a091c3"
+  },
+  "pid": 39874,
+  "stages": [
+    {
+      "stage": "start-disposable-l1",
+      "elapsedMs": 253
+    },
+    {
+      "stage": "prepare-genesis",
+      "elapsedMs": 377
+    },
+    {
+      "stage": "deploy-real-verifier",
+      "elapsedMs": 1539
+    }
+  ],
+  "exit": {
+    "code": 1,
+    "signal": null
+  },
+  "elapsedMs": 6520,
+  "nativeTimeRaw": "        6.50 real         1.26 user         0.83 sys\n           299892736  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               33971  page reclaims\n                2199  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                  55  messages sent\n                  61  messages received\n                   1  signals received\n                6985  voluntary context switches\n                6759  involuntary context switches\n         13359652118  instructions retired\n          4576011268  cycles elapsed\n           277873448  peak memory footprint\n",
+  "worker": {
+    "passed": false,
+    "profile": "direct real-verifier local deployment; no board or epoch proof",
+    "nonlocalNetworkDenied": true,
+    "deployment": {
+      "passed": false,
+      "stage": "direct-deployment",
+      "errorClass": "Error"
+    },
+    "failure": {
+      "stage": "deploy-real-verifier",
+      "errorClass": "Error",
+      "code": null,
+      "location": "    at deployC01RealProtocol (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/c01-real-deployment.mjs:122:21)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async worker (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-c01-real-network.mjs:94:18)"
+    },
+    "anvilExit": {
+      "code": 0,
+      "signal": null
+    },
+    "singletonsStopped": true
+  },
+  "processGroupAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "finishedAt": "2026-09-14T16:40:04.171Z"
+}

@@ -1,0 +1,461 @@
+{
+  "schemaVersion": 1,
+  "profile": "direct real-verifier local protocol deployment only",
+  "startedAt": "2026-09-14T16:44:25.933Z",
+  "deadlineMs": 300000,
+  "passed": false,
+  "testsApplicationOrEpoch": false,
+  "rssLimitKiB": 8388608,
+  "rssSampleIntervalMs": 1000,
+  "rssMethod": "sampled owned process-group RSS; not OS allocation limit",
+  "rssSamples": [
+    {
+      "elapsedMs": 28,
+      "rssKiB": 3968,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 3968
+        }
+      ]
+    },
+    {
+      "elapsedMs": 1055,
+      "rssKiB": 190304,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40386,
+          "rssKiB": 169984
+        },
+        {
+          "pid": 40390,
+          "rssKiB": 19120
+        }
+      ]
+    },
+    {
+      "elapsedMs": 2082,
+      "rssKiB": 351232,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40386,
+          "rssKiB": 327168
+        },
+        {
+          "pid": 40390,
+          "rssKiB": 22864
+        }
+      ]
+    },
+    {
+      "elapsedMs": 3109,
+      "rssKiB": 566816,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40386,
+          "rssKiB": 334528
+        },
+        {
+          "pid": 40390,
+          "rssKiB": 22912
+        },
+        {
+          "pid": 40397,
+          "rssKiB": 95648
+        },
+        {
+          "pid": 40398,
+          "rssKiB": 49136
+        },
+        {
+          "pid": 40399,
+          "rssKiB": 46672
+        },
+        {
+          "pid": 40425,
+          "rssKiB": 16720
+        }
+      ]
+    },
+    {
+      "elapsedMs": 4134,
+      "rssKiB": 791488,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40386,
+          "rssKiB": 334528
+        },
+        {
+          "pid": 40390,
+          "rssKiB": 22912
+        },
+        {
+          "pid": 40397,
+          "rssKiB": 95648
+        },
+        {
+          "pid": 40398,
+          "rssKiB": 49136
+        },
+        {
+          "pid": 40399,
+          "rssKiB": 46672
+        },
+        {
+          "pid": 40425,
+          "rssKiB": 241392
+        }
+      ]
+    },
+    {
+      "elapsedMs": 5161,
+      "rssKiB": 811248,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40386,
+          "rssKiB": 334528
+        },
+        {
+          "pid": 40390,
+          "rssKiB": 22912
+        },
+        {
+          "pid": 40397,
+          "rssKiB": 95648
+        },
+        {
+          "pid": 40398,
+          "rssKiB": 49136
+        },
+        {
+          "pid": 40399,
+          "rssKiB": 46672
+        },
+        {
+          "pid": 40425,
+          "rssKiB": 261152
+        }
+      ]
+    },
+    {
+      "elapsedMs": 6187,
+      "rssKiB": 835616,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40386,
+          "rssKiB": 334816
+        },
+        {
+          "pid": 40390,
+          "rssKiB": 22912
+        },
+        {
+          "pid": 40397,
+          "rssKiB": 95648
+        },
+        {
+          "pid": 40398,
+          "rssKiB": 49136
+        },
+        {
+          "pid": 40399,
+          "rssKiB": 46672
+        },
+        {
+          "pid": 40425,
+          "rssKiB": 285232
+        }
+      ]
+    },
+    {
+      "elapsedMs": 7215,
+      "rssKiB": 851088,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40386,
+          "rssKiB": 334848
+        },
+        {
+          "pid": 40390,
+          "rssKiB": 22912
+        },
+        {
+          "pid": 40397,
+          "rssKiB": 96048
+        },
+        {
+          "pid": 40398,
+          "rssKiB": 49136
+        },
+        {
+          "pid": 40399,
+          "rssKiB": 46672
+        },
+        {
+          "pid": 40425,
+          "rssKiB": 300272
+        }
+      ]
+    },
+    {
+      "elapsedMs": 8241,
+      "rssKiB": 871312,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40386,
+          "rssKiB": 334848
+        },
+        {
+          "pid": 40390,
+          "rssKiB": 22912
+        },
+        {
+          "pid": 40397,
+          "rssKiB": 96048
+        },
+        {
+          "pid": 40398,
+          "rssKiB": 49136
+        },
+        {
+          "pid": 40399,
+          "rssKiB": 46672
+        },
+        {
+          "pid": 40425,
+          "rssKiB": 320496
+        }
+      ]
+    },
+    {
+      "elapsedMs": 9267,
+      "rssKiB": 889776,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40386,
+          "rssKiB": 334848
+        },
+        {
+          "pid": 40390,
+          "rssKiB": 22912
+        },
+        {
+          "pid": 40397,
+          "rssKiB": 96048
+        },
+        {
+          "pid": 40398,
+          "rssKiB": 49136
+        },
+        {
+          "pid": 40399,
+          "rssKiB": 46672
+        },
+        {
+          "pid": 40425,
+          "rssKiB": 338960
+        }
+      ]
+    },
+    {
+      "elapsedMs": 10293,
+      "rssKiB": 671184,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40386,
+          "rssKiB": 334848
+        },
+        {
+          "pid": 40390,
+          "rssKiB": 22912
+        },
+        {
+          "pid": 40397,
+          "rssKiB": 96048
+        },
+        {
+          "pid": 40398,
+          "rssKiB": 49264
+        },
+        {
+          "pid": 40438,
+          "rssKiB": 94496
+        },
+        {
+          "pid": 40440,
+          "rssKiB": 72416
+        }
+      ]
+    },
+    {
+      "elapsedMs": 11319,
+      "rssKiB": 510624,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40386,
+          "rssKiB": 334848
+        },
+        {
+          "pid": 40390,
+          "rssKiB": 29232
+        },
+        {
+          "pid": 40397,
+          "rssKiB": 96080
+        },
+        {
+          "pid": 40398,
+          "rssKiB": 49264
+        },
+        {
+          "pid": 40438,
+          "rssKiB": 0
+        }
+      ]
+    },
+    {
+      "elapsedMs": 12348,
+      "rssKiB": 341328,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40386,
+          "rssKiB": 340128
+        }
+      ]
+    },
+    {
+      "elapsedMs": 13374,
+      "rssKiB": 341328,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40386,
+          "rssKiB": 340128
+        }
+      ]
+    },
+    {
+      "elapsedMs": 14405,
+      "rssKiB": 341328,
+      "members": [
+        {
+          "pid": 40384,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40386,
+          "rssKiB": 340128
+        }
+      ]
+    }
+  ],
+  "peakGroupRSSKiB": 889776,
+  "sourceHashes": {
+    "scripts/test-c01-real-network.mjs": "cdafe8f23374fa490f989bcc2c6aa2bfc3c51a786f6c26c74ccf73803e8076af",
+    "scripts/c01-real-deployment.mjs": "e33c1f3d8d4b3477f171023a624b16ce33a39bcc8a0fc4bb1d5d25a9f9ee7c57",
+    "scripts/c01-production-forge.mjs": "bc3f8113f1c7468e165087e6f1efe0a69dc90ace224c0d7dd77dea680d78468e",
+    "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js": "f84940700d4fe17c4bb94fb27199085fb057c567ff745e90c21352cd47a091c3"
+  },
+  "pid": 40384,
+  "stages": [
+    {
+      "stage": "start-disposable-l1",
+      "elapsedMs": 593
+    },
+    {
+      "stage": "prepare-genesis",
+      "elapsedMs": 718
+    },
+    {
+      "stage": "deploy-real-verifier",
+      "elapsedMs": 1705
+    }
+  ],
+  "exit": {
+    "code": 1,
+    "signal": null
+  },
+  "sanitizedStderr": "{\"level\":40,\"time\":1789404267743,\"pid\":40386,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"ethereum:deploy_aztec_l1_contracts\",\"msg\":\"Set block interval to 12\"}\n{\"level\":40,\"time\":1789404277245,\"pid\":40386,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"ethereum:deploy_aztec_l1_contracts\",\"msg\":\"[forge_broadcast] Broadcast succeeded.\"}\n",
+  "elapsedMs": 14739,
+  "nativeTimeRaw": "       14.72 real         9.10 user         1.17 sys\n           380715008  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               88687  page reclaims\n                3258  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 565  messages sent\n                 590  messages received\n                   6  signals received\n                4519  voluntary context switches\n               13269  involuntary context switches\n         12904564826  instructions retired\n          4268834198  cycles elapsed\n           318194568  peak memory footprint\n",
+  "worker": {
+    "passed": false,
+    "profile": "direct real-verifier local deployment; no board or epoch proof",
+    "nonlocalNetworkDenied": true,
+    "deployment": {
+      "passed": false,
+      "stage": "runtime-identity",
+      "errorClass": "AssertionError",
+      "diagnostic": "Deployed verifier differs from complete pinned Honk runtime\n+ actual - expected\n\n+ '[32-byte value]ea50d0e41461002d575b5f5ffd5b61004061003b366004614146565b610054565b604051901515815260200160405180910390f35b5f7f30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f00000016004803560248101916129609101358082146100a8576359895a5360e01b5f526018600452806024528160445260645ffd5b505060046024350135606f81146100c85763fa06659360e01b5f5260045ffd5b507f2f0ca3e610369fc41f7fb8a69995a96428fbf69d7dffd2b576e63ba4d9511ee15f526024803501610de080826020378060200191506101008383376101008084018261012001376101e0015f90812084900690819052905060016001607f1b03811683818009848282096140c0929092526140e052614100526129608083611760375060019150600160881b600160781b7f30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd476117605b6118608110156101a85783815110861695508260208201511086169550604081019050610180565b856101bc5763eb73e0bd60e01b5f5260045ffd5b506118605b611a608110156101dc578051821195909516946020016101c1565b506137805b613d408110156101fc578051821195909516946020016101e1565b506140405b6140c081101561021c57805182119590951694602001610201565b856102305763303df09f60e11b5f5260045ffd5b50611a605b61378081101561025057805187119590951694602001610235565b50613d405b61404081101561027057805187119590951694602001610255565b5050505081610288576320a3358960e01b5f5260045ffd5b60c061192060205e8260e05f20069050805f5260016001607f1b038116915080607f1c826141205280614140525060806119e060205e8260a05f20069050805f5260016001607f1b03811691508161422052614"
+    },
+    "failure": {
+      "stage": "deploy-real-verifier",
+      "errorClass": "Error",
+      "code": null,
+      "location": "    at deployC01RealProtocol (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/c01-real-deployment.mjs:122:21)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async worker (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-c01-real-network.mjs:99:18)"
+    },
+    "anvilExit": {
+      "code": 0,
+      "signal": null
+    },
+    "singletonsStopped": true,
+    "diagnosticTail": ""
+  },
+  "processGroupAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "finishedAt": "2026-09-14T16:44:40.685Z"
+}

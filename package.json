@@ -42,7 +42,8 @@
     "test:build": "node --test scripts/test-artifacts.mjs scripts/test-sdk-manifest.mjs scripts/test-noir-dependencies.mjs scripts/test-crs-build.mjs scripts/test-crs-consumers.mjs scripts/test-process-lifecycle.mjs",
     "build:crs": "node scripts/build-crs.mjs",
     "test:cli-sdk": "node scripts/test-cli-sdk.mjs",
-    "test:dependencies": "node --test scripts/test-dependency-*.mjs"
+    "test:dependencies": "node --test scripts/test-dependency-*.mjs",
+    "test:c01-clients": "node --test scripts/test-c01-user.mjs scripts/test-c01-deploy-activation.mjs scripts/test-artifacts.mjs"
   },
   "overrides": {
     "systeminformation": "5.31.7",

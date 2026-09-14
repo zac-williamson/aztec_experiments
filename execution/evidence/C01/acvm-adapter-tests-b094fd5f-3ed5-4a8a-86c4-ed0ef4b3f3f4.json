@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "profile": "test-only WASM witness adapter; no proofs",
+  "startedAt": "2026-09-14T17:22:36.139Z",
+  "sourceHashes": {
+    "scripts/c01-acvm-wasm-cli.mjs": "e3b984512fdfd94214490ed7a0e4cff8ca693ad635d642e260792b4a933a5a33",
+    "scripts/test-c01-acvm-adapter.mjs": "13a37f7ae4afec46e8d79101e3b250d8ac091a6ad4781d128129091022b180ac",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93"
+  },
+  "compilerSha256": "4e6e7cebf0c96a59b1993f6ff63e4f473be79a311f85009b2408854fd3e02a35",
+  "nodeVersion": "24.21.0",
+  "cases": [
+    {
+      "name": "nonempty ABI x=3 yields9 through actual stdout and gzip witness formats",
+      "passed": true,
+      "command": {
+        "code": 0,
+        "signal": null,
+        "killed": false,
+        "stdoutBytes": 219,
+        "stderrBytes": 0,
+        "stdoutSha256": "e4f69442152d439a99678c292153bc56b51cd2c59679837d8c5d3186877c4009",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "witnessEntries": 3,
+      "gzipSha256": "57df3d19fed5ef94793b97cb923e73d973aa6363b0e3e5583f57261e04041594"
+    },
+    {
+      "name": "actual x!=0 circuit constraint rejects zero",
+      "passed": true,
+      "command": {
+        "code": 1,
+        "signal": null,
+        "killed": false,
+        "stdoutBytes": 0,
+        "stderrBytes": 83,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "4cde25e01e4a280b7af72c062bfa4900bd56f9590fddae6c61296656dbad6418"
+      }
+    },
+    {
+      "name": "constraint-bound actual foreign call rejects without a substituted result",
+      "passed": true,
+      "command": {
+        "code": 1,
+        "signal": null,
+        "killed": false,
+        "stdoutBytes": 0,
+        "stderrBytes": 82,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "4136b3f455df481c44ebd2d826606b633938a4bbd402731276c5b525218493f6"
+      }
+    },
+    {
+      "name": "duplicate input witness key rejects",
+      "passed": true,
+      "command": {
+        "code": 1,
+        "signal": null,
+        "killed": false,
+        "stdoutBytes": 0,
+        "stderrBytes": 72,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "7cd18e1beacde18a45b09f231d881f8d538aa9ec83e8532de448884e4ddab0c9"
+      }
+    },
+    {
+      "name": "noncanonical modulus-valued Field rejects",
+      "passed": true,
+      "command": {
+        "code": 1,
+        "signal": null,
+        "killed": false,
+        "stdoutBytes": 0,
+        "stderrBytes": 70,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "b41b758e419d60920a3fb6f81fd8bf6cb66d75811db66671a7686f7af99f4791"
+      }
+    },
+    {
+      "name": "malformed shortened hex input rejects",
+      "passed": true,
+      "command": {
+        "code": 1,
+        "signal": null,
+        "killed": false,
+        "stdoutBytes": 0,
+        "stderrBytes": 71,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "90fff067e63150cdef3c3189986e67e8e236e068937b7b53ae7494f15d30e515"
+      }
+    },
+    {
+      "name": "outside-scope working directory rejects before creating output",
+      "passed": true,
+      "command": {
+        "code": 1,
+        "signal": null,
+        "killed": false,
+        "stdoutBytes": 0,
+        "stderrBytes": 81,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "b67cb46a79ee2c26672d214301a57b70d9926e5ee75de42ad5761949935b892d"
+      }
+    },
+    {
+      "name": "symlink input confined to the disposable tree rejects",
+      "passed": true,
+      "command": {
+        "code": 1,
+        "signal": null,
+        "killed": false,
+        "stdoutBytes": 0,
+        "stderrBytes": 82,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "989a00f9602e94ba911a4d525824deba38f98dee583434ebf116e6a280196b2f"
+      }
+    },
+    {
+      "name": "missing explicit scope rejects",
+      "passed": true,
+      "command": {
+        "code": 1,
+        "signal": null,
+        "killed": false,
+        "stdoutBytes": 0,
+        "stderrBytes": 72,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "f8f7f9e6f649479de84224578fa6ac204f8322ec80698b3232382ea879fd79f6"
+      }
+    },
+    {
+      "name": "unsupported argument list rejects",
+      "passed": true,
+      "command": {
+        "code": 1,
+        "signal": null,
+        "killed": false,
+        "stdoutBytes": 0,
+        "stderrBytes": 76,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "7c72e48f4fa61ec57be0dd5904bee7fc8befb5b8bac6e43868ce38ef980a0bc1"
+      }
+    }
+  ],
+  "compilations": [
+    {
+      "name": "square",
+      "sourceSha256": "5f87196521f66de5797b9dd08edc71134632e617add282a096bcc2b1bd7faa67",
+      "manifestSha256": "b869b4d152a4ba65e5e9eac3690761b269b2d9b2b4700b5b79a5285917ef9fb2",
+      "code": 0,
+      "signal": null,
+      "killed": false,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifactSha256": "ed259bf152bd859da5af52f78e3402852bdba5c1c1e5ed462c20e997d6a12d21"
+    },
+    {
+      "name": "foreign",
+      "sourceSha256": "899af2e82317ae42fb8a68501b584db4961f3f04fce5f6872515d4932b46ff7c",
+      "manifestSha256": "cbba1b3db536e70cb99e52e789aaf8f4a177419f7c340d0c9d042de57f626ed4",
+      "code": 0,
+      "signal": null,
+      "killed": false,
+      "stdoutBytes": 0,
+      "stderrBytes": 311,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "f7b7e1c686bb4df2932b6fb6147be3b5c333ca2fa70dfc5e380845dd776c4e92",
+      "artifactSha256": "47e9391a74a74dfb43c23e7a1dd272e394175be388c9459f0e2325c25c3bdedc"
+    }
+  ],
+  "passed": true,
+  "temporaryRootRemoved": true,
+  "finishedAt": "2026-09-14T17:22:37.180Z"
+}

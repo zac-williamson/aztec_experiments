@@ -1,0 +1,19 @@
+{
+  "scope": "Deployment Ready activation API and fail-closed receipt checks; inert chain controls, no proof qualification",
+  "passed": true,
+  "tests": 53,
+  "failed": 0,
+  "commands": [
+    "node24.21 --test scripts/test-c01-deploy-activation.mjs scripts/test-c01-user.mjs scripts/test-artifacts.mjs",
+    "node24.21 apps/build.mjs billboard/deploy"
+  ],
+  "sourceHashes": {
+    "apps/src/billboard/deploy/engine.js": "f838f18fac069021cc5a03fc79ab8cda89e3b01be93f47cc0e3c9ea9b8697a45",
+    "apps/dist/deploy.html": "e86c6e73f5065918b3e7c345f5162c4f3438f402ec8305d7f9b3b2cc941e698c",
+    "scripts/test-c01-deploy-activation.mjs": "171e410311ca65f57764dc447c74e4552fd4b8374372be4f5f249a21911e61f4",
+    "scripts/test-c01-user.mjs": "52e7f05c93af0c5ad02002833cb081c0b45fbc276f5e9981e95c70c4bf153cc9",
+    "scripts/test-artifacts.mjs": "defcc9a30c6a7c123b367cd373c8ed7018044c951020e9a19ffa5557448c93eb",
+    "package.json": "a01ee9dee38ec36513cfe5978de721976084946d307d16b61177566b838449f6"
+  },
+  "review": "execution/evidence/C01/deploy-activation-review.md"
+}

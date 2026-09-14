@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { gunzipSync } from 'node:zlib';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FR_MODULUS = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001n;
-const LIMITS = Object.freeze({ bytecode: 32 * 1024 * 1024, expandedBytecode: 128 * 1024 * 1024,
+const LIMITS = Object.freeze({ bytecode: 32 * 1024 * 1024, expandedBytecode: 384 * 1024 * 1024,
   inputToml: 4 * 1024 * 1024, outputEntries: 4194304, outputGzip: 128 * 1024 * 1024,
   stdout: 400 * 1024 * 1024 });
 const WASM_SHA256 = 'bcd66e862a95a57f7f2ae3cb97e24d007d2ad710ac7490262c3c92a5b823775d';

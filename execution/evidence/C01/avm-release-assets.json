@@ -1,0 +1,12 @@
+{
+  "url": "https://api.github.com/repos/AztecProtocol/aztec-packages/releases/tags/v5.2.0",
+  "tag": "v5.2.0",
+  "assets": [
+    {
+      "name": "barretenberg-avm-amd64-linux.tar.gz",
+      "bytes": 17847014,
+      "digest": "sha256:e573e15e0d808a751df001893e1fa87d4cbde0dafd3bd74e4f6c9ee8af1eb05d",
+      "url": "https://github.com/AztecProtocol/aztec-packages/releases/download/v5.2.0/barretenberg-avm-amd64-linux.tar.gz"
+    }
+  ]
+}

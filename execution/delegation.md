@@ -300,3 +300,18 @@ Root verified BaseParity, actual server padding and all ten adapter scenarios
 serially. The reused agent's implementation ownership is released; its last
 bounded lane reviews the server harness and identifies the next real-verifier
 integration boundary. No other agent or heavy test runs concurrently.
+
+Root owns new C01 real-network supervision and startup. Build_review owns only
+scripts/c01-real-deployment.mjs plus its review, preparing direct local deployment
+and runtime verifier identity checks without launching processes.
+
+Real deployment/checker agent ownership released; root integrated passing checks.
+Build_review now owns only scripts/c01-board-flow.mjs and review: prepare fresh
+account and genuine board deployment proof without execution. Root owns genesis,
+node and bounded proof supervision. All heavy runs remain serial.
+
+Board/Ready/settlement helper ownership released after source review. Root runs
+one genuine settlement experiment under the900s/8GiB supervisor. The reused
+build_review agent owns only the application deployment activation API fix,
+its focused behavioral test and review. No generated bundles or frozen proof
+harness inputs may be edited during that run; no second heavy process is allowed.

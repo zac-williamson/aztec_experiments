@@ -153,3 +153,15 @@ mocked proof. No dependency, circuit, verifier or foreign-call constraint is
 patched; genuine proof and verification remain mandatory. The adapter accepts
 only controlled fresh local files and rejects foreign calls. Broader circuit and
 actual finalized bridge qualification remain open until observed.
+
+## C01 local genuine epoch qualification
+
+Use explicit local Ethereum1s/Aztec12s slots, epoch4, and proof submission64epochs
+for the first genuine covering proof. Read these from the deployed contract. This
+retains the actual protocol deadline while allowing local single-worker proving;
+it is not a mainnet timing/performance claim. Wait for genuine committee eligibility
+using observed chain state before transactions. Partial epoch proving through the
+installed ProverNode.startProof API is acceptable only with actual verifier-backed
+L1 acceptance and canonical finalized Outbox consumption. No proven-tip/root or
+finality override is permitted. Prepare at most129 complete4MiB BN254 compressed
+chunks, all pinned to the exact executable; remove temporary setup after testing.

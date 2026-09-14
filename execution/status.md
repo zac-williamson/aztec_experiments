@@ -23,3 +23,32 @@ C01 checkpoint: authenticated V1 escrow, compact eight-field notes and affected 
 C01 implementation committed da5caf0: Noir101/101, portal29/29, client/artifact41/41, builds pass. Genuine nontrivial BaseParity proof passed (~70s,3.1GB maxRSS), altered public root and scalar corruption rejected. Actual BBNativeRollupProver padding through explicit test-only WASM CLI adapter passed, independently reverified and corruption rejected; ten adapter cases pass. All proof processes/temp setup cleaned. Next: genuine-verifier local protocol topology and finalized Ready/deposit/claim/no-post-exit integration; C01 real bridge criteria remain incomplete.
 
 Heavy checks remain serial with one bounded review agent. Padding and BaseParity qualify proof plumbing/capacity only, not application or finalized epoch acceptance. No mainnet transactions or release gates were waived.
+
+Continuing: first qualify direct real-verifier deployment on a fresh disposable
+chain, then ordinary node/prover startup. Root owns the bounded supervisor; one
+agent owns the deployment/identity module. No user decision is required.
+
+Real Honk verifier and production BlobLib deployment/code checks now pass.
+Real proof-verifying node and prover subsystem startup/cleanup also pass
+(real-network-84839e10). Next is a genuine board deployment proof with fresh local
+funding; no board transaction or epoch proof acceptance has yet been observed.
+
+Ordinary board deployment inclusion passes (1bb4b84e), and real portal binding
+proof/inclusion emits the exact expected Ready leaf (497f7da7). Deposits remain
+disabled. Next is genuine covering epoch proof and finalized Outbox activation.
+A temporary516MiB verified setup prefix prepares the outer circuit; all download
+chunks are bound to the pinned native binary. Local proof deadline will be64epochs
+for capacity qualification, with resource supervision retained. No mainnet claim.
+
+Latest: genuine epoch run cbdddf35 failed at PUBLIC_VM: the pinned lightweight
+bb binary explicitly requires full bb-avm. No epoch proof was accepted. Root
+stopped the now-idle attempt after507s; peak sampled group RSS5057344KiB, below
+8GiB. All owned processes, temporary chain and516MiB setup download removed.
+The later RPC shutdown errors are cleanup consequences, not the initial cause.
+Next qualify AVM-capable runtime before any repeat. Official5.2.0 publishes an
+amd64-Linux AVM artifact; native build feasibility is under source review.
+
+The application Ready activation now uses the actual getChainTips API and checks
+successful canonical inclusion again after witness resolution. Integrated53
+client/artifact tests pass; deployment page rebuilt. New16-case regression suite
+uses actual SDK BlockResponse schema and is included in test:c01-clients.

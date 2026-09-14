@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "profile": "direct real-verifier local protocol deployment only",
+  "startedAt": "2026-09-14T16:43:04.458Z",
+  "deadlineMs": 300000,
+  "passed": true,
+  "testsApplicationOrEpoch": false,
+  "rssLimitKiB": 8388608,
+  "rssSampleIntervalMs": 1000,
+  "rssMethod": "sampled owned process-group RSS; not OS allocation limit",
+  "rssSamples": [
+    {
+      "elapsedMs": 28,
+      "rssKiB": 4000,
+      "members": [
+        {
+          "pid": 40232,
+          "rssKiB": 4000
+        }
+      ]
+    },
+    {
+      "elapsedMs": 1056,
+      "rssKiB": 317152,
+      "members": [
+        {
+          "pid": 40232,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40234,
+          "rssKiB": 293152
+        },
+        {
+          "pid": 40237,
+          "rssKiB": 22800
+        }
+      ]
+    },
+    {
+      "elapsedMs": 2082,
+      "rssKiB": 444928,
+      "members": [
+        {
+          "pid": 40232,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40234,
+          "rssKiB": 300608
+        },
+        {
+          "pid": 40237,
+          "rssKiB": 22832
+        },
+        {
+          "pid": 40239,
+          "rssKiB": 96592
+        },
+        {
+          "pid": 40240,
+          "rssKiB": 23664
+        },
+        {
+          "pid": 40241,
+          "rssKiB": 32
+        }
+      ]
+    },
+    {
+      "elapsedMs": 3111,
+      "rssKiB": 566928,
+      "members": [
+        {
+          "pid": 40232,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40234,
+          "rssKiB": 300608
+        },
+        {
+          "pid": 40237,
+          "rssKiB": 28160
+        },
+        {
+          "pid": 40239,
+          "rssKiB": 96608
+        },
+        {
+          "pid": 40240,
+          "rssKiB": 140352
+        }
+      ]
+    },
+    {
+      "elapsedMs": 4144,
+      "rssKiB": 309376,
+      "members": [
+        {
+          "pid": 40232,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40234,
+          "rssKiB": 308176
+        }
+      ]
+    },
+    {
+      "elapsedMs": 5174,
+      "rssKiB": 309376,
+      "members": [
+        {
+          "pid": 40232,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40234,
+          "rssKiB": 308176
+        }
+      ]
+    },
+    {
+      "elapsedMs": 6206,
+      "rssKiB": 309392,
+      "members": [
+        {
+          "pid": 40232,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 40234,
+          "rssKiB": 308192
+        }
+      ]
+    }
+  ],
+  "peakGroupRSSKiB": 566928,
+  "sourceHashes": {
+    "scripts/test-c01-real-network.mjs": "4d5236890d4fddafe9ad448f9368884aba02dadf0eb71e78efbe06b76a5912b9",
+    "scripts/c01-real-deployment.mjs": "e33c1f3d8d4b3477f171023a624b16ce33a39bcc8a0fc4bb1d5d25a9f9ee7c57",
+    "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js": "f84940700d4fe17c4bb94fb27199085fb057c567ff745e90c21352cd47a091c3"
+  },
+  "pid": 40232,
+  "stages": [
+    {
+      "stage": "start-disposable-l1",
+      "elapsedMs": 145
+    },
+    {
+      "stage": "prepare-genesis",
+      "elapsedMs": 260
+    },
+    {
+      "stage": "deploy-real-verifier",
+      "elapsedMs": 926
+    }
+  ],
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "sanitizedStderr": "{\"level\":40,\"time\":1789404185475,\"pid\":40234,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"ethereum:deploy_aztec_l1_contracts\",\"msg\":\"Set block interval to 12\"}\n{\"level\":40,\"time\":1789404187599,\"pid\":40234,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"ethereum:deploy_aztec_l1_contracts\",\"msg\":\"[forge_broadcast] Broadcast succeeded.\"}\n",
+  "elapsedMs": 6577,
+  "nativeTimeRaw": "        6.56 real         1.53 user         0.83 sys\n           315670528  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               41007  page reclaims\n                1020  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 413  messages sent\n                 433  messages received\n                   1  signals received\n                 116  voluntary context switches\n               10575  involuntary context switches\n         13306097971  instructions retired\n          4242739194  cycles elapsed\n           285738128  peak memory footprint\n",
+  "worker": {
+    "passed": true,
+    "profile": "direct real-verifier local deployment; no board or epoch proof",
+    "nonlocalNetworkDenied": true,
+    "deployment": {
+      "profile": "local direct protocol deployment; pinned genuine Honk verifier identity only",
+      "passed": true,
+      "realVerifier": true,
+      "provesEpoch": false,
+      "productionBlobLibQualified": false,
+      "chainId": "31337",
+      "clientVersion": "anvil/v1.4.1",
+      "rollupVersion": "64716524",
+      "addresses": {
+        "rollup": "0xd85bc444c76bc1c69af2a091e907181e307c0246",
+        "inbox": "0x71d609bb430b846ae3242e3446355c60aeefe73f",
+        "outbox": "0x90c5908551a39ff325d80c869d334e9553bca788",
+        "verifier": "0xDBA2C717A935CC488125033eFc1ecB104b63441D"
+      },
+      "codeHashes": {
+        "rollup": "0xb779f7cf96324b83580e4e8215f898182ea59c11be51bc02ed0b8d9e5feb3404",
+        "inbox": "0x03e00b9122b55619fb748e13c9895c0fcee557dd0e98d96e5779e5e3bd1d143e",
+        "outbox": "0xf328aa2738e08eb7001db0082b484f6628a128be4f6f0bb28ba4ac7f00324b55",
+        "verifier": "0x1d5b7184d41dc24aa2023316fe2defd7196d03f276953614a2765885f3eed764"
+      },
+      "verifierBytes": 16996,
+      "verifierMatch": "whole runtime including metadata; no masking",
+      "sourceHashes": {
+        "node_modules/@aztec/l1-artifacts/l1-contracts/out/HonkVerifier.sol/HonkVerifier.json": "3fba3b75fdb2eec44554cefeb387704caa65f05a3eb1b4049bf2fe6b9d3367df",
+        "node_modules/@aztec/l1-artifacts/l1-contracts/generated/HonkVerifier.sol": "5aeb653a8c004674f226f751c6ea09d316593daaadac4dcecd1e2d44749b35bd"
+      },
+      "initialValidatorCount": 1,
+      "genesisArchiveRoot": "0x177a4955b31ecaafad999753938a44e526b54c5ba5d536688227f85f15cfbdf5",
+      "fundingNeeded": "0",
+      "beforeBlock": "0",
+      "beforeTimestamp": "1789404184",
+      "identityBlock": "36",
+      "identityBlockHash": "0x278421c35f8232fc9a240cc4c3ce0f1a255ef0773549883f34475d208f487476",
+      "afterTimestamp": "1789404593",
+      "sdkTimeAdjustments": "SDK sets Anvil block timestamp interval and may mine to slot1; no proven-state override"
+    },
+    "anvilExit": {
+      "code": 0,
+      "signal": null
+    },
+    "singletonsStopped": true
+  },
+  "processGroupAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "finishedAt": "2026-09-14T16:43:11.042Z"
+}

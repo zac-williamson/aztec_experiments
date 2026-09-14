@@ -39,6 +39,54 @@
   // ============================================================
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+  // This is also the maintained behavioral test seam; runDeploy uses this exact path.
+  async function activateReady({ node, portal, hash, leaf, ethers, log,
+    now = Date.now, wait = sleep, timeoutMs = 15 * 60 * 1000, intervalMs = 15000 }) {
+    const deadline = now() + timeoutMs;
+    async function finalizedReceipt() {
+      const receipt = await node.getTxReceipt(hash);
+      if (!receipt || receipt.status === 'pending') return null;
+      if (receipt.status === 'dropped') throw new Error('Ready transaction was dropped');
+      if (!['proposed', 'checkpointed', 'proven', 'finalized'].includes(receipt.status)) {
+        throw new Error('Ready transaction has unknown receipt status');
+      }
+      if (receipt.executionResult !== 'success') throw new Error('Ready transaction did not execute successfully');
+      if (!Number.isSafeInteger(receipt.blockNumber) || receipt.blockNumber < 1 || !receipt.blockHash) {
+        throw new Error('Ready transaction has incomplete inclusion metadata');
+      }
+      if (receipt.status === 'proposed') return null;
+      const tips = await node.getChainTips();
+      const finalizedNumber = tips?.finalized?.block?.number;
+      if (!Number.isSafeInteger(finalizedNumber) || finalizedNumber < 0) throw new Error('Invalid finalized chain tip');
+      if (finalizedNumber < receipt.blockNumber) return null;
+      const block = await node.getBlock(receipt.blockNumber);
+      if (!block || block.hash.toString() !== receipt.blockHash.toString()) return null;
+      return receipt;
+    }
+    while (now() < deadline) {
+      const receipt = await finalizedReceipt();
+      if (receipt) {
+        const witness = await node.getL2ToL1MembershipWitness(hash, leaf);
+        if (witness) {
+          // Re-read after witness resolution: never activate using a receipt cached before a reorg.
+          const current = await finalizedReceipt();
+          if (current && current.blockNumber === receipt.blockNumber &&
+            current.blockHash.toString() === receipt.blockHash.toString() && now() < deadline) {
+            const tx = await portal.activate(BigInt(witness.epochNumber), BigInt(witness.numCheckpointsInEpoch),
+              BigInt(witness.leafIndex), witness.siblingPath.toBufferArray().map(bytes => ethers.hexlify(bytes)));
+            const activation = await tx.wait();
+            if (activation.status !== 1 || !await portal.depositsEnabled()) throw new Error('Portal activation failed');
+            return activation;
+          }
+        }
+      }
+      log('Waiting for finalized Ready proof; deposits remain disabled.', 'info');
+      await wait(Math.min(intervalMs, Math.max(0, deadline - now())));
+    }
+    throw new Error('Ready proof not finalized within this run; resume with readyTxHash ' + hash.toString());
+  }
+  g.BillboardDeployActivation = Object.freeze({ activateReady });
+
   function extractErrorMessage(err) {
     if (!err) return 'Unknown error';
     let msg = err.message || String(err);
@@ -579,24 +627,7 @@
         a.EthAddress.fromString(predicted).toBuffer(), new a.Fr(BigInt(nodeInfo.l1ChainId)).toBuffer(),
         new a.Fr(BigInt(ready)).toBuffer()]);
       const hash = a.TxHash.fromString(readyTxHash);
-      const receipt = await aztecNode.getTxReceipt(hash);
-      if (receipt.blockNumber == null) throw new Error('Ready transaction is not included');
-      const deadline = Date.now() + 15 * 60 * 1000;
-      let witness = null;
-      while (Date.now() < deadline) {
-        const tips = await aztecNode.getL2Tips();
-        if (Number(tips.finalized.block.number) >= Number(receipt.blockNumber)) {
-          witness = await aztecNode.getL2ToL1MembershipWitness(hash, leaf);
-          if (witness) break;
-        }
-        log('Waiting for finalized Ready proof; deposits remain disabled.', 'info');
-        await sleep(15000);
-      }
-      if (!witness) throw new Error('Ready proof not finalized within this run; resume with readyTxHash ' + readyTxHash);
-      const tx = await portal.activate(BigInt(witness.epochNumber), BigInt(witness.numCheckpointsInEpoch),
-        BigInt(witness.leafIndex), witness.siblingPath.toBufferArray().map(bytes => ethers.hexlify(bytes)));
-      const activation = await tx.wait();
-      if (activation.status !== 1 || !await portal.depositsEnabled()) throw new Error('Portal activation failed');
+      await activateReady({ node: aztecNode, portal, hash, leaf, ethers, log });
     }
     log('Board and portal are linked; authenticated Ready enabled deposits.', 'success');
 
