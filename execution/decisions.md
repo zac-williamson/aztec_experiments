@@ -140,3 +140,16 @@ engineering with disposable test identities may continue while they remain open.
 ## C01 executable note limit correction — 2026-09-14
 
 Full compilation failed at actual create_note and discovery: pinned V5 permits at most8 packed Fields. P04's11-field fixture tested packing/selectors but never instantiated note creation. The original assumption is withdrawn. Keep11 logical wallet values but pack receipt metadata96bits and sequence state192bits in typed one-field substructs, yielding8 physical Fields. Generated chain selector staysindex1; no protocol patch, field deletion, second note or relaxed bound. interface-spec now records exact storage order. C01-A05 adds actual lifecycle and upper-bit rejection criteria; P04/A02 historical baseline build evidence is not relabelled as verification of this correction.
+
+## C01 local server witness adapter qualification
+
+The matching upstream Noir release metadata exposes no standalone ACVM asset.
+The installed standard server prover constructs a CLI-based NativeACVMSimulator,
+while the matched WASM ACVM has already generated genuine witnesses accepted by
+the pinned native prover. Prepare an explicitly named test-only WASM CLI adapter
+for that exact simulator boundary and qualify the actual BBNativeRollupProver
+small padding path. This is not native ACVM, a production replacement, or a
+mocked proof. No dependency, circuit, verifier or foreign-call constraint is
+patched; genuine proof and verification remain mandatory. The adapter accepts
+only controlled fresh local files and rejects foreign calls. Broader circuit and
+actual finalized bridge qualification remain open until observed.

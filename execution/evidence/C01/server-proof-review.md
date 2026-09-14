@@ -1,0 +1,29 @@
+# C01 server proof integration review
+
+Read-only review, 2026-09-14. No tests, proofs, network, or downloads executed in this lane. No blocking correctness finding for the stated padding-plumbing scope.
+
+## What the check establishes
+
+`scripts/test-c01-server-proof.mjs` SHA256 `15bf715e576211729134641ac25b773554da56b4b24be8b1fd36440a1de99f9d` matches the successful `server-padding-e44353c0-0e3e-4d7d-a082-f8dbc4fcd8de.json` record. That record reports exit 0, 3.94 seconds, peak sampled process-group RSS 546,960 KiB, normal process-group disappearance and temporary-directory removal. I inspected this saved result; I did not rerun it.
+
+The ABI-aware empty-output check is correct for the pinned artifact. It separately requires the SDK's typed output serialization to contain only zero bytes, then recursively flattens the artifact's return ABI into exactly 149 field slots. The only infinity flags must be `start_blob_accumulator.c_acc.is_infinity` and `end_blob_accumulator.c_acc.is_infinity`; both are boolean and encode as 1. Every other field encodes as 0. This avoids equating the SDK's compact typed serialization with Noir's field serialization. The pinned verification key bytes, domain exponent 12, 480 proof fields and 149 public inputs are also checked.
+
+The invocation really reaches installed `BBNativeRollupProver.new` and `getCheckpointPaddingRollupProof`, with the explicit test-only WASM ACVM CLI adapter. Installed `src/prover/server/bb_prover.ts:359` selects the real checkpoint-padding artifact and conversions; `:410` generates then verifies before returning. `:492` calls the native-backed instance's `generateProof`; `:621` independently splits and verifies the binary proof, throwing on false. Instances use explicit resource disposal. The reviewed executable module `node_modules/@aztec/bb-prover/dest/prover/server/bb_prover.js` has SHA256 `e7ac7d221192bca0a3253f73343c56c4494a18787ce80a63e01418f1355dc703`.
+
+The harness then verifies the returned serialized proof with another native instance, changes proof content while retaining field lengths, requires an ordinary `verified:false`, and reverifies the original successfully. A crash/throw does not satisfy the negative check. The saved result confirms all three outcomes. There is no separate changed-public-input control in this harness; its exact ABI equality check and the existing BaseParity changed-root control must not be described as that additional server-padding test. Likewise, this single mutation is one negative case, not comprehensive malformed-proof coverage.
+
+The direct server module hash above is supplementary review evidence: the harness fingerprints its own source, adapter, runtime pins, artifact, BB, ACVM WASM, and backend modules, but currently does not include this direct server module in its before/after fingerprints. Adding that path to future qualification evidence would strengthen the binding to the specific integration under test.
+
+## Smallest next real bridge integration
+
+There is no existing repository command that proves the genuine Ready-to-Outbox bridge path. `scripts/fee-network-worker.mjs` deliberately uses the helper deploying `realVerifier:false`, automine, and `realProofs:false`; changing a command flag cannot promote its historical evidence.
+
+The smallest new harness milestone is **real-verifier deployment and one genuinely settled Ready message**, followed later by deposit/claim/no-post exit. Reuse the disposable Anvil lifecycle and cleanup, but construct the protocol directly:
+
+1. Call installed `deployAztecL1Contracts(rpcUrl, freshPrivateKey, chainId, args)` (`@aztec/ethereum/src/deploy_aztec_l1_contracts.ts:284`) with `realVerifier:true`, coherent genesis/VK/protocol roots and an actual local validator committee. Read the deployed Rollup's `getEpochProofVerifier` through its L1 ABI and compare its runtime to the pinned Honk verifier, not merely a nonzero address.
+2. Call `createAztecNodeService(config, deps, {genesis})` with `realProofs:true`, `useAutomineSequencer:false`, `enableProverNode:true`, `proverAgentCount:1`, both prover pending-job/parallel-block limits 1, and proof publication enabled. Installed node factory `:601` creates and starts the prover subsystem; prover-node factory `:95` creates its broker when none is supplied. Prover-client `:247–274` starts agents and selects actual `BBNativeRollupProver`. Supply a fresh funded prover signer and the explicit adapter/native configuration; retain labels distinguishing WASM witness generation from native BB proving. Do not retain the padding-only circuit filter.
+3. Use a proving-enabled wallet for board deployment, portal binding and Ready. Require an actual submitted epoch proof accepted by the deployed Honk verifier, covering proven-checkpoint advancement, and the canonical Outbox root. Wait for the node's synchronized/finalized L1 view, call `node.getL2ToL1MembershipWitness(txHash, readyMessageHash, messageIndexInTx)` (installed interface `:239`), then invoke the portal's actual activation. No direct root insertion, `markAsProven`, storage override, fake verifier or synthetic settlement is admissible.
+
+This is a concrete implementation recipe, not an already runnable command or proven host-capacity claim. Before launching, preflight the additional circuit CRS/IPA requirements against verified local setup and preserve the existing memory/deadline supervision; small padding success cannot authorize an unbounded full epoch. The adapter must continue rejecting unexpected foreign calls rather than fabricate results. Complete withdrawal still requires a later separately accepted covering proof, so this first milestone alone does not close C01.
+
+Root disposition: added the actual server implementation to before/after source fingerprints and reran successfully. Final report: server-padding-5ee955dd-1fad-4e64-bd1d-3485f787442c.json. No semantic proof check changed.

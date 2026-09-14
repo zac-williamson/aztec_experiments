@@ -285,3 +285,18 @@ C01 continuation: earlier portal/client ownership is released. Root owns all
 contract and consumer integration. The sole reused agent owns only
 `scripts/test-c01-native-proof.mjs` and its harness review, preparing a bounded
 local proof plumbing experiment without running it. All other agents remain idle.
+
+C01 checkpoint da5caf0: all101 Noir,29 portal,41 client/artifact checks, app build,
+offline CLI and genuine native padding proof controls pass. Root owns bounded
+33-chunk setup preparation. Build_review owns only the new BaseParity harness
+and review. No concurrent proof runs; setup is temporary and must be removed
+after qualification. The passing padding harness remains frozen.
+
+BaseParity scalar-corruption and supervisor corrections are root-owned. The
+single agent now owns only an explicit test-only WASM ACVM CLI adapter and its
+review, for later actual server-wrapper qualification. No agent proof runs.
+
+Root verified BaseParity, actual server padding and all ten adapter scenarios
+serially. The reused agent's implementation ownership is released; its last
+bounded lane reviews the server harness and identifies the next real-verifier
+integration boundary. No other agent or heavy test runs concurrently.

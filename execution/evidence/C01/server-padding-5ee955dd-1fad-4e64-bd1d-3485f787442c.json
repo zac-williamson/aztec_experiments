@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "profile": "actual BBNativeRollupProver with explicit WASM CLI adapter; padding only",
+  "startedAt": "2026-09-14T13:52:30.193Z",
+  "deadlineMs": 300000,
+  "passed": true,
+  "testsApplicationOrEpoch": false,
+  "rssLimitKiB": 8388608,
+  "rssSampleIntervalMs": 1000,
+  "rssMethod": "sampled owned process-group RSS; not OS allocation limit",
+  "rssSamples": [
+    {
+      "elapsedMs": 25,
+      "rssKiB": 3936,
+      "members": [
+        {
+          "pid": 8427,
+          "rssKiB": 3936
+        }
+      ]
+    },
+    {
+      "elapsedMs": 1046,
+      "rssKiB": 511680,
+      "members": [
+        {
+          "pid": 8427,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 8429,
+          "rssKiB": 510480
+        }
+      ]
+    },
+    {
+      "elapsedMs": 2068,
+      "rssKiB": 547296,
+      "members": [
+        {
+          "pid": 8427,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 8429,
+          "rssKiB": 517776
+        },
+        {
+          "pid": 8433,
+          "rssKiB": 28320
+        }
+      ]
+    },
+    {
+      "elapsedMs": 3089,
+      "rssKiB": 531088,
+      "members": [
+        {
+          "pid": 8427,
+          "rssKiB": 1200
+        },
+        {
+          "pid": 8429,
+          "rssKiB": 517952
+        },
+        {
+          "pid": 8436,
+          "rssKiB": 11936
+        }
+      ]
+    }
+  ],
+  "peakGroupRSSKiB": 547296,
+  "sourceHashes": {
+    "crs-manifest.json": "4927de3e03d69f4e640a841f9421dd0b93819b5e3d42c142d12ee079d5a402be",
+    "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_checkpoint_padding.json": "8e9b00531edf18405e516cbb443ec3c59e205e329a18e0e9fbcdd55cef1cd900",
+    "node_modules/@aztec/bb.js/build/arm64-macos/bb": "208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031",
+    "node_modules/@aztec/noir-acvm_js/nodejs/acvm_js_bg.wasm": "bcd66e862a95a57f7f2ae3cb97e24d007d2ad710ac7490262c3c92a5b823775d",
+    "scripts/test-c01-server-proof.mjs": "cf58f77e66e7c1328396aa298afc8079c7295b4f8b1208f2dca13dfa632213fc",
+    "scripts/c01-acvm-wasm-cli.mjs": "aca8470c324e3d4ab8440d6e6243d05c0b550838c92273bcb122b9ee22231cb9",
+    "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "node_modules/@aztec/bb-prover/dest/bb/bb_js_backend.js": "a5dfae74d2b71ad006fdf1d7bc7965880476f37f82ec3e7f7a805f29e0089c6a",
+    "node_modules/@aztec/bb-prover/dest/prover/server/bb_prover.js": "e7ac7d221192bca0a3253f73343c56c4494a18787ce80a63e01418f1355dc703",
+    "node_modules/@aztec/bb.js/dest/node/bb_backends/node/native_socket.js": "72d56ee153101f9d3ef18d9bf63285ca86f95206e0673233cd5e601b50e4bd9b"
+  },
+  "setup": [
+    {
+      "name": "bn254_g1.dat",
+      "bytes": 75497472,
+      "numPoints": 1179648,
+      "format": "bn254-g1-uncompressed-64-byte",
+      "sha256": "2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac"
+    },
+    {
+      "name": "bn254_g2.dat",
+      "bytes": 128,
+      "numPoints": 1,
+      "format": "bn254-g2-uncompressed-128-byte",
+      "sha256": "01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f"
+    },
+    {
+      "name": "grumpkin_g1_v2.flat.dat",
+      "bytes": 4194368,
+      "numPoints": 65537,
+      "format": "grumpkin-g1-v2-uncompressed-64-byte",
+      "sha256": "b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9"
+    }
+  ],
+  "nativeLauncherSha256": "97806687d1979ad1316030421161bab53c8eef9ba618df98e14ebace313ccaf0",
+  "witnessEngine": "explicit WASM CLI adapter; not native ACVM",
+  "pid": 8427,
+  "stages": [
+    {
+      "stage": "network-denial-control",
+      "elapsedMs": 54
+    },
+    {
+      "stage": "server-prover",
+      "elapsedMs": 58
+    },
+    {
+      "stage": "server-result-checks",
+      "elapsedMs": 3085
+    },
+    {
+      "stage": "verify",
+      "elapsedMs": 3139
+    },
+    {
+      "stage": "corrupt-proof-verify",
+      "elapsedMs": 3266
+    },
+    {
+      "stage": "normal-proof-reverify",
+      "elapsedMs": 3389
+    }
+  ],
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "elapsedMs": 4071,
+  "nativeTimeRaw": "        4.05 real         2.84 user         0.34 sys\n           530808832  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               45555  page reclaims\n                 975  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                  89  messages sent\n                  42  messages received\n                   3  signals received\n                3049  voluntary context switches\n                4119  involuntary context switches\n          8274825850  instructions retired\n          2951604692  cycles elapsed\n           503057424  peak memory footprint\n",
+  "worker": {
+    "profile": "actual BBNativeRollupProver with explicit WASM CLI adapter; padding only",
+    "passed": true,
+    "threads": 1,
+    "ipNetworkingDenied": true,
+    "publicInputsMatchEmptyAbiEncoding": true,
+    "typedOutputBytes": 3568,
+    "serverWrapperReturnedVerifiedProof": true,
+    "witnessEngine": "Pinned WASM ACVM via explicit test-only CLI adapter; not native ACVM",
+    "nativeVerified": true,
+    "corruptedProofRejected": true,
+    "normalReverified": true,
+    "circuitDomain": 4096,
+    "proofFields": 480,
+    "publicInputFields": 149,
+    "proofSha256": "0bd0b0a60e7f682a5947111c56f4e124894db91a8cc79e6dbac9a5c67179ebee",
+    "serverWrapperMs": 1972.2899579999998,
+    "publicOutputSha256": "a87896c2a989fb7f700480d223bbb8e0c85bc3491c7175eee6969855aa893ccd",
+    "verificationMs": 127.16516700000011,
+    "sourceHashes": {
+      "crs-manifest.json": "4927de3e03d69f4e640a841f9421dd0b93819b5e3d42c142d12ee079d5a402be",
+      "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_checkpoint_padding.json": "8e9b00531edf18405e516cbb443ec3c59e205e329a18e0e9fbcdd55cef1cd900",
+      "node_modules/@aztec/bb.js/build/arm64-macos/bb": "208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031",
+      "node_modules/@aztec/noir-acvm_js/nodejs/acvm_js_bg.wasm": "bcd66e862a95a57f7f2ae3cb97e24d007d2ad710ac7490262c3c92a5b823775d",
+      "scripts/test-c01-server-proof.mjs": "cf58f77e66e7c1328396aa298afc8079c7295b4f8b1208f2dca13dfa632213fc",
+      "scripts/c01-acvm-wasm-cli.mjs": "aca8470c324e3d4ab8440d6e6243d05c0b550838c92273bcb122b9ee22231cb9",
+      "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+      "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+      "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+      "node_modules/@aztec/bb-prover/dest/bb/bb_js_backend.js": "a5dfae74d2b71ad006fdf1d7bc7965880476f37f82ec3e7f7a805f29e0089c6a",
+      "node_modules/@aztec/bb-prover/dest/prover/server/bb_prover.js": "e7ac7d221192bca0a3253f73343c56c4494a18787ce80a63e01418f1355dc703",
+      "node_modules/@aztec/bb.js/dest/node/bb_backends/node/native_socket.js": "72d56ee153101f9d3ef18d9bf63285ca86f95206e0673233cd5e601b50e4bd9b"
+    },
+    "nativeDestroyCompleted": true,
+    "nodeResourceUsage": {
+      "userCPUTime": 858739,
+      "systemCPUTime": 250762,
+      "maxRSS": 518192,
+      "sharedMemorySize": 0,
+      "unsharedDataSize": 0,
+      "unsharedStackSize": 0,
+      "minorPageFault": 32882,
+      "majorPageFault": 803,
+      "swappedOut": 0,
+      "fsRead": 0,
+      "fsWrite": 0,
+      "ipcSent": 35,
+      "ipcReceived": 18,
+      "signalsCount": 0,
+      "voluntaryContextSwitches": 3028,
+      "involuntaryContextSwitches": 3484
+    }
+  },
+  "processGroupAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "finishedAt": "2026-09-14T13:52:34.585Z"
+}

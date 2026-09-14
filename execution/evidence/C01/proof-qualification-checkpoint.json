@@ -1,0 +1,23 @@
+{
+  "scope": "C01 proof qualification checkpoint; not C01 acceptance",
+  "next": "Genuine verifier local protocol deployment and finalized board bridge integration",
+  "sources": {
+    "scripts/prepare-c01-parity-crs.mjs": "158a4596add8a1195508321109fbe0150241f557ebcfdaf399a97fffc37948c9",
+    "scripts/test-c01-base-parity-proof.mjs": "50dfaee5f03ea38ce1e7c279db7d78a2488201df8ad132fba09f912c3beda19d",
+    "scripts/c01-acvm-wasm-cli.mjs": "aca8470c324e3d4ab8440d6e6243d05c0b550838c92273bcb122b9ee22231cb9",
+    "scripts/test-c01-acvm-adapter.mjs": "13a37f7ae4afec46e8d79101e3b250d8ac091a6ad4781d128129091022b180ac",
+    "scripts/test-c01-server-proof.mjs": "cf58f77e66e7c1328396aa298afc8079c7295b4f8b1208f2dca13dfa632213fc"
+  },
+  "reports": {
+    "execution/evidence/C01/acvm-adapter-tests-34fc13ea-dca3-4f5a-85dd-d63abe802eb4.json": "ede0976c9af71acb7a9119abfe62c9434ac60d7750f9170d08fa467e214191af",
+    "execution/evidence/C01/native-base-parity-bd37eccb-6120-4c0e-a333-b13c9a40c02b.json": "bd711deb3b94e9034a1d2bc60ff68867c3f4984f45245aa6ca8f7e21ba9d17d3",
+    "execution/evidence/C01/native-base-parity-e8fe880a-b30f-4b97-bd65-278123d468da.json": "21ac699bb711c2a979afd0cd948ff368d3f10aded5605a04b3f9f9361ce15e66",
+    "execution/evidence/C01/parity-crs-cleanup.json": "f344b036af3389bccb350372109c1d57d68c2f061c95a5f2eabd954029ba3504",
+    "execution/evidence/C01/parity-crs-f6af425c-978b-4e51-b72a-5bdc7b425a7d.json": "803b6a7a222dcc54ce965029df457f38b94f36624abf3ce976fe94e8051a2431",
+    "execution/evidence/C01/server-padding-161672fe-6f08-41fc-b426-beaada24743a.json": "21e39804378d2a1c89b5cf2b3649c9b523974806738201f79f975ad08aa73547",
+    "execution/evidence/C01/server-padding-42713eac-2a05-43e8-aa62-9c29b1719169.json": "a3d246325d9449a8e96b622960a107421859f405d542163002e0e3df86d44964",
+    "execution/evidence/C01/server-padding-c508b8f3-fe47-4398-8b9f-21549a52dc45.json": "e35d81a9427fda30c071d44f6a2180d4eae0b592c90228cb4fbbd739ea3f8dd4",
+    "execution/evidence/C01/server-padding-e44353c0-0e3e-4d7d-a082-f8dbc4fcd8de.json": "efa23646e7ca3246098eeeeb9635c19ecea32c1e1b4b26d84953f1a8c20b4a2f",
+    "execution/evidence/C01/server-padding-5ee955dd-1fad-4e64-bd1d-3485f787442c.json": "a65b8a9c717d78e36b50e3f2d7e38bf3bb3dfcafd15600e8767895e076badd5f"
+  }
+}
