@@ -1,0 +1,312 @@
+{
+  "recordedAt": "2026-09-14T20:55:36.228262+00:00",
+  "sourceRun": "real-network-8a92f555-ae43-4b99-8858-a13cd07ee170.json",
+  "passed": false,
+  "elapsedMs": 1775297,
+  "stopReason": "SIGTERM",
+  "peakTreeRSSKiB": 6756000,
+  "cleanup": {
+    "descendantTreeAbsent": true,
+    "temporaryDirectoryRemoved": true,
+    "temporaryEpochSetupRemoved": true
+  },
+  "lastStages": [
+    {
+      "stage": "claim:wait-real-inbox-anchor",
+      "elapsedMs": 1127837
+    },
+    {
+      "stage": "claim:prove-real-claim",
+      "elapsedMs": 1162731
+    },
+    {
+      "stage": "claim:include-real-claim",
+      "elapsedMs": 1174026
+    },
+    {
+      "stage": "claim:check-delivered-deposit-note",
+      "elapsedMs": 1184896
+    },
+    {
+      "stage": "claim:reject-real-claim-replay",
+      "elapsedMs": 1185031
+    },
+    {
+      "stage": "real-no-post-exit",
+      "elapsedMs": 1185185
+    },
+    {
+      "stage": "exit:reopen-exit-wallet",
+      "elapsedMs": 1185204
+    },
+    {
+      "stage": "exit:wait-eligible-canonical-anchor",
+      "elapsedMs": 1185417
+    },
+    {
+      "stage": "exit:prove-real-withdrawal",
+      "elapsedMs": 1219088
+    },
+    {
+      "stage": "exit:include-real-withdrawal",
+      "elapsedMs": 1228354
+    },
+    {
+      "stage": "exit:verify-consumed-note",
+      "elapsedMs": 1241066
+    },
+    {
+      "stage": "resume-server-agent-for-exit-settlement",
+      "elapsedMs": 1241170
+    }
+  ],
+  "exitSettlementProgress": {
+    "passed": false,
+    "scope": "disposable real-verifier message settlement; no portal mutation",
+    "kind": "exit",
+    "deadlineMs": 1800000,
+    "syntheticSettlement": false,
+    "jobs": [
+      {
+        "uuid": "7a233376-b494-4aa8-a9cb-ada8d68a7ec0",
+        "status": "awaiting-root",
+        "epochNumber": 26
+      }
+    ],
+    "epochs": [
+      {
+        "epoch": 26,
+        "firstCheckpoint": 3,
+        "lastCheckpoint": 5,
+        "jobId": "7a233376-b494-4aa8-a9cb-ada8d68a7ec0",
+        "scheduling": "existing-automatic-session"
+      },
+      {
+        "epoch": 27,
+        "firstCheckpoint": 6,
+        "lastCheckpoint": 8
+      },
+      {
+        "epoch": 28,
+        "firstCheckpoint": 9,
+        "lastCheckpoint": 11
+      }
+    ],
+    "proofReceipts": [],
+    "proofSearch": {
+      "fromBlock": "54",
+      "blockHash": "0xddfc2285480757ffd3a67c3b0704ccea2fa473dc214a344ba4be50b631cc0460"
+    },
+    "initialProvenCheckpoint": 2,
+    "targetCheckpoint": 11,
+    "targetAlreadyProvenAtStart": false,
+    "messageBlock": "11",
+    "messageTxHash": "0x1e1de4b5afdf78d70c72e7a2d61a96b766bad2c73e1b3c91bfadd8c71a124530",
+    "expectedLeaf": "0x000156f5dae535bef1b711482507391179a912ad85795d71ed955235509af374",
+    "proverStartedByHelper": false,
+    "checkpoints": [
+      {
+        "epoch": 26,
+        "number": 3,
+        "failed": false,
+        "cancelled": false
+      },
+      {
+        "epoch": 26,
+        "number": 4,
+        "failed": false,
+        "cancelled": false
+      },
+      {
+        "epoch": 26,
+        "number": 5,
+        "failed": false,
+        "cancelled": false
+      },
+      {
+        "epoch": 27,
+        "number": 6,
+        "failed": false,
+        "cancelled": false
+      },
+      {
+        "epoch": 27,
+        "number": 7,
+        "failed": false,
+        "cancelled": false
+      },
+      {
+        "epoch": 27,
+        "number": 8,
+        "failed": false,
+        "cancelled": false
+      },
+      {
+        "epoch": 28,
+        "number": 9,
+        "failed": false,
+        "cancelled": false
+      },
+      {
+        "epoch": 28,
+        "number": 10,
+        "failed": false,
+        "cancelled": false
+      },
+      {
+        "epoch": 28,
+        "number": 11,
+        "failed": false,
+        "cancelled": false
+      }
+    ],
+    "proofProgress": {
+      "available": true,
+      "scope": "observed circuit scheduling only; no proof acceptance or native subphase claim",
+      "sampledAt": "2026-09-14T20:50:28.589Z",
+      "agents": [
+        {
+          "index": 0,
+          "status": "running"
+        }
+      ],
+      "sessions": [
+        {
+          "jobKeySha256": "a1033778ebe59220b40ae0641cf7e0070d37ba251d600feb154cf9ff16bc04a0",
+          "epoch": 26,
+          "status": "awaiting-root"
+        }
+      ],
+      "checkpoints": [
+        {
+          "epoch": 26,
+          "number": 3,
+          "failed": false,
+          "cancelled": false,
+          "blockProvingFullyEnqueued": true,
+          "subTreeCreated": true
+        },
+        {
+          "epoch": 26,
+          "number": 4,
+          "failed": false,
+          "cancelled": false,
+          "blockProvingFullyEnqueued": true,
+          "subTreeCreated": true
+        },
+        {
+          "epoch": 26,
+          "number": 5,
+          "failed": false,
+          "cancelled": false,
+          "blockProvingFullyEnqueued": true,
+          "subTreeCreated": true
+        },
+        {
+          "epoch": 27,
+          "number": 6,
+          "failed": false,
+          "cancelled": false,
+          "blockProvingFullyEnqueued": true,
+          "subTreeCreated": false
+        },
+        {
+          "epoch": 27,
+          "number": 7,
+          "failed": false,
+          "cancelled": false,
+          "blockProvingFullyEnqueued": true,
+          "subTreeCreated": false
+        },
+        {
+          "epoch": 27,
+          "number": 8,
+          "failed": false,
+          "cancelled": false,
+          "blockProvingFullyEnqueued": true,
+          "subTreeCreated": false
+        },
+        {
+          "epoch": 28,
+          "number": 9,
+          "failed": false,
+          "cancelled": false,
+          "blockProvingFullyEnqueued": true,
+          "subTreeCreated": false
+        },
+        {
+          "epoch": 28,
+          "number": 10,
+          "failed": false,
+          "cancelled": false,
+          "blockProvingFullyEnqueued": true,
+          "subTreeCreated": false
+        },
+        {
+          "epoch": 28,
+          "number": 11,
+          "failed": false,
+          "cancelled": false,
+          "blockProvingFullyEnqueued": true,
+          "subTreeCreated": false
+        }
+      ],
+      "broker": {
+        "byCircuit": {
+          "PARITY_BASE": {
+            "known": 2,
+            "fulfilled": 2,
+            "rejected": 0,
+            "aborted": 0,
+            "in-progress": 0,
+            "in-queue": 0
+          },
+          "PRIVATE_TX_BASE_ROLLUP": {
+            "known": 2,
+            "fulfilled": 2,
+            "rejected": 0,
+            "aborted": 0,
+            "in-progress": 0,
+            "in-queue": 0
+          },
+          "PARITY_ROOT": {
+            "known": 2,
+            "fulfilled": 2,
+            "rejected": 0,
+            "aborted": 0,
+            "in-progress": 0,
+            "in-queue": 0
+          },
+          "BLOCK_ROOT_SINGLE_TX_FIRST_ROLLUP": {
+            "known": 2,
+            "fulfilled": 2,
+            "rejected": 0,
+            "aborted": 0,
+            "in-progress": 0,
+            "in-queue": 0
+          },
+          "BLOCK_ROOT_EMPTY_TX_FIRST_ROLLUP": {
+            "known": 4,
+            "fulfilled": 4,
+            "rejected": 0,
+            "aborted": 0,
+            "in-progress": 0,
+            "in-queue": 0
+          }
+        },
+        "details": [],
+        "detailLimit": 64,
+        "totalRetainedJobs": 12,
+        "countsScope": "retained broker metadata for selected epochs; historical completed jobs may have been evicted",
+        "timingScope": "current dispatch/queue ages, not CPU time or measured completion durations"
+      }
+    },
+    "stage": "await-proof-publication",
+    "elapsedMs": 533227
+  },
+  "limitations": [
+    "Deliberately stopped after scheduler stall; no final worker result/whole-run pass",
+    "Helper assertion progression confirms claim/replay/exit stages, not final refund acceptance"
+  ],
+  "reproduction": "broker-retention-runtime.log: actual broker retention1 discards pending26 after28; retention64 preserves queued/in-progress26. Two tests passed."
+}

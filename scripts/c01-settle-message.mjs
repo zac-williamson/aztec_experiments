@@ -99,7 +99,15 @@ export async function settleC01Message({node,config,dateProvider,l1Client,direct
       group.lastCheckpoint=Number(cp.number);
     }
     const prover=node.getProverNode();assert(prover);
+    assert.equal(config.proverBrokerMaxEpochsToKeepResultsFor,64);
+    assert.equal(prover.getProver().getProvingJobSource().maxEpochsToKeepResultsFor,64);
+    observation.brokerRetentionEpochs=64;
     async function checkpointHealth(){
+      const broker=prover.getProver().getProvingJobSource();
+      const floor=broker.epochHeight-broker.maxEpochsToKeepResultsFor;
+      for(const group of observation.epochs){
+        if(group.epoch<floor)assert(Number(await rollup.getProvenCheckpointNumber())>=group.lastCheckpoint,'GENUINE_BROKER_RETENTION_LOSS');
+      }
       observation.checkpoints=[];
       for(const item of observation.epochs){
         for(const checkpoint of await prover.getCheckpointStore().listForEpoch(EpochNumber(item.epoch))){
@@ -182,7 +190,7 @@ export async function settleC01Message({node,config,dateProvider,l1Client,direct
   }catch(error){
     observation.passed=false;
     observation.failure={stage,errorClass:error?.constructor?.name??'Error',
-      reason:['SETTLEMENT_DEADLINE','GENUINE_CHECKPOINT_SUBTREE_FAILED','GENUINE_EPOCH_JOB_FAILED'].includes(error?.message)?error.message:'UNCLASSIFIED_SETTLEMENT_FAILURE'};
+      reason:['SETTLEMENT_DEADLINE','GENUINE_CHECKPOINT_SUBTREE_FAILED','GENUINE_EPOCH_JOB_FAILED','GENUINE_BROKER_RETENTION_LOSS'].includes(error?.message)?error.message:'UNCLASSIFIED_SETTLEMENT_FAILURE'};
     observation.elapsedMs=Date.now()-started;
     await progress('failed');
     const failure=new Error(`C01_SETTLEMENT_FAILED:${observation.failure.stage}:${observation.failure.errorClass}`);

@@ -17,6 +17,7 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
     validatorPrivateKeys:new SecretValue([privateKey]),coinbase:EthAddress.fromString(address),
     allowEphemeralSigningProtection:true,realProofs:true,useAutomineSequencer:false,automineEnableProveEpoch:false,
     enableProverNode:true,proverAgentCount:1,proverNodeMaxPendingJobs:1,proverNodeMaxParallelBlocksPerEpoch:1,
+    proverBrokerMaxEpochsToKeepResultsFor:64,
     proverNodeDisableProofPublish:false,proverPublisherPrivateKeys:[new SecretValue(privateKey)],
     acvmBinaryPath:path.join(ROOT,'scripts/c01-acvm-wasm-cli.mjs'),acvmWorkingDirectory:process.env.C01_ACVM_ROOT,
     bbBinaryPath:path.join(directory,'bb-one-thread'),bbWorkingDirectory:path.join(directory,'bb-work'),
@@ -41,6 +42,8 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
     for(const key of ['realProofs','enableProverNode'])assert.equal(actual[key],true);
     for(const key of ['useAutomineSequencer','automineEnableProveEpoch','proverNodeDisableProofPublish'])assert.equal(actual[key],false);
     assert(node.getProverNode(),'Actual prover subsystem absent');
+    assert.equal(node.getProverNode().getProver().getProvingJobSource().maxEpochsToKeepResultsFor,64);
+    observation.brokerRetentionEpochs=64;
     assert(node.getSequencer(),'Ordinary sequencer absent');assert(!node.getAutomineSequencer());
     const info=await node.getNodeInfo();assert.equal(Number(info.l1ChainId),31337);
     observation.realProofs=true;observation.proverSubsystemCreated=true;

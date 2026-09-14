@@ -359,7 +359,7 @@
       "evidence": "evidence/C01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Claim inclusion c40e5544 failed after genuine proof; continuous local mining repair source-reviewed and lifecycle-tested. New content negatives included in 103/103 Noir pass; 53/53 client/artifact checks pass. Run fresh 60min/8GiB full bridge with actual consumed-claim replay; acceptance remains open.",
+      "checkpoint": "Retry8a92f555 passed claim/note/replay/exit helper assertions but exit aggregation stalled: default broker retention1 discarded epoch26 work when epoch28 queued. Stopped supervisor deliberately; cleanup confirmed. Set/assert local retention64 to match proof window, add actual broker scheduling regression and four binding negatives, rebuild/retest, then rerun full bridge. Refund remains open.",
       "priority": 6
     },
     {

@@ -58,7 +58,7 @@ export async function readC01ProofProgress({prover,epochs=[]}){
         details.push(item);
       }
     }
-    result.broker={byCircuit,details,detailLimit:64,totalRetainedJobs:broker.jobsCache.size,
+    result.broker={epochHeight:safeInteger(broker.epochHeight),retentionEpochs:safeInteger(broker.maxEpochsToKeepResultsFor),oldestRetainedEpoch:Math.max(0,safeInteger(broker.epochHeight)-safeInteger(broker.maxEpochsToKeepResultsFor)),byCircuit,details,detailLimit:64,totalRetainedJobs:broker.jobsCache.size,
       countsScope:'retained broker metadata for selected epochs; historical completed jobs may have been evicted',
       timingScope:'current dispatch/queue ages, not CPU time or measured completion durations'};
     const checkpoints=prover.getCheckpointStore().list();assert(checkpoints.length<=128);

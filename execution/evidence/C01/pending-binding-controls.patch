@@ -1,0 +1,44 @@
+--- a/billboard/billboard_test/src/c01.nr
++++ b/billboard/billboard_test/src/c01.nr
+@@ -79,6 +79,41 @@
+     (env,board,owner)
+ }
+ 
++// C01 binding authority regressions. Existing bound_setup/valid claim is the normal control.
++#[test(should_fail_with="Only deployer can set portal")]
++unconstrained fn c01_binding_rejects_unauthorized_private_caller() {
++    let (mut env,board,deployer,_censor)=setup();
++    let attacker=env.create_light_account();
++    assert(attacker != deployer);
++    assert(!env.view_public(Billboard::at(board).is_portal_set()));
++    env.call_private(attacker,Billboard::at(board).update_portal(EthAddress::from_field(PORTAL)));
++}
++
++#[test(should_fail_with="Function _set_portal_public can only be called by the same contract")]
++unconstrained fn c01_binding_rejects_direct_nonself_public_call() {
++    let (mut env,board,deployer,_censor)=setup();
++    assert(deployer != board);
++    assert(!env.view_public(Billboard::at(board).is_portal_set()));
++    // Even the authorized deployer cannot bypass the private-to-self binding path.
++    env.call_public(deployer,Billboard::at(board)._set_portal_public(EthAddress::from_field(PORTAL)));
++}
++
++#[test(should_fail_with="Zero portal")]
++unconstrained fn c01_binding_rejects_zero_portal() {
++    let (mut env,board,deployer,_censor)=setup();
++    assert(!env.view_public(Billboard::at(board).is_portal_set()));
++    env.call_private(deployer,Billboard::at(board).update_portal(EthAddress::from_field(0)));
++}
++
++#[test(should_fail_with="Portal address already set -- immutable")]
++unconstrained fn c01_binding_rejects_second_binding() {
++    let (mut env,board,deployer,_censor)=setup();
++    env.call_private(deployer,Billboard::at(board).update_portal(EthAddress::from_field(PORTAL)));
++    assert(env.view_public(Billboard::at(board).is_portal_set()));
++    assert_eq(env.view_public(Billboard::at(board).get_portal()),EthAddress::from_field(PORTAL));
++    env.call_private(deployer,Billboard::at(board).update_portal(EthAddress::from_field(PORTAL+1)));
++}
++
+ #[test]
+ unconstrained fn c01_claim_delivers_exact_v1_receipt_and_initial_eligibility() {
+     let (mut env,board,owner,_censor,anchor_time)=setup_with_deposit(MINIMUM);

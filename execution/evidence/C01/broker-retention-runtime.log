@@ -1,0 +1,15 @@
+✔ known-bad retention 1 removes pending epoch 26 after epoch 28 arrives (2.493125ms)
+✔ local retention 64 preserves and dispatches pending epoch 26 before epoch 28 (0.335291ms)
+[21:54:37.985] INFO: prover-client:proving-broker New proving job id=26:PARITY_BASE:ba2a8425efe4057414539022a2df11d751fe7243a8b9cb5f25d220caa5d8e6e2 epochNumber=26 {"provingJobId":"26:PARITY_BASE:ba2a8425efe4057414539022a2df11d751fe7243a8b9cb5f25d220caa5d8e6e2"}
+[21:54:37.986] INFO: prover-client:proving-broker New proving job id=28:PARITY_BASE:2d6f5a1cf5a3b280ce2dcdd8244a40dc25abf13d96aef9696234f9379308074b epochNumber=28 {"provingJobId":"28:PARITY_BASE:2d6f5a1cf5a3b280ce2dcdd8244a40dc25abf13d96aef9696234f9379308074b"}
+[21:54:37.986] WARN: prover-client:proving-broker Tried enqueueing stale proving job id=26:PARITY_BASE:ba2a8425efe4057414539022a2df11d751fe7243a8b9cb5f25d220caa5d8e6e2 epochNumber=26 {"provingJobId":"26:PARITY_BASE:ba2a8425efe4057414539022a2df11d751fe7243a8b9cb5f25d220caa5d8e6e2"}
+[21:54:37.987] INFO: prover-client:proving-broker New proving job id=26:PARITY_BASE:ba2a8425efe4057414539022a2df11d751fe7243a8b9cb5f25d220caa5d8e6e2 epochNumber=26 {"provingJobId":"26:PARITY_BASE:ba2a8425efe4057414539022a2df11d751fe7243a8b9cb5f25d220caa5d8e6e2"}
+[21:54:37.987] INFO: prover-client:proving-broker New proving job id=28:PARITY_BASE:2d6f5a1cf5a3b280ce2dcdd8244a40dc25abf13d96aef9696234f9379308074b epochNumber=28 {"provingJobId":"28:PARITY_BASE:2d6f5a1cf5a3b280ce2dcdd8244a40dc25abf13d96aef9696234f9379308074b"}
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 982.422958

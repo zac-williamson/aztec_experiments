@@ -332,3 +332,9 @@ execution. Root owns integrated build/proof runs; no concurrent heavy work.
 Ready settlement passed. Root owns full-journey parent/node integration and the
 sole heavy run. Reused build_review owns only bridge-orchestration-review.md,
 reviewing Ready wrapper and agent lifecycle against actual pinned SDK source.
+
+Claim-inclusion diagnosis, pending negative controls and client-mining integration
+reviews are complete. Root integrated changes and passed103 Noir/53 client checks
+plus the actual zero-account mining lifecycle test. The reused build_review lane
+is idle; root alone supervises the genuine full bridge retry. No agent or second
+heavy process runs alongside the prover.

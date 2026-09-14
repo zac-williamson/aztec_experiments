@@ -205,3 +205,21 @@ The reviewed replay control checks the actually consumed message nullifier and
 rejects a fresh account request specifically for that consumed message. Two TXE
 controls change the depositor and an in-range amount independently. These are
 additional acceptance tests; their mere implementation does not close C01.
+
+## C01 local broker retention must cover the proof window
+
+Retry8a92f555 advanced through real claim inclusion, exact note/replay checks and
+no-post exit inclusion before aggregation stalled. Source/progress show pending
+epoch26 subtrees while only epoch27/28 broker jobs remained. The pinned broker's
+default retention is1; cleanup deletes pending as well as settled jobs below
+highestEnqueuedEpoch minus retention. Enqueueing28 therefore discards26. Root
+stopped the stalled run explicitly with SIGTERM after preserving progress; no
+refund or whole-run pass is claimed. All owned descendants and temporary data
+were confirmed removed.
+
+Set local proverBrokerMaxEpochsToKeepResultsFor to64, matching this test's actual
+64-epoch proof submission window, and assert the constructed broker value at
+startup and settlement. This changes local work retention only, not proof,
+message, expiry or finality validation. Add an actual in-memory broker scheduling
+regression contrasting1 and64; no simulated proof result counts as cryptographic
+evidence. Future runtime configuration must assess retention versus proof lag.
