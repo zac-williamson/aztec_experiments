@@ -111,7 +111,13 @@ pub contract BillboardSponsor {
     fn get_admin() -> AztecAddress { self.storage.admin.read() }
     #[external("public")]
     #[view]
-    fn get_batch(batch_id: u64) -> Batch { self.storage.batches.at(batch_id).read() }
+    fn get_batch(batch_id: u64) -> Batch {
+        // Public discovery must distinguish absent batches from failed RPC reads.
+        // Spending still uses the checked immutable read in _consume_coupon.
+        let batch = self.storage.batches.at(batch_id);
+        if batch.is_initialized() { batch.read() }
+        else { Batch { root: 0, window: 0, ticket_count: 0 } }
+    }
     #[external("public")]
     #[view]
     fn get_reserved(window: u64) -> u128 { self.storage.reserved_by_window.at(window).read() }

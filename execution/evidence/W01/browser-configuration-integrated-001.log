@@ -1,0 +1,34 @@
+✔ static browser config reopens encrypted coupons with wallet-derived key and closes each action (10.743292ms)
+✔ browser action failure closes provider and preserves action failure (1.927667ms)
+✔ wallet or sponsor change isolates local browser storage (2.23275ms)
+✔ invalid static config fails before action with fixed error (2.000792ms)
+✔ non-author actions and explicitly supplied local providers retain their route (0.476208ms)
+✔ actual engine sender routes claim through exact sponsor options (3.045042ms)
+✔ actual engine sender routes post through exact sponsor options (0.503917ms)
+✔ actual engine sender routes post dummy through exact sponsor options (0.6745ms)
+✔ actual engine sender routes withdraw through exact sponsor options (0.532042ms)
+✔ missing configuration, artifact, SDK or provider rejects before coupon acquisition or signing (2.461708ms)
+✔ literal gas settings hydrate through actual SDK and incomplete bounds never default (0.721417ms)
+✔ provider exhaustion and private errors never send, leak input text or fall back (1.231542ms)
+✔ exact submission ambiguity and paid failure propagate without reacquiring or resending (1.23175ms)
+✔ invalid author-funded or missing-auth prepared route cannot be sent (1.665375ms)
+✔ actual main entry fails closed for every private action before account/provider work (2.018166ms)
+✔ actual wallet keeps checked NO_FROM gas and owner scope/tag through simulation and proof (29.999292ms)
+✔ browser config preserves only the installed local sponsorship callback (4.133166ms)
+✔ provider cannot smuggle private messages or retry codes into the UI (1.402167ms)
+✔ actual main claim selects sponsorship and never calls the direct method (14.704042ms)
+✔ actual main post selects sponsorship and never calls the direct method (2.745292ms)
+✔ actual main post dummy selects sponsorship and never calls the direct method (1.39225ms)
+✔ actual main withdraw selects sponsorship and never calls the direct method (1.209416ms)
+✔ local coupon callback reads only deployment-scoped batch state without owner or action (0.442458ms)
+✔ actual RPC wrapper confines credentials and disallows redirect forwarding (17.607959ms)
+✔ Request and URL inputs preserve headers without mutating caller data (1.289458ms)
+✔ explicit private transport mode never gains RPC credentials even at the same endpoint (0.597917ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 494.742959

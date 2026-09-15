@@ -1,0 +1,67 @@
+[
+  {
+    "name": "constructor",
+    "sameBytecode": true,
+    "sameVK": true
+  },
+  {
+    "name": "get_admin",
+    "sameBytecode": true,
+    "sameVK": true
+  },
+  {
+    "name": "get_batch",
+    "sameBytecode": false,
+    "sameVK": true
+  },
+  {
+    "name": "get_config",
+    "sameBytecode": true,
+    "sameVK": true
+  },
+  {
+    "name": "get_reserved",
+    "sameBytecode": true,
+    "sameVK": true
+  },
+  {
+    "name": "register_batch",
+    "sameBytecode": true,
+    "sameVK": true
+  },
+  {
+    "name": "rotate_admin",
+    "sameBytecode": true,
+    "sameVK": true
+  },
+  {
+    "name": "sponsor_claim",
+    "sameBytecode": true,
+    "sameVK": true
+  },
+  {
+    "name": "sponsor_post",
+    "sameBytecode": true,
+    "sameVK": true
+  },
+  {
+    "name": "sponsor_withdraw",
+    "sameBytecode": true,
+    "sameVK": true
+  },
+  {
+    "name": "offchain_receive",
+    "sameBytecode": true,
+    "sameVK": true
+  },
+  {
+    "name": "public_dispatch",
+    "sameBytecode": false,
+    "sameVK": true
+  },
+  {
+    "name": "sync_state",
+    "sameBytecode": true,
+    "sameVK": true
+  }
+]

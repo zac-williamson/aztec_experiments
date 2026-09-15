@@ -1,0 +1,106 @@
+✖ immutable bounded intent survives reopen, canonical key ordering and scope binding (701.615125ms)
+✖ prepared bytes persist exactly before submission and cannot be replaced (0.926875ms)
+✖ one durable claim and uncertainty survive restart; stale revision cannot submit (0.124ms)
+✖ caller observations require exact hash, canonical block and tuple; pending is not confirmed (0.040792ms)
+✖ reverted receipt is never confirmed; dropped/unknown and rollback fence new work (0.035917ms)
+✖ wrong scope/target/operator/static flag or registration arguments fail actual codec checks (0.041708ms)
+✖ cached hash cannot authorize substituted calldata even when lookup returns intended args (0.027083ms)
+✖ empty proof, stale cached Tx hash, trailing bytes and size overflow cannot persist (0.025209ms)
+✖ reopen detects stored bytes/hash/observation tampering (0.042042ms)
+✖ two real connections enforce CAS and one job claim (0.052125ms)
+✖ two actual worker processes released together produce exactly one durable claimant (0.021542ms)
+✖ unsafe permissions and symlink database fail closed (0.026833ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 0
+ℹ fail 12
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1723.1275
+
+✖ failing tests:
+
+test at scripts/test-registration-journal.mjs:61:3
+✖ immutable bounded intent survives reopen, canonical key ordering and scope binding (701.615125ms)
+  TypeError: AztecAddress.fromString is not a function
+      at makeTx (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:52:39)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:45:12)
+      at async TestHook.run (node:internal/test_runner/test:1409:7)
+
+test at scripts/test-registration-journal.mjs:71:3
+✖ prepared bytes persist exactly before submission and cannot be replaced (0.926875ms)
+  TypeError: AztecAddress.fromString is not a function
+      at makeTx (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:52:39)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:45:12)
+      at async TestHook.run (node:internal/test_runner/test:1409:7)
+
+test at scripts/test-registration-journal.mjs:79:3
+✖ one durable claim and uncertainty survive restart; stale revision cannot submit (0.124ms)
+  TypeError: AztecAddress.fromString is not a function
+      at makeTx (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:52:39)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:45:12)
+      at async TestHook.run (node:internal/test_runner/test:1409:7)
+
+test at scripts/test-registration-journal.mjs:87:3
+✖ caller observations require exact hash, canonical block and tuple; pending is not confirmed (0.040792ms)
+  TypeError: AztecAddress.fromString is not a function
+      at makeTx (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:52:39)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:45:12)
+      at async TestHook.run (node:internal/test_runner/test:1409:7)
+
+test at scripts/test-registration-journal.mjs:98:3
+✖ reverted receipt is never confirmed; dropped/unknown and rollback fence new work (0.035917ms)
+  TypeError: AztecAddress.fromString is not a function
+      at makeTx (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:52:39)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:45:12)
+      at async TestHook.run (node:internal/test_runner/test:1409:7)
+
+test at scripts/test-registration-journal.mjs:108:3
+✖ wrong scope/target/operator/static flag or registration arguments fail actual codec checks (0.041708ms)
+  TypeError: AztecAddress.fromString is not a function
+      at makeTx (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:52:39)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:45:12)
+      at async TestHook.run (node:internal/test_runner/test:1409:7)
+
+test at scripts/test-registration-journal.mjs:116:3
+✖ cached hash cannot authorize substituted calldata even when lookup returns intended args (0.027083ms)
+  TypeError: AztecAddress.fromString is not a function
+      at makeTx (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:52:39)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:45:12)
+      at async TestHook.run (node:internal/test_runner/test:1409:7)
+
+test at scripts/test-registration-journal.mjs:127:3
+✖ empty proof, stale cached Tx hash, trailing bytes and size overflow cannot persist (0.025209ms)
+  TypeError: AztecAddress.fromString is not a function
+      at makeTx (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:52:39)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:45:12)
+      at async TestHook.run (node:internal/test_runner/test:1409:7)
+
+test at scripts/test-registration-journal.mjs:134:3
+✖ reopen detects stored bytes/hash/observation tampering (0.042042ms)
+  TypeError: AztecAddress.fromString is not a function
+      at makeTx (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:52:39)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:45:12)
+      at async TestHook.run (node:internal/test_runner/test:1409:7)
+
+test at scripts/test-registration-journal.mjs:140:3
+✖ two real connections enforce CAS and one job claim (0.052125ms)
+  TypeError: AztecAddress.fromString is not a function
+      at makeTx (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:52:39)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:45:12)
+      at async TestHook.run (node:internal/test_runner/test:1409:7)
+
+test at scripts/test-registration-journal.mjs:145:3
+✖ two actual worker processes released together produce exactly one durable claimant (0.021542ms)
+  TypeError: AztecAddress.fromString is not a function
+      at makeTx (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:52:39)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:45:12)
+      at async TestHook.run (node:internal/test_runner/test:1409:7)
+
+test at scripts/test-registration-journal.mjs:160:3
+✖ unsafe permissions and symlink database fail closed (0.026833ms)
+  TypeError: AztecAddress.fromString is not a function
+      at makeTx (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:52:39)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-registration-journal.mjs:45:12)
+      at async TestHook.run (node:internal/test_runner/test:1409:7)

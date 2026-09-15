@@ -1,0 +1,32 @@
+✔ immutable bounded intent survives reopen, canonical key ordering and scope binding (253.1755ms)
+✔ prepared bytes persist exactly before submission and cannot be replaced (69.12625ms)
+✔ one durable claim and uncertainty survive restart; stale revision cannot submit (36.63225ms)
+✔ caller observations require exact hash, canonical block and tuple; pending is not confirmed (30.41575ms)
+✔ reverted receipt is never confirmed; dropped/unknown and rollback fence new work (46.725ms)
+✔ wrong scope/target/operator/static flag or registration arguments fail actual codec checks (117.096042ms)
+✔ cached hash cannot authorize substituted calldata even when lookup returns intended args (42.233625ms)
+✔ empty proof, stale cached Tx hash, trailing bytes and size overflow cannot persist (34.300458ms)
+✔ reopen detects stored bytes/hash/observation tampering (103.093083ms)
+✔ stored pending/included claim state is validated; rollback to pending reacquires it (114.532459ms)
+✔ canonical inclusion permits the next batch without waiting for network finality (37.588375ms)
+✔ two real connections enforce CAS and one job claim (24.806042ms)
+✔ two actual worker processes released together produce exactly one durable claimant (578.796042ms)
+✔ abrupt worker death after commit retains exact transaction and submission uncertainty (544.572125ms)
+✔ unsafe permissions and symlink database fail closed (26.597209ms)
+✔ symlink ancestors and unsafe or dangling SQLite sidecars fail before opening (73.511125ms)
+✔ one step persists exact prepared bytes before send, then reconciles actual ABI state after restart (305.296958ms)
+✔ ambiguous send is retained and never causes automatic reprepare or resend (90.53475ms)
+✔ missing recovery fence stops before journal allocation, signing or send (15.357167ms)
+✔ wrong operator or network fails before signing (28.441125ms)
+✔ invalid proof validation or known public revert never reaches send (107.68ms)
+✔ an unrecorded preparation after restart requires recovery instead of duplicate signing (21.865459ms)
+✔ canonical mismatch fences all later work, rather than reporting inclusion (76.412333ms)
+✔ missing registered tuple after receipt success is a recovery stop (72.67025ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3659.547084

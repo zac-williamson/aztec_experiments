@@ -1,0 +1,16 @@
+✔ one step persists exact prepared bytes before send, then reconciles actual ABI state after restart (292.855625ms)
+✔ ambiguous send is retained and never causes automatic reprepare or resend (89.531625ms)
+✔ missing recovery fence stops before journal allocation, signing or send (15.169083ms)
+✔ wrong operator or network fails before signing (34.491792ms)
+✔ invalid proof validation or known public revert never reaches send (102.916583ms)
+✔ an unrecorded preparation after restart requires recovery instead of duplicate signing (18.40825ms)
+✔ canonical mismatch fences all later work, rather than reporting inclusion (73.43375ms)
+✔ missing registered tuple after receipt success is a recovery stop (70.252875ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1628.642792

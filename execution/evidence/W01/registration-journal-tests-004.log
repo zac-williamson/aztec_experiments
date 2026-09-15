@@ -1,0 +1,23 @@
+✔ immutable bounded intent survives reopen, canonical key ordering and scope binding (812.337333ms)
+✔ prepared bytes persist exactly before submission and cannot be replaced (150.016292ms)
+✔ one durable claim and uncertainty survive restart; stale revision cannot submit (80.928625ms)
+✔ caller observations require exact hash, canonical block and tuple; pending is not confirmed (44.099292ms)
+✔ reverted receipt is never confirmed; dropped/unknown and rollback fence new work (83.422584ms)
+✔ wrong scope/target/operator/static flag or registration arguments fail actual codec checks (308.472833ms)
+✔ cached hash cannot authorize substituted calldata even when lookup returns intended args (94.303125ms)
+✔ empty proof, stale cached Tx hash, trailing bytes and size overflow cannot persist (79.236709ms)
+✔ reopen detects stored bytes/hash/observation tampering (206.013459ms)
+✔ stored pending/included rows cannot lose the active claim; rollback must reacquire it (233.036041ms)
+✔ two real connections enforce CAS and one job claim (52.222583ms)
+✔ two actual worker processes released together produce exactly one durable claimant (1546.550917ms)
+✔ abrupt worker death after commit retains exact transaction and submission uncertainty (1170.71ms)
+✔ unsafe permissions and symlink database fail closed (46.462833ms)
+✔ symlink ancestors and unsafe or dangling SQLite sidecars fail before opening (132.507208ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6773.381541

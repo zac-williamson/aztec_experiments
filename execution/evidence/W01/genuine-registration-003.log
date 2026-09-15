@@ -1,0 +1,10 @@
+{"stage":"start-disposable-l1","elapsedMs":252}
+{"stage":"prepare-genesis","elapsedMs":377}
+{"stage":"deploy-local-protocol-fixture","elapsedMs":2108}
+{"stage":"wait-for-local-validator-activation","elapsedMs":3362}
+{"stage":"start-application-node","elapsedMs":3380}
+{"stage":"prove-board-deployment","elapsedMs":6164}
+{"stage":"include-board-deployment","elapsedMs":19563}
+{"stage":"registration:deploy-sponsor","elapsedMs":32041}
+{"stage":"registration:prove-persist-and-submit","elapsedMs":66339}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/W01/application-65533912-20fe-43de-8799-5e1898edf1df.json","passed":false,"profile":"genuine operator registration persistence and restart; no author journey or finality wait"}

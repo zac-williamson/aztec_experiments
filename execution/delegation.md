@@ -389,3 +389,5 @@ W01 delivery integration: root owns SDK/engine callback and integrated checks. b
 Current: root owns genuine shared-batch HTTP/SQLite delivery integration and sole bounded proof run. artifact_regressions reviews harness read-only; build_review owns NEW registration-journal.mjs/test/evidence only after design. build_verification delivered CLI store16tests and is idle.
 
 Continuation checkpoint: CLI/static-provider and registration-journal lanes delivered. Latest artifact_regressions review could not start because its usage quota was exhausted; no final independent disposition is claimed for the new anchor placement. Root inspected the narrow ordering change and supervises verification locally.
+
+Root integration checkpoint: registration journal lane integrated with fixed operator worker and actual genuine101s restart qualification. Root found/fixed absent PublicImmutable lookup mismatch, verified54 component/10 contract/89 artifact-client controls serially, and rebuilt clients. Latest delegated review remains quota-unavailable; no independent signoff is claimed. No heavy test processes remain.

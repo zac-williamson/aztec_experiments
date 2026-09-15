@@ -92,3 +92,16 @@ unconstrained fn w01_public_registration_uses_actual_current_timestamp() {
     assert(env.last_block_timestamp()>end);
     env.call_public(admin,BillboardSponsor::at(sponsor).register_batch(1,101,window,1));
 }
+
+#[test]
+unconstrained fn w01_public_absent_batch_lookup_does_not_initialize_or_reserve() {
+    let (env,sponsor,admin,window)=setup();
+    let absent=env.view_public(BillboardSponsor::at(sponsor).get_batch(1));
+    assert_eq(absent.root,0); assert_eq(absent.window,0); assert_eq(absent.ticket_count,0);
+    assert_eq(env.view_public(BillboardSponsor::at(sponsor).get_reserved(window)),0);
+    env.call_public(admin,BillboardSponsor::at(sponsor).register_batch(1,101,window,2));
+    let present=env.view_public(BillboardSponsor::at(sponsor).get_batch(1));
+    assert_eq(present.root,101); assert_eq(present.window,window); assert_eq(present.ticket_count,2);
+    assert_eq(env.view_public(BillboardSponsor::at(sponsor).get_reserved(window)),2600);
+    assert_eq(env.view_public(BillboardSponsor::at(sponsor).get_batch(2)).root,0);
+}

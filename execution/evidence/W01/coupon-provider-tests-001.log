@@ -1,0 +1,19 @@
+✔ durable encrypted acquisition verifies actual chain state despite issuer usable:false, then never reuses after reopen (328.194833ms)
+✔ lost submit response resumes persisted blind/reservation without another allocation or submit (3.5595ms)
+✔ retrieve outage and pending onchain registration retain same reservation for restart (8.986875ms)
+✔ concurrent acquisition of one persisted coupon hands it out at most once through encrypted CAS (3.278584ms)
+✔ storage commit failure precedes any opaque leaf submission (0.614833ms)
+✔ malicious reservation scope or position rejects before local save/submission (2.065083ms)
+✔ wrong issuer root, sibling or chain registration rejects without marking attempted (7.202ms)
+✔ attempted/expiry metadata tampering fails authentication on restart (6.944125ms)
+✔ wrong encryption key and ciphertext damage reject without coupon reuse (1.739ms)
+✔ bounded storage cap stops admission and expired rows are purged (4.328833ms)
+✔ deadline bounds a stalled readonly registration call and leaves coupon pending (52.728625ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 894.945

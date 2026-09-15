@@ -734,7 +734,7 @@
       "evidence": "evidence/W01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Genuine real coupon delivery claim/post passed6m33s; corrected consumed-coupon rejection + distinct-coupon exit/refund passed348028ms (5m48s), peak1.11GiB, fullcleanup. Replay proof10.25s rejected sole existing-nullifier with no fee. Static browser/CLI config committedefcc7cb. Registration journal16controls now release submission slot at canonical inclusion, track finality separately; root operator worker/recovery integration next. W01 remains incomplete (service, paid failures, observations).",
+      "checkpoint": "Genuine registration persistence/reopen/reconciliation passed101290ms, one proof and one send, full cleanup. Fixed absent public batch lookup;10 actual contract controls,54 serial journal/worker/state controls and89 artifact/client controls passed. SDK/apps rebuilt. W01 active: next connect bounded operator scheduling and issuer admission/recovery fence, replenishment/outages and remaining fee/privacy failure controls. Preserve startup-stall evidence and historical author-journey class binding.",
       "priority": 5
     },
     {

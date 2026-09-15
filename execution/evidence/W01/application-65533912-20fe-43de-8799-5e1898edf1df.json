@@ -1,0 +1,4311 @@
+{
+  "schemaVersion": 1,
+  "profile": "genuine operator registration persistence and restart; no author journey or finality wait",
+  "startedAt": "2026-09-15T05:53:40.759Z",
+  "deadlineMs": 540000,
+  "passed": false,
+  "testsApplicationOrEpoch": true,
+  "rssLimitKiB": 8388608,
+  "rssSampleIntervalMs": 1000,
+  "rssMethod": "sampled PPID descendant tree with remembered process identities/groups; not OS allocation limit",
+  "rssSamples": [
+    {
+      "elapsedMs": 25,
+      "rssKiB": 3968,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 3968,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Rs"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 1045,
+      "rssKiB": 241840,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 1200,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 221280,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 19360,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 2070,
+      "rssKiB": 508688,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 474576,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 19360,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4656,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9600,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 3095,
+      "rssKiB": 607808,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 338432,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 19488,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3712,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4112,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11569,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 96752,
+          "started": "Tue Sep 15 06:53:43 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11570,
+          "ppid": 11569,
+          "group": 11545,
+          "rssKiB": 138336,
+          "started": "Tue Sep 15 06:53:43 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11573,
+          "ppid": 11570,
+          "group": 11545,
+          "rssKiB": 6480,
+          "started": "Tue Sep 15 06:53:43 2026",
+          "state": "R"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 4125,
+      "rssKiB": 611440,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 577984,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 25712,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3712,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3536,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 5146,
+      "rssKiB": 640096,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 606608,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 25696,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3536,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 6167,
+      "rssKiB": 774864,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 587600,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "U"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 26640,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3808,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3536,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 152768,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 7191,
+      "rssKiB": 864080,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 711760,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 25728,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4128,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4768,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 117184,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 8224,
+      "rssKiB": 988144,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 728144,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 25728,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 168400,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4768,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 60592,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 9246,
+      "rssKiB": 1036640,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 648928,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 25728,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 326048,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4768,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 10269,
+      "rssKiB": 1051408,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 579536,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 25744,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 410192,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4768,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 11290,
+      "rssKiB": 951664,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 477360,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 22560,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 416064,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4512,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 12312,
+      "rssKiB": 1020528,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 479744,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 22560,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 482544,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4512,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 13335,
+      "rssKiB": 1034384,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 479792,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 22560,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 496352,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4512,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 14356,
+      "rssKiB": 1038768,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 479856,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 22560,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 500672,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4512,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 15378,
+      "rssKiB": 1021744,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 479920,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 22560,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 483584,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4512,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 16399,
+      "rssKiB": 1025504,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 480080,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 22560,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 487184,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4512,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 17420,
+      "rssKiB": 1015712,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 469424,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 22432,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 488176,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4512,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 18440,
+      "rssKiB": 921376,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 443872,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 21888,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 419952,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4512,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 19462,
+      "rssKiB": 925168,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 456448,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 21888,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 406672,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4592,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4416,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 20490,
+      "rssKiB": 963024,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 507616,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 23824,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 379872,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4592,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 15968,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 21520,
+      "rssKiB": 947360,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 508864,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 24304,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 362480,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4592,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 15968,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 22559,
+      "rssKiB": 898624,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 524352,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 24976,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 297584,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4592,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 15968,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 23586,
+      "rssKiB": 331488,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 203536,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 24848,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 86160,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3744,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9248,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 24617,
+      "rssKiB": 285504,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 209152,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 23952,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 35440,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9248,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 25648,
+      "rssKiB": 287360,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 210816,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 24144,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 35440,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9248,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 26685,
+      "rssKiB": 291936,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 215248,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 24288,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 35440,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9248,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 27718,
+      "rssKiB": 295440,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 218720,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 24320,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 35440,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9248,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 28749,
+      "rssKiB": 300688,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 223792,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 24496,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 35440,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9248,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 29772,
+      "rssKiB": 372864,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 292960,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 27136,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 35808,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9248,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 30793,
+      "rssKiB": 393056,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 308112,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 32176,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 35808,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9248,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 31821,
+      "rssKiB": 515008,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 327872,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 134432,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 35744,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9248,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 32843,
+      "rssKiB": 699888,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 527920,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 134240,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 20048,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4464,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9248,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 33870,
+      "rssKiB": 907760,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 549296,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30688,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 310128,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4432,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9248,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 34890,
+      "rssKiB": 887008,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 514944,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30240,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 327248,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4432,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 6176,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 35912,
+      "rssKiB": 976032,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 521456,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30528,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 409472,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4432,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 6176,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 36933,
+      "rssKiB": 1064224,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 524576,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30416,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 494656,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4432,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 6176,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 37954,
+      "rssKiB": 1109408,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 524768,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30512,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 539552,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4432,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 6176,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 38975,
+      "rssKiB": 1085888,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 524496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30592,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 516224,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4432,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 6176,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 39995,
+      "rssKiB": 1049840,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 523904,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30608,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 480752,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4432,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 6176,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 41020,
+      "rssKiB": 908272,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 442576,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30352,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 420768,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4432,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 6176,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 42041,
+      "rssKiB": 863936,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 417120,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30496,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 402032,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4144,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 6176,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 43059,
+      "rssKiB": 857808,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 420016,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30656,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 392848,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4144,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 6176,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 44080,
+      "rssKiB": 878496,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 430256,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30896,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 403056,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4144,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 6176,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 45105,
+      "rssKiB": 901488,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 445296,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30928,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 403152,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4144,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 14000,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 46138,
+      "rssKiB": 833776,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 426288,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30736,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 354656,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4128,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 14000,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 47172,
+      "rssKiB": 814976,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 512,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 418432,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30880,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 343568,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 4128,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 14000,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 48201,
+      "rssKiB": 699296,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 333600,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 30928,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 313056,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 14000,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 49231,
+      "rssKiB": 638912,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 337120,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 31248,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 248832,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 14000,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 50264,
+      "rssKiB": 630208,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 336528,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 31312,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 240656,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 14000,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 51290,
+      "rssKiB": 629376,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 339584,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 31392,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 236688,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 14000,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 52323,
+      "rssKiB": 553840,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 338304,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 27632,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 169712,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 10480,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 53355,
+      "rssKiB": 449216,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 299632,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "R"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 27616,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 104384,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9872,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 54388,
+      "rssKiB": 392928,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 283488,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 27616,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 64240,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9872,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 55418,
+      "rssKiB": 389056,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 282848,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 27584,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 61040,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9872,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 56457,
+      "rssKiB": 386672,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 283200,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 27696,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 58192,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9872,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 57487,
+      "rssKiB": 357984,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 285440,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 27776,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 27184,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9872,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 58516,
+      "rssKiB": 355296,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 285824,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 27856,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 24032,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9872,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 59545,
+      "rssKiB": 352528,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 290080,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 28032,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 16832,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9872,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 60573,
+      "rssKiB": 351776,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 289856,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 28240,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 16096,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9872,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 61600,
+      "rssKiB": 343232,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 282432,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 28320,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 14896,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9872,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 62632,
+      "rssKiB": 339024,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 278976,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 27920,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 14544,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9872,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 63662,
+      "rssKiB": 334864,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 275616,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 27792,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 13872,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9872,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 64689,
+      "rssKiB": 343344,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 282592,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 29392,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 13776,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 9872,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 65717,
+      "rssKiB": 364976,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 301440,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11551,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 35536,
+          "started": "Tue Sep 15 06:53:41 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11557,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 14112,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11560,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3760,
+          "started": "Tue Sep 15 06:53:42 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11592,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 3456,
+          "started": "Tue Sep 15 06:53:46 2026",
+          "state": "S"
+        },
+        {
+          "pid": 11680,
+          "ppid": 11547,
+          "group": 11545,
+          "rssKiB": 6176,
+          "started": "Tue Sep 15 06:54:00 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 66744,
+      "rssKiB": 395680,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 395184,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 67772,
+      "rssKiB": 395728,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 395232,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 68797,
+      "rssKiB": 395728,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 395232,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 69830,
+      "rssKiB": 395728,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 395232,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 70859,
+      "rssKiB": 340112,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 339616,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 71893,
+      "rssKiB": 340208,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 339712,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 72918,
+      "rssKiB": 340240,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 339744,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 73947,
+      "rssKiB": 340400,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 339904,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 74976,
+      "rssKiB": 340512,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 340016,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 76008,
+      "rssKiB": 340512,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 340016,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 77038,
+      "rssKiB": 340512,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 340016,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 78067,
+      "rssKiB": 340512,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 340016,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 79097,
+      "rssKiB": 341024,
+      "members": [
+        {
+          "pid": 11545,
+          "ppid": 11533,
+          "group": 11545,
+          "rssKiB": 496,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "Ss"
+        },
+        {
+          "pid": 11547,
+          "ppid": 11545,
+          "group": 11545,
+          "rssKiB": 340528,
+          "started": "Tue Sep 15 06:53:40 2026",
+          "state": "S"
+        }
+      ]
+    }
+  ],
+  "peakTreeRSSKiB": 1109408,
+  "sourceHashes": {
+    "scripts/test-c01-application.mjs": "4c98bc6b0512a93a9d5aa49b5686e2fadffd710b383630a02fe30e6c08802f4a",
+    "scripts/owned-test-process-tree.mjs": "0346e6b1fb449e55ebcfa5f35c30764fa0c32c1c4e9b98c77ed7ec48d5ae4039",
+    "scripts/c01-settle-application-message.mjs": "7399875d97f5dfd82a3787d8c39390fd9fc6673c8ce06d5bc41464515c3fef4b",
+    "scripts/c01-application-deployment.mjs": "a81fe20b22967ce6e3d6c1f751ee93ed6c9fef5e8553cf4037534780dec11fa2",
+    "scripts/prove-application-action.mjs": "b58a1298a7342578fbc6533e8ad6adcee540c8b0561da3228cd0925f92ba2a99",
+    "scripts/w01-sponsor-flow.mjs": "bb9013009777e39fbb1f83a2ff96f1f727dcebaf2eadcfabfe0218e5910ffa50",
+    "scripts/w01-shared-funding.mjs": "174f9433ab6132a9503220576a0fd0048868226bb87b6fac917363689831c408",
+    "scripts/w01-coupon-delivery.mjs": "857c32de2b66cf7719ab698f458912c5c087e1a54942e89799ef003445df0870",
+    "scripts/w01-coupon-replay.mjs": "f17c8aa7b4a471a7814296d9177f88f4a83cd2237a0ea4baf1759c3c64eff5bc",
+    "scripts/w01-registration-flow.mjs": "28a957111ea2d5eaf9a985f5a7da3342ae4c00084aa464b4fa59a28cd0dc7e17",
+    "sponsor-service/registration-worker.mjs": "1384317f3df9eab0ba2c1d6a53bd91145af2d679cd52e68caeab6087ef33572f",
+    "sponsor-service/registration-journal.mjs": "9a9ec4990cb6d4bbec5d671261c8dd1157244da03a28302ceaf3c6108c5415e8",
+    "sponsor-service/issuer.mjs": "4a045d7c42af001422753ab12a13d49428ef71ce5d23c35dc014462a230f2e70",
+    "sponsor-service/http.mjs": "53dd2eab7ee1cb1d08e98bfa1486592166e593ba6bf3ec85f317c4c5d48f7feb",
+    "sponsor-service/coupon-store.mjs": "037bf809d64f41e9f413600d1ac6c22c741cb52f5eca75c8850f8f8c496e7e81",
+    "shared/sponsor-state.mjs": "025a9a5b77c83f7659c81402255986d33114db828cbb73ec1edb63e856d65d8f",
+    "shared/sponsor-coupon-provider.mjs": "1cd0894cf08a6d3d4458453cf314778bf6b91b25183902a9574f7fee6da437a7",
+    "shared/sponsor-coupon-store.mjs": "b270e8ca96e1c850ec26910c6d3cc8bc7cff9ebd930aecc428767a2bf8cefaca",
+    "shared/sponsor-transport.mjs": "55a0efb60f2dc632e6ceeb0a55295471b3e905e9dbd45741d54fdf6d2fd34f4f",
+    "shared/sponsor-client.mjs": "ce72ab080b5bcb6517a4a249620c3375a62ce8cf7fb453543b77226095f25ed8",
+    "scripts/c01-settle-ready.mjs": "cf0a0e4a531e938b601f4fdf13ce336a9d453435f3df70e2be38f6d2e2d93d1c",
+    "scripts/c01-settle-message.mjs": "4e9bc2eeb7dad873311045c49f89b0b53c5ccd4f34d0516924e47338773ed132",
+    "scripts/c01-bridge-flow.mjs": "4022f4de0118dfa77f15bd75e3d020418a588d32ef31aec4b18d7b6ef12946e7",
+    "scripts/c02-screening-flow.mjs": "eb17ada6ead428a05d1f45e108626d58039c4e7293ba7257ebc4c6100d16a910",
+    "scripts/c03-author-claims.mjs": "8c4f2ff5f24d18e188a26dddc409d3603a993a740dc2bb61184f28b703227a25",
+    "scripts/c03-contention-flow.mjs": "cbf1c60fd420f7be9e80e77a62b578ee60199552145120e1559b59a81b2092b5",
+    "scripts/c01-client-mining.mjs": "a10abf9d1798fac6ddae89a0f62ce2b3e30b9ddd69a77512d5f83f8dc33ff332",
+    "scripts/c01-deposit-flow.mjs": "6a596a038b9d724bb6b2ef488c6387037531c952ed0ccf7a6251815b8666e571",
+    "scripts/c01-exit-flow.mjs": "e9eb569b09b894df45e595e11eedc26cd8211ca7be902b53b9790133fc1da4de",
+    "scripts/c01-withdraw-l1.mjs": "efc31d321d566b47fe18a17f23e4923b8258e6c42af43350130ff94ae5d62baa",
+    "scripts/c01-ready-flow.mjs": "91f74ca457f7954e84b7cb0d1297ce2e90b1e039254341aeda2f9bf35d838134",
+    "scripts/c01-board-inclusion.mjs": "46a43363765aff5460820ac2c33b636e3b6b8ef310830255b1ed549328db09ed",
+    "scripts/c01-board-flow.mjs": "5b4054c95363f33eed69e0268e771258662e33d7fa0c0a7525aac3f9fdd9b284",
+    "scripts/c01-real-node.mjs": "806f25791a94365bc9e8e4bf2cd2b52934bfef3a6f29854e7d39260879b721f1",
+    "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js": "f84940700d4fe17c4bb94fb27199085fb057c567ff745e90c21352cd47a091c3"
+  },
+  "setup": [
+    {
+      "name": "bn254_g1.dat",
+      "sha256": "2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac",
+      "bytes": 75497472
+    },
+    {
+      "name": "bn254_g2.dat",
+      "sha256": "01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f",
+      "bytes": 128
+    },
+    {
+      "name": "grumpkin_g1_v2.flat.dat",
+      "sha256": "b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9",
+      "bytes": 4194368
+    }
+  ],
+  "networkProofs": false,
+  "controlledSettlement": false,
+  "binarySha256": "208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031",
+  "registrationOnly": true,
+  "sponsoredPosting": false,
+  "sponsorship": false,
+  "startNode": true,
+  "boardProof": true,
+  "settle": false,
+  "bridge": false,
+  "screening": false,
+  "contention": false,
+  "postingDiagnostic": false,
+  "expectedAuthorCount": 1,
+  "pid": 11545,
+  "stages": [
+    {
+      "stage": "start-disposable-l1",
+      "elapsedMs": 252
+    },
+    {
+      "stage": "prepare-genesis",
+      "elapsedMs": 377
+    },
+    {
+      "stage": "deploy-local-protocol-fixture",
+      "elapsedMs": 2108
+    },
+    {
+      "stage": "wait-for-local-validator-activation",
+      "elapsedMs": 3362
+    },
+    {
+      "stage": "start-application-node",
+      "elapsedMs": 3380
+    },
+    {
+      "stage": "prove-board-deployment",
+      "elapsedMs": 6164
+    },
+    {
+      "stage": "include-board-deployment",
+      "elapsedMs": 19563
+    },
+    {
+      "stage": "registration:deploy-sponsor",
+      "elapsedMs": 32041
+    },
+    {
+      "stage": "registration:prove-persist-and-submit",
+      "elapsedMs": 66339
+    }
+  ],
+  "exit": {
+    "code": 1,
+    "signal": null
+  },
+  "sanitizedStderr": "{\"level\":40,\"time\":1789451623080,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"ethereum:deploy_aztec_l1_contracts\",\"msg\":\"Set block interval to 1\"}\n{\"level\":40,\"time\":1789451624286,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"ethereum:deploy_aztec_l1_contracts\",\"msg\":\"[forge_broadcast] Broadcast succeeded.\"}\n{\"level\":40,\"time\":1789451626718,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"node\",\"msg\":\"Keystore created from env: it's recommended to use a file-based key store for production\"}\n{\"level\":40,\"time\":1789451626808,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"archiver:validate_trace\",\"msg\":\"Ethereum client only supports trace methods for recent blocks (debug_traceTransaction, trace_transaction). Historical transaction traces may not be available.\"}\n{\"level\":40,\"time\":1789451627005,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"p2p\",\"msg\":\"No bootstrap nodes have been provided. Set the BOOTSTRAP_NODES environment variable in order to join the P2P network\"}\n{\"level\":40,\"time\":1789451627094,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"node\",\"msg\":\"Sequencer created but not started\"}\n{\"level\":40,\"time\":1789451627195,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"embedded-wallet:pxe:service\",\"msg\":\"PXE is already processing 1 jobs, concurrent execution is not supported. Will run once those are complete.\"}\n{\"level\":40,\"time\":1789451627195,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"embedded-wallet:pxe:service\",\"msg\":\"PXE is already processing 2 jobs, concurrent execution is not supported. Will run once those are complete.\"}\n{\"level\":40,\"time\":1789451640638,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"sequencer:publisher:price-oracle\",\"msg\":\"Uniswap V4 StateView contract not found, skipping fee asset price oracle\"}\n{\"level\":40,\"time\":1789451650361,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"sequencer:publisher:price-oracle\",\"msg\":\"Uniswap V4 StateView contract not found, skipping fee asset price oracle\"}\n{\"level\":40,\"time\":1789451652855,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"embedded-wallet:pxe:service\",\"msg\":\"PXE is already processing 1 jobs, concurrent execution is not supported. Will run once those are complete.\"}\n{\"level\":40,\"time\":1789451652856,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"embedded-wallet:pxe:service\",\"msg\":\"PXE is already processing 2 jobs, concurrent execution is not supported. Will run once those are complete.\"}\n{\"level\":40,\"time\":1789451655595,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"sequencer:checkpoint-proposal\",\"instanceId\":\"slot-14\",\"slot\":15,\"checkpointNumber\":2,\"reason\":\"no_blocks_built\",\"msg\":\"No blocks were built for slot 15\"}\n{\"level\":40,\"time\":1789451664942,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"sequencer:publisher:price-oracle\",\"msg\":\"Uniswap V4 StateView contract not found, skipping fee asset price oracle\"}\n{\"level\":40,\"time\":1789451667635,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"sequencer:checkpoint-proposal\",\"instanceId\":\"slot-15\",\"slot\":16,\"checkpointNumber\":2,\"reason\":\"no_blocks_built\",\"msg\":\"No blocks were built for slot 16\"}\n{\"level\":40,\"time\":1789451673669,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"sequencer:publisher:price-oracle\",\"msg\":\"Uniswap V4 StateView contract not found, skipping fee asset price oracle\"}\n{\"level\":40,\"time\":1789451685774,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"sequencer:publisher:price-oracle\",\"msg\":\"Uniswap V4 StateView contract not found, skipping fee asset price oracle\"}\n{\"level\":50,\"time\":1789451687359,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"sequencer:checkpoint-proposal\",\"instanceId\":\"slot-17\",\"reason\":\"Sequencer was interrupted\",\"slot\":18,\"checkpointNumber\":3,\"blockNumber\":3,\"msg\":\"Error building block: SequencerInterruptedError: Sequencer was interrupted\\n    at CheckpointProposalJob.awaitInterruptibleSleep (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/sequencer-client/dest/sequencer/checkpoint_proposal_job.js:635:23)\\n    at async CheckpointProposalJob.waitForTxsPollingInterval (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/sequencer-client/dest/sequencer/checkpoint_proposal_job.js:1808:9)\\n    at async CheckpointProposalJob.waitForMinTxs (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/sequencer-client/dest/sequencer/checkpoint_proposal_job.js:1510:13)\\n    at async file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/telemetry-client/dest/telemetry.js:35:33\\n    at async CheckpointProposalJob.buildSingleBlock (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/sequencer-client/dest/sequencer/checkpoint_proposal_job.js:1316:50)\\n    at async file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/telemetry-client/dest/telemetry.js:35:33\\n    at async CheckpointProposalJob.buildBlocksForCheckpoint (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/sequencer-client/dest/sequencer/checkpoint_proposal_job.js:1216:33)\\n    at async file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/telemetry-client/dest/telemetry.js:35:33\\n    at async CheckpointProposalJob.proposeCheckpoint (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/sequencer-client/dest/sequencer/checkpoint_proposal_job.js:1020:36)\\n    at async file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/telemetry-client/dest/telemetry.js:35:33\"}\n{\"level\":40,\"time\":1789451687360,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"sequencer:checkpoint-proposal\",\"instanceId\":\"slot-17\",\"slot\":18,\"checkpointNumber\":3,\"reason\":\"no_blocks_built\",\"msg\":\"No blocks were built for slot 18\"}\n{\"level\":40,\"time\":1789451687360,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"sequencer\",\"msg\":\"Cannot set sequencer to IDLE as it is stopping.\"}\n{\"level\":50,\"time\":1789451687360,\"pid\":11547,\"hostname\":\"Zacharys-MacBook-Pro.local\",\"module\":\"sequencer\",\"msg\":\"Error in running promise: SequencerInterruptedError: Sequencer was interrupted\\n    at Sequencer.setState (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/sequencer-client/dest/sequencer/sequencer.js:1026:19)\\n    at Sequencer.safeWork (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/sequencer-client/dest/sequencer/sequencer.js:677:18)\\n    at async poll (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/foundation/dest/promise/running-promise.js:50:21)\\n    at async RunningPromise.stop (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/foundation/dest/promise/running-promise.js:87:9)\\n    at async Sequencer.stop (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/sequencer-client/dest/sequencer/sequencer.js:639:9)\\n    at async SequencerClient.stop (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/sequencer-client/dest/client/sequencer-client.js:122:9)\\n    at async tryStop (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/stdlib/dest/interfaces/service.js:3:116)\\n    at async AztecNodeService.stop (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/node_modules/@aztec/aztec-node/dest/aztec-node/server.js:766:9)\\n    at async qualifyC01RealNode (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/c01-real-node.mjs:94:18)\\n    at async worker (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-c01-application.mjs:115:19)\"}\n",
+  "elapsedMs": 79503,
+  "nativeTimeRaw": "       79.49 real        34.29 user         2.63 sys\n           757809152  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n              334254  page reclaims\n                3258  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n               29392  messages sent\n               25415  messages received\n                   5  signals received\n               23666  voluntary context switches\n              104271  involuntary context switches\n        128276366401  instructions retired\n         41671105026  cycles elapsed\n          1051543832  peak memory footprint\n",
+  "worker": {
+    "passed": false,
+    "profile": "application transaction proofs with official local protocol fixture and controlled settlement",
+    "nonlocalNetworkDenied": true,
+    "deployment": {
+      "passed": true,
+      "profile": "official SDK local application fixture",
+      "realVerifier": false,
+      "networkProofs": false,
+      "rollupVersion": "238192876",
+      "addresses": {
+        "rollupAddress": "0xecd9405da6d0b236dbafb6e04ac85209fd647a14",
+        "registryAddress": "0x1d0beb4e4f72a3fb5639ecadacf118817105baac",
+        "inboxAddress": "0xced0fe2e5b1e9682e05e173022a8024ab03d2b9d",
+        "outboxAddress": "0x11d4676617f8bdafc1126410f9b8b5b3f4ce2033",
+        "feeJuiceAddress": "0x9e67d71d1e56f13ec908c917bf9806ed1084e634",
+        "feeJuicePortalAddress": "0x6c7d2d7373bbba91a14c0b12ebdb713aa72714d7",
+        "coinIssuerAddress": "0xc736577c2c300181ce365fff4eed031a825a0d0e",
+        "rewardDistributorAddress": "0x2c63c31c57d194bad88ae18970d7576bc4afb0a2",
+        "governanceProposerAddress": "0x1317788f36230ad291fdf01a5d1ddc2bc3f8ab1b",
+        "governanceAddress": "0x582459a1936bc9754286eeeeb65b09febdf99401",
+        "stakingAssetAddress": "0xe3350705d52d1275202bb7e39c5f90940dd9b276",
+        "feeAssetHandlerAddress": "0x4435eafb354c6f7af25f5749c95d18311fd12be5",
+        "stakingAssetHandlerAddress": "0xfeb9cc9a4bc93e8a431d78946ebe0b9405c581f9",
+        "zkPassportVerifierAddress": "0xe209184f751a442668109bf684503a4c38485234",
+        "gseAddress": "0xefe7aad744e663b649416adfd612505f57c24a76",
+        "dateGatedRelayerAddress": "0x9609daa2eff3eb69f9fbbc8143521bf7c833c591"
+      }
+    },
+    "validatorActivation": {
+      "committee": [
+        "0x62acb07db2e9bbd7e603e12ea1bc552db58f0283"
+      ],
+      "ordinaryTimeAdvancesSeconds": [
+        {
+          "seconds": 48,
+          "timestamp": "1789451706",
+          "epoch": "1",
+          "committee": null
+        },
+        {
+          "seconds": 48,
+          "timestamp": "1789451754",
+          "epoch": "2",
+          "committee": null
+        },
+        {
+          "seconds": 48,
+          "timestamp": "1789451802",
+          "epoch": "3",
+          "committee": null
+        }
+      ]
+    },
+    "registration": {
+      "passed": false,
+      "genuineProof": true,
+      "networkProofs": false,
+      "controlledSettlement": false,
+      "freshDisposableRecoveryFence": true,
+      "clientMining": {
+        "passed": false,
+        "ordinaryBlocksMined": 35,
+        "stopped": true,
+        "maxObservedClockLeadSeconds": 0,
+        "clockSynchronization": "every mined block, including correction of wall-clock lead",
+        "lastBlock": "89",
+        "lastTimestamp": "1789451851"
+      }
+    },
+    "failure": {
+      "stage": "registration:prove-persist-and-submit",
+      "errorClass": "Error",
+      "code": "SPONSOR_STATE_UNAVAILABLE",
+      "location": "    at Object.step (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/sponsor-service/registration-worker.mjs:26:79)\n    at async file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/w01-registration-flow.mjs:71:18\n    at async withC01ClientMining (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/c01-client-mining.mjs:45:18)"
+    },
+    "anvilExit": {
+      "code": 0,
+      "signal": null
+    },
+    "singletonsStopped": true,
+    "diagnosticTail": "C01_BOARD_STAGE create-proving-wallet\nC01_BOARD_STAGE build-deployment-request\nC01_BOARD_STAGE genuine-client-proof\nC01_BOARD_STAGE real-node-validation\n"
+  },
+  "processGroupAbsent": true,
+  "descendantTreeAbsent": true,
+  "derivedSetup": [],
+  "temporaryDirectoryRemoved": true,
+  "finishedAt": "2026-09-15T05:55:00.570Z"
+}
