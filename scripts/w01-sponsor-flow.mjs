@@ -18,6 +18,7 @@ import {proveApplicationAction} from './prove-application-action.mjs';
 import {fundW01Sponsor} from './w01-shared-funding.mjs';
 import {ROOT} from './toolchain.mjs';
 import {deliverW01Coupons} from './w01-coupon-delivery.mjs';
+import {rejectW01CouponReplay} from './w01-coupon-replay.mjs';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const included=r=>[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(r.status);
 
@@ -95,6 +96,17 @@ export async function prepareW01Sponsor({node,preparation,instance,l1Client,dire
     observation.sponsorAddress=sponsorInstance.address.toString();observation.authorInitiallyUnfunded=true;
     observation.balanceBeforeActions=String(await getFeeJuiceBalance(sponsorInstance.address,node));
     const attempted=new Set();
+    const sponsoredReplay=async({wallet:authorWallet,owner,kind,args})=>{
+      assert(owner.equals(author.address));assert.equal(kind,'withdraw');
+      if(kind!=='claim'&&!observation.couponReplay){
+        assert(attempted.has('claim'),'Replay control requires an included prior claim');
+        mark('prove-and-reject-consumed-coupon');
+        const replayPrepared=await prepareSponsoredAction({wallet:authorWallet,node,sponsorAddress:sponsorInstance.address,
+          sponsorArtifact:sponsorRaw,boardAddress:instance.address,boardArtifact:boardRaw,owner,
+          expectedChainId:31337n,expectedVersion:BigInt(info.rollupVersion),coupon:coupons.get('claim'),action:{kind,args},gasSettings:gas});
+        observation.couponReplay=await rejectW01CouponReplay({wallet:authorWallet,node,owner,prepared:replayPrepared,sponsorAddress:sponsorInstance.address});
+      }
+    };
     const sponsoredAction=async({wallet:authorWallet,owner,kind,args})=>{
       assert(owner.equals(author.address));assert(coupons.has(kind)&&!attempted.has(kind),'No duplicate coupon attempt');
       assert.equal(await getFeeJuiceBalance(owner,node),0n);
@@ -104,7 +116,7 @@ export async function prepareW01Sponsor({node,preparation,instance,l1Client,dire
       attempted.add(kind);return {...prepared,expectedFeePayer:sponsorInstance.address};
     };
     observation.passed=true;
-    Object.defineProperties(observation,{authorAccount:{value:author},sponsoredAction:{value:sponsoredAction},
+    Object.defineProperties(observation,{authorAccount:{value:author},sponsoredAction:{value:sponsoredAction},sponsoredReplay:{value:sponsoredReplay},
       sponsorAddressObject:{value:sponsorInstance.address}});
     return observation;
   } catch(error) {

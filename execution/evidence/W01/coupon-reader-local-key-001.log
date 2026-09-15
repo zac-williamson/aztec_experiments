@@ -1,0 +1,22 @@
+✔ stable derivation opens actual encrypted records after wallet/sponsor restart (14.824167ms)
+✔ different wallet cannot decrypt prior local store (4.8965ms)
+✔ different sponsor cannot decrypt prior local store (3.652125ms)
+✔ invalid secrets/configuration fail before any store creation or network work (0.717ms)
+✔ initialization errors are fixed and partially created adapters are closed (1.151792ms)
+✔ close is idempotent, blocks future acquire and sanitizes adapter close failures (0.53375ms)
+✔ actual local HTTP sees only window/token/opaque leaf, never wallet secret/owner/blind (102.974208ms)
+✔ owned reader waits for registration, returns normal result, and closes admission (3.053833ms)
+✔ already aborted callback starts neither registration wait nor state read (0.370084ms)
+✔ abort while registration is pending prevents a later state read and drain owns the wait (0.794375ms)
+✔ abort during a started read waits for its settlement before allowing teardown (1.591083ms)
+✔ registration rejection is immediately handled and skips the read (0.458916ms)
+✔ state read rejection retains its disposition and releases owned cleanup (0.349833ms)
+✔ drain waits for both sibling reads even when one succeeds and the other rejects (0.402541ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 587.497416

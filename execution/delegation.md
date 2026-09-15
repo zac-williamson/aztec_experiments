@@ -387,3 +387,5 @@ Current W01 lanes: root integrates genuine funding/claim/exit/post, generated br
 W01 delivery integration: root owns SDK/engine callback and integrated checks. build_verification owns new sponsor-service/coupon-store.mjs and CLI durable-store tests; build_review owns read-only transport/state review. No concurrent heavy jobs.
 
 Current: root owns genuine shared-batch HTTP/SQLite delivery integration and sole bounded proof run. artifact_regressions reviews harness read-only; build_review owns NEW registration-journal.mjs/test/evidence only after design. build_verification delivered CLI store16tests and is idle.
+
+Continuation checkpoint: CLI/static-provider and registration-journal lanes delivered. Latest artifact_regressions review could not start because its usage quota was exhausted; no final independent disposition is claimed for the new anchor placement. Root inspected the narrow ordering change and supervises verification locally.

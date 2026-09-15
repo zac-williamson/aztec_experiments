@@ -11,10 +11,37 @@ import {createSponsorTransport} from '../shared/sponsor-transport.mjs';
 import {createSponsorCouponProvider} from '../shared/sponsor-coupon-provider.mjs';
 import {readRegisteredSponsorBatch} from '../shared/sponsor-state.mjs';
 
+// Own every callback even when its caller stops waiting on a timeout race.
+// SDK reads cannot be cancelled here: drain them before their wallet is stopped.
+export function createOwnedCouponReader({waitForRegistration,readBatch}) {
+  const owned=[];let draining=false;
+  const live=signal=>{if(signal?.aborted)throw new Error('W01_COUPON_READ_ABORTED');};
+  return Object.freeze({
+    read:({batchId,signal})=>{
+      if(draining)throw new Error('W01_COUPON_READER_CLOSED');
+      const operation=(async()=>{
+        live(signal);
+        await waitForRegistration();
+        live(signal); // Do not start a read after a slow registration outlives acquisition.
+        const result=await readBatch({batchId});
+        live(signal); // A completed read after abort is never returned as usable.
+        return result;
+      })();
+      owned.push(operation);
+      operation.catch(()=>{}); // Preserve original rejection; drain owns its disposition.
+      return operation;
+    },
+    drain:()=>{draining=true;return Promise.allSettled(owned);},
+  });
+}
+
 export async function deliverW01Coupons({directory,node,wallet,sponsor,sponsorRaw,scope,owner,config,send,posting}) {
   const requestedRoot=path.join(directory,'w01-coupon-delivery');await fs.mkdir(requestedRoot,{mode:0o700});
   const root=await fs.realpath(requestedRoot);
   let issuer,boundary,registration;const stores=[];const requests=[];
+  const reader=createOwnedCouponReader({waitForRegistration:()=>registration,
+    readBatch:({batchId})=>readRegisteredSponsorBatch({wallet,node,sponsorAddress:sponsor.address,sponsorArtifact:sponsorRaw,
+      boardAddress:scope.boardAddress,expectedChainId:scope.l1ChainId,expectedVersion:scope.rollupVersion,batchId})});
   const now=async()=>BigInt((await node.getBlock('latest')).header.globalVariables.timestamp.toString());
   let timestamp=await now();
   try {
@@ -45,12 +72,8 @@ export async function deliverW01Coupons({directory,node,wallet,sponsor,sponsorRa
       providers.push(createSponsorCouponProvider({transport,sponsorAddress:sponsor.address.toString(),windowDuration:String(config.window_duration),store,
         nowSeconds:()=>timestamp,maxPolls:30,pollIntervalMs:1000,deadlineMs:60000}));
     }
-    const outcomes=await Promise.allSettled(providers.map((provider,i)=>provider.acquire({scope,owner,actionKind:kinds[i],readRegisteredBatch:async({batchId})=>{
-      // Surface registration failure promptly; actual helper still independently checks public state.
-      if(registration)await registration;
-      return readRegisteredSponsorBatch({wallet,node,sponsorAddress:sponsor.address,sponsorArtifact:sponsorRaw,boardAddress:scope.boardAddress,
-        expectedChainId:scope.l1ChainId,expectedVersion:scope.rollupVersion,batchId});
-    }})));
+    const outcomes=await Promise.allSettled(providers.map((provider,i)=>provider.acquire({scope,owner,
+      actionKind:kinds[i],readRegisteredBatch:reader.read})));
     for(const outcome of outcomes)if(outcome.status==='rejected')throw outcome.reason;
     const results=outcomes.map(outcome=>outcome.value);
     const batch=await registration;assert(batch);assert.equal(batch.ticketCount,2);
@@ -64,6 +87,7 @@ export async function deliverW01Coupons({directory,node,wallet,sponsor,sponsorRa
   } finally {
     // Registration is an owned operation, never leave a detached admin proof behind.
     if(registration)await registration.catch(()=>{});
+    await reader.drain(); // Includes reads whose acquisition already timed out.
     for(const store of stores)store.close();
     if(boundary){const closed=new Promise(resolve=>boundary.server.close(resolve));boundary.server.closeAllConnections();await closed;}
     issuer?.close();

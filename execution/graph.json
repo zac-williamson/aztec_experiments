@@ -734,7 +734,7 @@
       "evidence": "evidence/W01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Coupon delivery integrated:96 focused checks, real browser IndexedDB reopen/CAS, rebuilt SDK/CLI/generated engine checks pass. Root prepares genuine shared HTTP/SQLite batch claim/post run at unchanged540s/8GiB; independent harness review active. build_review owns new bounded registration journal only; production operator recovery/privacy/failure gates remain.",
+      "checkpoint": "Genuine real coupon delivery claim/post passed6m33s; corrected consumed-coupon rejection + distinct-coupon exit/refund passed348028ms (5m48s), peak1.11GiB, fullcleanup. Replay proof10.25s rejected sole existing-nullifier with no fee. Static browser/CLI config committedefcc7cb. Registration journal16controls now release submission slot at canonical inclusion, track finality separately; root operator worker/recovery integration next. W01 remains incomplete (service, paid failures, observations).",
       "priority": 5
     },
     {

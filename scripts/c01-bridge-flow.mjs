@@ -30,7 +30,7 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
       if(sponsorship){
         const {prepareW01Sponsor}=await import('./w01-sponsor-flow.mjs');
         observation.sponsor=await prepareW01Sponsor({...common,ready,rollupAddress,posting:sponsoredPosting});assert(observation.sponsor.passed);
-        common.authorAccount=observation.sponsor.authorAccount;common.sponsoredAction=observation.sponsor.sponsoredAction;
+        common.authorAccount=observation.sponsor.authorAccount;common.sponsoredAction=observation.sponsor.sponsoredAction;common.sponsoredReplay=observation.sponsor.sponsoredReplay;
       }
       mark('real-deposit-and-claim');
       observation.claim=await depositAndClaimC01({...common,ready,settlement});assert(observation.claim.passed);
