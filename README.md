@@ -1,5 +1,14 @@
 # Billboard — Anonymous Message Board on Aztec
 
+> **Fork status:** This repository contains ongoing production-readiness work based on
+> [Vitalik Buterin’s original repository](https://github.com/vbuterin/aztec_experiments),
+> starting at `1849967`. It is **not yet a production release**. See
+> [changes from upstream](CHANGES-FROM-UPSTREAM.md) and [current status](execution/status.md).
+> The original overview below includes historical privacy and formal-verification claims;
+> these are not assurance claims for this candidate. The current acceptance requirements
+> and privacy limits are recorded in [execution/requirements.md](execution/requirements.md).
+> V5 engineering continues; V6 compatibility and release clearance remain outstanding.
+
 An anonymous billboard on Aztec v5 mainnet. Users deposit ETH on L1, post messages anonymously on L2, and withdraw their ETH back to L1. Posts are fully anonymous — no sender address appears in public call data, and there is no link to the L1 deposit.
 
 Features:
