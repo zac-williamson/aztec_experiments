@@ -53,11 +53,6 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
       assert(observation.board.passed);
       if(include){mark('include-board-deployment');const {includeC01Board}=await import('./c01-board-inclusion.mjs');
         observation.inclusion=await includeC01Board({node,tx:observation.board.tx,rpcUrl:config.l1RpcUrls[0],dateProvider});
-        if(process.env.W01_REGISTRATION==='true'){
-          const {qualifyW01Registration}=await import('./w01-registration-flow.mjs');
-          observation.registration=await qualifyW01Registration({node,preparation,instance:observation.board.instance,directory,
-            l1Client:deployment.l1Client,rpcUrl:config.l1RpcUrls[0],dateProvider,mark});assert(observation.registration.passed);
-        }
         if(process.env.C01_READY==='true'){
           mark('prepare-and-prove-ready');
           const {prepareAndProveC01Ready}=await import('./c01-ready-flow.mjs');
@@ -81,12 +76,12 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
               const {completeC01Bridge}=await import('./c01-bridge-flow.mjs');
               observation.bridge=await completeC01Bridge({node,config:nodeConfig,dateProvider,l1Client:deployment.l1Client,
                 directory,rollupAddress:deployment.l1ContractAddresses.rollupAddress,preparation,
-                instance:observation.board.instance,ready:observation.ready,settlement:observation.settlement,mark,sponsoredPosting:process.env.W01_SPONSORED_POST==='true',sponsorship:process.env.W01_SPONSORSHIP==='true',screeningOnly:process.env.C02_SCREENING==='true',contentionOnly:process.env.C03_CONTENTION==='true'});
+                instance:observation.board.instance,ready:observation.ready,settlement:observation.settlement,mark,privateFeePosting:process.env.W01_PRIVATE_FEE_POST==='true',privateFees:process.env.W01_PRIVATE_FEES==='true',screeningOnly:process.env.C02_SCREENING==='true',contentionOnly:process.env.C03_CONTENTION==='true'});
               assert(observation.bridge.passed);
             }
           }
         }
-        observation.sequencerStarted=true;observation.scope=observation.registration?.passed?'genuine operator registration persistence and restart':observation.bridge?.contention?.passed?(process.env.C03_POSTING_DIAGNOSTIC==='true'?'one-author genuine posting diagnostic; not contention qualification':'ten genuine authors preparing posts from one anchor'):observation.bridge?.screening?.passed?'application posting and authenticated screening proofs':observation.bridge?.passed?'application proofs, controlled settlement, deposit/claim/exit/refund':observation.settlement?.passed?'controlled Ready settlement and enabled portal':'genuine client proof and ordinary checkpoint inclusion; no epoch proof acceptance';observation.epochSchedulingStarted=false;observation.idleProverAgentCreated=false;}
+        observation.sequencerStarted=true;observation.scope=observation.bridge?.contention?.passed?(process.env.C03_POSTING_DIAGNOSTIC==='true'?'one-author genuine posting diagnostic; not contention qualification':'ten genuine authors preparing posts from one anchor'):observation.bridge?.screening?.passed?'application posting and authenticated screening proofs':observation.bridge?.passed?'application proofs, controlled settlement, deposit/claim/exit/refund':observation.settlement?.passed?'controlled Ready settlement and enabled portal':'genuine client proof and ordinary checkpoint inclusion; no epoch proof acceptance';observation.epochSchedulingStarted=false;observation.idleProverAgentCreated=false;}
 
     }
     observation.passed=true;

@@ -39,10 +39,10 @@ export function buildContracts() {
   processArtifact(raw, raw);
   const canonical = path.join(ROOT, 'apps/src/billboard/billboard_artifact.json');
   fs.copyFileSync(raw, canonical);
-  const sponsorRaw = path.join(billboard, 'target/sponsor_contract-BillboardSponsor.json');
-  processArtifact(sponsorRaw, sponsorRaw);
-  const sponsorCanonical = path.join(ROOT, 'apps/src/billboard/sponsor_artifact.json');
-  fs.copyFileSync(sponsorRaw, sponsorCanonical);
+  const privateFeeRaw = path.join(billboard, 'target/private_fee_contract-PrivateFPC.json');
+  processArtifact(privateFeeRaw, privateFeeRaw);
+  const privateFeeCanonical = path.join(ROOT, 'apps/src/billboard/private_fee_artifact.json');
+  fs.copyFileSync(privateFeeRaw, privateFeeCanonical);
   // Keep legacy consumer copies consistent until consumers are consolidated.
   for (const name of ['deploy', 'censor']) {
     fs.copyFileSync(raw, path.join(ROOT, 'apps/src/billboard', name, 'billboard_artifact.json'));
@@ -65,7 +65,7 @@ export function buildContracts() {
   }
   fs.writeFileSync(path.join(ROOT, '.build/contracts-manifest.json'), JSON.stringify({
     inputs: contractInputs(ROOT), noir: sha(fs.readFileSync(canonical)),
-    sponsor: sha(fs.readFileSync(sponsorCanonical)),
+    privateFee: sha(fs.readFileSync(privateFeeCanonical)),
     portal: sha(portal.bytecode.object),
   }, null, 2) + '\n');
   console.log('Built canonical Noir/VK and Solidity artifacts; synchronized all consumers.');

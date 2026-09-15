@@ -683,10 +683,10 @@
     },
     {
       "id": "W01",
-      "title": "Implement and evaluate private or shared sponsored fees",
+      "title": "Implement and evaluate user-funded private fees",
       "phase": "engineering",
       "kind": "internal",
-      "status": "active",
+      "status": "done",
       "depends_on": [
         "P04",
         "C03"
@@ -709,14 +709,14 @@
       ],
       "plan": "tasks/W01.md",
       "actions": [
-        "Compare currently supported fee mechanisms against the threat model; prototype with fresh test-only accounts.",
-        "Implement the selected shared/private route and prevent silent fallback to a public per-user fee payer.",
-        "Add sponsor budgeting, abuse limits, replenishment/outage interfaces and correlation-aware logging."
+        "Implement canonical ownerless private FeeJuice payments with no issuer, coupons or offchain fee operator.",
+        "Fund and recover private credit through the protocol portal; qualify cold-start and subsequent application transactions with real proofs.",
+        "Assess funding and transaction observations, explicit maximum-fee charging, insufficient balance, replay and ambiguous submission behavior."
       ],
       "acceptance": [
         {
           "id": "W01-A01",
-          "description": "Ordinary posting does not expose a reusable author account as public fee payer; funding does not recreate that linkage."
+          "description": "Ordinary posting does not expose the author account as public fee payer; funding amount/timing and cold-start linkage are explicitly assessed against the privacy model."
         },
         {
           "id": "W01-A02",
@@ -724,17 +724,17 @@
         },
         {
           "id": "W01-A03",
-          "description": "Sponsor exhaustion or unsupported fees fail explicitly without falling back to an identity-revealing route."
+          "description": "Insufficient private credit or unsupported fees fail explicitly without public author-payment fallback."
         },
         {
           "id": "W01-A04",
-          "description": "Rate/budget controls and metrics work with no new author-identity collection; actual production funding remains an operator input."
+          "description": "Users fund and recover their own private fee credit without an issuer; maximum-fee charging and replay protection are verified without collecting author identities."
         }
       ],
       "evidence": "evidence/W01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Architecture correction from user: stop coupon issuer/operator work. Official private Fee Juice guide and reference PrivateFPC pinned to Aztec5.0.1 support ownerless user-funded private fee balances with no offchain agent. Local5.2 primitives confirm private setup payer election and FeeJuice bridge claims. Next qualify compatible ownerless private-fee integration and remove mandatory coupon/sponsor-service path; do not continue operator scheduling. No replacement application integration has been tested yet. Prior sponsorship evidence remains historical, not justification for retaining its architecture.",
+      "checkpoint": "Ownerless user-funded private fee replacement verified:145 Noir/TXE tests,134 component/generated checks, built CLI/browser smoke, genuine cold-start/post259.744s and standalone/claim/exit/refund290.068s; full cleanup. Coupon service/contracts/storage/registration removed. Max-fee/no-refund and public funding observations documented. Broader production release gates remain.",
       "priority": 5
     },
     {
@@ -1189,8 +1189,8 @@
       ],
       "plan": "tasks/O01.md",
       "actions": [
-        "Instrument liabilities/balance, sponsor balance, transaction failures, feed lag, signer health and moderation deadlines without secret/identity leakage.",
-        "Write executable operator runbooks for deploy, pause/exit, sponsor outage, RPC failover, policy/censor changes, credential rotation and recovery.",
+        "Instrument liabilities/balance, private fee funding failures, transaction failures, feed lag, signer health and moderation deadlines without secret/identity leakage.",
+        "Write executable operator runbooks for deploy, pause/exit, private fee funding outage, RPC failover, policy/censor changes, credential rotation and recovery.",
         "Provide restricted configuration templates and staging alerts; preserve original attribution and license requirements."
       ],
       "acceptance": [
@@ -1364,7 +1364,7 @@
       ],
       "plan": "tasks/T03.md",
       "actions": [
-        "Observe full fresh-user journeys as chain observer, RPC operator, sponsor and frontend host under the P01 threat model.",
+        "Observe full fresh-user journeys as chain observer, RPC operator, funding observer and frontend host under the P01 threat model.",
         "Inspect fee/funding addresses, logs, request metadata, storage, timing and reuse across posts and deposits.",
         "Publish a precise privacy statement and regression checks for preventable linkage.",
         "Reconcile P04 compiler-diagnostic-review.md against the final emitted application/protocol artifacts. Preserve all 26 original locations and require the relevant adverse proof/privacy cases and independent disposition; do not suppress the checks or treat source reasoning as proof."
@@ -1376,7 +1376,7 @@
         },
         {
           "id": "T03-A02",
-          "description": "RPC/host/sponsor correlation limits are documented with measured traces and configured minimization."
+          "description": "RPC/host/funding correlation limits are documented with measured traces and configured minimization."
         },
         {
           "id": "T03-A03",
@@ -1423,7 +1423,7 @@
       "actions": [
         "Test the agreed current browser/device matrix and supported wallet routes with reproducible hardware/network metadata.",
         "Run the required 10-author and 1,000-lifetime-post workloads, long absence, repeated deposits and withdrawal during traffic.",
-        "Inject reorgs, RPC delays/outages, crash/reload, duplicate submissions, signer failure and sponsor exhaustion.",
+        "Inject reorgs, RPC delays/outages, crash/reload, duplicate submissions, signer failure and private fee credit exhaustion.",
         "Measure and address cold browser proving-data initialization: P04 observed 109.6 seconds for 1,179,648 BN254 points on one host during other verification work. Qualify representative startup/proving latency and capacity with actual workloads; separate smoke-test budgets do not establish production performance.",
         "Measure cold SDK delivery/parse/readiness separately from SRS initialization on supported hosts. Reconcile any lazy-loading/code-splitting change with full output manifests, worker paths and actual browser journeys; retain source-bound timeout failures as diagnostic evidence."
       ],
@@ -1749,7 +1749,7 @@
       "plan": "tasks/T06.md",
       "actions": [
         "Run representative proof-enabled testnet operation for 14 consecutive actual days with the required workload and recorded monitoring coverage.",
-        "Exercise sponsor exhaustion, RPC failure, key/censor rotation, queue restart and recovery drills using test-only identities.",
+        "Exercise private fee credit exhaustion, RPC failure, key/censor rotation, queue restart and recovery drills using test-only identities.",
         "Record start/end timestamps and metrics; material application changes require a new candidate and renewed affected gates/soak."
       ],
       "acceptance": [
@@ -1847,14 +1847,14 @@
       ],
       "plan": "tasks/O02.md",
       "actions": [
-        "Present completed runbooks, restricted configuration templates and sponsor/hosting estimates to the user.",
+        "Present completed runbooks, restricted configuration templates and fee/hosting estimates to the user.",
         "Collect named operator and incident ownership, final moderation policy, approved budgets and production configuration references without storing secrets.",
         "Confirm exposed credentials are revoked/replaced/restricted through authorized owner action; do not treat source deletion as revocation."
       ],
       "acceptance": [
         {
           "id": "O02-A01",
-          "description": "Named owners accept moderation, sponsor funding, incident response and deployment responsibilities."
+          "description": "Named owners accept moderation, fee recovery support, incident response and deployment responsibilities."
         },
         {
           "id": "O02-A02",

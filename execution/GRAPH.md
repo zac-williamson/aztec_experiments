@@ -26,7 +26,7 @@ flowchart TD
     A01["A01: Regenerate and verify every release artifact"]
     C06 --> A01
     P02 --> A01
-    W01["W01: Implement and evaluate private or shared sponsored fees"]
+    W01["W01: Implement and evaluate user-funded private fees"]
     P04 --> W01
     C03 --> W01
     W02["W02: Secure wallet keys, secrets and recovery"]
@@ -123,7 +123,7 @@ flowchart TD
 | [C05](tasks/C05.md) | Enforce penalty, cooldown and arithmetic invariants | C04 | internal |
 | [C06](tasks/C06.md) | Harden escrow accounting and design safe recovery | C05 | internal |
 | [A01](tasks/A01.md) | Regenerate and verify every release artifact | C06, P02 | internal |
-| [W01](tasks/W01.md) | Implement and evaluate private or shared sponsored fees | P04, C03 | internal |
+| [W01](tasks/W01.md) | Implement and evaluate user-funded private fees | P04, C03 | internal |
 | [W02](tasks/W02.md) | Secure wallet keys, secrets and recovery | W01, C06 | internal |
 | [W03](tasks/W03.md) | Implement trustworthy receipts and resumable transaction journal | W02, A01 | internal |
 | [F01](tasks/F01.md) | Build incremental public feed with reorg recovery | C03 | internal |

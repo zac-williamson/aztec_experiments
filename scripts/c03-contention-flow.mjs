@@ -37,13 +37,13 @@ function packedText(text){
  * No state injection, server prover, proof worker fanout or automatic retry.
  */
 export async function proveAndIncludeC03Contention({node,preparation,instance,authorClaims,
-  l1Client,rpcUrl,directory,mineL1,reportStage,dateProvider,sponsoredAction}){
+  l1Client,rpcUrl,directory,mineL1,reportStage,dateProvider,privateFeeAction}){
   let wallet,sequencer,previousConfig,progressPath,stage='preflight';
   const count=preparation.authorAccounts.length;
-  assert([1,10].includes(count));assert(count===10||process.env.C03_POSTING_DIAGNOSTIC==='true'||typeof sponsoredAction==='function');
+  assert([1,10].includes(count));assert(count===10||process.env.C03_POSTING_DIAGNOSTIC==='true'||typeof privateFeeAction==='function');
   const started=performance.now();
   const listeners=[];
-  const observation={passed:false,scope:sponsoredAction?'one unfunded author genuine sponsored posting; not concurrency qualification':count===10?'ten real distinct-author post proofs prepared at one canonical anchor':'one-author posting diagnostic, not concurrency qualification',
+  const observation={passed:false,scope:privateFeeAction?'one author genuine private-fee posting; not concurrency qualification':count===10?'ten real distinct-author post proofs prepared at one canonical anchor':'one-author posting diagnostic, not concurrency qualification',
     applicationProofs:true,networkProofs:false,authorCount:count,contentionQualified:false,posts:[],allPreparedBeforeSubmission:false};
   // Atomically replace only sanitized observations; no accounts, note preimages or transaction bytes.
   const persist=async()=>{if(!progressPath)return;
@@ -146,7 +146,7 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
       await mark('prove-author-'+index);const started=performance.now();
       const {request,proven,tx}=await proveApplicationAction({wallet,owner:account.address,
         interaction:board.methods.post(...postArgs),
-        sponsoredAction:sponsoredAction?context=>sponsoredAction({...context,kind:'post',args:postArgs}):undefined});
+        privateFeeAction:privateFeeAction?context=>privateFeeAction({...context,kind:'post',args:postArgs}):undefined});
       const fee={gasSettings:request.txContext.gasSettings};
       assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchorBytes,'Prepared author drifted from the common anchor');
       assert.deepEqual((await wallet.pxe.getSyncedBlockHeader()).toBuffer(),anchorBytes);

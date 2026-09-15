@@ -110,8 +110,8 @@ function buildApp(appRelPath) {
   // App-specific resources (look in app dir, then parent)
   const portalBytecode = loadResource(appDir, 'portal_bytecode.txt');
   const billboardArtifact = loadResource(appDir, 'billboard_artifact.json');
-  const sponsorArtifact = loadResource(appDir, 'sponsor_artifact.json');
-  if (['billboard/user','billboard/censor'].includes(appRelPath) && !sponsorArtifact) throw new Error('Missing mandatory sponsor artifact');
+  const privateFeeArtifact = loadResource(appDir, 'private_fee_artifact.json') || (appRelPath === 'fee-juice' ? loadResource(path.join(appDir, '../billboard/user'), 'private_fee_artifact.json') : null);
+  if (['billboard/user','billboard/censor'].includes(appRelPath) && !privateFeeArtifact) throw new Error('Missing mandatory private fee artifact');
 
   // Load engine.js from the app directory (if it exists)
   const enginePath = path.join(appDir, 'engine.js');
@@ -152,8 +152,12 @@ function buildApp(appRelPath) {
     const bc = portalBytecode.startsWith('0x') ? portalBytecode : '0x' + portalBytecode;
     replacements['<!--PORTAL_BYTECODE-->'] = `<script>const PORTAL_BYTECODE = "${bc}";\n</script>`;
   }
+  if (appRelPath === 'fee-juice') {
+    replacements['<!--USER_ENGINE-->'] = `<script>${fs.readFileSync(path.join(appDir, '../billboard/user/engine.js'), 'utf8')}</script>`;
+    replacements['<!--PRIVATE_FEE_ARTIFACT-->'] = `<script>const BILLBOARD_PRIVATE_FEE_ARTIFACT = ${privateFeeArtifact};</script>`;
+  }
   if (billboardArtifact) {
-    replacements['<!--ARTIFACT-->'] = `<script>const BILLBOARD_ARTIFACT = ${billboardArtifact};\nconst BILLBOARD_SPONSOR_ARTIFACT = ${sponsorArtifact || 'null'};\n</script>`;
+    replacements['<!--ARTIFACT-->'] = `<script>const BILLBOARD_ARTIFACT = ${billboardArtifact};\nconst BILLBOARD_PRIVATE_FEE_ARTIFACT = ${privateFeeArtifact || 'null'};\n</script>`;
   }
 
   for (const [placeholder, replacement] of Object.entries(replacements)) {

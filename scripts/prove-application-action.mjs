@@ -1,18 +1,15 @@
 // TEST ONLY. One genuine application proof; caller owns submission, inclusion,
 // canonical-state assertions and the process/memory/deadline supervisor.
 import assert from 'node:assert/strict';
-import { NO_FROM } from '@aztec/aztec.js/account';
 
-export async function proveApplicationAction({ wallet, interaction, owner, sponsoredAction }) {
-  const prepared = sponsoredAction ? await sponsoredAction({ wallet, owner }) : {
+export async function proveApplicationAction({ wallet, interaction, owner, privateFeeAction }) {
+  const prepared = privateFeeAction ? await privateFeeAction({ wallet, owner, interaction }) : {
     interaction, options: { from: owner, additionalScopes: [] }, expectedFeePayer: owner,
   };
   assert(prepared?.interaction && prepared.options && prepared.expectedFeePayer);
-  if (sponsoredAction) {
-    assert.equal(prepared.options.from, NO_FROM, 'Sponsored application must use the restricted root');
-    assert(prepared.options.sendMessagesAs?.equals(owner), 'Sponsored note tags must use owner');
-    assert(prepared.options.additionalScopes?.some(scope => scope.equals(owner)), 'Missing owner PXE scope');
-    assert(!prepared.expectedFeePayer.equals(owner), 'Author must not pay sponsored fees');
+  if (privateFeeAction) {
+    assert(prepared.options.from.equals(owner), 'Private fee payment uses the authenticated account');
+    assert(!prepared.expectedFeePayer.equals(owner), 'Private fees must use the shared ownerless FPC');
   }
   const options = prepared.options;
   const payload = await prepared.interaction.request(options);

@@ -34,7 +34,7 @@ async function artifact(preparation){
 /** Same disposable in-memory identity as the preceding claim. Only enumerable fields may be logged.
  * The parent owns the native proof deadline/resource supervisor and node/prover shutdown.
  */
-export async function proveAndIncludeC01Exit({node,preparation,instance,claimResult,l1Client,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,sponsoredAction,sponsoredReplay}){
+export async function proveAndIncludeC01Exit({node,preparation,instance,claimResult,l1Client,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,privateFeeAction}){
   let wallet,sequencer,previousConfig,stage='preflight';
   const observation={passed:false,scope:'genuine no-post L2 withdrawal and ordinary checkpoint inclusion',
     syntheticProofs:false,syntheticSettlement:false,exitEpochProofAccepted:false,l1Withdrawn:false};
@@ -92,13 +92,7 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
       await mine();
     }
     assert(integer(anchor.globalVariables.timestamp)>=claim.nextAllowedTime,'No-post eligibility wait timed out');
-    if(sponsoredReplay){
-      await sponsoredReplay({wallet,owner:account.address,kind:'withdraw',args:[claim.depositChainId]});
-      // The negative proof is separate work. Select and verify the positive action's
-      // canonical anchor after it, preserving the exact proven-anchor comparison below.
-      await wallet.pxe.sync();anchor=await wallet.pxe.getSyncedBlockHeader();
-      assert(integer(anchor.globalVariables.timestamp)>=claim.nextAllowedTime);
-    }
+
     // Eligibility now has a usable anchor. Restore ordinary transaction-driven
     // production before client proving; the submitted exit supplies the required tx.
     sequencer.updateConfig(previousConfig);
@@ -112,9 +106,9 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
     mark('prove-real-withdrawal');
     const {proven,tx}=await proveApplicationAction({wallet,owner:account.address,
       interaction:board.methods.withdraw(claim.depositChainId),
-      sponsoredAction:sponsoredAction?context=>sponsoredAction({...context,kind:'withdraw',args:[claim.depositChainId]}):undefined});
+      privateFeeAction:privateFeeAction?context=>privateFeeAction({...context,kind:'withdraw',args:[claim.depositChainId]}):undefined});
     observation.feePayer=tx.data.feePayer.toString();
-    observation.sponsored=!!sponsoredAction;
+    observation.privateFees=!!privateFeeAction;
     assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer());
     assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),anchorBlock.hash.toString());
     assert.equal((await node.isValidTx(tx)).result,'valid');

@@ -157,8 +157,8 @@ function buildConfig(action, extra) {
     ethRpcUrl: ETH_RPC_URL,
     aztecWallet: ws && ws.aztec ? { secretKey: ws.aztec.secretKey, salt: ws.aztec.salt } : null,
     ethWallet: ethWallet,
-    // Local trusted integration. Coupon provider must keep owner/blind on this device.
-    sponsorship: window.billboardSponsorship,
+    // Public deployment configuration; fee funds belong to this wallet.
+    privateFee: window.billboardPrivateFee,
   };
   if (action) config.action = action;
   if (extra) Object.assign(config, extra);
@@ -168,53 +168,11 @@ function buildConfig(action, extra) {
 // ============================================================
 // Call engine with log routing to a specific status div
 // ============================================================
-// Static sponsor configuration is enough: secrets stay in the unlocked local wallet.
-async function withBrowserSponsorship(env, config, operation) {
-  const route = config.sponsorship;
-  if (!['claim', 'post', 'withdraw', 'auto'].includes(config.action) || !route || route.couponProvider) {
-    return operation(config);
-  }
-  let provider;
-  try {
-    const keys = ['issuerUrl', 'sponsorAddress', 'windowDuration', 'gasSettings'];
-    if (Object.keys(route).length !== keys.length || !keys.every(key => Object.hasOwn(route, key)) ||
-        !config.aztecWallet?.secretKey || typeof env.aztec?.createLocalSponsorCouponProvider !== 'function' ||
-        typeof env.aztec?.createIndexedDBSponsorCouponStore !== 'function') throw new Error();
-    // Local database namespace; never sent to the issuer or used as a public author tag.
-    const namespaceBytes = new TextEncoder().encode(JSON.stringify([
-      'AZTEC_BB_BROWSER_COUPON_DB_V1', config.aztecWallet.secretKey, route.sponsorAddress,
-    ]));
-    const digest = await crypto.subtle.digest('SHA-256', namespaceBytes);
-    namespaceBytes.fill(0);
-    const namespace = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
-    provider = await env.aztec.createLocalSponsorCouponProvider({
-      walletSecret: config.aztecWallet.secretKey, sponsorAddress: route.sponsorAddress,
-      windowDuration: route.windowDuration, issuerUrl: route.issuerUrl,
-      createStore: ({encryptionKey}) => env.aztec.createIndexedDBSponsorCouponStore({
-        encryptionKey, databaseName: 'aztec-bb-coupons-' + namespace,
-      }),
-    });
-  } catch (_) {
-    if (provider) await provider.close().catch(() => {});
-    throw new Error('Local sponsorship could not be initialized.');
-  }
-  let operationFailed = false;
-  try {
-    return await operation({...config, sponsorship: {...route, couponProvider: provider}});
-  } catch (error) {
-    operationFailed = true;
-    throw error;
-  } finally {
-    try { await provider.close(); }
-    catch (_) { if (!operationFailed) throw new Error('Sponsor storage could not be closed.'); }
-  }
-}
-
 function makeCallEngine(engineFn, envExtra) {
   return async function callEngine(action, statusDiv, extra) {
     _currentStatusDiv = statusDiv;
     const env = buildEnv(envExtra);
     const config = buildConfig(action, extra);
-    return await withBrowserSponsorship(env, config, checked => engineFn(env, checked));
+    return await engineFn(env, config);
   };
 }

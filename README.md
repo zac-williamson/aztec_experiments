@@ -331,19 +331,21 @@ lake build   # 2125 jobs, zero sorrys
 
 ### Important: aztec-nr version must match the bundle
 
-The L2 contract's `Nargo.toml` must depend on `aztec-nr` tag `v5.0.0` — the same version the `aztec_bundle.js` was built from. Version mismatches cause standard contract addresses (HandshakeRegistry, AuthRegistry, etc.) baked into the ACIR to differ from those registered in PXE, causing "contract is not registered" errors.
+The L2 contract's `Nargo.toml` must depend on `aztec-nr` tag `v5.2.0` — the same version the `aztec_bundle.js` was built from. Version mismatches cause standard contract addresses (HandshakeRegistry, AuthRegistry, etc.) baked into the ACIR to differ from those registered in PXE, causing "contract is not registered" errors.
 
 Each recompilation changes the contract class ID (public bytecode commitment), so always use a salt that was never used before when deploying.
+
+## Private transaction fees
+
+The coupon service has been removed. Users fund an ownerless private fee contract with their own L1 AZTEC tokens using the Fee Juice page. No issuer, coupon database or replenishment service is required. The page saves public deposit recovery metadata; private claim secrets are reconstructed from the existing wallet key. Keep that wallet backed up. Automatic token swaps and the former public Fee Juice CLI were removed.
+
+Configure `window.billboardPrivateFee` with the canonical contract address and explicit gas settings. CLI author actions accept `--private-fee-config` and an optional first-payment `--private-fee-claim-file` with owner-only file permissions. Subsequent transactions spend private credit.
+
+The contract charges the configured maximum transaction fee against private credit; it does not refund unused gas. The pooled FeeJuice balance and L1 funding amount/timing are public. This does not make funding itself unobservable.
 
 ## CLI usage
 
 ```bash
-# Fee Juice (swap ETH→AZTEC, deposit, claim — all in one)
-node apps/src/fee-juice/cli.mjs --gen-all                          # Generate new wallets
-node apps/src/fee-juice/cli.mjs --status --aztec-wallet wallet.json --eth-wallet eth_wallet.json
-node apps/src/fee-juice/cli.mjs --scan --aztec-wallet wallet.json --eth-wallet eth_wallet.json
-node apps/src/fee-juice/cli.mjs --eth-for-swap 0.005 --aztec-wallet wallet.json --eth-wallet eth_wallet.json
-
 # Billboard user (deposit → claim → post → withdraw → claim-l1)
 node apps/src/billboard/user/cli.mjs status   --contract-salt 2028 --aztec-wallet wallets/user_aztec_wallet.json --eth-wallet wallets/user_eth_wallet.json
 node apps/src/billboard/user/cli.mjs deposit  --contract-salt 2028 --amount 0.002 --aztec-wallet wallets/user_aztec_wallet.json --eth-wallet wallets/user_eth_wallet.json

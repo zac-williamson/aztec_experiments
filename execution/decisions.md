@@ -297,3 +297,8 @@ The shared contract address/public aggregate balance remain observable; individu
 fee balances/spending are private. L1 funding/cold-start timing still needs an
 accurate privacy description. No replacement integration or production security
 qualification was performed in this read-only protocol investigation.
+
+
+### User-funded private fees (2026-09-15)
+
+User explicitly requested removal of coupons. Replace the operated sponsor with an ownerless private FPC and user-funded protocol FeeJuice bridge. No issuer, coupon storage/registration, admin or operator replenishment is part of this fee path. Canonical artifacts are rebuilt for pinned 5.2. Private balances are charged the configured maximum fee, with no unused-gas refund. Pooled balances, funding amounts and cold-start timing remain observable and must be assessed; fully private spending does not imply invisible L1 funding. Historical sponsor evidence is retained only for its original source.

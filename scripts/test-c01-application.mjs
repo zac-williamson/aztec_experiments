@@ -16,7 +16,7 @@ const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function fingerprints() {
   const result = {};
   for (const name of ['scripts/test-c01-application.mjs','scripts/owned-test-process-tree.mjs','scripts/c01-settle-application-message.mjs','scripts/c01-application-deployment.mjs',
-    'scripts/prove-application-action.mjs','scripts/w01-sponsor-flow.mjs','scripts/w01-shared-funding.mjs','scripts/w01-coupon-delivery.mjs','scripts/w01-coupon-replay.mjs','scripts/w01-registration-flow.mjs','sponsor-service/registration-worker.mjs','sponsor-service/registration-journal.mjs','sponsor-service/issuer.mjs','sponsor-service/http.mjs','sponsor-service/coupon-store.mjs','shared/sponsor-state.mjs','shared/sponsor-coupon-provider.mjs','shared/sponsor-coupon-store.mjs','shared/sponsor-transport.mjs','shared/sponsor-client.mjs','scripts/c01-settle-ready.mjs','scripts/c01-settle-message.mjs','scripts/c01-bridge-flow.mjs','scripts/c02-screening-flow.mjs','scripts/c03-author-claims.mjs','scripts/c03-contention-flow.mjs','scripts/c01-client-mining.mjs','scripts/c01-deposit-flow.mjs','scripts/c01-exit-flow.mjs','scripts/c01-withdraw-l1.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
+    'scripts/prove-application-action.mjs','scripts/w01-private-fee-standalone.mjs','scripts/w01-private-fee-flow.mjs','scripts/w01-private-funding.mjs','shared/private-fee-client.mjs','shared/private-fee-payment.mjs','shared/private-fee-funding.mjs','scripts/c01-settle-ready.mjs','scripts/c01-settle-message.mjs','scripts/c01-bridge-flow.mjs','scripts/c02-screening-flow.mjs','scripts/c03-author-claims.mjs','scripts/c03-contention-flow.mjs','scripts/c01-client-mining.mjs','scripts/c01-deposit-flow.mjs','scripts/c01-exit-flow.mjs','scripts/c01-withdraw-l1.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
     'node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js']) {
     result[name] = sha(await fs.readFile(path.join(ROOT, name)));
   }
@@ -129,25 +129,24 @@ async function parent() {
   assertNodeVersion(); assertAztecPackages();
   assert.equal(process.platform, 'darwin', 'This bounded no-network profile is qualified for macOS only');
   assert.equal(process.arch, 'arm64', 'This harness pins the installed arm64 BB binary');
-  assert(process.argv.length===2||(process.argv.length===3&&['--node','--board-proof','--include','--ready','--settle','--bridge','--screening','--contention','--posting-diagnostic','--sponsorship','--sponsored-post','--sponsor-registration'].includes(process.argv[2])),'Unsupported harness arguments');
+  assert(process.argv.length===2||(process.argv.length===3&&['--node','--board-proof','--include','--ready','--settle','--bridge','--screening','--contention','--posting-diagnostic','--private-fees','--private-fee-post'].includes(process.argv[2])),'Unsupported harness arguments');
   const postingDiagnostic=process.argv[2]==='--posting-diagnostic';
   const contention=postingDiagnostic||process.argv[2]==='--contention';
-  const registrationOnly=process.argv[2]==='--sponsor-registration';
-  const sponsoredPosting=process.argv[2]==='--sponsored-post';
-  const sponsorship=sponsoredPosting||process.argv[2]==='--sponsorship';
+  const privateFeePosting=process.argv[2]==='--private-fee-post';
+  const privateFees=privateFeePosting||process.argv[2]==='--private-fees';
   const screening=process.argv[2]==='--screening';
-  const bridge=sponsorship||contention||screening||process.argv[2]==='--bridge';
+  const bridge=privateFees||contention||screening||process.argv[2]==='--bridge';
   const settle=bridge||process.argv[2]==='--settle';
   const readyFlow=process.argv[2]==='--ready'||settle;
-  const boardInclude=registrationOnly||process.argv[2]==='--include'||readyFlow;
+  const boardInclude=process.argv[2]==='--include'||readyFlow;
   const boardProof=process.argv[2]==='--board-proof'||boardInclude;
   const startNode=process.argv[2]==='--node'||boardProof;
   const id = randomUUID();
-  const evidence = path.join(ROOT, (sponsorship||registrationOnly)?'execution/evidence/W01':contention?'execution/evidence/C03':screening?'execution/evidence/C02':'execution/evidence/C01', `application-${id}.json`);
+  const evidence = path.join(ROOT, privateFees?'execution/evidence/W01':contention?'execution/evidence/C03':screening?'execution/evidence/C02':'execution/evidence/C01', `application-${id}.json`);
   await fs.mkdir(path.join(ROOT, '.build'), { recursive: true });
   // Short private path keeps native Unix socket names below macOS sockaddr_un limits.
   const directory = await fs.mkdtemp('/private/tmp/c01-application-');
-  const report = { schemaVersion: 1, profile: registrationOnly ? 'genuine operator registration persistence and restart; no author journey or finality wait' : sponsoredPosting ? 'genuine shared sponsor funding, unfunded-author claim and exact posting effects' : sponsorship ? 'genuine shared sponsor funding, unfunded-author claim/exit/refund; posting not yet qualified' : postingDiagnostic ? 'one-author genuine posting diagnostic; not contention qualification' : contention ? 'ten genuine authors preparing posts from one anchor' : screening ? 'application deposit, posting and authenticated screening proofs' : bridge ? 'application proofs, controlled settlement, deposit/claim/exit/refund' : settle ? 'application Ready proof and controlled settlement' : readyFlow ? 'genuine Ready proof and ordinary inclusion' : boardInclude ? 'genuine board proof and ordinary inclusion' : boardProof ? 'genuine board client proof' : startNode ? 'local protocol fixture and application node startup' : 'official local protocol deployment fixture only',
+  const report = { schemaVersion: 1, profile: privateFeePosting ? 'genuine user-funded private fees, cold start and posting' : privateFees ? 'genuine user-funded private fees, claim/exit/refund' : postingDiagnostic ? 'one-author genuine posting diagnostic; not contention qualification' : contention ? 'ten genuine authors preparing posts from one anchor' : screening ? 'application deposit, posting and authenticated screening proofs' : bridge ? 'application proofs, controlled settlement, deposit/claim/exit/refund' : settle ? 'application Ready proof and controlled settlement' : readyFlow ? 'genuine Ready proof and ordinary inclusion' : boardInclude ? 'genuine board proof and ordinary inclusion' : boardProof ? 'genuine board client proof' : startNode ? 'local protocol fixture and application node startup' : 'official local protocol deployment fixture only',
     startedAt: new Date().toISOString(), deadlineMs: DEADLINE_MS, passed: false, testsApplicationOrEpoch: boardProof, rssLimitKiB:RSS_LIMIT_KIB, rssSampleIntervalMs:1000, rssMethod:'sampled PPID descendant tree with remembered process identities/groups; not OS allocation limit', rssSamples:[], peakTreeRSSKiB:0 };
   let child, finished, timer, outerTimer, killPromise, rssTimer, rssPending;
   let childClosed=false,stopSampling=false;
@@ -166,11 +165,11 @@ async function parent() {
     const bb=path.join(ROOT,'node_modules/@aztec/bb.js/build/arm64-macos/bb');
     const binarySha=sha(await fs.readFile(bb));
     assert.equal(binarySha,'208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031');
-    report.networkProofs=false;report.controlledSettlement=!registrationOnly;report.binarySha256=binarySha;
+    report.networkProofs=false;report.controlledSettlement=settle;report.binarySha256=binarySha;
     assert(!bb.includes("'"));
     await fs.writeFile(path.join(directory,'bb-one-thread'),"#!/bin/sh\nHARDWARE_CONCURRENCY=1 exec '"+bb+"' \"$@\"\n",{flag:'wx',mode:0o700});
     await fs.mkdir(path.join(directory,'acvm'),{mode:0o700});
-    report.registrationOnly=registrationOnly;report.sponsoredPosting=sponsoredPosting;report.sponsorship=sponsorship;report.startNode=startNode;report.boardProof=boardProof;report.settle=settle;report.bridge=bridge;report.screening=screening;report.contention=contention;report.postingDiagnostic=postingDiagnostic;report.expectedAuthorCount=contention&&!postingDiagnostic?10:1;
+    report.privateFeePosting=privateFeePosting;report.privateFees=privateFees;report.startNode=startNode;report.boardProof=boardProof;report.settle=settle;report.bridge=bridge;report.screening=screening;report.contention=contention;report.postingDiagnostic=postingDiagnostic;report.expectedAuthorCount=contention&&!postingDiagnostic?10:1;
     if(postingDiagnostic)report.contentionQualified=false;
     const profile=path.join(directory,'local-only.sb');
     await fs.writeFile(profile, '(version 1)\n(allow default)\n(deny network-outbound (remote ip "*:*"))\n(allow network-outbound (remote ip "localhost:*"))\n(deny network-inbound (local ip "*:*"))\n(allow network-inbound (local ip "localhost:*"))\n');
@@ -178,7 +177,7 @@ async function parent() {
     const started = performance.now();
     child = spawn('/usr/bin/sandbox-exec', ['-f', profile, '/usr/bin/time', '-l', '-o', resources,
       process.execPath, SELF, '--worker', directory], { cwd: ROOT, detached: true,
-      env: {HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'warn',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',NODE_BACKEND:'js',FORGE_BIN:'/Users/zac/.foundry/bin/forge',C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,C01_START_NODE:String(startNode),C01_BOARD_PROOF:String(boardProof),C01_BOARD_INCLUDE:String(boardInclude),C01_READY:String(readyFlow),C01_SETTLE:String(settle),C01_BRIDGE:String(bridge),W01_REGISTRATION:String(registrationOnly),W01_SPONSORED_POST:String(sponsoredPosting),W01_SPONSORSHIP:String(sponsorship),C02_SCREENING:String(screening),C03_CONTENTION:String(contention),C03_POSTING_DIAGNOSTIC:String(postingDiagnostic),FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
+      env: {HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'warn',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',NODE_BACKEND:'js',FORGE_BIN:'/Users/zac/.foundry/bin/forge',C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,C01_START_NODE:String(startNode),C01_BOARD_PROOF:String(boardProof),C01_BOARD_INCLUDE:String(boardInclude),C01_READY:String(readyFlow),C01_SETTLE:String(settle),C01_BRIDGE:String(bridge),W01_PRIVATE_FEE_POST:String(privateFeePosting),W01_PRIVATE_FEES:String(privateFees),C02_SCREENING:String(screening),C03_CONTENTION:String(contention),C03_POSTING_DIAGNOSTIC:String(postingDiagnostic),FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
       stdio: ['ignore', 'pipe', 'pipe'] });
     report.pid = child.pid; report.stages = [];
     let stderrBuffer='';

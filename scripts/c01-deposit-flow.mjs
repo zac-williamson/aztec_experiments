@@ -46,7 +46,7 @@ async function artifacts(preparation,ready){
  * and includes private note/identity/secret material for a later no-post withdrawal.
  * Owns one ephemeral PXE wallet; caller owns sequencer/node/prover shutdown.
  */
-export async function depositAndClaimC01({node,preparation,instance,l1Client,ready,settlement,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,sponsoredAction}){
+export async function depositAndClaimC01({node,preparation,instance,l1Client,ready,settlement,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,privateFeeAction}){
   let stage='preflight',wallet,sequencer,previousSequencerConfig;
   const observation={passed:false,scope:'local real deposit and genuine private claim with ordinary checkpoint inclusion',
     syntheticMessages:false,syntheticProofs:false,claimEpochProofAccepted:false};
@@ -146,9 +146,9 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     const claimArgs=[EthAddress.fromString(depositor),amount,receipt.nonce,secret,new Fr(receipt.index)];
     const {request,proven,tx}=await proveApplicationAction({wallet,owner:account.address,
       interaction:board.methods.claim_deposit(...claimArgs),
-      sponsoredAction:sponsoredAction?context=>sponsoredAction({...context,kind:'claim',args:claimArgs}):undefined});
+      privateFeeAction:privateFeeAction?context=>privateFeeAction({...context,kind:'claim',args:claimArgs}):undefined});
     observation.feePayer=tx.data.feePayer.toString();
-    observation.sponsored=!!sponsoredAction;
+    observation.privateFees=!!privateFeeAction;
     assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer(),'Claim changed selected anchor');
     await canonicalDeposit();assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),canonicalAnchor.hash.toString());
     assert.equal((await node.isValidTx(tx)).result,'valid');

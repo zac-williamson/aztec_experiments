@@ -4,7 +4,7 @@
 // ============================================================
 //
 // Uses ONLY the browser bundle (aztec_bundle.js) for all Aztec
-// execution. Standard sponsorship also uses the local SDK-backed encrypted SQLite adapter. The bundle provides
+// execution and private fee payment. The bundle provides
 // createPXE, createAztecNodeClient, openPXEStore, all
 // crypto (WASM-based), and all contract classes.
 //
@@ -47,8 +47,8 @@
 //   --eth-rpc <url>          Ethereum RPC URL
 //   --aztec-wallet <file>    Path to Aztec wallet.json
 //   --eth-wallet <file>      Path to ETH wallet JSON
-//   --sponsor-config <file>  Public issuer/sponsor/gas JSON; uses the loaded wallet and encrypted SQLite
-//   --sponsor-provider <file> Local trusted module exporting createSponsorship({aztec})
+//   --private-fee-config <file> Public contract address and gas settings JSON
+//   --private-fee-claim-file <file> Private bridge claim JSON for the first fee payment (0600)
 //   --json                   Output posts as JSON (for list action, machine-readable)
 //   --pxe-dir <prefix>       PXE data directory prefix (default: pxe_bb_user_)
 // ============================================================
@@ -59,7 +59,7 @@ import { loadCliWalletInputs } from './wallet-inputs.mjs';
 import { createHash } from 'node:crypto';
 import BillboardCRS from '../../../../shared/crs-client.js';
 import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
@@ -346,8 +346,7 @@ function createStoreNode(a) {
 // ============================================================
 async function main() {
   if (Object.hasOwn(args, 'sponsor-config') || Object.hasOwn(args, 'sponsor-provider')) {
-    const { validateCliSponsorFlags } = await import('../../../../sponsor-service/cli-provider.mjs');
-    validateCliSponsorFlags(args);
+    throw new Error('Coupon sponsorship has been removed. Use --private-fee-config.');
   }
   log('Billboard User CLI', 'info');
   log('  Action:       ' + ACTION, 'info');
@@ -410,7 +409,7 @@ async function main() {
   const artifactPath = path.join(deployDir, 'billboard_artifact.json');
   const portalBytecode = fs.readFileSync(portalBytecodePath, 'utf8').trim();
   const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
-  const sponsorArtifact = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'sponsor_artifact.json'), 'utf8'));
+  const privateFeeArtifact = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'private_fee_artifact.json'), 'utf8'));
 
   const env = {
     aztec: a, ethers, log,
@@ -418,32 +417,15 @@ async function main() {
     createStore: createStoreNode(a),
     getBrowserSigner: null,
     portalBytecode: portalBytecode.startsWith('0x') ? portalBytecode : '0x' + portalBytecode,
-    artifact, sponsorArtifact,
+    artifact, privateFeeArtifact,
   };
 
-  let closeSponsorship, sponsorshipFailure;
-  try {
-  let sponsorship;
-  if (args['sponsor-config']) {
-    const { createCliSponsorship } = await import('../../../../sponsor-service/cli-provider.mjs');
-    const local = await createCliSponsorship({ configPath: args['sponsor-config'], walletPath: AZTEC_WALLET_PATH, walletSecret: aztecWallet.secretKey });
-    sponsorship = local.sponsorship;
-    closeSponsorship = local.close;
-  }
-  if (args['sponsor-provider']) {
-    // Explicit executable local integration, not an issuer URL or a secret-bearing CLI argument.
-    const providerPath = path.resolve(args['sponsor-provider']);
-    if (!fs.lstatSync(providerPath).isFile()) throw new Error('Sponsor provider must be a local regular module.');
-    try {
-      const provider = await import(pathToFileURL(providerPath).href);
-      if (typeof provider.createSponsorship !== 'function') throw new Error();
-      sponsorship = await provider.createSponsorship({ aztec: a });
-      if (typeof sponsorship?.couponProvider?.close === 'function') closeSponsorship = () => sponsorship.couponProvider.close();
-    } catch (_) { throw new Error('Local sponsor provider could not be initialized.'); }
-  }
+  const privateFee = args['private-fee-config'] ? readPrivateFeeJson(args['private-fee-config'], false) : undefined;
+  const privateFeeClaim = args['private-fee-claim-file'] ? readPrivateFeeJson(args['private-fee-claim-file'], true) : undefined;
+  if (privateFeeClaim && !privateFee) throw new Error('A private fee claim requires --private-fee-config.');
 
   const config = {
-    sponsorship,
+    privateFee, privateFeeClaim,
     action: ACTION,
     aztecNodeUrl: AZTEC_NODE_URL,
     ethRpcUrl: ETH_RPC_URL,
@@ -531,31 +513,40 @@ async function main() {
       }
     } catch (cacheErr) { /* ignore cache errors on failure path */ }
     log('', 'error');
-    if (args['sponsor-config']) throw e;
+    if (args['private-fee-config']) throw e;
     log('FAILED: ' + (e.stack || e.message || String(e)), 'error');
     throw e;
   }
-  } catch (error) {
-    sponsorshipFailure = error;
+ }
+
+// Secrets stay in a local file, never a command argument or executable provider module.
+function readPrivateFeeJson(filename, secret) {
+  try {
+    const fd = fs.openSync(path.resolve(filename), fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+    try {
+      const stat = fs.fstatSync(fd);
+      if (!stat.isFile() || stat.size > 16384 || (secret && (stat.mode & 0o077) !== 0)) throw new Error();
+      const value = JSON.parse(fs.readFileSync(fd, 'utf8'));
+      const keys = secret ? ['amount', 'salt', 'leafIndex', 'secret'] : ['contractAddress', 'gasSettings'];
+      if (!value || Array.isArray(value) || Object.keys(value).some(key => !keys.includes(key)) ||
+          !(secret ? ['amount', 'salt', 'leafIndex'] : keys).every(key => Object.hasOwn(value, key))) throw new Error();
+      return value;
+    } finally { fs.closeSync(fd); }
+  } catch (_) {
+    const error = new Error('Private fee configuration or claim file could not be loaded.');
+    error.code = 'BB_PRIVATE_FEE_CONFIGURATION';
     throw error;
-  } finally {
-    if (closeSponsorship) {
-      try { await closeSponsorship(); } catch (_) {
-        if (sponsorshipFailure) log('Sponsor storage could not be closed.', 'error');
-        else throw new Error('Sponsor storage could not be closed.');
-      }
-    }
   }
 }
 
-function formatCliSponsorFailure(error) {
+function formatCliPrivateFeeFailure(error) {
   const messages = {
-    CLI_SPONSOR_CONFIGURATION_UNAVAILABLE: 'Sponsor configuration could not be loaded. Check the local configuration and wallet storage.',
+    BB_PRIVATE_FEE_CONFIGURATION: 'Private fee configuration or claim file could not be loaded.',
     BB_SUBMISSION_UNKNOWN: 'Transaction submission outcome is unknown. Check its outcome before another attempt.',
     BB_TRANSACTION_FAILED: 'The transaction did not complete successfully. Check its receipt before another attempt.',
     BB_STATE_CONFLICT: 'Transaction state changed. Refresh and create a new proof before another attempt.',
   };
   try { if (typeof error?.code === 'string' && Object.hasOwn(messages, error.code)) return error.code + ': ' + messages[error.code]; } catch (_) {}
-  return 'Sponsored action could not be completed. Check any transaction outcome before another attempt.';
+  return 'Private fee payment could not be completed. Check any transaction outcome before another attempt.';
 }
-main().catch(e => { log('FATAL: ' + (args['sponsor-config'] ? formatCliSponsorFailure(e) : e.message), 'error'); __realProcess.exit(1); });
+main().catch(e => { log('FATAL: ' + (args['private-fee-config'] || args['private-fee-claim-file'] ? formatCliPrivateFeeFailure(e) : e.message), 'error'); __realProcess.exit(1); });

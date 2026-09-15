@@ -1,0 +1,13 @@
+{"stage":"start-disposable-l1","elapsedMs":280}
+{"stage":"prepare-genesis","elapsedMs":402}
+{"stage":"deploy-local-protocol-fixture","elapsedMs":2521}
+{"stage":"wait-for-local-validator-activation","elapsedMs":3682}
+{"stage":"start-application-node","elapsedMs":3696}
+{"stage":"prove-board-deployment","elapsedMs":6606}
+{"stage":"include-board-deployment","elapsedMs":19661}
+{"stage":"prepare-and-prove-ready","elapsedMs":31912}
+{"stage":"include-ready","elapsedMs":41958}
+{"stage":"settle-ready-test-message","elapsedMs":63144}
+{"stage":"private-fee:fund-disposable-user","elapsedMs":80961}
+{"stage":"private-fee:bridge-user-funds","elapsedMs":80971}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/W01/application-0ca4e6a6-a872-420e-8980-5211223d7732.json","passed":false,"profile":"genuine user-funded private fees, cold start and posting"}

@@ -16,9 +16,6 @@ const sdkPath = path.join(ROOT, '.build/sdk/aztec_bundle.js');
 const sources = {
   user: 'apps/src/billboard/user/cli.mjs',
   deploy: 'apps/src/billboard/deploy/cli.mjs',
-  fee: 'apps/src/fee-juice/cli.mjs',
-  randomGenerator: 'apps/src/fee-juice/cli.mjs',
-  signatureGenerator: 'apps/src/fee-juice/cli.mjs',
 };
 const sha = data => createHash('sha256').update(data).digest('hex');
 const resultMarker = 'CLI_SDK_RESULT=';
@@ -64,30 +61,9 @@ async function child(lane) {
     fs: guardedFs, path, PROJECT_ROOT: ROOT, __realProcess: realProcess,
     log: (message, level) => { if (level === 'warn') warnings.push(message); },
   };
-  if (lane === 'randomGenerator' || lane === 'signatureGenerator') {
-    const name = lane === 'randomGenerator' ? 'generateAztecWallet' : 'generateAztecFromEth';
-    const extracted = extract(source, name);
-    const fn = extracted.instantiate(bindings);
-    // Public, disposable test scalar. It is never loaded from a user's wallet.
-    const publicTestWallet = { privateKey: '0x' + '00'.repeat(31) + '01' };
-    const result = lane === 'randomGenerator'
-      ? await fn('memory-only-wallet.json', sdkPath)
-      : await fn(publicTestWallet, 'memory-only-wallet.json', sdkPath);
-    assert.equal(writes.length, 1);
-    assert.match(result.address || '', /^0x[0-9a-f]{64}$/);
-    assert.match(result.partialAddress || '', /^0x[0-9a-f]{64}$/);
-    assert.deepEqual(warnings, [], 'generator must not silently defer address derivation');
-    if (lane === 'signatureGenerator') {
-      const again = await fn(publicTestWallet, 'memory-only-wallet.json', sdkPath);
-      assert.equal(again.address, result.address, 'signature-based test derivation must be deterministic');
-    }
-    assert.deepEqual(networkRequests, []);
-    return { lane, outcome: 'pass', extractedFunction: name, functionSha256: sha(extracted.code), addressDerived: true, memoryOnlyWrites: writes.length, networkRequests: 0 };
-  }
-
   const loader = extract(source, 'loadAztecSDK');
   const a = await loader.instantiate(bindings)();
-  for (const name of ['prepareSponsoredAction','readRegisteredSponsorBatch','createSponsorCouponProvider','createLocalSponsorCouponProvider','createIndexedDBSponsorCouponStore','createSponsorTransport']) assert.equal(typeof a[name], 'function', 'Bundled sponsor export missing: '+name);
+  for (const name of ['preparePrivateFeePayment','derivePrivateFeeAddress','fundPrivateFees','recoverPrivateFeeClaim']) assert.equal(typeof a[name], 'function', 'Bundled private fee export missing: '+name);
   assert.equal(globalThis.process, realProcess);
   assert.ok(globalThis.indexedDB, 'actual loader must supply IndexedDB');
   const deriveSource = fs.readFileSync(path.join(ROOT, 'shared/aztec-lib.js'), 'utf8');

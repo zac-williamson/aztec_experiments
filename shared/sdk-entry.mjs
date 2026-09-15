@@ -14,12 +14,8 @@ export { Fr } from '@aztec/aztec.js/fields';
 export { Contract, ContractFunctionInteraction, BatchCall, DeployMethod, NO_WAIT,
   getContractClassFromArtifact, getContractInstanceFromInstantiationParams } from '@aztec/aztec.js/contracts';
 export { NO_FROM } from '@aztec/aztec.js/account';
-export { prepareSponsoredAction } from './sponsor-client.mjs';
-export { readRegisteredSponsorBatch } from './sponsor-state.mjs';
-export { createSponsorCouponProvider } from './sponsor-coupon-provider.mjs';
-export { createLocalSponsorCouponProvider } from './local-sponsor-provider.mjs';
-export { createIndexedDBSponsorCouponStore } from './sponsor-coupon-store.mjs';
-export { createSponsorTransport } from './sponsor-transport.mjs';
+export { preparePrivateFeePayment, derivePrivateFeeBridgeSecret, derivePrivateFeeAddress } from './private-fee-client.mjs';
+export { fundPrivateFees, recoverPrivateFeeClaim } from './private-fee-funding.mjs';
 export { FunctionCall, FunctionSelector, FunctionType, encodeArguments, loadContractArtifact } from '@aztec/aztec.js/abi';
 export { Capsule, HashedValues, ExecutionPayload, TxExecutionRequest, TxHash } from '@aztec/aztec.js/tx';
 export { TxContext } from '@aztec/stdlib/tx';
@@ -34,7 +30,7 @@ export { computeFeeJuiceMessageNullifier,
   computeFeeJuiceMessageNullifier as computeL1ToL2MessageNullifier,
   getNonNullifiedL1ToL2MessageWitness } from '@aztec/stdlib/messaging';
 export { createAztecNodeClient, waitForNode, waitForTx } from '@aztec/aztec.js/node';
-export { FeeJuicePaymentMethodWithClaim, SponsoredFeePaymentMethod, PrivateFeePaymentMethod } from '@aztec/aztec.js/fee';
+export { PrivateFeePaymentMethod, PrivateMintAndPayFeePaymentMethod } from './private-fee-payment.mjs';
 export { ProtocolContractAddress, ProtocolContractAddress as FeeJuiceAddressHolder } from '@aztec/protocol-contracts';
 import { ProtocolContractAddress } from '@aztec/protocol-contracts';
 export const FeeJuiceAddress = ProtocolContractAddress.FeeJuice;

@@ -176,8 +176,8 @@ async function qualifyConsumer(consumer) {
       const compatibilityBuffer = Buffer.from(new Uint8Array([1])).toString('hex');
       if (compatibilityBuffer !== '01') throw new Error('Legacy app Buffer compatibility failed');
       const a = globalThis.__aztec;
-      for (const name of ['prepareSponsoredAction','readRegisteredSponsorBatch','createSponsorCouponProvider','createLocalSponsorCouponProvider','createIndexedDBSponsorCouponStore','createSponsorTransport']) {
-        if (typeof a[name] !== 'function') throw new Error('Bundled sponsor export missing: '+name);
+      for (const name of ['preparePrivateFeePayment','derivePrivateFeeAddress','derivePrivateFeeBridgeSecret','fundPrivateFees','recoverPrivateFeeClaim','PrivateFeePaymentMethod','PrivateMintAndPayFeePaymentMethod']) {
+        if (typeof a[name] !== 'function') throw new Error('Bundled private fee export missing: '+name);
       }
       if (!a) throw new Error('SDK global missing');
       await stage('sync-prover-init', () => a.BarretenbergSync.initSingleton());
@@ -195,32 +195,10 @@ async function qualifyConsumer(consumer) {
       await stage('sqlite-write', () => map.set('key', 'value'));
       const value = await stage('sqlite-read', () => map.getAsync('key'));
       await stage('sqlite-close', () => store.close());
-      await stage('real-browser-encrypted-coupon-store', async () => {
-        let encryptionKey;
-        const databaseName = 'coupon-durability-smoke';
-        const localProvider = await a.createLocalSponsorCouponProvider({
-          walletSecret:new a.Fr(1).toString(),sponsorAddress:new a.Fr(2).toString(),windowDuration:'60',issuerUrl:'https://issuer.invalid',
-          createStore:async options=>{encryptionKey=options.encryptionKey;return a.createIndexedDBSponsorCouponStore({...options,databaseName});},
-        });
-        await localProvider.close();
-        if (encryptionKey.extractable) throw new Error('Wallet-derived coupon key must not be extractable');
-        const options = {encryptionKey,databaseName};
-        let first,second;
-        try {
-          first = await a.createIndexedDBSponsorCouponStore(options);
-          const record = {schemaVersion:1,id:'1'.repeat(64),partition:'2'.repeat(64),expiresAt:'999',blind:'disposable-local-test-blind',reservation:{token:'disposable-local-test-token'}};
-          if (!await first.put(record,{nowSeconds:'120'})) throw new Error('Coupon durable commit failed');
-          first.close();first=await a.createIndexedDBSponsorCouponStore(options);
-          const pending=await first.pending({partition:record.partition,nowSeconds:'120'});
-          if (pending.length!==1||pending[0].blind!==record.blind) throw new Error('Coupon reopen mismatch');
-          second=await a.createIndexedDBSponsorCouponStore(options);
-          const marked=await Promise.all([first.markAttempted(record.id),second.markAttempted(record.id)]);
-          if (marked.filter(Boolean).length!==1) throw new Error('Coupon concurrent attempt was not atomic');
-          first.close();first=await a.createIndexedDBSponsorCouponStore(options);
-          if ((await first.pending({partition:record.partition,nowSeconds:'120'})).length) throw new Error('Attempted coupon reappeared');
-        } finally {first?.close();second?.close();}
-      });
-      return { couponStorage:'real IndexedDB encrypted reopen and atomic attempted state passed', crs: window.BILLBOARD_CRS_MANIFEST ? 'verified and initialized through ' + consumer : 'skipped', bn254Inputs, legacyBuffer: compatibilityBuffer, exports: Object.keys(a).length, crossOriginIsolated, poseidon: hashed.toString(), sqlite: value, workers: 'initialized and destroyed' };
+      for (const name of ['preparePrivateFeePayment','derivePrivateFeeAddress','fundPrivateFees','recoverPrivateFeeClaim']) {
+        if(typeof a[name] !== 'function') throw new Error('Missing private fee export: '+name);
+      }
+      return { crs: window.BILLBOARD_CRS_MANIFEST ? 'verified and initialized through ' + consumer : 'skipped', bn254Inputs, legacyBuffer: compatibilityBuffer, exports: Object.keys(a).length, crossOriginIsolated, poseidon: hashed.toString(), sqlite: value, workers: 'initialized and destroyed' };
     }, consumer);
     clearTimeout(timeout);
     assert.equal(result.sqlite, 'value');
