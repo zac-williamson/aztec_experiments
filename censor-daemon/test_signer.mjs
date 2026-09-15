@@ -16,7 +16,9 @@ function fixture(t, run) {
   const censorWallet = path.join(root, 'disposable-wallet-fixture.json');
   fs.writeFileSync(cliPath, 'process.stdout.write(JSON.stringify(process.argv.slice(2)));\n');
   fs.writeFileSync(censorWallet, '{}\n');
-  const config = { cliPath, censorWallet, portalAddress: portal, aztecNodeUrl: 'http://127.0.0.1:5080' };
+  const privateFeeConfig = path.join(root, "fee config 'quoted' $(inert).json");
+  fs.writeFileSync(privateFeeConfig, '{}\n');
+  const config = { cliPath, censorWallet, privateFeeConfig, portalAddress: portal, aztecNodeUrl: 'http://127.0.0.1:5080' };
   return { config, root, signer: createSigner(config, run ? { run } : {}) };
 }
 
@@ -24,7 +26,7 @@ for (const reason of ["Quotes ' and \" stay data", '`echo harmless`', '$(echo ha
   test('real argv-echo process preserves one inert reason argument: ' + reason, t => {
     const { signer, config } = fixture(t);
     const argv = JSON.parse(signer.flag({ policyVersion: id(9), postId: id(5), reason }));
-    assert.deepEqual(argv, ['declare-immoral', '--portal-address', portal, '--censor-wallet', fs.realpathSync(config.censorWallet), '--node-url', 'http://127.0.0.1:5080/', '--post-id', id(5), '--expected-policy-version', id(9), '--censor-response', reason]);
+    assert.deepEqual(argv, ['declare-immoral', '--portal-address', portal, '--censor-wallet', fs.realpathSync(config.censorWallet), '--node-url', 'http://127.0.0.1:5080/', '--private-fee-config', fs.realpathSync(config.privateFeeConfig), '--post-id', id(5), '--expected-policy-version', id(9), '--censor-response', reason]);
   });
 }
 
@@ -49,6 +51,7 @@ test('startup config mutation cannot redirect later flags', t => {
   const calls = [];
   const { signer, config } = fixture(t, (...args) => { calls.push(args); return 'done'; });
   const original = { ...config };
+  config.privateFeeConfig = '/bad/fee-config';
   config.cliPath = '/bad/command'; config.censorWallet = '/bad/wallet';
   config.portalAddress = '0x' + '99'.repeat(20); config.aztecNodeUrl = 'http://example.com';
   signer.flag({ policyVersion: id(9), postId: id(2), reason: '1 - Spam' });
@@ -57,6 +60,8 @@ test('startup config mutation cannot redirect later flags', t => {
   assert.equal(argv[argv.indexOf('--censor-wallet') + 1], fs.realpathSync(original.censorWallet));
   assert.equal(argv[argv.indexOf('--portal-address') + 1], original.portalAddress);
   assert.equal(argv[argv.indexOf('--node-url') + 1], 'http://127.0.0.1:5080/');
+  assert.equal(argv[argv.indexOf('--private-fee-config') + 1], fs.realpathSync(original.privateFeeConfig));
+  assert(!argv.includes('--private-fee-claim-file'));
   assert.ok(Object.isFrozen(signer));
   assert.deepEqual(Object.keys(signer).sort(), ['flag', 'list']);
 });
@@ -69,7 +74,7 @@ test('host loader environment is not passed to the actual child', t => {
   finally { if (previous === undefined) delete process.env.NODE_OPTIONS; else process.env.NODE_OPTIONS = previous; }
 });
 
-for (const field of ['operation', 'command', 'wallet', 'destination', 'cliPath', 'nodeExecutable', 'censorWallet']) {
+for (const field of ['operation', 'command', 'wallet', 'destination', 'cliPath', 'nodeExecutable', 'censorWallet', 'privateFeeConfig', 'privateFeeClaim', 'private-fee-claim-file']) {
   test('flag rejects model-controlled ' + field + ' without invoking a process', t => {
     let calls = 0;
     const { signer } = fixture(t, () => { calls++; return 'done'; });
@@ -163,5 +168,12 @@ for (const change of [
   test('missing policy or invalid deadline fails closed: ' + JSON.stringify(change), t => {
     const { signer } = fixture(t, () => JSON.stringify({ ...validList, ...change }));
     assert.throws(() => signer.list());
+  });
+}
+
+for (const invalid of [undefined, '/nonexistent/billboard-fee-config', '.']) {
+  test('missing or invalid fee configuration rejected at signer startup: ' + invalid, t => {
+    const { config } = fixture(t);
+    assert.throws(() => createSigner({ ...config, privateFeeConfig: invalid }));
   });
 }

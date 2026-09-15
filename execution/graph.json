@@ -640,7 +640,7 @@
       "title": "Regenerate and verify every release artifact",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "C06",
         "P02"
@@ -658,7 +658,10 @@
         "shared/",
         "billboard/",
         ".github/",
-        "execution/release/"
+        "execution/release/",
+        "scripts/",
+        "censor-daemon/",
+        "BUILDING.md"
       ],
       "plan": "tasks/A01.md",
       "actions": [
@@ -687,7 +690,7 @@
       "evidence": "evidence/A01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "Current artifact consumers qualified; daemon private-fee configuration repaired; 108 integrated checks and exact 36-output frontend rebuild comparison pass. Validated aggregate and locally mutation-tested CI drift guard recorded; remote CI/full candidate qualification remain later gates.",
       "priority": 12
     },
     {

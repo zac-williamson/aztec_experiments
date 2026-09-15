@@ -415,3 +415,11 @@ protection plus missing adversarial bridge/conservation tests and recovery runbo
 - history_tests: new PortalConservation.t.sol generated conservation sequences.
 - history_pxe: recovery runbook from actual CLI/wallet code.
 - Root: integration, serial Forge verification, source/artifact comparison and evidence.
+
+## A01 active lanes
+- history_contract: read-only current consumer ABI/artifact audit.
+- history_tests: CI drift protection and associated tests, disjoint from root manifest.
+- history_pxe: read-only provenance coverage audit.
+- Root: aggregate release manifest implementation and serial integrated checks.
+
+A01 lanes completed: consumer fee-route repair, CI/provenance implementation and independent bounded final review integrated. Root verified 108 checks, daemon/signer checks, two frontend rebuilds and aggregate; native jobs remained serial/unused.

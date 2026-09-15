@@ -31,7 +31,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { checkArtifacts } from '../scripts/check-artifacts.mjs';
 import { validateCrsManifest } from '../scripts/build-crs.mjs';
-import { assertNodeVersion } from '../scripts/toolchain.mjs';
+import { assertNodeVersion, ROOT } from '../scripts/toolchain.mjs';
+import { beginFrontendBuild, finishFrontendBuild } from '../scripts/frontend-provenance.mjs';
+
+const frontendBuild = beginFrontendBuild(ROOT, { partial: process.argv.length > 2, rpcOverride: Boolean(process.env.BILLBOARD_RPC_CONFIG) });
 
 assertNodeVersion();
 checkArtifacts();
@@ -221,3 +224,5 @@ if (args.length > 0) {
     for (const app of apps) buildApp(app);
   }
 }
+
+finishFrontendBuild(ROOT, frontendBuild);

@@ -64,8 +64,8 @@ function parsePosts(stdout) {
 }
 
 export function createSigner(configuration, { run = execFileSync } = {}) {
-  exactObject(configuration, ['cliPath', 'censorWallet', 'portalAddress', 'aztecNodeUrl', 'nodeExecutable'],
-    ['cliPath', 'censorWallet', 'portalAddress', 'aztecNodeUrl']);
+  exactObject(configuration, ['cliPath', 'censorWallet', 'portalAddress', 'aztecNodeUrl', 'privateFeeConfig', 'nodeExecutable'],
+    ['cliPath', 'censorWallet', 'portalAddress', 'aztecNodeUrl', 'privateFeeConfig']);
   if (typeof run !== 'function') throw new Error('Invalid process runner');
   if (typeof configuration.portalAddress !== 'string' || !/^0x[0-9a-fA-F]{40}$/.test(configuration.portalAddress)) throw new Error('Invalid portal address');
   const url = new URL(configuration.aztecNodeUrl);
@@ -74,6 +74,7 @@ export function createSigner(configuration, { run = execFileSync } = {}) {
     nodeExecutable: realFile(configuration.nodeExecutable || process.execPath, 'Node executable'),
     cliPath: realFile(configuration.cliPath, 'CLI'),
     censorWallet: realFile(configuration.censorWallet, 'wallet'),
+    privateFeeConfig: realFile(configuration.privateFeeConfig, 'private fee configuration'),
     portalAddress: configuration.portalAddress, aztecNodeUrl: url.href,
   });
   // Do not inherit NODE_OPTIONS, NODE_PATH, preload hooks, loader injection,
@@ -83,7 +84,7 @@ export function createSigner(configuration, { run = execFileSync } = {}) {
   function call(operation, tail) {
     const argv = Object.freeze([trusted.cliPath, operation,
       '--portal-address', trusted.portalAddress, '--censor-wallet', trusted.censorWallet,
-      '--node-url', trusted.aztecNodeUrl, ...tail]);
+      '--node-url', trusted.aztecNodeUrl, '--private-fee-config', trusted.privateFeeConfig, ...tail]);
     let stdout;
     try {
       stdout = run(trusted.nodeExecutable, argv, { shell: false, encoding: 'utf8',

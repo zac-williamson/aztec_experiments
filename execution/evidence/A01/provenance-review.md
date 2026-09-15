@@ -1,0 +1,47 @@
+# A01 existing provenance coverage and aggregation recommendations
+
+Read-only source/manifest inspection. No compiler, prover, native job or reproducibility rebuild was run in this lane. An aggregate manifest is an integrity inventory, not a signed publisher attestation or independent security review.
+
+## Existing coverage
+
+| Component | Existing exact source/output coverage | Remaining aggregation gap |
+|---|---|---|
+| Compiler/toolchain | `toolchain.json` pins Node 24.21.0, Aztec 5.2.0, Solidity 0.8.27, Foundry 1.4.1, Noir beta.25 commit and platform archive checksums. `bootstrap-noir.mjs` verifies downloaded archive before extraction. | Installed compiler/prover/Node/Forge/Solc binary fingerprints are absent from manifests. Existing nargo bootstrap accepts an already-installed binary by version/commit output alone. Distinguish observed executable hashes from authenticated publisher pins. |
+| Noir source | `.build/contracts-manifest.json.inputs` uses `contractInputs`, including current contracts, tests, lockfiles and build helpers. `noir-dependencies.json` binds dependency files and embedded source inventories; build checks both. | Aggregate should reference these manifests by exact file hash, retain contract source mapping, and reject stale subordinate manifests rather than simply hashing them. |
+| Noir output/VKs | Complete canonical Billboard and PrivateFPC artifact file hashes bind all bytecode/VKs. Private function VK presence and copied Billboard artifacts are checked. | No named per-function bytecode/VK inventory. Add function name, custom attributes and explicit encoding-aware hashes; duplicate names or missing VKs must fail. Canonical processed artifacts are deployment outputs; raw target artifacts are compiler intermediates. |
+| Solidity | Compiled Forge artifact includes ABI, creation/runtime templates, metadata and immutable references. Portal creation copies match source output, and current source Keccak is checked against Solc metadata. | Contract manifest currently hashes the creation **hex string**. Add explicitly labeled decoded creation-byte hash and runtime-template-byte hash, metadata/source mapping and immutable references. The runtime template is not deployment-specific runtime: immutable values are substituted by the constructor. D01 must bind actual deployed runtime/configuration separately. |
+| SDK/workers/WASM | `.build/sdk/sdk-manifest.json` binds lockfile, build script, imported modules and eight emitted outputs. `checkSdk` validates source hashes, required assets, regular/confined paths and copied raw assets. | Aggregate source/dist copies and application HTML outputs together. Existing SDK inputs cover embedded BB WASM JavaScript containers, not separately named decoded BB payloads. |
+| CRS | `crs-manifest.json` pins three downloaded ranged assets and derived uncompressed G1, capacity, format, exact size and hash. It explicitly calls these locally recorded pins, not publisher checksums. Derived G1 records threaded WASM source/hash. | Bind both source and dist CRS manifests plus actual asset bytes; retain the provenance caveat. Do not replace checks with file existence or fetch unpinned full CRS files. |
+| Application bundles | `check-reproducibility.mjs` hashes exact app HTML, SDK/dist copies, full Forge artifact, canonical contracts and four CRS files. | No current aggregate mapping of frontend build inputs to HTML. Include `apps/build.mjs`, consumed app/shared source and configuration inputs, and exact emitted HTML hashes. Never include wallets/caches/private runtime data. |
+
+## Actual output paths
+
+- Canonical contracts: `apps/src/billboard/billboard_artifact.json`, `apps/src/billboard/private_fee_artifact.json`.
+- Billboard copies: `apps/src/billboard/{deploy,censor}/billboard_artifact.json`.
+- Portal creation copies: `apps/src/billboard/portal_bytecode.txt`, `apps/src/billboard/deploy/portal_bytecode.txt`.
+- Full Solidity compiler artifact: `billboard/portal/out/BillboardPortal.sol/BillboardPortal.json`; `.bytecode.object`, `.deployedBytecode.object`, `.deployedBytecode.immutableReferences`, `.metadata`/`.rawMetadata` are available.
+- SDK manifest: `.build/sdk/sdk-manifest.json`, copied to `apps/dist/sdk-manifest.json`.
+- Eight SDK outputs in both `.build/sdk/` and `apps/dist/`: `aztec_bundle.js`, `bb-main.worker.js`, `bb-thread.worker.js`, `sqlite.worker.js`, `acvm_js_bg.wasm`, `noirc_abi_wasm_bg.wasm`, `sqlite3.wasm`, `sqlite3-opfs-async-proxy.js`.
+- Embedded compressed BB WASM: `node_modules/@aztec/bb.js/dest/browser/barretenberg_wasm/fetch_code/browser/{barretenberg,barretenberg-threads}.js`. They contain a gzip/base64 data URL. If separately inventorying payloads, parse strict known data syntax without evaluating JavaScript, decode/gunzip with bounded size, and label container/compressed/decompressed hashes distinctly.
+- CRS dist: `apps/dist/crs/{crs-manifest.json,g1.dat,g2.dat,grumpkin_g1.dat,g1_uncompressed.dat}`.
+- Compiler default: `.build/toolchain/nargo`; native prover default derives from `node_modules/@aztec/bb.js/build/<platform>/bb`. Environment overrides `NARGO` and `BB` exist and need recording if used.
+
+## Minimal schema
+
+Use one deterministic schema version with `algorithm: sha256`, pinned toolchain, subordinate manifest file hashes, sorted build inputs, sorted output files with `{role, bytes, sha256}`, and named contract components. Record hash encodings explicitly where the component is a JSON string/base64/hex rather than raw file bytes. Keep observed build-tool binary provenance separate from portable output comparisons; do not insert timestamps or machine paths into deterministic artifact identity.
+
+Contract entries should identify the canonical artifact and consumer copies, private function names/VK hashes, and the portal's creation/runtime template/immutable metadata. SDK entries can reference its existing complete manifest and eight output copies. CRS entries can reuse the existing validated descriptors. Application HTML should be discovered from known templates with collisions rejected; avoid recursive hashing of all `apps/dist` files, which may include unrelated leftovers.
+
+Reuse `sha` and `contractInputs` from `scripts/artifact-provenance.mjs`, `checkArtifacts` from `scripts/check-artifacts.mjs`, `checkSdk`/`SDK_ASSETS` from `scripts/check-sdk.mjs`, and `verifyCrsBytes` from `scripts/build-crs.mjs` only if importing it does not trigger its CLI build path. Inspect module entry guards before reuse. The current reproducibility script executes CLI logic on import, so do not import it as a library unchanged.
+
+Required mutation controls: changed source with untouched output; changed VK; missing/altered worker or WASM; wrong CRS bytes; stale consumer copy; creation/runtime-template mismatch; path traversal/symlink escape; empty or missing manifest entries. Recomputing a manifest after maliciously changing all sources is outside unsigned integrity checks and must not be advertised as prevented.
+
+## Integrated review disposition
+
+Reviewed the integrated release inventory, `frontend-provenance.mjs` and `apps/build.mjs` after initial findings were addressed. The actual missing storage layout now serializes as null; bare compiler/prover executables are resolved before fingerprinting. Canonical frontend provenance snapshots build inputs before work, verifies them again at completion, and binds generated HTML hashes. Release aggregation validates that manifest and includes `.build/apps-manifest.json` among output hashes. Custom RPC builds intentionally do not receive canonical provenance; aggregate creation rejects an active override. Shared inputs include the actual Ethers distribution, and recursive app-source inventory follows confined file symlinks such as the censor engine.
+
+One additional concrete omission was confirmed: template-derived output discovery did not reject extra/orphan HTML already present in `apps/dist`. Removing a template could leave a served stale page absent from the manifest. Recommended a rejection (not deletion) of unexpected HTML in both completion/check paths, with an extra-page mutation regression. Root and the test lane were notified; this disposition does not claim the subsequent fix has been reviewed.
+
+No further concrete mismatch found in the inspected current input set. Whole artifact hashes continue to bind metadata not separately projected. Solc identity is reported from compiled metadata, while observed executable hashes cover Node, Nargo, BB and Forge; this does not authenticate the Solc executable or establish publisher attestation. Parent-reported integrated tests and write/check results were not independently rerun in this read-only lane.
+
+Final orphan-page disposition: reviewed the subsequent fix and regression source. `outputs()` now traverses `apps/dist` and rejects unexpected `.html`/`.htm` files case-insensitively, including nested pages, while preserving files. Both build completion and checking invoke that same inventory. Traversal confines symlink targets to the repository and rejects directory cycles. Added tests cover removed templates with leftover pages, top-level/nested unexpected HTML, preservation of rejected files, and output symlink escape/cycle failures. The previously identified orphan-page omission is resolved in source. Test execution and repeat-build results remain the parent verification lane's evidence. No remaining concrete blocker found in this final bounded review.

@@ -1,8 +1,13 @@
 # Release outputs
 
-This directory is intentionally not a release candidate at setup. During execution
-it will contain the verified manifest and acceptance matrix described in
-../evidence/README.md, plus the following handover documents:
+This directory contains engineering provenance, not a cleared production release.
+`artifact-manifest.json` is the A01 local content inventory; regenerate and check it
+using BUILDING.md. It binds generated outputs to validated inputs but is neither
+a signed attestation nor the final T05 release manifest. Later application changes
+require regeneration.
+
+The final package will also contain the manifest and acceptance matrix described
+in ../evidence/README.md, plus the following handover documents:
 
 - Release identity, source revision/fingerprint, reproducible build instructions.
 - Deployable artifacts and their provenance (or verified local artifact references).

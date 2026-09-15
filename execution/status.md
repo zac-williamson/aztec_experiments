@@ -26,3 +26,7 @@ C05 complete: checked cooldown/penalty arithmetic, inclusion-time moderation dea
 C06 active: strengthen escrow/bridge verification and document supported recovery. Existing accounting/guard implementation remains unless tests identify a defect; no new pause authority or service is planned.
 
 C06 complete:37 escrow/reentrancy/conservation tests and30 artifact checks pass; runtime unchanged. Recovery runbook documents actual routes and W02/W03 gaps. Next ready graph package will address remaining application work.
+
+A01 active: verify current consumer ABI/artifact agreement and complete release provenance/CI drift protection. Scope includes scripts for manifest and checks.
+
+A01 complete: current consumers and generated outputs qualified; missing daemon private-fee forwarding fixed. 108 integrated checks, 99 signer/daemon/shell checks and exact36-output rebuild comparison pass. Aggregate inventory validates; remote CI not claimed. Continuing next ready package.

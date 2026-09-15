@@ -31,6 +31,8 @@ const POLICY_VERSION = '0x' + '09'.padStart(64, '0');
 const OTHER_POLICY_VERSION = '0x' + '0a'.padStart(64, '0');
 const MOCK_WALLET = path.join(TEST_ROOT, 'disposable-wallet.json');
 fs.writeFileSync(MOCK_WALLET, '{}');
+const MOCK_FEES = path.join(TEST_ROOT, 'private-fees.json');
+fs.writeFileSync(MOCK_FEES, '{}');
 process.once('exit', () => fs.rmSync(TEST_ROOT, { recursive: true, force: true }));
 
 let pass = 0;
@@ -176,10 +178,10 @@ if (action === 'list' && args.includes('--json')) {
 // ============================================================
 // Run daemon as subprocess with mock infra (async, non-blocking)
 // ============================================================
-function runDaemon(args, timeoutMs = 30000, { production = false, stopAfterMs } = {}) {
+function runDaemon(args, timeoutMs = 30000, { production = false, stopAfterMs, omitFeeConfig = false } = {}) {
   // Explicit test-only harness injects mock runtime. Production has no CLI/env
   // bypass for model isolation, and this harness uses only disposable fixtures.
-  const productionArgs = [];
+  const productionArgs = omitFeeConfig ? [] : ['--private-fee-config', MOCK_FEES];
   for (let i = 0; i < args.length; i++) {
     if (!production && args[i] === '--skip-bootstrap') continue;
     if (!production && args[i] === '--model') { i++; continue; }
@@ -497,6 +499,10 @@ async function main() {
       assertTrue(result.stdout.includes('flagged'),
         'should confirm flagging');
       const signed = mockCli.calls().filter(args => args[0] === 'declare-immoral');
+      for (const argv of signed) {
+        assertEqual(argv[argv.indexOf('--private-fee-config') + 1], fs.realpathSync(MOCK_FEES), 'fixed fee config reaches CLI');
+        assertFalse(argv.includes('--private-fee-claim-file'), 'no repeated bridge claim');
+      }
       assertEqual(signed.length, 1, 'one actual mock flag call');
       assertEqual(signed[0][signed[0].indexOf('--expected-policy-version') + 1], POLICY_VERSION, 'exact policy version reaches signing CLI');
     } finally {
@@ -758,6 +764,12 @@ async function main() {
       assertEqual(calls.length, 2, 'both matching posts flagged');
       calls.forEach((args, i) => assertEqual(args[args.indexOf('--expected-policy-version') + 1], versions[i], 'snapshot policy reaches signer'));
     } finally { await mockServer.stop(); mockCli.cleanup(); }
+  });
+
+  await test('private fee configuration is mandatory at daemon startup', async () => {
+    const result = await runDaemon(['--portal-address', '0x' + '12'.repeat(20)], 5000, { omitFeeConfig: true });
+    assertTrue(result.exitCode !== 0, 'startup must fail');
+    assertTrue((result.stdout + result.stderr).includes('--private-fee-config is required'), 'bounded configuration error');
   });
 
   console.log(`\n=== Results ===`);

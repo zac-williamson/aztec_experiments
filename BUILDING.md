@@ -197,3 +197,24 @@ Record actual command results and unresolved failures in task evidence; never
 infer a pass from these instructions or a green compile alone. Real-proof
 journeys, network compatibility, browser coverage, independent review, and the
 14-day soak remain separate mandatory production gates.
+
+## Release artifact inventory
+
+After a complete canonical build, run:
+
+```sh
+node scripts/release-artifact-manifest.mjs write execution/release/artifact-manifest.json
+node scripts/release-artifact-manifest.mjs check execution/release/artifact-manifest.json
+```
+
+The inventory links validated contract, frontend, SDK and CRS manifests, names
+per-function verification keys, fingerprints the actual local compiler/prover
+executables, and records source/output hashes. It is platform-specific content
+provenance, not publisher authentication or release approval. Solidity runtime is
+labeled a compiler template: constructor immutables still need verification
+against a particular deployed address. Canonical inventory uses the public RPC
+example, not a local `BILLBOARD_RPC_CONFIG` override.
+
+CI compares freshly built generated consumers with their committed copies before
+a second rebuild, then checks the aggregate inventory on that runner. Changing
+frontend source without rebuilding its pages must fail provenance validation.

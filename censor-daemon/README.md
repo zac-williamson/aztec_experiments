@@ -21,6 +21,7 @@ After setting the variables to your reviewed model inputs and disposable local d
 ```bash
 node censor-daemon/daemon.mjs \
   --portal-address "$LOCAL_PORTAL_ADDRESS" \
+  --private-fee-config /absolute/path/private-fees.json \
   --node-url "$LOCAL_AZTEC_NODE_URL" \
   --censor-wallet "$DISPOSABLE_CENSOR_WALLET" \
   --model-image "$REVIEWED_MODEL_IMAGE_WITH_DIGEST" \
@@ -51,6 +52,7 @@ Normal exit, startup errors, SIGINT and SIGTERM trigger removal of both owned co
 | Option | Default | Purpose |
 | --- | --- | --- |
 | `--portal-address` | Required | L1 portal fixed for this process |
+| `--private-fee-config` | Required | Public private-fee contract/gas configuration file, fixed in the restricted signer |
 | `--censor-wallet` | `wallets/censor_aztec_wallet.json` | Existing host-side censor wallet |
 | `--node-url` | `http://127.0.0.1:5080` | Aztec node fixed for this process |
 | `--model-image` | Required | Reviewed local image with immutable digest |
@@ -83,3 +85,9 @@ node --test censor-daemon/model-runtime.test.mjs
 The default runner covers moderation, signer, daemon and wallet-command validation with mock infrastructure. The Docker suite requires Docker and the pinned Node image and executes a harmless probe under the actual model isolation profile. It uses newly created dummy secret fixtures, verifies a host listener is reachable from the transport but denied to the model, checks filesystem/environment/socket restrictions, tests weakened profile rejection and transport input bounds, and removes its own resources. Neither suite uses an existing wallet, downloads an LLM, proves moderation quality, or submits network transactions.
 
 The runtime API is `startModelRuntime({image, modelPath, modelSha256, port, threads, ctxSize})`, returning `{port, containerId, proxyId, inspect, stop}`. Callers must await `stop()` on exit. The probe helper is solely for isolation testing.
+
+## Censor fee funding
+
+Before starting the daemon, fund and claim the censor wallet's private fee balance using the existing private FeeJuice funding page. Use the same censor wallet and canonical private fee contract as the daemon configuration. The daemon spends an already claimed private balance; it does not repeat a bridge claim each time it starts a CLI process. Do not supply a claim-secret file to the daemon.
+
+The required `--private-fee-config` points to the public JSON configuration accepted by the user CLI (contract address and gas settings). Its absolute real-file path is validated and fixed when the restricted signer starts, then forwarded to the CLI. Model output cannot override that path, gas route, wallet or operation. Keep the host configuration file under operator control; changing its contents is an operator action, not a model capability. Fee exhaustion remains a visible signing failure until the wallet is funded again.
