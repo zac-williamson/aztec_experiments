@@ -266,3 +266,34 @@ application work. V6 compatibility and target-network clearance will be assessed
 before production release; no speculative dependency upgrade is made now. Audit,
 security, reliability and release checks remain. C02 scope includes application
 proof-test scripts and regenerated artifacts.
+
+
+## 2026-09-15 — replace the operated coupon architecture
+
+The user challenged the assumption that private V5 fees require an operated sponsor.
+Protocol/source review confirms an ownerless fully private FPC can maintain user-funded
+private balances and elect itself as protocol fee payer. No HTTP issuer, registration
+operator, sponsor funding actor or batch scheduler is inherent to that design.
+
+Sources checked: official https://docs.aztec.network/developers/docs/aztec-js/how_to_use_private_fee_juice;
+reference https://github.com/alejoamiras/ecosystem-tooling at9c71d5d9d84910ad76721a38cf1e07d7f49a4c1c,
+packages/private-fee-juice (package and Noir dependencies pinned5.0.1);
+local pinned5.2 FeeJuice contract claim_helper and PrivateContext.set_as_fee_payer.
+The reference verifies FeeJuice claim nullifiers, prevents repeated credit minting,
+keeps user credit in private notes and deducts fees during nonrevertible setup.
+It supports initial bridge claim plus private mint/payment within one transaction.
+
+The earlier inference from public native FeeJuice balances and deprecated
+PrivateFeePaymentMethod to needing an operated coupon system was unjustified.
+Deprecation concerns an older public-token-call FPC, not all private fee designs.
+Stop new coupon-service work. Next qualify and integrate the ownerless user-funded
+route, then remove mandatory coupon routing and service-only production gates.
+Preserve historical evidence without treating sunk work as architecture justification.
+
+The reference is5.0.1 while this application pins5.2.0: its artifact/address cannot
+be reused unchecked. Reference pay_fee charges the maximum gas budget without
+refunding the difference, which must be reflected in fee estimation and UX.
+The shared contract address/public aggregate balance remain observable; individual
+fee balances/spending are private. L1 funding/cold-start timing still needs an
+accurate privacy description. No replacement integration or production security
+qualification was performed in this read-only protocol investigation.

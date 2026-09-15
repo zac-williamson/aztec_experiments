@@ -734,7 +734,7 @@
       "evidence": "evidence/W01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Genuine registration persistence/reopen/reconciliation passed101290ms, one proof and one send, full cleanup. Fixed absent public batch lookup;10 actual contract controls,54 serial journal/worker/state controls and89 artifact/client controls passed. SDK/apps rebuilt. W01 active: next connect bounded operator scheduling and issuer admission/recovery fence, replenishment/outages and remaining fee/privacy failure controls. Preserve startup-stall evidence and historical author-journey class binding.",
+      "checkpoint": "Architecture correction from user: stop coupon issuer/operator work. Official private Fee Juice guide and reference PrivateFPC pinned to Aztec5.0.1 support ownerless user-funded private fee balances with no offchain agent. Local5.2 primitives confirm private setup payer election and FeeJuice bridge claims. Next qualify compatible ownerless private-fee integration and remove mandatory coupon/sponsor-service path; do not continue operator scheduling. No replacement application integration has been tested yet. Prior sponsorship evidence remains historical, not justification for retaining its architecture.",
       "priority": 5
     },
     {

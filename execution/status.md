@@ -1,5 +1,7 @@
 # Current status
 
+**Fee architecture correction:** Coupon-service development is stopped. V5 supports user-funded private fees through an ownerless fully private FPC, without an issuer or offchain operator. The previous sponsor-service remaining-work list below is superseded. Next qualify this simpler route against our pinned stack and replace mandatory coupon routing. This investigation has not yet changed or tested the application fee integration.
+
 Production readiness remains the objective. V5 suitability does not block engineering; V6 compatibility and release clearance remain required before production.
 
 C01 application deposit/claim/exit/refund, C02 authenticated screening and C03 independent posting identities are complete as historical engineering milestones. C03's ten genuine authors prepared from one common anchor and all included in7m57s with1.45GiB peak and cleanup. Tests use actual application proofs and official local settlement controls, never a network epoch prover.
