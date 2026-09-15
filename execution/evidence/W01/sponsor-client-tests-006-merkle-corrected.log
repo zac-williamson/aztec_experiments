@@ -1,0 +1,30 @@
+✔ prepares exact claim root with unfunded author and actual SDK ABI (690.050667ms)
+✔ prepares exact post root with unfunded author and actual SDK ABI (93.895375ms)
+✔ prepares exact withdraw root with unfunded author and actual SDK ABI (90.682875ms)
+✔ rejects missing sponsor configuration (0.328292ms)
+✔ rejects wrong installed class before configuration reads (8.08075ms)
+✔ rejects absent deployed sponsor (8.148959ms)
+✔ rejects immutable target mismatch (90.364916ms)
+✔ rejects mutually agreeing provider scope different from deployment (0.145833ms)
+✔ rejects node/wallet version disagreement (0.096084ms)
+✔ rejects changed middle sibling before signing (88.589917ms)
+✔ rejects wrong local blind (93.963292ms)
+✔ rejects index outside registered count (87.634792ms)
+✔ rejects expired anchor (90.30325ms)
+✔ rejects early anchor (89.211208ms)
+✔ rejects supplied gas above immutable cap (91.110459ms)
+✔ rejects aggregate fee above ticket budget (89.274917ms)
+✔ rejects sponsor depletion with no author fallback (93.513958ms)
+✔ rejects arbitrary operation (0.126584ms)
+✔ uses a fresh auth nonce on independent preparation (179.422834ms)
+✔ rejects actual board code different from bundled board artifact (88.655833ms)
+✔ actual client tree matches independently executed fixed Noir vector (1.321125ms)
+✔ route preparation rejects the formerly accepted plain-Poseidon tree before signing (93.02825ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3371.074708

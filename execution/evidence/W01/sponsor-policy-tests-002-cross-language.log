@@ -1,0 +1,62 @@
+warning: Unused expression result of type u128
+   ┌─ sponsor_common/src/tests.nr:36:5
+   │
+36 │     reserve_batch(c, 2, batch(1), reserved, 120);
+   │     --------------------------------------------
+   │
+
+warning: Unused expression result of type u128
+   ┌─ sponsor_common/src/tests.nr:39:54
+   │
+39 │ fn w01_policy_zero_count_rejects_before_division() { reserve_batch(config(),1,batch(0),0,120); }
+   │                                                      ----------------------------------------
+   │
+
+warning: Unused expression result of type u128
+   ┌─ sponsor_common/src/tests.nr:41:53
+   │
+41 │ fn w01_policy_count_above_tree_capacity_rejects() { reserve_batch(config(),1,batch(1025),0,120); }
+   │                                                     -------------------------------------------
+   │
+
+warning: Unused expression result of type u128
+   ┌─ sponsor_common/src/tests.nr:51:5
+   │
+51 │     reserve_batch(c,2,batch(1),reserved,120);
+   │     ----------------------------------------
+   │
+
+warning: Unused expression result of type (u64, u64)
+   ┌─ sponsor_common/src/tests.nr:65:58
+   │
+65 │ fn w01_policy_window_multiplication_overflow_rejects() { window_bounds(2,0x8000000000000000); }
+   │                                                          -----------------------------------
+   │
+
+warning: Unused expression result of type u128
+   ┌─ sponsor_common/src/tests.nr:67:60
+   │
+67 │ fn w01_policy_registration_after_inclusive_end_rejects() { reserve_batch(config(),1,batch(1),0,180); }
+   │                                                            ----------------------------------------
+   │
+
+[sponsor_common] Running 18 test functions
+[sponsor_common] Testing tests::w01_policy_u128_reservation_cannot_wrap ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_actual_l2_gas_above_cap_rejects_even_with_budget_room ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_count_above_tree_capacity_rejects ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_teardown_within_policy_cannot_exceed_actual_total ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_adjacent_windows_have_no_shared_inclusive_timestamp ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_registration_after_inclusive_end_rejects ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_multiple_batches_fill_one_window_exactly ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_tree_valid_index_still_requires_registered_count ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_u128_price_cannot_bypass_proven_u64_product_bound ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_coupon_transcript_binds_every_scope_component ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_highest_coupon_index_and_exact_gas_limits_succeed ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_next_batch_cannot_reuse_reserved_budget ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_valid_path_cannot_move_to_another_sponsor ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_valid_individual_gas_caps_still_obey_total_ticket_limit ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_window_multiplication_overflow_rejects ... [0m[32mok[0m
+[sponsor_common] Testing tests::w01_policy_zero_count_rejects_before_division ... [0m[32mok[0m
+[sponsor_common] Testing client_vector::client_vector_rejects_former_javascript_plain_hash_root ... [0m[32mok[0m
+[sponsor_common] Testing client_vector::client_vector_matches_production_leaf_and_noir_merkle_root ... [0m[32mok[0m
+[sponsor_common] [0m[32m18 tests passed[0m

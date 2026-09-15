@@ -1,0 +1,30 @@
+✔ actual SQLite durable reservation, idempotent commitment and hashed-only token (12.530584ms)
+✔ rejects identity fields, bad tokens/fields, expired reservations and policy drift (4.229208ms)
+✔ atomic budget admission across two real SQLite connections and failed write rollback (5.221083ms)
+✔ seals exact production depth10 tree including allocated holes; immutable and restart durable (392.560291ms)
+✔ full1024 capacity, all-empty seal rejection, and sealing recovery after interrupted process state (435.910375ms)
+✔ real competing processes cannot exceed one shared admission budget (122.048084ms)
+✔ rejects permissive directory/database and unsafe numeric configuration (3.333459ms)
+✔ retains reservation liability across expiry and rejects sealed retrieval after deadline (26.414292ms)
+✔ u64 ID counter is text and never truncated to SQLite signed integer (4.7905ms)
+✔ simultaneous sealing is idempotent and database sidecars stay private (50.78775ms)
+✔ clock rollback cannot submit, seal or retrieve a future-window allocation (23.403542ms)
+✔ corrupted stored reservation total fails closed on reopen (49.710625ms)
+✔ corrupted stored allocated count fails closed on reopen (24.856167ms)
+✔ corrupted stored next identifier fails closed on reopen (50.94175ms)
+✔ corrupted stored slot position gap fails closed on reopen (24.571167ms)
+✔ corrupted stored token hash shape fails closed on reopen (25.270917ms)
+✔ corrupted stored sealed root fails closed on reopen (47.260584ms)
+✔ corrupted stored sealed path fails closed on reopen (45.234125ms)
+✔ corrupted stored sealed path binding fails closed on reopen (48.167041ms)
+✔ reservation time is checked after actual competing SQLite write lock crosses boundary (309.386667ms)
+✔ concurrent database commit during asynchronous root validation fails closed (59.808375ms)
+✔ bounded retained history fails explicitly without pruning or identifier reuse (28.665834ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2403.429459

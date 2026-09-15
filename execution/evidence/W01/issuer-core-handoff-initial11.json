@@ -1,0 +1,15 @@
+{
+  "createdAt": "2026-09-15T04:01:54.419226+00:00",
+  "scope": "core-only; no transport/signing/registration",
+  "tests": {
+    "count": 11,
+    "passed": 11,
+    "command": ".build/A02-node/node-v24.21.0-darwin-arm64/bin/node --test scripts/test-sponsor-issuer.mjs"
+  },
+  "hashes": {
+    "sponsor-service/issuer.mjs": "5029edcb211946cbed3f10d5a57492852a7dd745f2dd917f7beeacddd92bcb23",
+    "scripts/test-sponsor-issuer.mjs": "50dd4b22b72e32b1dd075b8d7197303ff37a87347f250429905cded5599e8acb",
+    "execution/evidence/W01/issuer-core-tests.log": "48a3fd48d92ff4a9cf4634a6cc0b918c7ca5ea13f359cf63331d16f23c46e37e",
+    "execution/evidence/W01/issuer-core-handoff.md": "c1e9cf730f7a3cbcb3680091386fdb4afe10f4593bf9cb99fe4f2b4a9ae56916"
+  }
+}

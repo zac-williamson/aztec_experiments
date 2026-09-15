@@ -1,0 +1,31 @@
+✔ actual SQLite durable reservation, idempotent commitment and hashed-only token (12.900417ms)
+✔ rejects identity fields, bad tokens/fields, expired reservations and policy drift (4.459375ms)
+✔ atomic budget admission across two real SQLite connections and failed write rollback (6.240959ms)
+✔ seals exact production depth10 tree including allocated holes; immutable and restart durable (135.64875ms)
+✔ full1024 capacity, all-empty seal rejection, and sealing recovery after interrupted process state (382.663958ms)
+✔ real competing processes cannot exceed one shared admission budget (106.580667ms)
+✔ rejects permissive directory/database and unsafe numeric configuration (3.4545ms)
+✔ retains reservation liability across expiry and rejects sealed retrieval after deadline (44.491417ms)
+✔ u64 ID counter is text and never truncated to SQLite signed integer (6.091875ms)
+✔ simultaneous sealing is idempotent and database sidecars stay private (33.709125ms)
+✔ clock rollback cannot submit, seal or retrieve a future-window allocation (43.480125ms)
+✔ corrupted stored reservation total fails closed on reopen (82.987791ms)
+✔ corrupted stored allocated count fails closed on reopen (31.281375ms)
+✔ corrupted stored next identifier fails closed on reopen (65.15225ms)
+✔ corrupted stored slot position gap fails closed on reopen (27.792583ms)
+✔ corrupted stored token hash shape fails closed on reopen (32.326666ms)
+✔ corrupted stored sealed root fails closed on reopen (51.549166ms)
+✔ corrupted stored sealed path fails closed on reopen (53.259416ms)
+✔ corrupted stored sealed path binding fails closed on reopen (62.293584ms)
+✔ reservation time is checked after actual competing SQLite write lock crosses boundary (319.2635ms)
+✔ concurrent database commit during asynchronous root validation fails closed (64.378042ms)
+✔ bounded retained history fails explicitly without pruning or identifier reuse (24.084875ms)
+✔ aggregate window metrics use one coherent clock sample (2.944666ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2360.823708

@@ -97,3 +97,5 @@ pub fn validate_gas(c: SponsorConfig, gas: GasSettings) {
 }
 
 mod tests;
+
+mod client_vector;

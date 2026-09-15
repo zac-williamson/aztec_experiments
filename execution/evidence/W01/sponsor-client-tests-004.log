@@ -1,0 +1,28 @@
+✔ prepares exact claim root with unfunded author and actual SDK ABI (717.713292ms)
+✔ prepares exact post root with unfunded author and actual SDK ABI (89.468208ms)
+✔ prepares exact withdraw root with unfunded author and actual SDK ABI (93.951292ms)
+✔ rejects missing sponsor configuration (0.308958ms)
+✔ rejects wrong installed class before configuration reads (8.116666ms)
+✔ rejects absent deployed sponsor (8.715084ms)
+✔ rejects immutable target mismatch (103.340791ms)
+✔ rejects mutually agreeing provider scope different from deployment (0.149083ms)
+✔ rejects node/wallet version disagreement (0.090792ms)
+✔ rejects changed middle sibling before signing (88.030792ms)
+✔ rejects wrong local blind (91.134375ms)
+✔ rejects index outside registered count (86.830084ms)
+✔ rejects expired anchor (92.035791ms)
+✔ rejects early anchor (88.317792ms)
+✔ rejects supplied gas above immutable cap (94.410334ms)
+✔ rejects aggregate fee above ticket budget (93.306875ms)
+✔ rejects sponsor depletion with no author fallback (91.419459ms)
+✔ rejects arbitrary operation (0.150166ms)
+✔ uses a fresh auth nonce on independent preparation (186.102875ms)
+✔ rejects actual board code different from bundled board artifact (89.810708ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2421.362334

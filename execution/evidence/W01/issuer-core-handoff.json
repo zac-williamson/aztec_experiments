@@ -1,0 +1,21 @@
+{
+  "createdAt": "2026-09-15T04:01:54.419226+00:00",
+  "scope": "core-only; no transport/signing/registration",
+  "tests": {
+    "count": 22,
+    "passed": 22,
+    "command": ".build/A02-node/node-v24.21.0-darwin-arm64/bin/node --test scripts/test-sponsor-issuer.mjs"
+  },
+  "hashes": {
+    "sponsor-service/issuer.mjs": "2908ed7ca1b1db0c033bb57d473a3e25e74245900462829502d733ab972a2607",
+    "scripts/test-sponsor-issuer.mjs": "1f5ccda64a297c16d285dc8c8fa8dbc6db788e36c53cbeeac30d1b52d63e68e2",
+    "execution/evidence/W01/issuer-core-tests.log": "30f344f1cf191bf5091dc679e5a00ffd4b90d795fb0ecd7d60eed1d6b50e5930",
+    "execution/evidence/W01/issuer-core-handoff.md": "b101c732357b74eb62adfc55d6005a30a3f437c6fb02a038e15e246b5bb83f83"
+  },
+  "api": "await openIssuer(config,options)",
+  "reviewFixes": [
+    "Recheck time after BEGIN IMMEDIATE",
+    "Validate bounded coherent persisted snapshot and recomputed sealed root/path data; reject concurrent generation changes"
+  ],
+  "priorEvidence": "issuer-core-handoff-initial11.json and issuer-core-tests-initial11.log"
+}
