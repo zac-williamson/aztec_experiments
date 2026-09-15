@@ -18,13 +18,13 @@ function fixture(t) {
   fs.writeFileSync(path.join(directory, 'src/macro.nr'), 'macro source');
   fs.writeFileSync(path.join(directory, 'Nargo.toml'), 'external manifest');
   fs.writeFileSync(path.join(root, 'Nargo.toml'), 'local manifest');
-  const lock = { schema: 1, algorithm: 'sha256',
+  const lock = { schema: 2, algorithm: 'sha256',
     localManifests: { 'Nargo.toml': sha('local manifest') },
     packages: { [name]: { files: { 'Nargo.toml': sha('external manifest'),
       'src/lib.nr': sha('fn main() {}'), 'src/macro.nr': sha('macro source') } } },
-    embeddedSources: { [`${name}/src/lib.nr`]: sha('fn main() {}') },
+    embeddedSourcesByContract: { Fixture: { [`${name}/src/lib.nr`]: sha('fn main() {}') } },
   };
-  const artifact = { file_map: { 1: { path: `${name}/src/lib.nr`, source: 'fn main() {}' } } };
+  const artifact = { name: 'Fixture', file_map: { 1: { path: `${name}/src/lib.nr`, source: 'fn main() {}' } } };
   return { root, cacheRoot, directory, lock, artifact };
 }
 
@@ -58,7 +58,7 @@ test('changed, missing, new and conflicting artifact sources fail', t => {
   const modified = structuredClone(f.artifact);
   modified.file_map[1].source += '\nchanged';
   assert.throws(() => checkNoirEmbeddedSources(modified, f), /Embedded Noir dependency sources/);
-  assert.throws(() => checkNoirEmbeddedSources({ file_map: {} }, f), /Embedded Noir dependency sources/);
+  assert.throws(() => checkNoirEmbeddedSources({ name: 'Fixture', file_map: {} }, f), /Embedded Noir dependency sources/);
   const added = structuredClone(f.artifact);
   added.file_map[2] = { path: `${name}/src/new.nr`, source: 'unexpected' };
   assert.throws(() => checkNoirEmbeddedSources(added, f), /src\/new.nr/);
@@ -70,4 +70,15 @@ test('absolute and traversal source paths fail closed', t => {
   for (const filename of ['/someone/nargo/github.com/example/lib/src/lib.nr', `${name}/../outside.nr`]) {
     assert.throws(() => checkNoirEmbeddedSources({ file_map: { 0: { path: filename, source: '' } } }, f));
   }
+});
+
+ test('each contract requires its own exact registered source inventory', t => {
+  const f = fixture(t);
+  assert.throws(() => checkNoirEmbeddedSources({ ...f.artifact, name: 'Other' }, f), /Unregistered Noir contract/);
+  f.lock.embeddedSourcesByContract.Other = { [`${name}/src/macro.nr`]: sha('macro source') };
+  assert.throws(() => checkNoirEmbeddedSources({ ...f.artifact, name: 'Other' }, f), /Embedded Noir dependency sources/);
+  const other = { name: 'Other', file_map: { 1: { path: `${name}/src/macro.nr`, source: 'macro source' } } };
+  assert.deepEqual(checkNoirEmbeddedSources(other, f), { embeddedSources: 1 });
+  delete other.file_map[1];
+  assert.throws(() => checkNoirEmbeddedSources(other, f), /Embedded Noir dependency sources/);
 });

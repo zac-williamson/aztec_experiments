@@ -1,0 +1,98 @@
+{
+  "outcome": "pass",
+  "scope": "Sponsor contract compile, constrained pure policy tests and TXE public state; not genuine private sponsor composition or W01 acceptance",
+  "sourceHashes": {
+    "billboard/sponsor_contract/src/main.nr": "33ab289d70c04b1cc30b0de75737a15ff949669fbb9360ce5071cc98bcdf70af",
+    "billboard/sponsor_common/src/lib.nr": "5a619d185100cb482ce0ec988cf5fe694be35764307fe2f389306653a9fdff5d",
+    "billboard/sponsor_common/src/tests.nr": "377528588508241a62ac29bd783440e5ea40d7440312382f5a71be3a8c5d19e9",
+    "billboard/sponsor_test/src/lib.nr": "b9657226d977d7c9e1d5b974c4081bb1e2509b1e87444dea3acc26b3032f31d5",
+    "scripts/build-contracts.mjs": "d0874a181e58d74022386e3baba04550b58ffbda388589955dd4da9ff7f97d00",
+    "scripts/check-artifacts.mjs": "195fad77ff41efd4376f6e7264b1c0f2d50ae3786f10158378ef8100ed371cfa",
+    "scripts/check-noir-dependencies.mjs": "17be15dc0297b52fe959b9581067284c19e8426ecfc72463c1bd36c963123549",
+    "scripts/check-reproducibility.mjs": "c40724d4bd2bdc0793e46b20cc79c1fce9b87fc3dfdd9ccf0332a22254af91a8",
+    "noir-dependencies.json": "8b913d45060f21372b8fdb8521454b7263a43a5ee9367a7143e2c8f9a59ca9ca",
+    "apps/src/billboard/sponsor_artifact.json": "66faa801c6c0769abf0cd83172b21c662538a5509bb4352d637b4c6ed0b27e05"
+  },
+  "contractBuildInputs": {
+    "billboard/Nargo.toml": "ce4c17292583c482b9460ea9cdaf6651583011780bdad89f5e90210433405a6d",
+    "billboard/billboard_contract/Nargo.toml": "5c83d4f5a566a53ff7b2880c48ace29609939afac8069f349a89862a59626b28",
+    "billboard/billboard_contract/src/lib.nr": "dcccd20777da4b6871c1e47a358675f9c7e26d0067a15ebbdde18c0490e0b5af",
+    "billboard/billboard_contract/src/main.nr": "b9a384f40339c8cde664177f832d709c3509c59ac6e94ba84b1c5f76e382fd32",
+    "billboard/billboard_test/Nargo.toml": "440dff561e0876794d1949b1cff633e945cbd14494b9ee87ea906c7099d095f2",
+    "billboard/billboard_test/src/c01.nr": "2b5a7350af8d6cca135fad1f720fe9e6f54a6308097f9042d2e346263111eef9",
+    "billboard/billboard_test/src/c02.nr": "2245003d765fa6746e7e24a0bd8e19b70490a3332ac02fec2b216c3694d31d66",
+    "billboard/billboard_test/src/c03.nr": "7772009d9ede0ae13e00d146af18fe1369d2fbf9fae5bc640379ee759eadb416",
+    "billboard/billboard_test/src/compact_note.nr": "fcd8fac6616733b1ebd1f4c7088060ab7ad1c4563f94b9e3c76e3fc03038e889",
+    "billboard/billboard_test/src/lib.nr": "4c9d1ba9c2b6bd3dc9c2518494cad37b03686f5032e3038f8cb280ad453db3bb",
+    "billboard/billboard_test/src/w01.nr": "93c4104c8b2946cf8bd61c9977395ca93475964702f2d420e54b6239d4ae298b",
+    "billboard/fee-fixture/Nargo.toml": "faeb35cc458fcefe85bf1b1704b6a7d8dc0de6cc8f6a6c432cbb92441580c76e",
+    "billboard/fee-fixture/application/Nargo.toml": "76043b99a28dedab1103cb0de7adec88c9b7d99cdd9d8d94285e10147275da3c",
+    "billboard/fee-fixture/application/src/main.nr": "23b13163e57bb6d2e2131151d6e0287fc1c80c710806ff50476cf6ad988ad070",
+    "billboard/fee-fixture/common/Nargo.toml": "264f2ad699297dc4b0aa63fd0f075c9767f70608d1bae5ffde2acd262dfba1eb",
+    "billboard/fee-fixture/common/src/lib.nr": "05bf7abe137977adf54668077741adbf2723b0ea9c8d6543de5d21fc54092ba9",
+    "billboard/fee-fixture/common/src/tests.nr": "08966015613ca6792dd6f419ae8632e59fc419d301502dada57338a8280d0d09",
+    "billboard/fee-fixture/nested/Nargo.toml": "cd0f3dbf31ed9d88e18b84d13d8af159652efe7e335cc9b6d236dac51f09ac10",
+    "billboard/fee-fixture/nested/src/main.nr": "c8c6c219e9cb846a54f34fdef4648823b4dcff6a339361cd6b1b4d2cf9e78827",
+    "billboard/fee-fixture/sponsor/Nargo.toml": "f26bfffe6e4f8fab58c1fbe50b235f10dfdd5c7326b896b9ce27a486c812576d",
+    "billboard/fee-fixture/sponsor/src/main.nr": "969a96ff9f47125a16c1a09008ca32344e31ae97de7b265e5ac56edcce3899fb",
+    "billboard/fee-fixture/tests/Nargo.toml": "ab2c4c7304c5d1c2483cd763ab5ed2d82dd78942051dae95c1f47c898daee179",
+    "billboard/fee-fixture/tests/src/lib.nr": "0f089c8ef664200d950a650528e288f2481e3929fcd51c15ab2c7438c689c732",
+    "billboard/portal/foundry.toml": "30ef48a1b1d64ad2381cea0570e0a1a723c8e3f779192450887e5d06df823954",
+    "billboard/portal/package-lock.json": "d3493375a4401807217b0d2961aff547de6e6c3af3d6649d30f824044dc89fa7",
+    "billboard/portal/src/BillboardPortal.sol": "33012ac43e6ff30852a28d4a52288e65f9d57548a3bcd376525e04de87afd315",
+    "billboard/portal/src/PortalMessages.sol": "d727cc044eb2966a99fd8459eef27923ecc80c0b89a0966b130af8422d9ef4eb",
+    "billboard/portal/test/PortalArtifactRegression.t.sol": "3647f81032adab72da19b037050285daae3ff5af2588816c4b6a7ef14ede5a01",
+    "billboard/portal/test/PortalCodecVectors.t.sol": "bb96e7e45bca1b4f6dcf0174537e4c71fc21e2423de07c6c55166cc95e9767e9",
+    "billboard/portal/test/PortalV1.t.sol": "6211d6b7a54b4f1ede3184fe8b125c1c3c82eece4efaa75e794f170d04dc0c0c",
+    "billboard/sponsor_common/Nargo.toml": "ae4ab4ca91013cb7f13435b28cd27842fb08b832d3265d2f1221bfb159a7f109",
+    "billboard/sponsor_common/src/lib.nr": "5a619d185100cb482ce0ec988cf5fe694be35764307fe2f389306653a9fdff5d",
+    "billboard/sponsor_common/src/tests.nr": "377528588508241a62ac29bd783440e5ea40d7440312382f5a71be3a8c5d19e9",
+    "billboard/sponsor_contract/Nargo.toml": "692cadba782cda8b6ef68141413f9770298f5a2fba85ed043059d73d27794c54",
+    "billboard/sponsor_contract/src/main.nr": "33ab289d70c04b1cc30b0de75737a15ff949669fbb9360ce5071cc98bcdf70af",
+    "billboard/sponsor_test/Nargo.toml": "e624663d557265edb093e9ec85b5fb9683249a8b82cd7ddd4b965c8f2128112d",
+    "billboard/sponsor_test/src/lib.nr": "b9657226d977d7c9e1d5b974c4081bb1e2509b1e87444dea3acc26b3032f31d5",
+    "noir-dependencies.json": "8b913d45060f21372b8fdb8521454b7263a43a5ee9367a7143e2c8f9a59ca9ca",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+    "scripts/artifact-provenance.mjs": "7a0bc1717b199a8425f6bf846f7fdd184f98e62a733e3eac7baadc50d12a9ef4",
+    "scripts/build-contracts.mjs": "d0874a181e58d74022386e3baba04550b58ffbda388589955dd4da9ff7f97d00",
+    "scripts/check-noir-dependencies.mjs": "17be15dc0297b52fe959b9581067284c19e8426ecfc72463c1bd36c963123549",
+    "scripts/normalize-noir.mjs": "d1dc22ad5e50d016e9e1fce6d8c5d3cadc21db431b4eb94717a347f5c0c69a5d",
+    "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a"
+  },
+  "artifactSha256": "66faa801c6c0769abf0cd83172b21c662538a5509bb4352d637b4c6ed0b27e05",
+  "checks": {
+    "policy": {
+      "passed": 16,
+      "log": "sponsor-policy-tests-001.log",
+      "sha256": "8d3b18ff4012bba942c784b8a60e79a1638d8548b8dcb8c5f0d4dcb41ac74977"
+    },
+    "buildGuards": {
+      "passed": 37,
+      "log": "sponsor-build-guards-001.log",
+      "sha256": "20912f03489411dc22aaa73f08515f9b151ed7f041f12860d476c8eb4ecbdd16"
+    },
+    "integratedNoir": {
+      "delegatedBoardPassed": 12,
+      "policyPassed": 16,
+      "publicSponsorPassed": 9,
+      "log": "sponsor-integrated-tests-001.log",
+      "sha256": "03901cedeb78f90723c245a3e309d865b74a91c746f4127a132584b18e54ce5b"
+    },
+    "build": {
+      "log": "sponsor-integrated-build-002.log",
+      "sha256": "cad9bf935071d43b1d50779386fe7aedebc8dceaabbc4f05dafe7f7e39a37a08"
+    },
+    "sourceReview": {
+      "file": "sponsor-source-review.md",
+      "sha256": "80c2b641d771c579cc199c709f750b3a42a8d5a87d83b5891db64c9393818b96"
+    }
+  },
+  "remaining": [
+    "actual private sponsored proofs, paid revert/replay/expiry",
+    "mandatory production client route",
+    "opaque coupon issuance and operating controls",
+    "genuine shared replenishment",
+    "public/RPC/issuer observation assessment"
+  ]
+}

@@ -1,0 +1,10 @@
+[package]
+name = "sponsor_contract"
+type = "contract"
+authors = [""]
+compiler_version = ">=1.0.0"
+
+[dependencies]
+aztec = { git = "https://github.com/AztecProtocol/aztec-nr", tag = "v5.2.0", directory = "aztec" }
+sponsor_common = { path = "../sponsor_common" }
+billboard_contract = { path = "../billboard_contract" }

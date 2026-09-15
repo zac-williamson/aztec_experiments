@@ -13,3 +13,7 @@ The graph selects W01 sponsored-fee integration next, now that C03 is complete. 
 W01 is active: production sponsor integration is being designed against the now-verified independent post ABI. Existing mock-proof mechanism results are historical feasibility only; genuine application composition and privacy/operational controls remain required.
 
 W01 delegated-board milestone: all149 Noir tests pass in about4m40s, including12 exact authorization/ownership controls. Source stayed identical during the run. Next is sponsor contract/budget-policy integration, followed by client/issuer/shared-funding and genuine unfunded-author qualification. W01 is not complete.
+
+Sponsor contract now builds with verification keys;16 pure spending/membership tests and37 artifact/dependency integrity checks pass. Actual public storage/admin controls are next. These checks do not yet establish complete sponsored application behavior.
+
+Sponsor public state milestone:9/9 tests pass for real registration/accounting/admin state, and integrated sponsor checks pass12 delegated +16 policy +9 public tests. Client route implementation is in progress; no genuine sponsor composition acceptance yet.

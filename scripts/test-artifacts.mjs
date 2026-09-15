@@ -14,6 +14,7 @@ assertNodeVersion();
 // deliberately not compiled contracts or cryptographic proof evidence. Every
 // test gets a disposable directory and never alters the repository artifacts.
 const canonicalPath = 'apps/src/billboard/billboard_artifact.json';
+const sponsorPath = 'apps/src/billboard/sponsor_artifact.json';
 const portalPath = 'billboard/portal/out/BillboardPortal.sol/BillboardPortal.json';
 const manifestPath = '.build/contracts-manifest.json';
 const consumers = ['deploy', 'censor'];
@@ -57,6 +58,8 @@ function fixture(t) {
     functions: [{ name: 'fixture_private', custom_attributes: ['abi_private'], verification_key: 'fixture-vk' }],
   };
   json(canonicalPath, artifact);
+  json(sponsorPath, { name: 'BillboardSponsor', transpiled: true,
+    functions: ['sponsor_claim', 'sponsor_post', 'sponsor_withdraw'].map(name => ({ name, custom_attributes: ['abi_private'], verification_key: 'fixture-vk' })) });
   for (const consumer of consumers) json(`apps/src/billboard/${consumer}/billboard_artifact.json`, artifact);
   const bytecode = '0x60006000';
   json(portalPath, {
@@ -71,6 +74,7 @@ function fixture(t) {
   json(manifestPath, {
     inputs: Object.fromEntries(Object.keys(inputs).sort().map(name => [name, hash(inputs[name])])),
     noir: hash(read(canonicalPath)),
+    sponsor: hash(read(sponsorPath)),
     portal: hash(bytecode),
   });
   assert.doesNotThrow(() => checkArtifacts(root), 'the unchanged fixture must pass before each mutation');
@@ -81,6 +85,7 @@ test('matching synthetic artifacts and recorded sources pass', t => {
   const f = fixture(t);
   assert.deepEqual(checkArtifacts(f.root), {
     noirSha256: hash(f.read(canonicalPath).trim()),
+    sponsorSha256: hash(f.read(sponsorPath)),
     portalBytecodeSha256: hash('0x60006000'),
   });
 });
@@ -189,5 +194,17 @@ test('synchronized altered portal bytecode still fails the recorded build hash',
   const f = fixture(t);
   f.editJson(portalPath, a => { a.bytecode.object = '0x6001'; });
   for (const name of bytecodePaths) f.write(name, '0x6001\n');
+  assert.throws(() => checkArtifacts(f.root), /Contract artifact differs from build manifest/);
+});
+
+test('sponsor key, extra route and stale content fail closed', t => {
+  const f = fixture(t);
+  const original = f.read(sponsorPath);
+  f.editJson(sponsorPath, a => { delete a.functions[0].verification_key; });
+  assert.throws(() => checkArtifacts(f.root), /Canonical sponsor artifact/);
+  f.write(sponsorPath, original);
+  f.editJson(sponsorPath, a => { a.functions.push({ name: 'arbitrary_call', custom_attributes: ['abi_private'], verification_key: 'fixture' }); });
+  assert.throws(() => checkArtifacts(f.root), /Canonical sponsor artifact/);
+  f.write(sponsorPath, original + ' ');
   assert.throws(() => checkArtifacts(f.root), /Contract artifact differs from build manifest/);
 });

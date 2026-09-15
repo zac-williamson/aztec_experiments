@@ -8,9 +8,10 @@ import { ROOT, assertNodeVersion } from './toolchain.mjs';
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const prefix = 'dependencies/github.com/';
 function inventory(lock) {
-  if (lock.schema !== 1 || lock.algorithm !== 'sha256' || !lock.packages ||
-      !lock.localManifests || !lock.embeddedSources || !Object.keys(lock.packages).length ||
-      !Object.keys(lock.embeddedSources).length) throw new Error('Invalid Noir dependency lock');
+  if (lock.schema !== 2 || lock.algorithm !== 'sha256' || !lock.packages ||
+      !lock.localManifests || !lock.embeddedSourcesByContract || !Object.keys(lock.packages).length ||
+      !Object.keys(lock.embeddedSourcesByContract).length ||
+      Object.values(lock.embeddedSourcesByContract).some(sources => !sources || !Object.keys(sources).length)) throw new Error('Invalid Noir dependency lock');
   return lock;
 }
 function readLock(root) {
@@ -74,7 +75,10 @@ export function checkNoirEmbeddedSources(artifact, { root = ROOT, lock = readLoc
     if (actual[entry.path] && actual[entry.path] !== digest) throw new Error(`Conflicting Noir dependency source: ${entry.path}`);
     actual[entry.path] = digest;
   }
-  compare(actual, lock.embeddedSources, 'Embedded Noir dependency sources');
+  if (typeof artifact.name !== 'string' || !Object.hasOwn(lock.embeddedSourcesByContract, artifact.name)) {
+    throw new Error('Unregistered Noir contract source inventory');
+  }
+  compare(actual, lock.embeddedSourcesByContract[artifact.name], 'Embedded Noir dependency sources');
   return { embeddedSources: Object.keys(actual).length };
 }
 

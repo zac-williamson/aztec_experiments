@@ -13,6 +13,7 @@ function snapshot() {
     '.build/contracts-manifest.json', '.build/sdk/sdk-manifest.json',
     'apps/dist/sdk-manifest.json', 'apps/dist/crs/crs-manifest.json',
     'apps/src/billboard/billboard_artifact.json',
+    'apps/src/billboard/sponsor_artifact.json',
     'apps/src/billboard/deploy/billboard_artifact.json',
     'apps/src/billboard/censor/billboard_artifact.json',
     'apps/src/billboard/portal_bytecode.txt',

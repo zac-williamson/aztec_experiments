@@ -1,0 +1,45 @@
+✔ matching synthetic artifacts and recorded sources pass (9.080291ms)
+✔ stale deploy Noir copy is rejected (6.458ms)
+✔ stale censor Noir copy is rejected (5.801208ms)
+✔ missing verification key is rejected even when all consumer copies agree (7.148292ms)
+✔ empty private function set is rejected even when all consumer copies agree (5.523834ms)
+✔ only public functions is rejected even when all consumer copies agree (4.654459ms)
+✔ untranspiled artifact is rejected even when all consumer copies agree (7.617417ms)
+✔ truthy non-boolean transpilation marker is rejected even when all consumer copies agree (6.336959ms)
+✔ stale portal bytecode is rejected: apps/src/billboard/portal_bytecode.txt (5.315292ms)
+✔ stale portal bytecode is rejected: apps/src/billboard/deploy/portal_bytecode.txt (7.240083ms)
+✔ portal source drift is rejected by embedded compiler provenance (6.492917ms)
+✔ missing Solidity source provenance is rejected (5.782875ms)
+✔ string-encoded Solidity metadata remains supported (6.000584ms)
+✔ Noir source drift requires a rebuild (8.755916ms)
+✔ Noir dependency declaration drift requires a rebuild (5.595125ms)
+✔ root dependency lock drift requires a rebuild (5.56075ms)
+✔ portal dependency lock drift requires a rebuild (6.387417ms)
+✔ compiler configuration drift requires a rebuild (5.471292ms)
+✔ toolchain pins drift requires a rebuild (5.666042ms)
+✔ contract builder drift requires a rebuild (5.642791ms)
+✔ Noir debug-path normalizer drift requires a rebuild (5.44425ms)
+✔ Noir dependency verifier drift requires a rebuild (5.373708ms)
+✔ Noir dependency pins drift requires a rebuild (6.276292ms)
+✔ new Noir source omitted from the old manifest requires a rebuild (5.8915ms)
+✔ contract manifest input hash tampering is rejected (6.104708ms)
+✔ contract manifest noir hash tampering is rejected (5.552625ms)
+✔ contract manifest portal hash tampering is rejected (5.446875ms)
+✔ synchronized altered Noir artifacts still fail the recorded build hash (5.548166ms)
+✔ synchronized altered portal bytecode still fails the recorded build hash (7.422917ms)
+✔ sponsor key, extra route and stale content fail closed (7.04725ms)
+✔ matching trees and artifact embedded sources pass (4.607708ms)
+✔ macro change absent from file_map still fails the full tree check (1.886042ms)
+✔ new and missing tree sources cannot pass (2.324625ms)
+✔ local or transitive manifest changes fail (1.740542ms)
+✔ changed, missing, new and conflicting artifact sources fail (1.5945ms)
+✔ absolute and traversal source paths fail closed (1.659292ms)
+✔ each contract requires its own exact registered source inventory (1.38975ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 331.294375

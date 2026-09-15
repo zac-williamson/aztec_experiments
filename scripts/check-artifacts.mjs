@@ -13,6 +13,15 @@ export function checkArtifacts(root = ROOT) {
   if (artifact.transpiled !== true || !artifact.functions.some(f => (f.custom_attributes || []).includes('abi_private')) || artifact.functions.filter(f => (f.custom_attributes || []).includes('abi_private')).some(f => !f.verification_key)) {
     throw new Error('Canonical Noir artifact lacks transpilation or verification keys');
   }
+  const sponsorPath = 'apps/src/billboard/sponsor_artifact.json';
+  const sponsorBytes = fs.readFileSync(path.join(root, sponsorPath));
+  const sponsor = JSON.parse(sponsorBytes);
+  const sponsorPrivate = sponsor.functions?.filter(f => (f.custom_attributes || []).includes('abi_private')) ?? [];
+  if (sponsor.name !== 'BillboardSponsor' || sponsor.transpiled !== true || sponsorPrivate.length !== 3 ||
+      sponsorPrivate.some(f => !f.verification_key) ||
+      ['sponsor_claim', 'sponsor_post', 'sponsor_withdraw'].some(name => !sponsorPrivate.some(f => f.name === name))) {
+    throw new Error('Canonical sponsor artifact lacks fixed private routes or verification keys');
+  }
   for (const consumer of ['deploy', 'censor']) {
     if (read(`apps/src/billboard/${consumer}/billboard_artifact.json`) !== canonical) throw new Error(`Stale ${consumer} Noir artifact`);
   }
@@ -28,8 +37,8 @@ export function checkArtifacts(root = ROOT) {
   }
   const manifest = JSON.parse(read('.build/contracts-manifest.json'));
   if (JSON.stringify(manifest.inputs) !== JSON.stringify(contractInputs(root))) throw new Error('Contract build inputs changed; rebuild contracts');
-  if (manifest.noir !== sha(fs.readFileSync(path.join(root, canonicalPath))) || manifest.portal !== sha(portal.bytecode.object)) throw new Error('Contract artifact differs from build manifest');
-  return { noirSha256: createHash('sha256').update(canonical).digest('hex'), portalBytecodeSha256: createHash('sha256').update(portal.bytecode.object).digest('hex') };
+  if (manifest.noir !== sha(fs.readFileSync(path.join(root, canonicalPath))) || manifest.portal !== sha(portal.bytecode.object) || manifest.sponsor !== sha(sponsorBytes)) throw new Error('Contract artifact differs from build manifest');
+  return { sponsorSha256: sha(sponsorBytes), noirSha256: createHash('sha256').update(canonical).digest('hex'), portalBytecodeSha256: createHash('sha256').update(portal.bytecode.object).digest('hex') };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.join(ROOT, 'scripts/check-artifacts.mjs')) {

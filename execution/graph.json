@@ -734,7 +734,7 @@
       "evidence": "evidence/W01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Delegated board milestone passes149 Noir tests in about281s, source fingerprint844c933b7204c537eaf6fda55c8c26ffaed5d9049dabdc47bc657f8b910cd357. Compiled VK artifacts and official dependency-origin checks pass. Next integrate drafted immutable sponsor batch/window contract and16 pure policy tests, extend reproducible artifact pipeline, then mandatory client/issuance/shared funding/genuine journey. W01 remains active and incomplete.",
+      "checkpoint": "Delegated board committed243c2f9 (149 tests/281s). BillboardSponsor compiles/VKs;37 integrated Noir controls (12 delegated,16 policy,9 public) and37 build guards pass; sponsor-contract-milestone.json binds evidence. Client preparer in bounded lane; root integrates engine/issuance/shared funding/genuine journey next. W01 remains incomplete.",
       "priority": 5
     },
     {
