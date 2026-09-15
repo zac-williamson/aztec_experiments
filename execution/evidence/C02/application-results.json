@@ -1,0 +1,51 @@
+{
+  "passed": true,
+  "elapsedMs": 301649,
+  "peakTreeRSSKiB": 1157056,
+  "networkProofs": false,
+  "controlledSettlement": true,
+  "posts": [
+    {
+      "txHash": "0x0331f15cc0dfa9efccb5a56566bf29d33e68bfd21c95603705ad3763d368f185",
+      "blockNumber": "10",
+      "status": "checkpointed",
+      "executionResult": "success",
+      "proofSha256": "d88deea87c038b8f7d32626fa4bda088a576a6041ce22154511ab3c5b177a974",
+      "nodeValidation": "valid",
+      "exactDepositNullifier": true,
+      "exactReplacementNote": true,
+      "exactPostNote": true,
+      "sequence": "1",
+      "screenedSequence": "0",
+      "publicMessageChecked": true
+    },
+    {
+      "txHash": "0x12ff688100151d4a4d81ef7b1d31ee4e7d87f7821ffb0b0d51df0319cffc7400",
+      "blockNumber": "13",
+      "status": "checkpointed",
+      "executionResult": "success",
+      "proofSha256": "b0ccf0faa724feb3c273d76ffc52ec7ccb2508cf76d29da17d5310fc731f7c97",
+      "nodeValidation": "valid",
+      "exactDepositNullifier": true,
+      "exactReplacementNote": true,
+      "exactPostNote": true,
+      "sequence": "2",
+      "screenedSequence": "1",
+      "publicMessageChecked": true
+    }
+  ],
+  "wrongChain": {
+    "rejected": true,
+    "reason": "C02 wrong chain",
+    "mutatedIncludedHint": true,
+    "authenticSecondReceipt": false,
+    "originalNoteUnchanged": true,
+    "stage": "PXE constrained witness generation; no tx sent"
+  },
+  "cleanup": {
+    "processGroupAbsent": true,
+    "descendantTreeAbsent": true,
+    "temporaryDirectoryRemoved": true
+  },
+  "limitations": "One receipt, two real posts. Included foreign-history/owner/slot and grandchild/dummy cases are covered separately by maintained TXE tests. Public-inclusion deadlines remain C03/C05."
+}

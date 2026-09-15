@@ -1,0 +1,95 @@
+{
+  "task_id": "C02",
+  "outcome": "pass",
+  "recorded_at": "2026-09-15T01:29:15.286939+00:00",
+  "source_fingerprint": "66d32d9c55a2665d3f1cbd2da2b883ea26b6fed9466c125fcd37e0e819fce9be",
+  "source_inventory": "evidence/C02/source-final.json",
+  "artifacts": [
+    {
+      "path": "evidence/C02/source-final.json",
+      "sha256": "ba8d3b4097df7e79207b3356b7dfd70d4aaaaacc660b6db88c1f47e91d3da4ec"
+    },
+    {
+      "path": "evidence/C02/verification.md",
+      "sha256": "a640ea7b69d3f2f313ffa86c46fca3b63c1701bed6a58f4764a37f082a5d7685"
+    },
+    {
+      "path": "evidence/C02/integrated-review.md",
+      "sha256": "b87c441c7fe5dc24b97ce5c25c497a6f241c9587ea813d2ded5b30eb76d571e4"
+    },
+    {
+      "path": "evidence/C02/full-noir-tests.log",
+      "sha256": "900ab9c70314dd3b18026c61d02ce5d5bf122385aa3f123ef11f1553168f1828"
+    },
+    {
+      "path": "evidence/C02/client-tests-final.log",
+      "sha256": "18e8a43b8b619c5cb14967abcc23a449e5718a67149515105d6fe1d3fbb7af32"
+    },
+    {
+      "path": "evidence/C02/build-fourth.log",
+      "sha256": "9bf5cba98ea71970d10cfda19f9b06b3a061483520ff0b86fad8b22c26124c40"
+    },
+    {
+      "path": "evidence/C02/application-775dfdd5-518d-4bb9-bbe8-b3e346d88f6d.json",
+      "sha256": "60026d6a86c6836f9019374ffff3c4d3b119fc519ae669ad2f4a67b381ebc8d7"
+    },
+    {
+      "path": "evidence/C02/application-screening-001.log",
+      "sha256": "cbbcae278c47aa269adce60994462c487a09908c2d5291141974d8c502358bcf"
+    },
+    {
+      "path": "evidence/C02/application-results.json",
+      "sha256": "bc3d34e29ff3bbb68af86967b715b8b275f203ebf738abbab427e0561df8693e"
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C02-A01",
+      "result": "pass",
+      "summary": "Foreign contract/owner/slot/schema/chain included-note fixtures reject exact scope errors; genuine post constraints validate intended screening.",
+      "artifacts": [
+        "evidence/C02/verification.md",
+        "evidence/C02/full-noir-tests.log",
+        "evidence/C02/application-results.json"
+      ]
+    },
+    {
+      "id": "C02-A02",
+      "result": "pass",
+      "summary": "Separate authentic TXE receipts under one owner reject cross-history and burned old-cycle history; legitimate receipt/new-cycle controls pass.",
+      "artifacts": [
+        "evidence/C02/verification.md",
+        "evidence/C02/full-noir-tests.log",
+        "evidence/C02/application-results.json"
+      ]
+    },
+    {
+      "id": "C02-A03",
+      "result": "pass",
+      "summary": "Exact successor/head/timestamp checks pass; young real child blocks mature dummy successor; genuine second post advances exactly once.",
+      "artifacts": [
+        "evidence/C02/verification.md",
+        "evidence/C02/full-noir-tests.log",
+        "evidence/C02/application-results.json"
+      ]
+    },
+    {
+      "id": "C02-A04",
+      "result": "pass",
+      "summary": "129 integrated Noir tests include22 C02 controls for legitimate child/grandchild and dummy transitions; real two-post screening proofs pass.",
+      "artifacts": [
+        "evidence/C02/verification.md",
+        "evidence/C02/full-noir-tests.log",
+        "evidence/C02/application-results.json"
+      ]
+    }
+  ],
+  "review": {
+    "kind": "self-review",
+    "reviewer": "root integration and /root/build_review separate AI source review",
+    "summary": "Production ancestry/scope constraints and integrated test/proof evidence reviewed. Genuine run one-receipt limitation distinguished from TXE included-note adversarial controls; external audit not claimed.",
+    "artifacts": [
+      "evidence/C02/integrated-review.md"
+    ]
+  }
+}

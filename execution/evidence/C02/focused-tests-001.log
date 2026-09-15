@@ -1,0 +1,2157 @@
+{"profile":"C01 consistent-scope TXE","chain":1,"version":1,"originalPublicVersion":2,"realProofs":false,"port":57974}
+[02:07:43.971] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+error: Expected a pattern but found 'contract'
+   ┌─ billboard_test/src/c02.nr:35:27
+   │
+35 │     env: TestEnvironment, contract: AztecAddress, owner: AztecAddress,
+   │                           --------
+   │
+
+error: Expected a pattern but found ':'
+   ┌─ billboard_test/src/c02.nr:35:35
+   │
+35 │     env: TestEnvironment, contract: AztecAddress, owner: AztecAddress,
+   │                                   -
+   │
+
+error: Missing type for function parameter
+   ┌─ billboard_test/src/c02.nr:35:37
+   │
+35 │     env: TestEnvironment, contract: AztecAddress, owner: AztecAddress,
+   │                                     -------------
+   │
+
+error: Expected an expression but found 'contract'
+   ┌─ billboard_test/src/c02.nr:39:58
+   │
+39 │         PrivateContextOptions::new().at_contract_address(contract),
+   │                                                          --------
+   │
+
+error: Expected an expression but found 'contract'
+   ┌─ billboard_test/src/c02.nr:39:58
+   │
+39 │         PrivateContextOptions::new().at_contract_address(contract),
+   │                                                          --------
+   │
+
+error: Expected a statement but found 'contract'
+   ┌─ billboard_test/src/c02.nr:39:58
+   │
+39 │         PrivateContextOptions::new().at_contract_address(contract),
+   │                                                          --------
+   │
+
+error: Expected a statement but found ')'
+   ┌─ billboard_test/src/c02.nr:39:66
+   │
+39 │         PrivateContextOptions::new().at_contract_address(contract),
+   │                                                                  -
+   │
+
+error: Expected a statement but found ','
+   ┌─ billboard_test/src/c02.nr:39:67
+   │
+39 │         PrivateContextOptions::new().at_contract_address(contract),
+   │                                                                   -
+   │
+
+error: Expected a statement but found ','
+   ┌─ billboard_test/src/c02.nr:40:58
+   │
+40 │         |context| create_note(context, owner, slot, note),
+   │                                                          -
+   │
+
+error: Expected a statement but found ')'
+   ┌─ billboard_test/src/c02.nr:41:5
+   │
+41 │     );
+   │     -
+   │
+
+error: Expected a statement but found 'let'
+   ┌─ billboard_test/src/c02.nr:42:5
+   │
+42 │     let randomness = message.new_note.randomness;
+   │     ---
+   │
+
+error: Expected a statement but found 'let'
+   ┌─ billboard_test/src/c02.nr:42:5
+   │
+42 │     let randomness = message.new_note.randomness;
+   │     ---
+   │
+
+error: Expected a ; after `let` statement
+   ┌─ billboard_test/src/c02.nr:39:57
+   │
+39 │         PrivateContextOptions::new().at_contract_address(contract),
+   │                                                         -
+   │
+
+error: Expected an item but found 'let'
+   ┌─ billboard_test/src/c02.nr:42:5
+   │
+42 │     let randomness = message.new_note.randomness;
+   │     ---
+   │
+
+error: Expected an item but found 'randomness'
+   ┌─ billboard_test/src/c02.nr:42:9
+   │
+42 │     let randomness = message.new_note.randomness;
+   │         ----------
+   │
+
+error: Expected an item but found '='
+   ┌─ billboard_test/src/c02.nr:42:20
+   │
+42 │     let randomness = message.new_note.randomness;
+   │                    -
+   │
+
+error: Expected an item but found 'message'
+   ┌─ billboard_test/src/c02.nr:42:22
+   │
+42 │     let randomness = message.new_note.randomness;
+   │                      -------
+   │
+
+error: Expected an item but found '.'
+   ┌─ billboard_test/src/c02.nr:42:29
+   │
+42 │     let randomness = message.new_note.randomness;
+   │                             -
+   │
+
+error: Expected an item but found 'new_note'
+   ┌─ billboard_test/src/c02.nr:42:30
+   │
+42 │     let randomness = message.new_note.randomness;
+   │                              --------
+   │
+
+error: Expected an item but found '.'
+   ┌─ billboard_test/src/c02.nr:42:38
+   │
+42 │     let randomness = message.new_note.randomness;
+   │                                      -
+   │
+
+error: Expected an item but found 'randomness'
+   ┌─ billboard_test/src/c02.nr:42:39
+   │
+42 │     let randomness = message.new_note.randomness;
+   │                                       ----------
+   │
+
+error: Expected an item but found ';'
+   ┌─ billboard_test/src/c02.nr:42:49
+   │
+42 │     let randomness = message.new_note.randomness;
+   │                                                 -
+   │
+
+error: Expected an item but found 'env'
+   ┌─ billboard_test/src/c02.nr:43:5
+   │
+43 │     env.discover_note_at(contract, message);
+   │     ---
+   │
+
+error: Expected an item but found '.'
+   ┌─ billboard_test/src/c02.nr:43:8
+   │
+43 │     env.discover_note_at(contract, message);
+   │        -
+   │
+
+error: Expected an item but found 'discover_note_at'
+   ┌─ billboard_test/src/c02.nr:43:9
+   │
+43 │     env.discover_note_at(contract, message);
+   │         ----------------
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:43:25
+   │
+43 │     env.discover_note_at(contract, message);
+   │                         -
+   │
+
+error: Expected an identifier but found ','
+   ┌─ billboard_test/src/c02.nr:43:34
+   │
+43 │     env.discover_note_at(contract, message);
+   │                                  -
+   │
+
+error: Expected an item but found 'message'
+   ┌─ billboard_test/src/c02.nr:43:36
+   │
+43 │     env.discover_note_at(contract, message);
+   │                                    -------
+   │
+
+error: Expected an item but found ')'
+   ┌─ billboard_test/src/c02.nr:43:43
+   │
+43 │     env.discover_note_at(contract, message);
+   │                                           -
+   │
+
+error: Expected an item but found ';'
+   ┌─ billboard_test/src/c02.nr:43:44
+   │
+43 │     env.discover_note_at(contract, message);
+   │                                            -
+   │
+
+error: Expected an item but found 'let'
+   ┌─ billboard_test/src/c02.nr:44:5
+   │
+44 │     let candidates = env.utility_context_at(contract, |_| {
+   │     ---
+   │
+
+error: Expected an item but found 'candidates'
+   ┌─ billboard_test/src/c02.nr:44:9
+   │
+44 │     let candidates = env.utility_context_at(contract, |_| {
+   │         ----------
+   │
+
+error: Expected an item but found '='
+   ┌─ billboard_test/src/c02.nr:44:20
+   │
+44 │     let candidates = env.utility_context_at(contract, |_| {
+   │                    -
+   │
+
+error: Expected an item but found 'env'
+   ┌─ billboard_test/src/c02.nr:44:22
+   │
+44 │     let candidates = env.utility_context_at(contract, |_| {
+   │                      ---
+   │
+
+error: Expected an item but found '.'
+   ┌─ billboard_test/src/c02.nr:44:25
+   │
+44 │     let candidates = env.utility_context_at(contract, |_| {
+   │                         -
+   │
+
+error: Expected an item but found 'utility_context_at'
+   ┌─ billboard_test/src/c02.nr:44:26
+   │
+44 │     let candidates = env.utility_context_at(contract, |_| {
+   │                          ------------------
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:44:44
+   │
+44 │     let candidates = env.utility_context_at(contract, |_| {
+   │                                            -
+   │
+
+error: Expected an identifier but found ','
+   ┌─ billboard_test/src/c02.nr:44:53
+   │
+44 │     let candidates = env.utility_context_at(contract, |_| {
+   │                                                     -
+   │
+
+error: Expected an item but found '|'
+   ┌─ billboard_test/src/c02.nr:44:55
+   │
+44 │     let candidates = env.utility_context_at(contract, |_| {
+   │                                                       -
+   │
+
+error: Expected an item but found '_'
+   ┌─ billboard_test/src/c02.nr:44:56
+   │
+44 │     let candidates = env.utility_context_at(contract, |_| {
+   │                                                        -
+   │
+
+error: Expected an item but found '|'
+   ┌─ billboard_test/src/c02.nr:44:57
+   │
+44 │     let candidates = env.utility_context_at(contract, |_| {
+   │                                                         -
+   │
+
+error: Expected an item but found '{'
+   ┌─ billboard_test/src/c02.nr:44:59
+   │
+44 │     let candidates = env.utility_context_at(contract, |_| {
+   │                                                           -
+   │
+
+error: Expected an item but found 'aztec'
+   ┌─ billboard_test/src/c02.nr:45:9
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │         -----
+   │
+
+error: Expected an item but found '::'
+   ┌─ billboard_test/src/c02.nr:45:14
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │              --
+   │
+
+error: Expected an item but found 'oracle'
+   ┌─ billboard_test/src/c02.nr:45:16
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │                ------
+   │
+
+error: Expected an item but found '::'
+   ┌─ billboard_test/src/c02.nr:45:22
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │                      --
+   │
+
+error: Expected an item but found 'notes'
+   ┌─ billboard_test/src/c02.nr:45:24
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │                        -----
+   │
+
+error: Expected an item but found '::'
+   ┌─ billboard_test/src/c02.nr:45:29
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │                             --
+   │
+
+error: Expected an item but found 'get_notes'
+   ┌─ billboard_test/src/c02.nr:45:31
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │                               ---------
+   │
+
+error: Expected an item but found '::'
+   ┌─ billboard_test/src/c02.nr:45:40
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │                                        --
+   │
+
+error: Expected an item but found '<'
+   ┌─ billboard_test/src/c02.nr:45:42
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │                                          -
+   │
+
+error: Expected an item but found 'PostNote'
+   ┌─ billboard_test/src/c02.nr:45:43
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │                                           --------
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:45:51
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │                                                   -
+   │
+
+error: Expected an item but found '0'
+   ┌─ billboard_test/src/c02.nr:45:53
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │                                                     -
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:45:54
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │                                                      -
+   │
+
+error: Expected an item but found '10'
+   ┌─ billboard_test/src/c02.nr:45:56
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │                                                        --
+   │
+
+error: Expected an item but found '>'
+   ┌─ billboard_test/src/c02.nr:45:58
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │                                                          -
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:45:59
+   │
+45 │         aztec::oracle::notes::get_notes::<PostNote, 0, 10>(
+   │                                                           -
+   │
+
+error: Expected an item but found 'Option'
+   ┌─ billboard_test/src/c02.nr:46:13
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │             ------
+   │
+
+error: Expected an item but found '::'
+   ┌─ billboard_test/src/c02.nr:46:19
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                   --
+   │
+
+error: Expected an item but found 'some'
+   ┌─ billboard_test/src/c02.nr:46:21
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                     ----
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:46:25
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                         -
+   │
+
+error: Expected an item but found 'owner'
+   ┌─ billboard_test/src/c02.nr:46:26
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                          -----
+   │
+
+error: Expected an item but found ')'
+   ┌─ billboard_test/src/c02.nr:46:31
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                               -
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:32
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                -
+   │
+
+error: Expected an item but found 'slot'
+   ┌─ billboard_test/src/c02.nr:46:34
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                  ----
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:38
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                      -
+   │
+
+error: Expected an item but found '0'
+   ┌─ billboard_test/src/c02.nr:46:40
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                        -
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:41
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                         -
+   │
+
+error: Expected an item but found '['
+   ┌─ billboard_test/src/c02.nr:46:43
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                           -
+   │
+
+error: Expected an item but found ']'
+   ┌─ billboard_test/src/c02.nr:46:44
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                            -
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:45
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                             -
+   │
+
+error: Expected an item but found '['
+   ┌─ billboard_test/src/c02.nr:46:47
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                               -
+   │
+
+error: Expected an item but found ']'
+   ┌─ billboard_test/src/c02.nr:46:48
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                -
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:49
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                 -
+   │
+
+error: Expected an item but found '['
+   ┌─ billboard_test/src/c02.nr:46:51
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                   -
+   │
+
+error: Expected an item but found ']'
+   ┌─ billboard_test/src/c02.nr:46:52
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                    -
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:53
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                     -
+   │
+
+error: Expected an item but found '['
+   ┌─ billboard_test/src/c02.nr:46:55
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                       -
+   │
+
+error: Expected an item but found ']'
+   ┌─ billboard_test/src/c02.nr:46:56
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                        -
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:57
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                         -
+   │
+
+error: Expected an item but found '['
+   ┌─ billboard_test/src/c02.nr:46:59
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                           -
+   │
+
+error: Expected an item but found ']'
+   ┌─ billboard_test/src/c02.nr:46:60
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                            -
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:61
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                             -
+   │
+
+error: Expected an item but found '['
+   ┌─ billboard_test/src/c02.nr:46:63
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                               -
+   │
+
+error: Expected an item but found ']'
+   ┌─ billboard_test/src/c02.nr:46:64
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                -
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:65
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                 -
+   │
+
+error: Expected an item but found '['
+   ┌─ billboard_test/src/c02.nr:46:67
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                   -
+   │
+
+error: Expected an item but found ']'
+   ┌─ billboard_test/src/c02.nr:46:68
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                    -
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:69
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                     -
+   │
+
+error: Expected an item but found '['
+   ┌─ billboard_test/src/c02.nr:46:71
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                       -
+   │
+
+error: Expected an item but found ']'
+   ┌─ billboard_test/src/c02.nr:46:72
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                        -
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:73
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                         -
+   │
+
+error: Expected an item but found '['
+   ┌─ billboard_test/src/c02.nr:46:75
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                           -
+   │
+
+error: Expected an item but found ']'
+   ┌─ billboard_test/src/c02.nr:46:76
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                            -
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:77
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                             -
+   │
+
+error: Expected an item but found '10'
+   ┌─ billboard_test/src/c02.nr:46:79
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                               --
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:81
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                                 -
+   │
+
+error: Expected an item but found '0'
+   ┌─ billboard_test/src/c02.nr:46:83
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                                   -
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:84
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                                    -
+   │
+
+error: Expected an item but found 'NoteStatus'
+   ┌─ billboard_test/src/c02.nr:46:86
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                                      ----------
+   │
+
+error: Expected an item but found '.'
+   ┌─ billboard_test/src/c02.nr:46:96
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                                                -
+   │
+
+error: Expected an item but found 'ACTIVE'
+   ┌─ billboard_test/src/c02.nr:46:97
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                                                 ------
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:46:103
+   │
+46 │             Option::some(owner), slot, 0, [], [], [], [], [], [], [], [], [], 10, 0, NoteStatus.ACTIVE,
+   │                                                                                                       -
+   │
+
+error: Expected an item but found ')'
+   ┌─ billboard_test/src/c02.nr:47:9
+   │
+47 │         )
+   │         -
+   │
+
+error: Expected an item but found '}'
+   ┌─ billboard_test/src/c02.nr:48:5
+   │
+48 │     });
+   │     -
+   │
+
+error: Expected an item but found ')'
+   ┌─ billboard_test/src/c02.nr:48:6
+   │
+48 │     });
+   │      -
+   │
+
+error: Expected an item but found ';'
+   ┌─ billboard_test/src/c02.nr:48:7
+   │
+48 │     });
+   │       -
+   │
+
+error: Expected an item but found 'let'
+   ┌─ billboard_test/src/c02.nr:49:5
+   │
+49 │     let mut result = Option::none();
+   │     ---
+   │
+
+error: `mut` is not followed by an item
+   ┌─ billboard_test/src/c02.nr:49:9
+   │
+49 │     let mut result = Option::none();
+   │         ---
+   │
+
+error: Expected an item but found 'result'
+   ┌─ billboard_test/src/c02.nr:49:13
+   │
+49 │     let mut result = Option::none();
+   │             ------
+   │
+
+error: Expected an item but found '='
+   ┌─ billboard_test/src/c02.nr:49:20
+   │
+49 │     let mut result = Option::none();
+   │                    -
+   │
+
+error: Expected an item but found 'Option'
+   ┌─ billboard_test/src/c02.nr:49:22
+   │
+49 │     let mut result = Option::none();
+   │                      ------
+   │
+
+error: Expected an item but found '::'
+   ┌─ billboard_test/src/c02.nr:49:28
+   │
+49 │     let mut result = Option::none();
+   │                            --
+   │
+
+error: Expected an item but found 'none'
+   ┌─ billboard_test/src/c02.nr:49:30
+   │
+49 │     let mut result = Option::none();
+   │                              ----
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:49:34
+   │
+49 │     let mut result = Option::none();
+   │                                  -
+   │
+
+error: Expected an item but found ')'
+   ┌─ billboard_test/src/c02.nr:49:35
+   │
+49 │     let mut result = Option::none();
+   │                                   -
+   │
+
+error: Expected an item but found ';'
+   ┌─ billboard_test/src/c02.nr:49:36
+   │
+49 │     let mut result = Option::none();
+   │                                    -
+   │
+
+error: Expected an item but found 'let'
+   ┌─ billboard_test/src/c02.nr:50:5
+   │
+50 │     let mut matches: u32 = 0;
+   │     ---
+   │
+
+error: `mut` is not followed by an item
+   ┌─ billboard_test/src/c02.nr:50:9
+   │
+50 │     let mut matches: u32 = 0;
+   │         ---
+   │
+
+error: Expected an item but found 'matches'
+   ┌─ billboard_test/src/c02.nr:50:13
+   │
+50 │     let mut matches: u32 = 0;
+   │             -------
+   │
+
+error: Expected an item but found ':'
+   ┌─ billboard_test/src/c02.nr:50:20
+   │
+50 │     let mut matches: u32 = 0;
+   │                    -
+   │
+
+error: Expected an item but found 'u32'
+   ┌─ billboard_test/src/c02.nr:50:22
+   │
+50 │     let mut matches: u32 = 0;
+   │                      ---
+   │
+
+error: Expected an item but found '='
+   ┌─ billboard_test/src/c02.nr:50:26
+   │
+50 │     let mut matches: u32 = 0;
+   │                          -
+   │
+
+error: Expected an item but found '0'
+   ┌─ billboard_test/src/c02.nr:50:28
+   │
+50 │     let mut matches: u32 = 0;
+   │                            -
+   │
+
+error: Expected an item but found ';'
+   ┌─ billboard_test/src/c02.nr:50:29
+   │
+50 │     let mut matches: u32 = 0;
+   │                             -
+   │
+
+error: Expected an item but found 'for'
+   ┌─ billboard_test/src/c02.nr:51:5
+   │
+51 │     for candidate in candidates {
+   │     ---
+   │
+
+error: Expected an item but found 'candidate'
+   ┌─ billboard_test/src/c02.nr:51:9
+   │
+51 │     for candidate in candidates {
+   │         ---------
+   │
+
+error: Expected an item but found 'in'
+   ┌─ billboard_test/src/c02.nr:51:19
+   │
+51 │     for candidate in candidates {
+   │                   --
+   │
+
+error: Expected an item but found 'candidates'
+   ┌─ billboard_test/src/c02.nr:51:22
+   │
+51 │     for candidate in candidates {
+   │                      ----------
+   │
+
+error: Expected an item but found '{'
+   ┌─ billboard_test/src/c02.nr:51:33
+   │
+51 │     for candidate in candidates {
+   │                                 -
+   │
+
+error: Expected an item but found 'if'
+   ┌─ billboard_test/src/c02.nr:52:9
+   │
+52 │         if candidate.is_some() {
+   │         --
+   │
+
+error: Expected an item but found 'candidate'
+   ┌─ billboard_test/src/c02.nr:52:12
+   │
+52 │         if candidate.is_some() {
+   │            ---------
+   │
+
+error: Expected an item but found '.'
+   ┌─ billboard_test/src/c02.nr:52:21
+   │
+52 │         if candidate.is_some() {
+   │                     -
+   │
+
+error: Expected an item but found 'is_some'
+   ┌─ billboard_test/src/c02.nr:52:22
+   │
+52 │         if candidate.is_some() {
+   │                      -------
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:52:29
+   │
+52 │         if candidate.is_some() {
+   │                             -
+   │
+
+error: Expected an item but found ')'
+   ┌─ billboard_test/src/c02.nr:52:30
+   │
+52 │         if candidate.is_some() {
+   │                              -
+   │
+
+error: Expected an item but found '{'
+   ┌─ billboard_test/src/c02.nr:52:32
+   │
+52 │         if candidate.is_some() {
+   │                                -
+   │
+
+error: Expected an item but found 'let'
+   ┌─ billboard_test/src/c02.nr:53:13
+   │
+53 │             let value = candidate.unwrap_unchecked();
+   │             ---
+   │
+
+error: Expected an item but found 'value'
+   ┌─ billboard_test/src/c02.nr:53:17
+   │
+53 │             let value = candidate.unwrap_unchecked();
+   │                 -----
+   │
+
+error: Expected an item but found '='
+   ┌─ billboard_test/src/c02.nr:53:23
+   │
+53 │             let value = candidate.unwrap_unchecked();
+   │                       -
+   │
+
+error: Expected an item but found 'candidate'
+   ┌─ billboard_test/src/c02.nr:53:25
+   │
+53 │             let value = candidate.unwrap_unchecked();
+   │                         ---------
+   │
+
+error: Expected an item but found '.'
+   ┌─ billboard_test/src/c02.nr:53:34
+   │
+53 │             let value = candidate.unwrap_unchecked();
+   │                                  -
+   │
+
+error: Expected an item but found 'unwrap_unchecked'
+   ┌─ billboard_test/src/c02.nr:53:35
+   │
+53 │             let value = candidate.unwrap_unchecked();
+   │                                   ----------------
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:53:51
+   │
+53 │             let value = candidate.unwrap_unchecked();
+   │                                                   -
+   │
+
+error: Expected an item but found ')'
+   ┌─ billboard_test/src/c02.nr:53:52
+   │
+53 │             let value = candidate.unwrap_unchecked();
+   │                                                    -
+   │
+
+error: Expected an item but found ';'
+   ┌─ billboard_test/src/c02.nr:53:53
+   │
+53 │             let value = candidate.unwrap_unchecked();
+   │                                                     -
+   │
+
+error: Expected an item but found 'if'
+   ┌─ billboard_test/src/c02.nr:54:13
+   │
+54 │             if value.randomness == randomness {
+   │             --
+   │
+
+error: Expected an item but found 'value'
+   ┌─ billboard_test/src/c02.nr:54:16
+   │
+54 │             if value.randomness == randomness {
+   │                -----
+   │
+
+error: Expected an item but found '.'
+   ┌─ billboard_test/src/c02.nr:54:21
+   │
+54 │             if value.randomness == randomness {
+   │                     -
+   │
+
+error: Expected an item but found 'randomness'
+   ┌─ billboard_test/src/c02.nr:54:22
+   │
+54 │             if value.randomness == randomness {
+   │                      ----------
+   │
+
+error: Expected an item but found '=='
+   ┌─ billboard_test/src/c02.nr:54:33
+   │
+54 │             if value.randomness == randomness {
+   │                                 --
+   │
+
+error: Expected an item but found 'randomness'
+   ┌─ billboard_test/src/c02.nr:54:36
+   │
+54 │             if value.randomness == randomness {
+   │                                    ----------
+   │
+
+error: Expected an item but found '{'
+   ┌─ billboard_test/src/c02.nr:54:47
+   │
+54 │             if value.randomness == randomness {
+   │                                               -
+   │
+
+error: Expected an item but found 'matches'
+   ┌─ billboard_test/src/c02.nr:55:17
+   │
+55 │                 matches += 1;
+   │                 -------
+   │
+
+error: Expected an item but found '+'
+   ┌─ billboard_test/src/c02.nr:55:25
+   │
+55 │                 matches += 1;
+   │                         -
+   │
+
+error: Expected an item but found '='
+   ┌─ billboard_test/src/c02.nr:55:26
+   │
+55 │                 matches += 1;
+   │                          -
+   │
+
+error: Expected an item but found '1'
+   ┌─ billboard_test/src/c02.nr:55:28
+   │
+55 │                 matches += 1;
+   │                            -
+   │
+
+error: Expected an item but found ';'
+   ┌─ billboard_test/src/c02.nr:55:29
+   │
+55 │                 matches += 1;
+   │                             -
+   │
+
+error: Expected an item but found 'result'
+   ┌─ billboard_test/src/c02.nr:56:17
+   │
+56 │                 result = Option::some(value);
+   │                 ------
+   │
+
+error: Expected an item but found '='
+   ┌─ billboard_test/src/c02.nr:56:24
+   │
+56 │                 result = Option::some(value);
+   │                        -
+   │
+
+error: Expected an item but found 'Option'
+   ┌─ billboard_test/src/c02.nr:56:26
+   │
+56 │                 result = Option::some(value);
+   │                          ------
+   │
+
+error: Expected an item but found '::'
+   ┌─ billboard_test/src/c02.nr:56:32
+   │
+56 │                 result = Option::some(value);
+   │                                --
+   │
+
+error: Expected an item but found 'some'
+   ┌─ billboard_test/src/c02.nr:56:34
+   │
+56 │                 result = Option::some(value);
+   │                                  ----
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:56:38
+   │
+56 │                 result = Option::some(value);
+   │                                      -
+   │
+
+error: Expected an item but found 'value'
+   ┌─ billboard_test/src/c02.nr:56:39
+   │
+56 │                 result = Option::some(value);
+   │                                       -----
+   │
+
+error: Expected an item but found ')'
+   ┌─ billboard_test/src/c02.nr:56:44
+   │
+56 │                 result = Option::some(value);
+   │                                            -
+   │
+
+error: Expected an item but found ';'
+   ┌─ billboard_test/src/c02.nr:56:45
+   │
+56 │                 result = Option::some(value);
+   │                                             -
+   │
+
+error: Expected an item but found '}'
+   ┌─ billboard_test/src/c02.nr:57:13
+   │
+57 │             }
+   │             -
+   │
+
+error: Expected an item but found '}'
+   ┌─ billboard_test/src/c02.nr:58:9
+   │
+58 │         }
+   │         -
+   │
+
+error: Expected an item but found '}'
+   ┌─ billboard_test/src/c02.nr:59:5
+   │
+59 │     }
+   │     -
+   │
+
+error: Expected an item but found 'assert_eq'
+   ┌─ billboard_test/src/c02.nr:60:5
+   │
+60 │     assert_eq(matches, 1, "Fixture must select exactly its inserted note");
+   │     ---------
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:60:14
+   │
+60 │     assert_eq(matches, 1, "Fixture must select exactly its inserted note");
+   │              -
+   │
+
+error: Expected an item but found 'matches'
+   ┌─ billboard_test/src/c02.nr:60:15
+   │
+60 │     assert_eq(matches, 1, "Fixture must select exactly its inserted note");
+   │               -------
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:60:22
+   │
+60 │     assert_eq(matches, 1, "Fixture must select exactly its inserted note");
+   │                      -
+   │
+
+error: Expected an item but found '1'
+   ┌─ billboard_test/src/c02.nr:60:24
+   │
+60 │     assert_eq(matches, 1, "Fixture must select exactly its inserted note");
+   │                        -
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:60:25
+   │
+60 │     assert_eq(matches, 1, "Fixture must select exactly its inserted note");
+   │                         -
+   │
+
+error: Expected an item but found '"Fixture must select exactly its inserted note"'
+   ┌─ billboard_test/src/c02.nr:60:27
+   │
+60 │     assert_eq(matches, 1, "Fixture must select exactly its inserted note");
+   │                           -----------------------------------------------
+   │
+
+error: Expected an item but found ')'
+   ┌─ billboard_test/src/c02.nr:60:74
+   │
+60 │     assert_eq(matches, 1, "Fixture must select exactly its inserted note");
+   │                                                                          -
+   │
+
+error: Expected an item but found ';'
+   ┌─ billboard_test/src/c02.nr:60:75
+   │
+60 │     assert_eq(matches, 1, "Fixture must select exactly its inserted note");
+   │                                                                           -
+   │
+
+error: Expected an item but found 'let'
+   ┌─ billboard_test/src/c02.nr:61:5
+   │
+61 │     let hint = result.unwrap_unchecked();
+   │     ---
+   │
+
+error: Expected an item but found 'hint'
+   ┌─ billboard_test/src/c02.nr:61:9
+   │
+61 │     let hint = result.unwrap_unchecked();
+   │         ----
+   │
+
+error: Expected an item but found '='
+   ┌─ billboard_test/src/c02.nr:61:14
+   │
+61 │     let hint = result.unwrap_unchecked();
+   │              -
+   │
+
+error: Expected an item but found 'result'
+   ┌─ billboard_test/src/c02.nr:61:16
+   │
+61 │     let hint = result.unwrap_unchecked();
+   │                ------
+   │
+
+error: Expected an item but found '.'
+   ┌─ billboard_test/src/c02.nr:61:22
+   │
+61 │     let hint = result.unwrap_unchecked();
+   │                      -
+   │
+
+error: Expected an item but found 'unwrap_unchecked'
+   ┌─ billboard_test/src/c02.nr:61:23
+   │
+61 │     let hint = result.unwrap_unchecked();
+   │                       ----------------
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:61:39
+   │
+61 │     let hint = result.unwrap_unchecked();
+   │                                       -
+   │
+
+error: Expected an item but found ')'
+   ┌─ billboard_test/src/c02.nr:61:40
+   │
+61 │     let hint = result.unwrap_unchecked();
+   │                                        -
+   │
+
+error: Expected an item but found ';'
+   ┌─ billboard_test/src/c02.nr:61:41
+   │
+61 │     let hint = result.unwrap_unchecked();
+   │                                         -
+   │
+
+error: Expected an item but found 'assert_eq'
+   ┌─ billboard_test/src/c02.nr:62:5
+   │
+62 │     assert_eq(hint.note, note);
+   │     ---------
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:62:14
+   │
+62 │     assert_eq(hint.note, note);
+   │              -
+   │
+
+error: Expected an item but found 'hint'
+   ┌─ billboard_test/src/c02.nr:62:15
+   │
+62 │     assert_eq(hint.note, note);
+   │               ----
+   │
+
+error: Expected an item but found '.'
+   ┌─ billboard_test/src/c02.nr:62:19
+   │
+62 │     assert_eq(hint.note, note);
+   │                   -
+   │
+
+error: Expected an item but found 'note'
+   ┌─ billboard_test/src/c02.nr:62:20
+   │
+62 │     assert_eq(hint.note, note);
+   │                    ----
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:62:24
+   │
+62 │     assert_eq(hint.note, note);
+   │                        -
+   │
+
+error: Expected an item but found 'note'
+   ┌─ billboard_test/src/c02.nr:62:26
+   │
+62 │     assert_eq(hint.note, note);
+   │                          ----
+   │
+
+error: Expected an item but found ')'
+   ┌─ billboard_test/src/c02.nr:62:30
+   │
+62 │     assert_eq(hint.note, note);
+   │                              -
+   │
+
+error: Expected an item but found ';'
+   ┌─ billboard_test/src/c02.nr:62:31
+   │
+62 │     assert_eq(hint.note, note);
+   │                               -
+   │
+
+error: Expected an item but found 'assert_eq'
+   ┌─ billboard_test/src/c02.nr:63:5
+   │
+63 │     assert_eq(hint.owner, owner);
+   │     ---------
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:63:14
+   │
+63 │     assert_eq(hint.owner, owner);
+   │              -
+   │
+
+error: Expected an item but found 'hint'
+   ┌─ billboard_test/src/c02.nr:63:15
+   │
+63 │     assert_eq(hint.owner, owner);
+   │               ----
+   │
+
+error: Expected an item but found '.'
+   ┌─ billboard_test/src/c02.nr:63:19
+   │
+63 │     assert_eq(hint.owner, owner);
+   │                   -
+   │
+
+error: Expected an item but found 'owner'
+   ┌─ billboard_test/src/c02.nr:63:20
+   │
+63 │     assert_eq(hint.owner, owner);
+   │                    -----
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:63:25
+   │
+63 │     assert_eq(hint.owner, owner);
+   │                         -
+   │
+
+error: Expected an item but found 'owner'
+   ┌─ billboard_test/src/c02.nr:63:27
+   │
+63 │     assert_eq(hint.owner, owner);
+   │                           -----
+   │
+
+error: Expected an item but found ')'
+   ┌─ billboard_test/src/c02.nr:63:32
+   │
+63 │     assert_eq(hint.owner, owner);
+   │                                -
+   │
+
+error: Expected an item but found ';'
+   ┌─ billboard_test/src/c02.nr:63:33
+   │
+63 │     assert_eq(hint.owner, owner);
+   │                                 -
+   │
+
+error: Expected an item but found 'assert_eq'
+   ┌─ billboard_test/src/c02.nr:64:5
+   │
+64 │     assert_eq(hint.contract_address, contract);
+   │     ---------
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:64:14
+   │
+64 │     assert_eq(hint.contract_address, contract);
+   │              -
+   │
+
+error: Expected an item but found 'hint'
+   ┌─ billboard_test/src/c02.nr:64:15
+   │
+64 │     assert_eq(hint.contract_address, contract);
+   │               ----
+   │
+
+error: Expected an item but found '.'
+   ┌─ billboard_test/src/c02.nr:64:19
+   │
+64 │     assert_eq(hint.contract_address, contract);
+   │                   -
+   │
+
+error: Expected an item but found 'contract_address'
+   ┌─ billboard_test/src/c02.nr:64:20
+   │
+64 │     assert_eq(hint.contract_address, contract);
+   │                    ----------------
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:64:36
+   │
+64 │     assert_eq(hint.contract_address, contract);
+   │                                    -
+   │
+
+error: Expected an identifier but found ')'
+   ┌─ billboard_test/src/c02.nr:64:46
+   │
+64 │     assert_eq(hint.contract_address, contract);
+   │                                              -
+   │
+
+error: Expected an item but found 'assert_eq'
+   ┌─ billboard_test/src/c02.nr:65:5
+   │
+65 │     assert_eq(hint.storage_slot, slot);
+   │     ---------
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:65:14
+   │
+65 │     assert_eq(hint.storage_slot, slot);
+   │              -
+   │
+
+error: Expected an item but found 'hint'
+   ┌─ billboard_test/src/c02.nr:65:15
+   │
+65 │     assert_eq(hint.storage_slot, slot);
+   │               ----
+   │
+
+error: Expected an item but found '.'
+   ┌─ billboard_test/src/c02.nr:65:19
+   │
+65 │     assert_eq(hint.storage_slot, slot);
+   │                   -
+   │
+
+error: Expected an item but found 'storage_slot'
+   ┌─ billboard_test/src/c02.nr:65:20
+   │
+65 │     assert_eq(hint.storage_slot, slot);
+   │                    ------------
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:65:32
+   │
+65 │     assert_eq(hint.storage_slot, slot);
+   │                                -
+   │
+
+error: Expected an item but found 'slot'
+   ┌─ billboard_test/src/c02.nr:65:34
+   │
+65 │     assert_eq(hint.storage_slot, slot);
+   │                                  ----
+   │
+
+error: Expected an item but found ')'
+   ┌─ billboard_test/src/c02.nr:65:38
+   │
+65 │     assert_eq(hint.storage_slot, slot);
+   │                                      -
+   │
+
+error: Expected an item but found ';'
+   ┌─ billboard_test/src/c02.nr:65:39
+   │
+65 │     assert_eq(hint.storage_slot, slot);
+   │                                       -
+   │
+
+error: Expected an item but found 'hint'
+   ┌─ billboard_test/src/c02.nr:66:5
+   │
+66 │     hint
+   │     ----
+   │
+
+error: Expected an item but found '}'
+   ┌─ billboard_test/src/c02.nr:67:1
+   │
+67 │ }
+   │ -
+   │
+
+error: Expected a pattern but found 'contract'
+   ┌─ billboard_test/src/c02.nr:88:9
+   │
+88 │     let contract = if kind == 0 {
+   │         --------
+   │
+
+error: Expected a '=' but found 'contract'
+   ┌─ billboard_test/src/c02.nr:88:9
+   │
+88 │     let contract = if kind == 0 {
+   │         --------
+   │
+
+error: Expected a statement but found 'contract'
+   ┌─ billboard_test/src/c02.nr:88:9
+   │
+88 │     let contract = if kind == 0 {
+   │         --------
+   │
+
+error: Expected a statement but found '='
+   ┌─ billboard_test/src/c02.nr:88:18
+   │
+88 │     let contract = if kind == 0 {
+   │                  -
+   │
+
+error: Expected an expression but found 'contract'
+   ┌─ billboard_test/src/c02.nr:97:43
+   │
+97 │     let replacement = insert_fixture(env, contract, note_owner, slot, note);
+   │                                           --------
+   │
+
+error: Expected a statement but found 'contract'
+   ┌─ billboard_test/src/c02.nr:97:43
+   │
+97 │     let replacement = insert_fixture(env, contract, note_owner, slot, note);
+   │                                           --------
+   │
+
+error: Expected a statement but found ','
+   ┌─ billboard_test/src/c02.nr:97:51
+   │
+97 │     let replacement = insert_fixture(env, contract, note_owner, slot, note);
+   │                                                   -
+   │
+
+error: Expected a statement but found ','
+   ┌─ billboard_test/src/c02.nr:97:63
+   │
+97 │     let replacement = insert_fixture(env, contract, note_owner, slot, note);
+   │                                                               -
+   │
+
+error: Expected a statement but found ','
+   ┌─ billboard_test/src/c02.nr:97:69
+   │
+97 │     let replacement = insert_fixture(env, contract, note_owner, slot, note);
+   │                                                                     -
+   │
+
+error: Expected a statement but found ')'
+   ┌─ billboard_test/src/c02.nr:97:75
+   │
+97 │     let replacement = insert_fixture(env, contract, note_owner, slot, note);
+   │                                                                           -
+   │
+
+error: Expected a statement but found 'included'
+   ┌─ billboard_test/src/c02.nr:99:5
+   │
+99 │     included(env, board, replacement);
+   │     --------
+   │
+
+error: Expected a statement but found 'included'
+   ┌─ billboard_test/src/c02.nr:99:5
+   │
+99 │     included(env, board, replacement);
+   │     --------
+   │
+
+error: Expected a ; after `let` statement
+   ┌─ billboard_test/src/c02.nr:88:5
+   │
+88 │     let contract = if kind == 0 {
+   │     ---
+   │
+
+error: Expected a ; after `let` statement
+   ┌─ billboard_test/src/c02.nr:97:41
+   │
+97 │     let replacement = insert_fixture(env, contract, note_owner, slot, note);
+   │                                         -
+   │
+
+error: Expected a ; separating these two statements
+   ┌─ billboard_test/src/c02.nr:97:53
+   │
+97 │     let replacement = insert_fixture(env, contract, note_owner, slot, note);
+   │                                                     ----------
+   │
+
+error: Expected a ; separating these two statements
+   ┌─ billboard_test/src/c02.nr:97:65
+   │
+97 │     let replacement = insert_fixture(env, contract, note_owner, slot, note);
+   │                                                                 ----
+   │
+
+error: Expected an item but found 'included'
+   ┌─ billboard_test/src/c02.nr:99:5
+   │
+99 │     included(env, board, replacement);
+   │     --------
+   │
+
+error: Expected an item but found '('
+   ┌─ billboard_test/src/c02.nr:99:13
+   │
+99 │     included(env, board, replacement);
+   │             -
+   │
+
+error: Expected an item but found 'env'
+   ┌─ billboard_test/src/c02.nr:99:14
+   │
+99 │     included(env, board, replacement);
+   │              ---
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:99:17
+   │
+99 │     included(env, board, replacement);
+   │                 -
+   │
+
+error: Expected an item but found 'board'
+   ┌─ billboard_test/src/c02.nr:99:19
+   │
+99 │     included(env, board, replacement);
+   │                   -----
+   │
+
+error: Expected an item but found ','
+   ┌─ billboard_test/src/c02.nr:99:24
+   │
+99 │     included(env, board, replacement);
+   │                        -
+   │
+
+error: Expected an item but found 'replacement'
+   ┌─ billboard_test/src/c02.nr:99:26
+   │
+99 │     included(env, board, replacement);
+   │                          -----------
+   │
+
+error: Expected an item but found ')'
+   ┌─ billboard_test/src/c02.nr:99:37
+   │
+99 │     included(env, board, replacement);
+   │                                     -
+   │
+
+error: Expected an item but found ';'
+   ┌─ billboard_test/src/c02.nr:99:38
+   │
+99 │     included(env, board, replacement);
+   │                                      -
+   │
+
+error: Expected an item but found 'env'
+    ┌─ billboard_test/src/c02.nr:100:5
+    │
+100 │     env.mine_block_at(deposit_time + 7202);
+    │     ---
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_test/src/c02.nr:100:8
+    │
+100 │     env.mine_block_at(deposit_time + 7202);
+    │        -
+    │
+
+error: Expected an item but found 'mine_block_at'
+    ┌─ billboard_test/src/c02.nr:100:9
+    │
+100 │     env.mine_block_at(deposit_time + 7202);
+    │         -------------
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_test/src/c02.nr:100:22
+    │
+100 │     env.mine_block_at(deposit_time + 7202);
+    │                      -
+    │
+
+error: Expected an item but found 'deposit_time'
+    ┌─ billboard_test/src/c02.nr:100:23
+    │
+100 │     env.mine_block_at(deposit_time + 7202);
+    │                       ------------
+    │
+
+error: Expected an item but found '+'
+    ┌─ billboard_test/src/c02.nr:100:36
+    │
+100 │     env.mine_block_at(deposit_time + 7202);
+    │                                    -
+    │
+
+error: Expected an item but found '7202'
+    ┌─ billboard_test/src/c02.nr:100:38
+    │
+100 │     env.mine_block_at(deposit_time + 7202);
+    │                                      ----
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_test/src/c02.nr:100:42
+    │
+100 │     env.mine_block_at(deposit_time + 7202);
+    │                                          -
+    │
+
+error: Expected an item but found ';'
+    ┌─ billboard_test/src/c02.nr:100:43
+    │
+100 │     env.mine_block_at(deposit_time + 7202);
+    │                                           -
+    │
+
+error: Expected an item but found 'env'
+    ┌─ billboard_test/src/c02.nr:101:5
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │     ---
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_test/src/c02.nr:101:8
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │        -
+    │
+
+error: Expected an item but found 'call_private'
+    ┌─ billboard_test/src/c02.nr:101:9
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │         ------------
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_test/src/c02.nr:101:21
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                     -
+    │
+
+error: Expected an item but found 'owner'
+    ┌─ billboard_test/src/c02.nr:101:22
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                      -----
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_test/src/c02.nr:101:27
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                           -
+    │
+
+error: Expected an item but found 'Billboard'
+    ┌─ billboard_test/src/c02.nr:101:29
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                             ---------
+    │
+
+error: Expected an item but found '::'
+    ┌─ billboard_test/src/c02.nr:101:38
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                      --
+    │
+
+error: Expected an item but found 'at'
+    ┌─ billboard_test/src/c02.nr:101:40
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                        --
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_test/src/c02.nr:101:42
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                          -
+    │
+
+error: Expected an item but found 'board'
+    ┌─ billboard_test/src/c02.nr:101:43
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                           -----
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_test/src/c02.nr:101:48
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                -
+    │
+
+error: Expected an item but found '.'
+    ┌─ billboard_test/src/c02.nr:101:49
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                 -
+    │
+
+error: Expected an item but found 'post'
+    ┌─ billboard_test/src/c02.nr:101:50
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                  ----
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_test/src/c02.nr:101:54
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                      -
+    │
+
+error: Expected an item but found 'chain'
+    ┌─ billboard_test/src/c02.nr:101:55
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                       -----
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_test/src/c02.nr:101:60
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                            -
+    │
+
+error: Expected an item but found 'content'
+    ┌─ billboard_test/src/c02.nr:101:62
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                              -------
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_test/src/c02.nr:101:69
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                     -
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_test/src/c02.nr:101:70
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                      -
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_test/src/c02.nr:101:71
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                       -
+    │
+
+error: Expected an item but found 'false'
+    ┌─ billboard_test/src/c02.nr:101:73
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                         -----
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_test/src/c02.nr:101:78
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                              -
+    │
+
+error: Expected an item but found 'Option'
+    ┌─ billboard_test/src/c02.nr:101:80
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                ------
+    │
+
+error: Expected an item but found '::'
+    ┌─ billboard_test/src/c02.nr:101:86
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                      --
+    │
+
+error: Expected an item but found 'some'
+    ┌─ billboard_test/src/c02.nr:101:88
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                        ----
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_test/src/c02.nr:101:92
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                            -
+    │
+
+error: Expected an item but found 'replacement'
+    ┌─ billboard_test/src/c02.nr:101:93
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                             -----------
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_test/src/c02.nr:101:104
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                                        -
+    │
+
+error: Expected an item but found ','
+    ┌─ billboard_test/src/c02.nr:101:105
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                                         -
+    │
+
+error: Expected an item but found 'Option'
+    ┌─ billboard_test/src/c02.nr:101:107
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                                           ------
+    │
+
+error: Expected an item but found '::'
+    ┌─ billboard_test/src/c02.nr:101:113
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                                                 --
+    │
+
+error: Expected an item but found 'none'
+    ┌─ billboard_test/src/c02.nr:101:115
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                                                   ----
+    │
+
+error: Expected an item but found '('
+    ┌─ billboard_test/src/c02.nr:101:119
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                                                       -
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_test/src/c02.nr:101:120
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                                                        -
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_test/src/c02.nr:101:121
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                                                         -
+    │
+
+error: Expected an item but found ')'
+    ┌─ billboard_test/src/c02.nr:101:122
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                                                          -
+    │
+
+error: Expected an item but found ';'
+    ┌─ billboard_test/src/c02.nr:101:123
+    │
+101 │     env.call_private(owner, Billboard::at(board).post(chain, content(), false, Option::some(replacement), Option::none()));
+    │                                                                                                                           -
+    │
+
+error: Expected an item but found '}'
+    ┌─ billboard_test/src/c02.nr:102:1
+    │
+102 │ }
+    │ -
+    │
+
+error: anchor_block_header is private and not visible from the current module
+   ┌─ billboard_test/src/c02.nr:22:56
+   │
+22 │         let confirmed = assert_note_existed_by(context.anchor_block_header, hint);
+   │                                                        ------------------- anchor_block_header is private
+   │
+
+error: Function expects 2 parameters but 1 was given
+   ┌─ billboard_test/src/c02.nr:39:9
+   │
+39 │         PrivateContextOptions::new().at_contract_address(contract),
+   │         ------------------------------------------------
+   │
+
+error: Function expects 3 parameters but 2 were given
+   ┌─ billboard_test/src/c02.nr:38:19
+   │
+38 │     let message = env.private_context_opts(
+   │                   ------------------------
+   │
+
+error: expected type HintedNote<PostNote>, found type fn[(AztecAddress, Field, PostNote)](&mut PrivateContext) -> NoteMessage<PostNote>
+   ┌─ billboard_test/src/c02.nr:37:6
+   │
+37 │ ) -> HintedNote<PostNote> {
+   │      -------------------- expected HintedNote<PostNote> because of return type
+   ·
+40 │         |context| create_note(context, owner, slot, note),
+   │         ------------------------------------------------- fn[(AztecAddress, Field, PostNote)](&mut PrivateContext) -> NoteMessage<PostNote> returned here
+   │
+
+error: Type annotation needed
+   ┌─ billboard_test/src/c02.nr:38:19
+   │
+38 │     let message = env.private_context_opts(
+   │                   ------------------------ Could not determine the type of the generic argument `Env` declared on the function `private_context_opts`
+   │
+
+error: Type annotation needed
+   ┌─ billboard_test/src/c02.nr:38:19
+   │
+38 │     let message = env.private_context_opts(
+   │                   ------------------------ Could not determine the type of the generic argument `T` declared on the function `private_context_opts`
+   │
+
+error: Function expects 5 parameters but 1 was given
+   ┌─ billboard_test/src/c02.nr:97:23
+   │
+97 │     let replacement = insert_fixture(env, contract, note_owner, slot, note);
+   │                       -------------------
+   │
+
+error: expected type (), found type PostNote
+   ┌─ billboard_test/src/c02.nr:85:45
+   │
+85 │ unconstrained fn substituted_child(kind: u8) {
+   │                                             - expected () because of return type
+   ·
+97 │     let replacement = insert_fixture(env, contract, note_owner, slot, note);
+   │                                                                       ---- PostNote returned here
+   │
+   = help: try adding a return type: `-> PostNote`
+
+Aborting due to 306 previous errors
+Error: Test command exited unexpectedly: 1
+    at exitError (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/process-lifecycle.mjs:58:26)
+    at runWithService (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/process-lifecycle.mjs:103:67)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-noir.mjs:17:3

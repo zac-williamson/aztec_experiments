@@ -1,0 +1,22 @@
+{"profile":"C01 consistent-scope TXE","chain":1,"version":1,"originalPublicVersion":2,"realProofs":false,"port":58186}
+[02:09:06.132] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+error: anchor_block_header is private and not visible from the current module
+   ┌─ billboard_test/src/c02.nr:22:56
+   │
+22 │         let confirmed = assert_note_existed_by(context.anchor_block_header, hint);
+   │                                                        ------------------- anchor_block_header is private
+   │
+
+error: new_note is private and not visible from the current module
+   ┌─ billboard_test/src/c02.nr:42:30
+   │
+42 │     let randomness = message.new_note.randomness;
+   │                              -------- new_note is private
+   │
+
+Aborting due to 2 previous errors
+Error: Test command exited unexpectedly: 1
+    at exitError (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/process-lifecycle.mjs:58:26)
+    at runWithService (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/process-lifecycle.mjs:103:67)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-noir.mjs:17:3

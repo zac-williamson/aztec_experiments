@@ -257,3 +257,12 @@ accounting; trust the protocol settlement test fixture at that boundary. Label
 controlled settlement honestly. No server prover/native AVM build/epoch CRS is
 required. Application integration has a hard deadline below10minutes. Release
 network verification and independent application audit remain separate gates.
+
+## 2026-09-15 — production target reaffirmed
+
+The user reaffirmed production readiness, explicitly rejecting a reduced tech-demo
+engineering standard. Current V5 suitability is deferred and must not block
+application work. V6 compatibility and target-network clearance will be assessed
+before production release; no speculative dependency upgrade is made now. Audit,
+security, reliability and release checks remain. C02 scope includes application
+proof-test scripts and regenerated artifacts.

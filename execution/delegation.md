@@ -359,3 +359,7 @@ notes only. Both remain unapplied until C01 closes; no parallel heavy checks.
 C02 draft preparation complete: root production-draft.patch; build_review first
 13 tests, second8 history tests, metadata/API review; all unapplied and unverified.
 Agent idle. Root continues sole C01 genuine run and will apply only after closure.
+
+2026-09-15 C02: root owns contract/test patch integration and TXE checks; build_review
+owns scripts/c02-screening-flow.mjs and its notes only. Heavy checks remain bounded
+and serial. No network prover.

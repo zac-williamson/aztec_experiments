@@ -74,12 +74,12 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
               const {completeC01Bridge}=await import('./c01-bridge-flow.mjs');
               observation.bridge=await completeC01Bridge({node,config:nodeConfig,dateProvider,l1Client:deployment.l1Client,
                 directory,rollupAddress:deployment.l1ContractAddresses.rollupAddress,preparation,
-                instance:observation.board.instance,ready:observation.ready,settlement:observation.settlement,mark});
+                instance:observation.board.instance,ready:observation.ready,settlement:observation.settlement,mark,screeningOnly:process.env.C02_SCREENING==='true'});
               assert(observation.bridge.passed);
             }
           }
         }
-        observation.sequencerStarted=true;observation.scope=observation.bridge?.passed?'application proofs, controlled settlement, deposit/claim/exit/refund':observation.settlement?.passed?'controlled Ready settlement and enabled portal':'genuine client proof and ordinary checkpoint inclusion; no epoch proof acceptance';observation.epochSchedulingStarted=false;observation.idleProverAgentCreated=false;}
+        observation.sequencerStarted=true;observation.scope=observation.bridge?.screening?.passed?'application posting and authenticated screening proofs':observation.bridge?.passed?'application proofs, controlled settlement, deposit/claim/exit/refund':observation.settlement?.passed?'controlled Ready settlement and enabled portal':'genuine client proof and ordinary checkpoint inclusion; no epoch proof acceptance';observation.epochSchedulingStarted=false;observation.idleProverAgentCreated=false;}
 
     }
     observation.passed=true;

@@ -20,10 +20,12 @@ pub contract Billboard {
             note_viewer_options::NoteViewerOptions,
             note_interface::{NoteHash, NoteProperties},
             HintedNote,
+            ConfirmedNote,
             NoteMessage,
         },
         protocol::{
             address::{AztecAddress, EthAddress},
+            abis::block_header::BlockHeader,
                         traits::{Deserialize, FromField, Packable, Serialize, ToField},
         },
         state_vars::{Map, Owned, PrivateSet, PublicImmutable, PublicMutable, StateVariable},
@@ -78,6 +80,33 @@ pub contract Billboard {
         pub anchor_timestamp: u64,
         pub previous_link: Field,
         pub is_dummy: bool,
+    }
+
+    // Constructed only from the executing board, caller and selected live deposit.
+    // Merkle inclusion alone authorizes neither a foreign contract nor another owner.
+    pub struct ScreeningScope {
+        pub board: AztecAddress,
+        pub owner: AztecAddress,
+        pub slot: Field,
+        pub chain: Field,
+    }
+
+    impl ScreeningScope {
+        fn assert_identity(self, board: AztecAddress, owner: AztecAddress, slot: Field, note: PostNote) {
+            assert(board == self.board, "C02 wrong contract");
+            assert(owner == self.owner, "C02 wrong owner");
+            assert(slot == self.slot, "C02 wrong slot");
+            assert(note.schema_version == 1, "C02 wrong schema");
+            assert((note.deposit_chain_id == self.chain) & (self.chain != 0), "C02 wrong chain");
+        }
+
+        fn authenticate(self, header: BlockHeader, hinted: HintedNote<PostNote>) -> ConfirmedNote<PostNote> {
+            self.assert_identity(hinted.contract_address, hinted.owner, hinted.storage_slot, hinted.note);
+            let confirmed = assert_note_existed_by(header, hinted);
+            self.assert_identity(confirmed.contract_address, confirmed.owner, confirmed.storage_slot, confirmed.note);
+            assert(confirmed.note.anchor_timestamp <= header.timestamp(), "C02 future timestamp");
+            confirmed
+        }
     }
 
     #[derive(Deserialize, Eq, Serialize, Packable)]
@@ -366,79 +395,69 @@ pub contract Billboard {
         let mut new_screened_link = dep_note.screened_link;
         let mut new_screened_sequence = dep_note.sequences.screened_sequence;
 
-        // Screening is needed if there are unscreened posts:
-        //   last_screened != head AND head != SENTINEL (posts exist)
-        let need_screening = (dep_note.screened_link != dep_note.head_link)
-            & (dep_note.head_link != SENTINEL);
+        let head_sequence = dep_note.sequences.head_sequence;
+        let screened_sequence = dep_note.sequences.screened_sequence;
+        assert(screened_sequence <= head_sequence, "C02 deposit sequence");
+        assert(dep_note.sequences.last_real_sequence <= head_sequence, "C02 deposit real sequence");
+        assert((head_sequence == 0) == (dep_note.head_link == SENTINEL), "C02 deposit head");
+        assert((screened_sequence == 0) == (dep_note.screened_link == SENTINEL), "C02 deposit screened link");
+        assert((screened_sequence == head_sequence) == (dep_note.screened_link == dep_note.head_link), "C02 deposit progress");
+        let need_screening = screened_sequence < head_sequence;
+        let scope = ScreeningScope { board: addr, owner: sender,
+            slot: self.storage.posts.at(sender).storage_slot, chain: deposit_chain_id };
 
-        // Censor window threshold: posts older than this can be screened
+        // Real-post public inclusion/deadline records are introduced by C03/C05.
+        // This inherited real-post maturity rule is not the final public deadline guarantee.
         let screen_threshold: u64 = if now >= censor_window { now - censor_window } else { 0 };
-
         if need_screening {
-            // --- Verify and screen child ---
             assert(child.is_some(), "Child note required for screening");
-            let child_hinted = child.unwrap_unchecked();
-            let child_confirmed = assert_note_existed_by(header, child_hinted);
+            let child_confirmed = scope.authenticate(header, child.unwrap_unchecked());
+            let cn = child_confirmed.note;
+            assert((cn.sequence == screened_sequence + 1) & (cn.sequence <= head_sequence), "C02 child sequence");
+            assert(cn.previous_link == dep_note.screened_link, "C02 child previous link");
+            let child_inner_hash = cn.compute_note_hash(child_confirmed.owner,
+                child_confirmed.storage_slot, child_confirmed.randomness);
+            let child_link = post_link(addr, sender, deposit_chain_id, cn.sequence, child_inner_hash, link_secret);
+            let child_is_head = cn.sequence == head_sequence;
+            assert((child_link == dep_note.head_link) == child_is_head, "C02 child head");
+            let child_mature = cn.is_dummy | ((now >= censor_window) & (cn.anchor_timestamp <= screen_threshold));
 
-            // Verify child is the next post after last_screened
-            let child_inner_hash = child_confirmed.note.compute_note_hash(
-                child_confirmed.owner,
-                child_confirmed.storage_slot,
-                child_confirmed.randomness,
-            );
-            let child_link = post_link(self.address, sender, deposit_chain_id, child_confirmed.note.sequence, child_inner_hash, link_secret);
-            assert(
-                child_confirmed.note.previous_link == dep_note.screened_link,
-                "Child does not link to last_screened",
-            );
-
-            // Can only screen if child is older than censor_window
-            if child_confirmed.note.anchor_timestamp <= screen_threshold {
-                // Screen child — check flag status
-                let child_flag_slot = self.storage.post_flagged.at(child_confirmed.note.post_id as u32).get_storage_slot();
-                let child_flagged = public_storage_historical_read(header, child_flag_slot, addr);
-                if child_flagged == 1 {
-                    flag_count += 1;
+            if child_is_head {
+                assert(grandchild.is_none(), "C02 unexpected grandchild");
+            } else if child_mature {
+                assert(grandchild.is_some(), "Grandchild note required for screening");
+            }
+            if child_mature {
+                if !cn.is_dummy {
+                    let flag_slot = self.storage.post_flagged.at(cn.post_id as u32).get_storage_slot();
+                    if public_storage_historical_read(header, flag_slot, addr) == 1 { flag_count += 1; }
                 }
                 new_screened_link = child_link;
-                new_screened_sequence = child_confirmed.note.sequence;
-
-                // --- Check if grandchild is needed and available ---
-                // Grandchild is exempt if:
-                //   (i) child is the head (no grandchild exists), OR
-                //   (ii) grandchild would be too young to screen (but we still provide it
-                //        and the circuit checks its timestamp)
-                let child_is_head = child_link == dep_note.head_link;
-
-                if !child_is_head {
-                    // Verify and screen grandchild
-                    assert(grandchild.is_some(), "Grandchild note required for screening");
-                    let gc_hinted = grandchild.unwrap_unchecked();
-                    let gc_confirmed = assert_note_existed_by(header, gc_hinted);
-
-                    let gc_inner_hash = gc_confirmed.note.compute_note_hash(
-                        gc_confirmed.owner,
-                        gc_confirmed.storage_slot,
-                        gc_confirmed.randomness,
-                    );
-                    let gc_link = post_link(self.address, sender, deposit_chain_id, gc_confirmed.note.sequence, gc_inner_hash, link_secret);
-                    assert(
-                        gc_confirmed.note.previous_link == child_link,
-                        "Grandchild does not link to child",
-                    );
-
-                    // Can only screen grandchild if old enough
-                    if gc_confirmed.note.anchor_timestamp <= screen_threshold {
-                        let gc_flag_slot = self.storage.post_flagged.at(gc_confirmed.note.post_id as u32).get_storage_slot();
-                        let gc_flagged = public_storage_historical_read(header, gc_flag_slot, addr);
-                        if gc_flagged == 1 {
-                            flag_count += 1;
-                        }
-                        new_screened_link = gc_link;
-                        new_screened_sequence = gc_confirmed.note.sequence;
+                new_screened_sequence = cn.sequence;
+            }
+            // Even a currently unusable supplied successor must be authentic and consecutive.
+            if grandchild.is_some() {
+                let gc_confirmed = scope.authenticate(header, grandchild.unwrap_unchecked());
+                let gn = gc_confirmed.note;
+                assert((gn.sequence == cn.sequence + 1) & (gn.sequence <= head_sequence), "C02 grandchild sequence");
+                assert(gn.previous_link == child_link, "C02 grandchild previous link");
+                assert(gn.anchor_timestamp >= cn.anchor_timestamp, "C02 reversed timestamps");
+                let gc_inner_hash = gn.compute_note_hash(gc_confirmed.owner,
+                    gc_confirmed.storage_slot, gc_confirmed.randomness);
+                let gc_link = post_link(addr, sender, deposit_chain_id, gn.sequence, gc_inner_hash, link_secret);
+                assert((gc_link == dep_note.head_link) == (gn.sequence == head_sequence), "C02 grandchild head");
+                let gc_mature = gn.is_dummy | ((now >= censor_window) & (gn.anchor_timestamp <= screen_threshold));
+                if child_mature & gc_mature {
+                    if !gn.is_dummy {
+                        let flag_slot = self.storage.post_flagged.at(gn.post_id as u32).get_storage_slot();
+                        if public_storage_historical_read(header, flag_slot, addr) == 1 { flag_count += 1; }
                     }
+                    new_screened_link = gc_link;
+                    new_screened_sequence = gn.sequence;
                 }
             }
+        } else {
+            assert(child.is_none() & grandchild.is_none(), "C02 unexpected hints");
         }
 
         // --- Compute earliest usable time (save-up rule) ---
@@ -490,6 +509,7 @@ pub contract Billboard {
             new_note.randomness,
         );
         let new_link = post_link(self.address, sender, deposit_chain_id, sequence, inner_hash, link_secret);
+        assert(new_link != SENTINEL, "C02 invalid new head");
 
         NoteMessage::new(new_note, self.context).deliver(MessageDelivery::onchain_constrained());
 

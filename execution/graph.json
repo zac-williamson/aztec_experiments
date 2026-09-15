@@ -367,7 +367,7 @@
       "title": "Bind screening to authentic owner and deposit ancestry",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "C01"
       ],
@@ -379,7 +379,11 @@
       ],
       "scope": [
         "billboard/billboard_contract/",
-        "billboard/billboard_test/"
+        "billboard/billboard_test/",
+        "scripts/",
+        "execution/",
+        "apps/src/billboard/",
+        "TESTING.md"
       ],
       "plan": "tasks/C02.md",
       "actions": [
@@ -408,7 +412,7 @@
       "evidence": "evidence/C02.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "Verified129 Noir tests,53client tests and genuine application screening (301649ms,1157056KiB peak); source-bound evidence/review complete. Continue C03 post-counter contention.",
       "priority": 7
     },
     {

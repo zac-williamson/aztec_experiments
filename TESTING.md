@@ -10,6 +10,10 @@ Use the pinned Node24 runtime and Foundry versions in BUILDING.md.
   deposit-note delivery/burn, refund accounting and duplicate rejection. The parent
   enforces a nine-minute deadline and cleans its owned processes on failure.
 
+- `node scripts/test-c01-application.mjs --screening`: real deposit claim and two
+  real post proofs, checking authenticated screening and exact private-note state.
+  Uses the same nine-minute bound; writes evidence under `execution/evidence/C02`.
+
 The bridge test uses the installed Aztec SDK's `RollupCheatCodes` and
 `settleEpochOutbox` to advance local epochs and settle actual emitted messages.
 Network epoch proofs, protocol verifier qualification and Ethereum finality are

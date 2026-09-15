@@ -1,5 +1,6 @@
 mod c01;
 mod compact_note;
+mod c02;
 
 // ============================================================
 // Billboard — Noir unit tests (run with `aztec test`)
