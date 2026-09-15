@@ -308,12 +308,15 @@
       }
 
       async sendTx(executionPayload, opts) {
-        log('  Estimating gas (simulating tx)...', 'info');
+        const sponsored = opts.from === a.NO_FROM;
+        if (sponsored && !opts.fee?.gasSettings) throw sponsorFailure();
+        const checkedGas = sponsored ? a.GasSettings.from(opts.fee.gasSettings) : null;
+        log(sponsored ? '  Simulating with checked sponsor gas limits...' : '  Estimating gas (simulating tx)...', 'info');
         const feeOptions = await this.completeFeeOptions({
           from: opts.from,
           feePayer: executionPayload.feePayer,
           gasSettings: opts.fee?.gasSettings,
-          forEstimation: true,
+          forEstimation: !sponsored,
         });
 
         const simResult = await retry(
@@ -326,8 +329,8 @@
 
         const gu = simResult.gasUsed;
         const pad = 1 + this._estimatedGasPadding;
-        const gasLimits = gu.totalGas.mul(pad);
-        const teardownGasLimits = gu.teardownGas.mul(pad);
+        const gasLimits = sponsored ? opts.fee.gasSettings.gasLimits : gu.totalGas.mul(pad);
+        const teardownGasLimits = sponsored ? opts.fee.gasSettings.teardownGasLimits : gu.teardownGas.mul(pad);
         const maxFee = gasLimits.computeFee(feeOptions.gasSettings.maxFeesPerGas).toBigInt();
 
         log('  Estimated gas: L2=' + gasLimits.l2Gas.toLocaleString() + ' DA=' + gasLimits.daGas.toLocaleString(), 'info');
@@ -337,7 +340,7 @@
           await this._preProveHook({ gasLimits, maxFee, feeOptions, teardownGasLimits });
         }
 
-        const finalGasSettings = a.GasSettings.from({
+        const finalGasSettings = checkedGas ?? a.GasSettings.from({
           gasLimits: opts.fee?.gasSettings?.gasLimits ?? gasLimits,
           teardownGasLimits: opts.fee?.gasSettings?.teardownGasLimits ?? teardownGasLimits,
           maxFeesPerGas: feeOptions.gasSettings.maxFeesPerGas,
@@ -553,6 +556,71 @@
 
   g.BillboardPostCodec = Object.freeze({ safePostOrder, canonicalPostId, resolvePostId, packPostMessage, decodePostMessage, submitOnceWithReconciliation, requireSuccessfulReceipt, withFreshPostState, classifyDroppedTransaction, dummyStateCanRetry, postStateCanRetry, screeningFailureCanWait });
 
+  function sponsorFailure(code = 'BB_SPONSOR_UNAVAILABLE') {
+    const error = new Error(code === 'BB_SPONSOR_UNAVAILABLE'
+      ? 'Sponsorship is unavailable. Configure the reviewed sponsor and a local coupon provider before continuing.'
+      : 'Sponsored action stopped. Reconcile any submitted transaction before trying again.');
+    error.code = code;
+    return error;
+  }
+
+  function requireSponsorConfiguration(a, config, sponsorArtifact) {
+    const route = config?.sponsorship;
+    if (!a?.prepareSponsoredAction || a.NO_FROM === undefined || !sponsorArtifact ||
+        !route?.sponsorAddress || typeof route.couponProvider?.acquire !== 'function') throw sponsorFailure();
+    const gas = route.gasSettings;
+    for (const [key, fields] of [
+      ['gasLimits', ['daGas', 'l2Gas']], ['teardownGasLimits', ['daGas', 'l2Gas']],
+      ['maxFeesPerGas', ['feePerDaGas', 'feePerL2Gas']], ['maxPriorityFeesPerGas', ['feePerDaGas', 'feePerL2Gas']],
+    ]) if (!gas?.[key] || fields.some(field => gas[key][field] === undefined)) throw sponsorFailure();
+    // Actual SDK hydration; the preparer validates every bound before signing.
+    try { return { ...route, gasSettings: a.GasSettings.from(gas) }; }
+    catch (_) { throw sponsorFailure(); }
+  }
+
+  function createSponsoredSender({ a, config, sponsorArtifact, boardArtifact, wallet, node, owner, scope }) {
+    const route = requireSponsorConfiguration(a, config, sponsorArtifact);
+    const checkedScope = Object.freeze({ ...scope });
+    return async function sendSponsoredAction(kind, args) {
+      if (!['claim', 'post', 'withdraw'].includes(kind)) throw sponsorFailure('BB_SPONSOR_UNSUPPORTED_ACTION');
+      let prepared;
+      try {
+        // LOCAL trusted callback only. Never give a remote issuer owner/blind or action contents.
+        const coupon = await route.couponProvider.acquire({ scope: checkedScope, owner, actionKind: kind });
+        if (!coupon) throw sponsorFailure();
+        prepared = await a.prepareSponsoredAction({
+          wallet, node, owner, boardAddress: checkedScope.boardAddress, boardArtifact,
+          sponsorAddress: route.sponsorAddress, sponsorArtifact,
+          expectedChainId: checkedScope.l1ChainId, expectedVersion: checkedScope.rollupVersion,
+          coupon, action: { kind, args }, gasSettings: route.gasSettings,
+        });
+        if (prepared?.options?.from !== a.NO_FROM || !prepared.options.fee?.gasSettings ||
+            prepared.options.sendMessagesAs?.toString() !== owner.toString() ||
+            prepared.options.additionalScopes?.length !== 1 || prepared.options.additionalScopes[0].toString() !== owner.toString() ||
+            prepared.options.authWitnesses?.length !== 1) throw sponsorFailure('BB_SPONSOR_INVALID_ROUTE');
+      } catch (error) {
+        throw sponsorFailure('BB_SPONSOR_PREPARATION_FAILED');
+      }
+      try { return await prepared.interaction.send(prepared.options); }
+      catch (error) {
+        // Preserve exact-hash reconciliation and bounded whole-state reproof signals only.
+        if (['BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED'].includes(error?.code)) throw sponsorFailure(error.code);
+        if (error?.code === 'BB_STATE_CONFLICT') {
+          const allowed = ['Existing nullifier', 'Block header not found'];
+          if (Array.isArray(error.stateReasons) && error.stateReasons.length > 0 && error.stateReasons.every(reason => allowed.includes(reason))) {
+            const safe = sponsorFailure('BB_STATE_CONFLICT');
+            safe.stateReasons = Array.from(error.stateReasons);
+            throw safe;
+          }
+          throw sponsorFailure('BB_SUBMISSION_UNKNOWN');
+        }
+        // SDK errors can contain private inputs; do not log them or retry another coupon here.
+        throw sponsorFailure('BB_SPONSOR_ACTION_FAILED');
+      }
+    };
+  }
+  g.BillboardSponsorRouting = Object.freeze({ requireSponsorConfiguration, createSponsoredSender, createAztecWallet });
+
   function extractFieldArray(simResult) {
     let val = simResult;
     if (simResult && simResult.result !== undefined) val = simResult.result;
@@ -590,6 +658,7 @@
     const contractSalt = config.contractSalt || 1;
     const secretKeyHex = aztecWallet.secretKey;
     const action = config.action || 'status';
+    if (['claim', 'post', 'withdraw', 'auto'].includes(action)) requireSponsorConfiguration(a, config, env.sponsorArtifact);
 
     // ============================================================
     // Step 1: Derive account keys
@@ -631,9 +700,8 @@
     } catch (e) { /* non-critical */ }
 
     // Check fee juice balance
-    log('Checking Fee Juice balance...', 'info');
     let feeJuiceBalance = 0n;
-    try {
+    if (!['claim', 'post', 'withdraw', 'auto'].includes(action)) try {
       const slot = await a.deriveStorageSlotInMap(new a.Fr(1), address);
       const value = await aztecNode.getPublicStorageAt('latest', a.FeeJuiceAddress, slot);
       feeJuiceBalance = value ? BigInt(value.toString()) : 0n;
@@ -776,10 +844,7 @@
       if (!l2Deployed) {
         throw new Error('Billboard contract not deployed on L2 at ' + l2AddrHex + '. Deploy it first (use the deploy CLI or aztec-wallet).');
       }
-      if (feeJuiceBalance === 0n && (action === 'claim' || action === 'post' || action === 'withdraw' || action === 'auto')) {
-        log('  WARNING: No Fee Juice! You need some to pay for L2 tx fees.', 'warn');
-        log('  Run the fee-juice CLI first to fund your account.', 'warn');
-      }
+
 
       // Check setup cache
       const sKey = _setupKey(config);
@@ -915,7 +980,7 @@
     log('  L2 address:  ' + l2AddrHex, 'info');
     log('  L1 portal:   ' + portalAddr, 'info');
     if (l1Account) log('  L1 account:  ' + l1Account, 'info');
-    log('  Fee Juice:   ' + toAztec(feeJuiceBalance, 6) + ' AZTEC', 'info');
+    if (!['claim', 'post', 'withdraw', 'auto'].includes(action)) log('  Fee Juice:   ' + toAztec(feeJuiceBalance, 6) + ' AZTEC', 'info');
     if (l2NoteInfo && l2NoteInfo.amount > 0n) {
       log('  L2 note:     ' + l2NoteInfo.amount.toString() + ' wei (' + toEtherStr(l2NoteInfo.amount) + ' ETH)', 'info');
 
@@ -1068,6 +1133,15 @@
       log('Recovered the active receipt using its saved claim secret.', 'success');
     }
 
+    let sponsoredSender;
+    async function sendSponsored(kind, args) {
+      sponsoredSender ??= createSponsoredSender({ a, config, sponsorArtifact: env.sponsorArtifact,
+        boardArtifact: artifact, wallet, node: aztecNode, owner: address,
+        scope: { l1ChainId: String(nodeInfo.l1ChainId), rollupVersion: String(version),
+          rollupAddress: rollupAddr, boardAddress: l2AddrHex, portalAddress: portalAddr } });
+      return sponsoredSender(kind, args);
+    }
+
     // ============================================================
     // CLAIM action (claim deposit on L2)
     // ============================================================
@@ -1116,18 +1190,16 @@
 
       // No note — send the claim tx directly.
       // Skip pre-flight simulation: it triggers expensive PXE contract sync that can hang for 30+ min.
-      // If the L1→L2 message isn't ready, the tx itself will fail and we retry.
+      // An unavailable message stops the sponsored attempt without consuming another coupon here.
       log('  No existing note. Sending claim tx directly...', 'info');
-      log('  (If L1→L2 message is not yet ingested, this will retry automatically.)', 'info');
+      log('  If the message is unavailable, wait for ingestion before trying again.', 'info');
 
       // Retry loop: send claim tx, retry if it fails (message may not be ingested yet)
       let claimDone = false;
       for (let i = 0; i < 30; i++) {
         try {
           await new Promise(r => setTimeout(r, 0)); // yield to UI thread
-          const result = await withUserRetry(() => contract.methods.claim_deposit(
-            depositorField, amount, depositInfo.depositNonce, secret, leafIndex
-          ).send({ from: address }), 'Claim deposit tx');
+          const result = await sendSponsored('claim', [depositorField, amount, depositInfo.depositNonce, secret, leafIndex]);
           const receipt = result.receipt;
           log('  TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
           if (receipt.transactionFee !== undefined) {
@@ -1152,7 +1224,7 @@
             log('  Still syncing note...', 'info');
           }
           break;
-        } catch (e) { if (e?.code === 'BB_DEPOSIT_READ') throw e;
+        } catch (e) { if (e?.code?.startsWith('BB_')) throw e;
           const errMsg = extractErrorMessage(e).substring(0, 200);
           // Check if note appeared (maybe already claimed by another run)
           try {
@@ -1287,7 +1359,7 @@
       log('  Screening hints fetched: child=' + (childHint ? 'yes' : 'no') + ', grandchild=' + (grandchildHint ? 'yes' : 'no'), 'info');
       log('  Pre-flight passed.', 'success');
 
-      const result = await withUserRetry(() => contract.methods.post(
+      const result = await sendSponsored('post', [
         requireDepositChain(),
         postNonce,
         fields.map(f => new a.Fr(f)),
@@ -1295,7 +1367,7 @@
         false, // is_dummy
         childHint,
         grandchildHint
-      ).send({ from: address }), 'Post tx');
+      ]);
       const receipt = result.receipt;
       log('  TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
       if (receipt.transactionFee !== undefined) {
@@ -1331,7 +1403,7 @@
       }
 
       const dummyFields = new Array(32).fill(0).map(() => new a.Fr(0));
-      const result = await withUserRetry(() => contract.methods.post(
+      const result = await sendSponsored('post', [
         requireDepositChain(),
         new a.Fr(0),
         dummyFields,
@@ -1339,7 +1411,7 @@
         true, // is_dummy = true
         childHint,
         grandchildHint
-      ).send({ from: address }), 'Dummy post tx');
+      ]);
       const receipt = result.receipt;
       log('  Dummy post TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'info');
       if (receipt.transactionFee !== undefined) {
@@ -1618,7 +1690,7 @@
 
       log('Withdrawing (sending L2->L1 message)...', 'info');
       // V1 withdrawal burns the explicitly selected deposit identity.
-      const result = await withUserRetry(() => contract.methods.withdraw(requireDepositChain()).send({ from: address }), 'Withdraw tx');
+      const result = await sendSponsored('withdraw', [requireDepositChain()]);
       const receipt = result.receipt;
       log('  TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
       if (receipt.transactionFee !== undefined) {

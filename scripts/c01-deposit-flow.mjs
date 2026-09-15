@@ -20,6 +20,7 @@ import {EmbeddedWallet} from '@aztec/wallets/embedded';
 import {encodeEscrowCommitment} from '../shared/protocol-commitments.mjs';
 import {contractInputs} from './artifact-provenance.mjs';
 import {ROOT,assertNodeVersion,assertAztecPackages} from './toolchain.mjs';
+import {proveApplicationAction} from './prove-application-action.mjs';
 const BOARD='apps/src/billboard/billboard_artifact.json';
 const PORTAL='billboard/portal/out/BillboardPortal.sol/BillboardPortal.json';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -45,7 +46,7 @@ async function artifacts(preparation,ready){
  * and includes private note/identity/secret material for a later no-post withdrawal.
  * Owns one ephemeral PXE wallet; caller owns sequencer/node/prover shutdown.
  */
-export async function depositAndClaimC01({node,preparation,instance,l1Client,ready,settlement,directory,rpcUrl,dateProvider,mineL1,reportStage}){
+export async function depositAndClaimC01({node,preparation,instance,l1Client,ready,settlement,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,sponsoredAction}){
   let stage='preflight',wallet,sequencer,previousSequencerConfig;
   const observation={passed:false,scope:'local real deposit and genuine private claim with ordinary checkpoint inclusion',
     syntheticMessages:false,syntheticProofs:false,claimEpochProofAccepted:false};
@@ -78,7 +79,7 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     for(const key of ['backend','bbPath','threads'])assert.equal(Barretenberg.getSingleton().options[key],native[key]);
     mark('reopen-claim-wallet');
     wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
-    const account=preparation.account;
+    const account=authorAccount??preparation.account;
     const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'c01-disposable');
     assert(manager.address.equals(account.address));await wallet.registerContract(instance,checked.board);await wallet.pxe.sync();
     const board=Contract.at(instance.address,checked.board,wallet);
@@ -142,12 +143,12 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     const canonicalAnchor=await node.getBlock(anchor.getBlockNumber());assert(canonicalAnchor);
     assert.equal(canonicalAnchor.hash.toString(),(await anchor.hash()).toString());
     mark('prove-real-claim');
-    const payload=await board.methods.claim_deposit(EthAddress.fromString(depositor),amount,receipt.nonce,secret,new Fr(receipt.index)).request();
-    const fee=await wallet.completeFeeOptions({from:account.address,feePayer:payload.feePayer});
-    const request=await wallet.createTxExecutionRequestFromPayloadAndFee(payload,account.address,fee);
-    const proven=await wallet.pxe.proveTx(request,{scopes:wallet.scopesFrom(account.address,[],undefined),
-      senderForTags:wallet.senderForTagsFrom(account.address,undefined)});
-    assert(!proven.chonkProof.isEmpty());const tx=await proven.toTx();
+    const claimArgs=[EthAddress.fromString(depositor),amount,receipt.nonce,secret,new Fr(receipt.index)];
+    const {request,proven,tx}=await proveApplicationAction({wallet,owner:account.address,
+      interaction:board.methods.claim_deposit(...claimArgs),
+      sponsoredAction:sponsoredAction?context=>sponsoredAction({...context,kind:'claim',args:claimArgs}):undefined});
+    observation.feePayer=tx.data.feePayer.toString();
+    observation.sponsored=!!sponsoredAction;
     assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer(),'Claim changed selected anchor');
     await canonicalDeposit();assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),canonicalAnchor.hash.toString());
     assert.equal((await node.isValidTx(tx)).result,'valid');

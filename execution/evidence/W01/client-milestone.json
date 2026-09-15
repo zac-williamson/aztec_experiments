@@ -1,0 +1,32 @@
+{
+  "scope": "Client preparation, credential boundary and proof-routing unit milestone; not W01 acceptance",
+  "passed": true,
+  "checks": {
+    "clientAndBoundaryAndRouting": {
+      "passed": 27,
+      "failed": 0,
+      "durationMs": 2385.458917
+    },
+    "crossLanguagePolicyTests": 18,
+    "contractBuild": "exit0, regenerated sponsor artifact and build input manifest"
+  },
+  "priorEvidenceDisposition": "Earlier client logs004/005 did not establish membership correctness: mirrored hash error, superseded by006 and independent Noir vector.",
+  "sourceHashes": {
+    "shared/sponsor-client.mjs": "ce72ab080b5bcb6517a4a249620c3375a62ce8cf7fb453543b77226095f25ed8",
+    "scripts/test-sponsor-client.mjs": "50144ced069f9271ecb3bd08fc907ca75a52fb50799899d763497d5a6db0da90",
+    "shared/app-env.js": "5a8352ed9f63c85f2de23a4f3e19a845ac0271303e44a0bce511efc7dc14f3cd",
+    "scripts/test-rpc-credential-boundary.mjs": "8b1d0b183304f9f23064f0d37a150767bd51125f89a5c6b43f9a1e0e87df1d21",
+    "scripts/prove-application-action.mjs": "b58a1298a7342578fbc6533e8ad6adcee540c8b0561da3228cd0925f92ba2a99",
+    "scripts/test-application-action-routing.mjs": "04e104bc325eb893e25e395422de34d3fd8ed2627628a589d70c2d420e8ff46f",
+    "billboard/sponsor_common/src/lib.nr": "e9215cfc418d41898e82f5a83d00b82937b335ab4bcf3e14327052c271faad20",
+    "billboard/sponsor_common/src/client_vector.nr": "b4b2d6ffcc83adadd68527f97a5057d861014a36ec168deffef071b3465e1fe0",
+    "apps/src/billboard/sponsor_artifact.json": "939a7f5db9d29dad6d2cb42574251c20bc818313fc2ecf130a67bf76457ca8da",
+    "execution/evidence/W01/client-integrated-unit-001.log": "49fce0bba27c847e4c7e9f0a6c7647f9d1ff23f2d329fa0bc3aeb04132603d70",
+    "execution/evidence/W01/sponsor-integrated-build-003.log": "5aef97b2f2874b22daa1ba078eeba0bfdfd398346fd72da9631e5cc4b59dc7d3"
+  },
+  "limitations": [
+    "Wallet/node unit doubles do not establish actual sponsorship.",
+    "Genuine proof harness currently running; no result claimed.",
+    "Mandatory engine routing and issuer controls remain incomplete."
+  ]
+}

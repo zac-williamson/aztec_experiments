@@ -176,6 +176,7 @@ async function qualifyConsumer(consumer) {
       const compatibilityBuffer = Buffer.from(new Uint8Array([1])).toString('hex');
       if (compatibilityBuffer !== '01') throw new Error('Legacy app Buffer compatibility failed');
       const a = globalThis.__aztec;
+      if (typeof a.prepareSponsoredAction !== 'function') throw new Error('Bundled sponsored-action preparer missing');
       if (!a) throw new Error('SDK global missing');
       await stage('sync-prover-init', () => a.BarretenbergSync.initSingleton());
       if (window.BILLBOARD_CRS_MANIFEST) {

@@ -1,0 +1,14 @@
+✔ user generated page binds the canonical sponsor and isolated RPC credential (76.695334ms)
+✔ censor generated page binds the canonical sponsor and isolated RPC credential (24.137208ms)
+✔ deploy generated page binds the canonical sponsor and isolated RPC credential (23.296041ms)
+✔ fee-juice generated page binds the canonical sponsor and isolated RPC credential (2.597042ms)
+✔ actual RPC wrapper confines credentials and disallows redirect forwarding (9.888084ms)
+✔ Request and URL inputs preserve headers without mutating caller data (0.724667ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 170.22525

@@ -14,6 +14,7 @@ export { Fr } from '@aztec/aztec.js/fields';
 export { Contract, ContractFunctionInteraction, BatchCall, DeployMethod, NO_WAIT,
   getContractClassFromArtifact, getContractInstanceFromInstantiationParams } from '@aztec/aztec.js/contracts';
 export { NO_FROM } from '@aztec/aztec.js/account';
+export { prepareSponsoredAction } from './sponsor-client.mjs';
 export { FunctionCall, FunctionSelector, FunctionType, encodeArguments, loadContractArtifact } from '@aztec/aztec.js/abi';
 export { Capsule, HashedValues, ExecutionPayload, TxExecutionRequest, TxHash } from '@aztec/aztec.js/tx';
 export { TxContext } from '@aztec/stdlib/tx';

@@ -110,6 +110,8 @@ function buildApp(appRelPath) {
   // App-specific resources (look in app dir, then parent)
   const portalBytecode = loadResource(appDir, 'portal_bytecode.txt');
   const billboardArtifact = loadResource(appDir, 'billboard_artifact.json');
+  const sponsorArtifact = loadResource(appDir, 'sponsor_artifact.json');
+  if (['billboard/user','billboard/censor'].includes(appRelPath) && !sponsorArtifact) throw new Error('Missing mandatory sponsor artifact');
 
   // Load engine.js from the app directory (if it exists)
   const enginePath = path.join(appDir, 'engine.js');
@@ -151,7 +153,7 @@ function buildApp(appRelPath) {
     replacements['<!--PORTAL_BYTECODE-->'] = `<script>const PORTAL_BYTECODE = "${bc}";\n</script>`;
   }
   if (billboardArtifact) {
-    replacements['<!--ARTIFACT-->'] = `<script>const BILLBOARD_ARTIFACT = ${billboardArtifact};\n</script>`;
+    replacements['<!--ARTIFACT-->'] = `<script>const BILLBOARD_ARTIFACT = ${billboardArtifact};\nconst BILLBOARD_SPONSOR_ARTIFACT = ${sponsorArtifact || 'null'};\n</script>`;
   }
 
   for (const [placeholder, replacement] of Object.entries(replacements)) {

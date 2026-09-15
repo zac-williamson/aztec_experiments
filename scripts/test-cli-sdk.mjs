@@ -87,6 +87,7 @@ async function child(lane) {
 
   const loader = extract(source, 'loadAztecSDK');
   const a = await loader.instantiate(bindings)();
+  assert.equal(typeof a.prepareSponsoredAction, 'function', 'Bundled sponsored-action preparer missing');
   assert.equal(globalThis.process, realProcess);
   assert.ok(globalThis.indexedDB, 'actual loader must supply IndexedDB');
   const deriveSource = fs.readFileSync(path.join(ROOT, 'shared/aztec-lib.js'), 'utf8');

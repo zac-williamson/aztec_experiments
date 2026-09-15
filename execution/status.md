@@ -1,19 +1,19 @@
 # Current status
 
-Production readiness remains the objective. V5 deployment suitability does not block engineering; V6 compatibility and release clearance remain required before production.
+Production readiness remains the objective. V5 suitability does not block engineering; V6 compatibility and release clearance remain required before production.
 
-C01 application bridge and C02 authenticated screening are complete.
+C01 application deposit/claim/exit/refund, C02 authenticated screening and C03 independent posting identities are complete as historical engineering milestones. C03's ten genuine authors prepared from one common anchor and all included in7m57s with1.45GiB peak and cleanup. Tests use actual application proofs and official local settlement controls, never a network epoch prover.
 
-C03 independent posting identities is complete. Ten genuine authors prepared posts against one identical anchor; all ten were included and their public/private effects verified. Whole run7m57s, peak1.45GiB, cleanup passed.137 Noir,174 client/signer, daemon integration and SDK clock regressions pass. Stable identities now flow through CLI and moderation; ambiguous transaction outcomes fail closed.
+W01 shared sponsored fees is active:
 
-The batch stall was traced to accumulated local test-clock lead. Resetting to each mined timestamp fixes it; the passing run records zero lead. The local node caps one transaction per block to test application independence, not network throughput. No network prover or deadline extension.
+- Sponsor contract builds; delegated authorization, spending/membership and public administration controls pass.
+- Genuine shared FeeJuice funding plus unfunded-author claim/exit/L1 refund passed6m07s, peak1.095GiB. Exact sponsor fee debits, note/replay checks and cleanup passed (`genuine-bridge-milestone.json`).
+- Genuine sponsored posting passed6m02s, peak1.167GiB. Posting proof13.7s; public content/order and exact private note effects, unfunded author and exact fees passed (`genuine-post-milestone.json`).
+- Browser/CLI author actions require sponsorship and never fall back to author funding.46 integrated engine/routing/source controls pass; built SDK, CLI and cold browser adapters pass.6 source/generated-page checks confirm one restricted RPC credential wrapper. A duplicate legacy wrapper was found by generated-page testing and removed.
+- Client coupon hashing has an independent JavaScript/Noir vector; the earlier mirrored-fixture mistake is retained and superseded in evidence.
+- Durable opaque-commitment issuer core is committed in62d90e2;23 checks pass. Independent review's expiry-lock and persisted-state findings are fixed. Core remains bounded and requires external chain reconciliation for database rollback.
+- Restricted HTTP transport passes18 loopback checks. The local encrypted coupon provider and read-only registered-batch callback are in delegated implementation; root owns CLI durability, operator registration/reconciliation and integrated verification.
 
-The graph selects W01 sponsored-fee integration next, now that C03 is complete. C04 required screening-history lookup beyond the current16-note page follows in the ready work. C05 and all later production/review/release requirements remain open.
+W01 remains incomplete. Remaining work includes reliable coupon delivery/registration and operator replenishment/outages, genuine coupon-failure/replay coverage, and explicit fee/RPC/issuer observation assessment. In-memory per-action test roots do not establish production issuance or anonymity sets.
 
-W01 is active: production sponsor integration is being designed against the now-verified independent post ABI. Existing mock-proof mechanism results are historical feasibility only; genuine application composition and privacy/operational controls remain required.
-
-W01 delegated-board milestone: all149 Noir tests pass in about4m40s, including12 exact authorization/ownership controls. Source stayed identical during the run. Next is sponsor contract/budget-policy integration, followed by client/issuer/shared-funding and genuine unfunded-author qualification. W01 is not complete.
-
-Sponsor contract now builds with verification keys;16 pure spending/membership tests and37 artifact/dependency integrity checks pass. Actual public storage/admin controls are next. These checks do not yet establish complete sponsored application behavior.
-
-Sponsor public state milestone:9/9 tests pass for real registration/accounting/admin state, and integrated sponsor checks pass12 delegated +16 policy +9 public tests. Client route implementation is in progress; no genuine sponsor composition acceptance yet.
+C04 full screening-history lookup, C05 policy/penalties, C06 recovery and subsequent product/operations/qualification work remain. External review, representative14-day soak and target-network release clearance are still mandatory release gates. No public deployment, real-fund operation or external contact has been authorized or performed.

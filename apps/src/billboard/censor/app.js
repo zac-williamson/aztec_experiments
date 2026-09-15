@@ -40,6 +40,7 @@ setupRpcAuth();
 
 const callEngine = makeCallEngine(runBillboardUser, {
   artifact: typeof BILLBOARD_ARTIFACT !== 'undefined' ? BILLBOARD_ARTIFACT : null,
+  sponsorArtifact: typeof BILLBOARD_SPONSOR_ARTIFACT !== 'undefined' ? BILLBOARD_SPONSOR_ARTIFACT : null,
   portalBytecode: typeof PORTAL_BYTECODE !== 'undefined' ? PORTAL_BYTECODE : null,
 });
 

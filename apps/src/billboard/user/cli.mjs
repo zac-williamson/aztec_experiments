@@ -47,6 +47,7 @@
 //   --eth-rpc <url>          Ethereum RPC URL
 //   --aztec-wallet <file>    Path to Aztec wallet.json
 //   --eth-wallet <file>      Path to ETH wallet JSON
+//   --sponsor-provider <file> Local trusted module exporting createSponsorship({aztec})
 //   --json                   Output posts as JSON (for list action, machine-readable)
 //   --pxe-dir <prefix>       PXE data directory prefix (default: pxe_bb_user_)
 // ============================================================
@@ -57,7 +58,7 @@ import { loadCliWalletInputs } from './wallet-inputs.mjs';
 import { createHash } from 'node:crypto';
 import BillboardCRS from '../../../../shared/crs-client.js';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
@@ -397,6 +398,7 @@ async function main() {
   const artifactPath = path.join(deployDir, 'billboard_artifact.json');
   const portalBytecode = fs.readFileSync(portalBytecodePath, 'utf8').trim();
   const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+  const sponsorArtifact = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'sponsor_artifact.json'), 'utf8'));
 
   const env = {
     aztec: a, ethers, log,
@@ -404,10 +406,23 @@ async function main() {
     createStore: createStoreNode(a),
     getBrowserSigner: null,
     portalBytecode: portalBytecode.startsWith('0x') ? portalBytecode : '0x' + portalBytecode,
-    artifact,
+    artifact, sponsorArtifact,
   };
 
+  let sponsorship;
+  if (args['sponsor-provider']) {
+    // Explicit executable local integration, not an issuer URL or a secret-bearing CLI argument.
+    const providerPath = path.resolve(args['sponsor-provider']);
+    if (!fs.lstatSync(providerPath).isFile()) throw new Error('Sponsor provider must be a local regular module.');
+    try {
+      const provider = await import(pathToFileURL(providerPath).href);
+      if (typeof provider.createSponsorship !== 'function') throw new Error();
+      sponsorship = await provider.createSponsorship({ aztec: a });
+    } catch (_) { throw new Error('Local sponsor provider could not be initialized.'); }
+  }
+
   const config = {
+    sponsorship,
     action: ACTION,
     aztecNodeUrl: AZTEC_NODE_URL,
     ethRpcUrl: ETH_RPC_URL,

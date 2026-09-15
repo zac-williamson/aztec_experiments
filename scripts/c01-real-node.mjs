@@ -76,7 +76,7 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
               const {completeC01Bridge}=await import('./c01-bridge-flow.mjs');
               observation.bridge=await completeC01Bridge({node,config:nodeConfig,dateProvider,l1Client:deployment.l1Client,
                 directory,rollupAddress:deployment.l1ContractAddresses.rollupAddress,preparation,
-                instance:observation.board.instance,ready:observation.ready,settlement:observation.settlement,mark,screeningOnly:process.env.C02_SCREENING==='true',contentionOnly:process.env.C03_CONTENTION==='true'});
+                instance:observation.board.instance,ready:observation.ready,settlement:observation.settlement,mark,sponsoredPosting:process.env.W01_SPONSORED_POST==='true',sponsorship:process.env.W01_SPONSORSHIP==='true',screeningOnly:process.env.C02_SCREENING==='true',contentionOnly:process.env.C03_CONTENTION==='true'});
               assert(observation.bridge.passed);
             }
           }

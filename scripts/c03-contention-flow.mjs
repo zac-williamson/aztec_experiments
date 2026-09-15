@@ -1,5 +1,6 @@
 // TEST ONLY: ten independently owned rights, one actual private anchor, real client proofs.
 import assert from 'node:assert/strict';
+import {proveApplicationAction} from './prove-application-action.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
@@ -36,13 +37,13 @@ function packedText(text){
  * No state injection, server prover, proof worker fanout or automatic retry.
  */
 export async function proveAndIncludeC03Contention({node,preparation,instance,authorClaims,
-  l1Client,rpcUrl,directory,mineL1,reportStage,dateProvider}){
+  l1Client,rpcUrl,directory,mineL1,reportStage,dateProvider,sponsoredAction}){
   let wallet,sequencer,previousConfig,progressPath,stage='preflight';
   const count=preparation.authorAccounts.length;
-  assert([1,10].includes(count));assert(count===10||process.env.C03_POSTING_DIAGNOSTIC==='true');
+  assert([1,10].includes(count));assert(count===10||process.env.C03_POSTING_DIAGNOSTIC==='true'||typeof sponsoredAction==='function');
   const started=performance.now();
   const listeners=[];
-  const observation={passed:false,scope:count===10?'ten real distinct-author post proofs prepared at one canonical anchor':'one-author posting diagnostic, not concurrency qualification',
+  const observation={passed:false,scope:sponsoredAction?'one unfunded author genuine sponsored posting; not concurrency qualification':count===10?'ten real distinct-author post proofs prepared at one canonical anchor':'one-author posting diagnostic, not concurrency qualification',
     applicationProofs:true,networkProofs:false,authorCount:count,contentionQualified:false,posts:[],allPreparedBeforeSubmission:false};
   // Atomically replace only sanitized observations; no accounts, note preimages or transaction bytes.
   const persist=async()=>{if(!progressPath)return;
@@ -140,20 +141,19 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
       const id=await poseidon2HashWithSeparator([Fr.ONE,instance.address.toField(),nonce],0x42420102);
       assert(!id.isZero()&&!postIds.has(id.toString()));postIds.add(id.toString());
       const message=packedText('C03 independent author '+index);
-      const payload=await board.methods.post(claim.depositChainId,nonce,message.fields,message.length,false,undefined,undefined).request();
-      const fee=await wallet.completeFeeOptions({from:account.address,feePayer:payload.feePayer});
-      const request=await wallet.createTxExecutionRequestFromPayloadAndFee(payload,account.address,fee);
+      const postArgs=[claim.depositChainId,nonce,message.fields,message.length,false,undefined,undefined];
       assert.deepEqual((await wallet.pxe.getSyncedBlockHeader()).toBuffer(),anchorBytes);
       await mark('prove-author-'+index);const started=performance.now();
-      const proven=await wallet.pxe.proveTx(request,{scopes:wallet.scopesFrom(account.address,[],undefined),
-        senderForTags:wallet.senderForTagsFrom(account.address,undefined)});
-      assert(!proven.chonkProof.isEmpty());const tx=await proven.toTx();
+      const {request,proven,tx}=await proveApplicationAction({wallet,owner:account.address,
+        interaction:board.methods.post(...postArgs),
+        sponsoredAction:sponsoredAction?context=>sponsoredAction({...context,kind:'post',args:postArgs}):undefined});
+      const fee={gasSettings:request.txContext.gasSettings};
       assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchorBytes,'Prepared author drifted from the common anchor');
       assert.deepEqual((await wallet.pxe.getSyncedBlockHeader()).toBuffer(),anchorBytes);
       assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),anchorHash);
       assert.equal((await node.isValidTx(tx)).result,'valid');
       pending.push({item,oldNote,oldFields,id,message,tx});
-      observation.posts.push({authorIndex:index,postId:id.toString(),txHash:tx.getTxHash().toString(),
+      observation.posts.push({feePayer:tx.data.feePayer.toString(),authorIndex:index,postId:id.toString(),txHash:tx.getTxHash().toString(),
         proofSha256:sha(proven.chonkProof.toBuffer()),proofMs:Math.round(performance.now()-started),
         sameAnchor:true,nodeValidation:'valid',gasLimits:{l2Gas:fee.gasSettings.gasLimits.l2Gas,daGas:fee.gasSettings.gasLimits.daGas},
         teardownGasLimits:{l2Gas:fee.gasSettings.teardownGasLimits.l2Gas,daGas:fee.gasSettings.teardownGasLimits.daGas}});
@@ -215,7 +215,7 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
       const txIndex=rawBlock.body.txEffects.findIndex(effect=>effect.txHash.equals(tx.getTxHash()));assert(txIndex>=0);
       Object.assign(observation.posts[index],{status:receipt.status,executionResult:receipt.executionResult,
         blockNumber:String(receipt.blockNumber),txIndexInBlock:txIndex,orderIndex:String(ordered.indexOf(id.toString())),
-        exactDepositNullifier:true,exactReplacementNote:true,exactPostNote:true,publicContentChecked:true});
+        transactionFee:String(receipt.transactionFee),exactDepositNullifier:true,exactReplacementNote:true,exactPostNote:true,publicContentChecked:true});
       observation.verifiedCount=index+1;await persist();
     }
     const byExecution=[...observation.posts].sort((a,b)=>Number(BigInt(a.blockNumber)-BigInt(b.blockNumber))||a.txIndexInBlock-b.txIndexInBlock);

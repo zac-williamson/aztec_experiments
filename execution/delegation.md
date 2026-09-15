@@ -377,3 +377,9 @@ C03 closed: root verified genuine10-author run476849ms, integrated137Noir/174cli
 W01 resumed after C03: root owns sponsor/board/client architecture and integration; build_review gets bounded read-only owner/authwit/coupon interface review. No heavy processes running.
 
 W01 continuation: root applied and corrected the 12 delegated-board tests, owns serial build/full-suite verification. The reused build_review lane separately reviewed immutable batch/window budgeting and now owns only an unapplied sponsor-contract/common-policy patch. Root owns source integration and final evidence; no concurrent heavy test jobs.
+
+W01 next lane: root saved delegated and sponsor-contract milestones in243c2f9/8f5a517, owns browser/CLI wiring and the observed RPC credential-boundary repair. Reused build_review owns only shared/sponsor-client.mjs and scripts/test-sponsor-client.mjs: fixed routes, pre-signature class/scope/coupon/gas checks, and explicit no self-payer fallback. No genuine sponsor transaction result is claimed yet.
+
+Continuation: build_review owns mandatory engine sponsor routing/CLI configuration and focused tests (preserving root RPC wrapper); build_verification inspects exact local shared FeeJuice funding APIs read-only. Root owns artifact integration and genuine proof harness. Heavy checks remain serialized.
+
+Current W01 lanes: root integrates genuine funding/claim/exit/post, generated browsers and operator/CLI boundary. build_review implements encrypted local coupon provider/store; build_verification implements read-only registered-batch SDK helper after completing issuer core/HTTP transport. Earlier issuer findings independently reviewed and closed; heavy proof/browser checks remain serial.

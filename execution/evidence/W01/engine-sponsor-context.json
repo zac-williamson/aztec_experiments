@@ -1,0 +1,14 @@
+{
+  "sourceHashes": {
+    "apps/src/billboard/user/engine.js": "c86267a027025d4168c16135c113dffd974480a969087c5ff096336c2ecacf19",
+    "apps/src/billboard/user/cli.mjs": "4683177e9d49c29cb6027d7a294bbe13fdd652782729f1c97e1e09966b9d4711",
+    "shared/app-env.js": "5a8352ed9f63c85f2de23a4f3e19a845ac0271303e44a0bce511efc7dc14f3cd",
+    "scripts/test-engine-sponsor.mjs": "ce4c8ebb598b4d338debe339c77d337892429659a9b0cb01b5059a23e2a76370"
+  },
+  "command": ".build/A02-node/node-v24.21.0-darwin-arm64/bin/node --test scripts/test-engine-sponsor.mjs scripts/test-c03-post-client.mjs scripts/test-c01-user.mjs",
+  "log": "execution/evidence/W01/engine-sponsor-tests-007.log",
+  "tests": 41,
+  "passed": 41,
+  "failed": 0,
+  "limits": "Actual engine methods/dispatcher with explicit wallet/node/provider/prover doubles; no real sponsor proof or issuer operation. app-env hash includes root-owned RPC changes; this lane only adds sponsorship config."
+}

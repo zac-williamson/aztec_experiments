@@ -11,29 +11,9 @@
 const A = () => window.__aztec;
 
 // ============================================================
-// RPC config -- injected by build system from shared/rpc-config.json
-// Monkey-patches fetch to add x-aztec-api-key header for all requests
-// to the Aztec RPC endpoint.
+// RPC configuration is injected by the build. The application's explicit
+// setupRpcAuth() call installs the single checked boundary from app-env.js.
 // ============================================================
-(function setupRpcAuth() {
-  const cfg = window.RPC_CONFIG;
-  if (!cfg || !cfg.apiKey) return;
-  const origFetch = window.fetch.bind(window);
-  window.fetch = function(input, init) {
-    const url = typeof input === 'string' ? input : (input && input.url) || '';
-    if (url && url.includes('aztec-labs.com')) {
-      init = init || {};
-      init.headers = { ...(init.headers || {}), 'x-aztec-api-key': cfg.apiKey };
-      if (typeof input === 'string') {
-        return origFetch(input, init);
-      } else {
-        input = new Request(input, init);
-        return origFetch(input);
-      }
-    }
-    return origFetch(input, init);
-  };
-})();
 
 // Helper: get the node URL from RPC_CONFIG, falling back to the DOM input
 function getNodeUrl() {

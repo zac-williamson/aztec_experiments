@@ -63,15 +63,21 @@ function setupRpcAuth() {
   const cfg = window.RPC_CONFIG;
   if (!cfg || !cfg.apiKey) return;
   if (window._rpcAuthPatched) return;
-  window._rpcAuthPatched = true;
+  const apiKey = cfg.apiKey;
   const origFetch = window.fetch.bind(window);
+  const endpoint = new URL(_getNodeUrl(), window.location.href);
+  if (!['https:', 'http:'].includes(endpoint.protocol)) throw new Error('Invalid Aztec RPC endpoint');
+  window._rpcAuthPatched = true;
   window.fetch = function(input, init) {
-    const url = typeof input === 'string' ? input : (input && input.url) || '';
-    if (url && url.includes('aztec-labs.com')) {
-      init = init || {};
-      init.headers = { ...(init.headers || {}), 'x-aztec-api-key': cfg.apiKey };
-      if (typeof input === 'string') return origFetch(input, init);
-      else { input = new Request(input, init); return origFetch(input); }
+    const target = new URL(typeof input === 'string' || input instanceof URL ? String(input) : input.url, window.location.href);
+    // Only this configured JSON-RPC endpoint receives its credential. Substring
+    // matching would also disclose it to unrelated URLs containing the hostname.
+    if (target.origin === endpoint.origin && target.pathname === endpoint.pathname) {
+      const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
+      headers.set('x-aztec-api-key', apiKey);
+      // A redirect must not forward the credential outside the checked endpoint.
+      const options = { ...init, headers, redirect: 'error' };
+      return origFetch(input, options);
     }
     return origFetch(input, init);
   };
@@ -148,6 +154,8 @@ function buildConfig(action, extra) {
     ethRpcUrl: ETH_RPC_URL,
     aztecWallet: ws && ws.aztec ? { secretKey: ws.aztec.secretKey, salt: ws.aztec.salt } : null,
     ethWallet: ethWallet,
+    // Local trusted integration. Coupon provider must keep owner/blind on this device.
+    sponsorship: window.billboardSponsorship,
   };
   if (action) config.action = action;
   if (extra) Object.assign(config, extra);

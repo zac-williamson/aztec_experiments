@@ -16,6 +16,7 @@ import {EmbeddedWallet} from '@aztec/wallets/embedded';
 import {encodeEscrowCommitment} from '../shared/protocol-commitments.mjs';
 import {contractInputs} from './artifact-provenance.mjs';
 import {ROOT,assertNodeVersion,assertAztecPackages} from './toolchain.mjs';
+import {proveApplicationAction} from './prove-application-action.mjs';
 const BOARD='apps/src/billboard/billboard_artifact.json';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const integer=value=>BigInt(value.toString());
@@ -33,7 +34,7 @@ async function artifact(preparation){
 /** Same disposable in-memory identity as the preceding claim. Only enumerable fields may be logged.
  * The parent owns the native proof deadline/resource supervisor and node/prover shutdown.
  */
-export async function proveAndIncludeC01Exit({node,preparation,instance,claimResult,l1Client,directory,rpcUrl,dateProvider,mineL1,reportStage}){
+export async function proveAndIncludeC01Exit({node,preparation,instance,claimResult,l1Client,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,sponsoredAction}){
   let wallet,sequencer,previousConfig,stage='preflight';
   const observation={passed:false,scope:'genuine no-post L2 withdrawal and ordinary checkpoint inclusion',
     syntheticProofs:false,syntheticSettlement:false,exitEpochProofAccepted:false,l1Withdrawn:false};
@@ -61,7 +62,7 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
     for(const key of ['backend','bbPath','threads'])assert.equal(Barretenberg.getSingleton().options[key],native[key]);
     mark('reopen-exit-wallet');
     wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
-    const account=preparation.account;
+    const account=authorAccount??preparation.account;
     const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'c01-disposable');
     assert(manager.address.equals(account.address));await wallet.registerContract(instance,boardArtifact);await wallet.pxe.sync();
     const board=Contract.at(instance.address,boardArtifact,wallet);
@@ -102,12 +103,11 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
     const leaf=computeL2ToL1MessageHash({l2Sender:instance.address,l1Recipient:EthAddress.fromString(claim.scope.portalAddress),
       content,rollupVersion:new Fr(BigInt(claim.scope.rollupVersion)),chainId:new Fr(31337n)});
     mark('prove-real-withdrawal');
-    const payload=await board.methods.withdraw(claim.depositChainId).request();
-    const fee=await wallet.completeFeeOptions({from:account.address,feePayer:payload.feePayer});
-    const request=await wallet.createTxExecutionRequestFromPayloadAndFee(payload,account.address,fee);
-    const proven=await wallet.pxe.proveTx(request,{scopes:wallet.scopesFrom(account.address,[],undefined),
-      senderForTags:wallet.senderForTagsFrom(account.address,undefined)});
-    assert(!proven.chonkProof.isEmpty());const tx=await proven.toTx();
+    const {proven,tx}=await proveApplicationAction({wallet,owner:account.address,
+      interaction:board.methods.withdraw(claim.depositChainId),
+      sponsoredAction:sponsoredAction?context=>sponsoredAction({...context,kind:'withdraw',args:[claim.depositChainId]}):undefined});
+    observation.feePayer=tx.data.feePayer.toString();
+    observation.sponsored=!!sponsoredAction;
     assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer());
     assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),anchorBlock.hash.toString());
     assert.equal((await node.isValidTx(tx)).result,'valid');

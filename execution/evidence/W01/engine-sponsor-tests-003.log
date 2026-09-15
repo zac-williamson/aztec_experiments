@@ -1,0 +1,67 @@
+✔ actual engine sender routes claim through exact sponsor options (2.814417ms)
+✔ actual engine sender routes post through exact sponsor options (0.361292ms)
+✔ actual engine sender routes post dummy through exact sponsor options (0.298166ms)
+✔ actual engine sender routes withdraw through exact sponsor options (0.277709ms)
+✔ missing configuration, artifact, SDK or provider rejects before coupon acquisition or signing (1.276166ms)
+✔ literal gas settings hydrate through actual SDK and incomplete bounds never default (0.445084ms)
+✔ provider exhaustion and private errors never send, leak input text or fall back (0.848167ms)
+✔ exact submission ambiguity and paid failure propagate without reacquiring or resending (0.994042ms)
+✔ invalid author-funded or missing-auth prepared route cannot be sent (1.1045ms)
+✔ actual main entry fails closed for every private action before account/provider work (1.334ms)
+✔ actual wallet keeps checked NO_FROM gas and owner scope/tag through simulation and proof (27.215584ms)
+✔ browser config preserves only the installed local sponsorship callback (2.637125ms)
+✔ provider cannot smuggle private messages or retry codes into the UI (0.802667ms)
+✖ actual main claim selects sponsorship and never calls the direct method (3.398167ms)
+✖ actual main post selects sponsorship and never calls the direct method (0.9345ms)
+✖ actual main post dummy selects sponsorship and never calls the direct method (0.63225ms)
+✖ actual main withdraw selects sponsorship and never calls the direct method (0.651416ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 13
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 404.724917
+
+✖ failing tests:
+
+test at scripts/test-engine-sponsor.mjs:150:3
+✖ actual main claim selects sponsorship and never calls the direct method (3.398167ms)
+  TypeError: pxe.registerContractClass is not a function
+      at evalmachine.<anonymous>:888:31
+      at retry (evalmachine.<anonymous>:102:26)
+      at g.runBillboardUser (evalmachine.<anonymous>:888:15)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-sponsor.mjs:151:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test-engine-sponsor.mjs:150:3
+✖ actual main post selects sponsorship and never calls the direct method (0.9345ms)
+  TypeError: pxe.registerContractClass is not a function
+      at evalmachine.<anonymous>:888:31
+      at retry (evalmachine.<anonymous>:102:26)
+      at g.runBillboardUser (evalmachine.<anonymous>:888:15)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-sponsor.mjs:151:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test-engine-sponsor.mjs:150:3
+✖ actual main post dummy selects sponsorship and never calls the direct method (0.63225ms)
+  TypeError: pxe.registerContractClass is not a function
+      at evalmachine.<anonymous>:888:31
+      at retry (evalmachine.<anonymous>:102:26)
+      at g.runBillboardUser (evalmachine.<anonymous>:888:15)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-sponsor.mjs:151:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test-engine-sponsor.mjs:150:3
+✖ actual main withdraw selects sponsorship and never calls the direct method (0.651416ms)
+  TypeError: pxe.registerContractClass is not a function
+      at evalmachine.<anonymous>:888:31
+      at retry (evalmachine.<anonymous>:102:26)
+      at g.runBillboardUser (evalmachine.<anonymous>:888:15)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-sponsor.mjs:151:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

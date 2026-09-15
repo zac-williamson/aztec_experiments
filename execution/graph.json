@@ -734,7 +734,7 @@
       "evidence": "evidence/W01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Delegated board committed243c2f9 (149 tests/281s). BillboardSponsor compiles/VKs;37 integrated Noir controls (12 delegated,16 policy,9 public) and37 build guards pass; sponsor-contract-milestone.json binds evidence. Client preparer in bounded lane; root integrates engine/issuance/shared funding/genuine journey next. W01 remains incomplete.",
+      "checkpoint": "Genuine sponsored claim/exit/refund passed367140ms; genuine sponsored posting passed362454ms (post proof13.7s); unfunded author and exact sponsor fees verified, fullcleanup. Client engine/build/browser/CLI checks pass, duplicate unsafe RPC wrapper removed and6 generated/source boundary checks pass. Issuer core committed62d90e2 (23checks), HTTP transport18checks; local durableprovider and readonlychaincallback delegated, root wires CLI/operator integration next. W01 incomplete: provider/registration/recovery/failure/privacy qualification remains.",
       "priority": 5
     },
     {

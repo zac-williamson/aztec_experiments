@@ -1,0 +1,52 @@
+{
+  "scope": "Genuine sponsored shared funding, unfunded-author claim, no-post exit and actual L1 refund; W01 remains incomplete",
+  "passed": true,
+  "evidence": "execution/evidence/W01/application-076bd8a1-865e-4405-aff8-e6dd91ae25b7.json",
+  "sha256": "5363f30a47725e7945f6a0f736deaa1fe9dcb09bc10c1c5e3719b3d00b40ad0a",
+  "elapsedMs": 367140,
+  "peakTreeRSSKiB": 1147712,
+  "deadlineMs": 540000,
+  "cleanup": true,
+  "checks": {
+    "sharedFeeJuiceBridgeAndOperatorPaidClaim": true,
+    "authorRemainedUnfunded": true,
+    "actualSponsorFeePayers": true,
+    "exactSponsorFeeDebits": true,
+    "claimAndReplay": true,
+    "noPostExit": true,
+    "l1Refund": true
+  },
+  "sourceHashes": {
+    "scripts/test-c01-application.mjs": "5dcb7789a2e7cc06a9597a65ed14cfce8ff53b682857050f9fd9801ffedfa950",
+    "scripts/owned-test-process-tree.mjs": "0346e6b1fb449e55ebcfa5f35c30764fa0c32c1c4e9b98c77ed7ec48d5ae4039",
+    "scripts/c01-settle-application-message.mjs": "7399875d97f5dfd82a3787d8c39390fd9fc6673c8ce06d5bc41464515c3fef4b",
+    "scripts/c01-application-deployment.mjs": "a81fe20b22967ce6e3d6c1f751ee93ed6c9fef5e8553cf4037534780dec11fa2",
+    "scripts/prove-application-action.mjs": "b58a1298a7342578fbc6533e8ad6adcee540c8b0561da3228cd0925f92ba2a99",
+    "scripts/w01-sponsor-flow.mjs": "843de993cb2e46f052b388adc29a6b1a6cc0c89cc4265089bd467943885ad205",
+    "scripts/w01-shared-funding.mjs": "174f9433ab6132a9503220576a0fd0048868226bb87b6fac917363689831c408",
+    "shared/sponsor-client.mjs": "ce72ab080b5bcb6517a4a249620c3375a62ce8cf7fb453543b77226095f25ed8",
+    "scripts/c01-settle-ready.mjs": "cf0a0e4a531e938b601f4fdf13ce336a9d453435f3df70e2be38f6d2e2d93d1c",
+    "scripts/c01-settle-message.mjs": "4e9bc2eeb7dad873311045c49f89b0b53c5ccd4f34d0516924e47338773ed132",
+    "scripts/c01-bridge-flow.mjs": "9fbd85abe203818c59321cfdee515cd1b6dfbad9ceb083d2804893085493658c",
+    "scripts/c02-screening-flow.mjs": "eb17ada6ead428a05d1f45e108626d58039c4e7293ba7257ebc4c6100d16a910",
+    "scripts/c03-author-claims.mjs": "8c4f2ff5f24d18e188a26dddc409d3603a993a740dc2bb61184f28b703227a25",
+    "scripts/c03-contention-flow.mjs": "a718bf68546fee6b35018e1558505ff3043be6234ca0d2221567b05481af9ea1",
+    "scripts/c01-client-mining.mjs": "a10abf9d1798fac6ddae89a0f62ce2b3e30b9ddd69a77512d5f83f8dc33ff332",
+    "scripts/c01-deposit-flow.mjs": "6a596a038b9d724bb6b2ef488c6387037531c952ed0ccf7a6251815b8666e571",
+    "scripts/c01-exit-flow.mjs": "b3c99e5ce8bb37d4b9c57e0f5c110c5813754c9e4a93d3cda8e59cbeaf4a7487",
+    "scripts/c01-withdraw-l1.mjs": "efc31d321d566b47fe18a17f23e4923b8258e6c42af43350130ff94ae5d62baa",
+    "scripts/c01-ready-flow.mjs": "91f74ca457f7954e84b7cb0d1297ce2e90b1e039254341aeda2f9bf35d838134",
+    "scripts/c01-board-inclusion.mjs": "46a43363765aff5460820ac2c33b636e3b6b8ef310830255b1ed549328db09ed",
+    "scripts/c01-board-flow.mjs": "5b4054c95363f33eed69e0268e771258662e33d7fa0c0a7525aac3f9fdd9b284",
+    "scripts/c01-real-node.mjs": "233f43c4957c44349750ed40224ed4adb437a0541d99b27f1085ea0ecccd0456",
+    "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js": "f84940700d4fe17c4bb94fb27199085fb057c567ff745e90c21352cd47a091c3"
+  },
+  "limitations": [
+    "Disposable local network with official controlled Outbox settlement; no epoch prover or production finality claim.",
+    "No sponsored posting, coupon replay, issuer transport or privacy-footprint qualification in this run.",
+    "Per-action single-ticket test roots are composition fixtures, not a production anonymity-set measurement."
+  ]
+}

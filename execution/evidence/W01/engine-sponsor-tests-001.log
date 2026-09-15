@@ -1,0 +1,20 @@
+✔ actual engine sender routes claim through exact sponsor options (2.474709ms)
+✔ actual engine sender routes post through exact sponsor options (0.331166ms)
+✔ actual engine sender routes post dummy through exact sponsor options (0.293875ms)
+✔ actual engine sender routes withdraw through exact sponsor options (0.292125ms)
+✔ missing configuration, artifact, SDK or provider rejects before coupon acquisition or signing (1.135333ms)
+✔ literal gas settings hydrate through actual SDK and incomplete bounds never default (0.426375ms)
+✔ provider exhaustion and private errors never send, leak input text or fall back (0.7295ms)
+✔ exact submission ambiguity and paid failure propagate without reacquiring or resending (0.743709ms)
+✔ invalid author-funded or missing-auth prepared route cannot be sent (0.937291ms)
+✔ actual main entry fails closed for every private action before account/provider work (1.331458ms)
+✔ actual wallet keeps checked NO_FROM gas and owner scope/tag through simulation and proof (28.094792ms)
+✔ browser config preserves only the installed local sponsorship callback (2.642667ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 327.646875

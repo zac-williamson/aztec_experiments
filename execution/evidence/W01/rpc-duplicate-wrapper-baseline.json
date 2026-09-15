@@ -1,0 +1,4 @@
+{
+  "scope": "In-memory observation of both actual wrappers in browser order; no network or real credential",
+  "duplicateLegacyWrapperLeaksCredential": true
+}

@@ -1,0 +1,717 @@
+{"browserSmoke":{"elapsedMs":4,"stage":"http-server","state":"listening"}}
+{"browserSmoke":{"elapsedMs":4,"consumer":"sdk-only","stage":"browser-launch","state":"started"}}
+{"browserSmoke":{"elapsedMs":680,"consumer":"sdk-only","stage":"browser-launch","state":"completed"}}
+{"browserSmoke":{"elapsedMs":680,"consumer":"sdk-only","stage":"page-create","state":"started"}}
+{"browserSmoke":{"elapsedMs":834,"consumer":"sdk-only","stage":"page-create","state":"completed"}}
+{"browserSmoke":{"elapsedMs":834,"consumer":"sdk-only","stage":"expose-function","state":"started"}}
+{"browserSmoke":{"elapsedMs":849,"consumer":"sdk-only","stage":"expose-function","state":"completed"}}
+{"browserSmoke":{"elapsedMs":849,"consumer":"sdk-only","stage":"install-readiness-markers","state":"started"}}
+{"browserSmoke":{"elapsedMs":849,"consumer":"sdk-only","stage":"install-readiness-markers","state":"completed"}}
+{"browserSmoke":{"elapsedMs":849,"consumer":"sdk-only","stage":"navigation","state":"started"}}
+{"browserSmoke":{"elapsedMs":852,"consumer":"sdk-only","stage":"browser-request","state":"started","path":"/"}}
+{"browserSmoke":{"elapsedMs":856,"consumer":"sdk-only","stage":"http","requestId":1,"path":"/","state":"request-received"}}
+{"browserSmoke":{"elapsedMs":860,"consumer":"sdk-only","stage":"http","requestId":1,"path":"/","state":"response-finished","status":200,"bodyBytes":276,"durationMs":4}}
+{"browserSmoke":{"elapsedMs":864,"consumer":"sdk-only","stage":"browser-response","state":"headers","path":"/","status":200}}
+{"browserSmoke":{"elapsedMs":896,"consumer":"sdk-only","stage":"http","requestId":2,"path":"/aztec_bundle.js","state":"request-received"}}
+{"browserSmoke":{"elapsedMs":897,"consumer":"sdk-only","stage":"browser-request","state":"started","path":"/aztec_bundle.js"}}
+{"browserSmoke":{"elapsedMs":901,"consumer":"sdk-only","stage":"script.sdk","state":"before-script","browserElapsedMs":48}}
+{"browserSmoke":{"elapsedMs":902,"consumer":"sdk-only","stage":"browser-request","state":"finished","path":"/"}}
+{"browserSmoke":{"elapsedMs":905,"consumer":"sdk-only","stage":"http","requestId":2,"path":"/aztec_bundle.js","state":"file-read-completed","bodyBytes":50142228,"durationMs":9}}
+{"browserSmoke":{"elapsedMs":1067,"consumer":"sdk-only","stage":"http","requestId":2,"path":"/aztec_bundle.js","state":"response-finished","status":200,"bodyBytes":50142228,"durationMs":171}}
+{"browserSmoke":{"elapsedMs":1129,"consumer":"sdk-only","stage":"browser-response","state":"headers","path":"/aztec_bundle.js","status":200}}
+{"browserSmoke":{"elapsedMs":1130,"consumer":"sdk-only","stage":"browser-request","state":"finished","path":"/aztec_bundle.js"}}
+{"browserSmoke":{"elapsedMs":1565,"consumer":"sdk-only","stage":"script.sdk","state":"script-load","browserElapsedMs":714}}
+{"browserSmoke":{"elapsedMs":1566,"consumer":"sdk-only","stage":"script.sdk","state":"after-script","browserElapsedMs":715}}
+{"browserSmoke":{"elapsedMs":1568,"consumer":"sdk-only","stage":"script.document","state":"dom-content-loaded","browserElapsedMs":717}}
+{"browserSmoke":{"elapsedMs":1568,"consumer":"sdk-only","stage":"script.document","state":"load","browserElapsedMs":717}}
+{"browserSmoke":{"elapsedMs":1568,"consumer":"sdk-only","stage":"navigation","state":"completed"}}
+{"browserSmoke":{"elapsedMs":1569,"consumer":"sdk-only","stage":"sync-prover-init","state":"started"}}
+{"browserSmoke":{"elapsedMs":1729,"consumer":"sdk-only","stage":"sync-prover-init","state":"completed","durationMs":160}}
+{"browserSmoke":{"elapsedMs":1730,"consumer":"sdk-only","stage":"poseidon","state":"started"}}
+{"browserSmoke":{"elapsedMs":1732,"consumer":"sdk-only","stage":"poseidon","state":"completed","durationMs":3}}
+{"browserSmoke":{"elapsedMs":1733,"consumer":"sdk-only","stage":"async-prover-init","state":"started"}}
+{"browserSmoke":{"elapsedMs":1734,"consumer":"sdk-only","stage":"browser-request","state":"started","path":"/bb-main.worker.js"}}
+{"browserSmoke":{"elapsedMs":1735,"consumer":"sdk-only","stage":"http","requestId":3,"path":"/bb-main.worker.js","state":"request-received"}}
+{"browserSmoke":{"elapsedMs":1735,"consumer":"sdk-only","stage":"http","requestId":3,"path":"/bb-main.worker.js","state":"file-read-completed","bodyBytes":22772,"durationMs":0}}
+{"browserSmoke":{"elapsedMs":1736,"consumer":"sdk-only","stage":"http","requestId":3,"path":"/bb-main.worker.js","state":"response-finished","status":200,"bodyBytes":22772,"durationMs":1}}
+{"browserSmoke":{"elapsedMs":1739,"consumer":"sdk-only","stage":"browser-response","state":"headers","path":"/bb-main.worker.js","status":200}}
+{"browserSmoke":{"elapsedMs":1742,"consumer":"sdk-only","stage":"browser-request","state":"finished","path":"/bb-main.worker.js"}}
+{"browserSmoke":{"elapsedMs":1852,"consumer":"sdk-only","stage":"http","requestId":4,"path":"/bb-thread.worker.js","state":"request-received"}}
+{"browserSmoke":{"elapsedMs":1852,"consumer":"sdk-only","stage":"browser-request","state":"started","path":"/bb-thread.worker.js"}}
+{"browserSmoke":{"elapsedMs":1852,"consumer":"sdk-only","stage":"http","requestId":4,"path":"/bb-thread.worker.js","state":"file-read-completed","bodyBytes":15377,"durationMs":1}}
+{"browserSmoke":{"elapsedMs":1852,"consumer":"sdk-only","stage":"http","requestId":4,"path":"/bb-thread.worker.js","state":"response-finished","status":200,"bodyBytes":15377,"durationMs":1}}
+{"browserSmoke":{"elapsedMs":1854,"consumer":"sdk-only","stage":"browser-response","state":"headers","path":"/bb-thread.worker.js","status":200}}
+{"browserSmoke":{"elapsedMs":1854,"consumer":"sdk-only","stage":"browser-request","state":"finished","path":"/bb-thread.worker.js"}}
+{"browserSmoke":{"elapsedMs":1855,"consumer":"sdk-only","stage":"async-prover-init","state":"completed","durationMs":122}}
+{"browserSmoke":{"elapsedMs":1856,"consumer":"sdk-only","stage":"async-prover-destroy","state":"started"}}
+{"browserSmoke":{"elapsedMs":1856,"consumer":"sdk-only","stage":"async-prover-destroy","state":"completed","durationMs":0}}
+{"browserSmoke":{"elapsedMs":1857,"consumer":"sdk-only","stage":"sqlite-open","state":"started"}}
+{"browserSmoke":{"elapsedMs":1858,"consumer":"sdk-only","stage":"browser-request","state":"started","path":"/sqlite.worker.js"}}
+{"browserSmoke":{"elapsedMs":1858,"consumer":"sdk-only","stage":"http","requestId":5,"path":"/sqlite.worker.js","state":"request-received"}}
+{"browserSmoke":{"elapsedMs":1859,"consumer":"sdk-only","stage":"http","requestId":5,"path":"/sqlite.worker.js","state":"file-read-completed","bodyBytes":476347,"durationMs":0}}
+{"browserSmoke":{"elapsedMs":1859,"consumer":"sdk-only","stage":"http","requestId":5,"path":"/sqlite.worker.js","state":"response-finished","status":200,"bodyBytes":476347,"durationMs":1}}
+{"browserSmoke":{"elapsedMs":1860,"consumer":"sdk-only","stage":"browser-response","state":"headers","path":"/sqlite.worker.js","status":200}}
+{"browserSmoke":{"elapsedMs":1863,"consumer":"sdk-only","stage":"browser-request","state":"finished","path":"/sqlite.worker.js"}}
+{"browserSmoke":{"elapsedMs":1869,"consumer":"sdk-only","stage":"http","requestId":6,"path":"/sqlite3.wasm","state":"request-received"}}
+{"browserSmoke":{"elapsedMs":1869,"consumer":"sdk-only","stage":"browser-request","state":"started","path":"/sqlite3.wasm"}}
+{"browserSmoke":{"elapsedMs":1869,"consumer":"sdk-only","stage":"http","requestId":6,"path":"/sqlite3.wasm","state":"file-read-completed","bodyBytes":1058719,"durationMs":0}}
+{"browserSmoke":{"elapsedMs":1869,"consumer":"sdk-only","stage":"http","requestId":6,"path":"/sqlite3.wasm","state":"response-finished","status":200,"bodyBytes":1058719,"durationMs":1}}
+{"browserSmoke":{"elapsedMs":1870,"consumer":"sdk-only","stage":"browser-response","state":"headers","path":"/sqlite3.wasm","status":200}}
+{"browserSmoke":{"elapsedMs":1886,"consumer":"sdk-only","stage":"http","requestId":7,"path":"/sqlite3-opfs-async-proxy.js","state":"request-received"}}
+{"browserSmoke":{"elapsedMs":1886,"consumer":"sdk-only","stage":"browser-request","state":"started","path":"/sqlite3-opfs-async-proxy.js"}}
+{"browserSmoke":{"elapsedMs":1887,"consumer":"sdk-only","stage":"browser-request","state":"finished","path":"/sqlite3.wasm"}}
+{"browserSmoke":{"elapsedMs":1887,"consumer":"sdk-only","stage":"http","requestId":7,"path":"/sqlite3-opfs-async-proxy.js","state":"file-read-completed","bodyBytes":24541,"durationMs":0}}
+{"browserSmoke":{"elapsedMs":1887,"consumer":"sdk-only","stage":"http","requestId":7,"path":"/sqlite3-opfs-async-proxy.js","state":"response-finished","status":200,"bodyBytes":24541,"durationMs":1}}
+{"browserSmoke":{"elapsedMs":1888,"consumer":"sdk-only","stage":"browser-response","state":"headers","path":"/sqlite3-opfs-async-proxy.js","status":200}}
+{"browserSmoke":{"elapsedMs":1890,"consumer":"sdk-only","stage":"browser-request","state":"finished","path":"/sqlite3-opfs-async-proxy.js"}}
+{"browserSmoke":{"elapsedMs":1894,"consumer":"sdk-only","stage":"browser-request","state":"started","path":"/sqlite3-opfs-async-proxy.js"}}
+{"browserSmoke":{"elapsedMs":1894,"consumer":"sdk-only","stage":"http","requestId":8,"path":"/sqlite3-opfs-async-proxy.js","state":"request-received"}}
+{"browserSmoke":{"elapsedMs":1894,"consumer":"sdk-only","stage":"http","requestId":8,"path":"/sqlite3-opfs-async-proxy.js","state":"file-read-completed","bodyBytes":24541,"durationMs":0}}
+{"browserSmoke":{"elapsedMs":1894,"consumer":"sdk-only","stage":"http","requestId":8,"path":"/sqlite3-opfs-async-proxy.js","state":"response-finished","status":200,"bodyBytes":24541,"durationMs":0}}
+{"browserSmoke":{"elapsedMs":1896,"consumer":"sdk-only","stage":"browser-response","state":"headers","path":"/sqlite3-opfs-async-proxy.js","status":200}}
+{"browserSmoke":{"elapsedMs":1897,"consumer":"sdk-only","stage":"browser-request","state":"finished","path":"/sqlite3-opfs-async-proxy.js"}}
+{"browserSmoke":{"elapsedMs":1905,"consumer":"sdk-only","stage":"sqlite-open","state":"completed","durationMs":48}}
+{"browserSmoke":{"elapsedMs":1906,"consumer":"sdk-only","stage":"sqlite-write","state":"started"}}
+{"browserSmoke":{"elapsedMs":1909,"consumer":"sdk-only","stage":"sqlite-write","state":"completed","durationMs":2}}
+{"browserSmoke":{"elapsedMs":1909,"consumer":"sdk-only","stage":"sqlite-read","state":"started"}}
+{"browserSmoke":{"elapsedMs":1910,"consumer":"sdk-only","stage":"sqlite-read","state":"completed","durationMs":1}}
+{"browserSmoke":{"elapsedMs":1910,"consumer":"sdk-only","stage":"sqlite-close","state":"started"}}
+{"browserSmoke":{"elapsedMs":1911,"consumer":"sdk-only","stage":"sqlite-close","state":"completed","durationMs":1}}
+{"browserSmoke":{"elapsedMs":1917,"consumer":"sdk-only","stage":"browser","state":"disconnected","deadlineExceeded":false}}
+{
+  "outcome": "pass",
+  "navigationTimeoutMsPerConsumer": 30000,
+  "evaluationTimeoutMsPerConsumer": 120000,
+  "isolation": "Fresh browser process and disposable profile per consumer",
+  "consumers": [
+    {
+      "consumer": "sdk-only",
+      "outcome": "pass",
+      "browser": "145.0.7632.6",
+      "evaluationMs": 345,
+      "crs": "skipped",
+      "bn254Inputs": [],
+      "legacyBuffer": "01",
+      "exports": 71,
+      "crossOriginIsolated": true,
+      "poseidon": "0x038682aa1cb5ae4e0a3f13da432a95c77c5c111f6f030faf9cad641ce1ed7383",
+      "sqlite": "value",
+      "workers": "initialized and destroyed"
+    }
+  ],
+  "sourceHashes": {
+    ".build/sdk/aztec_bundle.js": "21f1bc33ab5a083a9ff579d40ff45ca44ff0f152316ee89944b9933fed9ea7f1",
+    "scripts/test-sdk-browser.mjs": "a830f478e9f22522534dd4c59ec743d6581c45b92fddaa284ee329b37b0f4bc1"
+  },
+  "stages": [
+    {
+      "elapsedMs": 4,
+      "stage": "http-server",
+      "state": "listening"
+    },
+    {
+      "elapsedMs": 4,
+      "consumer": "sdk-only",
+      "stage": "browser-launch",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 680,
+      "consumer": "sdk-only",
+      "stage": "browser-launch",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 680,
+      "consumer": "sdk-only",
+      "stage": "page-create",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 834,
+      "consumer": "sdk-only",
+      "stage": "page-create",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 834,
+      "consumer": "sdk-only",
+      "stage": "expose-function",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 849,
+      "consumer": "sdk-only",
+      "stage": "expose-function",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 849,
+      "consumer": "sdk-only",
+      "stage": "install-readiness-markers",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 849,
+      "consumer": "sdk-only",
+      "stage": "install-readiness-markers",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 849,
+      "consumer": "sdk-only",
+      "stage": "navigation",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 852,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/"
+    },
+    {
+      "elapsedMs": 856,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 1,
+      "path": "/",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 860,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 1,
+      "path": "/",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 276,
+      "durationMs": 4
+    },
+    {
+      "elapsedMs": 864,
+      "consumer": "sdk-only",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/",
+      "status": 200
+    },
+    {
+      "elapsedMs": 896,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 2,
+      "path": "/aztec_bundle.js",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 897,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/aztec_bundle.js"
+    },
+    {
+      "elapsedMs": 901,
+      "consumer": "sdk-only",
+      "stage": "script.sdk",
+      "state": "before-script",
+      "browserElapsedMs": 48
+    },
+    {
+      "elapsedMs": 902,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/"
+    },
+    {
+      "elapsedMs": 905,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 2,
+      "path": "/aztec_bundle.js",
+      "state": "file-read-completed",
+      "bodyBytes": 50142228,
+      "durationMs": 9
+    },
+    {
+      "elapsedMs": 1067,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 2,
+      "path": "/aztec_bundle.js",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 50142228,
+      "durationMs": 171
+    },
+    {
+      "elapsedMs": 1129,
+      "consumer": "sdk-only",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/aztec_bundle.js",
+      "status": 200
+    },
+    {
+      "elapsedMs": 1130,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/aztec_bundle.js"
+    },
+    {
+      "elapsedMs": 1565,
+      "consumer": "sdk-only",
+      "stage": "script.sdk",
+      "state": "script-load",
+      "browserElapsedMs": 714
+    },
+    {
+      "elapsedMs": 1566,
+      "consumer": "sdk-only",
+      "stage": "script.sdk",
+      "state": "after-script",
+      "browserElapsedMs": 715
+    },
+    {
+      "elapsedMs": 1568,
+      "consumer": "sdk-only",
+      "stage": "script.document",
+      "state": "dom-content-loaded",
+      "browserElapsedMs": 717
+    },
+    {
+      "elapsedMs": 1568,
+      "consumer": "sdk-only",
+      "stage": "script.document",
+      "state": "load",
+      "browserElapsedMs": 717
+    },
+    {
+      "elapsedMs": 1568,
+      "consumer": "sdk-only",
+      "stage": "navigation",
+      "state": "completed"
+    },
+    {
+      "elapsedMs": 1569,
+      "consumer": "sdk-only",
+      "stage": "sync-prover-init",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 1729,
+      "consumer": "sdk-only",
+      "stage": "sync-prover-init",
+      "state": "completed",
+      "durationMs": 160
+    },
+    {
+      "elapsedMs": 1730,
+      "consumer": "sdk-only",
+      "stage": "poseidon",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 1732,
+      "consumer": "sdk-only",
+      "stage": "poseidon",
+      "state": "completed",
+      "durationMs": 3
+    },
+    {
+      "elapsedMs": 1733,
+      "consumer": "sdk-only",
+      "stage": "async-prover-init",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 1734,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/bb-main.worker.js"
+    },
+    {
+      "elapsedMs": 1735,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 3,
+      "path": "/bb-main.worker.js",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 1735,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 3,
+      "path": "/bb-main.worker.js",
+      "state": "file-read-completed",
+      "bodyBytes": 22772,
+      "durationMs": 0
+    },
+    {
+      "elapsedMs": 1736,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 3,
+      "path": "/bb-main.worker.js",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 22772,
+      "durationMs": 1
+    },
+    {
+      "elapsedMs": 1739,
+      "consumer": "sdk-only",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/bb-main.worker.js",
+      "status": 200
+    },
+    {
+      "elapsedMs": 1742,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/bb-main.worker.js"
+    },
+    {
+      "elapsedMs": 1852,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 4,
+      "path": "/bb-thread.worker.js",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 1852,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/bb-thread.worker.js"
+    },
+    {
+      "elapsedMs": 1852,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 4,
+      "path": "/bb-thread.worker.js",
+      "state": "file-read-completed",
+      "bodyBytes": 15377,
+      "durationMs": 1
+    },
+    {
+      "elapsedMs": 1852,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 4,
+      "path": "/bb-thread.worker.js",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 15377,
+      "durationMs": 1
+    },
+    {
+      "elapsedMs": 1854,
+      "consumer": "sdk-only",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/bb-thread.worker.js",
+      "status": 200
+    },
+    {
+      "elapsedMs": 1854,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/bb-thread.worker.js"
+    },
+    {
+      "elapsedMs": 1855,
+      "consumer": "sdk-only",
+      "stage": "async-prover-init",
+      "state": "completed",
+      "durationMs": 122
+    },
+    {
+      "elapsedMs": 1856,
+      "consumer": "sdk-only",
+      "stage": "async-prover-destroy",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 1856,
+      "consumer": "sdk-only",
+      "stage": "async-prover-destroy",
+      "state": "completed",
+      "durationMs": 0
+    },
+    {
+      "elapsedMs": 1857,
+      "consumer": "sdk-only",
+      "stage": "sqlite-open",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 1858,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/sqlite.worker.js"
+    },
+    {
+      "elapsedMs": 1858,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 5,
+      "path": "/sqlite.worker.js",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 1859,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 5,
+      "path": "/sqlite.worker.js",
+      "state": "file-read-completed",
+      "bodyBytes": 476347,
+      "durationMs": 0
+    },
+    {
+      "elapsedMs": 1859,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 5,
+      "path": "/sqlite.worker.js",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 476347,
+      "durationMs": 1
+    },
+    {
+      "elapsedMs": 1860,
+      "consumer": "sdk-only",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/sqlite.worker.js",
+      "status": 200
+    },
+    {
+      "elapsedMs": 1863,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/sqlite.worker.js"
+    },
+    {
+      "elapsedMs": 1869,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 6,
+      "path": "/sqlite3.wasm",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 1869,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/sqlite3.wasm"
+    },
+    {
+      "elapsedMs": 1869,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 6,
+      "path": "/sqlite3.wasm",
+      "state": "file-read-completed",
+      "bodyBytes": 1058719,
+      "durationMs": 0
+    },
+    {
+      "elapsedMs": 1869,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 6,
+      "path": "/sqlite3.wasm",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 1058719,
+      "durationMs": 1
+    },
+    {
+      "elapsedMs": 1870,
+      "consumer": "sdk-only",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/sqlite3.wasm",
+      "status": 200
+    },
+    {
+      "elapsedMs": 1886,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 7,
+      "path": "/sqlite3-opfs-async-proxy.js",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 1886,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/sqlite3-opfs-async-proxy.js"
+    },
+    {
+      "elapsedMs": 1887,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/sqlite3.wasm"
+    },
+    {
+      "elapsedMs": 1887,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 7,
+      "path": "/sqlite3-opfs-async-proxy.js",
+      "state": "file-read-completed",
+      "bodyBytes": 24541,
+      "durationMs": 0
+    },
+    {
+      "elapsedMs": 1887,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 7,
+      "path": "/sqlite3-opfs-async-proxy.js",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 24541,
+      "durationMs": 1
+    },
+    {
+      "elapsedMs": 1888,
+      "consumer": "sdk-only",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/sqlite3-opfs-async-proxy.js",
+      "status": 200
+    },
+    {
+      "elapsedMs": 1890,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/sqlite3-opfs-async-proxy.js"
+    },
+    {
+      "elapsedMs": 1894,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "started",
+      "path": "/sqlite3-opfs-async-proxy.js"
+    },
+    {
+      "elapsedMs": 1894,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 8,
+      "path": "/sqlite3-opfs-async-proxy.js",
+      "state": "request-received"
+    },
+    {
+      "elapsedMs": 1894,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 8,
+      "path": "/sqlite3-opfs-async-proxy.js",
+      "state": "file-read-completed",
+      "bodyBytes": 24541,
+      "durationMs": 0
+    },
+    {
+      "elapsedMs": 1894,
+      "consumer": "sdk-only",
+      "stage": "http",
+      "requestId": 8,
+      "path": "/sqlite3-opfs-async-proxy.js",
+      "state": "response-finished",
+      "status": 200,
+      "bodyBytes": 24541,
+      "durationMs": 0
+    },
+    {
+      "elapsedMs": 1896,
+      "consumer": "sdk-only",
+      "stage": "browser-response",
+      "state": "headers",
+      "path": "/sqlite3-opfs-async-proxy.js",
+      "status": 200
+    },
+    {
+      "elapsedMs": 1897,
+      "consumer": "sdk-only",
+      "stage": "browser-request",
+      "state": "finished",
+      "path": "/sqlite3-opfs-async-proxy.js"
+    },
+    {
+      "elapsedMs": 1905,
+      "consumer": "sdk-only",
+      "stage": "sqlite-open",
+      "state": "completed",
+      "durationMs": 48
+    },
+    {
+      "elapsedMs": 1906,
+      "consumer": "sdk-only",
+      "stage": "sqlite-write",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 1909,
+      "consumer": "sdk-only",
+      "stage": "sqlite-write",
+      "state": "completed",
+      "durationMs": 2
+    },
+    {
+      "elapsedMs": 1909,
+      "consumer": "sdk-only",
+      "stage": "sqlite-read",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 1910,
+      "consumer": "sdk-only",
+      "stage": "sqlite-read",
+      "state": "completed",
+      "durationMs": 1
+    },
+    {
+      "elapsedMs": 1910,
+      "consumer": "sdk-only",
+      "stage": "sqlite-close",
+      "state": "started"
+    },
+    {
+      "elapsedMs": 1911,
+      "consumer": "sdk-only",
+      "stage": "sqlite-close",
+      "state": "completed",
+      "durationMs": 1
+    },
+    {
+      "elapsedMs": 1917,
+      "consumer": "sdk-only",
+      "stage": "browser",
+      "state": "disconnected",
+      "deadlineExceeded": false
+    }
+  ]
+}

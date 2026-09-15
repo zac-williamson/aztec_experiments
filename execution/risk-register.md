@@ -36,3 +36,11 @@ disposition against actual final artifacts. Details are in compiler-diagnostic-r
 ## 2026-09-12 X03 official-guidance refresh
 
 The bounded delegated primary-source recheck found no explicit later clearance lifting the August7 V5 deployment pause. The August17 package5.2 interoperability statement is separate from incident closure. See evidence/X03/clearance-recheck-2026-09-12.md for inspected sources/dates and limits. X03 remains a production-release blocker; local engineering continues. Final network state and fresh clearance still require verification.
+
+## W01-F01 — RPC credential attachment to unrelated origins
+
+Reproduced2026-09-15 with an in-memory fetch observer: the previous shared/app-env.js wrapper attached the configured RPC credential when any request URL contained `aztec-labs.com`, including that text in an unrelated origin's query. No network request or real credential was used. W01 owns remediation under fee/RPC/issuer observations (W01-A02); T05 must retain the regression on the final client candidate.
+
+The wrapper now compares parsed origin and exact configured JSON-RPC pathname, preserves Request headers, and rejects redirects on credential-bearing requests. The baseline observation is `evidence/W01/rpc-credential-baseline.json`; two tests of the actual wrapper pass in `evidence/W01/rpc-credential-boundary-002.log`. Browser release qualification remains part of later client/release verification. This finding does not establish that any real credential was transmitted to a third party.
+
+W01-F01 generated-page follow-up: a second immediately executed wrapper in shared/aztec-lib.js still used substring matching underneath the fixed app-env wrapper. Actual combined-source in-memory reproduction confirms credential leakage to an unrelated URL (rpc-duplicate-wrapper-baseline.json). Removed duplicate installation; all four app entrypoints already call the single app-env setup after it loads. Generated consumer checks and rebuilt pages verify the final boundary.

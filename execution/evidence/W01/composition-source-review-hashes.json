@@ -1,0 +1,12 @@
+{
+  "scripts/w01-sponsor-flow.mjs": "476dfe0a8cdf9be3e370555fa5d9b2c78e9d32a144730a5256206b64472a6ed0",
+  "shared/sponsor-client.mjs": "ce72ab080b5bcb6517a4a249620c3375a62ce8cf7fb453543b77226095f25ed8",
+  "scripts/prove-application-action.mjs": "b58a1298a7342578fbc6533e8ad6adcee540c8b0561da3228cd0925f92ba2a99",
+  "scripts/c01-bridge-flow.mjs": "9fbd85abe203818c59321cfdee515cd1b6dfbad9ceb083d2804893085493658c",
+  "scripts/c01-deposit-flow.mjs": "6a596a038b9d724bb6b2ef488c6387037531c952ed0ccf7a6251815b8666e571",
+  "scripts/c01-exit-flow.mjs": "b3c99e5ce8bb37d4b9c57e0f5c110c5813754c9e4a93d3cda8e59cbeaf4a7487",
+  "scripts/w01-shared-funding.mjs": "174f9433ab6132a9503220576a0fd0048868226bb87b6fac917363689831c408",
+  "billboard/sponsor_contract/src/main.nr": "33ab289d70c04b1cc30b0de75737a15ff949669fbb9360ce5071cc98bcdf70af",
+  "node_modules/@aztec/aztec.js/src/contract/contract_function_interaction.ts": "1ba603616ff6574c8ac9486e2ff0c7d9dd15127aa334a51be261f0d7d9d63537",
+  "node_modules/@aztec/stdlib/src/gas/gas_settings.ts": "504c8986cb820b85b042ff44ce53ccf72272f51484a1d5a91acaf36409e1eae4"
+}

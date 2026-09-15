@@ -1,0 +1,12 @@
+{"stage":"start-disposable-l1","elapsedMs":232}
+{"stage":"prepare-genesis","elapsedMs":363}
+{"stage":"deploy-local-protocol-fixture","elapsedMs":1937}
+{"stage":"wait-for-local-validator-activation","elapsedMs":3181}
+{"stage":"start-application-node","elapsedMs":3200}
+{"stage":"prove-board-deployment","elapsedMs":5830}
+{"stage":"include-board-deployment","elapsedMs":18758}
+{"stage":"prepare-and-prove-ready","elapsedMs":31426}
+{"stage":"include-ready","elapsedMs":41420}
+{"stage":"settle-ready-test-message","elapsedMs":63631}
+{"stage":"sponsor:prove-deploy","elapsedMs":81465}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/W01/application-2a7e2fdb-3a88-40c4-8bec-5e44cc8ef0ee.json","passed":false,"profile":"genuine shared sponsor funding, unfunded-author claim/exit/refund; posting not yet qualified"}
