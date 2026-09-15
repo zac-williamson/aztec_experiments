@@ -1,0 +1,18 @@
+✔ real standard route derives key, opens private SQLite, persists stable opaque namespace and closes (14.052875ms)
+✔ strict public configuration rejects extra secret fields and unsafe nested values (3.053125ms)
+✔ bounded config reader rejects malformed/oversized/nonregular/link files (1.577458ms)
+✔ invalid loaded wallet and nonprivate coupon directory fail with fixed safe error (2.239833ms)
+✔ both sponsor options and missing option values reject at actual CLI main seam before SDK (1.806208ms)
+✔ actual CLI RPC wrapper never leaks credential through misleading origin/path/query (10.68125ms)
+✔ actual CLI RPC wrapper preserves URL/Request/Headers and forbids authenticated redirects (2.1975ms)
+✔ actual CLI RPC wrapper honors issuer privacy mode even on exact endpoint collision (0.507625ms)
+✔ actual CLI main finally closes real encrypted provider on success and action failure (19.21875ms)
+✔ actual CLI fatal mapping preserves reconciliation codes without private diagnostics (0.663334ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 328.902125

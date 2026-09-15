@@ -43,3 +43,12 @@ test('Request and URL inputs preserve headers without mutating caller data', asy
   await window.fetch(new URL('https://rpc.example/aztec'));
   assert.equal(calls[1].init.headers.get('x-aztec-api-key'), 'disposable-test-credential');
 });
+
+test('explicit private transport mode never gains RPC credentials even at the same endpoint',async()=>{
+  const {window,calls}=boundary();
+  const options={credentials:'omit',referrerPolicy:'no-referrer',headers:{'content-type':'application/json'}};
+  await window.fetch('https://rpc.example/aztec',options);
+  assert.equal(calls[0].init,options);assert.equal(new Headers(calls[0].init.headers).get('x-aztec-api-key'),null);
+  const request=new Request('https://rpc.example/aztec',options);await window.fetch(request);
+  assert.equal(calls[1].input,request);assert.equal(calls[1].init,undefined);assert.equal(request.headers.get('x-aztec-api-key'),null);
+});

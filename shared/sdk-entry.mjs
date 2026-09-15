@@ -17,6 +17,7 @@ export { NO_FROM } from '@aztec/aztec.js/account';
 export { prepareSponsoredAction } from './sponsor-client.mjs';
 export { readRegisteredSponsorBatch } from './sponsor-state.mjs';
 export { createSponsorCouponProvider } from './sponsor-coupon-provider.mjs';
+export { createLocalSponsorCouponProvider } from './local-sponsor-provider.mjs';
 export { createIndexedDBSponsorCouponStore } from './sponsor-coupon-store.mjs';
 export { createSponsorTransport } from './sponsor-transport.mjs';
 export { FunctionCall, FunctionSelector, FunctionType, encodeArguments, loadContractArtifact } from '@aztec/aztec.js/abi';

@@ -87,7 +87,7 @@ async function child(lane) {
 
   const loader = extract(source, 'loadAztecSDK');
   const a = await loader.instantiate(bindings)();
-  for (const name of ['prepareSponsoredAction','readRegisteredSponsorBatch','createSponsorCouponProvider','createIndexedDBSponsorCouponStore','createSponsorTransport']) assert.equal(typeof a[name], 'function', 'Bundled sponsor export missing: '+name);
+  for (const name of ['prepareSponsoredAction','readRegisteredSponsorBatch','createSponsorCouponProvider','createLocalSponsorCouponProvider','createIndexedDBSponsorCouponStore','createSponsorTransport']) assert.equal(typeof a[name], 'function', 'Bundled sponsor export missing: '+name);
   assert.equal(globalThis.process, realProcess);
   assert.ok(globalThis.indexedDB, 'actual loader must supply IndexedDB');
   const deriveSource = fs.readFileSync(path.join(ROOT, 'shared/aztec-lib.js'), 'utf8');

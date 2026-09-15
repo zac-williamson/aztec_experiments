@@ -4,7 +4,7 @@
 // ============================================================
 //
 // Uses ONLY the browser bundle (aztec_bundle.js) for all Aztec
-// functionality — no npm Aztec SDK needed. The bundle provides
+// execution. Standard sponsorship also uses the local SDK-backed encrypted SQLite adapter. The bundle provides
 // createPXE, createAztecNodeClient, openPXEStore, all
 // crypto (WASM-based), and all contract classes.
 //
@@ -47,6 +47,7 @@
 //   --eth-rpc <url>          Ethereum RPC URL
 //   --aztec-wallet <file>    Path to Aztec wallet.json
 //   --eth-wallet <file>      Path to ETH wallet JSON
+//   --sponsor-config <file>  Public issuer/sponsor/gas JSON; uses the loaded wallet and encrypted SQLite
 //   --sponsor-provider <file> Local trusted module exporting createSponsorship({aztec})
 //   --json                   Output posts as JSON (for list action, machine-readable)
 //   --pxe-dir <prefix>       PXE data directory prefix (default: pxe_bb_user_)
@@ -128,17 +129,24 @@ if (!VALID_ACTIONS.includes(ACTION)) {
 // ============================================================
 // Monkey-patch fetch BEFORE loading SDK (adds API key for Aztec RPC)
 // ============================================================
-if (AZTEC_API_KEY) {
-  const origFetch = globalThis.fetch;
-  globalThis.fetch = function(input, init) {
-    const url = typeof input === 'string' ? input : (input && input.url) || '';
-    if (url && url.includes('aztec-labs.com')) {
-      init = init || {};
-      init.headers = { ...(init.headers || {}), 'x-aztec-api-key': AZTEC_API_KEY };
+function createCliRpcFetch(originalFetch, nodeUrl, apiKey) {
+  const endpoint = new URL(nodeUrl);
+  if (!['https:', 'http:'].includes(endpoint.protocol) || endpoint.username || endpoint.password) throw new Error('Invalid Aztec RPC endpoint.');
+  return function(input, init) {
+    const isRequest = input instanceof Request;
+    const credentials = init?.credentials ?? (isRequest ? input.credentials : undefined);
+    const referrerPolicy = init?.referrerPolicy ?? (isRequest ? input.referrerPolicy : undefined);
+    if (credentials === 'omit' && referrerPolicy === 'no-referrer') return originalFetch(input, init);
+    const target = new URL(typeof input === 'string' || input instanceof URL ? String(input) : input.url);
+    if (!target.username && !target.password && target.origin === endpoint.origin && target.pathname === endpoint.pathname) {
+      const headers = new Headers(init?.headers ?? (isRequest ? input.headers : undefined));
+      headers.set('x-aztec-api-key', apiKey);
+      return originalFetch(input, { ...init, headers, redirect: 'error' });
     }
-    return origFetch(input, init);
+    return originalFetch(input, init);
   };
 }
+if (AZTEC_API_KEY) globalThis.fetch = createCliRpcFetch(globalThis.fetch.bind(globalThis), AZTEC_NODE_URL, AZTEC_API_KEY);
 
 // ============================================================
 // Logging
@@ -337,6 +345,10 @@ function createStoreNode(a) {
 // Main
 // ============================================================
 async function main() {
+  if (Object.hasOwn(args, 'sponsor-config') || Object.hasOwn(args, 'sponsor-provider')) {
+    const { validateCliSponsorFlags } = await import('../../../../sponsor-service/cli-provider.mjs');
+    validateCliSponsorFlags(args);
+  }
   log('Billboard User CLI', 'info');
   log('  Action:       ' + ACTION, 'info');
   log('  Aztec node:   ' + AZTEC_NODE_URL, 'info');
@@ -409,7 +421,15 @@ async function main() {
     artifact, sponsorArtifact,
   };
 
+  let closeSponsorship, sponsorshipFailure;
+  try {
   let sponsorship;
+  if (args['sponsor-config']) {
+    const { createCliSponsorship } = await import('../../../../sponsor-service/cli-provider.mjs');
+    const local = await createCliSponsorship({ configPath: args['sponsor-config'], walletPath: AZTEC_WALLET_PATH, walletSecret: aztecWallet.secretKey });
+    sponsorship = local.sponsorship;
+    closeSponsorship = local.close;
+  }
   if (args['sponsor-provider']) {
     // Explicit executable local integration, not an issuer URL or a secret-bearing CLI argument.
     const providerPath = path.resolve(args['sponsor-provider']);
@@ -418,6 +438,7 @@ async function main() {
       const provider = await import(pathToFileURL(providerPath).href);
       if (typeof provider.createSponsorship !== 'function') throw new Error();
       sponsorship = await provider.createSponsorship({ aztec: a });
+      if (typeof sponsorship?.couponProvider?.close === 'function') closeSponsorship = () => sponsorship.couponProvider.close();
     } catch (_) { throw new Error('Local sponsor provider could not be initialized.'); }
   }
 
@@ -510,9 +531,31 @@ async function main() {
       }
     } catch (cacheErr) { /* ignore cache errors on failure path */ }
     log('', 'error');
+    if (args['sponsor-config']) throw e;
     log('FAILED: ' + (e.stack || e.message || String(e)), 'error');
-    __realProcess.exit(1);
+    throw e;
+  }
+  } catch (error) {
+    sponsorshipFailure = error;
+    throw error;
+  } finally {
+    if (closeSponsorship) {
+      try { await closeSponsorship(); } catch (_) {
+        if (sponsorshipFailure) log('Sponsor storage could not be closed.', 'error');
+        else throw new Error('Sponsor storage could not be closed.');
+      }
+    }
   }
 }
 
-main().catch(e => { log('FATAL: ' + e.message, 'error'); __realProcess.exit(1); });
+function formatCliSponsorFailure(error) {
+  const messages = {
+    CLI_SPONSOR_CONFIGURATION_UNAVAILABLE: 'Sponsor configuration could not be loaded. Check the local configuration and wallet storage.',
+    BB_SUBMISSION_UNKNOWN: 'Transaction submission outcome is unknown. Check its outcome before another attempt.',
+    BB_TRANSACTION_FAILED: 'The transaction did not complete successfully. Check its receipt before another attempt.',
+    BB_STATE_CONFLICT: 'Transaction state changed. Refresh and create a new proof before another attempt.',
+  };
+  try { if (typeof error?.code === 'string' && Object.hasOwn(messages, error.code)) return error.code + ': ' + messages[error.code]; } catch (_) {}
+  return 'Sponsored action could not be completed. Check any transaction outcome before another attempt.';
+}
+main().catch(e => { log('FATAL: ' + (args['sponsor-config'] ? formatCliSponsorFailure(e) : e.message), 'error'); __realProcess.exit(1); });

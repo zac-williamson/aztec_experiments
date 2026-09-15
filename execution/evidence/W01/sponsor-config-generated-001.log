@@ -1,0 +1,33 @@
+✔ user generated page binds the canonical sponsor and isolated RPC credential (114.612958ms)
+✔ censor generated page binds the canonical sponsor and isolated RPC credential (34.838875ms)
+✔ deploy generated page binds the canonical sponsor and isolated RPC credential (34.107083ms)
+✔ fee-juice generated page binds the canonical sponsor and isolated RPC credential (3.466792ms)
+✔ actual engine sender routes claim through exact sponsor options (3.340042ms)
+✔ actual engine sender routes post through exact sponsor options (0.533167ms)
+✔ actual engine sender routes post dummy through exact sponsor options (0.512917ms)
+✔ actual engine sender routes withdraw through exact sponsor options (0.519584ms)
+✔ missing configuration, artifact, SDK or provider rejects before coupon acquisition or signing (2.20675ms)
+✔ literal gas settings hydrate through actual SDK and incomplete bounds never default (0.625667ms)
+✔ provider exhaustion and private errors never send, leak input text or fall back (1.146084ms)
+✔ exact submission ambiguity and paid failure propagate without reacquiring or resending (1.312666ms)
+✔ invalid author-funded or missing-auth prepared route cannot be sent (1.442375ms)
+✔ actual main entry fails closed for every private action before account/provider work (1.87075ms)
+✔ actual wallet keeps checked NO_FROM gas and owner scope/tag through simulation and proof (28.797916ms)
+✔ browser config preserves only the installed local sponsorship callback (3.727458ms)
+✔ provider cannot smuggle private messages or retry codes into the UI (1.2575ms)
+✔ actual main claim selects sponsorship and never calls the direct method (14.491125ms)
+✔ actual main post selects sponsorship and never calls the direct method (2.371625ms)
+✔ actual main post dummy selects sponsorship and never calls the direct method (1.347167ms)
+✔ actual main withdraw selects sponsorship and never calls the direct method (1.212625ms)
+✔ local coupon callback reads only deployment-scoped batch state without owner or action (0.447459ms)
+✔ actual RPC wrapper confines credentials and disallows redirect forwarding (16.269ms)
+✔ Request and URL inputs preserve headers without mutating caller data (1.166875ms)
+✔ explicit private transport mode never gains RPC credentials even at the same endpoint (0.539083ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 401.499166

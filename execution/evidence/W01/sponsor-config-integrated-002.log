@@ -1,0 +1,38 @@
+✔ static browser config reopens encrypted coupons with wallet-derived key and closes each action (13.725625ms)
+✔ browser action failure closes provider and preserves action failure (2.183167ms)
+✔ wallet or sponsor change isolates local browser storage (2.486833ms)
+✔ invalid static config fails before action with fixed error (2.026ms)
+✔ non-author actions and explicitly supplied local providers retain their route (0.512292ms)
+✔ cleanup failure cannot erase submission uncertainty from the action (0.879209ms)
+✔ real standard route derives key, opens private SQLite, persists stable opaque namespace and closes (19.97975ms)
+✔ strict public configuration rejects extra secret fields and unsafe nested values (4.188167ms)
+✔ bounded config reader rejects malformed/oversized/nonregular/link files (1.791125ms)
+✔ invalid loaded wallet and nonprivate coupon directory fail with fixed safe error (2.065917ms)
+✔ both sponsor options and missing option values reject at actual CLI main seam before SDK (1.934042ms)
+✔ actual CLI RPC wrapper never leaks credential through misleading origin/path/query (11.328084ms)
+✔ actual CLI RPC wrapper preserves URL/Request/Headers and forbids authenticated redirects (3.030041ms)
+✔ actual CLI RPC wrapper honors issuer privacy mode even on exact endpoint collision (0.6245ms)
+✔ actual CLI main finally closes real encrypted provider on success and action failure (18.183042ms)
+✔ actual CLI fatal mapping preserves reconciliation codes without private diagnostics (0.653792ms)
+✔ stable derivation opens actual encrypted records after wallet/sponsor restart (19.83625ms)
+✔ different wallet cannot decrypt prior local store (5.086417ms)
+✔ different sponsor cannot decrypt prior local store (4.3555ms)
+✔ invalid secrets/configuration fail before any store creation or network work (0.738083ms)
+✔ initialization errors are fixed and partially created adapters are closed (0.910542ms)
+✔ close is idempotent, blocks future acquire and sanitizes adapter close failures (0.426292ms)
+✔ actual local HTTP sees only window/token/opaque leaf, never wallet secret/owner/blind (103.43675ms)
+✔ owned reader waits for registration, returns normal result, and closes admission (4.2455ms)
+✔ already aborted callback starts neither registration wait nor state read (0.490667ms)
+✔ abort while registration is pending prevents a later state read and drain owns the wait (1.509333ms)
+✔ abort during a started read waits for its settlement before allowing teardown (0.710416ms)
+✔ registration rejection is immediately handled and skips the read (0.914416ms)
+✔ state read rejection retains its disposition and releases owned cleanup (0.497459ms)
+✔ drain waits for both sibling reads even when one succeeds and the other rejects (0.620834ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 576.66175

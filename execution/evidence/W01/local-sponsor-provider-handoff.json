@@ -1,0 +1,16 @@
+{
+  "node": "24.21.0",
+  "tests": 7,
+  "passed": 7,
+  "failed": 0,
+  "scope": "wallet-derived local wrapper with actual crypto/SQLite and ephemeral issuer; no registered coupon/proof claim",
+  "sha256": {
+    "shared/local-sponsor-provider.mjs": "a6d5a5f76c829867d8165b389afe62f326a3b48e2868d43c5796bf521324dde6",
+    "scripts/test-local-sponsor-provider.mjs": "4c8fa2053baf0ddfbfc0dcc884fc91fe39571c9754a38619a6833528be55cabc",
+    "shared/sponsor-coupon-provider.mjs": "1cd0894cf08a6d3d4458453cf314778bf6b91b25183902a9574f7fee6da437a7",
+    "shared/sponsor-transport.mjs": "55a0efb60f2dc632e6ceeb0a55295471b3e905e9dbd45741d54fdf6d2fd34f4f",
+    "sponsor-service/coupon-store.mjs": "037bf809d64f41e9f413600d1ac6c22c741cb52f5eca75c8850f8f8c496e7e81",
+    "execution/evidence/W01/local-sponsor-provider-tests.log": "9657c29be14c22c15373233bf399319c518d5195d400917fed0b7eeb2bb7e39e",
+    "execution/evidence/W01/local-sponsor-provider-handoff.md": "e0bf24001e57108a454e8321d4515dd064f60c7d04f6fc771437c60b4412e726"
+  }
+}

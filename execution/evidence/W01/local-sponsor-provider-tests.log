@@ -1,0 +1,15 @@
+✔ stable derivation opens actual encrypted records after wallet/sponsor restart (11.964208ms)
+✔ different wallet cannot decrypt prior local store (3.855417ms)
+✔ different sponsor cannot decrypt prior local store (3.696875ms)
+✔ invalid secrets/configuration fail before any store creation or network work (0.67375ms)
+✔ initialization errors are fixed and partially created adapters are closed (0.71275ms)
+✔ close is idempotent, blocks future acquire and sanitizes adapter close failures (0.462916ms)
+✔ actual local HTTP sees only window/token/opaque leaf, never wallet secret/owner/blind (91.536417ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 511.556958

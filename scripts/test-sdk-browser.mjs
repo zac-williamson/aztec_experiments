@@ -176,7 +176,7 @@ async function qualifyConsumer(consumer) {
       const compatibilityBuffer = Buffer.from(new Uint8Array([1])).toString('hex');
       if (compatibilityBuffer !== '01') throw new Error('Legacy app Buffer compatibility failed');
       const a = globalThis.__aztec;
-      for (const name of ['prepareSponsoredAction','readRegisteredSponsorBatch','createSponsorCouponProvider','createIndexedDBSponsorCouponStore','createSponsorTransport']) {
+      for (const name of ['prepareSponsoredAction','readRegisteredSponsorBatch','createSponsorCouponProvider','createLocalSponsorCouponProvider','createIndexedDBSponsorCouponStore','createSponsorTransport']) {
         if (typeof a[name] !== 'function') throw new Error('Bundled sponsor export missing: '+name);
       }
       if (!a) throw new Error('SDK global missing');
@@ -196,8 +196,14 @@ async function qualifyConsumer(consumer) {
       const value = await stage('sqlite-read', () => map.getAsync('key'));
       await stage('sqlite-close', () => store.close());
       await stage('real-browser-encrypted-coupon-store', async () => {
-        const encryptionKey = await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+        let encryptionKey;
         const databaseName = 'coupon-durability-smoke';
+        const localProvider = await a.createLocalSponsorCouponProvider({
+          walletSecret:new a.Fr(1).toString(),sponsorAddress:new a.Fr(2).toString(),windowDuration:'60',issuerUrl:'https://issuer.invalid',
+          createStore:async options=>{encryptionKey=options.encryptionKey;return a.createIndexedDBSponsorCouponStore({...options,databaseName});},
+        });
+        await localProvider.close();
+        if (encryptionKey.extractable) throw new Error('Wallet-derived coupon key must not be extractable');
         const options = {encryptionKey,databaseName};
         let first,second;
         try {

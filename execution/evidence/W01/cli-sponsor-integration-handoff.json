@@ -1,0 +1,16 @@
+{
+  "node": "24.21.0",
+  "tests": 10,
+  "passed": 10,
+  "failed": 0,
+  "scope": "actual CLI source seams and config/crypto/SQLite, no complete CLI transaction/proof/build",
+  "sha256": {
+    "apps/src/billboard/user/cli.mjs": "b8ebf26d7985e6ca31f4b252b5028936c5a990d105b7e433e140f16d15397678",
+    "sponsor-service/cli-provider.mjs": "79c7c05e6121a54defb9a467a95801bd0661a251d2687a4664da4e196602cd54",
+    "scripts/test-cli-sponsor-config.mjs": "9de12cc5de24f0b20fbfbb04d93387b45bcd25aac4ce75b2084d48dfcbb1cfdf",
+    "shared/local-sponsor-provider.mjs": "a6d5a5f76c829867d8165b389afe62f326a3b48e2868d43c5796bf521324dde6",
+    "sponsor-service/coupon-store.mjs": "037bf809d64f41e9f413600d1ac6c22c741cb52f5eca75c8850f8f8c496e7e81",
+    "execution/evidence/W01/cli-sponsor-config-tests.log": "78802ac24d9d2a059a0275fad45d474646c81118d8c1af3e94b465d40c01672b",
+    "execution/evidence/W01/cli-sponsor-integration-handoff.md": "34f7c76a47ce26379a85ccdd10416f3ff84656029d18377c3bbfb467d53dc404"
+  }
+}
