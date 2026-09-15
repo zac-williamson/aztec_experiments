@@ -42,7 +42,7 @@ const options = {
   mainFields: ['browser', 'module', 'main'], conditions: ['browser'],
   plugins: [relocationPlugin, polyfillNode()],
   loader: { '.wasm': 'binary' }, legalComments: 'eof', metafile: true,
-  define: { 'process.env.NODE_ENV': '"production"' }, logLevel: 'warning',
+  define: { 'process.env.NODE_ENV': '"production"', 'process.env.LOG_LEVEL': '"silent"' }, logLevel: 'warning',
 };
 // Preserve the existing synchronous global while resolving import.meta URLs to
 // the actual emitted bundle URL rather than esbuild's empty import_meta object.

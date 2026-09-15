@@ -358,8 +358,8 @@ function waitForBundleThenInit() {
         try {
           await loadCensorWalletAndConnect();
         } catch (e) {
-          log('Setup failed: ' + (e.message || e), 'error', 'setupStatus');
-          console.error(e);
+          log('Setup failed: ' + 'operation did not complete; check configuration and recovery records', 'error', 'setupStatus');
+          console.error('Application operation did not complete.');
         }
       },
     });

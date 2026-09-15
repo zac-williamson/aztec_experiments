@@ -218,3 +218,13 @@ example, not a local `BILLBOARD_RPC_CONFIG` override.
 CI compares freshly built generated consumers with their committed copies before
 a second rebuild, then checks the aggregate inventory on that runner. Changing
 frontend source without rebuilding its pages must fail provenance validation.
+
+Wallet recovery uses random embedded Aztec keys and password-encrypted browser
+recovery files. Keep the password separately and export an updated file after
+each new collateral deposit. Ethereum signing uses a browser wallet; no Ethereum
+key generation or signature-derived Aztec keys are offered in the UI. See
+`execution/recovery-runbook.md` for scoped custody, CLI file permissions and lock
+recovery. The application SDK build fixes internal diagnostic logging to `silent`;
+application progress and validated public transaction identifiers remain visible.
+This does not encrypt the browser PXE database or protect an unlocked malicious
+page. Use a trusted device/profile and preserve backups.

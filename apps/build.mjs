@@ -68,7 +68,7 @@ const sharedFiles = {
   CRS_CLIENT: loadShared('crs-client.js'),
   POSEIDON2: loadShared('poseidon2.js'),
   ETHERS: loadShared('ethers.min.js'),
-  WALLET_BUTTONS: loadShared('wallet-buttons.js'),
+  WALLET_BUTTONS: loadShared('wallet-backup.js') + '\n' + loadShared('wallet-buttons.js'),
   APP_ENV: loadShared('app-env.js'),
   MODERATION_POLICY: loadShared('moderation-policy.js'),
 };

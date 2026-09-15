@@ -1,0 +1,27 @@
+=== Daemon Integration Tests (with mock infra) ===
+
+  ✓ dry-run flags violation in output but does not call declare-immoral
+  ✓ dry-run with OK verdict does not flag
+  ✓ skips already-flagged posts
+  ✓ skips empty posts
+  ✓ reasoning-only model output is an observable failure and cannot flag
+  ✓ processes multiple posts with mixed verdicts
+  ✓ missing --portal-address exits with error
+  ✓ --from skips earlier posts
+  ✓ non-dry-run calls declare-immoral via CLI
+  ✓ reads policy from contract output
+  ✓ rejects a local policy override instead of signing with fallback text
+  ✓ warns on posts past the censor window
+  ✓ warns on posts about to expire in censor window
+  ✓ processes oldest unflagged posts first (censor window urgency)
+  ✓ model cannot add a destination, operation or post index to a verdict
+  ✓ failed signing is not reported as a completed successful job
+  ✓ production CLI cannot bypass model isolation with skip-bootstrap
+  ✓ old post policy fails closed without model or signer action
+  ✓ empty contract policy fails closed without model or signer action
+  ✓ each poll refreshes exact policy before processing its matching new posts
+  ✓ private fee configuration is mandatory at daemon startup
+
+=== Results ===
+  Passed: 21
+  Failed: 0

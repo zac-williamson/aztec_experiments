@@ -14,7 +14,7 @@ const root = path.resolve(directory, '..');
 const flags = new Set(['dry-run', 'once']);
 const values = new Set(['portal-address', 'censor-wallet', 'policy', 'llama-port',
   'poll-interval', 'from', 'ctx-size', 'threads', 'node-url', 'model', 'cli',
-  'model-image', 'model-sha256', 'private-fee-config']);
+  'model-image', 'model-sha256', 'private-fee-config', 'eth-rpc']);
 function parseArgs(argv) {
   const args = Object.create(null);
   for (let i = 0; i < argv.length; i++) {
@@ -44,10 +44,12 @@ function configuration(argv) {
   const args = parseArgs(argv);
   if (args.policy) throw new Error('--policy is unsupported: moderation requires the exact contract policy');
   if (!args['portal-address']) throw new Error('--portal-address is required');
+  if (!args['eth-rpc']) throw new Error('--eth-rpc is required');
   if (!args['private-fee-config']) throw new Error('--private-fee-config is required');
   return Object.freeze({
     portalAddress: args['portal-address'],
     privateFeeConfig: path.resolve(args['private-fee-config']),
+    ethRpcUrl: args['eth-rpc'],
     censorWallet: path.resolve(args['censor-wallet'] || path.join(root, 'wallets/censor_aztec_wallet.json')),
     cliPath: path.resolve(args.cli || path.join(root, 'apps/src/billboard/user/cli.mjs')),
     aztecNodeUrl: args['node-url'] || 'http://127.0.0.1:5080',
@@ -76,7 +78,7 @@ export async function runDaemon(argv = process.argv.slice(2), { startRuntime = s
   assertNodeVersion();
   const config = configuration(argv);
   const signer = createSigner({ cliPath: config.cliPath, censorWallet: config.censorWallet,
-    portalAddress: config.portalAddress, aztecNodeUrl: config.aztecNodeUrl, privateFeeConfig: config.privateFeeConfig });
+    portalAddress: config.portalAddress, aztecNodeUrl: config.aztecNodeUrl, privateFeeConfig: config.privateFeeConfig, ethRpcUrl: config.ethRpcUrl });
   if (config.modelPath && fs.existsSync(config.modelPath) &&
       fs.realpathSync(config.modelPath) === fs.realpathSync(config.censorWallet)) {
     throw new Error('Model and signer wallet must be different files');

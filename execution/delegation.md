@@ -423,3 +423,13 @@ protection plus missing adversarial bridge/conservation tests and recovery runbo
 - Root: aggregate release manifest implementation and serial integrated checks.
 
 A01 lanes completed: consumer fee-route repair, CI/provenance implementation and independent bounded final review integrated. Root verified 108 checks, daemon/signer checks, two frontend rebuilds and aggregate; native jobs remained serial/unused.
+
+## W02 active lanes
+- history_contract: read-only wallet/key/recovery audit and recommended narrow supported route.
+- history_pxe: CLI private cache/network context inspection and bounded design; no edits until root allocates.
+- history_tests: browser claim-secret storage/export/restore inspection and bounded design; no edits until root allocates.
+- Root: shared wallet UI/context design, integration and serial verification.
+
+W02 integration: three implementation lanes delivered focused tests. Root completed actual two-profile browser recovery; genuine restored-author private-fee/post run is active under540s. Final additional reviewer turns hit account usage limits; root owns remaining inspection and does not claim delegated final signoff on subsequent changes. No concurrent native jobs.
+
+W02 closed by root: actual browser restore/tab exclusion, genuine restored signing authority, integrated tests and artifact checks passed. Final code review self-performed after delegated quota exhaustion; no external review claim. No heavy jobs remain.

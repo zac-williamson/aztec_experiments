@@ -273,7 +273,7 @@ aztec/
 │   └── notes/
 │       └── SECURITY_PROPERTIES_FORMAL.md ← Theorem-by-theorem mapping (P1-P18, I1-I12)
 │
-├── .pxe-cache/                     ← CLI PXE cache (IndexedDB dumps, gitignored)
+├── .pxe-cache-v2/                  ← encrypted scoped user CLI checkpoints (gitignored)
 │
 └── node_modules/                    ← ethers, fake-indexeddb
 ```
@@ -393,14 +393,13 @@ The web apps run the full PXE stack entirely in the browser:
 
 ### CLI PXE cache
 
-Both CLIs dump/restore the in-memory IndexedDB state to `~/.pxe-cache/` between runs, saving ~2-4s on PXE sync. Cache files are keyed by account address.
+The user CLI encrypts scoped IndexedDB checkpoints under `.pxe-cache-v2/` and prevents concurrent writers with a lock. The deploy CLI does not persist PXE checkpoints. Both require explicit Aztec/Ethereum RPC URLs and private wallet files. Old plaintext caches are preserved but not automatically imported.
 
-### Wallet loading
+### Wallet loading and recovery
 
-The shared `wallet-buttons.js` module provides a common wallet UI across all three apps with:
-- **ETH wallet**: Load from JSON, Generate random, or connect browser wallet
-- **Aztec wallet**: Load from JSON, Generate random, or derive from ETH wallet (sign a message, use signature as secret key)
-- Color-coded button states and auto-advancement when all wallets are loaded
+The browser uses a random embedded Aztec wallet and your external Ethereum browser wallet. Aztec keys are not derived from Ethereum signatures. Create and restore password-encrypted recovery files; export again after each collateral deposit so its random claim secret is included. Full account salts are preserved exactly. Reload to switch accounts or networks; concurrent wallet actions are blocked across tabs.
+
+Keep the recovery password separately. An unlocked page and its PXE database require a trusted device/browser profile. CLI users must back up the wallet plus its `claim-secrets-v2/` directory, not just the PXE checkpoint. See [the recovery runbook](execution/recovery-runbook.md) for current commands and limitations. Historical CLI examples above predate the mandatory private-fee configuration and explicit portal/network flags; use the runbook commands for the current application.
 
 ## Prerequisites
 

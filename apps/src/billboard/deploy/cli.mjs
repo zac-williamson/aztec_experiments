@@ -16,7 +16,7 @@
 //
 // Options:
 //   --contract-salt <num>    Contract deployment salt (default: 2028)
-//   --node-url <url>         Aztec node URL (default: from rpc-config.json)
+//   --node-url <url>         Explicit Aztec node URL (required)
 //   --eth-rpc <url>          Ethereum RPC URL
 //   --aztec-wallet <file>    Path to Aztec wallet.json
 //   --eth-wallet <file>      Path to ETH wallet JSON
@@ -36,6 +36,7 @@ import { createHash } from 'node:crypto';
 import BillboardCRS from '../../../../shared/crs-client.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { loadCliWalletInputs, validateCliNetwork } from '../user/wallet-inputs.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const __realProcess = process; // save before bundle overrides it
@@ -59,17 +60,15 @@ const args = parseArgs();
 // ============================================================
 // Config
 // ============================================================
-const rpcConfigPath = path.join(__dirname, '..', '..', '..', '..', 'shared', 'rpc-config.json');
-const rpcConfig = fs.existsSync(rpcConfigPath) ? JSON.parse(fs.readFileSync(rpcConfigPath, 'utf8')) : {};
-
-const AZTEC_NODE_URL = args['node-url'] || rpcConfig.nodeUrl || 'https://v5.mainnet.rpc.aztec-labs.com';
-const AZTEC_API_KEY = __realProcess.env.AZTEC_API_KEY || rpcConfig.apiKey || '';
-const ETH_RPC_URL = args['eth-rpc'] || 'https://invictus.ambire.com/ethereum';
+const network = validateCliNetwork({nodeUrl:args['node-url'],ethRpcUrl:args['eth-rpc']});
+const AZTEC_NODE_URL = network.nodeUrl;
+const AZTEC_API_KEY = __realProcess.env.AZTEC_API_KEY || '';
+const ETH_RPC_URL = network.ethRpcUrl;
 // Defaults match the deploy UI template (salt 2028, 0.002 ETH, 10s, K=4, censor set)
 const CONTRACT_SALT = parseInt(args['contract-salt'] || args['salt']) || 2028;
 const PROJECT_ROOT = path.join(__dirname, '..', '..', '..', '..');
-const AZTEC_WALLET_PATH = args['aztec-wallet'] || path.join(PROJECT_ROOT, 'wallets', 'user_aztec_wallet.json');
-const ETH_WALLET_PATH = args['eth-wallet'] || path.join(PROJECT_ROOT, 'wallets', 'user_eth_wallet.json');
+const AZTEC_WALLET_PATH = args['aztec-wallet'];
+const ETH_WALLET_PATH = args['eth-wallet'];
 const CENSOR_ADDR = args['censor'] || '0x0035abfebdafd10697b8a9a5de2792715602ff077787ca6cfefdab632547189f';
 const K_MULTIPLIER = args['k-multiplier'] ? parseInt(args['k-multiplier']) : 4;
 const MIN_DEPOSIT_ETH = args['min-deposit'] || '0.002';
@@ -81,17 +80,24 @@ const MODERATION_POLICY = args['moderation-policy'] || null; // null = use defau
 // ============================================================
 // Monkey-patch fetch BEFORE loading SDK (adds API key for Aztec RPC)
 // ============================================================
-if (AZTEC_API_KEY) {
-  const origFetch = globalThis.fetch;
-  globalThis.fetch = function(input, init) {
-    const url = typeof input === 'string' ? input : (input && input.url) || '';
-    if (url && url.includes('aztec-labs.com')) {
-      init = init || {};
-      init.headers = { ...(init.headers || {}), 'x-aztec-api-key': AZTEC_API_KEY };
+function createCliRpcFetch(originalFetch, nodeUrl, apiKey) {
+  const endpoint = new URL(nodeUrl);
+  if (!['https:', 'http:'].includes(endpoint.protocol) || endpoint.username || endpoint.password) throw new Error('Invalid Aztec RPC endpoint.');
+  return function(input, init) {
+    const isRequest = input instanceof Request;
+    const credentials = init?.credentials ?? (isRequest ? input.credentials : undefined);
+    const referrerPolicy = init?.referrerPolicy ?? (isRequest ? input.referrerPolicy : undefined);
+    if (credentials === 'omit' && referrerPolicy === 'no-referrer') return originalFetch(input, init);
+    const target = new URL(typeof input === 'string' || input instanceof URL ? String(input) : input.url);
+    if (!target.username && !target.password && target.origin === endpoint.origin && target.pathname === endpoint.pathname) {
+      const headers = new Headers(init?.headers ?? (isRequest ? input.headers : undefined));
+      headers.set('x-aztec-api-key', apiKey);
+      return originalFetch(input, { ...init, headers, redirect: 'error' });
     }
-    return origFetch(input, init);
+    return originalFetch(input, init);
   };
 }
+if(AZTEC_API_KEY) globalThis.fetch=createCliRpcFetch(globalThis.fetch.bind(globalThis),AZTEC_NODE_URL,AZTEC_API_KEY);
 
 // ============================================================
 // Logging
@@ -311,44 +317,21 @@ function readline() {
   });
 }
 
-async function pauseCLI(reason) {
-  if (reason === 'import-aztec-wallet') {
-    log('Please enter the path to your Aztec wallet.json', 'info');
-    const p = await readline();
-    return JSON.parse(fs.readFileSync(p || AZTEC_WALLET_PATH, 'utf8'));
-  }
-  if (reason === 'import-eth-wallet') {
-    log('Please enter the path to your ETH wallet JSON', 'info');
-    const p = await readline();
-    return JSON.parse(fs.readFileSync(p, 'utf8'));
-  }
-  throw new Error('Unknown pause reason: ' + reason);
-}
+async function pauseCLI() {throw new Error('Supply explicit wallet files before starting deployment.');}
 
 // ============================================================
 // Main
 // ============================================================
 async function main() {
   log('Billboard CLI Deploy Tool', 'info');
-  log('  Aztec node: ' + AZTEC_NODE_URL, 'info');
-  log('  ETH RPC:    ' + ETH_RPC_URL, 'info');
+  log('  Using explicit Aztec RPC endpoint.', 'info');
+  log('  Using explicit Ethereum RPC endpoint.', 'info');
   log('  Salt:       ' + CONTRACT_SALT, 'info');
   log('', 'info');
 
-  // Load wallets
-  let ethWallet = null, aztecWallet = null;
-  if (fs.existsSync(ETH_WALLET_PATH)) {
-    ethWallet = JSON.parse(fs.readFileSync(ETH_WALLET_PATH, 'utf8'));
-    log('ETH wallet: ' + ethWallet.address, 'success');
-  } else {
-    log('No ETH wallet at ' + ETH_WALLET_PATH + '. Generate with: node gen_eth_wallet.mjs', 'warn');
-  }
-  if (fs.existsSync(AZTEC_WALLET_PATH)) {
-    aztecWallet = JSON.parse(fs.readFileSync(AZTEC_WALLET_PATH, 'utf8'));
-    log('Aztec wallet: ' + (aztecWallet.address || '(no address)'), 'success');
-  } else {
-    log('No Aztec wallet at ' + AZTEC_WALLET_PATH, 'warn');
-  }
+  const {ethWallet,aztecWallet}=loadCliWalletInputs({action:'deploy',aztecWalletPath:AZTEC_WALLET_PATH,ethWalletPath:ETH_WALLET_PATH});
+  if(!ethWallet)throw new Error('An explicit Ethereum wallet file is required for deployment.');
+  log('Private wallet files loaded.','success');
 
   // Load SDK from bundle
   log('Loading Aztec SDK (bundle)...', 'info');
@@ -400,9 +383,9 @@ async function main() {
     log('========================================', 'success');
   } catch (e) {
     log('', 'error');
-    log('FAILED: ' + (e.stack || e.message || String(e)), 'error');
+    log('Deployment did not complete. Preserve its transaction records and check receipts before retrying.', 'error');
     __realProcess.exit(1);
   }
 }
 
-main().catch(e => { log('FATAL: ' + e.message, 'error'); __realProcess.exit(1); });
+main().catch(e => { log('Deployment setup failed. Check explicit RPC endpoints and private wallet files.', 'error'); __realProcess.exit(1); });

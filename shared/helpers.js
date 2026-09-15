@@ -41,7 +41,7 @@ function showPage(n) {
     }
   }
   if (_pages[n] && _pages[n].onShow) {
-    try { _pages[n].onShow(); } catch (e) { console.error(e); }
+    try { _pages[n].onShow(); } catch (e) { console.error('Application operation did not complete.'); }
   }
 }
 
@@ -91,8 +91,8 @@ function doNavAction() {
     })
     .catch(e => {
       if (workingDiv && workingDiv.parentNode) workingDiv.remove();
-      if (p.statusId) log('ERROR: ' + (e.message || String(e)), 'error', p.statusId);
-      console.error(e);
+      if (p.statusId) log('ERROR: ' + 'operation did not complete; check configuration and recovery records', 'error', p.statusId);
+      console.error('Application operation did not complete.');
       btn.disabled = false;
       btn.classList.remove('working');
       btn.textContent = origText;
@@ -126,8 +126,8 @@ function withBtn(btnId, busyText, statusId, action, autoAdvance) {
         }
       },
       (e) => {
-        if (statusId) log('ERROR: ' + (e.message || String(e)), 'error', statusId);
-        console.error(e);
+        if (statusId) log('ERROR: ' + 'operation did not complete; check configuration and recovery records', 'error', statusId);
+        console.error('Application operation did not complete.');
       }
     )
     .finally(() => {
@@ -150,7 +150,7 @@ function log(msg, type, containerId) {
   div.className = 'status ' + (type || 'info');
   const time = new Date().toLocaleTimeString();
   if (type === 'working') {
-    div.innerHTML = `<span class="spinner"></span>[${time}] ${msg}`;
+    const spinner=document.createElement('span'); spinner.className='spinner'; div.appendChild(spinner); div.appendChild(document.createTextNode(`[${time}] ${msg}`));
   } else {
     div.textContent = `[${time}] ${msg}`;
   }
@@ -240,7 +240,7 @@ function extractEthAddress(simResult) {
     } catch (e) {}
   }
   // Last resort: log what we got
-  console.warn('extractEthAddress: could not parse', typeof val, val);
+  console.warn('Could not decode Ethereum address.');
   return '0x0000000000000000000000000000000000000000';
 }
 

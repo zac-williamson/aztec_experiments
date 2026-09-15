@@ -44,8 +44,8 @@
 //   --moderation-policy <text>  Moderation policy text (for set-moderation-policy, or deploy default)
 //   --censor-wallet <file>   Path to censor Aztec wallet JSON (for declare-immoral/transfer-censor)
 //   --new-censor <addr>      New censor address (for transfer-censor)
-//   --node-url <url>         Aztec node URL
-//   --eth-rpc <url>          Ethereum RPC URL
+//   --node-url <url>         Explicit Aztec node URL (required)
+//   --eth-rpc <url>          Explicit Ethereum RPC URL (required)
 //   --aztec-wallet <file>    Path to Aztec wallet.json
 //   --eth-wallet <file>      Path to ETH wallet JSON
 //   --private-fee-config <file> Public contract address and gas settings JSON
@@ -56,7 +56,7 @@
 
 import fs from 'fs';
 import { createClaimSecretStore } from './claim-secret-store.mjs';
-import { loadCliWalletInputs } from './wallet-inputs.mjs';
+import { loadCliWalletInputs, validateCliNetwork } from './wallet-inputs.mjs';
 import { createHash } from 'node:crypto';
 import BillboardCRS from '../../../../shared/crs-client.js';
 import path from 'path';
@@ -95,13 +95,11 @@ const { args, positional } = parseArgs();
 // ============================================================
 // Config
 // ============================================================
-const rpcConfigPath = path.join(__dirname, '..', '..', '..', '..', 'shared', 'rpc-config.json');
-const rpcConfig = fs.existsSync(rpcConfigPath) ? JSON.parse(fs.readFileSync(rpcConfigPath, 'utf8')) : {};
-
 const ACTION = positional[0] || 'status';
-const AZTEC_NODE_URL = args['node-url'] || rpcConfig.nodeUrl || 'http://127.0.0.1:5080';
-const AZTEC_API_KEY = __realProcess.env.AZTEC_API_KEY || rpcConfig.apiKey || '';
-const ETH_RPC_URL = args['eth-rpc'] || 'https://invictus.ambire.com/ethereum';
+const network = validateCliNetwork({ nodeUrl: args['node-url'], ethRpcUrl: args['eth-rpc'] });
+const AZTEC_NODE_URL = network.nodeUrl;
+const AZTEC_API_KEY = __realProcess.env.AZTEC_API_KEY || '';
+const ETH_RPC_URL = network.ethRpcUrl;
 // Defaults match the user UI template
 const PORTAL_ADDRESS = args['portal-address'] || null;
 if (!PORTAL_ADDRESS) {
@@ -110,14 +108,14 @@ if (!PORTAL_ADDRESS) {
   __realProcess.exit(1);
 }
 const PROJECT_ROOT = path.join(__dirname, '..', '..', '..', '..');
-const AZTEC_WALLET_PATH = args['aztec-wallet'] || path.join(PROJECT_ROOT, 'wallets', 'user_aztec_wallet.json');
-const ETH_WALLET_PATH = args['eth-wallet'] || path.join(PROJECT_ROOT, 'wallets', 'user_eth_wallet.json');
+const AZTEC_WALLET_PATH = args['aztec-wallet'];
+const ETH_WALLET_PATH = args['eth-wallet'];
 
-const CENSOR_WALLET_PATH = args['censor-wallet'] || path.join(PROJECT_ROOT, 'wallets', 'censor_aztec_wallet.json');
+const CENSOR_WALLET_PATH = args['censor-wallet'];
 const PXE_DIR_PREFIX = args['pxe-dir'] || 'pxe_bb_user_';
 
 // PXE cache directory (persists IndexedDB state between CLI runs)
-const PXE_CACHE_DIR = path.join(PROJECT_ROOT, '.pxe-cache');
+const PXE_CACHE_DIR = path.join(PROJECT_ROOT, '.pxe-cache-v2');
 
 // Valid actions
 const VALID_ACTIONS = ['status', 'deposit', 'claim', 'post', 'list', 'withdraw', 'claim-l1', 'declare-immoral', 'transfer-censor', 'set-moderation-policy', 'auto'];
@@ -164,7 +162,7 @@ function log(msg, level) {
 // ============================================================
 // PXE cache (dump/restore IndexedDB between runs)
 // ============================================================
-const { dumpPxeCache, restorePxeCache } = require('./pxe-cache.cjs');
+const { createPxeCacheSession } = require('./pxe-cache.cjs');
 
 // ============================================================
 // Load engine
@@ -452,73 +450,52 @@ async function main() {
 
     depositChainId: args['deposit-chain-id'],
     claimSecretStore: aztecWallet && ['deposit', 'claim', 'auto'].includes(ACTION)
-      ? createClaimSecretStore(path.join(path.dirname(path.resolve(AZTEC_WALLET_PATH)), 'claim-secrets-v1'), aztecWallet.secretKey) : undefined,
+      ? createClaimSecretStore(path.join(path.dirname(path.resolve(AZTEC_WALLET_PATH)), 'claim-secrets-v2'), aztecWallet.secretKey, aztecWallet.salt) : undefined,
     jsonOutput: !!args['json'],
   };
 
+  let cache;
+  let cacheReady = false;
   try {
-    // Derive account address for cache file name
     const sk = a.Fr.fromHexString(aztecWallet.secretKey);
     const signingKey = a.deriveSigningKey(sk);
     const accountContract = new a.SchnorrInitializerlessAccountContract(signingKey);
     const { publicKeys } = await a.deriveKeys(sk);
     const accountArtifact = await accountContract.getContractArtifact();
     const immutablesHash = await accountContract.getImmutablesHash();
-    const saltVal = typeof aztecWallet.salt === 'string' ? parseInt(aztecWallet.salt, 16) : (aztecWallet.salt || 0);
     const inst = await a.getContractInstanceFromInstantiationParams(accountArtifact, {
       constructorArtifact: undefined, constructorArgs: undefined,
-      salt: new a.Fr(saltVal), publicKeys, immutablesHash,
+      salt: new a.Fr(BigInt(aztecWallet.salt)), publicKeys, immutablesHash,
     });
-    const accountAddr = inst.address.toString();
-    const cacheFile = path.join(PXE_CACHE_DIR, accountAddr.slice(0, 16) + '.json');
-
-    // Restore PXE cache before engine runs
-    if (!fs.existsSync(PXE_CACHE_DIR)) fs.mkdirSync(PXE_CACHE_DIR, { recursive: true });
-    const restored = await restorePxeCache(globalThis.indexedDB, cacheFile);
-    if (restored) {
-      log('  PXE cache restored from ' + path.basename(cacheFile), 'success');
-    }
-
+    const account = inst.address.toString().toLowerCase();
+    const node = a.createAztecNodeClient(AZTEC_NODE_URL);
+    const provider = new ethers.JsonRpcProvider(ETH_RPC_URL);
+    let nodeInfo, l1Network;
+    try { [nodeInfo, l1Network] = await Promise.all([node.getNodeInfo(), provider.getNetwork()]); }
+    finally { provider.destroy(); }
+    if (BigInt(nodeInfo.l1ChainId) !== l1Network.chainId) throw new Error('Aztec and Ethereum RPC chain identities differ');
+    const chainId = String(nodeInfo.l1ChainId), version = String(nodeInfo.rollupVersion);
+    const rollup = nodeInfo.l1ContractAddresses.rollupAddress.toString().toLowerCase();
+    config.expectedNetworkScope = { chainId, rollup, version };
+    const directory = PXE_DIR_PREFIX + account.slice(0, 16) + '_' + nodeInfo.l1ContractAddresses.rollupAddress;
+    const identity = a.getPXEStoreIdentity({ l1ChainId: nodeInfo.l1ChainId, rollupAddress: rollup,
+      accountAddress: account, dataDirectory: directory });
+    cache = createPxeCacheSession({ directory: PXE_CACHE_DIR, walletSecret: aztecWallet.secretKey,
+      scope: { account, chainId, rollup, version, databaseName: identity.name } });
+    await cache.restore(globalThis.indexedDB); cacheReady = true;
     const result = await globalThis.runBillboardUser(env, config);
-
-    // Dump PXE cache after engine completes
-    const dumped = await dumpPxeCache(globalThis.indexedDB, cacheFile);
-    if (dumped) {
-      log('  PXE cache saved.', 'success');
-    }
-
-    log('', 'info');
-    log('========================================', 'success');
+    await cache.save(globalThis.indexedDB);
+    log('  Private PXE checkpoint saved.', 'success');
     log('  Action "' + ACTION + '" completed!', 'success');
     if (result.state) log('  Final state: ' + result.state, 'success');
-    log('========================================', 'success');
   } catch (e) {
-    // Try to save cache even on failure (partial sync is still useful)
-    try {
-      if (typeof globalThis.indexedDB !== 'undefined' && globalThis.indexedDB._databases) {
-        const sk = a.Fr.fromHexString(aztecWallet.secretKey);
-        const signingKey = a.deriveSigningKey(sk);
-        const accountContract = new a.SchnorrInitializerlessAccountContract(signingKey);
-        const { publicKeys } = await a.deriveKeys(sk);
-        const accountArtifact = await accountContract.getContractArtifact();
-        const immutablesHash = await accountContract.getImmutablesHash();
-        const saltVal = typeof aztecWallet.salt === 'string' ? parseInt(aztecWallet.salt, 16) : (aztecWallet.salt || 0);
-        const inst = await a.getContractInstanceFromInstantiationParams(accountArtifact, {
-          constructorArtifact: undefined, constructorArgs: undefined,
-          salt: new a.Fr(saltVal), publicKeys, immutablesHash,
-        });
-        const accountAddr = inst.address.toString();
-        const cacheFile = path.join(PXE_CACHE_DIR, accountAddr.slice(0, 16) + '.json');
-        if (!fs.existsSync(PXE_CACHE_DIR)) fs.mkdirSync(PXE_CACHE_DIR, { recursive: true });
-        await dumpPxeCache(globalThis.indexedDB, cacheFile);
-        log('  PXE cache saved (partial).', 'info');
-      }
-    } catch (cacheErr) { /* ignore cache errors on failure path */ }
-    log('', 'error');
-    if (args['private-fee-config']) throw e;
-    log('FAILED: ' + (e.stack || e.message || String(e)), 'error');
+    if (cacheReady) {
+      try { await cache.save(globalThis.indexedDB); }
+      catch { throw new Error('Action or checkpoint save failed; preserve wallet/cache and reconcile transaction status before retrying'); }
+    }
     throw e;
-  }
+  } finally { if (cache) cache.close(); }
+
  }
 
 // Secrets stay in a local file, never a command argument or executable provider module.
@@ -551,4 +528,21 @@ function formatCliPrivateFeeFailure(error) {
   try { if (typeof error?.code === 'string' && Object.hasOwn(messages, error.code)) return error.code + ': ' + messages[error.code]; } catch (_) {}
   return 'Private fee payment could not be completed. Check any transaction outcome before another attempt.';
 }
-main().catch(e => { log('FATAL: ' + (args['private-fee-config'] || args['private-fee-claim-file'] ? formatCliPrivateFeeFailure(e) : e.message), 'error'); __realProcess.exit(1); });
+function formatCliFailure(error) {
+  const safeMessages = new Set([
+    'Aztec and Ethereum RPC chain identities differ',
+    'PXE cache is locked. Another process may be active; preserve the cache and inspect the lock before explicit recovery.',
+    'PXE checkpoint authentication failed; existing data preserved',
+    'PXE cache requires a private directory',
+    'Invalid private PXE checkpoint file',
+    'PXE checkpoint changed concurrently; refusing overwrite',
+    'Unexpected PXE database scope; refusing checkpoint',
+    'Action or checkpoint save failed; preserve wallet/cache and reconcile transaction status before retrying',
+    ...['Aztec', 'Censor', 'ETH'].flatMap(label => [label + ' wallet is required', label + ' wallet could not be read as a private regular file']),
+    'Invalid wallet salt', 'Invalid Aztec key', 'Invalid Censor key', 'Invalid Ethereum key',
+  ]);
+  if (safeMessages.has(error?.message)) return error.message;
+  if (args['private-fee-config'] || args['private-fee-claim-file']) return formatCliPrivateFeeFailure(error);
+  return 'Command failed. Preserve wallet/cache and check any transaction outcome before retrying.';
+}
+main().catch(e => { log('FATAL: ' + formatCliFailure(e), 'error'); __realProcess.exit(1); });

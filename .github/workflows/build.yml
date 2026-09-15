@@ -50,6 +50,7 @@ jobs:
           node --test scripts/test-release-artifact-manifest.mjs scripts/test-frontend-provenance.mjs
           npm run test:build
           node --test scripts/test-a01-ci.mjs scripts/test-built-private-fees.mjs scripts/test-c05-browser-feed.mjs scripts/test-c05-moderation-client.mjs scripts/test-screening-history-client.mjs scripts/test-private-fee-config.mjs scripts/test-engine-private-fee.mjs
+          NODE_BACKEND=js node --test scripts/test-w02-cli-cache.mjs scripts/test-w02-cli-inputs.mjs scripts/test-w02-cli-session.mjs scripts/test-w02-session.mjs scripts/test-w02-wallet-ui.mjs scripts/test-w02-rpc.mjs scripts/test-wallet-backup.mjs
           npm run test:dependencies
           npm run test:noir
           npm run test:moderation
@@ -61,6 +62,7 @@ jobs:
           (cd billboard/portal && FOUNDRY_PROFILE=regression forge test --offline -vv)
           npm run test:sdk-browser
           npm run test:cli-sdk
+          node scripts/test-w02-browser.mjs
           python3 -m unittest discover -s execution/tests -v
           python3 execution/graph.py validate
       - name: Model process isolation with disposable fixtures

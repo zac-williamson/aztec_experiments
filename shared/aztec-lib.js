@@ -131,7 +131,7 @@ async function showAddress(statusId) {
   try {
     const a = A();
     const sk = document.getElementById('secretKey').value.trim();
-    const saltVal = parseInt(document.getElementById('salt').value) || 0;
+    const saltVal = BigInt(window.BillboardWalletBackup.validateWallet({secretKey:document.getElementById('secretKey').value.trim(),salt:document.getElementById('salt').value || '0'}).salt);
     if (!sk || !sk.startsWith('0x')) return;
     if (!a || !a.Fr) return;
 
@@ -145,7 +145,7 @@ async function showAddress(statusId) {
   } catch (e) {
     const w = document.querySelector('#' + S + ' .status.working');
     if (w) w.remove();
-    log('Error deriving address: ' + e.message, 'error', S);
+    log('Error deriving address: ' + 'operation did not complete; check configuration and recovery records', 'error', S);
     return null;
   }
 }
@@ -165,26 +165,16 @@ function setupWalletFileInput(fileInputId, statusId, onLoaded) {
       await loadWalletFile(file, statusId);
       if (onLoaded) await onLoaded();
     } catch (err) {
-      log('Failed to load wallet.json: ' + err.message, 'error', statusId);
+      log('Failed to load wallet.json: ' + 'operation did not complete; check configuration and recovery records', 'error', statusId);
     }
   });
 }
 
 // Load a wallet file object into the secretKey/salt fields
 async function loadWalletFile(file, statusId) {
-  const text = await file.text();
-  const w = JSON.parse(text);
-  if (w.secretKey) document.getElementById('secretKey').value = w.secretKey;
-  // Only set salt from wallet.json if the user hasn't already entered a
-  // non-zero value. This lets the user override the salt for redeployment.
-  if (w.salt !== undefined) {
-    const currentSalt = parseInt(document.getElementById('salt').value) || 0;
-    if (currentSalt === 0) {
-      const s = typeof w.salt === 'string' ? parseInt(w.salt, 16) : w.salt;
-      document.getElementById('salt').value = (isNaN(s) ? 0 : s);
-    }
-  }
-  log('Loaded wallet.json', 'success', statusId);
+  // Route every loader through the same validation and no-overwrite boundary.
+  try { await _loadAztecWallet(file); }
+  catch { throw new Error('Wallet import did not complete. Check the file and password; reload before switching wallets.'); }
 }
 
 // Open file picker and return a promise that resolves when the wallet is loaded.
@@ -398,13 +388,15 @@ async function ensureAztecSetup(state, statusId, opts = {}) {
   const S = statusId;
   const nodeUrl = getNodeUrl();
   const sk = document.getElementById('secretKey').value.trim();
-  const saltVal = parseInt(document.getElementById('salt').value) || 0;
+  const saltVal = BigInt(window.BillboardWalletBackup.validateWallet({secretKey:document.getElementById('secretKey').value.trim(),salt:document.getElementById('salt').value || '0'}).salt);
   const dataDirPrefix = opts.dataDirPrefix || 'pxe_bb_';
 
   if (!sk) { log('Enter your secret key first.', 'error', S); return false; }
 
   // If already set up, reuse
-  if (state.wallet && state.pxe) return true;
+  const context=JSON.stringify([nodeUrl,sk,saltVal.toString()]);
+  if (state.wallet && state.pxe) {if(state.walletContext!==context)throw new Error('Wallet context changed. Reload before continuing.');return true;}
+  state.walletContext=context;
 
   // Step 1: Derive keys
   log('Step 1: Deriving account keys...', 'info', S);
@@ -662,7 +654,7 @@ async function preflightL1ToL2Message(aztecNode, recipientAddress, claimAmount, 
       log('  Nullifier found in tree at block ' + nullIdx[0].l2BlockNumber + ', leaf ' + nullIdx[0].data, 'info', S);
     }
   } catch (e) {
-    log('  Warning: nullifier check failed: ' + (e.message || e), 'warn', S);
+    log('  Warning: nullifier check failed: ' + 'operation did not complete; check configuration and recovery records', 'warn', S);
   }
 
   if (consumed) {

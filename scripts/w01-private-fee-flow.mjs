@@ -12,11 +12,13 @@ import {loadContractArtifact} from '@aztec/stdlib/abi';
 import {derivePrivateFeeInstance,preparePrivateFeePayment} from '../shared/private-fee-client.mjs';
 import {bridgePrivateFeeCredit} from './w01-private-funding.mjs';
 import {ROOT} from './toolchain.mjs';
+import {restoreApplicationAuthor} from './w02-wallet-restore.mjs';
 export async function prepareW01PrivateFees({node,preparation,l1Client,directory,rpcUrl,mineL1,standalone=false,reportStage:mark}){
   const observation={passed:false,ownerless:true,offchainIssuer:false,operatorFunding:false,chargesMaximumFee:true};let wallet;
   try{
     const raw=JSON.parse(await fs.readFile(path.join(ROOT,'apps/src/billboard/private_fee_artifact.json'))),artifact=loadContractArtifact(raw),instance=await derivePrivateFeeInstance(raw),info=await node.getNodeInfo();
-    const [author]=await generateSchnorrAccounts(1,'schnorr_initializerless');assert(!author.address.equals(preparation.account.address));assert.equal(await getFeeJuiceBalance(author.address,node),0n);
+    const [generated]=await generateSchnorrAccounts(1,'schnorr_initializerless');
+    const restored=await restoreApplicationAuthor(generated);const author=restored.author;observation.walletRestore=restored.observation;assert(!author.address.equals(preparation.account.address));assert.equal(await getFeeJuiceBalance(author.address,node),0n);
     wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:{backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1},autoSync:false,syncChainTip:'checkpointed'}});
     await wallet.createSchnorrInitializerlessAccount(author.secret,author.salt,author.signingKey,'private-fee-test-author');await wallet.registerContract(instance,artifact);
     const funded=await bridgePrivateFeeCredit({node,l1Client,wallet,directory,rpcUrl,walletSecret:author.secret,privateFeeArtifact:raw,owner:author.address,payer:instance.address,mineL1,mark});observation.funding=funded.observation;

@@ -210,7 +210,7 @@
           }
         }
       } catch (e) {
-        log('  Range ' + from + '-' + end + ' failed: ' + (e.message || e).substring(0, 80), 'warn');
+        log('  Range ' + from + '-' + end + ' could not be read', 'warn');
       }
     }
     log('  Scanned ' + scanned + ' chunk(s), total ' + logs.length + ' deposit event(s).', 'info');
@@ -260,7 +260,7 @@
       try {
         blocks = await aztecNode.getBlocks(BigInt(from), count, { includeTransactions: true });
       } catch (e) {
-        log('  Warning: could not fetch blocks ' + from + '-' + start + ': ' + extractErrorMessage(e).substring(0, 60), 'warn');
+        log('  Warning: could not fetch blocks ' + from + '-' + start + ': ' + 'request did not complete', 'warn');
         continue;
       }
       for (const block of blocks) {
@@ -357,6 +357,7 @@
         const txHash = tx.getTxHash();
         log('  Proving complete. Submitting to node...', 'success');
 
+        if (this._contextGuard) await this._contextGuard();
         await submitOnceWithReconciliation(rawNode, tx);
         log('  Submission checked. Hash: ' + txHash.toString(), 'info');
 
@@ -390,6 +391,7 @@
 
     const wallet = new AztecWallet(pxe, aztecNode);
     wallet._preProveHook = opts.preProveHook || null;
+    wallet._contextGuard = opts.contextGuard || null;
     wallet._secretKey = secretKey;
     return wallet;
   }
@@ -690,10 +692,19 @@
   // repeated calls with the same config (used by web app pages)
   // ============================================================
   const _setupCache = new Map();
-  function _setupKey(config) {
-    return (config.aztecNodeUrl || '') + '|' +
-           (config.aztecWallet?.secretKey || '') + '|' +
-           (config.portalAddress || config.contractSalt || 0);
+  function _setupKey(config, address, nodeInfo, rollup, board) {
+    return JSON.stringify([config.aztecNodeUrl, config.ethRpcUrl, address.toString(),
+      String(nodeInfo.l1ChainId), String(nodeInfo.rollupVersion), rollup.toLowerCase(),
+      board.toLowerCase(), config.portalAddress.toLowerCase(), config.dataDirPrefix || 'pxe_bb_']);
+  }
+  function walletSalt(value) {
+    if (value === undefined) return 0n;
+    if (typeof value === 'number' && (!Number.isSafeInteger(value) || value < 0)) throw new Error('Invalid wallet salt');
+    if (!['string','number','bigint'].includes(typeof value) ||
+        (typeof value === 'string' && !/^(?:0x[0-9a-fA-F]{1,64}|[0-9]{1,78})$/.test(value))) throw new Error('Invalid wallet salt');
+    const salt=BigInt(value);
+    if(salt<0n || salt>=21888242871839275222246405745257275088548364400416034343698204186575808495617n) throw new Error('Invalid wallet salt');
+    return salt;
   }
 
   // ============================================================
@@ -707,7 +718,7 @@
       throw new Error('Aztec wallet with secretKey is required.');
     }
 
-    const saltVal = typeof aztecWallet.salt === 'string' ? parseInt(aztecWallet.salt, 16) : (aztecWallet.salt || 0);
+    const saltVal = walletSalt(aztecWallet.salt);
     const contractSalt = config.contractSalt || 1;
     const secretKeyHex = aztecWallet.secretKey;
     const action = config.action || 'status';
@@ -745,6 +756,7 @@
     const l1Contracts = await aztecNode.getL1ContractAddresses();
     const rollupAddr = l1Contracts.rollupAddress.toString();
     const version = nodeInfo.rollupVersion;
+    if(config.expectedNetworkScope && (String(nodeInfo.l1ChainId)!==String(config.expectedNetworkScope.chainId) || String(version)!==String(config.expectedNetworkScope.version) || rollupAddr.toLowerCase()!==String(config.expectedNetworkScope.rollup).toLowerCase())) throw new Error('Network changed since CLI preflight.');
     log('  L1 Rollup: ' + rollupAddr, 'info');
 
     try {
@@ -795,13 +807,16 @@
         provider = new ethers.JsonRpcProvider(config.ethRpcUrl);
         ethSigner = new ethers.Wallet(config.ethWallet.privateKey, provider);
         l1Account = await ethSigner.getAddress();
-      } else if (env.getBrowserSigner) {
+      } else if (env.getBrowserSigner && config.hasEthSigner !== false) {
         ethSigner = await env.getBrowserSigner();
         l1Account = await ethSigner.getAddress();
         provider = ethSigner.provider;
       } else {
-        throw new Error('No ETH wallet.');
+        if(['deposit','claim','auto','claim-l1'].includes(action)) throw new Error('This operation requires an Ethereum wallet.');
+        provider = new ethers.JsonRpcProvider(config.ethRpcUrl);
       }
+      if (BigInt((await provider.getNetwork()).chainId) !== BigInt(nodeInfo.l1ChainId)) throw new Error('Ethereum signer chain disagrees with the board.');
+      if (config.contextGuard) await config.contextGuard();
       log('  L1 account:  ' + l1Account, 'info');
       const code = await provider.getCode(portalAddr);
       portalDeployed = code !== '0x';
@@ -820,15 +835,15 @@
             log('  Portal verified on L1.', 'success');
           }
         } catch (e) {
-          log('  Warning: could not read L2_CONTRACT from portal: ' + extractErrorMessage(e), 'warn');
+          log('  Warning: could not read L2_CONTRACT from portal: ' + 'request did not complete', 'warn');
         }
-        const active = await portal.getDeposit(l1Account);
-        portalL1Balance = BigInt(active.amount); portalDepositNonce = BigInt(active.nonce);
+        if(l1Account) {const active = await portal.getDeposit(l1Account);
+        portalL1Balance = BigInt(active.amount); portalDepositNonce = BigInt(active.nonce);}
       } else {
         log('  WARNING: Portal not deployed at ' + portalAddr, 'warn');
       }
     } catch (e) {
-      throw new Error('Could not verify the L1 wallet and receipt: ' + extractErrorMessage(e));
+      throw new Error('Could not verify the L1 wallet and receipt.');
     }
 
     // ============================================================
@@ -889,12 +904,14 @@
 
 
       // Check setup cache
-      const sKey = _setupKey(config);
+      const sKey = _setupKey(config, address, nodeInfo, rollupAddr, l2AddrHex);
       const cached = _setupCache.get(sKey);
       if (cached) {
         log('  Reusing cached PXE/wallet setup.', 'success');
         pxe = cached.pxe;
         wallet = cached.wallet;
+        wallet._preProveHook = config.preProveHook || null;
+        wallet._contextGuard = config.contextGuard || null;
         contract = cached.contract;
         // Re-sync to pick up latest state
         try { await pxe.sync(); } catch (e) {}
@@ -945,7 +962,7 @@
         // Step 7: Create wallet
         // ============================================================
         log('Step 7: Creating wallet...', 'info');
-        wallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, secretKey, { preProveHook: config.preProveHook });
+        wallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, secretKey, { preProveHook: config.preProveHook, contextGuard: config.contextGuard });
         const accountManager = await a.AccountManager.create(wallet, secretKey, accountContract, { salt: new a.Fr(saltVal) });
         wallet._accountManager = accountManager;
         log('  Wallet ready.', 'success');
@@ -982,7 +999,7 @@
           log('  No L2 deposit note found.', 'info');
         }
       } catch (e) { if (e?.code === 'BB_DEPOSIT_READ') throw e;
-        log('  Could not check L2 note: ' + extractErrorMessage(e), 'warn');
+        log('  Could not check L2 note: ' + 'request did not complete', 'warn');
       }
     }
 
@@ -1021,7 +1038,9 @@
     log('========================================', 'info');
     log('  L2 address:  ' + l2AddrHex, 'info');
     log('  L1 portal:   ' + portalAddr, 'info');
-    if (l1Account) log('  L1 account:  ' + l1Account, 'info');
+    if (l1Account) if (BigInt((await provider.getNetwork()).chainId) !== BigInt(nodeInfo.l1ChainId)) throw new Error('Ethereum signer chain disagrees with the board.');
+      if (config.contextGuard) await config.contextGuard();
+      log('  L1 account:  ' + l1Account, 'info');
     if (l2NoteInfo && l2NoteInfo.amount > 0n) {
       log('  L2 note:     ' + l2NoteInfo.amount.toString() + ' wei (' + toEtherStr(l2NoteInfo.amount) + ' ETH)', 'info');
 
@@ -1065,7 +1084,7 @@
           }
         }
       } catch (e) {
-        log('  (Could not fetch posts-available info: ' + extractErrorMessage(e).substring(0, 80) + ')', 'warn');
+        log('  (Could not fetch posts-available info: ' + 'request did not complete' + ')', 'warn');
       }
     }
     log('  L1 deposit:  ' + toEtherStr(portalL1Balance) + ' ETH', 'info');
@@ -1137,6 +1156,7 @@
       await store.save(secretScope(), record);
       if (await restoreSecret(secretHash) !== record.secret) throw new Error('Claim-secret storage read-back failed.');
       log('Claim secret saved locally. Sending deposit...', 'info');
+      if (config.contextGuard) await config.contextGuard();
       const tx = await withUserRetry(() => portal.deposit(secretHash,{ value: amount }), 'L1 deposit tx');
       log('  Tx sent: ' + tx.hash, 'info');
       const receipt = await tx.wait();
@@ -1272,7 +1292,7 @@
           }
           break;
         } catch (e) { if (e?.code?.startsWith('BB_')) throw e;
-          const errMsg = extractErrorMessage(e).substring(0, 200);
+          const errMsg = 'Claim did not complete';
           // Check if note appeared (maybe already claimed by another run)
           try {
             const r = await readDepositInfo();
@@ -1567,9 +1587,9 @@
           }
         } catch (err) {
           if (jsonOutput) {
-            _jsonPosts.push({ index: i, orderIndex: String(i), postId, text: '', flagged: false, error: extractErrorMessage(err) });
+            _jsonPosts.push({ index: i, orderIndex: String(i), postId, text: '', flagged: false, error: 'Post could not be read' });
           } else {
-            log('  [' + i + '] Error: ' + extractErrorMessage(err), 'error');
+            log('  [' + i + '] Error: ' + 'request did not complete', 'error');
           }
         }
       }
@@ -1598,7 +1618,7 @@
         }
         log('  Deposit note found: ' + noteInfo.amount.toString() + ' wei', 'info');
       } catch (e) { if (e?.code === 'BB_DEPOSIT_READ') throw e;
-        throw new Error('Cannot determine the live deposit: ' + extractErrorMessage(e));
+        throw new Error('Cannot determine the live deposit.');
       }
 
       // The contract checks withdrawal eligibility based on screening state:
@@ -1680,7 +1700,7 @@
               try {
                 await doDummyPost();
               } catch (e) { if (!screeningFailureCanWait(e)) throw e;
-                log('  Dummy post failed: ' + extractErrorMessage(e).substring(0, 100), 'warn');
+                log('  Dummy post failed: ' + 'request did not complete', 'warn');
                 // If it's a timing issue, wait and retry
                 await sleep(30000);
               }
@@ -1818,7 +1838,7 @@
       try {
         alreadyConsumed = await outbox.hasMessageBeenConsumedAtEpoch(BigInt(epochNumber), messageLeafId);
       } catch (e) {
-        log('  Warning: could not check consumed status: ' + extractErrorMessage(e).substring(0, 80), 'warn');
+        log('  Warning: could not check consumed status: ' + 'request did not complete', 'warn');
       }
       if (alreadyConsumed) {
         log('  This withdrawal has already been claimed on L1!', 'success');
@@ -1854,7 +1874,7 @@
           log('  The ETH was already claimed in a previous tx.', 'info');
           return;
         }
-        throw new Error('L1 withdrawal failed: ' + msg.substring(0, 200));
+        throw new Error('L1 withdrawal did not complete; check its receipt before retrying.');
       }
     }
 
@@ -1892,7 +1912,7 @@
             log('  Not ready yet, waiting 20s...', 'info');
             await sleep(20000);
           } else {
-            log('  Check failed: ' + extractErrorMessage(e).substring(0, 100), 'warn');
+            log('  Check failed: ' + 'request did not complete', 'warn');
             await sleep(20000);
           }
         }
@@ -1923,7 +1943,7 @@
       const { publicKeys: censorPublicKeys } = await a.deriveKeys(censorSk);
       const censorAccountArtifact = await censorAccountContract.getContractArtifact();
       const censorImmutablesHash = await censorAccountContract.getImmutablesHash();
-      const censorSaltVal = typeof censorWalletJson.salt === 'string' ? parseInt(censorWalletJson.salt, 16) : (censorWalletJson.salt || 0);
+      const censorSaltVal = walletSalt(censorWalletJson.salt);
       const censorInstance = await a.getContractInstanceFromInstantiationParams(censorAccountArtifact, {
         constructorArtifact: undefined, constructorArgs: undefined,
         salt: new a.Fr(censorSaltVal), publicKeys: censorPublicKeys, immutablesHash: censorImmutablesHash,
@@ -1938,7 +1958,7 @@
       await retry(() => pxe.registerContract(censorInstance), 'register-censor', log, 5);
       log('  Censor account registered.', 'success');
 
-      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk);
+      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk, {preProveHook:config.preProveHook,contextGuard:config.contextGuard});
       const censorAccountManager = await a.AccountManager.create(censorWallet, censorSk, censorAccountContract, { salt: new a.Fr(censorSaltVal) });
       censorWallet._accountManager = censorAccountManager;
 
@@ -2021,7 +2041,7 @@
       const { publicKeys: censorPublicKeys } = await a.deriveKeys(censorSk);
       const censorAccountArtifact = await censorAccountContract.getContractArtifact();
       const censorImmutablesHash = await censorAccountContract.getImmutablesHash();
-      const censorSaltVal = typeof censorWalletJson.salt === 'string' ? parseInt(censorWalletJson.salt, 16) : (censorWalletJson.salt || 0);
+      const censorSaltVal = walletSalt(censorWalletJson.salt);
       const censorInstance = await a.getContractInstanceFromInstantiationParams(censorAccountArtifact, {
         constructorArtifact: undefined, constructorArgs: undefined,
         salt: new a.Fr(censorSaltVal), publicKeys: censorPublicKeys, immutablesHash: censorImmutablesHash,
@@ -2038,7 +2058,7 @@
       log('  Censor account registered.', 'success');
 
       // Create censor wallet
-      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk);
+      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk, {preProveHook:config.preProveHook,contextGuard:config.contextGuard});
       const censorAccountManager = await a.AccountManager.create(censorWallet, censorSk, censorAccountContract, { salt: new a.Fr(censorSaltVal) });
       censorWallet._accountManager = censorAccountManager;
 
@@ -2081,7 +2101,7 @@
         const flaggedBy = fbv?.inner ? fbv.inner.toString() : (fbv?.toString ? fbv.toString() : fbv);
         log('  Public record: flagged by ' + flaggedBy, 'info');
       } catch (e) {
-        log('  Could not read flagged_by record: ' + extractErrorMessage(e).substring(0, 80), 'warn');
+        log('  Could not read flagged_by record: ' + 'request did not complete', 'warn');
       }
     }
 
@@ -2117,7 +2137,7 @@
       const { publicKeys: censorPublicKeys } = await a.deriveKeys(censorSk);
       const censorAccountArtifact = await censorAccountContract.getContractArtifact();
       const censorImmutablesHash = await censorAccountContract.getImmutablesHash();
-      const censorSaltVal = typeof censorWalletJson.salt === 'string' ? parseInt(censorWalletJson.salt, 16) : (censorWalletJson.salt || 0);
+      const censorSaltVal = walletSalt(censorWalletJson.salt);
       const censorInstance = await a.getContractInstanceFromInstantiationParams(censorAccountArtifact, {
         constructorArtifact: undefined, constructorArgs: undefined,
         salt: new a.Fr(censorSaltVal), publicKeys: censorPublicKeys, immutablesHash: censorImmutablesHash,
@@ -2134,7 +2154,7 @@
       log('  Censor account registered.', 'success');
 
       // Create censor wallet
-      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk);
+      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk, {preProveHook:config.preProveHook,contextGuard:config.contextGuard});
       const censorAccountManager = await a.AccountManager.create(censorWallet, censorSk, censorAccountContract, { salt: new a.Fr(censorSaltVal) });
       censorWallet._accountManager = censorAccountManager;
 
@@ -2174,7 +2194,7 @@
         const newCensorOnChain = ncv?.inner ? ncv.inner.toString() : (ncv?.toString ? ncv.toString() : ncv);
         log('  New censor on-chain: ' + newCensorOnChain, 'success');
       } catch (e) {
-        log('  Could not read new censor: ' + extractErrorMessage(e).substring(0, 80), 'warn');
+        log('  Could not read new censor: ' + 'request did not complete', 'warn');
       }
     }
 

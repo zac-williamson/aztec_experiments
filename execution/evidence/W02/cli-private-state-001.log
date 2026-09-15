@@ -1,0 +1,39 @@
+✔ V1 decoder maps all eleven values and rejects legacy/truncated/noncanonical values (0.589375ms)
+✔ Discovery rejects ambiguous rights and checks selected identity (0.282291ms)
+✔ Encrypted CLI records survive reopening and reject key/tamper/collision without plaintext (20.241083ms)
+✔ CLI store refuses a public directory and symlinked record (19.694834ms)
+✔ encrypted checkpoint retains exact IndexedDB schema, typed values and out-of-line keys after restart (34.579667ms)
+✔ concurrent session fails closed and stale lock is preserved (9.460958ms)
+✔ wrong wallet cannot restore or overwrite existing ciphertext (30.976708ms)
+✔ authenticated scope blocks transplanted cache: account (31.368667ms)
+✔ authenticated scope blocks transplanted cache: chainId (19.040959ms)
+✔ authenticated scope blocks transplanted cache: rollup (17.189917ms)
+✔ authenticated scope blocks transplanted cache: version (20.503958ms)
+✔ tampered cache and noncooperating concurrent writer cannot be silently overwritten (22.773917ms)
+✔ foreign scoped PXE database is not silently lost (6.1515ms)
+✔ public or symlinked checkpoint paths fail closed (22.564417ms)
+✔ actual pinned application PXE store reopens its persisted identity and map through encryption (36.819458ms)
+✔ full Field wallet salt survives without Number narrowing (5.339709ms)
+✔ invalid wallet salt fails closed 9007199254740992 (1.4645ms)
+✔ invalid wallet salt fails closed -1 (1.832708ms)
+✔ invalid wallet salt fails closed 0x (1.078458ms)
+✔ invalid wallet salt fails closed 0001 (0.836917ms)
+✔ invalid wallet salt fails closed 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001 (0.844041ms)
+✔ public wallet and symlink are rejected without modifying source files (1.108792ms)
+✔ network endpoints must be explicit and do not read ambient configuration (0.926875ms)
+✔ unsafe RPC endpoint rejects without echoing input (0.093667ms)
+✔ unsafe RPC endpoint rejects without echoing input (0.081042ms)
+✔ unsafe RPC endpoint rejects without echoing input (0.046375ms)
+✔ missing user wallet never loads defaults (0.053708ms)
+✔ escrow claim-secret encryption separates accounts sharing a key with different salts (29.737666ms)
+✔ CLI saves checkpoint and releases lock after success (30.461583ms)
+✔ CLI saves partial synced state then releases lock after action failure (29.993ms)
+✔ RPC chain mismatch prevents cache restore and action (1.038ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 342.637417

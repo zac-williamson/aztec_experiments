@@ -1,32 +1,18 @@
 # Current status
 
-Private fee replacement is implemented and verified. Coupon contracts, issuer service, registration and coupon storage are removed. Users fund an ownerless private FeeJuice contract and pay from private credit. No fee operator or replenishment service is required. Browser/CLI and moderator routing use the replacement; deployment remains an operator transaction.
+Production readiness remains the objective. Engineering continues against the pinned Aztec5.2 toolchain; production network compatibility/clearance, independent review and fourteen-day soak are still required. No public deployment or real-fund operation has occurred.
 
-## Verified results
+## Completed application milestones
 
-- Genuine cold-start board claim and private-balance post:4m20s.
-- Genuine standalone fee funding, board claim, withdrawal and Ethereum collateral refund:4m50s.
-- Individual application proofs:roughly10–15seconds. No network epoch proofs.
--145 Noir/TXE checks and134 component/generated-consumer checks pass. Built CLI and cold-browser SDK/CRS smoke pass. All genuine test process trees and temporary directories cleaned.
-- Funding/recovery tests use the production helper and an independent disposable Ethereum sender. Actual SDK tests reproduce and fix the incorrect owner-key substitution during shared-contract registration; a real Anvil reproduction qualified the stale-nonce fix.
+- Coupon service removed. Users fund an ownerless private FeeJuice contract and spend private credit. No fee operator is needed; cold-start funding remains publicly observable and the configured maximum fee is charged without an unused-gas refund.
+- Authenticated collateral deposits/refunds, independent post IDs, exact screening-history lookup and checked cooldown/penalty/moderation rules are implemented and verified.
+- Escrow accounting, replay and reentrancy checks pass. Current artifacts are tied to source, with CI drift guards and an aggregate inventory.
+- Wallet recovery is complete for the supported route: random embedded Aztec keys, encrypted browser backups, exact salts, scoped encrypted CLI checkpoints and account/network/tab guards. Ethereum browser signing uses an external wallet.
 
-The contract deducts the configured maximum fee with no unused-gas refund. L1 funding amounts and cold-start timing remain observable. These are documented limits, not claims of invisible funding. See evidence/W01.json and evidence/W01/private-fee-privacy.md. Historical coupon milestones apply only to their earlier source.
+## Latest evidence
 
-## Remaining project work
+125 integrated recovery/application checks and71 artifact checks pass. The actual built browser restores a wallet and collateral secret in a fresh profile, rejects a wrong password and blocks concurrent tabs. A genuine transaction signed with restored credentials claimed and posted using private fees in5m1s total. All owned processes/data cleaned; no network epoch proofs. See evidence/W02.json.
 
-Production readiness remains the objective, not a completed release claim. Next graph work includes full screening-history lookup, policy/penalty behavior, recovery, remaining product/operations work and final candidate qualification. Independent review, representative fourteen-day soak and target-network release clearance remain incomplete. V5 suitability does not block engineering; V6 compatibility and clearance are required before production. No public deployment or real-fund operation has been performed.
+## Next work
 
-
-C04 screening-history lookup is complete: exact successor selection replaces the first-page cutoff; 150 contract checks, 47 integrated checks and a genuine 4m35s screening journey pass. Persisted PXE1100-note/restart and seeded1002-note authenticated continuation/exit checks pass. Seeded notes are not claimed as executed publications; underlying PXE linear scanning remains documented. Next is C05 penalty/cooldown/moderation invariants.
-
-C05 is active: checked economic transitions and inclusion-time moderation rules. Scope includes affected shared/app/service consumers, generated artifacts and test scripts required by the fresh moderation ABI.
-
-C05 complete: checked cooldown/penalty arithmetic, inclusion-time moderation deadlines, immutable policy snapshots and consumer binding. 171 distinct contract checks and66 integrated checks pass. Genuine screening5m7s and private-fee claim/post pass with complete cleanup. Historical policy retrieval remains M02. Next: C06 escrow accounting and safe recovery.
-
-C06 active: strengthen escrow/bridge verification and document supported recovery. Existing accounting/guard implementation remains unless tests identify a defect; no new pause authority or service is planned.
-
-C06 complete:37 escrow/reentrancy/conservation tests and30 artifact checks pass; runtime unchanged. Recovery runbook documents actual routes and W02/W03 gaps. Next ready graph package will address remaining application work.
-
-A01 active: verify current consumer ABI/artifact agreement and complete release provenance/CI drift protection. Scope includes scripts for manifest and checks.
-
-A01 complete: current consumers and generated outputs qualified; missing daemon private-fee forwarding fixed. 108 integrated checks, 99 signer/daemon/shell checks and exact36-output rebuild comparison pass. Aggregate inventory validates; remote CI not claimed. Continuing next ready package.
+Continue the graph with trustworthy receipts and resumable transaction journals: unknown/reverted/reorganized outcomes, interruption recovery and withdrawal discovery beyond the old500-block window. Wallet backups do not yet provide a complete transaction journal. Later product, deployment/operations and final candidate gates remain open.

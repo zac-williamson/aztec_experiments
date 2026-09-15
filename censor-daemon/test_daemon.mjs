@@ -178,10 +178,10 @@ if (action === 'list' && args.includes('--json')) {
 // ============================================================
 // Run daemon as subprocess with mock infra (async, non-blocking)
 // ============================================================
-function runDaemon(args, timeoutMs = 30000, { production = false, stopAfterMs, omitFeeConfig = false } = {}) {
+function runDaemon(args, timeoutMs = 30000, { production = false, stopAfterMs, omitFeeConfig = false, omitEthRpc = false } = {}) {
   // Explicit test-only harness injects mock runtime. Production has no CLI/env
   // bypass for model isolation, and this harness uses only disposable fixtures.
-  const productionArgs = omitFeeConfig ? [] : ['--private-fee-config', MOCK_FEES];
+  const productionArgs = [...(omitEthRpc ? [] : ['--eth-rpc', 'http://127.0.0.1:8545']), ...(omitFeeConfig ? [] : ['--private-fee-config', MOCK_FEES])];
   for (let i = 0; i < args.length; i++) {
     if (!production && args[i] === '--skip-bootstrap') continue;
     if (!production && args[i] === '--model') { i++; continue; }
@@ -502,6 +502,7 @@ async function main() {
       for (const argv of signed) {
         assertEqual(argv[argv.indexOf('--private-fee-config') + 1], fs.realpathSync(MOCK_FEES), 'fixed fee config reaches CLI');
         assertFalse(argv.includes('--private-fee-claim-file'), 'no repeated bridge claim');
+        assertEqual(argv[argv.indexOf('--eth-rpc') + 1], 'http://127.0.0.1:8545/', 'fixed Ethereum RPC reaches CLI');
       }
       assertEqual(signed.length, 1, 'one actual mock flag call');
       assertEqual(signed[0][signed[0].indexOf('--expected-policy-version') + 1], POLICY_VERSION, 'exact policy version reaches signing CLI');
@@ -770,6 +771,12 @@ async function main() {
     const result = await runDaemon(['--portal-address', '0x' + '12'.repeat(20)], 5000, { omitFeeConfig: true });
     assertTrue(result.exitCode !== 0, 'startup must fail');
     assertTrue((result.stdout + result.stderr).includes('--private-fee-config is required'), 'bounded configuration error');
+  });
+
+  await test('Ethereum endpoint is mandatory at daemon startup', async () => {
+    const result = await runDaemon(['--portal-address', '0x' + '12'.repeat(20)], 5000, { omitEthRpc: true });
+    assertTrue(result.exitCode !== 0, 'startup must fail');
+    assertTrue((result.stdout + result.stderr).includes('--eth-rpc is required'), 'bounded endpoint error');
   });
 
   console.log(`\n=== Results ===`);

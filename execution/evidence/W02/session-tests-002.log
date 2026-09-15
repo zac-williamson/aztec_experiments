@@ -1,0 +1,14 @@
+✔ same-page overlapping calls and another-tab unavailable lock reject without invoking engine (6.557125ms)
+✔ provider account and chain switches prevent engine execution (3.496ms)
+✔ portal mutation blocks signing and proof hooks during an operation (0.534959ms)
+✔ engine witness errors and initial provider errors are both redacted (1.552541ms)
+✔ lossless salts and public cache identity separate account/network/deployment (1.163916ms)
+✔ missing Web Locks support fails closed before wallet work (0.414375ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 66.176

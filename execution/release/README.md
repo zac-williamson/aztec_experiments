@@ -1,7 +1,7 @@
 # Release outputs
 
 This directory contains engineering provenance, not a cleared production release.
-`artifact-manifest.json` is the A01 local content inventory; regenerate and check it
+`artifact-manifest.json` is the current local content inventory (introduced in A01, refreshed after W02); regenerate and check it
 using BUILDING.md. It binds generated outputs to validated inputs but is neither
 a signed attestation nor the final T05 release manifest. Later application changes
 require regeneration.

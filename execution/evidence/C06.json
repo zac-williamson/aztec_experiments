@@ -42,7 +42,7 @@
       "sha256": "1424a67cd1b2c62a0409bb63934d851329f6251b7b31d0e18bc024e2ede9158b"
     },
     {
-      "path": "recovery-runbook.md",
+      "path": "evidence/C06/recovery-runbook.md",
       "sha256": "c056c830d9327258aaed1c6af9230702fed7dd2ebb438edbbb02dd5e33e923a8"
     },
     {
@@ -58,7 +58,7 @@
       "artifacts": [
         "evidence/C06/verification.md",
         "evidence/C06/forge-final.log",
-        "recovery-runbook.md"
+        "evidence/C06/recovery-runbook.md"
       ]
     },
     {
@@ -68,7 +68,7 @@
       "artifacts": [
         "evidence/C06/verification.md",
         "evidence/C06/forge-final.log",
-        "recovery-runbook.md"
+        "evidence/C06/recovery-runbook.md"
       ]
     },
     {
@@ -78,7 +78,7 @@
       "artifacts": [
         "evidence/C06/verification.md",
         "evidence/C06/forge-final.log",
-        "recovery-runbook.md"
+        "evidence/C06/recovery-runbook.md"
       ]
     },
     {
@@ -88,14 +88,14 @@
       "artifacts": [
         "evidence/C06/verification.md",
         "evidence/C06/forge-final.log",
-        "recovery-runbook.md"
+        "evidence/C06/recovery-runbook.md"
       ]
     }
   ],
   "review": {
     "kind": "self-review",
     "reviewer": "root with history_tests independent lane review and history_contract/history_pxe implementation/source review",
-    "summary": "37 passing Forge checks, unchanged runtime bytes, actual recovery commands/source verified. W02/W03 remain explicit production work; no audit waiver.",
+    "summary": "37 passing Forge checks, unchanged runtime bytes, actual recovery commands/source verified. W02/W03 remain explicit production work; no audit waiver. Supporting mutable handover file archived byte-identically during W02; historical source/outcome unchanged.",
     "artifacts": [
       "evidence/C06/verification.md",
       "evidence/C06/recovery-review.md"

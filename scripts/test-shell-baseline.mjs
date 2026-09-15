@@ -23,7 +23,7 @@ test('known-bad shell construction retains substitutions; repaired authority emi
     fs.writeFileSync(censorWallet, '{}');
     const privateFeeConfig = path.join(directory, 'private-fees.json');
     fs.writeFileSync(privateFeeConfig, '{}');
-    const config = { cliPath, censorWallet, privateFeeConfig, portalAddress: '0x' + '1'.repeat(40), aztecNodeUrl: 'http://127.0.0.1:5080' };
+    const config = { cliPath, censorWallet, privateFeeConfig, ethRpcUrl: 'http://127.0.0.1:8545', portalAddress: '0x' + '1'.repeat(40), aztecNodeUrl: 'http://127.0.0.1:5080' };
     // These markers are never submitted to a shell or interpreted as code.
     const reason = 'rule 1: $(INERT_MARKER) `INERT_MARKER` ; "quoted"';
     let historicalCommand;

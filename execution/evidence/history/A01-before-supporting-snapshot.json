@@ -1,0 +1,138 @@
+{
+  "task_id": "A01",
+  "outcome": "pass",
+  "recorded_at": "2026-09-15T18:25:24.289832+00:00",
+  "source_fingerprint": "6f78ad53241fb3faec0fb7b95c850060e7b8313643ad1cae79fbfcd52f361ccc",
+  "source_inventory": "evidence/A01/source-001.json",
+  "artifacts": [
+    {
+      "path": "evidence/A01/source-001.json",
+      "sha256": "c5386307a274ebb08c91c29448e35a88b774dce8e6e3c47cffba0541b5230e93"
+    },
+    {
+      "path": "evidence/A01/verification.md",
+      "sha256": "7c1721c52136f95e29b829195bccd992c702885e4d4896ab1332d4d73ebee364"
+    },
+    {
+      "path": "evidence/A01/consumer-review.md",
+      "sha256": "9cfb6856f530f94770f869b3f8446a4c0e6bbd19e776afed15a292e637d3643b"
+    },
+    {
+      "path": "evidence/A01/provenance-review.md",
+      "sha256": "138efe03cc85a34bc45c0092db9fc51fa1f9c33898e46f84ef6a8a187582a349"
+    },
+    {
+      "path": "evidence/A01/integrated-final.log",
+      "sha256": "5cf92808ea989027de543d37947a579bb2d43dece8426d23cb3a67cb0b2fc054"
+    },
+    {
+      "path": "evidence/A01/signer-fee-tests.log",
+      "sha256": "60bbc3d81a044cc03e6f42116235bc5585055fdf30fb17f50b0dfe9999ace81a"
+    },
+    {
+      "path": "evidence/A01/daemon-fee-tests-002.log",
+      "sha256": "ea3f696038233723aaa9e372252aef71f59de1e7597971d95515da122b769469"
+    },
+    {
+      "path": "evidence/A01/shell-baseline-tests.log",
+      "sha256": "fd7e394f3152e1aa029258f31adabcb1812aa79f4c1598afc40b5ba655e5b9d6"
+    },
+    {
+      "path": "evidence/A01/apps-build-final-001.log",
+      "sha256": "c48a0c056c516f1ebb640d4486c5b074f0b562b556c0068a77c6b2e3c11fff36"
+    },
+    {
+      "path": "evidence/A01/apps-build-final-002.log",
+      "sha256": "c48a0c056c516f1ebb640d4486c5b074f0b562b556c0068a77c6b2e3c11fff36"
+    },
+    {
+      "path": "evidence/A01/reproducibility-final.log",
+      "sha256": "9346b76eebe1e84b570106c325a841450b38dccdbbcd84f1f8c53292a376839e"
+    },
+    {
+      "path": "evidence/A01/outputs-final-first.json",
+      "sha256": "5e9636c7aabcccccedb246116091a8ce2b2bb75cd450f1090a2b510fc45be484"
+    },
+    {
+      "path": "evidence/A01/outputs-final-second.json",
+      "sha256": "5e9636c7aabcccccedb246116091a8ce2b2bb75cd450f1090a2b510fc45be484"
+    },
+    {
+      "path": "evidence/A01/manifest-write-final.log",
+      "sha256": "fa4b4336cc55face230e07b1c10da8489bab24d59db9b5f821c180e1913295a1"
+    },
+    {
+      "path": "evidence/A01/manifest-check-final.log",
+      "sha256": "0be27213504a0a2900afcd3688bac0ac669c31dfb08e8794c0667440b9b53bf6"
+    },
+    {
+      "path": "evidence/A01/ci-guard-current.log",
+      "sha256": "e4a6b157ba8c759198e9a29d3ba2828f721700c77b566542f3ca40f92e04127e"
+    },
+    {
+      "path": "release/artifact-manifest.json",
+      "sha256": "258df072c2e9b4a0dc4ff936e2b9e0e9f15768b0c74175998854b2fc50500e91"
+    },
+    {
+      "path": "evidence/C06/forge-final.log",
+      "sha256": "eb1ca203b14106fd2b2df7c97257f965fe90d3ae1b730600b094935754fa2d8b"
+    },
+    {
+      "path": "evidence/C06/runtime-artifact-comparison.json",
+      "sha256": "1424a67cd1b2c62a0409bb63934d851329f6251b7b31d0e18bc024e2ede9158b"
+    }
+  ],
+  "criteria": [
+    {
+      "id": "A01-A01",
+      "result": "pass",
+      "summary": "Canonical consumers agree; restricted daemon forwards startup-fixed private-fee configuration.",
+      "artifacts": [
+        "evidence/A01/verification.md",
+        "evidence/A01/consumer-review.md",
+        "evidence/A01/integrated-final.log"
+      ]
+    },
+    {
+      "id": "A01-A02",
+      "result": "pass",
+      "summary": "Unchanged current generated portal passes deployed non-default minimum and liability decrement regressions.",
+      "artifacts": [
+        "evidence/A01/verification.md",
+        "evidence/C06/forge-final.log",
+        "evidence/C06/runtime-artifact-comparison.json"
+      ]
+    },
+    {
+      "id": "A01-A03",
+      "result": "pass",
+      "summary": "Validated aggregate binds current compiler metadata, source, bytecode/VKs, workers/WASM/CRS and frontend inputs/outputs.",
+      "artifacts": [
+        "evidence/A01/verification.md",
+        "release/artifact-manifest.json",
+        "evidence/A01/manifest-check-final.log",
+        "evidence/A01/reproducibility-final.log"
+      ]
+    },
+    {
+      "id": "A01-A04",
+      "result": "pass",
+      "summary": "Actual workflow guard rejects stale portal/censor and other generated outputs in disposable Git regressions; current checkout passes.",
+      "artifacts": [
+        "evidence/A01/verification.md",
+        "evidence/A01/integrated-final.log",
+        "evidence/A01/ci-guard-current.log"
+      ]
+    }
+  ],
+  "review": {
+    "kind": "self-review",
+    "reviewer": "root with history_contract consumer review and history_pxe provenance review",
+    "summary": "Concrete daemon routing and orphan HTML omissions repaired, final bounded review clear. Unsigned inventory and remote CI limitations explicit.",
+    "artifacts": [
+      "evidence/A01/verification.md",
+      "evidence/A01/consumer-review.md",
+      "evidence/A01/provenance-review.md"
+    ]
+  }
+}

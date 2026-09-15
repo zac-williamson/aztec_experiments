@@ -11,41 +11,49 @@ import { sha256ToField } from '@aztec/foundation/crypto/sha256';
 import { AztecAddress } from '@aztec/stdlib/aztec-address';
 import { EthAddress } from '@aztec/foundation/eth-address';
 
+const backupSource = await fs.readFile(new URL('../shared/wallet-backup.js',import.meta.url),'utf8');
 const appSource = await fs.readFile(new URL('../apps/src/billboard/user/app.js',import.meta.url),'utf8');
 const engineSource = await fs.readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8');
 const scope={l1ChainId:'31337',rollupAddress:'0x1111111111111111111111111111111111111111',rollupVersion:'1',
   boardAddress:'0x'+ '2'.padStart(64,'0'),portalAddress:'0x3333333333333333333333333333333333333333',depositor:'0x0000000000000000000000000000000000000004'};
 const walletSecret='0x'+'9'.padStart(64,'0');
+const walletSalt='0x'+ ((1n<<180n)+17n).toString(16).padStart(64,'0');
 const record={schemaVersion:1,secretHash:'0x'+'123'.padStart(64,'0'),secret:'0x'+'456'.padStart(64,'0')};
-const keyFor=(s,h)=>JSON.stringify(['AZTEC_BB_CLAIM_STORE_V1',s.l1ChainId,s.rollupAddress,s.rollupVersion,s.boardAddress,s.portalAddress,s.depositor,h]);
+const aadFor=(s,h)=>JSON.stringify(['AZTEC_BB_CLAIM_STORE_V2',s.l1ChainId,s.rollupAddress,s.rollupVersion,s.boardAddress,s.portalAddress,s.depositor,h]);
+const ownerId=createHash('sha256').update('AZTEC_BB_CLAIM_BACKUP_OWNER_V2\0'+walletSecret+walletSalt).digest('hex');
+const keyFor=(s,h)=>ownerId+':'+aadFor(s,h);
 function appContext() {
   const context={crypto:webcrypto,indexedDB:new IDBFactory(),TextEncoder,TextDecoder,Uint8Array,URLSearchParams,console,
     location:{search:''},document:{getElementById:()=>null},__aztec:{createPXE(){}},ETH_RPC_URL:'',
     checkBundle:()=>true,setupRpcAuth(){},makeCallEngine:()=>()=>{},runBillboardUser(){},initPages(){},initWalletButtons(){}};
-  context.window=context;vm.createContext(context);vm.runInContext(appSource,context,{filename:'user/app.js'});return context;
+  context.window=context;vm.createContext(context);vm.runInContext(backupSource,context,{filename:'shared/wallet-backup.js'});vm.runInContext(appSource,context,{filename:'user/app.js'});return context;
 }
 async function editEnvelope(context,key,transform) {
-  const db=await new Promise((resolve,reject)=>{const req=context.indexedDB.open('aztec-billboard-claim-secrets-v1',1);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});
+  const db=await new Promise((resolve,reject)=>{const req=context.indexedDB.open('aztec-billboard-claim-secrets-v2',1);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});
   try {return await new Promise((resolve,reject)=>{
     const tx=db.transaction('records','readwrite');const store=tx.objectStore('records');const req=store.get(key);let value;
     req.onsuccess=()=>{value=transform(req.result,store);};tx.oncomplete=()=>resolve(value);tx.onabort=()=>reject(tx.error);
   });} finally {db.close();}
 }
 test('browser actual module persists ciphertext and interoperates with Node AES-GCM',async()=>{
-  const c=appContext(),store=c.makeClaimSecretStore(walletSecret);await store.save(scope,record);
+  const c=appContext(),store=c.makeClaimSecretStore(walletSecret,walletSalt);await store.save(scope,record);
   assert.equal(JSON.stringify(await store.load(scope,record.secretHash)),JSON.stringify(record));
   const envelope=await editEnvelope(c,keyFor(scope,record.secretHash),value=>value);
   assert(!JSON.stringify(envelope).includes(record.secret));assert.match(envelope.iv,/^[0-9a-f]{24}$/);
-  const key=createHash('sha256').update(Buffer.from('AZTEC_BB_CLAIM_STORE_KEY_V1\0')).update(Buffer.from(walletSecret.slice(2),'hex')).digest();
+  const key=createHash('sha256').update(Buffer.from('AZTEC_BB_CLAIM_STORE_KEY_V2\0')).update(Buffer.from(walletSecret.slice(2),'hex')).update(Buffer.from(walletSalt.slice(2),'hex')).digest();
   const decipher=createDecipheriv('aes-256-gcm',key,Buffer.from(envelope.iv,'hex'));
-  const ciphertext=Buffer.from(envelope.ciphertext,'hex');decipher.setAuthTag(ciphertext.subarray(-16));decipher.setAAD(Buffer.from(keyFor(scope,record.secretHash)));
+  const ciphertext=Buffer.from(envelope.ciphertext,'hex');decipher.setAuthTag(ciphertext.subarray(-16));decipher.setAAD(Buffer.from(aadFor(scope,record.secretHash)));
   assert.deepEqual(JSON.parse(Buffer.concat([decipher.update(ciphertext.subarray(0,-16)),decipher.final()]).toString()),record);
   await store.save(scope,record); // Idempotent exact record only.
   await assert.rejects(store.save(scope,{...record,secret:'0x'+'457'.padStart(64,'0')}),/different claim secret/);
 });
 test('browser actual custody rejects wrong wallet, ciphertext corruption and moved scope',async()=>{
-  const c=appContext(),store=c.makeClaimSecretStore(walletSecret);await store.save(scope,record);
-  await assert.rejects(c.makeClaimSecretStore('0x'+'8'.padStart(64,'0')).load(scope,record.secretHash),/authenticate/);
+  const c=appContext(),store=c.makeClaimSecretStore(walletSecret,walletSalt);await store.save(scope,record);
+  assert.equal(await c.makeClaimSecretStore('0x'+'8'.padStart(64,'0'),walletSalt).load(scope,record.secretHash),null);
+  assert.equal(await c.makeClaimSecretStore(walletSecret,'0x0').load(scope,record.secretHash),null);
+  const foreignId=createHash('sha256').update('AZTEC_BB_CLAIM_BACKUP_OWNER_V2\0'+'0x'+'8'.padStart(64,'0')+walletSalt).digest('hex');
+  await editEnvelope(c,keyFor(scope,record.secretHash),(value,db)=>{db.put(value,foreignId+':'+aadFor(scope,record.secretHash));});
+  await assert.rejects(c.makeClaimSecretStore('0x'+'8'.padStart(64,'0'),walletSalt).load(scope,record.secretHash),/another wallet/);
   const altered={...scope,depositor:'0x0000000000000000000000000000000000000005'};
   assert.equal(await store.load(altered,record.secretHash),null);
   await editEnvelope(c,keyFor(scope,record.secretHash),(value,db)=>{db.put(value,keyFor(altered,record.secretHash));return value;});
@@ -54,9 +62,9 @@ test('browser actual custody rejects wrong wallet, ciphertext corruption and mov
   await assert.rejects(store.load(scope,record.secretHash),/authenticate/);
 });
 test('browser save observes transaction abort and never reports durable success',async()=>{
-  const c=appContext(),store=c.makeClaimSecretStore(walletSecret);
+  const c=appContext(),store=c.makeClaimSecretStore(walletSecret,walletSalt);
   // Abort a genuine IDB write transaction after add(), before completion.
-  const request=c.indexedDB.open('aztec-billboard-claim-secrets-v1',1);
+  const request=c.indexedDB.open('aztec-billboard-claim-secrets-v2',1);
   const db=await new Promise(resolve=>{request.onupgradeneeded=()=>request.result.createObjectStore('records');request.onsuccess=()=>resolve(request.result);});
   const proto=Object.getPrototypeOf(db),original=proto.transaction;
   proto.transaction=function(...args){const tx=original.apply(this,args);if(args[1]==='readwrite')queueMicrotask(()=>tx.abort());return tx;};

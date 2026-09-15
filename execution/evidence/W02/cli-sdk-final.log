@@ -1,0 +1,39 @@
+{
+  "outcome": "pass",
+  "node": "24.21.0",
+  "sdkSha256": "c21c47f831fc0992bd5099dfc15af8ee4ac7b0496b191504d1762a3cb566913f",
+  "scope": "Named functions extracted from real CLI sources; no main(), remote RPC, pre-existing wallets, persisted wallet files, or transactions. Account derivation and hashing use the actual built SDK.",
+  "sourceHashes": {
+    "apps/src/billboard/user/cli.mjs": "7e00e3abc2583c3526f56d951cfdaf7cda65ee23ceeeb297eace6861e6323750",
+    "apps/src/billboard/deploy/cli.mjs": "14ecf478693346744c4bea2389b2a53cdd453d63df6aaca643417b511bd73712",
+    "shared/aztec-lib.js": "aa8d08ccbc0402c7dd2dc4ad352e2c79634696cce491b050a574219f5a5c3286"
+  },
+  "results": [
+    {
+      "lane": "user",
+      "outcome": "pass",
+      "extractedFunction": "loadAztecSDK",
+      "functionSha256": "8616e19ad8004bc0d4728611b2ee9df37ff968557e5af31e10b3f83078593f68",
+      "exports": 74,
+      "poseidon": "0x038682aa1cb5ae4e0a3f13da432a95c77c5c111f6f030faf9cad641ce1ed7383",
+      "disposableAddress": "0x247237ece6de9a5f863fb8740a783ecf5110573e2cba008b2fc11ebf94bb8fcb",
+      "bufferCompatibility": "pass",
+      "storage": "actual bundled adapter opened, reopened and deleted in process-local fake-indexeddb",
+      "networkRequests": 0,
+      "filesystemWrites": 0
+    },
+    {
+      "lane": "deploy",
+      "outcome": "pass",
+      "extractedFunction": "loadAztecSDK",
+      "functionSha256": "bc3aa74762ac94b6e59f95b43789ad5fc6ec81b0e98bbe6d6d486a25fd54d080",
+      "exports": 74,
+      "poseidon": "0x038682aa1cb5ae4e0a3f13da432a95c77c5c111f6f030faf9cad641ce1ed7383",
+      "disposableAddress": "0x247237ece6de9a5f863fb8740a783ecf5110573e2cba008b2fc11ebf94bb8fcb",
+      "bufferCompatibility": "pass",
+      "storage": "actual bundled adapter opened, reopened and deleted in process-local fake-indexeddb",
+      "networkRequests": 0,
+      "filesystemWrites": 0
+    }
+  ]
+}

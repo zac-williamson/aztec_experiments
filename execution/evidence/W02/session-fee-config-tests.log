@@ -1,0 +1,18 @@
+✔ browser forwards public fee config and local claim directly with no service or store (1.701167ms)
+✔ CLI reads public configuration and restricted local claim, rejecting links, extra fields, and broad permissions (2.466875ms)
+✔ CLI keeps ambiguous outcomes actionable without exposing private errors (0.185125ms)
+✔ same-page overlapping calls and another-tab unavailable lock reject without invoking engine (4.364291ms)
+✔ provider account and chain switches prevent engine execution (1.55575ms)
+✔ portal mutation blocks signing and proof hooks during an operation (0.75175ms)
+✔ engine witness errors and initial provider errors are both redacted (3.302667ms)
+✔ lossless salts and public cache identity separate account/network/deployment (0.982541ms)
+✔ missing Web Locks support fails closed before wallet work (0.471208ms)
+✔ RPC aliases for the same account acquire the same cross-tab lock (0.876875ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 73.8215

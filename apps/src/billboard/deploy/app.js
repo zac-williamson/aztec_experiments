@@ -137,8 +137,8 @@ async function startDeploy() {
     }
   } catch (e) {
     log('', 'error', 'status');
-    log('ERROR: ' + (e.stack || e.message || String(e)), 'error', 'status');
-    console.error(e);
+    log('ERROR: ' + 'operation did not complete; check configuration and recovery records', 'error', 'status');
+    console.error('Application operation did not complete.');
   }
 }
 

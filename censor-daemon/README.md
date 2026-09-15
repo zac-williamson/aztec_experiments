@@ -23,6 +23,7 @@ node censor-daemon/daemon.mjs \
   --portal-address "$LOCAL_PORTAL_ADDRESS" \
   --private-fee-config /absolute/path/private-fees.json \
   --node-url "$LOCAL_AZTEC_NODE_URL" \
+  --eth-rpc "$LOCAL_ETH_RPC_URL" \
   --censor-wallet "$DISPOSABLE_CENSOR_WALLET" \
   --model-image "$REVIEWED_MODEL_IMAGE_WITH_DIGEST" \
   --model "$LOCAL_GGUF_FILE" \
@@ -91,3 +92,5 @@ The runtime API is `startModelRuntime({image, modelPath, modelSha256, port, thre
 Before starting the daemon, fund and claim the censor wallet's private fee balance using the existing private FeeJuice funding page. Use the same censor wallet and canonical private fee contract as the daemon configuration. The daemon spends an already claimed private balance; it does not repeat a bridge claim each time it starts a CLI process. Do not supply a claim-secret file to the daemon.
 
 The required `--private-fee-config` points to the public JSON configuration accepted by the user CLI (contract address and gas settings). Its absolute real-file path is validated and fixed when the restricted signer starts, then forwarded to the CLI. Model output cannot override that path, gas route, wallet or operation. Keep the host configuration file under operator control; changing its contents is an operator action, not a model capability. Fee exhaustion remains a visible signing failure until the wallet is funded again.
+
+The daemon also requires `--eth-rpc` explicitly. The restricted signer fixes and forwards this Ethereum endpoint alongside the Aztec node URL; it never selects an ambient shared RPC configuration. HTTP(S) endpoints with embedded credentials or fragments are rejected.

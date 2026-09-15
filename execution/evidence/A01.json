@@ -70,7 +70,7 @@
       "sha256": "e4a6b157ba8c759198e9a29d3ba2828f721700c77b566542f3ca40f92e04127e"
     },
     {
-      "path": "release/artifact-manifest.json",
+      "path": "evidence/A01/artifact-manifest.json",
       "sha256": "258df072c2e9b4a0dc4ff936e2b9e0e9f15768b0c74175998854b2fc50500e91"
     },
     {
@@ -109,7 +109,7 @@
       "summary": "Validated aggregate binds current compiler metadata, source, bytecode/VKs, workers/WASM/CRS and frontend inputs/outputs.",
       "artifacts": [
         "evidence/A01/verification.md",
-        "release/artifact-manifest.json",
+        "evidence/A01/artifact-manifest.json",
         "evidence/A01/manifest-check-final.log",
         "evidence/A01/reproducibility-final.log"
       ]
@@ -128,7 +128,7 @@
   "review": {
     "kind": "self-review",
     "reviewer": "root with history_contract consumer review and history_pxe provenance review",
-    "summary": "Concrete daemon routing and orphan HTML omissions repaired, final bounded review clear. Unsigned inventory and remote CI limitations explicit.",
+    "summary": "Concrete daemon routing and orphan HTML omissions repaired, final bounded review clear. Unsigned inventory and remote CI limitations explicit. Supporting mutable handover file archived byte-identically during W02; historical source/outcome unchanged.",
     "artifacts": [
       "evidence/A01/verification.md",
       "evidence/A01/consumer-review.md",

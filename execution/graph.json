@@ -754,7 +754,7 @@
       "title": "Secure wallet keys, secrets and recovery",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "W01",
         "C06"
@@ -767,7 +767,15 @@
       "scope": [
         "apps/src/billboard/",
         "apps/src/fee-juice/",
-        "shared/"
+        "shared/",
+        "scripts/",
+        "apps/build.mjs",
+        "apps/dist/",
+        "BUILDING.md",
+        "censor-daemon/",
+        ".gitignore",
+        "README.md",
+        ".github/"
       ],
       "plan": "tasks/W02.md",
       "actions": [
@@ -797,7 +805,7 @@
       "evidence": "evidence/W02.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "Encrypted recovery, exact wallet identity, scoped private CLI checkpoints and cross-tab/session guards qualified. 125 integrated/71 artifact checks, real browser restore/tab exclusion and genuine restored-author private-fee post301227ms pass. Remaining receipt/reorg/journal work is W03.",
       "priority": 13
     },
     {

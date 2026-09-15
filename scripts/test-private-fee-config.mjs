@@ -11,11 +11,14 @@ const cli=vm.createContext({fs,path});
 vm.runInContext(cliSource.slice(cliSource.indexOf('function readPrivateFeeJson('),cliSource.indexOf('main().catch')),cli);
 test('browser forwards public fee config and local claim directly with no service or store',async()=>{
  const route={contractAddress:'fee',gasSettings:{}},claim={salt:'local-secret'};
- const c=vm.createContext({window:{billboardPrivateFee:route,walletState:{aztec:{secretKey:'local-wallet',salt:0}}},ethers:{},log(){}});
+ const c=vm.createContext({window:{RPC_CONFIG:{ethRpcUrl:'http://eth',aztecNodeUrl:'http://node'},billboardPrivateFee:route,walletState:{aztec:{secretKey:'local-wallet',salt:0,address:{toString:()=> 'public-address'}}}},ethers:{},log(){},
+  document:{getElementById:()=>({value:'portal'})},navigator:{locks:{request:async(_name,_options,run)=>run({})}},
+  _walletGeneration:0,_assertWalletLive(){},getNodeUrl:()=> 'http://node'});
  vm.runInContext(browserSource,c);
  const config=c.buildConfig('post',{privateFeeClaim:claim});assert.equal(config.privateFee,route);assert.equal(config.privateFeeClaim,claim);assert(!('sponsorship' in config));
- const failure=Object.assign(new Error('unknown'),{code:'BB_SUBMISSION_UNKNOWN'});
- await assert.rejects(c.makeCallEngine(async()=>{throw failure;})('post','status'),e=>e===failure);
+ const failure=new Error('private-wallet-secret');
+ await assert.rejects(c.makeCallEngine(async(_env,actual)=>{assert.equal(actual.privateFee,route);assert.equal(actual.privateFeeClaim,claim);throw failure;})('post','status',{privateFeeClaim:claim}),e=>e.code==='BB_OPERATION_FAILED'&&!e.message.includes('private-wallet-secret'));
+ await assert.rejects(c.makeCallEngine(async()=>{throw Object.assign(failure,{code:'BB_SUBMISSION_UNKNOWN'});})('post','status'),e=>e.code==='BB_SUBMISSION_UNKNOWN'&&!e.message.includes('private-wallet-secret'));
 });
 test('CLI reads public configuration and restricted local claim, rejecting links, extra fields, and broad permissions',()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bb-private-fee-config-'));

@@ -10,6 +10,9 @@ node_modules/
 # OS files
 .DS_Store
 .pxe-cache/
+.pxe-cache-v2/
+claim-secrets-v1/
+claim-secrets-v2/
 wallets/
 censor-daemon/llama.cpp/
 censor-daemon/models/

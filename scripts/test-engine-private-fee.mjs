@@ -57,6 +57,9 @@ test('actual wallet keeps configured gas and normal account scope/tag through si
   assert.deepEqual(fees[1][1].gasSettings.toBuffer(),expectedSettings.toBuffer());
   const request=calls.find(c=>c[0]==='request');assert.equal(request[1],payload);assert.equal(request[2],owner);
   const proof=calls.find(c=>c[0]==='prove');assert.equal(proof[2].senderForTags,owner);assert.equal(proof[2].scopes[0],owner);
+  wallet._contextGuard=async()=>{throw new Error('context changed during proof');};
+  await assert.rejects(wallet.sendTx(payload,{from:owner,additionalScopes:[owner],sendMessagesAs:owner,fee:{gasSettings:settings}}),/context changed during proof/);
+  assert.equal(calls.filter(c=>c==='submit').length,1,'changed context must not submit a second proof');
 });
 // Exercise the actual top-level dispatch, not just the exported routing seam.
 import * as ethers from 'ethers';
@@ -99,7 +102,7 @@ function mainHarness(action,isDummy=false) {
   const config={action,isDummy,message:'text',depositChainId:'5',portalAddress:portal,ethRpcUrl:'http://fixture.invalid',aztecNodeUrl:'http://fixture.invalid',aztecWallet:{secretKey:new Fr(1).toString(),salt:0},
     reuseTxHash:new Fr(3).toString(),claimSecretStore:{save:async()=>{},load:async()=>({schemaVersion:1,secret:secret.toString(),secretHash:secretHash.toString()})},
     privateFee:{contractAddress:'private-fee',gasSettings:gas()}};
-  return {run:()=>c.runBillboardUser(env,config),requests,logs,authorBalanceReads:()=>authorBalanceReads,secret};
+  return {run:()=>c.runBillboardUser(env,config),env,config,requests,logs,authorBalanceReads:()=>authorBalanceReads,secret};
 }
 for(const [action,dummy] of [['claim',false],['post',false],['post',true],['withdraw',false]]) {
   test(`actual main ${action}${dummy?' dummy':''} uses standard author call with private fee payment`,async()=>{
@@ -125,4 +128,14 @@ test('moderator calls use their normal account with private fee payment',async()
 test('inherited object names never select an application method',async()=>{
  const h=fixture();for(const kind of ['constructor','__proto__','toString'])await assert.rejects(h.sender(kind,[]),e=>e.code==='BB_PRIVATE_FEE_UNSUPPORTED_ACTION');
  assert.equal(h.prepared.length,0);assert.equal(h.sends.length,0);
+});
+
+// L2 operations must not acquire an unrelated Ethereum signing authority.
+test('actual main private post works with no Ethereum signer',async()=>{
+ const h=mainHarness('post');h.env.getBrowserSigner=null;h.config.hasEthSigner=false;
+ await h.run();assert.equal(h.requests.length,1);assert.equal(h.requests[0].action.kind,'post');
+});
+test('actual main fails before PXE when RPC identity changed after CLI preflight',async()=>{
+ const h=mainHarness('post');h.config.expectedNetworkScope={chainId:'1',rollup:'0x'+'11'.repeat(20),version:'1'};
+ await assert.rejects(h.run(),/Network changed since CLI preflight/);assert.equal(h.requests.length,0);
 });

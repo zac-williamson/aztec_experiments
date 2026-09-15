@@ -1,220 +1,146 @@
-// ============================================================
-// pxe-cache.cjs — Dump/restore PXE IndexedDB state to a JSON file
-// ============================================================
-//
-// The PXE uses IndexedDB to store all its state (synced blocks,
-// decrypted notes, merkle trees, contract registrations, etc.).
-// In the browser, IndexedDB is persistent. In the CLI, we use
-// fake-indexeddb which is in-memory and lost on every run.
-//
-// This module dumps all IndexedDB databases to a JSON file after
-// PXE operations, and restores them before PXE creation on the
-// next run. The cache file is keyed by account address so
-// different wallets get separate caches.
-//
-// Usage:
-//   const { dumpPxeCache, restorePxeCache } = require('./pxe-cache.cjs');
-//
-//   // Before PXE creation:
-//   await restorePxeCache(indexedDB, '/path/to/cache.json');
-//
-//   // After PXE operations (before process exit):
-//   await dumpPxeCache(indexedDB, '/path/to/cache.json');
-// ============================================================
-
-const fs = require('fs');
-
-// --- Serialization for JSON-incompatible types ---
-
-function serializeValue(value, depth = 0) {
-  if (depth > 100) return null; // depth guard
-  if (value === null || value === undefined) return value;
-  if (typeof value === 'bigint') {
-    return { __t: 'bi', d: value.toString() };
-  }
-  if (value instanceof Uint8Array) {
-    return { __t: 'u8', d: Buffer.from(value).toString('base64') };
-  }
-  if (value instanceof ArrayBuffer) {
-    return { __t: 'ab', d: Buffer.from(value).toString('base64') };
-  }
-  if (Array.isArray(value)) {
-    return value.map(v => serializeValue(v, depth + 1));
-  }
-  if (typeof value === 'object') {
-    // Check for typed arrays (Int8Array, Float64Array, etc.)
-    if (ArrayBuffer.isView(value) && !(value instanceof DataView)) {
-      return { __t: 'u8', d: Buffer.from(value.buffer, value.byteOffset, value.byteLength).toString('base64') };
-    }
-    const result = {};
-    for (const [k, v] of Object.entries(value)) {
-      result[k] = serializeValue(v, depth + 1);
-    }
-    return result;
-  }
-  return value; // primitives
+// Encrypted, scoped CLI PXE checkpoints. Never imports the old plaintext cache.
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const v8 = require('node:v8');
+const FR = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+const MAX = 256 * 1024 * 1024;
+const hash = value => crypto.createHash('sha256').update(value).digest('hex');
+function scopeBytes(scope) {
+  if (!scope || Object.keys(scope).sort().join(',') !== 'account,chainId,databaseName,rollup,version' ||
+      !/^0x[0-9a-f]{64}$/.test(scope.account) || BigInt(scope.account) <= 0n || BigInt(scope.account) >= FR ||
+      !/^0x[0-9a-f]{40}$/.test(scope.rollup) || BigInt(scope.rollup) === 0n ||
+      !/^[1-9][0-9]{0,19}$/.test(scope.chainId) || BigInt(scope.chainId) >= 1n << 64n ||
+      !/^[1-9][0-9]{0,9}$/.test(scope.version) || BigInt(scope.version) >= 1n << 32n ||
+      typeof scope.databaseName !== 'string' || scope.databaseName.length > 2048) throw new Error('Invalid PXE cache scope');
+  const identity = JSON.parse(scope.databaseName);
+  if (!Array.isArray(identity) || identity.length !== 8 || identity[0] !== 'billboard-pxe' || identity[1] !== 1 ||
+      identity[3] !== 'pxe_data' || String(identity[4]) !== scope.chainId || identity[5] !== scope.rollup ||
+      identity[7] !== scope.account || !Number.isSafeInteger(identity[6]) || identity[6] < 0) throw new Error('PXE database identity differs from scope');
+  return Buffer.from(JSON.stringify(['BILLBOARD_PXE_CACHE_V2', scope.account, scope.chainId, scope.rollup, scope.version, scope.databaseName]));
 }
-
-function deserializeValue(value, depth = 0) {
-  if (depth > 100) return null;
-  if (value === null || value === undefined) return value;
-  if (typeof value === 'object') {
-    if (value.__t === 'bi') {
-      return BigInt(value.d);
-    }
-    if (value.__t === 'u8') {
-      return new Uint8Array(Buffer.from(value.d, 'base64'));
-    }
-    if (value.__t === 'ab') {
-      return Buffer.from(value.d, 'base64').buffer;
-    }
-    if (Array.isArray(value)) {
-      return value.map(v => deserializeValue(v, depth + 1));
-    }
-    const result = {};
-    for (const [k, v] of Object.entries(value)) {
-      result[k] = deserializeValue(v, depth + 1);
-    }
-    return result;
+function request(req) { return new Promise((resolve, reject) => { req.onsuccess = () => resolve(req.result); req.onerror = () => reject(new Error('PXE IndexedDB operation failed')); }); }
+async function snapshot(indexedDB, name) {
+  const databases = await indexedDB.databases();
+  if (databases.some(db => db.name?.startsWith('["billboard-pxe",') && db.name !== name)) throw new Error('Unexpected PXE database scope; refusing checkpoint');
+  if (!databases.some(db => db.name === name)) return null;
+  const db = await request(indexedDB.open(name));
+  try {
+    const names = [...db.objectStoreNames];
+    if (!names.length) throw new Error('Empty PXE database');
+    const tx = db.transaction(names, 'readonly');
+    const done = new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = tx.onabort = () => reject(new Error('PXE snapshot failed')); });
+    const stores = await Promise.all(names.map(async name => {
+      const store = tx.objectStore(name);
+      if (store.autoIncrement) throw new Error('Unsupported auto-increment PXE store');
+      const indexes = [...store.indexNames].map(name => { const i = store.index(name); return { name, keyPath: i.keyPath, unique: i.unique, multiEntry: i.multiEntry }; });
+      const [keys, values] = await Promise.all([request(store.getAllKeys()), request(store.getAll())]);
+      return { name, keyPath: store.keyPath, indexes, keys, values };
+    }));
+    await done;
+    return { version: db.version, stores };
+  } finally { db.close(); }
+}
+async function populate(indexedDB, name, data) {
+  if ((await indexedDB.databases()).some(db => db.name === name)) throw new Error('PXE restore requires an empty scoped database');
+  if (!data || !Number.isSafeInteger(data.version) || data.version < 1 || !Array.isArray(data.stores) || !data.stores.length) throw new Error('Invalid PXE snapshot');
+  const req = indexedDB.open(name, data.version);
+  req.onupgradeneeded = () => {
+    try {
+      for (const item of data.stores) {
+        const store = req.result.createObjectStore(item.name, { keyPath: item.keyPath });
+        for (const i of item.indexes) store.createIndex(i.name, i.keyPath, { unique: i.unique, multiEntry: i.multiEntry });
+      }
+    } catch { req.transaction.abort(); }
+  };
+  const db = await request(req);
+  try {
+    const tx = db.transaction(data.stores.map(s => s.name), 'readwrite');
+    const done = new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = tx.onabort = () => reject(new Error('PXE restore transaction failed')); });
+    try {
+      for (const item of data.stores) {
+        if (item.keys.length !== item.values.length) throw new Error('Invalid PXE records');
+        const store = tx.objectStore(item.name);
+        for (let i = 0; i < item.keys.length; i++) {
+          if (item.keyPath === null) store.add(item.values[i], item.keys[i]);
+          else store.add(item.values[i]);
+        }
+      }
+    } catch { tx.abort(); }
+    await done;
+  } finally { db.close(); }
+}
+function createPxeCacheSession({ directory, walletSecret, scope }) {
+  if (typeof walletSecret !== 'string' || !/^0x[0-9a-fA-F]{64}$/.test(walletSecret) || BigInt(walletSecret) <= 0n || BigInt(walletSecret) >= FR) throw new Error('Invalid PXE wallet key');
+  const aad = scopeBytes(scope);
+  const key = crypto.createHash('sha256').update('BILLBOARD_PXE_KEY_V2\0').update(Buffer.from(walletSecret.slice(2), 'hex')).digest();
+  fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const stat = fs.lstatSync(directory);
+  if (!stat.isDirectory() || stat.isSymbolicLink() || stat.mode & 0o077) throw new Error('PXE cache requires a private directory');
+  const name = path.join(directory, hash(aad)), file = name + '.json', lock = name + '.lock';
+  let lockFd;
+  try { lockFd = fs.openSync(lock, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_NOFOLLOW, 0o600); }
+  catch { throw new Error('PXE cache is locked. Another process may be active; preserve the cache and inspect the lock before explicit recovery.'); }
+  fs.writeFileSync(lockFd, JSON.stringify({ pid: process.pid })); fs.fsyncSync(lockFd);
+  const lockStat = fs.fstatSync(lockFd);
+  let closed = false, ready = false, previous;
+  function checkOpen() { if (closed) throw new Error('PXE cache session closed'); }
+  function read() {
+    let fd;
+    try { fd = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW); }
+    catch (e) { if (e.code === 'ENOENT') return null; throw new Error('Cannot read PXE checkpoint'); }
+    try {
+      const s = fs.fstatSync(fd);
+      if (!s.isFile() || s.mode & 0o077 || s.size > MAX * 1.4) throw new Error('Invalid private PXE checkpoint file');
+      return fs.readFileSync(fd);
+    } finally { fs.closeSync(fd); }
   }
-  return value;
+  return {
+    async restore(indexedDB) {
+      checkOpen(); if (ready) throw new Error('PXE cache already restored');
+      const bytes = read(); previous = bytes ? hash(bytes) : null;
+      if (bytes) {
+        let data;
+        try {
+          const e = JSON.parse(bytes);
+          if (e.schema !== 2 || typeof e.iv !== 'string' || !/^[0-9a-f]{24}$/.test(e.iv) || typeof e.ciphertext !== 'string') throw new Error();
+          const encrypted = Buffer.from(e.ciphertext, 'base64');
+          if (encrypted.length < 16 || encrypted.length > MAX) throw new Error();
+          const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(e.iv, 'hex'));
+          decipher.setAAD(aad); decipher.setAuthTag(encrypted.subarray(-16));
+          data = v8.deserialize(Buffer.concat([decipher.update(encrypted.subarray(0, -16)), decipher.final()]));
+        } catch { throw new Error('PXE checkpoint authentication failed; existing data preserved'); }
+        await populate(indexedDB, scope.databaseName, data);
+      }
+      ready = true; return Boolean(bytes);
+    },
+    async save(indexedDB) {
+      checkOpen(); if (!ready) throw new Error('PXE cache was not restored successfully');
+      const data = await snapshot(indexedDB, scope.databaseName);
+      if (!data) return false;
+      const payload = v8.serialize(data);
+      if (payload.length + 16 > MAX) throw new Error('PXE checkpoint exceeds supported size; previous checkpoint preserved');
+      const current = read(); if ((current ? hash(current) : null) !== previous) throw new Error('PXE checkpoint changed concurrently; refusing overwrite');
+      const iv = crypto.randomBytes(12), cipher = crypto.createCipheriv('aes-256-gcm', key, iv); cipher.setAAD(aad);
+      const ciphertext = Buffer.concat([cipher.update(payload), cipher.final(), cipher.getAuthTag()]);
+      const bytes = Buffer.from(JSON.stringify({ schema: 2, iv: iv.toString('hex'), ciphertext: ciphertext.toString('base64') }) + '\n');
+      const temp = file + '.' + crypto.randomBytes(8).toString('hex') + '.tmp';
+      let fd;
+      try {
+        fd = fs.openSync(temp, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_NOFOLLOW, 0o600);
+        fs.writeFileSync(fd, bytes); fs.fsyncSync(fd); fs.closeSync(fd); fd = undefined;
+        fs.renameSync(temp, file); const directoryFd = fs.openSync(directory, 'r');
+        try { fs.fsyncSync(directoryFd); } finally { fs.closeSync(directoryFd); }
+        previous = hash(bytes); return true;
+      } finally { if (fd !== undefined) fs.closeSync(fd); fs.rmSync(temp, { force: true }); }
+    },
+    close() {
+      if (closed) return;
+      closed = true; key.fill(0); fs.closeSync(lockFd);
+      const current = fs.lstatSync(lock);
+      if (current.ino === lockStat.ino && current.dev === lockStat.dev) fs.unlinkSync(lock);
+      else throw new Error('PXE cache lock changed; refusing cleanup');
+    },
+  };
 }
-
-// --- Dump all databases ---
-
-function dumpDatabase(indexedDB, name) {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(name);
-    req.onsuccess = () => {
-      const db = req.result;
-      const storeNames = [...db.objectStoreNames];
-      if (storeNames.length === 0) {
-        db.close();
-        resolve({ stores: {} });
-        return;
-      }
-      const tx = db.transaction(storeNames, 'readonly');
-      const stores = {};
-      let pending = storeNames.length;
-
-      for (const storeName of storeNames) {
-        const store = tx.objectStore(storeName);
-        // Use openCursor to get key-value pairs, filtering out null/invalid records
-        const cursorReq = store.openCursor();
-        const records = [];
-        cursorReq.onsuccess = () => {
-          const cursor = cursorReq.result;
-          if (cursor) {
-            const val = cursor.value;
-            // Skip null/undefined values and records with null keys
-            if (val !== null && val !== undefined) {
-              const serialized = serializeValue(val);
-              // Only keep records that have a valid slot (the keyPath)
-              if (serialized && serialized.slot !== null && serialized.slot !== undefined) {
-                records.push(serialized);
-              }
-            }
-            cursor.continue();
-          } else {
-            stores[storeName] = records;
-            if (--pending === 0) {
-              db.close();
-              resolve({ stores });
-            }
-          }
-        };
-        cursorReq.onerror = () => {
-          db.close();
-          reject(cursorReq.error);
-        };
-      }
-      tx.onerror = () => {
-        db.close();
-        reject(tx.error);
-      };
-    };
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function dumpPxeCache(indexedDB, filePath) {
-  // Get all database names from fake-indexeddb's internal map
-  if (!indexedDB._databases) {
-    return false; // not fake-indexeddb
-  }
-  const dbNames = [...indexedDB._databases.keys()];
-  if (dbNames.length === 0) return false;
-
-  const dump = {};
-  for (const name of dbNames) {
-    // Skip Barretenberg's CRS cache DB — it uses a 'keyval' store, not 'data',
-    // and Barretenberg will recreate it fresh when needed.
-    if (name === 'keyval-store') continue;
-    dump[name] = await dumpDatabase(indexedDB, name);
-  }
-
-  fs.writeFileSync(filePath, JSON.stringify(dump));
-  return true;
-}
-
-// --- Restore databases ---
-
-function createAndPopulateDatabase(indexedDB, name, storeData) {
-  return new Promise((resolve, reject) => {
-    // Open with version 1 to trigger upgrade
-    const req = indexedDB.open(name, 1);
-    req.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      // Create the "data" object store with keyPath "slot" (same as AztecIndexedDBStore)
-      if (!db.objectStoreNames.contains('data')) {
-        const objectStore = db.createObjectStore('data', { keyPath: 'slot' });
-        objectStore.createIndex('key', ['container', 'key'], { unique: false });
-        objectStore.createIndex('keyCount', ['container', 'key', 'keyCount'], { unique: true });
-        objectStore.createIndex('hash', ['container', 'key', 'hash'], { unique: true });
-      }
-    };
-    req.onsuccess = () => {
-      const db = req.result;
-      if (!storeData || !storeData.stores || !storeData.stores.data) {
-        db.close();
-        resolve();
-        return;
-      }
-      const records = storeData.stores.data.map(v => deserializeValue(v));
-      if (records.length === 0) {
-        db.close();
-        resolve();
-        return;
-      }
-      const tx = db.transaction('data', 'readwrite');
-      const store = tx.objectStore('data');
-      for (const record of records) {
-        if (!record || record.slot === null || record.slot === undefined) continue;
-        store.put(record);
-      }
-      tx.oncomplete = () => {
-        db.close();
-        resolve();
-      };
-      tx.onerror = () => {
-        db.close();
-        reject(tx.error);
-      };
-    };
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function restorePxeCache(indexedDB, filePath) {
-  if (!fs.existsSync(filePath)) return false;
-
-  const dump = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  for (const [name, storeData] of Object.entries(dump)) {
-    // Skip Barretenberg's CRS cache DB — let it be recreated fresh.
-    if (name === 'keyval-store') continue;
-    await createAndPopulateDatabase(indexedDB, name, storeData);
-  }
-  return true;
-}
-
-module.exports = { dumpPxeCache, restorePxeCache };
+module.exports = { createPxeCacheSession };

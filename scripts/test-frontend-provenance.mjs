@@ -16,7 +16,7 @@ function fixture(run) {
     'apps/src/user/engine.js', 'apps/src/user/billboard_artifact.json', 'apps/src/user/private_fee_artifact.json',
     'apps/dist/user.html',
     ...['styles.css', 'helpers.js', 'aztec-lib.js', 'crs-client.js', 'poseidon2.js', 'wallet-buttons.js',
-      'app-env.js', 'moderation-policy.js', 'rpc-config.example.json'].map(name => `shared/${name}`),
+      'wallet-backup.js', 'app-env.js', 'moderation-policy.js', 'rpc-config.example.json'].map(name => `shared/${name}`),
   ]) write(name);
   const build = () => finishFrontendBuild(root, beginFrontendBuild(root));
   try { run({ root, write, build }); } finally { fs.rmSync(root, { recursive: true, force: true }); }

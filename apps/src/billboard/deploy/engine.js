@@ -261,6 +261,7 @@
           }
         };
 
+        if(this._contextGuard)await this._contextGuard();
         await submitRetry(() => rawNode.sendTx(tx));
         if (submitted) log('  Tx submitted! Hash: ' + txHash.toString(), 'success');
 
@@ -292,6 +293,7 @@
 
     const wallet = new AztecWallet(pxe, aztecNode);
     wallet._preProveHook = opts.preProveHook || null;
+    wallet._contextGuard = opts.contextGuard || null;
     wallet._secretKey = secretKey;
     return wallet;
   }
@@ -312,7 +314,7 @@
       if (!aztecWallet || !aztecWallet.secretKey) throw new Error('Aztec wallet is required.');
     }
 
-    const saltVal = typeof aztecWallet.salt === 'string' ? parseInt(aztecWallet.salt, 16) : (aztecWallet.salt || 0);
+    const saltVal = BigInt(aztecWallet.salt ?? 0);
     const contractSalt = config.contractSalt || 1;
     const secretKeyHex = aztecWallet.secretKey;
 
@@ -366,7 +368,7 @@
         log('  WARNING: No Fee Juice. You need some to pay for deployment tx fees.', 'warn');
       }
     } catch (e) {
-      log('  Could not check balance: ' + extractErrorMessage(e), 'warn');
+      log('  Could not check balance: ' + 'operation did not complete; check configuration and recovery records', 'warn');
     }
 
     // ============================================================
@@ -410,7 +412,7 @@
     // Step 7: Create wallet
     // ============================================================
     log('Step 6: Creating wallet...', 'info');
-    const wallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, secretKey, { preProveHook: config.preProveHook });
+    const wallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, secretKey, { preProveHook: config.preProveHook, contextGuard: config.contextGuard });
     const accountManager = await a.AccountManager.create(wallet, secretKey, accountContract, { salt: new a.Fr(saltVal) });
     wallet._accountManager = accountManager;
     log('  Wallet ready.', 'success');

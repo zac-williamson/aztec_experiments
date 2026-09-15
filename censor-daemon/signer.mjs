@@ -64,13 +64,16 @@ function parsePosts(stdout) {
 }
 
 export function createSigner(configuration, { run = execFileSync } = {}) {
-  exactObject(configuration, ['cliPath', 'censorWallet', 'portalAddress', 'aztecNodeUrl', 'privateFeeConfig', 'nodeExecutable'],
-    ['cliPath', 'censorWallet', 'portalAddress', 'aztecNodeUrl', 'privateFeeConfig']);
+  exactObject(configuration, ['cliPath', 'censorWallet', 'portalAddress', 'aztecNodeUrl', 'privateFeeConfig', 'ethRpcUrl', 'nodeExecutable'],
+    ['cliPath', 'censorWallet', 'portalAddress', 'aztecNodeUrl', 'privateFeeConfig', 'ethRpcUrl']);
   if (typeof run !== 'function') throw new Error('Invalid process runner');
   if (typeof configuration.portalAddress !== 'string' || !/^0x[0-9a-fA-F]{40}$/.test(configuration.portalAddress)) throw new Error('Invalid portal address');
   const url = new URL(configuration.aztecNodeUrl);
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.hash) throw new Error('Invalid Aztec node URL');
+  const ethUrl = new URL(configuration.ethRpcUrl);
+  if (!['http:', 'https:'].includes(ethUrl.protocol) || ethUrl.username || ethUrl.password || ethUrl.hash) throw new Error('Invalid Ethereum RPC URL');
   const trusted = Object.freeze({
+    ethRpcUrl: ethUrl.href,
     nodeExecutable: realFile(configuration.nodeExecutable || process.execPath, 'Node executable'),
     cliPath: realFile(configuration.cliPath, 'CLI'),
     censorWallet: realFile(configuration.censorWallet, 'wallet'),
@@ -84,7 +87,7 @@ export function createSigner(configuration, { run = execFileSync } = {}) {
   function call(operation, tail) {
     const argv = Object.freeze([trusted.cliPath, operation,
       '--portal-address', trusted.portalAddress, '--censor-wallet', trusted.censorWallet,
-      '--node-url', trusted.aztecNodeUrl, '--private-fee-config', trusted.privateFeeConfig, ...tail]);
+      '--node-url', trusted.aztecNodeUrl, '--eth-rpc', trusted.ethRpcUrl, '--private-fee-config', trusted.privateFeeConfig, ...tail]);
     let stdout;
     try {
       stdout = run(trusted.nodeExecutable, argv, { shell: false, encoding: 'utf8',

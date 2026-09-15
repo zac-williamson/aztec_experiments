@@ -18,7 +18,7 @@
 let _currentStatusDiv = 'status';
 
 // ETH RPC URL (not declared in aztec-lib.js, safe to keep)
-const ETH_RPC_URL = 'https://invictus.ambire.com/ethereum';
+const ETH_RPC_URL = window.RPC_CONFIG?.ethRpcUrl || 'https://invictus.ambire.com/ethereum';
 
 // ============================================================
 // Bundle readiness check
@@ -157,6 +157,7 @@ function buildConfig(action, extra) {
     ethRpcUrl: ETH_RPC_URL,
     aztecWallet: ws && ws.aztec ? { secretKey: ws.aztec.secretKey, salt: ws.aztec.salt } : null,
     ethWallet: ethWallet,
+    hasEthSigner: !!ws?.ethSigner,
     // Public deployment configuration; fee funds belong to this wallet.
     privateFee: window.billboardPrivateFee,
   };
@@ -169,10 +170,61 @@ function buildConfig(action, extra) {
 // Call engine with log routing to a specific status div
 // ============================================================
 function makeCallEngine(engineFn, envExtra) {
+  let running=false;
   return async function callEngine(action, statusDiv, extra) {
-    _currentStatusDiv = statusDiv;
-    const env = buildEnv(envExtra);
-    const config = buildConfig(action, extra);
-    return await engineFn(env, config);
+    if(running) throw new Error('Another wallet operation is in progress.');
+    _assertWalletLive();
+    const ws=window.walletState, generation=_walletGeneration;
+    if(!ws?.aztec?.address) throw new Error('Load an Aztec wallet first.');
+    const portal=()=>document.getElementById('portalAddr')?.value.trim() || '';
+    const identity=()=>JSON.stringify([_getNodeUrl(),ETH_RPC_URL,portal(),ws.aztec?.secretKey,ws.aztec?.salt,ws.ethAccount,ws.ethChainId,window.billboardPrivateFee]);
+    const expected=identity();
+    async function guard() {
+      _assertWalletLive();
+      if(generation!==_walletGeneration || expected!==identity()) throw new Error('Wallet or deployment configuration changed. Reload before continuing.');
+      if(ws.ethType==='browser') {
+        const [accounts,chain]=await Promise.all([window.ethereum.request({method:'eth_accounts'}),window.ethereum.request({method:'eth_chainId'})]);
+        if(!Array.isArray(accounts) || accounts[0]?.toLowerCase()!==ws.ethAccount.toLowerCase() || BigInt(chain)!==BigInt(ws.ethChainId)) {
+          _invalidateWalletContext(); throw new Error('Wallet account or chain changed.');
+        }
+      }
+    }
+    if(!navigator.locks?.request) throw new Error('This browser cannot safely coordinate wallet tabs. Use a browser with Web Locks support.');
+    // One operation per full account across tabs, including RPC aliases and networks. No secret in lock name.
+    const lockName='billboard-wallet:'+ws.aztec.address.toString();
+    running=true;
+    try {
+      return await navigator.locks.request(lockName,{ifAvailable:true},async lock=>{
+        if(!lock) throw new Error('This wallet is busy in another tab.');
+        await guard();
+        _currentStatusDiv=statusDiv;
+        const env=buildEnv(envExtra),config=buildConfig(action,extra);
+        const prior=config.preProveHook;
+        config.contextGuard=guard;
+        config.preProveHook=async value=>{await guard();if(prior)await prior(value);await guard();};
+        env.getBrowserSigner=async()=>{
+          await guard(); if(!ws.ethSigner) throw new Error('Connect an Ethereum wallet first.');
+          const signer=ws.ethSigner;
+          return new Proxy(signer,{get(target,property){
+            const value=Reflect.get(target,property,target);
+            if(typeof value!=='function')return value;
+            if(['sendTransaction','signTransaction','signMessage','signTypedData'].includes(property))return async(...args)=>{await guard();return value.apply(target,args);};
+            return value.bind(target);
+          }});
+        };
+        try {const result=await engineFn(env,config);await guard();return result;}
+        catch(error) {
+          // RPC/prover exceptions can include witness or request data. Only a
+          // bounded public classification crosses into UI error/log handlers.
+          const code=['BB_SUBMISSION_UNKNOWN','PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN','BB_PRIVATE_FEE_AMOUNT'].includes(error?.code)?error.code:'BB_OPERATION_FAILED';
+          const clean=new Error(code==='BB_OPERATION_FAILED'?'Operation did not complete. Check your wallet, network, balance and saved recovery records.':'Transaction needs attention. Keep your recovery record and check its outcome before retrying.');
+          clean.code=code;throw clean;
+        }
+      });
+    } catch(error) {
+      const clean=new Error('Wallet operation did not complete. Check the connection and recovery records; reload if the account or network changed.');
+      clean.code=['BB_SUBMISSION_UNKNOWN','PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN','BB_PRIVATE_FEE_AMOUNT'].includes(error?.code)?error.code:'BB_OPERATION_FAILED';
+      throw clean;
+    } finally {running=false;}
   };
 }

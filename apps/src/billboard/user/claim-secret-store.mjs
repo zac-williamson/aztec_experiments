@@ -25,9 +25,11 @@ function validateRecord(record, secretHash) {
 }
 
 /** Encrypted, immutable records. A successful save includes file and directory fsync and read-back. */
-export function createClaimSecretStore(directory, walletSecret) {
+export function createClaimSecretStore(directory, walletSecret, walletSalt = 0) {
   if (!field(walletSecret)) throw new Error('Invalid claim storage wallet key');
-  const key = createHash('sha256').update('AZTEC_BB_CLAIM_STORE_KEY_V1\0').update(Buffer.from(walletSecret.slice(2), 'hex')).digest();
+  if (!((typeof walletSalt === 'number' && Number.isSafeInteger(walletSalt) && walletSalt >= 0) || (typeof walletSalt === 'string' && /^(?:0x[0-9a-fA-F]{1,64}|0|[1-9][0-9]{0,76})$/.test(walletSalt))) || BigInt(walletSalt) >= FR) throw new Error('Invalid claim storage wallet salt');
+  const saltBytes = Buffer.from(BigInt(walletSalt).toString(16).padStart(64, '0'), 'hex');
+  const key = createHash('sha256').update('AZTEC_BB_CLAIM_STORE_KEY_V2\0').update(Buffer.from(walletSecret.slice(2), 'hex')).update(saltBytes).digest();
   fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
   const stat = fs.lstatSync(directory);
   if (!stat.isDirectory() || stat.isSymbolicLink() || (stat.mode & 0o077)) throw new Error('Claim storage must be a private directory');

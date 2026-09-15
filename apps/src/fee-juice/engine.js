@@ -44,7 +44,7 @@
       await pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact);
       await pxe.registerContract(instance);
       await pxe.sync();
-      const wallet=g.BillboardPrivateFeeRouting.createAztecWallet(a,pxe,node,node,log,secretKey);
+      const wallet=g.BillboardPrivateFeeRouting.createAztecWallet(a,pxe,node,node,log,secretKey,{preProveHook:config.preProveHook,contextGuard:config.contextGuard});
       wallet._accountManager=await a.AccountManager.create(wallet,secretKey,accountContract,{salt});
       const constructorArtifact=accountArtifact.functions.find(f=>f.name==='constructor');
       if(constructorArtifact){const signingPublicKey=await accountContract.getSigningPublicKey();await new a.ContractFunctionInteraction(wallet,owner,constructorArtifact,[signingPublicKey.x,signingPublicKey.y]).simulate({from:owner});}

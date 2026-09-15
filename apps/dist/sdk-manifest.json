@@ -1,7 +1,7 @@
 {
   "aztecVersion": "5.2.0",
   "lockfile": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
-  "buildScript": "c9377ed150243ffbc92e8e61ce11576fac793e727050857a3887ed6626108d64",
+  "buildScript": "f3572588937d2fb74248422db9de7d2270847953b19f5d8dba4783f99e354a2c",
   "inputs": {
     "node_modules/@adraffy/ens-normalize/dist/index.mjs": "6edd9ca24176d6846bb11727d10a165757e05d9a5a40abc06eb2004b98a56f09",
     "node_modules/@aztec/accounts/artifacts/SchnorrAccount.json": "d6f896b457fb519a8228f51e70f4a441f3450908cc9eca96aabdd348197474aa",
@@ -1506,13 +1506,14 @@
     "shared/private-fee-client.mjs": "5098aaf46bd3bcdb5302e45186b2dc43cf3bcd70d0cd74aa1b063ff50432fe4b",
     "shared/private-fee-funding.mjs": "f6a11c95e4fa0cb45b450cb8964f172c2550e11f6d4682b69618685f93499e9f",
     "shared/private-fee-payment.mjs": "9863e2e4b2abd3c7e9839be307668c9794a758bde2cd3ca8c4351575710b5f09",
-    "shared/sdk-entry.mjs": "1befd411f1b08e9eba1987cc5089ad2541dbdaba42fa2c768703086b25280952",
+    "shared/private-pxe.mjs": "b47bb4cf2739ff15a3c273fe32692cb975f5b28ca71910f11e236e0715845918",
+    "shared/sdk-entry.mjs": "6eb4c969dbce907d288475622906d9a7a1ae610d5bf12a796978b77f4da336fb",
     "shared/sdk-store.mjs": "083710db7c2911bf3f6a5008d0618f49317a1cd93d686d483fe089e2c433e01f",
     "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a"
   },
   "outputs": {
     "acvm_js_bg.wasm": "bcd66e862a95a57f7f2ae3cb97e24d007d2ad710ac7490262c3c92a5b823775d",
-    "aztec_bundle.js": "f3f7326f6a8ecd672838580e901e6c0222cf8d5d5642cf4be97015e80c666dc1",
+    "aztec_bundle.js": "c21c47f831fc0992bd5099dfc15af8ee4ac7b0496b191504d1762a3cb566913f",
     "bb-main.worker.js": "568e68dd87fc2bd1cb945422f7a52aa442c661f2c9bb7156307f01d25edce564",
     "bb-thread.worker.js": "f06a7e630a5d1e3d13353c2c89d3646c19b5a731f0055e49af17c499deae0086",
     "noirc_abi_wasm_bg.wasm": "2cbd4bb57d2cd47e8e14fb78ddf597b6b6d5f0cf7717c54692242967786bf334",
