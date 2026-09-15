@@ -1,0 +1,36 @@
+✔ reads actual ABI batch/config with NO_FROM and returns latest node timestamp, never authorizes (517.001791ms)
+✔ rejects wallet chain (0.413667ms)
+✔ rejects node chain (0.071792ms)
+✔ rejects wallet version (0.061292ms)
+✔ rejects node version (0.066583ms)
+✔ rejects agreeing wrong chain (0.062167ms)
+✔ rejects absent deployed contract before registering (9.678958ms)
+✔ rejects changed currentContractClassId (11.109333ms)
+✔ rejects changed originalContractClassId (9.031166ms)
+✔ rejects forged instance preimage even if advertised address/class match (14.500666ms)
+✔ rejects wrong advertised contract address (9.786458ms)
+✔ rejects wrong artifact name (0.087167ms)
+✔ rejects changed private root inventory (0.059875ms)
+✔ rejects immutable board mismatch (9.456375ms)
+✔ rejects unavailable or invalid batch 0:0x0000000000000000000000000000000000000000000000000000000000000000 (9.022875ms)
+✔ rejects unavailable or invalid batch 0:0x0000000000000000000000000000000000000000000000000000000000000014 (9.052083ms)
+✔ rejects unavailable or invalid batch 1025:0x0000000000000000000000000000000000000000000000000000000000000014 (9.624042ms)
+✔ rejects invalid requested batch 0 (0.127ms)
+✔ rejects invalid requested batch 01 (0.056667ms)
+✔ rejects invalid requested batch -1 (0.0435ms)
+✔ rejects invalid requested batch 18446744073709551616 (0.042166ms)
+✔ rejects invalid requested batch 9007199254740992 (0.032833ms)
+✔ rejects foreign author/key fields before touching wallet (0.042041ms)
+✔ rejects field outside Fr modulus (0.059875ms)
+✔ rejects malformed latest timestamp (11.561709ms)
+✔ rejects overflowing batch window range (8.804709ms)
+✔ rejects invalid immutable policy (8.949834ms)
+✔ provider exceptions are sanitized without diagnostic stack metadata (0.154708ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1302.915416

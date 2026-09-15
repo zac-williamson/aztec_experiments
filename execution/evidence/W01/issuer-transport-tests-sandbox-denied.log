@@ -1,0 +1,155 @@
+✖ real HTTP reservation, commitment, operator-only seal and pending retrieval (20.63775ms)
+✖ strict payload fields and fixed safe failures over real HTTP (4.728167ms)
+✖ methods, fixed paths, credentials, encoding and malformed JSON are rejected (3.197625ms)
+✖ exact CORS allowlist, bounded preflight and privacy headers (2.763875ms)
+✖ declared and chunked request bodies are bounded before issuer mutation (2.995084ms)
+✖ global admission rate rejects further requests without identity buckets (2.968292ms)
+✖ global in-flight bound and server deadline limit stalled operations (0.427666ms)
+✖ partial request body is closed at the server deadline (2.987709ms)
+✖ internal database or implementation errors never expose diagnostics (0.42325ms)
+✔ browser request explicitly omits credentials and referrers and forbids redirects (3.55175ms)
+✔ transport rejects unsafe origins and secret-bearing inputs before fetch (0.480083ms)
+✔ transport rejects changed scope, unknown response fields and registration fiction (0.89275ms)
+✖ transport caps actual streamed response bytes on loopback HTTP (0.569875ms)
+✔ transport total deadline bounds stalled fetch and stream regardless of injected cancellation (105.926958ms)
+✔ transport sanitizes network and remote error bodies (0.620125ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 5
+ℹ fail 10
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 364.010875
+
+✖ failing tests:
+
+test at scripts/test-sponsor-transport.mjs:31:1
+✖ real HTTP reservation, commitment, operator-only seal and pending retrieval (20.63775ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/test-sponsor-transport.mjs:43:1
+✖ strict payload fields and fixed safe failures over real HTTP (4.728167ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/test-sponsor-transport.mjs:52:1
+✖ methods, fixed paths, credentials, encoding and malformed JSON are rejected (3.197625ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/test-sponsor-transport.mjs:62:1
+✖ exact CORS allowlist, bounded preflight and privacy headers (2.763875ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/test-sponsor-transport.mjs:73:1
+✖ declared and chunked request bodies are bounded before issuer mutation (2.995084ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/test-sponsor-transport.mjs:82:1
+✖ global admission rate rejects further requests without identity buckets (2.968292ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/test-sponsor-transport.mjs:87:1
+✖ global in-flight bound and server deadline limit stalled operations (0.427666ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/test-sponsor-transport.mjs:97:1
+✖ partial request body is closed at the server deadline (2.987709ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/test-sponsor-transport.mjs:107:1
+✖ internal database or implementation errors never expose diagnostics (0.42325ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/test-sponsor-transport.mjs:134:1
+✖ transport caps actual streamed response bytes on loopback HTTP (0.569875ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2306:21)
+      at listenInCluster (node:net:2437:12)
+      at node:net:2666:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }

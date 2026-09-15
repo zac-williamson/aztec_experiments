@@ -1,0 +1,49 @@
+{
+  "outcome": "pass",
+  "scope": "Coupon delivery components, engine callback, real browser storage and bundled SDK; not complete W01 acceptance",
+  "recordedAt": "2026-09-15T04:36:12.472518+00:00",
+  "checks": {
+    "focusedComponents": 96,
+    "generatedPagesAndEngine": 22,
+    "browser": "Actual Chromium IndexedDB encrypted close/reopen and concurrent atomic attempted flag; SDK exports/worker/SQLite smoke",
+    "cli": "Actual bundle loader and account derivation smoke",
+    "http": "Actual loopback HTTP and SQLite issuer, two distinct coupons in common batch; chain callback explicitly doubled"
+  },
+  "limitations": [
+    "Genuine delivered-coupon transaction test is separately supervised and not included in this result",
+    "CLI durable key lifecycle and operator registration/recovery integration remain unfinished",
+    "No network anonymity or production readiness claim"
+  ],
+  "sourceHashes": {
+    "shared/sponsor-state.mjs": "025a9a5b77c83f7659c81402255986d33114db828cbb73ec1edb63e856d65d8f",
+    "shared/sponsor-coupon-provider.mjs": "1cd0894cf08a6d3d4458453cf314778bf6b91b25183902a9574f7fee6da437a7",
+    "shared/sponsor-coupon-store.mjs": "b270e8ca96e1c850ec26910c6d3cc8bc7cff9ebd930aecc428767a2bf8cefaca",
+    "shared/sponsor-transport.mjs": "55a0efb60f2dc632e6ceeb0a55295471b3e905e9dbd45741d54fdf6d2fd34f4f",
+    "sponsor-service/http.mjs": "53dd2eab7ee1cb1d08e98bfa1486592166e593ba6bf3ec85f317c4c5d48f7feb",
+    "sponsor-service/coupon-store.mjs": "037bf809d64f41e9f413600d1ac6c22c741cb52f5eca75c8850f8f8c496e7e81",
+    "sponsor-service/issuer.mjs": "4a045d7c42af001422753ab12a13d49428ef71ce5d23c35dc014462a230f2e70",
+    "shared/sdk-entry.mjs": "5ed43af845ba649e2bf86447a3f961189ce97985039f848471b63b5a17243391",
+    "apps/src/billboard/user/engine.js": "c7780ff1c1d2beb8bcf7fdec3ad71a7e344ddba2238e0f0f3411274eea16f856",
+    "scripts/test-cli-coupon-store.mjs": "536c14b33df926fc74bd6e0de0dc9de2f48954c86ae948690543904fb0bbf4d8",
+    "scripts/test-coupon-delivery.mjs": "b75574c45f8d9d6d7dee56c67227bb264a784f64bde339741ad6b256cc2dd5fe",
+    "scripts/test-sponsor-coupon-provider.mjs": "0ef007f408b507c3d6ab9bbc33f34424d2e848f957eb4cf1bf507c445f9f738e",
+    "scripts/test-sponsor-state.mjs": "b92330acce288ec5e78c09877e9bfd49950fe1c1663c6e7633831bf7c4fb8f1e",
+    "scripts/test-sponsor-transport.mjs": "c2f38fb1175b14d765fd56b282a89410800a295002498aaa2ccf9dc2107d1e9e",
+    "scripts/test-engine-sponsor.mjs": "a2af34b663632bc7ba2d1cf52da9f974184a69b310bdee75d54fbc0ac0c7dcc4",
+    "scripts/test-sdk-browser.mjs": "0df11fd449d942572e9db8bcb7fe27aab2d0ee60a5d20d1669e344da612156d3",
+    "scripts/test-cli-sdk.mjs": "11419e84b44791043662de85a97742fd69b10922d29336594551ad311fd3eea3",
+    "apps/dist/aztec_bundle.js": "2cc9bb9b562f22ad551f4574336cd3cddb60201e4ea5769e7010dc6a2c3983ce",
+    "apps/dist/sdk-manifest.json": "a5044e81d22b9646e460457018d1cb782387a814873abc2471e4dcb934336db3",
+    "apps/dist/user.html": "889c72046f2538eed13bc4fc0a8ea9477a24927aecb27aa2874df1091ea26196",
+    "apps/dist/censor.html": "eddacec2cf93f707daa61dc3bd51c7daddffd35d3dfe2f5e94d65be5c232503f"
+  },
+  "evidenceHashes": {
+    "coupon-integrated-002.log": "a4ccc1d8951dc96c9a69fb453be006238d2ed4b675f9e38b5206682f88e9a9cc",
+    "coupon-browser-002.log": "bb30bedc2611391e9b52dfa81526347757fddb817e0160f71fc5debe76e3da14",
+    "coupon-cli-sdk-001.log": "a7baa7a606d87ab613fef0af795e1c0cef3a8a27f19e182ac49cc0643803ec80",
+    "coupon-built-engine-001.log": "d6d33be29af5ccb05446bb3db7d3718569c065b3ac7914d580d25f10a3c37d30",
+    "coupon-sdk-build-002.log": "19f2a05d859f73095e5f5430bee8fcd0e01d3941110a566563ef4c22659dd967",
+    "transport-review-fixes-001.log": "02f79713c9d47f60c78576157f8b6babbaf8e04496cfdc8cdcb61fa643d3293d",
+    "transport-state-review.md": "b9ea96affeb542c188e94562bf47b0ed5d93fc5d69089d9de7e65d2b1e02d2e1"
+  }
+}

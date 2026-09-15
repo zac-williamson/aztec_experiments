@@ -1,0 +1,155 @@
+✖ reads actual ABI batch/config with NO_FROM and returns latest node timestamp, never authorizes (536.00875ms)
+✔ rejects wallet chain (0.564917ms)
+✔ rejects node chain (0.066875ms)
+✔ rejects wallet version (0.054959ms)
+✔ rejects node version (0.054583ms)
+✔ rejects agreeing wrong chain (0.061458ms)
+✔ rejects absent deployed contract before registering (9.542167ms)
+✔ rejects changed currentContractClassId (9.6905ms)
+✔ rejects changed originalContractClassId (9.658166ms)
+✔ rejects forged instance preimage even if advertised address/class match (12.31525ms)
+✔ rejects wrong advertised contract address (8.585334ms)
+✔ rejects wrong artifact name (0.118292ms)
+✔ rejects changed private root inventory (0.07025ms)
+✔ rejects immutable board mismatch (9.475166ms)
+✖ rejects unavailable or invalid batch 0:0x0000000000000000000000000000000000000000000000000000000000000000 (9.761917ms)
+✖ rejects unavailable or invalid batch 0:0x0000000000000000000000000000000000000000000000000000000000000014 (9.909167ms)
+✖ rejects unavailable or invalid batch 1025:0x0000000000000000000000000000000000000000000000000000000000000014 (9.722458ms)
+✔ rejects invalid requested batch 0 (0.189417ms)
+✔ rejects invalid requested batch 01 (0.073834ms)
+✔ rejects invalid requested batch -1 (0.044875ms)
+✔ rejects invalid requested batch 18446744073709551616 (0.050291ms)
+✔ rejects invalid requested batch 9007199254740992 (0.034ms)
+✔ rejects foreign author/key fields before touching wallet (0.05925ms)
+✔ rejects field outside Fr modulus (0.065459ms)
+✔ rejects malformed latest timestamp (14.927708ms)
+✖ rejects overflowing batch window range (9.170666ms)
+✔ rejects invalid immutable policy (10.893875ms)
+✔ provider exceptions are sanitized without diagnostic stack metadata (0.133417ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 23
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1450.332041
+
+✖ failing tests:
+
+test at scripts/test-sponsor-state.mjs:39:1
+✖ reads actual ABI batch/config with NO_FROM and returns latest node timestamp, never authorizes (536.00875ms)
+  Error [SponsorStateError]: SPONSOR_STATE_INVALID_VALUE
+      at requireValue (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:12:45)
+      at field (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:21:3)
+      at read (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:72:14)
+      at async readRegisteredSponsorBatch (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:35:14)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-sponsor-state.mjs:40:29)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    code: 'SPONSOR_STATE_INVALID_VALUE'
+  }
+
+test at scripts/test-sponsor-state.mjs:51:154
+✖ rejects unavailable or invalid batch 0:0x0000000000000000000000000000000000000000000000000000000000000000 (9.761917ms)
+  AssertionError [ERR_ASSERTION]: The validation function is expected to return "true". Received false
+  
+  Caught error:
+  
+  SponsorStateError: SPONSOR_STATE_INVALID_VALUE
+      at async reject (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-sponsor-state.mjs:37:104)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: SponsorStateError: SPONSOR_STATE_INVALID_VALUE
+        at requireValue (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:12:45)
+        at field (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:21:3)
+        at read (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:72:14)
+        at async readRegisteredSponsorBatch (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:35:14)
+        at async waitForActual (node:assert:646:5)
+        at async strict.rejects (node:assert:769:25)
+        at async reject (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-sponsor-state.mjs:37:104)
+        at async Test.run (node:internal/test_runner/test:1409:7)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:974:7),
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/test-sponsor-state.mjs:51:154
+✖ rejects unavailable or invalid batch 0:0x0000000000000000000000000000000000000000000000000000000000000014 (9.909167ms)
+  AssertionError [ERR_ASSERTION]: The validation function is expected to return "true". Received false
+  
+  Caught error:
+  
+  SponsorStateError: SPONSOR_STATE_INVALID_VALUE
+      at async reject (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-sponsor-state.mjs:37:104)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: SponsorStateError: SPONSOR_STATE_INVALID_VALUE
+        at requireValue (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:12:45)
+        at field (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:21:3)
+        at read (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:72:14)
+        at async readRegisteredSponsorBatch (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:35:14)
+        at async waitForActual (node:assert:646:5)
+        at async strict.rejects (node:assert:769:25)
+        at async reject (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-sponsor-state.mjs:37:104)
+        at async Test.run (node:internal/test_runner/test:1409:7)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:974:7),
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/test-sponsor-state.mjs:51:154
+✖ rejects unavailable or invalid batch 1025:0x0000000000000000000000000000000000000000000000000000000000000014 (9.722458ms)
+  AssertionError [ERR_ASSERTION]: The validation function is expected to return "true". Received false
+  
+  Caught error:
+  
+  SponsorStateError: SPONSOR_STATE_INVALID_VALUE
+      at async reject (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-sponsor-state.mjs:37:104)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: SponsorStateError: SPONSOR_STATE_INVALID_VALUE
+        at requireValue (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:12:45)
+        at field (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:21:3)
+        at read (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:72:14)
+        at async readRegisteredSponsorBatch (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:35:14)
+        at async waitForActual (node:assert:646:5)
+        at async strict.rejects (node:assert:769:25)
+        at async reject (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-sponsor-state.mjs:37:104)
+        at async Test.run (node:internal/test_runner/test:1409:7)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:974:7),
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/test-sponsor-state.mjs:56:1
+✖ rejects overflowing batch window range (9.170666ms)
+  AssertionError [ERR_ASSERTION]: The validation function is expected to return "true". Received false
+  
+  Caught error:
+  
+  SponsorStateError: SPONSOR_STATE_INVALID_VALUE
+      at async reject (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-sponsor-state.mjs:37:104)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: SponsorStateError: SPONSOR_STATE_INVALID_VALUE
+        at requireValue (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:12:45)
+        at field (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:21:3)
+        at read (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:72:14)
+        at async readRegisteredSponsorBatch (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/sponsor-state.mjs:35:14)
+        at async waitForActual (node:assert:646:5)
+        at async strict.rejects (node:assert:769:25)
+        at async reject (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-sponsor-state.mjs:37:104)
+        at async Test.run (node:internal/test_runner/test:1409:7)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:974:7),
+    operator: 'rejects',
+    diff: 'simple'
+  }

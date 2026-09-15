@@ -1,0 +1,30 @@
+✔ user generated page binds the canonical sponsor and isolated RPC credential (121.302459ms)
+✔ censor generated page binds the canonical sponsor and isolated RPC credential (34.81525ms)
+✔ deploy generated page binds the canonical sponsor and isolated RPC credential (35.44875ms)
+✔ fee-juice generated page binds the canonical sponsor and isolated RPC credential (3.351417ms)
+✔ actual engine sender routes claim through exact sponsor options (3.534042ms)
+✔ actual engine sender routes post through exact sponsor options (0.554375ms)
+✔ actual engine sender routes post dummy through exact sponsor options (0.471458ms)
+✔ actual engine sender routes withdraw through exact sponsor options (0.622625ms)
+✔ missing configuration, artifact, SDK or provider rejects before coupon acquisition or signing (2.64125ms)
+✔ literal gas settings hydrate through actual SDK and incomplete bounds never default (0.719875ms)
+✔ provider exhaustion and private errors never send, leak input text or fall back (1.778ms)
+✔ exact submission ambiguity and paid failure propagate without reacquiring or resending (1.499042ms)
+✔ invalid author-funded or missing-auth prepared route cannot be sent (1.989792ms)
+✔ actual main entry fails closed for every private action before account/provider work (2.034417ms)
+✔ actual wallet keeps checked NO_FROM gas and owner scope/tag through simulation and proof (29.203292ms)
+✔ browser config preserves only the installed local sponsorship callback (4.310375ms)
+✔ provider cannot smuggle private messages or retry codes into the UI (1.400291ms)
+✔ actual main claim selects sponsorship and never calls the direct method (16.226167ms)
+✔ actual main post selects sponsorship and never calls the direct method (2.89325ms)
+✔ actual main post dummy selects sponsorship and never calls the direct method (1.574084ms)
+✔ actual main withdraw selects sponsorship and never calls the direct method (1.538666ms)
+✔ local coupon callback reads only deployment-scoped batch state without owner or action (0.531833ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 471.649417

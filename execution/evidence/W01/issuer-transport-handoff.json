@@ -1,0 +1,17 @@
+{
+  "scope": "HTTP/client transport only; no public service, registration or provider qualification",
+  "node": "24.21.0",
+  "result": {
+    "tests": 18,
+    "passed": 18,
+    "failed": 0
+  },
+  "files": {
+    "sponsor-service/http.mjs": "a3255799a0485c86ad6a912839f771bbe9af59788d6c1c859a108533a8a5851f",
+    "shared/sponsor-transport.mjs": "8e572e53f91eca1b777845dca881efc2306e4fbe2b2edb85569ab3d03d1fc514",
+    "scripts/test-sponsor-transport.mjs": "c7576cf9826148953f17273e057c05eae2c2dbd9e5875448e659e4e046a3309f",
+    "sponsor-service/issuer.mjs": "4a045d7c42af001422753ab12a13d49428ef71ce5d23c35dc014462a230f2e70",
+    "execution/evidence/W01/issuer-transport-tests.log": "d55ff17b9083fc2b890843eb0eae8f5a52531ba74c6549e9f35b6bd5bbf17ec3",
+    "execution/evidence/W01/issuer-transport-handoff.md": "34382a06f62992cb5dd78a6b08523e67940a15c8fd29828b06fc1d58074f0540"
+  }
+}

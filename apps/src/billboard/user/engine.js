@@ -566,7 +566,7 @@
 
   function requireSponsorConfiguration(a, config, sponsorArtifact) {
     const route = config?.sponsorship;
-    if (!a?.prepareSponsoredAction || a.NO_FROM === undefined || !sponsorArtifact ||
+    if (!a?.prepareSponsoredAction || !a?.readRegisteredSponsorBatch || a.NO_FROM === undefined || !sponsorArtifact ||
         !route?.sponsorAddress || typeof route.couponProvider?.acquire !== 'function') throw sponsorFailure();
     const gas = route.gasSettings;
     for (const [key, fields] of [
@@ -586,7 +586,14 @@
       let prepared;
       try {
         // LOCAL trusted callback only. Never give a remote issuer owner/blind or action contents.
-        const coupon = await route.couponProvider.acquire({ scope: checkedScope, owner, actionKind: kind });
+        const readRegisteredBatch = ({ batchId }) => a.readRegisteredSponsorBatch({
+          wallet, node, sponsorAddress: route.sponsorAddress, sponsorArtifact,
+          boardAddress: checkedScope.boardAddress,
+          expectedChainId: checkedScope.l1ChainId, expectedVersion: checkedScope.rollupVersion, batchId,
+        });
+        const coupon = await route.couponProvider.acquire({
+          scope: checkedScope, owner, actionKind: kind, readRegisteredBatch,
+        });
         if (!coupon) throw sponsorFailure();
         prepared = await a.prepareSponsoredAction({
           wallet, node, owner, boardAddress: checkedScope.boardAddress, boardArtifact,

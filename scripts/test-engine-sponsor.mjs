@@ -14,7 +14,7 @@ const owner={toString:()=> 'owner'};
 function fixture(change={}) {
   const c=context(),requests=[],acquisitions=[],sends=[];
   const options={from:NO_FROM,additionalScopes:[owner],sendMessagesAs:owner,authWitnesses:['exact-auth'],fee:{gasSettings:gas()}};
-  const a={NO_FROM,GasSettings,prepareSponsoredAction:async input=>{requests.push(input);return {interaction:{send:async opts=>{sends.push(opts);if(change.sendError)throw change.sendError;return {receipt:{status:'checkpointed',executionResult:'success'}};}},options};}};
+  const a={NO_FROM,GasSettings,readRegisteredSponsorBatch:async input=>input,prepareSponsoredAction:async input=>{requests.push(input);return {interaction:{send:async opts=>{sends.push(opts);if(change.sendError)throw change.sendError;return {receipt:{status:'checkpointed',executionResult:'success'}};}},options};}};
   const config={sponsorship:{sponsorAddress:'sponsor',gasSettings:gas(),couponProvider:{acquire:async request=>{acquisitions.push(request);if(change.acquireError)throw change.acquireError;return change.noCoupon?null:{batchId:1,index:0,blind:'local-blind',siblings:[]};}}}};
   const inputs={a,config,sponsorArtifact:{sponsor:true},boardArtifact:{board:true},wallet:{},node:{},owner,scope};
   return {c,a,config,inputs,requests,acquisitions,sends,options,send:()=>c.BillboardSponsorRouting.createSponsoredSender(inputs)};
@@ -27,12 +27,12 @@ for(const [kind,args] of [['claim',['depositor',10n,1n,'claim-secret',42n]],['po
     assert.equal(request.expectedChainId,'31337');assert.equal(request.expectedVersion,'1');assert.equal(request.boardArtifact,h.inputs.boardArtifact);
     assert.equal(request.sponsorArtifact,h.inputs.sponsorArtifact);assert.equal(request.owner,owner);
     assert.equal(h.sends[0],h.options);assert.equal(h.sends[0].from,NO_FROM);
-    const acquired=h.acquisitions[0];assert.deepEqual(Object.keys(acquired).sort(),['actionKind','owner','scope']);
+    const acquired=h.acquisitions[0];assert.deepEqual(Object.keys(acquired).sort(),['actionKind','owner','readRegisteredBatch','scope']);
     assert(!JSON.stringify(acquired).includes('claim-secret'));assert(!('args' in acquired));assert(Object.isFrozen(acquired.scope));
   });
 }
 test('missing configuration, artifact, SDK or provider rejects before coupon acquisition or signing',async()=>{
-  for(const mutation of [h=>delete h.config.sponsorship,h=>delete h.inputs.sponsorArtifact,h=>delete h.a.prepareSponsoredAction,h=>delete h.config.sponsorship.couponProvider,h=>delete h.config.sponsorship.gasSettings.maxFeesPerGas.feePerDaGas]) {
+  for(const mutation of [h=>delete h.config.sponsorship,h=>delete h.inputs.sponsorArtifact,h=>delete h.a.prepareSponsoredAction,h=>delete h.a.readRegisteredSponsorBatch,h=>delete h.config.sponsorship.couponProvider,h=>delete h.config.sponsorship.gasSettings.maxFeesPerGas.feePerDaGas]) {
     const h=fixture();mutation(h);assert.throws(()=>h.send(),e=>e.code==='BB_SPONSOR_UNAVAILABLE');assert.equal(h.requests.length,0);assert.equal(h.acquisitions.length,0);
   }
 });
@@ -137,6 +137,7 @@ function mainHarness(action,isDummy=false) {
     createAztecNodeClient:()=>node,loadContractArtifact:x=>x,
     createPXE:async()=>({registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{}}),AccountManager:{create:async()=>({address:addr})},Contract:{at:async()=>({methods})},
     computeSecretHash:async()=>secretHash,poseidon2HashWithSeparator:async()=>new Fr(5),
+    readRegisteredSponsorBatch:async input=>input,
     prepareSponsoredAction:async input=>{requests.push(input);return {interaction:{send:async opts=>{assert.equal(opts.from,NO_FROM);sent=true;return {receipt:{status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)}};}},options:{from:NO_FROM,additionalScopes:[addr],sendMessagesAs:addr,authWitnesses:['auth'],fee:{gasSettings:gas()}}};},
   };
   const env={aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},sponsorArtifact:{},
@@ -155,3 +156,13 @@ for(const [action,dummy] of [['claim',false],['post',false],['post',true],['with
     assert(!h.logs.some(text=>text.includes('fund your account')||text.includes('You need some to pay')));
   });
 }
+
+test('local coupon callback reads only deployment-scoped batch state without owner or action',async()=>{
+  const h=fixture();await h.send()('claim',['private-claim-secret']);
+  const read=await h.acquisitions[0].readRegisteredBatch({batchId:'17',signal:{}});
+  assert.deepEqual(Object.keys(read).sort(),['batchId','boardAddress','expectedChainId','expectedVersion','node','sponsorAddress','sponsorArtifact','wallet']);
+  assert.equal(read.batchId,'17');assert.equal(read.wallet,h.inputs.wallet);assert.equal(read.node,h.inputs.node);
+  assert.equal(read.boardAddress,scope.boardAddress);assert.equal(read.expectedChainId,scope.l1ChainId);
+  assert.equal(read.expectedVersion,scope.rollupVersion);assert.equal(read.sponsorArtifact,h.inputs.sponsorArtifact);
+  assert(!JSON.stringify(read).includes('private-claim-secret'));
+});
