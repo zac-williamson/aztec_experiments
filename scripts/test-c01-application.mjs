@@ -16,7 +16,7 @@ const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function fingerprints() {
   const result = {};
   for (const name of ['scripts/test-c01-application.mjs','scripts/owned-test-process-tree.mjs','scripts/c01-settle-application-message.mjs','scripts/c01-application-deployment.mjs',
-    'scripts/c01-settle-ready.mjs','scripts/c01-settle-message.mjs','scripts/c01-bridge-flow.mjs','scripts/c02-screening-flow.mjs','scripts/c01-client-mining.mjs','scripts/c01-deposit-flow.mjs','scripts/c01-exit-flow.mjs','scripts/c01-withdraw-l1.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
+    'scripts/c01-settle-ready.mjs','scripts/c01-settle-message.mjs','scripts/c01-bridge-flow.mjs','scripts/c02-screening-flow.mjs','scripts/c03-author-claims.mjs','scripts/c03-contention-flow.mjs','scripts/c01-client-mining.mjs','scripts/c01-deposit-flow.mjs','scripts/c01-exit-flow.mjs','scripts/c01-withdraw-l1.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
     'node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js']) {
     result[name] = sha(await fs.readFile(path.join(ROOT, name)));
   }
@@ -76,7 +76,7 @@ async function worker(directory) {
     const [{getGenesisValues},{getConfigEnvVars},{deployC01ApplicationProtocol}]=await Promise.all([
       import('@aztec/world-state/testing'),import('@aztec/aztec-node/config'),import('./c01-application-deployment.mjs')]);
     let preparation;
-    if(process.env.C01_BOARD_PROOF==='true'){const {prepareC01BoardFlow}=await import('./c01-board-flow.mjs');preparation=await prepareC01BoardFlow({bbBinaryPath:path.join(directory,'bb-one-thread'),directory});}
+    if(process.env.C01_BOARD_PROOF==='true'){const {prepareC01BoardFlow}=await import('./c01-board-flow.mjs');preparation=await prepareC01BoardFlow({bbBinaryPath:path.join(directory,'bb-one-thread'),directory,authorCount:process.env.C03_CONTENTION==='true'&&process.env.C03_POSTING_DIAGNOSTIC!=='true'?10:1});}
     const {genesisArchiveRoot,fundingNeeded,genesis}=await getGenesisValues(preparation?.fundingAddresses??[]);
     const {SecretValue}=await import('@aztec/foundation/config');
     const {EthAddress}=await import('@aztec/foundation/eth-address');
@@ -129,20 +129,22 @@ async function parent() {
   assertNodeVersion(); assertAztecPackages();
   assert.equal(process.platform, 'darwin', 'This bounded no-network profile is qualified for macOS only');
   assert.equal(process.arch, 'arm64', 'This harness pins the installed arm64 BB binary');
-  assert(process.argv.length===2||(process.argv.length===3&&['--node','--board-proof','--include','--ready','--settle','--bridge','--screening'].includes(process.argv[2])),'Unsupported harness arguments');
+  assert(process.argv.length===2||(process.argv.length===3&&['--node','--board-proof','--include','--ready','--settle','--bridge','--screening','--contention','--posting-diagnostic'].includes(process.argv[2])),'Unsupported harness arguments');
+  const postingDiagnostic=process.argv[2]==='--posting-diagnostic';
+  const contention=postingDiagnostic||process.argv[2]==='--contention';
   const screening=process.argv[2]==='--screening';
-  const bridge=screening||process.argv[2]==='--bridge';
+  const bridge=contention||screening||process.argv[2]==='--bridge';
   const settle=bridge||process.argv[2]==='--settle';
   const readyFlow=process.argv[2]==='--ready'||settle;
   const boardInclude=process.argv[2]==='--include'||readyFlow;
   const boardProof=process.argv[2]==='--board-proof'||boardInclude;
   const startNode=process.argv[2]==='--node'||boardProof;
   const id = randomUUID();
-  const evidence = path.join(ROOT, screening?'execution/evidence/C02':'execution/evidence/C01', `application-${id}.json`);
+  const evidence = path.join(ROOT, contention?'execution/evidence/C03':screening?'execution/evidence/C02':'execution/evidence/C01', `application-${id}.json`);
   await fs.mkdir(path.join(ROOT, '.build'), { recursive: true });
   // Short private path keeps native Unix socket names below macOS sockaddr_un limits.
   const directory = await fs.mkdtemp('/private/tmp/c01-application-');
-  const report = { schemaVersion: 1, profile: screening ? 'application deposit, posting and authenticated screening proofs' : bridge ? 'application proofs, controlled settlement, deposit/claim/exit/refund' : settle ? 'application Ready proof and controlled settlement' : readyFlow ? 'genuine Ready proof and ordinary inclusion' : boardInclude ? 'genuine board proof and ordinary inclusion' : boardProof ? 'genuine board client proof' : startNode ? 'local protocol fixture and application node startup' : 'official local protocol deployment fixture only',
+  const report = { schemaVersion: 1, profile: postingDiagnostic ? 'one-author genuine posting diagnostic; not contention qualification' : contention ? 'ten genuine authors preparing posts from one anchor' : screening ? 'application deposit, posting and authenticated screening proofs' : bridge ? 'application proofs, controlled settlement, deposit/claim/exit/refund' : settle ? 'application Ready proof and controlled settlement' : readyFlow ? 'genuine Ready proof and ordinary inclusion' : boardInclude ? 'genuine board proof and ordinary inclusion' : boardProof ? 'genuine board client proof' : startNode ? 'local protocol fixture and application node startup' : 'official local protocol deployment fixture only',
     startedAt: new Date().toISOString(), deadlineMs: DEADLINE_MS, passed: false, testsApplicationOrEpoch: boardProof, rssLimitKiB:RSS_LIMIT_KIB, rssSampleIntervalMs:1000, rssMethod:'sampled PPID descendant tree with remembered process identities/groups; not OS allocation limit', rssSamples:[], peakTreeRSSKiB:0 };
   let child, finished, timer, outerTimer, killPromise, rssTimer, rssPending;
   let childClosed=false,stopSampling=false;
@@ -165,14 +167,15 @@ async function parent() {
     assert(!bb.includes("'"));
     await fs.writeFile(path.join(directory,'bb-one-thread'),"#!/bin/sh\nHARDWARE_CONCURRENCY=1 exec '"+bb+"' \"$@\"\n",{flag:'wx',mode:0o700});
     await fs.mkdir(path.join(directory,'acvm'),{mode:0o700});
-    report.startNode=startNode;report.boardProof=boardProof;report.settle=settle;report.bridge=bridge;report.screening=screening;
+    report.startNode=startNode;report.boardProof=boardProof;report.settle=settle;report.bridge=bridge;report.screening=screening;report.contention=contention;report.postingDiagnostic=postingDiagnostic;report.expectedAuthorCount=contention&&!postingDiagnostic?10:1;
+    if(postingDiagnostic)report.contentionQualified=false;
     const profile=path.join(directory,'local-only.sb');
     await fs.writeFile(profile, '(version 1)\n(allow default)\n(deny network-outbound (remote ip "*:*"))\n(allow network-outbound (remote ip "localhost:*"))\n(deny network-inbound (local ip "*:*"))\n(allow network-inbound (local ip "localhost:*"))\n');
     const resources = path.join(directory, 'time.txt');
     const started = performance.now();
     child = spawn('/usr/bin/sandbox-exec', ['-f', profile, '/usr/bin/time', '-l', '-o', resources,
       process.execPath, SELF, '--worker', directory], { cwd: ROOT, detached: true,
-      env: {HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'warn',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',NODE_BACKEND:'js',FORGE_BIN:'/Users/zac/.foundry/bin/forge',C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,C01_START_NODE:String(startNode),C01_BOARD_PROOF:String(boardProof),C01_BOARD_INCLUDE:String(boardInclude),C01_READY:String(readyFlow),C01_SETTLE:String(settle),C01_BRIDGE:String(bridge),C02_SCREENING:String(screening),FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
+      env: {HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'warn',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',NODE_BACKEND:'js',FORGE_BIN:'/Users/zac/.foundry/bin/forge',C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,C01_START_NODE:String(startNode),C01_BOARD_PROOF:String(boardProof),C01_BOARD_INCLUDE:String(boardInclude),C01_READY:String(readyFlow),C01_SETTLE:String(settle),C01_BRIDGE:String(bridge),C02_SCREENING:String(screening),C03_CONTENTION:String(contention),C03_POSTING_DIAGNOSTIC:String(postingDiagnostic),FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
       stdio: ['ignore', 'pipe', 'pipe'] });
     report.pid = child.pid; report.stages = [];
     let stderrBuffer='';
@@ -245,6 +248,9 @@ async function parent() {
       for(const [kind,key] of [['ready','settlementProgress'],['exit','exitSettlementProgress']]){
         try{report[key]=JSON.parse(await fs.readFile(path.join(directory,`settlement-${kind}-progress.json`),'utf8'));}catch{}
       }
+    }
+    if(contention){
+      try{report.contentionProgress=JSON.parse(await fs.readFile(path.join(directory,'c03-contention-progress.json'),'utf8'));}catch(error){report.contentionProgressReadError={errorClass:error.name,code:error.code??null};}
     }
     if (killPromise) await killPromise;
     if (child.pid) await cleanGroup(child.pid);

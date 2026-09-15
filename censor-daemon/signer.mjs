@@ -4,9 +4,10 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { validateReason } from './moderation.mjs';
+import { validatePostId } from '../shared/protocol-schema.mjs';
 
 const MAX_OUTPUT_BYTES = 10 * 1024 * 1024;
-const MAX_INDEX = 0xffffffff;
+const MAX_INDEX = Number.MAX_SAFE_INTEGER;
 function exactObject(value, allowed, required = allowed) {
   if (!value || typeof value !== 'object' || Array.isArray(value) ||
       ![Object.prototype, null].includes(Object.getPrototypeOf(value))) throw new Error('Expected a plain signer request');
@@ -32,15 +33,18 @@ function parsePosts(stdout) {
   catch { throw new Error('Malformed JSON post-list response'); }
   index(data.count);
   if (!Array.isArray(data.posts) || data.posts.length > 10000) throw new Error('Invalid or oversized post list');
-  const seen = new Set();
+  const seen = new Set(), identities = new Set();
   const posts = data.posts.map(post => {
     if (!post || typeof post !== 'object') throw new Error('Invalid post');
     const postIndex = index(post.index);
     if (postIndex >= data.count || seen.has(postIndex)) throw new Error('Invalid or duplicate post index');
     seen.add(postIndex);
+    const postId = validatePostId(post.postId);
+    if (identities.has(postId)) throw new Error('Duplicate post id');
+    identities.add(postId);
     if (typeof post.text !== 'string' || Buffer.byteLength(post.text, 'utf8') > 16384 || typeof post.flagged !== 'boolean') throw new Error('Invalid post fields');
     if (post.timestamp !== undefined && (!Number.isSafeInteger(post.timestamp) || post.timestamp < 0)) throw new Error('Invalid post timestamp');
-    return Object.freeze({ index: postIndex, text: post.text, flagged: post.flagged, timestamp: post.timestamp });
+    return Object.freeze({ index: postIndex, postId, text: post.text, flagged: post.flagged, timestamp: post.timestamp });
   });
   if (data.policy !== undefined && (typeof data.policy !== 'string' || Buffer.byteLength(data.policy, 'utf8') > 16384)) throw new Error('Invalid policy');
   for (const key of ['censorWindow', 'maxSaveUp']) {
@@ -89,11 +93,11 @@ export function createSigner(configuration, { run = execFileSync } = {}) {
       return parsePosts(call('list', ['--json']));
     },
     flag(request) {
-      exactObject(request, ['postIndex', 'reason']);
-      const postIndex = index(request.postIndex);
+      exactObject(request, ['postId', 'reason']);
+      const postId = validatePostId(request.postId);
       const reason = validateReason(request.reason);
       if (reason.startsWith('--')) throw new Error('Reason must not be a CLI option');
-      return call('declare-immoral', ['--post-index', String(postIndex), '--censor-response', reason]);
+      return call('declare-immoral', ['--post-id', postId, '--censor-response', reason]);
     },
   });
 }

@@ -1,0 +1,56 @@
+=== Daemon Integration Tests (with mock infra) ===
+
+  ✓ dry-run flags violation in output but does not call declare-immoral
+  ✓ dry-run with OK verdict does not flag
+  ✓ skips already-flagged posts
+  ✓ skips empty posts
+  ✓ reasoning-only model output is an observable failure and cannot flag
+  ✓ processes multiple posts with mixed verdicts
+  ✓ missing --portal-address exits with error
+  ✓ --from skips earlier posts
+  ✓ non-dry-run calls declare-immoral via CLI
+  ✓ reads policy from contract output
+  ✓ falls back to local policy file when contract policy is empty
+  ✓ warns on posts past the censor window
+  ✓ warns on posts about to expire in censor window
+  ✓ processes oldest unflagged posts first (censor window urgency)
+  ✓ model cannot add a destination, operation or post index to a verdict
+  ✓ failed signing is not reported as a completed successful job
+  ✓ production CLI cannot bypass model isolation with skip-bootstrap
+
+=== Results ===
+  Passed: 17
+  Failed: 0
+✔ censor-daemon/test_daemon.mjs (2520.630708ms)
+✔ pinned internal L2Block hash method differs from public node BlockResponse hash value (5.354709ms)
+✔ actual deployment helper waits for finality then forwards exact authenticated witness (2.336292ms)
+✔ unfinalized receipt never requests a witness or activates (1.129625ms)
+✔ missing witness never activates a finalized transaction (1.954667ms)
+✔ reverted receipt fails closed before witness lookup (0.527459ms)
+✔ missing success receipt fails closed before witness lookup (0.415333ms)
+✔ dropped receipt fails closed before witness lookup (0.356625ms)
+✔ unknown receipt fails closed before witness lookup (0.36775ms)
+✔ missing block hash receipt fails closed before witness lookup (0.365833ms)
+✔ pending and proposed receipts do not qualify even with a high finalized tip (0.453625ms)
+✔ receipt block must still match canonical block at its height (1.036833ms)
+✔ re-inclusion during witness resolution refreshes receipt and waits for the new block (0.889792ms)
+✔ drop during witness resolution prevents activation (0.486625ms)
+✔ malformed finalized tip cannot satisfy the finality comparison (0.375584ms)
+✔ activation requires successful L1 receipt and enabled portal {"activationStatus":0} (2.834125ms)
+✔ activation requires successful L1 receipt and enabled portal {"enabled":false} (0.586625ms)
+✔ browser actual module persists ciphertext and interoperates with Node AES-GCM (12.123542ms)
+✔ browser actual custody rejects wrong wallet, ciphertext corruption and moved scope (3.809834ms)
+✔ browser save observes transaction abort and never reports durable success (1.781041ms)
+✔ actual engine codec matches frozen claim, boundary and exit commitments (8.213333ms)
+✔ actual public deposit flow saves and reads back before send; returns event receipt nonce without secret (6.014458ms)
+✔ actual deposit flow fails closed for missing store, failed durability and disabled portal (2.350375ms)
+✔ actual deposit flow fails closed for mismatched read-back and existing receipt (2.411209ms)
+✔ actual recovery requires the current event nonce and exact saved secret hash without signing fallback (7.102375ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2526.387709

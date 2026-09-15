@@ -17,6 +17,8 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
     validatorPrivateKeys:new SecretValue([privateKey]),coinbase:EthAddress.fromString(address),
     allowEphemeralSigningProtection:true,realProofs:true,useAutomineSequencer:false,automineEnableProveEpoch:false,
     enableProverNode:false,proverAgentCount:0,
+    // Application contention concerns one private anchor, not network batch throughput.
+    ...(process.env.C03_CONTENTION==='true'?{maxTxsPerBlock:1}:{}),
     bbBinaryPath:path.join(directory,'bb-one-thread'),bbWorkingDirectory:path.join(directory,'bb-work'),
     bbChonkVerifyMaxBatch:1,bbChonkVerifyConcurrency:1,bbIVCConcurrency:1,numConcurrentIVCVerifiers:1,
   };
@@ -74,12 +76,12 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
               const {completeC01Bridge}=await import('./c01-bridge-flow.mjs');
               observation.bridge=await completeC01Bridge({node,config:nodeConfig,dateProvider,l1Client:deployment.l1Client,
                 directory,rollupAddress:deployment.l1ContractAddresses.rollupAddress,preparation,
-                instance:observation.board.instance,ready:observation.ready,settlement:observation.settlement,mark,screeningOnly:process.env.C02_SCREENING==='true'});
+                instance:observation.board.instance,ready:observation.ready,settlement:observation.settlement,mark,screeningOnly:process.env.C02_SCREENING==='true',contentionOnly:process.env.C03_CONTENTION==='true'});
               assert(observation.bridge.passed);
             }
           }
         }
-        observation.sequencerStarted=true;observation.scope=observation.bridge?.screening?.passed?'application posting and authenticated screening proofs':observation.bridge?.passed?'application proofs, controlled settlement, deposit/claim/exit/refund':observation.settlement?.passed?'controlled Ready settlement and enabled portal':'genuine client proof and ordinary checkpoint inclusion; no epoch proof acceptance';observation.epochSchedulingStarted=false;observation.idleProverAgentCreated=false;}
+        observation.sequencerStarted=true;observation.scope=observation.bridge?.contention?.passed?(process.env.C03_POSTING_DIAGNOSTIC==='true'?'one-author genuine posting diagnostic; not contention qualification':'ten genuine authors preparing posts from one anchor'):observation.bridge?.screening?.passed?'application posting and authenticated screening proofs':observation.bridge?.passed?'application proofs, controlled settlement, deposit/claim/exit/refund':observation.settlement?.passed?'controlled Ready settlement and enabled portal':'genuine client proof and ordinary checkpoint inclusion; no epoch proof acceptance';observation.epochSchedulingStarted=false;observation.idleProverAgentCreated=false;}
 
     }
     observation.passed=true;

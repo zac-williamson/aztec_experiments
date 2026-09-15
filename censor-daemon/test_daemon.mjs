@@ -138,7 +138,7 @@ fs.appendFileSync(${JSON.stringify(this.callsFile)}, JSON.stringify(args) + \"\\
 if (action === 'list' && args.includes('--json')) {
   process.stdout.write(JSON.stringify({
     count: ${JSON.stringify(this.behavior.posts.length)},
-    posts: ${JSON.stringify(this.behavior.posts)},
+    posts: ${JSON.stringify(this.behavior.posts.map(post => ({ ...post, postId: '0x' + BigInt(post.index + 101).toString(16).padStart(64, '0') })))},
     censor: "0x000fdd755b5c59a56e6957dbcff8889fe9e5f3c5d6496426c9efcbed92ebb77a",
     kMultiplier: 4,
     censorWindow: ${JSON.stringify(this.behavior.censorWindow || 3600)},
@@ -147,7 +147,7 @@ if (action === 'list' && args.includes('--json')) {
   }));
 } else if (action === 'declare-immoral') {
   if (${JSON.stringify(this.behavior.flagExit || 0)}) process.exit(${JSON.stringify(this.behavior.flagExit || 0)});
-  const idx = args[args.indexOf('--post-index') + 1];
+  const idx = args[args.indexOf('--post-id') + 1];
   const resp = args[args.indexOf('--censor-response') + 1];
   process.stderr.write("Flagging post " + idx + " with: " + resp + "\\n");
   process.stdout.write("Transaction mined\\n");

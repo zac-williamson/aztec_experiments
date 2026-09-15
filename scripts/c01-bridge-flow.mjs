@@ -8,7 +8,7 @@ import {withC01ClientMining} from './c01-client-mining.mjs';
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 export async function completeC01Bridge({node,config,dateProvider,l1Client,directory,rollupAddress,
-  preparation,instance,ready,settlement,mark,screeningOnly=false}){
+  preparation,instance,ready,settlement,mark,screeningOnly=false,contentionOnly=false}){
   const observation={passed:false,scope:'genuine local deposit, private claim, no-post exit and L1 refund',
     applicationProofs:true,controlledSettlement:true,networkProofs:false};
   assert(!node.getProverNode(),'No network prover in application test');
@@ -18,6 +18,14 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
 
     await withC01ClientMining({rpcUrl:config.l1RpcUrls[0],dateProvider,observation},async mineL1=>{
       const common={node,preparation,instance,l1Client,directory,rpcUrl:config.l1RpcUrls[0],dateProvider,mineL1,reportStage:mark};
+      if(contentionOnly){
+        const {prepareC03AuthorClaims}=await import('./c03-author-claims.mjs');
+        const {proveAndIncludeC03Contention}=await import('./c03-contention-flow.mjs');
+        observation.authorClaims=await prepareC03AuthorClaims({...common,ready,settlement});
+        assert(observation.authorClaims.passed);
+        observation.contention=await proveAndIncludeC03Contention({...common,authorClaims:observation.authorClaims.authorClaims});
+        assert(observation.contention.passed);return;
+      }
       mark('real-deposit-and-claim');
       observation.claim=await depositAndClaimC01({...common,ready,settlement});assert(observation.claim.passed);
       if(screeningOnly){
@@ -28,6 +36,7 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
       mark('real-no-post-exit');
       observation.exit=await proveAndIncludeC01Exit({...common,claimResult:observation.claim});assert(observation.exit.passed);
     });
+    if(contentionOnly){observation.scope='ten genuine authors, same-anchor post preparation and inclusion';observation.passed=true;return observation;}
     if(screeningOnly){observation.scope='genuine deposit, private claim and authenticated post screening';observation.passed=true;return observation;}
     mark('settle-exit-test-message');
     observation.exitSettlement=await settleC01Message({node,config,dateProvider,l1Client,directory,rollupAddress,
@@ -40,7 +49,7 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
       settlement:observation.exitSettlement,l1Client,rpcUrl:config.l1RpcUrls[0]});
     assert(observation.refund.passed);observation.passed=true;return observation;
   }catch(error){
-    for(const [key,name] of [['screening','screeningObservation'],['claim','depositObservation'],['exit','exitObservation'],['exitSettlement','settlementObservation'],['refund','withdrawalObservation']]){
+    for(const [key,name] of [['contention','contentionObservation'],['authorClaims','authorClaimsObservation'],['screening','screeningObservation'],['claim','depositObservation'],['exit','exitObservation'],['exitSettlement','settlementObservation'],['refund','withdrawalObservation']]){
       if(error[name])observation[key]=error[name];
     }
     error.bridgeObservation={...observation,passed:false};throw error;

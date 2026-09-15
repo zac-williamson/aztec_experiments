@@ -4,7 +4,7 @@ use aztec::macros::aztec;
 
 #[aztec]
 pub contract Billboard {
-    use crate::lib::{ReceiptMetadata, SequenceState, compute_cooldown, checked_time_add, deposit_chain_id, post_link, get_ready_msg_hash, get_deposit_msg_hash, get_withdraw_msg_hash};
+    use crate::lib::{ReceiptMetadata, SequenceState, compute_cooldown, checked_time_add, deposit_chain_id, post_id, post_link, get_ready_msg_hash, get_deposit_msg_hash, get_withdraw_msg_hash};
 
     use aztec::{
         history::{note::assert_note_existed_by, storage::public_storage_historical_read},
@@ -180,16 +180,20 @@ pub contract Billboard {
         /// Append-only post chain — one PrivateSet per account.
         /// PostNotes are never nullified; they serve as historical anchors.
         posts: Owned<PrivateSet<PostNote, Context>, Context>,
-        post_count: PublicMutable<u32, Context>,
-        post_data: Map<u32, PublicMutable<Field, Context>, Context>,
+        /// Only real publication allocates a live display-order index.
+        post_count: PublicMutable<u64, Context>,
+        post_id_by_order: Map<u64, PublicMutable<Field, Context>, Context>,
+        post_exists: Map<Field, PublicMutable<bool, Context>, Context>,
+        post_length: Map<Field, PublicMutable<u16, Context>, Context>,
+        post_data: Map<Field, Map<u32, PublicMutable<Field, Context>, Context>, Context>,
         censor: PublicMutable<AztecAddress, Context>,
         // Post metadata (public)
-        post_time: Map<u32, PublicMutable<u64, Context>, Context>,
-        post_flagged: Map<u32, PublicMutable<bool, Context>, Context>,
+        post_time: Map<Field, PublicMutable<u64, Context>, Context>,
+        post_flagged: Map<Field, PublicMutable<bool, Context>, Context>,
         /// The address of the censor who flagged each post (zero = never flagged).
         /// Public record of accountability.
-        post_flagged_by: Map<u32, PublicMutable<AztecAddress, Context>, Context>,
-        censor_response: Map<u32, PublicMutable<Field, Context>, Context>,
+        post_flagged_by: Map<Field, PublicMutable<AztecAddress, Context>, Context>,
+        censor_response: Map<Field, Map<u32, PublicMutable<Field, Context>, Context>, Context>,
         /// Moderation policy: packed as [Field; POLICY_FIELDS] (31 bytes each).
         /// Set at init time, only the censor can update via set_moderation_policy.
         policy_data: Map<u32, PublicMutable<Field, Context>, Context>,
@@ -279,23 +283,23 @@ pub contract Billboard {
     // declare_immoral -- censor only (public function)
     // ============================================================
     // Each post is screened at most once (when last_screened advances past it).
-    // The censor has a guaranteed censor_window to flag before screening happens.
-    // No flag_time storage needed — we just check post_flagged at screening time.
+    // C03 addresses stable identity only. Inclusion-time policy/deadline binding
+    // and full moderation-window semantics remain explicit C05 integration work.
 
     #[external("public")]
-    fn declare_immoral(post_index: u32, response: [Field; MSG_FIELDS]) {
+    fn declare_immoral(post_id: Field, response: [Field; MSG_FIELDS]) {
         let censor = self.storage.censor.read();
         let sender = self.msg_sender();
         assert(sender.to_field() != AztecAddress::zero().to_field(), "No censor configured");
         assert(sender.to_field() == censor.to_field(), "Only censor can declare immoral");
-        assert(post_index < self.storage.post_count.read(), "Invalid post index");
-        assert(!self.storage.post_flagged.at(post_index).read(), "Already flagged");
+        assert(self.storage.post_exists.at(post_id).read(), "Invalid post id");
+        assert(!self.storage.post_flagged.at(post_id).read(), "Already flagged");
 
-        self.storage.post_flagged.at(post_index).write(true);
-        self.storage.post_flagged_by.at(post_index).write(sender);
+        self.storage.post_flagged.at(post_id).write(true);
+        self.storage.post_flagged_by.at(post_id).write(sender);
 
         for i in 0..MSG_FIELDS {
-            self.storage.censor_response.at(post_index * MSG_FIELDS + i).write(response[i]);
+            self.storage.censor_response.at(post_id).at(i).write(response[i]);
         }
     }
 
@@ -361,7 +365,9 @@ pub contract Billboard {
     #[external("private")]
     fn post(
         deposit_chain_id: Field,
+        post_nonce: Field,
         msg: [Field; MSG_FIELDS],
+        message_length: u16,
         is_dummy: bool,
         child: Option<HintedNote<PostNote>>,
         grandchild: Option<HintedNote<PostNote>>,
@@ -370,6 +376,18 @@ pub contract Billboard {
         let now = self.context.get_anchor_block_header().timestamp();
         let header = self.context.get_anchor_block_header();
         let addr = self.context.this_address();
+        let public_post_id = if is_dummy {
+            assert(post_nonce == 0, "Dummy nonce must be zero");
+            assert(message_length == 0, "Dummy message length must be zero");
+            for field in msg { assert(field == 0, "Dummy message must be empty"); }
+            0
+        } else {
+            assert(post_nonce != 0, "Post nonce must not be zero");
+            crate::lib::validate_message(msg, message_length);
+            let id = post_id(addr, post_nonce);
+            assert(id != 0, "Post id must not be zero");
+            id
+        };
 
         // --- Pop the deposit note ---
         let options = NoteGetterOptions::<DepositNote, 8, Field, Field>::new()
@@ -429,7 +447,7 @@ pub contract Billboard {
             }
             if child_mature {
                 if !cn.is_dummy {
-                    let flag_slot = self.storage.post_flagged.at(cn.post_id as u32).get_storage_slot();
+                    let flag_slot = self.storage.post_flagged.at(cn.post_id).get_storage_slot();
                     if public_storage_historical_read(header, flag_slot, addr) == 1 { flag_count += 1; }
                 }
                 new_screened_link = child_link;
@@ -449,7 +467,7 @@ pub contract Billboard {
                 let gc_mature = gn.is_dummy | ((now >= censor_window) & (gn.anchor_timestamp <= screen_threshold));
                 if child_mature & gc_mature {
                     if !gn.is_dummy {
-                        let flag_slot = self.storage.post_flagged.at(gn.post_id as u32).get_storage_slot();
+                        let flag_slot = self.storage.post_flagged.at(gn.post_id).get_storage_slot();
                         if public_storage_historical_read(header, flag_slot, addr) == 1 { flag_count += 1; }
                     }
                     new_screened_link = gc_link;
@@ -490,15 +508,14 @@ pub contract Billboard {
         let penalty = (cooldown as u128) * (penalty_multiplier as u128);
         let new_next_allowed: u64 = (effective_old as u128 + penalty) as u64;
 
-        // --- Read post_count ---
-        let post_count_slot = self.storage.post_count.get_storage_slot();
-        let post_id_field = public_storage_historical_read(header, post_count_slot, addr);
-        let post_id: u32 = post_id_field as u32;
+        // No public count read or reservation: unrelated authors may publish
+        // between this private anchor and the eventual public inclusion.
 
         // --- Create the new PostNote and compute its link ---
+        assert(dep_note.sequences.head_sequence < 0xffffffffffffffff, "Post sequence overflow");
         let sequence = dep_note.sequences.head_sequence + 1;
         let post_note = PostNote { schema_version: 1, deposit_chain_id, sequence,
-            post_id: post_id as Field, anchor_timestamp: now,
+            post_id: public_post_id, anchor_timestamp: now,
             previous_link: dep_note.head_link, is_dummy };
 
         let post_msg = self.storage.posts.at(sender).insert(post_note);
@@ -513,8 +530,8 @@ pub contract Billboard {
 
         NoteMessage::new(new_note, self.context).deliver(MessageDelivery::onchain_constrained());
 
-        // --- Enqueue public call to store the post ---
-        self.enqueue_self._post_public(msg, now, post_id, is_dummy);
+        // Dummies advance only private history and never compete for public order.
+        if !is_dummy { self.enqueue_self._publish_post(public_post_id, msg, message_length); }
 
         // --- Update last_real_sequence (only for non-dummy posts) ---
         let new_last_real = if is_dummy {
@@ -539,17 +556,22 @@ pub contract Billboard {
 
     #[external("public")]
     #[only_self]
-    fn _post_public(msg: [Field; MSG_FIELDS], timestamp: u64, post_id: u32, is_dummy: bool) {
-        let current_count = self.storage.post_count.read();
-        assert(current_count == post_id, "Post count mismatch -- retry");
-
-        self.storage.post_time.at(post_id).write(timestamp);
-        if !is_dummy {
-            for i in 0..MSG_FIELDS {
-                self.storage.post_data.at(post_id * MSG_FIELDS + i).write(msg[i]);
-            }
-        }
-        self.storage.post_count.write(post_id + 1);
+    fn _publish_post(post_id: Field, msg: [Field; MSG_FIELDS], message_length: u16) {
+        assert(post_id != 0, "Post id must not be zero");
+        assert(!self.storage.post_exists.at(post_id).read(), "Post id already exists");
+        crate::lib::validate_message(msg, message_length);
+        let order = self.storage.post_count.read();
+        assert(order < 0xffffffffffffffff, "Post count overflow");
+        let published_at = self.context.timestamp();
+        assert(published_at <= 0x7fffffffffffffff, "Timestamp out of range");
+        self.storage.post_exists.at(post_id).write(true);
+        self.storage.post_id_by_order.at(order).write(post_id);
+        self.storage.post_time.at(post_id).write(published_at);
+        self.storage.post_length.at(post_id).write(message_length);
+        for i in 0..MSG_FIELDS { self.storage.post_data.at(post_id).at(i).write(msg[i]); }
+        self.storage.post_count.write(order + 1);
+        // No invented policyVersion/event: full policy+deadline event payloads
+        // are integrated with C05 against the actual public inclusion timestamp.
     }
 
     // ============================================================
@@ -592,45 +614,67 @@ pub contract Billboard {
 
     #[external("public")]
     #[view]
-    fn get_post_count() -> pub u32 {
+    fn get_post_count() -> pub u64 {
         self.storage.post_count.read()
     }
 
     #[external("public")]
     #[view]
-    fn get_post(id: u32) -> pub [Field; MSG_FIELDS] {
-        assert(id < self.storage.post_count.read(), "Invalid post id");
+    fn get_post_id(order: u64) -> pub Field {
+        assert(order < self.storage.post_count.read(), "Invalid post order");
+        self.storage.post_id_by_order.at(order).read()
+    }
+
+    #[external("public")]
+    #[view]
+    fn get_post_exists(id: Field) -> pub bool { self.storage.post_exists.at(id).read() }
+
+    #[external("public")]
+    #[view]
+    fn get_post_length(id: Field) -> pub u16 {
+        assert(self.storage.post_exists.at(id).read(), "Invalid post id");
+        self.storage.post_length.at(id).read()
+    }
+
+    #[external("public")]
+    #[view]
+    fn get_post(id: Field) -> pub [Field; MSG_FIELDS] {
+        assert(self.storage.post_exists.at(id).read(), "Invalid post id");
         let mut msg: [Field; MSG_FIELDS] = [0; MSG_FIELDS];
         for i in 0..MSG_FIELDS {
-            msg[i] = self.storage.post_data.at(id * MSG_FIELDS + i).read();
+            msg[i] = self.storage.post_data.at(id).at(i).read();
         }
         msg
     }
 
     #[external("public")]
     #[view]
-    fn get_post_time(id: u32) -> pub u64 {
+    fn get_post_time(id: Field) -> pub u64 {
+        assert(self.storage.post_exists.at(id).read(), "Invalid post id");
         self.storage.post_time.at(id).read()
     }
 
     #[external("public")]
     #[view]
-    fn is_post_flagged(id: u32) -> pub bool {
+    fn is_post_flagged(id: Field) -> pub bool {
+        assert(self.storage.post_exists.at(id).read(), "Invalid post id");
         self.storage.post_flagged.at(id).read()
     }
 
     #[external("public")]
     #[view]
-    fn get_post_flagged_by(id: u32) -> pub AztecAddress {
+    fn get_post_flagged_by(id: Field) -> pub AztecAddress {
+        assert(self.storage.post_exists.at(id).read(), "Invalid post id");
         self.storage.post_flagged_by.at(id).read()
     }
 
     #[external("public")]
     #[view]
-    fn get_censor_response(id: u32) -> pub [Field; MSG_FIELDS] {
+    fn get_censor_response(id: Field) -> pub [Field; MSG_FIELDS] {
+        assert(self.storage.post_exists.at(id).read(), "Invalid post id");
         let mut msg: [Field; MSG_FIELDS] = [0; MSG_FIELDS];
         for i in 0..MSG_FIELDS {
-            msg[i] = self.storage.censor_response.at(id * MSG_FIELDS + i).read();
+            msg[i] = self.storage.censor_response.at(id).at(i).read();
         }
         msg
     }

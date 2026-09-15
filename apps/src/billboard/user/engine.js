@@ -358,28 +358,8 @@
         const txHash = tx.getTxHash();
         log('  Proving complete. Submitting to node...', 'success');
 
-        const ALREADY_EXISTS_RE = /existing nullifier|already exists|duplicate.*tx|tx.*duplicate/i;
-        let submitted = false;
-        const submitRetry = async (fn, maxRetries = 20) => {
-          for (let i = 1; i <= maxRetries; i++) {
-            try { await fn(); submitted = true; return; }
-            catch (err) {
-              const msg = err.message || '';
-              if (ALREADY_EXISTS_RE.test(msg)) {
-                log('  Tx may have already been submitted (got: ' + msg + '). Checking receipt...', 'warn');
-                return;
-              }
-              const isTransient = TRANSIENT_RE.test(msg);
-              if (!isTransient || i === maxRetries) throw err;
-              const delay = Math.min(5000 * i, 30000);
-              log('  Node busy (attempt ' + i + '/' + maxRetries + '), retrying in ' + (delay/1000) + 's...', 'warn');
-              await sleep(delay);
-            }
-          }
-        };
-
-        await submitRetry(() => rawNode.sendTx(tx));
-        if (submitted) log('  Tx submitted! Hash: ' + txHash.toString(), 'success');
+        await submitOnceWithReconciliation(rawNode, tx);
+        log('  Submission checked. Hash: ' + txHash.toString(), 'info');
 
         const waitOpts = typeof opts.wait === 'object' ? opts.wait : undefined;
         const timeout = waitOpts?.timeout ?? 600;
@@ -389,8 +369,9 @@
         let pollCount = 0;
         while (Date.now() < deadline) {
           try {
-            const r = await rawNode.getTxReceipt(txHash);
-            if (r && !r.isPending()) { receipt = r; break; }
+            let r = await rawNode.getTxReceipt(txHash);
+            if (r?.status === 'dropped') r = await classifyDroppedTransaction(rawNode, tx, r);
+            if (r && ['checkpointed', 'proven', 'finalized'].includes(r.status)) { receipt = r; break; }
           } catch (err) {
             if (!TRANSIENT_RE.test(err.message || '')) throw err;
           }
@@ -401,7 +382,8 @@
           }
           await sleep(interval * 1000);
         }
-        if (!receipt) throw new Error('Tx ' + txHash.toString() + ' not confirmed within ' + timeout + 's');
+        if (!receipt) throw taggedSubmissionError('Tx ' + txHash.toString() + ' not confirmed within ' + timeout + 's; reconcile before retrying.', 'BB_SUBMISSION_UNKNOWN');
+        requireSuccessfulReceipt(receipt, txHash);
         log('  Tx confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
         return { receipt };
       }
@@ -426,6 +408,150 @@
     if (val && val.toString) val = val.toString();
     return Number(BigInt(val));
   }
+
+  function unwrapPostValue(value) {
+    if (value && value.result !== undefined) value = value.result;
+    if (value && value.value !== undefined) value = value.value;
+    return value;
+  }
+
+  // The current UI/list loop uses Numbers. Reject unsafe orders before conversion;
+  // stable identities always remain canonical Fields, never numeric display indexes.
+  function safePostOrder(value) {
+    value = unwrapPostValue(value);
+    if (typeof value === 'number' && !Number.isSafeInteger(value)) throw new Error('Unsafe post order');
+    if (!['number', 'bigint', 'string'].includes(typeof value)) throw new Error('Invalid post order');
+    const text = String(value);
+    if (!/^(0|[1-9][0-9]*)$/.test(text)) throw new Error('Invalid post order');
+    const order = BigInt(text);
+    if (order > BigInt(Number.MAX_SAFE_INTEGER) || order >= (1n << 64n)) throw new Error('Unsafe post order');
+    return Number(order);
+  }
+
+  function canonicalPostId(a, value, fromConfig = false) {
+    value = unwrapPostValue(value);
+    if (fromConfig && (typeof value !== 'string' || !/^0x[0-9a-f]{64}$/.test(value))) {
+      throw new Error('Post ID must be a canonical lowercase Field');
+    }
+    if (typeof value === 'number' || value === null || value === undefined || typeof value === 'boolean') {
+      throw new Error('Invalid post ID');
+    }
+    const number = BigInt(value.toString());
+    const id = new a.Fr(number);
+    if (number <= 0n || id.toBigInt() !== number) throw new Error('Invalid post ID');
+    const text = id.toString();
+    if (!/^0x[0-9a-f]{64}$/.test(text)) throw new Error('Invalid post ID encoding');
+    return text;
+  }
+
+  async function resolvePostId(a, contract, address, target) {
+    let id;
+    if (target.postId !== undefined && target.postId !== null) {
+      id = canonicalPostId(a, target.postId, true);
+    } else {
+      if (target.postIndex === undefined || target.postIndex === null) throw new Error('Post ID or order required');
+      const order = safePostOrder(target.postIndex);
+      id = canonicalPostId(a, await contract.methods.get_post_id(BigInt(order)).simulate({ from: address }));
+    }
+    const exists = unwrapPostValue(await contract.methods.get_post_exists(new a.Fr(BigInt(id))).simulate({ from: address }));
+    if (exists !== true) throw new Error('Unknown post ID');
+    return id;
+  }
+
+  function packPostMessage(text) {
+    if (typeof text !== 'string' || !text || text.includes('\0')) throw new Error('Invalid message text');
+    const bytes = new TextEncoder().encode(text);
+    if (new TextDecoder('utf-8', { fatal: true }).decode(bytes) !== text) throw new Error('Invalid message UTF-8');
+    if (bytes.length > MSG_BYTES) throw new Error('Message too long (max ' + MSG_BYTES + ' bytes).');
+    const padded = new Uint8Array(MSG_BYTES); padded.set(bytes);
+    const fields = [];
+    for (let i = 0; i < MSG_FIELDS; i++) {
+      let value = 0n;
+      for (let j = 0; j < 31; j++) value = (value << 8n) | BigInt(padded[i * 31 + j]);
+      fields.push(value);
+    }
+    return { fields, byteLength: bytes.length };
+  }
+
+  function decodePostMessage(fields, length) {
+    length = safePostOrder(length);
+    if (length < 1 || length > MSG_BYTES || fields.length !== MSG_FIELDS) throw new Error('Invalid message length');
+    const bytes = new Uint8Array(MSG_BYTES);
+    fields.forEach((field, i) => {
+      let value = BigInt(field.toString());
+      if (value < 0n || value >= (1n << 248n)) throw new Error('Invalid message Field');
+      for (let j = 30; j >= 0; j--) { bytes[i * 31 + j] = Number(value & 255n); value >>= 8n; }
+    });
+    if (bytes.slice(0, length).includes(0) || bytes.slice(length).some(byte => byte !== 0)) throw new Error('Invalid message padding');
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes.slice(0, length));
+  }
+
+  function taggedSubmissionError(message, code) { return Object.assign(new Error(message), { code }); }
+  async function submitOnceWithReconciliation(node, tx) {
+    try { await node.sendTx(tx); return; }
+    catch (error) {
+      let receipt;
+      try { receipt = await node.getTxReceipt(tx.getTxHash()); }
+      catch { throw taggedSubmissionError('Submission status is unknown; reconcile this transaction before retrying.', 'BB_SUBMISSION_UNKNOWN'); }
+      const exact = receipt?.txHash?.toString() === tx.getTxHash().toString();
+      if (exact && ['pending', 'proposed', 'checkpointed', 'proven', 'finalized'].includes(receipt.status)) return;
+      if (exact && receipt.status === 'dropped') { await classifyDroppedTransaction(node, tx, receipt); return; }
+      throw taggedSubmissionError('Submission was not confirmed; reconcile this transaction before retrying.', 'BB_SUBMISSION_UNKNOWN');
+    }
+  }
+  async function classifyDroppedTransaction(node, tx, receipt) {
+    if (receipt?.status !== 'dropped' || receipt.txHash?.toString() !== tx.getTxHash().toString()) {
+      throw taggedSubmissionError('Transaction status could not be reconciled.', 'BB_SUBMISSION_UNKNOWN');
+    }
+    let validation;
+    try { validation = await node.isValidTx(tx); }
+    catch { throw taggedSubmissionError('Dropped transaction could not be revalidated.', 'BB_SUBMISSION_UNKNOWN'); }
+    let refreshed;
+    try { refreshed = await node.getTxReceipt(tx.getTxHash()); }
+    catch { throw taggedSubmissionError('Receipt reconciliation is unavailable.', 'BB_SUBMISSION_UNKNOWN'); }
+    if (refreshed?.txHash?.toString() !== tx.getTxHash().toString()) throw taggedSubmissionError('Receipt identity changed.', 'BB_SUBMISSION_UNKNOWN');
+    if (['pending','proposed','checkpointed','proven','finalized'].includes(refreshed.status)) return refreshed;
+    if (refreshed.status !== 'dropped') throw taggedSubmissionError('Receipt status is unknown.', 'BB_SUBMISSION_UNKNOWN');
+    // Pinned SDK structured validation reasons; a generic dropped receipt does not establish a conflict.
+    const stateReasons = ['Existing nullifier', 'Block header not found'];
+    if (validation?.result === 'invalid' && Array.isArray(validation.reason) && validation.reason.length > 0
+        && validation.reason.every(reason => stateReasons.includes(reason))) {
+      const conflict = taggedSubmissionError('Transaction state changed; refresh and create a new proof.', 'BB_STATE_CONFLICT');
+      conflict.stateReasons = [...validation.reason];
+      throw conflict;
+    }
+    throw taggedSubmissionError('Transaction dropped for an unconfirmed reason; reconcile before retrying.', 'BB_SUBMISSION_UNKNOWN');
+  }
+  function requireSuccessfulReceipt(receipt, txHash) {
+    if (receipt?.txHash?.toString() !== txHash.toString() || !['checkpointed', 'proven', 'finalized'].includes(receipt.status)
+        || receipt.executionResult !== 'success' || receipt.blockNumber == null || receipt.blockHash == null) {
+      throw taggedSubmissionError('Transaction did not complete successfully.', 'BB_TRANSACTION_FAILED');
+    }
+    return receipt;
+  }
+  async function withFreshPostState(attempt, refresh, maximum = 2, retryAllowed = () => true) {
+    for (let i = 0; ; i++) {
+      try { return await attempt(); }
+      catch (error) {
+        if (error?.code !== 'BB_STATE_CONFLICT' || i >= maximum || !retryAllowed(error)) throw error;
+        await refresh();
+      }
+    }
+  }
+
+  // Dummy attempts own their bounded retry controller; the outer dispatcher never retries them.
+  function postStateCanRetry(isDummy, _error) { return !isDummy; }
+
+  function screeningFailureCanWait(error) {
+    // Tagged transaction/custody outcomes must reach the caller, never an outer wait/retry loop.
+    return !(typeof error?.code === 'string' && error.code.startsWith('BB_'));
+  }
+
+  function dummyStateCanRetry(error) {
+    return Array.isArray(error?.stateReasons) && error.stateReasons.length > 0 && error.stateReasons.every(reason => reason === 'Block header not found');
+  }
+
+  g.BillboardPostCodec = Object.freeze({ safePostOrder, canonicalPostId, resolvePostId, packPostMessage, decodePostMessage, submitOnceWithReconciliation, requireSuccessfulReceipt, withFreshPostState, classifyDroppedTransaction, dummyStateCanRetry, postStateCanRetry, screeningFailureCanWait });
 
   function extractFieldArray(simResult) {
     let val = simResult;
@@ -1067,7 +1193,11 @@
     // ============================================================
     // POST action
     // ============================================================
-    async function doPost() {
+    async function doPost() { const logicalNonce = generateSecret(a); return withFreshPostState(()=>doPostAttempt(logicalNonce), async()=>{
+      log('  State changed; refreshing rights and preparing a new proof.', 'warn');
+      await wallet.pxe.sync();
+    }, 2, error => postStateCanRetry(!!config.isDummy, error)); }
+    async function doPostAttempt(postNonce) {
       if (!contract) throw new Error('PXE setup required for post.');
 
       const isDummy = !!config.isDummy;
@@ -1100,20 +1230,11 @@
         return;
       }
 
-      const encoder = new TextEncoder();
-      const bytes = encoder.encode(msgText);
-      if (bytes.length > MSG_BYTES - 1) throw new Error('Message too long (max ' + (MSG_BYTES - 1) + ' bytes, got ' + bytes.length + ').');
-
-      const padded = new Uint8Array(MSG_FIELDS * 31);
-      padded.set(bytes);
-      const fields = [];
-      for (let i = 0; i < MSG_FIELDS; i++) {
-        let val = 0n;
-        for (let j = 0; j < 31; j++) val = (val << 8n) | BigInt(padded[i * 31 + j]);
-        fields.push(val);
-      }
-
-      log('Posting message (' + bytes.length + ' bytes)...', 'info');
+      const { fields, byteLength } = packPostMessage(msgText);
+      // One nonce per logical attempt; wallet approval/transport retries retain it.
+      // Confirmed collision/state-conflict reconciliation is the next C03 increment.
+      // The logical nonce is retained across state refreshes; publication rejects duplicate IDs.
+      log('Posting message (' + byteLength + ' bytes)...', 'info');
 
       // Pre-flight: check note exists + time lock expired
       let infoResult = null;
@@ -1168,7 +1289,9 @@
 
       const result = await withUserRetry(() => contract.methods.post(
         requireDepositChain(),
+        postNonce,
         fields.map(f => new a.Fr(f)),
+        byteLength,
         false, // is_dummy
         childHint,
         grandchildHint
@@ -1184,7 +1307,11 @@
     // ============================================================
     // DUMMY POST (internal helper — advances screening without storing content)
     // ============================================================
-    async function doDummyPost() {
+    async function doDummyPost() { return withFreshPostState(doDummyPostAttempt, async()=>{
+      log('  State changed; refreshing screening hints and preparing a new proof.', 'warn');
+      await wallet.pxe.sync();
+    }, 2, dummyStateCanRetry); }
+    async function doDummyPostAttempt() {
       if (!contract) throw new Error('PXE setup required for dummy post.');
       if ((await readDepositInfo()).amount === 0n) throw new Error('No live deposit for dummy post.');
 
@@ -1206,7 +1333,9 @@
       const dummyFields = new Array(32).fill(0).map(() => new a.Fr(0));
       const result = await withUserRetry(() => contract.methods.post(
         requireDepositChain(),
+        new a.Fr(0),
         dummyFields,
+        0,
         true, // is_dummy = true
         childHint,
         grandchildHint
@@ -1228,7 +1357,7 @@
 
       if (!jsonOutput) log('Loading posts...', 'info');
       const countResult = await contract.methods.get_post_count().simulate({ from: address });
-      const count = extractInt(countResult);
+      const count = safePostOrder(countResult);
       if (!jsonOutput) log('  Post count: ' + count, 'info');
 
       // Check censor config
@@ -1289,29 +1418,19 @@
       const _jsonPosts = [];
 
       for (let i = 0; i < count; i++) {
+        let postId = null;
         try {
-          const postResult = await contract.methods.get_post(BigInt(i)).simulate({ from: address });
+          postId = await resolvePostId(a, contract, address, { postIndex: i });
+          const idField = new a.Fr(BigInt(postId));
+          const postResult = await contract.methods.get_post(idField).simulate({ from: address });
           const vals = extractFieldArray(postResult);
-          let bytes = [];
-          for (let f = 0; f < MSG_FIELDS; f++) {
-            let val = vals[f];
-            let fieldBytes = [];
-            for (let b = 0; b < 31; b++) {
-              fieldBytes.unshift(Number(val & 0xffn));
-              val >>= 8n;
-            }
-            bytes = bytes.concat(fieldBytes);
-          }
-          let len = bytes.length;
-          for (let b = 0; b < bytes.length; b++) {
-            if (bytes[b] === 0) { len = b; break; }
-          }
-          const msg = new TextDecoder().decode(new Uint8Array(bytes.slice(0, len)));
+          const length = await contract.methods.get_post_length(idField).simulate({ from: address });
+          const msg = decodePostMessage(vals, length);
 
           // Check if flagged
           let flagged = false;
           try {
-            const flagResult = await contract.methods.is_post_flagged(BigInt(i)).simulate({ from: address });
+            const flagResult = await contract.methods.is_post_flagged(idField).simulate({ from: address });
             let fv = flagResult;
             if (fv && fv.result !== undefined) fv = fv.result;
             if (fv && fv.value !== undefined) fv = fv.value;
@@ -1322,7 +1441,7 @@
           let censorResponse = null, flaggedBy = null;
           if (flagged) {
             try {
-              const respResult = await contract.methods.get_censor_response(BigInt(i)).simulate({ from: address });
+              const respResult = await contract.methods.get_censor_response(idField).simulate({ from: address });
               const respVals = extractFieldArray(respResult);
               let rBytes = [];
               for (let f = 0; f < MSG_FIELDS; f++) {
@@ -1341,7 +1460,7 @@
               censorResponse = new TextDecoder().decode(new Uint8Array(rBytes.slice(0, rLen)));
             } catch (e) {}
             try {
-              const fbResult = await contract.methods.get_post_flagged_by(BigInt(i)).simulate({ from: address });
+              const fbResult = await contract.methods.get_post_flagged_by(idField).simulate({ from: address });
               let fbv = fbResult;
               if (fbv && fbv.result !== undefined) fbv = fbv.result;
               if (fbv && fbv.value !== undefined) fbv = fbv.value;
@@ -1352,22 +1471,22 @@
           // Read post timestamp (for censor window calculations)
           let timestamp = 0;
           try {
-            const timeResult = await contract.methods.get_post_time(BigInt(i)).simulate({ from: address });
+            const timeResult = await contract.methods.get_post_time(idField).simulate({ from: address });
             timestamp = Number(extractInt(timeResult));
           } catch (e) {}
 
           if (jsonOutput) {
-            _jsonPosts.push({ index: i, text: msg || '', flagged, censorResponse, flaggedBy, timestamp });
+            _jsonPosts.push({ index: i, orderIndex: String(i), postId, text: msg || '', flagged, censorResponse, flaggedBy, timestamp });
           } else if (flagged) {
-            log('  [' + i + '] [FLAGGED] ' + (msg || '(binary data)'), 'warn');
+            log('  [' + i + '] ' + postId + ' [FLAGGED] ' + (msg || '(binary data)'), 'warn');
             if (censorResponse) log('         ↳ Censor: ' + censorResponse, 'warn');
             if (flaggedBy) log('         ↳ Flagged by: ' + flaggedBy, 'warn');
           } else {
-            log('  [' + i + '] ' + (msg || '(binary data)'), 'info');
+            log('  [' + i + '] ' + postId + ' ' + (msg || '(binary data)'), 'info');
           }
         } catch (err) {
           if (jsonOutput) {
-            _jsonPosts.push({ index: i, text: '', flagged: false, error: extractErrorMessage(err) });
+            _jsonPosts.push({ index: i, orderIndex: String(i), postId, text: '', flagged: false, error: extractErrorMessage(err) });
           } else {
             log('  [' + i + '] Error: ' + extractErrorMessage(err), 'error');
           }
@@ -1479,7 +1598,7 @@
               log('  Making dummy post #' + (attempt + 1) + ' to advance screening...', 'info');
               try {
                 await doDummyPost();
-              } catch (e) { if (e?.code === 'BB_DEPOSIT_READ') throw e;
+              } catch (e) { if (!screeningFailureCanWait(e)) throw e;
                 log('  Dummy post failed: ' + extractErrorMessage(e).substring(0, 100), 'warn');
                 // If it's a timing issue, wait and retry
                 await sleep(30000);
@@ -1793,8 +1912,10 @@
     async function doDeclareImmoral() {
       if (!contract) throw new Error('PXE setup required for declare-immoral.');
 
-      const postIndex = config.postIndex;
-      if (postIndex === undefined || postIndex === null) throw new Error('Post index required (use --post-index <num>).');
+      // Resolve display order once before signing. Stable ID stays fixed through
+      // wallet retries even if more posts are published in the meantime.
+      const postId = await resolvePostId(a, contract, address, config);
+      const postIdField = new a.Fr(BigInt(postId));
       const responseText = config.censorResponse || '';
 
       // Load censor wallet — accept JSON object (browser) or file path (CLI)
@@ -1873,11 +1994,11 @@
         fields.push(val);
       }
 
-      log('Declaring post ' + postIndex + ' as immoral...', 'info');
+      log('Declaring post ' + postId + ' as immoral...', 'info');
       if (responseText) log('  Response: "' + responseText.substring(0, 60) + '"', 'info');
 
       const result = await withUserRetry(() => censorContract.methods.declare_immoral(
-        BigInt(postIndex),
+        postIdField,
         fields.map(f => new a.Fr(f))
       ).send({ from: censorAddress }), 'Declare immoral tx');
       const receipt = result.receipt;
@@ -1885,11 +2006,11 @@
       if (receipt.transactionFee !== undefined) {
         log('  Fee paid: ' + toAztec(BigInt(receipt.transactionFee), 6) + ' AZTEC', 'info');
       }
-      log('  Post ' + postIndex + ' flagged as immoral.', 'success');
+      log('  Post ' + postId + ' flagged as immoral.', 'success');
 
       // Verify: read back the flagged_by record
       try {
-        const flaggedByResult = await contract.methods.get_post_flagged_by(BigInt(postIndex)).simulate({ from: address });
+        const flaggedByResult = await contract.methods.get_post_flagged_by(postIdField).simulate({ from: address });
         let fbv = flaggedByResult;
         if (fbv && fbv.result !== undefined) fbv = fbv.result;
         if (fbv && fbv.value !== undefined) fbv = fbv.value;

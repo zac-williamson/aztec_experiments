@@ -39,6 +39,11 @@ pub fn deposit_chain_id(board: AztecAddress, owner: AztecAddress, content: Field
     poseidon2_hash_with_separator([1, board.to_field(), owner.to_field(), content, secret], 0x42420101)
 }
 
+/// Independent public identity; the wallet keeps the fresh nonce private.
+pub fn post_id(board: AztecAddress, nonce: Field) -> Field {
+    poseidon2_hash_with_separator([1, board.to_field(), nonce], 0x42420102)
+}
+
 pub fn post_link(board: AztecAddress, owner: AztecAddress, chain: Field, sequence: u64, inner_hash: Field, secret: Field) -> Field {
     poseidon2_hash_with_separator([1, board.to_field(), owner.to_field(), chain, sequence as Field, inner_hash, secret], 0x42420103)
 }
@@ -60,27 +65,42 @@ pub fn checked_time_add(time: u64, interval: u64) -> u64 {
     time + interval
 }
 
-/// Canonical 31-byte big-endian fields, nonempty UTF-8, no NUL or hidden padding.
+/// Canonical 31-byte fields, nonempty UTF-8, no NUL or hidden padding.
+/// Keep policy error strings stable while sharing the actual decoding rules.
 pub fn validate_policy(policy: [Field; 48], length: u32) {
     assert(length > 0, "Policy must not be empty");
     assert(length <= 1488, "Policy too long");
+    validate_text(policy, length, true);
+}
+
+pub fn validate_message(message: [Field; 32], length: u16) {
+    assert(length > 0, "Message must not be empty");
+    assert(length <= 992, "Message too long");
+    validate_text(message, length as u32, false);
+}
+
+fn validate_text<let N: u32>(fields: [Field; N], length: u32, is_policy: bool) {
     let mut remaining: u8 = 0;
     let mut lower: u8 = 0x80;
     let mut upper: u8 = 0xbf;
-    for i in 0..48 {
-        let bytes: [u8; 32] = policy[i].to_be_bytes();
-        assert(bytes[0] == 0, "Policy field exceeds 31 bytes");
+    for i in 0..N {
+        let bytes: [u8; 32] = fields[i].to_be_bytes();
+        if is_policy { assert(bytes[0] == 0, "Policy field exceeds 31 bytes"); }
+        else { assert(bytes[0] == 0, "Message field exceeds 31 bytes"); }
         for j in 0..31 {
             let byte = bytes[j + 1];
             if i * 31 + j >= length {
-                assert(byte == 0, "Nonzero policy padding");
+                if is_policy { assert(byte == 0, "Nonzero policy padding"); }
+                else { assert(byte == 0, "Nonzero message padding"); }
             } else if remaining > 0 {
-                assert((byte >= lower) & (byte <= upper), "Invalid policy UTF-8 continuation");
+                if is_policy { assert((byte >= lower) & (byte <= upper), "Invalid policy UTF-8 continuation"); }
+                else { assert((byte >= lower) & (byte <= upper), "Invalid message UTF-8 continuation"); }
                 remaining -= 1;
                 lower = 0x80;
                 upper = 0xbf;
             } else {
-                assert(byte > 0, "Policy contains NUL");
+                if is_policy { assert(byte > 0, "Policy contains NUL"); }
+                else { assert(byte > 0, "Message contains NUL"); }
                 if byte < 0x80 {
                 } else if (byte >= 0xc2) & (byte <= 0xdf) {
                     remaining = 1;
@@ -89,7 +109,8 @@ pub fn validate_policy(policy: [Field; 48], length: u32) {
                     lower = if byte == 0xe0 { 0xa0 } else { 0x80 };
                     upper = if byte == 0xed { 0x9f } else { 0xbf };
                 } else {
-                    assert((byte >= 0xf0) & (byte <= 0xf4), "Invalid policy UTF-8 lead");
+                    if is_policy { assert((byte >= 0xf0) & (byte <= 0xf4), "Invalid policy UTF-8 lead"); }
+                    else { assert((byte >= 0xf0) & (byte <= 0xf4), "Invalid message UTF-8 lead"); }
                     remaining = 3;
                     lower = if byte == 0xf0 { 0x90 } else { 0x80 };
                     upper = if byte == 0xf4 { 0x8f } else { 0xbf };
@@ -97,7 +118,8 @@ pub fn validate_policy(policy: [Field; 48], length: u32) {
             }
         }
     }
-    assert(remaining == 0, "Truncated policy UTF-8");
+    if is_policy { assert(remaining == 0, "Truncated policy UTF-8"); }
+    else { assert(remaining == 0, "Truncated message UTF-8"); }
 }
 
 use aztec::protocol::traits::{Deserialize, Packable, Serialize};

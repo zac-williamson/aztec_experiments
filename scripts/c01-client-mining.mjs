@@ -4,6 +4,15 @@ import {createPublicClient,http} from 'viem';
 import {foundry} from 'viem/chains';
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
+// This disposable chain advances by mined timestamps after test warps. Real wall
+// time can run faster than its mining loop; reset in both directions each tick.
+export function synchronizeC01MinedClock(dateProvider,timestamp){
+  assert(Number.isSafeInteger(timestamp)&&timestamp>0);
+  const lead=dateProvider.nowInSeconds()-timestamp;
+  dateProvider.setTime(timestamp*1000);
+  return lead;
+}
+
 export async function withC01ClientMining({rpcUrl,dateProvider,observation},work){
   const url=new URL(rpcUrl);assert.equal(url.protocol,'http:');assert.equal(url.hostname,'127.0.0.1');
   assert(!url.username&&!url.password);
@@ -18,8 +27,8 @@ export async function withC01ClientMining({rpcUrl,dateProvider,observation},work
         await client.request({method:'evm_mine',params:[]});
         const block=await client.getBlock({blockTag:'latest'});
         const timestamp=Number(block.timestamp);assert(Number.isSafeInteger(timestamp));
-        state.maxObservedClockLeadSeconds=Math.max(state.maxObservedClockLeadSeconds,dateProvider.nowInSeconds()-timestamp);
-        if(timestamp>dateProvider.nowInSeconds())dateProvider.setTime(timestamp*1000);
+        state.maxObservedClockLeadSeconds=Math.max(state.maxObservedClockLeadSeconds,synchronizeC01MinedClock(dateProvider,timestamp));
+        state.clockSynchronization="every mined block, including correction of wall-clock lead";
         state.ordinaryBlocksMined++;state.lastBlock=String(block.number);state.lastTimestamp=String(block.timestamp);
         if(active)await new Promise(resolve=>{const timer=setTimeout(resolve,1000);wake=()=>{clearTimeout(timer);resolve();};});
       }

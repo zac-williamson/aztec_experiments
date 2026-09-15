@@ -37,6 +37,7 @@
 //   --reuse                  Reuse an existing deposit instead of making a new one
 //   --reuse-tx <hash>        Reuse a specific deposit by L1 tx hash
 //   --withdraw-tx <hash>     L2 withdrawal tx hash (for claim-l1, skip scan)
+//   --post-id <field>        Stable post identity to flag
 //   --post-index <num>       Post index to flag (for declare-immoral)
 //   --censor-response <text> Censor's response message (for declare-immoral)
 //   --moderation-policy <text>  Moderation policy text (for set-moderation-policy, or deploy default)
@@ -363,8 +364,8 @@ async function main() {
     log('ERROR: --msg <text> required for post (or use --dummy for a dummy post)', 'error');
     __realProcess.exit(1);
   }
-  if (ACTION === 'declare-immoral' && args['post-index'] === undefined) {
-    log('ERROR: --post-index <num> required for declare-immoral', 'error');
+  if (ACTION === 'declare-immoral' && args['post-index'] === undefined && args['post-id'] === undefined) {
+    log('ERROR: --post-id <field> or --post-index <order> required for declare-immoral', 'error');
     __realProcess.exit(1);
   }
   if (ACTION === 'transfer-censor' && !args['new-censor']) {
@@ -421,7 +422,8 @@ async function main() {
     reuse: args['reuse'],
     reuseTxHash: args['reuse-tx'],
     withdrawTxHash: args['withdraw-tx'],
-    postIndex: args['post-index'] !== undefined ? parseInt(args['post-index']) : undefined,
+    postId: args['post-id'],
+    postIndex: args['post-index'],
     censorResponse: args['censor-response'],
     moderationPolicy: args['moderation-policy'] || undefined,
     censorWalletPath: CENSOR_WALLET_PATH,

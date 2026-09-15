@@ -6,6 +6,7 @@ import {createHash} from 'node:crypto';
 import {Contract} from '@aztec/aztec.js/contracts';
 import {Barretenberg,BackendType} from '@aztec/bb.js';
 import {Fr} from '@aztec/foundation/curves/bn254';
+import {poseidon2HashWithSeparator} from '@aztec/foundation/crypto/poseidon';
 import {loadContractArtifact} from '@aztec/stdlib/abi';
 import {NoteStatus} from '@aztec/stdlib/note';
 import {TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
@@ -103,14 +104,21 @@ export async function proveAndIncludeC02Screening({node,preparation,instance,cla
     const options=()=>({scopes:wallet.scopesFrom(account.address,[],undefined),senderForTags:wallet.senderForTagsFrom(account.address,undefined)});
     const message=text=>{const bytes=Buffer.alloc(31);Buffer.from(text).copy(bytes);
       return [new Fr(BigInt('0x'+bytes.toString('hex'))),...Array.from({length:31},()=>Fr.ZERO)];};
-    async function requestPost(msg,child,grandchild){
-      const payload=await board.methods.post(claim.depositChainId,msg,false,child,grandchild).request();
+    const messageLength=msg=>{
+      const bytes=Buffer.concat(msg.map(field=>field.toBuffer().subarray(1)));
+      let length=bytes.length;while(length&&bytes[length-1]===0)length--;return length;
+    };
+    async function requestPost(msg,child,grandchild,nonce=Fr.random()){
+      const payload=await board.methods.post(claim.depositChainId,nonce,msg,messageLength(msg),false,child,grandchild).request();
       const fee=await wallet.completeFeeOptions({from:account.address,feePayer:payload.feePayer});
       return wallet.createTxExecutionRequestFromPayloadAndFee(payload,account.address,fee);
     }
     async function post(msg,child,grandchild,anchor,oldFields,screenedSequence,screenedLink){
       const count=integer(await query('get_post_count'));const oldNote=currentNote;
-      mark('prove-post');const proven=await wallet.pxe.proveTx(await requestPost(msg,child,grandchild),options());
+      const nonce=Fr.random();assert(!nonce.isZero());
+      const postId=await poseidon2HashWithSeparator([Fr.ONE,instance.address.toField(),nonce],0x42420102);
+      assert(!postId.isZero());
+      mark('prove-post');const proven=await wallet.pxe.proveTx(await requestPost(msg,child,grandchild,nonce),options());
       assert(!proven.chonkProof.isEmpty());const tx=await proven.toTx();
       assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer());
       assert.equal((await node.isValidTx(tx)).result,'valid');mark('include-post');await node.sendTx(tx);
@@ -134,13 +142,16 @@ export async function proveAndIncludeC02Screening({node,preparation,instance,cla
       assert(!currentNote.siloedNullifier.equals(oldNote.siloedNullifier));
       const posts=(await wallet.pxe.debug.getNotes(filter)).filter(n=>n.txHash.equals(tx.getTxHash())&&n.note.items.length===7);
       assert.equal(posts.length,1);const note=posts[0];
-      assert.deepEqual(note.note.items.map(integer),[1n,claim.depositChainId.toBigInt(),fields[6],count,now,oldFields[5],0n]);
+      assert.deepEqual(note.note.items.map(integer),[1n,claim.depositChainId.toBigInt(),fields[6],postId.toBigInt(),now,oldFields[5],0n]);
       assert.equal(integer(await query('get_post_count')),count+1n);
-      assert.deepEqual((await query('get_post',count)).map(integer),msg.map(integer));
-      assert.equal(await query('is_post_flagged',count),false);
+      assert.equal(integer(await query('get_post_id',count)),postId.toBigInt());
+      assert.deepEqual((await query('get_post',postId)).map(integer),msg.map(integer));
+      assert.equal(integer(await query('get_post_length',postId)),BigInt(messageLength(msg)));
+      assert(integer(await query('get_post_time',postId))>=now);
+      assert.equal(await query('is_post_flagged',postId),false);
       observation.posts.push({txHash:tx.getTxHash().toString(),blockNumber:String(receipt.blockNumber),
         status:receipt.status,executionResult:receipt.executionResult,proofSha256:sha(proven.chonkProof.toBuffer()),
-        nodeValidation:'valid',exactDepositNullifier:true,exactReplacementNote:true,exactPostNote:true,
+        nodeValidation:'valid',postId:postId.toString(),orderIndex:String(count),exactDepositNullifier:true,exactReplacementNote:true,exactPostNote:true,
         sequence:String(fields[6]),screenedSequence:String(fields[8]),publicMessageChecked:true});
       return {fields,note,tx};
     }

@@ -46,12 +46,14 @@ async function nativeClientOptions(bbBinaryPath) {
 /** All account material stays in memory. Serialize only artifactHashes/funding addresses if needed.
  * Call before genesis construction. Parent owns the global native singleton and its final teardown.
  */
-export async function prepareC01BoardFlow({ bbBinaryPath } = {}) {
+export async function prepareC01BoardFlow({ bbBinaryPath, authorCount = 1 } = {}) {
   assertNodeVersion(); assertAztecPackages();
   await nativeClientOptions(bbBinaryPath);
   const prepared = await boardArtifact();
-  const [account] = await generateSchnorrAccounts(1, 'schnorr_initializerless');
-  return { ...prepared, account, salt: Fr.random(), fundingAddresses: [account.address] };
+  assert([1,10].includes(authorCount));
+  const authorAccounts = await generateSchnorrAccounts(authorCount, 'schnorr_initializerless');
+  const account = authorAccounts[0];
+  return { ...prepared, account, authorAccounts, salt: Fr.random(), fundingAddresses: authorAccounts.map(a=>a.address) };
 }
 
 /** Owns/stops its ephemeral wallet. Returns tx/instance in memory for the parent's next step.

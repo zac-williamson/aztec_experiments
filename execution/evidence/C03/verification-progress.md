@@ -1,0 +1,17 @@
+# C03 verification progress — incomplete
+
+Production independent IDs/public order and coordinated client/signer ABI are implemented.137 Noir tests passed in412.27seconds, including22 migrated screening tests and8 new C03 controls. The ten-author TXE case is sequential and does not by itself establish same-anchor concurrency.174 integrated client/signer checks pass in client-final-tests-007.log after review found and fixed nested dummy retry propagation and uncertain poll-timeout handling.
+
+First genuine run application-800a4756-c1a3-49e0-8029-be8e907f4cdb.json hit540seconds after proving/submitting ten same-anchor posts. Peak1519200KiB; cleanup passed. Successful inclusion was not established. Retained as failed evidence. A premature second launch application-6db97929-30f5-4365-b4da-d7dbd74d8340.json was explicitly stopped during setup because a checkpoint-edit script failed before instrumentation was applied; it is not an application failure or qualification result.
+
+Instrumented rerun uses one native prover thread, normal transaction verification and official controlled Outbox settlement. No network prover;540second deadline unchanged. Parent preserves atomic sanitized contention progress even after timeout. The helper fails immediately for an included but failed execution. Source snapshot source-instrumented.json binds the current application. Completion awaits observed actual results and final review.
+
+
+Instrumented ten-author attempt application-5f2c706f-9204-437b-bd93-ed3f1a728c19.json finished502693ms; all ten post proofs validated and submitted, all receipts remained pending for120seconds. Cleanup passed; no C03-A01 acceptance. Gas review found no evidence of a declared-gas rejection. One-author diagnostic application-725e6a89-b5d4-4651-85ac-c6ade9999794.json passed: application verified202930ms, entire run including cleanup215638ms, peak1321920KiB. It is explicitly nonqualifying for ten-author concurrency.
+
+Current next experiment limits the disposable node to one transaction per block, retaining ordinary successful inclusion and the same ten-proof anchor requirement. This tests application independence across changing public order without claiming network batch throughput. It is an experimental test-profile change, not an established diagnosis. All proofs must finish before any post submission. No network prover or deadline extension. Source source-bounded-blocks.json.
+
+
+Bounded-block run application-6dbf4981-ddb6-4bbf-b043-4ac8e4c09187.json was stopped explicitly after durable diagnostics showed all10 pending/eligible and the local clock5seconds ahead of mined L1 time. Sequencer entered PROPOSER_CHECK around6.05seconds into its build frame, then initialized an empty checkpoint without CREATING_BLOCK. Effective subslot deadlines3/5/7seconds with1second minimum leave a6second final start cutoff. Thus reducing per-block count did not resolve this run.
+
+Source examination and deterministic SDK-clock regression identify forward-only synchronization as a cause of accumulated lead: each mining iteration waits1second plus RPC overhead, while the node's test clock continues tracking wall time. The actual loop now resets to each mined timestamp in both directions. test-c01-mining-clock.mjs reproduces7seconds accumulated lead under the old policy across300iterations with25ms overhead; corrected samples stay aligned and a forward test warp still works. Recorded1pass, reviewed independently by build_review. Whole-run monotonic deadline/proof checks unchanged. Current rerun source-clock-fixed.json.

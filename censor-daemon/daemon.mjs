@@ -122,7 +122,7 @@ export async function runDaemon(argv = process.argv.slice(2), { startRuntime = s
       if (config.dryRun) { log('[DRY RUN] Would flag post #' + idx, 'warn'); return; }
       log('Flagging post #' + idx + ' via restricted signer.');
       // The index comes from validated fetched data, never from model output.
-      signer.flag({ postIndex: idx, reason: verdict.reason });
+      signer.flag({ postId: post.postId, reason: verdict.reason });
       log('Post #' + idx + ' flagged.');
     }
     async function pollAndProcess() {

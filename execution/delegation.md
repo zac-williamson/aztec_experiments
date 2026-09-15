@@ -363,3 +363,13 @@ Agent idle. Root continues sole C01 genuine run and will apply only after closur
 2026-09-15 C02: root owns contract/test patch integration and TXE checks; build_review
 owns scripts/c02-screening-flow.mjs and its notes only. Heavy checks remain bounded
 and serial. No network prover.
+
+C03: root owns all tests, clients, harness and integration; /root/build_review owns billboard/billboard_contract/src/main.nr and lib.nr only for independent post identity/public ordering. No concurrent heavy runs.
+
+C03 core delivered to root. /root/build_review now owns only user/engine.js and censor/engine.js for posting/list/moderation ABI migration. Root owns Noir compile fixes, tests, proof harness and remaining consumers.
+
+C03 current: root owns integration and batch-author claims/runtime; /root/build_review has delivered contention helper and reviewed batch claims, now read-only client retry review. No agent-heavy runs.
+
+C03 instrumented rerun: root supervises sole genuine ten-author run with unchanged540s deadline. build_review delivered receipt progress capture and repaired two dummy retry propagation seams;174 integrated client/signer checks pass. Timing diagnosis is read-only and explicitly inconclusive pending receipt observations. Source frozen for run.
+
+C03 closed: root verified genuine10-author run476849ms, integrated137Noir/174client/daemon/clock checks; build_review independently checked final runtime/source binding. All owned processes removed. Graph selected W01 fee integration next; C04 remains ready.

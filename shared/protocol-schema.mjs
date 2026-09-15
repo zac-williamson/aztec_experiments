@@ -29,6 +29,10 @@ function nonzeroField(value, label) {
   field(value, label);
   if (BigInt(value) === 0n) throw new Error(`Invalid ${label}`);
 }
+export function validatePostId(value) {
+  nonzeroField(value, 'post id');
+  return value;
+}
 function timestamp(value, label) {
   uint(value, 63, label);
 }

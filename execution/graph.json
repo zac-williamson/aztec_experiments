@@ -420,7 +420,7 @@
       "title": "Remove global-counter contention from posting",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "C02"
       ],
@@ -433,7 +433,13 @@
       "scope": [
         "billboard/billboard_contract/",
         "billboard/billboard_test/",
-        "apps/src/billboard/user/"
+        "apps/src/billboard/user/",
+        "apps/src/billboard/",
+        "shared/",
+        "censor-daemon/",
+        "scripts/",
+        "execution/",
+        "TESTING.md"
       ],
       "plan": "tasks/C03.md",
       "actions": [
@@ -462,7 +468,7 @@
       "evidence": "evidence/C03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "Verified ten genuine same-anchor posts in476849ms including cleanup;137Noir/174client/daemon/clock checks pass. Stable IDs, safe retries and clock repair source-bound; C04 history lookup is next.",
       "priority": 8
     },
     {

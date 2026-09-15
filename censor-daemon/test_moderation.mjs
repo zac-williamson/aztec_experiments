@@ -36,7 +36,7 @@ for (const verdict of [{ isViolation: true, reason }, { isViolation: false, reas
   test('strict JSON verdict ' + verdict.isViolation, () => assert.deepEqual(parseVerdict(JSON.stringify(verdict)), verdict));
 }
 test('JSON key order is irrelevant', () => assert.deepEqual(parseVerdict(JSON.stringify({ reason, isViolation: true })), { isViolation: true, reason }));
-for (const field of ['command', 'operation', 'wallet', 'destination', 'postIndex']) {
+for (const field of ['command', 'operation', 'wallet', 'destination', 'postIndex', 'postId']) {
   test('model cannot add ' + field + ' to verdict', () => fails(() => parseVerdict(JSON.stringify({ isViolation: true, reason, [field]: 'untrusted' })), 'INVALID_VERDICT'));
 }
 for (const text of ['{"isViolation":true,"reason":', '[]', 'null', '{"isViolation":"true","reason":"spam"}', '{"isViolation":true,"reason":null}', '{"isViolation":true,"reason":{"command":"list"}}', '{"isViolation":true,"isViolation":false,"reason":"spam"}', '{"isViolation":true,"reason":"spam","reason":"other"}', '"VIOLATION - 1 - Spam"']) {

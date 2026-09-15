@@ -1,11 +1,11 @@
 # Current status
 
-Production readiness remains the objective. Current V5 deployment suitability does not block application engineering; V6 compatibility and release clearance remain required before production.
+Production readiness remains the objective. V5 deployment suitability does not block engineering; V6 compatibility and release clearance remain required before production.
 
-C01 bridge authentication is complete, with the real application bridge round trip verified in4m24s using official controlled settlement and no network prover.
+C01 application bridge and C02 authenticated screening are complete.
 
-C02 screening authentication is complete. 129 Noir regressions and53 client checks pass. The genuine two-post screening flow passes in5m02s with1.1GiB peak memory; both post proofs take about16seconds. Evidence and source-bound AI review are recorded.
+C03 independent posting identities is complete. Ten genuine authors prepared posts against one identical anchor; all ten were included and their public/private effects verified. Whole run7m57s, peak1.45GiB, cleanup passed.137 Noir,174 client/signer, daemon integration and SDK clock regressions pass. Stable identities now flow through CLI and moderation; ambiguous transaction outcomes fail closed.
 
-Root owns integration and serialized bounded checks. The reused review subagent has reviewed C02 and is preparing a read-only C03 implementation map.
+The batch stall was traced to accumulated local test-clock lead. Resetting to each mined timestamp fixes it; the passing run records zero lead. The local node caps one transaction per block to test application independence, not network throughput. No network prover or deadline extension.
 
-Next: remove shared post-counter contention in C03.
+The graph selects W01 sponsored-fee integration next, now that C03 is complete. C04 required screening-history lookup beyond the current16-note page follows in the ready work. C05 and all later production/review/release requirements remain open.

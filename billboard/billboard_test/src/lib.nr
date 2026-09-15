@@ -1,6 +1,7 @@
 mod c01;
 mod compact_note;
 mod c02;
+mod c03;
 
 // ============================================================
 // Billboard — Noir unit tests (run with `aztec test`)
@@ -60,8 +61,22 @@ fn empty_msg() -> [Field; MSG_FIELDS] {
 
 fn msg_with(value: Field) -> [Field; MSG_FIELDS] {
     let mut m = [0; MSG_FIELDS];
-    m[0] = value;
+    // Four printable hexadecimal bytes preserve distinct fixture values.
+    let value = value as u32;
+    let mut packed: Field = 0;
+    for i in 0..4 {
+        let nibble = (value >> ((3 - i) * 4)) & 15;
+        let byte = if nibble < 10 { 48 + nibble } else { 87 + nibble };
+        packed = packed * 256 + byte as Field;
+    }
+    m[0] = packed * 0x1000000000000000000000000000000000000000000000000000000;
     m
+}
+
+unconstrained fn fresh_post_nonce() -> Field {
+    let nonce = aztec::oracle::random::random();
+    assert(nonce != 0, "Test nonce must be nonzero");
+    nonce
 }
 
 // ============================================================
@@ -280,8 +295,8 @@ unconstrained fn test_init_sets_all_parameters() {
 #[test]
 unconstrained fn test_init_default_flag_state() {
     let (env, contract_address, _deployer, _censor) = setup();
-    let flagged = env.view_public(Billboard::at(contract_address).is_post_flagged(0));
-    assert(!flagged, "Post 0 should not be flagged initially");
+    let exists = env.view_public(Billboard::at(contract_address).get_post_exists(0));
+    assert(!exists, "Zero is not a real post identity");
 }
 
 // ============================================================
@@ -416,7 +431,7 @@ unconstrained fn test_declare_immoral_fails_when_no_censor() {
     env.call_public(someone, Billboard::at(contract_address).declare_immoral(0, empty_msg()));
 }
 
-#[test(should_fail_with = "Invalid post index")]
+#[test(should_fail_with = "Invalid post id")]
 unconstrained fn test_declare_immoral_censor_passes_auth() {
     let (mut env, contract_address, _deployer, censor) = setup();
     env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, empty_msg()));
@@ -535,17 +550,17 @@ unconstrained fn test_full_flow_first_post() {
 
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(42), false, child, grandchild),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(42), 4, false, child, grandchild),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
     assert(count == 1, f"Expected post_count=1, got {count}");
 
-    let stored_msg = env.view_public(Billboard::at(contract_address).get_post(0));
+    let stored_msg = env.view_public(Billboard::at(contract_address).get_post(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64))));
     let m0 = stored_msg[0];
-    assert(m0 == 42, f"Expected msg[0]=42, got {m0}");
+    assert(m0 == msg_with(42)[0], f"Expected msg[0]=42, got {m0}");
 
-    let post_time_stored = env.view_public(Billboard::at(contract_address).get_post_time(0));
+    let post_time_stored = env.view_public(Billboard::at(contract_address).get_post_time(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64))));
     assert(post_time_stored == post_time, f"Expected post_time={post_time}, got {post_time_stored}");
 }
 
@@ -558,7 +573,7 @@ unconstrained fn test_full_flow_post_too_early() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(42), false, child, grandchild),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(42), 4, false, child, grandchild),
     );
 }
 
@@ -598,7 +613,7 @@ unconstrained fn test_full_flow_second_post_screens_first() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child1, gc1),
     );
 
     // Post 2: need to wait cooldown AND censor_window so post 1 can be screened
@@ -620,15 +635,15 @@ unconstrained fn test_full_flow_second_post_screens_first() {
 
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, grandchild2),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(200), 4, false, child2, grandchild2),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
     assert(count == 2, f"Expected count=2, got {count}");
 
-    let stored_msg = env.view_public(Billboard::at(contract_address).get_post(1));
+    let stored_msg = env.view_public(Billboard::at(contract_address).get_post(env.view_public(Billboard::at(contract_address).get_post_id((1) as u64))));
     let m0 = stored_msg[0];
-    assert(m0 == 200, f"Expected msg[0]=200, got {m0}");
+    assert(m0 == msg_with(200)[0], f"Expected msg[0]=200, got {m0}");
 }
 
 #[test]
@@ -643,21 +658,21 @@ unconstrained fn test_full_flow_declare_immoral_after_post() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child, gc),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child, gc),
     );
 
     // Censor flags post 0
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, msg_with(999)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(999)));
 
-    let flagged = env.view_public(Billboard::at(contract_address).is_post_flagged(0));
+    let flagged = env.view_public(Billboard::at(contract_address).is_post_flagged(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64))));
     assert(flagged, "Post should be flagged");
 
-    let flagger = env.view_public(Billboard::at(contract_address).get_post_flagged_by(0));
+    let flagger = env.view_public(Billboard::at(contract_address).get_post_flagged_by(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64))));
     assert(flagger.to_field() == censor.to_field(), "Flagger should be censor");
 
-    let stored_response = env.view_public(Billboard::at(contract_address).get_censor_response(0));
+    let stored_response = env.view_public(Billboard::at(contract_address).get_censor_response(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64))));
     let r0 = stored_response[0];
-    assert(r0 == 999, f"Expected response[0]=999, got {r0}");
+    assert(r0 == msg_with(999)[0], f"Expected response[0]=999, got {r0}");
 }
 
 #[test(should_fail_with = "Already flagged")]
@@ -669,10 +684,10 @@ unconstrained fn test_full_flow_double_flag_fails() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child, gc),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child, gc),
     );
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, msg_with(1)));
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, msg_with(2)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(1)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(2)));
 }
 
 #[test]
@@ -691,11 +706,11 @@ unconstrained fn test_full_flow_second_post_with_flag() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child1, gc1),
     );
 
     // Flag post 0 (can be done any time after post 0 exists)
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, msg_with(999)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(999)));
 
     // Post 2: screening will find post0 flagged → flag_count=1
     // The check for post2 is: now >= effective_old = old_next_allowed = post1_time + cooldown
@@ -714,7 +729,7 @@ unconstrained fn test_full_flow_second_post_with_flag() {
 
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, grandchild2),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(200), 4, false, child2, grandchild2),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -734,10 +749,10 @@ unconstrained fn test_full_flow_flag_penalty_post3_too_early() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child1, gc1),
     );
 
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, msg_with(999)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(999)));
 
     // Post 2 (screens post0, finds flag)
     let post2_time = deposit_time + 2 * BASE_COOLDOWN + 1;
@@ -746,7 +761,7 @@ unconstrained fn test_full_flow_flag_penalty_post3_too_early() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(200), 4, false, child2, gc2),
     );
 
     // Post 3 too early — flag penalty extended next_allowed.
@@ -760,7 +775,7 @@ unconstrained fn test_full_flow_flag_penalty_post3_too_early() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(300), false, child3, gc3),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(300), 4, false, child3, gc3),
     );
 }
 
@@ -780,11 +795,11 @@ unconstrained fn test_flag_penalty_exact_value() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child1, gc1),
     );
 
     // Flag post 0
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, msg_with(999)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(999)));
 
     // Post 2 (screens post 0, finds flag)
     let post2_time = deposit_time + 2 * BASE_COOLDOWN + 1;
@@ -793,7 +808,7 @@ unconstrained fn test_flag_penalty_exact_value() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(200), 4, false, child2, gc2),
     );
 
     // After post2: effective_old = deposit_time + 2*cooldown (old_next_allowed)
@@ -819,11 +834,11 @@ unconstrained fn test_flag_penalty_with_save_up() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child1, gc1),
     );
 
     // Flag post 0
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, msg_with(999)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(999)));
 
     // Go dormant for a long time, then post (screens flagged post0)
     let dormant_time = post1_time + 100_000;
@@ -833,7 +848,7 @@ unconstrained fn test_flag_penalty_with_save_up() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(200), 4, false, child2, gc2),
     );
 
     // save_up_floor = dormant_time - cooldown * max_save_up = dormant_time - 57600
@@ -868,7 +883,7 @@ unconstrained fn test_flag_penalty_two_flags() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child1, gc1),
     );
 
     // Post 2 (index 1) — post0 too young to screen
@@ -878,12 +893,12 @@ unconstrained fn test_flag_penalty_two_flags() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(200), 4, false, child2, gc2),
     );
 
     // Flag both posts
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, msg_with(999)));
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(1, msg_with(998)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(999)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((1) as u64)), msg_with(998)));
 
     // Post 3 — screens both post0 (child) and post1 (grandchild), finds 2 flags
     // Need both posts old enough: now >= post2_time + censor_window = deposit_time + 3*cooldown
@@ -896,7 +911,7 @@ unconstrained fn test_flag_penalty_two_flags() {
     assert(gc3.is_some(), "Grandchild expected");
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(300), false, child3, gc3),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(300), 4, false, child3, gc3),
     );
 
     // effective_old = deposit_time + 3*cooldown (old_next_allowed)
@@ -920,7 +935,7 @@ unconstrained fn test_full_flow_second_post_without_flag() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child1, gc1),
     );
 
     // earliest = post1_time + 3600 (no flags)
@@ -931,7 +946,7 @@ unconstrained fn test_full_flow_second_post_without_flag() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(200), 4, false, child2, gc2),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -975,7 +990,7 @@ unconstrained fn test_full_flow_multiple_posts() {
             env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
         env.call_private(
             owner,
-            Billboard::at(contract_address).post(chain, msg_with((i + 1) as Field), false, child, gc),
+            Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with((i + 1) as Field), 4, false, child, gc),
         );
 
         let count = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -986,9 +1001,9 @@ unconstrained fn test_full_flow_multiple_posts() {
     }
 
     for i in 0..3 {
-        let stored = env.view_public(Billboard::at(contract_address).get_post(i));
+        let stored = env.view_public(Billboard::at(contract_address).get_post(env.view_public(Billboard::at(contract_address).get_post_id((i) as u64))));
         let s0 = stored[0];
-        let expected = (i + 1) as Field;
+        let expected = msg_with((i + 1) as Field)[0];
         assert(s0 == expected, f"Post {i}: expected msg[0]={expected}, got {s0}");
     }
 }
@@ -1011,7 +1026,7 @@ unconstrained fn test_censor_window_post_too_young_to_screen() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child1, gc1),
     );
 
     // Post 2 at the exact time-lock boundary.
@@ -1029,7 +1044,7 @@ unconstrained fn test_censor_window_post_too_young_to_screen() {
     // The post still succeeds (screening is best-effort, not required)
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, grandchild2),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(200), 4, false, child2, grandchild2),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -1055,7 +1070,7 @@ unconstrained fn test_censor_window_grandchild_screening() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child1, gc1),
     );
 
     // Post 2 at the exact time-lock boundary (post1 too young to screen)
@@ -1065,7 +1080,7 @@ unconstrained fn test_censor_window_grandchild_screening() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(200), 4, false, child2, gc2),
     );
 
     // Post 3 — wait long enough for both post1 and post2 to be screenable.
@@ -1085,7 +1100,7 @@ unconstrained fn test_censor_window_grandchild_screening() {
 
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(300), false, child3, grandchild3),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(300), 4, false, child3, grandchild3),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -1117,12 +1132,12 @@ unconstrained fn test_censor_window_hard_invariant() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child1, gc1),
     );
 
     // Flag post 0 well within the censor window (at T + 1)
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, msg_with(999)));
-    let flagged = env.view_public(Billboard::at(contract_address).is_post_flagged(0));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(999)));
+    let flagged = env.view_public(Billboard::at(contract_address).is_post_flagged(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64))));
     assert(flagged, "Post should be flagged");
 
     // Post 2 at T + cooldown (post0 is still too young to screen: age < censor_window)
@@ -1135,7 +1150,7 @@ unconstrained fn test_censor_window_hard_invariant() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(200), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(200), 4, false, child2, gc2),
     );
 
     // Verify post0 was NOT screened (too young)
@@ -1162,7 +1177,7 @@ unconstrained fn test_censor_window_hard_invariant() {
     assert(gc3.is_some(), "Grandchild expected");
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(300), false, child3, gc3),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(300), 4, false, child3, gc3),
     );
 
     // Now post0 WAS screened (flag counted). Verify penalty applied.
@@ -1182,7 +1197,7 @@ unconstrained fn test_censor_window_hard_invariant() {
 
 #[test]
 unconstrained fn test_dummy_post_does_not_store_content() {
-    // Dummy post should increment post_count but not store message content
+    // Dummy post does not create a public post or allocate an order index.
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
     let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
@@ -1194,22 +1209,14 @@ unconstrained fn test_dummy_post_does_not_store_content() {
     // Post a dummy
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(42), true, child, gc),
+        Billboard::at(contract_address).post(chain, 0, [0; 32], 0, true, child, gc),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
-    assert(count == 1, f"Expected count=1, got {count}");
-
-    // Post time should still be stored
-    let pt = env.view_public(Billboard::at(contract_address).get_post_time(0));
-    assert(pt == post_time, f"Expected post_time={post_time}, got {pt}");
-
-    // get_post should return all zeros (dummy doesn't store content)
-    // Actually get_post reads from post_data, which is only written for non-dummy
-    // So the data will be zeros (default storage value)
-    let stored = env.view_public(Billboard::at(contract_address).get_post(0));
-    let s0 = stored[0];
-    assert(s0 == 0, f"Expected msg[0]=0 for dummy, got {s0}");
+    assert_eq(count, 0, "Dummy must not allocate public order");
+    assert(!env.view_public(Billboard::at(contract_address).get_post_exists(0)));
+    let (dummy, _) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
+    assert_eq(dummy.unwrap_unchecked().note.post_id, 0);
 
     // last_real_post_index should still be NO_REAL_POST
     let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
@@ -1230,7 +1237,7 @@ unconstrained fn test_dummy_post_advances_screening() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child1, gc1),
     );
 
     // Post 2 (dummy) — screens post 1
@@ -1240,7 +1247,7 @@ unconstrained fn test_dummy_post_advances_screening() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, empty_msg(), true, child2, gc2),
+        Billboard::at(contract_address).post(chain, 0, [0; 32], 0, true, child2, gc2),
     );
 
     // Verify screening advanced
@@ -1280,7 +1287,7 @@ unconstrained fn test_withdraw_unscreened_real_posts() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child, gc),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child, gc),
     );
 
     // Try to withdraw — post 0 hasn't been screened yet
@@ -1302,7 +1309,7 @@ unconstrained fn test_withdraw_succeeds_after_dummy_post() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(100), false, child1, gc1),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child1, gc1),
     );
 
     // Post 2 (dummy) — screens post 0
@@ -1312,7 +1319,7 @@ unconstrained fn test_withdraw_succeeds_after_dummy_post() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, empty_msg(), true, child2, gc2),
+        Billboard::at(contract_address).post(chain, 0, [0; 32], 0, true, child2, gc2),
     );
 
     // Verify last_screened >= last_real_post (withdrawal eligibility)
@@ -1353,7 +1360,7 @@ unconstrained fn test_save_up_allows_burst_after_dormancy() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(1), false, child, gc),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(1), 4, false, child, gc),
     );
 
     // Go dormant for a very long time
@@ -1369,7 +1376,7 @@ unconstrained fn test_save_up_allows_burst_after_dormancy() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(2), false, child2, gc2),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(2), 4, false, child2, gc2),
     );
 
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -1386,7 +1393,7 @@ unconstrained fn test_save_up_allows_burst_after_dormancy() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(3), false, child3, gc3),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(3), 4, false, child3, gc3),
     );
 
     let count2 = env.view_public(Billboard::at(contract_address).get_post_count());
@@ -1408,7 +1415,7 @@ unconstrained fn test_save_up_prevents_excessive_burst() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(1), false, child, gc),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(1), 4, false, child, gc),
     );
 
     // Go dormant
@@ -1423,7 +1430,7 @@ unconstrained fn test_save_up_prevents_excessive_burst() {
             env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
         env.call_private(
             owner,
-            Billboard::at(contract_address).post(chain, msg_with((i + 2) as Field), false, child_i, gc_i),
+            Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with((i + 2) as Field), 4, false, child_i, gc_i),
         );
     }
 
@@ -1434,7 +1441,7 @@ unconstrained fn test_save_up_prevents_excessive_burst() {
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
     env.call_private(
         owner,
-        Billboard::at(contract_address).post(chain, msg_with(999), false, child_f, gc_f),
+        Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(999), 4, false, child_f, gc_f),
     );
 }
 
@@ -1446,10 +1453,10 @@ pub unconstrained fn setup_regular_history(length: u32) -> (TestEnvironment, Azt
     for i in 0..length {
         env.mine_block_at(deposit_time + (i as u64 + 1) * (BASE_COOLDOWN + CENSOR_WINDOW + 1));
         let (child, grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
-        env.call_private(owner, Billboard::at(contract_address).post(chain, msg_with(i as Field + 1), false, child, grandchild));
+        env.call_private(owner, Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(i as Field + 1), 4, false, child, grandchild));
     }
     let count = env.view_public(Billboard::at(contract_address).get_post_count());
-    assert(count == length, f"History setup expected {length}, got {count}");
+    assert(count == length as u64, f"History setup expected {length}, got {count}");
     (env, contract_address, owner, deposit_time)
 }
 
@@ -1461,7 +1468,7 @@ unconstrained fn test_history_first_page_control() {
     assert(child.is_some(), "Last note in first page must be discoverable");
     let hinted = child.unwrap_unchecked();
     let index = hinted.note.post_id;
-    assert(index == 15, f"Expected first-page last child15, got {index}");
+    assert(index == env.view_public(Billboard::at(contract_address).get_post_id(15)), f"Expected first-page last child15, got {index}");
 }
 
 #[test]
@@ -1473,7 +1480,7 @@ unconstrained fn test_history_known_bad_missing_child_after_first_page() {
         assert(notes[i].is_some(), "First history page must be full");
         let note = notes[i].unwrap_unchecked();
         let index = note.note.post_id;
-        assert(index == i as Field, f"Measured TXE first-page index expected {i}, got {index}");
+        assert(index == env.view_public(Billboard::at(contract_address).get_post_id(i as u64)), f"Measured TXE first-page index expected {i}, got {index}");
     }
     let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
     assert(info[8] == 16, "Previous child must actually have been screened");
@@ -1489,5 +1496,5 @@ unconstrained fn test_history_known_bad_next_post_cannot_progress() {
     let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
     env.mine_block_at(deposit_time + 18 * (BASE_COOLDOWN + CENSOR_WINDOW + 1));
     let (child, grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
-    env.call_private(owner, Billboard::at(contract_address).post(chain, msg_with(18), false, child, grandchild));
+    env.call_private(owner, Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(18), 4, false, child, grandchild));
 }

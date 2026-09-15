@@ -1,0 +1,24 @@
+✔ large stable Field identity is preserved without Number conversion (0.790333ms)
+✔ order parsing rejects truncation and unsafe integer aliases (0.218291ms)
+✔ message byte length and canonical padding round trip multi-byte text (1.698125ms)
+✔ moderation resolves displayed order once and thereafter carries only identity (0.441291ms)
+✔ unknown identity and unsafe order stop before signing (0.149084ms)
+✔ state conflict causes refresh and a new attempt, never resubmission of old proof (0.198917ms)
+✔ uncertain submission never triggers automatic new proof or resend (0.143625ms)
+✔ exact already-known transaction is reconciled without resending (0.072917ms)
+✔ failed, proposed, dropped and mismatched receipts never report success (0.113125ms)
+✔ queued drop requires structured pinned conflict validation before fresh proof (0.238917ms)
+✔ state refresh has a bounded retry budget (0.100208ms)
+✔ receipt becoming included during revalidation prevents fresh proof (0.05775ms)
+✔ dummy retries reject ambiguous spent-right conflicts and allow only invalid anchor refresh (0.108541ms)
+✔ outer post retry cannot override an inner dummy spent-right refusal (0.083667ms)
+✔ auto screening propagates unresolved transaction outcomes and retains a timing wait control (0.09175ms)
+✔ nested dummy anchor recovery retains one two-refresh budget (0.0825ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 168.085416
