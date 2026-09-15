@@ -42,13 +42,13 @@ function integer(value, fallback, min, max, label) {
 }
 function configuration(argv) {
   const args = parseArgs(argv);
+  if (args.policy) throw new Error('--policy is unsupported: moderation requires the exact contract policy');
   if (!args['portal-address']) throw new Error('--portal-address is required');
   return Object.freeze({
     portalAddress: args['portal-address'],
     censorWallet: path.resolve(args['censor-wallet'] || path.join(root, 'wallets/censor_aztec_wallet.json')),
     cliPath: path.resolve(args.cli || path.join(root, 'apps/src/billboard/user/cli.mjs')),
     aztecNodeUrl: args['node-url'] || 'http://127.0.0.1:5080',
-    policyFile: path.resolve(args.policy || path.join(directory, 'policy.txt')),
     llamaPort: integer(args['llama-port'], 5090, 1024, 65535, 'model port'),
     pollInterval: integer(args['poll-interval'], 30, 1, 3600, 'poll interval'),
     fromIndex: integer(args.from, 0, 0, 0xffffffff, 'starting post index'),
@@ -64,8 +64,8 @@ function log(message, level = 'info') {
     char => '\\u' + char.charCodeAt(0).toString(16).padStart(4, '0'));
   console.log(`[${new Date().toISOString()}] [${level}] ${safe}`);
 }
-function remainingWindow(post, seconds, now) {
-  return !post.timestamp || !seconds ? null : post.timestamp + seconds - now;
+function remainingWindow(post, now) {
+  return BigInt(post.flagDeadline) - BigInt(now);
 }
 
 // The injected runtime is a programmatic test seam. Production CLI arguments and
@@ -88,60 +88,43 @@ export async function runDaemon(argv = process.argv.slice(2), { startRuntime = s
     log('Starting isolated model runtime; signer configuration fixed at startup.');
     runtime = await startRuntime({ image: config.modelImage, modelPath: config.modelPath,
       modelSha256: config.modelSha256, port: config.llamaPort, threads: config.threads, ctxSize: config.ctxSize });
-    let policy;
-    let censorWindow = 0;
-    try {
-      const initial = signer.list();
-      if (initial.policy.trim()) {
-        policy = initial.policy.trim();
-        log('Policy from contract (' + policy.length + ' chars)');
-      }
-      censorWindow = initial.censorWindow;
-    } catch (error) {
-      log('Could not fetch contract config: ' + error.message, 'error');
-    }
-    if (!policy) {
-      if (fs.existsSync(config.policyFile)) {
-        if (fs.statSync(config.policyFile).size > 16384) throw new Error('Policy file exceeds size limit');
-        policy = fs.readFileSync(config.policyFile, 'utf8').trim();
-        log('Policy from file (' + policy.length + ' chars)');
-      } else {
-        policy = 'No spam, advertising, profanity, or advocacy of violence.';
-        log('No policy file, using default.', 'warn');
-      }
-    }
     let nextIndex = config.fromIndex;
     const completed = new Set();
-    async function processPost(post) {
+    async function processPost(post, data) {
       const idx = post.index;
       if (post.flagged) { log('#' + idx + ' already flagged, skipping.'); return; }
+      if (post.policyVersion !== data.policyVersion) {
+        throw Object.assign(new Error('Historical policy unavailable for this post; event-backed policy retrieval is required'), { code: 'HISTORICAL_POLICY_UNAVAILABLE' });
+      }
       if (!post.text.trim()) { log('#' + idx + ' (empty), skipping.'); return; }
-      const verdict = await moderatePost(post.text, policy, runtime.port);
+      const verdict = await moderatePost(post.text, data.policy, runtime.port);
       log('#' + idx + ' LLM: ' + (verdict.isViolation ? 'VIOLATION' : 'OK'));
       if (!verdict.isViolation) return;
       if (config.dryRun) { log('[DRY RUN] Would flag post #' + idx, 'warn'); return; }
       log('Flagging post #' + idx + ' via restricted signer.');
       // The index comes from validated fetched data, never from model output.
-      signer.flag({ postId: post.postId, reason: verdict.reason });
+      signer.flag({ postId: post.postId, policyVersion: post.policyVersion, reason: verdict.reason });
       log('Post #' + idx + ' flagged.');
     }
     async function pollAndProcess() {
       let data;
       try { data = signer.list(); }
       catch (error) { log('Failed to fetch posts: ' + error.message, 'error'); return false; }
-      censorWindow = data.censorWindow;
+      log('Policy from contract (' + data.policy.length + ' chars), version ' + data.policyVersion);
       const now = Math.floor(Date.now() / 1000);
       const pending = data.posts.filter(post => post.index >= nextIndex && !completed.has(post.index));
-      if (censorWindow > 0) pending.sort((a, b) =>
-        (remainingWindow(a, censorWindow, now) ?? Infinity) - (remainingWindow(b, censorWindow, now) ?? Infinity));
+      pending.sort((a, b) => {
+        const first = BigInt(a.flagDeadline), second = BigInt(b.flagDeadline);
+        return first < second ? -1 : first > second ? 1 : 0;
+      });
       let succeeded = true;
       for (const post of pending) {
         if (stopping) break;
-        const remaining = remainingWindow(post, censorWindow, now);
+        const remaining = remainingWindow(post, now);
         if (remaining !== null && remaining < 0) log('#' + post.index + ' past censor window; flag may be too late', 'warn');
         else if (remaining !== null && remaining < 300) log('#' + post.index + ' censor window expiring', 'warn');
         try {
-          await processPost(post);
+          await processPost(post, data);
           completed.add(post.index);
           while (completed.delete(nextIndex)) nextIndex++;
         } catch (error) {

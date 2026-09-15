@@ -19,6 +19,15 @@ function index(value) {
   if (!Number.isInteger(value) || value < 0 || value > MAX_INDEX) throw new Error('Invalid post index');
   return value;
 }
+function policyVersion(value) {
+  try { return validatePostId(value); }
+  catch { throw new Error('Invalid policy version'); }
+}
+function deadline(value) {
+  if (typeof value !== 'string' || !/^(0|[1-9][0-9]*)$/.test(value) || value.length > 19 ||
+      BigInt(value) > 0x7fffffffffffffffn) throw new Error('Invalid flag deadline');
+  return value;
+}
 function realFile(value, label) {
   if (typeof value !== 'string' || !path.isAbsolute(value) || value.includes('\0')) throw new Error(`Invalid ${label} path`);
   const resolved = fs.realpathSync(value);
@@ -44,13 +53,13 @@ function parsePosts(stdout) {
     identities.add(postId);
     if (typeof post.text !== 'string' || Buffer.byteLength(post.text, 'utf8') > 16384 || typeof post.flagged !== 'boolean') throw new Error('Invalid post fields');
     if (post.timestamp !== undefined && (!Number.isSafeInteger(post.timestamp) || post.timestamp < 0)) throw new Error('Invalid post timestamp');
-    return Object.freeze({ index: postIndex, postId, text: post.text, flagged: post.flagged, timestamp: post.timestamp });
+    return Object.freeze({ index: postIndex, postId, policyVersion: policyVersion(post.policyVersion), flagDeadline: deadline(post.flagDeadline), text: post.text, flagged: post.flagged, timestamp: post.timestamp });
   });
-  if (data.policy !== undefined && (typeof data.policy !== 'string' || Buffer.byteLength(data.policy, 'utf8') > 16384)) throw new Error('Invalid policy');
+  if (typeof data.policy !== 'string' || !data.policy.isWellFormed() || data.policy.includes('\0') || Buffer.byteLength(data.policy, 'utf8') > 1488 || !data.policy.length) throw new Error('Invalid policy');
   for (const key of ['censorWindow', 'maxSaveUp']) {
     if (data[key] !== undefined && (!Number.isSafeInteger(data[key]) || data[key] < 0)) throw new Error(`Invalid ${key}`);
   }
-  return Object.freeze({ count: data.count, posts: Object.freeze(posts), policy: data.policy || '',
+  return Object.freeze({ count: data.count, posts: Object.freeze(posts), policy: data.policy, policyVersion: policyVersion(data.policyVersion),
     censorWindow: data.censorWindow || 0, maxSaveUp: data.maxSaveUp || 0 });
 }
 
@@ -93,11 +102,12 @@ export function createSigner(configuration, { run = execFileSync } = {}) {
       return parsePosts(call('list', ['--json']));
     },
     flag(request) {
-      exactObject(request, ['postId', 'reason']);
+      exactObject(request, ['postId', 'policyVersion', 'reason']);
+      const expectedPolicyVersion = policyVersion(request.policyVersion);
       const postId = validatePostId(request.postId);
       const reason = validateReason(request.reason);
       if (reason.startsWith('--')) throw new Error('Reason must not be a CLI option');
-      return call('declare-immoral', ['--post-id', postId, '--censor-response', reason]);
+      return call('declare-immoral', ['--post-id', postId, '--expected-policy-version', expectedPolicyVersion, '--censor-response', reason]);
     },
   });
 }

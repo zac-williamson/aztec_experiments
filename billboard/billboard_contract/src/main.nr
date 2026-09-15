@@ -10,6 +10,7 @@ pub contract Billboard {
         history::{note::assert_note_existed_by, storage::public_storage_historical_read},
         keys::getters::{get_nhk_app, get_public_keys, try_get_public_keys},
         macros::{
+            events::event,
             functions::{external, initializer, only_self, view},
             notes::note,
             storage::storage,
@@ -26,6 +27,7 @@ pub contract Billboard {
         protocol::{
             address::{AztecAddress, EthAddress},
             abis::block_header::BlockHeader,
+            constants::MAX_TX_LIFETIME,
                         traits::{Deserialize, FromField, Packable, Serialize, ToField},
         },
         state_vars::{Map, Owned, PrivateSet, PublicImmutable, PublicMutable, StateVariable},
@@ -38,6 +40,7 @@ pub contract Billboard {
     // ============================================================
     global MSG_FIELDS: u32 = 32;
     global SENTINEL: Field = 0;
+    global REASON_FIELDS: u32 = 7;
 
     /// Maximum moderation policy size in bytes.
     /// Limited by the per-transaction public data write cap (64 writes):
@@ -178,6 +181,29 @@ pub contract Billboard {
                 self.min_deposit, self.max_deposit, self.base_cooldown, self.k_multiplier,
                 self.censor_window, self.max_save_up)
         }
+        /// Admission preserves a possible timely recovery schedule. It cannot
+        /// guarantee recovery after arbitrary user inactivity or protocol outage.
+        /// No private history count or derived deadline is published.
+        fn assert_recovery_horizon(self, now: u64, next_allowed: u64,
+            cooldown: u64, remaining: u64, head_sequence: u64) {
+            // Every existing public post is included by this anchor. The new
+            // real post must be included within the protocol transaction lifetime.
+            let latest_deadline = now as u128 + MAX_TX_LIFETIME as u128 + self.censor_window as u128;
+            let start = if next_allowed as u128 > latest_deadline { next_allowed as u128 } else { latest_deadline };
+            // Once every real post is mature, each dummy advances two entries,
+            // except the final entry when the remaining count is odd. New trailing
+            // dummies do not prevent exit after the final real entry is screened.
+            let steps = (remaining as u128 + 1) / 2;
+            assert(head_sequence as u128 + steps <= 0xffffffffffffffff, "Recovery sequence horizon exceeded");
+            let max_step_debt = cooldown as u128 * (1 + 2 * (self.k_multiplier as u128 - 1));
+            // Allow one full inclusion lifetime for each screening transaction,
+            // and another for the final withdrawal. Products are below 2^113
+            // under Config bounds and the u64 sequence domain, hence fit u128.
+            let recovery_end = start + steps * (MAX_TX_LIFETIME as u128 + max_step_debt)
+                + MAX_TX_LIFETIME as u128;
+            assert(recovery_end <= 0x7fffffffffffffff, "Recovery horizon exceeded");
+        }
+
         fn validate(self, chain: Field, version: Field) {
             self.rollup_address.validate();
             assert(self.rollup_address.to_field() != 0, "Zero rollup");
@@ -193,6 +219,23 @@ pub contract Billboard {
             assert(self.censor_window > 0, "Censor window must be > 0");
             assert(self.max_save_up > 0, "Max save up must be > 0");
         }
+    }
+
+    #[event]
+    struct PolicyPublished {
+        schema_version: u32, policy_version: Field, policy_length: u16,
+        policy_fields: [Field; POLICY_FIELDS],
+    }
+    #[event]
+    struct PostPublished {
+        schema_version: u32, post_id: Field, order_index: u64, published_at: u64,
+        flag_deadline: u64, policy_version: Field, message_length: u16,
+        message_fields: [Field; MSG_FIELDS],
+    }
+    #[event]
+    struct PostFlagged {
+        schema_version: u32, post_id: Field, policy_version: Field, flagged_at: u64,
+        censor: AztecAddress, reason_length: u16, reason_fields: [Field; REASON_FIELDS],
     }
 
     // ============================================================
@@ -225,6 +268,10 @@ pub contract Billboard {
         /// Set at init time, only the censor can update via set_moderation_policy.
         policy_data: Map<u32, PublicMutable<Field, Context>, Context>,
         policy_len: PublicMutable<u32, Context>,
+        policy_version: PublicMutable<Field, Context>,
+        post_policy_version: Map<Field, PublicMutable<Field, Context>, Context>,
+        post_flag_deadline: Map<Field, PublicMutable<u64, Context>, Context>,
+        censor_response_length: Map<Field, PublicMutable<u16, Context>, Context>,
     }
 
     // ============================================================
@@ -249,6 +296,10 @@ pub contract Billboard {
         self.storage.censor.write(censor);
         self.storage.policy_len.write(policy_len);
         for i in 0..POLICY_FIELDS { self.storage.policy_data.at(i).write(policy[i]); }
+        let version = crate::lib::policy_version(self.address, policy, policy_len);
+        self.storage.policy_version.write(version);
+        self.emit(PolicyPublished { schema_version: 1, policy_version: version,
+            policy_length: policy_len as u16, policy_fields: policy });
     }
 
     #[external("private")]
@@ -304,17 +355,20 @@ pub contract Billboard {
         for i in 0..POLICY_FIELDS {
             self.storage.policy_data.at(i).write(policy[i]);
         }
+        let version = crate::lib::policy_version(self.address, policy, policy_len);
+        self.storage.policy_version.write(version);
+        self.emit(PolicyPublished { schema_version: 1, policy_version: version,
+            policy_length: policy_len as u16, policy_fields: policy });
     }
 
     // ============================================================
     // declare_immoral -- censor only (public function)
     // ============================================================
     // Each post is screened at most once (when last_screened advances past it).
-    // C03 addresses stable identity only. Inclusion-time policy/deadline binding
-    // and full moderation-window semantics remain explicit C05 integration work.
 
     #[external("public")]
-    fn declare_immoral(post_id: Field, response: [Field; MSG_FIELDS]) {
+    fn declare_immoral(post_id: Field, expected_policy_version: Field,
+        reason_fields: [Field; REASON_FIELDS], reason_length: u16) {
         let censor = self.storage.censor.read();
         let sender = self.msg_sender();
         assert(sender.to_field() != AztecAddress::zero().to_field(), "No censor configured");
@@ -322,12 +376,20 @@ pub contract Billboard {
         assert(self.storage.post_exists.at(post_id).read(), "Invalid post id");
         assert(!self.storage.post_flagged.at(post_id).read(), "Already flagged");
 
+        let version = self.storage.post_policy_version.at(post_id).read();
+        assert(version == expected_policy_version, "Policy version mismatch");
+        let now = self.context.timestamp();
+        assert(now < self.storage.post_flag_deadline.at(post_id).read(), "Flag deadline expired");
+        crate::lib::validate_reason(reason_fields, reason_length);
         self.storage.post_flagged.at(post_id).write(true);
         self.storage.post_flagged_by.at(post_id).write(sender);
 
-        for i in 0..MSG_FIELDS {
-            self.storage.censor_response.at(post_id).at(i).write(response[i]);
+        self.storage.censor_response_length.at(post_id).write(reason_length);
+        for i in 0..REASON_FIELDS {
+            self.storage.censor_response.at(post_id).at(i).write(reason_fields[i]);
         }
+        self.emit(PostFlagged { schema_version: 1, post_id, policy_version: version,
+            flagged_at: now, censor: sender, reason_length, reason_fields });
     }
 
     // ============================================================
@@ -380,7 +442,7 @@ pub contract Billboard {
     // whose timestamp <= now - censor_window.
     //
     // Timing: check now >= effective_old, where
-    //   effective_old = max(old_next_allowed, now - cooldown*max_save_up)
+    //   effective_old = max(old_next_allowed, now - cooldown*(max_save_up-1))
     // Then set new_next_allowed = effective_old + cooldown * (1 + (k-1) * flag_count)
     //
     // The flag penalty: each flagged post found during screening adds (k-1) extra
@@ -451,9 +513,6 @@ pub contract Billboard {
         let scope = ScreeningScope { board: addr, owner: sender,
             slot: self.storage.posts.at(sender).storage_slot, chain: deposit_chain_id };
 
-        // Real-post public inclusion/deadline records are introduced by C03/C05.
-        // This inherited real-post maturity rule is not the final public deadline guarantee.
-        let screen_threshold: u64 = if now >= censor_window { now - censor_window } else { 0 };
         if need_screening {
             assert(child.is_some(), "Child note required for screening");
             let child_confirmed = scope.authenticate(header, child.unwrap_unchecked());
@@ -465,7 +524,20 @@ pub contract Billboard {
             let child_link = post_link(addr, sender, deposit_chain_id, cn.sequence, child_inner_hash, link_secret);
             let child_is_head = cn.sequence == head_sequence;
             assert((child_link == dep_note.head_link) == child_is_head, "C02 child head");
-            let child_mature = cn.is_dummy | ((now >= censor_window) & (cn.anchor_timestamp <= screen_threshold));
+            let child_mature = if cn.is_dummy { true } else {
+                let exists_slot = self.storage.post_exists.at(cn.post_id).get_storage_slot();
+                assert(public_storage_historical_read(header, exists_slot, addr) == 1, "Post not publicly included");
+                let time_slot = self.storage.post_time.at(cn.post_id).get_storage_slot();
+                let deadline_slot = self.storage.post_flag_deadline.at(cn.post_id).get_storage_slot();
+                let published_field = public_storage_historical_read(header, time_slot, addr);
+                let deadline_field = public_storage_historical_read(header, deadline_slot, addr);
+                let published = published_field as u64;
+                let deadline = deadline_field as u64;
+                assert((published as Field == published_field) & (deadline as Field == deadline_field), "Invalid post deadline");
+                assert((published >= cn.anchor_timestamp) & (published <= now), "Invalid publication timestamp");
+                assert(deadline == checked_time_add(published, censor_window), "Invalid post deadline");
+                now >= deadline
+            };
 
             if child_is_head {
                 assert(grandchild.is_none(), "C02 unexpected grandchild");
@@ -491,7 +563,20 @@ pub contract Billboard {
                     gc_confirmed.storage_slot, gc_confirmed.randomness);
                 let gc_link = post_link(addr, sender, deposit_chain_id, gn.sequence, gc_inner_hash, link_secret);
                 assert((gc_link == dep_note.head_link) == (gn.sequence == head_sequence), "C02 grandchild head");
-                let gc_mature = gn.is_dummy | ((now >= censor_window) & (gn.anchor_timestamp <= screen_threshold));
+                let gc_mature = if gn.is_dummy { true } else {
+                    let exists_slot = self.storage.post_exists.at(gn.post_id).get_storage_slot();
+                    assert(public_storage_historical_read(header, exists_slot, addr) == 1, "Post not publicly included");
+                    let time_slot = self.storage.post_time.at(gn.post_id).get_storage_slot();
+                    let deadline_slot = self.storage.post_flag_deadline.at(gn.post_id).get_storage_slot();
+                    let published_field = public_storage_historical_read(header, time_slot, addr);
+                    let deadline_field = public_storage_historical_read(header, deadline_slot, addr);
+                    let published = published_field as u64;
+                    let deadline = deadline_field as u64;
+                    assert((published as Field == published_field) & (deadline as Field == deadline_field), "Invalid post deadline");
+                    assert((published >= gn.anchor_timestamp) & (published <= now), "Invalid publication timestamp");
+                    assert(deadline == checked_time_add(published, censor_window), "Invalid post deadline");
+                    now >= deadline
+                };
                 if child_mature & gc_mature {
                     if !gn.is_dummy {
                         let flag_slot = self.storage.post_flagged.at(gn.post_id).get_storage_slot();
@@ -505,35 +590,8 @@ pub contract Billboard {
             assert(child.is_none() & grandchild.is_none(), "C02 unexpected hints");
         }
 
-        // --- Compute earliest usable time (save-up rule) ---
-        // The current post is allowed if now >= old_next_allowed_time.
-        // The save-up floor prevents bursting: even after long dormancy,
-        // the effective "start" for the next timer is at most
-        // (now - cooldown * max_save_up) in the past.
-        let save_up_product = (cooldown as u128) * (max_save_up as u128);
-        let save_up_floor: u64 = if (now as u128) >= save_up_product {
-            now - (save_up_product as u64)
-        } else {
-            0
-        };
-
-        // effective_old = max(old_next_allowed, save_up_floor)
-        // Since save_up_floor <= now always, the check now >= effective_old
-        // is equivalent to now >= old_next_allowed.
-        let effective_old = if dep_note.next_allowed_time > save_up_floor {
-            dep_note.next_allowed_time
-        } else {
-            save_up_floor
-        };
-
-        assert(now >= effective_old, "Too early to post -- time lock not yet expired");
-
-        // next_allowed_time for the NEXT post:
-        //   effective_old + cooldown * (1 + (k-1) * flag_count)
-        // Each flag adds (k-1) extra cooldowns (equivalent to k-1 dummy posts).
-        let penalty_multiplier: u64 = 1 + (k - 1) * flag_count;
-        let penalty = (cooldown as u128) * (penalty_multiplier as u128);
-        let new_next_allowed: u64 = (effective_old as u128 + penalty) as u64;
+        let new_next_allowed = crate::lib::compute_next_allowed(now, dep_note.next_allowed_time,
+            cooldown, k, max_save_up, flag_count);
 
         // No public count read or reservation: unrelated authors may publish
         // between this private anchor and the eventual public inclusion.
@@ -541,6 +599,9 @@ pub contract Billboard {
         // --- Create the new PostNote and compute its link ---
         assert(dep_note.sequences.head_sequence < 0xffffffffffffffff, "Post sequence overflow");
         let sequence = dep_note.sequences.head_sequence + 1;
+        if !is_dummy {
+            config.assert_recovery_horizon(now, new_next_allowed, cooldown, sequence - new_screened_sequence, sequence);
+        }
         let post_note = PostNote { schema_version: 1, deposit_chain_id, sequence,
             post_id: public_post_id, anchor_timestamp: now,
             previous_link: dep_note.head_link, is_dummy };
@@ -590,15 +651,20 @@ pub contract Billboard {
         let order = self.storage.post_count.read();
         assert(order < 0xffffffffffffffff, "Post count overflow");
         let published_at = self.context.timestamp();
-        assert(published_at <= 0x7fffffffffffffff, "Timestamp out of range");
+        let config = self.storage.config.read();
+        let deadline = checked_time_add(published_at, config.censor_window as u64);
+        let version = self.storage.policy_version.read();
         self.storage.post_exists.at(post_id).write(true);
         self.storage.post_id_by_order.at(order).write(post_id);
         self.storage.post_time.at(post_id).write(published_at);
+        self.storage.post_flag_deadline.at(post_id).write(deadline);
+        self.storage.post_policy_version.at(post_id).write(version);
         self.storage.post_length.at(post_id).write(message_length);
         for i in 0..MSG_FIELDS { self.storage.post_data.at(post_id).at(i).write(msg[i]); }
         self.storage.post_count.write(order + 1);
-        // No invented policyVersion/event: full policy+deadline event payloads
-        // are integrated with C05 against the actual public inclusion timestamp.
+        self.emit(PostPublished { schema_version: 1, post_id, order_index: order,
+            published_at, flag_deadline: deadline, policy_version: version,
+            message_length, message_fields: msg });
     }
 
     // ============================================================
@@ -697,10 +763,35 @@ pub contract Billboard {
 
     #[external("public")]
     #[view]
-    fn get_censor_response(id: Field) -> pub [Field; MSG_FIELDS] {
+    fn get_policy_version() -> pub Field { self.storage.policy_version.read() }
+
+    #[external("public")]
+    #[view]
+    fn get_post_policy_version(id: Field) -> pub Field {
         assert(self.storage.post_exists.at(id).read(), "Invalid post id");
-        let mut msg: [Field; MSG_FIELDS] = [0; MSG_FIELDS];
-        for i in 0..MSG_FIELDS {
+        self.storage.post_policy_version.at(id).read()
+    }
+
+    #[external("public")]
+    #[view]
+    fn get_post_flag_deadline(id: Field) -> pub u64 {
+        assert(self.storage.post_exists.at(id).read(), "Invalid post id");
+        self.storage.post_flag_deadline.at(id).read()
+    }
+
+    #[external("public")]
+    #[view]
+    fn get_censor_response_length(id: Field) -> pub u16 {
+        assert(self.storage.post_exists.at(id).read(), "Invalid post id");
+        self.storage.censor_response_length.at(id).read()
+    }
+
+    #[external("public")]
+    #[view]
+    fn get_censor_response(id: Field) -> pub [Field; REASON_FIELDS] {
+        assert(self.storage.post_exists.at(id).read(), "Invalid post id");
+        let mut msg: [Field; REASON_FIELDS] = [0; REASON_FIELDS];
+        for i in 0..REASON_FIELDS {
             msg[i] = self.storage.censor_response.at(id).at(i).read();
         }
         msg
@@ -770,6 +861,18 @@ pub contract Billboard {
             policy[i] = self.storage.policy_data.at(i).read();
         }
         (policy, self.storage.policy_len.read())
+    }
+
+    /// Read content and commitment from the same public-state snapshot.
+    /// Separate latest-state requests could straddle a policy update.
+    #[external("public")]
+    #[view]
+    fn get_moderation_policy_snapshot() -> pub ([Field; POLICY_FIELDS], u32, Field) {
+        let mut policy: [Field; POLICY_FIELDS] = [0; POLICY_FIELDS];
+        for i in 0..POLICY_FIELDS {
+            policy[i] = self.storage.policy_data.at(i).read();
+        }
+        (policy, self.storage.policy_len.read(), self.storage.policy_version.read())
     }
 
     #[external("public")]

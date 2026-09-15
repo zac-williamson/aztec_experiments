@@ -41,3 +41,5 @@ resistance measurements belong to M03.
 These checks constrain data and authority. They do not establish that a model's
 decision is correct or that the model process is isolated. The separate process
 isolation checks and later model evaluation provide that evidence.
+
+Every signer request also carries the validated post ID and its policy version, selected from fetched public data by the host. The daemon processes only posts matching its atomic current policy snapshot; model output cannot select or override either identity. Historical versions unavailable to the current reader remain unresolved.

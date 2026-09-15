@@ -59,14 +59,14 @@ Normal exit, startup errors, SIGINT and SIGTERM trigger removal of both owned co
 | `--llama-port` | `5090` | Loopback transport port, 1024–65535 |
 | `--threads` | `4` | Model threads and CPU limit, 1–16 |
 | `--ctx-size` | `4096` | Context size, 512–32768 |
-| `--policy` | `censor-daemon/policy.txt` | Local policy fallback |
+| `--policy` | Unsupported | Local policy overrides are rejected; use the onchain policy |
 | `--poll-interval` | `30` | Poll interval in seconds, 1–3600 |
 | `--from` | `0` | Starting post index |
 | `--cli` | `apps/src/billboard/user/cli.mjs` | Trusted CLI path fixed at startup |
 | `--dry-run` | Off | Evaluate without submitting flags |
 | `--once` | Off | Exit after one polling iteration |
 
-Model memory is currently limited to 4096 MiB; the transport gets 512 MiB and one CPU. M03 must benchmark an actual pinned model within those bounds before release. The daemon currently resolves on-chain policy at startup with a local/default fallback; durable retry/recovery and policy freshness are separate M02 work and are not established by this isolation change.
+Model memory is currently limited to 4096 MiB; the transport gets 512 MiB and one CPU. M03 must benchmark an actual pinned model within those bounds before release. The daemon refreshes an atomic onchain policy snapshot each poll and binds every flag to the reviewed policy version. It rejects local/default policy substitutes. Posts under a different historical policy remain unresolved with `HISTORICAL_POLICY_UNAVAILABLE`; historical policy retrieval and durable retry/recovery remain M02 work.
 
 ## Tests
 

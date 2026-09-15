@@ -49,13 +49,13 @@ unconstrained fn c03_ten_distinct_claimed_authors_get_unique_ids_and_live_order_
         let info = env.execute_utility(Billboard::at(board).get_deposit_info(authors[i], chains[i]));
         assert_eq(info[6], 1); assert_eq(info[8], 0);
     }
-    env.call_public(censor, Billboard::at(board).declare_immoral(ids[6], msg_with(0xc03)));
+    env.call_public(censor, Billboard::at(board).declare_immoral(ids[6], env.view_public(Billboard::at(board).get_post_policy_version(ids[6])), crate::reason_with(0xc03), 4));
     for i in 0..10 {
         assert_eq(env.view_public(Billboard::at(board).is_post_flagged(ids[i])), i == 6);
         assert_eq(env.view_public(Billboard::at(board).get_post_id(i as u64)), ids[i]);
     }
     assert_eq(env.view_public(Billboard::at(board).get_post_flagged_by(ids[6])), censor);
-    assert_eq(env.view_public(Billboard::at(board).get_censor_response(ids[6])), msg_with(0xc03));
+    assert_eq(env.view_public(Billboard::at(board).get_censor_response(ids[6])), crate::reason_with(0xc03));
 }
 
 #[test]

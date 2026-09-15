@@ -207,9 +207,13 @@ async function refreshBillboard() {
 
     const posts = [];
     for (let i = count - 1; i >= 0; i--) {
+      let identity = await _handles.contract.methods.get_post_id(BigInt(i)).simulate({ from: _handles.address });
+      if (identity && identity.result !== undefined) identity = identity.result;
+      if (identity && identity.value !== undefined) identity = identity.value;
+      const postId = BigInt(identity.toString());
       let flagged = false;
       try {
-        const flagResult = await _handles.contract.methods.is_post_flagged(BigInt(i)).simulate({ from: _handles.address });
+        const flagResult = await _handles.contract.methods.is_post_flagged(postId).simulate({ from: _handles.address });
         let fv = flagResult;
         if (fv && fv.result !== undefined) fv = fv.result;
         if (fv && fv.value !== undefined) fv = fv.value;
@@ -220,26 +224,15 @@ async function refreshBillboard() {
       let flaggedBy = null;
       if (flagged) {
         try {
-          const respResult = await _handles.contract.methods.get_censor_response(BigInt(i)).simulate({ from: _handles.address });
+          const respResult = await _handles.contract.methods.get_censor_response(postId).simulate({ from: _handles.address });
           const respVals = extractFieldArray(respResult);
-          let rBytes = [];
-          for (let f = 0; f < MSG_FIELDS; f++) {
-            let val = respVals[f];
-            let fieldBytes = [];
-            for (let b = 0; b < 31; b++) {
-              fieldBytes.unshift(Number(val & 0xffn));
-              val >>= 8n;
-            }
-            rBytes = rBytes.concat(fieldBytes);
-          }
-          let rLen = rBytes.length;
-          for (let b = 0; b < rBytes.length; b++) {
-            if (rBytes[b] === 0) { rLen = b; break; }
-          }
-          censorResponse = new TextDecoder().decode(new Uint8Array(rBytes.slice(0, rLen)));
+          let reasonLength = await _handles.contract.methods.get_censor_response_length(postId).simulate({ from: _handles.address });
+          if (reasonLength && reasonLength.result !== undefined) reasonLength = reasonLength.result;
+          if (reasonLength && reasonLength.value !== undefined) reasonLength = reasonLength.value;
+          censorResponse = window.BillboardModerationCodec.decodeModerationReason(respVals, reasonLength.toString());
         } catch (e) {}
         try {
-          const fbResult = await _handles.contract.methods.get_post_flagged_by(BigInt(i)).simulate({ from: _handles.address });
+          const fbResult = await _handles.contract.methods.get_post_flagged_by(postId).simulate({ from: _handles.address });
           let fbv = fbResult;
           if (fbv && fbv.result !== undefined) fbv = fbv.result;
           if (fbv && fbv.value !== undefined) fbv = fbv.value;
@@ -253,7 +246,7 @@ async function refreshBillboard() {
       }
 
       try {
-        const postResult = await _handles.contract.methods.get_post(BigInt(i)).simulate({ from: _handles.address });
+        const postResult = await _handles.contract.methods.get_post(postId).simulate({ from: _handles.address });
         const vals = extractFieldArray(postResult);
         let bytes = [];
         for (let f = 0; f < MSG_FIELDS; f++) {

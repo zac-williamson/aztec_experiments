@@ -307,3 +307,17 @@ User explicitly requested removal of coupons. Replace the operated sponsor with 
 ### C04 history retrieval and test scope
 
 Use pinned note-property selectors for deposit identity and predecessor link before a two-result oracle limit; the second result detects ambiguity. This bounds the Noir response, not the pinned PXE backend's owner/slot scan cost. Measure that backend explicitly. Extend scope to supporting test/build scripts and generated consumers. Long-history verification combines real17/33-post lifecycle executions, actual persisted PXE records beyond1000, and an explicitly seeded long-history contract fixture with authenticated continuation/exit; do not describe seeded notes as1000executed/proven transactions. Avoid a repetitive1001-transaction run that the33-post benchmark indicates would exceed the nine-minute budget.
+
+## C05 checked economics and moderation inclusion
+
+The fresh ABI uses seven-field, length-delimited moderation reasons and requires
+the post's captured policy version. Policy identity follows the P01 content hash;
+public inclusion starts the full censor window. CLI policy reads are atomic.
+Private admission conservatively reserves a timely recovery schedule within the
+supported timestamp and sequence domains; no backlog count is made public.
+The existing unconditional withdrawal debt check remains authoritative.
+
+C05 passes171 distinct contract checks,66 integrated checks and genuine screening
+and private-fee claim/post journeys. Automatic historical-policy retrieval remains
+M02; current daemon behavior is explicit failure before model/signing for a
+mismatched version. This is not production completion or an audit waiver.

@@ -529,7 +529,7 @@
       "title": "Enforce penalty, cooldown and arithmetic invariants",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "C04"
       ],
@@ -542,7 +542,13 @@
       "scope": [
         "billboard/billboard_contract/",
         "billboard/billboard_test/",
-        "billboard/portal/"
+        "billboard/portal/",
+        "apps/src/billboard/",
+        "apps/dist/",
+        "shared/",
+        "censor-daemon/",
+        "scripts/",
+        "noir-dependencies.json"
       ],
       "plan": "tasks/C05.md",
       "actions": [
@@ -572,7 +578,7 @@
       "evidence": "evidence/C05.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "171 distinct contract checks,66 integrated checks, genuine screening5m7s and private-fee claim/post passed; evidence/C05.json. Continue C06 escrow/recovery.",
       "priority": 10
     },
     {
@@ -994,7 +1000,7 @@
       "evidence": "evidence/M02.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "After prerequisites, persist/reconcile jobs and current policy. M01 review also found set-moderation-policy absent from engine needsPXE action list; repair and exercise actual policy initialization, including empty boards.",
+      "checkpoint": "C05 consumer integration rejects historical-policy mismatches with HISTORICAL_POLICY_UNAVAILABLE. Implement authenticated historical policy retrieval from V1 events; never apply the current policy to an old-policy post. Current snapshots are atomic.",
       "priority": 16
     },
     {

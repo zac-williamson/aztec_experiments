@@ -37,6 +37,7 @@
 //   --reuse                  Reuse an existing deposit instead of making a new one
 //   --reuse-tx <hash>        Reuse a specific deposit by L1 tx hash
 //   --withdraw-tx <hash>     L2 withdrawal tx hash (for claim-l1, skip scan)
+//   --expected-policy-version <field>  Bind flag to the reviewed policy
 //   --post-id <field>        Stable post identity to flag
 //   --post-index <num>       Post index to flag (for declare-immoral)
 //   --censor-response <text> Censor's response message (for declare-immoral)
@@ -441,6 +442,7 @@ async function main() {
     reuseTxHash: args['reuse-tx'],
     withdrawTxHash: args['withdraw-tx'],
     postId: args['post-id'],
+    expectedPolicyVersion: args['expected-policy-version'],
     postIndex: args['post-index'],
     censorResponse: args['censor-response'],
     moderationPolicy: args['moderation-policy'] || undefined,

@@ -485,6 +485,46 @@
     return new TextDecoder('utf-8', { fatal: true }).decode(bytes.slice(0, length));
   }
 
+  function packModerationReason(text) {
+    if (typeof text !== 'string' || text.includes('\0')) throw new Error('Invalid moderation reason');
+    const bytes = new TextEncoder().encode(text);
+    if (bytes.length > 200 || new TextDecoder('utf-8', { fatal: true }).decode(bytes) !== text) throw new Error('Moderation reason must be valid UTF-8 and at most 200 bytes');
+    const padded = new Uint8Array(217); padded.set(bytes);
+    const fields = Array.from({ length: 7 }, (_, i) => {
+      let value = 0n;
+      for (let j = 0; j < 31; j++) value = (value << 8n) | BigInt(padded[i * 31 + j]);
+      return value;
+    });
+    return { fields, byteLength: bytes.length };
+  }
+
+  function decodeModerationReason(fields, length) {
+    length = safePostOrder(length);
+    if (fields.length !== 7 || length > 200) throw new Error('Invalid moderation reason length');
+    const padded = [...fields, ...Array(25).fill(0n)];
+    if (length === 0) {
+      if (padded.some(value => BigInt(value.toString()) !== 0n)) throw new Error('Invalid moderation reason padding');
+      return '';
+    }
+    return decodePostMessage(padded, length);
+  }
+
+  async function readPolicySnapshot(a, contract, address) {
+    const snapshot = unwrapPostValue(await contract.methods.get_moderation_policy_snapshot().simulate({ from: address }));
+    if (!Array.isArray(snapshot) || snapshot.length !== 3 || !Array.isArray(snapshot[0]) || snapshot[0].length !== 48) throw new Error('Invalid policy snapshot');
+    const byteLength = safePostOrder(unwrapPostValue(snapshot[1]).toString());
+    if (byteLength < 1 || byteLength > 1488) throw new Error('Invalid policy snapshot length');
+    return { fields: snapshot[0], byteLength, version: canonicalPostId(a, snapshot[2]) };
+  }
+
+  async function moderationArguments(a, contract, address, postIdField, text, expectedPolicyVersion) {
+    const packed = packModerationReason(text);
+    const version = canonicalPostId(a, await contract.methods.get_post_policy_version(postIdField).simulate({ from: address }));
+    if (expectedPolicyVersion !== undefined && canonicalPostId(a, expectedPolicyVersion, true) !== version) throw new Error('Post policy changed or does not match the reviewed policy');
+    return [postIdField, new a.Fr(BigInt(version)), packed.fields.map(value => new a.Fr(value)), packed.byteLength];
+  }
+  g.BillboardModerationCodec = Object.freeze({ packModerationReason, decodeModerationReason, moderationArguments, readPolicySnapshot });
+
   function taggedSubmissionError(message, code) { return Object.assign(new Error(message), { code }); }
   async function submitOnceWithReconciliation(node, tx) {
     try { await node.sendTx(tx); return; }
@@ -994,7 +1034,7 @@
           const cdR = await contract.methods.get_base_cooldown().simulate({ from: address });
           baseCooldown = BigInt(extractInt(cdR));
           const mdR = await contract.methods.get_min_deposit().simulate({ from: address });
-          minDepositL2 = BigInt(extractInt(mdR));
+          minDepositL2 = BigInt(unwrapPostValue(mdR).toString());
           const msuR = await contract.methods.get_max_save_up().simulate({ from: address });
           maxSaveUp = Number(extractInt(msuR));
         }
@@ -1445,15 +1485,12 @@
       if (maxSaveUp > 0 && !jsonOutput) log('  Max save-up: ' + maxSaveUp, 'info');
 
       // Read moderation policy from contract
-      let policyText = null;
+      let policyText = null, policyVersion = null;
       try {
-        const policyResult = await contract.methods.get_moderation_policy().simulate({ from: address });
-        let policyFields = policyResult;
-        let policyLen = 0;
-        if (policyResult && policyResult.result !== undefined) {
-          policyFields = policyResult.result[0] || policyResult.result;
-          policyLen = Number(policyResult.result[1] !== undefined ? policyResult.result[1] : 0);
-        }
+        const snapshot = await readPolicySnapshot(a, contract, address);
+        const policyFields = snapshot.fields;
+        const policyLen = snapshot.byteLength;
+        policyVersion = snapshot.version;
         if (policyLen > 0 && g.unpackFieldsToString) {
           policyText = g.unpackFieldsToString(policyFields, policyLen);
           if (policyText && !jsonOutput) {
@@ -1465,7 +1502,7 @@
       } catch (e) {}
 
       if (count === 0) {
-        if (jsonOutput) { console.log(JSON.stringify({ count: 0, posts: [], censor: censorAddr, kMultiplier: kMult })); }
+        if (jsonOutput) { console.log(JSON.stringify({ count: 0, posts: [], censor: censorAddr, kMultiplier: kMult, policy: policyText || '', policyVersion, censorWindow, maxSaveUp })); }
         else { log('  No posts yet.', 'info'); }
         return;
       }
@@ -1498,21 +1535,8 @@
             try {
               const respResult = await contract.methods.get_censor_response(idField).simulate({ from: address });
               const respVals = extractFieldArray(respResult);
-              let rBytes = [];
-              for (let f = 0; f < MSG_FIELDS; f++) {
-                let val = respVals[f];
-                let fieldBytes = [];
-                for (let b = 0; b < 31; b++) {
-                  fieldBytes.unshift(Number(val & 0xffn));
-                  val >>= 8n;
-                }
-                rBytes = rBytes.concat(fieldBytes);
-              }
-              let rLen = rBytes.length;
-              for (let b = 0; b < rBytes.length; b++) {
-                if (rBytes[b] === 0) { rLen = b; break; }
-              }
-              censorResponse = new TextDecoder().decode(new Uint8Array(rBytes.slice(0, rLen)));
+              const reasonLength = await contract.methods.get_censor_response_length(idField).simulate({ from: address });
+              censorResponse = decodeModerationReason(respVals, unwrapPostValue(reasonLength));
             } catch (e) {}
             try {
               const fbResult = await contract.methods.get_post_flagged_by(idField).simulate({ from: address });
@@ -1530,8 +1554,10 @@
             timestamp = Number(extractInt(timeResult));
           } catch (e) {}
 
+          const postPolicyVersion = canonicalPostId(a, await contract.methods.get_post_policy_version(idField).simulate({ from: address }));
+          const flagDeadline = String(unwrapPostValue(await contract.methods.get_post_flag_deadline(idField).simulate({ from: address })));
           if (jsonOutput) {
-            _jsonPosts.push({ index: i, orderIndex: String(i), postId, text: msg || '', flagged, censorResponse, flaggedBy, timestamp });
+            _jsonPosts.push({ policyVersion: postPolicyVersion, flagDeadline, index: i, orderIndex: String(i), postId, text: msg || '', flagged, censorResponse, flaggedBy, timestamp });
           } else if (flagged) {
             log('  [' + i + '] ' + postId + ' [FLAGGED] ' + (msg || '(binary data)'), 'warn');
             if (censorResponse) log('         ↳ Censor: ' + censorResponse, 'warn');
@@ -1548,7 +1574,7 @@
         }
       }
       if (jsonOutput) {
-        console.log(JSON.stringify({ count, posts: _jsonPosts, censor: censorAddr, kMultiplier: kMult, censorWindow, maxSaveUp, policy: policyText || '' }));
+        console.log(JSON.stringify({ count, posts: _jsonPosts, censor: censorAddr, kMultiplier: kMult, censorWindow, maxSaveUp, policy: policyText || '', policyVersion }));
       } else {
         log('  All ' + count + ' posts loaded.', 'success');
       }
@@ -2035,25 +2061,10 @@
       // Sync PXE
       await pxe.sync();
 
-      const encoder = new TextEncoder();
-      const bytes = encoder.encode(responseText);
-      if (bytes.length > MSG_BYTES - 1) throw new Error('Response too long (max ' + (MSG_BYTES - 1) + ' bytes).');
-
-      const padded = new Uint8Array(MSG_FIELDS * 31);
-      padded.set(bytes);
-      const fields = [];
-      for (let i = 0; i < MSG_FIELDS; i++) {
-        let val = 0n;
-        for (let j = 0; j < 31; j++) val = (val << 8n) | BigInt(padded[i * 31 + j]);
-        fields.push(val);
-      }
-
+      const flagArguments = await moderationArguments(a, censorContract, censorAddress, postIdField,
+        responseText, config.expectedPolicyVersion);
       log('Declaring post ' + postId + ' as immoral...', 'info');
-      if (responseText) log('  Response: "' + responseText.substring(0, 60) + '"', 'info');
-
-      const result = await sendCensorPrivate(censorWallet,censorAddress,censorContract,'declare_immoral',[
-        postIdField,fields.map(f => new a.Fr(f))
-      ]);
+      const result = await sendCensorPrivate(censorWallet, censorAddress, censorContract, 'declare_immoral', flagArguments);
       const receipt = result.receipt;
       log('  TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
       if (receipt.transactionFee !== undefined) {

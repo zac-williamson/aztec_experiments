@@ -27,6 +27,8 @@ import { spawn } from 'child_process';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const TEST_ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'billboard-daemon-tests-'));
+const POLICY_VERSION = '0x' + '09'.padStart(64, '0');
+const OTHER_POLICY_VERSION = '0x' + '0a'.padStart(64, '0');
 const MOCK_WALLET = path.join(TEST_ROOT, 'disposable-wallet.json');
 fs.writeFileSync(MOCK_WALLET, '{}');
 process.once('exit', () => fs.rmSync(TEST_ROOT, { recursive: true, force: true }));
@@ -62,6 +64,7 @@ class MockLlamaServer {
     this.port = port;
     this.responses = responses; // function(postText) => { content, reasoning_content }
     this.requests = [];
+    this.policies = [];
     this.server = null;
   }
 
@@ -83,6 +86,7 @@ class MockLlamaServer {
             // Extract the post text from the prompt
             const actualPost = JSON.parse(userPrompt.slice(userPrompt.indexOf('\n') + 1)).post;
             this.requests.push(actualPost);
+            this.policies.push(JSON.parse(userPrompt.slice(userPrompt.indexOf('\n') + 1)).policy);
             const resp = this.responses(actualPost);
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
@@ -138,12 +142,13 @@ fs.appendFileSync(${JSON.stringify(this.callsFile)}, JSON.stringify(args) + \"\\
 if (action === 'list' && args.includes('--json')) {
   process.stdout.write(JSON.stringify({
     count: ${JSON.stringify(this.behavior.posts.length)},
-    posts: ${JSON.stringify(this.behavior.posts.map(post => ({ ...post, postId: '0x' + BigInt(post.index + 101).toString(16).padStart(64, '0') })))},
+    posts: ${JSON.stringify(this.behavior.posts.map(post => ({ policyVersion: this.behavior.policyVersion ?? POLICY_VERSION, flagDeadline: String((post.timestamp ?? Math.floor(Date.now() / 1000)) + (this.behavior.censorWindow ?? 3600)), ...post, postId: '0x' + BigInt(post.index + 101).toString(16).padStart(64, '0') })))},
     censor: "0x000fdd755b5c59a56e6957dbcff8889fe9e5f3c5d6496426c9efcbed92ebb77a",
     kMultiplier: 4,
     censorWindow: ${JSON.stringify(this.behavior.censorWindow || 3600)},
     maxSaveUp: ${JSON.stringify(this.behavior.maxSaveUp || 16)},
-    policy: ${JSON.stringify(this.behavior.policy || '')}
+    policy: ${JSON.stringify(this.behavior.policy ?? 'No spam')},
+    policyVersion: ${JSON.stringify(this.behavior.policyVersion ?? POLICY_VERSION)}
   }));
 } else if (action === 'declare-immoral') {
   if (${JSON.stringify(this.behavior.flagExit || 0)}) process.exit(${JSON.stringify(this.behavior.flagExit || 0)});
@@ -171,7 +176,7 @@ if (action === 'list' && args.includes('--json')) {
 // ============================================================
 // Run daemon as subprocess with mock infra (async, non-blocking)
 // ============================================================
-function runDaemon(args, timeoutMs = 30000, { production = false } = {}) {
+function runDaemon(args, timeoutMs = 30000, { production = false, stopAfterMs } = {}) {
   // Explicit test-only harness injects mock runtime. Production has no CLI/env
   // bypass for model isolation, and this harness uses only disposable fixtures.
   const productionArgs = [];
@@ -188,11 +193,13 @@ function runDaemon(args, timeoutMs = 30000, { production = false } = {}) {
     const child = spawn(process.execPath, childArgs, {
       stdio: ['ignore', 'pipe', 'pipe'], timeout: timeoutMs, killSignal: 'SIGKILL',
     });
+    const stopTimer = stopAfterMs ? setTimeout(() => child.kill('SIGTERM'), stopAfterMs) : undefined;
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (d) => { stdout += d.toString(); });
     child.stderr.on('data', (d) => { stderr += d.toString(); });
     child.on('close', (code, signal) => {
+      clearTimeout(stopTimer);
       resolve({ stdout, stderr, exitCode: code === null ? 1 : code, signal });
     });
     child.on('error', (error) => {
@@ -489,7 +496,9 @@ async function main() {
         'should flag post in non-dry-run mode');
       assertTrue(result.stdout.includes('flagged'),
         'should confirm flagging');
-      assertEqual(mockCli.calls().filter(args => args[0] === 'declare-immoral').length, 1, 'one actual mock flag call');
+      const signed = mockCli.calls().filter(args => args[0] === 'declare-immoral');
+      assertEqual(signed.length, 1, 'one actual mock flag call');
+      assertEqual(signed[0][signed[0].indexOf('--expected-policy-version') + 1], POLICY_VERSION, 'exact policy version reaches signing CLI');
     } finally {
       await mockServer.stop();
       mockCli.cleanup();
@@ -501,7 +510,7 @@ async function main() {
     const posts = [
       { index: 0, text: 'Hello world', flagged: false },
     ];
-    const onChainPolicy = '1. No spam\n2. No violence\n3. No illegal content';
+    const onChainPolicy = '  1. No spam\n2. No violence\n3. No illegal content\n ';
     const mockCli = new MockCli(MOCK_CLI, { posts, policy: onChainPolicy });
     const mockServer = new MockLlamaServer(MOCK_PORT, () => ({ content: 'OK' }));
     await mockServer.start();
@@ -522,6 +531,7 @@ async function main() {
         'should indicate policy was read from contract');
       // Verify the mock server received the on-chain policy in the prompt
       assertEqual(mockServer.requests.length, 1, 'should call LLM once');
+      assertEqual(mockServer.policies[0], onChainPolicy, 'policy bytes must not be trimmed or normalized');
     } finally {
       await mockServer.stop();
       mockCli.cleanup();
@@ -529,7 +539,7 @@ async function main() {
   });
 
   // Test 11: Falls back to local policy file when contract has no policy
-  await test('falls back to local policy file when contract policy is empty', async () => {
+  await test('rejects a local policy override instead of signing with fallback text', async () => {
     const posts = [
       { index: 0, text: 'Hello', flagged: false },
     ];
@@ -555,8 +565,9 @@ async function main() {
         '--model', path.join(__dirname, 'test_dummy_model.gguf'),
       ]);
 
-      assertTrue(result.stdout.includes('Policy from file'),
-        'should indicate policy was read from local file');
+      assertTrue(result.exitCode !== 0, 'local override must fail closed');
+      assertEqual(mockServer.requests.length, 0, 'no moderation with fallback policy');
+      assertFalse(mockCli.calls().some(args => args[0] === 'declare-immoral'), 'no signing');
     } finally {
       await mockServer.stop();
       mockCli.cleanup();
@@ -695,6 +706,58 @@ async function main() {
       '--censor-wallet', MOCK_WALLET, '--skip-bootstrap', '--once'], 30000, { production: true });
     assertTrue(result.exitCode !== 0, 'unsupported isolation bypass must fail');
     assertTrue(result.stdout.includes('managed isolated model runtime'), 'operator receives migration guidance');
+  });
+
+  for (const [label, behavior, diagnostic] of [
+    ['old post policy', { posts: [{ index: 0, text: 'Spam', flagged: false, policyVersion: OTHER_POLICY_VERSION }] }, 'HISTORICAL_POLICY_UNAVAILABLE'],
+    ['empty contract policy', { posts: [{ index: 0, text: 'Spam', flagged: false }], policy: '' }, 'Invalid policy'],
+  ]) {
+    await test(label + ' fails closed without model or signer action', async () => {
+      const mockCli = new MockCli(MOCK_CLI, behavior);
+      const mockServer = new MockLlamaServer(0, () => ({ content: 'VIOLATION - 1 - Spam' }));
+      await mockServer.start();
+      try {
+        const result = await runDaemon(['--portal-address', '0x' + '12'.repeat(20),
+          '--censor-wallet', MOCK_WALLET, '--cli', MOCK_CLI,
+          '--llama-port', String(mockServer.port), '--once']);
+        assertTrue(result.exitCode !== 0, 'unavailable matching policy cannot complete job');
+        assertTrue(result.stdout.includes(diagnostic), 'clear policy diagnostic');
+        assertEqual(mockServer.requests.length, 0, 'model must not see mismatched policy');
+        assertFalse(mockCli.calls().some(args => args[0] === 'declare-immoral'), 'no signing');
+      } finally { await mockServer.stop(); mockCli.cleanup(); }
+    });
+  }
+
+  await test('each poll refreshes exact policy before processing its matching new posts', async () => {
+    const mockCli = new MockCli(MOCK_CLI, { posts: [] });
+    const policies = [' First policy \n', '\n Second policy  '];
+    const versions = [POLICY_VERSION, OTHER_POLICY_VERSION];
+    const responses = policies.map((policy, i) => ({ count: i + 1, policy, policyVersion: versions[i],
+      censorWindow: 3600, maxSaveUp: 16, posts: [{ index: i,
+        postId: '0x' + BigInt(i + 501).toString(16).padStart(64, '0'), policyVersion: versions[i],
+        flagDeadline: String(Math.floor(Date.now() / 1000) + 3600), text: 'Spam ' + i, flagged: false }] }));
+    fs.writeFileSync(MOCK_CLI, `const fs = require('fs');
+      const args = process.argv.slice(2);
+      const file = ${JSON.stringify(mockCli.callsFile)};
+      const previous = fs.readFileSync(file,'utf8').trim().split('\\n').filter(Boolean).map(JSON.parse);
+      fs.appendFileSync(file, JSON.stringify(args)+'\\n');
+      if(args[0]==='list') {
+        const count = previous.filter(a=>a[0]==='list').length;
+        process.stdout.write(JSON.stringify(${JSON.stringify(responses)}[Math.min(count,1)]));
+      } else process.stdout.write('Transaction mined');`);
+    const mockServer = new MockLlamaServer(0, () => ({ content: 'VIOLATION - 1 - Spam' }));
+    await mockServer.start();
+    try {
+      const result = await runDaemon(['--portal-address', '0x' + '12'.repeat(20),
+        '--censor-wallet', MOCK_WALLET, '--cli', MOCK_CLI,
+        '--llama-port', String(mockServer.port), '--poll-interval', '1'], 10000, { stopAfterMs: 2400 });
+      assertEqual(result.exitCode, 0, 'graceful shutdown after multiple polls');
+      assertEqual(mockServer.policies.length, 2, 'two new posts processed');
+      policies.forEach((policy, i) => assertEqual(mockServer.policies[i], policy, 'fresh exact policy ' + i));
+      const calls = mockCli.calls().filter(args => args[0] === 'declare-immoral');
+      assertEqual(calls.length, 2, 'both matching posts flagged');
+      calls.forEach((args, i) => assertEqual(args[args.indexOf('--expected-policy-version') + 1], versions[i], 'snapshot policy reaches signer'));
+    } finally { await mockServer.stop(); mockCli.cleanup(); }
   });
 
   console.log(`\n=== Results ===`);

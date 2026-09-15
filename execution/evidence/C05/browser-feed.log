@@ -1,0 +1,11 @@
+✔ user feed resolves large stable IDs and decodes seven-field reasons with explicit length (3.729084ms)
+✔ censor feed resolves large stable IDs and decodes seven-field reasons with explicit length (1.344791ms)
+✔ user countdown does not announce withdrawal eligibility while screened debt remains (0.671875ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 45.782875

@@ -397,3 +397,15 @@ Private fee replacement: private_fee_contract owns newNoircontract/tests/workspa
 Private fee integration: contract lane delivered eight TXE checks and documented TXE setup-phase limitation; client lane delivered35 component checks plus actual production-helper funding/recovery harness; UI lane delivered17 focused checks including moderator routing. Root runs all heavy jobs serially. Independent client/contract reviews found and corrected the shared test funding identity and clarified public cold-start observations.
 
 C04: history_contract owns exact-link utility implementation; history_tests owns TXE lifecycle/negative tests; history_pxe owns actual persistent PXE store selector/reload qualification. Root owns safe client integration, serial build/testing, genuine screening and evidence integration.
+
+## C05 active lanes
+- Contract lane: main.nr moderation metadata, deadline authentication and integration of checked economics.
+- Economics lane: lib.nr checked transition helper and independent boundary vectors.
+- Test lane: Noir application regressions and ABI adaptation.
+- Root: shared/browser/service consumers, graph, integration and serial verification. No concurrent heavy builds/tests.
+
+C05 lanes completed and root-integrated: contract/economics/test implementation,
+independent consumer and arithmetic review, and actual-source browser feed tests.
+Root ran all native verification serially, recorded C05 evidence, and retained
+historical-policy recovery for M02. C06 preparation identified existing escrow
+protection plus missing adversarial bridge/conservation tests and recovery runbook.

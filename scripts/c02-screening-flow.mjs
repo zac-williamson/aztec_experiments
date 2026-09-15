@@ -136,7 +136,7 @@ export async function proveAndIncludeC02Screening({node,preparation,instance,cla
       assert.notEqual(fields[5],0n);assert.notEqual(fields[5],oldFields[5]);
       assert.equal(fields[6],oldFields[6]+1n);assert.equal(fields[7],screenedLink);
       assert.equal(fields[8],screenedSequence);assert.equal(fields[9],fields[6]);
-      const now=integer(anchor.globalVariables.timestamp),floor=now>cooldown*maxSave?now-cooldown*maxSave:0n;
+      const now=integer(anchor.globalVariables.timestamp),floor=now>cooldown*(maxSave-1n)?now-cooldown*(maxSave-1n):0n;
       assert.equal(fields[10],(oldFields[10]>floor?oldFields[10]:floor)+cooldown);
       currentNote=await exactDeposit(fields,tx);
       assert(!currentNote.siloedNullifier.equals(oldNote.siloedNullifier));
@@ -158,7 +158,9 @@ export async function proveAndIncludeC02Screening({node,preparation,instance,cla
     let anchor=await eligible(initial[10]);
     assert.deepEqual(await query('get_screen_hints',account.address,claim.depositChainId),[undefined,undefined]);
     const first=await post(message('C02 first post'),undefined,undefined,anchor,initial,0n,0n);
-    const mature=integer(first.note.note.items[4])+censorWindow;
+    const firstId=new Fr(first.note.note.items[3].toBigInt());
+    const mature=integer(await query('get_post_flag_deadline',firstId));
+    assert.equal(mature,integer(await query('get_post_time',firstId))+censorWindow);
     anchor=await eligible(first.fields[10]>mature?first.fields[10]:mature);
     const hints=await query('get_screen_hints',account.address,claim.depositChainId);
     assert(Array.isArray(hints)&&hints.length===2);const [child,grandchild]=hints;
@@ -188,7 +190,7 @@ export async function proveAndIncludeC02Screening({node,preparation,instance,cla
     await post(message('C02 screening post'),child,undefined,anchor,first.fields,1n,first.fields[5]);
     await artifact(preparation);observation.passed=true;
     observation.scope='genuine first-post and mature child screening proofs; exact state and mutated-chain rejection';
-    observation.limitations='One receipt, two real posts. Included foreign-history/owner/slot and grandchild/dummy cases are covered separately by maintained TXE tests. Public-inclusion deadlines remain C03/C05.';
+    observation.limitations='One receipt, two real posts. Included foreign-history/owner/slot and grandchild/dummy cases are covered separately by maintained TXE tests. Actual public-inclusion deadline is checked and used for maturity; flagged and delayed-inclusion boundary cases are covered by TXE.';
     return observation;
   }catch(error){const failure=new Error(`C02_SCREENING_FAILED:${stage}:${error?.name??'Error'}`);
     failure.screeningObservation={...observation,passed:false,stage,errorClass:error?.name??'Error',

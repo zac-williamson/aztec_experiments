@@ -3,6 +3,7 @@ mod compact_note;
 mod c02;
 mod c03;
 mod c04_seeded;
+mod c05;
 
 
 // ============================================================
@@ -55,6 +56,12 @@ fn policy_with_byte(b: u8) -> ([Field; POLICY_FIELDS], u32) {
     let mut p = [0; POLICY_FIELDS];
     p[0] = (b as Field) * 0x1000000000000000000000000000000000000000000000000000000000000;
     (p, 1)
+}
+
+pub fn reason_with(value: Field) -> [Field; 7] {
+    let mut result = [0; 7];
+    result[0] = msg_with(value)[0];
+    result
 }
 
 fn empty_msg() -> [Field; MSG_FIELDS] {
@@ -417,7 +424,7 @@ unconstrained fn test_transfer_censor_old_censor_loses_rights() {
 unconstrained fn test_declare_immoral_rejects_non_censor() {
     let (mut env, contract_address, _deployer, _censor) = setup();
     let attacker = env.create_light_account();
-    env.call_public(attacker, Billboard::at(contract_address).declare_immoral(0, empty_msg()));
+    env.call_public(attacker, Billboard::at(contract_address).declare_immoral(0, 0, [0; 7], 0));
 }
 
 #[test(should_fail_with = "Zero censor")]
@@ -430,13 +437,13 @@ unconstrained fn test_declare_immoral_fails_when_no_censor() {
     let contract_address =
         env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer, initializer);
     let someone = env.create_light_account();
-    env.call_public(someone, Billboard::at(contract_address).declare_immoral(0, empty_msg()));
+    env.call_public(someone, Billboard::at(contract_address).declare_immoral(0, 0, [0; 7], 0));
 }
 
 #[test(should_fail_with = "Invalid post id")]
 unconstrained fn test_declare_immoral_censor_passes_auth() {
     let (mut env, contract_address, _deployer, censor) = setup();
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, empty_msg()));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(0, 0, [0; 7], 0));
 }
 
 // ============================================================
@@ -664,7 +671,7 @@ unconstrained fn test_full_flow_declare_immoral_after_post() {
     );
 
     // Censor flags post 0
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(999)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), env.view_public(Billboard::at(contract_address).get_post_policy_version(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)))), crate::reason_with(999), 4));
 
     let flagged = env.view_public(Billboard::at(contract_address).is_post_flagged(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64))));
     assert(flagged, "Post should be flagged");
@@ -688,8 +695,8 @@ unconstrained fn test_full_flow_double_flag_fails() {
         owner,
         Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child, gc),
     );
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(1)));
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(2)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), env.view_public(Billboard::at(contract_address).get_post_policy_version(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)))), crate::reason_with(1), 4));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), env.view_public(Billboard::at(contract_address).get_post_policy_version(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)))), crate::reason_with(2), 4));
 }
 
 #[test]
@@ -712,7 +719,7 @@ unconstrained fn test_full_flow_second_post_with_flag() {
     );
 
     // Flag post 0 (can be done any time after post 0 exists)
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(999)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), env.view_public(Billboard::at(contract_address).get_post_policy_version(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)))), crate::reason_with(999), 4));
 
     // Post 2: screening will find post0 flagged → flag_count=1
     // The check for post2 is: now >= effective_old = old_next_allowed = post1_time + cooldown
@@ -754,7 +761,7 @@ unconstrained fn test_full_flow_flag_penalty_post3_too_early() {
         Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(100), 4, false, child1, gc1),
     );
 
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(999)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), env.view_public(Billboard::at(contract_address).get_post_policy_version(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)))), crate::reason_with(999), 4));
 
     // Post 2 (screens post0, finds flag)
     let post2_time = deposit_time + 2 * BASE_COOLDOWN + 1;
@@ -801,7 +808,7 @@ unconstrained fn test_flag_penalty_exact_value() {
     );
 
     // Flag post 0
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(999)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), env.view_public(Billboard::at(contract_address).get_post_policy_version(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)))), crate::reason_with(999), 4));
 
     // Post 2 (screens post 0, finds flag)
     let post2_time = deposit_time + 2 * BASE_COOLDOWN + 1;
@@ -840,7 +847,7 @@ unconstrained fn test_flag_penalty_with_save_up() {
     );
 
     // Flag post 0
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(999)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), env.view_public(Billboard::at(contract_address).get_post_policy_version(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)))), crate::reason_with(999), 4));
 
     // Go dormant for a long time, then post (screens flagged post0)
     let dormant_time = post1_time + 100_000;
@@ -864,7 +871,7 @@ unconstrained fn test_flag_penalty_with_save_up() {
     //   = deposit_time + 46001 + 4*3600 = deposit_time + 46001 + 14400 = deposit_time + 60401
     let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
     let next_allowed = info[10] as u64;
-    let save_up_floor = dormant_time - BASE_COOLDOWN * MAX_SAVE_UP;
+    let save_up_floor = dormant_time - BASE_COOLDOWN * (MAX_SAVE_UP - 1);
     let expected = save_up_floor + K * BASE_COOLDOWN;
     assert(next_allowed == expected, f"Expected next_allowed={expected}, got {next_allowed}");
 
@@ -899,8 +906,8 @@ unconstrained fn test_flag_penalty_two_flags() {
     );
 
     // Flag both posts
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(999)));
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((1) as u64)), msg_with(998)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), env.view_public(Billboard::at(contract_address).get_post_policy_version(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)))), crate::reason_with(999), 4));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((1) as u64)), env.view_public(Billboard::at(contract_address).get_post_policy_version(env.view_public(Billboard::at(contract_address).get_post_id((1) as u64)))), crate::reason_with(998), 4));
 
     // Post 3 — screens both post0 (child) and post1 (grandchild), finds 2 flags
     // Need both posts old enough: now >= post2_time + censor_window = deposit_time + 3*cooldown
@@ -1138,7 +1145,7 @@ unconstrained fn test_censor_window_hard_invariant() {
     );
 
     // Flag post 0 well within the censor window (at T + 1)
-    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), msg_with(999)));
+    env.call_public(censor, Billboard::at(contract_address).declare_immoral(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)), env.view_public(Billboard::at(contract_address).get_post_policy_version(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64)))), crate::reason_with(999), 4));
     let flagged = env.view_public(Billboard::at(contract_address).is_post_flagged(env.view_public(Billboard::at(contract_address).get_post_id((0) as u64))));
     assert(flagged, "Post should be flagged");
 
@@ -1350,7 +1357,7 @@ unconstrained fn test_withdraw_succeeds_after_dummy_post() {
 
 #[test]
 unconstrained fn test_save_up_allows_burst_after_dormancy() {
-    // After dormancy, user can make ~max_save_up+1 posts in quick succession
+    // After dormancy, user can make ~max_save_up posts in quick succession
     // because the save-up floor resets the timer.
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
     let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
@@ -1404,9 +1411,9 @@ unconstrained fn test_save_up_allows_burst_after_dormancy() {
 
 #[test(should_fail_with = "Too early to post -- time lock not yet expired")]
 unconstrained fn test_save_up_prevents_excessive_burst() {
-    // After dormancy, user can make max_save_up+1 posts quickly, but not more.
+    // After dormancy, user can make max_save_up posts quickly, but not more.
     // Each post sets next_allowed = effective_old + cooldown.
-    // After max_save_up+1 posts, the save-up floor no longer helps.
+    // After max_save_up posts, the save-up floor no longer helps.
     let (mut env, contract_address, owner, _censor, deposit_time) = setup_with_deposit(MIN_DEPOSIT);
     let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
 
@@ -1424,8 +1431,8 @@ unconstrained fn test_save_up_prevents_excessive_burst() {
     let dormant_time = post1_time + 100_000;
     env.mine_block_at(dormant_time);
 
-    // Make max_save_up + 1 posts in quick succession (should all succeed)
-    for i in 0..MAX_SAVE_UP + 1 {
+    // Make max_save_up posts in quick succession (should all succeed)
+    for i in 0..MAX_SAVE_UP {
         let t = dormant_time + i;
         env.mine_block_at(t);
         let (child_i, gc_i) =
@@ -1437,7 +1444,7 @@ unconstrained fn test_save_up_prevents_excessive_burst() {
     }
 
     // The next post should fail — save-up budget exhausted
-    let t_fail = dormant_time + MAX_SAVE_UP + 1;
+    let t_fail = dormant_time + MAX_SAVE_UP;
     env.mine_block_at(t_fail);
     let (child_f, gc_f) =
         env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));

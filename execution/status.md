@@ -18,3 +18,7 @@ Production readiness remains the objective, not a completed release claim. Next 
 
 
 C04 screening-history lookup is complete: exact successor selection replaces the first-page cutoff; 150 contract checks, 47 integrated checks and a genuine 4m35s screening journey pass. Persisted PXE1100-note/restart and seeded1002-note authenticated continuation/exit checks pass. Seeded notes are not claimed as executed publications; underlying PXE linear scanning remains documented. Next is C05 penalty/cooldown/moderation invariants.
+
+C05 is active: checked economic transitions and inclusion-time moderation rules. Scope includes affected shared/app/service consumers, generated artifacts and test scripts required by the fresh moderation ABI.
+
+C05 complete: checked cooldown/penalty arithmetic, inclusion-time moderation deadlines, immutable policy snapshots and consumer binding. 171 distinct contract checks and66 integrated checks pass. Genuine screening5m7s and private-fee claim/post pass with complete cleanup. Historical policy retrieval remains M02. Next: C06 escrow accounting and safe recovery.

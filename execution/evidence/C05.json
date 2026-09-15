@@ -1,0 +1,127 @@
+{
+  "task_id": "C05",
+  "outcome": "pass",
+  "recorded_at": "2026-09-15T18:00:30.239472+00:00",
+  "source_fingerprint": "588cc2cb72a4412e809ad3ff9aacac3e05f1fdb759aff1bd311a7d052df05db1",
+  "source_inventory": "evidence/C05/source-001.json",
+  "artifacts": [
+    {
+      "path": "evidence/C05/source-001.json",
+      "sha256": "5a774a8365c3961a153bfc0d8b37a0ab02973492f2877e24a1ccefd5abe30222"
+    },
+    {
+      "path": "evidence/C05/verification.md",
+      "sha256": "5b8b9144f1536941dc7dc3f2c90b2cb85b4f7a3213d20e72a9755a634f053709"
+    },
+    {
+      "path": "evidence/C05/review.md",
+      "sha256": "c294dc56dca10da68d8357d3d7cd6fe3f361fb3ff8c0f650a77b7623001c0a12"
+    },
+    {
+      "path": "evidence/C05/artifact-comparison.json",
+      "sha256": "7cfa68ca4df7a837ed21b4d7cc1a6aa43d1b7f301f09b4afa5efe0a81a86ab4e"
+    },
+    {
+      "path": "evidence/C05/build-006.log",
+      "sha256": "d0269d041929ba2270b7b2c3d11d18833301d4f7b3bb4674bca716b3f0835887"
+    },
+    {
+      "path": "evidence/C05/noir-full-001.log",
+      "sha256": "ef4004c9de5ed4e0f768aea9d2311379049d49593062b6a908f7651dae1f36fc"
+    },
+    {
+      "path": "evidence/C05/noir-targeted-002.log",
+      "sha256": "f9132915ad640673d43ad8b3251a09a9cab013257fc190eca3249cca1356b272"
+    },
+    {
+      "path": "evidence/C05/client-003.log",
+      "sha256": "ae0572a310f9f6887eeffe32716c29eb17b9752c4a62175af85e66e98f7027fa"
+    },
+    {
+      "path": "evidence/C05/integrated-components.log",
+      "sha256": "2be3afd22d7b769412d0ff214d361e5a23363e414e8edf28cb4d7df37a8b553a"
+    },
+    {
+      "path": "evidence/C05/signer-policy-001.log",
+      "sha256": "7e75461c6f5a54905bf2c9ae7e96f7494916c118e6825f66051f76ae8bfc3778"
+    },
+    {
+      "path": "evidence/C05/daemon-policy-001.log",
+      "sha256": "c464c057c520679928d04840259312601ab51bc89a52adac058efa6502612d77"
+    },
+    {
+      "path": "evidence/C05/browser-feed.log",
+      "sha256": "cadddc42dd2e8006a640f641b6b97b5fc19ea06814a8b491f643cf65efa8f91b"
+    },
+    {
+      "path": "evidence/C05/apps-build.log",
+      "sha256": "c48a0c056c516f1ebb640d4486c5b074f0b562b556c0068a77c6b2e3c11fff36"
+    },
+    {
+      "path": "evidence/C05/genuine-screening-001.log",
+      "sha256": "9dc44a6c69dd8f7a4ab005ae4e1c9b085e6ef3b1fc18d7171430b1ee057fe5b5"
+    },
+    {
+      "path": "evidence/C05/genuine-private-fee-post-001.log",
+      "sha256": "4ee7ea7d64fdcfb028030769d710c606c691cd25184e48a1ce9c459011beb7f3"
+    },
+    {
+      "path": "evidence/C02/application-4ec415d4-ae99-4c46-a64e-db1ddda1c255.json",
+      "sha256": "01428d9495d9c9d6155f92eb3719514bcccaa7faa8a61dfca8c75c8506921cae"
+    },
+    {
+      "path": "evidence/W01/application-8921a9c3-d76d-48fd-b24e-5edad6bdfcca.json",
+      "sha256": "0bc370cd5168a69b74ff4340fad22939f9613c5043e1b9436e69add3af6f8322"
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C05-A01",
+      "result": "pass",
+      "summary": "Actual TXE flagged screening preserves debt, rejects early withdrawal and permits exit/redeposit only after debt expiry; genuine bridge/refund evidence remains separately scoped.",
+      "artifacts": [
+        "evidence/C05/verification.md",
+        "evidence/C05/noir-full-001.log",
+        "evidence/C05/noir-targeted-002.log"
+      ]
+    },
+    {
+      "id": "C05-A02",
+      "result": "pass",
+      "summary": "Full suite and targeted tests preserve no-post/eligible exits, reject unscreened or premature exits, enforce actual public inclusion deadlines and reject late flags. Genuine screening and private fee posting pass.",
+      "artifacts": [
+        "evidence/C05/verification.md",
+        "evidence/C05/noir-full-001.log",
+        "evidence/C05/noir-targeted-002.log"
+      ]
+    },
+    {
+      "id": "C05-A03",
+      "result": "pass",
+      "summary": "Checked integer operations reject invalid inputs and unsupported obligations; tested zero/max bounds, multi-flag behavior, saturation, text boundaries, timestamp narrowing and recovery horizon.",
+      "artifacts": [
+        "evidence/C05/verification.md",
+        "evidence/C05/noir-full-001.log",
+        "evidence/C05/noir-targeted-002.log"
+      ]
+    },
+    {
+      "id": "C05-A04",
+      "result": "pass",
+      "summary": "144 independently computed economic combinations and exact M-post burst controls pass; flagged debt is charged once and cannot reset by withdrawal/redeposit.",
+      "artifacts": [
+        "evidence/C05/verification.md",
+        "evidence/C05/noir-full-001.log",
+        "evidence/C05/noir-targeted-002.log"
+      ]
+    }
+  ],
+  "review": {
+    "kind": "self-review",
+    "reviewer": "root with history_contract, history_pxe and history_tests delegated implementation/review lanes",
+    "summary": "Integrated source/ABI, arithmetic, policy race, deadline, privacy and recovery review. Independent release audit and historical-policy daemon retrieval remain outstanding.",
+    "artifacts": [
+      "evidence/C05/review.md"
+    ]
+  }
+}

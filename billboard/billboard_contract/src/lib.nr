@@ -56,6 +56,7 @@ pub fn compute_cooldown(amount: u128, cooldown_base_seconds: u64, min_deposit_we
     let numerator = (cooldown_base_seconds as u128) * min_deposit_wei;
     let quotient = numerator / amount;
     let result = quotient + if numerator % amount == 0 { 0 } else { 1 };
+    assert((result > 0) & (result <= cooldown_base_seconds as u128), "Cooldown out of range");
     result as u64
 }
 
@@ -63,6 +64,48 @@ pub fn checked_time_add(time: u64, interval: u64) -> u64 {
     assert(time <= 0x7fffffffffffffff, "Timestamp out of range");
     assert(interval <= 0x7fffffffffffffff - time, "Eligibility timestamp overflow");
     time + interval
+}
+
+/// All economics are validated before arithmetic or narrowing. The maximum
+/// products are below 2^49, so each interval fits u64; time addition separately
+/// enforces the executable timestamp horizon rather than merely the wire type.
+pub fn compute_next_allowed(now: u64, previous: u64, cooldown: u64,
+    k: u64, max_save_up: u64, flags: u64) -> u64 {
+    assert((cooldown > 0) & (cooldown <= 0xffffffff), "Invalid cooldown");
+    assert((k > 0) & (k <= 0xffff), "Invalid penalty multiplier");
+    assert((max_save_up > 0) & (max_save_up <= 0xffff), "Invalid save-up cap");
+    assert(flags <= 2, "Invalid flag count");
+    assert((now <= 0x7fffffffffffffff) & (previous <= 0x7fffffffffffffff), "Timestamp out of range");
+    let saved = cooldown * (max_save_up - 1);
+    let floor = if now >= saved { now - saved } else { 0 };
+    let effective = if previous > floor { previous } else { floor };
+    assert(now >= effective, "Too early to post -- time lock not yet expired");
+    let penalty = cooldown * (1 + (k - 1) * flags);
+    checked_time_add(effective, penalty)
+}
+
+/// Hash exactly the declared UTF-8 bytes, without terminal/padding bytes.
+/// Matches SHA_FIELD(domain || word(1) || word(board) || word(length) || bytes).
+pub fn policy_version(board: AztecAddress, policy: [Field; 48], length: u32) -> Field {
+    validate_policy(policy, length);
+    let header = encode_words("AZTEC_BB_POLICY_V1", [1, board.to_field(), length as Field]);
+    let mut message: [u8; 1616] = [0; 1616];
+    for i in 0..128 { message[i] = header[i]; }
+    for i in 0..48 {
+        let bytes: [u8; 32] = policy[i].to_be_bytes();
+        for j in 0..31 { message[128 + i * 31 + j] = bytes[j + 1]; }
+    }
+    let digest = sha256::sha256_var(message, 128 + length);
+    // The first 31 digest bytes, not modulo Fr and not the last 31 bytes.
+    let mut value: Field = 0;
+    for i in 0..31 { value = value * 256 + digest[i] as Field; }
+    value
+}
+
+/// Empty reasons are valid per V1; nonempty bytes obey the shared text codec.
+pub fn validate_reason(reason: [Field; 7], length: u16) {
+    assert(length <= 200, "Reason too long");
+    validate_text(reason, length as u32, false);
 }
 
 /// Canonical 31-byte fields, nonempty UTF-8, no NUL or hidden padding.
