@@ -1,0 +1,245 @@
+--- /dev/null
++++ b/billboard/sponsor_common/Nargo.toml
+@@ -0,0 +1,8 @@
++[package]
++name = "sponsor_common"
++type = "lib"
++authors = [""]
++compiler_version = ">=1.0.0"
++
++[dependencies]
++aztec = { git = "https://github.com/AztecProtocol/aztec-nr", tag = "v5.2.0", directory = "aztec" }
+--- /dev/null
++++ b/billboard/sponsor_common/src/lib.nr
+@@ -0,0 +1,97 @@
++use aztec::protocol::{address::AztecAddress, abis::gas_settings::GasSettings,
++    hash::poseidon2_hash_with_separator, merkle_tree::root::root_from_sibling_path,
++    traits::{Deserialize, Packable, Serialize, ToField}};
++
++pub global TREE_DEPTH: u32 = 10;
++pub global MAX_TICKETS: u32 = 1024;
++pub global COUPON_DOMAIN: u32 = 0x42420104;
++// Shared windows are bounded; every transaction still obeys the protocol's shorter remaining lifetime.
++pub global MAX_WINDOW_DURATION: u64 = 86400;
++global MAX_U64: u64 = 0xffffffffffffffff;
++
++#[derive(Deserialize, Eq, Packable, Serialize)]
++pub struct SponsorConfig {
++    pub board: AztecAddress,
++    pub window_duration: u64,
++    pub window_budget: u128,
++    pub max_da_gas: u32,
++    pub max_l2_gas: u32,
++    pub max_teardown_da: u32,
++    pub max_teardown_l2: u32,
++    pub max_fee_da: u128,
++    pub max_fee_l2: u128,
++    pub max_priority_da: u128,
++    pub max_priority_l2: u128,
++    pub max_fee_per_ticket: u128,
++}
++#[derive(Deserialize, Eq, Packable, Serialize)]
++pub struct Batch {
++    pub root: Field,
++    pub window: u64,
++    pub ticket_count: u32,
++}
++
++pub fn validate_config(c: SponsorConfig) {
++    assert(c.board.to_field() != 0, "Sponsor zero board");
++    assert(c.window_duration > 0 & c.window_duration <= MAX_WINDOW_DURATION, "Sponsor invalid window duration");
++    assert(c.window_budget > 0, "Sponsor zero window budget");
++    assert(c.max_fee_per_ticket > 0 & c.max_fee_per_ticket <= c.window_budget, "Sponsor invalid ticket budget");
++    assert(c.max_da_gas > 0 & c.max_l2_gas > 0, "Sponsor zero gas cap");
++    assert(c.max_teardown_da <= c.max_da_gas & c.max_teardown_l2 <= c.max_l2_gas, "Sponsor invalid teardown cap");
++    assert(c.max_fee_da > 0 & c.max_fee_l2 > 0, "Sponsor zero unit fee cap");
++    assert(c.max_fee_da <= MAX_U64 as u128 & c.max_fee_l2 <= MAX_U64 as u128, "Sponsor unit fee cap too large");
++    assert(c.max_priority_da <= c.max_fee_da & c.max_priority_l2 <= c.max_fee_l2, "Sponsor invalid priority cap");
++}
++
++// Fixed Unix-epoch-aligned windows [start,end], with no shared endpoint.
++// All arithmetic is checked before computing a potentially overflowing product/sum.
++pub fn window_bounds(duration: u64, window: u64) -> (u64, u64) {
++    assert(duration > 0 & duration <= MAX_WINDOW_DURATION, "Sponsor invalid window duration");
++    let span = duration - 1;
++    assert(window <= (MAX_U64 - span) / duration, "Sponsor window timestamp overflow");
++    let start = window * duration;
++    (start, start + span)
++}
++
++pub fn reserve_batch(c: SponsorConfig, batch_id: u64, batch: Batch, reserved: u128, now: u64) -> u128 {
++    assert(batch_id > 0, "Sponsor zero batch id");
++    assert(batch.root != 0, "Sponsor zero coupon root");
++    assert(batch.ticket_count > 0 & batch.ticket_count <= MAX_TICKETS, "Sponsor invalid ticket count");
++    let (_, end) = window_bounds(c.window_duration, batch.window);
++    assert(now <= end, "Sponsor expired registration window");
++    assert(reserved <= c.window_budget, "Sponsor invalid reserved balance");
++    let remaining = c.window_budget - reserved;
++    // This also establishes that the following multiplication/addition fit u128.
++    assert(c.max_fee_per_ticket <= remaining / batch.ticket_count as u128, "Sponsor window budget exhausted");
++    reserved + c.max_fee_per_ticket * batch.ticket_count as u128
++}
++
++pub fn coupon_leaf(chain_id: Field, version: Field, sponsor: AztecAddress, window: u64,
++    batch_id: u64, index: u32, owner: AztecAddress, blind: Field) -> Field {
++    poseidon2_hash_with_separator([chain_id, version, sponsor.to_field(), window as Field,
++        batch_id as Field, index as Field, owner.to_field(), blind], COUPON_DOMAIN)
++}
++pub fn validate_coupon(batch: Batch, chain_id: Field, version: Field, sponsor: AztecAddress,
++    batch_id: u64, index: u32, owner: AztecAddress, blind: Field, siblings: [Field; TREE_DEPTH]) {
++    assert(batch_id > 0, "Sponsor zero batch id");
++    assert(batch.ticket_count > 0 & batch.ticket_count <= MAX_TICKETS, "Sponsor invalid ticket count");
++    assert(index < batch.ticket_count, "Sponsor coupon index outside batch");
++    assert(owner.to_field() != 0, "Sponsor zero coupon owner");
++    assert(blind != 0, "Sponsor zero coupon blind");
++    let leaf = coupon_leaf(chain_id, version, sponsor, batch.window, batch_id, index, owner, blind);
++    assert(root_from_sibling_path(leaf, index as Field, siblings) == batch.root, "Sponsor invalid coupon membership");
++}
++
++pub fn validate_gas(c: SponsorConfig, gas: GasSettings) {
++    assert(gas.gas_limits.da_gas <= c.max_da_gas & gas.gas_limits.l2_gas <= c.max_l2_gas, "Sponsor gas exceeds cap");
++    assert(gas.teardown_gas_limits.da_gas <= c.max_teardown_da & gas.teardown_gas_limits.l2_gas <= c.max_teardown_l2, "Sponsor teardown exceeds cap");
++    assert(gas.teardown_gas_limits.da_gas <= gas.gas_limits.da_gas & gas.teardown_gas_limits.l2_gas <= gas.gas_limits.l2_gas, "Sponsor teardown exceeds total");
++    assert(gas.max_fees_per_gas.fee_per_da_gas <= c.max_fee_da & gas.max_fees_per_gas.fee_per_l2_gas <= c.max_fee_l2, "Sponsor unit fee exceeds cap");
++    assert(gas.max_priority_fees_per_gas.fee_per_da_gas <= c.max_priority_da & gas.max_priority_fees_per_gas.fee_per_l2_gas <= c.max_priority_l2, "Sponsor priority exceeds cap");
++    assert(gas.max_priority_fees_per_gas.fee_per_da_gas <= gas.max_fees_per_gas.fee_per_da_gas & gas.max_priority_fees_per_gas.fee_per_l2_gas <= gas.max_fees_per_gas.fee_per_l2_gas, "Sponsor priority exceeds fee");
++    // Immutable configuration caps prices to u64: two u32*u64 products fit u128.
++    // V5.2 total gas includes teardown; do not add the reserve a second time.
++    let maximum_fee = gas.gas_limits.da_gas as u128 * gas.max_fees_per_gas.fee_per_da_gas
++        + gas.gas_limits.l2_gas as u128 * gas.max_fees_per_gas.fee_per_l2_gas;
++    assert(maximum_fee <= c.max_fee_per_ticket, "Sponsor transaction exceeds ticket budget");
++}
+--- /dev/null
++++ b/billboard/sponsor_contract/Nargo.toml
+@@ -0,0 +1,10 @@
++[package]
++name = "sponsor_contract"
++type = "contract"
++authors = [""]
++compiler_version = ">=1.0.0"
++
++[dependencies]
++aztec = { git = "https://github.com/AztecProtocol/aztec-nr", tag = "v5.2.0", directory = "aztec" }
++sponsor_common = { path = "../sponsor_common" }
++billboard_contract = { path = "../billboard_contract" }
+--- /dev/null
++++ b/billboard/sponsor_contract/src/main.nr
+@@ -0,0 +1,118 @@
++use aztec::macros::aztec;
++
++#[aztec]
++pub contract BillboardSponsor {
++    use aztec::{macros::{functions::{allow_phase_change, external, initializer, internal, view}, storage::storage},
++        note::HintedNote, protocol::{address::{AztecAddress, EthAddress}, traits::ToField},
++        state_vars::{Map, Owned, PublicImmutable, PublicMutable, SingleUseClaim}};
++    use billboard_contract::{Billboard, Billboard::PostNote};
++    use sponsor_common::{SponsorConfig, Batch, TREE_DEPTH, validate_config, reserve_batch,
++        validate_coupon, validate_gas, window_bounds};
++
++    #[storage]
++    struct Storage<Context> {
++        config: PublicImmutable<SponsorConfig, Context>,
++        admin: PublicMutable<AztecAddress, Context>,
++        batches: Map<u64, PublicImmutable<Batch, Context>, Context>,
++        reserved_by_window: Map<u64, PublicMutable<u128, Context>, Context>,
++        claims: Map<u64, Map<u32, Owned<SingleUseClaim<Context>, Context>, Context>, Context>,
++    }
++
++    #[external("public")]
++    #[initializer]
++    fn constructor(admin: AztecAddress, config: SponsorConfig) {
++        assert(admin.to_field() != 0, "Sponsor zero admin");
++        validate_config(config);
++        self.storage.config.initialize(config);
++        self.storage.admin.write(admin);
++    }
++
++    #[external("public")]
++    fn rotate_admin(next_admin: AztecAddress) {
++        assert(self.msg_sender() == self.storage.admin.read(), "Sponsor only admin");
++        assert(next_admin.to_field() != 0, "Sponsor zero admin");
++        self.storage.admin.write(next_admin);
++        // Existing batches and reservations stay immutable; this cannot revoke a coupon.
++    }
++
++    #[external("public")]
++    fn register_batch(batch_id: u64, root: Field, window: u64, ticket_count: u32) {
++        assert(self.msg_sender() == self.storage.admin.read(), "Sponsor only admin");
++        assert(!self.storage.batches.at(batch_id).is_initialized(), "Sponsor batch id already registered");
++        let config = self.storage.config.read();
++        let batch = Batch { root, window, ticket_count };
++        let reserved = self.storage.reserved_by_window.at(window).read();
++        let next_reserved = reserve_batch(config, batch_id, batch, reserved, self.context.timestamp());
++        // Both writes execute in one public call. No private mutable budget read,
++        // reclaim operation, reserve reset, or batch replacement exists.
++        self.storage.batches.at(batch_id).initialize(batch);
++        self.storage.reserved_by_window.at(window).write(next_reserved);
++    }
++
++    #[internal("private")]
++    fn _consume_coupon(owner: AztecAddress, batch_id: u64, index: u32, blind: Field, siblings: [Field; TREE_DEPTH]) -> SponsorConfig {
++        assert(self.context.maybe_msg_sender().is_none(), "Sponsor must be transaction root");
++        let config = self.storage.config.read();
++        let batch = self.storage.batches.at(batch_id).read();
++        validate_coupon(batch, self.context.chain_id(), self.context.version(), self.address, batch_id, index, owner, blind, siblings);
++        let (start, end) = window_bounds(config.window_duration, batch.window);
++        let anchor_time = self.context.get_anchor_block_header().timestamp();
++        assert(anchor_time >= start, "Sponsor coupon not active");
++        assert(anchor_time <= end, "Sponsor coupon expired at anchor");
++        validate_gas(config, self.context.gas_settings());
++        // The protocol also enforces the minimum of this deadline and its transaction lifetime.
++        self.context.set_expiration_timestamp(end);
++        // Global immutable batch ID + fixed index + committed owner. The claim
++        // uses the owner's NHK; membership inputs remain private.
++        self.storage.claims.at(batch_id).at(index).at(owner).claim();
++        config
++    }
++
++    #[external("private")]
++    #[allow_phase_change]
++    fn sponsor_claim(owner: AztecAddress, batch_id: u64, index: u32, blind: Field, siblings: [Field; TREE_DEPTH],
++        depositor: EthAddress, amount: u128, deposit_nonce: u64, secret: Field, message_leaf_index: Field, auth_nonce: Field) {
++        let config = self.internal._consume_coupon(owner, batch_id, index, blind, siblings);
++        self.context.set_as_fee_payer();
++        self.context.end_setup();
++        self.call(Billboard::at(config.board).delegated_claim_deposit(owner, depositor, amount, deposit_nonce, secret, message_leaf_index, auth_nonce));
++    }
++
++    #[external("private")]
++    #[allow_phase_change]
++    fn sponsor_post(owner: AztecAddress, batch_id: u64, index: u32, blind: Field, siblings: [Field; TREE_DEPTH],
++        deposit_chain_id: Field, post_nonce: Field, msg: [Field;32], message_length: u16, is_dummy: bool,
++        child: Option<HintedNote<PostNote>>, grandchild: Option<HintedNote<PostNote>>, auth_nonce: Field) {
++        // Pending metadata changes meaning across end_setup. The board only accepts
++        // historical membership anyway: explicitly require settled hints here.
++        if child.is_some() { assert(child.unwrap_unchecked().metadata.is_settled(), "Sponsor child must be settled"); }
++        if grandchild.is_some() { assert(grandchild.unwrap_unchecked().metadata.is_settled(), "Sponsor grandchild must be settled"); }
++        let config = self.internal._consume_coupon(owner, batch_id, index, blind, siblings);
++        self.context.set_as_fee_payer();
++        self.context.end_setup();
++        self.call(Billboard::at(config.board).delegated_post(owner, deposit_chain_id, post_nonce, msg, message_length, is_dummy, child, grandchild, auth_nonce));
++    }
++
++    #[external("private")]
++    #[allow_phase_change]
++    fn sponsor_withdraw(owner: AztecAddress, batch_id: u64, index: u32, blind: Field, siblings: [Field; TREE_DEPTH],
++        deposit_chain_id: Field, auth_nonce: Field) {
++        let config = self.internal._consume_coupon(owner, batch_id, index, blind, siblings);
++        self.context.set_as_fee_payer();
++        self.context.end_setup();
++        self.call(Billboard::at(config.board).delegated_withdraw(owner, deposit_chain_id, auth_nonce));
++    }
++
++    #[external("public")]
++    #[view]
++    fn get_config() -> SponsorConfig { self.storage.config.read() }
++    #[external("public")]
++    #[view]
++    fn get_admin() -> AztecAddress { self.storage.admin.read() }
++    #[external("public")]
++    #[view]
++    fn get_batch(batch_id: u64) -> Batch { self.storage.batches.at(batch_id).read() }
++    #[external("public")]
++    #[view]
++    fn get_reserved(window: u64) -> u128 { self.storage.reserved_by_window.at(window).read() }
++}

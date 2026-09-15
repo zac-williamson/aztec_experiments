@@ -686,7 +686,7 @@
       "title": "Implement and evaluate private or shared sponsored fees",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "P04",
         "C03"
@@ -704,7 +704,8 @@
         "billboard/",
         "execution/",
         "scripts/",
-        "package.json"
+        "package.json",
+        "noir-dependencies.json"
       ],
       "plan": "tasks/W01.md",
       "actions": [
@@ -733,7 +734,7 @@
       "evidence": "evidence/W01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Mechanism feasibility passed and committed throughdb1e55c: actual local sponsor debit, exact coupon replay, paid revert, admission+builder expiry. Production integration waits for C03 (C01 fresh deposit schema, C02 owner/ancestry, C03 stable post IDs). All W01 criteria retained; resume against fresh delegated ABI afterC03. Requalify later C04\u2013C06 effects before release.",
+      "checkpoint": "Delegated board milestone passes149 Noir tests in about281s, source fingerprint844c933b7204c537eaf6fda55c8c26ffaed5d9049dabdc47bc657f8b910cd357. Compiled VK artifacts and official dependency-origin checks pass. Next integrate drafted immutable sponsor batch/window contract and16 pure policy tests, extend reproducible artifact pipeline, then mandatory client/issuance/shared funding/genuine journey. W01 remains active and incomplete.",
       "priority": 5
     },
     {

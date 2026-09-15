@@ -373,3 +373,7 @@ C03 current: root owns integration and batch-author claims/runtime; /root/build_
 C03 instrumented rerun: root supervises sole genuine ten-author run with unchanged540s deadline. build_review delivered receipt progress capture and repaired two dummy retry propagation seams;174 integrated client/signer checks pass. Timing diagnosis is read-only and explicitly inconclusive pending receipt observations. Source frozen for run.
 
 C03 closed: root verified genuine10-author run476849ms, integrated137Noir/174client/daemon/clock checks; build_review independently checked final runtime/source binding. All owned processes removed. Graph selected W01 fee integration next; C04 remains ready.
+
+W01 resumed after C03: root owns sponsor/board/client architecture and integration; build_review gets bounded read-only owner/authwit/coupon interface review. No heavy processes running.
+
+W01 continuation: root applied and corrected the 12 delegated-board tests, owns serial build/full-suite verification. The reused build_review lane separately reviewed immutable batch/window budgeting and now owns only an unapplied sponsor-contract/common-policy patch. Root owns source integration and final evidence; no concurrent heavy test jobs.

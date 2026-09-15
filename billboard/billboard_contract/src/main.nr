@@ -10,7 +10,7 @@ pub contract Billboard {
         history::{note::assert_note_existed_by, storage::public_storage_historical_read},
         keys::getters::{get_nhk_app, get_public_keys, try_get_public_keys},
         macros::{
-            functions::{external, initializer, only_self, view},
+            functions::{authorize_once, external, initializer, internal, only_self, view},
             notes::note,
             storage::storage,
         },
@@ -310,6 +310,22 @@ pub contract Billboard {
     #[external("private")]
     fn claim_deposit(depositor: EthAddress, amount: u128, deposit_nonce: u64, secret: Field, message_leaf_index: Field) {
         let sender = self.msg_sender();
+        self.internal._claim_deposit_for(sender, depositor, amount, deposit_nonce, secret, message_leaf_index);
+    }
+
+    // The SDK macro derives the complete serialized argument length, including
+    // hinted-note metadata. Self-delegation is rejected, so every successful
+    // delegated call necessarily verified an owner authwit bound to its caller.
+    #[authorize_once("owner", "auth_nonce")]
+    #[external("private")]
+    fn delegated_claim_deposit(owner: AztecAddress, depositor: EthAddress, amount: u128, deposit_nonce: u64, secret: Field, message_leaf_index: Field, auth_nonce: Field) {
+        assert(owner != self.msg_sender(), "Delegated owner must differ from caller");
+        assert(auth_nonce != 0, "Delegated auth nonce must not be zero");
+        self.internal._claim_deposit_for(owner, depositor, amount, deposit_nonce, secret, message_leaf_index);
+    }
+
+    #[internal("private")]
+    fn _claim_deposit_for(sender: AztecAddress, depositor: EthAddress, amount: u128, deposit_nonce: u64, secret: Field, message_leaf_index: Field) {
         let now = self.context.get_anchor_block_header().timestamp();
         let config = self.storage.config.read();
         config.validate(self.context.chain_id(), self.context.version());
@@ -363,16 +379,24 @@ pub contract Billboard {
     // The save-up rule prevents bursting after dormancy.
 
     #[external("private")]
-    fn post(
-        deposit_chain_id: Field,
-        post_nonce: Field,
-        msg: [Field; MSG_FIELDS],
-        message_length: u16,
-        is_dummy: bool,
-        child: Option<HintedNote<PostNote>>,
-        grandchild: Option<HintedNote<PostNote>>,
-    ) {
+    fn post(deposit_chain_id: Field, post_nonce: Field, msg: [Field; MSG_FIELDS], message_length: u16, is_dummy: bool, child: Option<HintedNote<PostNote>>, grandchild: Option<HintedNote<PostNote>>) {
         let sender = self.msg_sender();
+        self.internal._post_for(sender, deposit_chain_id, post_nonce, msg, message_length, is_dummy, child, grandchild);
+    }
+
+    // The SDK macro derives the complete serialized argument length, including
+    // hinted-note metadata. Self-delegation is rejected, so every successful
+    // delegated call necessarily verified an owner authwit bound to its caller.
+    #[authorize_once("owner", "auth_nonce")]
+    #[external("private")]
+    fn delegated_post(owner: AztecAddress, deposit_chain_id: Field, post_nonce: Field, msg: [Field; MSG_FIELDS], message_length: u16, is_dummy: bool, child: Option<HintedNote<PostNote>>, grandchild: Option<HintedNote<PostNote>>, auth_nonce: Field) {
+        assert(owner != self.msg_sender(), "Delegated owner must differ from caller");
+        assert(auth_nonce != 0, "Delegated auth nonce must not be zero");
+        self.internal._post_for(owner, deposit_chain_id, post_nonce, msg, message_length, is_dummy, child, grandchild);
+    }
+
+    #[internal("private")]
+    fn _post_for(sender: AztecAddress, deposit_chain_id: Field, post_nonce: Field, msg: [Field; MSG_FIELDS], message_length: u16, is_dummy: bool, child: Option<HintedNote<PostNote>>, grandchild: Option<HintedNote<PostNote>>) {
         let now = self.context.get_anchor_block_header().timestamp();
         let header = self.context.get_anchor_block_header();
         let addr = self.context.this_address();
@@ -586,6 +610,22 @@ pub contract Billboard {
     #[external("private")]
     fn withdraw(deposit_chain_id: Field) {
         let sender = self.msg_sender();
+        self.internal._withdraw_for(sender, deposit_chain_id);
+    }
+
+    // The SDK macro derives the complete serialized argument length, including
+    // hinted-note metadata. Self-delegation is rejected, so every successful
+    // delegated call necessarily verified an owner authwit bound to its caller.
+    #[authorize_once("owner", "auth_nonce")]
+    #[external("private")]
+    fn delegated_withdraw(owner: AztecAddress, deposit_chain_id: Field, auth_nonce: Field) {
+        assert(owner != self.msg_sender(), "Delegated owner must differ from caller");
+        assert(auth_nonce != 0, "Delegated auth nonce must not be zero");
+        self.internal._withdraw_for(owner, deposit_chain_id);
+    }
+
+    #[internal("private")]
+    fn _withdraw_for(sender: AztecAddress, deposit_chain_id: Field) {
         let now = self.context.get_anchor_block_header().timestamp();
         let config = self.storage.config.read();
         config.validate(self.context.chain_id(), self.context.version());
