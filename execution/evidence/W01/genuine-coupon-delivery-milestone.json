@@ -1,0 +1,137 @@
+{
+  "passed": true,
+  "scope": "Genuine shared HTTP issuance, encrypted real SQLite coupon delivery, actual registered batch, unfunded author claim/post",
+  "evidence": "application-75302fad-0e79-4666-a04f-591e439d765a.json",
+  "evidenceSha256": "d89d1b0af3f2a348e35fea2d9c3b4a931cc4f68ad45fd3cbe2cfe48b8b5df128",
+  "elapsedMs": 393100,
+  "peakTreeRSSKiB": 1217584,
+  "cleanup": {
+    "processGroupAbsent": true,
+    "descendantTreeAbsent": true,
+    "temporaryDirectoryRemoved": true
+  },
+  "couponDelivery": {
+    "passed": true,
+    "realHttp": true,
+    "realSqlite": true,
+    "encryptedLocalStorage": true,
+    "genuineRegisteredBatch": true,
+    "sameAuthorSeparateTestStores": true,
+    "productionOperatorRecoveryQualified": false,
+    "batchId": "1",
+    "root": "0x271fe32eeb963e4de92e42180e5675e6273e423751b4402e9f53793e86c6a729",
+    "ticketCount": 2,
+    "requestFields": [
+      {
+        "route": "reserve",
+        "fields": [
+          "window"
+        ]
+      },
+      {
+        "route": "reserve",
+        "fields": [
+          "window"
+        ]
+      },
+      {
+        "route": "submit",
+        "fields": [
+          "leaf",
+          "token"
+        ]
+      },
+      {
+        "route": "submit",
+        "fields": [
+          "leaf",
+          "token"
+        ]
+      },
+      {
+        "route": "retrieve",
+        "fields": [
+          "token"
+        ]
+      },
+      {
+        "route": "retrieve",
+        "fields": [
+          "token"
+        ]
+      },
+      {
+        "route": "retrieve",
+        "fields": [
+          "token"
+        ]
+      },
+      {
+        "route": "retrieve",
+        "fields": [
+          "token"
+        ]
+      }
+    ],
+    "issuerCounters": {
+      "batches": 1,
+      "allocated": 2,
+      "submitted": 2,
+      "sealed": 1,
+      "currentWindow": "20711",
+      "currentWindowReserved": "545015854913822400"
+    }
+  },
+  "sponsorAccounting": {
+    "authorRemainedUnfunded": true,
+    "exactFeeDebitsChecked": true,
+    "balanceBeforeActions": "1000000000000000000000",
+    "balanceAfterActions": "999999966300862600000"
+  },
+  "postChecks": {
+    "verifiedCount": 1,
+    "uniqueIdsAndOrder": true
+  },
+  "sourceHashes": {
+    "scripts/test-c01-application.mjs": "2695477ef40b736d97a58f3f05dd77691b16e393b68e56cfa1e6c0bfc8b3b4d5",
+    "scripts/owned-test-process-tree.mjs": "0346e6b1fb449e55ebcfa5f35c30764fa0c32c1c4e9b98c77ed7ec48d5ae4039",
+    "scripts/c01-settle-application-message.mjs": "7399875d97f5dfd82a3787d8c39390fd9fc6673c8ce06d5bc41464515c3fef4b",
+    "scripts/c01-application-deployment.mjs": "a81fe20b22967ce6e3d6c1f751ee93ed6c9fef5e8553cf4037534780dec11fa2",
+    "scripts/prove-application-action.mjs": "b58a1298a7342578fbc6533e8ad6adcee540c8b0561da3228cd0925f92ba2a99",
+    "scripts/w01-sponsor-flow.mjs": "53103e52659dada0fac6ccc7063bbe133bb10769efcb2825c775bb87d38fc8e6",
+    "scripts/w01-shared-funding.mjs": "174f9433ab6132a9503220576a0fd0048868226bb87b6fac917363689831c408",
+    "scripts/w01-coupon-delivery.mjs": "9e6d41e1a7e159c70da2d8c4bfb1e44187a1449cea5bd5748cc4e1c5ea9ec2c1",
+    "sponsor-service/issuer.mjs": "4a045d7c42af001422753ab12a13d49428ef71ce5d23c35dc014462a230f2e70",
+    "sponsor-service/http.mjs": "53dd2eab7ee1cb1d08e98bfa1486592166e593ba6bf3ec85f317c4c5d48f7feb",
+    "sponsor-service/coupon-store.mjs": "037bf809d64f41e9f413600d1ac6c22c741cb52f5eca75c8850f8f8c496e7e81",
+    "shared/sponsor-state.mjs": "025a9a5b77c83f7659c81402255986d33114db828cbb73ec1edb63e856d65d8f",
+    "shared/sponsor-coupon-provider.mjs": "1cd0894cf08a6d3d4458453cf314778bf6b91b25183902a9574f7fee6da437a7",
+    "shared/sponsor-coupon-store.mjs": "b270e8ca96e1c850ec26910c6d3cc8bc7cff9ebd930aecc428767a2bf8cefaca",
+    "shared/sponsor-transport.mjs": "55a0efb60f2dc632e6ceeb0a55295471b3e905e9dbd45741d54fdf6d2fd34f4f",
+    "shared/sponsor-client.mjs": "ce72ab080b5bcb6517a4a249620c3375a62ce8cf7fb453543b77226095f25ed8",
+    "scripts/c01-settle-ready.mjs": "cf0a0e4a531e938b601f4fdf13ce336a9d453435f3df70e2be38f6d2e2d93d1c",
+    "scripts/c01-settle-message.mjs": "4e9bc2eeb7dad873311045c49f89b0b53c5ccd4f34d0516924e47338773ed132",
+    "scripts/c01-bridge-flow.mjs": "65826415026862cb1950d14d955100743ad0d1784ef4e08bf1a1498e67218d0e",
+    "scripts/c02-screening-flow.mjs": "eb17ada6ead428a05d1f45e108626d58039c4e7293ba7257ebc4c6100d16a910",
+    "scripts/c03-author-claims.mjs": "8c4f2ff5f24d18e188a26dddc409d3603a993a740dc2bb61184f28b703227a25",
+    "scripts/c03-contention-flow.mjs": "cbf1c60fd420f7be9e80e77a62b578ee60199552145120e1559b59a81b2092b5",
+    "scripts/c01-client-mining.mjs": "a10abf9d1798fac6ddae89a0f62ce2b3e30b9ddd69a77512d5f83f8dc33ff332",
+    "scripts/c01-deposit-flow.mjs": "6a596a038b9d724bb6b2ef488c6387037531c952ed0ccf7a6251815b8666e571",
+    "scripts/c01-exit-flow.mjs": "b3c99e5ce8bb37d4b9c57e0f5c110c5813754c9e4a93d3cda8e59cbeaf4a7487",
+    "scripts/c01-withdraw-l1.mjs": "efc31d321d566b47fe18a17f23e4923b8258e6c42af43350130ff94ae5d62baa",
+    "scripts/c01-ready-flow.mjs": "91f74ca457f7954e84b7cb0d1297ce2e90b1e039254341aeda2f9bf35d838134",
+    "scripts/c01-board-inclusion.mjs": "46a43363765aff5460820ac2c33b636e3b6b8ef310830255b1ed549328db09ed",
+    "scripts/c01-board-flow.mjs": "5b4054c95363f33eed69e0268e771258662e33d7fa0c0a7525aac3f9fdd9b284",
+    "scripts/c01-real-node.mjs": "a884bf8f30bf04dc6d60e4732208722104c1b07196c74262b1ee22591991a06a",
+    "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js": "f84940700d4fe17c4bb94fb27199085fb057c567ff745e90c21352cd47a091c3"
+  },
+  "limitations": [
+    "One author, two separate local test stores; no multi-user anonymity claim",
+    "Ephemeral test encryption keys; production unlock/restart integration separate",
+    "Normal-path success; timeout reader ownership review remains open until patch controls and subsequent run",
+    "Production operator durable registration/replenishment and genuine coupon replay/paid-failure qualification remain"
+  ]
+}

@@ -734,7 +734,7 @@
       "evidence": "evidence/W01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Genuine sponsored claim/exit/refund passed367140ms; genuine sponsored posting passed362454ms (post proof13.7s); unfunded author and exact sponsor fees verified, fullcleanup. Client engine/build/browser/CLI checks pass, duplicate unsafe RPC wrapper removed and6 generated/source boundary checks pass. Issuer core committed62d90e2 (23checks), HTTP transport18checks; local durableprovider and readonlychaincallback delegated, root wires CLI/operator integration next. W01 incomplete: provider/registration/recovery/failure/privacy qualification remains.",
+      "checkpoint": "Coupon delivery integrated:96 focused checks, real browser IndexedDB reopen/CAS, rebuilt SDK/CLI/generated engine checks pass. Root prepares genuine shared HTTP/SQLite batch claim/post run at unchanged540s/8GiB; independent harness review active. build_review owns new bounded registration journal only; production operator recovery/privacy/failure gates remain.",
       "priority": 5
     },
     {

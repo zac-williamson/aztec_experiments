@@ -1,5 +1,5 @@
 // TEST ONLY: genuine application sponsorship on the parent's disposable local chain.
-// No issuer/privacy qualification is claimed by this in-memory coupon fixture.
+// Opaque HTTP issuance is exercised; production operator recovery/privacy gates remain.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -13,18 +13,19 @@ import {loadContractArtifact} from '@aztec/stdlib/abi';
 import {GasFees} from '@aztec/stdlib/gas';
 import {TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
 import {EmbeddedWallet} from '@aztec/wallets/embedded';
-import {prepareSponsoredAction,computeSponsorCouponRoot} from '../shared/sponsor-client.mjs';
+import {prepareSponsoredAction} from '../shared/sponsor-client.mjs';
 import {proveApplicationAction} from './prove-application-action.mjs';
 import {fundW01Sponsor} from './w01-shared-funding.mjs';
 import {ROOT} from './toolchain.mjs';
+import {deliverW01Coupons} from './w01-coupon-delivery.mjs';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const included=r=>[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(r.status);
 
 /** Returns a nonenumerable owner/callback to existing genuine claim/exit checks.
  * Every admin action is separately proven, validated and included. Parent owns mining/limits.
  */
-export async function prepareW01Sponsor({node,preparation,instance,l1Client,directory,mineL1,reportStage,posting=false}) {
-  const observation={passed:false,scope:'genuine sponsor deployment, shared funding and in-memory test coupons',
+export async function prepareW01Sponsor({node,preparation,instance,l1Client,directory,mineL1,reportStage,ready,rollupAddress,posting=false}) {
+  const observation={passed:false,scope:'genuine sponsor deployment, shared funding and real opaque coupon delivery',
     issuerQualified:false,transactions:[]};
   let wallet,stage='preflight';
   const mark=name=>{stage=name;reportStage?.('sponsor:'+name);};
@@ -86,14 +87,10 @@ export async function prepareW01Sponsor({node,preparation,instance,l1Client,dire
     const sponsor=Contract.at(sponsorInstance.address,artifact,wallet);
     const timestamp=BigInt((await node.getBlock('latest')).header.globalVariables.timestamp.toString());
     const window=timestamp/86400n;assert((window+1n)*86400n-timestamp>900n,'Test requires sufficient coupon window remaining');
-    const coupons=new Map();
-    for(const [kind,batchId] of [['claim',1n],[posting?'post':'withdraw',2n]]){
-      let blind=Fr.random();while(blind.isZero())blind=Fr.random();
-      const coupon={batchId,index:0,blind,siblings:Array.from({length:10},()=>Fr.ZERO)};
-      const root=await computeSponsorCouponRoot({chainId:31337n,version:BigInt(info.rollupVersion),sponsorAddress:sponsorInstance.address,
-        window,owner:author.address,...coupon});
-      await send(sponsor.methods.register_batch(batchId,root,window,1),'register-'+kind);coupons.set(kind,coupon);
-    }
+    const delivered=await deliverW01Coupons({directory,node,wallet,sponsor,sponsorRaw,owner:author.address,config,send,posting,
+      scope:{l1ChainId:'31337',rollupVersion:String(info.rollupVersion),rollupAddress:rollupAddress.toString().toLowerCase(),
+        boardAddress:instance.address.toString(),portalAddress:ready.portalAddress.toLowerCase()}});
+    const coupons=delivered.coupons;observation.couponDelivery=delivered.observation;
     assert.equal(await getFeeJuiceBalance(author.address,node),0n);
     observation.sponsorAddress=sponsorInstance.address.toString();observation.authorInitiallyUnfunded=true;
     observation.balanceBeforeActions=String(await getFeeJuiceBalance(sponsorInstance.address,node));

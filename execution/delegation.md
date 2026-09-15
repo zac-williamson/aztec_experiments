@@ -383,3 +383,7 @@ W01 next lane: root saved delegated and sponsor-contract milestones in243c2f9/8f
 Continuation: build_review owns mandatory engine sponsor routing/CLI configuration and focused tests (preserving root RPC wrapper); build_verification inspects exact local shared FeeJuice funding APIs read-only. Root owns artifact integration and genuine proof harness. Heavy checks remain serialized.
 
 Current W01 lanes: root integrates genuine funding/claim/exit/post, generated browsers and operator/CLI boundary. build_review implements encrypted local coupon provider/store; build_verification implements read-only registered-batch SDK helper after completing issuer core/HTTP transport. Earlier issuer findings independently reviewed and closed; heavy proof/browser checks remain serial.
+
+W01 delivery integration: root owns SDK/engine callback and integrated checks. build_verification owns new sponsor-service/coupon-store.mjs and CLI durable-store tests; build_review owns read-only transport/state review. No concurrent heavy jobs.
+
+Current: root owns genuine shared-batch HTTP/SQLite delivery integration and sole bounded proof run. artifact_regressions reviews harness read-only; build_review owns NEW registration-journal.mjs/test/evidence only after design. build_verification delivered CLI store16tests and is idle.
