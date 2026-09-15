@@ -586,7 +586,7 @@
       "title": "Harden escrow accounting and design safe recovery",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "C05"
       ],
@@ -632,7 +632,7 @@
       "evidence": "evidence/C06.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "37 Forge checks and30 artifact checks pass; runtime unchanged; recovery runbook source-reviewed, W02/W03 client gaps preserved. Evidence/C06.json.",
       "priority": 11
     },
     {
@@ -845,7 +845,7 @@
       "evidence": "evidence/W03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "P03 actual shared-wallet sendTx with SDK5 receipt classes resolves reverted and dropped outcomes as confirmed. Success requires executionResult plus inclusion/finality semantics, not obsolete status-only checks. Replace known-bad regression assertions and exercise all four duplicated engine consumers.",
+      "checkpoint": "C06 recovery review found false unclaimed status on withdrawal lookup errors, misleading advice after500-block scan miss, and arbitrary already/consumed error-text treated as refunded without receipt verification. Fix with journal/reconciliation and explicit unknown states; see evidence/C06/recovery-review.md.",
       "priority": 14
     },
     {

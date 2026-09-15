@@ -1,0 +1,38 @@
+✔ matching synthetic artifacts and recorded sources pass (12.380125ms)
+✔ stale deploy Noir copy is rejected (8.666583ms)
+✔ stale censor Noir copy is rejected (7.567458ms)
+✔ missing verification key is rejected even when all consumer copies agree (8.390208ms)
+✔ empty private function set is rejected even when all consumer copies agree (7.522958ms)
+✔ only public functions is rejected even when all consumer copies agree (6.661417ms)
+✔ untranspiled artifact is rejected even when all consumer copies agree (7.796333ms)
+✔ truthy non-boolean transpilation marker is rejected even when all consumer copies agree (5.544583ms)
+✔ stale portal bytecode is rejected: apps/src/billboard/portal_bytecode.txt (5.564833ms)
+✔ stale portal bytecode is rejected: apps/src/billboard/deploy/portal_bytecode.txt (5.424709ms)
+✔ portal source drift is rejected by embedded compiler provenance (5.5965ms)
+✔ missing Solidity source provenance is rejected (5.554625ms)
+✔ string-encoded Solidity metadata remains supported (7.497292ms)
+✔ Noir source drift requires a rebuild (5.933333ms)
+✔ Noir dependency declaration drift requires a rebuild (5.119792ms)
+✔ root dependency lock drift requires a rebuild (5.843667ms)
+✔ portal dependency lock drift requires a rebuild (5.870917ms)
+✔ compiler configuration drift requires a rebuild (5.872208ms)
+✔ toolchain pins drift requires a rebuild (6.918375ms)
+✔ contract builder drift requires a rebuild (5.9325ms)
+✔ Noir debug-path normalizer drift requires a rebuild (5.220084ms)
+✔ Noir dependency verifier drift requires a rebuild (5.776375ms)
+✔ Noir dependency pins drift requires a rebuild (6.1765ms)
+✔ new Noir source omitted from the old manifest requires a rebuild (6.284458ms)
+✔ contract manifest input hash tampering is rejected (6.542ms)
+✔ contract manifest noir hash tampering is rejected (5.397792ms)
+✔ contract manifest portal hash tampering is rejected (5.9725ms)
+✔ synchronized altered Noir artifacts still fail the recorded build hash (5.112959ms)
+✔ synchronized altered portal bytecode still fails the recorded build hash (5.294125ms)
+✔ privateFee key, extra route and stale content fail closed (6.622167ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 383.160417

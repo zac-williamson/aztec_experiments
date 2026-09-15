@@ -22,3 +22,7 @@ C04 screening-history lookup is complete: exact successor selection replaces the
 C05 is active: checked economic transitions and inclusion-time moderation rules. Scope includes affected shared/app/service consumers, generated artifacts and test scripts required by the fresh moderation ABI.
 
 C05 complete: checked cooldown/penalty arithmetic, inclusion-time moderation deadlines, immutable policy snapshots and consumer binding. 171 distinct contract checks and66 integrated checks pass. Genuine screening5m7s and private-fee claim/post pass with complete cleanup. Historical policy retrieval remains M02. Next: C06 escrow accounting and safe recovery.
+
+C06 active: strengthen escrow/bridge verification and document supported recovery. Existing accounting/guard implementation remains unless tests identify a defect; no new pause authority or service is planned.
+
+C06 complete:37 escrow/reentrancy/conservation tests and30 artifact checks pass; runtime unchanged. Recovery runbook documents actual routes and W02/W03 gaps. Next ready graph package will address remaining application work.

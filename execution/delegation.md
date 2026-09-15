@@ -409,3 +409,9 @@ independent consumer and arithmetic review, and actual-source browser feed tests
 Root ran all native verification serially, recorded C05 evidence, and retained
 historical-policy recovery for M02. C06 preparation identified existing escrow
 protection plus missing adversarial bridge/conservation tests and recovery runbook.
+
+## C06 active lanes
+- history_contract: new PortalReentrancy.t.sol adversarial Inbox/Outbox callback tests.
+- history_tests: new PortalConservation.t.sol generated conservation sequences.
+- history_pxe: recovery runbook from actual CLI/wallet code.
+- Root: integration, serial Forge verification, source/artifact comparison and evidence.
