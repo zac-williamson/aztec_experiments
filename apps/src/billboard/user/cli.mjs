@@ -524,6 +524,8 @@ function formatCliPrivateFeeFailure(error) {
     BB_SUBMISSION_UNKNOWN: 'Transaction submission outcome is unknown. Check its outcome before another attempt.',
     BB_TRANSACTION_FAILED: 'The transaction did not complete successfully. Check its receipt before another attempt.',
     BB_STATE_CONFLICT: 'Transaction state changed. Refresh and create a new proof before another attempt.',
+    BB_RECOVERY_UNKNOWN: 'Recovery could not be verified. Preserve the receipt and retry lookup; do not create another deposit.',
+    BB_SETTLEMENT_PENDING: 'Withdrawal recorded; network settlement is pending. Retry the Ethereum claim later.',
   };
   try { if (typeof error?.code === 'string' && Object.hasOwn(messages, error.code)) return error.code + ': ' + messages[error.code]; } catch (_) {}
   return 'Private fee payment could not be completed. Check any transaction outcome before another attempt.';
@@ -542,7 +544,7 @@ function formatCliFailure(error) {
     'Invalid wallet salt', 'Invalid Aztec key', 'Invalid Censor key', 'Invalid Ethereum key',
   ]);
   if (safeMessages.has(error?.message)) return error.message;
-  if (args['private-fee-config'] || args['private-fee-claim-file']) return formatCliPrivateFeeFailure(error);
+  if (args['private-fee-config'] || args['private-fee-claim-file'] || ['BB_RECOVERY_UNKNOWN','BB_SETTLEMENT_PENDING','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT'].includes(error?.code)) return formatCliPrivateFeeFailure(error);
   return 'Command failed. Preserve wallet/cache and check any transaction outcome before retrying.';
 }
 main().catch(e => { log('FATAL: ' + formatCliFailure(e), 'error'); __realProcess.exit(1); });

@@ -241,51 +241,14 @@
         const txHash = tx.getTxHash();
         log('  Proving complete. Submitting to node...', 'success');
 
-        const ALREADY_EXISTS_RE = /existing nullifier|already exists|duplicate.*tx|tx.*duplicate/i;
-        let submitted = false;
-        const submitRetry = async (fn, maxRetries = 20) => {
-          for (let i = 1; i <= maxRetries; i++) {
-            try { await fn(); submitted = true; return; }
-            catch (err) {
-              const msg = err.message || '';
-              if (ALREADY_EXISTS_RE.test(msg)) {
-                log('  Tx may have already been submitted (got: ' + msg + '). Checking receipt...', 'warn');
-                return;
-              }
-              const isTransient = TRANSIENT_RE.test(msg);
-              if (!isTransient || i === maxRetries) throw err;
-              const delay = Math.min(5000 * i, 30000);
-              log('  Node busy (attempt ' + i + '/' + maxRetries + '), retrying in ' + (delay/1000) + 's...', 'warn');
-              await sleep(delay);
-            }
-          }
-        };
-
+        log('  Transaction hash: ' + txHash.toString(), 'info');
         if(this._contextGuard)await this._contextGuard();
-        await submitRetry(() => rawNode.sendTx(tx));
-        if (submitted) log('  Tx submitted! Hash: ' + txHash.toString(), 'success');
-
-        const waitOpts = typeof opts.wait === 'object' ? opts.wait : undefined;
-        const timeout = waitOpts?.timeout ?? 600;
-        const interval = waitOpts?.interval ?? 5;
-        const deadline = Date.now() + timeout * 1000;
-        let receipt = null;
-        let pollCount = 0;
-        while (Date.now() < deadline) {
-          try {
-            const r = await rawNode.getTxReceipt(txHash);
-            if (r && !r.isPending()) { receipt = r; break; }
-          } catch (err) {
-            if (!TRANSIENT_RE.test(err.message || '')) throw err;
-          }
-          pollCount++;
-          if (pollCount % 4 === 0) {
-            const elapsed = Math.round((Date.now() - (deadline - timeout * 1000)) / 1000);
-            log('  Waiting for confirmation... (' + elapsed + 's elapsed)', 'info');
-          }
-          await sleep(interval * 1000);
-        }
-        if (!receipt) throw new Error('Tx ' + txHash.toString() + ' not confirmed within ' + timeout + 's');
+        await a.submitOnceWithReconciliation(rawNode,tx);
+        const waitOpts=typeof opts.wait==='object'?opts.wait:{};
+        const receipt=await a.waitForSuccessfulReceipt(rawNode,tx,{
+          timeoutMs:(waitOpts.timeout ?? 540)*1000,intervalMs:(waitOpts.interval ?? 5)*1000,
+          now:()=>Date.now(),sleep:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
+        });
         log('  Tx confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
         return { receipt };
       }

@@ -169,6 +169,20 @@ function buildConfig(action, extra) {
 // ============================================================
 // Call engine with log routing to a specific status div
 // ============================================================
+function publicOperationFailure(error) {
+  const messages={
+    BB_SUBMISSION_UNKNOWN:'Submission outcome is unknown. Keep the transaction record and check its receipt before retrying.',
+    PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN:'Fee funding outcome is unknown. Keep its recovery file and check the transaction before retrying.',
+    BB_PRIVATE_FEE_AMOUNT:'Deposit more than the configured maximum claim fee.',
+    BB_TRANSACTION_FAILED:'The transaction did not execute successfully. Check its receipt before trying again.',
+    BB_STATE_CONFLICT:'Transaction state changed. Refresh the account before creating a new proof.',
+    BB_RECOVERY_UNKNOWN:'Recovery state could not be verified. Keep your recovery records and retry the lookup; do not create a replacement deposit.',
+    BB_SETTLEMENT_PENDING:'Your withdrawal is recorded. Network settlement is pending; retry the Ethereum claim later.',
+  };
+  const code=typeof error?.code==='string'&&Object.hasOwn(messages,error.code)?error.code:'BB_OPERATION_FAILED';
+  return Object.assign(new Error(messages[code]||'Wallet operation did not complete. Check the connection and recovery records; reload if the account or network changed.'),{code});
+}
+
 function makeCallEngine(engineFn, envExtra) {
   let running=false;
   return async function callEngine(action, statusDiv, extra) {
@@ -216,15 +230,11 @@ function makeCallEngine(engineFn, envExtra) {
         catch(error) {
           // RPC/prover exceptions can include witness or request data. Only a
           // bounded public classification crosses into UI error/log handlers.
-          const code=['BB_SUBMISSION_UNKNOWN','PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN','BB_PRIVATE_FEE_AMOUNT'].includes(error?.code)?error.code:'BB_OPERATION_FAILED';
-          const clean=new Error(code==='BB_OPERATION_FAILED'?'Operation did not complete. Check your wallet, network, balance and saved recovery records.':'Transaction needs attention. Keep your recovery record and check its outcome before retrying.');
-          clean.code=code;throw clean;
+          throw publicOperationFailure(error);
         }
       });
     } catch(error) {
-      const clean=new Error('Wallet operation did not complete. Check the connection and recovery records; reload if the account or network changed.');
-      clean.code=['BB_SUBMISSION_UNKNOWN','PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN','BB_PRIVATE_FEE_AMOUNT'].includes(error?.code)?error.code:'BB_OPERATION_FAILED';
-      throw clean;
+      throw publicOperationFailure(error);
     } finally {running=false;}
   };
 }

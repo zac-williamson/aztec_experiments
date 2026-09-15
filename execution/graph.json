@@ -813,7 +813,7 @@
       "title": "Implement trustworthy receipts and resumable transaction journal",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "W02",
         "A01"
@@ -827,7 +827,11 @@
       "scope": [
         "apps/src/billboard/",
         "apps/src/fee-juice/",
-        "shared/"
+        "shared/",
+        "scripts/",
+        "apps/dist/",
+        "apps/build.mjs",
+        ".github/"
       ],
       "plan": "tasks/W03.md",
       "actions": [
@@ -856,7 +860,7 @@
       "evidence": "evidence/W03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "C06 recovery review found false unclaimed status on withdrawal lookup errors, misleading advice after500-block scan miss, and arbitrary already/consumed error-text treated as refunded without receipt verification. Fix with journal/reconciliation and explicit unknown states; see evidence/C06/recovery-review.md.",
+      "checkpoint": "Receipt/history milestone verified: 106 integrated checks, 80 artifact/client checks, actual browser recovery and CLI SDK smoke. Shared/deploy/user receipts require canonical successful execution; long-history lookup has no fixed lookback; settlement pending returns promptly. Next implement encrypted durable operation journal with pre-broadcast transaction identity, restart reconciliation, persisted history cursors and matching Ethereum refund receipt verification. W03 remains active; no crash-resume completion claim. Final delegated turns quota-unavailable; root self-review.",
       "priority": 14
     },
     {

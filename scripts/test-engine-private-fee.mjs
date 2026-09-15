@@ -1,3 +1,5 @@
+import {TxHash} from '@aztec/stdlib/tx';
+import * as transactionOutcomes from '../shared/transaction-outcomes.mjs';
 // Actual application routing, with explicit node/proof/payment-preparer doubles.
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -40,7 +42,7 @@ const owner={toString:()=> 'owner'};
 test('actual wallet keeps configured gas and normal account scope/tag through simulation and proof',async()=>{
   const c=context(),calls=[],settings=gas(),expectedSettings=gas(),txHash={toString:()=>new Fr(4).toString()},payload={authWitnesses:['exact-auth']};
   const receipt={txHash,status:'checkpointed',executionResult:'success',blockNumber:1,blockHash:'block'};
-  const node={sendTx:async()=>calls.push('submit'),getTxReceipt:async()=>receipt};
+  const node={sendTx:async()=>calls.push('submit'),getTxReceipt:async()=>receipt,getBlock:async()=>({hash:'block'})};
   class BaseWallet {
     constructor(pxe){this.pxe=pxe;}
     async completeFeeOptions(opts){calls.push(['fees',opts]);return {gasSettings:opts.gasSettings};}
@@ -50,7 +52,7 @@ test('actual wallet keeps configured gas and normal account scope/tag through si
     senderForTagsFrom(from,sender){assert.equal(from,owner);return sender;}
   }
   const pxe={proveTx:async(request,opts)=>{calls.push(['prove',request,opts]);return {toTx:async()=>({getTxHash:()=>txHash})};}};
-  const wallet=c.BillboardPrivateFeeRouting.createAztecWallet({BaseWallet,owner,GasSettings},pxe,node,node,()=>{},Fr.ONE,{preProveHook:async ({gasLimits,feeOptions})=>{gasLimits.l2Gas=999999;feeOptions.gasSettings.maxFeesPerGas.feePerL2Gas=999999n;}});
+  const wallet=c.BillboardPrivateFeeRouting.createAztecWallet({...transactionOutcomes,BaseWallet,owner,GasSettings},pxe,node,node,()=>{},Fr.ONE,{preProveHook:async ({gasLimits,feeOptions})=>{gasLimits.l2Gas=999999;feeOptions.gasSettings.maxFeesPerGas.feePerL2Gas=999999n;}});
   const result=await wallet.sendTx(payload,{from:owner,additionalScopes:[owner],sendMessagesAs:owner,fee:{gasSettings:settings}});
   assert.equal(result.receipt,receipt);assert.equal(calls.filter(c=>c==='submit').length,1);
   const fees=calls.filter(c=>c[0]==='fees');assert.equal(fees[0][1].forEstimation,false);
@@ -80,7 +82,7 @@ function mainHarness(action,isDummy=false) {
   const provider={getCode:async()=> '0x01',getNetwork:async()=>({chainId:31337n}),destroy(){},getTransactionReceipt:async()=>({status:1,logs:[{address:portal,...event}]})};
   class Portal {L2_CONTRACT=async()=>board.toString();L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>rollup;VERSION=async()=>1n;getDeposit=async()=>({nonce:7n,amount});}
   const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:1}),getL1ContractAddresses:async()=>({rollupAddress:rollup}),getBlockNumber:async()=>1,
-    getBlock:async()=>({timestamp:100,body:{txEffects:[]}}),getContract:async()=>({address:board}),getPublicStorageAt:async()=>{authorBalanceReads++;throw new Error('Author fee lookup forbidden');}};
+    getBlock:async number=>({number,hash:'block',timestamp:100,body:{txEffects:[]}}),getBlocks:async(from,count)=>Array.from({length:count},(_,i)=>({number:Number(from)+i,hash:'block',body:{txEffects:[]}})),getContract:async()=>({address:board}),getPublicStorageAt:async()=>{authorBalanceReads++;throw new Error('Author fee lookup forbidden');}};
   const note=()=>({schemaVersion:1n,depositChainId:5n,depositNonce:7n,amount:action==='claim'&&!sent?0n:amount,nextAllowedTime:0n,lastRealPostIndex:0n,lastScreenedIndex:0n,headSequence:0n});
   c.readBillboardDepositInfo=async()=>note();
   const methods=new Proxy({}, {get:(_target,name)=>{
@@ -102,7 +104,7 @@ function mainHarness(action,isDummy=false) {
   const config={action,isDummy,message:'text',depositChainId:'5',portalAddress:portal,ethRpcUrl:'http://fixture.invalid',aztecNodeUrl:'http://fixture.invalid',aztecWallet:{secretKey:new Fr(1).toString(),salt:0},
     reuseTxHash:new Fr(3).toString(),claimSecretStore:{save:async()=>{},load:async()=>({schemaVersion:1,secret:secret.toString(),secretHash:secretHash.toString()})},
     privateFee:{contractAddress:'private-fee',gasSettings:gas()}};
-  return {run:()=>c.runBillboardUser(env,config),env,config,requests,logs,authorBalanceReads:()=>authorBalanceReads,secret};
+  return {run:()=>c.runBillboardUser(env,config),env,config,node,Portal,requests,logs,authorBalanceReads:()=>authorBalanceReads,secret};
 }
 for(const [action,dummy] of [['claim',false],['post',false],['post',true],['withdraw',false]]) {
   test(`actual main ${action}${dummy?' dummy':''} uses standard author call with private fee payment`,async()=>{
@@ -138,4 +140,26 @@ test('actual main private post works with no Ethereum signer',async()=>{
 test('actual main fails before PXE when RPC identity changed after CLI preflight',async()=>{
  const h=mainHarness('post');h.config.expectedNetworkScope={chainId:'1',rollup:'0x'+'11'.repeat(20),version:'1'};
  await assert.rejects(h.run(),/Network changed since CLI preflight/);assert.equal(h.requests.length,0);
+});
+
+function l1RecoveryFixture() {
+ const h=mainHarness('claim-l1');h.config.withdrawTxHash=new Fr(99).toString();h.env.aztec.TxHash=TxHash;
+ h.node.getL1ContractAddresses=async()=>({rollupAddress:'0x'+'11'.repeat(20),outboxAddress:'0x'+'55'.repeat(20)});
+ h.Portal.prototype.hasMessageBeenConsumedAtEpoch=async()=>false;
+ return h;
+}
+test('settlement pending returns after one witness lookup, without ninety-minute polling',async()=>{
+ const h=l1RecoveryFixture();let calls=0;h.node.getL2ToL1MembershipWitness=async()=>{calls++;return null;};
+ await assert.rejects(h.run(),e=>e.code==='BB_SETTLEMENT_PENDING');assert.equal(calls,1);
+});
+test('witness RPC failure remains unknown, never a false unclaimed or paid result',async()=>{
+ const h=l1RecoveryFixture();h.node.getL2ToL1MembershipWitness=async()=>{throw new Error('PRIVATE_WITNESS_ERROR');};
+ await assert.rejects(h.run(),e=>e.code==='BB_RECOVERY_UNKNOWN');assert(!JSON.stringify(h.logs).includes('PRIVATE_WITNESS_ERROR'));
+});
+for(const consumed of [false,true])test(`consumed/error text is not evidence of a refund: ${consumed}`,async()=>{
+ const h=l1RecoveryFixture();h.node.getL2ToL1MembershipWitness=async()=>({epochNumber:1,numCheckpointsInEpoch:1,leafIndex:0,siblingPath:{pathSize:1,toBufferArray:()=>[Buffer.alloc(32)]}});
+ h.Portal.prototype.hasMessageBeenConsumedAtEpoch=async()=>consumed;
+ h.Portal.prototype.withdraw=async()=>{throw new Error('already consumed PRIVATE_RPC_ERROR');};
+ await assert.rejects(h.run(),e=>e.code===(consumed?'BB_RECOVERY_UNKNOWN':'BB_SUBMISSION_UNKNOWN'));
+ assert(!h.logs.some(s=>s.includes('ETH claimed successfully')||s.includes('PRIVATE_RPC_ERROR')));
 });

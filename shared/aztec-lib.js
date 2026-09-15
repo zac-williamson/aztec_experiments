@@ -307,64 +307,15 @@ function createAztecWallet(pxe, aztecNode, rawNode, statusId, opts = {}) {
       const txHash = tx.getTxHash();
       log('  Proving complete. Submitting to node...', 'success', S);
 
-      // Submit with extended retry (node may be temporarily overloaded).
-      // Also handles the case where the first submission succeeds on the node
-      // but the RPC response is lost (transient network error). In that case,
-      // retries will get "Existing nullifier" or "duplicate" errors because
-      // the tx is already in the mempool or already included. When we detect
-      // those errors, we poll for the receipt instead of failing.
-      const ALREADY_EXISTS_RE = /existing nullifier|already exists|duplicate.*tx|tx.*duplicate/i;
-      let submitted = false;
-      const submitRetry = async (fn, maxRetries = 20) => {
-        for (let i = 1; i <= maxRetries; i++) {
-          try { await fn(); submitted = true; return; }
-          catch (err) {
-            const msg = err.message || '';
-            const isTransient = TRANSIENT_RE.test(msg);
-            const isAlreadyExists = ALREADY_EXISTS_RE.test(msg);
-            if (isAlreadyExists) {
-              // The tx was likely already submitted successfully in a previous attempt.
-              // Don't retry -- fall through to receipt polling below.
-              log('  Tx may have already been submitted (got: ' + msg + '). Checking receipt...', 'warn', S);
-              return;
-            }
-            if (!isTransient || i === maxRetries) throw err;
-            const delay = Math.min(5000 * i, 30000);
-            log('  Node busy (attempt ' + i + '/' + maxRetries + '), retrying in ' + (delay/1000) + 's...', 'warn', S);
-            await new Promise(r => setTimeout(r, delay));
-          }
-        }
-      };
-
-      await submitRetry(() => rawNode.sendTx(tx));
-      if (submitted) {
-        log('  Tx submitted! Hash: ' + txHash.toString(), 'success', S);
-      }
-
-      // Poll for receipt (also covers the case where the tx was already
-      // submitted but we didn't get confirmation due to a transient error)
-      const waitOpts = typeof opts.wait === 'object' ? opts.wait : undefined;
-      const timeout = waitOpts?.timeout ?? 600;
-      const interval = waitOpts?.interval ?? 5;
-      const deadline = Date.now() + timeout * 1000;
-      let receipt = null;
-      let pollCount = 0;
-      while (Date.now() < deadline) {
-        try {
-          const r = await rawNode.getTxReceipt(txHash);
-          if (r && !r.isPending()) { receipt = r; break; }
-        } catch (err) {
-          const t = TRANSIENT_RE.test(err.message || '');
-          if (!t) throw err;
-        }
-        pollCount++;
-        if (pollCount % 4 === 0) {
-          const elapsed = Math.round((Date.now() - (deadline - timeout * 1000)) / 1000);
-          log('  Waiting for confirmation... (' + elapsed + 's elapsed)', 'working', S);
-        }
-        await new Promise(r => setTimeout(r, interval * 1000));
-      }
-      if (!receipt) throw new Error('Tx ' + txHash.toString() + ' not confirmed within ' + timeout + 's');
+      // Submit once; a lost response is reconciled by this exact transaction hash.
+      log('  Transaction hash: ' + txHash.toString(), 'info', S);
+      if(this._contextGuard)await this._contextGuard();
+      await a.submitOnceWithReconciliation(rawNode,tx);
+      const waitOpts=typeof opts.wait==='object'?opts.wait:{};
+      const receipt=await a.waitForSuccessfulReceipt(rawNode,tx,{
+        timeoutMs:(waitOpts.timeout ?? 540)*1000,intervalMs:(waitOpts.interval ?? 5)*1000,
+        now:()=>Date.now(),sleep:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
+      });
       log('  Tx confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success', S);
       return { receipt };
     }
@@ -372,6 +323,7 @@ function createAztecWallet(pxe, aztecNode, rawNode, statusId, opts = {}) {
 
   const wallet = new AztecWallet(pxe, aztecNode);
   wallet._preProveHook = opts.preProveHook || null;
+  wallet._contextGuard = opts.contextGuard || null;
   return wallet;
 }
 

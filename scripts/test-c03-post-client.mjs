@@ -1,3 +1,4 @@
+import * as transactionOutcomes from '../shared/transaction-outcomes.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
@@ -5,7 +6,7 @@ import {test} from 'node:test';
 import {Fr} from '@aztec/foundation/curves/bn254';
 const context=vm.createContext({console,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});
 vm.runInContext(await readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8'),context);
-const codec=context.BillboardPostCodec;
+const codec={...context.BillboardPostCodec,...transactionOutcomes};
 const id=new Fr(1n<<180n).toString();
 test('large stable Field identity is preserved without Number conversion',()=>{
   assert.equal(codec.canonicalPostId({Fr},id,true),id);

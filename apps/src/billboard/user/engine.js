@@ -132,27 +132,9 @@
     });
   }
 
-  // Retry a user-rejected signing/transaction action.
-  // When the user rejects a personal_sign or eth_sendTransaction in their wallet,
-  // ethers throws an error with code ACTION_REJECTED (4001). Instead of crashing,
-  // we log a message and retry indefinitely until the user accepts or cancels the whole flow.
-  const REJECT_RE = /ACTION_REJECTED|user rejected|4001|user-denied|rejected the request/i;
-  async function withUserRetry(fn, label) {
-    for (;;) {
-      try {
-        return await fn();
-      } catch (err) {
-        const msg = err && (err.message || String(err));
-        if (REJECT_RE.test(msg)) {
-          log('  ' + label + ' was rejected in your wallet. Please try again (or accept the request to continue).', 'warn');
-          // Brief pause so we don't hammer the wallet if it auto-rejects
-          await sleep(1500);
-          continue;
-        }
-        throw err;
-      }
-    }
-  }
+  // A cancellation ends the operation. Never open another signing request
+  // automatically or rebuild a transaction after an ambiguous submission.
+  async function withUserRetry(fn, _label) { return fn(); }
 
   function generateSecret(a) {
     let secret;
@@ -246,43 +228,53 @@
   // Shared pure codec seam for cross-consumer known-answer qualification.
   g.BillboardUserCodec = Object.freeze({ escrowContent, computeWithdrawMessageLeaf });
 
-  // Scan L2 blocks for a withdrawal tx matching the message leaf.
-  // Returns { txHash, messageIndexInTx } or null.
-  async function findWithdrawTxHash(aztecNode, messageLeaf, fromBlock, toBlock, log) {
-    const batchSize = 10;
-    const targetBigInt = messageLeaf.toBigInt();
-    log('  Scanning L2 blocks ' + fromBlock + '-' + toBlock + ' for withdrawal tx...', 'info');
-    log('  Looking for message leaf: 0x' + targetBigInt.toString(16), 'info');
-    for (let start = fromBlock; start >= toBlock; start -= batchSize) {
-      const from = Math.max(start - batchSize + 1, toBlock);
-      const count = start - from + 1;
-      let blocks;
-      try {
-        blocks = await aztecNode.getBlocks(BigInt(from), count, { includeTransactions: true });
-      } catch (e) {
-        log('  Warning: could not fetch blocks ' + from + '-' + start + ': ' + 'request did not complete', 'warn');
-        continue;
-      }
-      for (const block of blocks) {
-        if (!block || !block.body) continue;
-        for (const txEffect of block.body.txEffects) {
-          if (!txEffect.l2ToL1Msgs) continue;
-          for (let mi = 0; mi < txEffect.l2ToL1Msgs.length; mi++) {
-            const msg = txEffect.l2ToL1Msgs[mi];
-            const msgBigInt = typeof msg.toBigInt === 'function' ? msg.toBigInt() : (msg.asBigInt || 0n);
-            if (msgBigInt === 0n) continue;
-            if (msgBigInt === targetBigInt) {
-              const txHashStr = txEffect.txHash ? txEffect.txHash.toString() : '?';
-              log('  Found matching L2->L1 message in tx ' + txHashStr, 'success');
-              return { txHash: txHashStr, messageIndexInTx: mi };
-            }
+  // A negative result is valid only after complete, canonical history coverage.
+  // Cursor persistence is supplied by the transaction journal; never skip RPC gaps.
+  async function findWithdrawTxHash(aztecNode, messageLeaf, fromBlock, toBlock, log, options={}) {
+    const first=Math.max(1,Number(toBlock)),last=Number(fromBlock);
+    if(!Number.isSafeInteger(first)||!Number.isSafeInteger(last)||first<1||last<0)throw new Error('Invalid withdrawal history range');
+    if(last<first)return null;
+    const fail=()=>Object.assign(new Error('Withdrawal history is incomplete. Preserve the receipt and retry recovery.'),{code:'BB_RECOVERY_UNKNOWN'});
+    const timeout=options.timeoutMs??20000;
+    if(!Number.isFinite(timeout)||timeout<=0||timeout>20000)throw fail();
+    const deadline=Date.now()+timeout,target=messageLeaf.toBigInt();
+    async function read(fn) {let timer;try {return await Promise.race([Promise.resolve().then(fn),new Promise((_,reject)=>{timer=setTimeout(()=>reject(fail()),Math.max(0,deadline-Date.now()));})]);}catch {throw fail();}finally {clearTimeout(timer);}}
+    const anchor=await read(()=>aztecNode.getBlock(last));
+    if(!anchor?.hash)throw fail();
+    for(let end=last;end>=first;end-=50) {
+      if(Date.now()>=deadline)throw fail();
+      const from=Math.max(first,end-49),count=end-from+1;
+      const blocks=await read(()=>aztecNode.getBlocks(from,count,{includeTransactions:true}));
+      if(!Array.isArray(blocks)||blocks.length!==count)throw fail();
+      const numbered=new Map(blocks.map(block=>[Number(block?.number),block]));
+      if(numbered.size!==count)throw fail();
+      for(let number=from;number<=end;number++) {
+        const block=numbered.get(number);
+        if(!block?.hash||!Array.isArray(block.body?.txEffects))throw fail();
+        for(const effect of block.body.txEffects) {
+          if(!Array.isArray(effect.l2ToL1Msgs))throw fail();
+          for(let index=0;index<effect.l2ToL1Msgs.length;index++) {
+            const value=effect.l2ToL1Msgs[index];
+            if(!value||typeof value.toBigInt!=='function')throw fail();
+            if(value.toBigInt()!==target)continue;
+            if(!effect.txHash)throw fail();
+            const canonical=await read(()=>aztecNode.getBlock(number));
+            const receipt=await read(()=>aztecNode.getTxReceipt(effect.txHash));
+            if(canonical?.hash?.toString()!==block.hash.toString() || receipt?.blockHash?.toString()!==block.hash.toString() ||
+              receipt?.txHash?.toString()!==effect.txHash.toString() || Number(receipt.blockNumber)!==number || receipt.executionResult!=='success' ||
+              !['checkpointed','proven','finalized'].includes(receipt.status))throw fail();
+            return {txHash:effect.txHash.toString(),messageIndexInTx:index,blockNumber:number,blockHash:block.hash.toString()};
           }
         }
       }
-      log('  ...scanned blocks ' + from + '-' + start, 'info');
+      if(options.onProgress)await options.onProgress({nextBlock:from-1,anchorBlock:last,anchorHash:anchor.hash.toString()});
+      log('  Checked withdrawal history through block '+from,'info');
     }
+    const current=await read(()=>aztecNode.getBlock(last));
+    if(current?.hash?.toString()!==anchor.hash.toString())throw fail();
     return null;
   }
+  g.BillboardWithdrawalHistory=Object.freeze({findWithdrawTxHash});
 
   // ============================================================
   // Aztec Wallet (gas estimation + prove/submit split, with retry)
@@ -357,33 +349,14 @@
         const txHash = tx.getTxHash();
         log('  Proving complete. Submitting to node...', 'success');
 
+        log('  Transaction hash: ' + txHash.toString(), 'info');
         if (this._contextGuard) await this._contextGuard();
-        await submitOnceWithReconciliation(rawNode, tx);
-        log('  Submission checked. Hash: ' + txHash.toString(), 'info');
-
-        const waitOpts = typeof opts.wait === 'object' ? opts.wait : undefined;
-        const timeout = waitOpts?.timeout ?? 600;
-        const interval = waitOpts?.interval ?? 5;
-        const deadline = Date.now() + timeout * 1000;
-        let receipt = null;
-        let pollCount = 0;
-        while (Date.now() < deadline) {
-          try {
-            let r = await rawNode.getTxReceipt(txHash);
-            if (r?.status === 'dropped') r = await classifyDroppedTransaction(rawNode, tx, r);
-            if (r && ['checkpointed', 'proven', 'finalized'].includes(r.status)) { receipt = r; break; }
-          } catch (err) {
-            if (!TRANSIENT_RE.test(err.message || '')) throw err;
-          }
-          pollCount++;
-          if (pollCount % 4 === 0) {
-            const elapsed = Math.round((Date.now() - (deadline - timeout * 1000)) / 1000);
-            log('  Waiting for confirmation... (' + elapsed + 's elapsed)', 'info');
-          }
-          await sleep(interval * 1000);
-        }
-        if (!receipt) throw taggedSubmissionError('Tx ' + txHash.toString() + ' not confirmed within ' + timeout + 's; reconcile before retrying.', 'BB_SUBMISSION_UNKNOWN');
-        requireSuccessfulReceipt(receipt, txHash);
+        await a.submitOnceWithReconciliation(rawNode,tx);
+        const waitOpts=typeof opts.wait==='object'?opts.wait:{};
+        const receipt=await a.waitForSuccessfulReceipt(rawNode,tx,{
+          timeoutMs:(waitOpts.timeout ?? 540)*1000,intervalMs:(waitOpts.interval ?? 5)*1000,
+          now:()=>Date.now(),sleep:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
+        });
         log('  Tx confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
         return { receipt };
       }
@@ -527,49 +500,6 @@
   }
   g.BillboardModerationCodec = Object.freeze({ packModerationReason, decodeModerationReason, moderationArguments, readPolicySnapshot });
 
-  function taggedSubmissionError(message, code) { return Object.assign(new Error(message), { code }); }
-  async function submitOnceWithReconciliation(node, tx) {
-    try { await node.sendTx(tx); return; }
-    catch (error) {
-      let receipt;
-      try { receipt = await node.getTxReceipt(tx.getTxHash()); }
-      catch { throw taggedSubmissionError('Submission status is unknown; reconcile this transaction before retrying.', 'BB_SUBMISSION_UNKNOWN'); }
-      const exact = receipt?.txHash?.toString() === tx.getTxHash().toString();
-      if (exact && ['pending', 'proposed', 'checkpointed', 'proven', 'finalized'].includes(receipt.status)) return;
-      if (exact && receipt.status === 'dropped') { await classifyDroppedTransaction(node, tx, receipt); return; }
-      throw taggedSubmissionError('Submission was not confirmed; reconcile this transaction before retrying.', 'BB_SUBMISSION_UNKNOWN');
-    }
-  }
-  async function classifyDroppedTransaction(node, tx, receipt) {
-    if (receipt?.status !== 'dropped' || receipt.txHash?.toString() !== tx.getTxHash().toString()) {
-      throw taggedSubmissionError('Transaction status could not be reconciled.', 'BB_SUBMISSION_UNKNOWN');
-    }
-    let validation;
-    try { validation = await node.isValidTx(tx); }
-    catch { throw taggedSubmissionError('Dropped transaction could not be revalidated.', 'BB_SUBMISSION_UNKNOWN'); }
-    let refreshed;
-    try { refreshed = await node.getTxReceipt(tx.getTxHash()); }
-    catch { throw taggedSubmissionError('Receipt reconciliation is unavailable.', 'BB_SUBMISSION_UNKNOWN'); }
-    if (refreshed?.txHash?.toString() !== tx.getTxHash().toString()) throw taggedSubmissionError('Receipt identity changed.', 'BB_SUBMISSION_UNKNOWN');
-    if (['pending','proposed','checkpointed','proven','finalized'].includes(refreshed.status)) return refreshed;
-    if (refreshed.status !== 'dropped') throw taggedSubmissionError('Receipt status is unknown.', 'BB_SUBMISSION_UNKNOWN');
-    // Pinned SDK structured validation reasons; a generic dropped receipt does not establish a conflict.
-    const stateReasons = ['Existing nullifier', 'Block header not found'];
-    if (validation?.result === 'invalid' && Array.isArray(validation.reason) && validation.reason.length > 0
-        && validation.reason.every(reason => stateReasons.includes(reason))) {
-      const conflict = taggedSubmissionError('Transaction state changed; refresh and create a new proof.', 'BB_STATE_CONFLICT');
-      conflict.stateReasons = [...validation.reason];
-      throw conflict;
-    }
-    throw taggedSubmissionError('Transaction dropped for an unconfirmed reason; reconcile before retrying.', 'BB_SUBMISSION_UNKNOWN');
-  }
-  function requireSuccessfulReceipt(receipt, txHash) {
-    if (receipt?.txHash?.toString() !== txHash.toString() || !['checkpointed', 'proven', 'finalized'].includes(receipt.status)
-        || receipt.executionResult !== 'success' || receipt.blockNumber == null || receipt.blockHash == null) {
-      throw taggedSubmissionError('Transaction did not complete successfully.', 'BB_TRANSACTION_FAILED');
-    }
-    return receipt;
-  }
   async function withFreshPostState(attempt, refresh, maximum = 2, retryAllowed = () => true) {
     for (let i = 0; ; i++) {
       try { return await attempt(); }
@@ -592,7 +522,7 @@
     return Array.isArray(error?.stateReasons) && error.stateReasons.length > 0 && error.stateReasons.every(reason => reason === 'Block header not found');
   }
 
-  g.BillboardPostCodec = Object.freeze({ safePostOrder, canonicalPostId, resolvePostId, packPostMessage, decodePostMessage, submitOnceWithReconciliation, requireSuccessfulReceipt, withFreshPostState, classifyDroppedTransaction, dummyStateCanRetry, postStateCanRetry, screeningFailureCanWait });
+  g.BillboardPostCodec = Object.freeze({ safePostOrder, canonicalPostId, resolvePostId, packPostMessage, decodePostMessage, withFreshPostState, dummyStateCanRetry, postStateCanRetry, screeningFailureCanWait });
 
   function privateFeeFailure(code = 'BB_PRIVATE_FEE_UNAVAILABLE') {
     const error = new Error(code === 'BB_PRIVATE_FEE_UNAVAILABLE'
@@ -1015,15 +945,15 @@
         try {
           const messageLeaf = computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, portalL1Balance, portalDepositNonce, version, nodeInfo.l1ChainId);
           const latestBlock = await aztecNode.getBlockNumber();
-          const found = await findWithdrawTxHash(aztecNode, messageLeaf, latestBlock, Math.max(0, latestBlock - 500), log);
+          const found = await findWithdrawTxHash(aztecNode, messageLeaf, latestBlock, 1, log);
           if (found) {
             stateStatus = 'withdrawn_l2_claimable_l1';
             log('  Withdrawal tx found: ' + found.txHash, 'success');
           } else {
             stateStatus = 'deposited_l1_not_claimed_l2';
           }
-        } catch (e) {
-          stateStatus = 'deposited_l1_not_claimed_l2';
+        } catch {
+          throw Object.assign(new Error('Cannot distinguish an unclaimed deposit from an unresolved withdrawal. Retry recovery; do not create another deposit.'),{code:'BB_RECOVERY_UNKNOWN'});
         }
       } else {
         stateStatus = 'deposited_l1_not_claimed_l2';
@@ -1038,9 +968,8 @@
     log('========================================', 'info');
     log('  L2 address:  ' + l2AddrHex, 'info');
     log('  L1 portal:   ' + portalAddr, 'info');
-    if (l1Account) if (BigInt((await provider.getNetwork()).chainId) !== BigInt(nodeInfo.l1ChainId)) throw new Error('Ethereum signer chain disagrees with the board.');
-      if (config.contextGuard) await config.contextGuard();
-      log('  L1 account:  ' + l1Account, 'info');
+    if (config.contextGuard) await config.contextGuard();
+    if (l1Account) log('  L1 account:  ' + l1Account, 'info');
     if (l2NoteInfo && l2NoteInfo.amount > 0n) {
       log('  L2 note:     ' + l2NoteInfo.amount.toString() + ' wei (' + toEtherStr(l2NoteInfo.amount) + ' ETH)', 'info');
 
@@ -1313,7 +1242,7 @@
             try {
               const messageLeaf = computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, amount, depositInfo.depositNonce, version, nodeInfo.l1ChainId);
               const latestBlock = await aztecNode.getBlockNumber();
-              const found = await findWithdrawTxHash(aztecNode, messageLeaf, latestBlock, Math.max(0, latestBlock - 1000), log);
+              const found = await findWithdrawTxHash(aztecNode, messageLeaf, latestBlock, 1, log);
               if (found) {
                 log('  Withdrawal tx found: ' + found.txHash, 'success');
                 log('  The deposit was already claimed and withdrawn.', 'info');
@@ -1733,11 +1662,9 @@
       log('  ═══════════════════════════════════════════', 'success');
       log('', 'info');
       log('  The epoch proof must land on L1 before you can claim.', 'info');
-      log('  This typically takes ~40 minutes on mainnet.', 'info');
       log('  You can monitor progress on an Aztec block explorer.', 'info');
-      log('  Run: node cli.mjs claim-l1 --contract-salt <salt>', 'info');
-      log('  The claim-l1 action will wait automatically and claim', 'info');
-      log('  as soon as the epoch proof is available.', 'info');
+      log('  Run claim-l1 with this portal and wallet to check settlement.', 'info');
+      log('  If settlement is pending, retry the claim later.', 'info');
     }
 
     // ============================================================
@@ -1769,11 +1696,9 @@
         const messageLeaf = computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, withdrawAmount, portalDepositNonce, version, chainId);
         log('  Message leaf: 0x' + messageLeaf.toBigInt().toString(16), 'info');
         const latestBlock = await aztecNode.getBlockNumber();
-        const found = await findWithdrawTxHash(aztecNode, messageLeaf, latestBlock, Math.max(0, latestBlock - 500), log);
+        const found = await findWithdrawTxHash(aztecNode, messageLeaf, latestBlock, 1, log);
         if (!found) {
-          log('  Could not find a withdrawal tx in the last 500 blocks.', 'error');
-          log('  Make sure you have withdrawn on L2 first.', 'error');
-          throw new Error('Withdrawal tx not found. Withdraw on L2 first.');
+          throw Object.assign(new Error('No matching withdrawal found in complete canonical history. Check the selected receipt and wallet.'),{code:'BB_RECOVERY_UNKNOWN'});
         }
         withdrawTxHash = found.txHash;
         messageIndexInTx = found.messageIndexInTx;
@@ -1784,39 +1709,14 @@
       const messageLeaf = computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, withdrawAmount, portalDepositNonce, version, chainId);
       log('  Message leaf: ' + messageLeaf.toString(), 'info');
 
-      // Get L2->L1 membership witness (retry until epoch is proven)
-      // On mainnet, epoch proofs typically take ~40 minutes to land on L1.
-      log('  Waiting for epoch proof to land on L1...', 'info');
-      log('  This typically takes ~40 minutes. Will check every 30s...', 'info');
-      let witness = null;
-      const MAX_EPOCH_WAIT = 180; // up to 90 min at 30s intervals
-      const epochStart = Date.now();
-      for (let i = 0; i < MAX_EPOCH_WAIT; i++) {
-        try {
-          const w = await aztecNode.getL2ToL1MembershipWitness(
-            a.TxHash.fromString(withdrawTxHash),
-            messageLeaf,
-            messageIndexInTx
-          );
-          if (w) { witness = w; break; }
-        } catch (e) {}
-        const elapsed = Math.floor((Date.now() - epochStart) / 1000);
-        const elapsedMin = Math.floor(elapsed / 60);
-        const elapsedSec = elapsed % 60;
-        if (i === 0) {
-          log('  Epoch proof not ready yet. Retrying every 30s...', 'info');
-        } else if (i % 4 === 0) {
-          const estRemaining = Math.max(0, 40 - elapsedMin);
-          log('  [' + elapsedMin + 'm' + String(elapsedSec).padStart(2, '0') + 's elapsed] Still waiting for epoch proof... (~' + estRemaining + ' min remaining)', 'info');
-        }
-        await sleep(30000);
-      }
-
-      if (!witness) {
-        log('  Epoch proof not available after 90 min.', 'error');
-        log('  The proof may still be processing. Try again later:', 'info');
-        log('  node cli.mjs claim-l1 --contract-salt <salt> --withdraw-tx ' + withdrawTxHash, 'info');
-        throw new Error('Epoch proof not available. Try again later.');
+      // Settlement belongs to the network. Return a resumable pending outcome;
+      // do not keep a client process polling for ninety minutes.
+      let witness;
+      try {witness=await aztecNode.getL2ToL1MembershipWitness(a.TxHash.fromString(withdrawTxHash),messageLeaf,messageIndexInTx);}
+      catch {throw Object.assign(new Error('Could not check withdrawal settlement. Preserve the withdrawal transaction and retry.'),{code:'BB_RECOVERY_UNKNOWN'});}
+      if(!witness) {
+        log('Withdrawal is recorded. Network settlement is pending; retry this claim later.','info');
+        throw Object.assign(new Error('Network settlement is pending. Retry this claim later.'),{code:'BB_SETTLEMENT_PENDING'});
       }
 
       const epochNumber = witness.epochNumber;
@@ -1838,12 +1738,10 @@
       try {
         alreadyConsumed = await outbox.hasMessageBeenConsumedAtEpoch(BigInt(epochNumber), messageLeafId);
       } catch (e) {
-        log('  Warning: could not check consumed status: ' + 'request did not complete', 'warn');
+        throw Object.assign(new Error('Could not verify the Outbox consumption state.'),{code:'BB_RECOVERY_UNKNOWN'});
       }
       if (alreadyConsumed) {
-        log('  This withdrawal has already been claimed on L1!', 'success');
-        log('  The ETH was already sent to your address.', 'info');
-        return;
+        throw Object.assign(new Error('Outbox message is consumed. Verify the matching Ethereum refund receipt before treating it as paid.'),{code:'BB_RECOVERY_UNKNOWN'});
       }
 
       log('  Deposit balance in portal: ' + toEtherStr(withdrawAmount) + ' ETH', 'info');
@@ -1867,14 +1765,8 @@
         log('  L1 tx confirmed! Block: ' + rc.blockNumber, 'success');
         log('  ETH claimed successfully!', 'success');
         log('  Check your L1 wallet balance.', 'info');
-      } catch (e) {
-        const msg = extractErrorMessage(e);
-        if (msg.includes('already') || msg.includes('consumed') || msg.includes('MessageAlreadyConsumed')) {
-          log('  This message was already consumed.', 'info');
-          log('  The ETH was already claimed in a previous tx.', 'info');
-          return;
-        }
-        throw new Error('L1 withdrawal did not complete; check its receipt before retrying.');
+      } catch {
+        throw Object.assign(new Error('Ethereum withdrawal outcome is unknown. Check its receipt before retrying.'),{code:'BB_SUBMISSION_UNKNOWN'});
       }
     }
 

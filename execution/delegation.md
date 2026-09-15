@@ -433,3 +433,6 @@ A01 lanes completed: consumer fee-route repair, CI/provenance implementation and
 W02 integration: three implementation lanes delivered focused tests. Root completed actual two-profile browser recovery; genuine restored-author private-fee/post run is active under540s. Final additional reviewer turns hit account usage limits; root owns remaining inspection and does not claim delegated final signoff on subsequent changes. No concurrent native jobs.
 
 W02 closed by root: actual browser restore/tab exclusion, genuine restored signing authority, integrated tests and artifact checks passed. Final code review self-performed after delegated quota exhaustion; no external review claim. No heavy jobs remain.
+
+## W03 receipt/history milestone
+Root implemented and self-reviewed receipt classification, historical withdrawal lookup and settlement outcomes. Prior final delegated turns exhausted available quota; no additional independent signoff is claimed. Integrated checks, built-browser recovery and CLI SDK checks passed. Durable transaction journal remains next.

@@ -5,6 +5,7 @@ globalThis.Buffer ??= Buffer;
 // Explicit browser/CLI compatibility surface for the pinned Aztec SDK.
 // Build this source; do not recover exports by editing a generated bundle.
 export { createPXE } from './private-pxe.mjs';
+export { requireSuccessfulReceipt, submitOnceWithReconciliation, classifyDroppedTransaction, waitForSuccessfulReceipt } from './transaction-outcomes.mjs';
 export { openPXEStore, getPXEStoreIdentity, PXE_DATA_SCHEMA_VERSION } from './sdk-store.mjs';
 export { AztecSQLiteOPFSStore } from '@aztec/kv-store/sqlite-opfs';
 export { BaseWallet } from '@aztec/wallet-sdk/base-wallet';
