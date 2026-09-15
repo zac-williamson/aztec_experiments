@@ -1,0 +1,1641 @@
+error: Function get_screen_successor must be marked as either #[external(...)], #[internal(...)], or #[test]
+  ┌─ std/panic.nr:8:12
+  │
+8 │     assert(false, message);
+  │            ----- Assertion failed
+  │
+  = Call stack:
+    1: #[aztec]
+            at billboard_contract/src/main.nr:5:1
+    2: aztec
+            at /Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/aztec.nr:109:5
+    3: check_each_fn_macroified
+            at /Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/aztec.nr:346:13
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:216:23
+    │
+216 │             deployer: self.msg_sender() };
+    │                       ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:217:25
+    │
+217 │         config.validate(self.context.chain_id(), self.context.version());
+    │                         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:217:50
+    │
+217 │         config.validate(self.context.chain_id(), self.context.version());
+    │                                                  ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:220:9
+    │
+220 │         self.storage.config.initialize(config);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:221:9
+    │
+221 │         self.storage.censor.write(censor);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:222:9
+    │
+222 │         self.storage.policy_len.write(policy_len);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:223:37
+    │
+223 │         for i in 0..POLICY_FIELDS { self.storage.policy_data.at(i).write(policy[i]); }
+    │                                     ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:228:22
+    │
+228 │         let config = self.storage.config.read();
+    │                      ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:229:9
+    │
+229 │         config.validate(self.context.chain_id(), self.context.version());
+    │         ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:230:16
+    │
+230 │         assert(self.msg_sender() == config.deployer, "Only deployer can set portal");
+    │                ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:230:44
+    │
+230 │         assert(self.msg_sender() == config.deployer, "Only deployer can set portal");
+    │                                            -------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:233:9
+    │
+233 │         self.enqueue_self._set_portal_public(portal);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:241:17
+    │
+241 │         assert(!self.storage.portal_address.is_initialized(), "Portal address already set -- immutable");
+    │                 ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:242:22
+    │
+242 │         let config = self.storage.config.read();
+    │                      ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:243:9
+    │
+243 │         config.validate(self.context.chain_id(), self.context.version());
+    │         ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:244:9
+    │
+244 │         self.storage.portal_address.initialize(portal);
+    │         ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:245:49
+    │
+245 │         let content = get_ready_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                 ----------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:245:70
+    │
+245 │         let content = get_ready_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                                      ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:246:20
+    │
+246 │             config.rollup_version, config.hash(self.address));
+    │                    -------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:246:36
+    │
+246 │             config.rollup_version, config.hash(self.address));
+    │                                    ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:247:9
+    │
+247 │         self.context.message_portal(portal, content);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:256:22
+    │
+256 │         let censor = self.storage.censor.read();
+    │                      ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:257:22
+    │
+257 │         let sender = self.msg_sender();
+    │                      ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:258:16
+    │
+258 │         assert(sender.to_field() != AztecAddress::zero().to_field(), "No censor configured");
+    │                ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:259:16
+    │
+259 │         assert(sender.to_field() == censor.to_field(), "Only censor can transfer rights");
+    │                ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:259:37
+    │
+259 │         assert(sender.to_field() == censor.to_field(), "Only censor can transfer rights");
+    │                                     ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:261:9
+    │
+261 │         self.storage.censor.write(new_censor);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:270:22
+    │
+270 │         let censor = self.storage.censor.read();
+    │                      ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:271:22
+    │
+271 │         let sender = self.msg_sender();
+    │                      ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:272:16
+    │
+272 │         assert(sender.to_field() != AztecAddress::zero().to_field(), "No censor configured");
+    │                ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:273:16
+    │
+273 │         assert(sender.to_field() == censor.to_field(), "Only censor can set policy");
+    │                ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:273:37
+    │
+273 │         assert(sender.to_field() == censor.to_field(), "Only censor can set policy");
+    │                                     ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:275:9
+    │
+275 │         self.storage.policy_len.write(policy_len);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:277:13
+    │
+277 │             self.storage.policy_data.at(i).write(policy[i]);
+    │             ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:290:22
+    │
+290 │         let censor = self.storage.censor.read();
+    │                      ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:291:22
+    │
+291 │         let sender = self.msg_sender();
+    │                      ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:292:16
+    │
+292 │         assert(sender.to_field() != AztecAddress::zero().to_field(), "No censor configured");
+    │                ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:293:16
+    │
+293 │         assert(sender.to_field() == censor.to_field(), "Only censor can declare immoral");
+    │                ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:293:37
+    │
+293 │         assert(sender.to_field() == censor.to_field(), "Only censor can declare immoral");
+    │                                     ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:294:16
+    │
+294 │         assert(self.storage.post_exists.at(post_id).read(), "Invalid post id");
+    │                ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:295:17
+    │
+295 │         assert(!self.storage.post_flagged.at(post_id).read(), "Already flagged");
+    │                 ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:297:9
+    │
+297 │         self.storage.post_flagged.at(post_id).write(true);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:298:9
+    │
+298 │         self.storage.post_flagged_by.at(post_id).write(sender);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:301:13
+    │
+301 │             self.storage.censor_response.at(post_id).at(i).write(response[i]);
+    │             ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:311:22
+    │
+311 │         let sender = self.msg_sender();
+    │                      ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:312:19
+    │
+312 │         let now = self.context.get_anchor_block_header().timestamp();
+    │                   ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:313:22
+    │
+313 │         let config = self.storage.config.read();
+    │                      ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:314:9
+    │
+314 │         config.validate(self.context.chain_id(), self.context.version());
+    │         ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:315:22
+    │
+315 │         let portal = self.storage.portal_address.read();
+    │                      ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:316:9
+    │
+316 │         portal.validate();
+    │         ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:318:16
+    │
+318 │         assert(portal.to_field() != 0, "Zero portal");
+    │                ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:319:16
+    │
+319 │         assert(sender.to_field() != 0, "Zero owner");
+    │                ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:323:33
+    │
+323 │         assert(amount >= config.min_deposit, "Deposit below minimum");
+    │                                 ----------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:324:33
+    │
+324 │         assert(amount <= config.max_deposit, "Deposit above maximum");
+    │                                 ----------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:325:51
+    │
+325 │         let content = get_deposit_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                   ----------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:325:72
+    │
+325 │         let content = get_deposit_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                                        ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:326:20
+    │
+326 │             config.rollup_version, depositor, deposit_nonce, amount);
+    │                    -------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:327:9
+    │
+327 │         self.context.consume_l1_to_l2_message(content, [secret], portal, message_leaf_index);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:328:38
+    │
+328 │         let chain = deposit_chain_id(self.address, sender, content, secret);
+    │                                      ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:330:56
+    │
+330 │         let cooldown = compute_cooldown(amount, config.base_cooldown as u64, config.min_deposit);
+    │                                                        ------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:330:85
+    │
+330 │         let cooldown = compute_cooldown(amount, config.base_cooldown as u64, config.min_deposit);
+    │                                                                                     ----------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:335:9
+    │
+335 │         self.storage.deposits.at(sender).insert(note).deliver(MessageDelivery::onchain_constrained());
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:374:22
+    │
+374 │         let sender = self.msg_sender();
+    │                      ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:375:19
+    │
+375 │         let now = self.context.get_anchor_block_header().timestamp();
+    │                   ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:376:22
+    │
+376 │         let header = self.context.get_anchor_block_header();
+    │                      ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:377:20
+    │
+377 │         let addr = self.context.this_address();
+    │                    ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:394:21
+    │
+394 │         let notes = self.storage.deposits.at(sender).pop_notes(options);
+    │                     ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:395:16
+    │
+395 │         assert(notes.len() > 0, "No deposit note found -- claim a deposit first");
+    │                ----- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:396:24
+    │
+396 │         let dep_note = notes.get_unchecked(0);
+    │                        ----- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:397:26
+    │
+397 │         assert((dep_note.receipt.schema_version == 1) & (dep_note.deposit_chain_id == deposit_chain_id) & (deposit_chain_id != 0), "Invalid deposit identity");
+    │                          ------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:397:67
+    │
+397 │         assert((dep_note.receipt.schema_version == 1) & (dep_note.deposit_chain_id == deposit_chain_id) & (deposit_chain_id != 0), "Invalid deposit identity");
+    │                                                                   ---------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:399:22
+    │
+399 │         let config = self.storage.config.read();
+    │                      ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:400:9
+    │
+400 │         config.validate(self.context.chain_id(), self.context.version());
+    │         ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:401:50
+    │
+401 │         let cooldown = compute_cooldown(dep_note.amount, config.base_cooldown as u64, config.min_deposit);
+    │                                                  ------ Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:401:65
+    │
+401 │         let cooldown = compute_cooldown(dep_note.amount, config.base_cooldown as u64, config.min_deposit);
+    │                                                                 ------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:401:94
+    │
+401 │         let cooldown = compute_cooldown(dep_note.amount, config.base_cooldown as u64, config.min_deposit);
+    │                                                                                              ----------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:402:24
+    │
+402 │         let k = config.k_multiplier as u64;
+    │                        ------------ Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:403:36
+    │
+403 │         let censor_window = config.censor_window as u64;
+    │                                    ------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:404:34
+    │
+404 │         let max_save_up = config.max_save_up as u64;
+    │                                  ----------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:408:27
+    │
+408 │         let link_secret = self.context.request_nhk_app(owner_npk_m_hash);
+    │                           ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:412:46
+    │
+412 │         let mut new_screened_link = dep_note.screened_link;
+    │                                              ------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:413:50
+    │
+413 │         let mut new_screened_sequence = dep_note.sequences.screened_sequence;
+    │                                                  --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:415:38
+    │
+415 │         let head_sequence = dep_note.sequences.head_sequence;
+    │                                      --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:416:42
+    │
+416 │         let screened_sequence = dep_note.sequences.screened_sequence;
+    │                                          --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:418:25
+    │
+418 │         assert(dep_note.sequences.last_real_sequence <= head_sequence, "C02 deposit real sequence");
+    │                         --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:419:50
+    │
+419 │         assert((head_sequence == 0) == (dep_note.head_link == SENTINEL), "C02 deposit head");
+    │                                                  --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:420:54
+    │
+420 │         assert((screened_sequence == 0) == (dep_note.screened_link == SENTINEL), "C02 deposit screened link");
+    │                                                      ------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:421:66
+    │
+421 │         assert((screened_sequence == head_sequence) == (dep_note.screened_link == dep_note.head_link), "C02 deposit progress");
+    │                                                                  ------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:421:92
+    │
+421 │         assert((screened_sequence == head_sequence) == (dep_note.screened_link == dep_note.head_link), "C02 deposit progress");
+    │                                                                                            --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:424:19
+    │
+424 │             slot: self.storage.posts.at(sender).storage_slot, chain: deposit_chain_id };
+    │                   ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:434:49
+    │
+434 │             assert(cn.previous_link == dep_note.screened_link, "C02 child previous link");
+    │                                                 ------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:439:44
+    │
+439 │             assert((child_link == dep_note.head_link) == child_is_head, "C02 child head");
+    │                                            --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:449:37
+    │
+449 │                     let flag_slot = self.storage.post_flagged.at(cn.post_id).get_storage_slot();
+    │                                     ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:465:45
+    │
+465 │                 assert((gc_link == dep_note.head_link) == (gn.sequence == head_sequence), "C02 grandchild head");
+    │                                             --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:469:41
+    │
+469 │                         let flag_slot = self.storage.post_flagged.at(gn.post_id).get_storage_slot();
+    │                                         ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:495:41
+    │
+495 │         let effective_old = if dep_note.next_allowed_time > save_up_floor {
+    │                                         ----------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:496:22
+    │
+496 │             dep_note.next_allowed_time
+    │                      ----------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:514:25
+    │
+514 │         assert(dep_note.sequences.head_sequence < 0xffffffffffffffff, "Post sequence overflow");
+    │                         --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:515:33
+    │
+515 │         let sequence = dep_note.sequences.head_sequence + 1;
+    │                                 --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:518:37
+    │
+518 │             previous_link: dep_note.head_link, is_dummy };
+    │                                     --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:520:24
+    │
+520 │         let post_msg = self.storage.posts.at(sender).insert(post_note);
+    │                        ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:521:24
+    │
+521 │         let new_note = post_msg.get_new_note();
+    │                        -------- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:523:22
+    │
+523 │             new_note.owner,
+    │                      ----- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:524:22
+    │
+524 │             new_note.storage_slot,
+    │                      ------------ Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:525:22
+    │
+525 │             new_note.randomness,
+    │                      ---------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:527:34
+    │
+527 │         let new_link = post_link(self.address, sender, deposit_chain_id, sequence, inner_hash, link_secret);
+    │                                  ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:530:36
+    │
+530 │         NoteMessage::new(new_note, self.context).deliver(MessageDelivery::onchain_constrained());
+    │                                    ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:533:24
+    │
+533 │         if !is_dummy { self.enqueue_self._publish_post(public_post_id, msg, message_length); }
+    │                        ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:537:22
+    │
+537 │             dep_note.sequences.last_real_sequence
+    │                      --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:544:31
+    │
+544 │             receipt: dep_note.receipt, deposit_chain_id,
+    │                               ------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:547:30
+    │
+547 │             amount: dep_note.amount,
+    │                              ------ Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:548:36
+    │
+548 │             l1_depositor: dep_note.l1_depositor,
+    │                                    ------------ Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:553:9
+    │
+553 │         self.storage.deposits.at(sender).insert(new_deposit).deliver(MessageDelivery::onchain_constrained());
+    │         ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:530:9
+    │
+530 │         NoteMessage::new(new_note, self.context).deliver(MessageDelivery::onchain_constrained());
+    │         ---------------- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:530:9
+    │
+530 │         NoteMessage::new(new_note, self.context).deliver(MessageDelivery::onchain_constrained());
+    │         ---------------- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:530:9
+    │
+530 │         NoteMessage::new(new_note, self.context).deliver(MessageDelivery::onchain_constrained());
+    │         ------------------------------------------------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:530:9
+    │
+530 │         NoteMessage::new(new_note, self.context).deliver(MessageDelivery::onchain_constrained());
+    │         ------------------------------------------------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:530:9
+    │
+530 │         NoteMessage::new(new_note, self.context).deliver(MessageDelivery::onchain_constrained());
+    │         ---------------- Could not determine the type of the generic argument `Note` declared on the struct `NoteMessage`
+    │
+
+error: Type annotation needed
+    ┌─ billboard_contract/src/main.nr:530:9
+    │
+530 │         NoteMessage::new(new_note, self.context).deliver(MessageDelivery::onchain_constrained());
+    │         ------------------------------------------------ Could not determine the type of the generic argument `Note` declared on the struct `NoteMessage`
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:560:17
+    │
+560 │         assert(!self.storage.post_exists.at(post_id).read(), "Post id already exists");
+    │                 ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:562:21
+    │
+562 │         let order = self.storage.post_count.read();
+    │                     ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:564:28
+    │
+564 │         let published_at = self.context.timestamp();
+    │                            ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:566:9
+    │
+566 │         self.storage.post_exists.at(post_id).write(true);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:567:9
+    │
+567 │         self.storage.post_id_by_order.at(order).write(post_id);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:568:9
+    │
+568 │         self.storage.post_time.at(post_id).write(published_at);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:569:9
+    │
+569 │         self.storage.post_length.at(post_id).write(message_length);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:570:34
+    │
+570 │         for i in 0..MSG_FIELDS { self.storage.post_data.at(post_id).at(i).write(msg[i]); }
+    │                                  ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:571:9
+    │
+571 │         self.storage.post_count.write(order + 1);
+    │         ---- not found in this scope
+    │
+
+error: The value `18446744073709551615` cannot fit into `u32` which has range `0..=4294967295`
+    ┌─ billboard_contract/src/main.nr:563:24
+    │
+563 │         assert(order < 0xffffffffffffffff, "Post count overflow");
+    │                        ------------------
+    │
+
+error: The value `9223372036854775807` cannot fit into `u32` which has range `0..=4294967295`
+    ┌─ billboard_contract/src/main.nr:565:32
+    │
+565 │         assert(published_at <= 0x7fffffffffffffff, "Timestamp out of range");
+    │                                ------------------
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:587:22
+    │
+587 │         let sender = self.msg_sender();
+    │                      ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:588:19
+    │
+588 │         let now = self.context.get_anchor_block_header().timestamp();
+    │                   ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:589:22
+    │
+589 │         let config = self.storage.config.read();
+    │                      ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:590:9
+    │
+590 │         config.validate(self.context.chain_id(), self.context.version());
+    │         ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:591:22
+    │
+591 │         let portal = self.storage.portal_address.read();
+    │                      ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:592:9
+    │
+592 │         portal.validate();
+    │         ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:593:16
+    │
+593 │         assert(portal.to_field() != 0, "Zero portal");
+    │                ------ Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:596:21
+    │
+596 │         let notes = self.storage.deposits.at(sender).pop_notes(options);
+    │                     ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:597:16
+    │
+597 │         assert(notes.len() > 0, "No deposit note found");
+    │                ----- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:598:23
+    │
+598 │         let deposit = notes.get_unchecked(0);
+    │                       ----- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:599:25
+    │
+599 │         assert((deposit.receipt.schema_version == 1) & (deposit.deposit_chain_id == deposit_chain_id) & (deposit_chain_id != 0), "Invalid deposit identity");
+    │                         ------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:599:65
+    │
+599 │         assert((deposit.receipt.schema_version == 1) & (deposit.deposit_chain_id == deposit_chain_id) & (deposit_chain_id != 0), "Invalid deposit identity");
+    │                                                                 ---------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:600:25
+    │
+600 │         assert((deposit.receipt.deposit_nonce > 0) & (deposit.amount >= config.min_deposit) & (deposit.amount <= config.max_deposit), "Invalid deposit receipt");
+    │                         ------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:600:63
+    │
+600 │         assert((deposit.receipt.deposit_nonce > 0) & (deposit.amount >= config.min_deposit) & (deposit.amount <= config.max_deposit), "Invalid deposit receipt");
+    │                                                               ------ Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:600:80
+    │
+600 │         assert((deposit.receipt.deposit_nonce > 0) & (deposit.amount >= config.min_deposit) & (deposit.amount <= config.max_deposit), "Invalid deposit receipt");
+    │                                                                                ----------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:600:104
+    │
+600 │         assert((deposit.receipt.deposit_nonce > 0) & (deposit.amount >= config.min_deposit) & (deposit.amount <= config.max_deposit), "Invalid deposit receipt");
+    │                                                                                                        ------ Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:600:121
+    │
+600 │         assert((deposit.receipt.deposit_nonce > 0) & (deposit.amount >= config.min_deposit) & (deposit.amount <= config.max_deposit), "Invalid deposit receipt");
+    │                                                                                                                         ----------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:601:17
+    │
+601 │         deposit.l1_depositor.validate();
+    │                 ------------ Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:602:24
+    │
+602 │         assert(deposit.l1_depositor.to_field() != 0, "Zero depositor");
+    │                        ------------ Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:603:24
+    │
+603 │         assert(deposit.sequences.screened_sequence >= deposit.sequences.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │                        --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:603:63
+    │
+603 │         assert(deposit.sequences.screened_sequence >= deposit.sequences.last_real_sequence, "Too early to withdraw -- not all posts screened");
+    │                                                               --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:604:31
+    │
+604 │         assert(now >= deposit.next_allowed_time, "Too early to withdraw -- time lock not expired");
+    │                               ----------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:605:52
+    │
+605 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                    ----------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:605:73
+    │
+605 │         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
+    │                                                                         ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:606:20
+    │
+606 │             config.rollup_version, deposit.l1_depositor, deposit.receipt.deposit_nonce, deposit.amount);
+    │                    -------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:606:44
+    │
+606 │             config.rollup_version, deposit.l1_depositor, deposit.receipt.deposit_nonce, deposit.amount);
+    │                                            ------------ Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:606:66
+    │
+606 │             config.rollup_version, deposit.l1_depositor, deposit.receipt.deposit_nonce, deposit.amount);
+    │                                                                  ------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:606:97
+    │
+606 │             config.rollup_version, deposit.l1_depositor, deposit.receipt.deposit_nonce, deposit.amount);
+    │                                                                                                 ------ Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:607:9
+    │
+607 │         self.context.message_portal(portal, content);
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:617:9
+    │
+617 │         self.storage.post_count.read()
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:623:24
+    │
+623 │         assert(order < self.storage.post_count.read(), "Invalid post order");
+    │                        ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:624:9
+    │
+624 │         self.storage.post_id_by_order.at(order).read()
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:629:49
+    │
+629 │     fn get_post_exists(id: Field) -> pub bool { self.storage.post_exists.at(id).read() }
+    │                                                 ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:634:16
+    │
+634 │         assert(self.storage.post_exists.at(id).read(), "Invalid post id");
+    │                ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:635:9
+    │
+635 │         self.storage.post_length.at(id).read()
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:641:16
+    │
+641 │         assert(self.storage.post_exists.at(id).read(), "Invalid post id");
+    │                ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:644:22
+    │
+644 │             msg[i] = self.storage.post_data.at(id).at(i).read();
+    │                      ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:652:16
+    │
+652 │         assert(self.storage.post_exists.at(id).read(), "Invalid post id");
+    │                ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:653:9
+    │
+653 │         self.storage.post_time.at(id).read()
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:659:16
+    │
+659 │         assert(self.storage.post_exists.at(id).read(), "Invalid post id");
+    │                ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:660:9
+    │
+660 │         self.storage.post_flagged.at(id).read()
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:666:16
+    │
+666 │         assert(self.storage.post_exists.at(id).read(), "Invalid post id");
+    │                ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:667:9
+    │
+667 │         self.storage.post_flagged_by.at(id).read()
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:673:16
+    │
+673 │         assert(self.storage.post_exists.at(id).read(), "Invalid post id");
+    │                ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:676:22
+    │
+676 │             msg[i] = self.storage.censor_response.at(id).at(i).read();
+    │                      ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:684:9
+    │
+684 │         self.storage.censor.read()
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:690:9
+    │
+690 │         self.storage.config.read().k_multiplier as u64
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:696:9
+    │
+696 │         self.storage.config.read().censor_window as u64
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:702:9
+    │
+702 │         self.storage.config.read().max_save_up as u64
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:708:9
+    │
+708 │         self.storage.config.read().deployer
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:714:9
+    │
+714 │         self.storage.config.read().min_deposit
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:720:9
+    │
+720 │         self.storage.config.read().base_cooldown as u64
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:726:9
+    │
+726 │         self.storage.portal_address.read()
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:732:9
+    │
+732 │         self.storage.portal_address.is_initialized()
+    │         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:742:25
+    │
+742 │             policy[i] = self.storage.policy_data.at(i).read();
+    │                         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:744:18
+    │
+744 │         (policy, self.storage.policy_len.read())
+    │                  ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:749:41
+    │
+749 │     fn get_config_hash() -> pub Field { self.storage.config.read().hash(self.address) }
+    │                                         ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:753:40
+    │
+753 │     fn get_max_deposit() -> pub u128 { self.storage.config.read().max_deposit }
+    │                                        ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:759:21
+    │
+759 │         let notes = self.storage.deposits.at(owner).view_notes(options);
+    │                     ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:761:33
+    │
+761 │         for i in 0..10 { if i < notes.len() { ids[i] = notes.get_unchecked(i).deposit_chain_id; } }
+    │                                 ----- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:761:56
+    │
+761 │         for i in 0..10 { if i < notes.len() { ids[i] = notes.get_unchecked(i).deposit_chain_id; } }
+    │                                                        ----- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:770:21
+    │
+770 │         let notes = self.storage.deposits.at(owner).view_notes(options);
+    │                     ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:771:12
+    │
+771 │         if notes.len() == 0 { [0; 11] } else { notes.get_unchecked(0).logical_fields() }
+    │            ----- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:771:48
+    │
+771 │         if notes.len() == 0 { [0; 11] } else { notes.get_unchecked(0).logical_fields() }
+    │                                                ----- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: missing pub keyword on return type of function get_screen_successor
+    ┌─ billboard_contract/src/main.nr:778:10
+    │
+778 │     ) -> HintedNote<PostNote> {
+    │          -------------------- missing pub on return type
+    │
+    = The `pub` keyword is mandatory for the entry-point function return type because the verifier cannot retrieve private witness and thus the function will not be able to return a 'priv' value
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:811:25
+    │
+811 │         let dep_notes = self.storage.deposits.at(owner).view_notes(dep_options);
+    │                         ---- not found in this scope
+    │
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:812:16
+    │
+812 │         assert(dep_notes.len() > 0, "BB_HISTORY_DEPOSIT_MISSING");
+    │                --------- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:813:16
+    │
+813 │         assert(dep_notes.len() == 1, "BB_HISTORY_DEPOSIT_AMBIGUOUS");
+    │                --------- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in method call
+    ┌─ billboard_contract/src/main.nr:814:23
+    │
+814 │         let deposit = dep_notes.get_unchecked(0);
+    │                       --------- Type must be known by this point to know which method to call
+    │
+    = Try adding a type annotation for the object type before this method call
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:815:37
+    │
+815 │         let head_sequence = deposit.sequences.head_sequence;
+    │                                     --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:816:41
+    │
+816 │         let screened_sequence = deposit.sequences.screened_sequence;
+    │                                         --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:819:24
+    │
+819 │         assert(deposit.sequences.last_real_sequence <= head_sequence, "BB_HISTORY_STALE");
+    │                        --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:820:49
+    │
+820 │         assert((head_sequence == 0) == (deposit.head_link == SENTINEL), "BB_HISTORY_STALE");
+    │                                                 --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:821:53
+    │
+821 │         assert((screened_sequence == 0) == (deposit.screened_link == SENTINEL), "BB_HISTORY_STALE");
+    │                                                     ------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:822:65
+    │
+822 │         assert((screened_sequence == head_sequence) == (deposit.screened_link == deposit.head_link),
+    │                                                                 ------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:822:90
+    │
+822 │         assert((screened_sequence == head_sequence) == (deposit.screened_link == deposit.head_link),
+    │                                                                                          --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:831:49
+    │
+831 │             let scope = ScreeningScope { board: self.address, owner,
+    │                                                 ---- not found in this scope
+    │
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:832:23
+    │
+832 │                 slot: self.storage.posts.at(owner).storage_slot, chain: deposit_chain_id };
+    │                       ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:833:58
+    │
+833 │             let cn = get_screen_successor(scope, deposit.screened_link, true);
+    │                                                          ------------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:836:40
+    │
+836 │             let child_link = post_link(self.address, owner, deposit_chain_id, cn.note.sequence, child_hash, link_secret);
+    │                                        ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:838:43
+    │
+838 │             assert((child_link == deposit.head_link) == child_is_head, "BB_HISTORY_STALE");
+    │                                           --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:845:49
+    │
+845 │                 let grandchild_link = post_link(self.address, owner, deposit_chain_id, gn.note.sequence, grandchild_hash, link_secret);
+    │                                                 ---- not found in this scope
+    │
+
+error: Object type is unknown in field access
+    ┌─ billboard_contract/src/main.nr:846:52
+    │
+846 │                 assert((grandchild_link == deposit.head_link) == (gn.note.sequence == head_sequence),
+    │                                                    --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: cannot find `self` in this scope
+    ┌─ billboard_contract/src/main.nr:858:25
+    │
+858 │         let post_slot = self.storage.posts.at(owner).storage_slot;
+    │                         ---- not found in this scope
+    │
+
+Aborting due to 215 previous errors
+node:internal/errors:986
+  const err = new Error(message);
+              ^
+
+Error: Command failed: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/toolchain/nargo compile --force --silence-warnings
+    at genericNodeError (node:internal/errors:986:15)
+    at wrappedFn (node:internal/errors:540:14)
+    at checkExecSyncError (node:child_process:942:11)
+    at execFileSync (node:child_process:978:15)
+    at buildContracts (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/build-contracts.mjs:37:3)
+    at file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/build-contracts.mjs:74:81
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 11486,
+  stdout: null,
+  stderr: null
+}
+
+Node.js v24.21.0

@@ -15,3 +15,6 @@ The contract deducts the configured maximum fee with no unused-gas refund. L1 fu
 ## Remaining project work
 
 Production readiness remains the objective, not a completed release claim. Next graph work includes full screening-history lookup, policy/penalty behavior, recovery, remaining product/operations work and final candidate qualification. Independent review, representative fourteen-day soak and target-network release clearance remain incomplete. V5 suitability does not block engineering; V6 compatibility and clearance are required before production. No public deployment or real-fund operation has been performed.
+
+
+C04 screening-history lookup is complete: exact successor selection replaces the first-page cutoff; 150 contract checks, 47 integrated checks and a genuine 4m35s screening journey pass. Persisted PXE1100-note/restart and seeded1002-note authenticated continuation/exit checks pass. Seeded notes are not claimed as executed publications; underlying PXE linear scanning remains documented. Next is C05 penalty/cooldown/moderation invariants.

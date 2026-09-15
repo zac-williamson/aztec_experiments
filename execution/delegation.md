@@ -395,3 +395,5 @@ Root integration checkpoint: registration journal lane integrated with fixed ope
 Private fee replacement: private_fee_contract owns newNoircontract/tests/workspace; private_fee_client owns newsharedfeeclient/paymentmethod/tests; private_fee_ui owns application/CLI/engine integration. Root owns oldcoupondeletion/buildscripts/artifactintegration/genuineproofharness. Heavy verification runs serially under existing bounds.
 
 Private fee integration: contract lane delivered eight TXE checks and documented TXE setup-phase limitation; client lane delivered35 component checks plus actual production-helper funding/recovery harness; UI lane delivered17 focused checks including moderator routing. Root runs all heavy jobs serially. Independent client/contract reviews found and corrected the shared test funding identity and clarified public cold-start observations.
+
+C04: history_contract owns exact-link utility implementation; history_tests owns TXE lifecycle/negative tests; history_pxe owns actual persistent PXE store selector/reload qualification. Root owns safe client integration, serial build/testing, genuine screening and evidence integration.

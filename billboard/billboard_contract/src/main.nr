@@ -48,8 +48,7 @@ pub contract Billboard {
     /// ceil(1488 / 31) = 48 (48 * 31 = 1488).
     global POLICY_FIELDS: u32 = 48;
 
-    /// Maximum number of PostNotes to fetch in utility functions.
-    /// Used by get_screen_hints to search for child/grandchild.
+    /// Debug inspection page size. Screening uses exact-link selectors instead.
     global MAX_HINT_NOTES: u32 = 16;
 
     // ============================================================
@@ -98,6 +97,34 @@ pub contract Billboard {
             assert(slot == self.slot, "C02 wrong slot");
             assert(note.schema_version == 1, "C02 wrong schema");
             assert((note.deposit_chain_id == self.chain) & (self.chain != 0), "C02 wrong chain");
+        }
+
+        /// Fetch one exact successor, with one additional result to detect ambiguity.
+        /// PXE applies selectors before the limit, so history length cannot hide a successor.
+        unconstrained fn get_screen_successor(
+            self, previous_link: Field, is_child: bool,
+        ) -> HintedNote<PostNote> {
+            let scope = self;
+            let chain = PostNote::properties().deposit_chain_id;
+            let previous = PostNote::properties().previous_link;
+            let notes = aztec::oracle::notes::get_notes::<PostNote, 2, 2>(
+                Option::some(scope.owner), scope.slot, 2,
+                [chain.index, previous.index], [chain.offset, previous.offset],
+                [chain.length, previous.length], [scope.chain, previous_link],
+                [Comparator.EQ, Comparator.EQ], [0; 2], [0; 2], [0; 2], [0; 2],
+                2, 0, NoteStatus.ACTIVE,
+            );
+            if is_child {
+                assert(notes[0].is_some(), "BB_HISTORY_CHILD_MISSING");
+                assert(notes[1].is_none(), "BB_HISTORY_CHILD_AMBIGUOUS");
+            } else {
+                assert(notes[0].is_some(), "BB_HISTORY_GRANDCHILD_MISSING");
+                assert(notes[1].is_none(), "BB_HISTORY_GRANDCHILD_AMBIGUOUS");
+            }
+            let hinted = notes[0].unwrap_unchecked();
+            scope.assert_identity(hinted.contract_address, hinted.owner, hinted.storage_slot, hinted.note);
+            assert(hinted.note.previous_link == previous_link, "BB_HISTORY_STALE");
+            hinted
         }
 
         fn authenticate(self, header: BlockHeader, hinted: HintedNote<PostNote>) -> ConfirmedNote<PostNote> {
@@ -772,124 +799,60 @@ pub contract Billboard {
         if notes.len() == 0 { [0; 11] } else { notes.get_unchecked(0).logical_fields() }
     }
 
-    /// Returns the child and grandchild HintedNotes for screening.
-    /// The frontend calls this and passes the results to post().
-    ///
-    /// - child: the PostNote whose prev_link == screened_link
-    /// - grandchild: the PostNote whose prev_link == child_link (or None
-    ///   if child is the head or no grandchild exists)
-    ///
-    /// Returns (None, None) if no screening is needed (last_screened == head
-    /// or no posts exist).
+    /// Returns exact child/grandchild hints for the selected live deposit.
+    /// These utility results remain untrusted: post() authenticates inclusion,
+    /// ownership, deposit identity, sequence and links in its private proof.
+    /// Missing or ambiguous wallet history is explicit instead of silently returning no hints.
     #[external("utility")]
     unconstrained fn get_screen_hints(
         owner: AztecAddress, deposit_chain_id: Field,
     ) -> pub (Option<HintedNote<PostNote>>, Option<HintedNote<PostNote>>) {
-        // 1. Get deposit note
         let dep_options = NoteViewerOptions::<DepositNote, 8>::new()
-            .select(DepositNote::properties().deposit_chain_id, Comparator.EQ, deposit_chain_id).set_limit(1);
+            .select(DepositNote::properties().deposit_chain_id, Comparator.EQ, deposit_chain_id).set_limit(2);
         let dep_notes = self.storage.deposits.at(owner).view_notes(dep_options);
+        assert(dep_notes.len() > 0, "BB_HISTORY_DEPOSIT_MISSING");
+        assert(dep_notes.len() == 1, "BB_HISTORY_DEPOSIT_AMBIGUOUS");
+        let deposit = dep_notes.get_unchecked(0);
+        let head_sequence = deposit.sequences.head_sequence;
+        let screened_sequence = deposit.sequences.screened_sequence;
+        assert(deposit_chain_id != 0, "BB_HISTORY_DEPOSIT_INVALID");
+        assert(screened_sequence <= head_sequence, "BB_HISTORY_STALE");
+        assert(deposit.sequences.last_real_sequence <= head_sequence, "BB_HISTORY_STALE");
+        assert((head_sequence == 0) == (deposit.head_link == SENTINEL), "BB_HISTORY_STALE");
+        assert((screened_sequence == 0) == (deposit.screened_link == SENTINEL), "BB_HISTORY_STALE");
+        assert((screened_sequence == head_sequence) == (deposit.screened_link == deposit.head_link),
+            "BB_HISTORY_STALE");
 
         let mut child = Option::none();
         let mut grandchild = Option::none();
-        let mut done = false;
-
-        // No deposit note → nothing to screen
-        if dep_notes.len() == 0 {
-            done = true;
-        }
-
-        // 2. Get deposit note fields and check if screening is needed
-        let mut dep_note_head: Field = SENTINEL;
-        let mut dep_note_last_screened: Field = SENTINEL;
-        if !done {
-            let dep_note = dep_notes.get_unchecked(0);
-            dep_note_head = dep_note.head_link;
-            dep_note_last_screened = dep_note.screened_link;
-            // Screening not needed if last_screened == head or no posts
-            if (dep_note_last_screened == dep_note_head) | (dep_note_head == SENTINEL) {
-                done = true;
-            }
-        }
-
-        // 3. Get link_secret
-        let mut link_secret: Field = 0;
-        if !done {
+        if screened_sequence < head_sequence {
             let maybe_pk = try_get_public_keys(owner);
-            if maybe_pk.is_none() {
-                done = true;
-            } else {
-                link_secret = get_nhk_app(maybe_pk.unwrap_unchecked().npk_m_hash);
+            assert(maybe_pk.is_some(), "BB_HISTORY_KEYS_MISSING");
+            let link_secret = get_nhk_app(maybe_pk.unwrap_unchecked().npk_m_hash);
+            let scope = ScreeningScope { board: self.address, owner,
+                slot: self.storage.posts.at(owner).storage_slot, chain: deposit_chain_id };
+            let cn = scope.get_screen_successor(deposit.screened_link, true);
+            assert(cn.note.sequence == screened_sequence + 1, "BB_HISTORY_STALE");
+            let child_hash = cn.note.compute_note_hash(cn.owner, cn.storage_slot, cn.randomness);
+            let child_link = post_link(self.address, owner, deposit_chain_id, cn.note.sequence, child_hash, link_secret);
+            let child_is_head = cn.note.sequence == head_sequence;
+            assert((child_link == deposit.head_link) == child_is_head, "BB_HISTORY_STALE");
+            child = Option::some(cn);
+            if !child_is_head {
+                let gn = scope.get_screen_successor(child_link, false);
+                assert(gn.note.sequence == cn.note.sequence + 1, "BB_HISTORY_STALE");
+                assert(gn.note.anchor_timestamp >= cn.note.anchor_timestamp, "BB_HISTORY_STALE");
+                let grandchild_hash = gn.note.compute_note_hash(gn.owner, gn.storage_slot, gn.randomness);
+                let grandchild_link = post_link(self.address, owner, deposit_chain_id, gn.note.sequence, grandchild_hash, link_secret);
+                assert((grandchild_link == deposit.head_link) == (gn.note.sequence == head_sequence),
+                    "BB_HISTORY_STALE");
+                grandchild = Option::some(gn);
             }
         }
-
-        // 4. Fetch PostNotes
-        if !done {
-            let post_slot = self.storage.posts.at(owner).storage_slot;
-            let opt_notes = aztec::oracle::notes::get_notes::<PostNote, 0, MAX_HINT_NOTES>(
-                Option::some(owner),
-                post_slot,
-                0,
-                [],
-                [],
-                [],
-                [],
-                [],
-                [],
-                [],
-                [],
-                [],
-                MAX_HINT_NOTES,
-                0,
-                NoteStatus.ACTIVE,
-            );
-
-            // 5. Find child (whose prev_link == screened_link)
-            let mut child_link: Field = 0;
-
-            for i in 0..MAX_HINT_NOTES {
-                if child.is_none() {
-                    let maybe = opt_notes[i];
-                    if maybe.is_some() {
-                        let hinted = maybe.unwrap_unchecked();
-                        if (hinted.note.deposit_chain_id == deposit_chain_id) & (hinted.note.previous_link == dep_note_last_screened) {
-                            let inner_hash = hinted.note.compute_note_hash(
-                                hinted.owner,
-                                hinted.storage_slot,
-                                hinted.randomness,
-                            );
-                            child_link = post_link(self.address, owner, deposit_chain_id, hinted.note.sequence, inner_hash, link_secret);
-                            child = Option::some(hinted);
-                        }
-                    }
-                }
-            }
-
-            // 6. If child not found or child is the head, no grandchild
-            let child_is_head = child_link == dep_note_head;
-            let no_child = child.is_none();
-            let skip_grandchild = no_child | child_is_head;
-
-            // 7. Find grandchild (whose prev_link == child_link)
-            if !skip_grandchild {
-                for i in 0..MAX_HINT_NOTES {
-                    if grandchild.is_none() {
-                        let maybe = opt_notes[i];
-                        if maybe.is_some() {
-                            let hinted = maybe.unwrap_unchecked();
-                            if (hinted.note.deposit_chain_id == deposit_chain_id) & (hinted.note.previous_link == child_link) {
-                                grandchild = Option::some(hinted);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         (child, grandchild)
     }
 
-    /// Returns all PostNotes for an account as HintedNotes (unordered).
+    /// Returns the first debug page of PostNotes for an account (unordered).
     /// Useful for debugging or for frontends that want to inspect the chain.
     #[external("utility")]
     unconstrained fn get_post_notes(owner: AztecAddress) -> pub [Option<HintedNote<PostNote>>; MAX_HINT_NOTES] {

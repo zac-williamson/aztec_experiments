@@ -1,0 +1,8 @@
+file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-screening-history-pxe.mjs:22
+const board = AztecAddress.fromBigInt(101n);
+                           ^
+
+TypeError: AztecAddress.fromBigInt is not a function
+    at file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-screening-history-pxe.mjs:22:28
+
+Node.js v24.21.0

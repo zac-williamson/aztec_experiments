@@ -2,6 +2,7 @@ mod c01;
 mod compact_note;
 mod c02;
 mod c03;
+mod c04_seeded;
 
 
 // ============================================================
@@ -1472,30 +1473,75 @@ unconstrained fn test_history_first_page_control() {
     assert(index == env.view_public(Billboard::at(contract_address).get_post_id(15)), f"Expected first-page last child15, got {index}");
 }
 
-#[test]
-unconstrained fn test_history_known_bad_missing_child_after_first_page() {
-    let (mut env, contract_address, owner, _deposit_time) = setup_regular_history(17);
-    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
-    let notes = env.execute_utility(Billboard::at(contract_address).get_post_notes(owner));
-    for i in 0..16 {
-        assert(notes[i].is_some(), "First history page must be full");
-        let note = notes[i].unwrap_unchecked();
-        let index = note.note.post_id;
-        assert(index == env.view_public(Billboard::at(contract_address).get_post_id(i as u64)), f"Measured TXE first-page index expected {i}, got {index}");
-    }
-    let info = env.execute_utility(Billboard::at(contract_address).get_deposit_info(owner, chain));
-    assert(info[8] == 16, "Previous child must actually have been screened");
-    assert(info[9] == 17, "The seventeenth real post must exist");
-    let (child, grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
-    assert(child.is_none(), "Known-bad control: next required child is omitted by first page");
-    assert(grandchild.is_none(), "No grandchild expected without child");
+// Every iteration executes the actual claim/post contract path in TXE. This
+// measures lifecycle correctness, not client proving or PXE persistence.
+pub unconstrained fn history_progress_and_exit(length: u32) {
+    let (mut env, board, owner, deposit_time) = setup_regular_history(length);
+    let chain = test_chain(board, owner, MIN_DEPOSIT);
+    let before = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
+    assert_eq(before[8], (length - 1) as Field);
+    assert_eq(before[9], length as Field);
+    let (child, grandchild) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
+    assert(child.is_some(), "Required child must be found beyond the first page");
+    assert(grandchild.is_none(), "Current head has no grandchild");
+    let hint = child.unwrap_unchecked();
+    assert_eq(hint.note.sequence, length as u64);
+    assert_eq(hint.note.deposit_chain_id, chain);
+    assert_eq(hint.note.post_id, env.view_public(Billboard::at(board).get_post_id((length - 1) as u64)));
+    env.mine_block_at(deposit_time + (length as u64 + 1) * (BASE_COOLDOWN + CENSOR_WINDOW + 1));
+    // A real contract call authenticates the retrieved historical hint, screens
+    // the final real post, and creates the private dummy needed for exit.
+    env.call_private(owner, Billboard::at(board).post(chain, 0, [0; 32], 0, true, child, grandchild));
+    let after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
+    assert_eq(after[8], length as Field);
+    assert_eq(after[9], length as Field);
+    assert_eq(after[6], (length + 1) as Field);
+    assert_eq(env.view_public(Billboard::at(board).get_post_count()), length as u64);
+    // Saving unused cooldown can leave next_allowed_time behind the current
+    // block. Mining backwards is invalid even though withdrawal is eligible.
+    let current = env.last_block_timestamp();
+    let eligible = after[10] as u64;
+    env.mine_block_at(if eligible > current { eligible } else { current + 1 });
+    env.call_private(owner, Billboard::at(board).withdraw(chain));
+    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain)), [0; 11]);
 }
 
-#[test(should_fail_with = "Child note required for screening")]
-unconstrained fn test_history_known_bad_next_post_cannot_progress() {
-    let (mut env, contract_address, owner, deposit_time) = setup_regular_history(17);
-    let chain = test_chain(contract_address, owner, MIN_DEPOSIT);
-    env.mine_block_at(deposit_time + 18 * (BASE_COOLDOWN + CENSOR_WINDOW + 1));
-    let (child, grandchild) = env.execute_utility(Billboard::at(contract_address).get_screen_hints(owner, chain));
-    env.call_private(owner, Billboard::at(contract_address).post(chain, crate::fresh_post_nonce(), msg_with(18), 4, false, child, grandchild));
+#[test]
+unconstrained fn test_history_17_progress_and_exit() { history_progress_and_exit(17); }
+
+#[test]
+unconstrained fn test_history_33_progress_and_exit() { history_progress_and_exit(33); }
+
+#[test]
+unconstrained fn test_history_two_deposits_select_independent_children_and_exit() {
+    let (mut env, board, owner, _deposit_time) = setup_regular_history(17);
+    let first = test_chain(board, owner, MIN_DEPOSIT);
+    let portal = EthAddress::from_field(TEST_PORTAL);
+    let depositor = EthAddress::from_field(0x87654321);
+    let secret: Field = 0xc04001;
+    let content = get_deposit_msg_hash(1, portal, board, 1, depositor, 2, MIN_DEPOSIT);
+    let second = deposit_chain_id(board, owner, content, secret);
+    assert(first != second);
+    let leaf = env.send_l1_to_l2_message(content, secret, portal, board);
+    env.call_private(owner, Billboard::at(board).claim_deposit(depositor, MIN_DEPOSIT, 2, secret, leaf));
+    let second_before = env.execute_utility(Billboard::at(board).get_deposit_info(owner, second));
+    env.mine_block_at((second_before[10] as u64) + CENSOR_WINDOW + 1);
+    env.call_private(owner, Billboard::at(board).post(second, fresh_post_nonce(), msg_with(18), 4, false, Option::none(), Option::none()));
+    let (first_child, first_gc) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, first));
+    let (second_child, second_gc) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, second));
+    assert(first_child.is_some()); assert(second_child.is_some());
+    assert(first_gc.is_none()); assert(second_gc.is_none());
+    assert_eq(first_child.unwrap_unchecked().note.deposit_chain_id, first);
+    assert_eq(first_child.unwrap_unchecked().note.sequence, 17);
+    assert_eq(second_child.unwrap_unchecked().note.deposit_chain_id, second);
+    assert_eq(second_child.unwrap_unchecked().note.sequence, 1);
+    env.mine_block_at(env.last_block_timestamp() + BASE_COOLDOWN + CENSOR_WINDOW + 1);
+    env.call_private(owner, Billboard::at(board).post(first, 0, [0; 32], 0, true, first_child, first_gc));
+    env.call_private(owner, Billboard::at(board).post(second, 0, [0; 32], 0, true, second_child, second_gc));
+    env.mine_block_at(env.last_block_timestamp() + BASE_COOLDOWN + CENSOR_WINDOW + 1);
+    env.call_private(owner, Billboard::at(board).withdraw(first));
+    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, first)), [0; 11]);
+    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, second))[1], second);
+    env.call_private(owner, Billboard::at(board).withdraw(second));
+    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, second)), [0; 11]);
 }

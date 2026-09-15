@@ -476,7 +476,7 @@
       "title": "Retrieve complete screening history",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "C03"
       ],
@@ -489,7 +489,10 @@
       "scope": [
         "billboard/billboard_contract/",
         "billboard/billboard_test/",
-        "apps/src/billboard/user/"
+        "apps/src/billboard/user/",
+        "scripts/",
+        "apps/dist/",
+        "execution/"
       ],
       "plan": "tasks/C04.md",
       "actions": [
@@ -518,7 +521,7 @@
       "evidence": "evidence/C04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "P03 adds actual TXE first-page control and 17-post missing-child/next-post regression. Verify measured results and replace known-bad assertions when implementing full history lookup; production PXE ordering,32/1000 histories and multiple deposits remain required.",
+      "checkpoint": "Verified exact-link history lookup:150Noir/TXE checks,47 integrated checks, actual1100-note PXE/reopen341ms, seeded1002-note authenticated continuation/exit and genuine screening274.901s with fullcleanup. Only utility bytecode changed. Underlying PXE linear scan remains documented.",
       "priority": 9
     },
     {

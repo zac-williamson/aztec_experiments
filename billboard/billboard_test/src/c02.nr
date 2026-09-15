@@ -373,3 +373,32 @@ unconstrained fn malformed_grandchild(reverse_time: bool) {
 unconstrained fn c02_included_grandchild_cannot_precede_child_time() { malformed_grandchild(true); }
 #[test(should_fail_with = "C02 grandchild sequence")]
 unconstrained fn c02_included_grandchild_sequence_gap_rejected() { malformed_grandchild(false); }
+
+// C04 utility ambiguity is detected before a caller tries to prove a post.
+// Both candidates have real TXE note-tree membership; their issuance here is
+// artificial, exercising a corrupt/hostile wallet-history condition.
+#[test(should_fail_with = "BB_HISTORY_CHILD_AMBIGUOUS")]
+unconstrained fn c04_duplicate_successor_has_explicit_recoverable_error() {
+    let (env, board, owner, chain, _time, original) = one_post();
+    let duplicate = insert_fixture(env, board, owner, original.storage_slot, original.note);
+    assert(duplicate.randomness != original.randomness);
+    included(env, board, duplicate);
+    let _ = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
+}
+
+#[test(should_fail_with = "BB_HISTORY_DEPOSIT_MISSING")]
+unconstrained fn c04_unknown_deposit_has_explicit_recoverable_error() {
+    let (env, board, owner, _censor, _time) = setup_with_deposit(AMOUNT);
+    let _ = env.execute_utility(Billboard::at(board).get_screen_hints(owner, 0xc04bad));
+}
+
+// Even a once-valid utility result is untrusted after another post changes the
+// live deposit: the private contract must reject the stale sequence.
+#[test(should_fail_with = "C02 child sequence")]
+unconstrained fn c04_stale_retrieved_hint_cannot_skip_authentication() {
+    let (mut env, board, owner, chain, time, original) = one_post();
+    env.mine_block_at(time + 7202);
+    env.call_private(owner, Billboard::at(board).post(chain, crate::fresh_post_nonce(), content(), 4, false, Option::some(original), Option::none()));
+    env.mine_block_at(time + 10803);
+    env.call_private(owner, Billboard::at(board).post(chain, crate::fresh_post_nonce(), content(), 4, false, Option::some(original), Option::none()));
+}

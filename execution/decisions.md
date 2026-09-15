@@ -302,3 +302,8 @@ qualification was performed in this read-only protocol investigation.
 ### User-funded private fees (2026-09-15)
 
 User explicitly requested removal of coupons. Replace the operated sponsor with an ownerless private FPC and user-funded protocol FeeJuice bridge. No issuer, coupon storage/registration, admin or operator replenishment is part of this fee path. Canonical artifacts are rebuilt for pinned 5.2. Private balances are charged the configured maximum fee, with no unused-gas refund. Pooled balances, funding amounts and cold-start timing remain observable and must be assessed; fully private spending does not imply invisible L1 funding. Historical sponsor evidence is retained only for its original source.
+
+
+### C04 history retrieval and test scope
+
+Use pinned note-property selectors for deposit identity and predecessor link before a two-result oracle limit; the second result detects ambiguity. This bounds the Noir response, not the pinned PXE backend's owner/slot scan cost. Measure that backend explicitly. Extend scope to supporting test/build scripts and generated consumers. Long-history verification combines real17/33-post lifecycle executions, actual persisted PXE records beyond1000, and an explicitly seeded long-history contract fixture with authenticated continuation/exit; do not describe seeded notes as1000executed/proven transactions. Avoid a repetitive1001-transaction run that the33-post benchmark indicates would exceed the nine-minute budget.

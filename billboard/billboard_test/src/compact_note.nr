@@ -26,6 +26,10 @@ fn c01_compact_exact_maximum_fields_and_generated_selectors() {
     let selector = DepositNote::properties().deposit_chain_id;
     assert_eq(selector.index, 1); assert_eq(selector.offset, 0); assert_eq(selector.length, 32);
     assert_eq(DepositNote::properties().next_allowed_time.index, 7);
+    let chain = PostNote::properties().deposit_chain_id;
+    assert_eq(chain.index, 1); assert_eq(chain.offset, 0); assert_eq(chain.length, 32);
+    let previous = PostNote::properties().previous_link;
+    assert_eq(previous.index, 5); assert_eq(previous.offset, 0); assert_eq(previous.length, 32);
 }
 
 #[test(should_fail_with="Noncanonical receipt metadata")]

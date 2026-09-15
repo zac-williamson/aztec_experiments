@@ -1,0 +1,21 @@
+✔ normal author calls carry only private payment method and bootstrap claim is consumed once (2.911709ms)
+✔ unknown submission is preserved without retry and private errors are redacted (1.468375ms)
+✔ missing private fee configuration fails before account work for every private action (1.330209ms)
+✔ actual wallet keeps configured gas and normal account scope/tag through simulation and proof (32.243458ms)
+✔ actual main claim uses standard author call with private fee payment (13.156583ms)
+✔ actual main post uses standard author call with private fee payment (2.06825ms)
+✔ actual main post dummy uses standard author call with private fee payment (1.23725ms)
+✔ actual main withdraw uses standard author call with private fee payment (0.9495ms)
+✔ moderator calls use their normal account with private fee payment (1.003459ms)
+✔ inherited object names never select an application method (0.319917ms)
+✔ valid no-screening and linked hints survive SDK result wrappers (0.922459ms)
+✔ malformed result never silently becomes empty hints (0.665416ms)
+✔ missing, conflicting, stale and transport errors are explicit and redact raw data (0.206334ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 568.605584

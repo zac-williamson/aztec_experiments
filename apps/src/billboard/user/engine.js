@@ -609,6 +609,31 @@
   }
   g.BillboardPrivateFeeRouting = Object.freeze({ requirePrivateFeeConfiguration, createPrivateFeeSender, createAztecWallet });
 
+  async function readScreeningHints(contract, owner, depositChainId) {
+    try {
+      let result = await contract.methods.get_screen_hints(owner, depositChainId).simulate({from: owner});
+      if (result && result.result !== undefined) result = result.result;
+      if (result && result.value !== undefined) result = result.value;
+      if (!Array.isArray(result) || result.length !== 2 || result.some(hint => hint != null && (typeof hint !== 'object' || Array.isArray(hint))) || (!result[0] && result[1])) {
+        throw new Error('BB_HISTORY_INVALID_RESPONSE');
+      }
+      return result;
+    } catch (error) {
+      let detail = '';
+      try { detail = extractErrorMessage(error); } catch (_) {}
+      const reason = /BB_HISTORY_[A-Z_]+/.exec(detail)?.[0];
+      let message = 'Could not read screening history. Sync your wallet and retry.';
+      if (reason?.endsWith('_AMBIGUOUS')) message = 'Conflicting screening history was found. Sync or restore your wallet history before retrying.';
+      else if (reason === 'BB_HISTORY_DEPOSIT_MISSING') message = 'The selected deposit is unavailable. Sync your wallet and select an active deposit.';
+      else if (reason?.endsWith('_MISSING')) message = 'Screening history is incomplete. Sync or restore your wallet history before retrying.';
+      else if (reason?.includes('STALE')) message = 'Screening history is stale. Sync your wallet and retry.';
+      const safe = new Error(message);
+      safe.code = 'BB_SCREENING_HISTORY_UNAVAILABLE';
+      throw safe;
+    }
+  }
+  g.BillboardScreeningHistory = Object.freeze({readScreeningHints});
+
   function extractFieldArray(simResult) {
     let val = simResult;
     if (simResult && simResult.result !== undefined) val = simResult.result;
@@ -1325,19 +1350,7 @@
 
       // Fetch screening hints (child + grandchild PostNotes for the screening proof)
       log('  Fetching screening hints...', 'info');
-      let childHint = null, grandchildHint = null;
-      try {
-        const hintsResult = await contract.methods.get_screen_hints(address, requireDepositChain()).simulate({ from: address });
-        let hv = hintsResult;
-        if (hv && hv.result !== undefined) hv = hv.result;
-        if (hv && hv.value !== undefined) hv = hv.value;
-        if (Array.isArray(hv)) {
-          childHint = hv[0];
-          grandchildHint = hv[1];
-        }
-      } catch (e) {
-        throw new Error('Could not fetch screening hints: ' + extractErrorMessage(e));
-      }
+      const [childHint, grandchildHint] = await readScreeningHints(contract, address, requireDepositChain());
       log('  Screening hints fetched: child=' + (childHint ? 'yes' : 'no') + ', grandchild=' + (grandchildHint ? 'yes' : 'no'), 'info');
       log('  Pre-flight passed.', 'success');
 
@@ -1370,19 +1383,7 @@
       if ((await readDepositInfo()).amount === 0n) throw new Error('No live deposit for dummy post.');
 
       // Fetch screening hints
-      let childHint = null, grandchildHint = null;
-      try {
-        const hintsResult = await contract.methods.get_screen_hints(address, requireDepositChain()).simulate({ from: address });
-        let hv = hintsResult;
-        if (hv && hv.result !== undefined) hv = hv.result;
-        if (hv && hv.value !== undefined) hv = hv.value;
-        if (Array.isArray(hv)) {
-          childHint = hv[0];
-          grandchildHint = hv[1];
-        }
-      } catch (e) { if (e?.code === 'BB_DEPOSIT_READ') throw e;
-        throw new Error('Could not fetch screening hints for dummy post: ' + extractErrorMessage(e));
-      }
+      const [childHint, grandchildHint] = await readScreeningHints(contract, address, requireDepositChain());
 
       const dummyFields = new Array(32).fill(0).map(() => new a.Fr(0));
       const result = await sendPrivate('post', [
