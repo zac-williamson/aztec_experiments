@@ -433,6 +433,7 @@ async function main() {
   if (privateFeeClaim && !privateFee) throw new Error('A private fee claim requires --private-fee-config.');
 
   const config = {
+    reconcilePrevious: args['reconcile-previous'] === true,
     privateFee, privateFeeClaim,
     action: ACTION,
     acknowledgeTx: args['acknowledge-tx'],

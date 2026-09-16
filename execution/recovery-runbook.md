@@ -61,8 +61,8 @@ encrypted under the wallet key and full salt, before claim/post/withdraw submiss
 The saved record is bound to account, chain, rollup/version, board and portal.
 A failed storage write stops submission. The last record remains after confirmation.
 This covers user L2 actions. Portal Ethereum deposits/refunds now have their own
-intent records (below); deployment, fee-funding and separate moderation actions
-still need journal integration.
+intent records (below). Moderator actions also use the journal. Deployment and
+fee-funding consumers still need integration.
 
 After a browser restart, restore the same wallet in the same browser profile,
 select the same portal and use **Recover saved Aztec transaction** in Wallet Setup.
@@ -166,3 +166,24 @@ There is no automatic deletion or migration that discards unresolved transaction
 Backups cannot detect erased storage or recover requests made after the file was
 exported. Storage ownership tags group local records without exposing their scope;
 this does not protect an unlocked page or a compromised operating system.
+
+
+## Moderator transaction recovery
+
+The flag, policy-change and authority-transfer routes share the active moderator
+wallet and its durable journal. A second wallet cannot silently supply signing
+authority. The moderator screen offers **Recover saved moderator transaction**;
+normal browser acknowledgement is retained only in the current live page.
+
+The restricted daemon supplies `--reconcile-previous` itself. Before preparing a
+new moderator payment, the CLI recovers the saved transaction, validates its current
+canonical outcome and compares authenticated operation metadata. An identical
+already successful operation returns the original receipt without another proof
+or payment. A canonical revert is eligible for another attempt; unknown, pending,
+invalid and reorganized results remain blocked. Model output cannot choose recovery
+flags or supply acknowledgement hashes. The daemon's durable review queue and
+historical policy retrieval remain later work; this does not complete moderation
+operations or stale-proof replacement.
+
+All browser wallet screens now use the same collateral-secret store for recovery
+files, including when a moderator wallet was previously used as an author.

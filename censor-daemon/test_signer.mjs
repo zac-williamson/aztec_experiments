@@ -26,7 +26,7 @@ for (const reason of ["Quotes ' and \" stay data", '`echo harmless`', '$(echo ha
   test('real argv-echo process preserves one inert reason argument: ' + reason, t => {
     const { signer, config } = fixture(t);
     const argv = JSON.parse(signer.flag({ policyVersion: id(9), postId: id(5), reason }));
-    assert.deepEqual(argv, ['declare-immoral', '--portal-address', portal, '--censor-wallet', fs.realpathSync(config.censorWallet), '--node-url', 'http://127.0.0.1:5080/', '--eth-rpc', 'http://127.0.0.1:8545/', '--private-fee-config', fs.realpathSync(config.privateFeeConfig), '--post-id', id(5), '--expected-policy-version', id(9), '--censor-response', reason]);
+    assert.deepEqual(argv, ['declare-immoral', '--portal-address', portal, '--censor-wallet', fs.realpathSync(config.censorWallet), '--node-url', 'http://127.0.0.1:5080/', '--eth-rpc', 'http://127.0.0.1:8545/', '--private-fee-config', fs.realpathSync(config.privateFeeConfig), '--reconcile-previous', '--post-id', id(5), '--expected-policy-version', id(9), '--censor-response', reason]);
   });
 }
 
@@ -75,7 +75,7 @@ test('host loader environment is not passed to the actual child', t => {
   finally { if (previous === undefined) delete process.env.NODE_OPTIONS; else process.env.NODE_OPTIONS = previous; }
 });
 
-for (const field of ['operation', 'command', 'wallet', 'destination', 'cliPath', 'nodeExecutable', 'censorWallet', 'privateFeeConfig', 'ethRpcUrl', 'privateFeeClaim', 'private-fee-claim-file']) {
+for (const field of ['operation', 'command', 'wallet', 'destination', 'cliPath', 'nodeExecutable', 'censorWallet', 'privateFeeConfig', 'ethRpcUrl', 'privateFeeClaim', 'private-fee-claim-file', 'reconcilePrevious', 'acknowledgeTx']) {
   test('flag rejects model-controlled ' + field + ' without invoking a process', t => {
     let calls = 0;
     const { signer } = fixture(t, () => { calls++; return 'done'; });

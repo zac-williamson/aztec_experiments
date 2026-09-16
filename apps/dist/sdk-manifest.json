@@ -1508,7 +1508,7 @@
     "shared/journal-backup.mjs": "5a5292c781f442c07b51769b62c856c60821dbf95a00cb5e8c79f6ea5c2ea512",
     "shared/journal-indexeddb.mjs": "3b9bb21ae70b8bde89b460b673dcd4dd38422ee2d7f6d31f7c5c9c1bba4773b8",
     "shared/journal-record.mjs": "549c91da1ea11706769edc28fba6b1c1ad0fa58c845e784cc7462353726d5a08",
-    "shared/l2-journal.mjs": "d86de08231f86e85d12fb059d0c5f362c49db5031c4f2e27cb196f12e5672259",
+    "shared/l2-journal.mjs": "386e0e21b725ed4c38facf4d138f77d1eacc47d8549aa8ac0992df8c609acbf6",
     "shared/private-fee-client.mjs": "5098aaf46bd3bcdb5302e45186b2dc43cf3bcd70d0cd74aa1b063ff50432fe4b",
     "shared/private-fee-funding.mjs": "f6a11c95e4fa0cb45b450cb8964f172c2550e11f6d4682b69618685f93499e9f",
     "shared/private-fee-payment.mjs": "9863e2e4b2abd3c7e9839be307668c9794a758bde2cd3ca8c4351575710b5f09",
@@ -1520,7 +1520,7 @@
   },
   "outputs": {
     "acvm_js_bg.wasm": "bcd66e862a95a57f7f2ae3cb97e24d007d2ad710ac7490262c3c92a5b823775d",
-    "aztec_bundle.js": "43fb41ed12e2463c0453b60b9b32b50215b5f556e112f209918fbcc554632cd1",
+    "aztec_bundle.js": "1c8ff1dcad74ab444f6a771991f7ed4f075c3c27e3051f76668038dfa9c5afed",
     "bb-main.worker.js": "568e68dd87fc2bd1cb945422f7a52aa442c661f2c9bb7156307f01d25edce564",
     "bb-thread.worker.js": "f06a7e630a5d1e3d13353c2c89d3646c19b5a731f0055e49af17c499deae0086",
     "noirc_abi_wasm_bg.wasm": "2cbd4bb57d2cd47e8e14fb78ddf597b6b6d5f0cf7717c54692242967786bf334",

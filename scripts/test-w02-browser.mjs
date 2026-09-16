@@ -23,11 +23,11 @@ try {
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const origin='http://127.0.0.1:'+server.address().port;
   browser=await chromium.launch({headless:true});
-  async function open() {
+  async function open(pageName='user.html') {
     const context=await browser.newContext({acceptDownloads:true});
     await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){externalRequests++;return route.abort();}return route.continue();});
     const page=await context.newPage();page.setDefaultTimeout(15000);
-    await page.goto(origin+'/user.html');
+    await page.goto(origin+'/'+pageName);
     await page.waitForFunction(()=>window.__aztec?.Fr && document.getElementById('wbAztecGenBtn'));
     return {context,page};
   }
@@ -132,7 +132,7 @@ try {
   await first.page.locator('#wbPassword').fill(password);await first.page.locator('#wbPasswordConfirm').fill(password);
   const portableDownload=first.page.waitForEvent('download');await first.page.locator('#wbBackupBtn').click();
   const portable=await fs.readFile(await (await portableDownload).path());
-  stage='restore-journals-fresh-profile';const third=await open();
+  stage='restore-journals-fresh-profile';const third=await open('censor.html');
   await third.page.locator('#wbPassword').fill(password);await third.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:portable});
   await third.page.waitForFunction(()=>window.walletState.aztec?.address);
   const portableResult=await third.page.evaluate(async txHash=>{
@@ -142,9 +142,10 @@ try {
     const node={getTxReceipt:async()=>({txHash,status:'checkpointed',executionResult:'success',blockNumber:1,blockHash:'canonical'}),getBlock:async()=>({hash:'canonical'})};
     const journal=await a.createL2Journal({storage,walletSecret:w.secretKey,walletSalt:w.salt,scope,Tx:a.Tx,node});
     let blocked=false;try{await journal.assertCanStart();}catch(e){blocked=e.code==='BB_RECOVERY_REQUIRED';}
-    return {count:records.length,blocked,hash:(await journal.recover()).txHash.toString()};
+    return {count:records.length,claims:(await BillboardClaimBackup.exportRecords(w)).length,blocked,hash:(await journal.recover()).txHash.toString()};
   },savedHash);
-  assert.deepEqual(portableResult,{count:2,blocked:true,hash:savedHash});
+  assert.deepEqual(portableResult,{count:2,claims:1,blocked:true,hash:savedHash});
+  assert.equal(await third.page.getByRole('button',{name:'Recover saved moderator transaction'}).count(),1);
 
   console.log(JSON.stringify({passed:true,actualBuiltBrowser:true,freshProfiles:3,actualPortableJournalRestore:true,wrongPasswordRejected:true,sameRestoredAddress:true,restoredClaimCommitmentVerified:true,actualCrossTabExclusion:true,actualJournalReloadRecovery:true,actualEthereumIntentReloadRecovery:true,externalRequestsBlocked:externalRequests,secretsWrittenToEvidence:false}));
 }catch(error){console.log(JSON.stringify({passed:false,stage,errorClass:error.name,location:error.stack?.split('\n').filter(l=>l.trim().startsWith('at ')).slice(0,2)}));process.exitCode=1;}

@@ -5,8 +5,7 @@ import vm from 'node:vm';
 import { webcrypto } from 'node:crypto';
 import { IDBFactory } from 'fake-indexeddb';
 const helper = fs.readFileSync(new URL('../shared/wallet-backup.js', import.meta.url), 'utf8');
-const app = fs.readFileSync(new URL('../apps/src/billboard/user/app.js', import.meta.url), 'utf8');
-const storeSource = app.slice(app.indexOf('function makeClaimSecretStore('), app.indexOf('async function readCurrentDeposit('));
+const storeSource=fs.readFileSync(new URL('../shared/claim-secret-store.js',import.meta.url),'utf8');
 // Lightweight commitment double for custody tests; one separate test below uses the pinned SDK.
 const sdkDouble = { Fr: class { constructor(value) { this.value = value; } }, computeSecretHash: value => ({ toString: () => '0x' + (value.value - 1n).toString(16).padStart(64, '0') }) };
 

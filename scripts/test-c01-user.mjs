@@ -13,6 +13,7 @@ import { AztecAddress } from '@aztec/stdlib/aztec-address';
 import { EthAddress } from '@aztec/foundation/eth-address';
 
 const backupSource = await fs.readFile(new URL('../shared/wallet-backup.js',import.meta.url),'utf8');
+const claimSource=await fs.readFile(new URL('../shared/claim-secret-store.js',import.meta.url),'utf8');
 const appSource = await fs.readFile(new URL('../apps/src/billboard/user/app.js',import.meta.url),'utf8');
 const engineSource = await fs.readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8');
 const scope={l1ChainId:'31337',rollupAddress:'0x1111111111111111111111111111111111111111',rollupVersion:'1',
@@ -27,7 +28,7 @@ function appContext() {
   const context={crypto:webcrypto,indexedDB:new IDBFactory(),TextEncoder,TextDecoder,Uint8Array,URLSearchParams,console,
     location:{search:''},document:{getElementById:()=>null},__aztec:{createPXE(){}},ETH_RPC_URL:'',
     checkBundle:()=>true,setupRpcAuth(){},makeCallEngine:()=>()=>{},runBillboardUser(){},initPages(){},initWalletButtons(){}};
-  context.window=context;vm.createContext(context);vm.runInContext(backupSource,context,{filename:'shared/wallet-backup.js'});vm.runInContext(appSource,context,{filename:'user/app.js'});return context;
+  context.window=context;vm.createContext(context);vm.runInContext(backupSource,context,{filename:'shared/wallet-backup.js'});vm.runInContext(claimSource,context);vm.runInContext(appSource,context,{filename:'user/app.js'});return context;
 }
 async function editEnvelope(context,key,transform) {
   const db=await new Promise((resolve,reject)=>{const req=context.indexedDB.open('aztec-billboard-claim-secrets-v2',1);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});

@@ -10,7 +10,8 @@ import {Fr} from '@aztec/foundation/curves/bn254';
 import {Gas,GasFees,GasSettings} from '@aztec/stdlib/gas';
 import {NO_FROM} from '@aztec/aztec.js/account';
 const source=await readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8');
-function context(){const c=vm.createContext({console,Buffer,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});vm.runInContext(source,c);return c;}
+const policySource=await readFile(new URL('../shared/moderation-policy.js',import.meta.url),'utf8');
+function context(){const c=vm.createContext({console,Buffer,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});vm.runInContext(policySource,c);vm.runInContext(source,c);return c;}
 const gas=()=>new GasSettings(new Gas(100,200),new Gas(1,2),new GasFees(3n,4n),new GasFees(0n,0n));
 function fixture(failure){
  const c=context(),prepared=[],sends=[],owner={toString:()=> 'owner'};
@@ -87,8 +88,8 @@ function mainHarness(action,isDummy=false) {
   const note=()=>({schemaVersion:1n,depositChainId:5n,depositNonce:7n,amount:action==='claim'&&!sent?0n:amount,nextAllowedTime:0n,lastRealPostIndex:0n,lastScreenedIndex:0n,headSequence:0n});
   c.readBillboardDepositInfo=async()=>note();
   const methods=new Proxy({}, {get:(_target,name)=>{
-    if(['post','withdraw','claim_deposit'].includes(name)) return (...args)=>({send:async opts=>{assert.equal(opts.from,addr);assert.equal(opts.fee.paymentMethod,'private-method');sent=true;requests.at(-1).action={kind:action,args};return {receipt:{status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)}};}});
-    return ()=>({simulate:async()=>name==='get_screen_hints'?[null,null]:1n});
+    if(['post','withdraw','claim_deposit','transfer_censor','declare_immoral','set_moderation_policy'].includes(name)) return (...args)=>({send:async opts=>{assert.equal(opts.from,addr);assert.equal(opts.fee.paymentMethod,'private-method');sent=true;requests.at(-1).action={kind:action,args};return {receipt:{status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)}};}});
+    return ()=>({simulate:async()=>name==='get_post_exists'?true:name==='get_screen_hints'?[null,null]:1n});
   }});
   class BaseWallet {constructor(pxe){this.pxe=pxe;}}
   const a={Fr,AztecAddress,EthAddress,NO_FROM,GasSettings,BaseWallet,sha256ToField,Buffer,
@@ -101,11 +102,12 @@ function mainHarness(action,isDummy=false) {
     preparePrivateFeePayment:async input=>{requests.push(input);return {paymentMethod:'private-method',gasSettings:gas()};},
   };
   const cursorRecords=new Map();
-  const env={createHistoryCursor:options=>createHistoryCursor({...options,storage:{read:async key=>cursorRecords.get(key)??null,compareAndSwap:async(key,previous,next)=>{assert.equal(cursorRecords.get(key)??null,previous);cursorRecords.set(key,next);}}}),createEthereumJournal:async()=>({assertCanStart:async()=>{},send:async()=>{throw Object.assign(new Error('Unknown Ethereum submission'),{code:'BB_ETH_SUBMISSION_UNKNOWN'});}}),createTransactionJournal:async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{}}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},privateFeeArtifact:{},
+  const env={createHistoryCursor:options=>createHistoryCursor({...options,storage:{read:async key=>cursorRecords.get(key)??null,compareAndSwap:async(key,previous,next)=>{assert.equal(cursorRecords.get(key)??null,previous);cursorRecords.set(key,next);}}}),createEthereumJournal:async()=>({assertCanStart:async()=>{},send:async()=>{throw Object.assign(new Error('Unknown Ethereum submission'),{code:'BB_ETH_SUBMISSION_UNKNOWN'});}}),createTransactionJournal:async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},setOperation:()=>{}}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},privateFeeArtifact:{},
     initCRS:async()=>{},createStore:async()=>({}),log:text=>logs.push(text),getBrowserSigner:async()=>({getAddress:async()=>depositor,provider})};
   const config={action,isDummy,message:'text',depositChainId:'5',portalAddress:portal,ethRpcUrl:'http://fixture.invalid',aztecNodeUrl:'http://fixture.invalid',aztecWallet:{secretKey:new Fr(1).toString(),salt:0},
     reuseTxHash:new Fr(3).toString(),claimSecretStore:{save:async()=>{},load:async()=>({schemaVersion:1,secret:secret.toString(),secretHash:secretHash.toString()})},
     privateFee:{contractAddress:'private-fee',gasSettings:gas()}};
+  config.censorWalletJson={...config.aztecWallet};config.newCensor=new Fr(44).toString();config.postId=new Fr(55).toString();config.moderationPolicy='No threats';
   return {run:()=>c.runBillboardUser(env,config),env,config,node,Portal,requests,logs,authorBalanceReads:()=>authorBalanceReads,secret};
 }
 for(const [action,dummy] of [['claim',false],['post',false],['post',true],['withdraw',false]]) {
@@ -187,4 +189,33 @@ test('Ethereum recovery handles already refunded receipts before checking active
   h.env.createEthereumJournal=async options=>{assert.equal(options.scope.depositor,'0x0000000000000000000000000000000000000004');return {assertCanStart:async()=>{},send:async()=>{},recover:async()=>({outcome,txHash:new Fr(99).toString()})};};
   const result=await h.run();assert.equal(result.state,outcome==='success'?'ethereum_recovered':'ethereum_'+outcome);assert.equal(h.requests.length,0);assert.equal(h.logs.some(s=>s.includes('portal event verified')),outcome==='success');
  }
+});
+
+for(const action of ['declare-immoral','set-moderation-policy','transfer-censor']) {
+ test(`actual moderator ${action} uses the active wallet's durable journal`,async()=>{
+  const h=mainHarness(action);let journal;
+  h.env.createTransactionJournal=async options=>{assert.equal(options.walletSecret,h.config.aztecWallet.secretKey);journal={assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},setOperation:()=>{}};return journal;};
+  h.env.getBrowserSigner=null;h.config.hasEthSigner=false;await h.run();
+  assert.equal(h.requests.length,1);assert.equal(h.requests[0].wallet._transactionJournal,journal);
+ });
+ test(`actual moderator ${action} refuses an unresolved previous transaction before preparing a fee`,async()=>{
+  const h=mainHarness(action);h.env.createTransactionJournal=async()=>({assertCanStart:async()=>{throw Object.assign(new Error('recovery required'),{code:'BB_RECOVERY_REQUIRED'});},prepare:async()=>{},confirmed:()=>{},setOperation:()=>{}});
+  await assert.rejects(h.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(h.requests.length,0);
+ });
+}
+test('moderator wallet cannot bypass journal ownership by supplying a second key',async()=>{
+ const h=mainHarness('transfer-censor');h.config.censorWalletJson={secretKey:new Fr(33).toString(),salt:0};
+ await assert.rejects(h.run(),/Load the moderator wallet as the active wallet/);assert.equal(h.requests.length,0);
+});
+
+for(const outcome of ['success','reverted'])test(`moderator recovery ${outcome} distinguishes an already completed identical transfer from a failed one`,async()=>{
+ const h=mainHarness('transfer-censor');h.config.reconcilePrevious=true;let operations=[],reads=0;
+ const receipt={executionResult:outcome,txHash:new Fr(99),blockNumber:1,status:'checkpointed',blockHash:'canonical'};
+ h.env.createTransactionJournal=async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},setOperation:operation=>operations.push(operation),reconcilePrevious:async()=>{reads++;return {receipt,operation:JSON.stringify(['transfer_censor',[h.config.newCensor]])};}});
+ await h.run();assert.equal(h.requests.length,outcome==='success'?0:1);assert.equal(operations.length,outcome==='success'?0:1);assert.equal(reads,outcome==='success'?2:1);
+});
+test('moderator recovery with unknown outcome cannot prepare another private fee payment',async()=>{
+ const h=mainHarness('transfer-censor');h.config.reconcilePrevious=true;
+ h.env.createTransactionJournal=async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},reconcilePrevious:async()=>{throw Object.assign(new Error('unknown'),{code:'BB_SUBMISSION_UNKNOWN'});}});
+ await assert.rejects(h.run(),{code:'BB_SUBMISSION_UNKNOWN'});assert.equal(h.requests.length,0);
 });

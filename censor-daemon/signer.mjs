@@ -111,7 +111,7 @@ export function createSigner(configuration, { run = execFileSync } = {}) {
       const postId = validatePostId(request.postId);
       const reason = validateReason(request.reason);
       if (reason.startsWith('--')) throw new Error('Reason must not be a CLI option');
-      return call('declare-immoral', ['--post-id', postId, '--expected-policy-version', expectedPolicyVersion, '--censor-response', reason]);
+      return call('declare-immoral', ['--reconcile-previous', '--post-id', postId, '--expected-policy-version', expectedPolicyVersion, '--censor-response', reason]);
     },
   });
 }

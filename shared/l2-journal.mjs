@@ -17,12 +17,13 @@ export function l2JournalScopeText(scope) {
  */
 export async function createL2Journal({storage,walletSecret,walletSalt,scope,Tx,node,acknowledgeTx,crypto=globalThis.crypto,waitOptions={},contextGuard} ) {
   const slot=await createEncryptedJournalSlot({storage,walletSecret,walletSalt,scopeText:l2JournalScopeText(scope),keyDomain:'AZTEC_BB_L2_JOURNAL_KEY_V1',crypto});
-  let acknowledged=acknowledgeTx,lastHash=null;
+  let acknowledged=acknowledgeTx,lastHash=null,operation=null;
   async function read() {
     const saved=await slot.read();if(saved.value===null)return {...saved,tx:null};
     try {
       const record=saved.value;
       if(record.version!==1||typeof record.txHash!=='string'||!/^0x[0-9a-f]{64}$/.test(record.txHash)||typeof record.tx!=='string'||!/^(?:[0-9a-f]{2})+$/.test(record.tx))throw invalid();
+      if(record.operation!==undefined&&record.operation!==null&&(typeof record.operation!=='string'||!record.operation.length||record.operation.length>16384))throw invalid();
       const tx=Tx.fromBuffer(Buffer.from(record.tx,'hex'));
       if(tx.getTxHash().toString()!==record.txHash||Buffer.from(tx.toBuffer()).toString('hex')!==record.tx)throw invalid();
       return {...saved,tx};
@@ -39,15 +40,12 @@ export async function createL2Journal({storage,walletSecret,walletSalt,scope,Tx,
     return previous;
   }
   async function prepare(tx,previous) {
-    await slot.write(previous,{version:1,txHash:tx.getTxHash().toString(),tx:Buffer.from(tx.toBuffer()).toString('hex')});
+    await slot.write(previous,{version:1,txHash:tx.getTxHash().toString(),tx:Buffer.from(tx.toBuffer()).toString('hex'),operation});
   }
 
   function confirmed(receipt) {acknowledged=receipt.txHash.toString();lastHash=acknowledged;}
-  return {
-    assertCanStart,prepare,confirmed,
-    get lastTxHash(){return lastHash;},
-    async recover() {
-      const saved=await read();if(!saved.tx)throw transactionError('BB_NO_SAVED_TRANSACTION','No saved Aztec transaction exists for this wallet and board.');
+  async function recoverSaved(saved) {
+      if(!saved.tx)throw transactionError('BB_NO_SAVED_TRANSACTION','No saved Aztec transaction exists for this wallet and board.');
       let receipt;try {receipt=await node.getTxReceipt(saved.tx.getTxHash());}catch {throw fail();}
       if(receipt?.txHash?.toString()!==saved.tx.getTxHash().toString())throw fail();
       if(receipt.status==='dropped') {
@@ -59,6 +57,17 @@ export async function createL2Journal({storage,walletSecret,walletSalt,scope,Tx,
         await submitOnceWithReconciliation(node,saved.tx);
       }
       const result=await waitForCanonicalReceipt(node,saved.tx,waitOptions);confirmed(result);return result;
+  }
+  return {
+    assertCanStart,prepare,confirmed,
+    setOperation(value){if(typeof value!=='string'||!value.length||value.length>16384)throw invalid();operation=value;},
+    get lastTxHash(){return lastHash;},
+    async recover(){return recoverSaved(await read());},
+    async reconcilePrevious(){
+      const saved=await read();if(!saved.tx)return null;
+      const receipt=await recoverSaved(saved);
+      if((await read()).encoded!==saved.encoded)throw fail();
+      return {receipt,operation:saved.value.operation??null};
     },
   };
 }

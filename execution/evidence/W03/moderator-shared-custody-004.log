@@ -1,0 +1,34 @@
+✔ browser actual module persists ciphertext and interoperates with Node AES-GCM (7.225458ms)
+✔ browser actual custody rejects wrong wallet, ciphertext corruption and moved scope (3.908541ms)
+✔ browser save observes transaction abort and never reports durable success (1.430834ms)
+✔ actual engine codec matches frozen claim, boundary and exit commitments (5.182459ms)
+✔ actual public deposit flow saves and reads back before send; returns event receipt nonce without secret (6.22175ms)
+✔ actual deposit flow fails closed for missing store, failed durability and disabled portal (2.538834ms)
+✔ actual deposit flow fails closed for mismatched read-back and existing receipt (2.039209ms)
+✔ actual recovery requires the current event nonce and exact saved secret hash without signing fallback (4.405833ms)
+✔ build provenance rejects changed frontend sources paired with old HTML (22.634667ms)
+✔ build provenance rejects output changes and removed output (18.277416ms)
+✔ source removal and newly discovered app invalidate previous build (15.212542ms)
+✔ partial or interrupted builds cannot preserve a valid aggregate manifest (16.197917ms)
+✔ mid-build drift and private RPC overrides cannot be certified (20.970541ms)
+✔ internal symlinks hash the actual source while escapes and cycles reject (17.917375ms)
+✔ obsolete template cannot leave a served HTML page in certified output (21.902833ms)
+✔ unexpected top-level and nested HTML reject certification without deletion (17.826125ms)
+✔ output symlink escapes and cycles cannot bypass the served HTML inventory (16.149708ms)
+✔ password encryption roundtrips full salt and scoped claims without exposing plaintext (148.392125ms)
+✔ wrong passwords, ciphertext edits and parameter edits fail closed (142.678875ms)
+✔ optional wallet/network isolation rejects mismatch while all-network backup preserves scopes (0.873ms)
+✔ wallet parsing preserves large salt and rejects unsafe numeric or field overflow (0.394666ms)
+✔ claim export selects this wallet and roundtrips all original network scopes offline (6.786333ms)
+✔ bulk restore is idempotent and conflicting records cannot partially restore (2.039666ms)
+✔ different wallet accounts can hold the same scope independently (2.64075ms)
+✔ a concurrent custody change aborts the entire write transaction (2.429708ms)
+✔ pinned Aztec commitment validation rejects poisoning before custody writes (117.210042ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 531.636042

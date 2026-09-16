@@ -751,7 +751,7 @@
       return findWithdrawTxHash(aztecNode,messageLeaf,latestBlock,1,log,{cursorStore});
     }
 
-    const journalActions = ['claim','post','withdraw','auto','recover'];
+    const journalActions = ['claim','post','withdraw','auto','recover','declare-immoral','set-moderation-policy','transfer-censor'];
     if(journalActions.includes(action) && typeof env.createTransactionJournal!=='function')throw Object.assign(new Error('Durable transaction journal is required.'),{code:'BB_JOURNAL_INVALID'});
     const transactionJournal = journalActions.includes(action)
       ? await env.createTransactionJournal({walletSecret:secretKeyHex,walletSalt:saltVal,
@@ -767,7 +767,14 @@
       return {recovered:true,lastL2TxHash:receipt.txHash.toString(),state:succeeded?'transaction_recovered':'transaction_reverted'};
     }
     // Check before any action-specific state changes, including auto-mode L1 sends.
-    if(transactionJournal)await transactionJournal.assertCanStart();
+    let reconciledModerator=null;
+    if(transactionJournal) {
+      if(config.reconcilePrevious===true&&['declare-immoral','set-moderation-policy','transfer-censor'].includes(action)) {
+        if(typeof transactionJournal.reconcilePrevious!=='function')throw Object.assign(new Error('Moderator recovery is unavailable.'),{code:'BB_JOURNAL_INVALID'});
+        reconciledModerator=await transactionJournal.reconcilePrevious();
+      }
+      await transactionJournal.assertCanStart();
+    }
 
 
     // Check if L2 contract is deployed
@@ -1202,7 +1209,16 @@
       return privateFeeSender(kind, args);
     }
 
-    function sendCensorPrivate(censorWallet, censorAddress, censorContract, kind, args) {
+    async function sendCensorPrivate(censorWallet, censorAddress, censorContract, kind, args) {
+      const encode=value=>Array.isArray(value)?value.map(encode):String(value);
+      const operation=JSON.stringify([kind,args.map(encode)]);
+      if(typeof transactionJournal?.setOperation!=='function')throw Object.assign(new Error('Moderator operation journal is unavailable.'),{code:'BB_JOURNAL_INVALID'});
+      if(reconciledModerator?.operation===operation&&reconciledModerator.receipt.executionResult==='success') {
+        const fresh=await transactionJournal.reconcilePrevious();
+        if(fresh?.operation!==operation)throw Object.assign(new Error('Moderator recovery record changed.'),{code:'BB_RECOVERY_REQUIRED'});
+        if(fresh.receipt.executionResult==='success')return {receipt:fresh.receipt};
+      }
+      transactionJournal.setOperation(operation);
       const sender=createPrivateFeeSender({a,config,privateFeeArtifact:env.privateFeeArtifact,
         contract:censorContract,wallet:censorWallet,node:aztecNode,owner:censorAddress,
         scope:{l1ChainId:String(nodeInfo.l1ChainId),rollupVersion:String(version)}});
@@ -1887,6 +1903,8 @@
       if (!censorWalletJson) throw new Error('Censor wallet required.');
       if (!censorWalletJson.secretKey) throw new Error('Censor wallet JSON missing secretKey.');
 
+      if(censorWalletJson.secretKey.toLowerCase()!==secretKeyHex.toLowerCase()||walletSalt(censorWalletJson.salt)!==saltVal)throw new Error('Load the moderator wallet as the active wallet before a moderator action.');
+      if(!transactionJournal)throw Object.assign(new Error('Durable moderator transaction journal is required.'),{code:'BB_JOURNAL_INVALID'});
       const censorSk = a.Fr.fromHexString(censorWalletJson.secretKey);
       const censorSigningKey = a.deriveSigningKey(censorSk);
       const censorAccountContract = new a.SchnorrInitializerlessAccountContract(censorSigningKey);
@@ -1908,7 +1926,7 @@
       await retry(() => pxe.registerContract(censorInstance), 'register-censor', log, 5);
       log('  Censor account registered.', 'success');
 
-      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk, {preProveHook:config.preProveHook,contextGuard:config.contextGuard});
+      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk, {preProveHook:config.preProveHook,contextGuard:config.contextGuard,transactionJournal});
       const censorAccountManager = await a.AccountManager.create(censorWallet, censorSk, censorAccountContract, { salt: new a.Fr(censorSaltVal) });
       censorWallet._accountManager = censorAccountManager;
 
@@ -1968,68 +1986,7 @@
       const postIdField = new a.Fr(BigInt(postId));
       const responseText = config.censorResponse || '';
 
-      // Load censor wallet — accept JSON object (browser) or file path (CLI)
-      let censorWalletJson = config.censorWalletJson || null;
-      if (!censorWalletJson && config.censorWalletPath) {
-        const censorWalletPath = config.censorWalletPath;
-        if (fs.existsSync(censorWalletPath)) {
-          censorWalletJson = JSON.parse(fs.readFileSync(censorWalletPath, 'utf8'));
-          log('Loaded censor wallet from ' + censorWalletPath, 'success');
-        } else {
-          throw new Error('Censor wallet file not found: ' + censorWalletPath);
-        }
-      }
-      if (!censorWalletJson) {
-        throw new Error('Censor wallet required for declare-immoral.');
-      }
-      if (!censorWalletJson.secretKey) throw new Error('Censor wallet JSON missing secretKey.');
-
-      // Derive censor account
-      const censorSk = a.Fr.fromHexString(censorWalletJson.secretKey);
-      const censorSigningKey = a.deriveSigningKey(censorSk);
-      const censorAccountContract = new a.SchnorrInitializerlessAccountContract(censorSigningKey);
-      const { publicKeys: censorPublicKeys } = await a.deriveKeys(censorSk);
-      const censorAccountArtifact = await censorAccountContract.getContractArtifact();
-      const censorImmutablesHash = await censorAccountContract.getImmutablesHash();
-      const censorSaltVal = walletSalt(censorWalletJson.salt);
-      const censorInstance = await a.getContractInstanceFromInstantiationParams(censorAccountArtifact, {
-        constructorArtifact: undefined, constructorArgs: undefined,
-        salt: new a.Fr(censorSaltVal), publicKeys: censorPublicKeys, immutablesHash: censorImmutablesHash,
-        });
-      const censorPartialAddress = await a.computePartialAddress(censorInstance);
-      const censorAddress = censorInstance.address;
-      log('  Censor address: ' + censorAddress.toString(), 'info');
-
-      // Register censor account with PXE
-      log('  Registering censor account with PXE...', 'info');
-      const censorDerivedKeys = await a.deriveKeys(censorSk);
-      await pxe.registerAccount(censorDerivedKeys, censorPartialAddress);
-      await retry(() => pxe.registerContract(censorInstance), 'register-censor', log, 5);
-      log('  Censor account registered.', 'success');
-
-      // Create censor wallet
-      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk, {preProveHook:config.preProveHook,contextGuard:config.contextGuard});
-      const censorAccountManager = await a.AccountManager.create(censorWallet, censorSk, censorAccountContract, { salt: new a.Fr(censorSaltVal) });
-      censorWallet._accountManager = censorAccountManager;
-
-      // Store censor's signing key capsule
-      log('  Storing censor signing key capsule...', 'info');
-      const censorSigningPublicKey = await censorAccountContract.getSigningPublicKey();
-      const censorConstructorArtifact = censorAccountArtifact.functions.find(f => f.name === 'constructor');
-      if (censorConstructorArtifact) {
-        const storeCall = new a.ContractFunctionInteraction(
-          censorWallet, censorInstance.address, censorConstructorArtifact,
-          [censorSigningPublicKey.x, censorSigningPublicKey.y]
-        );
-        await storeCall.simulate({ from: censorInstance.address });
-        log('  Censor capsule stored.', 'success');
-      }
-
-      // Create contract instance bound to censor's wallet
-      const censorContract = await a.Contract.at(l2Addr, contractArtifact, censorWallet);
-
-      // Sync PXE
-      await pxe.sync();
+      const {censorWallet,censorAddress,censorContract}=await _loadCensorWalletAndContract();
 
       const flagArguments = await moderationArguments(a, censorContract, censorAddress, postIdField,
         responseText, config.expectedPolicyVersion);
@@ -2064,66 +2021,7 @@
       const newCensorStr = config.newCensor;
       if (!newCensorStr) throw new Error('New censor address required (use --new-censor <addr>).');
 
-      // Load censor wallet — accept JSON object (browser) or file path (CLI)
-      let censorWalletJson = config.censorWalletJson || null;
-      if (!censorWalletJson && config.censorWalletPath) {
-        const censorWalletPath = config.censorWalletPath;
-        if (fs.existsSync(censorWalletPath)) {
-          censorWalletJson = JSON.parse(fs.readFileSync(censorWalletPath, 'utf8'));
-          log('Loaded censor wallet from ' + censorWalletPath, 'success');
-        } else {
-          throw new Error('Censor wallet file not found: ' + censorWalletPath);
-        }
-      }
-      if (!censorWalletJson) {
-        throw new Error('Censor wallet required for transfer-censor.');
-      }
-      if (!censorWalletJson.secretKey) throw new Error('Censor wallet JSON missing secretKey.');
-
-      // Derive censor account
-      const censorSk = a.Fr.fromHexString(censorWalletJson.secretKey);
-      const censorSigningKey = a.deriveSigningKey(censorSk);
-      const censorAccountContract = new a.SchnorrInitializerlessAccountContract(censorSigningKey);
-      const { publicKeys: censorPublicKeys } = await a.deriveKeys(censorSk);
-      const censorAccountArtifact = await censorAccountContract.getContractArtifact();
-      const censorImmutablesHash = await censorAccountContract.getImmutablesHash();
-      const censorSaltVal = walletSalt(censorWalletJson.salt);
-      const censorInstance = await a.getContractInstanceFromInstantiationParams(censorAccountArtifact, {
-        constructorArtifact: undefined, constructorArgs: undefined,
-        salt: new a.Fr(censorSaltVal), publicKeys: censorPublicKeys, immutablesHash: censorImmutablesHash,
-      });
-      const censorPartialAddress = await a.computePartialAddress(censorInstance);
-      const censorAddress = censorInstance.address;
-      log('  Censor address: ' + censorAddress.toString(), 'info');
-
-      // Register censor account with PXE
-      log('  Registering censor account with PXE...', 'info');
-      const censorDerivedKeys = await a.deriveKeys(censorSk);
-      await pxe.registerAccount(censorDerivedKeys, censorPartialAddress);
-      await retry(() => pxe.registerContract(censorInstance), 'register-censor', log, 5);
-      log('  Censor account registered.', 'success');
-
-      // Create censor wallet
-      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk, {preProveHook:config.preProveHook,contextGuard:config.contextGuard});
-      const censorAccountManager = await a.AccountManager.create(censorWallet, censorSk, censorAccountContract, { salt: new a.Fr(censorSaltVal) });
-      censorWallet._accountManager = censorAccountManager;
-
-      // Store censor's signing key capsule
-      log('  Storing censor signing key capsule...', 'info');
-      const censorSigningPublicKey = await censorAccountContract.getSigningPublicKey();
-      const censorConstructorArtifact = censorAccountArtifact.functions.find(f => f.name === 'constructor');
-      if (censorConstructorArtifact) {
-        const storeCall = new a.ContractFunctionInteraction(
-          censorWallet, censorInstance.address, censorConstructorArtifact,
-          [censorSigningPublicKey.x, censorSigningPublicKey.y]
-        );
-        await storeCall.simulate({ from: censorInstance.address });
-        log('  Censor capsule stored.', 'success');
-      }
-
-      // Create contract instance bound to censor's wallet
-      const censorContract = await a.Contract.at(l2Addr, contractArtifact, censorWallet);
-      await pxe.sync();
+      const {censorWallet,censorAddress,censorContract}=await _loadCensorWalletAndContract();
 
       const newCensorAddr = a.AztecAddress.fromFieldUnsafe(a.Fr.fromHexString(newCensorStr));
       log('Transferring censor rights to ' + newCensorAddr.toString() + '...', 'info');

@@ -38,11 +38,25 @@ if (!checkBundle('setupStatus')) {
 }
 setupRpcAuth();
 
-const callEngine = makeCallEngine(runBillboardUser, {
+const journalAcknowledgements=new Map();
+const runCensorEngine = makeCallEngine(runBillboardUser, {
+  createHistoryCursor: options => window.__aztec.createHistoryCursor({...options,storage:window.__aztec.createBrowserJournalStorage()}),
+  createTransactionJournal: options => window.__aztec.createL2Journal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
   artifact: typeof BILLBOARD_ARTIFACT !== 'undefined' ? BILLBOARD_ARTIFACT : null,
   privateFeeArtifact: typeof BILLBOARD_PRIVATE_FEE_ARTIFACT !== 'undefined' ? BILLBOARD_PRIVATE_FEE_ARTIFACT : null,
   portalBytecode: typeof PORTAL_BYTECODE !== 'undefined' ? PORTAL_BYTECODE : null,
 });
+
+async function callEngine(action,statusDiv,extra={}) {
+  const identity=JSON.stringify([window.walletState?.aztec?.address?.toString(),_portalAddr(),_getNodeUrl()]);
+  const result=await runCensorEngine(action,statusDiv,{...extra,acknowledgeTx:journalAcknowledgements.get(identity)});
+  if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
+  return result;
+}
+async function recoverSavedTransaction() {
+  try {await callEngine('recover','setupStatus',_commonConfig());}
+  catch(error){log(error.message,'error','setupStatus');}
+}
 
 // ============================================================
 // Setup — load censor wallet, connect to contract

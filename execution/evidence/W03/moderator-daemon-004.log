@@ -1,0 +1,222 @@
+✔ simple VIOLATION with rule number and reason (1.525417ms)
+✔ simple OK (0.103917ms)
+✔ VIOLATION at end after thinking reasoning (0.102542ms)
+✔ OK at end after thinking reasoning (0.041667ms)
+✔ NOT A VIOLATION prose is explicitly unresolved, never a flag (0.177125ms)
+✔ NO VIOLATION prose is explicitly unresolved, never a flag (0.049875ms)
+✔ VIOLATION without reason is explicitly unresolved (0.040084ms)
+✔ empty text is explicitly unresolved (0.0385ms)
+✔ random text is explicitly unresolved instead of defaulting to OK (0.048792ms)
+✔ VIOLATION with extra whitespace (0.083417ms)
+✔ multiple lines, valid standalone VIOLATION is last (0.044042ms)
+✔ earlier VIOLATION cannot make ambiguous final prose a verdict (0.038167ms)
+✔ embedded VIOLATION after prose is not a standalone verdict (0.036209ms)
+✔ oversized reason is rejected rather than silently truncated (0.039ms)
+✔ case insensitive VIOLATION (0.02825ms)
+✔ case insensitive OK (0.022208ms)
+✔ buildSystemPrompt mentions rules and billboard (0.0715ms)
+✔ buildUserPrompt includes policy, post and clear output formats (0.071041ms)
+✔ buildUserPrompt handles empty post (0.026209ms)
+✔ buildUserPrompt quotes post data without corrupting its envelope (0.040208ms)
+✔ thinking model output with reasoning then standalone legacy final verdict (0.027375ms)
+✔ thinking model output that concludes OK (0.026792ms)
+✔ legacy markdown bold wrapper remains supported (0.026375ms)
+✔ strict JSON verdict true (0.0495ms)
+✔ strict JSON verdict false (0.027792ms)
+✔ JSON key order is irrelevant (0.041ms)
+✔ model cannot add command to verdict (0.043ms)
+✔ model cannot add operation to verdict (0.033ms)
+✔ model cannot add wallet to verdict (0.023792ms)
+✔ model cannot add destination to verdict (0.02775ms)
+✔ model cannot add postIndex to verdict (0.019292ms)
+✔ model cannot add postId to verdict (0.018541ms)
+✔ malformed or untyped verdict rejected: {"isViolation":true,"reason": (0.035542ms)
+✔ malformed or untyped verdict rejected: [] (0.018292ms)
+✔ malformed or untyped verdict rejected: null (0.028875ms)
+✔ malformed or untyped verdict rejected: {"isViolation":"true","reason":"spam"} (0.026459ms)
+✔ malformed or untyped verdict rejected: {"isViolation":true,"reason":null} (0.022ms)
+✔ malformed or untyped verdict rejected: {"isViolation":true,"reason":{"command":"list"}} (0.021ms)
+✔ malformed or untyped verdict rejected: {"isViolation":true,"isViolation":false,"reason":"spam" (0.035583ms)
+✔ malformed or untyped verdict rejected: {"isViolation":true,"reason":"spam","reason":"other"} (0.021958ms)
+✔ malformed or untyped verdict rejected: "VIOLATION - 1 - Spam" (0.021125ms)
+✔ non-string model text rejected: null (0.039417ms)
+✔ non-string model text rejected: undefined (0.016958ms)
+✔ non-string model text rejected: false (0.02025ms)
+✔ non-string model text rejected: 123 (0.016ms)
+✔ non-string model text rejected: [object Object] (0.014917ms)
+✔ non-string model text rejected: OK (0.016542ms)
+✔ shell-looking JSON reason remains inert text: Quotes ' and " remain text (0.025708ms)
+✔ shell-looking JSON reason remains inert text: `echo harmless` (0.016833ms)
+✔ shell-looking JSON reason remains inert text: $(echo harmless) (0.018458ms)
+✔ shell-looking JSON reason remains inert text: ${HOME}; true (0.015208ms)
+✔ shell-looking JSON reason remains inert text: Reason: colons and "reason": stay inside one value (0.015625ms)
+✔ control or option-like reason rejected: "line\nbreak" (0.026083ms)
+✔ control or option-like reason rejected: "line\rbreak" (0.017167ms)
+✔ control or option-like reason rejected: "tab\tdata" (0.017417ms)
+✔ control or option-like reason rejected: "nul\u0000data" (0.017667ms)
+✔ control or option-like reason rejected: "\u001b[31mtext" (0.016541ms)
+✔ control or option-like reason rejected: "badtext" (0.014625ms)
+✔ control or option-like reason rejected: "bad‮text" (0.032167ms)
+✔ control or option-like reason rejected: "--node-url" (0.018459ms)
+✔ control or option-like reason rejected: "\ud800" (0.016375ms)
+✔ reason byte limit accounts for multibyte UTF-8 (0.047792ms)
+✔ oversized full verdict is rejected (0.023958ms)
+✔ oversized post and policy are rejected before network access (0.19375ms)
+✔ valid HTTP final verdict uses structured request and trusted local endpoint (11.491583ms)
+✔ incomplete or malformed HTTP choice is observable unresolved failure: {"choices":[{"finish_reason":"length","message":{"content":"VIOLATION - 1 - Spam"}}]} (0.192875ms)
+✔ incomplete or malformed HTTP choice is observable unresolved failure: {"choices":[{"finish_reason":"stop","message":{"content":"","reasoning_content":"VIOLATION - 1  (0.11175ms)
+✔ incomplete or malformed HTTP choice is observable unresolved failure: {"choices":[{"finish_reason":"stop","message":{"content":{"isViolation":true,"reason":"1 - Adve (0.098875ms)
+✔ incomplete or malformed HTTP choice is observable unresolved failure: {"choices":[]} (0.438875ms)
+✔ incomplete or malformed HTTP choice is observable unresolved failure: {"choices":[{"finish_reason":"stop","message":{"content":"OK"}},{"finish_reason":"stop","messag (0.094917ms)
+✔ HTTP error remains unresolved without reflecting untrusted server body (0.150834ms)
+✔ unavailable model produces explicit error (0.07675ms)
+✔ timeout is bounded even if fetch adapter ignores cancellation (20.908541ms)
+✔ malformed response JSON is explicit failure (0.283416ms)
+✔ oversized HTTP response is stopped and cancelled (0.443958ms)
+✔ slow response body is bounded by the whole-request timeout (20.548125ms)
+ℹ tests 76
+ℹ suites 0
+ℹ pass 76
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 62.938167
+✔ real argv-echo process preserves one inert reason argument: Quotes ' and " stay data (31.8385ms)
+✔ real argv-echo process preserves one inert reason argument: `echo harmless` (27.629083ms)
+✔ real argv-echo process preserves one inert reason argument: $(echo harmless) (29.051291ms)
+✔ real argv-echo process preserves one inert reason argument: ${HOME}; true (28.462084ms)
+✔ real argv-echo process preserves one inert reason argument: safe; # command-looking comment (28.990167ms)
+✔ executable, operation, argv and execution limits are chosen by signer (1.370167ms)
+✔ startup config mutation cannot redirect later flags (0.891916ms)
+✔ host loader environment is not passed to the actual child (31.449375ms)
+✔ flag rejects model-controlled operation without invoking a process (1.420875ms)
+✔ flag rejects model-controlled command without invoking a process (0.800916ms)
+✔ flag rejects model-controlled wallet without invoking a process (0.697917ms)
+✔ flag rejects model-controlled destination without invoking a process (0.716917ms)
+✔ flag rejects model-controlled cliPath without invoking a process (0.795958ms)
+✔ flag rejects model-controlled nodeExecutable without invoking a process (0.657083ms)
+✔ flag rejects model-controlled censorWallet without invoking a process (0.5815ms)
+✔ flag rejects model-controlled privateFeeConfig without invoking a process (0.587209ms)
+✔ flag rejects model-controlled ethRpcUrl without invoking a process (0.597791ms)
+✔ flag rejects model-controlled privateFeeClaim without invoking a process (0.880208ms)
+✔ flag rejects model-controlled private-fee-claim-file without invoking a process (0.565583ms)
+✔ flag rejects model-controlled reconcilePrevious without invoking a process (0.579916ms)
+✔ flag rejects model-controlled acknowledgeTx without invoking a process (0.671708ms)
+✔ invalid or incorrectly typed post id rejected: -1 (0.691167ms)
+✔ invalid or incorrectly typed post id rejected: 4294967296 (0.638583ms)
+✔ invalid or incorrectly typed post id rejected: 1.5 (0.70375ms)
+✔ invalid or incorrectly typed post id rejected: NaN (0.5525ms)
+✔ invalid or incorrectly typed post id rejected: Infinity (0.580709ms)
+✔ invalid or incorrectly typed post id rejected: 1 (0.913541ms)
+✔ invalid or incorrectly typed post id rejected: 1 --node-url (1.007083ms)
+✔ invalid or incorrectly typed post id rejected: null (0.853792ms)
+✔ invalid or incorrectly typed post id rejected: undefined (0.656208ms)
+✔ invalid or incorrectly typed post id rejected: [object Object] (0.593042ms)
+✔ invalid or incorrectly typed post id rejected: 1 (0.864292ms)
+✔ invalid or incorrectly typed post id rejected: 0x0000000000000000000000000000000000000000000000000000000000000000 (0.766542ms)
+✔ invalid or incorrectly typed post id rejected: 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001 (0.554167ms)
+✔ full Field identity stays exact in signer argv (26.867083ms)
+✔ unsafe or oversized reason rejected before process call: "line\nbreak" (0.811584ms)
+✔ unsafe or oversized reason rejected before process call: "tab\tdata" (0.611625ms)
+✔ unsafe or oversized reason rejected before process call: "nul\u0000data" (0.554709ms)
+✔ unsafe or oversized reason rejected before process call: "\u001b[31mtext" (0.908417ms)
+✔ unsafe or oversized reason rejected before process call: "--node-url" (0.644959ms)
+✔ unsafe or oversized reason rejected before process call: " --censor-wallet" (0.581458ms)
+✔ unsafe or oversized reason rejected before process call: "ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé" (0.521166ms)
+✔ unsafe or oversized reason rejected before process call: "" (0.815958ms)
+✔ unsafe or oversized reason rejected before process call: null (0.788375ms)
+✔ unsafe or oversized reason rejected before process call: {} (0.680542ms)
+✔ unsafe or oversized reason rejected before process call: 123 (0.638333ms)
+✔ JSON model output cannot override host-selected post index (0.79225ms)
+✔ list validates data and projects away untrusted extra fields (0.785792ms)
+✔ invalid list response rejected: malformed JSON (0.602917ms)
+✔ invalid list response rejected: multiple candidate JSON records (0.526958ms)
+✔ invalid list response rejected: missing identity (0.700417ms)
+✔ invalid list response rejected: zero identity (0.454333ms)
+✔ invalid list response rejected: duplicate identities (0.492ms)
+✔ invalid list response rejected: string index (0.456417ms)
+✔ invalid list response rejected: index outside count (0.457708ms)
+✔ invalid list response rejected: duplicate indices (0.749583ms)
+✔ invalid list response rejected: string flag (0.81825ms)
+✔ invalid list response rejected: nonstring post (0.693708ms)
+✔ invalid list response rejected: negative timestamp (0.762375ms)
+✔ invalid list response rejected: oversize post text (0.694833ms)
+✔ invalid or oversized process output rejected: object (1.126334ms)
+✔ invalid or oversized process output rejected: object (0.744084ms)
+✔ invalid or oversized process output rejected: string (2.8495ms)
+✔ process timeout is observable without reflecting child diagnostics (0.809667ms)
+✔ invalid policy version rejected before signing: undefined (0.702042ms)
+✔ invalid policy version rejected before signing: null (0.964ms)
+✔ invalid policy version rejected before signing: 1 (0.644625ms)
+✔ invalid policy version rejected before signing: 0x0000000000000000000000000000000000000000000000000000000000000000 (0.842208ms)
+✔ invalid policy version rejected before signing: 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001 (0.480166ms)
+✔ missing policy or invalid deadline fails closed: {} (0.564ms)
+✔ missing policy or invalid deadline fails closed: {"policy":""} (0.753542ms)
+✔ missing policy or invalid deadline fails closed: {"posts":[{"index":0,"postId":"0x0000000000000000000000000000000000000000000000000000000000000001","flagDeadline":"3601","text":"post","flagged":false,"timestamp":1}]} (0.804709ms)
+✔ missing policy or invalid deadline fails closed: {"posts":[{"index":0,"postId":"0x0000000000000000000000000000000000000000000000000000000000000001","policyVersion":"0x0000000000000000000000000000000000000000000000000000000000000009","flagDeadline":"01","text":"post","flagged":false,"timestamp":1}]} (0.715084ms)
+✔ missing policy or invalid deadline fails closed: {"posts":[{"index":0,"postId":"0x0000000000000000000000000000000000000000000000000000000000000001","policyVersion":"0x0000000000000000000000000000000000000000000000000000000000000009","flagDeadline":"-1","text":"post","flagged":false,"timestamp":1}]} (0.556625ms)
+✔ missing policy or invalid deadline fails closed: {"posts":[{"index":0,"postId":"0x0000000000000000000000000000000000000000000000000000000000000001","policyVersion":"0x0000000000000000000000000000000000000000000000000000000000000009","flagDeadline":"9223372036854775808","text":"post","flagged":false,"timestamp":1}]} (0.563333ms)
+✔ missing policy or invalid deadline fails closed: {"posts":[{"index":0,"postId":"0x0000000000000000000000000000000000000000000000000000000000000001","policyVersion":"0x0000000000000000000000000000000000000000000000000000000000000009","flagDeadline":100,"text":"post","flagged":false,"timestamp":1}]} (0.523208ms)
+✔ missing or invalid fee configuration rejected at signer startup: undefined (1.143916ms)
+✔ missing or invalid fee configuration rejected at signer startup: /nonexistent/billboard-fee-config (0.588625ms)
+✔ missing or invalid fee configuration rejected at signer startup: . (0.511ms)
+✔ invalid Ethereum RPC rejected at signer startup (0.492333ms)
+✔ invalid Ethereum RPC rejected at signer startup (0.542666ms)
+✔ invalid Ethereum RPC rejected at signer startup (0.585084ms)
+✔ invalid Ethereum RPC rejected at signer startup (0.764333ms)
+ℹ tests 83
+ℹ suites 0
+ℹ pass 83
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 267.462334
+=== Daemon Integration Tests (with mock infra) ===
+
+  ✓ dry-run flags violation in output but does not call declare-immoral
+  ✓ dry-run with OK verdict does not flag
+  ✓ skips already-flagged posts
+  ✓ skips empty posts
+  ✓ reasoning-only model output is an observable failure and cannot flag
+  ✓ processes multiple posts with mixed verdicts
+  ✓ missing --portal-address exits with error
+  ✓ --from skips earlier posts
+  ✓ non-dry-run calls declare-immoral via CLI
+  ✓ reads policy from contract output
+  ✓ rejects a local policy override instead of signing with fallback text
+  ✓ warns on posts past the censor window
+  ✓ warns on posts about to expire in censor window
+  ✓ processes oldest unflagged posts first (censor window urgency)
+  ✓ model cannot add a destination, operation or post index to a verdict
+  ✓ failed signing is not reported as a completed successful job
+  ✓ production CLI cannot bypass model isolation with skip-bootstrap
+  ✓ old post policy fails closed without model or signer action
+  ✓ empty contract policy fails closed without model or signer action
+  ✓ each poll refreshes exact policy before processing its matching new posts
+  ✓ private fee configuration is mandatory at daemon startup
+  ✓ Ethereum endpoint is mandatory at daemon startup
+
+=== Results ===
+  Passed: 22
+  Failed: 0
+✔ declare-immoral reads only the explicit censor private file (2.176834ms)
+✔ declare-immoral cannot fall back to other available wallets (0.917542ms)
+✔ transfer-censor reads only the explicit censor private file (0.707584ms)
+✔ transfer-censor cannot fall back to other available wallets (0.572ms)
+✔ set-moderation-policy reads only the explicit censor private file (0.65425ms)
+✔ set-moderation-policy cannot fall back to other available wallets (0.53525ms)
+✔ list reads only the explicit censor private file (0.635083ms)
+✔ list cannot fall back to other available wallets (0.542666ms)
+✔ malformed censor diagnostics exclude file content (1.260708ms)
+✔ user action loads explicitly chosen valid user and Ethereum private files (0.722833ms)
+✔ censor refuses public-readable key files (0.589083ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 49.258042

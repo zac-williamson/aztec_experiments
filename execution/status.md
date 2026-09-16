@@ -28,3 +28,7 @@ Withdrawal scan progress is now encrypted and durable in browser/CLI.146 integra
 Active implementation: portable journal records in password-encrypted recovery files, with authenticated ownership and conflict-safe restoration.
 
 Portable journal backups now work across browser and CLI, with collateral secrets and conflict-safe fresh-wallet restore.184 integrated and80 artifact checks pass; actual built-browser three-profile recovery passes. See evidence/W03/portable-milestone-002.md. Continue W03: remaining consumers and linked stale-proof replacement, then complete interruption coverage.
+
+Active work: moderator transaction journal integration and recovery UI, consolidating duplicated moderator wallet setup.
+
+Moderator journal integration passes198 core and192 moderation/daemon/authority checks. The browser recovery file now preserves collateral custody across all screens. See evidence/W03/moderator-milestone-004.md. Next: fee funding/claim and deployment consumers, then stale proofs and complete stage coverage.

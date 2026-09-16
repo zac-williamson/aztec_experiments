@@ -832,7 +832,8 @@
         "apps/dist/",
         "apps/build.mjs",
         ".github/",
-        ".gitignore"
+        ".gitignore",
+        "censor-daemon/"
       ],
       "plan": "tasks/W03.md",
       "actions": [
@@ -861,7 +862,7 @@
       "evidence": "evidence/W03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Portable encrypted journal backups integrated in browser and offline CLI, including collateral secrets, fresh-wallet restore and conflict rejection.184 integrated/80 artifact checks and actual3-profile browser recovery pass. Next linked stale L2 proof replacement and remaining fee/deployment/moderation consumers, then full-stage qualification. W03 remains active.",
+      "checkpoint": "Moderator journal and exact-operation reconciliation integrated across CLI, browser and restricted daemon.198 core checks and192 moderation/daemon/authority checks pass; built moderator-screen recovery preserves claims/journals. Next private-fee funding/claim and deployment journals, linked stale proof replacement and full-stage qualification. W03 active.",
       "priority": 14
     },
     {

@@ -321,3 +321,7 @@ C05 passes171 distinct contract checks,66 integrated checks and genuine screenin
 and private-fee claim/post journeys. Automatic historical-policy retrieval remains
 M02; current daemon behavior is explicit failure before model/signing for a
 mismatched version. This is not production completion or an audit waiver.
+
+## W03 moderator recovery scope
+
+Extend W03 to censor-daemon/ because enforcing durable moderator journals requires its trusted signer to reconcile previous requests between jobs and after restart. Model output cannot select recovery/acknowledgement flags. Persist exact moderator operation metadata with the transaction; a recovered successful identical operation is returned without another proof. Failed or unknown results must not complete a job.

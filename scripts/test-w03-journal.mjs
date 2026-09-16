@@ -25,6 +25,13 @@ for(const backend of ['file','indexeddb']) {
   const temp=fs.mkdtempSync(path.join(os.tmpdir(),'bb-journal-test-'));
   try {const idb=new IDBFactory(),storage=backend==='file'?createFileJournalStorage(temp):createBrowserJournalStorage(idb);await fn(fixture(storage),{temp,idb,storage});}finally{fs.rmSync(temp,{recursive:true,force:true});}
  }
+ test(`${backend}: operation metadata survives restart and canonical recovery alone permits the next operation`,()=>withStorage(async f=>{
+  const operation=JSON.stringify(['transfer_censor',['recipient']]),j=await f.newSession();
+  assert.equal(await j.reconcilePrevious(),null);j.setOperation(operation);await j.prepare(f.tx,await j.assertCanStart());
+  f.setStatus('checkpointed');const restarted=await f.newSession(),recovered=await restarted.reconcilePrevious();
+  assert.equal(recovered.operation,operation);assert.equal(recovered.receipt.executionResult,'success');assert.equal(f.sent.length,0);
+  await restarted.assertCanStart();f.reorg();await assert.rejects(restarted.reconcilePrevious(),{code:'BB_SUBMISSION_UNKNOWN'});
+ }));
  test(`${backend}: crash before broadcast recovers identical actual SDK transaction without a new proof`,()=>withStorage(async f=>{
   const first=await f.newSession();await first.prepare(f.tx,await first.assertCanStart());assert.equal(f.sent.length,0);
   const resumed=await f.newSession();await assert.rejects(resumed.assertCanStart(),{code:'BB_RECOVERY_REQUIRED'});
