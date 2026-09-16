@@ -20,3 +20,7 @@ Continue the graph with trustworthy receipts and resumable transaction journals:
 W03 active: user Aztec transactions and Ethereum portal deposits/refunds now save encrypted recovery records before submission/signing. Ethereum recovery retains the original sender nonce and checks the exact transaction plus matching portal event; it can recover a refund after the active receipt becomes zero.182 integrated checks and93 artifact/client checks pass. Actual browser reload and real local Ethereum deposit/refund recovery pass, including lost responses and repeated recovery without another payment. See evidence/W03/ethereum-milestone-003.md.
 
 Still open: portable journal backups, linked stale Aztec proof replacement, fee-funding/deployment/moderation integration, persistent Aztec history-scan cursors and complete all-stage interruption qualification. The graph remains active; this is not production completion.
+
+Current work: persisting withdrawal-history search progress across restarts, revalidating chain anchors before skipping already searched blocks. Then continue remaining W03 recovery work.
+
+Withdrawal scan progress is now encrypted and durable in browser/CLI.146 integrated and67 artifact checks pass, plus built-browser recovery regression. See evidence/W03/history-milestone-001.md. Next: portable transaction recovery backups.

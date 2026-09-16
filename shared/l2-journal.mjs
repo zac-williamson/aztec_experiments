@@ -3,7 +3,7 @@ import {createEncryptedJournalSlot} from './journal-record.mjs';
 const fail=()=>transactionError('BB_RECOVERY_REQUIRED','Recover the saved transaction before starting another operation.');
 const invalid=()=>transactionError('BB_JOURNAL_INVALID','Transaction recovery storage could not be authenticated. Preserve it before continuing.');
 const scopeNames=['account','chainId','rollup','version','board','portal'];
-function scopeText(scope) {
+export function l2JournalScopeText(scope) {
   if(!scope || Object.keys(scope).sort().join()!==[...scopeNames].sort().join())throw invalid();
   for(const name of ['account','board'])if(!/^0x[0-9a-f]{64}$/.test(scope[name]))throw invalid();
   for(const name of ['rollup','portal'])if(!/^0x[0-9a-f]{40}$/.test(scope[name]))throw invalid();
@@ -16,7 +16,7 @@ function scopeText(scope) {
  * acknowledge its exact hash, after a fresh canonical receipt check.
  */
 export async function createL2Journal({storage,walletSecret,walletSalt,scope,Tx,node,acknowledgeTx,crypto=globalThis.crypto,waitOptions={},contextGuard} ) {
-  const slot=await createEncryptedJournalSlot({storage,walletSecret,walletSalt,scopeText:scopeText(scope),keyDomain:'AZTEC_BB_L2_JOURNAL_KEY_V1',crypto});
+  const slot=await createEncryptedJournalSlot({storage,walletSecret,walletSalt,scopeText:l2JournalScopeText(scope),keyDomain:'AZTEC_BB_L2_JOURNAL_KEY_V1',crypto});
   let acknowledged=acknowledgeTx,lastHash=null;
   async function read() {
     const saved=await slot.read();if(saved.value===null)return {...saved,tx:null};

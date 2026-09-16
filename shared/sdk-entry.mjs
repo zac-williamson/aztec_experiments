@@ -47,3 +47,5 @@ export { poseidon2Hash, poseidon2HashBytes, poseidon2HashWithSeparator } from '@
 export { sha256ToField } from '@aztec/foundation/crypto/sha256';
 export { initSync as initACVMSync } from '@aztec/noir-acvm_js';
 export { initSync as initAbiSync } from '@aztec/noir-noirc_abi';
+
+export { createHistoryCursor } from './history-cursor.mjs';

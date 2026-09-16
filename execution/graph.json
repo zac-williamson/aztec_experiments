@@ -861,7 +861,7 @@
       "evidence": "evidence/W03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Ethereum portal deposit/refund intent journal integrated: fixed sender nonce and exact calldata/value persisted before signing, canonical receipt and portal-event verification, lost-hash sender/nonce search with durable bounded cursors, explicit same-nonce retry. Verified182 integrated and93 artifact/client checks, actual browser reload, CLI SDK smoke and real disposable Ethereum portal deposit/refund with responses lost after mining. Next portable encrypted journal backup, linked stale L2 proof replacement, private-fee funding/deploy/moderation consumers, persistent L2 scan cursors and full-stage interruption qualification. W03 remains active; root self-review after prior delegated quota exhaustion.",
+      "checkpoint": "Persistent encrypted withdrawal-history cursors integrated and verified:146 integrated checks,67 artifact checks and actual browser regression pass. Restart includes new blocks and reorg resets skipped pages. Next portable journal backup/restore, stale L2 proof replacement and remaining transaction consumers; W03 stays active.",
       "priority": 14
     },
     {

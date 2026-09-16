@@ -226,6 +226,7 @@ setupRpcAuth();
 const journalAcknowledgements = new Map();
 const ethereumAcknowledgements = new Map();
 const runUserEngine = makeCallEngine(runBillboardUser, {
+  createHistoryCursor: options => window.__aztec.createHistoryCursor({...options,storage:window.__aztec.createBrowserJournalStorage()}),
   createEthereumJournal: options => window.__aztec.createEthereumJournal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
   createTransactionJournal: options => window.__aztec.createL2Journal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
   artifact: typeof BILLBOARD_ARTIFACT !== 'undefined' ? BILLBOARD_ARTIFACT : null,

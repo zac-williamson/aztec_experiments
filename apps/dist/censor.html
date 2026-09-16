@@ -40167,9 +40167,25 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     async function read(fn) {let timer;try {return await Promise.race([Promise.resolve().then(fn),new Promise((_,reject)=>{timer=setTimeout(()=>reject(fail()),Math.max(0,deadline-Date.now()));})]);}catch {throw fail();}finally {clearTimeout(timer);}}
     const anchor=await read(()=>aztecNode.getBlock(last));
     if(!anchor?.hash)throw fail();
-    for(let end=last;end>=first;end-=50) {
+    let ranges=[[first,last]];
+    const saved=options.cursorStore?await options.cursorStore.read():null;
+    if(saved) {
+      if(!Number.isSafeInteger(saved.anchorBlock)||saved.anchorBlock<first||typeof saved.anchorHash!=='string'||!Array.isArray(saved.ranges))throw fail();
+      let prior=first-1;
+      for(const range of saved.ranges) {
+        if(!Array.isArray(range)||range.length!==2||!range.every(Number.isSafeInteger)||range[0]<=prior||range[1]<range[0]||range[1]>saved.anchorBlock)throw fail();
+        prior=range[1];
+      }
+      const previousAnchor=saved.anchorBlock<=last?await read(()=>aztecNode.getBlock(saved.anchorBlock)):null;
+      if(previousAnchor?.hash?.toString()===saved.anchorHash) {
+        ranges=saved.ranges.map(range=>[...range]);
+        if(last>saved.anchorBlock)ranges.push([saved.anchorBlock+1,last]);
+      }
+    }
+    while(ranges.length) {
+      const range=ranges[ranges.length-1],end=range[1];
       if(Date.now()>=deadline)throw fail();
-      const from=Math.max(first,end-49),count=end-from+1;
+      const from=Math.max(range[0],end-49),count=end-from+1;
       const blocks=await read(()=>aztecNode.getBlocks(from,count,{includeTransactions:true}));
       if(!Array.isArray(blocks)||blocks.length!==count)throw fail();
       const numbered=new Map(blocks.map(block=>[Number(block?.number),block]));
@@ -40193,7 +40209,13 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
           }
         }
       }
-      if(options.onProgress)await options.onProgress({nextBlock:from-1,anchorBlock:last,anchorHash:anchor.hash.toString()});
+      // Never persist skipped pages under an anchor that changed during the read.
+      const checkedAnchor=await read(()=>aztecNode.getBlock(last));
+      if(checkedAnchor?.hash?.toString()!==anchor.hash.toString())throw fail();
+      if(from===range[0])ranges.pop();else range[1]=from-1;
+      const progress={nextBlock:ranges.at(-1)?.[1]??0,anchorBlock:last,anchorHash:anchor.hash.toString(),ranges:ranges.map(range=>[...range])};
+      if(options.cursorStore)await options.cursorStore.write(progress);
+      if(options.onProgress)await options.onProgress(progress);
       log('  Checked withdrawal history through block '+from,'info');
     }
     const current=await read(()=>aztecNode.getBlock(last));
@@ -40647,6 +40669,14 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     log('  L2 billboard: ' + l2AddrHex, 'success');
     log('  L1 portal: ' + portalAddr, 'info');
 
+    async function searchWithdrawal(messageLeaf,latestBlock) {
+      if(typeof env.createHistoryCursor!=='function')throw Object.assign(new Error('Durable withdrawal recovery storage is required.'),{code:'BB_JOURNAL_INVALID'});
+      const cursorStore=await env.createHistoryCursor({walletSecret:secretKeyHex,walletSalt:saltVal,
+        scope:{account:address.toString().toLowerCase(),chainId:String(nodeInfo.l1ChainId),rollup:rollupAddr.toLowerCase(),version:String(version),board:l2AddrHex.toLowerCase(),portal:portalAddr.toLowerCase()},
+        messageLeaf:'0x'+messageLeaf.toBigInt().toString(16).padStart(64,'0')});
+      return findWithdrawTxHash(aztecNode,messageLeaf,latestBlock,1,log,{cursorStore});
+    }
+
     const journalActions = ['claim','post','withdraw','auto','recover'];
     if(journalActions.includes(action) && typeof env.createTransactionJournal!=='function')throw Object.assign(new Error('Durable transaction journal is required.'),{code:'BB_JOURNAL_INVALID'});
     const transactionJournal = journalActions.includes(action)
@@ -40914,7 +40944,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         try {
           const messageLeaf = computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, portalL1Balance, portalDepositNonce, version, nodeInfo.l1ChainId);
           const latestBlock = await aztecNode.getBlockNumber();
-          const found = await findWithdrawTxHash(aztecNode, messageLeaf, latestBlock, 1, log);
+          const found = await searchWithdrawal(messageLeaf,latestBlock);
           if (found) {
             stateStatus = 'withdrawn_l2_claimable_l1';
             log('  Withdrawal tx found: ' + found.txHash, 'success');
@@ -41209,7 +41239,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
             try {
               const messageLeaf = computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, amount, depositInfo.depositNonce, version, nodeInfo.l1ChainId);
               const latestBlock = await aztecNode.getBlockNumber();
-              const found = await findWithdrawTxHash(aztecNode, messageLeaf, latestBlock, 1, log);
+              const found = await searchWithdrawal(messageLeaf,latestBlock);
               if (found) {
                 log('  Withdrawal tx found: ' + found.txHash, 'success');
                 log('  The deposit was already claimed and withdrawn.', 'info');
@@ -41663,7 +41693,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         const messageLeaf = computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, withdrawAmount, portalDepositNonce, version, chainId);
         log('  Message leaf: 0x' + messageLeaf.toBigInt().toString(16), 'info');
         const latestBlock = await aztecNode.getBlockNumber();
-        const found = await findWithdrawTxHash(aztecNode, messageLeaf, latestBlock, 1, log);
+        const found = await searchWithdrawal(messageLeaf,latestBlock);
         if (!found) {
           throw Object.assign(new Error('No matching withdrawal found in complete canonical history. Check the selected receipt and wallet.'),{code:'BB_RECOVERY_UNKNOWN'});
         }
