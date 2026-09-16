@@ -48,3 +48,7 @@ Active: bounded transaction RPC reads and durable logical post identity for link
 After the app restart, removed the verified paused proof-test process group7099 and its orphaned parent completed cleanup. Second native attempt failed in process-snapshot parsing, not proving; exact formatting detail was unavailable. Fixed supervisor cleanup so read failure after SIGSTOP still kills owned children, and added one full-snapshot retry for malformed rows. Five actual-process/parser checks pass. Native memory cap tightened to2GiB; nine-minute deadline unchanged. Continue proof-recovery qualification.
 
 Real stale-post replacement passed in296744ms with1851936KiB peak, genuine conflicting private-fee spend and replacement inclusion; all owned processes/data removed.159 integrated,143 artifact and5 supervisor checks pass; built-browser recovery passes with at most two simultaneous profiles. W03 remains active: correct withdrawal absence reporting and finish action-specific recovery.
+
+Stale-post milestone c3a93b6 pushed. Active: require canonical exit evidence for missing-note withdrawal outcomes; then continue remaining stage-specific recovery.
+
+Withdrawal absence now requires an authenticated matching deposit and exact canonical exit, under a20second deadline.184 integrated checks and built-browser regression pass. AI reviewer findings addressed. Continue safe action-specific stale-proof recovery.

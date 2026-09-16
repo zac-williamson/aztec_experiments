@@ -41798,20 +41798,37 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     async function doWithdraw() {
       if (!contract) throw new Error('PXE setup required for withdraw.');
 
-      // Check if already withdrawn (note consumed)
-      let noteInfo = null;
-      try {
-        const r = await readDepositInfo();
-        noteInfo = r;
-        if (noteInfo.amount === 0n) {
-          log('No deposit note found -- already withdrawn in a previous session.', 'info');
-          log('  Run claim-l1 to claim your ETH on L1.', 'info');
-          return;
-        }
-        log('  Deposit note found: ' + noteInfo.amount.toString() + ' wei', 'info');
-      } catch (e) { if (e?.code === 'BB_DEPOSIT_READ') throw e;
+      // Note absence alone cannot distinguish an unclaimed receipt, incomplete
+      // wallet state and an actual withdrawal. Require its exact canonical exit.
+      let noteInfo;
+      try { noteInfo = await readDepositInfo(); }
+      catch (e) { if (e?.code === 'BB_DEPOSIT_READ') throw e;
         throw new Error('Cannot determine the live deposit.');
       }
+      if (noteInfo.amount === 0n) {
+        const unknown = () => Object.assign(new Error('No live deposit note was found, but a successful withdrawal has not been established. Recover the saved transaction or check the original deposit; do not make another deposit.'), {code:'BB_RECOVERY_UNKNOWN'});
+        try {
+          const priorExit = await a.boundedTransactionRead(async () => {
+          const active = await new ethers.Contract(portalAddr, PORTAL_ABI, provider).getDeposit(l1Account);
+          if (BigInt(active.amount) <= 0n || BigInt(active.nonce) <= 0n || selectedChain == null) throw unknown();
+          // Authenticate the selected private chain against this receipt and owner;
+          // an exit for another deposit must not complete this withdrawal request.
+          await doReuseDeposit();
+          if (BigInt(depositInfo.amount) !== BigInt(active.amount) || BigInt(depositInfo.depositNonce) !== BigInt(active.nonce)) throw unknown();
+          const content = escrowContent(a, ethers, false, l2Addr, portalAddr, l1Account, BigInt(active.amount), BigInt(active.nonce), version, nodeInfo.l1ChainId);
+          const chain = await a.poseidon2HashWithSeparator([new a.Fr(1), l2Addr.toField(), address.toField(), content, new a.Fr(BigInt(depositInfo.secret))], 0x42420101);
+          if (chain.toBigInt() !== selectedChain) throw unknown();
+          const leaf = computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, BigInt(active.amount), BigInt(active.nonce), version, nodeInfo.l1ChainId);
+          const found = await searchWithdrawal(leaf, await aztecNode.getBlockNumber());
+          if (!found) throw unknown();
+          return found;
+          }, 20000);
+          log('Confirmed prior withdrawal. Tx hash: ' + priorExit.txHash, 'success');
+          log('  Run claim-l1 to check settlement and claim your ETH on L1.', 'info');
+          return;
+        } catch { throw unknown(); }
+      }
+      log('  Deposit note found: ' + noteInfo.amount.toString() + ' wei', 'info');
 
       // The contract checks withdrawal eligibility based on screening state:
       //   last_screened_index >= last_real_post_index (all real posts screened)

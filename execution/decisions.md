@@ -348,3 +348,12 @@ invalid by spending its private fee note in a separate genuine transaction. It t
 restores the encrypted journal and regenerates the same post. This avoids invented
 node-validation results or a network epoch prover. The existing540-second parent
 budget and serialized native-job limit apply.
+
+## W03 stale screening and withdrawal identity
+
+Persist the selected deposit chain and complete decoded source note for screening
+and withdrawal requests. A replacement must reconcile every previous proof and
+see exactly that same source note before proving. Any changed or missing note
+blocks regeneration; recovery must not advance another screening step or switch
+to a different deposit. Claim recovery will additionally preserve its exact claim
+arguments and authenticate the corresponding receipt.

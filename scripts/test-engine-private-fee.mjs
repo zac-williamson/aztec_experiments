@@ -71,7 +71,7 @@ import {AztecAddress} from '@aztec/stdlib/aztec-address';
 import {EthAddress} from '@aztec/foundation/eth-address';
 import {sha256ToField} from '@aztec/foundation/crypto/sha256';
 function mainHarness(action,isDummy=false) {
-  const c=context(),requests=[],logs=[],operations=[];let sent=false,authorBalanceReads=0,postExists=!['post','recover'].includes(action);
+  const c=context(),requests=[],logs=[],operations=[];let sent=false,authorBalanceReads=0,postExists=!['post','recover'].includes(action),missingNote=false;
   // Timers only represent UI yields in this inert test; no network/proof work is performed.
   c.setTimeout=callback=>setTimeout(callback,0);
   const addr=AztecAddress.fromFieldUnsafe(new Fr(12));
@@ -85,14 +85,14 @@ function mainHarness(action,isDummy=false) {
   class Portal {L2_CONTRACT=async()=>board.toString();L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>rollup;VERSION=async()=>1n;getDeposit=async()=>({nonce:7n,amount});}
   const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:1}),getL1ContractAddresses:async()=>({rollupAddress:rollup}),getBlockNumber:async()=>1,
     getBlock:async number=>({number,hash:'block',timestamp:100,body:{txEffects:[]}}),getBlocks:async(from,count)=>Array.from({length:count},(_,i)=>({number:Number(from)+i,hash:'block',body:{txEffects:[]}})),getContract:async()=>({address:board}),getPublicStorageAt:async()=>{authorBalanceReads++;throw new Error('Author fee lookup forbidden');}};
-  const note=()=>({schemaVersion:1n,depositChainId:5n,depositNonce:7n,amount:action==='claim'&&!sent?0n:amount,nextAllowedTime:0n,lastRealPostIndex:0n,lastScreenedIndex:0n,headSequence:0n});
+  const note=()=>({schemaVersion:1n,depositChainId:5n,depositNonce:7n,amount:missingNote||(action==='claim'&&!sent)?0n:amount,nextAllowedTime:0n,lastRealPostIndex:0n,lastScreenedIndex:0n,headSequence:0n});
   c.readBillboardDepositInfo=async()=>note();
   const methods=new Proxy({}, {get:(_target,name)=>{
     if(['post','withdraw','claim_deposit','transfer_censor','declare_immoral','set_moderation_policy'].includes(name)) return (...args)=>({send:async opts=>{assert.equal(opts.from,addr);assert.equal(opts.fee.paymentMethod,'private-method');sent=true;requests.at(-1).action={kind:action,args};return {receipt:{status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)}};}});
     return ()=>({simulate:async()=>name==='get_post_exists'?postExists:name==='get_screen_hints'?[null,null]:1n});
   }});
   class BaseWallet {constructor(pxe){this.pxe=pxe;}}
-  const a={Fr,AztecAddress,EthAddress,NO_FROM,GasSettings,BaseWallet,sha256ToField,Buffer,
+  const a={...transactionOutcomes,Fr,AztecAddress,EthAddress,NO_FROM,GasSettings,BaseWallet,sha256ToField,Buffer,
     deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
     SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;getSigningPublicKey=async()=>({x:Fr.ONE,y:Fr.ONE});},
     getContractInstanceFromInstantiationParams:async()=>({address:addr}),computePartialAddress:async()=>Fr.ZERO,
@@ -108,7 +108,13 @@ function mainHarness(action,isDummy=false) {
     reuseTxHash:new Fr(3).toString(),claimSecretStore:{save:async()=>{},load:async()=>({schemaVersion:1,secret:secret.toString(),secretHash:secretHash.toString()})},
     privateFee:{contractAddress:'private-fee',gasSettings:gas()}};
   config.censorWalletJson={...config.aztecWallet};config.newCensor=new Fr(44).toString();config.postId=new Fr(55).toString();config.moderationPolicy='No threats';
-  return {run:()=>c.runBillboardUser(env,config),env,config,node,Portal,requests,logs,operations,setPostExists:value=>postExists=value,authorBalanceReads:()=>authorBalanceReads,secret};
+  function setWithdrawalHistory(executionResult='success') {
+    const leaf=c.BillboardUserCodec.computeWithdrawMessageLeaf(a,ethers,board,portal,depositor,amount,7n,1,31337);
+    const txHash=new Fr(88);
+    node.getBlocks=async()=>[{number:1,hash:'block',body:{txEffects:[{txHash,l2ToL1Msgs:[leaf]}]}}];
+    node.getTxReceipt=async()=>({txHash,status:'checkpointed',executionResult,blockNumber:1,blockHash:'block'});
+  }
+  return {run:()=>c.runBillboardUser(env,config),setWithdrawalHistory,env,config,node,Portal,requests,logs,operations,setMissingNote:value=>missingNote=value,setPostExists:value=>postExists=value,authorBalanceReads:()=>authorBalanceReads,secret};
 }
 for(const [action,dummy] of [['claim',false],['post',false],['post',true],['withdraw',false]]) {
   test(`actual main ${action}${dummy?' dummy':''} uses standard author call with private fee payment`,async()=>{
@@ -244,4 +250,41 @@ for(const kind of ['dummy','withdraw','claim'])test(`recovery cannot silently re
 
 for(const [action,dummy,kind] of [['claim',false,'claim'],['post',true,'dummy'],['withdraw',false,'withdraw']])test(`${action} ${dummy?'dummy':''} records its own operation rather than stale real-post metadata`,async()=>{
  const h=mainHarness(action,dummy);await h.run();assert.equal(JSON.parse(h.operations.at(-1)).kind,kind);
+});
+
+for (const unavailable of [false,true]) test(`missing withdrawal note never proves success when history ${unavailable?'is unavailable':'contains no exit'}`,async()=>{
+ const h=mainHarness('withdraw');h.setMissingNote(true);
+ if(unavailable)h.node.getBlocks=async()=>{throw new Error('unavailable');};
+ await assert.rejects(h.run(),e=>e.code==='BB_RECOVERY_UNKNOWN');
+ assert.equal(h.requests.length,0);
+ assert(!h.logs.some(x=>x.includes('Confirmed prior withdrawal')||x.includes('already withdrawn')));
+});
+
+test('missing withdrawal note can recover an exact successful canonical exit without paying again',async()=>{
+ const h=mainHarness('withdraw');h.setMissingNote(true);h.setWithdrawalHistory();
+ await h.run();assert.equal(h.requests.length,0);
+ assert(h.logs.some(x=>x.includes('Confirmed prior withdrawal. Tx hash:')));
+});
+test('missing withdrawal note cannot recover a reverted exit',async()=>{
+ const h=mainHarness('withdraw');h.setMissingNote(true);h.setWithdrawalHistory('reverted');
+ await assert.rejects(h.run(),e=>e.code==='BB_RECOVERY_UNKNOWN');assert.equal(h.requests.length,0);
+});
+
+test('an exit for another selected deposit cannot complete withdrawal',async()=>{
+ const h=mainHarness('withdraw');h.setMissingNote(true);h.setWithdrawalHistory();h.config.depositChainId='6';
+ await assert.rejects(h.run(),e=>e.code==='BB_RECOVERY_UNKNOWN');assert.equal(h.requests.length,0);
+ assert(!h.logs.some(x=>x.includes('Confirmed prior withdrawal.')));
+});
+test('withdrawal recovery without original claim custody cannot guess deposit ownership',async()=>{
+ const h=mainHarness('withdraw');h.setMissingNote(true);h.setWithdrawalHistory();h.config.claimSecretStore.load=async()=>null;
+ await assert.rejects(h.run(),e=>e.code==='BB_RECOVERY_UNKNOWN');assert.equal(h.requests.length,0);
+});
+
+test('withdrawal absence reconciliation has a deadline even if its receipt read stalls',async()=>{
+ const h=mainHarness('withdraw');h.setMissingNote(true);h.setWithdrawalHistory();
+ let checked=false;
+ h.env.aztec.boundedTransactionRead=(fn,timeout)=>{assert.equal(timeout,20000);checked=true;return transactionOutcomes.boundedTransactionRead(fn,20);};
+ // Receipt lookup for the selected claim happens within the bounded callback.
+ h.config.claimSecretStore.load=()=>new Promise(()=>{});
+ await assert.rejects(h.run(),e=>e.code==='BB_RECOVERY_UNKNOWN');assert(checked);assert.equal(h.requests.length,0);
 });

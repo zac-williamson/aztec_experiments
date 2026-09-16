@@ -862,7 +862,7 @@
       "evidence": "evidence/W03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Real stale-post replacement qualified in296744ms under2GiB;159 integrated,143 artifact,5 supervisor checks and built-browser restore pass. Integrate this milestone, then correct withdrawal absence handling and qualify remaining action recovery.",
+      "checkpoint": "Stale-post milestone c3a93b6 pushed. Active: withdrawal missing-note paths must require exact canonical exit evidence, then qualify safe action-specific stale recovery and final stage matrix.",
       "priority": 14
     },
     {

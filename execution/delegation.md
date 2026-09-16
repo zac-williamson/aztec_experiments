@@ -453,3 +453,7 @@ Root tested storage/nonce/event/reorg/cursor boundaries, real local Ethereum por
 deposit/refund after lost responses, and actual built-browser reload. Root reviewed
 signer-call ordering, exact-nonce retry and canonical acknowledgement separately
 from implementation. Remaining W03 work is recorded in the graph checkpoint.
+
+## Resumed recovery review
+
+- recovery_review: read-only review of withdrawal absence handling and regression scope; no heavy jobs. Root implements remaining stale-action recovery. AI review does not replace external audit.
