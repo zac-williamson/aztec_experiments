@@ -861,7 +861,7 @@
       "evidence": "evidence/W03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Persistent encrypted withdrawal-history cursors integrated and verified:146 integrated checks,67 artifact checks and actual browser regression pass. Restart includes new blocks and reorg resets skipped pages. Next portable journal backup/restore, stale L2 proof replacement and remaining transaction consumers; W03 stays active.",
+      "checkpoint": "Portable encrypted journal backups integrated in browser and offline CLI, including collateral secrets, fresh-wallet restore and conflict rejection.184 integrated/80 artifact checks and actual3-profile browser recovery pass. Next linked stale L2 proof replacement and remaining fee/deployment/moderation consumers, then full-stage qualification. W03 remains active.",
       "priority": 14
     },
     {

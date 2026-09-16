@@ -1,0 +1,20 @@
+✔ full Field salt reaches derivation and DOM without retaining old salt (4.781833ms)
+✔ failed derivation does not activate or overwrite secret fields (0.549083ms)
+✔ malformed import event emits bounded diagnostics and clears selection (0.598833ms)
+✔ signature generation and silent wallet replacement are unavailable (0.313ms)
+✔ provider change during initial connection prevents activating a stale signer (0.420458ms)
+✔ callback failure invalidates activated session without logging callback diagnostics (0.354917ms)
+✔ password recovery file transfers actual SDK transaction browser to CLI and back without changing identity (462.562958ms)
+✔ fresh profile restores pending history search progress (171.257791ms)
+✔ older authenticated backup never replaces newer local transaction (313.918417ms)
+✔ foreign wallet, moved key, descriptor damage and duplicated records fail before restore writes (143.225291ms)
+✔ export filters other wallets but refuses legacy records lacking ownership metadata (117.734583ms)
+✔ actual offline CLI restores fresh wallet plus claims/journals, exports portable file, rejects overwrite and wrong password (2691.569584ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4388.614458

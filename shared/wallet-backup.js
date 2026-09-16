@@ -36,17 +36,29 @@
     return { scope, record: { schemaVersion: 1, secretHash: field(value.record.secretHash, true), secret: field(value.record.secret, true) } };
   }
   function validatePayload(value, { expectedNetwork, expectedWallet } = {}) {
-    if (!exact(value, ['schemaVersion', 'wallet', 'claims']) || value.schemaVersion !== 1 || !Array.isArray(value.claims) || value.claims.length > 10000) throw new Error('Invalid wallet backup.');
+    const portable=value?.schemaVersion===2;
+    if (!exact(value, portable?['schemaVersion','wallet','claims','journals']:['schemaVersion','wallet','claims']) || (!portable&&value.schemaVersion!==1) || !Array.isArray(value.claims) || value.claims.length > 10000) throw new Error('Invalid wallet backup.');
+    let journals;
+    if(portable) {
+      if(!Array.isArray(value.journals)||value.journals.length>10000)throw new Error('Invalid recovery journal backup.');
+      const keys=new Set();let total=0;
+      journals=value.journals.map(record=>{
+        if(!exact(record,['key','encoded'])||typeof record.key!=='string'||!/^[0-9a-f]{64}$/.test(record.key)||typeof record.encoded!=='string'||record.encoded.length>16*1024*1024||keys.has(record.key))throw new Error('Invalid recovery journal backup.');
+        keys.add(record.key);total+=record.encoded.length;if(total>16*1024*1024)throw new Error('Recovery journal backup is too large.');
+        return {key:record.key,encoded:record.encoded};
+      });
+    }
     const wallet = validateWallet(value.wallet);
     const claims = value.claims.map(validateClaim);
     const ids = claims.map(claim => JSON.stringify([claim.scope, claim.record.secretHash]));
     if (new Set(ids).size !== ids.length) throw new Error('Duplicate backup claim.');
     if (expectedWallet && JSON.stringify(wallet) !== JSON.stringify(validateWallet(expectedWallet))) throw new Error('Backup belongs to another wallet.');
     if (expectedNetwork) {
+      if(journals?.length)throw new Error('Network-filtered journal restore is unsupported; restore the complete wallet offline.');
       const expected = network(expectedNetwork);
       if (claims.some(claim => JSON.stringify(network({ l1ChainId: claim.scope.l1ChainId, rollupAddress: claim.scope.rollupAddress, rollupVersion: claim.scope.rollupVersion })) !== JSON.stringify(expected))) throw new Error('Backup belongs to another network.');
     }
-    return { schemaVersion: 1, wallet, claims };
+    return portable?{schemaVersion:2,wallet,claims,journals}:{schemaVersion:1,wallet,claims};
   }
   const aad = encoder.encode('AZTEC_BB_PASSWORD_BACKUP_V1\0PBKDF2-SHA256:600000:AES-256-GCM');
   function passwordBytes(password) {

@@ -65,11 +65,23 @@ function _downloadJson(filename,obj) {
   const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
+async function _withRecoveryLock(wallet,run) {
+  if(!globalThis.navigator?.locks?.request)throw new Error('This browser cannot safely coordinate wallet recovery.');
+  return navigator.locks.request('billboard-wallet:'+wallet.address.toString(),{ifAvailable:true},async lock=>{
+    if(!lock)throw new Error('Another tab is using this wallet. Wait for it to finish before exporting or restoring.');
+    _assertWalletLive();return run();
+  });
+}
 async function _writeWalletBackup(wallet,password) {
+ return _withRecoveryLock(wallet,async()=>{
   const claims=window.BillboardClaimBackup?await window.BillboardClaimBackup.exportRecords(wallet):[];
-  const envelope=await window.BillboardWalletBackup.encrypt({schemaVersion:1,wallet:{secretKey:wallet.secretKey,salt:wallet.salt},claims},password);
+  if(!window.__aztec.createJournalBackup)throw new Error('Transaction recovery export is unavailable.');
+  const journalBackup=await window.__aztec.createJournalBackup({storage:window.__aztec.createBrowserJournalStorage(),walletSecret:wallet.secretKey,walletSalt:wallet.salt});
+  const journals=await journalBackup.exportRecords();
+  const envelope=await window.BillboardWalletBackup.encrypt({schemaVersion:2,wallet:{secretKey:wallet.secretKey,salt:wallet.salt},claims,journals},password);
   _downloadJson('aztec-recovery-'+wallet.address.toString().slice(2,18)+'.json',envelope);
-  _wlog('Encrypted recovery file downloaded. Keep it and its password safely. Export again after each new collateral deposit.','success');
+  _wlog('Encrypted recovery file downloaded. Keep it and its password safely. Export again after each transaction or recovery update. Older files do not contain later requests.','success');
+ });
 }
 async function _loadAztecWallet(file) {
   return _walletOperation(async()=>{
@@ -79,10 +91,16 @@ async function _loadAztecWallet(file) {
       // Raw CLI wallets may be imported, but every browser export is encrypted.
       const payload=parsed.secretKey?{wallet:parsed,claims:[]}:await window.BillboardWalletBackup.decrypt(parsed,_backupPassword());
       const prepared=await _prepareWallet(payload.wallet);
+      if(payload.claims.length||payload.journals?.length)await _withRecoveryLock(prepared,async()=>{
       if(payload.claims.length) {
         if(!window.BillboardClaimBackup) throw new Error();
         await window.BillboardClaimBackup.restoreRecords(prepared,payload.claims);
       }
+      if(payload.journals?.length) {
+        const journalBackup=await window.__aztec.createJournalBackup({storage:window.__aztec.createBrowserJournalStorage(),walletSecret:prepared.secretKey,walletSalt:prepared.salt});
+        await journalBackup.restoreRecords(payload.journals);
+      }
+      });
       _activateWallet(prepared);
       if(parsed.secretKey) _wlog('This imported file contains an unencrypted key. Create an encrypted recovery file and protect the original.','warn');
     } finally { _clearBackupPassword(); }
@@ -132,7 +150,7 @@ function initWalletButtons(containerId,options={}) {
     <div class="wallet-group"><span class="wallet-label">Aztec</span><button class="secondary wallet-btn" id="wbAztecBtn">Restore wallet</button><button class="secondary wallet-btn" id="wbAztecGenBtn">Create wallet</button><button class="secondary wallet-btn" id="wbBackupBtn">Export recovery file</button></div></div>
     <label>Recovery password <input type="password" id="wbPassword" autocomplete="new-password" minlength="12" maxlength="1024"></label>
     <label>Repeat password when creating a backup <input type="password" id="wbPasswordConfirm" autocomplete="new-password" maxlength="1024"></label>
-    <p>Keep your encrypted recovery file and password. Export again after each new collateral deposit. Losing your wallet key or a deposit claim secret can make funds unrecoverable. This browser holds decrypted keys while open; use a trusted device. Reload before changing wallets.</p>`;
+    <p>Keep your encrypted recovery file and password. Export again after each transaction or recovery update. Older files do not contain later requests. Losing your wallet key or a deposit claim secret can make funds unrecoverable. This browser holds decrypted keys while open; use a trusted device. Reload before changing wallets.</p>`;
   const handle=run=>async()=>{try{await run();}catch{_wlog('Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.','error');}};
   document.getElementById('wbAztecBtn').addEventListener('click',()=>document.getElementById('wbAztecFile').click());
   document.getElementById('wbAztecGenBtn').addEventListener('click',handle(_generateAztecWallet));

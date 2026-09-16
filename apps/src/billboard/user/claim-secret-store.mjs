@@ -33,6 +33,8 @@ export function createClaimSecretStore(directory, walletSecret, walletSalt = 0) 
   fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
   const stat = fs.lstatSync(directory);
   if (!stat.isDirectory() || stat.isSymbolicLink() || (stat.mode & 0o077)) throw new Error('Claim storage must be a private directory');
+  const owner=createHash('sha256').update(key).digest('hex');
+  const descriptorAad=Buffer.from('AZTEC_BB_CLAIM_RECOVERY_V1');
   const filename = aad => path.join(directory, createHash('sha256').update(aad).digest('hex') + '.json');
   function load(scope, secretHash) {
     const aad = aadFor(scope, secretHash);
@@ -54,6 +56,26 @@ export function createClaimSecretStore(directory, walletSecret, walletSalt = 0) 
     finally { fs.closeSync(fd); }
   }
   return {
+    async exportRecords() {
+      const files=fs.readdirSync(directory).filter(name=>/^[0-9a-f]{64}\.json$/.test(name));if(files.length>10000)throw new Error('Claim backup is too large');
+      const records=[];
+      for(const name of files) {
+        let fd,plain;
+        try {
+          fd=fs.openSync(path.join(directory,name),fs.constants.O_RDONLY|fs.constants.O_NOFOLLOW);
+          const st=fs.fstatSync(fd);if(!st.isFile()||(st.mode&0o077)||st.size>4096)throw new Error();
+          const envelope=JSON.parse(fs.readFileSync(fd,'utf8')),descriptor=envelope.recovery;
+          if(!descriptor)throw new Error();if(descriptor.owner!==owner)continue;
+          if(typeof descriptor.iv!=='string'||!/^[0-9a-f]{24}$/.test(descriptor.iv)||typeof descriptor.data!=='string'||!/^(?:[0-9a-f]{2}){17,2048}$/.test(descriptor.data))throw new Error();
+          const encrypted=Buffer.from(descriptor.data,'hex'),cipher=createDecipheriv('aes-256-gcm',key,Buffer.from(descriptor.iv,'hex'));
+          cipher.setAAD(descriptorAad);cipher.setAuthTag(encrypted.subarray(-16));plain=Buffer.concat([cipher.update(encrypted.subarray(0,-16)),cipher.final()]);
+          const {scope,secretHash}=JSON.parse(plain.toString('utf8'));
+          if(path.basename(filename(aadFor(scope,secretHash)))!==name)throw new Error();
+          records.push({scope,record:load(scope,secretHash)});
+        }catch{throw new Error('Cannot authenticate all claim records for recovery export');}finally{plain?.fill(0);if(fd!==undefined)fs.closeSync(fd);}
+      }
+      return records;
+    },
     async load(scope, secretHash) { return load(scope, secretHash); },
     async save(scope, input) {
       const record = validateRecord(input, input?.secretHash);
@@ -66,7 +88,10 @@ export function createClaimSecretStore(directory, walletSecret, walletSalt = 0) 
       const iv = randomBytes(12);
       const cipher = createCipheriv('aes-256-gcm', key, iv); cipher.setAAD(aad);
       const ciphertext = Buffer.concat([cipher.update(JSON.stringify(record), 'utf8'), cipher.final(), cipher.getAuthTag()]);
-      const envelope = JSON.stringify({ schemaVersion: 1, iv: iv.toString('hex'), ciphertext: ciphertext.toString('hex') });
+      const recoveryIv=randomBytes(12),recoveryCipher=createCipheriv('aes-256-gcm',key,recoveryIv);recoveryCipher.setAAD(descriptorAad);
+      const metadata=Buffer.from(JSON.stringify({scope,secretHash:record.secretHash}));let recoveryData;
+      try{recoveryData=Buffer.concat([recoveryCipher.update(metadata),recoveryCipher.final(),recoveryCipher.getAuthTag()]);}finally{metadata.fill(0);}
+      const envelope = JSON.stringify({ schemaVersion: 1, iv: iv.toString('hex'), ciphertext: ciphertext.toString('hex'),recovery:{owner,iv:recoveryIv.toString('hex'),data:recoveryData.toString('hex')} });
       const target = filename(aad), temporary = target + '.' + randomBytes(12).toString('hex') + '.tmp';
       let fd;
       try {

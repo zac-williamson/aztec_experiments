@@ -14,5 +14,12 @@ export function createBrowserJournalStorage(indexedDB=globalThis.indexedDB) {
       tx.oncomplete=()=>resolve(value);tx.onabort=tx.onerror=()=>reject(new Error('Transaction journal update failed'));
     });}finally {db.close();}
   }
-  return {read:key=>access(key,false),compareAndSwap:(key,previous,next)=>access(key,true,previous,next)};
+  async function keys() {
+    const db=await open();try{return await new Promise((resolve,reject)=>{
+      const tx=db.transaction('records','readonly'),req=tx.objectStore('records').getAllKeys(null,10001);
+      tx.oncomplete=()=>req.result.length>10000?reject(new Error('Transaction journal is too large')):resolve(req.result);
+      tx.onabort=tx.onerror=()=>reject(new Error('Cannot enumerate transaction journal'));
+    });}finally{db.close();}
+  }
+  return {keys,read:key=>access(key,false),compareAndSwap:(key,previous,next)=>access(key,true,previous,next)};
 }

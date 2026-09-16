@@ -128,6 +128,24 @@ try {
   },ethereumHash);
   assert.deepEqual(ethRecovered,{blocked:true,submissions:1,nonce:5,outcome:'success'});
 
-  console.log(JSON.stringify({passed:true,actualBuiltBrowser:true,freshProfiles:2,wrongPasswordRejected:true,sameRestoredAddress:true,restoredClaimCommitmentVerified:true,actualCrossTabExclusion:true,actualJournalReloadRecovery:true,actualEthereumIntentReloadRecovery:true,externalRequestsBlocked:externalRequests,secretsWrittenToEvidence:false}));
+  stage='export-portable-journals';
+  await first.page.locator('#wbPassword').fill(password);await first.page.locator('#wbPasswordConfirm').fill(password);
+  const portableDownload=first.page.waitForEvent('download');await first.page.locator('#wbBackupBtn').click();
+  const portable=await fs.readFile(await (await portableDownload).path());
+  stage='restore-journals-fresh-profile';const third=await open();
+  await third.page.locator('#wbPassword').fill(password);await third.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:portable});
+  await third.page.waitForFunction(()=>window.walletState.aztec?.address);
+  const portableResult=await third.page.evaluate(async txHash=>{
+    const a=window.__aztec,w=window.walletState.aztec,storage=a.createBrowserJournalStorage();
+    const records=await (await a.createJournalBackup({storage,walletSecret:w.secretKey,walletSalt:w.salt})).exportRecords();
+    const scope={account:w.address.toString(),chainId:'31337',rollup:'0x'+'11'.repeat(20),version:'5',board:'0x'+'0'.repeat(63)+'2',portal:'0x'+'22'.repeat(20)};
+    const node={getTxReceipt:async()=>({txHash,status:'checkpointed',executionResult:'success',blockNumber:1,blockHash:'canonical'}),getBlock:async()=>({hash:'canonical'})};
+    const journal=await a.createL2Journal({storage,walletSecret:w.secretKey,walletSalt:w.salt,scope,Tx:a.Tx,node});
+    let blocked=false;try{await journal.assertCanStart();}catch(e){blocked=e.code==='BB_RECOVERY_REQUIRED';}
+    return {count:records.length,blocked,hash:(await journal.recover()).txHash.toString()};
+  },savedHash);
+  assert.deepEqual(portableResult,{count:2,blocked:true,hash:savedHash});
+
+  console.log(JSON.stringify({passed:true,actualBuiltBrowser:true,freshProfiles:3,actualPortableJournalRestore:true,wrongPasswordRejected:true,sameRestoredAddress:true,restoredClaimCommitmentVerified:true,actualCrossTabExclusion:true,actualJournalReloadRecovery:true,actualEthereumIntentReloadRecovery:true,externalRequestsBlocked:externalRequests,secretsWrittenToEvidence:false}));
 }catch(error){console.log(JSON.stringify({passed:false,stage,errorClass:error.name,location:error.stack?.split('\n').filter(l=>l.trim().startsWith('at ')).slice(0,2)}));process.exitCode=1;}
 finally{clearTimeout(watchdog);if(browser)await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

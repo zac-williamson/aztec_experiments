@@ -49,3 +49,4 @@ export { initSync as initACVMSync } from '@aztec/noir-acvm_js';
 export { initSync as initAbiSync } from '@aztec/noir-noirc_abi';
 
 export { createHistoryCursor } from './history-cursor.mjs';
+export { createJournalBackup } from './journal-backup.mjs';

@@ -86,9 +86,10 @@ lock recovery. No automatic stale-lock takeover is implemented.
 
 The browser record lives in IndexedDB `aztec-billboard-transaction-journal-v1`.
 Do not clear this browser profile while a transaction outcome is unresolved.
-The current password-encrypted wallet backup does **not** include this journal;
-restoring keys on a fresh device does not restore pending transaction provenance.
-This is not complete cross-device or all-stage crash recovery. Canonical receipt
+Current password-encrypted recovery exports include authenticated Aztec/Ethereum
+journals and saved withdrawal-search progress. Restore refuses to replace a newer
+local record. Export again after transaction/recovery changes; an old file does not
+contain later requests. All-stage integration remains unfinished. Canonical receipt
 checks are current observations, not guarantees against a later chain reorg.
 
 
@@ -133,7 +134,35 @@ retry are distinct actions; neither erases unresolved records.
 Ethereum records share the private `transaction-journal-v1/` directory / browser
 IndexedDB adapter with the Aztec record but use separate cryptographic domains
 and include the Ethereum depositor. These are local latest-intent records;
-portable wallet backups do not yet contain either journal. This implementation
+portable wallet backups now include both journals. This implementation
 covers portal deposit/refund, not ERC20 approvals or private FeeJuice funding.
 The disposable Ethereum evidence uses the real portal/bridge contracts and
 controlled test roots; it is not evidence of a new Aztec proof or network prover.
+
+
+## Offline CLI recovery files
+
+Use `node apps/src/billboard/user/recovery-cli.mjs export --wallet /private/wallet.json --file /private/recovery.json`.
+The password is read without echo from the terminal (or from standard input for
+automation), never a command argument. The output must not already exist.
+
+Restore with `node apps/src/billboard/user/recovery-cli.mjs restore --wallet /private/restored/wallet.json --file /private/recovery.json`.
+A missing wallet file is created privately from the decrypted backup. An existing
+wallet must match exactly. The command restores collateral secrets and transaction
+records alongside that wallet, with commitment/authentication checks before writes.
+No node, PXE or Ethereum signer is started. CLI and browser use the same encrypted
+recovery-file format. Keep the password separately. Do not clear the old profile or
+folder until recovery from the exported file has been checked.
+
+Each record is immutable on restore: identical records are accepted; conflicting
+records are preserved and the restore fails. Interrupted multi-record restores can
+be rerun. Recovery does not acknowledge successful transactions or authorize a new
+payment: reconcile their canonical receipts through the application first.
+
+Older development records without encrypted ownership metadata cannot be silently
+included in a complete export. Such an export fails; preserve the original profile
+and records, then reconcile them through the original scoped application route.
+There is no automatic deletion or migration that discards unresolved transactions.
+Backups cannot detect erased storage or recover requests made after the file was
+exported. Storage ownership tags group local records without exposing their scope;
+this does not protect an unlocked page or a compromised operating system.

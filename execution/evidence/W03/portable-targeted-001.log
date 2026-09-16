@@ -1,0 +1,22 @@
+✔ browser actual module persists ciphertext and interoperates with Node AES-GCM (11.030833ms)
+✔ browser actual custody rejects wrong wallet, ciphertext corruption and moved scope (3.218084ms)
+✔ browser save observes transaction abort and never reports durable success (1.298125ms)
+✔ actual engine codec matches frozen claim, boundary and exit commitments (5.247334ms)
+✔ actual public deposit flow saves and reads back before send; returns event receipt nonce without secret (7.091166ms)
+✔ actual deposit flow fails closed for missing store, failed durability and disabled portal (2.997375ms)
+✔ actual deposit flow fails closed for mismatched read-back and existing receipt (1.792709ms)
+✔ actual recovery requires the current event nonce and exact saved secret hash without signing fallback (4.485166ms)
+✔ password recovery file transfers actual SDK transaction browser to CLI and back without changing identity (461.78575ms)
+✔ fresh profile restores pending history search progress (170.718708ms)
+✔ older authenticated backup never replaces newer local transaction (305.024583ms)
+✔ foreign wallet, moved key, descriptor damage and duplicated records fail before restore writes (141.289041ms)
+✔ export filters other wallets but refuses legacy records lacking ownership metadata (117.906792ms)
+✔ actual offline CLI restores fresh wallet plus claims/journals, exports portable file, rejects overwrite and wrong password (2643.775ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4354.089125

@@ -24,3 +24,7 @@ Still open: portable journal backups, linked stale Aztec proof replacement, fee-
 Current work: persisting withdrawal-history search progress across restarts, revalidating chain anchors before skipping already searched blocks. Then continue remaining W03 recovery work.
 
 Withdrawal scan progress is now encrypted and durable in browser/CLI.146 integrated and67 artifact checks pass, plus built-browser recovery regression. See evidence/W03/history-milestone-001.md. Next: portable transaction recovery backups.
+
+Active implementation: portable journal records in password-encrypted recovery files, with authenticated ownership and conflict-safe restoration.
+
+Portable journal backups now work across browser and CLI, with collateral secrets and conflict-safe fresh-wallet restore.184 integrated and80 artifact checks pass; actual built-browser three-profile recovery passes. See evidence/W03/portable-milestone-002.md. Continue W03: remaining consumers and linked stale-proof replacement, then complete interruption coverage.
