@@ -45,3 +45,6 @@ transaction-journal-v1/
 
 # Disposable public event cache (contains no private notes).
 .public-feed-cache/
+
+# Durable local moderator state and model provenance.
+.moderation-state/

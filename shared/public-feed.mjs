@@ -34,8 +34,8 @@ export function createPublicFeed({ scope, source, storage, startBlock=1, rangeSi
     const posts=new Map(),orders=new Set(),policies=new Map();let expectedOrder=0n;
     for(const e of events){const p=e.payload;
       if(e.type==='PolicyPublished'){const old=policies.get(p.policyVersion);if(old&&JSON.stringify(old)!==JSON.stringify(p))throw fail('Conflicting public policy.');policies.delete(p.policyVersion);policies.set(p.policyVersion,p);}
-      else if(e.type==='PostPublished'){if(!policies.has(p.policyVersion))throw fail('Public post policy is missing from history.');if(BigInt(p.orderIndex)!==expectedOrder++)throw fail('Public post history has a gap.');if(posts.has(p.postId)||orders.has(p.orderIndex))throw fail('Duplicate public post identity.');posts.set(p.postId,{...p,flagged:false,flag:null});orders.add(p.orderIndex);}
-      else {const post=posts.get(p.postId);if(!post||post.policyVersion!==p.policyVersion||post.flagged)throw fail('Invalid public flag history.');post.flagged=true;post.flag={...p};}
+      else if(e.type==='PostPublished'){if(!policies.has(p.policyVersion))throw fail('Public post policy is missing from history.');if(BigInt(p.orderIndex)!==expectedOrder++)throw fail('Public post history has a gap.');if(posts.has(p.postId)||orders.has(p.orderIndex))throw fail('Duplicate public post identity.');posts.set(p.postId,{...p,publication:e.position,flagged:false,flag:null});orders.add(p.orderIndex);}
+      else {const post=posts.get(p.postId);if(!post||post.policyVersion!==p.policyVersion||post.flagged)throw fail('Invalid public flag history.');post.flagged=true;post.flag={...p,position:e.position};}
     }
     return {posts:[...posts.values()].sort((a,b)=>BigInt(a.orderIndex)>BigInt(b.orderIndex)?-1:1),policies:[...policies.values()]};
   }
@@ -69,7 +69,7 @@ export function createPublicFeed({ scope, source, storage, startBlock=1, rangeSi
       return {...status(),head:head.number,complete:(state.checkpoints.at(-1)?.number??startBlock-1)>=head.number,pages};
     }finally{busy=false;}
   }
-  function status(){return {lastBlock:state?.checkpoints.at(-1)?.number??startBlock-1,eventCount:state?.events.length??0,revision:state?.revision??0};}
+  function status(){return {lastBlock:state?.checkpoints.at(-1)?.number??startBlock-1,eventCount:state?.events.length??0,revision:state?.revision??0,checkpoint:state?.checkpoints.at(-1)??null};}
   async function page({limit=50,cursor=null}={}){
     await load();if(!integer(limit)||limit<1||limit>200)throw fail('Invalid public feed page size.');
     const {posts,policies}=project(state.events);let upper=posts[0]?.orderIndex??null,before=null;

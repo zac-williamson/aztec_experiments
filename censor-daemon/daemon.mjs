@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 // Host orchestrator. Production model execution always uses the isolated runtime.
 import fs from 'node:fs';
+import {createHash,randomUUID} from 'node:crypto';
+import {scopeKey} from '../shared/protocol-schema.mjs';
+import {publicNode} from '../shared/public-feed-rpc.mjs';
+import {openJobStore} from './job-store.mjs';
+import {processModerationCycle} from './worker.mjs';
+import {identifyModel} from './model-version.mjs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -14,7 +20,7 @@ const root = path.resolve(directory, '..');
 const flags = new Set(['dry-run', 'once']);
 const values = new Set(['portal-address', 'censor-wallet', 'policy', 'llama-port',
   'poll-interval', 'from', 'ctx-size', 'threads', 'node-url', 'model', 'cli',
-  'model-image', 'model-sha256', 'private-fee-config', 'eth-rpc']);
+  'model-image', 'model-sha256', 'private-fee-config', 'eth-rpc', 'state-dir']);
 function parseArgs(argv) {
   const args = Object.create(null);
   for (let i = 0; i < argv.length; i++) {
@@ -42,11 +48,13 @@ function integer(value, fallback, min, max, label) {
 }
 function configuration(argv) {
   const args = parseArgs(argv);
+  if(args.from!==undefined&&args.from!=='0')throw new Error('--from cannot skip durable jobs; use a separate explicitly scoped state directory.');
   if (args.policy) throw new Error('--policy is unsupported: moderation requires the exact contract policy');
   if (!args['portal-address']) throw new Error('--portal-address is required');
   if (!args['eth-rpc']) throw new Error('--eth-rpc is required');
   if (!args['private-fee-config']) throw new Error('--private-fee-config is required');
   return Object.freeze({
+    stateDir:path.resolve(args['state-dir']||path.join(root,'.moderation-state')),
     portalAddress: args['portal-address'],
     privateFeeConfig: path.resolve(args['private-fee-config']),
     ethRpcUrl: args['eth-rpc'],
@@ -74,86 +82,38 @@ function remainingWindow(post, now) {
 
 // The injected runtime is a programmatic test seam. Production CLI arguments and
 // environment variables cannot replace it with an arbitrary external endpoint.
-export async function runDaemon(argv = process.argv.slice(2), { startRuntime = startModelRuntime } = {}) {
+function persistModelIdentity(directory,runtime){
+  if(!Buffer.isBuffer(runtime.configurationBytes)||!Buffer.isBuffer(runtime.promptBytes)||runtime.configurationBytes.length>1024*1024||runtime.promptBytes.length>1024*1024)throw new Error('Exact model configuration and prompt bytes are required');
+  const identity=identifyModel({...runtime.modelIdentity,configurationBytes:runtime.configurationBytes,promptBytes:runtime.promptBytes});
+  if(identity.modelVersion!==runtime.modelIdentity?.modelVersion)throw new Error('Model content identity mismatch');
+  fs.mkdirSync(directory,{recursive:true,mode:0o700});const stat=fs.lstatSync(directory);
+  if(!stat.isDirectory()||stat.isSymbolicLink()||(stat.mode&0o077))throw new Error('Moderation state requires a private directory');
+  for(const [suffix,bytes] of [['runtime.json',runtime.configurationBytes],['prompt.json',runtime.promptBytes],['identity.json',Buffer.from(JSON.stringify(identity,null,2)+'\n')]]){
+    const name=path.join(directory,identity.modelVersion.slice(2)+'-'+suffix);
+    let fd;try{fd=fs.openSync(name,'wx',0o600);fs.writeFileSync(fd,bytes);fs.fsyncSync(fd);}catch(error){if(error.code!=='EEXIST')throw error;const existing=fs.openSync(name,fs.constants.O_RDONLY|fs.constants.O_NOFOLLOW);try{const st=fs.fstatSync(existing);if(!st.isFile()||st.size!==bytes.length||!fs.readFileSync(existing).equals(bytes))throw new Error('Saved model identity bytes changed');}finally{fs.closeSync(existing);}}finally{if(fd!==undefined)fs.closeSync(fd);}
+  }
+  return identity;
+}
+export async function runDaemon(argv = process.argv.slice(2), { startRuntime = startModelRuntime,createNode=publicNode } = {}) {
   assertNodeVersion();
-  const config = configuration(argv);
-  const signer = createSigner({ cliPath: config.cliPath, censorWallet: config.censorWallet,
-    portalAddress: config.portalAddress, aztecNodeUrl: config.aztecNodeUrl, privateFeeConfig: config.privateFeeConfig, ethRpcUrl: config.ethRpcUrl });
-  if (config.modelPath && fs.existsSync(config.modelPath) &&
-      fs.realpathSync(config.modelPath) === fs.realpathSync(config.censorWallet)) {
-    throw new Error('Model and signer wallet must be different files');
-  }
-  let runtime;
-  let stopping = false;
-  const wait = new AbortController();
-  const shutdown = () => { stopping = true; wait.abort(); };
-  process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);
-  try {
-    log('Starting isolated model runtime; signer configuration fixed at startup.');
-    runtime = await startRuntime({ image: config.modelImage, modelPath: config.modelPath,
-      modelSha256: config.modelSha256, port: config.llamaPort, threads: config.threads, ctxSize: config.ctxSize });
-    let nextIndex = config.fromIndex;
-    const completed = new Set();
-    async function processPost(post, data) {
-      const idx = post.index;
-      if (post.flagged) { log('#' + idx + ' already flagged, skipping.'); return; }
-      if (post.policyVersion !== data.policyVersion) {
-        throw Object.assign(new Error('Historical policy unavailable for this post; event-backed policy retrieval is required'), { code: 'HISTORICAL_POLICY_UNAVAILABLE' });
-      }
-      if (!post.text.trim()) { log('#' + idx + ' (empty), skipping.'); return; }
-      const verdict = await moderatePost(post.text, data.policy, runtime.port);
-      log('#' + idx + ' LLM: ' + (verdict.isViolation ? 'VIOLATION' : 'OK'));
-      if (!verdict.isViolation) return;
-      if (config.dryRun) { log('[DRY RUN] Would flag post #' + idx, 'warn'); return; }
-      log('Flagging post #' + idx + ' via restricted signer.');
-      // The index comes from validated fetched data, never from model output.
-      signer.flag({ postId: post.postId, policyVersion: post.policyVersion, reason: verdict.reason });
-      log('Post #' + idx + ' flagged.');
-    }
-    async function pollAndProcess() {
-      let data;
-      try { data = signer.list(); }
-      catch (error) { log('Failed to fetch posts: ' + error.message, 'error'); return false; }
-      log('Policy from contract (' + data.policy.length + ' chars), version ' + data.policyVersion);
-      const now = Math.floor(Date.now() / 1000);
-      const pending = data.posts.filter(post => post.index >= nextIndex && !completed.has(post.index));
-      pending.sort((a, b) => {
-        const first = BigInt(a.flagDeadline), second = BigInt(b.flagDeadline);
-        return first < second ? -1 : first > second ? 1 : 0;
-      });
-      let succeeded = true;
-      for (const post of pending) {
-        if (stopping) break;
-        const remaining = remainingWindow(post, now);
-        if (remaining !== null && remaining < 0) log('#' + post.index + ' past censor window; flag may be too late', 'warn');
-        else if (remaining !== null && remaining < 300) log('#' + post.index + ' censor window expiring', 'warn');
-        try {
-          await processPost(post, data);
-          completed.add(post.index);
-          while (completed.delete(nextIndex)) nextIndex++;
-        } catch (error) {
-          succeeded = false;
-          log('#' + post.index + ' moderation/signing error: ' + (error.code || 'FAILED') + ': ' + error.message, 'error');
-          // Do not advance beyond failed work. Durable state/retries are M02.
-        }
-      }
-      return succeeded;
-    }
+  const config=configuration(argv),signer=createSigner({cliPath:config.cliPath,censorWallet:config.censorWallet,portalAddress:config.portalAddress,aztecNodeUrl:config.aztecNodeUrl,privateFeeConfig:config.privateFeeConfig,ethRpcUrl:config.ethRpcUrl});
+  let runtime,store,storeScope,stopping=false;const wait=new AbortController(),worker=randomUUID();
+  const shutdown=()=>{stopping=true;wait.abort();};process.on('SIGINT',shutdown);process.on('SIGTERM',shutdown);
+  try{
+    log('Starting isolated model runtime and durable moderation queue.');
+    runtime=await startRuntime({image:config.modelImage,modelPath:config.modelPath,modelSha256:config.modelSha256,port:config.llamaPort,threads:config.threads,ctxSize:config.ctxSize});
+    const identity=persistModelIdentity(config.stateDir,runtime),node=createNode(config.aztecNodeUrl);
     do {
-      const succeeded = await pollAndProcess();
-      if (config.once) {
-        if (!succeeded) throw new Error('One or more moderation jobs failed; no success was recorded for failed jobs');
-        log('All posts processed (--once mode).');
-        break;
-      }
-      if (!stopping) await delay(config.pollInterval * 1000, undefined, { signal: wait.signal }).catch(error => {
-        if (error.name !== 'AbortError') throw error;
-      });
-    } while (!stopping);
-  } finally {
-    process.off('SIGINT', shutdown); process.off('SIGTERM', shutdown);
-    if (runtime) await runtime.stop();
-  }
+      let complete=false;
+      try{
+        if(!store){const data=signer.list(),id=createHash('sha256').update(scopeKey(data.scope)).digest('hex');store=openJobStore({filename:path.join(config.stateDir,id+'.sqlite'),scope:data.scope,modelVersion:identity.modelVersion});storeScope=data.scope;}
+        const result=await processModerationCycle({store,signer,node,scope:storeScope,worker,log,dryRun:config.dryRun,stopping:()=>stopping,evaluate:(post,policy)=>moderatePost(post,policy,runtime.port)});
+        complete=result.complete;log('Moderation queue: '+JSON.stringify(result.status.counts));
+      }catch(error){log('Moderation cycle remains unresolved: '+(error.code||'FAILED')+': '+error.message,'error');}
+      if(config.once){if(!complete)throw new Error('Moderation jobs remain unresolved or require attention; saved work will resume next run');log('All posts processed (--once mode).');break;}
+      if(!stopping)await delay(config.pollInterval*1000,undefined,{signal:wait.signal}).catch(error=>{if(error.name!=='AbortError')throw error;});
+    }while(!stopping);
+  }finally{process.off('SIGINT',shutdown);process.off('SIGTERM',shutdown);store?.close();if(runtime)await runtime.stop();}
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

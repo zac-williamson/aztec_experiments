@@ -68,3 +68,11 @@ W03 complete with immutable final evidence;468 integrated checks and browser/Eth
 F01 active: shared wallet-free public feed with incremental events, durable canonical checkpoints and pagination. Scope includes scripts and daemon read integration; no private wallet or network prover needed for reads.
 
 F01 complete:23KB wallet-free reader and incremental browser/CLI feed;380 final affected checks plus actual browser/CLI and wallet/moderation checks pass. Continuing M02 durable moderation jobs.
+
+M02 active after F01 commit875c02f. Delegated durable job/lease store; root integrates exact historical policy, structured transaction outcome/finalized-event confirmation, deterministic model digest and bounded scheduling. Shared public-feed metadata and script scope included.
+
+M02 resumed after usage interruption: SDK/client build passed. Final queue rollover and integration reviews delegated; root runs affected regressions serially before recording acceptance.
+
+M02 verification:208 integrated checks and actual built public/wallet browsers pass. Review repaired model rollover polling/duplicate signing and lost replacement responses, including after deadline. Finalizing superseded unsigned jobs before final combined run. Single latest wallet journal limits historical reorg automation; attention states remain explicit.
+
+M02 complete:344 moderation and208 integrated checks, actual built public/wallet browsers, artifact inventory pass. Model rollover and lost replacement-response defects fixed. Evidence bound to6d2ccd2d. Continue M03 real-model quality/runtime qualification; production gates remain incomplete.

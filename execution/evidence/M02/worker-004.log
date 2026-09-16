@@ -1,0 +1,27 @@
+✔ OK decision survives database reopen without reevaluation (11.051792ms)
+✔ evaluation uses historical policy A even when current policy is B (2.935792ms)
+✔ empty board with policy A then B persists cursor without evaluation (1.931209ms)
+✔ checkpointed signer response is durable progress, never completion (3.908459ms)
+✔ lost signer response recovers saved hash read-only after deadline (4.219459ms)
+✔ dropped transaction after deadline never signs again (3.934959ms)
+✔ finalized revert clears old intent and permits bounded fresh attempt (7.1155ms)
+✔ unknown submission blocks unrelated signing (20.919167ms)
+✔ known included success awaiting finality lets another job run (3.90475ms)
+✔ deadline passing during inference prevents any signing (2.843666ms)
+✔ post missing during inference prevents old decision signing (2.534125ms)
+✔ post changed during inference prevents old decision signing (2.101875ms)
+✔ expired evaluation lease prevents stale worker signing (3.221083ms)
+✔ matching finalized receipt and canonical flag completes without resigning (3.818333ms)
+✔ snapshot missing scope fails before database ingestion or model (1.909458ms)
+✔ snapshot other-board scope fails before database ingestion or model (1.590416ms)
+✔ scope changing after inference fails before signing (2.3005ms)
+✔ canonical receipt mismatch never completes or signs a replacement (3.126209ms)
+✔ lost response with empty journal after deadline remains explicit manual review (3.213125ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 145.333125

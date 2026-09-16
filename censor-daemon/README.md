@@ -1,6 +1,6 @@
 # Moderation daemon
 
-The daemon reads Billboard posts, asks a local model for a bounded moderation verdict, and passes accepted violations to a host-side signer. The signer fixes its CLI, wallet, portal and node configuration at startup. Model output supplies only a validated violation decision and reason. The post index comes from the validated post list; the model cannot select an executable, wallet or transaction destination.
+The daemon reads Billboard posts, asks a local model for a bounded moderation verdict, and passes accepted violations to a host-side signer. The signer fixes its CLI, wallet, portal and node configuration at startup. Model output supplies only a validated violation decision and reason. The post identity and captured policy come from the validated public feed; the model cannot select an executable, wallet or transaction destination.
 
 ## Runtime prerequisites
 
@@ -56,6 +56,7 @@ Normal exit, startup errors, SIGINT and SIGTERM trigger removal of both owned co
 | `--private-fee-config` | Required | Public private-fee contract/gas configuration file, fixed in the restricted signer |
 | `--censor-wallet` | `wallets/censor_aztec_wallet.json` | Existing host-side censor wallet |
 | `--node-url` | `http://127.0.0.1:5080` | Aztec node fixed for this process |
+| `--state-dir` | `.moderation-state` | Private durable queue and model identity directory |
 | `--model-image` | Required | Reviewed local image with immutable digest |
 | `--model` | Required | Local GGUF file |
 | `--model-sha256` | Required | Trusted 64-character lowercase SHA-256 |
@@ -64,12 +65,12 @@ Normal exit, startup errors, SIGINT and SIGTERM trigger removal of both owned co
 | `--ctx-size` | `4096` | Context size, 512–32768 |
 | `--policy` | Unsupported | Local policy overrides are rejected; use the onchain policy |
 | `--poll-interval` | `30` | Poll interval in seconds, 1–3600 |
-| `--from` | `0` | Starting post index |
+| `--from` | `0` | Only zero accepted; durable jobs cannot be skipped |
 | `--cli` | `apps/src/billboard/user/cli.mjs` | Trusted CLI path fixed at startup |
 | `--dry-run` | Off | Evaluate without submitting flags |
 | `--once` | Off | Exit after one polling iteration |
 
-Model memory is currently limited to 4096 MiB; the transport gets 512 MiB and one CPU. M03 must benchmark an actual pinned model within those bounds before release. The daemon refreshes an atomic onchain policy snapshot each poll and binds every flag to the reviewed policy version. It rejects local/default policy substitutes. Posts under a different historical policy remain unresolved with `HISTORICAL_POLICY_UNAVAILABLE`; historical policy retrieval and durable retry/recovery remain M02 work.
+Model memory is currently limited to 4096 MiB; the transport gets 512 MiB and one CPU. M03 must benchmark an actual pinned model within those bounds before release. The daemon refreshes an atomic onchain policy snapshot each poll and binds every flag to the reviewed policy version. It rejects local/default policy substitutes. Each post uses its captured historical policy from the validated feed. Missing policy content fails closed. Durable SQLite jobs retain decisions, leases, deadlines and receipt progress across restarts; completion requires a finalized successful receipt and its matching canonical flag event. See [the queue runbook](../execution/moderation-queue-runbook.md) for retry, backup, dry-run and attention-state procedures.
 
 ## Tests
 
@@ -83,9 +84,9 @@ bash censor-daemon/run_tests.sh --with-docker
 node --test censor-daemon/model-runtime.test.mjs
 ```
 
-The default runner covers moderation, signer, daemon and wallet-command validation with mock infrastructure. The Docker suite requires Docker and the pinned Node image and executes a harmless probe under the actual model isolation profile. It uses newly created dummy secret fixtures, verifies a host listener is reachable from the transport but denied to the model, checks filesystem/environment/socket restrictions, tests weakened profile rejection and transport input bounds, and removes its own resources. Neither suite uses an existing wallet, downloads an LLM, proves moderation quality, or submits network transactions.
+The default runner covers moderation, signer, daemon, wallet-command validation, durable jobs, crash recovery, model identity and canonical flag reconciliation with mock infrastructure. The Docker suite requires Docker and the pinned Node image and executes a harmless probe under the actual model isolation profile. It uses newly created dummy secret fixtures, verifies a host listener is reachable from the transport but denied to the model, checks filesystem/environment/socket restrictions, tests weakened profile rejection and transport input bounds, and removes its own resources. Neither suite uses an existing wallet, downloads an LLM, proves moderation quality, or submits network transactions.
 
-The runtime API is `startModelRuntime({image, modelPath, modelSha256, port, threads, ctxSize})`, returning `{port, containerId, proxyId, inspect, stop}`. Callers must await `stop()` on exit. The probe helper is solely for isolation testing.
+The runtime API is `startModelRuntime({image, modelPath, modelSha256, port, threads, ctxSize})`, returning `{port, containerId, proxyId, inspect, stop, modelIdentity, configurationBytes, promptBytes}`. Callers must await `stop()` on exit. The probe helper is solely for isolation testing.
 
 ## Censor fee funding
 

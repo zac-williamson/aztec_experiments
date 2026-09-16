@@ -61,7 +61,7 @@ export async function createReleaseManifest(){
   for(const name of ['package.json','package-lock.json','toolchain.json','noir-dependencies.json','crs-manifest.json','scripts/release-artifact-manifest.mjs','scripts/build-sdk.mjs','scripts/build-crs.mjs','scripts/check-artifacts.mjs','scripts/check-sdk.mjs','scripts/check-reproducibility.mjs','scripts/frontend-provenance.mjs','apps/build.mjs','.github/workflows/build.yml'])input(name);
   const frontendInputs=Object.keys(frontend.inputs).sort();
   for(const entry of fs.readdirSync(path.join(ROOT,'censor-daemon'))){
-    if(/\.(mjs|cjs)$/.test(entry))input('censor-daemon/'+entry);
+    if(/\.(mjs|cjs)$/.test(entry)||entry==='prompt-template.json')input('censor-daemon/'+entry);
   }
   const pages={};
   for(const [output,digest] of Object.entries(frontend.outputs)){

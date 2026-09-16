@@ -35,11 +35,11 @@ The currently encoded contract limits fit these input bounds. Errors have stable
 codes (`INVALID_INPUT`, `INVALID_VERDICT`, `INVALID_REASON`, `INVALID_RESPONSE`,
 `RESPONSE_TOO_LARGE`, `MODEL_TIMEOUT`, `MODEL_HTTP_ERROR`, `MODEL_UNAVAILABLE`).
 They leave the post unresolved and must not authorize a flag. Durable retries and
-backlog recovery belong to M02; classification accuracy and prompt-injection
+backlog recovery use the SQLite job queue; classification accuracy and prompt-injection
 resistance measurements belong to M03.
 
 These checks constrain data and authority. They do not establish that a model's
 decision is correct or that the model process is isolated. The separate process
 isolation checks and later model evaluation provide that evidence.
 
-Every signer request also carries the validated post ID and its policy version, selected from fetched public data by the host. The daemon processes only posts matching its atomic current policy snapshot; model output cannot select or override either identity. Historical versions unavailable to the current reader remain unresolved.
+Every signer request also carries the validated post ID and its policy version, selected from fetched public data by the host. The daemon uses each post’s exact captured historical policy from the atomic public feed; model output cannot select or override either identity. Missing historical versions remain unresolved.

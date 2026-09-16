@@ -974,7 +974,7 @@
       "title": "Make moderation jobs durable and deadline-aware",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "M01",
         "F01",
@@ -990,7 +990,9 @@
       "scope": [
         "censor-daemon/",
         "apps/src/billboard/",
-        "services/"
+        "services/",
+        "shared/",
+        "scripts/"
       ],
       "plan": "tasks/M02.md",
       "actions": [
@@ -1020,7 +1022,7 @@
       "evidence": "evidence/M02.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "C05 consumer integration rejects historical-policy mismatches with HISTORICAL_POLICY_UNAVAILABLE. Implement authenticated historical policy retrieval from V1 events; never apply the current policy to an old-policy post. Current snapshots are atomic.",
+      "checkpoint": "Durable queue accepted:344 daemon checks,208 integrated checks, actual built browser checks; evidence/M02.json. Continue M03 real model qualification.",
       "priority": 16
     },
     {

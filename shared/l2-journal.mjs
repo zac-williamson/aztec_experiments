@@ -99,7 +99,7 @@ export async function createL2Journal({storage,walletSecret,walletSalt,scope,Tx,
   }
   return {
     assertCanStart,prepare,confirmed,
-    async inspect(){const saved=await read();return saved.value?{operation:saved.value.operation??null,txHash:saved.value.txHash,...(saved.value.applicationNullifier?{applicationNullifier:saved.value.applicationNullifier}:{})}:null;},
+    async inspect(){const saved=await read();return saved.value?{operation:saved.value.operation??null,txHash:saved.value.txHash,predecessorTxHashes:(saved.value.replacements??[]).map(item=>item.txHash),...(saved.value.applicationNullifier?{applicationNullifier:saved.value.applicationNullifier}:{})}:null;},
     async allowReplacement(expectedOperation){
       const saved=await read();
       if(!saved.tx||!expectedOperation||saved.value.operation!==expectedOperation||(saved.value.replacements?.length??0)>=8)throw fail();

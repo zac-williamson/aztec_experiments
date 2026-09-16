@@ -1,3 +1,5 @@
+import {identifyModel,sha256Bytes} from './model-version.mjs';
+import {runtimeConfiguration} from './runtime-configuration.mjs';
 import fs from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import { createHash, randomUUID } from 'node:crypto';
@@ -150,7 +152,10 @@ async function startContainer(options, entrypoint, args, healthPath) {
     }
     if (!ready) throw new Error('Isolated model health check timed out');
     await inspect();
-    return { port: config.port, containerId, proxyId, inspect, stop };
+    const assets=await Promise.all(['moderation.mjs','runtime-configuration.mjs','model-runtime.mjs'].map(async name=>({name,sha256:sha256Bytes(await fs.readFile(new URL(name,import.meta.url)))})));
+    const configurationBytes=runtimeConfiguration(config,assets),promptBytes=await fs.readFile(new URL('./prompt-template.json',import.meta.url));
+    const modelIdentity=identifyModel({imageDigest:'0x'+config.image.split('@sha256:')[1],weightsDigest:'0x'+config.modelSha256,configurationBytes,promptBytes});
+    return { port: config.port, containerId, proxyId, inspect, stop, modelIdentity, configurationBytes, promptBytes };
   } catch (error) {
     try { await stop(); } catch (cleanup) { throw new AggregateError([error, cleanup], 'Model startup and cleanup failed'); }
     throw error;

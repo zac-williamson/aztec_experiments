@@ -3,7 +3,7 @@ export function publicRpc(url,{fetchImpl=globalThis.fetch,timeoutMs=20000,maxByt
   const parsed=new URL(url);if(!['http:','https:'].includes(parsed.protocol)||parsed.username||parsed.password||!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>20000)throw Error('Invalid public RPC configuration.');
   let id=0;
   return async(method,params=[])=>{
-    if(!['node_getNodeInfo','node_getContract','node_getBlockData','node_getPublicLogsByTags','node_getPublicStorageAt','eth_chainId','eth_call'].includes(method))throw Error('Unsupported public RPC method.');
+    if(!['node_getNodeInfo','node_getTxReceipt','node_getContract','node_getBlockData','node_getPublicLogsByTags','node_getPublicStorageAt','eth_chainId','eth_call'].includes(method))throw Error('Unsupported public RPC method.');
     const requestId=++id,controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
     try {
       const response=await fetchImpl(parsed.href,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:requestId,method,params}),signal:controller.signal,credentials:'omit',referrerPolicy:'no-referrer'});
@@ -18,7 +18,7 @@ export function publicRpc(url,{fetchImpl=globalThis.fetch,timeoutMs=20000,maxByt
   };
 }
 export function publicNode(url,options){const rpc=publicRpc(url,options);return Object.freeze({
-  getNodeInfo:()=>rpc('node_getNodeInfo'),getContract:address=>rpc('node_getContract',[address]),getBlockData:block=>rpc('node_getBlockData',[block]),
+  getNodeInfo:()=>rpc('node_getNodeInfo'),getTxReceipt:hash=>rpc('node_getTxReceipt',[hash]),getContract:address=>rpc('node_getContract',[address]),getBlockData:block=>rpc('node_getBlockData',[block]),
   getPublicLogsByTags:query=>rpc('node_getPublicLogsByTags',[query]),
   getPublicStorageAt:(block,address,slot)=>rpc('node_getPublicStorageAt',[block,address,slot]),
 });}

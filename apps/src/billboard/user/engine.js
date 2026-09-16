@@ -711,7 +711,8 @@
     const contractSalt = config.contractSalt || 1;
     const secretKeyHex = aztecWallet.secretKey;
     let action = config.action || 'status';
-    if (['claim', 'post', 'withdraw', 'auto', 'declare-immoral', 'transfer-censor', 'set-moderation-policy'].includes(action)) requirePrivateFeeConfiguration(a, config, env.privateFeeArtifact);
+    if (config.inspectOnly && action !== 'declare-immoral') throw new Error('Journal inspection requires declare-immoral.');
+    if (!config.inspectOnly && ['claim', 'post', 'withdraw', 'auto', 'declare-immoral', 'transfer-censor', 'set-moderation-policy'].includes(action)) requirePrivateFeeConfiguration(a, config, env.privateFeeArtifact);
 
     // ============================================================
     // Step 1: Derive account keys
@@ -789,8 +790,18 @@
       ? await env.createTransactionJournal({walletSecret:secretKeyHex,walletSalt:saltVal,
           scope:{account:address.toString().toLowerCase(),chainId:String(nodeInfo.l1ChainId),rollup:rollupAddr.toLowerCase(),version:String(version),board:l2AddrHex.toLowerCase(),portal:portalAddr.toLowerCase()},
           Tx:a.Tx,node:rawNode,acknowledgeTx:config.acknowledgeTx,contextGuard:config.contextGuard}) : null;
+    if(config.inspectOnly===true) {
+      if(typeof transactionJournal?.inspect!=='function')throw Object.assign(new Error('Journal inspection unavailable.'),{code:'BB_JOURNAL_INVALID'});
+      const postId=canonicalPostId(a,config.postId,true);
+      const policyVersion=canonicalPostId(a,config.expectedPolicyVersion,true);
+      const packed=packModerationReason(config.censorResponse);
+      const operation=JSON.stringify(['declare_immoral',[postId,policyVersion,packed.fields.map(value=>new a.Fr(value).toString()),String(packed.byteLength)]]);
+      const saved=await transactionJournal.inspect();
+      if(saved&&saved.operation!==operation)throw Object.assign(new Error('Saved moderator request differs from the inspected request.'),{code:'BB_RECOVERY_REQUIRED'});
+      return {type:'billboard-moderation-journal-v1',postId,policyVersion,txHash:saved?.txHash??null,predecessorTxHashes:saved?.predecessorTxHashes??[]};
+    }
     if(journalActions.includes(action) && (!transactionJournal || typeof transactionJournal.assertCanStart!=='function' || typeof transactionJournal.prepare!=='function' || typeof transactionJournal.confirmed!=='function'))throw Object.assign(new Error('Invalid transaction journal.'),{code:'BB_JOURNAL_INVALID'});
-    let resumedPost = null, resumedSpend = null, resumedClaim = null, claimOperation = null, resumedModeratorOperation = null;
+    let resumedPost = null, resumedSpend = null, resumedClaim = null, claimOperation = null, resumedModeratorOperation = null, lastModeratorReceipt = null;
     if(action==='recover') {
       if(!transactionJournal)throw new Error('Transaction journal is required for recovery.');
       if(config.contextGuard)await config.contextGuard();
@@ -1331,7 +1342,7 @@
       if(reconciledModerator?.operation===operation&&reconciledModerator.receipt.executionResult==='success') {
         const fresh=await transactionJournal.reconcilePrevious();
         if(fresh?.operation!==operation)throw Object.assign(new Error('Moderator recovery record changed.'),{code:'BB_RECOVERY_REQUIRED'});
-        if(fresh.receipt.executionResult==='success')return {receipt:fresh.receipt};
+        if(fresh.receipt.executionResult==='success'){lastModeratorReceipt=fresh.receipt;return {receipt:fresh.receipt};}
       }
       if(resumedModeratorOperation) {
         if(operation!==resumedModeratorOperation)throw Object.assign(new Error('The saved moderator request differs from the current action.'),{code:'BB_RECOVERY_REQUIRED'});
@@ -1342,7 +1353,7 @@
       const sender=createPrivateFeeSender({a,config,privateFeeArtifact:env.privateFeeArtifact,
         contract:censorContract,wallet:censorWallet,node:aztecNode,owner:censorAddress,
         scope:{l1ChainId:String(nodeInfo.l1ChainId),rollupVersion:String(version)}});
-      return sender(kind,args);
+      const sent=await sender(kind,args);lastModeratorReceipt=sent.receipt;return sent;
     }
 
     // ============================================================
@@ -2234,6 +2245,9 @@
 
     result.lastEthereumTxHash = ethereumJournal?.lastTxHash || null;
     result.lastL2TxHash = transactionJournal?.lastTxHash || null;
+    if(lastModeratorReceipt)result.moderatorPredecessors=(await transactionJournal.inspect?.())?.predecessorTxHashes??[];
+    if(lastModeratorReceipt)result.moderatorReceipt={txHash:lastModeratorReceipt.txHash.toString(),status:lastModeratorReceipt.status,
+      executionResult:lastModeratorReceipt.executionResult,blockNumber:Number(lastModeratorReceipt.blockNumber),blockHash:lastModeratorReceipt.blockHash?.toString()??null};
     result.state = stateStatus;
     result.l2Addr = l2AddrHex;
     result.portalAddr = portalAddr;

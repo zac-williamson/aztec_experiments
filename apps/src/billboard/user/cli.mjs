@@ -435,11 +435,12 @@ async function main() {
     createTransactionJournal: options => a.createL2Journal({...options,storage:createFileJournalStorage(path.join(path.dirname(path.resolve(AZTEC_WALLET_PATH || CENSOR_WALLET_PATH)),'transaction-journal-v1'))}),
   };
 
-  const privateFee = args['private-fee-config'] ? readPrivateFeeJson(args['private-fee-config'], false) : undefined;
-  const privateFeeClaim = args['private-fee-claim-file'] ? readPrivateFeeJson(args['private-fee-claim-file'], true) : undefined;
+  const privateFee = !args['inspect-only'] && args['private-fee-config'] ? readPrivateFeeJson(args['private-fee-config'], false) : undefined;
+  const privateFeeClaim = !args['inspect-only'] && args['private-fee-claim-file'] ? readPrivateFeeJson(args['private-fee-claim-file'], true) : undefined;
   if (privateFeeClaim && !privateFee) throw new Error('A private fee claim requires --private-fee-config.');
 
   const config = {
+    inspectOnly: args['inspect-only'] === true,
     reconcilePrevious: args['reconcile-previous'] === true,
     privateFee, privateFeeClaim,
     action: ACTION,
@@ -474,6 +475,12 @@ async function main() {
     jsonOutput: !!args['json'],
   };
 
+  if(config.inspectOnly) {
+    if(ACTION!=='declare-immoral'||args.json!==true)throw new Error('Journal inspection requires declare-immoral --json.');
+    console.log(JSON.stringify(await globalThis.runBillboardUser(env,config)));
+    return;
+  }
+
   let cache;
   let cacheReady = false;
   try {
@@ -506,6 +513,7 @@ async function main() {
     const result = await globalThis.runBillboardUser(env, config);
     await cache.save(globalThis.indexedDB);
     log('  Private PXE checkpoint saved.', 'success');
+    if(ACTION==='declare-immoral'&&args.json)console.log(JSON.stringify({type:'billboard-moderation-submission-v1',postId:args['post-id'],policyVersion:args['expected-policy-version'],receipt:result.moderatorReceipt??null,predecessorTxHashes:result.moderatorPredecessors??[]}));
     const recoveredRevert=['transaction_reverted','ethereum_reverted','ethereum_replaced'].includes(result.state);
     log(recoveredRevert?'  Recovery found a failed or replaced transaction; the original action failed.':'  Action "' + ACTION + '" completed!',recoveredRevert?'warn':'success');
     if(result.lastEthereumTxHash)log('  To start another payment, acknowledge the reconciled transaction with --acknowledge-ethereum-tx '+result.lastEthereumTxHash,'info');

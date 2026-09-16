@@ -469,3 +469,10 @@ Recovery reviewer delivered application-nullifier helper and25 fixture tests, na
 
 - recovery_review implemented the lightweight event adapter/build metadata and actual SDK serialization tests; then added independent index/configuration probes and reviews.
 - Root owns durable index, public RPC/configuration, browser/CLI integration, build provenance and integrated qualification. Heavy checks run serially. No external audit signoff implied.
+
+## M02 durable moderation
+
+- Earlier queue and signer lanes implemented durable jobs and structured read-only recovery.
+- moderation_queue_review owns queue rollover regression and fix only.
+- moderation_integration_review independently reviews worker, signer, daemon and receipt integration without editing.
+- Root integrates, verifies serially, documents and commits. AI review is not external audit.

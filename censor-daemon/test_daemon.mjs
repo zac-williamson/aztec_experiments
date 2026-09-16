@@ -28,6 +28,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const TEST_ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'billboard-daemon-tests-'));
 const POLICY_VERSION = '0x' + '09'.padStart(64, '0');
+const id=n=>'0x'+BigInt(n).toString(16).padStart(64,'0');
+const SCOPE={l1ChainId:'31337',rollupAddress:'0x'+'34'.repeat(20),rollupVersion:'1',boardAddress:id(7),portalAddress:'0x'+'12'.repeat(20)};
 const OTHER_POLICY_VERSION = '0x' + '0a'.padStart(64, '0');
 const MOCK_WALLET = path.join(TEST_ROOT, 'disposable-wallet.json');
 fs.writeFileSync(MOCK_WALLET, '{}');
@@ -134,35 +136,24 @@ class MockCli {
   }
 
   _writeScript() {
-    const self = this;
-    const script = `#!/usr/bin/env node
-const fs = require('fs');
-const args = process.argv.slice(2);
-const action = args[0];
-fs.appendFileSync(${JSON.stringify(this.callsFile)}, JSON.stringify(args) + \"\\n\");
-
-if (action === 'list' && args.includes('--json')) {
-  process.stdout.write(JSON.stringify({
-    count: ${JSON.stringify(this.behavior.posts.length)},
-    posts: ${JSON.stringify(this.behavior.posts.map(post => ({ policyVersion: this.behavior.policyVersion ?? POLICY_VERSION, flagDeadline: String((post.timestamp ?? Math.floor(Date.now() / 1000)) + (this.behavior.censorWindow ?? 3600)), ...post, postId: '0x' + BigInt(post.index + 101).toString(16).padStart(64, '0') })))},
-    censor: "0x000fdd755b5c59a56e6957dbcff8889fe9e5f3c5d6496426c9efcbed92ebb77a",
-    kMultiplier: 4,
-    censorWindow: ${JSON.stringify(this.behavior.censorWindow || 3600)},
-    maxSaveUp: ${JSON.stringify(this.behavior.maxSaveUp || 16)},
-    policy: ${JSON.stringify(this.behavior.policy ?? 'No spam')},
-    policyVersion: ${JSON.stringify(this.behavior.policyVersion ?? POLICY_VERSION)}
-  }));
-} else if (action === 'declare-immoral') {
-  if (${JSON.stringify(this.behavior.flagExit || 0)}) process.exit(${JSON.stringify(this.behavior.flagExit || 0)});
-  const idx = args[args.indexOf('--post-id') + 1];
-  const resp = args[args.indexOf('--censor-response') + 1];
-  process.stderr.write("Flagging post " + idx + " with: " + resp + "\\n");
-  process.stdout.write("Transaction mined\\n");
-} else {
-  process.stderr.write("Unknown action: " + action + "\\n");
-  process.exit(1);
-}
-`;
+    const now=Math.floor(Date.now()/1000);
+    const data={scope:SCOPE,checkpoint:{number:10,hash:id(10)},count:this.behavior.posts.length,
+      posts:this.behavior.posts.map(post=>({timestamp:now,policyVersion:this.behavior.policyVersion??POLICY_VERSION,flagDeadline:String((post.timestamp??now)+(this.behavior.censorWindow??3600)),flagEvent:null,...post,postId:id(post.index+101)})),
+      policies:this.behavior.policies??[{policyVersion:this.behavior.policyVersion??POLICY_VERSION,text:this.behavior.policy??'No spam',censorWindow:String(this.behavior.censorWindow??3600)}],
+      policy:this.behavior.policy??'No spam',policyVersion:this.behavior.policyVersion??POLICY_VERSION,censorWindow:this.behavior.censorWindow??3600,maxSaveUp:16};
+    const script = `const fs=require('fs');const args=process.argv.slice(2);const file=${JSON.stringify(this.callsFile)};
+const previous=fs.readFileSync(file,'utf8').trim().split('\\n').filter(Boolean).map(JSON.parse);
+fs.appendFileSync(file,JSON.stringify(args)+'\\n');
+const id=n=>'0x'+BigInt(n).toString(16).padStart(64,'0');const data=${JSON.stringify(data)};
+const signed=previous.filter(a=>a[0]==='declare-immoral'&&!a.includes('--inspect-only'));
+if(args[0]==='list'){
+ for(const p of data.posts){const call=signed.find(a=>a[a.indexOf('--post-id')+1]===p.postId);if(call&&!${JSON.stringify(Boolean(this.behavior.flagExit))}){p.flagged=true;p.flagEvent={schemaVersion:1,scope:data.scope,type:'PostFlagged',position:{blockNumber:'10',blockHash:id(10),txHash:id(BigInt(p.postId)+1000n),txIndexWithinBlock:'0',logIndexWithinTx:'0'},payload:{postId:p.postId,policyVersion:p.policyVersion,reason:call[call.indexOf('--censor-response')+1],flaggedAt:String(p.timestamp+1),censorAddress:id(8)}};}}
+ process.stdout.write(JSON.stringify(data));
+}else if(args[0]==='declare-immoral'){
+ const postId=args[args.indexOf('--post-id')+1],policyVersion=args[args.indexOf('--expected-policy-version')+1],txHash=id(BigInt(postId)+1000n);
+ if(args.includes('--inspect-only'))process.stdout.write(JSON.stringify({type:'billboard-moderation-journal-v1',postId,policyVersion,txHash:signed.length?txHash:null,predecessorTxHashes:[]}));
+ else {if(${JSON.stringify(this.behavior.flagExit||0)})process.exit(${JSON.stringify(this.behavior.flagExit||0)});process.stdout.write(JSON.stringify({type:'billboard-moderation-submission-v1',postId,policyVersion,receipt:{txHash,status:'finalized',executionResult:'success',blockNumber:10,blockHash:id(10)},predecessorTxHashes:[]}));}
+}else process.exit(1);`;
     fs.writeFileSync(this.scriptPath, script);
     fs.chmodSync(this.scriptPath, 0o755);
   }
@@ -178,18 +169,23 @@ if (action === 'list' && args.includes('--json')) {
 // ============================================================
 // Run daemon as subprocess with mock infra (async, non-blocking)
 // ============================================================
-function runDaemon(args, timeoutMs = 30000, { production = false, stopAfterMs, omitFeeConfig = false, omitEthRpc = false } = {}) {
+function runDaemon(args, timeoutMs = 30000, { production = false, stopAfterMs, omitFeeConfig = false, omitEthRpc = false, nodeStatus = 'finalized', stateDir = fs.mkdtempSync(path.join(TEST_ROOT,'state-')) } = {}) {
   // Explicit test-only harness injects mock runtime. Production has no CLI/env
   // bypass for model isolation, and this harness uses only disposable fixtures.
-  const productionArgs = [...(omitEthRpc ? [] : ['--eth-rpc', 'http://127.0.0.1:8545']), ...(omitFeeConfig ? [] : ['--private-fee-config', MOCK_FEES])];
+  const productionArgs = ['--state-dir',stateDir,...(omitEthRpc ? [] : ['--eth-rpc', 'http://127.0.0.1:8545']), ...(omitFeeConfig ? [] : ['--private-fee-config', MOCK_FEES])];
   for (let i = 0; i < args.length; i++) {
     if (!production && args[i] === '--skip-bootstrap') continue;
     if (!production && args[i] === '--model') { i++; continue; }
     productionArgs.push(args[i]);
   }
   const moduleUrl = new URL('./daemon.mjs', import.meta.url).href;
+  const identityUrl=new URL('./model-version.mjs',import.meta.url).href;
   const harness = `import {runDaemon} from ${JSON.stringify(moduleUrl)};
-    await runDaemon(process.argv.slice(1), {startRuntime: async config => ({port:config.port, stop:async()=>{}})});`;
+    import {identifyModel} from ${JSON.stringify(identityUrl)};
+    const configurationBytes=Buffer.from('fixture runtime'),promptBytes=Buffer.from('fixture prompt');
+    const modelIdentity=identifyModel({imageDigest:'0x'+'11'.repeat(32),weightsDigest:'0x'+'22'.repeat(32),configurationBytes,promptBytes});
+    await runDaemon(process.argv.slice(1), {startRuntime: async config => ({port:config.port,stop:async()=>{},modelIdentity,configurationBytes,promptBytes}),
+      createNode:()=>({getTxReceipt:async txHash=>({txHash,status:${JSON.stringify(nodeStatus)},executionResult:'success',blockNumber:10,blockHash:${JSON.stringify(id(10))}}),getBlockData:async()=>({blockHash:${JSON.stringify(id(10))},header:{globalVariables:{blockNumber:10}}})})});`;
   return new Promise((resolve) => {
     const childArgs = production ? [path.join(__dirname, 'daemon.mjs'), ...productionArgs] : ['--input-type=module', '-e', harness, '--', ...productionArgs];
     const child = spawn(process.execPath, childArgs, {
@@ -311,7 +307,7 @@ async function main() {
         '--model', path.join(__dirname, 'test_dummy_model.gguf'),
       ]);
 
-      assertTrue(result.stdout.includes('already flagged'),
+      assertTrue(result.stdout.includes('manual-review'),
         'should skip already-flagged posts');
       assertTrue(mockServer.requests.length === 0,
         'should not call LLM for flagged posts');
@@ -322,7 +318,7 @@ async function main() {
   });
 
   // Test 4: Skips empty posts
-  await test('skips empty posts', async () => {
+  await test('empty public text fails input validation before model evaluation', async () => {
     const posts = [
       { index: 0, text: '', flagged: false },
     ];
@@ -344,10 +340,8 @@ async function main() {
         '--model', path.join(__dirname, 'test_dummy_model.gguf'),
       ]);
 
-      assertTrue(result.stdout.includes('empty'),
-        'should mention empty post');
-      assertTrue(mockServer.requests.length === 0,
-        'should not call LLM for empty posts');
+      assertTrue(result.exitCode !== 0, 'invalid verdict on empty content remains unresolved');
+      assertEqual(mockServer.requests.length, 0, 'invalid empty post cannot reach model or become approved');
     } finally {
       await mockServer.stop();
       mockCli.cleanup();
@@ -380,7 +374,7 @@ async function main() {
 
       assertTrue(result.exitCode !== 0, 'reasoning-only output must remain unresolved');
       assertFalse(result.stdout.includes('Would flag'), 'reasoning text cannot authorize a flag');
-      assertTrue(result.stdout.includes('moderation/signing error'), 'unresolved response must be observable');
+      assertTrue(result.stdout.includes('remains unresolved'), 'unresolved response must be observable');
     } finally {
       await mockServer.stop();
       mockCli.cleanup();
@@ -439,7 +433,7 @@ async function main() {
   });
 
   // Test 8: --from skips earlier posts
-  await test('--from skips earlier posts', async () => {
+  await test('--from cannot bypass durable moderation jobs', async () => {
     const posts = [
       { index: 0, text: 'Post zero', flagged: false },
       { index: 1, text: 'Post one', flagged: false },
@@ -462,10 +456,9 @@ async function main() {
         '--model', path.join(__dirname, 'test_dummy_model.gguf'),
       ]);
 
-      // Should only process post #2
-      assertTrue(mockServer.requests.length === 1,
-        `should call LLM 1 time (from index 2), got ${mockServer.requests.length}`);
-      assertEqual(mockServer.requests[0], 'Post two', 'should process post #2');
+      assertTrue(result.exitCode!==0,'unsafe skip fails closed');
+      assertTrue((result.stdout+result.stderr).includes('--from cannot skip durable jobs'),'clear skip rejection');
+      assertEqual(mockServer.requests.length,0,'no model work after invalid startup');
     } finally {
       await mockServer.stop();
       mockCli.cleanup();
@@ -494,9 +487,9 @@ async function main() {
         '--model', path.join(__dirname, 'test_dummy_model.gguf'),
       ]);
 
-      assertTrue(result.stdout.includes('Flagging post'),
+      assertTrue(result.stdout.includes('flag finalized'),
         'should flag post in non-dry-run mode');
-      assertTrue(result.stdout.includes('flagged'),
+      assertTrue(result.stdout.includes('confirmed-flag'),
         'should confirm flagging');
       const signed = mockCli.calls().filter(args => args[0] === 'declare-immoral');
       for (const argv of signed) {
@@ -534,8 +527,7 @@ async function main() {
         '--model', path.join(__dirname, 'test_dummy_model.gguf'),
       ]);
 
-      assertTrue(result.stdout.includes('Policy from contract'),
-        'should indicate policy was read from contract');
+      assertEqual(result.exitCode,0,'exact contract policy processed');
       // Verify the mock server received the on-chain policy in the prompt
       assertEqual(mockServer.requests.length, 1, 'should call LLM once');
       assertEqual(mockServer.policies[0], onChainPolicy, 'policy bytes must not be trimmed or normalized');
@@ -604,7 +596,9 @@ async function main() {
         '--model', path.join(__dirname, 'test_dummy_model.gguf'),
       ]);
 
-      assertTrue(result.stdout.includes('past censor window'),
+      assertTrue(result.exitCode!==0,'expired job requires attention');
+      assertEqual(mockServer.requests.length,0,'expired job cannot start inference or signing');
+      assertTrue(result.stdout.includes('expired'),
         'should warn that post is past the censor window');
     } finally {
       await mockServer.stop();
@@ -634,7 +628,7 @@ async function main() {
         '--model', path.join(__dirname, 'test_dummy_model.gguf'),
       ]);
 
-      assertTrue(result.stdout.includes('expiring'),
+      assertTrue(result.stdout.includes('deadline approaching'),
         'should warn that post censor window is expiring soon');
     } finally {
       await mockServer.stop();
@@ -704,7 +698,7 @@ async function main() {
         '--llama-port', String(mockServer.port), '--once']);
       assertTrue(result.exitCode !== 0, 'signing failure must cause unsuccessful one-shot exit');
       assertFalse(result.stdout.includes('Post #0 flagged.'), 'failed signing cannot be logged as successful');
-      assertTrue(result.stdout.includes('Signer declare-immoral failed (7)'), 'bounded failure status must be observable');
+      assertTrue(result.stdout.includes('remains unresolved'), 'bounded failure status must be observable');
     } finally { await mockServer.stop(); mockCli.cleanup(); }
   });
 
@@ -716,8 +710,8 @@ async function main() {
   });
 
   for (const [label, behavior, diagnostic] of [
-    ['old post policy', { posts: [{ index: 0, text: 'Spam', flagged: false, policyVersion: OTHER_POLICY_VERSION }] }, 'HISTORICAL_POLICY_UNAVAILABLE'],
-    ['empty contract policy', { posts: [{ index: 0, text: 'Spam', flagged: false }], policy: '' }, 'Invalid policy'],
+    ['old post policy', { posts: [{ index: 0, text: 'Spam', flagged: false, policyVersion: OTHER_POLICY_VERSION }] }, 'Historical policy unavailable'],
+    ['empty contract policy', { posts: [{ index: 0, text: 'Spam', flagged: false }], policy: '' }, 'Invalid historical policy'],
   ]) {
     await test(label + ' fails closed without model or signer action', async () => {
       const mockCli = new MockCli(MOCK_CLI, behavior);
@@ -735,36 +729,34 @@ async function main() {
     });
   }
 
-  await test('each poll refreshes exact policy before processing its matching new posts', async () => {
-    const mockCli = new MockCli(MOCK_CLI, { posts: [] });
-    const policies = [' First policy \n', '\n Second policy  '];
-    const versions = [POLICY_VERSION, OTHER_POLICY_VERSION];
-    const responses = policies.map((policy, i) => ({ count: i + 1, policy, policyVersion: versions[i],
-      censorWindow: 3600, maxSaveUp: 16, posts: [{ index: i,
-        postId: '0x' + BigInt(i + 501).toString(16).padStart(64, '0'), policyVersion: versions[i],
-        flagDeadline: String(Math.floor(Date.now() / 1000) + 3600), text: 'Spam ' + i, flagged: false }] }));
-    fs.writeFileSync(MOCK_CLI, `const fs = require('fs');
-      const args = process.argv.slice(2);
-      const file = ${JSON.stringify(mockCli.callsFile)};
-      const previous = fs.readFileSync(file,'utf8').trim().split('\\n').filter(Boolean).map(JSON.parse);
-      fs.appendFileSync(file, JSON.stringify(args)+'\\n');
-      if(args[0]==='list') {
-        const count = previous.filter(a=>a[0]==='list').length;
-        process.stdout.write(JSON.stringify(${JSON.stringify(responses)}[Math.min(count,1)]));
-      } else process.stdout.write('Transaction mined');`);
-    const mockServer = new MockLlamaServer(0, () => ({ content: 'VIOLATION - 1 - Spam' }));
-    await mockServer.start();
-    try {
-      const result = await runDaemon(['--portal-address', '0x' + '12'.repeat(20),
-        '--censor-wallet', MOCK_WALLET, '--cli', MOCK_CLI,
-        '--llama-port', String(mockServer.port), '--poll-interval', '1'], 10000, { stopAfterMs: 2400 });
-      assertEqual(result.exitCode, 0, 'graceful shutdown after multiple polls');
-      assertEqual(mockServer.policies.length, 2, 'two new posts processed');
-      policies.forEach((policy, i) => assertEqual(mockServer.policies[i], policy, 'fresh exact policy ' + i));
-      const calls = mockCli.calls().filter(args => args[0] === 'declare-immoral');
-      assertEqual(calls.length, 2, 'both matching posts flagged');
-      calls.forEach((args, i) => assertEqual(args[args.indexOf('--expected-policy-version') + 1], versions[i], 'snapshot policy reaches signer'));
-    } finally { await mockServer.stop(); mockCli.cleanup(); }
+  await test('restart retains completed decisions without re-evaluating or resubmitting',async()=>{
+    const mockCli=new MockCli(MOCK_CLI,{posts:[{index:0,text:'Spam',flagged:false}]});
+    const server=new MockLlamaServer(0,()=>({content:'VIOLATION - 1 - Spam'}));await server.start();
+    const stateDir=fs.mkdtempSync(path.join(TEST_ROOT,'restart-'));
+    const args=['--portal-address',SCOPE.portalAddress,'--censor-wallet',MOCK_WALLET,'--cli',MOCK_CLI,'--llama-port',String(server.port),'--once'];
+    try{
+      const first=await runDaemon(args,30000,{stateDir});assertEqual(first.exitCode,0,first.stdout+first.stderr);
+      const second=await runDaemon(args,30000,{stateDir});assertEqual(second.exitCode,0,second.stdout+second.stderr);
+      assertEqual(server.requests.length,1,'completed durable decision survives restart');
+      assertEqual(mockCli.calls().filter(a=>a[0]==='declare-immoral'&&!a.includes('--inspect-only')).length,1,'restart must not resend');
+    }finally{await server.stop();mockCli.cleanup();}
+  });
+  await test('submitted receipt without finality remains durable and restart does not resend',async()=>{
+    const mockCli=new MockCli(MOCK_CLI,{posts:[{index:0,text:'Pending spam',flagged:false}]});
+    const server=new MockLlamaServer(0,()=>({content:'VIOLATION - 1 - Spam'}));await server.start();
+    const stateDir=fs.mkdtempSync(path.join(TEST_ROOT,'pending-'));
+    const args=['--portal-address',SCOPE.portalAddress,'--censor-wallet',MOCK_WALLET,'--cli',MOCK_CLI,'--llama-port',String(server.port),'--once'];
+    try{
+      for(let i=0;i<2;i++){const result=await runDaemon(args,30000,{stateDir,nodeStatus:'proven'});assertTrue(result.exitCode!==0,'nonfinal inclusion is not completion');assertFalse(result.stdout.includes('flag finalized'),'no false finality');}
+      assertEqual(server.requests.length,1,'saved verdict reused');assertEqual(mockCli.calls().filter(a=>a[0]==='declare-immoral'&&!a.includes('--inspect-only')).length,1,'pending submission never resent');
+    }finally{await server.stop();mockCli.cleanup();}
+  });
+  await test('historical policy bytes are used for an older post after policy update',async()=>{
+    const historical=' Original policy \n';
+    const mockCli=new MockCli(MOCK_CLI,{posts:[{index:0,text:'Old policy post',flagged:false,policyVersion:OTHER_POLICY_VERSION}],policies:[{policyVersion:OTHER_POLICY_VERSION,text:historical,censorWindow:'3600'},{policyVersion:POLICY_VERSION,text:'No spam',censorWindow:'3600'}]});
+    const server=new MockLlamaServer(0,()=>({content:'OK'}));await server.start();
+    try{const result=await runDaemon(['--portal-address',SCOPE.portalAddress,'--censor-wallet',MOCK_WALLET,'--cli',MOCK_CLI,'--llama-port',String(server.port),'--once']);assertEqual(result.exitCode,0,result.stdout+result.stderr);assertEqual(server.policies[0],historical,'historical policy exact bytes');}
+    finally{await server.stop();mockCli.cleanup();}
   });
 
   await test('private fee configuration is mandatory at daemon startup', async () => {

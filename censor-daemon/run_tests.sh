@@ -10,7 +10,7 @@ fi
 node "$SCRIPT_DIR/test_moderation.mjs"
 node "$SCRIPT_DIR/test_signer.mjs"
 node "$SCRIPT_DIR/test_daemon.mjs"
-node --test "$SCRIPT_DIR/test_wallet_authority.mjs"
+node --test --test-concurrency=1 "$SCRIPT_DIR/test_wallet_authority.mjs" "$SCRIPT_DIR/test_job_store.mjs" "$SCRIPT_DIR/test_worker.mjs" "$SCRIPT_DIR/test_model_version.mjs" "$SCRIPT_DIR/test_flag_outcome.mjs"
 if [[ "${1:-}" == '--with-docker' ]]; then
   node --test "$SCRIPT_DIR/model-runtime.test.mjs"
 fi
