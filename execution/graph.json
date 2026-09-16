@@ -871,7 +871,7 @@
       "title": "Build incremental public feed with reorg recovery",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "C03"
       ],
@@ -884,7 +884,9 @@
         "apps/",
         "shared/",
         "services/",
-        "execution/"
+        "execution/",
+        "scripts/",
+        "censor-daemon/"
       ],
       "plan": "tasks/F01.md",
       "actions": [
@@ -913,7 +915,7 @@
       "evidence": "evidence/F01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "Public feed complete:380 final affected checks, real built browser/CLI public reads, wallet regression and moderation checks pass. See evidence/F01.json. Continue M02.",
       "priority": 15
     },
     {

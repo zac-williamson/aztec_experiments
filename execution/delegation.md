@@ -464,3 +464,8 @@ Recovery reviewer delivered application-nullifier helper and25 fixture tests, na
 
 - recovery_review: owns apps/src/fee-juice/engine.js and scripts/test-private-fee-funding-engine.mjs for exact funding-claim recovery, plus only necessary related new focused tests. No shared journal/SDK/build edits or heavy jobs.
 - Root: deploy engine/tests and integration; later moderator recovery.
+
+## F01 public feed
+
+- recovery_review implemented the lightweight event adapter/build metadata and actual SDK serialization tests; then added independent index/configuration probes and reviews.
+- Root owns durable index, public RPC/configuration, browser/CLI integration, build provenance and integrated qualification. Heavy checks run serially. No external audit signoff implied.

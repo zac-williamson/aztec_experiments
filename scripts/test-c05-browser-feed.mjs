@@ -22,54 +22,19 @@ function pack(text, count = 32) {
   });
 }
 for (const app of ['user', 'censor']) {
-  test(app + ' feed resolves large stable IDs and decodes seven-field reasons with explicit length', async () => {
+  test(app + ' renders stable public IDs, Unicode and moderation reasons without wallet reads', async () => {
     const appSource = source(`apps/src/billboard/${app}/app.js`);
     const start = appSource.indexOf('async function refreshBillboard()');
     const end = appSource.indexOf('\nfunction escapeHtml(', start);
-    assert(start >= 0 && end > start);
-    const elements = { billboardFeed: { innerHTML: '' }, billboardMeta: { innerHTML: '', textContent: '' } };
-    const calls = [];
-    const errors = [];
-    let reasonCalls = 0;
-    const methods = new Proxy({}, { get(_target, method) {
-      return (...args) => ({ simulate: async () => {
-        calls.push([method, ...args]);
-        if (method === 'get_post_count') return { result: 2n };
-        if (method === 'get_post_id') {
-          assert([0n, 1n].includes(args[0]));
-          return { result: { value: ids[Number(args[0])] } };
-        }
-        if (!ids.includes(args[0])) { errors.push('Wrong identity for ' + method); throw new Error('Wrong identity'); }
-        const flagged = args[0] === ids[1];
-        if (method === 'is_post_flagged') return { result: flagged };
-        if (method === 'get_post') return { result: pack(flagged ? flaggedText : text) };
-        if (method === 'get_censor_response') return { result: packedReason.fields };
-        if (method === 'get_censor_response_length') return { result: { value: BigInt(packedReason.byteLength) } };
-        if (method === 'get_post_flagged_by') return { result: '0x1234' };
-        throw new Error('Unexpected method ' + method);
-      } });
-    } });
-    const context = vm.createContext({ TextDecoder, Uint8Array, console,
-      document: { getElementById: id => elements[id] },
-      window: { BillboardModerationCodec: { decodeModerationReason(fields, length) {
-        reasonCalls++; assert.equal(fields.length, 7); assert.equal(length, String(packedReason.byteLength));
-        return codec.decodeModerationReason(fields, length);
-      } } },
-      _handles: { address: {}, contract: { methods }, aztecNode: { getBlockNumber: async () => 7 } },
-      _billboardLastCount: -1, _billboardLastBlock: -1, _showCensored: true, MSG_FIELDS: 32,
-      extractInt: result => result.result, extractFieldArray: result => result.result,
-      escapeHtml: value => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'),
-    });
-    vm.runInContext(appSource.slice(start, end), context);
-    await context.refreshBillboard();
-    assert.deepEqual(errors, []);
-    assert.equal(reasonCalls, 1);
-    assert(elements.billboardFeed.innerHTML.includes('Visible &lt;message&gt; with Unicode café 🌍'));
-    assert(elements.billboardFeed.innerHTML.includes(reason));
-    if (app === 'user') assert(elements.billboardFeed.innerHTML.includes(flaggedText));
-    assert(!elements.billboardFeed.innerHTML.includes('(error loading)'));
-    assert(calls.some(([method, id]) => method === 'get_post' && id === ids[0]));
-    assert(calls.some(([method, id]) => method === 'get_censor_response_length' && id === ids[1]));
+    const elements = { billboardFeed: { innerHTML: '' }, billboardMeta: { textContent: '' } };
+    let reads=0;
+    const context=vm.createContext({console,document:{getElementById:id=>elements[id]},window:{BillboardPublic:{async readFeed(){reads++;return {posts:[{orderIndex:'0',postId:ids[0].toString(),text,flagged:false},{orderIndex:'1',postId:ids[1].toString(),text:flaggedText,flagged:true,flag:{reason,censorAddress:'0x1234'}}],eventCount:3,lastBlock:7,nextCursor:null,progress:{complete:true}};}}},
+      _portalAddr:()=> 'portal',_getNodeUrl:()=> 'node',ETH_RPC_URL:'ethereum',_billboardLastCount:-1,_billboardLastBlock:-1,_showCensored:true,
+      escapeHtml:value=>value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')});
+    vm.runInContext(appSource.slice(start,end),context);await context.refreshBillboard();
+    assert.equal(reads,1);assert(elements.billboardFeed.innerHTML.includes('Visible &lt;message&gt; with Unicode café 🌍'));
+    assert(elements.billboardFeed.innerHTML.includes(reason));if(app==='user')assert(elements.billboardFeed.innerHTML.includes(flaggedText));
+    assert.equal(elements.billboardMeta.textContent,'Latest messages through block 7');
   });
 }
 

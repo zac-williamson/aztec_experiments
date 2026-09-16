@@ -9,7 +9,8 @@ function fixture(run) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'frontend-provenance-'));
   const write = (name, value = name) => { const file = path.join(root, name); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, value); };
   for (const name of [
-    'apps/build.mjs', 'scripts/frontend-provenance.mjs', 'scripts/check-artifacts.mjs', 'scripts/check-sdk.mjs',
+    'apps/build.mjs', 'scripts/build-public-feed.mjs', 'apps/dist/public-feed.js', 'apps/dist/public-feed-metadata.json',
+    ...['public-feed.mjs','public-feed-source.mjs','public-feed-metadata.mjs','public-feed-rpc.mjs','public-feed-connection.mjs','public-feed-browser.mjs','protocol-schema.mjs','transaction-outcomes.mjs'].map(x=>`shared/${x}`), 'scripts/frontend-provenance.mjs', 'scripts/check-artifacts.mjs', 'scripts/check-sdk.mjs',
     'scripts/build-crs.mjs', 'scripts/toolchain.mjs', 'package.json', 'package-lock.json', 'crs-manifest.json',
     '.build/contracts-manifest.json', '.build/sdk/sdk-manifest.json', 'apps/dist/crs/crs-manifest.json',
     'node_modules/ethers/dist/ethers.umd.min.js', 'apps/src/user/template.html', 'apps/src/user/app.js',

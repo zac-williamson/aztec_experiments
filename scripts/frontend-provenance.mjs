@@ -6,7 +6,8 @@ import { ROOT } from './toolchain.mjs';
 const manifestName = '.build/apps-manifest.json';
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const required = [
-  'apps/build.mjs', 'scripts/frontend-provenance.mjs', 'scripts/check-artifacts.mjs',
+  'apps/build.mjs', 'scripts/build-public-feed.mjs',
+  ...['public-feed.mjs','public-feed-source.mjs','public-feed-metadata.mjs','public-feed-rpc.mjs','public-feed-connection.mjs','public-feed-browser.mjs','protocol-schema.mjs','transaction-outcomes.mjs'].map(x=>`shared/${x}`), 'scripts/frontend-provenance.mjs', 'scripts/check-artifacts.mjs',
   'scripts/check-sdk.mjs', 'scripts/build-crs.mjs', 'scripts/toolchain.mjs',
   'package.json', 'package-lock.json', 'crs-manifest.json',
   '.build/contracts-manifest.json', '.build/sdk/sdk-manifest.json', 'apps/dist/crs/crs-manifest.json',
@@ -57,7 +58,7 @@ function outputs(root) {
     } else throw new Error(`Unsupported frontend output: ${name}`);
   };
   visit('apps/dist');
-  return hashes(root, names);
+  return hashes(root, [...names, 'apps/dist/public-feed.js', 'apps/dist/public-feed-metadata.json']);
 }
 export function beginFrontendBuild(root = ROOT, { partial = false, rpcOverride = false } = {}) {
   fs.rmSync(path.join(root, manifestName), { force: true });

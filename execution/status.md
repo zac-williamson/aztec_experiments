@@ -64,3 +64,7 @@ Author recovery e73c406 pushed. Active W03 lanes: private fee claim engine/tests
 W03 final review: all remaining consumer recovery implemented;468 integrated checks, actual browser recovery, real local Ethereum lost-response recovery and moderation checks pass. Preparing immutable completion evidence. F01 read-only gap review delegated.
 
 W03 complete with immutable final evidence;468 integrated checks and browser/Ethereum/moderation checks passed. Historical genuine proofs are explicitly scoped. Continue F01 public feed; release gates remain incomplete.
+
+F01 active: shared wallet-free public feed with incremental events, durable canonical checkpoints and pagination. Scope includes scripts and daemon read integration; no private wallet or network prover needed for reads.
+
+F01 complete:23KB wallet-free reader and incremental browser/CLI feed;380 final affected checks plus actual browser/CLI and wallet/moderation checks pass. Continuing M02 durable moderation jobs.

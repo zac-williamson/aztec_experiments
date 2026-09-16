@@ -42,3 +42,6 @@ billboard/portal/out/PortalArtifactRegression.t.sol/
 
 # Encrypted transaction recovery state stays local.
 transaction-journal-v1/
+
+# Disposable public event cache (contains no private notes).
+.public-feed-cache/

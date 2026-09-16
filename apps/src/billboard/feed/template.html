@@ -1,0 +1,6 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Billboard — Read messages</title><!--STYLES--></head><body>
+<h1>Billboard</h1><p>Read public messages without connecting a wallet.</p>
+<div class="card"><label>Portal address<input id="portal" placeholder="0x…"></label><label>Aztec node<input id="node" value="http://127.0.0.1:5080"></label><label>Ethereum RPC<input id="ethereum" value="http://127.0.0.1:8545"></label><button id="connect">Open board</button></div>
+<p id="status" role="status">Enter the board’s connection details.</p><div id="messages"></div><button id="more" hidden>Older messages</button><button id="refresh" hidden>Refresh</button>
+<p class="small">Messages are public and immutable. This reader caches public content on this device. RPC providers can observe reads. Checkpointed posts may change after a chain reorganisation.</p>
+<script src="public-feed.js"></script><!--APP--></body></html>

@@ -25,6 +25,7 @@
 // within a project like billboard/).
 
 import fs from 'fs';
+import { buildPublicFeed } from '../scripts/build-public-feed.mjs';
 import { createHash } from 'node:crypto';
 import { checkSdk } from '../scripts/check-sdk.mjs';
 import path from 'path';
@@ -225,4 +226,5 @@ if (args.length > 0) {
   }
 }
 
+await buildPublicFeed();
 finishFrontendBuild(ROOT, frontendBuild);

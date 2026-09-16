@@ -365,118 +365,16 @@ async function refreshPolicy() {
 async function refreshBillboard() {
   const feed = document.getElementById('billboardFeed');
   const meta = document.getElementById('billboardMeta');
-  if (!feed || !_handles || !_handles.contract) return;
-
+  if (!feed || !_portalAddr()) return;
   try {
-    let currentBlock = -1;
-    try { currentBlock = await _handles.aztecNode.getBlockNumber(); } catch (e) {}
-
-    const countResult = await _handles.contract.methods.get_post_count().simulate({ from: _handles.address });
-    const count = Number(extractInt(countResult));
-
-    if (meta) {
-      const blkStr = currentBlock >= 0 ? ' &middot; block ' + currentBlock : '';
-      meta.innerHTML = count + ' message' + (count !== 1 ? 's' : '') + ' on the billboard' + blkStr;
-    }
-
-    if (count === 0) {
-      feed.innerHTML = '<div class="billboard-empty">No messages yet. Be the first to post!</div>';
-      _billboardLastCount = 0;
-      return;
-    }
-
-    if (count === _billboardLastCount && currentBlock === _billboardLastBlock) return;
-    const isNewPost = count > _billboardLastCount && _billboardLastCount >= 0;
-    _billboardLastCount = count;
-    _billboardLastBlock = currentBlock;
-
-    const posts = [];
-    let flaggedCount = 0;
-    for (let i = count - 1; i >= 0; i--) {
-      let identity = await _handles.contract.methods.get_post_id(BigInt(i)).simulate({ from: _handles.address });
-      if (identity && identity.result !== undefined) identity = identity.result;
-      if (identity && identity.value !== undefined) identity = identity.value;
-      const postId = BigInt(identity.toString());
-      let flagged = false;
-      try {
-        const flagResult = await _handles.contract.methods.is_post_flagged(postId).simulate({ from: _handles.address });
-        let fv = flagResult;
-        if (fv && fv.result !== undefined) fv = fv.result;
-        if (fv && fv.value !== undefined) fv = fv.value;
-        flagged = fv && (fv === true || BigInt(fv.toString ? fv.toString() : fv) > 0n);
-      } catch (e) {}
-
-      let censorResponse = null;
-      let flaggedBy = null;
-      if (flagged) {
-        flaggedCount++;
-        try {
-          const respResult = await _handles.contract.methods.get_censor_response(postId).simulate({ from: _handles.address });
-          const respVals = extractFieldArray(respResult);
-          let reasonLength = await _handles.contract.methods.get_censor_response_length(postId).simulate({ from: _handles.address });
-          if (reasonLength && reasonLength.result !== undefined) reasonLength = reasonLength.result;
-          if (reasonLength && reasonLength.value !== undefined) reasonLength = reasonLength.value;
-          censorResponse = window.BillboardModerationCodec.decodeModerationReason(respVals, reasonLength.toString());
-        } catch (e) {}
-        try {
-          const fbResult = await _handles.contract.methods.get_post_flagged_by(postId).simulate({ from: _handles.address });
-          let fbv = fbResult;
-          if (fbv && fbv.result !== undefined) fbv = fbv.result;
-          if (fbv && fbv.value !== undefined) fbv = fbv.value;
-          flaggedBy = fbv?.inner ? fbv.inner.toString() : (fbv?.toString ? fbv.toString() : fbv);
-        } catch (e) {}
-      }
-
-      if (flagged) {
-        // Fetch the actual post content (point 7: show contents + censorship reason after confirmation)
-        let actualMsg = '(could not load content)';
-        try {
-          const postResult = await _handles.contract.methods.get_post(postId).simulate({ from: _handles.address });
-          const vals = extractFieldArray(postResult);
-          let bytes = [];
-          for (let f = 0; f < MSG_FIELDS; f++) {
-            let val = vals[f];
-            let fieldBytes = [];
-            for (let b = 0; b < 31; b++) {
-              fieldBytes.unshift(Number(val & 0xffn));
-              val >>= 8n;
-            }
-            bytes = bytes.concat(fieldBytes);
-          }
-          let len = bytes.length;
-          for (let b = 0; b < bytes.length; b++) {
-            if (bytes[b] === 0) { len = b; break; }
-          }
-          actualMsg = new TextDecoder().decode(new Uint8Array(bytes.slice(0, len))) || '(empty)';
-        } catch (e) {}
-        posts.push({ idx: i, msg: actualMsg, flagged: true, censorResponse, flaggedBy });
-        continue;
-      }
-
-      try {
-        const postResult = await _handles.contract.methods.get_post(postId).simulate({ from: _handles.address });
-        const vals = extractFieldArray(postResult);
-        let bytes = [];
-        for (let f = 0; f < MSG_FIELDS; f++) {
-          let val = vals[f];
-          let fieldBytes = [];
-          for (let b = 0; b < 31; b++) {
-            fieldBytes.unshift(Number(val & 0xffn));
-            val >>= 8n;
-          }
-          bytes = bytes.concat(fieldBytes);
-        }
-        let len = bytes.length;
-        for (let b = 0; b < bytes.length; b++) {
-          if (bytes[b] === 0) { len = b; break; }
-        }
-        const msg = new TextDecoder().decode(new Uint8Array(bytes.slice(0, len)));
-        posts.push({ idx: i, msg: msg || '(binary data)' });
-      } catch (err) {
-        posts.push({ idx: i, msg: '(error loading)', err: true });
-      }
-    }
-
+    const selectedPortal=_portalAddr(),selectedNode=_getNodeUrl();
+    const page=await window.BillboardPublic.readFeed({portalAddress:selectedPortal,nodeUrl:selectedNode,ethereumUrl:ETH_RPC_URL});
+    if(selectedPortal!==_portalAddr()||selectedNode!==_getNodeUrl())return;
+    const posts=page.posts.map(p=>({idx:p.orderIndex,postId:p.postId,msg:p.text,flagged:p.flagged,censorResponse:p.flag?.reason,flaggedBy:p.flag?.censorAddress}));
+    const flaggedCount=posts.filter(p=>p.flagged).length;
+    const isNewPost=page.eventCount>_billboardLastCount&&_billboardLastCount>=0;
+    _billboardLastCount=page.eventCount;_billboardLastBlock=page.lastBlock;
+    if(meta)meta.textContent=page.progress.complete?'Latest messages through block '+page.lastBlock:'Loading public history through block '+page.lastBlock;
     // Split posts into visible and censored
     const visiblePosts = posts.filter(p => !p.flagged);
     const censoredPosts = posts.filter(p => p.flagged);
@@ -523,9 +421,10 @@ async function refreshBillboard() {
     }
 
     feed.innerHTML = html;
+    if(page.nextCursor){const link=document.createElement('a');link.href='feed.html?portal='+encodeURIComponent(_portalAddr());link.textContent='Read older messages';feed.append(link);}
     if (isNewPost) feed.scrollTop = 0;
   } catch (e) {
-    if (meta) meta.textContent = 'Loading messages...';
+    if (meta) meta.textContent = 'Could not update messages; displayed content may be stale.';
   }
 }
 

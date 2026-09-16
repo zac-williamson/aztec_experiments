@@ -350,6 +350,13 @@ function createStoreNode(a) {
 // Main
 // ============================================================
 async function main() {
+  if(ACTION==='list') {
+    const {listPublicFeed}=await import('../../../../shared/public-feed-cli.mjs');
+    const result=await listPublicFeed({root:PROJECT_ROOT,nodeUrl:AZTEC_NODE_URL,ethereumUrl:ETH_RPC_URL,portalAddress:PORTAL_ADDRESS,cacheDirectory:args['public-feed-cache']});
+    if(args.json)console.log(JSON.stringify(result));
+    else for(const post of result.posts)console.log('#'+post.index+' '+(post.flagged?'[flagged] ':'')+post.text);
+    return;
+  }
   if (Object.hasOwn(args, 'sponsor-config') || Object.hasOwn(args, 'sponsor-provider')) {
     throw new Error('Coupon sponsorship has been removed. Use --private-fee-config.');
   }
