@@ -63,6 +63,7 @@ try {
     return {count:records.length,hash:records[0].record.secretHash,matches:(await a.computeSecretHash(new a.Fr(BigInt(records[0].record.secret)))).toString()===records[0].record.secretHash};
   });
   assert.deepEqual(restored,{count:1,hash:commitment,matches:true});
+  await second.context.close();
   stage='same-profile-tab-exclusion';
   const other=await first.context.newPage();other.setDefaultTimeout(15000);
   await other.goto(origin+'/user.html');await other.waitForFunction(()=>window.__aztec?.Fr && document.getElementById('wbAztecFile'));
@@ -77,7 +78,7 @@ try {
   const blocked=await other.evaluate(async()=>{
     let called=false;try {await makeCallEngine(async()=>{called=true;})('status','setupStatus',{});return false;}catch{return !called;}
   });
-  assert.equal(blocked,true);await first.page.evaluate(()=>window._testReleaseLock());
+  assert.equal(blocked,true);await first.page.evaluate(()=>window._testReleaseLock());await other.close();
 
   stage='journal-before-reload';
   const savedHash=await first.page.evaluate(async()=>{
@@ -132,6 +133,7 @@ try {
   await first.page.locator('#wbPassword').fill(password);await first.page.locator('#wbPasswordConfirm').fill(password);
   const portableDownload=first.page.waitForEvent('download');await first.page.locator('#wbBackupBtn').click();
   const portable=await fs.readFile(await (await portableDownload).path());
+  await first.context.close();
   stage='restore-journals-fresh-profile';const third=await open('censor.html');
   await third.page.locator('#wbPassword').fill(password);await third.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:portable});
   await third.page.waitForFunction(()=>window.walletState.aztec?.address);
@@ -146,6 +148,7 @@ try {
   },savedHash);
   assert.deepEqual(portableResult,{count:2,claims:1,blocked:true,hash:savedHash});
   assert.equal(await third.page.getByRole('button',{name:'Recover saved moderator transaction'}).count(),1);
+  await third.context.close();
 
   stage='deployment-resume-ui';const deploy=await open('deploy.html');
   await deploy.page.locator('#wbPassword').fill(password);await deploy.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:portable});
@@ -167,6 +170,6 @@ try {
   });
   assert.deepEqual(deployResult,{pending:true,hashSaved:true,noReadyLink:true,calls:1});
 
-  console.log(JSON.stringify({passed:true,actualBuiltBrowser:true,freshProfiles:4,deploymentPendingUiAndWalletLock:true,actualPortableJournalRestore:true,wrongPasswordRejected:true,sameRestoredAddress:true,restoredClaimCommitmentVerified:true,actualCrossTabExclusion:true,actualJournalReloadRecovery:true,actualEthereumIntentReloadRecovery:true,externalRequestsBlocked:externalRequests,secretsWrittenToEvidence:false}));
+  console.log(JSON.stringify({passed:true,actualBuiltBrowser:true,freshProfiles:4,maximumConcurrentProfiles:2,deploymentPendingUiAndWalletLock:true,actualPortableJournalRestore:true,wrongPasswordRejected:true,sameRestoredAddress:true,restoredClaimCommitmentVerified:true,actualCrossTabExclusion:true,actualJournalReloadRecovery:true,actualEthereumIntentReloadRecovery:true,externalRequestsBlocked:externalRequests,secretsWrittenToEvidence:false}));
 }catch(error){console.log(JSON.stringify({passed:false,stage,errorClass:error.name,location:error.stack?.split('\n').filter(l=>l.trim().startsWith('at ')).slice(0,2)}));process.exitCode=1;}
 finally{clearTimeout(watchdog);if(browser)await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

@@ -37,7 +37,7 @@ function packedText(text){
  * No state injection, server prover, proof worker fanout or automatic retry.
  */
 export async function proveAndIncludeC03Contention({node,preparation,instance,authorClaims,
-  l1Client,rpcUrl,directory,mineL1,reportStage,dateProvider,privateFeeAction}){
+  l1Client,rpcUrl,directory,mineL1,reportStage,dateProvider,privateFeeAction,discardUnsubmittedFee}){
   let wallet,sequencer,previousConfig,progressPath,stage='preflight';
   const count=preparation.authorAccounts.length;
   assert([1,10].includes(count));assert(count===10||process.env.C03_POSTING_DIAGNOSTIC==='true'||typeof privateFeeAction==='function');
@@ -123,7 +123,7 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
         if(integer(anchor.globalVariables.timestamp)>=eligibleAt)break;await mineL1();}while(Date.now()<deadline);
       assert(integer(anchor.globalVariables.timestamp)>=eligibleAt,'Common eligibility anchor unavailable');
     }finally{sequencer.updateConfig(previousConfig);}
-    const anchorBytes=anchor.toBuffer(),anchorHash=(await anchor.hash()).toString();
+    let anchorBytes=anchor.toBuffer(),anchorHash=(await anchor.hash()).toString();
     assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),anchorHash);
     observation.anchorBlock=Number(anchor.getBlockNumber());observation.anchorHash=anchorHash;
     observation.anchorHeaderSha256=sha(anchorBytes);
@@ -144,9 +144,17 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
       const postArgs=[claim.depositChainId,nonce,message.fields,message.length,false,undefined,undefined];
       assert.deepEqual((await wallet.pxe.getSyncedBlockHeader()).toBuffer(),anchorBytes);
       await mark('prove-author-'+index);const started=performance.now();
-      const {request,proven,tx}=await proveApplicationAction({wallet,owner:account.address,
+      let preparedProof=await proveApplicationAction({wallet,owner:account.address,
         interaction:board.methods.post(...postArgs),
         privateFeeAction:privateFeeAction?context=>privateFeeAction({...context,kind:'post',args:postArgs}):undefined});
+      if(process.env.W03_PROOF_RECOVERY==='true') {
+        assert.equal(count,1);assert(privateFeeAction&&discardUnsubmittedFee);
+        const {replaceW03StalePost}=await import('./w03-proof-recovery.mjs');
+        const recovered=await replaceW03StalePost({wallet,node,account,claim,board,postArgs,original:preparedProof,privateFeeAction,discardUnsubmittedFee,directory,mineL1,mark});
+        preparedProof=recovered.replacement;anchor=recovered.anchor;anchorBytes=anchor.toBuffer();anchorHash=(await anchor.hash()).toString();
+        observation.recovery=recovered.observation;observation.anchorBlock=Number(anchor.getBlockNumber());observation.anchorHash=anchorHash;observation.anchorHeaderSha256=sha(anchorBytes);
+      }
+      const {request,proven,tx}=preparedProof;
       const fee={gasSettings:request.txContext.gasSettings};
       assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchorBytes,'Prepared author drifted from the common anchor');
       assert.deepEqual((await wallet.pxe.getSyncedBlockHeader()).toBuffer(),anchorBytes);
@@ -220,8 +228,9 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
     }
     const byExecution=[...observation.posts].sort((a,b)=>Number(BigInt(a.blockNumber)-BigInt(b.blockNumber))||a.txIndexInBlock-b.txIndexInBlock);
     assert.deepEqual(byExecution.map(post=>post.postId),ordered,'Public order differs from actual execution order');
+    if(observation.recovery){await observation.recovery.verify();assert(observation.recovery.passed);}
     await artifact(preparation);observation.passed=true;observation.contentionQualified=count===10;observation.uniqueIdsAndOrder=true;
-    observation.limitations=(count===10?'Ten distinct rights only':'One-author diagnostic only; not ten-author qualification')+'; no same-note conflict/refresh or protocol throughput/finality claim.';
+    observation.limitations=(count===10?'Ten distinct rights only':'One-author diagnostic only; not ten-author qualification')+(observation.recovery?'; real private-fee-note conflict and journal-linked post proof replacement; no protocol throughput/finality claim.':'; no same-note conflict/refresh or protocol throughput/finality claim.');
     await mark('verified');return observation;
   }catch(error){observation.passed=false;observation.failure={errorClass:error?.name??'Error',stage};await persist();const failure=new Error(`C03_CONTENTION_FAILED:${stage}:${error?.name??'Error'}`);
     failure.contentionObservation={...observation,passed:false,stage,errorClass:error?.name??'Error',

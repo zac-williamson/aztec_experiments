@@ -71,7 +71,7 @@ import {AztecAddress} from '@aztec/stdlib/aztec-address';
 import {EthAddress} from '@aztec/foundation/eth-address';
 import {sha256ToField} from '@aztec/foundation/crypto/sha256';
 function mainHarness(action,isDummy=false) {
-  const c=context(),requests=[],logs=[];let sent=false,authorBalanceReads=0;
+  const c=context(),requests=[],logs=[],operations=[];let sent=false,authorBalanceReads=0,postExists=!['post','recover'].includes(action);
   // Timers only represent UI yields in this inert test; no network/proof work is performed.
   c.setTimeout=callback=>setTimeout(callback,0);
   const addr=AztecAddress.fromFieldUnsafe(new Fr(12));
@@ -89,7 +89,7 @@ function mainHarness(action,isDummy=false) {
   c.readBillboardDepositInfo=async()=>note();
   const methods=new Proxy({}, {get:(_target,name)=>{
     if(['post','withdraw','claim_deposit','transfer_censor','declare_immoral','set_moderation_policy'].includes(name)) return (...args)=>({send:async opts=>{assert.equal(opts.from,addr);assert.equal(opts.fee.paymentMethod,'private-method');sent=true;requests.at(-1).action={kind:action,args};return {receipt:{status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)}};}});
-    return ()=>({simulate:async()=>name==='get_post_exists'?true:name==='get_screen_hints'?[null,null]:1n});
+    return ()=>({simulate:async()=>name==='get_post_exists'?postExists:name==='get_screen_hints'?[null,null]:1n});
   }});
   class BaseWallet {constructor(pxe){this.pxe=pxe;}}
   const a={Fr,AztecAddress,EthAddress,NO_FROM,GasSettings,BaseWallet,sha256ToField,Buffer,
@@ -102,13 +102,13 @@ function mainHarness(action,isDummy=false) {
     preparePrivateFeePayment:async input=>{requests.push(input);return {paymentMethod:'private-method',gasSettings:gas()};},
   };
   const cursorRecords=new Map();
-  const env={createHistoryCursor:options=>createHistoryCursor({...options,storage:{read:async key=>cursorRecords.get(key)??null,compareAndSwap:async(key,previous,next)=>{assert.equal(cursorRecords.get(key)??null,previous);cursorRecords.set(key,next);}}}),createEthereumJournal:async()=>({assertCanStart:async()=>{},send:async()=>{throw Object.assign(new Error('Unknown Ethereum submission'),{code:'BB_ETH_SUBMISSION_UNKNOWN'});}}),createTransactionJournal:async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},setOperation:()=>{}}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},privateFeeArtifact:{},
+  const env={createHistoryCursor:options=>createHistoryCursor({...options,storage:{read:async key=>cursorRecords.get(key)??null,compareAndSwap:async(key,previous,next)=>{assert.equal(cursorRecords.get(key)??null,previous);cursorRecords.set(key,next);}}}),createEthereumJournal:async()=>({assertCanStart:async()=>{},send:async()=>{throw Object.assign(new Error('Unknown Ethereum submission'),{code:'BB_ETH_SUBMISSION_UNKNOWN'});}}),createTransactionJournal:async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},setOperation:value=>operations.push(value)}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},privateFeeArtifact:{},
     initCRS:async()=>{},createStore:async()=>({}),log:text=>logs.push(text),getBrowserSigner:async()=>({getAddress:async()=>depositor,provider})};
   const config={action,isDummy,message:'text',depositChainId:'5',portalAddress:portal,ethRpcUrl:'http://fixture.invalid',aztecNodeUrl:'http://fixture.invalid',aztecWallet:{secretKey:new Fr(1).toString(),salt:0},
     reuseTxHash:new Fr(3).toString(),claimSecretStore:{save:async()=>{},load:async()=>({schemaVersion:1,secret:secret.toString(),secretHash:secretHash.toString()})},
     privateFee:{contractAddress:'private-fee',gasSettings:gas()}};
   config.censorWalletJson={...config.aztecWallet};config.newCensor=new Fr(44).toString();config.postId=new Fr(55).toString();config.moderationPolicy='No threats';
-  return {run:()=>c.runBillboardUser(env,config),env,config,node,Portal,requests,logs,authorBalanceReads:()=>authorBalanceReads,secret};
+  return {run:()=>c.runBillboardUser(env,config),env,config,node,Portal,requests,logs,operations,setPostExists:value=>postExists=value,authorBalanceReads:()=>authorBalanceReads,secret};
 }
 for(const [action,dummy] of [['claim',false],['post',false],['post',true],['withdraw',false]]) {
   test(`actual main ${action}${dummy?' dummy':''} uses standard author call with private fee payment`,async()=>{
@@ -218,4 +218,30 @@ test('moderator recovery with unknown outcome cannot prepare another private fee
  const h=mainHarness('transfer-censor');h.config.reconcilePrevious=true;
  h.env.createTransactionJournal=async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},reconcilePrevious:async()=>{throw Object.assign(new Error('unknown'),{code:'BB_SUBMISSION_UNKNOWN'});}});
  await assert.rejects(h.run(),{code:'BB_SUBMISSION_UNKNOWN'});assert.equal(h.requests.length,0);
+});
+
+test('actual recovery dispatcher restores the saved message and nonce before requesting a fresh post proof',async()=>{
+ const h=mainHarness('recover'),nonce=new Fr(123).toString(),operations=[];
+ const operation=JSON.stringify({schemaVersion:1,kind:'post',nonce,message:'original saved text',depositChain:new Fr(5).toString()});
+ let allowed=0;
+ h.config.message='a different new message';h.config.isDummy=true;
+ h.env.createTransactionJournal=async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},
+  recover:async()=>{throw Object.assign(new Error('stale'),{code:'BB_RECOVERY_REQUIRED'});},inspect:async()=>({operation}),
+  allowReplacement:async expected=>{assert.equal(expected,operation);allowed++;},setOperation:value=>operations.push(value)});
+ await h.run();assert.equal(allowed,1);assert.deepEqual(operations,[operation]);assert.equal(h.requests.length,1);
+ assert.equal(h.requests[0].action.args[1].toString(),nonce);assert.equal(h.requests[0].action.args[4],false);
+ assert.equal(context().BillboardPostCodec.decodePostMessage(h.requests[0].action.args[2].map(x=>x.toBigInt()),h.requests[0].action.args[3]),'original saved text');
+});
+test('already published stable identity blocks a replacement before fee preparation',async()=>{
+ const h=mainHarness('post');h.setPostExists(true);
+ await assert.rejects(h.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(h.requests.length,0);
+});
+for(const kind of ['dummy','withdraw','claim'])test(`recovery cannot silently regenerate a ${kind} operation`,async()=>{
+ const h=mainHarness('recover');let allowed=0;
+ h.env.createTransactionJournal=async()=>({assertCanStart:async()=>{},prepare:async()=>{},confirmed:()=>{},recover:async()=>{throw Object.assign(new Error('blocked'),{code:'BB_RECOVERY_REQUIRED'});},inspect:async()=>({operation:JSON.stringify({kind})}),allowReplacement:async()=>{allowed++;}});
+ await assert.rejects(h.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(allowed,0);assert.equal(h.requests.length,0);
+});
+
+for(const [action,dummy,kind] of [['claim',false,'claim'],['post',true,'dummy'],['withdraw',false,'withdraw']])test(`${action} ${dummy?'dummy':''} records its own operation rather than stale real-post metadata`,async()=>{
+ const h=mainHarness(action,dummy);await h.run();assert.equal(JSON.parse(h.operations.at(-1)).kind,kind);
 });

@@ -42,3 +42,9 @@ Fee recovery qualification passes207 integrated and84 artifact checks, real loca
 Active: deployment recovery, including a bounded settlement check and truthful pending status; then persisted setup transactions and Ready provenance. Fee milestone committed and pushed as52a8000.
 
 Deployment recovery milestone passes204 integrated and143 artifact/client checks, real Ethereum creation/activation recovery and built-browser pending/lock checks. See evidence/W03/deploy-milestone-007.md. Continuing stale-proof replacement and full-stage qualification.
+
+Active: bounded transaction RPC reads and durable logical post identity for linked stale-proof replacement. Deployment milestone48038a9 pushed; implementation continues.
+
+After the app restart, removed the verified paused proof-test process group7099 and its orphaned parent completed cleanup. Second native attempt failed in process-snapshot parsing, not proving; exact formatting detail was unavailable. Fixed supervisor cleanup so read failure after SIGSTOP still kills owned children, and added one full-snapshot retry for malformed rows. Five actual-process/parser checks pass. Native memory cap tightened to2GiB; nine-minute deadline unchanged. Continue proof-recovery qualification.
+
+Real stale-post replacement passed in296744ms with1851936KiB peak, genuine conflicting private-fee spend and replacement inclusion; all owned processes/data removed.159 integrated,143 artifact and5 supervisor checks pass; built-browser recovery passes with at most two simultaneous profiles. W03 remains active: correct withdrawal absence reporting and finish action-specific recovery.

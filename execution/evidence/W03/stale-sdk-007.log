@@ -1,0 +1,7 @@
+
+> build:sdk
+> node scripts/build-sdk.mjs
+
+(node:5974) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Built pinned SDK and upstream workers: /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/sdk

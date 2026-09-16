@@ -1,4 +1,4 @@
-import { transactionError, submitOnceWithReconciliation, waitForCanonicalReceipt } from './transaction-outcomes.mjs';
+import { transactionError, boundedTransactionRead, classifyDroppedTransaction, submitOnceWithReconciliation, waitForCanonicalReceipt } from './transaction-outcomes.mjs';
 import {createEncryptedJournalSlot} from './journal-record.mjs';
 const fail=()=>transactionError('BB_RECOVERY_REQUIRED','Recover the saved transaction before starting another operation.');
 const invalid=()=>transactionError('BB_JOURNAL_INVALID','Transaction recovery storage could not be authenticated. Preserve it before continuing.');
@@ -17,13 +17,23 @@ export function l2JournalScopeText(scope) {
  */
 export async function createL2Journal({storage,walletSecret,walletSalt,scope,Tx,node,acknowledgeTx,crypto=globalThis.crypto,waitOptions={},contextGuard} ) {
   const slot=await createEncryptedJournalSlot({storage,walletSecret,walletSalt,scopeText:l2JournalScopeText(scope),keyDomain:'AZTEC_BB_L2_JOURNAL_KEY_V1',crypto});
-  let acknowledged=acknowledgeTx,lastHash=null,operation=null;
+  let acknowledged=acknowledgeTx,lastHash=null,operation=null,replacement=null;
   async function read() {
     const saved=await slot.read();if(saved.value===null)return {...saved,tx:null};
     try {
       const record=saved.value;
       if(record.version!==1||typeof record.txHash!=='string'||!/^0x[0-9a-f]{64}$/.test(record.txHash)||typeof record.tx!=='string'||!/^(?:[0-9a-f]{2})+$/.test(record.tx))throw invalid();
       if(record.operation!==undefined&&record.operation!==null&&(typeof record.operation!=='string'||!record.operation.length||record.operation.length>16384))throw invalid();
+      if(record.replacements!==undefined) {
+        if(!Array.isArray(record.replacements)||record.replacements.length>8)throw invalid();
+        const seen=new Set([record.txHash]);
+        for(const prior of record.replacements) {
+          if(!prior||Object.keys(prior).sort().join()!=='tx,txHash'||typeof prior.tx!=='string'||!/^(?:[0-9a-f]{2})+$/.test(prior.tx)||typeof prior.txHash!=='string'||seen.has(prior.txHash))throw invalid();
+          const old=Tx.fromBuffer(Buffer.from(prior.tx,'hex'));
+          if(old.getTxHash().toString()!==prior.txHash||Buffer.from(old.toBuffer()).toString('hex')!==prior.tx)throw invalid();
+          seen.add(prior.txHash);
+        }
+      }
       const tx=Tx.fromBuffer(Buffer.from(record.tx,'hex'));
       if(tx.getTxHash().toString()!==record.txHash||Buffer.from(tx.toBuffer()).toString('hex')!==record.tx)throw invalid();
       return {...saved,tx};
@@ -32,6 +42,7 @@ export async function createL2Journal({storage,walletSecret,walletSalt,scope,Tx,
   async function assertCanStart() {
     const previous=await read();
     if(previous.tx) {
+      if(replacement?.encoded===previous.encoded) {await rejectedAttempts(previous);return previous;}
       if(acknowledged!==previous.tx.getTxHash().toString())throw fail();
       // A previous display or cached receipt cannot authorize a replacement
       // after a reorg. This check intentionally does not regenerate stale proofs.
@@ -39,17 +50,37 @@ export async function createL2Journal({storage,walletSecret,walletSalt,scope,Tx,
     }
     return previous;
   }
+  async function rejectedAttempts(saved) {
+    return boundedTransactionRead(async()=>{
+      let reasons=[];
+      for(const attempt of [...(saved.value.replacements||[]),{tx:saved.value.tx,txHash:saved.value.txHash}]) {
+        const tx=Tx.fromBuffer(Buffer.from(attempt.tx,'hex'));
+        let receipt;try{receipt=await node.getTxReceipt(tx.getTxHash());}catch{throw fail();}
+        try {await classifyDroppedTransaction(node,tx,receipt);throw fail();}
+        catch(error){if(error?.code!=='BB_STATE_CONFLICT')throw fail();reasons=error.stateReasons;}
+      }
+      return reasons;
+    },waitOptions.readTimeoutMs??20000);
+  }
   async function prepare(tx,previous) {
-    await slot.write(previous,{version:1,txHash:tx.getTxHash().toString(),tx:Buffer.from(tx.toBuffer()).toString('hex'),operation});
+    let replacements=[];
+    if(replacement) {
+      if(replacement.encoded!==previous.encoded||operation!==previous.value.operation||!operation)throw fail();
+      await rejectedAttempts(previous);
+      replacements=[...(previous.value.replacements||[]),{txHash:previous.value.txHash,tx:previous.value.tx}];
+      if(replacements.length>8||replacements.some(prior=>prior.txHash===tx.getTxHash().toString()))throw fail();
+    }
+    await slot.write(previous,{version:1,txHash:tx.getTxHash().toString(),tx:Buffer.from(tx.toBuffer()).toString('hex'),operation,...(replacements.length?{replacements}:{})});
+    replacement=null;
   }
 
   function confirmed(receipt) {acknowledged=receipt.txHash.toString();lastHash=acknowledged;}
   async function recoverSaved(saved) {
       if(!saved.tx)throw transactionError('BB_NO_SAVED_TRANSACTION','No saved Aztec transaction exists for this wallet and board.');
-      let receipt;try {receipt=await node.getTxReceipt(saved.tx.getTxHash());}catch {throw fail();}
+      let receipt;try {receipt=await boundedTransactionRead(()=>node.getTxReceipt(saved.tx.getTxHash()));}catch {throw fail();}
       if(receipt?.txHash?.toString()!==saved.tx.getTxHash().toString())throw fail();
       if(receipt.status==='dropped') {
-        let validation;try {validation=await node.isValidTx(saved.tx);}catch {throw fail();}
+        let validation;try {validation=await boundedTransactionRead(()=>node.isValidTx(saved.tx));}catch {throw fail();}
         if(validation?.result!=='valid')throw fail();
         // A crash before broadcast is safe to recover: identical bytes, hash and
         // nullifiers, never a newly generated proof or a new logical operation.
@@ -60,6 +91,14 @@ export async function createL2Journal({storage,walletSecret,walletSalt,scope,Tx,
   }
   return {
     assertCanStart,prepare,confirmed,
+    async inspect(){const saved=await read();return saved.value?{operation:saved.value.operation??null,txHash:saved.value.txHash}:null;},
+    async allowReplacement(expectedOperation){
+      const saved=await read();
+      if(!saved.tx||!expectedOperation||saved.value.operation!==expectedOperation||(saved.value.replacements?.length??0)>=8)throw fail();
+      const reasons=await rejectedAttempts(saved);
+      if((await read()).encoded!==saved.encoded)throw fail();
+      replacement={encoded:saved.encoded};operation=expectedOperation;return reasons;
+    },
     setOperation(value){if(typeof value!=='string'||!value.length||value.length>16384)throw invalid();operation=value;},
     get lastTxHash(){return lastHash;},
     async recover(){return recoverSaved(await read());},

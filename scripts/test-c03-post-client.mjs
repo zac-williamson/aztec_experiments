@@ -131,3 +131,12 @@ test('nested dummy anchor recovery retains one two-refresh budget',async()=>{
     async()=>innerRefresh++,2,codec.dummyStateCanRetry),async()=>outerRefresh++,2,e=>codec.postStateCanRetry(true,e)),e=>e===error);
   assert.equal(attempts,3);assert.equal(innerRefresh,2);assert.equal(outerRefresh,0);
 });
+
+test('saved post operation requires the original canonical nonce, chain and valid message',()=>{
+ const operation={schemaVersion:1,kind:'post',nonce:id,depositChain:new Fr(2).toString(),message:'saved 🌍'};
+ assert.equal(JSON.stringify(codec.parsePostOperation({Fr},JSON.stringify(operation))),JSON.stringify(operation));
+ for(const change of [{nonce:'0x1'},{nonce:Fr.ZERO.toString()},{depositChain:'5'},{message:''},{message:'\ud800'},
+  {kind:'dummy'},{schemaVersion:2},{additional:'not part of the operation'}]){
+  assert.throws(()=>codec.parsePostOperation({Fr},JSON.stringify({...operation,...change})),{code:'BB_JOURNAL_INVALID'});
+ }
+});

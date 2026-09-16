@@ -1,0 +1,13 @@
+✔ actual descendant accounting includes memory in a child-created process group and cleans it (269.178ms)
+✔ remembered descendant identity survives parent exit and remains counted and terminated (277.911209ms)
+✔ snapshot failure after freezing cannot leave actual owned children stopped (223.531459ms)
+✔ incomplete ps snapshot retries the entire read once, never ignores a row (0.245291ms)
+✔ persistently malformed process counters fail closed after the bounded retry (0.195625ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 827.048209

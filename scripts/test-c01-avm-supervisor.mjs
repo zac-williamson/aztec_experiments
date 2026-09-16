@@ -71,3 +71,25 @@ test('remembered descendant identity survives parent exit and remains counted an
     assert.throws(()=>process.kill(f.leafPid,0),{code:'ESRCH'});
   }finally{await f.cleanup();}
 });
+
+test('snapshot failure after freezing cannot leave actual owned children stopped',{timeout:20000},async()=>{
+ const f=await fixture();
+ try{
+  await f.tree.sample();const actual=f.tree.snapshot;let failed=false;
+  f.tree.snapshot=async()=>{if(!failed){failed=true;throw new Error('synthetic snapshot failure');}return actual();};
+  await f.tree.cleanup();await f.exited;assert.equal(failed,true);
+  assert.equal((await f.tree.sample()).members.length,0);
+  assert.throws(()=>process.kill(f.leafPid,0),{code:'ESRCH'});
+ }finally{await f.cleanup();}
+});
+
+import {readProcessSnapshot,parseProcessSnapshot} from './owned-test-process-tree.mjs';
+const validRow='123 1 123 4096 Wed Sep 16 18:00:00 2026 S';
+test('incomplete ps snapshot retries the entire read once, never ignores a row',async()=>{
+ let reads=0;const result=await readProcessSnapshot(async()=>({stdout:++reads===1?'123 1 123 - -':validRow}));
+ assert.equal(reads,2);assert.equal(result[0].rssKiB,4096);
+});
+test('persistently malformed process counters fail closed after the bounded retry',async()=>{
+ let reads=0;await assert.rejects(readProcessSnapshot(async()=>{reads++;return{stdout:'123 1 123 - Wed Sep 16 18:00:00 2026 S'};}),{code:'BB_PROCESS_SNAPSHOT_FORMAT'});assert.equal(reads,2);
+ assert.throws(()=>parseProcessSnapshot(validRow+'\nmalformed'),{code:'BB_PROCESS_SNAPSHOT_FORMAT'});
+});

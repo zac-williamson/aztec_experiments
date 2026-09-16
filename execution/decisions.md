@@ -325,3 +325,26 @@ mismatched version. This is not production completion or an audit waiver.
 ## W03 moderator recovery scope
 
 Extend W03 to censor-daemon/ because enforcing durable moderator journals requires its trusted signer to reconcile previous requests between jobs and after restart. Model output cannot select recovery/acknowledgement flags. Persist exact moderator operation metadata with the transaction; a recovered successful identical operation is returned without another proof. Failed or unknown results must not complete a job.
+
+## W03 stale post proof replacement
+
+A fresh proof must preserve the logical operation. Persist the real post's nonce,
+message and deposit-chain identity in the same encrypted record as its proven
+transaction. Replacements retain up to eight exact predecessor proofs and may be
+prepared only after every saved attempt is freshly reported dropped and invalid
+for the pinned state-conflict reasons. Recheck immediately before saving a new
+proof; unknown/live attempts and concurrent record changes fail closed. The board's
+independent post ID remains unchanged and an already visible ID blocks new proving.
+
+This route initially applies to real posts, whose public identity is enforced by
+the contract. Dummy screening has no equivalent independent ID and must not inherit
+real-post metadata or silently take this path. Other operations keep their specific
+recovery routes while their stale-state behavior is qualified. Missing local notes
+must not be treated as evidence of a prior successful withdrawal; review that path
+in the remaining all-stage qualification. No criterion is closed by this decision.
+
+The new local proof-recovery qualification makes the original post proof actually
+invalid by spending its private fee note in a separate genuine transaction. It then
+restores the encrypted journal and regenerates the same post. This avoids invented
+node-validation results or a network epoch prover. The existing540-second parent
+budget and serialized native-job limit apply.

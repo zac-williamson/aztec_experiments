@@ -862,7 +862,7 @@
       "evidence": "evidence/W03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Deployment recovery integrated:204 integrated checks,143 artifact/client checks, real local Ethereum creation/activation response-loss recovery and built-browser pending/lock checks pass. Continue linked stale-proof replacement and all-stage qualification. No routine stopping point.",
+      "checkpoint": "Real stale-post replacement qualified in296744ms under2GiB;159 integrated,143 artifact,5 supervisor checks and built-browser restore pass. Integrate this milestone, then correct withdrawal absence handling and qualify remaining action recovery.",
       "priority": 14
     },
     {

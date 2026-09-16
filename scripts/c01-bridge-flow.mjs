@@ -30,7 +30,7 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
       if(privateFees){
         const {prepareW01PrivateFees}=await import('./w01-private-fee-flow.mjs');
         observation.privateFee=await prepareW01PrivateFees({...common,standalone:!privateFeePosting});
-        common.authorAccount=observation.privateFee.authorAccount;common.privateFeeAction=observation.privateFee.privateFeeAction;
+        common.authorAccount=observation.privateFee.authorAccount;common.privateFeeAction=observation.privateFee.privateFeeAction;common.discardUnsubmittedFee=observation.privateFee.discardUnsubmittedFee;
       }
       mark('real-deposit-and-claim');
       observation.claim=await depositAndClaimC01({...common,ready,settlement});assert(observation.claim.passed);
@@ -39,7 +39,7 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
         observation.post=await proveAndIncludeC03Contention({...common,
           authorClaims:[{account:common.authorAccount,claimResult:observation.claim}]});
         assert(observation.post.passed);
-        await observation.privateFee.verify(BigInt(observation.claim.fee)+BigInt(observation.post.posts[0].transactionFee));
+        await observation.privateFee.verify(BigInt(observation.claim.fee)+BigInt(observation.post.posts[0].transactionFee)+BigInt(observation.post.recovery?.transactionFee??0));
         assert.equal(observation.claim.feePayer,observation.privateFee.payer);assert.equal(observation.post.posts[0].feePayer,observation.privateFee.payer);return;
       }
       if(screeningOnly){

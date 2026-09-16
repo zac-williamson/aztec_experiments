@@ -4,28 +4,37 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 const execFileAsync=promisify(execFile);
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-async function processSnapshot(){
-  const {stdout}=await execFileAsync('/bin/ps',['-axo','pid=,ppid=,pgid=,rss=,lstart=,stat='],{timeout:2000,maxBuffer:4*1024*1024,env:{PATH:'/usr/bin:/bin',LC_ALL:'C'}});
+export function parseProcessSnapshot(stdout){
   const members=[];
   for(const line of stdout.trim().split('\n')){
-    const fields=line.trim().split(/\s+/);assert(fields.length===10,'Unexpected ps format');
+    const fields=line.trim().split(/\s+/);
+    if(fields.length!==10)throw Object.assign(new Error('Process snapshot row has incomplete fields'),{code:'BB_PROCESS_SNAPSHOT_FORMAT'});
     const [pid,ppid,group,rss]=fields.slice(0,4).map(Number);
-    assert([pid,ppid,group,rss].every(Number.isSafeInteger)&&rss>=0,'Invalid ps counters');
+    if(![pid,ppid,group,rss].every(Number.isSafeInteger)||rss<0)throw Object.assign(new Error('Process snapshot row has invalid counters'),{code:'BB_PROCESS_SNAPSHOT_FORMAT'});
     members.push({pid,ppid,group,rssKiB:rss,started:fields.slice(4,9).join(' '),state:fields[9]});
   }
   return members;
+}
+export async function readProcessSnapshot(read=()=>execFileAsync('/bin/ps',['-axo','pid=,ppid=,pgid=,rss=,lstart=,stat='],{timeout:2000,maxBuffer:4*1024*1024,env:{PATH:'/usr/bin:/bin',LC_ALL:'C'}})){
+  // A process can disappear while ps reads its counters. Retry one inconsistent
+  // snapshot in full; never omit a malformed row or invent resource data.
+  for(let attempt=0;attempt<2;attempt++){
+    const {stdout}=await read();
+    try{return parseProcessSnapshot(stdout);}
+    catch(error){if(error.code!=='BB_PROCESS_SNAPSHOT_FORMAT'||attempt===1)throw error;}
+  }
 }
 function signalOwned(id,signal){
   try{process.kill(id,signal);}catch(error){if(!['ESRCH','EPERM'].includes(error.code))throw error;}
 }
 // Narrow build supervision seam used by the real stage runner and actual-process regression.
 export class OwnedBuildTree {
-  constructor(rootPid){
-    assert(Number.isSafeInteger(rootPid)&&rootPid>1);this.rootPid=rootPid;
+  constructor(rootPid,{snapshot=readProcessSnapshot}={}){
+    assert(Number.isSafeInteger(rootPid)&&rootPid>1);this.rootPid=rootPid;this.snapshot=snapshot;
     this.known=new Map();this.ownedGroups=new Set([rootPid]);this.members=[];this.seeded=false;
   }
   async sample(){
-    const rows=await processSnapshot(),byPid=new Map(rows.map(row=>[row.pid,row]));
+    const rows=await this.snapshot(),byPid=new Map(rows.map(row=>[row.pid,row]));
     if(!this.seeded){const root=byPid.get(this.rootPid);if(root){this.known.set(root.pid,root.started);this.seeded=true;}}
     const owned=new Set(rows.filter(row=>this.known.get(row.pid)===row.started).map(row=>row.pid));
     // A group can outlive its leader. Preserve it across reparenting, but reject an observed
@@ -55,17 +64,23 @@ export class OwnedBuildTree {
     for(const row of this.members)signalOwned(row.pid,signal);
   }
   async cleanup(){
-    // Freeze before killing so Ninja cannot launch a replacement compiler during teardown.
+    // Always terminate remembered children even if the diagnostic read fails
+    // after freezing them. Otherwise the parent can wait forever on stopped work.
     this.signalRemembered('SIGSTOP');
-    for(let i=0;i<3;i++){
-      const {members}=await this.sample();if(members.length===0)return;
-      this.signalRemembered('SIGSTOP');
-    }
-    this.signalRemembered('SIGKILL');const end=Date.now()+5000;
+    try{
+      for(let i=0;i<3;i++){
+        const {members}=await this.sample();if(members.length===0)return;
+        this.signalRemembered('SIGSTOP');
+      }
+    }catch{/* Fresh verification below is still required before claiming cleanup. */}
+    finally{this.signalRemembered('SIGKILL');}
+    const end=Date.now()+5000;let lastError;
     while(Date.now()<end){
-      const {members}=await this.sample();if(members.length===0)return;
+      try{const {members}=await this.sample();if(members.length===0)return;lastError=null;}
+      catch(error){lastError=error;}
       this.signalRemembered('SIGKILL');await sleep(100);
     }
+    if(lastError)throw lastError;
     assert.equal((await this.sample()).members.length,0,'Owned build descendants remain');
   }
 }

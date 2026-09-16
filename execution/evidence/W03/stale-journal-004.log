@@ -1,0 +1,21 @@
+✔ stale proof replacement retains exact post intent and original proof through portable recovery (668.676833ms)
+✔ uncertain or live original cannot authorize another proof: {"status":"pending"} (112.532125ms)
+✔ uncertain or live original cannot authorize another proof: {"status":"proposed"} (128.059333ms)
+✔ uncertain or live original cannot authorize another proof: {"status":"checkpointed"} (109.448792ms)
+✔ uncertain or live original cannot authorize another proof: {"validation":{"result":"valid"}} (92.31025ms)
+✔ uncertain or live original cannot authorize another proof: {"validation":{"result":"invalid","reason":["bad signature"]}} (89.841084ms)
+✔ uncertain or live original cannot authorize another proof: {"validation":{"result":"invalid","reason":["Existing nullifier","unrecognized"]}} (91.30875ms)
+✔ original becoming live during proving prevents saving replacement and preserves the original request (187.159542ms)
+✔ different logical operation cannot consume a stale-proof authorization (236.20975ms)
+✔ concurrent replacement authorizations still allow only one durable new proof (387.007958ms)
+✔ replacement chain is bounded and preserves its last record when the limit is reached (7897.8285ms)
+✔ stalled transaction reads and canonical receipt requests respect bounded deadlines (20.449458ms)
+✔ stalled replacement reconciliation remains unknown and leaves the original record intact (165.742334ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11644.113125

@@ -30,7 +30,7 @@ export async function prepareW01PrivateFees({node,preparation,l1Client,directory
       assert(owner.equals(author.address));
       const prepared=await preparePrivateFeePayment({wallet:actionWallet,node,owner,privateFeeAddress:instance.address,privateFeeArtifact:raw,expectedChainId:31337,expectedVersion:info.rollupVersion,gasSettings:gas, ...(first?{claim:funded.claim}:{})});
       first=false;allocated+=BigInt(prepared.metadata.maximumFee);
-      return {interaction,options:{from:owner,additionalScopes:[owner],fee:{paymentMethod:prepared.paymentMethod,gasSettings:prepared.gasSettings}},expectedFeePayer:instance.address};
+      return {maximumFee:prepared.metadata.maximumFee,interaction,options:{from:owner,additionalScopes:[owner],fee:{paymentMethod:prepared.paymentMethod,gasSettings:prepared.gasSettings}},expectedFeePayer:instance.address};
     };
     if(standalone){const {proveAndIncludePrivateFeeStandalone}=await import('./w01-private-fee-standalone.mjs');observation.standalone=await proveAndIncludePrivateFeeStandalone({wallet,owner:author.address,privateFeeAction,node,mineL1,mark});}
     const verify=async(fees)=>{
@@ -40,7 +40,7 @@ export async function prepareW01PrivateFees({node,preparation,l1Client,directory
       assert.equal(await getFeeJuiceBalance(instance.address,node),BigInt(funded.claim.amount)-fees-BigInt(observation.standalone?.transactionFee??0));
       Object.assign(observation,{passed:true,coldStart:true,privateDebit:String(allocated),privateBalance:String(result),actualProtocolFees:String(fees+BigInt(observation.standalone?.transactionFee??0)),authorPublicBalanceZero:true,payer:instance.address.toString()});
     };
-    Object.defineProperties(observation,{authorAccount:{value:author},privateFeeAction:{value:privateFeeAction},verify:{value:verify},close:{value:async()=>{await wallet.stop();wallet=undefined;}}});
+    Object.defineProperties(observation,{discardUnsubmittedFee:{value:maximum=>{assert(BigInt(maximum)>0n&&allocated>=BigInt(maximum));allocated-=BigInt(maximum);}},authorAccount:{value:author},privateFeeAction:{value:privateFeeAction},verify:{value:verify},close:{value:async()=>{await wallet.stop();wallet=undefined;}}});
     return observation;
   }catch(error){if(error.privateFeeFundingObservation)observation.funding=error.privateFeeFundingObservation;if(error.privateFeeStandaloneObservation)observation.standalone=error.privateFeeStandaloneObservation;if(wallet)await wallet.stop();error.privateFeeObservation=observation;throw error;}
 }

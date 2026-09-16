@@ -10,7 +10,7 @@ Browser users should export an encrypted recovery file from Wallet Setup after e
 
 Browser custody uses IndexedDB `aztec-billboard-claim-secrets-v2`; its records are encrypted under the key and full account salt. The PXE's browser database is private execution state but is not encrypted by this application. Use a trusted browser profile/device and keep site data until recovery is checked. Keys are decrypted in memory while the page is open; browser encryption does not protect an unlocked malicious page. The old v1 test database is left untouched and is not automatically imported.
 
-CLI users must preserve the exact wallet file plus `claim-secrets-v2/` beside it and the repository's `.pxe-cache-v2/`. Wallet files must be private regular files (mode0600); directories must be private (mode0700). Checkpoints are authenticated/encrypted to the full account/network/rollup identity. A stale lock is not silently removed: inspect its PID, confirm its owning process has stopped, and only then remove that specific lock to resume. Keep the same `--pxe-dir` prefix. Old plaintext `.pxe-cache/` and v1 claim-store files are preserved but not automatically loaded. Browser-to-CLI backup-format conversion is not supported.
+CLI users must preserve the exact wallet file plus `claim-secrets-v2/` beside it and the repository's `.pxe-cache-v2/`. Wallet files must be private regular files (mode0600); directories must be private (mode0700). Checkpoints are authenticated/encrypted to the full account/network/rollup identity. A stale lock is not silently removed: inspect its PID, confirm its owning process has stopped, and only then remove that specific lock to resume. Keep the same `--pxe-dir` prefix. Old plaintext `.pxe-cache/` and v1 claim-store files are preserved but not automatically loaded. The shared password-encrypted recovery format supports browser/CLI export and restore; follow the portable recovery section below.
 
 Wallet creation uses a random Aztec key. Signature-derived keys and browser-generated Ethereum key files are no longer offered. Ethereum signing uses your browser wallet; CLI Ethereum keys remain explicit private local files. Changing the account or chain invalidates the page, and wallet operations for one account are locked across tabs. Reload to switch; reconcile any submitted transaction before retrying.
 
@@ -41,7 +41,7 @@ The browser has existing deposit, dummy-post, withdrawal and L1-claim actions, b
 
 Check the exact transaction receipt on the correct chain. After an L1 refund, verify its successful receipt and `Withdrawn` event, and that `getDeposit(originalDepositor)` has nonce and amount zero. A status label, timeout, or message containing “already consumed” is not proof of payment. A reverted ETH transfer rolls back both the receipt change and Outbox consumption, so the same legitimate refund can be retried after the recipient can accept ETH.
 
-Without `--withdraw-tx`, discovery scans the full requested L2 history in50-block pages. Each lookup attempt is bounded to20seconds; incomplete history remains unknown. Persistent scan cursors remain unfinished, so a very large chain may require the saved transaction hash or an archival lookup. Never submit another withdrawal merely because discovery is incomplete.
+Without `--withdraw-tx`, discovery scans the full requested L2 history in50-block pages. Each lookup attempt is bounded to20seconds; incomplete history remains unknown. Authenticated persistent cursors preserve searched ranges across restarts and recheck their canonical anchors; unavailable archival data still leaves recovery unknown. Never submit another withdrawal merely because discovery is incomplete.
 
 The Ethereum claim action checks for the L2-to-L1 witness once and returns a pending outcome when settlement is not ready. Retry the claim later. Production settlement belongs to the network; no application process needs to wait ninety minutes. Local tests use the official settlement controls and their short test deadline; do not run a network prover for recovery.
 
@@ -61,7 +61,7 @@ encrypted under the wallet key and full salt, before claim/post/withdraw submiss
 The saved record is bound to account, chain, rollup/version, board and portal.
 A failed storage write stops submission. The last record remains after confirmation.
 This covers user L2 actions. Portal Ethereum deposits/refunds now have their own
-intent records (below). Moderator actions also use the journal. Deployment consumers still need integration.
+intent records (below). Moderator actions also use the journal. Deployment and binding also use scoped journals; Ethereum creation and activation use the deployment profile below.
 
 After a browser restart, restore the same wallet in the same browser profile,
 select the same portal and use **Recover saved Aztec transaction** in Wallet Setup.
@@ -74,8 +74,13 @@ For the CLI, use the `recover` action with the usual explicit RPC, portal and wa
 arguments. The returned transaction hash can be passed as `--acknowledge-tx <hash>`
 when intentionally starting another action. The CLI rechecks that receipt against
 the canonical chain before accepting this acknowledgement. Pending, unknown or
-reorganized outcomes do not authorize replacement. Invalid/stale dropped proofs
-remain blocked pending the later logical-operation recovery work.
+reorganized outcomes do not authorize replacement. A saved real post may be reproved only after every saved attempt is freshly reported
+dropped and invalid for the supported state-conflict reasons. Recovery preserves
+the original message, nonce and deposit chain, checks that the post ID is not already
+visible, and retains up to eight predecessor proofs. It rechecks immediately before
+saving the replacement. This requires the original private fee configuration and
+may take a normal application proving interval. Other stale operations remain
+blocked unless their action-specific recovery can establish a safe continuation.
 
 Keep `transaction-journal-v1/` alongside the Aztec wallet file. It contains encrypted
 records, private directories/files, atomic replacement and fsync/read-back. A `.lock`

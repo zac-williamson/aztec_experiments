@@ -1,0 +1,18 @@
+{"stage":"start-disposable-l1","elapsedMs":159}
+{"stage":"prepare-genesis","elapsedMs":281}
+{"stage":"deploy-local-protocol-fixture","elapsedMs":2038}
+{"stage":"wait-for-local-validator-activation","elapsedMs":3516}
+{"stage":"start-application-node","elapsedMs":3542}
+{"stage":"prove-board-deployment","elapsedMs":7265}
+{"stage":"include-board-deployment","elapsedMs":22916}
+{"stage":"prepare-and-prove-ready","elapsedMs":35200}
+{"stage":"include-ready","elapsedMs":46749}
+{"stage":"settle-ready-test-message","elapsedMs":67972}
+{"stage":"private-fee:fund-disposable-user","elapsedMs":86249}
+{"stage":"private-fee:bridge-user-funds","elapsedMs":86260}
+{"stage":"private-fee:wait-inbox","elapsedMs":86827}
+{"stage":"real-deposit-and-claim","elapsedMs":127082}
+{"stage":"claim:reopen-claim-wallet","elapsedMs":127206}
+{"stage":"claim:deposit-real-l1","elapsedMs":127552}
+{"stage":"claim:wait-real-inbox-anchor","elapsedMs":127560}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/W01/application-e8406054-924b-4a6d-b815-37a0dc5a27f8.json","passed":false,"profile":"genuine stale post proof, private credit conflict and journal-linked replacement"}

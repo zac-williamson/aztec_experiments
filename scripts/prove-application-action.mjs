@@ -23,5 +23,5 @@ export async function proveApplicationAction({ wallet, interaction, owner, priva
   assert(!proven.chonkProof.isEmpty(), 'Missing genuine application proof');
   const tx = await proven.toTx();
   assert(tx.data.feePayer.equals(prepared.expectedFeePayer), 'Actual proven fee payer mismatch');
-  return { payload, request, proven, tx };
+  return { payload, request, proven, tx, maximumFee: prepared.maximumFee };
 }
