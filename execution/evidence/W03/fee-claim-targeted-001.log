@@ -1,0 +1,15 @@
+✔ funding deposits to shared address and passes mandatory recovery callback (2.489875ms)
+✔ standalone claim uses standard author entrypoint with only private fee payload, then stops PXE (0.64775ms)
+✔ browser recovery storage preserves earlier deposits and refuses conflicting replacements or secrets (0.848917ms)
+✔ deposit below claim fee is rejected before requesting L1 funding (0.4505ms)
+✔ private fee claim refuses missing or unresolved recovery storage before consuming bridge information (0.799667ms)
+✔ private fee success recovery requires no Ethereum signer, bridge claim file or PXE (0.435333ms)
+✔ private fee reverted recovery requires no Ethereum signer, bridge claim file or PXE (0.392958ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 266.86675

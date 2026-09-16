@@ -1,13 +1,34 @@
 // Private fee funding: public recovery records only; wallet secrets never enter recovery records.
 let fundingRecord = null;
-const callEngine = makeCallEngine(runFeeJuiceFlow, {
+const journalAcknowledgements=new Map(),ethereumAcknowledgements=new Map();
+const runFeeEngine = makeCallEngine(runFeeJuiceFlow, {
+  createJournalStorage:()=>window.__aztec.createBrowserJournalStorage(),
+  createTransactionJournal: options => window.__aztec.createL2Journal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
   privateFeeArtifact: BILLBOARD_PRIVATE_FEE_ARTIFACT,
   fundPrivateFees: options => window.__aztec.fundPrivateFees(options),
 });
+async function callEngine(action,statusDiv,extra={}) {
+  const identity=JSON.stringify([window.walletState?.aztec?.address?.toString(),_getNodeUrl()]);
+  const result=await runFeeEngine(action,statusDiv,{...extra,acknowledgeTx:journalAcknowledgements.get(identity),acknowledgeEthereumTx:ethereumAcknowledgements.get(identity)});
+  if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
+  if(result?.lastEthereumTxHash)ethereumAcknowledgements.set(identity,result.lastEthereumTxHash);
+  return result;
+}
+async function recoverSavedFeeTransaction() {
+  try {await callEngine('recover-l2','claimStatus');}
+  catch(error){log(safeFundingError(error),'error','claimStatus');}
+}
+async function recoverSavedFeeEthereum(retry=false) {
+  try {const result=await callEngine('recover-eth','depositStatus',{retryEthereum:retry,saveRecovery:saveFundingRecord,fundingRecord});if(result.record)saveFundingRecord(result.record);}
+  catch(error){log(safeFundingError(error),'error','depositStatus');}
+}
 setupRpcAuth();
 function safeFundingError(error) {
+  if(error?.code==='BB_ETH_RECOVERY_REQUIRED')return 'Check the saved Ethereum fee request before starting another deposit.';
+  if(error?.code==='BB_RECOVERY_REQUIRED')return 'Recover the saved private fee transaction before attempting another claim.';
+  if(error?.code==='BB_JOURNAL_INVALID')return 'Private fee recovery storage could not be authenticated or saved. Preserve your recovery files.';
   if(error?.code==='BB_PRIVATE_FEE_AMOUNT')return 'Deposit more than the configured maximum claim fee, so a private balance remains after claiming.';
-  return ['BB_SUBMISSION_UNKNOWN','PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN'].includes(error?.code)
+  return ['BB_SUBMISSION_UNKNOWN','BB_ETH_SUBMISSION_UNKNOWN','PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN'].includes(error?.code)
     ? 'Submission outcome is unknown. Keep the recovery record and check the transaction before retrying.'
     : 'The operation did not complete. Keep your recovery record and check your configuration and deposit.';
 }

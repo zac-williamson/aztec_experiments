@@ -7,11 +7,21 @@ import net from 'node:net';
 import {spawn,execFileSync} from 'node:child_process';
 import {once} from 'node:events';
 import {randomBytes} from 'node:crypto';
-import {Wallet,ContractFactory,JsonRpcProvider,solidityPacked,getBytes} from 'ethers';
+import {Wallet,Contract,ContractFactory,JsonRpcProvider,solidityPacked,getBytes} from 'ethers';
 import {createEthereumJournal} from '../shared/ethereum-journal.mjs';
 import {createFileJournalStorage} from '../apps/src/billboard/user/transaction-journal-store.mjs';
 import {encodeReadyCommitment,encodeEscrowCommitment,sha256Field} from '../shared/protocol-commitments.mjs';
 import {ROOT,pins,assertNodeVersion} from './toolchain.mjs';
+import {InboxAbi} from '@aztec/l1-artifacts/InboxAbi';
+import {InboxBytecode} from '@aztec/l1-artifacts/InboxBytecode';
+import {TestERC20Abi} from '@aztec/l1-artifacts/TestERC20Abi';
+import {TestERC20Bytecode} from '@aztec/l1-artifacts/TestERC20Bytecode';
+import {FeeJuicePortalAbi} from '@aztec/l1-artifacts/FeeJuicePortalAbi';
+import {AztecAddress} from '@aztec/stdlib/aztec-address';
+import {Fr} from '@aztec/foundation/curves/bn254';
+import {BarretenbergSync} from '@aztec/bb.js';
+import {derivePrivateFeeAddress} from '../shared/private-fee-client.mjs';
+import {fundPrivateFees,recoverPrivateFeeFunding,recoverPrivateFeeClaim} from '../shared/private-fee-funding.mjs';
 assertNodeVersion();
 const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'bb-eth-live-'));
 let anvil,provider,stage='startup',passed=false,watchdog;
@@ -52,11 +62,34 @@ try {
   assert.equal((await portal.getDeposit(user.address)).amount,0n);
   const refund=await (await createEthereumJournal({...options,signer:null})).recover();assert.equal(refund.outcome,'success');assert.equal(refund.event.amount,1000n);assert.equal(sends,2);
   const again=await (await createEthereumJournal({...options,signer:lostResponseSigner})).recover({retry:true});assert.equal(again.txHash,refund.txHash);assert.equal(sends,2);
+  stage='deploy-real-fee-inbox-and-token';
+  const token=await new ContractFactory(TestERC20Abi,TestERC20Bytecode,operator).deploy('Disposable fee token','FEE',operator.address);await token.waitForDeployment();
+  const inbox=await new ContractFactory(InboxAbi,InboxBytecode,operator).deploy(await publisher.getAddress(),await token.getAddress(),5,10,1);await inbox.waitForDeployment();
+  await (await publisher.setInbox(await inbox.getAddress())).wait();
+  const feePortal=new Contract(await inbox.getFeeAssetPortal(),FeeJuicePortalAbi,provider);
+  await (await token.mint(user.address,1000n)).wait();
+  const privateFeeArtifact=JSON.parse(fs.readFileSync(path.join(ROOT,'apps/src/billboard/private_fee_artifact.json')));
+  const privateFeeAddress=await derivePrivateFeeAddress(privateFeeArtifact),owner=AztecAddress.fromFieldUnsafe(Fr.fromString(journalScope.account));
+  const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5,l1ContractAddresses:{rollupAddress:await publisher.getAddress(),feeJuicePortalAddress:await feePortal.getAddress(),feeJuiceAddress:await token.getAddress()}})};
+  const publicRecords=[];
+  const feeInput={node,ethSigner:{...lostResponseSigner,provider},owner,walletSecret,walletSalt,privateFeeAddress,privateFeeArtifact,amount:'1000',expectedChainId:'31337',expectedVersion:'5',journalStorage:storage,saveRecovery:async record=>publicRecords.push(record)};
+  const recoverFee=()=>recoverPrivateFeeFunding({...feeInput,ethSigner:undefined,ethProvider:provider,sender:user.address});
+  stage='fee-approval-response-lost-after-mining';
+  await assert.rejects(fundPrivateFees(feeInput),{code:'BB_ETH_SUBMISSION_UNKNOWN'});assert.equal(sends,3);assert.equal(await token.allowance(user.address,await feePortal.getAddress()),1000n);
+  const approved=await recoverFee();assert.equal(approved.outcome,'approved');assert.equal(sends,3);
+  feeInput.acknowledgeEthereumTx=approved.lastEthereumTxHash;
+  stage='fee-deposit-response-lost-after-mining';
+  await assert.rejects(fundPrivateFees(feeInput),{code:'BB_ETH_SUBMISSION_UNKNOWN'});assert.equal(sends,4);assert.equal(publicRecords.at(-1).txHash,undefined);
+  const funded=await recoverFee();assert.equal(funded.outcome,'funded');assert.equal(funded.record.amount,'1000');assert.equal(sends,4);
+  const recoveredClaim=await recoverPrivateFeeClaim({...feeInput,ethProvider:provider,record:funded.record});assert.equal(recoveredClaim.amount,1000n);
+  assert.equal(await token.balanceOf(await feePortal.getAddress()),1000n);assert.equal(await token.balanceOf(user.address),0n);
+  assert.equal((await recoverFee()).lastEthereumTxHash,funded.lastEthereumTxHash);assert.equal(sends,4);
   passed=true;
 }catch(error){console.log(JSON.stringify({passed:false,stage,errorClass:error.name,code:error.code||null}));process.exitCode=1;}
 finally {
+  await BarretenbergSync.destroySingleton();
   clearTimeout(watchdog);if(provider)provider.destroy();
   if(anvil&&anvil.exitCode===null&&anvil.signalCode===null){const closed=once(anvil,'close');anvil.kill('SIGTERM');const kill=setTimeout(()=>anvil.kill('SIGKILL'),2000);await closed;clearTimeout(kill);}
   fs.rmSync(temporary,{recursive:true,force:true});
-  if(passed)console.log(JSON.stringify({passed:true,realEthereumReceipts:true,portalDepositAndRefund:true,lostHashRecovered:true,repeatedRecoveryDidNotResend:true,controlledBridgeRoots:true,networkProofs:false,ownedProcessExited:true,temporaryDirectoryRemoved:!fs.existsSync(temporary),secretsLogged:false}));
+  if(passed)console.log(JSON.stringify({passed:true,realEthereumReceipts:true,portalDepositAndRefund:true,realFeeTokenApprovalAndBridgeDeposit:true,feeResponsesLostAfterMining:true,lostHashRecovered:true,repeatedRecoveryDidNotResend:true,controlledBridgeRoots:true,networkProofs:false,ownedProcessExited:true,temporaryDirectoryRemoved:!fs.existsSync(temporary),secretsLogged:false}));
 }

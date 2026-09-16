@@ -1,0 +1,41 @@
+✔ file: empty Ethereum journal reports its own recovery route (11.355875ms)
+✔ file: deposit requires matching canonical receipt and event (40.530792ms)
+✔ file: withdraw requires matching canonical receipt and event (23.257625ms)
+✔ file: lost response before hash storage finds original sender/nonce without another send (20.476958ms)
+✔ file: rejection/crash before broadcast retains exact nonce, calldata and value for explicit retry (20.880292ms)
+✔ file: storage failure stops before wallet request (1.24125ms)
+✔ file: concurrent intent saves authorize only one signer request (20.501458ms)
+✔ file: reorg prevents acknowledgement and never reports paid (21.077459ms)
+✔ file: reverted or replaced transaction is not a successful payment (20.928709ms)
+✔ file: missing refund event cannot prove payment (23.692292ms)
+✔ file: nonce refund event cannot prove payment (20.145375ms)
+✔ file: amount refund event cannot prove payment (18.528625ms)
+✔ file: address refund event cannot prove payment (20.635166ms)
+✔ file: duplicate refund event cannot prove payment (21.939792ms)
+✔ file: full salt/authentication mismatch and chain change fail before signing (21.51925ms)
+✔ file: long history checkpoints survive failed lookup and resume without skipping gaps (1204.273ms)
+✔ indexeddb: empty Ethereum journal reports its own recovery route (3.910583ms)
+✔ indexeddb: deposit requires matching canonical receipt and event (5.543042ms)
+✔ indexeddb: withdraw requires matching canonical receipt and event (5.649459ms)
+✔ indexeddb: lost response before hash storage finds original sender/nonce without another send (3.245083ms)
+✔ indexeddb: rejection/crash before broadcast retains exact nonce, calldata and value for explicit retry (2.986833ms)
+✔ indexeddb: storage failure stops before wallet request (0.882333ms)
+✔ indexeddb: concurrent intent saves authorize only one signer request (5.863625ms)
+✔ indexeddb: reorg prevents acknowledgement and never reports paid (3.037417ms)
+✔ indexeddb: reverted or replaced transaction is not a successful payment (3.527042ms)
+✔ indexeddb: missing refund event cannot prove payment (3.794791ms)
+✔ indexeddb: nonce refund event cannot prove payment (3.979875ms)
+✔ indexeddb: amount refund event cannot prove payment (3.564667ms)
+✔ indexeddb: address refund event cannot prove payment (2.631958ms)
+✔ indexeddb: duplicate refund event cannot prove payment (2.648208ms)
+✔ indexeddb: full salt/authentication mismatch and chain change fail before signing (3.387709ms)
+✔ indexeddb: long history checkpoints survive failed lookup and resume without skipping gaps (60.319916ms)
+✔ Ethereum lookup obeys a short read deadline (13.733625ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1899.289291

@@ -1,0 +1,1 @@
+{"passed":true,"realEthereumReceipts":true,"portalDepositAndRefund":true,"realFeeTokenApprovalAndBridgeDeposit":true,"feeResponsesLostAfterMining":true,"lostHashRecovered":true,"repeatedRecoveryDidNotResend":true,"controlledBridgeRoots":true,"networkProofs":false,"ownedProcessExited":true,"temporaryDirectoryRemoved":true,"secretsLogged":false}

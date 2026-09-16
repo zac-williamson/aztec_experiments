@@ -21,7 +21,7 @@ export async function prepareW01PrivateFees({node,preparation,l1Client,directory
     const restored=await restoreApplicationAuthor(generated);const author=restored.author;observation.walletRestore=restored.observation;assert(!author.address.equals(preparation.account.address));assert.equal(await getFeeJuiceBalance(author.address,node),0n);
     wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:{backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1},autoSync:false,syncChainTip:'checkpointed'}});
     await wallet.createSchnorrInitializerlessAccount(author.secret,author.salt,author.signingKey,'private-fee-test-author');await wallet.registerContract(instance,artifact);
-    const funded=await bridgePrivateFeeCredit({node,l1Client,wallet,directory,rpcUrl,walletSecret:author.secret,privateFeeArtifact:raw,owner:author.address,payer:instance.address,mineL1,mark});observation.funding=funded.observation;
+    const funded=await bridgePrivateFeeCredit({node,l1Client,wallet,directory,rpcUrl,walletSecret:author.secret,walletSalt:author.salt,privateFeeArtifact:raw,owner:author.address,payer:instance.address,mineL1,mark});observation.funding=funded.observation;
     // Explicit test gas cap; normal client/UI shows this maximum charge before signing.
     const gas=(await wallet.completeFeeOptions({from:author.address,feePayer:instance.address})).gasSettings.clone();
     gas.maxFeesPerGas=new GasFees(gas.maxFeesPerGas.feePerDaGas*16n||1n,gas.maxFeesPerGas.feePerL2Gas*16n||1n);

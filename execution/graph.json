@@ -862,7 +862,7 @@
       "evidence": "evidence/W03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Moderator journal and exact-operation reconciliation integrated across CLI, browser and restricted daemon.198 core checks and192 moderation/daemon/authority checks pass; built moderator-screen recovery preserves claims/journals. Next private-fee funding/claim and deployment journals, linked stale proof replacement and full-stage qualification. W03 active.",
+      "checkpoint": "Private-fee approval/deposit and L2 claim journals integrated.207 integrated/84 artifact checks, real Anvil lost-response recovery and genuine private-fee claim/post run pass (260773ms, all owned resources removed). Next deployment journals, linked stale-proof replacement and full-stage qualification. W03 active; no routine stopping point.",
       "priority": 14
     },
     {

@@ -2,6 +2,10 @@ import {Interface} from 'ethers';
 import {createEncryptedJournalSlot} from './journal-record.mjs';
 import {transactionError} from './transaction-outcomes.mjs';
 const iface=new Interface([
+  'function approve(address spender,uint256 amount) returns (bool)',
+  'function depositToAztecPublic(bytes32 to,uint256 amount,bytes32 secretHash) returns(bytes32 key,uint256 index)',
+  'event Approval(address indexed owner,address indexed spender,uint256 value)',
+  'event DepositToAztecPublic(bytes32 indexed to,uint256 amount,bytes32 secretHash,bytes32 key,uint256 index)',
   'function deposit(bytes32 secretHash) payable',
   'function withdraw(uint256 epoch,uint256 numCheckpointsInEpoch,uint256 leafIndex,bytes32[] path)',
   'event Deposited(address indexed depositor,uint64 nonce,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)',
@@ -15,24 +19,31 @@ const lower=v=>typeof v==='string'?v.toLowerCase():'';
 const positive=v=>typeof v==='string'&&/^[1-9][0-9]{0,77}$/.test(v);
 const integer=v=>Number.isSafeInteger(v)&&v>=0;
 function validatedScope(scope) {
-  const names=['account','chainId','rollup','version','board','portal','depositor'];
+  const names=['account','chainId','rollup','version','board','portal','depositor',...(scope?.token!==undefined?['token']:[])];
   if(!scope||Object.keys(scope).sort().join()!==[...names].sort().join())throw invalid();
-  if(!hash(scope.account)||!hash(scope.board)||!address(scope.rollup)||!address(scope.portal)||!address(scope.depositor)||!positive(scope.chainId)||!positive(scope.version))throw invalid();
+  if((scope.token!==undefined&&!address(scope.token))||!hash(scope.account)||!hash(scope.board)||!address(scope.rollup)||!address(scope.portal)||!address(scope.depositor)||!positive(scope.chainId)||!positive(scope.version))throw invalid();
   return JSON.stringify(['AZTEC_BB_ETH_JOURNAL_V1',...names.map(n=>scope[n])]);
 }
 function validateIntent(record,scope) {
-  if(!record||record.version!==1||record.from!==scope.depositor||record.to!==scope.portal||record.chainId!==scope.chainId||!integer(record.nonce)||
+  if(!record||record.version!==1||record.from!==scope.depositor||record.to!==(record.expected?.kind==='approve'?scope.token:scope.portal)||record.chainId!==scope.chainId||!integer(record.nonce)||
     !integer(record.startBlock)||!hash(record.startHash)||!integer(record.nextBlock)||record.nextBlock<1||
     (record.cursorHash!==null&&!hash(record.cursorHash))||(record.txHash!==null&&!hash(record.txHash))||
     typeof record.data!=='string'||record.data.length>131072||!/^0x(?:[0-9a-f]{2})+$/.test(record.data)||
     typeof record.value!=='string'||!/^(0|[1-9][0-9]{0,77})$/.test(record.value))throw invalid();
   const expected=record.expected;
-  if(!expected||!['deposit','withdraw'].includes(expected.kind)||!positive(expected.nonce)||BigInt(expected.nonce)>=1n<<64n||!positive(expected.amount)||BigInt(expected.amount)>=1n<<96n)throw invalid();
+  const fee=scope.token!==undefined;
+  if(!expected||!(fee?['approve','fee-deposit']:['deposit','withdraw']).includes(expected.kind)||!positive(expected.amount)||BigInt(expected.amount)>=(1n<<(fee?128n:96n)))throw invalid();
+  if(!fee&&(!positive(expected.nonce)||BigInt(expected.nonce)>=1n<<64n))throw invalid();
   let parsed;try{parsed=iface.parseTransaction({data:record.data,value:record.value});}catch{throw invalid();}
-  if(!parsed||parsed.name!==expected.kind||iface.encodeFunctionData(parsed.fragment,parsed.args).toLowerCase()!==record.data)throw invalid();
+  const method=expected.kind==='fee-deposit'?'depositToAztecPublic':expected.kind;
+  if(!parsed||parsed.name!==method||iface.encodeFunctionData(parsed.fragment,parsed.args).toLowerCase()!==record.data)throw invalid();
   if(expected.kind==='deposit') {
     if(!hash(expected.secretHash)||lower(parsed.args[0])!==expected.secretHash||record.value!==expected.amount)throw invalid();
-  }else if(record.value!=='0')throw invalid();
+  }else {
+    if(record.value!=='0')throw invalid();
+    if(expected.kind==='approve'&&(expected.spender!==scope.portal||lower(parsed.args[0])!==scope.portal||String(parsed.args[1])!==expected.amount))throw invalid();
+    if(expected.kind==='fee-deposit'&&(expected.recipient!==scope.board||!hash(expected.secretHash)||lower(parsed.args[0])!==scope.board||String(parsed.args[1])!==expected.amount||lower(parsed.args[2])!==expected.secretHash))throw invalid();
+  }
   return record;
 }
 function matchesRequest(tx,record) {
@@ -50,12 +61,17 @@ export async function verifyEthereumIntentReceipt(provider,record,txHash,read=fn
   if(!matchesRequest(tx,record))return {outcome:'replaced',txHash,receipt,event:null};
   if(receipt.status===0)return {outcome:'reverted',txHash,receipt,event:null};
   if(!Array.isArray(receipt.logs))throw unknown();
-  const expected=record.expected,eventName=expected.kind==='deposit'?'Deposited':'Withdrawn';
+  const expected=record.expected,eventName=({deposit:'Deposited',withdraw:'Withdrawn',approve:'Approval','fee-deposit':'DepositToAztecPublic'})[expected.kind];
   const topic=iface.getEvent(eventName).topicHash.toLowerCase(),events=[];
   for(const log of receipt.logs) {
     if(lower(log.address)!==record.to||lower(log.topics?.[0])!==topic)continue;
     let parsed;try{parsed=iface.parseLog(log);}catch{throw unknown();}
-    if(!parsed||lower(parsed.args.depositor)!==record.from||String(parsed.args.nonce)!==expected.nonce||String(parsed.args.amount)!==expected.amount||
+    if(!parsed)throw unknown();
+    if(expected.kind==='approve') {
+      if(lower(parsed.args.owner)!==record.from||lower(parsed.args.spender)!==expected.spender||String(parsed.args.value)!==expected.amount)throw unknown();
+    }else if(expected.kind==='fee-deposit') {
+      if(lower(parsed.args.to)!==expected.recipient||String(parsed.args.amount)!==expected.amount||lower(parsed.args.secretHash)!==expected.secretHash)throw unknown();
+    }else if(lower(parsed.args.depositor)!==record.from||String(parsed.args.nonce)!==expected.nonce||String(parsed.args.amount)!==expected.amount||
       (expected.kind==='deposit'&&lower(parsed.args.secretHash)!==expected.secretHash))throw unknown();
     events.push(parsed.args);
   }
@@ -75,7 +91,7 @@ export async function createEthereumJournal({storage,walletSecret,walletSalt,sco
     if(String((await read(()=>provider.getNetwork())).chainId)!==scope.chainId)throw unknown();
     if(contextGuard)await contextGuard();
   }
-  function confirmed(result){acknowledged=result.txHash;lastHash=result.txHash;return result;}
+  function confirmed(result,request){acknowledged=result.txHash;lastHash=result.txHash;return {...result,request};}
   async function locate(saved,read) {
     let record=saved.value;
     if(record.txHash) {const result=await verifyEthereumIntentReceipt(provider,record,record.txHash,read);if(result)return {saved,result};}
@@ -132,21 +148,24 @@ export async function createEthereumJournal({storage,walletSecret,walletSalt,sco
   async function finish(saved) {
     const read=reader();await network(read);
     const result=await verifyEthereumIntentReceipt(provider,saved.value,saved.value.txHash,read);
-    if(result)return confirmed(result);
+    if(result)return confirmed(result,saved.value);
     // Bounded confirmation wait; a timeout keeps the durable request intact.
     await read(()=>provider.waitForTransaction(saved.value.txHash,1,timeoutMs));
     const after=await verifyEthereumIntentReceipt(provider,saved.value,saved.value.txHash,reader());
-    if(!after)throw unknown();return confirmed(after);
+    if(!after)throw unknown();return confirmed(after,saved.value);
   }
   return {
     assertCanStart,get lastTxHash(){return lastHash;},
-    async send({data,value,expected}) {
+    async send(intent) {
       const previous=await assertCanStart(),read=reader();await network(read);
       if(!signer||lower(await signer.getAddress())!==scope.depositor)throw unknown();
       const start=await read(()=>provider.getBlock('latest'));
-      const nonce=await read(()=>provider.getTransactionCount(scope.depositor,'pending'));
+      const pendingNonce=await read(()=>provider.getTransactionCount(scope.depositor,'pending'));
+      if(!integer(pendingNonce))throw unknown();
+      const nonce=Math.max(pendingNonce,previous.value?previous.value.nonce+1:0);
+      const {data,value,expected}=typeof intent==='function'?await intent(nonce):intent;
       if(!start||!integer(start.number)||!hash(lower(start.hash))||!integer(nonce))throw unknown();
-      const record=validateIntent({version:1,from:scope.depositor,to:scope.portal,chainId:scope.chainId,nonce,data:lower(data),value:String(value),expected,
+      const record=validateIntent({version:1,from:scope.depositor,to:expected?.kind==='approve'?scope.token:scope.portal,chainId:scope.chainId,nonce,data:lower(data),value:String(value),expected,
         startBlock:start.number,startHash:lower(start.hash),nextBlock:start.number+1,cursorHash:null,txHash:null},scope);
       const saved=await slot.write(previous,record);
       const result=await finish(await broadcast(saved));
@@ -157,7 +176,7 @@ export async function createEthereumJournal({storage,walletSecret,walletSalt,sco
       let saved=await load();if(!saved.value)throw transactionError('BB_NO_SAVED_ETHEREUM_TRANSACTION','No saved Ethereum request exists for this wallet and portal.');
       const read=reader();await network(read);
       const found=await locate(saved,read);saved=found.saved;
-      if(found.result)return confirmed(found.result);
+      if(found.result)return confirmed(found.result,saved.value);
       if(!retry)throw unknown();
       // Explicit retry retains the same sender nonce, destination, calldata and
       // value. Even if an earlier broadcast is hidden by RPC, at most one request

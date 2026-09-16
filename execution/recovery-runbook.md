@@ -61,8 +61,7 @@ encrypted under the wallet key and full salt, before claim/post/withdraw submiss
 The saved record is bound to account, chain, rollup/version, board and portal.
 A failed storage write stops submission. The last record remains after confirmation.
 This covers user L2 actions. Portal Ethereum deposits/refunds now have their own
-intent records (below). Moderator actions also use the journal. Deployment and
-fee-funding consumers still need integration.
+intent records (below). Moderator actions also use the journal. Deployment consumers still need integration.
 
 After a browser restart, restore the same wallet in the same browser profile,
 select the same portal and use **Recover saved Aztec transaction** in Wallet Setup.
@@ -135,7 +134,7 @@ Ethereum records share the private `transaction-journal-v1/` directory / browser
 IndexedDB adapter with the Aztec record but use separate cryptographic domains
 and include the Ethereum depositor. These are local latest-intent records;
 portable wallet backups now include both journals. This implementation
-covers portal deposit/refund, not ERC20 approvals or private FeeJuice funding.
+also covers the canonical fee-token approval and private FeeJuice bridge deposit.
 The disposable Ethereum evidence uses the real portal/bridge contracts and
 controlled test roots; it is not evidence of a new Aztec proof or network prover.
 
@@ -187,3 +186,26 @@ operations or stale-proof replacement.
 
 All browser wallet screens now use the same collateral-secret store for recovery
 files, including when a moderator wallet was previously used as an author.
+
+
+## Private fee funding recovery
+
+The private-fee screen has separate recovery for its Ethereum request and its
+Aztec claim transaction. Ethereum approval and bridge deposit now persist exact
+sender nonce, destination, calldata, value and expected events before signing.
+A lost response does not permit another deposit: use **Check saved Ethereum fee
+request**. **Retry saved Ethereum fee request** deliberately reuses the original
+nonce and payload. Canonical approval recovery permits continuing to the deposit;
+canonical bridge recovery reconstructs the public funding record, even when the
+transaction hash was never saved by the UI. Replaced or reverted requests are
+reported distinctly. Select the original funding account or import its public
+funding record to identify the sender; read recovery does not require that sender
+to sign, while explicit retry does.
+
+Use **Recover saved private fee transaction** after an interrupted Aztec claim.
+It reads/replays the saved proven transaction without requesting another Ethereum
+signature, importing the bridge claim file or starting a new proof. A revert is
+reported as a failed claim. The recovery file exported by the wallet contains these
+journal records; its public funding record can be reconstructed through recovery.
+Funding remains publicly observable, while the resulting private credit is spent
+through the ownerless FPC. No fee-service actor is introduced.

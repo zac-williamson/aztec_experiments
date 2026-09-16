@@ -16,7 +16,7 @@ export { Contract, ContractFunctionInteraction, BatchCall, DeployMethod, NO_WAIT
   getContractClassFromArtifact, getContractInstanceFromInstantiationParams } from '@aztec/aztec.js/contracts';
 export { NO_FROM } from '@aztec/aztec.js/account';
 export { preparePrivateFeePayment, derivePrivateFeeBridgeSecret, derivePrivateFeeAddress } from './private-fee-client.mjs';
-export { fundPrivateFees, recoverPrivateFeeClaim } from './private-fee-funding.mjs';
+export { fundPrivateFees, recoverPrivateFeeClaim, recoverPrivateFeeFunding } from './private-fee-funding.mjs';
 export { FunctionCall, FunctionSelector, FunctionType, encodeArguments, loadContractArtifact } from '@aztec/aztec.js/abi';
 export { Capsule, HashedValues, ExecutionPayload, TxExecutionRequest, TxHash } from '@aztec/aztec.js/tx';
 export { createEthereumJournal, verifyEthereumIntentReceipt } from './ethereum-journal.mjs';

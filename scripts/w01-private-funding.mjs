@@ -1,3 +1,4 @@
+import {createFileJournalStorage} from '../apps/src/billboard/user/transaction-journal-store.mjs';
 // TEST ONLY: independent disposable L1 identity uses the production funding/recovery helpers.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -9,7 +10,7 @@ import {Fr} from '@aztec/foundation/curves/bn254';
 import {parseEventLogs} from 'viem';
 import {fundPrivateFees,recoverPrivateFeeClaim} from '../shared/private-fee-funding.mjs';
 const silent=Object.fromEntries(['trace','debug','verbose','info','warn','error','fatal'].map(k=>[k,()=>{}]));silent.getBindings=()=>({});
-export async function bridgePrivateFeeCredit({node,l1Client,wallet,owner,walletSecret,payer,privateFeeArtifact,directory,rpcUrl,mineL1,mark}){
+export async function bridgePrivateFeeCredit({node,l1Client,wallet,owner,walletSecret,walletSalt,payer,privateFeeArtifact,directory,rpcUrl,mineL1,mark}){
   assert.equal(await l1Client.getChainId(),31337);
   const info=await node.getNodeInfo(),portal=info.l1ContractAddresses.feeJuicePortalAddress.toString();
   const endpoint=new URL(rpcUrl);assert(['127.0.0.1','localhost','[::1]'].includes(endpoint.hostname),'Disposable local L1 only');
@@ -40,7 +41,7 @@ export async function bridgePrivateFeeCredit({node,l1Client,wallet,owner,walletS
       return signer.sendTransaction(request);
     }};
     mark('private-fee:bridge-user-funds');
-    const record=await fundPrivateFees({node,ethSigner:checkedSigner,owner,walletSecret,privateFeeAddress:payer,privateFeeArtifact,amount,
+    const record=await fundPrivateFees({journalStorage:createFileJournalStorage(path.join(directory,'fee-journal')),walletSalt:walletSalt.toString(),node,ethSigner:checkedSigner,owner,walletSecret,privateFeeAddress:payer,privateFeeArtifact,amount,
       saveRecovery,expectedChainId:31337,expectedVersion:info.rollupVersion});
     assert.equal(depositSends,1);assert.equal(saves,3);
     const recoveredRecord=JSON.parse(await fs.readFile(recoveryPath,'utf8'));assert.deepEqual(recoveredRecord,record);

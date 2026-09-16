@@ -239,8 +239,11 @@
 <p>Bridge your AZTEC tokens into a private balance. Your transactions spend that balance through a shared, ownerless contract.</p>
 <p class="small">You need AZTEC tokens and ETH for Ethereum gas in your connected wallet. This page does not exchange tokens.</p>
 <div class="card"><h2>1. Load your wallets</h2><input id="secretKey" type="hidden"><input id="salt" type="hidden" value="0"><div id="walletButtonsContainer"></div><div id="setupStatus" class="status-container"></div></div>
-<div class="card"><h2>2. Deposit AZTEC</h2><label>Shared private fee contract</label><input id="azaddr" readonly><label>Amount of AZTEC</label><input id="amount" value="1.0"><button id="depositBtn" onclick="doDepositPage()">Deposit</button><div id="depositStatus" class="status-container"></div><p>Recovery metadata is saved in this browser before submission. Download a copy and keep your wallet backup.</p><button class="secondary" onclick="downloadRecovery()">Download recovery record</button></div>
-<div class="card"><h2>3. Claim your private balance</h2><p>Once the bridge message is available, prove a private claim. Its fee comes from the deposit. This deducts the configured maximum fee; unused gas is not refunded.</p><label>Import a recovery record, if needed</label><input type="file" accept="application/json" onchange="importRecovery(event)"><label>Ethereum deposit transaction hash (if submission response was lost)</label><input id="recoveryTxHash" placeholder="0x…"><button id="claimBtn" onclick="doClaimPage()">Claim private balance</button><div id="claimStatus" class="status-container"></div></div>
+<div class="card"><h2>2. Deposit AZTEC</h2><label>Shared private fee contract</label><input id="azaddr" readonly><label>Amount of AZTEC</label><input id="amount" value="1.0"><button id="depositBtn" onclick="doDepositPage()">Deposit</button><button class="secondary" onclick="recoverSavedFeeEthereum()">Check saved Ethereum fee request</button>
+  <button class="secondary" onclick="recoverSavedFeeEthereum(true)">Retry saved Ethereum fee request</button>
+  <div id="depositStatus" class="status-container"></div><p>Recovery metadata is saved in this browser before submission. Download a copy and keep your wallet backup.</p><button class="secondary" onclick="downloadRecovery()">Download recovery record</button></div>
+<div class="card"><h2>3. Claim your private balance</h2><p>Once the bridge message is available, prove a private claim. Its fee comes from the deposit. This deducts the configured maximum fee; unused gas is not refunded.</p><label>Import a recovery record, if needed</label><input type="file" accept="application/json" onchange="importRecovery(event)"><label>Ethereum deposit transaction hash (if submission response was lost)</label><input id="recoveryTxHash" placeholder="0x…"><button id="claimBtn" onclick="doClaimPage()">Claim private balance</button><button class="secondary" onclick="recoverSavedFeeTransaction()">Recover saved private fee transaction</button>
+  <div id="claimStatus" class="status-container"></div></div>
 <script src="aztec_bundle.js"></script>
 <script>window.RPC_CONFIG = {"nodeUrl":"http://127.0.0.1:5080"};window.BILLBOARD_CRS_MANIFEST = {"schemaVersion":2,"aztecVersion":"5.2.0","provenance":{"package":"@aztec/bb.js","version":"5.2.0","source":"node_modules/@aztec/bb.js/dest/node/crs/net_crs.js","sourceSha256":"98182144b264c587733e40e5ed22446d704af132eb36ed0b02b307a99cda4da5","observedAt":"2026-09-12","method":"SHA-256 of exact ranged responses downloaded from the primary URLs. These are locally recorded content pins, not a separate publisher checksum attestation.","pointBudget":"BN254 preserves at least the existing 1048577-point capacity, rounded to the next 131072-point/4MiB compressed chunk. Grumpkin preserves 65537 points. Capacity for production proofs is verified separately."},"files":[{"name":"g1.dat","url":"https://crs.aztec-cdn.foundation/g1_compressed.dat","fallbackUrl":"https://crs.aztec-labs.com/g1_compressed.dat","bytes":37748736,"numPoints":1179648,"format":"bn254-g1-compressed-32-byte","range":{"start":0,"end":37748735},"sha256":"8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416"},{"name":"g2.dat","url":"https://crs.aztec-cdn.foundation/g2.dat","fallbackUrl":"https://crs.aztec-labs.com/g2.dat","bytes":128,"numPoints":1,"format":"bn254-g2-uncompressed-128-byte","range":{"start":0,"end":127},"sha256":"01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f"},{"name":"grumpkin_g1.dat","url":"https://crs.aztec-cdn.foundation/grumpkin_g1_v2.dat","fallbackUrl":"https://crs.aztec-labs.com/grumpkin_g1_v2.dat","bytes":4194368,"numPoints":65537,"format":"grumpkin-g1-v2-uncompressed-64-byte","range":{"start":0,"end":4194367},"sha256":"b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9"}],"derivedG1":{"name":"g1_uncompressed.dat","bytes":75497472,"numPoints":1179648,"format":"bn254-g1-uncompressed-64-byte","sha256":"2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac","derivation":{"method":"bb-srs-init-v1","packageVersion":"5.2.0","inputName":"g1.dat","inputSha256":"8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416","g2Sha256":"01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f","wasmSource":"node_modules/@aztec/bb.js/dest/node/barretenberg_wasm/barretenberg-threads.wasm.gz","wasmSha256":"9106f6164e4714a87ce1cf13ceac4d22109767a16e6fb997f1af7e7fcc81ae45"}}};
 // Shared browser/Node CRS loading. The manifest comes from the source build,
@@ -19184,15 +19187,36 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     const privateFeeAddress=await a.derivePrivateFeeAddress(env.privateFeeArtifact);
     if(privateFeeAddress.toString()!==config.privateFee.contractAddress)throw new Error('Private fee deployment configuration does not match the bundled contract.');
     if(config.action==='status')return {ok:true,address:owner.toString(),feePayer:privateFeeAddress.toString()};
+    let transactionJournal;
+    if(['claim','recover-l2'].includes(config.action)) {
+      if(typeof env.createTransactionJournal!=='function')throw Object.assign(new Error('Durable private fee recovery storage is required.'),{code:'BB_JOURNAL_INVALID'});
+      const contracts=await node.getL1ContractAddresses();
+      transactionJournal=await env.createTransactionJournal({walletSecret:config.aztecWallet.secretKey,walletSalt:salt.toString(),
+        scope:{account:owner.toString().toLowerCase(),chainId:String(info.l1ChainId),version:String(info.rollupVersion),rollup:contracts.rollupAddress.toString().toLowerCase(),board:privateFeeAddress.toString().toLowerCase(),portal:contracts.feeJuicePortalAddress.toString().toLowerCase()},
+        Tx:a.Tx,node,acknowledgeTx:config.acknowledgeTx,contextGuard:config.contextGuard});
+      if(config.action==='recover-l2') {
+        const receipt=await transactionJournal.recover(),ok=receipt.executionResult==='success';
+        log(ok?'The saved private fee transaction succeeded.':'The saved private fee transaction reverted; the claim failed.',ok?'success':'warn');
+        return {ok,receipt,lastL2TxHash:receipt.txHash.toString(),state:ok?'transaction_recovered':'transaction_reverted'};
+      }
+      await transactionJournal.assertCanStart();
+    }
+    if(config.action==='recover-eth') {
+      const result=await a.recoverPrivateFeeFunding({node,owner,privateFeeAddress,privateFeeArtifact:env.privateFeeArtifact,
+        walletSecret:config.aztecWallet.secretKey,walletSalt:salt.toString(),expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion),
+        ethSigner:await env.getBrowserSigner(),journalStorage:env.createJournalStorage(),sender:config.fundingRecord?.sender,retry:config.retryEthereum===true,saveRecovery:config.saveRecovery,contextGuard:config.contextGuard});
+      log(result.outcome==='funded'?'Private fee deposit recovered. Claim after the bridge message is available.':result.outcome==='approved'?'Token approval recovered. Continue with the deposit.':'The previous Ethereum request failed or was replaced.', ['funded','approved'].includes(result.outcome)?'success':'warn');
+      return result;
+    }
     if(config.action==='deposit'){
       if(typeof env.fundPrivateFees!=='function')throw new Error('Private fee funding support is unavailable.');
       const amount=env.ethers.parseUnits(config.depositAmount,18);
       const feeLimit=a.GasSettings.from(config.privateFee.gasSettings).getFeeLimit().toBigInt();
       if(feeLimit<=0n || amount<=feeLimit){const error=new Error('Deposit must exceed the configured maximum claim fee.');error.code='BB_PRIVATE_FEE_AMOUNT';throw error;}
       const record=await env.fundPrivateFees({node,owner,privateFeeAddress,privateFeeArtifact:env.privateFeeArtifact,
-        walletSecret:config.aztecWallet.secretKey,expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion),
+        walletSecret:config.aztecWallet.secretKey,walletSalt:salt.toString(),journalStorage:env.createJournalStorage(),acknowledgeEthereumTx:config.acknowledgeEthereumTx,contextGuard:config.contextGuard,expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion),
         ethSigner:await env.getBrowserSigner(),amount,saveRecovery:config.saveRecovery});
-      return {ok:true,record};
+      return {ok:true,record,lastEthereumTxHash:record.txHash};
     }
     if(config.action!=='claim'||!config.fundingRecord)throw new Error('Import the recovery file for your private fee deposit.');
     const ethSigner=await env.getBrowserSigner();
@@ -19209,7 +19233,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       await pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact);
       await pxe.registerContract(instance);
       await pxe.sync();
-      const wallet=g.BillboardPrivateFeeRouting.createAztecWallet(a,pxe,node,node,log,secretKey,{preProveHook:config.preProveHook,contextGuard:config.contextGuard});
+      const wallet=g.BillboardPrivateFeeRouting.createAztecWallet(a,pxe,node,node,log,secretKey,{preProveHook:config.preProveHook,contextGuard:config.contextGuard,transactionJournal});
       wallet._accountManager=await a.AccountManager.create(wallet,secretKey,accountContract,{salt});
       const constructorArtifact=accountArtifact.functions.find(f=>f.name==='constructor');
       if(constructorArtifact){const signingPublicKey=await accountContract.getSigningPublicKey();await new a.ContractFunctionInteraction(wallet,owner,constructorArtifact,[signingPublicKey.x,signingPublicKey.y]).simulate({from:owner});}
@@ -19217,9 +19241,9 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion),gasSettings:config.privateFee.gasSettings,claim});
       const result=await new a.BatchCall(wallet,[]).send({from:owner,fee:{paymentMethod:prepared.paymentMethod,gasSettings:prepared.gasSettings}});
       log('Your private fee balance is ready for board transactions.','success');
-      return {ok:true,receipt:result.receipt};
+      return {ok:true,receipt:result.receipt,lastL2TxHash:transactionJournal.lastTxHash};
     }catch(error){
-      const code=['BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT'].includes(error?.code)?error.code:'BB_PRIVATE_FEE_CLAIM_FAILED';
+      const code=['BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID'].includes(error?.code)?error.code:'BB_PRIVATE_FEE_CLAIM_FAILED';
       const safe=new Error(code==='BB_SUBMISSION_UNKNOWN'?'Submission outcome is unknown. Check the transaction before retrying.':'Private fee claim did not complete. Keep the recovery file and check the deposit before retrying.');safe.code=code;throw safe;
     }finally{if(pxe)await pxe.stop().catch(()=>{});}
   };
@@ -19861,14 +19885,35 @@ function makeCallEngine(engineFn, envExtra) {
 </script><script>
 // Private fee funding: public recovery records only; wallet secrets never enter recovery records.
 let fundingRecord = null;
-const callEngine = makeCallEngine(runFeeJuiceFlow, {
+const journalAcknowledgements=new Map(),ethereumAcknowledgements=new Map();
+const runFeeEngine = makeCallEngine(runFeeJuiceFlow, {
+  createJournalStorage:()=>window.__aztec.createBrowserJournalStorage(),
+  createTransactionJournal: options => window.__aztec.createL2Journal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
   privateFeeArtifact: BILLBOARD_PRIVATE_FEE_ARTIFACT,
   fundPrivateFees: options => window.__aztec.fundPrivateFees(options),
 });
+async function callEngine(action,statusDiv,extra={}) {
+  const identity=JSON.stringify([window.walletState?.aztec?.address?.toString(),_getNodeUrl()]);
+  const result=await runFeeEngine(action,statusDiv,{...extra,acknowledgeTx:journalAcknowledgements.get(identity),acknowledgeEthereumTx:ethereumAcknowledgements.get(identity)});
+  if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
+  if(result?.lastEthereumTxHash)ethereumAcknowledgements.set(identity,result.lastEthereumTxHash);
+  return result;
+}
+async function recoverSavedFeeTransaction() {
+  try {await callEngine('recover-l2','claimStatus');}
+  catch(error){log(safeFundingError(error),'error','claimStatus');}
+}
+async function recoverSavedFeeEthereum(retry=false) {
+  try {const result=await callEngine('recover-eth','depositStatus',{retryEthereum:retry,saveRecovery:saveFundingRecord,fundingRecord});if(result.record)saveFundingRecord(result.record);}
+  catch(error){log(safeFundingError(error),'error','depositStatus');}
+}
 setupRpcAuth();
 function safeFundingError(error) {
+  if(error?.code==='BB_ETH_RECOVERY_REQUIRED')return 'Check the saved Ethereum fee request before starting another deposit.';
+  if(error?.code==='BB_RECOVERY_REQUIRED')return 'Recover the saved private fee transaction before attempting another claim.';
+  if(error?.code==='BB_JOURNAL_INVALID')return 'Private fee recovery storage could not be authenticated or saved. Preserve your recovery files.';
   if(error?.code==='BB_PRIVATE_FEE_AMOUNT')return 'Deposit more than the configured maximum claim fee, so a private balance remains after claiming.';
-  return ['BB_SUBMISSION_UNKNOWN','PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN'].includes(error?.code)
+  return ['BB_SUBMISSION_UNKNOWN','BB_ETH_SUBMISSION_UNKNOWN','PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN'].includes(error?.code)
     ? 'Submission outcome is unknown. Keep the recovery record and check the transaction before retrying.'
     : 'The operation did not complete. Keep your recovery record and check your configuration and deposit.';
 }

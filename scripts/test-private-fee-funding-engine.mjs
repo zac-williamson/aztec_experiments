@@ -7,9 +7,9 @@ import {Fr} from '@aztec/foundation/curves/bn254';
 const source=fs.readFileSync(new URL('../apps/src/fee-juice/engine.js',import.meta.url),'utf8');
 function harness(){
  const calls=[],owner={toString:()=> 'owner'},payer={toString:()=> 'shared'},wallet={},claim={amount:'100',salt:'private-salt',secret:'private-secret',leafIndex:'1'};
- const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5}),getL1ContractAddresses:async()=>({rollupAddress:'rollup'})};
+ const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5}),getL1ContractAddresses:async()=>({rollupAddress:'rollup',feeJuicePortalAddress:'fee-portal'})};
  const pxe={registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{},stop:async()=>calls.push('stop')};
- const context=vm.createContext({BillboardPrivateFeeRouting:{createAztecWallet:()=>wallet}});vm.runInContext(source,context);
+ const context=vm.createContext({BillboardPrivateFeeRouting:{createAztecWallet:(...args)=>{wallet.journal=args.at(-1).transactionJournal;return wallet;}}});vm.runInContext(source,context);
  const a={Fr,GasSettings:{from:()=>({getFeeLimit:()=>new Fr(10)})},deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
   SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;},
   getContractInstanceFromInstantiationParams:async()=>({address:owner}),derivePrivateFeeAddress:async()=>payer,createAztecNodeClient:()=>node,
@@ -18,10 +18,10 @@ function harness(){
   preparePrivateFeePayment:async input=>{calls.push(['prepare',input]);return {paymentMethod:'private',gasSettings:{}};},
   BatchCall:class{constructor(w,actions){assert.equal(w,wallet);assert.equal(actions.length,0);}send=async opts=>{calls.push(['send',opts]);return {receipt:{status:'checkpointed'}};}}
  };
- const env={aztec:a,privateFeeArtifact:{},log:message=>calls.push(['log',message]),initCRS:async()=>{},createStore:async()=>({}),getBrowserSigner:async()=>({provider:{}}),ethers:{parseUnits:()=>100n},
+ const env={createJournalStorage:()=>({}),createTransactionJournal:async input=>{calls.push(['journal',input]);return {assertCanStart:async()=>calls.push('journal-preflight'),lastTxHash:'saved-hash'};},aztec:a,privateFeeArtifact:{},log:message=>calls.push(['log',message]),initCRS:async()=>{},createStore:async()=>({}),getBrowserSigner:async()=>({provider:{}}),ethers:{parseUnits:()=>100n},
  fundPrivateFees:async input=>{calls.push(['fund',input]);const record={nonce:'1'};await input.saveRecovery(record);return record;}};
  const config={aztecWallet:{secretKey:Fr.ONE.toString(),salt:0},privateFee:{contractAddress:'shared',gasSettings:{}},fundingRecord:{nonce:'1'},saveRecovery:async record=>calls.push(['save',record]),depositAmount:'0.1'};
- return {calls,owner,claim,a,run:action=>context.runFeeJuiceFlow(env,{...config,action})};
+ return {calls,owner,claim,a,env,config,wallet,run:action=>context.runFeeJuiceFlow(env,{...config,action})};
 }
 test('funding deposits to shared address and passes mandatory recovery callback',async()=>{
  const h=harness();const result=await h.run('deposit');assert.equal(result.record.nonce,'1');
@@ -31,7 +31,7 @@ test('funding deposits to shared address and passes mandatory recovery callback'
 test('standalone claim uses standard author entrypoint with only private fee payload, then stops PXE',async()=>{
  const h=harness();await h.run('claim');const preparation=h.calls.find(c=>c[0]==='prepare')[1];assert.equal(preparation.claim,h.claim);
  const send=h.calls.find(c=>c[0]==='send')[1];assert.equal(send.from,h.owner);assert.equal(send.fee.paymentMethod,'private');
- assert.equal(h.calls.filter(c=>c==='stop').length,1);assert(!h.calls.filter(c=>c[0]==='log').some(c=>c[1].includes('private-secret')));
+ assert.equal(h.calls.filter(c=>c==='stop').length,1);assert(h.wallet.journal);assert(h.calls.indexOf('journal-preflight')<h.calls.findIndex(c=>c[0]==='recover'));assert.equal(h.calls.find(c=>c[0]==='journal')[1].scope.portal,'fee-portal');assert(!h.calls.filter(c=>c[0]==='log').some(c=>c[1].includes('private-secret')));
 });
 
 test('browser recovery storage preserves earlier deposits and refuses conflicting replacements or secrets',()=>{
@@ -48,4 +48,24 @@ test('browser recovery storage preserves earlier deposits and refuses conflictin
 test('deposit below claim fee is rejected before requesting L1 funding',async()=>{
  const h=harness();h.a.GasSettings.from=()=>({getFeeLimit:()=>new Fr(101)});
  await assert.rejects(h.run('deposit'),/must exceed/);assert(!h.calls.some(c=>c[0]==='fund'));
+});
+
+test('private fee claim refuses missing or unresolved recovery storage before consuming bridge information',async()=>{
+ const missing=harness();delete missing.env.createTransactionJournal;await assert.rejects(missing.run('claim'),{code:'BB_JOURNAL_INVALID'});
+ const pending=harness();pending.env.createTransactionJournal=async()=>({assertCanStart:async()=>{throw Object.assign(new Error('pending'),{code:'BB_RECOVERY_REQUIRED'});}});
+ await assert.rejects(pending.run('claim'),{code:'BB_RECOVERY_REQUIRED'});assert(!pending.calls.some(c=>c[0]==='recover'||c[0]==='prepare'));
+});
+for(const outcome of ['success','reverted'])test(`private fee ${outcome} recovery requires no Ethereum signer, bridge claim file or PXE`,async()=>{
+ const h=harness();h.config.fundingRecord=null;h.env.getBrowserSigner=()=>{throw new Error('must not request signer');};h.env.initCRS=()=>{throw new Error('must not start PXE');};
+ h.env.createTransactionJournal=async()=>({recover:async()=>({executionResult:outcome,txHash:Fr.ONE})});
+ const result=await h.run('recover-l2');assert.equal(result.ok,outcome==='success');assert.equal(result.lastL2TxHash,Fr.ONE.toString());assert.equal(result.state,outcome==='success'?'transaction_recovered':'transaction_reverted');
+ assert(!h.calls.some(c=>c[0]==='recover'||c[0]==='send'));
+});
+
+for(const outcome of ['approved','funded','reverted','replaced'])test(`fee Ethereum ${outcome} recovery is explicit and does not start an L2 proof`,async()=>{
+ const h=harness();let options;
+ h.a.recoverPrivateFeeFunding=async input=>{options=input;return {outcome,lastEthereumTxHash:'hash'};};
+ h.config.retryEthereum=true;
+ const result=await h.run('recover-eth');assert.equal(result.outcome,outcome);assert.equal(options.retry,true);assert.equal(options.walletSalt,Fr.ZERO.toString());
+ assert(!h.calls.some(c=>c[0]==='prepare'||c[0]==='send'));
 });

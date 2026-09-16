@@ -1,3 +1,4 @@
+import {createEthereumJournal} from './ethereum-journal.mjs';
 // User-funded Fee Juice bridge. Recovery metadata is public; secrets derive from the existing wallet key.
 import { Interface, getAddress } from 'ethers';
 import { Fr } from '@aztec/foundation/curves/bn254';
@@ -63,6 +64,26 @@ function validRecord(record){
   address(record.sender);
   if(record.txHash!==undefined)check(/^0x[0-9a-fA-F]{64}$/.test(record.txHash),'PRIVATE_FEE_RECOVERY_INVALID');
 }
+async function fundingJournal(input,scope,sender) {
+  check(input.journalStorage?.read&&input.journalStorage?.compareAndSwap&&input.walletSalt!==undefined,'BB_JOURNAL_INVALID');
+  return createEthereumJournal({storage:input.journalStorage,walletSecret:secretField(input.walletSecret).toString(),walletSalt:input.walletSalt,
+    scope:{account:input.owner.toString().toLowerCase(),chainId:scope.chainId,version:scope.version,rollup:scope.rollupAddress.toLowerCase(),board:scope.privateFeeAddress.toLowerCase(),portal:scope.portalAddress.toLowerCase(),token:scope.tokenAddress.toLowerCase(),depositor:sender.toLowerCase()},
+    provider:input.ethProvider??input.ethSigner?.provider,signer:input.ethSigner,acknowledgeTx:input.acknowledgeEthereumTx,contextGuard:input.contextGuard});
+}
+export async function recoverPrivateFeeFunding(input) {
+  const ethProvider=input.ethProvider??input.ethSigner?.provider;
+  const scope=await verifyScope({...input,ethProvider});
+  const sender=address(input.sender??await input.ethSigner?.getAddress());
+  const journal=await fundingJournal({...input,ethProvider},scope,sender);
+  const result=await journal.recover({retry:input.retry===true});
+  if(result.outcome!=='success')return {outcome:result.outcome,lastEthereumTxHash:result.txHash};
+  if(result.request.expected.kind==='approve')return {outcome:'approved',lastEthereumTxHash:result.txHash};
+  const record={schema:SCHEMA,...scope,sender,nonce:String(result.request.nonce),amount:result.request.expected.amount,txHash:result.txHash,leafIndex:String(result.event.index)};
+  const {secretHash}=await claimSecrets({...input,record});
+  check(eq(secretHash,result.request.expected.secretHash),'PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH');
+  if(input.saveRecovery)await input.saveRecovery(copy(record));
+  return {outcome:'funded',lastEthereumTxHash:result.txHash,record:copy(record)};
+}
 /** Saves public recovery data before submission. No automatic resend after an uncertain send. */
 export async function fundPrivateFees(input){
   let record,depositAttempted=false,phase='validate-input';
@@ -76,40 +97,34 @@ export async function fundPrivateFees(input){
     phase='verify-scope';
     const scope=await verifyScope({node,ethProvider,privateFeeArtifact,privateFeeAddress,expectedChainId,expectedVersion});
     const sender=address(await ethSigner.getAddress());
-    phase='read-token-funding';let confirmedNextNonce=0n;
+    phase='journal-preflight';const journal=await fundingJournal(input,scope,sender);await journal.assertCanStart();
+    phase='read-token-funding';
     const [balance,allowance]=await Promise.all([read(ethProvider,scope.tokenAddress,tokenAbi,'balanceOf',[sender]),read(ethProvider,scope.tokenAddress,tokenAbi,'allowance',[sender,scope.portalAddress])]);
     check(balance>=quantity,'PRIVATE_FEE_FUNDING_TOKEN_BALANCE');
     if(allowance<quantity){
       phase='submit-approval';
-      const approval=await ethSigner.sendTransaction({from:sender,chainId:uint(scope.chainId,64),to:scope.tokenAddress,data:tokenAbi.encodeFunctionData('approve',[scope.portalAddress,quantity]),value:0n});
-      phase='confirm-approval';
-      const receipt=await approval.wait(1);check(receipt?.status===1,'PRIVATE_FEE_FUNDING_APPROVAL_FAILED');
-      // Ethers caches pending nonce reads; a confirmed approval proves this nonce is consumed.
-      confirmedNextNonce=uint(approval.nonce,64)+1n;
+      await journal.send({data:tokenAbi.encodeFunctionData('approve',[scope.portalAddress,quantity]),value:'0',expected:{kind:'approve',amount:quantity.toString(),spender:scope.portalAddress.toLowerCase()}});
       phase='verify-allowance';
       check(await read(ethProvider,scope.tokenAddress,tokenAbi,'allowance',[sender,scope.portalAddress])>=quantity,'PRIVATE_FEE_FUNDING_APPROVAL_FAILED');
     }
     check(eq(await ethSigner.getAddress(),sender),'PRIVATE_FEE_FUNDING_ACCOUNT_CHANGED');
     phase='select-deposit-nonce';
-    const pendingNonce=uint(await ethProvider.getTransactionCount(sender,'pending'),64);
-    const nonce=pendingNonce>confirmedNextNonce?pendingNonce:confirmedNextNonce;
-    check(nonce<=BigInt(Number.MAX_SAFE_INTEGER),'PRIVATE_FEE_FUNDING_INVALID');
-    record={schema:SCHEMA,...scope,sender,nonce:nonce.toString(),amount:quantity.toString()};
-    const {secretHash}=await claimSecrets({walletSecret,owner,record});
-    phase='save-before-deposit';await saveRecovery(copy(record));
-    // Recheck the selected network after the user-facing approval/save steps.
-    check(uint((await ethProvider.getNetwork()).chainId,64)===uint(scope.chainId,64)&&eq(await ethSigner.getAddress(),sender),'PRIVATE_FEE_FUNDING_ACCOUNT_CHANGED');
-    phase='submit-deposit';depositAttempted=true;
-    const transaction=await ethSigner.sendTransaction({from:sender,chainId:uint(scope.chainId,64),to:scope.portalAddress,data:portalAbi.encodeFunctionData('depositToAztecPublic',[scope.privateFeeAddress,quantity,secretHash.toString()]),nonce:Number(nonce),value:0n});
-    check(/^0x[0-9a-fA-F]{64}$/.test(transaction.hash),'PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN');
-    record={...record,txHash:transaction.hash};phase='save-deposit-hash';await saveRecovery(copy(record));
-    phase='confirm-deposit';await transaction.wait(1);
+    const deposited=await journal.send(async nonce=>{
+      record={schema:SCHEMA,...scope,sender,nonce:nonce.toString(),amount:quantity.toString()};
+      const {secretHash}=await claimSecrets({walletSecret,owner,record});
+      phase='save-before-deposit';await saveRecovery(copy(record));
+      check(uint((await ethProvider.getNetwork()).chainId,64)===uint(scope.chainId,64)&&eq(await ethSigner.getAddress(),sender),'PRIVATE_FEE_FUNDING_ACCOUNT_CHANGED');
+      phase='submit-deposit';depositAttempted=true;
+      return {data:portalAbi.encodeFunctionData('depositToAztecPublic',[scope.privateFeeAddress,quantity,secretHash.toString()]),value:'0',expected:{kind:'fee-deposit',amount:quantity.toString(),secretHash:secretHash.toString(),recipient:scope.privateFeeAddress.toLowerCase()}};
+    });
+    record={...record,txHash:deposited.txHash};phase='save-deposit-hash';await saveRecovery(copy(record));
     phase='recover-confirmed-claim';
     const claim=await recoverPrivateFeeClaim({node,ethProvider,owner,walletSecret,privateFeeArtifact,record,expectedChainId,expectedVersion});
     record={...record,leafIndex:claim.leafIndex.toBigInt().toString()};phase='save-confirmed-claim';await saveRecovery(copy(record));
     return copy(record);
   }catch(error){
-    const wrapped=depositAttempted?new PrivateFeeFundingError('PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN',record):
+    const journalCode=['BB_JOURNAL_INVALID','BB_ETH_RECOVERY_REQUIRED','BB_ETH_SUBMISSION_UNKNOWN','BB_ETH_TRANSACTION_FAILED'].includes(error?.code);
+    const wrapped=journalCode?new PrivateFeeFundingError(error.code,record):depositAttempted?new PrivateFeeFundingError('PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN',record):
       error instanceof PrivateFeeFundingError?error:new PrivateFeeFundingError('PRIVATE_FEE_FUNDING_FAILED');
     // Finite codes only: never copy provider messages, payloads, transaction arguments or stacks.
     const names=new Set(['Error','TypeError','RangeError','AssertionError','PrivateFeeFundingError']);
