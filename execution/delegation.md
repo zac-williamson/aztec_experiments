@@ -459,3 +459,8 @@ from implementation. Remaining W03 work is recorded in the graph checkpoint.
 - recovery_review: read-only review of withdrawal absence handling and regression scope; no heavy jobs. Root implements remaining stale-action recovery. AI review does not replace external audit.
 
 Recovery reviewer delivered application-nullifier helper and25 fixture tests, native attribution helper, and read-only claim/note/journal reviews. Root integrated expected-note selection, addressed receipt scope/timeouts and step-guard lifetime, and ran the genuine qualification. No external audit signoff is implied.
+
+## Remaining W03 consumers
+
+- recovery_review: owns apps/src/fee-juice/engine.js and scripts/test-private-fee-funding-engine.mjs for exact funding-claim recovery, plus only necessary related new focused tests. No shared journal/SDK/build edits or heavy jobs.
+- Root: deploy engine/tests and integration; later moderator recovery.

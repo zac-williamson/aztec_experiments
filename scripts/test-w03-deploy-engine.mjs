@@ -12,19 +12,20 @@ import {IDBFactory} from 'fake-indexeddb';
 import {createBrowserJournalStorage} from '../shared/journal-indexeddb.mjs';
 import {createL2Journal} from '../shared/l2-journal.mjs';
 import {createEthereumJournal} from '../shared/ethereum-journal.mjs';
+import {boundedTransactionRead} from '../shared/transaction-outcomes.mjs';
 const source=await readFile(new URL('../apps/src/billboard/deploy/engine.js',import.meta.url),'utf8');
 const field=n=>'0x'+BigInt(n).toString(16).padStart(64,'0');
 class FixtureTx {
- constructor(kind){this.kind=kind;}
- toBuffer(){return Buffer.from(this.kind);}
+ constructor(kind,proof=0){this.kind=kind;this.proof=proof;}
+ toBuffer(){return Buffer.from(JSON.stringify([this.kind,this.proof]));}
  getTxHash(){return ethers.sha256(this.toBuffer());}
- static fromBuffer(bytes){return new FixtureTx(bytes.toString());}
+ static fromBuffer(bytes){return new FixtureTx(...JSON.parse(bytes.toString()));}
 }
-function fixture({lostBinding=false,lostDeploy=false,existing=true}={}) {
+function fixture({lostBinding=false,lostDeploy=false,existing=true,staleDeploy=false,staleBinding=false}={}) {
  const actor=AztecAddress.fromFieldUnsafe(new Fr(1)),board=AztecAddress.fromFieldUnsafe(new Fr(2));
  const rollup='0x'+'3'.repeat(40),sender='0x'+'4'.repeat(40),blockHash=field(5);
  const instance={address:actor,currentContractClassId:'class'};
- const storage=createBrowserJournalStorage(new IDBFactory()),receipts=new Map();
+ const storage=createBrowserJournalStorage(new IDBFactory()),receipts=new Map(),invalids=new Set();let proofId=0;
  let bound=null,stops=0,deploys=0,bindings=0,finalized=0;
  const wordHash=(label,words)=>'0x'+(BigInt(ethers.sha256(ethers.AbiCoder.defaultAbiCoder().encode(['bytes32',...words.map(()=> 'uint256')],[ethers.encodeBytes32String(label),...words])))>>8n).toString(16).padStart(64,'0');
  const configHash=wordHash('AZTEC_BB_CONFIG_V1',[1n,31337n,BigInt(rollup),2n,5n,1n,100n,10n,64n,10n,16n]);
@@ -33,15 +34,17 @@ function fixture({lostBinding=false,lostDeploy=false,existing=true}={}) {
   getTxReceipt:async hash=>receipts.get(String(hash)),getBlock:async()=>({hash:blockHash}),getChainTips:async()=>({finalized:{block:{number:finalized}}}),
   sendTx:async tx=>{if(tx.kind==='deploy'){existing=true;}else {bound=tx.kind.slice(5);}
    receipts.set(tx.getTxHash(),{txHash:tx.getTxHash(),status:'checkpointed',executionResult:'success',blockNumber:1,blockHash});},
-  isValidTx:async()=>({result:'valid'})};
+  isValidTx:async tx=>invalids.has(tx.getTxHash())?{result:'invalid',reason:['Block header not found']}:{result:'valid'}};
  const pxe={registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{},stop:async()=>{stops++;}};
  async function submit(wallet,kind,lose){
-  const journal=wallet._transactionJournal,previous=await journal.assertCanStart(),tx=new FixtureTx(kind);
-  await journal.prepare(tx,previous);await node.sendTx(tx);
+  const journal=wallet._transactionJournal,previous=await journal.assertCanStart(),tx=new FixtureTx(kind,++proofId);
+  await journal.prepare(tx,previous);
+  if((kind==='deploy'&&staleDeploy)||(kind.startsWith('bind:')&&staleBinding)){receipts.set(tx.getTxHash(),{txHash:tx.getTxHash(),status:'dropped'});invalids.add(tx.getTxHash());throw new Error('synthetic stale proof');}
+  await node.sendTx(tx);
   if(lose)throw new Error('synthetic lost response');
   const receipt=await node.getTxReceipt(tx.getTxHash());journal.confirmed(receipt);return{receipt};
  }
- const a={Fr,AztecAddress,EthAddress,Tx:FixtureTx,TxHash:{fromString:x=>x},BaseWallet:class{},
+ const a={boundedTransactionRead,Fr,AztecAddress,EthAddress,Tx:FixtureTx,TxHash:{fromString:x=>x},BaseWallet:class{},
   deriveSigningKey:()=>({}),deriveKeys:async()=>({publicKeys:{}}),computePartialAddress:async()=>new Fr(1),
   getContractInstanceFromInstantiationParams:async()=>instance,deriveStorageSlotInMap:async()=>new Fr(1),
   SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>field(0);getSigningPublicKey=async()=>({});},
@@ -60,7 +63,7 @@ function fixture({lostBinding=false,lostDeploy=false,existing=true}={}) {
   createTransactionJournal:options=>createL2Journal({...options,storage,waitOptions:{timeoutMs:20,intervalMs:1}})};
  const config={aztecWallet:{secretKey:field(8),salt:field(9)},contractSalt:1,censor:actor.toString(),minDepositWei:1n,maxDepositWei:100n,baseCooldown:10,censorWindow:10,moderationPolicy:''};
  function run(extra={}){const context=vm.createContext({setTimeout,clearTimeout,Buffer,packStringToFields:()=>({fields:Array(48).fill(0n),len:0})});vm.runInContext(source,context);return context.runDeploy(env,{...config,...extra});}
- return {run,env,node,receipts,get stops(){return stops;},get deploys(){return deploys;},get bindings(){return bindings;},clearLoss(){lostBinding=false;lostDeploy=false;}};
+ return {run,env,node,provider,receipts,setBound:value=>bound=value,get stops(){return stops;},get deploys(){return deploys;},get bindings(){return bindings;},clearLoss(){lostBinding=false;lostDeploy=false;staleDeploy=false;staleBinding=false;}};
 }
 test('lost binding response resumes from encrypted transaction without supplied hash or another binding',async()=>{
  const f=fixture({lostBinding:true});await assert.rejects(f.run(),/synthetic lost/);assert.equal(f.stops,1);f.clearLoss();
@@ -80,4 +83,27 @@ test('unresolved saved binding cannot start another transaction or falsely compl
 test('missing journal fails closed before any deployment signature and closes PXE',async()=>{
  const f=fixture({existing:false});delete f.env.createTransactionJournal;
  await assert.rejects(f.run(),{code:'BB_JOURNAL_INVALID'});assert.equal(f.deploys,0);assert.equal(f.bindings,0);assert.equal(f.stops,1);
+});
+
+for(const kind of ['deploy','binding'])test(`definitively stale ${kind} proof regenerates only the same deployment operation`,async()=>{
+ const f=fixture(kind==='deploy'?{existing:false,staleDeploy:true}:{staleBinding:true});
+ await assert.rejects(f.run(),/synthetic stale proof/);const original=[...f.receipts.keys()][0];f.clearLoss();
+ const result=await f.run();assert.equal(result.status,'pending-settlement');
+ assert.equal(f.deploys,kind==='deploy'?2:0);assert.equal(f.bindings,kind==='binding'?2:1);
+ assert.equal(f.receipts.get(original).status,'dropped');assert.notEqual(result.readyTxHash,original);
+ await f.run();assert.equal(f.deploys,kind==='deploy'?2:0);assert.equal(f.bindings,kind==='binding'?2:1);
+});
+test('stale binding cannot silently accept another binding that appeared meanwhile',async()=>{
+ const f=fixture({staleBinding:true});await assert.rejects(f.run(),/synthetic stale proof/);f.clearLoss();f.setBound('0x'+'a'.repeat(40));
+ await assert.rejects(f.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(f.bindings,1);
+});
+test('stale binding cannot redeploy a missing original Ethereum portal',async()=>{
+ const f=fixture({staleBinding:true});await assert.rejects(f.run(),/synthetic stale proof/);f.clearLoss();f.provider.getCode=async()=> '0x';
+ await assert.rejects(f.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(f.bindings,1);
+});
+
+test('stale board deployment cannot silently accept a board that appeared meanwhile',async()=>{
+ const f=fixture({existing:false,staleDeploy:true});await assert.rejects(f.run(),/synthetic stale proof/);f.clearLoss();
+ f.node.getContract=async()=>({currentContractClassId:'class'});
+ await assert.rejects(f.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(f.deploys,1);assert.equal(f.bindings,0);
 });

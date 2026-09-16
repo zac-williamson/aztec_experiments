@@ -1,0 +1,16 @@
+✔ lost binding response resumes from encrypted transaction without supplied hash or another binding (21.598875ms)
+✔ lost board deployment response resumes original transaction and deploys the board only once (5.669083ms)
+✔ unresolved saved binding cannot start another transaction or falsely complete setup (23.669417ms)
+✔ missing journal fails closed before any deployment signature and closes PXE (0.901541ms)
+✔ definitively stale deploy proof regenerates only the same deployment operation (10.521292ms)
+✔ definitively stale binding proof regenerates only the same deployment operation (8.397292ms)
+✔ stale binding cannot silently accept another binding that appeared meanwhile (4.225375ms)
+✔ stale binding cannot redeploy a missing original Ethereum portal (5.497583ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 220.887708

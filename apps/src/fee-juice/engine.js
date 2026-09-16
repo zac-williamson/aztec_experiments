@@ -19,7 +19,14 @@
     const privateFeeAddress=await a.derivePrivateFeeAddress(env.privateFeeArtifact);
     if(privateFeeAddress.toString()!==config.privateFee.contractAddress)throw new Error('Private fee deployment configuration does not match the bundled contract.');
     if(config.action==='status')return {ok:true,address:owner.toString(),feePayer:privateFeeAddress.toString()};
-    let transactionJournal;
+    const invalidIntent=()=>Object.assign(new Error('The original private fee claim identity is unavailable.'),{code:'BB_RECOVERY_REQUIRED'});
+    const fundingKeys=['schema','chainId','version','rollupAddress','portalAddress','tokenAddress','privateFeeAddress','sender','nonce','amount','txHash','leafIndex'];
+    function fundingRecord(record) {
+      if(!record||typeof record!=='object'||Object.keys(record).some(key=>!fundingKeys.includes(key))||
+        fundingKeys.some(key=>typeof record[key]!=='string'||!record[key].length)||record.schema!=='private-fee-funding-v1')throw invalidIntent();
+      return Object.fromEntries(fundingKeys.map(key=>[key,record[key]]));
+    }
+    let transactionJournal, resumedOperation;
     if(['claim','recover-l2'].includes(config.action)) {
       if(typeof env.createTransactionJournal!=='function')throw Object.assign(new Error('Durable private fee recovery storage is required.'),{code:'BB_JOURNAL_INVALID'});
       const contracts=await node.getL1ContractAddresses();
@@ -27,9 +34,22 @@
         scope:{account:owner.toString().toLowerCase(),chainId:String(info.l1ChainId),version:String(info.rollupVersion),rollup:contracts.rollupAddress.toString().toLowerCase(),board:privateFeeAddress.toString().toLowerCase(),portal:contracts.feeJuicePortalAddress.toString().toLowerCase()},
         Tx:a.Tx,node,acknowledgeTx:config.acknowledgeTx,contextGuard:config.contextGuard});
       if(config.action==='recover-l2') {
-        const receipt=await transactionJournal.recover(),ok=receipt.executionResult==='success';
-        log(ok?'The saved private fee transaction succeeded.':'The saved private fee transaction reverted; the claim failed.',ok?'success':'warn');
-        return {ok,receipt,lastL2TxHash:receipt.txHash.toString(),state:ok?'transaction_recovered':'transaction_reverted'};
+        try {
+          const receipt=await transactionJournal.recover(),ok=receipt.executionResult==='success';
+          log(ok?'The saved private fee transaction succeeded.':'The saved private fee transaction reverted; the claim failed.',ok?'success':'warn');
+          return {ok,receipt,lastL2TxHash:receipt.txHash.toString(),state:ok?'transaction_recovered':'transaction_reverted'};
+        } catch(error) {
+          if(error?.code!=='BB_RECOVERY_REQUIRED'||typeof transactionJournal.inspect!=='function'||typeof transactionJournal.allowReplacement!=='function')throw error;
+          const saved=await transactionJournal.inspect();
+          let intent;try{intent=JSON.parse(saved?.operation);}catch{throw invalidIntent();}
+          if(!intent||Object.keys(intent).sort().join()!=='kind,owner,record,schemaVersion'||intent.schemaVersion!==1||
+            intent.kind!=='private-fee-claim'||intent.owner!==owner.toString().toLowerCase())throw invalidIntent();
+          const record=fundingRecord(intent.record);
+          resumedOperation=saved.operation;
+          await transactionJournal.allowReplacement(resumedOperation);
+          config={...config,action:'claim',fundingRecord:record};
+          log('Restoring the original private fee claim for a fresh proof.','info');
+        }
       }
       await transactionJournal.assertCanStart();
     }
@@ -51,9 +71,15 @@
       return {ok:true,record,lastEthereumTxHash:record.txHash};
     }
     if(config.action!=='claim'||!config.fundingRecord)throw new Error('Import the recovery file for your private fee deposit.');
+    const originalFunding=Object.freeze({...config.fundingRecord});
     const ethSigner=await env.getBrowserSigner();
-    const claim=await a.recoverPrivateFeeClaim({node,ethProvider:ethSigner.provider,owner,walletSecret:config.aztecWallet.secretKey,
-      privateFeeArtifact:env.privateFeeArtifact,record:config.fundingRecord,expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion)});
+    const claim=await a.boundedTransactionRead(()=>a.recoverPrivateFeeClaim({node,ethProvider:ethSigner.provider,owner,walletSecret:config.aztecWallet.secretKey,
+      privateFeeArtifact:env.privateFeeArtifact,record:originalFunding,expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion)}),20000);
+    const record=fundingRecord({...originalFunding,leafIndex:String(claim.leafIndex.toBigInt?.()??claim.leafIndex)});
+    const operation=JSON.stringify({schemaVersion:1,kind:'private-fee-claim',owner:owner.toString().toLowerCase(),record});
+    if(resumedOperation&&operation!==resumedOperation)throw invalidIntent();
+    if(typeof transactionJournal.setOperation!=='function')throw Object.assign(new Error('Private fee claim operation storage is required.'),{code:'BB_JOURNAL_INVALID'});
+    transactionJournal.setOperation(operation);
     let pxe;
     try{
       await env.initCRS();

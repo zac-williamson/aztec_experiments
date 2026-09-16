@@ -40029,10 +40029,21 @@ if (typeof module !== 'undefined' && module.exports) {
       scope: { account: address.toString().toLowerCase(), chainId: String(nodeInfo.l1ChainId), rollup: rollupAddr.toLowerCase(),
         version: String(version), board: l2Addr.toString().toLowerCase(), portal: '0x' + '0'.repeat(40) },
       Tx: a.Tx, node: rawNode, contextGuard: config.contextGuard });
-    const recoveredDeployment = await deploymentJournal.reconcilePrevious();
+    let recoveredDeployment=null, staleDeployment=null;
+    const unresolved=()=>Object.assign(new Error('The original deployment transaction requires reconciliation. Preserve its recovery records.'),{code:'BB_RECOVERY_REQUIRED'});
+    try { recoveredDeployment = await deploymentJournal.reconcilePrevious(); }
+    catch(error) {
+      if(error?.code!=='BB_RECOVERY_REQUIRED'||typeof deploymentJournal.inspect!=='function'||typeof deploymentJournal.allowReplacement!=='function')throw error;
+      const saved=await deploymentJournal.inspect();
+      if(saved?.operation!=='deploy-board'&&!/^bind-portal:0x[0-9a-f]{40}$/.test(saved?.operation??''))throw error;
+      await deploymentJournal.allowReplacement(saved.operation);
+      staleDeployment=saved.operation;
+    }
     await deploymentJournal.assertCanStart();
     wallet._transactionJournal = deploymentJournal;
-    let existingInstance = await rawNode.getContract(l2Addr);
+    let existingInstance = await a.boundedTransactionRead(()=>rawNode.getContract(l2Addr),20000);
+    if(staleDeployment==='deploy-board'&&existingInstance)throw unresolved();
+    if(staleDeployment?.startsWith('bind-portal:')&&!existingInstance)throw unresolved();
 
     if (existingInstance) {
       log('  Contract already deployed on L2!', 'success');
@@ -40067,6 +40078,7 @@ if (typeof module !== 'undefined' && module.exports) {
     const readPortal = async () => ethers.getAddress('0x' + scalar(await l2Contract.methods.get_portal().simulate({ from: address })).toString(16).padStart(40, '0'));
     const portalState = await l2Contract.methods.is_portal_set().simulate({ from: address });
     const portalAlreadySet = (portalState?.result ?? portalState?.value ?? portalState) === true;
+    if(staleDeployment?.startsWith('bind-portal:')&&portalAlreadySet)throw unresolved();
     const wordHash = (label, words) => {
       const bytes = ethers.AbiCoder.defaultAbiCoder().encode(['bytes32', ...words.map(() => 'uint256')],
         [ethers.encodeBytes32String(label), ...words]);
@@ -40118,8 +40130,14 @@ if (typeof module !== 'undefined' && module.exports) {
     let predicted = portalAlreadySet ? await readPortal() : recoveredCreation?.outcome === 'success'
       ? recoveredCreation.request.expected.portal
       : computePortalAddress(portalBytecode, PORTAL_ABI, l2AddrHex, rollupAddr, version, minDepositWei, maxDepositWei, configHash, ethers);
+    if(staleDeployment?.startsWith('bind-portal:')) {
+      const originalPortal=staleDeployment.slice('bind-portal:'.length);
+      if(recoveredCreation?.outcome==='success'&&recoveredCreation.request.expected.portal.toLowerCase()!==originalPortal)throw unresolved();
+      predicted=originalPortal;
+    }
     log('  Portal address: ' + predicted, 'info');
     if (await provider.getCode(predicted) === '0x') {
+      if(staleDeployment?.startsWith('bind-portal:'))throw unresolved();
       if (portalAlreadySet) throw new Error('The bound portal has no code; preserve deployment recovery records.');
       const hasProxy = await provider.getCode(CREATE2_PROXY) !== '0x';
       const result = await ethereumDeployment.send(nonce => {

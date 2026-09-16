@@ -17546,6 +17546,26 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
   }
   g.BillboardModerationCodec = Object.freeze({ packModerationReason, decodeModerationReason, moderationArguments, readPolicySnapshot });
 
+  function restoreModeratorOperation(a, encoded) {
+    try {
+      const value=JSON.parse(encoded);
+      if(!Array.isArray(value)||value.length!==2||!Array.isArray(value[1]))throw new Error();
+      const [kind,args]=value;
+      const field=value=>{if(typeof value!=='string'||!/^0x[0-9a-f]{64}$/.test(value))throw new Error();const parsed=new a.Fr(BigInt(value));if(parsed.toString()!==value)throw new Error();return parsed;};
+      if(kind==='transfer_censor'&&args.length===1) return {action:'transfer-censor',newCensor:field(args[0]).toString()};
+      if(kind==='set_moderation_policy'&&args.length===2&&Array.isArray(args[0])&&args[0].length===48) {
+        const fields=args[0].map(field),length=Number(field(args[1]).toBigInt());
+        if(!Number.isSafeInteger(length)||length<1||length>1488||typeof g.unpackFieldsToString!=='function')throw new Error();
+        return {action:'set-moderation-policy',moderationPolicy:g.unpackFieldsToString(fields.map(v=>v.toBigInt()),length)};
+      }
+      if(kind==='declare_immoral'&&args.length===4&&Array.isArray(args[2])&&args[2].length===7&&typeof args[3]==='string'&&/^(0|[1-9][0-9]*)$/.test(args[3])) {
+        const postId=field(args[0]).toString(),expectedPolicyVersion=field(args[1]).toString();
+        return {action:'declare-immoral',postId,expectedPolicyVersion,censorResponse:decodeModerationReason(args[2].map(field),Number(args[3]))};
+      }
+      throw new Error();
+    } catch {throw Object.assign(new Error('Saved moderator operation is invalid. Preserve the recovery record.'),{code:'BB_JOURNAL_INVALID'});}
+  }
+
   function parsePostOperation(a, encoded) {
     try {
       const value = JSON.parse(encoded);
@@ -17787,7 +17807,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
           scope:{account:address.toString().toLowerCase(),chainId:String(nodeInfo.l1ChainId),rollup:rollupAddr.toLowerCase(),version:String(version),board:l2AddrHex.toLowerCase(),portal:portalAddr.toLowerCase()},
           Tx:a.Tx,node:rawNode,acknowledgeTx:config.acknowledgeTx,contextGuard:config.contextGuard}) : null;
     if(journalActions.includes(action) && (!transactionJournal || typeof transactionJournal.assertCanStart!=='function' || typeof transactionJournal.prepare!=='function' || typeof transactionJournal.confirmed!=='function'))throw Object.assign(new Error('Invalid transaction journal.'),{code:'BB_JOURNAL_INVALID'});
-    let resumedPost = null, resumedSpend = null, resumedClaim = null, claimOperation = null;
+    let resumedPost = null, resumedSpend = null, resumedClaim = null, claimOperation = null, resumedModeratorOperation = null;
     if(action==='recover') {
       if(!transactionJournal)throw new Error('Transaction journal is required for recovery.');
       if(config.contextGuard)await config.contextGuard();
@@ -17799,8 +17819,12 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         if (!saved?.operation) throw error;
         // Posts retain their public identity; note-spending actions must retain
         // their attributed application nullifier in every replacement proof.
-        let kind;try{kind=JSON.parse(saved.operation)?.kind;}catch{throw error;}
-        if(kind==='post') {
+        let kind,metadata;try{metadata=JSON.parse(saved.operation);kind=metadata?.kind;}catch{throw error;}
+        if(Array.isArray(metadata)) {
+          const restored=restoreModeratorOperation(a,saved.operation);
+          resumedModeratorOperation=saved.operation;action=restored.action;
+          config={...config,...restored,reconcilePrevious:false,censorWalletJson:config.censorWalletJson||config.aztecWallet};
+        } else if(kind==='post') {
           resumedPost = parsePostOperation(a, saved.operation);
           action='post';
           config={...config,action,isDummy:false,message:resumedPost.message,depositChainId:resumedPost.depositChain};
@@ -17839,7 +17863,12 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     if(transactionJournal) {
       if(config.reconcilePrevious===true&&['declare-immoral','set-moderation-policy','transfer-censor'].includes(action)) {
         if(typeof transactionJournal.reconcilePrevious!=='function')throw Object.assign(new Error('Moderator recovery is unavailable.'),{code:'BB_JOURNAL_INVALID'});
-        reconciledModerator=await transactionJournal.reconcilePrevious();
+        try { reconciledModerator=await transactionJournal.reconcilePrevious(); }
+        catch(error) {
+          if(error?.code!=='BB_RECOVERY_REQUIRED'||typeof transactionJournal.inspect!=='function'||typeof transactionJournal.allowReplacement!=='function')throw error;
+          const saved=await transactionJournal.inspect();restoreModeratorOperation(a,saved?.operation);
+          await transactionJournal.allowReplacement(saved.operation);resumedModeratorOperation=saved.operation;
+        }
       }
       await transactionJournal.assertCanStart();
     }
@@ -18320,6 +18349,11 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         const fresh=await transactionJournal.reconcilePrevious();
         if(fresh?.operation!==operation)throw Object.assign(new Error('Moderator recovery record changed.'),{code:'BB_RECOVERY_REQUIRED'});
         if(fresh.receipt.executionResult==='success')return {receipt:fresh.receipt};
+      }
+      if(resumedModeratorOperation) {
+        if(operation!==resumedModeratorOperation)throw Object.assign(new Error('The saved moderator request differs from the current action.'),{code:'BB_RECOVERY_REQUIRED'});
+        const current=unwrapPostValue(await a.boundedTransactionRead(()=>censorContract.methods.get_censor().simulate({from:censorAddress}),20000));
+        if(new a.Fr(BigInt(current.toString())).toString()!==censorAddress.toString())throw Object.assign(new Error('This wallet no longer has moderator authority.'),{code:'BB_RECOVERY_REQUIRED'});
       }
       transactionJournal.setOperation(operation);
       const sender=createPrivateFeeSender({a,config,privateFeeArtifact:env.privateFeeArtifact,
@@ -19248,7 +19282,14 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     const privateFeeAddress=await a.derivePrivateFeeAddress(env.privateFeeArtifact);
     if(privateFeeAddress.toString()!==config.privateFee.contractAddress)throw new Error('Private fee deployment configuration does not match the bundled contract.');
     if(config.action==='status')return {ok:true,address:owner.toString(),feePayer:privateFeeAddress.toString()};
-    let transactionJournal;
+    const invalidIntent=()=>Object.assign(new Error('The original private fee claim identity is unavailable.'),{code:'BB_RECOVERY_REQUIRED'});
+    const fundingKeys=['schema','chainId','version','rollupAddress','portalAddress','tokenAddress','privateFeeAddress','sender','nonce','amount','txHash','leafIndex'];
+    function fundingRecord(record) {
+      if(!record||typeof record!=='object'||Object.keys(record).some(key=>!fundingKeys.includes(key))||
+        fundingKeys.some(key=>typeof record[key]!=='string'||!record[key].length)||record.schema!=='private-fee-funding-v1')throw invalidIntent();
+      return Object.fromEntries(fundingKeys.map(key=>[key,record[key]]));
+    }
+    let transactionJournal, resumedOperation;
     if(['claim','recover-l2'].includes(config.action)) {
       if(typeof env.createTransactionJournal!=='function')throw Object.assign(new Error('Durable private fee recovery storage is required.'),{code:'BB_JOURNAL_INVALID'});
       const contracts=await node.getL1ContractAddresses();
@@ -19256,9 +19297,22 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         scope:{account:owner.toString().toLowerCase(),chainId:String(info.l1ChainId),version:String(info.rollupVersion),rollup:contracts.rollupAddress.toString().toLowerCase(),board:privateFeeAddress.toString().toLowerCase(),portal:contracts.feeJuicePortalAddress.toString().toLowerCase()},
         Tx:a.Tx,node,acknowledgeTx:config.acknowledgeTx,contextGuard:config.contextGuard});
       if(config.action==='recover-l2') {
-        const receipt=await transactionJournal.recover(),ok=receipt.executionResult==='success';
-        log(ok?'The saved private fee transaction succeeded.':'The saved private fee transaction reverted; the claim failed.',ok?'success':'warn');
-        return {ok,receipt,lastL2TxHash:receipt.txHash.toString(),state:ok?'transaction_recovered':'transaction_reverted'};
+        try {
+          const receipt=await transactionJournal.recover(),ok=receipt.executionResult==='success';
+          log(ok?'The saved private fee transaction succeeded.':'The saved private fee transaction reverted; the claim failed.',ok?'success':'warn');
+          return {ok,receipt,lastL2TxHash:receipt.txHash.toString(),state:ok?'transaction_recovered':'transaction_reverted'};
+        } catch(error) {
+          if(error?.code!=='BB_RECOVERY_REQUIRED'||typeof transactionJournal.inspect!=='function'||typeof transactionJournal.allowReplacement!=='function')throw error;
+          const saved=await transactionJournal.inspect();
+          let intent;try{intent=JSON.parse(saved?.operation);}catch{throw invalidIntent();}
+          if(!intent||Object.keys(intent).sort().join()!=='kind,owner,record,schemaVersion'||intent.schemaVersion!==1||
+            intent.kind!=='private-fee-claim'||intent.owner!==owner.toString().toLowerCase())throw invalidIntent();
+          const record=fundingRecord(intent.record);
+          resumedOperation=saved.operation;
+          await transactionJournal.allowReplacement(resumedOperation);
+          config={...config,action:'claim',fundingRecord:record};
+          log('Restoring the original private fee claim for a fresh proof.','info');
+        }
       }
       await transactionJournal.assertCanStart();
     }
@@ -19280,9 +19334,15 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       return {ok:true,record,lastEthereumTxHash:record.txHash};
     }
     if(config.action!=='claim'||!config.fundingRecord)throw new Error('Import the recovery file for your private fee deposit.');
+    const originalFunding=Object.freeze({...config.fundingRecord});
     const ethSigner=await env.getBrowserSigner();
-    const claim=await a.recoverPrivateFeeClaim({node,ethProvider:ethSigner.provider,owner,walletSecret:config.aztecWallet.secretKey,
-      privateFeeArtifact:env.privateFeeArtifact,record:config.fundingRecord,expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion)});
+    const claim=await a.boundedTransactionRead(()=>a.recoverPrivateFeeClaim({node,ethProvider:ethSigner.provider,owner,walletSecret:config.aztecWallet.secretKey,
+      privateFeeArtifact:env.privateFeeArtifact,record:originalFunding,expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion)}),20000);
+    const record=fundingRecord({...originalFunding,leafIndex:String(claim.leafIndex.toBigInt?.()??claim.leafIndex)});
+    const operation=JSON.stringify({schemaVersion:1,kind:'private-fee-claim',owner:owner.toString().toLowerCase(),record});
+    if(resumedOperation&&operation!==resumedOperation)throw invalidIntent();
+    if(typeof transactionJournal.setOperation!=='function')throw Object.assign(new Error('Private fee claim operation storage is required.'),{code:'BB_JOURNAL_INVALID'});
+    transactionJournal.setOperation(operation);
     let pxe;
     try{
       await env.initCRS();

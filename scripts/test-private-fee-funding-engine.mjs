@@ -4,13 +4,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {Fr} from '@aztec/foundation/curves/bn254';
+import {boundedTransactionRead} from '../shared/transaction-outcomes.mjs';
 const source=fs.readFileSync(new URL('../apps/src/fee-juice/engine.js',import.meta.url),'utf8');
 function harness(){
  const calls=[],owner={toString:()=> 'owner'},payer={toString:()=> 'shared'},wallet={},claim={amount:'100',salt:'private-salt',secret:'private-secret',leafIndex:'1'};
  const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5}),getL1ContractAddresses:async()=>({rollupAddress:'rollup',feeJuicePortalAddress:'fee-portal'})};
  const pxe={registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{},stop:async()=>calls.push('stop')};
  const context=vm.createContext({BillboardPrivateFeeRouting:{createAztecWallet:(...args)=>{wallet.journal=args.at(-1).transactionJournal;return wallet;}}});vm.runInContext(source,context);
- const a={Fr,GasSettings:{from:()=>({getFeeLimit:()=>new Fr(10)})},deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
+ const a={Fr,boundedTransactionRead,GasSettings:{from:()=>({getFeeLimit:()=>new Fr(10)})},deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
   SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;},
   getContractInstanceFromInstantiationParams:async()=>({address:owner}),derivePrivateFeeAddress:async()=>payer,createAztecNodeClient:()=>node,
   computePartialAddress:async()=>Fr.ONE,createPXE:async()=>pxe,AccountManager:{create:async()=>({address:owner})},
@@ -18,10 +19,11 @@ function harness(){
   preparePrivateFeePayment:async input=>{calls.push(['prepare',input]);return {paymentMethod:'private',gasSettings:{}};},
   BatchCall:class{constructor(w,actions){assert.equal(w,wallet);assert.equal(actions.length,0);}send=async opts=>{calls.push(['send',opts]);return {receipt:{status:'checkpointed'}};}}
  };
- const env={createJournalStorage:()=>({}),createTransactionJournal:async input=>{calls.push(['journal',input]);return {assertCanStart:async()=>calls.push('journal-preflight'),lastTxHash:'saved-hash'};},aztec:a,privateFeeArtifact:{},log:message=>calls.push(['log',message]),initCRS:async()=>{},createStore:async()=>({}),getBrowserSigner:async()=>({provider:{}}),ethers:{parseUnits:()=>100n},
+ const journal={assertCanStart:async()=>calls.push('journal-preflight'),setOperation:operation=>calls.push(['operation',operation]),lastTxHash:'saved-hash'};
+ const env={createJournalStorage:()=>({}),createTransactionJournal:async input=>{calls.push(['journal',input]);return journal;},aztec:a,privateFeeArtifact:{},log:message=>calls.push(['log',message]),initCRS:async()=>{},createStore:async()=>({}),getBrowserSigner:async()=>({provider:{}}),ethers:{parseUnits:()=>100n},
  fundPrivateFees:async input=>{calls.push(['fund',input]);const record={nonce:'1'};await input.saveRecovery(record);return record;}};
- const config={aztecWallet:{secretKey:Fr.ONE.toString(),salt:0},privateFee:{contractAddress:'shared',gasSettings:{}},fundingRecord:{nonce:'1'},saveRecovery:async record=>calls.push(['save',record]),depositAmount:'0.1'};
- return {calls,owner,claim,a,env,config,wallet,run:action=>context.runFeeJuiceFlow(env,{...config,action})};
+ const config={aztecWallet:{secretKey:Fr.ONE.toString(),salt:0},privateFee:{contractAddress:'shared',gasSettings:{}},fundingRecord:{schema:'private-fee-funding-v1',chainId:'31337',version:'5',rollupAddress:'rollup',portalAddress:'fee-portal',tokenAddress:'token',privateFeeAddress:'shared',sender:'sender',nonce:'1',amount:'100',txHash:Fr.ONE.toString()},saveRecovery:async record=>calls.push(['save',record]),depositAmount:'0.1'};
+ return {calls,owner,claim,a,env,config,wallet,journal,run:action=>context.runFeeJuiceFlow(env,{...config,action})};
 }
 test('funding deposits to shared address and passes mandatory recovery callback',async()=>{
  const h=harness();const result=await h.run('deposit');assert.equal(result.record.nonce,'1');
@@ -68,4 +70,54 @@ for(const outcome of ['approved','funded','reverted','replaced'])test(`fee Ether
  h.config.retryEthereum=true;
  const result=await h.run('recover-eth');assert.equal(result.outcome,outcome);assert.equal(options.retry,true);assert.equal(options.walletSalt,Fr.ZERO.toString());
  assert(!h.calls.some(c=>c[0]==='prepare'||c[0]==='send'));
+});
+async function staleHarness(){
+ const h=harness();await h.run('claim');
+ const operation=h.calls.find(c=>c[0]==='operation')[1];h.calls.length=0;
+ h.journal.recover=async()=>{throw Object.assign(new Error('stale'),{code:'BB_RECOVERY_REQUIRED'});};
+ h.journal.inspect=async()=>({operation});
+ h.journal.allowReplacement=async saved=>{assert.equal(saved,operation);h.calls.push('allow-replacement');};
+ return {...h,operation};
+}
+test('claim persists exact public funding identity before preparation without duplicating secrets',async()=>{
+ const h=harness();await h.run('claim');
+ const encoded=h.calls.find(c=>c[0]==='operation')[1],intent=JSON.parse(encoded);
+ assert.equal(intent.record.leafIndex,'1');assert.equal(intent.owner,'owner');
+ assert(!encoded.includes('private-secret'));assert(!encoded.includes('private-salt'));
+ assert(h.calls.findIndex(c=>c[0]==='operation')<h.calls.findIndex(c=>c[0]==='prepare'));
+});
+test('stale private fee claim restores saved funding record even when UI holds another deposit',async()=>{
+ const h=await staleHarness();h.config.fundingRecord={nonce:'different'};
+ await h.run('recover-l2');
+ const restored=h.calls.find(c=>c[0]==='recover')[1].record;
+ assert.deepEqual(JSON.parse(JSON.stringify(restored)),JSON.parse(h.operation).record);
+ assert.equal(h.calls.filter(c=>c[0]==='send').length,1);assert(!h.calls.some(c=>c[0]==='fund'));
+ assert.equal(h.calls.find(c=>c[0]==='operation')[1],h.operation);
+});
+for(const code of ['BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED'])test(`${code} does not regenerate private fee claim`,async()=>{
+ const h=await staleHarness();h.journal.recover=async()=>{throw Object.assign(new Error('blocked'),{code});};
+ await assert.rejects(h.run('recover-l2'),{code});assert(!h.calls.some(c=>c[0]==='recover'||c[0]==='prepare'||c==='allow-replacement'));
+});
+test('live old claim cannot authorize replacement',async()=>{
+ const h=await staleHarness();h.journal.allowReplacement=async()=>{throw Object.assign(new Error('live'),{code:'BB_RECOVERY_REQUIRED'});};
+ await assert.rejects(h.run('recover-l2'),{code:'BB_RECOVERY_REQUIRED'});assert(!h.calls.some(c=>c[0]==='recover'||c[0]==='prepare'));
+});
+for(const change of ['owner','kind','unknown-record-key'])test(`saved fee claim rejects ${change}`,async()=>{
+ const h=await staleHarness(),intent=JSON.parse(h.operation);
+ if(change==='unknown-record-key')intent.record.secret='must-not-read';else intent[change]='different';
+ h.journal.inspect=async()=>({operation:JSON.stringify(intent)});
+ await assert.rejects(h.run('recover-l2'),{code:'BB_RECOVERY_REQUIRED'});assert(!h.calls.some(c=>c[0]==='prepare'||c==='allow-replacement'));
+});
+test('changed canonical message index blocks regenerated claim before proving',async()=>{
+ const h=await staleHarness();h.claim.leafIndex='2';
+ await assert.rejects(h.run('recover-l2'),{code:'BB_RECOVERY_REQUIRED'});assert(!h.calls.some(c=>c[0]==='prepare'||c[0]==='send'));
+});
+test('canonical funding validation failure blocks regenerated claim',async()=>{
+ const h=await staleHarness();h.a.recoverPrivateFeeClaim=async()=>{throw Object.assign(new Error('reorg'),{code:'PRIVATE_FEE_RECOVERY_REORG'});};
+ await assert.rejects(h.run('recover-l2'),{code:'PRIVATE_FEE_RECOVERY_REORG'});assert(!h.calls.some(c=>c[0]==='prepare'||c[0]==='send'));
+});
+test('private fee funding reconciliation has a bounded deadline',async()=>{
+ const h=await staleHarness();h.a.recoverPrivateFeeClaim=async()=>new Promise(()=>{});
+ h.a.boundedTransactionRead=(fn,timeout)=>{assert.equal(timeout,20000);return boundedTransactionRead(fn,5);};
+ await assert.rejects(h.run('recover-l2'),{code:'BB_SUBMISSION_UNKNOWN'});assert(!h.calls.some(c=>c[0]==='prepare'||c[0]==='send'));
 });

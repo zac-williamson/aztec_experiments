@@ -1,0 +1,130 @@
+{
+  "task_id": "W03",
+  "outcome": "pass",
+  "recorded_at": "2026-09-16T19:24:22.577403+00:00",
+  "source_fingerprint": "3637aa24ae5b1d130f7e5129778e13e9457c85d1c4deae315182272abbd52863",
+  "source_inventory": "evidence/W03/source-final-043.json",
+  "artifacts": [
+    {
+      "path": "evidence/W03/source-final-043.json",
+      "sha256": "7d34bd49bc622a4247257efa6c82ed2e15a3fa613aa03542d1746132ca5a5fd5"
+    },
+    {
+      "path": "evidence/W03/artifact-manifest-final-043.json",
+      "sha256": "bce916135cd41348ce51c3b72b0bafa6d0a53f8b3e0615551213122e8d8fc1d5"
+    },
+    {
+      "path": "evidence/W03/recovery-runbook-final-043.md",
+      "sha256": "3cc4b06663182c28d1e1b446b25fcf06e58c181db17ac36429b123c8b76212be"
+    },
+    {
+      "path": "evidence/W03/remaining-stage-coverage.md",
+      "sha256": "804e47dde2a59372589b07687e025fa851e2e8d81bf3148577331809907602b6"
+    },
+    {
+      "path": "evidence/W03/final-review-043.md",
+      "sha256": "18c24eef18a79c7ef2fe86328c6f5e2f20f783833de715c5e3ba75112a8f246e"
+    },
+    {
+      "path": "evidence/W03/consumer-review-041.md",
+      "sha256": "571de046a37c1460889b5b6854cfd02d397d30de7c25c363a854c62ce8eea05f"
+    },
+    {
+      "path": "evidence/W03/consumers-integrated-041.log",
+      "sha256": "76ea64d6b7aaf5fc2659a9bd361f5c1e9040b3b4b2765ae2aa1f57d785b91497"
+    },
+    {
+      "path": "evidence/W03/consumers-sdk-041.log",
+      "sha256": "9bf4af27858c35167099508a4383946330e58d0dffbaf6894a53bcfb02916dbf"
+    },
+    {
+      "path": "evidence/W03/consumers-apps-041.log",
+      "sha256": "96f5e814889ce0626ce9aee1a5f05b13fef5042f202df798e6a8e699d57d17f4"
+    },
+    {
+      "path": "evidence/W03/final-browser-043.log",
+      "sha256": "54b0c9bacd0b033010f961015ff331ea7221d6fa0180f88e00d4a813558c7d26"
+    },
+    {
+      "path": "evidence/W03/final-ethereum-042.log",
+      "sha256": "641dd9eb3d765fd62ddc0ad62b88d634591152ead534d4ec44a3499015aca0ea"
+    },
+    {
+      "path": "evidence/W03/final-moderation-043.log",
+      "sha256": "67cd4185d79fc265acaa2410edb8877b88d8689cedc7dd2e767bf4435a6f9007"
+    },
+    {
+      "path": "evidence/W03/author-recovery-milestone-037.md",
+      "sha256": "569fe548ef92d4cdb59bba8928a168a71ef1a4c5e5bd9576194ab732adeae4cf"
+    },
+    {
+      "path": "evidence/W03/stale-milestone-014.md",
+      "sha256": "ad92039035b3f8d7773e91fda1145e990b84b7ce16fdee6848881ecce9dc75f7"
+    },
+    {
+      "path": "evidence/W01/application-8df5c9f5-4b7d-4a4c-9a90-4d726f9748e5.json",
+      "sha256": "b6cbffadc9c987d07d7f134efe58e42f400fadc91742fe06a421c7d4a8819e21"
+    },
+    {
+      "path": "evidence/W01/application-74babdac-4283-478d-97ae-5dd5fa9c0909.json",
+      "sha256": "842745808372191a56981d935d89570fb606a696d6db3f572aa4bc6cf9cb0bba"
+    }
+  ],
+  "criteria": [
+    {
+      "id": "W03-A01",
+      "result": "pass",
+      "summary": "Canonical status checks distinguish success from revert; moderator signer/daemon rejects failed operations. Unknown and reorganized results remain unresolved.",
+      "artifacts": [
+        "evidence/W03/consumers-integrated-041.log",
+        "evidence/W03/remaining-stage-coverage.md",
+        "evidence/W03/final-review-043.md",
+        "evidence/W03/final-moderation-043.log"
+      ]
+    },
+    {
+      "id": "W03-A02",
+      "result": "pass",
+      "summary": "Encrypted journals preserve exact transaction and operation identity across reload/crash. Real browser restoration and real local Ethereum lost-response tests pass; SDK journal and engine fixtures cover all L2 consumers and replacement races.",
+      "artifacts": [
+        "evidence/W03/consumers-integrated-041.log",
+        "evidence/W03/remaining-stage-coverage.md",
+        "evidence/W03/final-review-043.md",
+        "evidence/W03/final-browser-043.log",
+        "evidence/W03/final-ethereum-042.log"
+      ]
+    },
+    {
+      "id": "W03-A03",
+      "result": "pass",
+      "summary": "History fixture scans1100 blocks in22 bounded pages, persists encrypted canonical checkpoints and resumes after restart/reorg without an unstored transaction hash; missing note alone never confirms exit.",
+      "artifacts": [
+        "evidence/W03/consumers-integrated-041.log",
+        "evidence/W03/remaining-stage-coverage.md",
+        "evidence/W03/final-review-043.md"
+      ]
+    },
+    {
+      "id": "W03-A04",
+      "result": "pass",
+      "summary": "Genuine same-post replacement after real invalidation passed; genuine application-note attribution/stale rejection passed. Current consumer fixtures preserve original identity, predecessor invalidity, deadlines and reorg handling. Native reports are historical source-bound evidence; T05 reconciles the final candidate.",
+      "artifacts": [
+        "evidence/W03/consumers-integrated-041.log",
+        "evidence/W03/remaining-stage-coverage.md",
+        "evidence/W03/final-review-043.md",
+        "evidence/W03/consumer-review-041.md",
+        "evidence/W01/application-8df5c9f5-4b7d-4a4c-9a90-4d726f9748e5.json",
+        "evidence/W01/application-74babdac-4283-478d-97ae-5dd5fa9c0909.json"
+      ]
+    }
+  ],
+  "review": {
+    "kind": "self-review",
+    "reviewer": "root with delegated recovery_review AI review",
+    "summary": "Reviewed exact operation recovery, canonical outcomes, authority/custody and test limits. Not independent external review.",
+    "artifacts": [
+      "evidence/W03/final-review-043.md",
+      "evidence/W03/consumer-review-041.md"
+    ]
+  }
+}

@@ -58,3 +58,9 @@ Active: bind screening/withdrawal replacement proofs to the same board note null
 Same-note recovery: real SDK call emits three board nullifiers, so select the exact persistent deposit note through scoped PXE state and require its unique inclusion in the final proof.102 focused checks pass. Native034 in flight; prior failed assumption/sampler attempts preserved. Exact claim recovery and one-attempt submission implemented with canonical L1 receipt checks.
 
 Author recovery milestone verified:423 integrated checks, built-browser recovery and genuine same-note screening/withdrawal/refund in300088ms (1620448KiB peak), all cleanup complete. Continue private fee claim recovery, then deployment/moderator stale proofs. W03 remains active.
+
+Author recovery e73c406 pushed. Active W03 lanes: private fee claim engine/tests delegated; root handles stale deployment/binding proofs. Heavy checks remain serial. Moderator recovery follows.
+
+W03 final review: all remaining consumer recovery implemented;468 integrated checks, actual browser recovery, real local Ethereum lost-response recovery and moderation checks pass. Preparing immutable completion evidence. F01 read-only gap review delegated.
+
+W03 complete with immutable final evidence;468 integrated checks and browser/Ethereum/moderation checks passed. Historical genuine proofs are explicitly scoped. Continue F01 public feed; release gates remain incomplete.

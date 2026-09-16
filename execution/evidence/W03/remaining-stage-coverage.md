@@ -1,27 +1,23 @@
-# Remaining W03 qualification checkpoint
+# W03 final stage coverage
 
-Completed milestones are historical evidence, not final W03 closure. Current
-implementation is in flight after deployment commit48038a9.
+All transaction consumers now use durable, authenticated identity and explicit
+canonical outcomes. Current integrated checks:468 passing, zero failures.
 
-| Stage | Existing evidence | Remaining qualification |
-|---|---|---|
-| L1 collateral deposit/refund | Real Anvil lost-response recovery, canonical exact-nonce/event checks, portable records | Reconcile in final all-stage suite |
-| Private fee approval/deposit | Real pinned token/Inbox/portal lost-response recovery; real native funding | Reconcile in final all-stage suite |
-| Aztec claim/post/withdraw journal | Actual SDK serialization, browser/file storage, process death before broadcast, canonical recovery | Real post replacement and author claim/screen/withdraw recovery implemented; fee/deployment/moderator regeneration remains |
-| Real post stale proof | Linked predecessor records; same nonce/message/chain; 159 integrated checks | Genuine proof replacement passed296744ms; browser and143 artifact checks pass; final all-stage reconciliation remains |
-| Dummy screening | Exact proven transaction replay; ambiguous state conflict refuses regeneration | Exact source-note nullifier binding implemented and genuine attribution qualified; finish integrated milestone and final reconciliation |
-| Moderator actions | Exact operation metadata, trusted daemon reconciliation, canonical repeated-job success | Final stage checks; durable queue is later M02 |
-| Deployment | Engine restart tests, real Ethereum creation/activation recovery, pending settlement UI | Reconcile in final all-stage suite |
-| Withdrawal history | Full history, authenticated progress cursor, reorg anchors, beyond500 blocks | Reconcile in final all-stage suite |
+| Stage | Qualification |
+|---|---|
+| L1 collateral deposit/refund | Real Anvil mined-response loss, exact nonce/event recovery, repeat recovery without resending |
+| Private fee approval/deposit | Real pinned token/Inbox/portal recovery, no duplicate payment |
+| Author claims | Exact receipt/message/custody-bound recovery; changed identity and unknown outcomes rejected |
+| Real posts | Genuine invalid old proof, journal restore and same-post replacement inclusion; current engine/journal regression |
+| Screening/withdrawal | Genuine same-note proof attribution and stale rejection; source sequence/final nullifier preservation and replacement races tested in client fixtures |
+| Private fee claim | Saved beneficiary/funding record restored; canonical funding revalidation; edited UI intent ignored |
+| Moderator actions | Saved method/arguments restored; authority rechecked; differing daemon jobs blocked; canonical revert never success |
+| Deployment/binding | Predicted board and original portal preserved; conflicting state blocked; real Ethereum creation/activation recovery |
+| Withdrawal history |1100-block fixture,22 bounded pages, encrypted restart cursor, reorg reconciliation, no unstored hash required |
+| Browser/CLI custody | Actual built browser reload and portable restore; encrypted file journal, atomic writes, process death and lock checks |
 
-Resolved in25bd7c0: the user-engine missing-note withdrawal branch previously: absence currently logs
-“already withdrawn” without independently identifying the exit transaction. This
-must not be presented as proved success. Likewise stale claim/withdraw recovery
-must preserve the selected deposit identity, and cannot silently become a new
-logical operation. Keep unresolved or ambiguous requests durable.
-
-The native supervisor's sampler failure is a harness issue, not an application
-vulnerability or proof rejection. Two interrupted attempts are preserved. Cleanup
-now always kills remembered children after freezing them, including read failures;
-full snapshot validation/retry and real detached-process cleanup tests pass. The
-third attempt passed under2GiB RSS and540s limits with all owned processes/data removed.
+The genuine runs are historical source-bound reports; final source reconciliation
+remains T05. Engine RPC fixtures are not real chain/proof evidence. The real
+screening/withdrawal run qualifies attribution and rejection, not a live combined
+regenerated-screening race. M02 owns durable moderation queue operations. No
+external audit, network clearance or elapsed soak is claimed here.

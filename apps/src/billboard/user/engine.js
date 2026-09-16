@@ -529,6 +529,26 @@
   }
   g.BillboardModerationCodec = Object.freeze({ packModerationReason, decodeModerationReason, moderationArguments, readPolicySnapshot });
 
+  function restoreModeratorOperation(a, encoded) {
+    try {
+      const value=JSON.parse(encoded);
+      if(!Array.isArray(value)||value.length!==2||!Array.isArray(value[1]))throw new Error();
+      const [kind,args]=value;
+      const field=value=>{if(typeof value!=='string'||!/^0x[0-9a-f]{64}$/.test(value))throw new Error();const parsed=new a.Fr(BigInt(value));if(parsed.toString()!==value)throw new Error();return parsed;};
+      if(kind==='transfer_censor'&&args.length===1) return {action:'transfer-censor',newCensor:field(args[0]).toString()};
+      if(kind==='set_moderation_policy'&&args.length===2&&Array.isArray(args[0])&&args[0].length===48) {
+        const fields=args[0].map(field),length=Number(field(args[1]).toBigInt());
+        if(!Number.isSafeInteger(length)||length<1||length>1488||typeof g.unpackFieldsToString!=='function')throw new Error();
+        return {action:'set-moderation-policy',moderationPolicy:g.unpackFieldsToString(fields.map(v=>v.toBigInt()),length)};
+      }
+      if(kind==='declare_immoral'&&args.length===4&&Array.isArray(args[2])&&args[2].length===7&&typeof args[3]==='string'&&/^(0|[1-9][0-9]*)$/.test(args[3])) {
+        const postId=field(args[0]).toString(),expectedPolicyVersion=field(args[1]).toString();
+        return {action:'declare-immoral',postId,expectedPolicyVersion,censorResponse:decodeModerationReason(args[2].map(field),Number(args[3]))};
+      }
+      throw new Error();
+    } catch {throw Object.assign(new Error('Saved moderator operation is invalid. Preserve the recovery record.'),{code:'BB_JOURNAL_INVALID'});}
+  }
+
   function parsePostOperation(a, encoded) {
     try {
       const value = JSON.parse(encoded);
@@ -770,7 +790,7 @@
           scope:{account:address.toString().toLowerCase(),chainId:String(nodeInfo.l1ChainId),rollup:rollupAddr.toLowerCase(),version:String(version),board:l2AddrHex.toLowerCase(),portal:portalAddr.toLowerCase()},
           Tx:a.Tx,node:rawNode,acknowledgeTx:config.acknowledgeTx,contextGuard:config.contextGuard}) : null;
     if(journalActions.includes(action) && (!transactionJournal || typeof transactionJournal.assertCanStart!=='function' || typeof transactionJournal.prepare!=='function' || typeof transactionJournal.confirmed!=='function'))throw Object.assign(new Error('Invalid transaction journal.'),{code:'BB_JOURNAL_INVALID'});
-    let resumedPost = null, resumedSpend = null, resumedClaim = null, claimOperation = null;
+    let resumedPost = null, resumedSpend = null, resumedClaim = null, claimOperation = null, resumedModeratorOperation = null;
     if(action==='recover') {
       if(!transactionJournal)throw new Error('Transaction journal is required for recovery.');
       if(config.contextGuard)await config.contextGuard();
@@ -782,8 +802,12 @@
         if (!saved?.operation) throw error;
         // Posts retain their public identity; note-spending actions must retain
         // their attributed application nullifier in every replacement proof.
-        let kind;try{kind=JSON.parse(saved.operation)?.kind;}catch{throw error;}
-        if(kind==='post') {
+        let kind,metadata;try{metadata=JSON.parse(saved.operation);kind=metadata?.kind;}catch{throw error;}
+        if(Array.isArray(metadata)) {
+          const restored=restoreModeratorOperation(a,saved.operation);
+          resumedModeratorOperation=saved.operation;action=restored.action;
+          config={...config,...restored,reconcilePrevious:false,censorWalletJson:config.censorWalletJson||config.aztecWallet};
+        } else if(kind==='post') {
           resumedPost = parsePostOperation(a, saved.operation);
           action='post';
           config={...config,action,isDummy:false,message:resumedPost.message,depositChainId:resumedPost.depositChain};
@@ -822,7 +846,12 @@
     if(transactionJournal) {
       if(config.reconcilePrevious===true&&['declare-immoral','set-moderation-policy','transfer-censor'].includes(action)) {
         if(typeof transactionJournal.reconcilePrevious!=='function')throw Object.assign(new Error('Moderator recovery is unavailable.'),{code:'BB_JOURNAL_INVALID'});
-        reconciledModerator=await transactionJournal.reconcilePrevious();
+        try { reconciledModerator=await transactionJournal.reconcilePrevious(); }
+        catch(error) {
+          if(error?.code!=='BB_RECOVERY_REQUIRED'||typeof transactionJournal.inspect!=='function'||typeof transactionJournal.allowReplacement!=='function')throw error;
+          const saved=await transactionJournal.inspect();restoreModeratorOperation(a,saved?.operation);
+          await transactionJournal.allowReplacement(saved.operation);resumedModeratorOperation=saved.operation;
+        }
       }
       await transactionJournal.assertCanStart();
     }
@@ -1303,6 +1332,11 @@
         const fresh=await transactionJournal.reconcilePrevious();
         if(fresh?.operation!==operation)throw Object.assign(new Error('Moderator recovery record changed.'),{code:'BB_RECOVERY_REQUIRED'});
         if(fresh.receipt.executionResult==='success')return {receipt:fresh.receipt};
+      }
+      if(resumedModeratorOperation) {
+        if(operation!==resumedModeratorOperation)throw Object.assign(new Error('The saved moderator request differs from the current action.'),{code:'BB_RECOVERY_REQUIRED'});
+        const current=unwrapPostValue(await a.boundedTransactionRead(()=>censorContract.methods.get_censor().simulate({from:censorAddress}),20000));
+        if(new a.Fr(BigInt(current.toString())).toString()!==censorAddress.toString())throw Object.assign(new Error('This wallet no longer has moderator authority.'),{code:'BB_RECOVERY_REQUIRED'});
       }
       transactionJournal.setOperation(operation);
       const sender=createPrivateFeeSender({a,config,privateFeeArtifact:env.privateFeeArtifact,
