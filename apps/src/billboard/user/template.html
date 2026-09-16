@@ -25,6 +25,8 @@
     <label>L1 Portal Address (0x...)</label>
     <input id="portalAddr" placeholder="0x... (from the deploy app)">
     <div id="walletButtonsContainer"></div>
+    <button type="button" onclick="recoverSavedTransaction()">Recover saved Aztec transaction</button>
+    <p class="small">After a restart, recover the previous transaction before sending another. Recovery reuses its saved proof.</p>
     <div id="setupStatus" class="status-container"></div>
   </div>
 </section>

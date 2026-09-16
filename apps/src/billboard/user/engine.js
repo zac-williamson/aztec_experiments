@@ -297,6 +297,7 @@
       }
 
       async sendTx(executionPayload, opts) {
+        const previousJournal = this._transactionJournal ? await this._transactionJournal.assertCanStart() : null;
         const fixedGas = !!opts.fee?.gasSettings;
         const checkedGas = fixedGas ? a.GasSettings.from(opts.fee.gasSettings) : null;
         log(fixedGas ? '  Simulating with configured gas limits...' : '  Estimating gas (simulating tx)...', 'info');
@@ -351,12 +352,15 @@
 
         log('  Transaction hash: ' + txHash.toString(), 'info');
         if (this._contextGuard) await this._contextGuard();
+        if (this._transactionJournal) await this._transactionJournal.prepare(tx, previousJournal);
+        if (this._contextGuard) await this._contextGuard();
         await a.submitOnceWithReconciliation(rawNode,tx);
         const waitOpts=typeof opts.wait==='object'?opts.wait:{};
         const receipt=await a.waitForSuccessfulReceipt(rawNode,tx,{
           timeoutMs:(waitOpts.timeout ?? 540)*1000,intervalMs:(waitOpts.interval ?? 5)*1000,
           now:()=>Date.now(),sleep:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
         });
+        if (this._transactionJournal) this._transactionJournal.confirmed(receipt);
         log('  Tx confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
         return { receipt };
       }
@@ -365,6 +369,7 @@
     const wallet = new AztecWallet(pxe, aztecNode);
     wallet._preProveHook = opts.preProveHook || null;
     wallet._contextGuard = opts.contextGuard || null;
+    wallet._transactionJournal = opts.transactionJournal || null;
     wallet._secretKey = secretKey;
     return wallet;
   }
@@ -565,7 +570,7 @@
         claim = undefined;
         return result;
       } catch (error) {
-        if (['BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED'].includes(error?.code)) throw privateFeeFailure(error.code);
+        if (['BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID'].includes(error?.code)) throw privateFeeFailure(error.code);
         if (error?.code === 'BB_STATE_CONFLICT') {
           const allowed = ['Existing nullifier', 'Block header not found'];
           if (Array.isArray(error.stateReasons) && error.stateReasons.length > 0 && error.stateReasons.every(reason => allowed.includes(reason))) {
@@ -716,6 +721,25 @@
     log('  L2 billboard: ' + l2AddrHex, 'success');
     log('  L1 portal: ' + portalAddr, 'info');
 
+    const journalActions = ['claim','post','withdraw','auto','recover'];
+    if(journalActions.includes(action) && typeof env.createTransactionJournal!=='function')throw Object.assign(new Error('Durable transaction journal is required.'),{code:'BB_JOURNAL_INVALID'});
+    const transactionJournal = journalActions.includes(action)
+      ? await env.createTransactionJournal({walletSecret:secretKeyHex,walletSalt:saltVal,
+          scope:{account:address.toString().toLowerCase(),chainId:String(nodeInfo.l1ChainId),rollup:rollupAddr.toLowerCase(),version:String(version),board:l2AddrHex.toLowerCase(),portal:portalAddr.toLowerCase()},
+          Tx:a.Tx,node:rawNode,acknowledgeTx:config.acknowledgeTx,contextGuard:config.contextGuard}) : null;
+    if(journalActions.includes(action) && (!transactionJournal || typeof transactionJournal.assertCanStart!=='function' || typeof transactionJournal.prepare!=='function' || typeof transactionJournal.confirmed!=='function'))throw Object.assign(new Error('Invalid transaction journal.'),{code:'BB_JOURNAL_INVALID'});
+    if(action==='recover') {
+      if(!transactionJournal)throw new Error('Transaction journal is required for recovery.');
+      if(config.contextGuard)await config.contextGuard();
+      const receipt=await transactionJournal.recover();
+      const succeeded=receipt.executionResult==='success';
+      log((succeeded?'Saved transaction succeeded. Hash: ':'Saved transaction reverted; the action failed. Hash: ')+receipt.txHash.toString(),succeeded?'success':'warn');
+      return {recovered:true,lastL2TxHash:receipt.txHash.toString(),state:succeeded?'transaction_recovered':'transaction_reverted'};
+    }
+    // Check before any action-specific state changes, including auto-mode L1 sends.
+    if(transactionJournal)await transactionJournal.assertCanStart();
+
+
     // Check if L2 contract is deployed
     let l2Deployed = false;
     let existingInstance = null;
@@ -842,6 +866,7 @@
         wallet = cached.wallet;
         wallet._preProveHook = config.preProveHook || null;
         wallet._contextGuard = config.contextGuard || null;
+        wallet._transactionJournal = transactionJournal;
         contract = cached.contract;
         // Re-sync to pick up latest state
         try { await pxe.sync(); } catch (e) {}
@@ -892,7 +917,7 @@
         // Step 7: Create wallet
         // ============================================================
         log('Step 7: Creating wallet...', 'info');
-        wallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, secretKey, { preProveHook: config.preProveHook, contextGuard: config.contextGuard });
+        wallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, secretKey, { preProveHook: config.preProveHook, contextGuard: config.contextGuard, transactionJournal });
         const accountManager = await a.AccountManager.create(wallet, secretKey, accountContract, { salt: new a.Fr(saltVal) });
         wallet._accountManager = accountManager;
         log('  Wallet ready.', 'success');
@@ -2181,6 +2206,7 @@
       throw new Error('Unknown action: ' + action + '. Valid: status, deposit, claim, post, list, withdraw, claim-l1, auto');
     }
 
+    result.lastL2TxHash = transactionJournal?.lastTxHash || null;
     result.state = stateStatus;
     result.l2Addr = l2AddrHex;
     result.portalAddr = portalAddr;

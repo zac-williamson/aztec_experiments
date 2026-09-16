@@ -41,9 +41,9 @@ The browser has existing deposit, dummy-post, withdrawal and L1-claim actions, b
 
 Check the exact transaction receipt on the correct chain. After an L1 refund, verify its successful receipt and `Withdrawn` event, and that `getDeposit(originalDepositor)` has nonce and amount zero. A status label, timeout, or message containing “already consumed” is not proof of payment. A reverted ETH transfer rolls back both the receipt change and Outbox consumption, so the same legitimate refund can be retried after the recipient can accept ETH.
 
-Without `--withdraw-tx`, discovery only scans the latest 500 L2 blocks. A withdrawal older than that can still be claimed using its transaction hash. If the hash is missing, recover it from retained transaction records or an appropriate archival source; the current UI cannot guarantee automatic discovery. Do not submit another L2 withdrawal just because the scan says “Withdraw on L2 first.”
+Without `--withdraw-tx`, discovery scans the full requested L2 history in50-block pages. Each lookup attempt is bounded to20seconds; incomplete history remains unknown. Persistent scan cursors remain unfinished, so a very large chain may require the saved transaction hash or an archival lookup. Never submit another withdrawal merely because discovery is incomplete.
 
-The CLI currently waits in 30-second intervals for an L2-to-L1 witness, up to 90 minutes. This is a network-settlement wait, not application proof generation; its printed “40 minutes” estimate is not a guarantee. Production settlement belongs to the network. Local application tests use the official settlement controls and their separate short test deadline; do not run a network prover for this recovery procedure.
+The Ethereum claim action checks for the L2-to-L1 witness once and returns a pending outcome when settlement is not ready. Retry the claim later. Production settlement belongs to the network; no application process needs to wait ninety minutes. Local tests use the official settlement controls and their short test deadline; do not run a network prover for recovery.
 
 ## Limits and authority
 
@@ -51,4 +51,41 @@ Deposits are disabled before authenticated Ready activation. After activation, t
 
 Lost escrow claim secrets, lost wallet keys and permanent protocol unavailability can make recovery impossible. No administrator can refund collateral while leaving a live L2 posting right. A user who can restore the correct state follows the same screened, debt-paid exit as everyone else.
 
-W02 still owns reviewed backup/export/restore UX and private-cache handling. W03 still owns durable submission journals, reliable historical discovery and honest unknown-state handling. These gaps must be completed before presenting recovery as a production-ready product.
+W02 provides the supported wallet/claim-secret backup and private-cache route. W03 still owns complete transaction-stage recovery, portable transaction provenance, resumable historical discovery and honest unknown-state handling. These gaps must be completed before presenting recovery as a production-ready product.
+
+
+## Saved Aztec transaction recovery (W03 partial implementation)
+
+The user browser and user CLI now save the exact proven Aztec transaction,
+encrypted under the wallet key and full salt, before claim/post/withdraw submission.
+The saved record is bound to account, chain, rollup/version, board and portal.
+A failed storage write stops submission. The last record remains after confirmation.
+This currently covers user L2 actions; Ethereum transactions, deployment, fee-funding
+and separate moderation actions still need journal integration.
+
+After a browser restart, restore the same wallet in the same browser profile,
+select the same portal and use **Recover saved Aztec transaction** in Wallet Setup.
+Recovery checks the saved hash and, if it is dropped but still valid, resubmits
+identical bytes without making a new proof. It displays confirmed success and
+confirmed revert differently. A successful recovery lookup lets the live page
+start another action; restarting the page requires reconciliation again.
+
+For the CLI, use the `recover` action with the usual explicit RPC, portal and wallet
+arguments. The returned transaction hash can be passed as `--acknowledge-tx <hash>`
+when intentionally starting another action. The CLI rechecks that receipt against
+the canonical chain before accepting this acknowledgement. Pending, unknown or
+reorganized outcomes do not authorize replacement. Invalid/stale dropped proofs
+remain blocked pending the later logical-operation recovery work.
+
+Keep `transaction-journal-v1/` alongside the Aztec wallet file. It contains encrypted
+records, private directories/files, atomic replacement and fsync/read-back. A `.lock`
+left by a crash during a file update must be inspected only after all users of the
+wallet are stopped; preserve the record and temporary files before administrative
+lock recovery. No automatic stale-lock takeover is implemented.
+
+The browser record lives in IndexedDB `aztec-billboard-transaction-journal-v1`.
+Do not clear this browser profile while a transaction outcome is unresolved.
+The current password-encrypted wallet backup does **not** include this journal;
+restoring keys on a fresh device does not restore pending transaction provenance.
+This is not complete cross-device or all-stage crash recovery. Canonical receipt
+checks are current observations, not guarantees against a later chain reorg.

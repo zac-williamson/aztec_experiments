@@ -79,6 +79,27 @@ try {
   });
   assert.equal(blocked,true);await first.page.evaluate(()=>window._testReleaseLock());
 
-  console.log(JSON.stringify({passed:true,actualBuiltBrowser:true,freshProfiles:2,wrongPasswordRejected:true,sameRestoredAddress:true,restoredClaimCommitmentVerified:true,actualCrossTabExclusion:true,externalRequestsBlocked:externalRequests,secretsWrittenToEvidence:false}));
+  stage='journal-before-reload';
+  const savedHash=await first.page.evaluate(async()=>{
+    const a=window.__aztec,w=window.walletState.aztec,tx=a.Tx.random({randomProof:true});
+    const scope={account:w.address.toString(),chainId:'31337',rollup:'0x'+'11'.repeat(20),version:'5',board:'0x'+'0'.repeat(63)+'2',portal:'0x'+'22'.repeat(20)};
+    const journal=await a.createL2Journal({storage:a.createBrowserJournalStorage(),walletSecret:w.secretKey,walletSalt:w.salt,scope,Tx:a.Tx,node:{}});
+    await journal.prepare(tx,await journal.assertCanStart());return tx.getTxHash().toString();
+  });
+  stage='journal-reload-and-wallet-restore';
+  await first.page.reload();await first.page.waitForFunction(()=>window.__aztec?.createL2Journal && document.getElementById('wbAztecFile'));
+  await first.page.locator('#wbPassword').fill(password);await first.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:encrypted});
+  await first.page.waitForFunction(()=>window.walletState.aztec?.address);
+  const recovery=await first.page.evaluate(async txHash=>{
+    const a=window.__aztec,w=window.walletState.aztec;let submissions=0,status='dropped',blocked=false;
+    const scope={account:w.address.toString(),chainId:'31337',rollup:'0x'+'11'.repeat(20),version:'5',board:'0x'+'0'.repeat(63)+'2',portal:'0x'+'22'.repeat(20)};
+    const node={getTxReceipt:async()=>({txHash,status,executionResult:'success',blockNumber:1,blockHash:'canonical'}),getBlock:async()=>({hash:'canonical'}),isValidTx:async()=>({result:'valid'}),sendTx:async tx=>{if(tx.getTxHash().toString()!==txHash)throw new Error('identity');submissions++;status='checkpointed';}};
+    const journal=await a.createL2Journal({storage:a.createBrowserJournalStorage(),walletSecret:w.secretKey,walletSalt:w.salt,scope,Tx:a.Tx,node});
+    try{await journal.assertCanStart();}catch(e){blocked=e.code==='BB_RECOVERY_REQUIRED';}
+    const receipt=await journal.recover();return {blocked,submissions,sameHash:receipt.txHash.toString()===txHash};
+  },savedHash);
+  assert.deepEqual(recovery,{blocked:true,submissions:1,sameHash:true});
+
+  console.log(JSON.stringify({passed:true,actualBuiltBrowser:true,freshProfiles:2,wrongPasswordRejected:true,sameRestoredAddress:true,restoredClaimCommitmentVerified:true,actualCrossTabExclusion:true,actualJournalReloadRecovery:true,externalRequestsBlocked:externalRequests,secretsWrittenToEvidence:false}));
 }catch(error){console.log(JSON.stringify({passed:false,stage,errorClass:error.name,location:error.stack?.split('\n').filter(l=>l.trim().startsWith('at ')).slice(0,2)}));process.exitCode=1;}
 finally{clearTimeout(watchdog);if(browser)await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

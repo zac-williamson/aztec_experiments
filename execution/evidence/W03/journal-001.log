@@ -1,0 +1,25 @@
+✔ file: crash before broadcast recovers identical actual SDK transaction without a new proof (231.273042ms)
+✔ file: crash after broadcast recovers receipt without resending; acknowledgement is explicit (226.388209ms)
+✔ file: canonical recheck rejects previously acknowledged receipt after reorg (149.379625ms)
+✔ file: concurrent prepare permits exactly one durable transaction (137.266833ms)
+✔ file: wrong key and full-salt mismatch fail authentication (175.587833ms)
+✔ file: scope separation never recovers another board or chain (94.809625ms)
+✔ file: failed execution, uncertain drop, RPC error and foreign receipt never permit replacement (291.367958ms)
+✔ file: persisted envelope excludes transaction and wallet plaintext and tampering fails closed (159.369667ms)
+✔ indexeddb: crash before broadcast recovers identical actual SDK transaction without a new proof (182.544666ms)
+✔ indexeddb: crash after broadcast recovers receipt without resending; acknowledgement is explicit (254.437167ms)
+✔ indexeddb: canonical recheck rejects previously acknowledged receipt after reorg (148.396583ms)
+✔ indexeddb: concurrent prepare permits exactly one durable transaction (166.918208ms)
+✔ indexeddb: wrong key and full-salt mismatch fail authentication (177.833958ms)
+✔ indexeddb: scope separation never recovers another board or chain (87.071917ms)
+✔ indexeddb: failed execution, uncertain drop, RPC error and foreign receipt never permit replacement (302.775542ms)
+✔ indexeddb: persisted envelope excludes transaction and wallet plaintext and tampering fails closed (126.598625ms)
+✔ file adapter rejects symlinks, unsafe modes and stale locks without replacing data (2.09375ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3535.064292

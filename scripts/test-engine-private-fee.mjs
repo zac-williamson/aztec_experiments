@@ -27,7 +27,7 @@ test('normal author calls carry only private payment method and bootstrap claim 
  assert.equal(h.prepared[0].claim.salt,'secret-salt');assert.equal(h.prepared[1].claim,undefined);assert.equal(h.prepared[2].claim,undefined);
 });
 test('unknown submission is preserved without retry and private errors are redacted',async()=>{
- for(const code of ['BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','UNTRUSTED']){
+ for(const code of ['BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID','UNTRUSTED']){
   const failure=Object.assign(new Error('secret input details'),{code,stateReasons:['Block header not found']});const h=fixture(failure);
   await assert.rejects(h.sender('post',['message']),e=>e.code===(code==='UNTRUSTED'?'BB_PRIVATE_FEE_ACTION_FAILED':code)&&!e.message.includes('secret'));
   assert.equal(h.sends.length,1);assert.equal(h.prepared.length,1);
@@ -99,7 +99,7 @@ function mainHarness(action,isDummy=false) {
     computeSecretHash:async()=>secretHash,poseidon2HashWithSeparator:async()=>new Fr(5),
     preparePrivateFeePayment:async input=>{requests.push(input);return {paymentMethod:'private-method',gasSettings:gas()};},
   };
-  const env={aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},privateFeeArtifact:{},
+  const env={createTransactionJournal:async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{}}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},privateFeeArtifact:{},
     initCRS:async()=>{},createStore:async()=>({}),log:text=>logs.push(text),getBrowserSigner:async()=>({getAddress:async()=>depositor,provider})};
   const config={action,isDummy,message:'text',depositChainId:'5',portalAddress:portal,ethRpcUrl:'http://fixture.invalid',aztecNodeUrl:'http://fixture.invalid',aztecWallet:{secretKey:new Fr(1).toString(),salt:0},
     reuseTxHash:new Fr(3).toString(),claimSecretStore:{save:async()=>{},load:async()=>({schemaVersion:1,secret:secret.toString(),secretHash:secretHash.toString()})},
@@ -162,4 +162,18 @@ for(const consumed of [false,true])test(`consumed/error text is not evidence of 
  h.Portal.prototype.withdraw=async()=>{throw new Error('already consumed PRIVATE_RPC_ERROR');};
  await assert.rejects(h.run(),e=>e.code===(consumed?'BB_RECOVERY_UNKNOWN':'BB_SUBMISSION_UNKNOWN'));
  assert(!h.logs.some(s=>s.includes('ETH claimed successfully')||s.includes('PRIVATE_RPC_ERROR')));
+});
+
+test('actual main refuses a private send when durable journal is unavailable',async()=>{
+ const h=mainHarness('post');delete h.env.createTransactionJournal;
+ await assert.rejects(h.run(),{code:'BB_JOURNAL_INVALID'});assert.equal(h.requests.length,0);
+});
+test('actual main recovery avoids proving and Ethereum signing and reports revert distinctly',async()=>{
+ for(const executionResult of ['success','reverted']) {
+  const h=mainHarness('recover');let scope;
+  h.env.initCRS=async()=>{throw new Error('Recovery must not prove');};h.env.getBrowserSigner=async()=>{throw new Error('Recovery must not acquire Ethereum signer');};
+  h.env.createTransactionJournal=async options=>{scope=options.scope;return {assertCanStart:async()=>{},prepare:async()=>{},confirmed:()=>{},recover:async()=>({txHash:new Fr(99),executionResult})};};
+  const result=await h.run();assert.equal(result.state,executionResult==='success'?'transaction_recovered':'transaction_reverted');assert.equal(scope.chainId,'31337');assert.equal(scope.version,'1');assert.equal(scope.portal,h.config.portalAddress);assert.equal(h.requests.length,0);
+  assert.equal(h.logs.some(s=>s.includes('Saved transaction succeeded')),executionResult==='success');
+ }
 });

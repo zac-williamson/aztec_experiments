@@ -15,9 +15,9 @@ const start=source.indexOf('  let cache;'),end=source.indexOf('\n }\n\n// Secret
 assert(start>0&&end>start);
 const body=source.slice(start,end);
 const key='0x'+'07'.padStart(64,'0'),account='0x'+'08'.padStart(64,'0'),rollup='0x'+'12'.repeat(20);
-async function exercise(t,{actionFails=false,chainMismatch=false}={}) {
+async function exercise(t,{actionFails=false,chainMismatch=false,recoveredRevert=false}={}) {
   const directory=fs.mkdtempSync(path.join(os.tmpdir(),'w02-cli-session-'));t.after(()=>fs.rmSync(directory,{recursive:true,force:true}));
-  const config={},idb=new IDBFactory();let calls=0,destroyed=0;
+  const config={},idb=new IDBFactory();let calls=0,destroyed=0;const messages=[];
   const nodeInfo={l1ChainId:31337,rollupVersion:1,l1ContractAddresses:{rollupAddress:rollup}};
   const identity=getPXEStoreIdentity({l1ChainId:31337,rollupAddress:rollup,accountAddress:account,dataDirectory:'prefix'+account.slice(0,16)+'_'+rollup}).name;
   const a={ Fr:class {constructor(v){this.value=v;}static fromHexString(v){return BigInt(v);}}, deriveSigningKey:v=>v,
@@ -28,13 +28,14 @@ async function exercise(t,{actionFails=false,chainMismatch=false}={}) {
   const ethers={JsonRpcProvider:class {async getNetwork(){return {chainId:chainMismatch?1n:31337n};}destroy(){destroyed++;}}};
   const context={a,ethers,aztecWallet:{secretKey:key,salt:'0x'+(1n<<80n).toString(16)},config,env:{},
     PXE_DIR_PREFIX:'prefix',PXE_CACHE_DIR:directory,AZTEC_NODE_URL:'http://node.invalid',ETH_RPC_URL:'http://l1.invalid',ACTION:'post',
-    createPxeCacheSession,log(){},indexedDB:idb,
+    createPxeCacheSession,log(message,level){messages.push({message,level});},indexedDB:idb,
     runBillboardUser:async()=>{calls++;assert.deepEqual(JSON.parse(JSON.stringify(config.expectedNetworkScope)),{chainId:'31337',rollup,version:'1'});
       const request=idb.open(identity);request.onupgradeneeded=()=>request.result.createObjectStore('data',{keyPath:'slot'});
       const db=await new Promise((r,j)=>{request.onsuccess=()=>r(request.result);request.onerror=j;});
       const tx=db.transaction('data','readwrite');tx.objectStore('data').put({slot:1,value:'private progress'});
-      await new Promise((r,j)=>{tx.oncomplete=r;tx.onerror=j;});db.close();if(actionFails)throw new Error('synthetic action failure');return{state:'done'};}};
+      await new Promise((r,j)=>{tx.oncomplete=r;tx.onerror=j;});db.close();if(actionFails)throw new Error('synthetic action failure');return{state:recoveredRevert?'transaction_reverted':'done'};}};
   let error;try{await new vm.Script(`(async()=>{${body}})()`).runInNewContext(context);}catch(e){error=e;}
+  if(recoveredRevert){assert(messages.some(x=>x.level==='warn'&&x.message.includes('original action failed')));assert(!messages.some(x=>x.level==='success'&&(x.message.includes('Action')||x.message.includes('transaction_reverted'))));}
   assert.equal(destroyed,1);assert(!fs.readdirSync(directory).some(f=>f.endsWith('.lock')));
   if(chainMismatch){assert.match(error.message,/chain identities differ/);assert.equal(calls,0);assert.equal(fs.readdirSync(directory).length,0);}
   else{assert.equal(calls,1);assert.equal(fs.readdirSync(directory).filter(f=>f.endsWith('.json')).length,1);if(actionFails)assert.match(error.message,/synthetic action failure/);else assert.equal(error,undefined);}
@@ -42,3 +43,5 @@ async function exercise(t,{actionFails=false,chainMismatch=false}={}) {
 test('CLI saves checkpoint and releases lock after success',t=>exercise(t));
 test('CLI saves partial synced state then releases lock after action failure',t=>exercise(t,{actionFails:true}));
 test('RPC chain mismatch prevents cache restore and action',t=>exercise(t,{chainMismatch:true}));
+
+test('CLI recovered revert is never presented as action success',t=>exercise(t,{recoveredRevert:true}));

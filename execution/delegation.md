@@ -436,3 +436,11 @@ W02 closed by root: actual browser restore/tab exclusion, genuine restored signi
 
 ## W03 receipt/history milestone
 Root implemented and self-reviewed receipt classification, historical withdrawal lookup and settlement outcomes. Prior final delegated turns exhausted available quota; no additional independent signoff is claimed. Integrated checks, built-browser recovery and CLI SDK checks passed. Durable transaction journal remains next.
+
+## W03 encrypted L2 recovery milestone (2026-09-16)
+Root implemented browser/CLI encrypted pre-broadcast storage, exact-byte recovery,
+canonical acknowledgement and active-engine integration. Existing errored agents
+still report usage exhaustion; no replacement agents were spawned to evade it.
+Root added independent storage, process-death, actual browser reload and engine
+ordering tests, then performed diff review. This remains self-review; production
+independent review is not claimed. Ethereum and other remaining W03 lanes are open.

@@ -9,7 +9,7 @@ import {BlockHash} from '@aztec/stdlib/block';
 import * as outcomes from '../shared/transaction-outcomes.mjs';
 const hash=TxHash.zero();
 const mined=(executionResult='success',status='checkpointed')=>MinedTxReceipt.from({txHash:hash,status,executionResult,transactionFee:0n,blockHash:BlockHash.ZERO,blockNumber:1,slotNumber:1,txIndexInBlock:0,epochNumber:0});
-function fixture(consumer,{receipts=[mined()],submitError,proofError,blockHash=BlockHash.ZERO,validation={result:'valid'},preProveHook}={}) {
+function fixture(consumer,{receipts=[mined()],submitError,proofError,blockHash=BlockHash.ZERO,validation={result:'valid'},preProveHook,transactionJournal}={}) {
  let now=0;const logs=[],calls={proof:0,submit:0,receipt:0};
  const gas={l2Gas:100,daGas:10,mul(){return this;},computeFee(){return{toBigInt:()=>1n};}};
  class BaseWallet {
@@ -34,7 +34,7 @@ function fixture(consumer,{receipts=[mined()],submitError,proofError,blockHash=B
  }else{
   const source=fs.readFileSync(new URL(`../apps/src/billboard/${consumer}/engine.js`,import.meta.url),'utf8');
   vm.runInContext(source.replace(/\}\)\(\);\s*$/,'g.testWalletFactory=createAztecWallet;})();'),c);
-  wallet=c.testWalletFactory(sdk,pxe,node,node,log,null,{preProveHook});
+  wallet=c.testWalletFactory(sdk,pxe,node,node,log,null,{preProveHook,transactionJournal});
  }
  return{calls,logs,send:()=>wallet.sendTx({},{from:'fixture',wait:{timeout:0.03,interval:0.01}}),confirmed:()=>logs.some(x=>x.level==='success'&&x.message.includes('Tx confirmed!'))};
 }
@@ -55,3 +55,13 @@ for(const consumer of ['shared','deploy','user']) {
  test(`${consumer}: already text cannot turn a reverted transaction into success`,async()=>{const f=fixture(consumer,{submitError:new Error('already exists PRIVATE_RPC_SENTINEL'),receipts:[mined('reverted')]});await assert.rejects(f.send(),e=>e.code==='BB_TRANSACTION_FAILED');assert(!f.confirmed());assert(!JSON.stringify(f.logs).includes('PRIVATE_RPC_SENTINEL'));});
  test(`${consumer}: proof or pre-proof failure never submits`,async()=>{for(const options of [{proofError:new Error('stop')},{preProveHook:async()=>{throw new Error('stop');}}]){const f=fixture(consumer,options);await assert.rejects(f.send(),/stop/);assert.equal(f.calls.submit,0);assert(!f.confirmed());}});
 }
+
+for(const boundary of ['assertCanStart','prepare'])test(`user: journal ${boundary} failure prevents submission`,async()=>{
+ const journal={assertCanStart:async()=>({encoded:null}),prepare:async()=>{},confirmed:()=>{}};
+ journal[boundary]=async()=>{throw Object.assign(new Error('recovery required'),{code:'BB_RECOVERY_REQUIRED'});};
+ const f=fixture('user',{transactionJournal:journal});await assert.rejects(f.send(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(f.calls.submit,0);assert.equal(f.calls.proof,boundary==='prepare'?1:0);
+});
+test('user: exact transaction is saved before send and acknowledged only after canonical success',async()=>{
+ let f;const events=[];const journal={assertCanStart:async()=>{events.push('read');return {encoded:'prior'};},prepare:async(tx,prior)=>{assert.equal(tx.getTxHash().toString(),hash.toString());assert.equal(prior.encoded,'prior');assert.equal(f.calls.proof,1);assert.equal(f.calls.submit,0);events.push('save');},confirmed:receipt=>{assert.equal(f.calls.submit,1);assert.equal(receipt.executionResult,'success');events.push('confirmed');}};
+ f=fixture('user',{transactionJournal:journal});await f.send();assert.deepEqual(events,['read','save','confirmed']);
+});

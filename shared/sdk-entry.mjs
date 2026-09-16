@@ -19,7 +19,9 @@ export { preparePrivateFeePayment, derivePrivateFeeBridgeSecret, derivePrivateFe
 export { fundPrivateFees, recoverPrivateFeeClaim } from './private-fee-funding.mjs';
 export { FunctionCall, FunctionSelector, FunctionType, encodeArguments, loadContractArtifact } from '@aztec/aztec.js/abi';
 export { Capsule, HashedValues, ExecutionPayload, TxExecutionRequest, TxHash } from '@aztec/aztec.js/tx';
-export { TxContext } from '@aztec/stdlib/tx';
+export { createL2Journal } from './l2-journal.mjs';
+export { createBrowserJournalStorage } from './journal-indexeddb.mjs';
+export { Tx, TxContext } from '@aztec/stdlib/tx';
 export { Gas, GasSettings } from '@aztec/stdlib/gas';
 export { MerkleTreeId } from '@aztec/stdlib/trees';
 export { computePartialAddress } from '@aztec/stdlib/contract';

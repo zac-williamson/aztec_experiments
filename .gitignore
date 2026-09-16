@@ -39,3 +39,6 @@ billboard/portal/out/build-info/
 
 # Default Foundry compile may emit test-only artifacts; regression outputs use .build.
 billboard/portal/out/PortalArtifactRegression.t.sol/
+
+# Encrypted transaction recovery state stays local.
+transaction-journal-v1/

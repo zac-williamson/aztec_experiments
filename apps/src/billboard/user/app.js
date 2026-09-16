@@ -223,11 +223,26 @@ setupRpcAuth();
 // ============================================================
 // Engine caller with log routing
 // ============================================================
-const callEngine = makeCallEngine(runBillboardUser, {
+const journalAcknowledgements = new Map();
+const runUserEngine = makeCallEngine(runBillboardUser, {
+  createTransactionJournal: options => window.__aztec.createL2Journal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
   artifact: typeof BILLBOARD_ARTIFACT !== 'undefined' ? BILLBOARD_ARTIFACT : null,
   privateFeeArtifact: typeof BILLBOARD_PRIVATE_FEE_ARTIFACT !== 'undefined' ? BILLBOARD_PRIVATE_FEE_ARTIFACT : null,
   portalBytecode: typeof PORTAL_BYTECODE !== 'undefined' ? PORTAL_BYTECODE : null,
 });
+
+async function callEngine(action,statusDiv,extra={}) {
+  const identity=JSON.stringify([window.walletState?.aztec?.address?.toString(),_portalAddr(),_getNodeUrl()]);
+  const result=await runUserEngine(action,statusDiv,{...extra,acknowledgeTx:journalAcknowledgements.get(identity)});
+  // Only a result returned to this live page acknowledges a completed action.
+  // Reload deliberately loses acknowledgement, so recovery precedes another send.
+  if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
+  return result;
+}
+async function recoverSavedTransaction() {
+  try {await callEngine('recover','setupStatus',_commonConfig());}
+  catch(error){log(error.message,'error','setupStatus');}
+}
 
 // ============================================================
 // Pagination

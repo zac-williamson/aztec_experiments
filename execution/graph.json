@@ -831,7 +831,8 @@
         "scripts/",
         "apps/dist/",
         "apps/build.mjs",
-        ".github/"
+        ".github/",
+        ".gitignore"
       ],
       "plan": "tasks/W03.md",
       "actions": [
@@ -860,7 +861,7 @@
       "evidence": "evidence/W03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Receipt/history milestone verified: 106 integrated checks, 80 artifact/client checks, actual browser recovery and CLI SDK smoke. Shared/deploy/user receipts require canonical successful execution; long-history lookup has no fixed lookback; settlement pending returns promptly. Next implement encrypted durable operation journal with pre-broadcast transaction identity, restart reconciliation, persisted history cursors and matching Ethereum refund receipt verification. W03 remains active; no crash-resume completion claim. Final delegated turns quota-unavailable; root self-review.",
+      "checkpoint": "Encrypted user L2 pre-broadcast journal integrated in browser/CLI and verified: 148 integrated checks, 93 artifact/client checks, abrupt worker SIGKILL recovery, actual built browser reload and CLI SDK smoke. Exact proven bytes retained; missing storage blocks sends; explicit canonical reconciliation before replacement. Next implement Ethereum deposit/refund/fee-funding stage records and matching canonical events, portable journal backup, linked stale-proof replacement, remaining deployment/moderation consumers and durable withdrawal-scan cursors. W03 remains active, not complete. Final review self-performed after delegated quota exhaustion.",
       "priority": 14
     },
     {

@@ -34,7 +34,7 @@ export async function classifyDroppedTransaction(node,tx,receipt) {
   }
   throw transactionError('BB_SUBMISSION_UNKNOWN','Drop reason is unconfirmed. Reconcile before retrying.');
 }
-export async function waitForSuccessfulReceipt(node,tx,{timeoutMs=540000,intervalMs=5000,now=Date.now,sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms)),onPoll=()=>{}}={}) {
+export async function waitForCanonicalReceipt(node,tx,{timeoutMs=540000,intervalMs=5000,now=Date.now,sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms)),onPoll=()=>{}}={}) {
   const txHash=tx.getTxHash(),deadline=now()+timeoutMs;
   while(now()<deadline) {
     let receipt;
@@ -46,7 +46,7 @@ export async function waitForSuccessfulReceipt(node,tx,{timeoutMs=540000,interva
         if(!Number.isSafeInteger(receipt.blockNumber) || receipt.blockNumber<1 || !receipt.blockHash) throw transactionError('BB_SUBMISSION_UNKNOWN','Receipt block identity is unavailable.');
         let block;try {block=await node.getBlock(receipt.blockNumber);}catch {}
         if(!block || hash(block.hash)!==hash(receipt.blockHash)) throw transactionError('BB_SUBMISSION_UNKNOWN','Receipt block is not confirmed canonical.');
-        requireSuccessfulReceipt(receipt,txHash);
+        if(!['success','reverted'].includes(receipt.executionResult))throw transactionError('BB_SUBMISSION_UNKNOWN','Receipt execution result is unavailable.');
         return receipt;
       }
       if(!pending.has(receipt.status))throw transactionError('BB_SUBMISSION_UNKNOWN','Receipt status is unrecognized.');
@@ -54,4 +54,8 @@ export async function waitForSuccessfulReceipt(node,tx,{timeoutMs=540000,interva
     onPoll();await sleep(Math.min(intervalMs,Math.max(0,deadline-now())));
   }
   throw transactionError('BB_SUBMISSION_UNKNOWN','Confirmation timed out. Keep the transaction identifier and reconcile before retrying.');
+}
+
+export async function waitForSuccessfulReceipt(node,tx,options={}) {
+  return requireSuccessfulReceipt(await waitForCanonicalReceipt(node,tx,options),tx.getTxHash());
 }
