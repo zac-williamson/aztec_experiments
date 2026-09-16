@@ -861,7 +861,7 @@
       "evidence": "evidence/W03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Encrypted user L2 pre-broadcast journal integrated in browser/CLI and verified: 148 integrated checks, 93 artifact/client checks, abrupt worker SIGKILL recovery, actual built browser reload and CLI SDK smoke. Exact proven bytes retained; missing storage blocks sends; explicit canonical reconciliation before replacement. Next implement Ethereum deposit/refund/fee-funding stage records and matching canonical events, portable journal backup, linked stale-proof replacement, remaining deployment/moderation consumers and durable withdrawal-scan cursors. W03 remains active, not complete. Final review self-performed after delegated quota exhaustion.",
+      "checkpoint": "Ethereum portal deposit/refund intent journal integrated: fixed sender nonce and exact calldata/value persisted before signing, canonical receipt and portal-event verification, lost-hash sender/nonce search with durable bounded cursors, explicit same-nonce retry. Verified182 integrated and93 artifact/client checks, actual browser reload, CLI SDK smoke and real disposable Ethereum portal deposit/refund with responses lost after mining. Next portable encrypted journal backup, linked stale L2 proof replacement, private-fee funding/deploy/moderation consumers, persistent L2 scan cursors and full-stage interruption qualification. W03 remains active; root self-review after prior delegated quota exhaustion.",
       "priority": 14
     },
     {

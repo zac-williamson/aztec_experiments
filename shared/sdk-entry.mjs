@@ -19,6 +19,7 @@ export { preparePrivateFeePayment, derivePrivateFeeBridgeSecret, derivePrivateFe
 export { fundPrivateFees, recoverPrivateFeeClaim } from './private-fee-funding.mjs';
 export { FunctionCall, FunctionSelector, FunctionType, encodeArguments, loadContractArtifact } from '@aztec/aztec.js/abi';
 export { Capsule, HashedValues, ExecutionPayload, TxExecutionRequest, TxHash } from '@aztec/aztec.js/tx';
+export { createEthereumJournal, verifyEthereumIntentReceipt } from './ethereum-journal.mjs';
 export { createL2Journal } from './l2-journal.mjs';
 export { createBrowserJournalStorage } from './journal-indexeddb.mjs';
 export { Tx, TxContext } from '@aztec/stdlib/tx';

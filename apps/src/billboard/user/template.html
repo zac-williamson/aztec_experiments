@@ -27,6 +27,9 @@
     <div id="walletButtonsContainer"></div>
     <button type="button" onclick="recoverSavedTransaction()">Recover saved Aztec transaction</button>
     <p class="small">After a restart, recover the previous transaction before sending another. Recovery reuses its saved proof.</p>
+    <button type="button" onclick="recoverSavedEthereum()">Check saved Ethereum request</button>
+    <button type="button" onclick="recoverSavedEthereum(true)">Retry saved Ethereum request</button>
+    <p class="small">Retry keeps the original Ethereum nonce and payment details. Your wallet may ask you to sign again.</p>
     <div id="setupStatus" class="status-container"></div>
   </div>
 </section>

@@ -1,0 +1,46 @@
+✔ browser actual module persists ciphertext and interoperates with Node AES-GCM (10.77525ms)
+✔ browser actual custody rejects wrong wallet, ciphertext corruption and moved scope (5.979ms)
+✔ browser save observes transaction abort and never reports durable success (4.020458ms)
+✔ actual engine codec matches frozen claim, boundary and exit commitments (7.791959ms)
+✔ actual public deposit flow saves and reads back before send; returns event receipt nonce without secret (10.766875ms)
+✔ actual deposit flow fails closed for missing store, failed durability and disabled portal (3.635959ms)
+✔ actual deposit flow fails closed for mismatched read-back and existing receipt (2.259792ms)
+✔ actual recovery requires the current event nonce and exact saved secret hash without signing fallback (6.49375ms)
+✔ normal author calls carry only private payment method and bootstrap claim is consumed once (3.272292ms)
+✔ unknown submission is preserved without retry and private errors are redacted (2.7185ms)
+✔ missing private fee configuration fails before account work for every private action (2.475625ms)
+✔ actual wallet keeps configured gas and normal account scope/tag through simulation and proof (34.926625ms)
+✔ actual main claim uses standard author call with private fee payment (17.485ms)
+✔ actual main post uses standard author call with private fee payment (3.028584ms)
+✔ actual main post dummy uses standard author call with private fee payment (1.537ms)
+✔ actual main withdraw uses standard author call with private fee payment (1.416042ms)
+✔ moderator calls use their normal account with private fee payment (1.597083ms)
+✔ inherited object names never select an application method (0.671541ms)
+✔ actual main private post works with no Ethereum signer (1.675667ms)
+✔ actual main fails before PXE when RPC identity changed after CLI preflight (1.090041ms)
+✔ settlement pending returns after one witness lookup, without ninety-minute polling (1.903542ms)
+✔ witness RPC failure remains unknown, never a false unclaimed or paid result (1.783708ms)
+✔ consumed/error text is not evidence of a refund: false (2.76475ms)
+✔ consumed/error text is not evidence of a refund: true (2.133334ms)
+✔ actual main refuses a private send when durable journal is unavailable (0.946208ms)
+✔ actual main recovery avoids proving and Ethereum signing and reports revert distinctly (8.197375ms)
+✔ Ethereum recovery handles already refunded receipts before checking active deposit (2.591167ms)
+✔ CLI saves checkpoint and releases lock after success (33.507458ms)
+✔ CLI saves partial synced state then releases lock after action failure (15.228791ms)
+✔ RPC chain mismatch prevents cache restore and action (1.426584ms)
+✔ CLI recovered revert is never presented as action success (15.342583ms)
+✔ same-page overlapping calls and another-tab unavailable lock reject without invoking engine (8.50825ms)
+✔ provider account and chain switches prevent engine execution (1.374167ms)
+✔ portal mutation blocks signing and proof hooks during an operation (0.887958ms)
+✔ engine witness errors and initial provider errors are both redacted (2.209958ms)
+✔ lossless salts and public cache identity separate account/network/deployment (3.017042ms)
+✔ missing Web Locks support fails closed before wallet work (0.50725ms)
+✔ RPC aliases for the same account acquire the same cross-tab lock (0.872375ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 609.049583

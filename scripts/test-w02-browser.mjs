@@ -100,6 +100,34 @@ try {
   },savedHash);
   assert.deepEqual(recovery,{blocked:true,submissions:1,sameHash:true});
 
-  console.log(JSON.stringify({passed:true,actualBuiltBrowser:true,freshProfiles:2,wrongPasswordRejected:true,sameRestoredAddress:true,restoredClaimCommitmentVerified:true,actualCrossTabExclusion:true,actualJournalReloadRecovery:true,externalRequestsBlocked:externalRequests,secretsWrittenToEvidence:false}));
+  stage='ethereum-intent-before-reload';
+  const ethereumHash=await first.page.evaluate(async()=>{
+    const a=window.__aztec,w=window.walletState.aztec,secretHash=a.Fr.random().toString();
+    const scope={account:w.address.toString(),chainId:'31337',rollup:'0x'+'11'.repeat(20),version:'5',board:'0x'+'0'.repeat(63)+'2',portal:'0x'+'22'.repeat(20),depositor:'0x'+'33'.repeat(20)};
+    const blockHash='0x'+'01'.repeat(32),provider={getNetwork:async()=>({chainId:31337n}),getBlock:async()=>({number:1,hash:blockHash}),getTransactionCount:async()=>5};
+    const signer={getAddress:async()=>scope.depositor,sendTransaction:async()=>{throw new Error('synthetic lost signing response');}};
+    const journal=await a.createEthereumJournal({storage:a.createBrowserJournalStorage(),walletSecret:w.secretKey,walletSalt:w.salt,scope,provider,signer});
+    const iface=new ethers.Interface(['function deposit(bytes32) payable']);
+    try{await journal.send({data:iface.encodeFunctionData('deposit',[secretHash]),value:'100',expected:{kind:'deposit',nonce:'1',amount:'100',secretHash}});}catch(e){if(e.code!=='BB_ETH_SUBMISSION_UNKNOWN')throw e;}
+    return secretHash;
+  });
+  stage='ethereum-intent-reload';await first.page.reload();await first.page.waitForFunction(()=>window.__aztec?.createEthereumJournal && document.getElementById('wbAztecFile'));
+  await first.page.locator('#wbPassword').fill(password);await first.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:encrypted});await first.page.waitForFunction(()=>window.walletState.aztec?.address);
+  const ethRecovered=await first.page.evaluate(async secretHash=>{
+    const a=window.__aztec,w=window.walletState.aztec,scope={account:w.address.toString(),chainId:'31337',rollup:'0x'+'11'.repeat(20),version:'5',board:'0x'+'0'.repeat(63)+'2',portal:'0x'+'22'.repeat(20),depositor:'0x'+'33'.repeat(20)};
+    const blockHash='0x'+'01'.repeat(32),txHash='0x'+'04'.repeat(32);let tx=null,receipt=null,nonce=null,submissions=0;
+    const iface=new ethers.Interface(['function deposit(bytes32) payable','event Deposited(address indexed depositor,uint64 nonce,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
+    const provider={getNetwork:async()=>({chainId:31337n}),getBlockNumber:async()=>1,getBlock:async()=>({number:1,hash:blockHash}),getTransaction:async()=>tx,getTransactionReceipt:async()=>receipt};
+    const signer={getAddress:async()=>scope.depositor,sendTransaction:async request=>{
+      if(request.data!==iface.encodeFunctionData('deposit',[secretHash])||request.value!==100n)throw new Error('payment changed');
+      submissions++;nonce=request.nonce;tx={...request,hash:txHash};receipt={hash:txHash,from:scope.depositor,to:scope.portal,status:1,blockNumber:1,blockHash,logs:[{address:scope.portal,...iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,1,100,secretHash,secretHash,0])}]};return tx;
+    }};
+    const journal=await a.createEthereumJournal({storage:a.createBrowserJournalStorage(),walletSecret:w.secretKey,walletSalt:w.salt,scope,provider,signer});
+    let blocked=false;try{await journal.assertCanStart();}catch(e){blocked=e.code==='BB_ETH_RECOVERY_REQUIRED';}
+    const result=await journal.recover({retry:true});return {blocked,submissions,nonce,outcome:result.outcome};
+  },ethereumHash);
+  assert.deepEqual(ethRecovered,{blocked:true,submissions:1,nonce:5,outcome:'success'});
+
+  console.log(JSON.stringify({passed:true,actualBuiltBrowser:true,freshProfiles:2,wrongPasswordRejected:true,sameRestoredAddress:true,restoredClaimCommitmentVerified:true,actualCrossTabExclusion:true,actualJournalReloadRecovery:true,actualEthereumIntentReloadRecovery:true,externalRequestsBlocked:externalRequests,secretsWrittenToEvidence:false}));
 }catch(error){console.log(JSON.stringify({passed:false,stage,errorClass:error.name,location:error.stack?.split('\n').filter(l=>l.trim().startsWith('at ')).slice(0,2)}));process.exitCode=1;}
 finally{clearTimeout(watchdog);if(browser)await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

@@ -766,7 +766,7 @@
         l1Account = await ethSigner.getAddress();
         provider = ethSigner.provider;
       } else {
-        if(['deposit','claim','auto','claim-l1'].includes(action)) throw new Error('This operation requires an Ethereum wallet.');
+        if(['deposit','claim','auto','claim-l1','recover-eth'].includes(action)) throw new Error('This operation requires an Ethereum wallet.');
         provider = new ethers.JsonRpcProvider(config.ethRpcUrl);
       }
       if (BigInt((await provider.getNetwork()).chainId) !== BigInt(nodeInfo.l1ChainId)) throw new Error('Ethereum signer chain disagrees with the board.');
@@ -798,6 +798,24 @@
       }
     } catch (e) {
       throw new Error('Could not verify the L1 wallet and receipt.');
+    }
+
+    const ethereumActions=['deposit','claim-l1','auto','recover-eth'];
+    let ethereumJournal=null;
+    if(ethereumActions.includes(action)) {
+      if(typeof env.createEthereumJournal!=='function'||!l1Account)throw Object.assign(new Error('Ethereum transaction journal is required.'),{code:'BB_JOURNAL_INVALID'});
+      ethereumJournal=await env.createEthereumJournal({walletSecret:secretKeyHex,walletSalt:saltVal,
+        scope:{account:address.toString().toLowerCase(),chainId:String(nodeInfo.l1ChainId),rollup:rollupAddr.toLowerCase(),version:String(version),board:l2AddrHex.toLowerCase(),portal:portalAddr.toLowerCase(),depositor:l1Account.toLowerCase()},
+        provider,signer:ethSigner,acknowledgeTx:config.acknowledgeEthereumTx,contextGuard:config.contextGuard});
+      if(!ethereumJournal||typeof ethereumJournal.send!=='function'||typeof ethereumJournal.assertCanStart!=='function')throw Object.assign(new Error('Invalid Ethereum journal.'),{code:'BB_JOURNAL_INVALID'});
+      if(action==='recover-eth') {
+        const recovered=await ethereumJournal.recover({retry:config.retryEthereum===true});
+        const success=recovered.outcome==='success';
+        log(success?'Saved Ethereum request and portal event verified.':'Saved Ethereum request '+recovered.outcome+'; the original action did not succeed.',success?'success':'warn');
+        log('Ethereum transaction: '+recovered.txHash,'info');
+        return {recovered:true,lastEthereumTxHash:recovered.txHash,state:success?'ethereum_recovered':'ethereum_'+recovered.outcome};
+      }
+      await ethereumJournal.assertCanStart();
     }
 
     // ============================================================
@@ -1111,13 +1129,11 @@
       if (await restoreSecret(secretHash) !== record.secret) throw new Error('Claim-secret storage read-back failed.');
       log('Claim secret saved locally. Sending deposit...', 'info');
       if (config.contextGuard) await config.contextGuard();
-      const tx = await withUserRetry(() => portal.deposit(secretHash,{ value: amount }), 'L1 deposit tx');
-      log('  Tx sent: ' + tx.hash, 'info');
-      const receipt = await tx.wait();
-      if (receipt.status !== 1) throw new Error('Deposit transaction reverted.');
-      const event = parsedDeposit(receipt);
-      if (event.amount !== amount || event.secretHash.toLowerCase() !== secretHash) throw new Error('Deposit receipt disagrees with saved intent.');
-      depositInfo = { amount, leafIndex: event.index, depositNonce: event.nonce, secret: record.secret, secretHash, txHash: tx.hash };
+      const expectedNonce=BigInt(await portal.lastDepositNonce(l1Account))+1n;
+      const paid=await ethereumJournal.send({data:new ethers.Interface(PORTAL_ABI).encodeFunctionData('deposit',[secretHash]),value:amount.toString(),
+        expected:{kind:'deposit',nonce:expectedNonce.toString(),amount:amount.toString(),secretHash}});
+      const event=paid.event;
+      depositInfo = { amount, leafIndex: event.index, depositNonce: event.nonce, secret: record.secret, secretHash, txHash: paid.txHash };
       portalL1Balance = amount; portalDepositNonce = event.nonce;
       log('Deposit confirmed. Receipt nonce: ' + event.nonce.toString(), 'success');
     }
@@ -1774,25 +1790,12 @@
       // Call portal.withdraw on L1
       log('  Sending L1 withdrawal tx...', 'info');
       const pathHex = siblingPath.toBufferArray().map(buf => '0x' + Buffer.from(buf).toString('hex'));
-      const portalWithSigner = new ethers.Contract(portalAddr, PORTAL_ABI, ethSigner);
-
-      try {
-        const tx = await withUserRetry(() => portalWithSigner.withdraw(
-          BigInt(epochNumber),
-          BigInt(numCheckpointsInEpoch),
-          BigInt(leafIndex),
-          pathHex
-        ), 'L1 withdrawal tx');
-        log('  L1 tx sent: ' + tx.hash, 'success');
-        log('  Waiting for confirmation...', 'info');
-        const rc = await tx.wait();
-        if (rc.status !== 1) throw new Error('L1 withdrawal tx reverted in block ' + rc.blockNumber);
-        log('  L1 tx confirmed! Block: ' + rc.blockNumber, 'success');
-        log('  ETH claimed successfully!', 'success');
-        log('  Check your L1 wallet balance.', 'info');
-      } catch {
-        throw Object.assign(new Error('Ethereum withdrawal outcome is unknown. Check its receipt before retrying.'),{code:'BB_SUBMISSION_UNKNOWN'});
-      }
+      const refunded=await ethereumJournal.send({
+        data:new ethers.Interface(PORTAL_ABI).encodeFunctionData('withdraw',[BigInt(epochNumber),BigInt(numCheckpointsInEpoch),BigInt(leafIndex),pathHex]),value:'0',
+        expected:{kind:'withdraw',nonce:portalDepositNonce.toString(),amount:withdrawAmount.toString()},
+      });
+      log('  L1 refund transaction: '+refunded.txHash,'info');
+      log('  Matching Withdrawn event and canonical receipt verified. ETH claimed successfully!','success');
     }
 
     // ============================================================
@@ -2206,6 +2209,7 @@
       throw new Error('Unknown action: ' + action + '. Valid: status, deposit, claim, post, list, withdraw, claim-l1, auto');
     }
 
+    result.lastEthereumTxHash = ethereumJournal?.lastTxHash || null;
     result.lastL2TxHash = transactionJournal?.lastTxHash || null;
     result.state = stateStatus;
     result.l2Addr = l2AddrHex;

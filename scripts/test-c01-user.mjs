@@ -1,4 +1,5 @@
 // Actual user module evaluation. UI/network/identity fixtures are inert; no wallet, chain or prover.
+import {createEthereumJournal} from '../shared/ethereum-journal.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -91,7 +92,7 @@ function depositHarness({store,enabled=true,activeNonce=0n,eventNonce=7n,reuse=f
     constructor(){this.interface=iface;}
     L2_CONTRACT=async()=>scope.boardAddress;L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>scope.rollupAddress;VERSION=async()=>1n;
     getDeposit=async()=>({nonce:activeNonce,amount:activeNonce?1_000_000_000_000_000n:0n});depositsEnabled=async()=>enabled;
-    MIN_DEPOSIT=async()=>1n;MAX_DEPOSIT=async()=>10n**20n;
+    MIN_DEPOSIT=async()=>1n;MAX_DEPOSIT=async()=>10n**20n;lastDepositNonce=async()=>6n;
     async deposit(hash,{value}) {
       sent++;sequence.push('send');assert(saved,'L1 submission preceded durable storage');
       const event=iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,eventNonce,value,hash,ethers.ZeroHash,32n]);
@@ -107,8 +108,19 @@ function depositHarness({store,enabled=true,activeNonce=0n,eventNonce=7n,reuse=f
     // Deterministic hash stub isolates custody/ordering; cryptographic SDK compatibility is separately qualified.
     computeSecretHash:async secret=>new Fr(secret.toBigInt() % 1000000n + 1n)};
   const defaultStore={save:async(s,r)=>{sequence.push('save');assert.deepEqual(JSON.parse(JSON.stringify(s)),scope);saved=JSON.parse(JSON.stringify(r));},load:async()=>{sequence.push('readback');return saved;}};
-  const env={aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},
-    log:message=>logs.push(message),getBrowserSigner:async()=>({getAddress:async()=>scope.depositor,provider})};
+  const journalRecords=new Map();let sentBody,sentReceipt;
+  const receiptLookup=provider.getTransactionReceipt;
+  provider.getBlock=async n=>({number:n==='latest'?1:n,hash:'0x'+Number(n==='latest'?1:n).toString(16).padStart(64,'0')});
+  provider.getTransactionCount=async()=>0;
+  provider.getTransaction=async()=>sentBody;
+  provider.getTransactionReceipt=async h=>sentReceipt||receiptLookup(h);
+  const signer={getAddress:async()=>scope.depositor,provider,sendTransaction:async request=>{
+    const parsed=new ethers.Interface(['function deposit(bytes32) payable']).parseTransaction({data:request.data});
+    const tx=await new Portal().deposit(parsed.args[0],{value:request.value});
+    sentBody={...request,hash:tx.hash};sentReceipt={...await tx.wait(),hash:tx.hash,from:scope.depositor,to:scope.portalAddress,blockNumber:2,blockHash:'0x'+'2'.padStart(64,'0')};return sentBody;
+  }};
+  const env={createEthereumJournal:options=>createEthereumJournal({...options,storage:{read:async key=>journalRecords.get(key)??null,compareAndSwap:async(key,old,next)=>{assert.equal(journalRecords.get(key)??null,old);journalRecords.set(key,next);}}}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},
+    log:message=>logs.push(message),getBrowserSigner:async()=>signer};
   const config={action:'deposit',portalAddress:scope.portalAddress,ethRpcUrl:'http://fixture.invalid',aztecNodeUrl:'http://fixture.invalid',
     aztecWallet:{secretKey:walletSecret,salt:'0x00'},depositAmount:'0.001',reuseTxHash:reuse?'0x'+'b'.repeat(64):undefined,claimSecretStore:store===undefined?defaultStore:store};
   return {run:()=>c.runBillboardUser(env,config),sent:()=>sent,logs,sequence,secret:()=>saved?.secret};

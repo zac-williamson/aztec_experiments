@@ -224,7 +224,9 @@ setupRpcAuth();
 // Engine caller with log routing
 // ============================================================
 const journalAcknowledgements = new Map();
+const ethereumAcknowledgements = new Map();
 const runUserEngine = makeCallEngine(runBillboardUser, {
+  createEthereumJournal: options => window.__aztec.createEthereumJournal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
   createTransactionJournal: options => window.__aztec.createL2Journal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
   artifact: typeof BILLBOARD_ARTIFACT !== 'undefined' ? BILLBOARD_ARTIFACT : null,
   privateFeeArtifact: typeof BILLBOARD_PRIVATE_FEE_ARTIFACT !== 'undefined' ? BILLBOARD_PRIVATE_FEE_ARTIFACT : null,
@@ -233,14 +235,23 @@ const runUserEngine = makeCallEngine(runBillboardUser, {
 
 async function callEngine(action,statusDiv,extra={}) {
   const identity=JSON.stringify([window.walletState?.aztec?.address?.toString(),_portalAddr(),_getNodeUrl()]);
-  const result=await runUserEngine(action,statusDiv,{...extra,acknowledgeTx:journalAcknowledgements.get(identity)});
+  const result=await runUserEngine(action,statusDiv,{...extra,acknowledgeTx:journalAcknowledgements.get(identity),acknowledgeEthereumTx:ethereumAcknowledgements.get(identity)});
   // Only a result returned to this live page acknowledges a completed action.
   // Reload deliberately loses acknowledgement, so recovery precedes another send.
   if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
+  if(result?.lastEthereumTxHash)ethereumAcknowledgements.set(identity,result.lastEthereumTxHash);
   return result;
 }
 async function recoverSavedTransaction() {
   try {await callEngine('recover','setupStatus',_commonConfig());}
+  catch(error){log(error.message,'error','setupStatus');}
+}
+
+async function recoverSavedEthereum(retry=false) {
+  try {
+    await callEngine('recover-eth','setupStatus',{..._commonConfig(),retryEthereum:retry});
+    if(_handles) {const refreshed=await callEngine('status','setupStatus',_commonConfig());_handles=refreshed.handles;_stateResult=refreshed;}
+  }
   catch(error){log(error.message,'error','setupStatus');}
 }
 

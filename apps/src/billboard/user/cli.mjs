@@ -15,6 +15,7 @@
 //   node cli.mjs <action> [options]
 //
 // Actions:
+//   recover-eth Check the saved Ethereum request; --retry-ethereum retries its same nonce
 //   recover     Reconcile the saved Aztec transaction without creating a new proof
 //   status      Show current state (deposit note, portal balance, etc.)
 //   deposit     Make a new ETH deposit into the L1 portal
@@ -51,6 +52,8 @@
 //   --eth-wallet <file>      Path to ETH wallet JSON
 //   --private-fee-config <file> Public contract address and gas settings JSON
 //   --private-fee-claim-file <file> Private bridge claim JSON for the first fee payment (0600)
+//   --acknowledge-ethereum-tx <hash>  Start another payment after this reconciled request
+//   --retry-ethereum         Explicitly retry the saved Ethereum nonce and calldata
 //   --acknowledge-tx <hash>   Explicitly start another action after this confirmed transaction
 //   --json                   Output posts as JSON (for list action, machine-readable)
 //   --pxe-dir <prefix>       PXE data directory prefix (default: pxe_bb_user_)
@@ -121,7 +124,7 @@ const PXE_DIR_PREFIX = args['pxe-dir'] || 'pxe_bb_user_';
 const PXE_CACHE_DIR = path.join(PROJECT_ROOT, '.pxe-cache-v2');
 
 // Valid actions
-const VALID_ACTIONS = ['status', 'deposit', 'claim', 'post', 'list', 'withdraw', 'claim-l1', 'declare-immoral', 'transfer-censor', 'set-moderation-policy', 'auto', 'recover'];
+const VALID_ACTIONS = ['status', 'deposit', 'claim', 'post', 'list', 'withdraw', 'claim-l1', 'declare-immoral', 'transfer-censor', 'set-moderation-policy', 'auto', 'recover', 'recover-eth'];
 if (!VALID_ACTIONS.includes(ACTION)) {
   console.error('Unknown action: ' + ACTION);
   console.error('Valid actions: ' + VALID_ACTIONS.join(', '));
@@ -420,6 +423,7 @@ async function main() {
     getBrowserSigner: null,
     portalBytecode: portalBytecode.startsWith('0x') ? portalBytecode : '0x' + portalBytecode,
     artifact, privateFeeArtifact,
+    createEthereumJournal: options => a.createEthereumJournal({...options,storage:createFileJournalStorage(path.join(path.dirname(path.resolve(AZTEC_WALLET_PATH || CENSOR_WALLET_PATH)),'transaction-journal-v1'))}),
     createTransactionJournal: options => a.createL2Journal({...options,storage:createFileJournalStorage(path.join(path.dirname(path.resolve(AZTEC_WALLET_PATH || CENSOR_WALLET_PATH)),'transaction-journal-v1'))}),
   };
 
@@ -431,6 +435,8 @@ async function main() {
     privateFee, privateFeeClaim,
     action: ACTION,
     acknowledgeTx: args['acknowledge-tx'],
+    acknowledgeEthereumTx: args['acknowledge-ethereum-tx'],
+    retryEthereum: args['retry-ethereum']===true,
     aztecNodeUrl: AZTEC_NODE_URL,
     ethRpcUrl: ETH_RPC_URL,
     contractSalt: 0, // not used when portalAddress is provided
@@ -491,8 +497,9 @@ async function main() {
     const result = await globalThis.runBillboardUser(env, config);
     await cache.save(globalThis.indexedDB);
     log('  Private PXE checkpoint saved.', 'success');
-    const recoveredRevert=result.state==='transaction_reverted';
-    log(recoveredRevert?'  Recovery found a reverted transaction; the original action failed.':'  Action "' + ACTION + '" completed!',recoveredRevert?'warn':'success');
+    const recoveredRevert=['transaction_reverted','ethereum_reverted','ethereum_replaced'].includes(result.state);
+    log(recoveredRevert?'  Recovery found a failed or replaced transaction; the original action failed.':'  Action "' + ACTION + '" completed!',recoveredRevert?'warn':'success');
+    if(result.lastEthereumTxHash)log('  To start another payment, acknowledge the reconciled transaction with --acknowledge-ethereum-tx '+result.lastEthereumTxHash,'info');
     if(result.lastL2TxHash)log('  To start another action, acknowledge the confirmed transaction with --acknowledge-tx '+result.lastL2TxHash,'info');
     if (result.state) log('  Final state: ' + result.state, recoveredRevert?'warn':'success');
   } catch (e) {
@@ -531,6 +538,10 @@ function formatCliPrivateFeeFailure(error) {
     BB_SUBMISSION_UNKNOWN: 'Transaction submission outcome is unknown. Check its outcome before another attempt.',
     BB_TRANSACTION_FAILED: 'The transaction did not complete successfully. Check its receipt before another attempt.',
     BB_STATE_CONFLICT: 'Transaction state changed. Refresh and create a new proof before another attempt.',
+    BB_NO_SAVED_ETHEREUM_TRANSACTION: 'No saved Ethereum request exists for this wallet and portal.',
+    BB_ETH_RECOVERY_REQUIRED: 'Check the saved Ethereum request using recover-eth. Use --retry-ethereum only to retry its original nonce and payment details.',
+    BB_ETH_SUBMISSION_UNKNOWN: 'Ethereum submission is uncertain. Preserve the saved request and use recover-eth.',
+    BB_ETH_TRANSACTION_FAILED: 'Ethereum request reverted or was replaced. Use recover-eth before another payment.',
     BB_RECOVERY_REQUIRED: 'Recover the saved transaction first using the recover action. Starting another action requires its confirmed hash via --acknowledge-tx.',
     BB_JOURNAL_INVALID: 'Transaction journal could not be authenticated or saved. Preserve wallet and recovery storage before continuing.',
     BB_NO_SAVED_TRANSACTION: 'No saved Aztec transaction exists for this wallet and board.',
@@ -554,7 +565,7 @@ function formatCliFailure(error) {
     'Invalid wallet salt', 'Invalid Aztec key', 'Invalid Censor key', 'Invalid Ethereum key',
   ]);
   if (safeMessages.has(error?.message)) return error.message;
-  if (args['private-fee-config'] || args['private-fee-claim-file'] || ['BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID','BB_NO_SAVED_TRANSACTION','BB_RECOVERY_UNKNOWN','BB_SETTLEMENT_PENDING','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT'].includes(error?.code)) return formatCliPrivateFeeFailure(error);
+  if (args['private-fee-config'] || args['private-fee-claim-file'] || ['BB_NO_SAVED_ETHEREUM_TRANSACTION','BB_ETH_RECOVERY_REQUIRED','BB_ETH_SUBMISSION_UNKNOWN','BB_ETH_TRANSACTION_FAILED','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID','BB_NO_SAVED_TRANSACTION','BB_RECOVERY_UNKNOWN','BB_SETTLEMENT_PENDING','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT'].includes(error?.code)) return formatCliPrivateFeeFailure(error);
   return 'Command failed. Preserve wallet/cache and check any transaction outcome before retrying.';
 }
 main().catch(e => { log('FATAL: ' + formatCliFailure(e), 'error'); __realProcess.exit(1); });

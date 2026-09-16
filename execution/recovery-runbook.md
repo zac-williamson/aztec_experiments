@@ -60,8 +60,9 @@ The user browser and user CLI now save the exact proven Aztec transaction,
 encrypted under the wallet key and full salt, before claim/post/withdraw submission.
 The saved record is bound to account, chain, rollup/version, board and portal.
 A failed storage write stops submission. The last record remains after confirmation.
-This currently covers user L2 actions; Ethereum transactions, deployment, fee-funding
-and separate moderation actions still need journal integration.
+This covers user L2 actions. Portal Ethereum deposits/refunds now have their own
+intent records (below); deployment, fee-funding and separate moderation actions
+still need journal integration.
 
 After a browser restart, restore the same wallet in the same browser profile,
 select the same portal and use **Recover saved Aztec transaction** in Wallet Setup.
@@ -89,3 +90,50 @@ The current password-encrypted wallet backup does **not** include this journal;
 restoring keys on a fresh device does not restore pending transaction provenance.
 This is not complete cross-device or all-stage crash recovery. Canonical receipt
 checks are current observations, not guarantees against a later chain reorg.
+
+
+## Saved Ethereum deposit and refund recovery
+
+Before asking the Ethereum signer to send a portal deposit or refund, the client
+saves an encrypted intent containing the verified network/portal/depositor,
+destination, calldata, ETH value, fixed Ethereum sender nonce, expected portal
+receipt nonce/amount and deposit secret commitment where applicable. The claim
+secret is committed separately before a deposit intent can be signed.
+
+Use **Check saved Ethereum request** in Wallet Setup, or CLI `recover-eth` with
+the same Aztec wallet, Ethereum wallet, portal and explicit RPC arguments.
+The check does not send a transaction. It verifies the receipt's canonical block,
+actual transaction fields and one matching `Deposited` or `Withdrawn` portal event.
+Refund recovery works even after the active portal receipt is zero; zero balance
+or Outbox consumption alone never means payment succeeded. A canonical reverted
+or replacement transaction is displayed separately from successful payment.
+
+If the hash was lost between signing and persistence, the client searches the
+canonical Ethereum history for the original sender/nonce. It saves scan progress
+in the encrypted record, uses bounded20-second lookup attempts and checks cursor
+anchors for reorgs. Reorgs invalidate skipped history and restart scanning from
+genesis. Repeated checks resume after completed pages; missing RPC bodies or gaps
+remain unknown. An archival RPC may be needed for old records.
+
+If checking cannot find a completed request, **Retry saved Ethereum request** or
+`recover-eth --retry-ethereum` may ask the same Ethereum wallet to sign again.
+The retry preserves sender nonce, destination, calldata and value. Ethereum can
+execute at most one transaction with that sender nonce on its canonical chain;
+the client never guesses a new nonce for an unresolved payment. Wallet rejection
+also leaves the intent intact because a free-form wallet error cannot prove that
+nothing was broadcast. Replacement gas pricing remains subject to the wallet/node;
+an underpriced replacement leaves the outcome unresolved.
+
+A new CLI payment after recovery uses `--acknowledge-ethereum-tx <hash>`.
+The live browser remembers the acknowledgement only after recovery returns and
+refreshes existing board state. A new session must reconcile again. The receipt
+is checked again before replacing the saved intent. Normal recover and explicit
+retry are distinct actions; neither erases unresolved records.
+
+Ethereum records share the private `transaction-journal-v1/` directory / browser
+IndexedDB adapter with the Aztec record but use separate cryptographic domains
+and include the Ethereum depositor. These are local latest-intent records;
+portable wallet backups do not yet contain either journal. This implementation
+covers portal deposit/refund, not ERC20 approvals or private FeeJuice funding.
+The disposable Ethereum evidence uses the real portal/bridge contracts and
+controlled test roots; it is not evidence of a new Aztec proof or network prover.

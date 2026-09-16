@@ -99,7 +99,7 @@ function mainHarness(action,isDummy=false) {
     computeSecretHash:async()=>secretHash,poseidon2HashWithSeparator:async()=>new Fr(5),
     preparePrivateFeePayment:async input=>{requests.push(input);return {paymentMethod:'private-method',gasSettings:gas()};},
   };
-  const env={createTransactionJournal:async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{}}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},privateFeeArtifact:{},
+  const env={createEthereumJournal:async()=>({assertCanStart:async()=>{},send:async()=>{throw Object.assign(new Error('Unknown Ethereum submission'),{code:'BB_ETH_SUBMISSION_UNKNOWN'});}}),createTransactionJournal:async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{}}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},privateFeeArtifact:{},
     initCRS:async()=>{},createStore:async()=>({}),log:text=>logs.push(text),getBrowserSigner:async()=>({getAddress:async()=>depositor,provider})};
   const config={action,isDummy,message:'text',depositChainId:'5',portalAddress:portal,ethRpcUrl:'http://fixture.invalid',aztecNodeUrl:'http://fixture.invalid',aztecWallet:{secretKey:new Fr(1).toString(),salt:0},
     reuseTxHash:new Fr(3).toString(),claimSecretStore:{save:async()=>{},load:async()=>({schemaVersion:1,secret:secret.toString(),secretHash:secretHash.toString()})},
@@ -160,7 +160,7 @@ for(const consumed of [false,true])test(`consumed/error text is not evidence of 
  const h=l1RecoveryFixture();h.node.getL2ToL1MembershipWitness=async()=>({epochNumber:1,numCheckpointsInEpoch:1,leafIndex:0,siblingPath:{pathSize:1,toBufferArray:()=>[Buffer.alloc(32)]}});
  h.Portal.prototype.hasMessageBeenConsumedAtEpoch=async()=>consumed;
  h.Portal.prototype.withdraw=async()=>{throw new Error('already consumed PRIVATE_RPC_ERROR');};
- await assert.rejects(h.run(),e=>e.code===(consumed?'BB_RECOVERY_UNKNOWN':'BB_SUBMISSION_UNKNOWN'));
+ await assert.rejects(h.run(),e=>e.code===(consumed?'BB_RECOVERY_UNKNOWN':'BB_ETH_SUBMISSION_UNKNOWN'));
  assert(!h.logs.some(s=>s.includes('ETH claimed successfully')||s.includes('PRIVATE_RPC_ERROR')));
 });
 
@@ -175,5 +175,14 @@ test('actual main recovery avoids proving and Ethereum signing and reports rever
   h.env.createTransactionJournal=async options=>{scope=options.scope;return {assertCanStart:async()=>{},prepare:async()=>{},confirmed:()=>{},recover:async()=>({txHash:new Fr(99),executionResult})};};
   const result=await h.run();assert.equal(result.state,executionResult==='success'?'transaction_recovered':'transaction_reverted');assert.equal(scope.chainId,'31337');assert.equal(scope.version,'1');assert.equal(scope.portal,h.config.portalAddress);assert.equal(h.requests.length,0);
   assert.equal(h.logs.some(s=>s.includes('Saved transaction succeeded')),executionResult==='success');
+ }
+});
+
+test('Ethereum recovery handles already refunded receipts before checking active deposit',async()=>{
+ for(const outcome of ['success','reverted','replaced']) {
+  const h=mainHarness('recover-eth');h.Portal.prototype.getDeposit=async()=>({nonce:0n,amount:0n});
+  h.env.initCRS=async()=>{throw new Error('Recovery must not prove');};
+  h.env.createEthereumJournal=async options=>{assert.equal(options.scope.depositor,'0x0000000000000000000000000000000000000004');return {assertCanStart:async()=>{},send:async()=>{},recover:async()=>({outcome,txHash:new Fr(99).toString()})};};
+  const result=await h.run();assert.equal(result.state,outcome==='success'?'ethereum_recovered':'ethereum_'+outcome);assert.equal(h.requests.length,0);assert.equal(h.logs.some(s=>s.includes('portal event verified')),outcome==='success');
  }
 });

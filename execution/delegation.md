@@ -444,3 +444,12 @@ still report usage exhaustion; no replacement agents were spawned to evade it.
 Root added independent storage, process-death, actual browser reload and engine
 ordering tests, then performed diff review. This remains self-review; production
 independent review is not claimed. Ethereum and other remaining W03 lanes are open.
+
+## W03 Ethereum recovery milestone (2026-09-16)
+Root implemented encrypted Ethereum intents and canonical transaction/event
+verification, integrated browser/CLI recovery, and extracted shared encrypted-slot
+storage. Existing delegated quota failures remain; no independent signoff claimed.
+Root tested storage/nonce/event/reorg/cursor boundaries, real local Ethereum portal
+deposit/refund after lost responses, and actual built-browser reload. Root reviewed
+signer-call ordering, exact-nonce retry and canonical acknowledgement separately
+from implementation. Remaining W03 work is recorded in the graph checkpoint.
