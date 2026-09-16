@@ -209,3 +209,34 @@ reported as a failed claim. The recovery file exported by the wallet contains th
 journal records; its public funding record can be reconstructed through recovery.
 Funding remains publicly observable, while the resulting private credit is spent
 through the ownerless FPC. No fee-service actor is introduced.
+
+## Interrupted deployment
+
+Resume with the same Aztec wallet and salt, Ethereum account, network, contract
+salt and board settings. The deployment flow first reconciles its saved Aztec
+transaction, then checks the existing board. A successful saved portal-binding
+transaction supplies the Ready hash automatically. A conflicting manually supplied
+hash fails; do not guess or discard the saved record. Unknown or reorganized
+transactions block new submissions.
+
+Ethereum portal creation and activation use separate encrypted records. Direct
+creation records the sender nonce and its derived address before signing; CREATE2
+records the proxy, salt and creation bytecode. Recovery checks the exact canonical
+transaction and deployed code; activation also requires the matching Activated
+configuration event. A failed response cannot silently start another deployment.
+The creation nonce is carried into activation to avoid reusing it through a stale
+provider cache. The portal's complete configuration is verified before binding.
+
+For an unresolved Ethereum request, the deployment screen offers an explicit
+same-nonce retry checkbox; CLI uses `--retry-ethereum true`. This retries the saved
+request, not a new deployment. Canonical completed requests are reconciled without
+another signature. Keep the original Ethereum account selected to locate its
+record. Wallet recovery files contain these scoped records.
+
+After binding, setup makes one bounded check for finalized Ready inclusion and its
+Outbox witness. If network settlement is pending it returns `pending-settlement`,
+keeps deposits disabled and shows no ready-to-use link. Resume later with the same
+settings. An RPC timeout reports unknown state. No network prover is started and
+there is no fifteen-minute settlement loop. The PXE closes on success, pending or
+failure. Browser deployment uses the same wallet/context and cross-tab lock as
+other application actions.

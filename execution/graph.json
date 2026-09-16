@@ -862,7 +862,7 @@
       "evidence": "evidence/W03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Private-fee approval/deposit and L2 claim journals integrated.207 integrated/84 artifact checks, real Anvil lost-response recovery and genuine private-fee claim/post run pass (260773ms, all owned resources removed). Next deployment journals, linked stale-proof replacement and full-stage qualification. W03 active; no routine stopping point.",
+      "checkpoint": "Deployment recovery integrated:204 integrated checks,143 artifact/client checks, real local Ethereum creation/activation response-loss recovery and built-browser pending/lock checks pass. Continue linked stale-proof replacement and all-stage qualification. No routine stopping point.",
       "priority": 14
     },
     {

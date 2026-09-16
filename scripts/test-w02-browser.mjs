@@ -147,6 +147,26 @@ try {
   assert.deepEqual(portableResult,{count:2,claims:1,blocked:true,hash:savedHash});
   assert.equal(await third.page.getByRole('button',{name:'Recover saved moderator transaction'}).count(),1);
 
-  console.log(JSON.stringify({passed:true,actualBuiltBrowser:true,freshProfiles:3,actualPortableJournalRestore:true,wrongPasswordRejected:true,sameRestoredAddress:true,restoredClaimCommitmentVerified:true,actualCrossTabExclusion:true,actualJournalReloadRecovery:true,actualEthereumIntentReloadRecovery:true,externalRequestsBlocked:externalRequests,secretsWrittenToEvidence:false}));
+  stage='deployment-resume-ui';const deploy=await open('deploy.html');
+  await deploy.page.locator('#wbPassword').fill(password);await deploy.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:portable});
+  await deploy.page.waitForFunction(()=>window.walletState.aztec?.address);
+  const deployResult=await deploy.page.evaluate(async()=>{
+    let calls=0;
+    window.runDeploy=async()=>{calls++;return{status:'pending-settlement',l2Addr:'0x'+'2'.padStart(64,'0'),portalAddr:'0x'+'22'.repeat(20),readyTxHash:'0x'+'44'.repeat(32)};};
+    document.getElementById('maxDepositEth').value='1';
+    await startDeploy();
+    const pending=document.getElementById('status').textContent.includes('Network settlement is pending');
+    const hashSaved=document.getElementById('readyTxHash').value==='0x'+'44'.repeat(32);
+    const noReadyLink=!document.querySelector('#status a[href^="user.html"]');
+    let release;const held=navigator.locks.request('billboard-wallet:'+window.walletState.aztec.address.toString(),async()=>{
+      await new Promise(resolve=>release=resolve);
+    });
+    while(!release)await new Promise(resolve=>setTimeout(resolve,0));
+    try{await startDeploy();}finally{release();await held;}
+    return{pending,hashSaved,noReadyLink,calls};
+  });
+  assert.deepEqual(deployResult,{pending:true,hashSaved:true,noReadyLink:true,calls:1});
+
+  console.log(JSON.stringify({passed:true,actualBuiltBrowser:true,freshProfiles:4,deploymentPendingUiAndWalletLock:true,actualPortableJournalRestore:true,wrongPasswordRejected:true,sameRestoredAddress:true,restoredClaimCommitmentVerified:true,actualCrossTabExclusion:true,actualJournalReloadRecovery:true,actualEthereumIntentReloadRecovery:true,externalRequestsBlocked:externalRequests,secretsWrittenToEvidence:false}));
 }catch(error){console.log(JSON.stringify({passed:false,stage,errorClass:error.name,location:error.stack?.split('\n').filter(l=>l.trim().startsWith('at ')).slice(0,2)}));process.exitCode=1;}
 finally{clearTimeout(watchdog);if(browser)await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

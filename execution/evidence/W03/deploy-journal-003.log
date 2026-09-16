@@ -1,0 +1,32 @@
+✔ create-portal: restart and portable encrypted restore recover exact request without another signature (17.867042ms)
+✔ create-portal: rejects wrong value before signing (1.36975ms)
+✔ create-portal: rejects wrong address before signing (0.81925ms)
+✔ create-portal: rejects wrong data before signing (0.642542ms)
+✔ create-portal: a mined revert is retained and never reports success (2.752041ms)
+✔ create-portal: a reorg cannot acknowledge or replace the saved request (3.03025ms)
+✔ create2-portal: restart and portable encrypted restore recover exact request without another signature (5.682916ms)
+✔ create2-portal: rejects wrong value before signing (0.557375ms)
+✔ create2-portal: rejects wrong address before signing (0.601833ms)
+✔ create2-portal: rejects wrong data before signing (0.612ms)
+✔ create2-portal: a mined revert is retained and never reports success (2.616333ms)
+✔ create2-portal: a reorg cannot acknowledge or replace the saved request (2.617833ms)
+✔ activate-portal: restart and portable encrypted restore recover exact request without another signature (7.839625ms)
+✔ activate-portal: rejects wrong value before signing (0.647583ms)
+✔ activate-portal: rejects wrong address before signing (0.579125ms)
+✔ activate-portal: rejects wrong data before signing (0.753625ms)
+✔ activate-portal: a mined revert is retained and never reports success (2.741417ms)
+✔ activate-portal: a reorg cannot acknowledge or replace the saved request (3.418958ms)
+✔ create-portal: empty deployed code fails recovery (3.216917ms)
+✔ create2-portal: empty deployed code fails recovery (3.258542ms)
+✔ direct creation receipt must name the address derived from the saved sender nonce (2.025166ms)
+✔ activation absent event cannot confirm setup (2.950459ms)
+✔ activation wrong-config event cannot confirm setup (3.546375ms)
+✔ activation duplicate event cannot confirm setup (2.747417ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 269.263667

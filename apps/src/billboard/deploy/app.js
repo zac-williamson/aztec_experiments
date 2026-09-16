@@ -72,6 +72,11 @@ function getThreadingMode() {
 // ============================================================
 // Main — start the deploy flow
 // ============================================================
+const callDeploy = makeCallEngine((env, config) => runDeploy(env, config), {
+  pause, portalBytecode: PORTAL_BYTECODE, artifact: BILLBOARD_ARTIFACT,
+  createJournalStorage: () => window.__aztec.createBrowserJournalStorage(),
+  createTransactionJournal: options => window.__aztec.createL2Journal({...options, storage: window.__aztec.createBrowserJournalStorage()}),
+});
 async function startDeploy() {
   clearStatus('status');
 
@@ -95,9 +100,9 @@ async function startDeploy() {
   const ws = window.walletState;
 
   _currentStatusDiv = 'status';
-  const env = buildEnv({ pause: pause, portalBytecode: PORTAL_BYTECODE, artifact: BILLBOARD_ARTIFACT });
   const extraConfig = {
     contractSalt: contractSalt,
+    retryEthereum: document.getElementById('retryEthereum')?.checked === true,
     dataDirPrefix: 'pxe_bb_',
   };
   // Only pass censor config if the user provided values
@@ -112,19 +117,19 @@ async function startDeploy() {
   extraConfig.maxSaveUp = maxSaveUp;
   // Moderation policy (empty string => engine uses default)
   extraConfig.moderationPolicy = moderationPolicy.trim() || undefined;
-  const config = buildConfig(null, extraConfig);
 
   try {
-    const result = await runDeploy(env, config);
+    const result = await callDeploy('deploy', 'status', extraConfig);
     log('', 'info', 'status');
-    log('All done! Copy these addresses for the user app:', 'success', 'status');
+    log(result.status === 'active' ? 'Deployment complete. The board is ready to use.' : 'Deployment saved. Network settlement is pending; resume with the same settings later.', result.status === 'active' ? 'success' : 'info', 'status');
+    if (result.readyTxHash) document.getElementById('readyTxHash').value = result.readyTxHash;
     log('  Salt: ' + (extraConfig.contractSalt || 1), 'info', 'status');
     log('  L2:   ' + result.l2Addr, 'info', 'status');
     log('  L1:   ' + result.portalAddr, 'info', 'status');
 
     // Add a clickable link to the user app with the portal address pre-filled
     const statusDiv = document.getElementById('status');
-    if (statusDiv) {
+    if (statusDiv && result.status === 'active') {
       const linkDiv = document.createElement('div');
       linkDiv.className = 'status success';
       linkDiv.style.marginTop = '8px';

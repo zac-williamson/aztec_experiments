@@ -56,12 +56,12 @@ for(const consumer of ['shared','deploy','user']) {
  test(`${consumer}: proof or pre-proof failure never submits`,async()=>{for(const options of [{proofError:new Error('stop')},{preProveHook:async()=>{throw new Error('stop');}}]){const f=fixture(consumer,options);await assert.rejects(f.send(),/stop/);assert.equal(f.calls.submit,0);assert(!f.confirmed());}});
 }
 
-for(const boundary of ['assertCanStart','prepare'])test(`user: journal ${boundary} failure prevents submission`,async()=>{
+for(const consumer of ['user','deploy'])for(const boundary of ['assertCanStart','prepare'])test(`${consumer}: journal ${boundary} failure prevents submission`,async()=>{
  const journal={assertCanStart:async()=>({encoded:null}),prepare:async()=>{},confirmed:()=>{}};
  journal[boundary]=async()=>{throw Object.assign(new Error('recovery required'),{code:'BB_RECOVERY_REQUIRED'});};
- const f=fixture('user',{transactionJournal:journal});await assert.rejects(f.send(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(f.calls.submit,0);assert.equal(f.calls.proof,boundary==='prepare'?1:0);
+ const f=fixture(consumer,{transactionJournal:journal});await assert.rejects(f.send(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(f.calls.submit,0);assert.equal(f.calls.proof,boundary==='prepare'?1:0);
 });
-test('user: exact transaction is saved before send and acknowledged only after canonical success',async()=>{
+for(const consumer of ['user','deploy'])test(`${consumer}: exact transaction is saved before send and acknowledged only after canonical success`,async()=>{
  let f;const events=[];const journal={assertCanStart:async()=>{events.push('read');return {encoded:'prior'};},prepare:async(tx,prior)=>{assert.equal(tx.getTxHash().toString(),hash.toString());assert.equal(prior.encoded,'prior');assert.equal(f.calls.proof,1);assert.equal(f.calls.submit,0);events.push('save');},confirmed:receipt=>{assert.equal(f.calls.submit,1);assert.equal(receipt.executionResult,'success');events.push('confirmed');}};
- f=fixture('user',{transactionJournal:journal});await f.send();assert.deepEqual(events,['read','save','confirmed']);
+ f=fixture(consumer,{transactionJournal:journal});await f.send();assert.deepEqual(events,['read','save','confirmed']);
 });

@@ -38,3 +38,7 @@ Active: private-fee claim transaction recovery, followed by Ethereum fee approva
 Fee approval/deposit exact-nonce recovery and standalone L2 claim recovery are implemented, not yet committed.62 focused checks pass; real Anvil fee approval and bridge deposit recovered after lost post-mining responses with no duplicate payment. Native --private-fee-post qualification is running with the540-second bound; log evidence/W03/fee-application-005.log. No parallel heavy jobs.
 
 Fee recovery qualification passes207 integrated and84 artifact checks, real local Ethereum response-loss recovery, and a genuine application claim/post run in4m21s. All owned resources removed. See evidence/W03/fee-milestone-006.md. Continue with deployment recovery, linked stale-proof replacement and full-stage checks.
+
+Active: deployment recovery, including a bounded settlement check and truthful pending status; then persisted setup transactions and Ready provenance. Fee milestone committed and pushed as52a8000.
+
+Deployment recovery milestone passes204 integrated and143 artifact/client checks, real Ethereum creation/activation recovery and built-browser pending/lock checks. See evidence/W03/deploy-milestone-007.md. Continuing stale-proof replacement and full-stage qualification.

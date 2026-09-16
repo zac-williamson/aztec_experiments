@@ -41,11 +41,28 @@
 
   // This is also the maintained behavioral test seam; runDeploy uses this exact path.
   async function activateReady({ node, portal, hash, leaf, ethers, log,
-    now = Date.now, wait = sleep, timeoutMs = 15 * 60 * 1000, intervalMs = 15000 }) {
-    const deadline = now() + timeoutMs;
+    timeoutMs = 20000, activate }) {
+    // Settlement belongs to the network. Check once and leave a resumable state;
+    // do not hold an application run open waiting for an epoch to settle.
+    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0 || timeoutMs > 20000) throw new Error('Invalid Ready check timeout');
+    let deadline = Date.now() + timeoutMs;
+    const pending = () => {
+      log('Portal binding is saved. Network settlement is pending; resume deployment later.', 'info');
+      return { status: 'pending-settlement', readyTxHash: hash.toString() };
+    };
+    async function read(fn) {
+      let timer;
+      try {
+        return await Promise.race([Promise.resolve().then(fn), new Promise((_, reject) => {
+          timer = setTimeout(() => reject(Object.assign(new Error('Ready state is unknown; resume deployment to check again.'),
+            { code: 'BB_RECOVERY_UNKNOWN' })), Math.max(0, deadline - Date.now()));
+        })]);
+      } finally { clearTimeout(timer); }
+    }
     async function finalizedReceipt() {
-      const receipt = await node.getTxReceipt(hash);
+      const receipt = await read(() => node.getTxReceipt(hash));
       if (!receipt || receipt.status === 'pending') return null;
+      if (receipt.txHash?.toString() !== hash.toString()) throw new Error('Ready receipt transaction hash mismatch');
       if (receipt.status === 'dropped') throw new Error('Ready transaction was dropped');
       if (!['proposed', 'checkpointed', 'proven', 'finalized'].includes(receipt.status)) {
         throw new Error('Ready transaction has unknown receipt status');
@@ -55,35 +72,28 @@
         throw new Error('Ready transaction has incomplete inclusion metadata');
       }
       if (receipt.status === 'proposed') return null;
-      const tips = await node.getChainTips();
+      const tips = await read(() => node.getChainTips());
       const finalizedNumber = tips?.finalized?.block?.number;
       if (!Number.isSafeInteger(finalizedNumber) || finalizedNumber < 0) throw new Error('Invalid finalized chain tip');
       if (finalizedNumber < receipt.blockNumber) return null;
-      const block = await node.getBlock(receipt.blockNumber);
+      const block = await read(() => node.getBlock(receipt.blockNumber));
       if (!block || block.hash.toString() !== receipt.blockHash.toString()) return null;
       return receipt;
     }
-    while (now() < deadline) {
-      const receipt = await finalizedReceipt();
-      if (receipt) {
-        const witness = await node.getL2ToL1MembershipWitness(hash, leaf);
-        if (witness) {
-          // Re-read after witness resolution: never activate using a receipt cached before a reorg.
-          const current = await finalizedReceipt();
-          if (current && current.blockNumber === receipt.blockNumber &&
-            current.blockHash.toString() === receipt.blockHash.toString() && now() < deadline) {
-            const tx = await portal.activate(BigInt(witness.epochNumber), BigInt(witness.numCheckpointsInEpoch),
-              BigInt(witness.leafIndex), witness.siblingPath.toBufferArray().map(bytes => ethers.hexlify(bytes)));
-            const activation = await tx.wait();
-            if (activation.status !== 1 || !await portal.depositsEnabled()) throw new Error('Portal activation failed');
-            return activation;
-          }
-        }
-      }
-      log('Waiting for finalized Ready proof; deposits remain disabled.', 'info');
-      await wait(Math.min(intervalMs, Math.max(0, deadline - now())));
-    }
-    throw new Error('Ready proof not finalized within this run; resume with readyTxHash ' + hash.toString());
+    const receipt = await finalizedReceipt();
+    if (!receipt) return pending();
+    const witness = await read(() => node.getL2ToL1MembershipWitness(hash, leaf));
+    if (!witness) return pending();
+    // A witness obtained before a reorg cannot authorize activation.
+    const current = await finalizedReceipt();
+    if (!current || current.blockNumber !== receipt.blockNumber ||
+      current.blockHash.toString() !== receipt.blockHash.toString()) return pending();
+    const args = [BigInt(witness.epochNumber), BigInt(witness.numCheckpointsInEpoch),
+      BigInt(witness.leafIndex), witness.siblingPath.toBufferArray().map(bytes => ethers.hexlify(bytes))];
+    const activation = activate ? await activate(args) : await (await portal.activate(...args)).wait();
+    deadline = Date.now() + timeoutMs;
+    if (activation.status !== 1 || !await read(() => portal.depositsEnabled())) throw new Error('Portal activation failed');
+    return { status: 'active', receipt: activation };
   }
   g.BillboardDeployActivation = Object.freeze({ activateReady });
 
@@ -191,6 +201,7 @@
       }
 
       async sendTx(executionPayload, opts) {
+        const previousJournal = this._transactionJournal ? await this._transactionJournal.assertCanStart() : null;
         log('  Estimating gas (simulating tx)...', 'info');
         const feeOptions = await this.completeFeeOptions({
           from: opts.from,
@@ -243,12 +254,14 @@
 
         log('  Transaction hash: ' + txHash.toString(), 'info');
         if(this._contextGuard)await this._contextGuard();
+        if (this._transactionJournal) await this._transactionJournal.prepare(tx, previousJournal);
         await a.submitOnceWithReconciliation(rawNode,tx);
         const waitOpts=typeof opts.wait==='object'?opts.wait:{};
         const receipt=await a.waitForSuccessfulReceipt(rawNode,tx,{
           timeoutMs:(waitOpts.timeout ?? 540)*1000,intervalMs:(waitOpts.interval ?? 5)*1000,
           now:()=>Date.now(),sleep:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
         });
+        if (this._transactionJournal) this._transactionJournal.confirmed(receipt);
         log('  Tx confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
         return { receipt };
       }
@@ -257,6 +270,7 @@
     const wallet = new AztecWallet(pxe, aztecNode);
     wallet._preProveHook = opts.preProveHook || null;
     wallet._contextGuard = opts.contextGuard || null;
+    wallet._transactionJournal = opts.transactionJournal || null;
     wallet._secretKey = secretKey;
     return wallet;
   }
@@ -353,6 +367,7 @@
       dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
     }, { store });
     log('  PXE created.', 'success');
+    try {
 
     // ============================================================
     // Step 6: Register account + sync
@@ -443,8 +458,15 @@
     const l2Addr = await deployMethod.getAddress();
     log('  Predicted L2 address: ' + l2Addr.toString(), 'info');
 
-    let existingInstance = null;
-    try { existingInstance = await aztecNode.getContract(l2Addr); } catch (e) { /* not deployed */ }
+    if (typeof env.createTransactionJournal !== 'function') throw Object.assign(new Error('Deployment recovery storage is required.'), { code: 'BB_JOURNAL_INVALID' });
+    const deploymentJournal = await env.createTransactionJournal({ walletSecret: secretKeyHex, walletSalt: saltVal,
+      scope: { account: address.toString().toLowerCase(), chainId: String(nodeInfo.l1ChainId), rollup: rollupAddr.toLowerCase(),
+        version: String(version), board: l2Addr.toString().toLowerCase(), portal: '0x' + '0'.repeat(40) },
+      Tx: a.Tx, node: rawNode, contextGuard: config.contextGuard });
+    const recoveredDeployment = await deploymentJournal.reconcilePrevious();
+    await deploymentJournal.assertCanStart();
+    wallet._transactionJournal = deploymentJournal;
+    let existingInstance = await rawNode.getContract(l2Addr);
 
     if (existingInstance) {
       log('  Contract already deployed on L2!', 'success');
@@ -463,24 +485,10 @@
       await pxe.registerContract(existingInstance);
     } else {
       log('  Not yet deployed. Sending deploy tx...', 'info');
-      try {
-        const result = await deployMethod.send({ from: address });
-        log('  TX confirmed! Block: ' + result.receipt.blockNumber, 'success');
-        log('  L2 contract address: ' + l2Addr.toString(), 'success');
-      } catch (err) {
-        if (/existing nullifier|already exists|duplicate/i.test(err.message || '')) {
-          log('  Deployment nullifier already consumed. Re-checking...', 'warn');
-          let found = false;
-          for (let i = 0; i < 10; i++) {
-            await sleep(10000);
-            try {
-              existingInstance = await aztecNode.getContract(l2Addr);
-              if (existingInstance) { found = true; break; }
-            } catch (e) {}
-            log('  Contract not visible yet, retrying... (' + (i+1) + '/10)', 'warn');
-          }
-        } else { throw err; }
-      }
+      deploymentJournal.setOperation('deploy-board');
+      const result = await deployMethod.send({ from: address });
+      log('  TX confirmed! Block: ' + result.receipt.blockNumber, 'success');
+      log('  L2 contract address: ' + l2Addr.toString(), 'success');
       const finalInstance = existingInstance || await deployMethod.getInstance();
       await pxe.registerContractClass(contractArtifact);
       await pxe.registerContract(finalInstance);
@@ -530,40 +538,32 @@
       log('  ETH address: ' + ethSigner.address, 'info');
     }
 
-    let predicted = portalAlreadySet ? await readPortal() : computePortalAddress(portalBytecode, PORTAL_ABI, l2AddrHex, rollupAddr, version, minDepositWei, maxDepositWei, configHash, ethers);
-    log('  Predicted portal address: ' + predicted, 'info');
-
     const provider = ethSigner.provider;
     if ((await provider.getNetwork()).chainId !== BigInt(nodeInfo.l1ChainId)) throw new Error('L1 signer and Aztec node chain mismatch');
-    const existingCode = await provider.getCode(predicted);
-
-    if (existingCode !== '0x') {
-      log('  Portal already deployed at ' + predicted + '!', 'success');
-    } else {
-      // Check if CREATE2 proxy exists
-      const proxyCode = await provider.getCode(CREATE2_PROXY);
-      if (proxyCode === '0x') {
-        log('  CREATE2 proxy not found. Falling back to direct deploy...', 'warn');
-        log('  WARNING: address will depend on nonce and is NOT deterministic.', 'warn');
-        const factory = new ethers.ContractFactory(PORTAL_ABI, portalBytecode, ethSigner);
-        const contract = await factory.deploy(rollupAddr, l2AddrHex, BigInt(version), BigInt(minDepositWei), maxDepositWei, configHash);
-        log('  Tx sent: ' + contract.deploymentTransaction().hash, 'info');
-        await contract.waitForDeployment();
-        const addr = await contract.getAddress();
-        predicted = addr;
-        log('  Portal deployed at ' + addr, 'success');
-      } else {
-        log('  Deploying via CREATE2 proxy ' + CREATE2_PROXY + '...', 'info');
-        const creation = portalCreationBytecode(portalBytecode, PORTAL_ABI, rollupAddr, l2AddrHex, version, minDepositWei, maxDepositWei, configHash, ethers);
-        const salt = ethers.getBytes(l2AddrHex);
-        const data = ethers.concat([salt, creation]);
-        const tx = await ethSigner.sendTransaction({ to: CREATE2_PROXY, data, value: 0 });
-        log('  Tx sent: ' + tx.hash, 'info');
-        log('  Waiting for confirmation...', 'info');
-        const rc = await tx.wait();
-        log('  Confirmed in block ' + rc.blockNumber, 'success');
-        log('  Portal deployed at ' + predicted, 'success');
-      }
+    if (typeof env.createJournalStorage !== 'function' || typeof a.createEthereumJournal !== 'function') throw Object.assign(new Error('Ethereum deployment recovery storage is required.'), { code: 'BB_JOURNAL_INVALID' });
+    const creation = portalCreationBytecode(portalBytecode, PORTAL_ABI, rollupAddr, l2AddrHex, version, minDepositWei, maxDepositWei, configHash, ethers);
+    const ethereumScope = { account: address.toString().toLowerCase(), chainId: String(nodeInfo.l1ChainId),
+      rollup: rollupAddr.toLowerCase(), version: String(version), board: l2AddrHex.toLowerCase(),
+      portal: '0x' + '0'.repeat(40), depositor: (await ethSigner.getAddress()).toLowerCase(), deployment: ethers.keccak256(creation) };
+    const ethereumOptions = { storage: env.createJournalStorage(), walletSecret: secretKeyHex, walletSalt: saltVal,
+      scope: ethereumScope, provider, signer: ethSigner, contextGuard: config.contextGuard };
+    const ethereumDeployment = await a.createEthereumJournal(ethereumOptions);
+    let recoveredCreation = await ethereumDeployment.reconcilePrevious({ retry: config.retryEthereum === true });
+    let predicted = portalAlreadySet ? await readPortal() : recoveredCreation?.outcome === 'success'
+      ? recoveredCreation.request.expected.portal
+      : computePortalAddress(portalBytecode, PORTAL_ABI, l2AddrHex, rollupAddr, version, minDepositWei, maxDepositWei, configHash, ethers);
+    log('  Portal address: ' + predicted, 'info');
+    if (await provider.getCode(predicted) === '0x') {
+      if (portalAlreadySet) throw new Error('The bound portal has no code; preserve deployment recovery records.');
+      const hasProxy = await provider.getCode(CREATE2_PROXY) !== '0x';
+      const result = await ethereumDeployment.send(nonce => {
+        const portalAddress = hasProxy ? predicted.toLowerCase() : ethers.getCreateAddress({ from: ethereumScope.depositor, nonce }).toLowerCase();
+        return { data: hasProxy ? ethers.concat([ethers.getBytes(l2AddrHex), creation]) : creation, value: '0',
+          expected: { kind: hasProxy ? 'create2-portal' : 'create-portal', portal: portalAddress } };
+      });
+      recoveredCreation = result;
+      predicted = result.request.expected.portal;
+      log('  Portal deployment confirmed: ' + result.txHash, 'success');
     }
 
     const portal = new ethers.Contract(predicted, PORTAL_ABI, ethSigner);
@@ -573,16 +573,23 @@
       BigInt(minDepositWei), maxDepositWei, BigInt(configHash)];
     if (values.some((value, index) => BigInt(value) !== expected[index])) throw new Error('Portal configuration mismatch');
 
-    let readyTxHash = config.readyTxHash || null;
+    const recoveredBindingHash = recoveredDeployment?.operation === 'bind-portal:' + predicted.toLowerCase() &&
+      recoveredDeployment.receipt.executionResult === 'success' ? recoveredDeployment.receipt.txHash.toString() : null;
+    if (config.readyTxHash && recoveredBindingHash && config.readyTxHash !== recoveredBindingHash) throw new Error('Supplied binding hash differs from the saved transaction');
+    let readyTxHash = recoveredBindingHash || config.readyTxHash || null;
     if (portalAlreadySet) {
       if ((await readPortal()).toLowerCase() !== predicted.toLowerCase()) throw new Error('Board is bound to another portal');
     } else {
+      deploymentJournal.setOperation('bind-portal:' + predicted.toLowerCase());
       const result = await l2Contract.methods.update_portal(a.EthAddress.fromString(predicted)).send({ from: address });
       readyTxHash = result.receipt.txHash.toString();
       log('Portal binding transaction: ' + readyTxHash, 'info');
       if ((await readPortal()).toLowerCase() !== predicted.toLowerCase()) throw new Error('Portal binding did not persist');
     }
 
+    const ethereumActivation = await a.createEthereumJournal({ ...ethereumOptions, scope: { ...ethereumScope, portal: predicted.toLowerCase() },
+      minimumNonce: recoveredCreation ? recoveredCreation.request.nonce + 1 : 0 });
+    await ethereumActivation.reconcilePrevious({ retry: config.retryEthereum === true });
     if (!await portal.depositsEnabled()) {
       if (!readyTxHash) throw new Error('Portal awaits Ready proof: provide the original readyTxHash to resume activation');
       const ready = wordHash('AZTEC_BB_READY_V1', [1n, BigInt(nodeInfo.l1ChainId), BigInt(predicted),
@@ -592,10 +599,14 @@
         a.EthAddress.fromString(predicted).toBuffer(), new a.Fr(BigInt(nodeInfo.l1ChainId)).toBuffer(),
         new a.Fr(BigInt(ready)).toBuffer()]);
       const hash = a.TxHash.fromString(readyTxHash);
-      await activateReady({ node: aztecNode, portal, hash, leaf, ethers, log });
+      const activation = await activateReady({ node: rawNode, portal, hash, leaf, ethers, log,
+        activate: async args => (await ethereumActivation.send({ data: new ethers.Interface(PORTAL_ABI).encodeFunctionData('activate', args),
+          value: '0', expected: { kind: 'activate-portal', portal: predicted.toLowerCase(), configHash: configHash.toLowerCase() } })).receipt });
+      if (activation.status !== 'active') return { l2Addr: l2Addr.toString(), portalAddr: predicted, readyTxHash, configHash, status: activation.status };
     }
     log('Board and portal are linked; authenticated Ready enabled deposits.', 'success');
 
-    return { l2Addr: l2Addr.toString(), portalAddr: predicted, readyTxHash, configHash };
+    return { l2Addr: l2Addr.toString(), portalAddr: predicted, readyTxHash, configHash, status: 'active' };
+    } finally { await pxe.stop(); }
   };
 })();

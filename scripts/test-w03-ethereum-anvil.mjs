@@ -7,7 +7,7 @@ import net from 'node:net';
 import {spawn,execFileSync} from 'node:child_process';
 import {once} from 'node:events';
 import {randomBytes} from 'node:crypto';
-import {Wallet,Contract,ContractFactory,JsonRpcProvider,solidityPacked,getBytes} from 'ethers';
+import {Wallet,Contract,ContractFactory,JsonRpcProvider,solidityPacked,getBytes,getCreateAddress,keccak256} from 'ethers';
 import {createEthereumJournal} from '../shared/ethereum-journal.mjs';
 import {createFileJournalStorage} from '../apps/src/billboard/user/transaction-journal-store.mjs';
 import {encodeReadyCommitment,encodeEscrowCommitment,sha256Field} from '../shared/protocol-commitments.mjs';
@@ -84,6 +84,29 @@ try {
   const recoveredClaim=await recoverPrivateFeeClaim({...feeInput,ethProvider:provider,record:funded.record});assert.equal(recoveredClaim.amount,1000n);
   assert.equal(await token.balanceOf(await feePortal.getAddress()),1000n);assert.equal(await token.balanceOf(user.address),0n);
   assert.equal((await recoverFee()).lastEthereumTxHash,funded.lastEthereumTxHash);assert.equal(sends,4);
+  stage='portal-creation-response-lost-after-mining';
+  const freshBoard=field(),freshConfig=field();
+  const creationRequest=await new ContractFactory(portalArtifact.abi,portalArtifact.bytecode.object).getDeployTransaction(scope.rollupAddress,freshBoard,5,1,1000000,freshConfig);
+  const deploymentScope={...journalScope,board:freshBoard,portal:'0x'+'0'.repeat(40),deployment:keccak256(creationRequest.data)};
+  const deploymentOptions={...options,scope:deploymentScope};
+  const deployJournal=await createEthereumJournal(deploymentOptions);
+  assert.equal(await deployJournal.reconcilePrevious(),null);
+  await assert.rejects(deployJournal.send(nonce=>({data:creationRequest.data,value:'0',expected:{kind:'create-portal',portal:getCreateAddress({from:user.address,nonce}).toLowerCase()}})),{code:'BB_ETH_SUBMISSION_UNKNOWN'});
+  const deployed=await (await createEthereumJournal({...deploymentOptions,signer:null})).reconcilePrevious();
+  assert.equal(deployed.outcome,'success');assert.equal(sends,5);
+  const freshPortal=new Contract(deployed.request.expected.portal,portalArtifact.abi,provider);
+  assert.equal(await freshPortal.L2_CONTRACT(),freshBoard);assert.equal(await freshPortal.depositsEnabled(),false);
+  assert.equal((await (await createEthereumJournal(deploymentOptions)).reconcilePrevious({retry:true})).txHash,deployed.txHash);assert.equal(sends,5);
+  stage='portal-activation-response-lost-after-mining';
+  const freshScope={...scope,boardAddress:freshBoard,portalAddress:deployed.request.expected.portal};
+  const readyContent=await sha256Field(encodeReadyCommitment(freshScope,freshConfig));
+  const freshReadyRoot=await sha256Field(getBytes(solidityPacked(['bytes32','uint256','address','uint256','bytes32'],[freshBoard,5,freshScope.portalAddress,31337,readyContent])));
+  await (await publisher.publish(3,1,freshReadyRoot)).wait();
+  const activationOptions={...deploymentOptions,scope:{...deploymentScope,portal:freshScope.portalAddress}};
+  await assert.rejects((await createEthereumJournal(activationOptions)).send({data:freshPortal.interface.encodeFunctionData('activate',[3,1,0,[]]),value:'0',expected:{kind:'activate-portal',portal:freshScope.portalAddress,configHash:freshConfig}}),{code:'BB_ETH_SUBMISSION_UNKNOWN'});
+  const activated=await (await createEthereumJournal({...activationOptions,signer:null})).reconcilePrevious();
+  assert.equal(activated.outcome,'success');assert.equal(await freshPortal.depositsEnabled(),true);assert.equal(sends,6);
+  assert.equal((await (await createEthereumJournal(activationOptions)).reconcilePrevious({retry:true})).txHash,activated.txHash);assert.equal(sends,6);
   passed=true;
 }catch(error){console.log(JSON.stringify({passed:false,stage,errorClass:error.name,code:error.code||null}));process.exitCode=1;}
 finally {
@@ -91,5 +114,5 @@ finally {
   clearTimeout(watchdog);if(provider)provider.destroy();
   if(anvil&&anvil.exitCode===null&&anvil.signalCode===null){const closed=once(anvil,'close');anvil.kill('SIGTERM');const kill=setTimeout(()=>anvil.kill('SIGKILL'),2000);await closed;clearTimeout(kill);}
   fs.rmSync(temporary,{recursive:true,force:true});
-  if(passed)console.log(JSON.stringify({passed:true,realEthereumReceipts:true,portalDepositAndRefund:true,realFeeTokenApprovalAndBridgeDeposit:true,feeResponsesLostAfterMining:true,lostHashRecovered:true,repeatedRecoveryDidNotResend:true,controlledBridgeRoots:true,networkProofs:false,ownedProcessExited:true,temporaryDirectoryRemoved:!fs.existsSync(temporary),secretsLogged:false}));
+  if(passed)console.log(JSON.stringify({passed:true,realEthereumReceipts:true,portalCreationAndActivationLostResponses:true,portalDepositAndRefund:true,realFeeTokenApprovalAndBridgeDeposit:true,feeResponsesLostAfterMining:true,lostHashRecovered:true,repeatedRecoveryDidNotResend:true,controlledBridgeRoots:true,networkProofs:false,ownedProcessExited:true,temporaryDirectoryRemoved:!fs.existsSync(temporary),secretsLogged:false}));
 }

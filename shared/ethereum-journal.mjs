@@ -1,7 +1,10 @@
-import {Interface} from 'ethers';
+import {Interface,getCreateAddress,getCreate2Address,keccak256} from 'ethers';
+const CREATE2_PROXY='0x4e59b44847b379578588920ca78fbf26c0b4956c';
 import {createEncryptedJournalSlot} from './journal-record.mjs';
 import {transactionError} from './transaction-outcomes.mjs';
 const iface=new Interface([
+  'function activate(uint256 epoch,uint256 checkpointCount,uint256 leafIndex,bytes32[] path)',
+  'event Activated(bytes32 indexed configHash)',
   'function approve(address spender,uint256 amount) returns (bool)',
   'function depositToAztecPublic(bytes32 to,uint256 amount,bytes32 secretHash) returns(bytes32 key,uint256 index)',
   'event Approval(address indexed owner,address indexed spender,uint256 value)',
@@ -19,18 +22,40 @@ const lower=v=>typeof v==='string'?v.toLowerCase():'';
 const positive=v=>typeof v==='string'&&/^[1-9][0-9]{0,77}$/.test(v);
 const integer=v=>Number.isSafeInteger(v)&&v>=0;
 function validatedScope(scope) {
-  const names=['account','chainId','rollup','version','board','portal','depositor',...(scope?.token!==undefined?['token']:[])];
+  const names=['account','chainId','rollup','version','board','portal','depositor',...(scope?.token!==undefined?['token']:[]),...(scope?.deployment!==undefined?['deployment']:[])];
   if(!scope||Object.keys(scope).sort().join()!==[...names].sort().join())throw invalid();
+  if(scope.deployment!==undefined&&(!hash(scope.deployment)||scope.token!==undefined))throw invalid();
   if((scope.token!==undefined&&!address(scope.token))||!hash(scope.account)||!hash(scope.board)||!address(scope.rollup)||!address(scope.portal)||!address(scope.depositor)||!positive(scope.chainId)||!positive(scope.version))throw invalid();
   return JSON.stringify(['AZTEC_BB_ETH_JOURNAL_V1',...names.map(n=>scope[n])]);
 }
+function intentDestination(expected,scope) {
+  if(scope.deployment!==undefined) {
+    if(expected?.kind==='create-portal')return null;
+    if(expected?.kind==='create2-portal')return CREATE2_PROXY;
+    if(expected?.kind==='activate-portal')return scope.portal;
+  }
+  return expected?.kind==='approve'?scope.token:scope.portal;
+}
 function validateIntent(record,scope) {
-  if(!record||record.version!==1||record.from!==scope.depositor||record.to!==(record.expected?.kind==='approve'?scope.token:scope.portal)||record.chainId!==scope.chainId||!integer(record.nonce)||
+  if(!record||record.version!==1||record.from!==scope.depositor||record.to!==intentDestination(record.expected,scope)||record.chainId!==scope.chainId||!integer(record.nonce)||
     !integer(record.startBlock)||!hash(record.startHash)||!integer(record.nextBlock)||record.nextBlock<1||
     (record.cursorHash!==null&&!hash(record.cursorHash))||(record.txHash!==null&&!hash(record.txHash))||
     typeof record.data!=='string'||record.data.length>131072||!/^0x(?:[0-9a-f]{2})+$/.test(record.data)||
     typeof record.value!=='string'||!/^(0|[1-9][0-9]{0,77})$/.test(record.value))throw invalid();
   const expected=record.expected;
+  if(scope.deployment!==undefined) {
+    if(!expected||!['create-portal','create2-portal','activate-portal'].includes(expected.kind)||!address(expected.portal)||record.value!=='0')throw invalid();
+    if(expected.kind==='create-portal') {
+      if(keccak256(record.data)!==scope.deployment||lower(getCreateAddress({from:record.from,nonce:record.nonce}))!==expected.portal)throw invalid();
+    }else if(expected.kind==='create2-portal') {
+      if(record.data.slice(0,66)!==scope.board||keccak256('0x'+record.data.slice(66))!==scope.deployment||lower(getCreate2Address(CREATE2_PROXY,scope.board,scope.deployment))!==expected.portal)throw invalid();
+    }else {
+      if(expected.portal!==scope.portal||!hash(expected.configHash))throw invalid();
+      let parsed;try{parsed=iface.parseTransaction({data:record.data});}catch{throw invalid();}
+      if(parsed?.name!=='activate'||iface.encodeFunctionData(parsed.fragment,parsed.args).toLowerCase()!==record.data)throw invalid();
+    }
+    return record;
+  }
   const fee=scope.token!==undefined;
   if(!expected||!(fee?['approve','fee-deposit']:['deposit','withdraw']).includes(expected.kind)||!positive(expected.amount)||BigInt(expected.amount)>=(1n<<(fee?128n:96n)))throw invalid();
   if(!fee&&(!positive(expected.nonce)||BigInt(expected.nonce)>=1n<<64n))throw invalid();
@@ -47,7 +72,7 @@ function validateIntent(record,scope) {
   return record;
 }
 function matchesRequest(tx,record) {
-  try{return lower(tx.from)===record.from&&lower(tx.to)===record.to&&Number(tx.nonce)===record.nonce&&String(tx.chainId)===record.chainId&&lower(tx.data)===record.data&&BigInt(tx.value)===BigInt(record.value);}catch{return false;}
+  try{return lower(tx.from)===record.from&&(tx.to==null?null:lower(tx.to))===record.to&&Number(tx.nonce)===record.nonce&&String(tx.chainId)===record.chainId&&lower(tx.data)===record.data&&BigInt(tx.value)===BigInt(record.value);}catch{return false;}
 }
 // This validator requires the actual transaction, canonical receipt and exact
 // portal event. An empty active balance or consumed Outbox bit is insufficient.
@@ -61,13 +86,22 @@ export async function verifyEthereumIntentReceipt(provider,record,txHash,read=fn
   if(!matchesRequest(tx,record))return {outcome:'replaced',txHash,receipt,event:null};
   if(receipt.status===0)return {outcome:'reverted',txHash,receipt,event:null};
   if(!Array.isArray(receipt.logs))throw unknown();
-  const expected=record.expected,eventName=({deposit:'Deposited',withdraw:'Withdrawn',approve:'Approval','fee-deposit':'DepositToAztecPublic'})[expected.kind];
+  const expected=record.expected;
+  if(['create-portal','create2-portal'].includes(expected.kind)) {
+    if(expected.kind==='create-portal'&&lower(receipt.contractAddress)!==expected.portal)throw unknown();
+    const code=await read(()=>provider.getCode(expected.portal,receipt.blockNumber));
+    if(typeof code!=='string'||code==='0x'||!/^0x(?:[0-9a-fA-F]{2})+$/.test(code))throw unknown();
+    return {outcome:'success',txHash,receipt,event:null};
+  }
+  const eventName=({deposit:'Deposited',withdraw:'Withdrawn',approve:'Approval','fee-deposit':'DepositToAztecPublic','activate-portal':'Activated'})[expected.kind];
   const topic=iface.getEvent(eventName).topicHash.toLowerCase(),events=[];
   for(const log of receipt.logs) {
     if(lower(log.address)!==record.to||lower(log.topics?.[0])!==topic)continue;
     let parsed;try{parsed=iface.parseLog(log);}catch{throw unknown();}
     if(!parsed)throw unknown();
-    if(expected.kind==='approve') {
+    if(expected.kind==='activate-portal') {
+      if(lower(parsed.args.configHash)!==expected.configHash)throw unknown();
+    }else if(expected.kind==='approve') {
       if(lower(parsed.args.owner)!==record.from||lower(parsed.args.spender)!==expected.spender||String(parsed.args.value)!==expected.amount)throw unknown();
     }else if(expected.kind==='fee-deposit') {
       if(lower(parsed.args.to)!==expected.recipient||String(parsed.args.amount)!==expected.amount||lower(parsed.args.secretHash)!==expected.secretHash)throw unknown();
@@ -78,8 +112,9 @@ export async function verifyEthereumIntentReceipt(provider,record,txHash,read=fn
   if(events.length!==1)throw unknown();
   return {outcome:'success',txHash,receipt,event:events[0]};
 }
-export async function createEthereumJournal({storage,walletSecret,walletSalt,scope,provider,signer,acknowledgeTx,contextGuard,timeoutMs=20000}) {
+export async function createEthereumJournal({storage,walletSecret,walletSalt,scope,provider,signer,acknowledgeTx,contextGuard,timeoutMs=20000,minimumNonce=0}) {
   const slot=await createEncryptedJournalSlot({storage,walletSecret,walletSalt,scopeText:validatedScope(scope),keyDomain:'AZTEC_BB_ETH_JOURNAL_KEY_V1'});
+  if(!integer(minimumNonce))throw invalid();
   if(!Number.isFinite(timeoutMs)||timeoutMs<=0||timeoutMs>20000)throw invalid();
   let acknowledged=acknowledgeTx,lastHash=null;
   function reader() {
@@ -162,16 +197,17 @@ export async function createEthereumJournal({storage,walletSecret,walletSalt,sco
       const start=await read(()=>provider.getBlock('latest'));
       const pendingNonce=await read(()=>provider.getTransactionCount(scope.depositor,'pending'));
       if(!integer(pendingNonce))throw unknown();
-      const nonce=Math.max(pendingNonce,previous.value?previous.value.nonce+1:0);
+      const nonce=Math.max(pendingNonce,previous.value?previous.value.nonce+1:0,minimumNonce);
       const {data,value,expected}=typeof intent==='function'?await intent(nonce):intent;
       if(!start||!integer(start.number)||!hash(lower(start.hash))||!integer(nonce))throw unknown();
-      const record=validateIntent({version:1,from:scope.depositor,to:expected?.kind==='approve'?scope.token:scope.portal,chainId:scope.chainId,nonce,data:lower(data),value:String(value),expected,
+      const record=validateIntent({version:1,from:scope.depositor,to:intentDestination(expected,scope),chainId:scope.chainId,nonce,data:lower(data),value:String(value),expected,
         startBlock:start.number,startHash:lower(start.hash),nextBlock:start.number+1,cursorHash:null,txHash:null},scope);
       const saved=await slot.write(previous,record);
       const result=await finish(await broadcast(saved));
       if(result.outcome!=='success')throw transactionError('BB_ETH_TRANSACTION_FAILED','The Ethereum request reverted or was replaced. Reconcile it before another action.');
       return result;
     },
+    async reconcilePrevious(options={}){if(!(await load()).value)return null;return this.recover(options);},
     async recover({retry=false}={}) {
       let saved=await load();if(!saved.value)throw transactionError('BB_NO_SAVED_ETHEREUM_TRANSACTION','No saved Ethereum request exists for this wallet and portal.');
       const read=reader();await network(read);

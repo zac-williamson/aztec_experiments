@@ -1503,7 +1503,7 @@
     "node_modules/zod/v4/locales/zh-CN.js": "1e2126360ec80d47cf03df58c00eff062d6dfb555983717911a49457d4d84431",
     "node_modules/zod/v4/locales/zh-TW.js": "65c0f93ee9a7f8d74744e17d19406d2a3ba467afb623be963e6a5b8ef00dbec1",
     "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
-    "shared/ethereum-journal.mjs": "df5a36c09fa4ff3b0e513086f1548e3be99f608d2818bb71f9f0134539284dff",
+    "shared/ethereum-journal.mjs": "b30902ed978aa226fe236bdea50857e92a108dc91b492aaa8236acbacfd545ed",
     "shared/history-cursor.mjs": "7bc1407ea7c7749f89b89b8ecf15fb39b0c58e9d336ec4dc5a792922d93b49b4",
     "shared/journal-backup.mjs": "5a5292c781f442c07b51769b62c856c60821dbf95a00cb5e8c79f6ea5c2ea512",
     "shared/journal-indexeddb.mjs": "3b9bb21ae70b8bde89b460b673dcd4dd38422ee2d7f6d31f7c5c9c1bba4773b8",
@@ -1520,7 +1520,7 @@
   },
   "outputs": {
     "acvm_js_bg.wasm": "bcd66e862a95a57f7f2ae3cb97e24d007d2ad710ac7490262c3c92a5b823775d",
-    "aztec_bundle.js": "d2d162aa4c714ff840f3d91f990a5ea77b73d44330410c1151e9cb366bda6d67",
+    "aztec_bundle.js": "649f3d2353cbe26381089c02c264663f07571ac8ee583b458356cd64a68e1aa7",
     "bb-main.worker.js": "568e68dd87fc2bd1cb945422f7a52aa442c661f2c9bb7156307f01d25edce564",
     "bb-thread.worker.js": "f06a7e630a5d1e3d13353c2c89d3646c19b5a731f0055e49af17c499deae0086",
     "noirc_abi_wasm_bg.wasm": "2cbd4bb57d2cd47e8e14fb78ddf597b6b6d5f0cf7717c54692242967786bf334",

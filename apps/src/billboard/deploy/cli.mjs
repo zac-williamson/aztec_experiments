@@ -24,6 +24,7 @@
 //   --k-multiplier <num>     K multiplier for censored cooldown (default: 4)
 //   --min-deposit <eth>      Minimum deposit in ETH (default: 0.002)
 //   --max-deposit <eth>      Required maximum deposit in ETH
+//   --retry-ethereum true  Retry only the saved Ethereum request with its original nonce
 //   --ready-tx <hash>        Original binding transaction to resume Ready activation
 //   --base-cooldown <sec>    Posting cooldown at min deposit in seconds (default: 10)
 //   --censor-window <sec>    Min time censor has to flag a post before screening (default: 3600)
@@ -32,6 +33,7 @@
 // ============================================================
 
 import fs from 'fs';
+import {createFileJournalStorage} from '../user/transaction-journal-store.mjs';
 import { createHash } from 'node:crypto';
 import BillboardCRS from '../../../../shared/crs-client.js';
 import path from 'path';
@@ -347,6 +349,8 @@ async function main() {
 
   const env = {
     aztec: a, ethers, log,
+    createJournalStorage: () => createFileJournalStorage(path.join(path.dirname(path.resolve(AZTEC_WALLET_PATH)), 'transaction-journal-v1')),
+    createTransactionJournal: options => a.createL2Journal({...options, storage: createFileJournalStorage(path.join(path.dirname(path.resolve(AZTEC_WALLET_PATH)), 'transaction-journal-v1'))}),
     pause: pauseCLI,
     initCRS: () => initCRSNode(a),
     createStore: createStoreNode(a),
@@ -367,6 +371,7 @@ async function main() {
     minDepositWei: ethers.parseEther(MIN_DEPOSIT_ETH),
     maxDepositWei: args['max-deposit'] ? ethers.parseEther(args['max-deposit']) : undefined,
     readyTxHash: args['ready-tx'],
+    retryEthereum: args['retry-ethereum'] === 'true',
     baseCooldown: BASE_COOLDOWN,
     censorWindow: CENSOR_WINDOW,
     maxSaveUp: MAX_SAVE_UP,
@@ -377,7 +382,8 @@ async function main() {
     const result = await globalThis.runDeploy(env, config);
     log('', 'info');
     log('========================================', 'success');
-    log('  Deployment complete!', 'success');
+    log(result.status === 'active' ? '  Deployment complete!' : '  Deployment saved; network settlement pending. Resume with the same settings.', result.status === 'active' ? 'success' : 'info');
+    if (result.readyTxHash) log('  Binding transaction: ' + result.readyTxHash, 'info');
     log('  L2 contract: ' + result.l2Addr, 'success');
     log('  L1 portal:   ' + result.portalAddr, 'success');
     log('========================================', 'success');
