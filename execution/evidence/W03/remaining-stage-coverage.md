@@ -7,14 +7,14 @@ implementation is in flight after deployment commit48038a9.
 |---|---|---|
 | L1 collateral deposit/refund | Real Anvil lost-response recovery, canonical exact-nonce/event checks, portable records | Reconcile in final all-stage suite |
 | Private fee approval/deposit | Real pinned token/Inbox/portal lost-response recovery; real native funding | Reconcile in final all-stage suite |
-| Aztec claim/post/withdraw journal | Actual SDK serialization, browser/file storage, process death before broadcast, canonical recovery | Real proof restore/replacement and stage-specific stale-state handling |
+| Aztec claim/post/withdraw journal | Actual SDK serialization, browser/file storage, process death before broadcast, canonical recovery | Real post replacement and author claim/screen/withdraw recovery implemented; fee/deployment/moderator regeneration remains |
 | Real post stale proof | Linked predecessor records; same nonce/message/chain; 159 integrated checks | Genuine proof replacement passed296744ms; browser and143 artifact checks pass; final all-stage reconciliation remains |
-| Dummy screening | Exact proven transaction replay; ambiguous state conflict refuses regeneration | Persist/compare source screening state before supporting fresh anchor proof; do not reuse real-post identity logic |
+| Dummy screening | Exact proven transaction replay; ambiguous state conflict refuses regeneration | Exact source-note nullifier binding implemented and genuine attribution qualified; finish integrated milestone and final reconciliation |
 | Moderator actions | Exact operation metadata, trusted daemon reconciliation, canonical repeated-job success | Final stage checks; durable queue is later M02 |
 | Deployment | Engine restart tests, real Ethereum creation/activation recovery, pending settlement UI | Reconcile in final all-stage suite |
 | Withdrawal history | Full history, authenticated progress cursor, reorg anchors, beyond500 blocks | Reconcile in final all-stage suite |
 
-Inspect the user-engine missing-note withdrawal branch: absence currently logs
+Resolved in25bd7c0: the user-engine missing-note withdrawal branch previously: absence currently logs
 “already withdrawn” without independently identifying the exit transaction. This
 must not be presented as proved success. Likewise stale claim/withdraw recovery
 must preserve the selected deposit identity, and cannot silently become a new

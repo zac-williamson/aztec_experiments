@@ -52,3 +52,9 @@ Real stale-post replacement passed in296744ms with1851936KiB peak, genuine confl
 Stale-post milestone c3a93b6 pushed. Active: require canonical exit evidence for missing-note withdrawal outcomes; then continue remaining stage-specific recovery.
 
 Withdrawal absence now requires an authenticated matching deposit and exact canonical exit, under a20second deadline.184 integrated checks and built-browser regression pass. AI reviewer findings addressed. Continue safe action-specific stale-proof recovery.
+
+Active: bind screening/withdrawal replacement proofs to the same board note nullifier. Merely rereading the same note before proving has a race; final proof inputs must retain the original application spend. Reviewer implementing bounded extraction helper/tests; root owns journal/engine integration.
+
+Same-note recovery: real SDK call emits three board nullifiers, so select the exact persistent deposit note through scoped PXE state and require its unique inclusion in the final proof.102 focused checks pass. Native034 in flight; prior failed assumption/sampler attempts preserved. Exact claim recovery and one-attempt submission implemented with canonical L1 receipt checks.
+
+Author recovery milestone verified:423 integrated checks, built-browser recovery and genuine same-note screening/withdrawal/refund in300088ms (1620448KiB peak), all cleanup complete. Continue private fee claim recovery, then deployment/moderator stale proofs. W03 remains active.

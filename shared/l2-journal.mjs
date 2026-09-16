@@ -18,6 +18,10 @@ export function l2JournalScopeText(scope) {
 export async function createL2Journal({storage,walletSecret,walletSalt,scope,Tx,node,acknowledgeTx,crypto=globalThis.crypto,waitOptions={},contextGuard} ) {
   const slot=await createEncryptedJournalSlot({storage,walletSecret,walletSalt,scopeText:l2JournalScopeText(scope),keyDomain:'AZTEC_BB_L2_JOURNAL_KEY_V1',crypto});
   let acknowledged=acknowledgeTx,lastHash=null,operation=null,replacement=null;
+  function containsApplicationNullifier(tx,value) {
+    return typeof value==='string' && /^0x[0-9a-f]{64}$/.test(value) && !/^0x0+$/.test(value) &&
+      tx.data?.getNonEmptyNullifiers?.().some(item=>item.toString()===value);
+  }
   async function read() {
     const saved=await slot.read();if(saved.value===null)return {...saved,tx:null};
     try {
@@ -30,11 +34,13 @@ export async function createL2Journal({storage,walletSecret,walletSalt,scope,Tx,
         for(const prior of record.replacements) {
           if(!prior||Object.keys(prior).sort().join()!=='tx,txHash'||typeof prior.tx!=='string'||!/^(?:[0-9a-f]{2})+$/.test(prior.tx)||typeof prior.txHash!=='string'||seen.has(prior.txHash))throw invalid();
           const old=Tx.fromBuffer(Buffer.from(prior.tx,'hex'));
+          if(record.applicationNullifier!==undefined&&!containsApplicationNullifier(old,record.applicationNullifier))throw invalid();
           if(old.getTxHash().toString()!==prior.txHash||Buffer.from(old.toBuffer()).toString('hex')!==prior.tx)throw invalid();
           seen.add(prior.txHash);
         }
       }
       const tx=Tx.fromBuffer(Buffer.from(record.tx,'hex'));
+      if(record.applicationNullifier!==undefined&&!containsApplicationNullifier(tx,record.applicationNullifier))throw invalid();
       if(tx.getTxHash().toString()!==record.txHash||Buffer.from(tx.toBuffer()).toString('hex')!==record.tx)throw invalid();
       return {...saved,tx};
     }catch{throw invalid();}
@@ -62,15 +68,17 @@ export async function createL2Journal({storage,walletSecret,walletSalt,scope,Tx,
       return reasons;
     },waitOptions.readTimeoutMs??20000);
   }
-  async function prepare(tx,previous) {
+  async function prepare(tx,previous,{applicationNullifier}={}) {
+    if(applicationNullifier!==undefined&&!containsApplicationNullifier(tx,applicationNullifier))throw invalid();
     let replacements=[];
     if(replacement) {
       if(replacement.encoded!==previous.encoded||operation!==previous.value.operation||!operation)throw fail();
+      if(previous.value.applicationNullifier!==undefined && applicationNullifier!==previous.value.applicationNullifier)throw fail();
       await rejectedAttempts(previous);
       replacements=[...(previous.value.replacements||[]),{txHash:previous.value.txHash,tx:previous.value.tx}];
       if(replacements.length>8||replacements.some(prior=>prior.txHash===tx.getTxHash().toString()))throw fail();
     }
-    await slot.write(previous,{version:1,txHash:tx.getTxHash().toString(),tx:Buffer.from(tx.toBuffer()).toString('hex'),operation,...(replacements.length?{replacements}:{})});
+    await slot.write(previous,{version:1,txHash:tx.getTxHash().toString(),tx:Buffer.from(tx.toBuffer()).toString('hex'),operation,...(applicationNullifier!==undefined?{applicationNullifier}:{}),...(replacements.length?{replacements}:{})});
     replacement=null;
   }
 
@@ -91,7 +99,7 @@ export async function createL2Journal({storage,walletSecret,walletSalt,scope,Tx,
   }
   return {
     assertCanStart,prepare,confirmed,
-    async inspect(){const saved=await read();return saved.value?{operation:saved.value.operation??null,txHash:saved.value.txHash}:null;},
+    async inspect(){const saved=await read();return saved.value?{operation:saved.value.operation??null,txHash:saved.value.txHash,...(saved.value.applicationNullifier?{applicationNullifier:saved.value.applicationNullifier}:{})}:null;},
     async allowReplacement(expectedOperation){
       const saved=await read();
       if(!saved.tx||!expectedOperation||saved.value.operation!==expectedOperation||(saved.value.replacements?.length??0)>=8)throw fail();

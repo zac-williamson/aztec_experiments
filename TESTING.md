@@ -15,8 +15,12 @@ Use the pinned Node24 runtime and Foundry versions in BUILDING.md.
   Uses the same nine-minute bound; writes evidence under `execution/evidence/C02`.
 
 - `node scripts/test-c01-application.mjs --private-fee-post`: user-funded private fees, production L1 funding/recovery helpers, first-use claim and subsequent private posting.
+- `node scripts/test-c01-application.mjs --proof-recovery`: genuine stale real-post proof, conflicting private fee spend, encrypted journal restore and same-post replacement.
+- `node scripts/test-c01-application.mjs --note-attribution`: genuine unsubmitted screening proof and withdrawal of the same private deposit note, stale-proof rejection and L1 refund. This qualifies attribution, not a combined regenerated-screening race.
 - `node scripts/test-c01-application.mjs --private-fees`: standalone fee-balance funding, private board claim/withdrawal and actual local L1 refund. Both private-fee profiles retain the nine-minute deadline.
 - `node scripts/test-noir.mjs --filter private_fee`: ownership, replay and insufficient-credit constraints. Positive fee election is covered by genuine transactions because pinned TXE starts calls in the application phase; see `billboard/private_fee_test/INTEGRATION-BOUNDARY.md`.
+
+Native runs are serialized, with a540-second deadline and a sampled2GiB owned-process RSS limit. Browser profiles close after their checks; no heavy jobs run beside native proving.
 
 The bridge test uses the installed Aztec SDK's `RollupCheatCodes` and
 `settleEpochOutbox` to advance local epochs and settle actual emitted messages.

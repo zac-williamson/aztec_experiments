@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {Tx} from '@aztec/stdlib/tx';
+import {Fr} from '@aztec/foundation/curves/bn254';
 import {IDBFactory} from 'fake-indexeddb';
 import {createL2Journal} from '../shared/l2-journal.mjs';
 import {createBrowserJournalStorage} from '../shared/journal-indexeddb.mjs';
@@ -75,4 +76,24 @@ test('stalled replacement reconciliation remains unknown and leaves the original
 test('replacement RPC exceptions expose only the bounded recovery classification',async()=>{
  const f=await fixture();f.node.getTxReceipt=async()=>{throw new Error('PRIVATE_RPC_DETAIL');};
  await assert.rejects((await f.open()).allowReplacement(f.operation),error=>error.code==='BB_RECOVERY_REQUIRED'&&!error.message.includes('PRIVATE_RPC_DETAIL'));
+});
+
+test('replacement must retain the exact bound application spend even when fee nullifiers change',async()=>{
+ const f=await fixture(),j=await f.open();
+ // Start a new fixture journal with a proven-input bound application nullifier.
+ const storage=createBrowserJournalStorage(new IDBFactory());const options={...f.options,storage};
+ const first=Tx.random(),app=Fr.random();
+ const originalValues=first.data.forPublic?first.data.forPublic.nonRevertibleAccumulatedData.nullifiers:first.data.forRollup.end.nullifiers;originalValues[1]=app;
+ const initial=await createL2Journal(options);initial.setOperation(f.operation);
+ await initial.prepare(first,await initial.assertCanStart(),{applicationNullifier:app.toString()});
+ const resumed=await createL2Journal(options);assert.equal((await resumed.inspect()).applicationNullifier,app.toString());
+ await resumed.allowReplacement(f.operation);const previous=await resumed.assertCanStart();
+ const other=Tx.random();
+ await assert.rejects(resumed.prepare(other,previous),{code:'BB_RECOVERY_REQUIRED'});
+ await assert.rejects(resumed.prepare(other,previous,{applicationNullifier:other.data.getNonEmptyNullifiers()[0].toString()}),{code:'BB_RECOVERY_REQUIRED'});
+ const same=Tx.random();const values=same.data.forPublic?same.data.forPublic.nonRevertibleAccumulatedData.nullifiers:same.data.forRollup.end.nullifiers;
+ values[1]=app;
+ await resumed.prepare(same,previous,{applicationNullifier:app.toString()});
+ const reopened=await createL2Journal(options);assert.equal((await reopened.inspect()).applicationNullifier,app.toString());
+ const records=await(await createJournalBackup(options)).exportRecords();assert(records.length>0);
 });

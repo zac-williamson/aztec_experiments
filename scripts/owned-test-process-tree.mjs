@@ -17,11 +17,13 @@ export function parseProcessSnapshot(stdout){
 }
 export async function readProcessSnapshot(read=()=>execFileAsync('/bin/ps',['-axo','pid=,ppid=,pgid=,rss=,lstart=,stat='],{timeout:2000,maxBuffer:4*1024*1024,env:{PATH:'/usr/bin:/bin',LC_ALL:'C'}})){
   // A process can disappear while ps reads its counters. Retry one inconsistent
-  // snapshot in full; never omit a malformed row or invent resource data.
+  // snapshot or interrupted reader in full; never omit a malformed row or invent resource data.
   for(let attempt=0;attempt<2;attempt++){
-    const {stdout}=await read();
-    try{return parseProcessSnapshot(stdout);}
-    catch(error){if(error.code!=='BB_PROCESS_SNAPSHOT_FORMAT'||attempt===1)throw error;}
+    try { const {stdout}=await read();return parseProcessSnapshot(stdout); }
+    catch(error){
+      const transient=error.code==='BB_PROCESS_SNAPSHOT_FORMAT'||error.killed===true||error.signal==='SIGPIPE';
+      if(!transient||attempt===1)throw error;
+    }
   }
 }
 function signalOwned(id,signal){

@@ -17,6 +17,7 @@ import {encodeEscrowCommitment} from '../shared/protocol-commitments.mjs';
 import {contractInputs} from './artifact-provenance.mjs';
 import {ROOT,assertNodeVersion,assertAztecPackages} from './toolchain.mjs';
 import {proveApplicationAction} from './prove-application-action.mjs';
+import {qualifyDummyNoteAttribution} from './w03-note-attribution.mjs';
 const BOARD='apps/src/billboard/billboard_artifact.json';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const integer=value=>BigInt(value.toString());
@@ -34,7 +35,7 @@ async function artifact(preparation){
 /** Same disposable in-memory identity as the preceding claim. Only enumerable fields may be logged.
  * The parent owns the native proof deadline/resource supervisor and node/prover shutdown.
  */
-export async function proveAndIncludeC01Exit({node,preparation,instance,claimResult,l1Client,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,privateFeeAction}){
+export async function proveAndIncludeC01Exit({node,preparation,instance,claimResult,l1Client,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,privateFeeAction,discardUnsubmittedFee}){
   let wallet,sequencer,previousConfig,stage='preflight';
   const observation={passed:false,scope:'genuine no-post L2 withdrawal and ordinary checkpoint inclusion',
     syntheticProofs:false,syntheticSettlement:false,exitEpochProofAccepted:false,l1Withdrawn:false};
@@ -103,14 +104,27 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
       {depositor:claim.depositor,depositNonce:String(claim.depositNonce),amount:String(claim.amount)}))]);
     const leaf=computeL2ToL1MessageHash({l2Sender:instance.address,l1Recipient:EthAddress.fromString(claim.scope.portalAddress),
       content,rollupVersion:new Fr(BigInt(claim.scope.rollupVersion)),chainId:new Fr(31337n)});
+    if(process.env.W03_NOTE_ATTRIBUTION==='true') {
+      mark('prove-unsubmitted-dummy-attribution');
+      observation.noteAttribution=await qualifyDummyNoteAttribution({wallet,board,owner:account.address,
+        depositChainId:claim.depositChainId,originalNote,node,privateFeeAction,discardUnsubmittedFee});
+      assert.deepEqual(await logical(),claim.logicalFields,'Unsubmitted dummy must not advance the deposit');
+    }
     mark('prove-real-withdrawal');
     const {proven,tx}=await proveApplicationAction({wallet,owner:account.address,
       interaction:board.methods.withdraw(claim.depositChainId),
       privateFeeAction:privateFeeAction?context=>privateFeeAction({...context,kind:'withdraw',args:[claim.depositChainId]}):undefined});
+    if(observation.noteAttribution)await observation.noteAttribution.verifyWithdrawal(proven,tx);
     observation.feePayer=tx.data.feePayer.toString();
     observation.privateFees=!!privateFeeAction;
-    assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer());
-    assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),anchorBlock.hash.toString());
+    // Additional diagnostic proving can let PXE select a newer checkpoint.
+    // Verify the actual proven anchor, rather than require the earlier preflight
+    // checkpoint byte-for-byte; withdrawal eligibility must hold at this anchor.
+    const proofAnchor=tx.data.constants.anchorBlockHeader;
+    assert(integer(proofAnchor.globalVariables.timestamp)>=claim.nextAllowedTime);
+    assert(integer(proofAnchor.globalVariables.blockNumber)>=integer(anchor.globalVariables.blockNumber));
+    const proofAnchorBlock=await node.getBlock(proofAnchor.getBlockNumber());assert(proofAnchorBlock);
+    assert.equal(proofAnchorBlock.hash.toString(),(await proofAnchor.hash()).toString());
     assert.equal((await node.isValidTx(tx)).result,'valid');
     Object.assign(observation,{txHash:tx.getTxHash().toString(),proofSha256:sha(proven.chonkProof.toBuffer()),nodeValidation:'valid',inclusionSnapshots:[]});
     mark('include-real-withdrawal');await node.sendTx(tx);
@@ -130,6 +144,7 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
     assert.equal(effect.data.l2ToL1Msgs.filter(message=>message.equals(leaf)).length,1,'Exact exit leaf missing/duplicated');
     assert.equal(effect.data.nullifiers.filter(nullifier=>nullifier.equals(originalNote.siloedNullifier)).length,1,
       'Exact claimed note nullifier not emitted');
+    if(observation.noteAttribution)await observation.noteAttribution.verifyConsumed();
     mark('verify-consumed-note');await wallet.pxe.sync();
     assert.deepEqual(await logical(),Array(11).fill(0n));
     const remaining=await wallet.pxe.debug.getNotes(filter);
@@ -148,7 +163,7 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
     return observation;
   }catch(error){
     const failure=new Error(`C01_EXIT_FAILED:${stage}:${error?.name??'Error'}`);
-    failure.exitObservation={...observation,passed:false,stage,errorClass:error?.name??'Error',location:error?.stack?.split('\n').filter(line=>line.trimStart().startsWith('at ')).slice(0,3).join('\n')};throw failure;
+    failure.exitObservation={...observation,passed:false,stage,errorClass:error?.name??'Error',errorCode:error?.code??null,attributionStage:error?.attributionStage??null,attributionDiagnostics:error?.attributionDiagnostics??null,location:error?.stack?.split('\n').filter(line=>line.trimStart().startsWith('at ')).slice(0,3).join('\n')};throw failure;
   }finally{
     try{if(sequencer&&previousConfig)sequencer.updateConfig(previousConfig);}
     finally{if(wallet){try{await wallet.stop();observation.walletStopped=true;}

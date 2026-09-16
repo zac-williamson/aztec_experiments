@@ -50,3 +50,7 @@ export { initSync as initAbiSync } from '@aztec/noir-noirc_abi';
 
 export { createHistoryCursor } from './history-cursor.mjs';
 export { createJournalBackup } from './journal-backup.mjs';
+
+export { extractApplicationNullifier } from './application-nullifier.mjs';
+
+export { NoteStatus } from '@aztec/stdlib/note';

@@ -40503,7 +40503,9 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
 
         log('  Transaction hash: ' + txHash.toString(), 'info');
         if (this._contextGuard) await this._contextGuard();
-        if (this._transactionJournal) await this._transactionJournal.prepare(tx, previousJournal);
+        const applicationNullifier = this._applicationNullifierBoard
+          ? (await a.extractApplicationNullifier(provenTx, tx, this._applicationNullifierBoard, this._applicationNoteNullifier)).toString() : undefined;
+        if (this._transactionJournal) await this._transactionJournal.prepare(tx, previousJournal, {applicationNullifier});
         if (this._contextGuard) await this._contextGuard();
         await a.submitOnceWithReconciliation(rawNode,tx);
         const waitOpts=typeof opts.wait==='object'?opts.wait:{};
@@ -40897,7 +40899,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
           scope:{account:address.toString().toLowerCase(),chainId:String(nodeInfo.l1ChainId),rollup:rollupAddr.toLowerCase(),version:String(version),board:l2AddrHex.toLowerCase(),portal:portalAddr.toLowerCase()},
           Tx:a.Tx,node:rawNode,acknowledgeTx:config.acknowledgeTx,contextGuard:config.contextGuard}) : null;
     if(journalActions.includes(action) && (!transactionJournal || typeof transactionJournal.assertCanStart!=='function' || typeof transactionJournal.prepare!=='function' || typeof transactionJournal.confirmed!=='function'))throw Object.assign(new Error('Invalid transaction journal.'),{code:'BB_JOURNAL_INVALID'});
-    let resumedPost = null;
+    let resumedPost = null, resumedSpend = null, resumedClaim = null, claimOperation = null;
     if(action==='recover') {
       if(!transactionJournal)throw new Error('Transaction journal is required for recovery.');
       if(config.contextGuard)await config.contextGuard();
@@ -40907,16 +40909,36 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         if(error?.code!=='BB_RECOVERY_REQUIRED'||typeof transactionJournal.inspect!=='function'||typeof transactionJournal.allowReplacement!=='function')throw error;
         const saved = await transactionJournal.inspect();
         if (!saved?.operation) throw error;
-        // Only a real post has the independent on-chain identity needed for this
-        // replacement route. Other operations retain their existing recovery path.
+        // Posts retain their public identity; note-spending actions must retain
+        // their attributed application nullifier in every replacement proof.
         let kind;try{kind=JSON.parse(saved.operation)?.kind;}catch{throw error;}
-        if(kind!=='post')throw error;
-        resumedPost = parsePostOperation(a, saved.operation);
+        if(kind==='post') {
+          resumedPost = parsePostOperation(a, saved.operation);
+          action='post';
+          config={...config,action,isDummy:false,message:resumedPost.message,depositChainId:resumedPost.depositChain};
+        } else if(kind==='claim') {
+          const intent=JSON.parse(saved.operation);
+          if(Object.keys(intent).sort().join()!=='amount,depositChain,depositNonce,depositor,kind,leafIndex,schemaVersion,secretHash,transactionHash'||intent.schemaVersion!==1||
+            !/^0x[0-9a-f]{40}$/.test(intent.depositor)||!/^0x[0-9a-f]{64}$/.test(intent.transactionHash)||
+            !/^[1-9][0-9]*$/.test(intent.amount)||!/^[1-9][0-9]*$/.test(intent.depositNonce)||!/^(0|[1-9][0-9]*)$/.test(intent.leafIndex))throw error;
+          canonicalPostId(a,intent.depositChain,true);canonicalPostId(a,intent.secretHash,true);
+          if(BigInt(intent.amount)>=1n<<128n||BigInt(intent.depositNonce)>=1n<<64n)throw error;
+          new a.Fr(BigInt(intent.leafIndex));
+          resumedClaim={intent,operation:saved.operation};action='claim';
+          config={...config,action,reuseTxHash:intent.transactionHash,depositChainId:intent.depositChain};
+        } else if(kind==='dummy'||kind==='withdraw') {
+          const intent=JSON.parse(saved.operation);
+          if(Object.keys(intent).sort().join()!=='depositChain,headSequence,kind,schemaVersion'||intent.schemaVersion!==1||
+            typeof intent.headSequence!=='string'||!/^(0|[1-9][0-9]*)$/.test(intent.headSequence)||BigInt(intent.headSequence)>=1n<<64n||
+            !saved.applicationNullifier)throw error;
+          canonicalPostId(a,intent.depositChain,true);
+          resumedSpend={intent,operation:saved.operation,applicationNullifier:saved.applicationNullifier};
+          action=kind==='dummy'?'post':'withdraw';
+          config={...config,action,isDummy:kind==='dummy',message:'',depositChainId:intent.depositChain};
+        } else throw error;
         requirePrivateFeeConfiguration(a, config, env.privateFeeArtifact);
         await transactionJournal.allowReplacement(saved.operation);
-        action='post';
-        config={...config,action,isDummy:false,message:resumedPost.message,depositChainId:resumedPost.depositChain};
-        log('Saved post proof is stale. Restoring the same message and post identity for a fresh proof.', 'info');
+        log('Saved proof is stale. Restoring the same action for a fresh proof.', 'info');
       }
       if(receipt) {
         const succeeded=receipt.executionResult==='success';
@@ -41342,6 +41364,11 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       if (config.reuseTxHash) {
         const receipt = await provider.getTransactionReceipt(config.reuseTxHash);
         if (!receipt || receipt.status !== 1) throw new Error('No successful deposit receipt found.');
+        const receiptHash=receipt.hash??receipt.transactionHash;
+        if(typeof receiptHash!=='string'||receiptHash.toLowerCase()!==config.reuseTxHash.toLowerCase()||
+          !receipt.blockHash||!Number.isSafeInteger(receipt.blockNumber)||receipt.blockNumber<1)throw Object.assign(new Error('Saved deposit receipt identity is unavailable.'),{code:'BB_RECOVERY_UNKNOWN'});
+        const block=await provider.getBlock(receipt.blockNumber);
+        if(block?.hash!==receipt.blockHash)throw Object.assign(new Error('Saved deposit receipt is not canonical.'),{code:'BB_RECOVERY_UNKNOWN'});
         event = parsedDeposit(receipt); txHash = config.reuseTxHash;
       } else {
         const events = await findAllDeposits(ethers,provider,portalAddr,l1Account,log);
@@ -41363,12 +41390,38 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     async function sendPrivate(kind, args) {
       if(kind!=='post'||args[4]===true) {
         if(typeof transactionJournal?.setOperation!=='function')throw Object.assign(new Error('Transaction operation journal is required.'),{code:'BB_JOURNAL_INVALID'});
-        transactionJournal.setOperation(JSON.stringify({kind:kind==='post'?'dummy':kind}));
-      }
+        const operationKind=kind==='post'?'dummy':kind;
+        if(operationKind==='dummy'||operationKind==='withdraw') {
+          const note=await readDepositInfo();
+          if(note.amount<=0n)throw Object.assign(new Error('The original deposit spend must be reconciled.'),{code:'BB_RECOVERY_REQUIRED'});
+          const operation=JSON.stringify({schemaVersion:1,kind:operationKind,depositChain:requireDepositChain().toString(),headSequence:note.headSequence.toString()});
+          if(resumedSpend&&operation!==resumedSpend.operation)throw Object.assign(new Error('The saved deposit state changed. Recover its original transaction.'),{code:'BB_RECOVERY_REQUIRED'});
+          const notes=await a.boundedTransactionRead(()=>wallet.pxe.debug.getNotes({contractAddress:l2Addr,owner:address,
+            storageSlot:contractArtifact.storageLayout.deposits.slot,status:a.NoteStatus.ACTIVE,scopes:[address]}),20000);
+          if(!Array.isArray(notes))throw Object.assign(new Error('Private deposit note attribution is unavailable.'),{code:'BB_RECOVERY_REQUIRED'});
+          const matching=notes.filter(item=>item.note?.items?.length===8 && item.note.items[1].equals(requireDepositChain()));
+          if(matching.length!==1||!matching[0].owner.equals(address)||!matching[0].contractAddress.equals(l2Addr)||
+            !matching[0].storageSlot.equals(contractArtifact.storageLayout.deposits.slot)||matching[0].siloedNullifier.isZero())throw Object.assign(new Error('Private deposit note attribution is ambiguous.'),{code:'BB_RECOVERY_REQUIRED'});
+          const packed=matching[0].note.items.map(value=>value.toBigInt());
+          if(packed[0]!==1n+(note.depositNonce<<32n)||packed[2]!==note.amount||
+            packed[6]!==note.headSequence+(note.lastScreenedIndex<<64n)+(note.lastRealPostIndex<<128n)||packed[7]!==note.nextAllowedTime||
+            (resumedSpend&&matching[0].siloedNullifier.toString()!==resumedSpend.applicationNullifier))throw Object.assign(new Error('The selected private deposit changed before proving.'),{code:'BB_RECOVERY_REQUIRED'});
+          transactionJournal.setOperation(operation);
+          wallet._applicationNullifierBoard=l2Addr;
+          wallet._applicationNoteNullifier=matching[0].siloedNullifier;
+        } else {
+          if(operationKind==='claim'&&!claimOperation)throw Object.assign(new Error('Exact claim identity is unavailable.'),{code:'BB_JOURNAL_INVALID'});
+          transactionJournal.setOperation(operationKind==='claim'?claimOperation:JSON.stringify({kind:operationKind}));
+          wallet._applicationNullifierBoard=null;
+        }
+      } else wallet._applicationNullifierBoard=null;
       privateFeeSender ??= createPrivateFeeSender({ a, config, privateFeeArtifact: env.privateFeeArtifact,
         contract, wallet, node: aztecNode, owner: address,
         scope: { l1ChainId: String(nodeInfo.l1ChainId), rollupVersion: String(version) } });
-      return privateFeeSender(kind, args);
+      const result = await privateFeeSender(kind, args);
+      // A confirmed saved step no longer constrains the next intentional action.
+      resumedSpend = null;
+      return result;
     }
 
     async function sendCensorPrivate(censorWallet, censorAddress, censorContract, kind, args) {
@@ -41397,7 +41450,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       // If we don't have depositInfo yet, try to reuse an existing deposit
       if (!depositInfo) {
         log('No deposit info from this session. Searching L1 for existing deposits...', 'info');
-        await doReuseDeposit();
+        await a.boundedTransactionRead(()=>doReuseDeposit(),20000);
       }
 
       const depositorField = a.Fr.fromHexString(l1Account);
@@ -41407,7 +41460,8 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       const claimContent = escrowContent(a,ethers,false,l2Addr,portalAddr,l1Account,amount,depositInfo.depositNonce,version,nodeInfo.l1ChainId);
       selectedChain = (await a.poseidon2HashWithSeparator([new a.Fr(1),l2Addr.toField(),address.toField(),claimContent,secret],0x42420101)).toBigInt();
       if (selectedChain === 0n) throw new Error('Invalid derived deposit identity');
-
+      claimOperation=JSON.stringify({schemaVersion:1,kind:'claim',depositor:l1Account.toLowerCase(),amount:String(amount),depositNonce:String(depositInfo.depositNonce),leafIndex:String(leafIndex),secretHash:depositInfo.secretHash.toLowerCase(),transactionHash:depositInfo.txHash.toLowerCase(),depositChain:new a.Fr(selectedChain).toString()});
+      if(resumedClaim&&claimOperation!==resumedClaim.operation)throw Object.assign(new Error('The original claim receipt or beneficiary does not match the saved request.'),{code:'BB_RECOVERY_REQUIRED'});
 
       log('Claiming deposit on L2...', 'info');
       log('  Depositor:    ' + l1Account, 'info');
@@ -41426,6 +41480,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       } catch (e) { if (e?.code === 'BB_DEPOSIT_READ') throw e;}
 
       if (noteInfo.amount > 0n) {
+        if(resumedClaim)throw Object.assign(new Error('A deposit note exists, but the saved claim transaction still needs reconciliation.'),{code:'BB_RECOVERY_REQUIRED'});
         log('  Deposit note already exists on L2!', 'success');
         log('  Amount: ' + noteInfo.amount.toString() + ' wei', 'info');
         log('  Next allowed time: ' + noteInfo.nextAllowedTime.toString(), 'info');
@@ -41433,78 +41488,14 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         return;
       }
 
-      // No note — send the claim tx directly.
-      // Skip pre-flight simulation: it triggers expensive PXE contract sync that can hang for 30+ min.
-      // Wait for the escrow message before preparing a private fee payment.
-      log('  No existing note. Sending claim tx directly...', 'info');
-      log('  If the message is unavailable, wait for ingestion before trying again.', 'info');
+      // One attempt per action. Message availability and uncertain submission
+      // remain retryable outcomes; never run a ten-minute blind retry loop.
+      const result = await sendPrivate('claim', [depositorField, amount, depositInfo.depositNonce, secret, leafIndex]);
+      const receipt = result.receipt;
+      log('  Claim confirmed. Tx hash: ' + receipt.txHash + ', block: ' + receipt.blockNumber, 'success');
+      try { await a.boundedTransactionRead(()=>wallet.pxe.sync(),20000); }
+      catch { log('  Claim confirmed; wallet synchronization is pending. Refresh before the next action.', 'warn'); }
 
-      // Retry loop: send claim tx, retry if it fails (message may not be ingested yet)
-      let claimDone = false;
-      for (let i = 0; i < 30; i++) {
-        try {
-          await new Promise(r => setTimeout(r, 0)); // yield to UI thread
-          const result = await sendPrivate('claim', [depositorField, amount, depositInfo.depositNonce, secret, leafIndex]);
-          const receipt = result.receipt;
-          log('  TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
-          if (receipt.transactionFee !== undefined) {
-            log('  Fee paid: ' + toAztec(BigInt(receipt.transactionFee), 6) + ' AZTEC', 'info');
-          }
-          claimDone = true;
-
-          // Wait for PXE to sync the new note
-          log('  Waiting for PXE to sync the deposit note...', 'info');
-          for (let j = 0; j < 10; j++) {
-            await sleep(5000);
-            await new Promise(r => setTimeout(r, 0));
-            try {
-              const r2 = await readDepositInfo();
-              const info2 = r2;
-              if (info2.amount > 0n) {
-                log('  Deposit note synced! Amount: ' + info2.amount.toString() + ' wei', 'success');
-                log('  Next allowed time: ' + info2.nextAllowedTime.toString(), 'info');
-                break;
-              }
-            } catch (e) { if (e?.code === 'BB_DEPOSIT_READ') throw e;}
-            log('  Still syncing note...', 'info');
-          }
-          break;
-        } catch (e) { if (e?.code?.startsWith('BB_')) throw e;
-          const errMsg = 'Claim did not complete';
-          // Check if note appeared (maybe already claimed by another run)
-          try {
-            const r = await readDepositInfo();
-            const info = r;
-            if (info.amount > 0n) {
-              log('  Deposit note already exists on L2!', 'success');
-              log('  No claim needed. You can post or withdraw.', 'success');
-              return;
-            }
-          } catch (e2) { if (e2?.code === 'BB_DEPOSIT_READ') throw e2;}
-
-          if (i < 29) {
-            log('  [' + (i+1) + '/30] Claim failed, retrying in 20s... (' + errMsg.substring(0, 120) + ')', 'warn');
-            await sleep(20000);
-          } else {
-            // Final failure — check if already withdrawn
-            log('  Could not claim after 10 min. Checking for a previous withdrawal...', 'info');
-            try {
-              const messageLeaf = computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, amount, depositInfo.depositNonce, version, nodeInfo.l1ChainId);
-              const latestBlock = await aztecNode.getBlockNumber();
-              const found = await searchWithdrawal(messageLeaf,latestBlock);
-              if (found) {
-                log('  Withdrawal tx found: ' + found.txHash, 'success');
-                log('  The deposit was already claimed and withdrawn.', 'info');
-                log('  Run the claim-l1 action to claim your ETH on L1.', 'success');
-                return;
-              }
-            } catch (e3) {}
-            throw new Error('Could not claim deposit after 10 min. ' + errMsg);
-          }
-        }
-      }
-
-      if (!claimDone) return; // already returned from a special case
     }
 
     // ============================================================
@@ -41627,7 +41618,13 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     // DUMMY POST (internal helper — advances screening without storing content)
     // ============================================================
     async function doDummyPost() { return withFreshPostState(doDummyPostAttempt, async()=>{
-      log('  State changed; refreshing screening hints and preparing a new proof.', 'warn');
+      const saved=await transactionJournal.inspect();
+      if(!saved?.applicationNullifier||!saved.operation)throw Object.assign(new Error('Saved screening spend is unavailable.'),{code:'BB_RECOVERY_REQUIRED'});
+      const intent=JSON.parse(saved.operation);
+      if(intent.kind!=='dummy'||intent.depositChain!==requireDepositChain().toString())throw Object.assign(new Error('Saved screening identity changed.'),{code:'BB_RECOVERY_REQUIRED'});
+      await transactionJournal.allowReplacement(saved.operation);
+      resumedSpend={intent,operation:saved.operation,applicationNullifier:saved.applicationNullifier};
+      log('  State changed; refreshing hints for the same saved screening step.', 'warn');
       await wallet.pxe.sync();
     }, 2, dummyStateCanRetry); }
     async function doDummyPostAttempt() {

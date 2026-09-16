@@ -93,3 +93,11 @@ test('persistently malformed process counters fail closed after the bounded retr
  let reads=0;await assert.rejects(readProcessSnapshot(async()=>{reads++;return{stdout:'123 1 123 - Wed Sep 16 18:00:00 2026 S'};}),{code:'BB_PROCESS_SNAPSHOT_FORMAT'});assert.equal(reads,2);
  assert.throws(()=>parseProcessSnapshot(validRow+'\nmalformed'),{code:'BB_PROCESS_SNAPSHOT_FORMAT'});
 });
+
+test('one interrupted snapshot reader retries fresh data; repeated interruption still fails closed',async()=>{
+ const valid='123 1 123 456 Mon Sep 14 12:00:00 2026 S';let calls=0;
+ const failure=()=>Object.assign(new Error('reader interrupted'),{killed:true,signal:'SIGPIPE'});
+ const rows=await readProcessSnapshot(async()=>{if(calls++===0)throw failure();return {stdout:valid};});
+ assert.equal(calls,2);assert.equal(rows[0].rssKiB,456);
+ calls=0;await assert.rejects(readProcessSnapshot(async()=>{calls++;throw failure();}),{signal:'SIGPIPE'});assert.equal(calls,2);
+});

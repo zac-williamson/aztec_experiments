@@ -87,7 +87,7 @@ function depositHarness({store,enabled=true,activeNonce=0n,eventNonce=7n,reuse=f
   const address=AztecAddress.fromFieldUnsafe(Fr.fromHexString(scope.boardAddress));
   const iface=new ethers.Interface(['event Deposited(address indexed depositor,uint64 nonce,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
   const provider={getCode:async()=> '0x01',getNetwork:async()=>({chainId:31337n}),destroy(){},
-    getTransactionReceipt:async()=>({status:1,logs:[{address:scope.portalAddress,
+    getTransactionReceipt:async hash=>({hash,blockNumber:1,blockHash:new Fr(1).toString(),status:1,logs:[{address:scope.portalAddress,
       ...iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,eventNonce,1_000_000_000_000_000n,recoveryHash,ethers.ZeroHash,32n])}]})};
   class Portal {
     constructor(){this.interface=iface;}

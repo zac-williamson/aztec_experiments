@@ -357,3 +357,17 @@ see exactly that same source note before proving. Any changed or missing note
 blocks regeneration; recovery must not advance another screening step or switch
 to a different deposit. Claim recovery will additionally preserve its exact claim
 arguments and authenticate the corresponding receipt.
+
+## W03 final-proof spend binding
+
+A pre-proof note read alone races with wallet state changes. Screening/withdrawal
+records therefore bind the attributed board-call nullifier and require it in every
+replacement final proof. They also preserve selected chain and source sequence.
+A different fee-note nullifier cannot satisfy this condition. Genuine attribution
+qualification is in progress; the first run failed closed and is not evidence of
+completion. Claim replacement instead preserves the complete original receipt and
+message identity, validated against custody and the scoped beneficiary. The
+contract consumes that exact L1 message. A note's presence is not confirmation of
+an unresolved saved transaction. Claim actions make one submission attempt.
+
+Extend W03 documentation scope to TESTING.md to document the actual bounded recovery profiles and tightened resource limit. No change to contract scope or release gates.

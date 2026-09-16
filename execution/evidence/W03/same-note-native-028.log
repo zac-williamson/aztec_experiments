@@ -1,0 +1,14 @@
+{"stage":"start-disposable-l1","elapsedMs":186}
+{"stage":"prepare-genesis","elapsedMs":303}
+{"stage":"deploy-local-protocol-fixture","elapsedMs":1846}
+{"stage":"wait-for-local-validator-activation","elapsedMs":2934}
+{"stage":"start-application-node","elapsedMs":2952}
+{"stage":"prove-board-deployment","elapsedMs":5710}
+{"stage":"include-board-deployment","elapsedMs":19030}
+{"stage":"prepare-and-prove-ready","elapsedMs":31287}
+{"stage":"include-ready","elapsedMs":41508}
+{"stage":"settle-ready-test-message","elapsedMs":62677}
+{"stage":"private-fee:fund-disposable-user","elapsedMs":80573}
+{"stage":"private-fee:bridge-user-funds","elapsedMs":80582}
+{"stage":"private-fee:wait-inbox","elapsedMs":81118}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/W01/application-d34d476d-76e7-4c82-abdf-4c580262bd47.json","passed":false,"profile":"genuine same-note dummy and withdrawal attribution, private fees and refund"}

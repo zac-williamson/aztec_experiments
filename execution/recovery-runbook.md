@@ -79,8 +79,21 @@ dropped and invalid for the supported state-conflict reasons. Recovery preserves
 the original message, nonce and deposit chain, checks that the post ID is not already
 visible, and retains up to eight predecessor proofs. It rechecks immediately before
 saving the replacement. This requires the original private fee configuration and
-may take a normal application proving interval. Other stale operations remain
-blocked unless their action-specific recovery can establish a safe continuation.
+may take a normal application proving interval.
+
+Collateral claims restore the exact original Ethereum receipt, secret commitment,
+message position and deposit identity. Receipt hash/canonical-block checks and
+wallet custody must agree before proving. An existing note does not establish
+that an unresolved saved transaction succeeded. Each claim action makes one
+attempt; unavailable messages or RPC failures return control for explicit recovery.
+
+Screening and withdrawal replacements preserve the selected deposit chain and
+source sequence, and must spend the exact same application note as the saved
+proof. The wallet identifies that note in private state; its attributed nullifier
+must appear in the final proof and every linked predecessor. A changed note,
+ambiguous lookup or missing attribution remains blocked. This avoids advancing
+an extra screening step during recovery. Private fee claims, deployment and
+moderator stale-proof regeneration are still being completed separately.
 
 Keep `transaction-journal-v1/` alongside the Aztec wallet file. It contains encrypted
 records, private directories/files, atomic replacement and fsync/read-back. A `.lock`

@@ -833,7 +833,8 @@
         "apps/build.mjs",
         ".github/",
         ".gitignore",
-        "censor-daemon/"
+        "censor-daemon/",
+        "TESTING.md"
       ],
       "plan": "tasks/W03.md",
       "actions": [
@@ -862,7 +863,7 @@
       "evidence": "evidence/W03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Stale-post milestone c3a93b6 pushed. Active: withdrawal missing-note paths must require exact canonical exit evidence, then qualify safe action-specific stale recovery and final stage matrix.",
+      "checkpoint": "Author claim/screening/withdrawal recovery implemented; genuine attribution/refund passed300088ms under2GiB. Complete built-browser/integrated qualification, commit, then private fee claim, deployment and moderator stale-proof recovery.",
       "priority": 14
     },
     {

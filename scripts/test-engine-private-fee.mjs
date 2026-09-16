@@ -69,9 +69,10 @@ test('actual wallet keeps configured gas and normal account scope/tag through si
 import * as ethers from 'ethers';
 import {AztecAddress} from '@aztec/stdlib/aztec-address';
 import {EthAddress} from '@aztec/foundation/eth-address';
+import {NoteStatus} from '@aztec/stdlib/note';
 import {sha256ToField} from '@aztec/foundation/crypto/sha256';
 function mainHarness(action,isDummy=false) {
-  const c=context(),requests=[],logs=[],operations=[];let sent=false,authorBalanceReads=0,postExists=!['post','recover'].includes(action),missingNote=false;
+  const c=context(),requests=[],logs=[],operations=[];let sent=false,authorBalanceReads=0,postExists=!['post','recover'].includes(action),missingNote=false,noteOverrides={},actionHook=null;
   // Timers only represent UI yields in this inert test; no network/proof work is performed.
   c.setTimeout=callback=>setTimeout(callback,0);
   const addr=AztecAddress.fromFieldUnsafe(new Fr(12));
@@ -81,28 +82,28 @@ function mainHarness(action,isDummy=false) {
   const secret=new Fr(8),secretHash=new Fr(9),amount=1000000000000000n;
   const iface=new ethers.Interface(['event Deposited(address indexed depositor,uint64 nonce,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
   const event=iface.encodeEventLog(iface.getEvent('Deposited'),[depositor,7n,amount,secretHash.toString(),ethers.ZeroHash,42n]);
-  const provider={getCode:async()=> '0x01',getNetwork:async()=>({chainId:31337n}),destroy(){},getTransactionReceipt:async()=>({status:1,logs:[{address:portal,...event}]})};
+  const provider={getCode:async()=> '0x01',getNetwork:async()=>({chainId:31337n}),destroy(){},getBlock:async()=>({hash:'canonical-eth'}),getTransactionReceipt:async hash=>({hash,status:1,blockNumber:1,blockHash:'canonical-eth',logs:[{address:portal,...event}]})};
   class Portal {L2_CONTRACT=async()=>board.toString();L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>rollup;VERSION=async()=>1n;getDeposit=async()=>({nonce:7n,amount});}
   const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:1}),getL1ContractAddresses:async()=>({rollupAddress:rollup}),getBlockNumber:async()=>1,
     getBlock:async number=>({number,hash:'block',timestamp:100,body:{txEffects:[]}}),getBlocks:async(from,count)=>Array.from({length:count},(_,i)=>({number:Number(from)+i,hash:'block',body:{txEffects:[]}})),getContract:async()=>({address:board}),getPublicStorageAt:async()=>{authorBalanceReads++;throw new Error('Author fee lookup forbidden');}};
-  const note=()=>({schemaVersion:1n,depositChainId:5n,depositNonce:7n,amount:missingNote||(action==='claim'&&!sent)?0n:amount,nextAllowedTime:0n,lastRealPostIndex:0n,lastScreenedIndex:0n,headSequence:0n});
+  const note=()=>({schemaVersion:1n,depositChainId:5n,depositNonce:7n,amount:missingNote||(action==='claim'&&!sent)?0n:amount,nextAllowedTime:0n,lastRealPostIndex:0n,lastScreenedIndex:0n,headSequence:0n,...noteOverrides});
   c.readBillboardDepositInfo=async()=>note();
   const methods=new Proxy({}, {get:(_target,name)=>{
-    if(['post','withdraw','claim_deposit','transfer_censor','declare_immoral','set_moderation_policy'].includes(name)) return (...args)=>({send:async opts=>{assert.equal(opts.from,addr);assert.equal(opts.fee.paymentMethod,'private-method');sent=true;requests.at(-1).action={kind:action,args};return {receipt:{status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)}};}});
+    if(['post','withdraw','claim_deposit','transfer_censor','declare_immoral','set_moderation_policy'].includes(name)) return (...args)=>({send:async opts=>{assert.equal(opts.from,addr);assert.equal(opts.fee.paymentMethod,'private-method');if(actionHook)await actionHook(name,args);sent=true;requests.at(-1).action={kind:action,args};return {receipt:{status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)}};}});
     return ()=>({simulate:async()=>name==='get_post_exists'?postExists:name==='get_screen_hints'?[null,null]:1n});
   }});
   class BaseWallet {constructor(pxe){this.pxe=pxe;}}
-  const a={...transactionOutcomes,Fr,AztecAddress,EthAddress,NO_FROM,GasSettings,BaseWallet,sha256ToField,Buffer,
+  const a={...transactionOutcomes,NoteStatus,Fr,AztecAddress,EthAddress,NO_FROM,GasSettings,BaseWallet,sha256ToField,Buffer,
     deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
     SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;getSigningPublicKey=async()=>({x:Fr.ONE,y:Fr.ONE});},
     getContractInstanceFromInstantiationParams:async()=>({address:addr}),computePartialAddress:async()=>Fr.ZERO,
     createAztecNodeClient:()=>node,loadContractArtifact:x=>x,
-    createPXE:async()=>({registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{}}),AccountManager:{create:async()=>({address:addr})},Contract:{at:async()=>({methods})},
+    createPXE:async()=>({debug:{getNotes:async filter=>{assert.equal(filter.status,NoteStatus.ACTIVE);const n=note();return [{owner:addr,contractAddress:board,storageSlot:Fr.ONE,siloedNullifier:new Fr(7),note:{items:[1n+(n.depositNonce<<32n),5n,amount,BigInt(depositor),0n,0n,n.headSequence+(n.lastScreenedIndex<<64n)+(n.lastRealPostIndex<<128n),n.nextAllowedTime].map(v=>new Fr(v))}}];}},registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{}}),AccountManager:{create:async()=>({address:addr})},Contract:{at:async()=>({methods})},
     computeSecretHash:async()=>secretHash,poseidon2HashWithSeparator:async()=>new Fr(5),
     preparePrivateFeePayment:async input=>{requests.push(input);return {paymentMethod:'private-method',gasSettings:gas()};},
   };
   const cursorRecords=new Map();
-  const env={createHistoryCursor:options=>createHistoryCursor({...options,storage:{read:async key=>cursorRecords.get(key)??null,compareAndSwap:async(key,previous,next)=>{assert.equal(cursorRecords.get(key)??null,previous);cursorRecords.set(key,next);}}}),createEthereumJournal:async()=>({assertCanStart:async()=>{},send:async()=>{throw Object.assign(new Error('Unknown Ethereum submission'),{code:'BB_ETH_SUBMISSION_UNKNOWN'});}}),createTransactionJournal:async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},setOperation:value=>operations.push(value)}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},privateFeeArtifact:{},
+  const env={createHistoryCursor:options=>createHistoryCursor({...options,storage:{read:async key=>cursorRecords.get(key)??null,compareAndSwap:async(key,previous,next)=>{assert.equal(cursorRecords.get(key)??null,previous);cursorRecords.set(key,next);}}}),createEthereumJournal:async()=>({assertCanStart:async()=>{},send:async()=>{throw Object.assign(new Error('Unknown Ethereum submission'),{code:'BB_ETH_SUBMISSION_UNKNOWN'});}}),createTransactionJournal:async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},setOperation:value=>operations.push(value)}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{storageLayout:{deposits:{slot:Fr.ONE}}},privateFeeArtifact:{},
     initCRS:async()=>{},createStore:async()=>({}),log:text=>logs.push(text),getBrowserSigner:async()=>({getAddress:async()=>depositor,provider})};
   const config={action,isDummy,message:'text',depositChainId:'5',portalAddress:portal,ethRpcUrl:'http://fixture.invalid',aztecNodeUrl:'http://fixture.invalid',aztecWallet:{secretKey:new Fr(1).toString(),salt:0},
     reuseTxHash:new Fr(3).toString(),claimSecretStore:{save:async()=>{},load:async()=>({schemaVersion:1,secret:secret.toString(),secretHash:secretHash.toString()})},
@@ -114,7 +115,7 @@ function mainHarness(action,isDummy=false) {
     node.getBlocks=async()=>[{number:1,hash:'block',body:{txEffects:[{txHash,l2ToL1Msgs:[leaf]}]}}];
     node.getTxReceipt=async()=>({txHash,status:'checkpointed',executionResult,blockNumber:1,blockHash:'block'});
   }
-  return {run:()=>c.runBillboardUser(env,config),setWithdrawalHistory,env,config,node,Portal,requests,logs,operations,setMissingNote:value=>missingNote=value,setPostExists:value=>postExists=value,authorBalanceReads:()=>authorBalanceReads,secret};
+  return {run:()=>c.runBillboardUser(env,config),setWithdrawalHistory,env,config,node,provider,Portal,requests,logs,operations,setMissingNote:value=>missingNote=value,setNoteState:value=>noteOverrides=value,onAction:value=>actionHook=value,setPostExists:value=>postExists=value,authorBalanceReads:()=>authorBalanceReads,secret};
 }
 for(const [action,dummy] of [['claim',false],['post',false],['post',true],['withdraw',false]]) {
   test(`actual main ${action}${dummy?' dummy':''} uses standard author call with private fee payment`,async()=>{
@@ -287,4 +288,93 @@ test('withdrawal absence reconciliation has a deadline even if its receipt read 
  // Receipt lookup for the selected claim happens within the bounded callback.
  h.config.claimSecretStore.load=()=>new Promise(()=>{});
  await assert.rejects(h.run(),e=>e.code==='BB_RECOVERY_UNKNOWN');assert(checked);assert.equal(h.requests.length,0);
+});
+
+for(const kind of ['dummy','withdraw'])for(const changed of [false,true])test(`saved ${kind} requires the same source screening sequence (${changed?'changed':'unchanged'})`,async()=>{
+ const h=mainHarness('recover'),operations=[];
+ const operation=JSON.stringify({schemaVersion:1,kind,depositChain:new Fr(5).toString(),headSequence:changed?'1':'0'});
+ h.env.createTransactionJournal=async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},
+  recover:async()=>{throw Object.assign(new Error('stale'),{code:'BB_RECOVERY_REQUIRED'});},
+  inspect:async()=>({operation,applicationNullifier:new Fr(7).toString()}),allowReplacement:async()=>{},setOperation:op=>operations.push(op)});
+ if(changed){await assert.rejects(h.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(h.requests.length,0);}
+ else {await h.run();assert.equal(h.requests.length,1);assert.deepEqual(operations,[operation]);}
+});
+
+test('actual wallet passes attributed application spend to the durable journal before submission',async()=>{
+ const c=context(),calls=[],txHash=new Fr(91),appNullifier=new Fr(92),tx={getTxHash:()=>txHash};
+ const receipt={txHash,status:'checkpointed',executionResult:'success',blockNumber:1,blockHash:'block'};
+ class BaseWallet {
+  constructor(pxe){this.pxe=pxe;}
+  async completeFeeOptions(opts){return {gasSettings:opts.gasSettings};}
+  async simulateViaEntrypoint(){return {gasUsed:{totalGas:new Gas(1,1),teardownGas:new Gas(0,0)}};}
+  async createTxExecutionRequestFromPayloadAndFee(){return 'request';}
+  scopesFrom(){return [];} senderForTagsFrom(){return owner;}
+ }
+ const proven={toTx:async()=>tx},pxe={proveTx:async()=>proven};
+ const node={sendTx:async()=>calls.push('submit'),getTxReceipt:async()=>receipt,getBlock:async()=>({hash:'block'})};
+ const journal={assertCanStart:async()=>null,prepare:async(value,previous,binding)=>{assert.equal(value,tx);assert.equal(binding.applicationNullifier,appNullifier.toString());calls.push('saved');},confirmed:()=>{}};
+ const a={...transactionOutcomes,BaseWallet,GasSettings,extractApplicationNullifier:async(result,value,board)=>{assert.equal(result,proven);assert.equal(value,tx);assert.equal(board,'board');calls.push('attributed');return appNullifier;}};
+ const wallet=c.BillboardPrivateFeeRouting.createAztecWallet(a,pxe,node,node,()=>{},Fr.ONE,{transactionJournal:journal});wallet._applicationNullifierBoard='board';
+ await wallet.sendTx({}, {from:owner,fee:{gasSettings:gas()}});
+ assert.deepEqual(calls,['attributed','saved','submit']);
+ a.extractApplicationNullifier=async()=>{throw Object.assign(new Error('unsupported'),{code:'BB_APPLICATION_ATTRIBUTION_UNSUPPORTED'});};
+ await assert.rejects(wallet.sendTx({}, {from:owner,fee:{gasSettings:gas()}}),{code:'BB_APPLICATION_ATTRIBUTION_UNSUPPORTED'});
+ assert.equal(calls.filter(x=>x==='submit').length,1);
+});
+
+test('successful retried screening releases its step guard before the following withdrawal',async()=>{
+ const h=mainHarness('auto');h.config.message='';h.setNoteState({headSequence:1n,lastRealPostIndex:1n,lastScreenedIndex:0n});
+ let operation,dummyCalls=0,withdrawals=0;
+ h.env.createTransactionJournal=async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},
+  setOperation:value=>operation=value,inspect:async()=>({operation,applicationNullifier:new Fr(7).toString()}),allowReplacement:async()=>{}});
+ h.onAction(async name=>{
+  if(name==='post') {dummyCalls++;if(dummyCalls===1)throw Object.assign(new Error('expired anchor'),{code:'BB_STATE_CONFLICT',stateReasons:['Block header not found']});
+   h.setNoteState({headSequence:2n,lastRealPostIndex:1n,lastScreenedIndex:1n});}
+  if(name==='withdraw')withdrawals++;
+ });
+ // L1 settlement is intentionally absent from this action-routing fixture.
+ await assert.rejects(h.run());
+ assert.equal(dummyCalls,2);assert.equal(withdrawals,1);
+ assert.equal(JSON.parse(operation).kind,'withdraw');
+});
+
+function savedClaimHarness(overrides={}) {
+ const h=mainHarness('recover');h.setMissingNote(true);
+ const intent={schemaVersion:1,kind:'claim',depositor:'0x0000000000000000000000000000000000000004',amount:'1000000000000000',depositNonce:'7',leafIndex:'42',secretHash:new Fr(9).toString(),transactionHash:new Fr(3).toString(),depositChain:new Fr(5).toString(),...overrides};
+ const operation=JSON.stringify(intent),operations=[];
+ h.env.createTransactionJournal=async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},
+  recover:async()=>{throw Object.assign(new Error('stale'),{code:'BB_RECOVERY_REQUIRED'});},inspect:async()=>({operation}),
+  allowReplacement:async expected=>assert.equal(expected,operation),setOperation:op=>operations.push(op)});
+ return {...h,intent,operation,operations};
+}
+test('stale claim restores exact original receipt and claim identity without depositing again',async()=>{
+ const h=savedClaimHarness();h.config.reuseTxHash=new Fr(999).toString();
+ await h.run();assert.equal(h.requests.length,1);assert.deepEqual(h.operations,[h.operation]);
+ const args=h.requests[0].action.args;
+ assert.equal(args[1],1000000000000000n);assert.equal(args[2],7n);assert.equal(args[3].toString(),h.secret.toString());assert.equal(args[4],42n);
+});
+for(const [key,value] of [['amount','1'],['depositNonce','8'],['leafIndex','43'],['depositChain',new Fr(6).toString()],['secretHash',new Fr(10).toString()],['depositor','0x0000000000000000000000000000000000000005']])test(`stale claim rejects changed ${key} before another fee payment`,async()=>{
+ const h=savedClaimHarness({[key]:value});await assert.rejects(h.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(h.requests.length,0);
+});
+test('an existing note is not confirmation of an unresolved saved claim transaction',async()=>{
+ const h=savedClaimHarness();h.setMissingNote(false);await assert.rejects(h.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(h.requests.length,0);
+});
+test('failed claim does not enter the former thirty-attempt loop',async()=>{
+ const h=mainHarness('claim');let sends=0;h.onAction(async()=>{sends++;throw new Error('not available');});
+ await assert.rejects(h.run());assert.equal(sends,1);assert.equal(h.requests.length,1);
+});
+
+test('saved claim rejects a receipt returned for another transaction',async()=>{
+ const h=savedClaimHarness(),read=h.provider.getTransactionReceipt;
+ h.provider.getTransactionReceipt=async hash=>({...await read(hash),hash:new Fr(999).toString()});
+ await assert.rejects(h.run(),{code:'BB_RECOVERY_UNKNOWN'});assert.equal(h.requests.length,0);
+});
+test('saved claim rejects a reorged Ethereum receipt',async()=>{
+ const h=savedClaimHarness();h.provider.getBlock=async()=>({hash:'different block'});
+ await assert.rejects(h.run(),{code:'BB_RECOVERY_UNKNOWN'});assert.equal(h.requests.length,0);
+});
+test('saved claim receipt reads time out before any proof or fee preparation',async()=>{
+ const h=savedClaimHarness();h.provider.getTransactionReceipt=()=>new Promise(()=>{});
+ h.env.aztec.boundedTransactionRead=(fn,timeout)=>{assert.equal(timeout,20000);return transactionOutcomes.boundedTransactionRead(fn,20);};
+ await assert.rejects(h.run(),{code:'BB_SUBMISSION_UNKNOWN'});assert.equal(h.requests.length,0);
 });
