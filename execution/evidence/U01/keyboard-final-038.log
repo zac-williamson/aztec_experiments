@@ -1,0 +1,2 @@
+{"passed":true,"scope":"Built HTTPS UI-only keyboard checks; public feed data fixture, no wallet or transaction qualification","keyboardConfigImport":true,"invalidImportStatus":true,"navigationHeadingFocus":true,"emptyMessageValidation":true,"validationClearsOnInput":true,"flaggedDisclosureSpace":true,"focusAndExpansionPreservedAcrossRefresh":true,"feeAndDeployLabels":true,"externalRequests":0,"rpcRequests":0}
+{"boundedBrowser":true,"elapsedMs":3143,"peakRSSKiB":960528,"stopReason":null,"ownedTreeAbsent":true}

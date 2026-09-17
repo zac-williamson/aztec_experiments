@@ -624,7 +624,7 @@
         claim = undefined;
         return result;
       } catch (error) {
-        if (['BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID'].includes(error?.code)) throw privateFeeFailure(error.code);
+        if (['BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID', 'BB_BROWSER_PROOF_FAILED'].includes(error?.code)) throw privateFeeFailure(error.code);
         if (error?.code === 'BB_STATE_CONFLICT') {
           const allowed = ['Existing nullifier', 'Block header not found'];
           if (Array.isArray(error.stateReasons) && error.stateReasons.length > 0 && error.stateReasons.every(reason => allowed.includes(reason))) {

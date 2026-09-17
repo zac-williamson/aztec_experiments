@@ -13,7 +13,7 @@ import {chromium} from 'playwright';
 import {generateHosting} from '../deploy/hosting-config.mjs';
 import {ROOT,assertNodeVersion} from './toolchain.mjs';
 assertNodeVersion();
-const args=process.argv.slice(2),withCrs=args.includes('--with-crs');const positional=args.filter(arg=>arg!=='--with-crs');if(positional.length>1)throw Error('Usage: test-u01-hosting-browser.mjs [CADDY] [--with-crs]');const caddy=path.resolve(positional[0]||path.join(ROOT,'.build/caddy-2.11.4/caddy'));const leafDeadlineMs=withCrs?500000:120000;
+const args=process.argv.slice(2),withCrs=args.includes('--with-crs');const positional=args.filter(arg=>arg!=='--with-crs');if(positional.length>1)throw Error('Usage: test-u01-hosting-browser.mjs [CADDY] [--with-crs]');const caddy=path.resolve(positional[0]||path.join(ROOT,'.build/caddy-2.11.4/caddy'));const leafDeadlineMs=120000;
 assert.match(execFileSync(caddy,['version'],{encoding:'utf8'}),/^v2\.11\.4 /);
 const dir=fs.mkdtempSync(path.join(process.env.BILLBOARD_TEST_TMPDIR||os.tmpdir(),'bb-https-'));let child,browser,passed=false,sourceStage='startup';const cspBlocked=[];
 const timeout=setTimeout(()=>{child?.kill('SIGKILL');void browser?.close().catch(()=>{});process.exitCode=1;},leafDeadlineMs);

@@ -73,7 +73,7 @@ async function doDepositPage() {
       const result=await callEngine('deposit','depositStatus',{depositAmount:document.getElementById('amount').value.trim(),saveRecovery:saveFundingRecord});
       if(result.record)saveFundingRecord(result.record);
       log('Deposit recorded. Download the recovery file, then claim after the bridge message is available.', 'success','depositStatus');
-    }catch(error){throw new Error(safeFundingError(error));}
+    }catch(error){log(safeFundingError(error),'error','depositStatus');}
   });
 }
 async function doClaimPage() {
@@ -85,7 +85,7 @@ async function doClaimPage() {
       await callEngine('claim','claimStatus',{fundingRecord:record});
       saveFundingRecord(record);
       log('Private balance funded. You can now return to the message board.', 'success','claimStatus');
-    }catch(error){throw new Error(safeFundingError(error));}
+    }catch(error){log(safeFundingError(error),'error','claimStatus');}
   });
 }
 try {const key=localStorage.getItem('billboard-private-fee-recovery-latest');const saved=key&&localStorage.getItem(key);if(saved)fundingRecord=JSON.parse(saved);}catch(_){}

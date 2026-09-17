@@ -1,0 +1,1688 @@
+{
+  "scope": "Read-only supplemental process-category samples; command text is discarded, authoritative pass/fail uses outer owned-tree supervisor. Includes supervisor itself.",
+  "samples": [
+    {
+      "observedElapsedMs": 35,
+      "rssKiB": {
+        "application-test/node": 490832,
+        "Ethereum-test-chain": 44128,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 576,
+      "rssKiB": {
+        "application-test/node": 497728,
+        "Ethereum-test-chain": 44224,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 1126,
+      "rssKiB": {
+        "application-test/node": 499424,
+        "Ethereum-test-chain": 44832,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 1676,
+      "rssKiB": {
+        "application-test/node": 502128,
+        "Ethereum-test-chain": 44928,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 2227,
+      "rssKiB": {
+        "application-test/node": 502176,
+        "Ethereum-test-chain": 44944,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 2777,
+      "rssKiB": {
+        "application-test/node": 503968,
+        "Ethereum-test-chain": 45008,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 3321,
+      "rssKiB": {
+        "application-test/node": 503984,
+        "Ethereum-test-chain": 45008,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 3871,
+      "rssKiB": {
+        "application-test/node": 506768,
+        "Ethereum-test-chain": 45120,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 4414,
+      "rssKiB": {
+        "application-test/node": 506784,
+        "Ethereum-test-chain": 45120,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 4965,
+      "rssKiB": {
+        "application-test/node": 510016,
+        "Ethereum-test-chain": 45184,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 5514,
+      "rssKiB": {
+        "application-test/node": 510032,
+        "Ethereum-test-chain": 45184,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 6065,
+      "rssKiB": {
+        "application-test/node": 513264,
+        "Ethereum-test-chain": 45232,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 6606,
+      "rssKiB": {
+        "application-test/node": 513856,
+        "Ethereum-test-chain": 45392,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 7143,
+      "rssKiB": {
+        "application-test/node": 515920,
+        "Ethereum-test-chain": 45456,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 7685,
+      "rssKiB": {
+        "application-test/node": 522544,
+        "Ethereum-test-chain": 46736,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 8224,
+      "rssKiB": {
+        "application-test/node": 522160,
+        "Ethereum-test-chain": 46736,
+        "native-prover": 23088
+      },
+      "latestPublicStage": {
+        "stage": "claim:wait-real-inbox-anchor",
+        "elapsedMs": 122434
+      }
+    },
+    {
+      "observedElapsedMs": 8763,
+      "rssKiB": {
+        "application-test/node": 570704,
+        "Ethereum-test-chain": 46752,
+        "native-prover": 23264
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 9301,
+      "rssKiB": {
+        "application-test/node": 630304,
+        "Ethereum-test-chain": 46752,
+        "native-prover": 23488
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 9839,
+      "rssKiB": {
+        "application-test/node": 661312,
+        "Ethereum-test-chain": 46752,
+        "native-prover": 23488
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 10377,
+      "rssKiB": {
+        "application-test/node": 702496,
+        "Ethereum-test-chain": 46832,
+        "native-prover": 125040
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 10914,
+      "rssKiB": {
+        "application-test/node": 702544,
+        "Ethereum-test-chain": 46880,
+        "native-prover": 156192
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 11453,
+      "rssKiB": {
+        "application-test/node": 702064,
+        "Ethereum-test-chain": 47280,
+        "native-prover": 318752
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 11994,
+      "rssKiB": {
+        "application-test/node": 712416,
+        "Ethereum-test-chain": 47280,
+        "native-prover": 360304
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 12532,
+      "rssKiB": {
+        "application-test/node": 724544,
+        "Ethereum-test-chain": 47616,
+        "native-prover": 397296
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 13077,
+      "rssKiB": {
+        "application-test/node": 724496,
+        "Ethereum-test-chain": 47504,
+        "native-prover": 397920
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 13615,
+      "rssKiB": {
+        "application-test/node": 723088,
+        "Ethereum-test-chain": 47408,
+        "native-prover": 407360
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 14152,
+      "rssKiB": {
+        "application-test/node": 728176,
+        "Ethereum-test-chain": 47440,
+        "native-prover": 407360
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 14715,
+      "rssKiB": {
+        "application-test/node": 729008,
+        "Ethereum-test-chain": 47440,
+        "native-prover": 438640
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 15256,
+      "rssKiB": {
+        "application-test/node": 681024,
+        "Ethereum-test-chain": 42208,
+        "native-prover": 582752
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 15794,
+      "rssKiB": {
+        "application-test/node": 678192,
+        "Ethereum-test-chain": 41072,
+        "native-prover": 596432
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 16331,
+      "rssKiB": {
+        "application-test/node": 683472,
+        "Ethereum-test-chain": 40480,
+        "native-prover": 613056
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 16871,
+      "rssKiB": {
+        "application-test/node": 683360,
+        "Ethereum-test-chain": 40400,
+        "native-prover": 635936
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 17408,
+      "rssKiB": {
+        "application-test/node": 682800,
+        "Ethereum-test-chain": 40432,
+        "native-prover": 346912
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 17940,
+      "rssKiB": {
+        "application-test/node": 687488,
+        "Ethereum-test-chain": 40432,
+        "native-prover": 364208
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 18478,
+      "rssKiB": {
+        "application-test/node": 682880,
+        "Ethereum-test-chain": 40528,
+        "native-prover": 364208
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 19012,
+      "rssKiB": {
+        "application-test/node": 686496,
+        "Ethereum-test-chain": 42544,
+        "native-prover": 365424
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 19549,
+      "rssKiB": {
+        "application-test/node": 685328,
+        "Ethereum-test-chain": 42624,
+        "native-prover": 365424
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 20082,
+      "rssKiB": {
+        "application-test/node": 687440,
+        "Ethereum-test-chain": 42688,
+        "native-prover": 407184
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 20616,
+      "rssKiB": {
+        "application-test/node": 688768,
+        "Ethereum-test-chain": 42752,
+        "native-prover": 419504
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 21152,
+      "rssKiB": {
+        "application-test/node": 694624,
+        "Ethereum-test-chain": 42784,
+        "native-prover": 443856
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 21686,
+      "rssKiB": {
+        "application-test/node": 695008,
+        "Ethereum-test-chain": 42832,
+        "native-prover": 443856
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 22219,
+      "rssKiB": {
+        "application-test/node": 707312,
+        "Ethereum-test-chain": 43776,
+        "native-prover": 460304
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 22757,
+      "rssKiB": {
+        "application-test/node": 708400,
+        "Ethereum-test-chain": 43776,
+        "native-prover": 460448
+      },
+      "latestPublicStage": {
+        "stage": "claim:prove-real-claim",
+        "elapsedMs": 154318
+      }
+    },
+    {
+      "observedElapsedMs": 23293,
+      "rssKiB": {
+        "application-test/node": 712704,
+        "Ethereum-test-chain": 43856,
+        "native-prover": 467328
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 23845,
+      "rssKiB": {
+        "application-test/node": 714432,
+        "Ethereum-test-chain": 43904,
+        "native-prover": 469920
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 24396,
+      "rssKiB": {
+        "application-test/node": 716544,
+        "Ethereum-test-chain": 43936,
+        "native-prover": 469920
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 24943,
+      "rssKiB": {
+        "application-test/node": 716560,
+        "Ethereum-test-chain": 43936,
+        "native-prover": 469920
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 25499,
+      "rssKiB": {
+        "application-test/node": 718576,
+        "Ethereum-test-chain": 44016,
+        "native-prover": 469920
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 26074,
+      "rssKiB": {
+        "application-test/node": 718608,
+        "Ethereum-test-chain": 44016,
+        "native-prover": 469920
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 26614,
+      "rssKiB": {
+        "application-test/node": 718688,
+        "Ethereum-test-chain": 44080,
+        "native-prover": 469920
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 27160,
+      "rssKiB": {
+        "application-test/node": 723072,
+        "Ethereum-test-chain": 44128,
+        "native-prover": 469920
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 27707,
+      "rssKiB": {
+        "application-test/node": 718800,
+        "Ethereum-test-chain": 44144,
+        "native-prover": 469920
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 28254,
+      "rssKiB": {
+        "application-test/node": 720688,
+        "Ethereum-test-chain": 44192,
+        "native-prover": 469856
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 28792,
+      "rssKiB": {
+        "application-test/node": 720720,
+        "Ethereum-test-chain": 44160,
+        "native-prover": 469856
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 29337,
+      "rssKiB": {
+        "application-test/node": 723504,
+        "Ethereum-test-chain": 44304,
+        "native-prover": 469840
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 29883,
+      "rssKiB": {
+        "application-test/node": 723744,
+        "Ethereum-test-chain": 44304,
+        "native-prover": 469840
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 30433,
+      "rssKiB": {
+        "application-test/node": 724832,
+        "Ethereum-test-chain": 44400,
+        "native-prover": 469824
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 30985,
+      "rssKiB": {
+        "application-test/node": 724848,
+        "Ethereum-test-chain": 44416,
+        "native-prover": 469824
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 31532,
+      "rssKiB": {
+        "application-test/node": 724864,
+        "Ethereum-test-chain": 44432,
+        "native-prover": 453456
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 32086,
+      "rssKiB": {
+        "application-test/node": 724880,
+        "Ethereum-test-chain": 44528,
+        "native-prover": 447424
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 32636,
+      "rssKiB": {
+        "application-test/node": 725776,
+        "Ethereum-test-chain": 44528,
+        "native-prover": 447424
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 33182,
+      "rssKiB": {
+        "application-test/node": 725808,
+        "Ethereum-test-chain": 44576,
+        "native-prover": 447424
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 33729,
+      "rssKiB": {
+        "application-test/node": 726192,
+        "Ethereum-test-chain": 44592,
+        "native-prover": 447424
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 34280,
+      "rssKiB": {
+        "application-test/node": 726208,
+        "Ethereum-test-chain": 44640,
+        "native-prover": 447424
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 34829,
+      "rssKiB": {
+        "application-test/node": 728608,
+        "Ethereum-test-chain": 45040,
+        "native-prover": 447424
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 35375,
+      "rssKiB": {
+        "application-test/node": 733120,
+        "Ethereum-test-chain": 45088,
+        "native-prover": 447424
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 35927,
+      "rssKiB": {
+        "application-test/node": 728976,
+        "Ethereum-test-chain": 45104,
+        "native-prover": 447424
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 36467,
+      "rssKiB": {
+        "application-test/node": 728960,
+        "Ethereum-test-chain": 45104,
+        "native-prover": 447424
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 37018,
+      "rssKiB": {
+        "application-test/node": 701168,
+        "Ethereum-test-chain": 43952,
+        "native-prover": 439280
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 37564,
+      "rssKiB": {
+        "application-test/node": 701360,
+        "Ethereum-test-chain": 43760,
+        "native-prover": 439264
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 38107,
+      "rssKiB": {
+        "application-test/node": 692320,
+        "Ethereum-test-chain": 43040,
+        "native-prover": 439184
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 38658,
+      "rssKiB": {
+        "application-test/node": 692288,
+        "Ethereum-test-chain": 43040,
+        "native-prover": 437504
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 39216,
+      "rssKiB": {
+        "application-test/node": 691200,
+        "Ethereum-test-chain": 42480,
+        "native-prover": 433824
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 39766,
+      "rssKiB": {
+        "application-test/node": 690448,
+        "Ethereum-test-chain": 42016,
+        "native-prover": 414432
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 40309,
+      "rssKiB": {
+        "application-test/node": 690496,
+        "Ethereum-test-chain": 42144,
+        "native-prover": 414432
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 40851,
+      "rssKiB": {
+        "application-test/node": 692432,
+        "Ethereum-test-chain": 42144,
+        "native-prover": 414432
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 41386,
+      "rssKiB": {
+        "application-test/node": 693920,
+        "Ethereum-test-chain": 42976,
+        "native-prover": 414432
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 41924,
+      "rssKiB": {
+        "application-test/node": 698736,
+        "Ethereum-test-chain": 43168,
+        "native-prover": 414432
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 42464,
+      "rssKiB": {
+        "application-test/node": 697088,
+        "Ethereum-test-chain": 43312,
+        "native-prover": 414432
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 43006,
+      "rssKiB": {
+        "application-test/node": 697120,
+        "Ethereum-test-chain": 43312,
+        "native-prover": 414432
+      },
+      "latestPublicStage": {
+        "stage": "claim:include-real-claim",
+        "elapsedMs": 169071
+      }
+    },
+    {
+      "observedElapsedMs": 43544,
+      "rssKiB": {
+        "application-test/node": 833440,
+        "Ethereum-test-chain": 43040,
+        "native-prover": 382112
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 44085,
+      "rssKiB": {
+        "application-test/node": 829584,
+        "Ethereum-test-chain": 42848,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 44626,
+      "rssKiB": {
+        "application-test/node": 829616,
+        "Ethereum-test-chain": 42896,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 45178,
+      "rssKiB": {
+        "application-test/node": 809984,
+        "Ethereum-test-chain": 40960,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 45715,
+      "rssKiB": {
+        "application-test/node": 743680,
+        "Ethereum-test-chain": 40512,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 46275,
+      "rssKiB": {
+        "application-test/node": 743552,
+        "Ethereum-test-chain": 41056,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 46826,
+      "rssKiB": {
+        "application-test/node": 744944,
+        "Ethereum-test-chain": 41008,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 47388,
+      "rssKiB": {
+        "application-test/node": 744768,
+        "Ethereum-test-chain": 41184,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 47929,
+      "rssKiB": {
+        "application-test/node": 746000,
+        "Ethereum-test-chain": 41184,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 48473,
+      "rssKiB": {
+        "application-test/node": 746016,
+        "Ethereum-test-chain": 41248,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 49032,
+      "rssKiB": {
+        "application-test/node": 746128,
+        "Ethereum-test-chain": 41248,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 49576,
+      "rssKiB": {
+        "application-test/node": 746272,
+        "Ethereum-test-chain": 41296,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 50128,
+      "rssKiB": {
+        "application-test/node": 746352,
+        "Ethereum-test-chain": 41392,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 50673,
+      "rssKiB": {
+        "application-test/node": 746464,
+        "Ethereum-test-chain": 41408,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 51230,
+      "rssKiB": {
+        "application-test/node": 747040,
+        "Ethereum-test-chain": 41456,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 51781,
+      "rssKiB": {
+        "application-test/node": 747280,
+        "Ethereum-test-chain": 41472,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 52339,
+      "rssKiB": {
+        "application-test/node": 747968,
+        "Ethereum-test-chain": 41488,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 52879,
+      "rssKiB": {
+        "application-test/node": 749008,
+        "Ethereum-test-chain": 42880,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 53427,
+      "rssKiB": {
+        "application-test/node": 749040,
+        "Ethereum-test-chain": 42960,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 53977,
+      "rssKiB": {
+        "application-test/node": 749104,
+        "Ethereum-test-chain": 42960,
+        "native-prover": 376544
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 54517,
+      "rssKiB": {
+        "application-test/node": 634352,
+        "Ethereum-test-chain": 39040,
+        "native-prover": 348512
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 55063,
+      "rssKiB": {
+        "application-test/node": 637056,
+        "Ethereum-test-chain": 39056,
+        "native-prover": 348512
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 55598,
+      "rssKiB": {
+        "application-test/node": 637072,
+        "Ethereum-test-chain": 39392,
+        "native-prover": 348512
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 56143,
+      "rssKiB": {
+        "application-test/node": 639056,
+        "Ethereum-test-chain": 39456,
+        "native-prover": 348512
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 56683,
+      "rssKiB": {
+        "application-test/node": 639184,
+        "Ethereum-test-chain": 39472,
+        "native-prover": 348512
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 57230,
+      "rssKiB": {
+        "application-test/node": 640272,
+        "Ethereum-test-chain": 40192,
+        "native-prover": 348512
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 57766,
+      "rssKiB": {
+        "application-test/node": 640304,
+        "Ethereum-test-chain": 40192,
+        "native-prover": 348512
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 58306,
+      "rssKiB": {
+        "application-test/node": 640400,
+        "Ethereum-test-chain": 40288,
+        "native-prover": 348512
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 58841,
+      "rssKiB": {
+        "application-test/node": 641056,
+        "Ethereum-test-chain": 40256,
+        "native-prover": 348512
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 59388,
+      "rssKiB": {
+        "application-test/node": 641040,
+        "Ethereum-test-chain": 40336,
+        "native-prover": 348496
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 59931,
+      "rssKiB": {
+        "application-test/node": 641056,
+        "Ethereum-test-chain": 40352,
+        "native-prover": 348496
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 60467,
+      "rssKiB": {
+        "application-test/node": 641616,
+        "Ethereum-test-chain": 40544,
+        "native-prover": 348384
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 61011,
+      "rssKiB": {
+        "application-test/node": 641616,
+        "Ethereum-test-chain": 40480,
+        "native-prover": 348096
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 61565,
+      "rssKiB": {
+        "application-test/node": 638400,
+        "Ethereum-test-chain": 40432,
+        "native-prover": 348096
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 62120,
+      "rssKiB": {
+        "application-test/node": 642704,
+        "Ethereum-test-chain": 40448,
+        "native-prover": 348096
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 62688,
+      "rssKiB": {
+        "application-test/node": 639088,
+        "Ethereum-test-chain": 40560,
+        "native-prover": 348096
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 63230,
+      "rssKiB": {
+        "application-test/node": 640304,
+        "Ethereum-test-chain": 40704,
+        "native-prover": 348096
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 63783,
+      "rssKiB": {
+        "application-test/node": 640336,
+        "Ethereum-test-chain": 40704,
+        "native-prover": 348096
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 64330,
+      "rssKiB": {
+        "application-test/node": 641600,
+        "Ethereum-test-chain": 40880,
+        "native-prover": 348096
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 64882,
+      "rssKiB": {
+        "application-test/node": 644352,
+        "Ethereum-test-chain": 42608,
+        "native-prover": 348096
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 65444,
+      "rssKiB": {
+        "application-test/node": 651104,
+        "Ethereum-test-chain": 45120,
+        "native-prover": 348096
+      },
+      "latestPublicStage": {
+        "stage": "browser-prepare-handoff",
+        "elapsedMs": 189149
+      }
+    },
+    {
+      "observedElapsedMs": 65982,
+      "rssKiB": {
+        "application-test/node": 795024,
+        "Ethereum-test-chain": 45264,
+        "native-prover": 17648
+      },
+      "latestPublicStage": {
+        "stage": "browser-ready",
+        "elapsedMs": 211597
+      }
+    },
+    {
+      "observedElapsedMs": 66522,
+      "rssKiB": {
+        "application-test/node": 1049232,
+        "Ethereum-test-chain": 45328,
+        "native-prover": 17648,
+        "HTTPS-server": 45088
+      },
+      "latestPublicStage": {
+        "browserStage": "local-https",
+        "elapsedMs": 211839
+      }
+    },
+    {
+      "observedElapsedMs": 67070,
+      "rssKiB": {
+        "application-test/node": 1010560,
+        "Ethereum-test-chain": 43600,
+        "native-prover": 17648,
+        "HTTPS-server": 46240,
+        "browser": 141728
+      },
+      "latestPublicStage": {
+        "browserStage": "browser-start",
+        "elapsedMs": 212350
+      }
+    },
+    {
+      "observedElapsedMs": 67609,
+      "rssKiB": {
+        "application-test/node": 978992,
+        "Ethereum-test-chain": 41664,
+        "native-prover": 17648,
+        "HTTPS-server": 54624,
+        "browser": 574736
+      },
+      "latestPublicStage": {
+        "browserStage": "wallet-software",
+        "elapsedMs": 212976
+      }
+    },
+    {
+      "observedElapsedMs": 68147,
+      "rssKiB": {
+        "application-test/node": 1011136,
+        "Ethereum-test-chain": 41664,
+        "native-prover": 17648,
+        "HTTPS-server": 54624,
+        "browser": 650448
+      },
+      "latestPublicStage": {
+        "browserStage": "public-config-import",
+        "elapsedMs": 213880
+      }
+    },
+    {
+      "observedElapsedMs": 68983,
+      "rssKiB": {
+        "application-test/node": 808448,
+        "Ethereum-test-chain": 37344,
+        "native-prover": 14000,
+        "HTTPS-server": 49840,
+        "browser": 545056
+      },
+      "latestPublicStage": {
+        "browserStage": "wallet-connect-and-status",
+        "elapsedMs": 214215
+      }
+    },
+    {
+      "observedElapsedMs": 69543,
+      "rssKiB": {
+        "application-test/node": 690864,
+        "Ethereum-test-chain": 30640,
+        "native-prover": 16672,
+        "HTTPS-server": 54560,
+        "browser": 742688
+      },
+      "latestPublicStage": {
+        "browserStage": "wallet-connect-and-status",
+        "elapsedMs": 214215
+      }
+    },
+    {
+      "observedElapsedMs": 70083,
+      "rssKiB": {
+        "application-test/node": 669440,
+        "Ethereum-test-chain": 30224,
+        "native-prover": 16512,
+        "HTTPS-server": 51440,
+        "browser": 1064704
+      },
+      "latestPublicStage": {
+        "browserStage": "wallet-connect-and-status",
+        "elapsedMs": 214215
+      }
+    },
+    {
+      "observedElapsedMs": 70624,
+      "rssKiB": {
+        "application-test/node": 673968,
+        "Ethereum-test-chain": 30576,
+        "native-prover": 16512,
+        "HTTPS-server": 51408,
+        "browser": 1215104
+      },
+      "latestPublicStage": {
+        "browserStage": "wallet-connect-and-status",
+        "elapsedMs": 214215
+      }
+    },
+    {
+      "observedElapsedMs": 71172,
+      "rssKiB": {
+        "application-test/node": 662000,
+        "Ethereum-test-chain": 28224,
+        "native-prover": 16288,
+        "HTTPS-server": 55568,
+        "browser": 1202544
+      },
+      "latestPublicStage": {
+        "browserStage": "wallet-connect-and-status",
+        "elapsedMs": 214215
+      }
+    },
+    {
+      "observedElapsedMs": 71712,
+      "rssKiB": {
+        "application-test/node": 689648,
+        "Ethereum-test-chain": 28816,
+        "native-prover": 17312,
+        "HTTPS-server": 57312,
+        "browser": 1217312
+      },
+      "latestPublicStage": {
+        "browserStage": "actual-gui-post",
+        "elapsedMs": 217128
+      }
+    },
+    {
+      "observedElapsedMs": 72252,
+      "rssKiB": {
+        "application-test/node": 704832,
+        "Ethereum-test-chain": 33744,
+        "native-prover": 17312,
+        "HTTPS-server": 60320,
+        "browser": 1133456
+      },
+      "latestPublicStage": {
+        "browserStage": "actual-gui-post",
+        "elapsedMs": 217128
+      }
+    },
+    {
+      "observedElapsedMs": 72791,
+      "rssKiB": {
+        "application-test/node": 711888,
+        "Ethereum-test-chain": 34624,
+        "native-prover": 17312,
+        "HTTPS-server": 61728,
+        "browser": 1210080
+      },
+      "latestPublicStage": {
+        "browserStage": "actual-gui-post",
+        "elapsedMs": 217128
+      }
+    },
+    {
+      "observedElapsedMs": 73332,
+      "rssKiB": {
+        "application-test/node": 718640,
+        "Ethereum-test-chain": 35616,
+        "native-prover": 17312,
+        "HTTPS-server": 64672,
+        "browser": 1228672
+      },
+      "latestPublicStage": {
+        "browserStage": "actual-gui-post",
+        "elapsedMs": 217128
+      }
+    },
+    {
+      "observedElapsedMs": 73873,
+      "rssKiB": {
+        "application-test/node": 695936,
+        "Ethereum-test-chain": 35616,
+        "native-prover": 17312,
+        "HTTPS-server": 64672,
+        "browser": 1279184
+      },
+      "latestPublicStage": {
+        "browserStage": "actual-gui-post",
+        "elapsedMs": 217128
+      }
+    },
+    {
+      "observedElapsedMs": 74472,
+      "rssKiB": {
+        "application-test/node": 696736,
+        "Ethereum-test-chain": 35776,
+        "native-prover": 17312,
+        "HTTPS-server": 64672,
+        "browser": 1371072
+      },
+      "latestPublicStage": {
+        "browserStage": "actual-gui-post",
+        "elapsedMs": 217128
+      }
+    },
+    {
+      "observedElapsedMs": 75009,
+      "rssKiB": {
+        "application-test/node": 369776
+      },
+      "latestPublicStage": {
+        "browserStage": "actual-gui-post",
+        "elapsedMs": 217128
+      }
+    }
+  ]
+}

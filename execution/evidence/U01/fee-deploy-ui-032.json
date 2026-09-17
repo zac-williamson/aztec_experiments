@@ -1,0 +1,75 @@
+{
+  "startedAt": "2026-09-17T17:21:34.613Z",
+  "script": "scripts/test-u01-fee-deploy-ui.mjs",
+  "args": [],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 2097152,
+  "rssMethod": "sampled owned descendant tree; not an OS allocation limit",
+  "passed": true,
+  "samples": [
+    {
+      "elapsedMs": 23,
+      "rssKiB": 880
+    },
+    {
+      "elapsedMs": 1043,
+      "rssKiB": 269008
+    },
+    {
+      "elapsedMs": 2066,
+      "rssKiB": 817520
+    },
+    {
+      "elapsedMs": 3087,
+      "rssKiB": 989920
+    }
+  ],
+  "peakRSSKiB": 989920,
+  "sourceHashes": {
+    "scripts/test-u01-fee-deploy-ui.mjs": "d2db77d523e42b7cbe45ef1050bfb219a08bce54443764e3c9bd8a4e4c56ece2",
+    "scripts/run-bounded-browser-check.mjs": "f1cd830b2d99857bef6f5298eed80f82ae75e939ffa56d9cf23eedfd20ea777f",
+    "scripts/owned-test-process-tree.mjs": "77e972d5bbe21350d61c940afa381f6621b61787bffeae8ffaccbb0bd1a5c9fb",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "d08fb577cf9c8a7243e912d4036b90048834ee587578b5948bf2795929c475a3",
+    ".build/sdk/sdk-manifest.json": "f3942a73fb497c240090d94f05ff78d097fbe36d53ba758ab8d3601cbdd44bac"
+  },
+  "peakProcesses": [
+    {
+      "pid": 17461,
+      "ppid": 17447,
+      "rssKiB": 204656
+    },
+    {
+      "pid": 17464,
+      "ppid": 17461,
+      "rssKiB": 57104
+    },
+    {
+      "pid": 17467,
+      "ppid": 17461,
+      "rssKiB": 98432
+    },
+    {
+      "pid": 17472,
+      "ppid": 17467,
+      "rssKiB": 75776
+    },
+    {
+      "pid": 17473,
+      "ppid": 17467,
+      "rssKiB": 54128
+    },
+    {
+      "pid": 17475,
+      "ppid": 17467,
+      "rssKiB": 499824
+    }
+  ],
+  "code": 0,
+  "signal": null,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "stopReason": null,
+  "elapsedMs": 3712,
+  "finishedAt": "2026-09-17T17:21:38.329Z"
+}

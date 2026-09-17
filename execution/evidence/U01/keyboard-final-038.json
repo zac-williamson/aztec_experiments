@@ -1,0 +1,77 @@
+{
+  "startedAt": "2026-09-17T18:07:54.690Z",
+  "script": "scripts/test-u01-keyboard-browser.mjs",
+  "args": [],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 2097152,
+  "rssMethod": "sampled owned descendant tree; not an OS allocation limit",
+  "passed": true,
+  "samples": [
+    {
+      "elapsedMs": 22,
+      "rssKiB": 688
+    },
+    {
+      "elapsedMs": 1048,
+      "rssKiB": 444272
+    },
+    {
+      "elapsedMs": 2072,
+      "rssKiB": 960528
+    },
+    {
+      "elapsedMs": 3097,
+      "rssKiB": 318608
+    }
+  ],
+  "peakRSSKiB": 960528,
+  "sourceHashes": {
+    "scripts/test-u01-keyboard-browser.mjs": "d8cd00b671026aadf3dd23c20a99a00f543d3a2082f55db0dd7f04b3df7f01c3",
+    "scripts/run-bounded-browser-check.mjs": "37f4b6adaf971a767735f6f17e5e81b120a2b4affc3dc1c013417b84c24f2a8f",
+    "scripts/owned-test-process-tree.mjs": "77e972d5bbe21350d61c940afa381f6621b61787bffeae8ffaccbb0bd1a5c9fb",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "7fd4bfc1c5a5fe113cbef997a62430a22306487d7b4c7579b9479cc3c3653631",
+    ".build/sdk/sdk-manifest.json": "a5312b3d535abfd3075c57e839093e447e3d43b32995083c0760d51aaf50a2ab"
+  },
+  "controllerHeapLimitMiB": 64,
+  "maxSamplingGapMs": 1026,
+  "peakProcesses": [
+    {
+      "pid": 20673,
+      "ppid": 20672,
+      "rssKiB": 159280
+    },
+    {
+      "pid": 20676,
+      "ppid": 20673,
+      "rssKiB": 55920
+    },
+    {
+      "pid": 20679,
+      "ppid": 20673,
+      "rssKiB": 93936
+    },
+    {
+      "pid": 20682,
+      "ppid": 20679,
+      "rssKiB": 78528
+    },
+    {
+      "pid": 20683,
+      "ppid": 20679,
+      "rssKiB": 56160
+    },
+    {
+      "pid": 20686,
+      "ppid": 20679,
+      "rssKiB": 516704
+    }
+  ],
+  "code": 0,
+  "signal": null,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "elapsedMs": 3143,
+  "stopReason": null,
+  "finishedAt": "2026-09-17T18:07:57.834Z"
+}

@@ -118,3 +118,9 @@ ActualSDK API defect reproduced025: BaseWallet.scopesFrom nowrequires additional
 U01 resumed: latest63 focused regressions and CLI compatibility pass. Browser post026 exceeded sampled2GiB while debugger was enabled and cleaned up. Diagnostic instrumentation now defaults off. Implement supported SDK524288-point BN254 prefix after mandatory full-file verification; preserve other setup and unchanged540s/2GiB limits. Genuine browser proof remains unqualified.
 
 U01: uninstrumented browserpost028 exceeded aggregate memory limit at2379664KiB after221875ms; cleanup complete. Actual HTTPS setup028 and UI-only journey029 pass. Next isolate proof input lifetime and retain all local/node proof verification under unchanged limits. No actual browser proof is qualified.
+
+U01 milestone ae39dd0 pushed. Streaming proof candidate passes16 checks; boundedSDK031build910496KiB, cleaned. Genuine browser031 in progress under unchanged bounds. Quarantine prevents reuse of partially failed proof backend; same SDK circuits and normal local/node proof verification remain required.
+
+Browser031 stopped at2121728KiB/221171ms before completion; supplemental sampling attributes about1.3GiB toChromium and0.7GiB tocombinedtest/node. Candidate033 defersunusedSDKartifactobjects and removes whole-file hashbuffers inhosting generator.65focusedchecks andfee/deployUI033 pass; genuine034 inprogress with bounded public BBstage observation, no debugger.
+
+U01 blocked: genuine browser proof exceeded aggregate memory in034/036; final038 hosting/config/keyboard/journey and CLI pass. T02 active: implement flagged screening-to-refund journey in existing bounded real-proof harness. No production readiness claim.

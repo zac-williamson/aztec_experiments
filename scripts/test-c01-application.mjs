@@ -50,7 +50,7 @@ async function writeBrowserResult(directory,result) {
 }
 async function browserWorker(directory) {
   let result={passed:false,failure:'Browser driver did not complete'};
-  try {const control=await readPrivateControl();const {runU01BrowserPost}=await import('./u01-browser-post.mjs');result=await runU01BrowserPost({...control,directory,onStage:stage=>process.stdout.write(JSON.stringify({browserStage:stage})+'\n')});}
+  try {const control=await readPrivateControl();const {runU01BrowserPost}=await import('./u01-browser-post.mjs');result=await runU01BrowserPost({...control,directory,observeProofStages:true,onStage:stage=>process.stdout.write(JSON.stringify({browserStage:stage})+'\n')});}
   catch {result={passed:false,failure:'Browser driver failed; raw errors omitted'};}
   await writeBrowserResult(directory,result);process.exitCode=result.passed?0:1;
 }
@@ -242,8 +242,9 @@ async function parent() {
         assert(path.resolve(descriptor.backupPath).startsWith(directory+path.sep));
         if(report.stopReason)throw Error('Browser launch cancelled');
         const remaining=DEADLINE_MS-(performance.now()-started)-10000;assert(remaining>0);
-        browserChild=spawn(process.execPath,[SELF,'--browser-worker',directory],{cwd:ROOT,detached:true,stdio:['pipe','pipe','ignore'],env:{PATH:path.dirname(process.execPath)+':/usr/bin:/bin',HOME:process.env.HOME,TMPDIR:directory,NODE_OPTIONS:'',...(process.env.PLAYWRIGHT_BROWSERS_PATH?{PLAYWRIGHT_BROWSERS_PATH:process.env.PLAYWRIGHT_BROWSERS_PATH}:{})}});
-        let progress='';browserChild.stdout.on('data',bytes=>{progress+=bytes.toString();if(progress.length>4096){progress='';return;}let newline;while((newline=progress.indexOf('\n'))>=0){const line=progress.slice(0,newline);progress=progress.slice(newline+1);try{const {browserStage}=JSON.parse(line);if(!['local-https','browser-start','wallet-software','public-config-import','encrypted-wallet-restore','wallet-connect-and-status','actual-gui-post'].includes(browserStage))continue;const record={browserStage,elapsedMs:Math.round(performance.now()-started)};(report.browserStages??=[]).push(record);console.log(JSON.stringify(record));}catch{}}});
+        report.browserDriverHeapLimitMiB=64;
+        browserChild=spawn(process.execPath,['--max-old-space-size=64',SELF,'--browser-worker',directory],{cwd:ROOT,detached:true,stdio:['pipe','pipe','ignore'],env:{PATH:path.dirname(process.execPath)+':/usr/bin:/bin',HOME:process.env.HOME,TMPDIR:directory,NODE_OPTIONS:'',...(process.env.PLAYWRIGHT_BROWSERS_PATH?{PLAYWRIGHT_BROWSERS_PATH:process.env.PLAYWRIGHT_BROWSERS_PATH}:{})}});
+        let progress='';browserChild.stdout.on('data',bytes=>{progress+=bytes.toString();if(progress.length>4096){progress='';return;}let newline;while((newline=progress.indexOf('\n'))>=0){const line=progress.slice(0,newline);progress=progress.slice(newline+1);try{const {browserStage}=JSON.parse(line);if(!['local-https','browser-start','wallet-software','public-config-import','encrypted-wallet-restore','wallet-connect-and-status','actual-gui-post','prover-start','prover-load','prover-accumulate','prover-finalize','prover-hiding-key','prover-verify','prover-compress'].includes(browserStage))continue;const record={browserStage,elapsedMs:Math.round(performance.now()-started)};(report.browserStages??=[]).push(record);console.log(JSON.stringify(record));}catch{}}});
         const ended=new Promise((resolve,reject)=>{browserChild.once('error',reject);browserChild.once('close',(code,signal)=>resolve({code,signal}));});
         assert(Number.isSafeInteger(browserChild.pid));await treeFor(browserChild.pid).sample();
         browserChild.stdin.on('error',()=>{});browserChild.stdin.end(JSON.stringify({...descriptor,...browserControl,timeoutMs:Math.min(480000,Math.floor(remaining))}));

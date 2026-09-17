@@ -164,6 +164,7 @@ function publicOperationFailure(error) {
     WORKER_UNAVAILABLE:'Browser workers are unavailable or blocked. Check the browser and hosting settings.',
     CRYPTO_UNAVAILABLE:'Browser cryptography is unavailable.',
     LOCKS_UNAVAILABLE:'Browser storage locks are unavailable; wallet actions cannot safely continue.',
+    BB_BROWSER_PROOF_FAILED:'Browser proving did not complete. Reload and restore your wallet, then check saved transactions before trying again.',
     BB_BROWSER_PROVER_CONFIGURATION:'Browser proving setup could not be verified. Reload this page and check the locally hosted setup files.',
     OPFS_UNAVAILABLE:'Private browser file storage is unavailable or blocked. Wallet storage cannot start.',
     STORAGE_UNAVAILABLE:'Browser storage is unavailable or blocked. Preserve your recovery file before changing browser settings.',

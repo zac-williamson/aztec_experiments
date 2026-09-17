@@ -9,13 +9,13 @@ import {chromium} from 'playwright';
 import {generateHosting} from '../deploy/hosting-config.mjs';
 import {ROOT,assertNodeVersion} from './toolchain.mjs';
 
-export async function runU01BrowserPost({directory,origin,nodeUrl,ethereumUrl,rpcToken,publicConfig,backupPath,backupPassword,ethereumAccount,message,timeoutMs=480000,diagnostic=false,onStage=()=>{}}) {
+export async function runU01BrowserPost({directory,origin,nodeUrl,ethereumUrl,rpcToken,publicConfig,backupPath,backupPassword,ethereumAccount,message,timeoutMs=480000,diagnostic=false,observeProofStages=false,onStage=()=>{}}) {
  assertNodeVersion();
  const started=Date.now();let browser,child,timer,page,debuggerSession,stage='validation';
  const mark=value=>{stage=value;onStage(value);};
  const external=new Set(),csp=new Set(),paths=new Set(),failedHttp=new Map(),cspDetails=[];
  const publicPath=value=>/^\/(?:rpc\/(?:aztec|ethereum)|(?:user|feed|censor|deploy|fee-juice)\.html|(?:aztec_bundle|public-feed|bb-main.worker|bb-thread.worker|sqlite.worker|sqlite3-opfs-async-proxy)\.js|(?:sqlite3|acvm_js_bg|noirc_abi_wasm_bg)\.wasm|crs\/(?:crs-manifest\.json|g1\.dat|g1_uncompressed\.dat|g2\.dat|grumpkin_g1\.dat))$/.test(value)?value:'other-local-path';
- const observation={passed:false,sourceStage:stage,elapsedMs:0,diagnosticInstrumentation:diagnostic,performanceQualified:false,diagnosticScope:diagnostic?'Error formatter and catch breakpoint observation; original application behavior preserved.':'No formatter wrapper or debugger enabled; GUI wall time only, not isolated proof performance.'};
+ const observation={passed:false,sourceStage:stage,elapsedMs:0,diagnosticInstrumentation:diagnostic,proofStageObservation:observeProofStages,performanceQualified:false,diagnosticScope:diagnostic?'Error formatter and catch breakpoint observation; original application behavior preserved.':'No formatter wrapper or debugger enabled; GUI wall time only, not isolated proof performance.'};
  const requireValue=(condition)=>{if(!condition)throw Error('Invalid disposable browser test parameters');};
  const local=value=>{const u=new URL(value);requireValue(['http:','https:'].includes(u.protocol)&&u.hostname==='127.0.0.1'&&u.port&&!u.username&&!u.password&&!u.search&&!u.hash&&u.pathname==='/');return u;};
  const site=local(origin),node=local(nodeUrl),ethereum=local(ethereumUrl);
@@ -130,6 +130,19 @@ export async function runU01BrowserPost({directory,origin,nodeUrl,ethereumUrl,rp
    });
    const breakpoint=await debuggerSession.send('Debugger.setBreakpointByUrl',{url:site.origin+'/user.html',lineNumber,columnNumber});
    catchBreakpointId=breakpoint.breakpointId;requireValue(breakpoint.locations.length===1);
+   }
+   if(observeProofStages){
+    const phases=new Set(['start','load','accumulate','finalize','hiding-key','verify','compress']);let observed=0;
+    await page.exposeBinding('recordU01ProofStage',(_source,phase)=>{if(phases.has(phase)&&observed++<256)onStage('prover-'+phase);});
+    await page.evaluate(()=>{
+     const actual=globalThis.__aztec.Barretenberg.getSingleton();
+     for(const [method,phase] of [['chonkStart','start'],['chonkLoad','load'],['chonkAccumulate','accumulate'],['chonkProve','finalize'],['chonkComputeVk','hiding-key'],['chonkVerify','verify'],['chonkCompressProof','compress']]){
+      const original=actual[method];if(typeof original!=='function')throw Error('Proof stage boundary unavailable');
+      // Observe public method names only; preserve exact receiver, arguments and
+      // returned promise. No debugger, bytecode, witness or proof data captured.
+      actual[method]=function(...args){void globalThis.recordU01ProofStage(phase).catch(()=>{});return Reflect.apply(original,this,args);};
+     }
+    });
    }
    mark('actual-gui-post');await page.locator('#msgText').fill(message);const postStarted=Date.now();await page.locator('#postBtn').click();
    await page.waitForFunction(()=>{const text=document.getElementById('postStatus')?.textContent||'';return text.includes('Message included. Public content and transaction timing remain observable.')||!!document.querySelector('#postStatus .error');},{},{timeout:remaining()});

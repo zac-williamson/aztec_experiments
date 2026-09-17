@@ -1,0 +1,2 @@
+{"passed":true,"scope":"Actual built HTTPS DOM with explicit UI-state engine and read-result fixtures; no genuine wallet/transaction/proof qualification","statusNavigation":true,"postBusyPreventsRepeat":true,"untrustedTextLiteral":true,"screeningAndTimeGates":true,"withdrawalActionExplicit":true,"pendingSettlementKeepsClaimPage":true,"recoveryRefreshAllStates":true,"rpcRequests":0,"externalRequests":0}
+{"boundedBrowser":true,"elapsedMs":5551,"peakRSSKiB":864992,"stopReason":null,"ownedTreeAbsent":true}

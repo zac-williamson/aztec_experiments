@@ -4,6 +4,10 @@ import {createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 const digest=x=>createHash('sha256').update(x).digest('base64');
 const quote=x=>JSON.stringify(x);
+// CRS and SDK files are large. Hash them with bounded scratch space instead of
+// retaining whole-file buffers in the hosting generator's process.
+function fileDigest(filename){const hash=createHash('sha256'),buffer=Buffer.allocUnsafe(256*1024),fd=fs.openSync(filename,'r');try{let count;while((count=fs.readSync(fd,buffer,0,buffer.length,null))>0)hash.update(buffer.subarray(0,count));return hash.digest('hex');}finally{fs.closeSync(fd);}}
+
 function attribute(value){return value.replace(/&(?:quot|apos|amp|lt|gt|#\d+|#x[0-9a-f]+);/gi,m=>{const name=m.slice(1,-1);if(name[0]==='#')return String.fromCodePoint(name[1].toLowerCase()==='x'?parseInt(name.slice(2),16):Number(name.slice(1)));return {quot:'"',apos:"'",amp:'&',lt:'<',gt:'>'}[name.toLowerCase()];});}
 export function contentSecurityPolicy(html,origins=[]){
  const hashes=new Set();
@@ -20,7 +24,7 @@ export function generateHosting({dist,site,origins=[],certificate,key,local=fals
  const publicNames=new Set(['feed.html','user.html','censor.html','deploy.html','fee-juice.html','aztec_bundle.js','public-feed.js','public-feed-metadata.json','sdk-manifest.json','bb-main.worker.js','bb-thread.worker.js','sqlite.worker.js','sqlite3-opfs-async-proxy.js','sqlite3.wasm','acvm_js_bg.wasm','noirc_abi_wasm_bg.wasm','crs/crs-manifest.json','crs/g1.dat','crs/g1_uncompressed.dat','crs/g2.dat','crs/grumpkin_g1.dat']);
  const files=[];function walk(dir){for(const item of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,item.name);if(item.isSymbolicLink())throw Error('Static distribution symlink rejected');if(item.isDirectory())walk(p);else{const relative=path.relative(dist,p).split(path.sep).join('/');if(!publicNames.has(relative)||!/^[a-zA-Z0-9_./-]+\.(?:html|js|css|wasm|dat|json|png|svg|woff2)$/.test(relative)||relative.split('/').some(p=>p.startsWith('.')))continue;files.push(relative);}}}walk(dist);files.sort();
  if(!files.includes('feed.html'))throw Error('Built public feed is required');
- const inventory=files.map(name=>({path:name,sha256:createHash('sha256').update(fs.readFileSync(path.join(dist,name))).digest('hex')}));
+ const inventory=files.map(name=>({path:name,sha256:fileDigest(path.join(dist,name))}));
  const lines=['{',' admin off',...(local?[' auto_https off']:[]),'}',site+' {',...(local?[' bind 127.0.0.1']:[]),' root * '+quote(dist),...(certificate?[' tls '+quote(certificate)+' '+quote(key)]:[]),' route {','  encode zstd gzip','  header {','   Cross-Origin-Opener-Policy same-origin','   Cross-Origin-Embedder-Policy require-corp','   Cross-Origin-Resource-Policy same-origin','   X-Content-Type-Options nosniff','   Referrer-Policy no-referrer','   Permissions-Policy "camera=(), microphone=(), geolocation=()"','   Cache-Control "no-cache"',...(!local?['   Strict-Transport-Security "max-age=31536000"']:[]),'   -Server','  }','  @home path /','  redir @home /feed.html 302'];
  for(const name of files.filter(n=>n.endsWith('.html'))){const csp=contentSecurityPolicy(fs.readFileSync(path.join(dist,name),'utf8'),origins);lines.push('  @page'+lines.length+' path /'+name);lines.push('  header @page'+(lines.length-1)+' Content-Security-Policy '+quote(csp));}
  lines.push('  @allowed path '+files.map(x=>'/'+x).join(' '),'  handle @allowed {','   file_server','  }','  respond 404',' }','}');

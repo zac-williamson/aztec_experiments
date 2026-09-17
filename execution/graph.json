@@ -1153,7 +1153,7 @@
       "title": "Complete user flows and production hosting configuration",
       "phase": "engineering",
       "kind": "internal",
-      "status": "active",
+      "status": "blocked",
       "depends_on": [
         "W03",
         "F01",
@@ -1201,8 +1201,13 @@
       ],
       "evidence": "evidence/U01.json",
       "evidence_mode": "historical",
-      "blocker": null,
-      "checkpoint": "Actual HTTPS setup028 passes3968ms/1112752KiB;155 focused checks and GUI state journey029 pass. Uninstrumented real browserpost028 stopped at aggregate2379664KiB/221875ms; cleanup complete, no proof qualified. Investigating pinned SDK eager proof-input allocation/queued work and implementing bounded streaming candidate; unchanged540s/2GiB and all proof verification required.",
+      "blocker": {
+        "reason": "Genuine browser post has not completed within the unchanged 540s/2GiB whole-test bound; runs034 and036 exceeded aggregate memory during third Chonk accumulation.",
+        "evidence": "evidence/U01/browser-post-034.json; evidence/U01/browser-post-036.json; evidence/U01/disposition-038.md",
+        "unblock": "Complete genuine browser proving and canonical effects verification within the current bound, or obtain an explicitly reviewed resource policy change. No automatic limit increase.",
+        "next_action": "Preserve failed proof evidence and continue independent full application journey tests in T02."
+      },
+      "checkpoint": "Browser proof runs034/036 exceed aggregate2GiB at third accumulation. Hosting/config/keyboard/journey038 and CLI pass. Continue independent T02; no completed browser proof.",
       "priority": 19
     },
     {
@@ -1326,7 +1331,7 @@
       "title": "Demonstrate full bridge journey with real proofs",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "T01",
         "W03",
@@ -1348,7 +1353,9 @@
         "billboard/test/",
         "apps/",
         "censor-daemon/",
-        "execution/"
+        "execution/",
+        "scripts/",
+        "TESTING.md"
       ],
       "plan": "tasks/T02.md",
       "actions": [
@@ -1378,7 +1385,7 @@
       "evidence": "evidence/T02.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "Resume existing real-proof harness: implement flagged post, screening debt, eligible exit and actual Outbox refund with exact state checks; serialized540s/2GiB runs.",
       "priority": 22
     },
     {

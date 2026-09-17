@@ -1,5 +1,10 @@
-import { createPXE as createSdkPXE } from '@aztec/pxe/client/bundle';
+import { Buffer } from 'node:buffer';
+import { createPXE as createSdkPXE } from '@aztec/pxe/client/lazy';
 import { Barretenberg, BackendType } from '@aztec/bb.js';
+import { BBLazyPrivateKernelProver } from '@aztec/bb-prover/client/lazy';
+import { WASMSimulator } from '@aztec/simulator/client';
+import { ChonkProofWithPublicInputs } from '@aztec/stdlib/proofs';
+import { proveBrowserChonk } from './browser-chonk-stream.mjs';
 
 // PXE/prover diagnostics may contain private execution data. The application
 // reports bounded progress and public receipt identifiers through its own UI.
@@ -43,11 +48,23 @@ export async function initializeBrowserProver(supplied) {
     return proverOrOptions;
   }catch{throw browserFailure();}
 }
+// Keep the SDK circuit simulator/artifact provider. Only the application-to-BB
+// input lifetime changes: each circuit is consumed before expanding the next.
+class BrowserPrivateKernelProver extends BBLazyPrivateKernelProver {
+  async createChonkProof(executionSteps) {
+    const bb=await Barretenberg.initSingleton({...this.options,logger:discard});
+    const result=await proveBrowserChonk(executionSteps,bb);
+    const proof=ChonkProofWithPublicInputs.fromBufferArray(result.proofFields);
+    proof.compressedProof=result.compressedProof?Buffer.from(result.compressedProof):undefined;
+    return proof;
+  }
+}
 export async function createPXE(node,config,options={}) {
   let selected=options;
   if(typeof window !== 'undefined') {
     const proverOrOptions=await initializeBrowserProver(options.proverOrOptions);
-    selected={...options,proverOrOptions};
+    const simulator=options.simulator??new WASMSimulator();
+    selected={...options,simulator,proverOrOptions:new BrowserPrivateKernelProver(simulator,{...proverOrOptions,logger:privateLogger})};
   }
   return createSdkPXE(node,config,{...selected,loggers:{store:privateLogger,pxe:privateLogger,prover:privateLogger}});
 }

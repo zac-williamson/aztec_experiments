@@ -1,0 +1,11 @@
+{"passed":false,"sourceStage":"cold-crs-initialization","errorClass":"Error","cspBlocked":[]}
+{"passed":false,"ownedServerStopped":true,"temporaryDirectoryRemoved":true}
+file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-u01-hosting-browser.mjs:58
+}catch(error){console.log(JSON.stringify({passed:false,sourceStage,errorClass:error.name,cspBlocked}));throw new Error('HTTPS rehearsal failed at '+sourceStage+' ('+error.name+')');}finally{clearTimeout(timeout);await browser?.close();if(child&&child.exitCode===null&&child.signalCode===null){const closed=once(child,'close');child.kill('SIGTERM');const kill=setTimeout(()=>child.kill('SIGKILL'),2000);await closed;clearTimeout(kill);}fs.rmSync(dir,{recursive:true,force:true});console.log(JSON.stringify({passed,ownedServerStopped:!child||child.exitCode!==null||child.signalCode!==null,temporaryDirectoryRemoved:!fs.existsSync(dir)}));}
+                                                                                                             ^
+
+Error: HTTPS rehearsal failed at cold-crs-initialization (Error)
+    at file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-u01-hosting-browser.mjs:58:110
+
+Node.js v24.21.0
+{"boundedBrowser":false,"elapsedMs":705235,"peakRSSKiB":961024,"stopReason":null,"ownedTreeAbsent":true}

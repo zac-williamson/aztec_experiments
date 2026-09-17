@@ -411,3 +411,32 @@ verify every source byte before selecting the format-correct prefix. G2 and the
 recorded separately. This removes historical overprovisioning, not verification.
 The 71 focused checks pass; actual transaction proof capacity and aggregate
 memory remain subject to the unchanged nine-minute/2 GiB qualification.
+
+## Browser proof input lifetime candidate
+
+Uninstrumented browserpost028 still exceeded aggregate2GiB. The pinned SDK
+expands every circuit/witness then queues all accumulation inputs at once. The
+browser-only candidate keeps its circuit simulation and artifact provider, but
+expands/loads/accumulates one circuit at a time through public BB APIs. It must
+preserve the final hiding-key generation, structured local proof verification,
+field order and compressed proof conversion; the genuine node still verifies
+submission. Do not label this a memory fix until actual proving fits the bound.
+Any partially failed backend is quarantined until a fresh instance/page, since
+reset-after-failure semantics have not been established. No network prover,
+proof bypass, external service or resource-limit increase is introduced.
+
+## Deferred browser artifact evaluation
+
+Candidate033 uses the pinned SDK lazy PXE and lazy kernel artifact provider,
+retaining the browser streaming override. Actual emitted code contains50 deferred
+kernel JSON factories, no bundled artifact provider or eager client/reset VK
+tables. All code remains in one51,979,520-byte IIFE; there are no per-circuit HTTP
+requests, and download size has not improved. This targets object residency, not
+network throughput. Final cold/warm capacity still needs genuine measurement.
+The hosting inventory now hashes large assets incrementally with256KiB scratch
+space; exact full-content hash/route/CSP behavior is tested unchanged.
+
+The UI-specific fee/deployment check033 passes with zero RPC/external requests;
+its engine results are explicit fixtures, not payment/deployment proof evidence.
+It checks amount/unknown-outcome guidance, duplicate prevention, recovery export
+and exact deployment-to-public-configuration transfer.

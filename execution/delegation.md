@@ -527,3 +527,13 @@ Disjoint source ownership; no delegated heavy jobs.
 - model_failure_review: supported verified BN254 initialization budget in shared/crs-client.js, shared/private-pxe.mjs and focused tests.
 - deployment_gap_review: read-only remaining GUI journey/driver review, evidence only.
 - Root: browser assertion integration, builds and serialized genuine transaction qualification. No delegated heavy jobs.
+
+## U01 streaming proof input candidate
+- model_failure_review: shared/browser-chonk-stream.mjs and focused sequence/error checks.
+- deploy_fixture_integration: independent pinned-SDK equivalence review, evidence only.
+- Root: internal browser prover injection, integration, serial build and real proof.
+No changes to circuit semantics, verification requirements, deadline or memory bound.
+Baseline browser/hosting milestone committed and pushed as ae39dd0 before this candidate.
+
+## T02 resumed full journey
+Root owns harness orchestration and serial verification. Delegate flagged screening helper and explicit posted-state exit support in disjoint files; no agent may launch heavy proof runs.
