@@ -371,3 +371,13 @@ contract consumes that exact L1 message. A note's presence is not confirmation o
 an unresolved saved transaction. Claim actions make one submission attempt.
 
 Extend W03 documentation scope to TESTING.md to document the actual bounded recovery profiles and tightened resource limit. No change to contract scope or release gates.
+
+## Model qualification and frontend dependency (2026-09-17)
+
+Remove the M03 -> U01 scheduling edge: UI/hosting consumes the already implemented
+moderation decision/queue interfaces, not a successfully qualified model. The
+failed model benchmark must not stall independent wallet, rendering, accessibility
+or hosting work. Keep M03 mandatory through O01 and R01 and therefore every
+production release. No quality criterion or release gate is removed or passed;
+U01 must not present an unqualified model as approved. This refines artifact
+dependencies while preserving the production-readiness requirement.

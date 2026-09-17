@@ -1,0 +1,71 @@
+{
+  "runtime": {
+    "implementation": "CPython",
+    "version": "3.14.3"
+  },
+  "scope": "finite abstract transition checking, not contract or cryptographic proof",
+  "sources": {
+    "billboard/portal/src/PortalMessages.sol": "d727cc044eb2966a99fd8459eef27923ecc80c0b89a0966b130af8422d9ef4eb",
+    "billboard/portal/src/BillboardPortal.sol": "33012ac43e6ff30852a28d4a52288e65f9d57548a3bcd376525e04de87afd315",
+    "billboard/billboard_contract/src/main.nr": "76e8d71ca6bfc8c49395ccd5009b9dabb1567683cd5304e7475b201a531d37b5",
+    "billboard/billboard_contract/src/lib.nr": "16b594659ca235560c45f5d852cd9c66d73c9ade468dcabedc8ed3c171833e85"
+  },
+  "results": {
+    "bridge": {
+      "depth": 9,
+      "correct": {
+        "states": 482,
+        "edges": 1193,
+        "counterexample": null
+      },
+      "mutations": {
+        "duplicate-claim": {
+          "states": 18,
+          "edges": 26,
+          "counterexample": [
+            "deposit(0,1)",
+            "claim(0,1)",
+            "claim(0,1)"
+          ],
+          "violation": "one live deposit note per consumed receipt"
+        }
+      }
+    },
+    "screening": {
+      "depth": 11,
+      "correct": {
+        "states": 4593,
+        "edges": 5384,
+        "counterexample": null
+      },
+      "mutations": {
+        "skipped-screening": {
+          "states": 18,
+          "edges": 18,
+          "counterexample": [
+            "tick",
+            "tick",
+            "post-real",
+            "post-real"
+          ],
+          "violation": "screening must not skip an immature real predecessor"
+        },
+        "debt-reset": {
+          "states": 420,
+          "edges": 476,
+          "counterexample": [
+            "tick",
+            "post-real",
+            "tick",
+            "flag(1)",
+            "tick",
+            "post-dummy",
+            "withdraw"
+          ],
+          "violation": "withdrawal preserves outstanding screening and cooldown debt"
+        }
+      }
+    }
+  },
+  "elapsedSeconds": 0.027
+}

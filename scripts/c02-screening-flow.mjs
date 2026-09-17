@@ -4,11 +4,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {Contract} from '@aztec/aztec.js/contracts';
+import {DomainSeparator} from '@aztec/constants';
 import {Barretenberg,BackendType} from '@aztec/bb.js';
 import {Fr} from '@aztec/foundation/curves/bn254';
 import {poseidon2HashWithSeparator} from '@aztec/foundation/crypto/poseidon';
 import {loadContractArtifact} from '@aztec/stdlib/abi';
 import {NoteStatus} from '@aztec/stdlib/note';
+import {computeUniqueNoteHash,siloNoteHash} from '@aztec/stdlib/hash';
 import {TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
 import {EmbeddedWallet} from '@aztec/wallets/embedded';
 import {contractInputs} from './artifact-provenance.mjs';
@@ -53,7 +55,24 @@ export async function proveAndIncludeC02Screening({node,preparation,instance,cla
     const native={backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1};
     for(const key of ['backend','bbPath','threads'])assert.equal(Barretenberg.getSingleton().options[key],native[key]);
     mark('reopen-wallet');
-    wallet=await EmbeddedWallet.create(node,{ephemeral:true,
+    // Local test-only oracle wrapper. It supplies an authentic path for the wrong
+    // leaf only while an explicit membership probe is armed; production code and
+    // dependency sources are untouched. A mere 'note not found' oracle error is
+    // not accepted as constrained membership rejection.
+    let membershipProbe=null;
+    const walletNode=new Proxy(node,{get(target,key){
+      if(key==='getNoteHashMembershipWitness')return async(blockHash,noteHash)=>{
+        const actual=await target.getNoteHashMembershipWitness(blockHash,noteHash);
+        if(membershipProbe&&blockHash.toString()===membershipProbe.anchorHash&&actual===undefined){
+          if(!noteHash.equals(membershipProbe.expectedHash))throw new Error('T01_UNEXPECTED_MEMBERSHIP_LEAF');
+          assert(!noteHash.equals(membershipProbe.authenticHash));
+          membershipProbe.substitutions++;return membershipProbe.authenticWitness;
+        }
+        return actual;
+      };
+      const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;
+    }});
+    wallet=await EmbeddedWallet.create(walletNode,{ephemeral:true,
       pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
     const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'c02-disposable');
     assert(manager.address.equals(account.address));await wallet.registerContract(instance,boardArtifact);await wallet.pxe.sync();
@@ -187,9 +206,58 @@ export async function proveAndIncludeC02Screening({node,preparation,instance,cla
     assert.deepEqual((await wallet.pxe.getSyncedBlockHeader()).toBuffer(),anchor.toBuffer());
     observation.wrongChain={rejected:true,reason:'C02 wrong chain',mutatedIncludedHint:true,
       authenticSecondReceipt:false,originalNoteUnchanged:true,stage:'PXE constrained witness generation; no tx sent'};
+    // Keep the note's content, owner, slot and contract unchanged. Alter only
+    // its commitment randomness or settled nonce. Supply the real child's path
+    // for that nonexistent leaf, forcing the Noir membership constraint to reject
+    // rather than relying on the honest node refusing to provide a witness.
+    assert(child.metadata&&integer(child.metadata.stage)===3n,'Expected settled hinted-note metadata');
+    assert.equal(integer(child.metadata.maybe_note_nonce),first.note.noteNonce.toBigInt());
+    // Pinned aztec-nr macros/notes.nr packs note fields then owner/randomness;
+    // note/utils.nr prefixes the storage slot and NOTE_HASH separator. Check the
+    // reconstruction against the PXE's actual note hash before mutating anything.
+    const innerHashForRandomness=randomness=>poseidon2HashWithSeparator([
+      first.note.storageSlot,...first.note.note.items,first.note.owner.toField(),randomness,
+    ],DomainSeparator.NOTE_HASH);
+    assert((await innerHashForRandomness(first.note.randomness)).equals(first.note.noteHash),
+      'Pinned PostNote hash reconstruction differs from actual included note');
+    const authenticHash=await computeUniqueNoteHash(first.note.noteNonce,
+      await siloNoteHash(first.note.contractAddress,first.note.noteHash));
+    const anchorHash=(await anchor.hash()).toString();
+    const authenticWitness=await node.getNoteHashMembershipWitness(await anchor.hash(),authenticHash);
+    assert(authenticWitness,'Actual included child must have a membership witness');
+    observation.membershipMutations=[];
+    for(const field of ['randomness','settledNonce']){
+      const original=field==='randomness'?integer(child.randomness):integer(child.metadata.maybe_note_nonce);
+      const replacement=original===1n?2n:1n;
+      const changed=field==='randomness'?{...child,randomness:replacement}
+        :{...child,metadata:{...child.metadata,maybe_note_nonce:replacement}};
+      mark('reject-mutated-'+field+'-membership');
+      const alteredInner=field==='randomness'?await innerHashForRandomness(new Fr(replacement)):first.note.noteHash;
+      const alteredNonce=field==='settledNonce'?new Fr(replacement):first.note.noteNonce;
+      const expectedHash=await computeUniqueNoteHash(alteredNonce,await siloNoteHash(first.note.contractAddress,alteredInner));
+      assert(!expectedHash.equals(authenticHash));
+      assert.equal(await node.getNoteHashMembershipWitness(await anchor.hash(),expectedHash),undefined,
+        'Mutated leaf unexpectedly exists in the authentic note tree');
+      membershipProbe={anchorHash,authenticHash,expectedHash,authenticWitness,substitutions:0};
+      let constraintRejected=false;
+      try{
+        try{await wallet.pxe.proveTx(await requestPost(message('T01 rejected membership'),changed,undefined),options());}
+        catch(error){let cause=error;const seen=new Set();
+          for(let i=0;cause&&i<8&&!seen.has(cause);i++){seen.add(cause);
+            if(typeof cause.message==='string'&&cause.message.includes('Proving note inclusion failed')){constraintRejected=true;break;}
+            cause=cause.cause;}}
+        assert.equal(membershipProbe.substitutions,1,'Probe must inject exactly one authentic sibling path for the wrong leaf');
+        assert(constraintRejected,'Mutated '+field+' did not fail the constrained note-membership assertion');
+        assert.deepEqual(await logical(),first.fields);await exactDeposit(first.fields,first.tx);
+        assert.deepEqual((await wallet.pxe.getSyncedBlockHeader()).toBuffer(),anchor.toBuffer());
+        observation.membershipMutations.push({field,rejected:true,reason:'Proving note inclusion failed',
+          mutatedIncludedHint:true,authenticSiblingPathForWrongLeaf:true,exactChangedLeafMatched:true,oracleSubstitutions:1,
+          originalNoteUnchanged:true,stage:'PXE constrained witness generation; no completed hostile proof and no tx sent'});
+      }finally{membershipProbe=null;}
+    }
     await post(message('C02 screening post'),child,undefined,anchor,first.fields,1n,first.fields[5]);
     await artifact(preparation);observation.passed=true;
-    observation.scope='genuine first-post and mature child screening proofs; exact state and mutated-chain rejection';
+    observation.scope='genuine first-post and mature child screening proofs; exact state, mutated-chain and constrained membership rejection';
     observation.limitations='One receipt, two real posts. Included foreign-history/owner/slot and grandchild/dummy cases are covered separately by maintained TXE tests. Actual public-inclusion deadline is checked and used for maturity; flagged and delayed-inclusion boundary cases are covered by TXE.';
     return observation;
   }catch(error){const failure=new Error(`C02_SCREENING_FAILED:${stage}:${error?.name??'Error'}`);

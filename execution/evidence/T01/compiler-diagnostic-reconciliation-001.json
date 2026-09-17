@@ -1,0 +1,2082 @@
+{
+  "schemaVersion": 1,
+  "kind": "diagnostic-reconciliation-inventory",
+  "assurance": "Read-only exact-byte inventory; no diagnostic closed and no hostile witness executed.",
+  "original": {
+    "path": "execution/evidence/P04/toolchain-compiler-diagnostics.json",
+    "sha256": "b1b7e398c6e566a064e7e51b63ebc2cba9a46e8e243660e991103bbbeccf6121",
+    "occurrences": 26,
+    "uniqueLocations": 12,
+    "constraintChecksDisabled": false,
+    "compilerFlags": [
+      "compile",
+      "--workspace",
+      "--force",
+      "--silence-warnings"
+    ]
+  },
+  "historicalSourceIdentities": {
+    "path": "execution/evidence/P04/compiler-diagnostic-review-sources.json",
+    "sha256": "b7016de6391e4ad7633d9e356234e6bfbd7df9429853fba715ea652bc85ae02f",
+    "records": [
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/context/private_context.nr",
+        "sha256": "29a0032aa88697997495a7ef73498d920d29bea222b48bdb3dcff170c2a9ab86",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/history/note.nr",
+        "sha256": "c4000743423e87df37423c8d21f97c7a4afe22a1b24e1beed4fd2e1d6b438c69",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/history/storage.nr",
+        "sha256": "c73be49d2d219051e1079cca667cf6f5caa23547ad0a969fcbcada5ce64fa395",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/keys/getters/mod.nr",
+        "sha256": "354144ac27ea16d71b3c090c0c4db02f07dd85b09a8656cf7dcccfb4173a374a",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/macros/functions/initialization_utils.nr",
+        "sha256": "6922a6f1042e5d24aa71ffdab27b2a2d5805ac6227296d39b7a9a86023ce6fe6",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/messages/delivery/constrained_delivery.nr",
+        "sha256": "f0adcbdc4a1bc79ed76779128a1376ecc318c9a9a0a895f717783e2bf9870193",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/messages/delivery/mod.nr",
+        "sha256": "7553f3e0d0a153aff1ae5d1ec191d9aaeff68eab2bd0010de3d3f0ac02cc79a0",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/messages/delivery/tag.nr",
+        "sha256": "7e9ad73c15754dbf3ddf6be8da00587f717422cfa58c086b7c21edc8252755bc",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/messages/delivery/tag_derivation.nr",
+        "sha256": "63f3433ecf0d9e332cc96ef79482855f1817e99d20ac15a1a9b9da5296bcb25c",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/messages/delivery/tag_secret_source.nr",
+        "sha256": "c000cb15961d12cd0b47ef44852a81f0255d52700f96d193e623a154cd7d7aa8",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/messages/encryption/aes128.nr",
+        "sha256": "33450dc6ed95e6c712dce4f77797dc9e05ec3a69397fbd189411198b25636d78",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/messaging.nr",
+        "sha256": "62844141beaaf6e3a028043136fc790de417ea48c85ca7c7233f9a6526a919cb",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/note/note_getter.nr",
+        "sha256": "6c974f964063a2bde1ee8fd05f8e5976e2ac9568a301fe7a7106f35f5bf83ad0",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/nullifier/utils.nr",
+        "sha256": "3e0bda86c100a2c80fa945763939720a1d30915b9ef0d9969154f7b044f24f1f",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/oracle/get_contract_instance.nr",
+        "sha256": "d9c296e45885a5a32e20b1f942ca6b00d150afcaf15b1d262f8ebdb239ce8903",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-packages",
+        "commit": "49a592109ec4f18d79212b43d621891aaf36f7b6",
+        "path": "noir-projects/noir-protocol-circuits/crates/private-kernel-lib/src/components/previous_kernel_for_tail_validator.nr",
+        "sha256": "db90c979ab9f432c96f46c16e7018fc6db6e7557d5ba712a17a2d1a4198e0573",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-packages",
+        "commit": "49a592109ec4f18d79212b43d621891aaf36f7b6",
+        "path": "noir-projects/noir-protocol-circuits/crates/private-kernel-lib/src/components/private_call_data_validator.nr",
+        "sha256": "2051d33161576bb6f2966bffb1b6e8f97733e2662a25a9f4958ff58e5f2b3946",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-packages",
+        "commit": "49a592109ec4f18d79212b43d621891aaf36f7b6",
+        "path": "noir-projects/noir-protocol-circuits/crates/private-kernel-lib/src/reset/key_validation_request/validate_key_validation_request.nr",
+        "sha256": "0adf4b2478ad79410249e73010608ca2f65f20befb7c92ed90cdcf013c2911a9",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-packages",
+        "commit": "49a592109ec4f18d79212b43d621891aaf36f7b6",
+        "path": "noir-projects/noir-protocol-circuits/crates/private-kernel-lib/src/reset/read_request/read_request_validator.nr",
+        "sha256": "7934b0ffb6f31c66c50bd1931b03d7fc35b74c7ff73abf799e71f15238800589",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-packages",
+        "commit": "49a592109ec4f18d79212b43d621891aaf36f7b6",
+        "path": "noir-projects/noir-protocol-circuits/crates/private-kernel-lib/src/reset/read_request/validate_pending_read_requests.nr",
+        "sha256": "1449a9b8d6c903b19815440797f4ac79f4c0d8717b4655d7fe846b83fa33250d",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-packages",
+        "commit": "49a592109ec4f18d79212b43d621891aaf36f7b6",
+        "path": "noir-projects/noir-protocol-circuits/crates/private-kernel-lib/src/reset/read_request/validate_settled_read_requests.nr",
+        "sha256": "a9e7d1f46b6d01b7b23b36d1ceda2c3342ce03b97ed718fcb9951c63581b45c1",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-packages",
+        "commit": "49a592109ec4f18d79212b43d621891aaf36f7b6",
+        "path": "noir-projects/noir-protocol-circuits/crates/types/src/contract_instance.nr",
+        "sha256": "0848cf9db4d20e0300df7a8d4025c6a7be7b9f11787a014aab6e29a777d62e64",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-packages",
+        "commit": "49a592109ec4f18d79212b43d621891aaf36f7b6",
+        "path": "noir-projects/noir-protocol-circuits/crates/types/src/data/storage_read.nr",
+        "sha256": "8dcc43c5f0354230b7126c7e08ec17345ac4639740f81e0c5a78bf3990a2d953",
+        "archiveByteComparison": "pass"
+      },
+      {
+        "repository": "aztec-packages",
+        "commit": "49a592109ec4f18d79212b43d621891aaf36f7b6",
+        "path": "noir-projects/noir-protocol-circuits/crates/types/src/merkle_tree/membership.nr",
+        "sha256": "17d5e69f114aea208a343dc3e61031cda9e11299de67658b17636e8db62e1134",
+        "archiveByteComparison": "pass"
+      }
+    ]
+  },
+  "currentBuild": {
+    "contractsManifestSha256": "934697a1b4982eaf78fb7c0ef1a6ca978f70bc8a8c0f0616c898469b06cf8a57",
+    "sdkManifestSha256": "8902630202adb88393625648ef5b5a1cb3f8d1ded053f5e8d24ff0900bfdc221",
+    "toolchain": {
+      "node": "24.21.0",
+      "aztec": "5.2.0",
+      "solidity": "0.8.27",
+      "foundry": "1.4.1",
+      "noir": {
+        "version": "1.0.0-beta.25",
+        "commit": "75061fab15986eedee4e7d9104ff87dd9fa4ca10",
+        "assets": {
+          "darwin-arm64": {
+            "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-beta.25/nargo-aarch64-apple-darwin.tar.gz",
+            "sha256": "63ed453d09a65bfc78eef63252423126959d41c85de0da0cf54289c5e266ceb5"
+          },
+          "linux-arm64": {
+            "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-beta.25/nargo-aarch64-unknown-linux-gnu.tar.gz",
+            "sha256": "4e86553af99e87c047bae40f1315234709e8d815f6158f3b8a00bf68f512a2b7"
+          },
+          "darwin-x64": {
+            "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-beta.25/nargo-x86_64-apple-darwin.tar.gz",
+            "sha256": "660567c645f841389b1e37ddebd4f6c75417763018ea034e08b28338bf27673c"
+          },
+          "linux-x64": {
+            "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-beta.25/nargo-x86_64-unknown-linux-gnu.tar.gz",
+            "sha256": "bf3410ab94933a4aebd1f988b67ae974c6c227f9456ed0f1e4a3716bb8a30fe9"
+          }
+        }
+      },
+      "sources": [
+        "https://install.aztec.network/5.2.0/versions",
+        "https://api.github.com/repos/noir-lang/noir/releases/tags/v1.0.0-beta.25",
+        "https://nodejs.org/en/blog/release/v24.21.0"
+      ]
+    },
+    "protocolPackageVersion": "5.2.0"
+  },
+  "applicationArtifacts": {
+    "billboard": {
+      "path": "apps/src/billboard/deploy/billboard_artifact.json",
+      "sha256": "50009f964ca8496c645e8bbb4d9a3b18621c9b26a7a2c7376e4f33c3b7e53696",
+      "noirVersion": "1.0.0-beta.25+75061fab15986eedee4e7d9104ff87dd9fa4ca10",
+      "functions": {
+        "_publish_post": {
+          "attributes": [
+            "abi_public",
+            "abi_only_self"
+          ],
+          "bytecodeSha256": "d23b6aebc786c341e0e3649461dbf0da7385ebbbb7b68b0d1077feba2cdb2e81",
+          "verificationKeySha256": null
+        },
+        "_set_portal_public": {
+          "attributes": [
+            "abi_public",
+            "abi_only_self"
+          ],
+          "bytecodeSha256": "33c63d7cb5d6408825c21bc0cc536ff8a5dce01ee63a54da591d23ece3ac5e8f",
+          "verificationKeySha256": null
+        },
+        "claim_deposit": {
+          "attributes": [
+            "abi_private"
+          ],
+          "bytecodeSha256": "4a33058dd337d6f3de14520defd974cb2844b6a5904d149e6e2eb2b409973bbd",
+          "verificationKeySha256": "7e04bb21557413df2751296b8488093d0e3bb30860b6d2ef297898280d5306cd"
+        },
+        "declare_immoral": {
+          "attributes": [
+            "abi_public"
+          ],
+          "bytecodeSha256": "dc0a6fbcf4e446b6daacdede71a24daf6dae942bfcc1199a4698e4018cce670f",
+          "verificationKeySha256": null
+        },
+        "get_base_cooldown": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "7d000917c009416ec04f21a052d88c9570e822a0716864178bac1732bdedf3b0",
+          "verificationKeySha256": null
+        },
+        "get_censor": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "85563dae535f31c288d535d98f1fd4c0d1f6be714ca2ee8f0697eb3fa793b42d",
+          "verificationKeySha256": null
+        },
+        "get_censor_response": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "f3c47f3e21349df57c9bd2cc6c04c83d44e8b07b8becc664dc96a25696dc0ccf",
+          "verificationKeySha256": null
+        },
+        "get_censor_response_length": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "ecda3e175bdbd8ce00bf94d97a498c1e5eecfb77707de990f4b6ac6d4b69f4a9",
+          "verificationKeySha256": null
+        },
+        "get_censor_window": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "ac4213f234113d14b02dc05382390a1692857204f96de4d59e9517a46aa179ed",
+          "verificationKeySha256": null
+        },
+        "get_config_hash": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "fccb4e5d0bf713789887c1b16e456e151582a87e3df0c82c36b01cc985b7de00",
+          "verificationKeySha256": null
+        },
+        "get_deployer": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "cfa3f21e9b69287ca6d6de3f631044716e43d923532e465134c064f15a85537a",
+          "verificationKeySha256": null
+        },
+        "get_deposit_ids": {
+          "attributes": [
+            "abi_utility"
+          ],
+          "bytecodeSha256": "efea3bfa3a1eee1a55378aa82a66eccce6aa74d933a991c8fbb3799f3d912075",
+          "verificationKeySha256": null
+        },
+        "get_deposit_info": {
+          "attributes": [
+            "abi_utility"
+          ],
+          "bytecodeSha256": "7e3f38a9c70d44d78496645ba5005013a6be9890e39a901c0758f0f3540127db",
+          "verificationKeySha256": null
+        },
+        "get_k_multiplier": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "377c36eb64475640247988a84aed142a38c07393a3ddbbb24432f60eb6b6ce7f",
+          "verificationKeySha256": null
+        },
+        "get_max_deposit": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "aea583a14050db1a8a274dc0fa6433c6d9f2ad0f43c7c640aea6564bfe4c980f",
+          "verificationKeySha256": null
+        },
+        "get_max_save_up": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "21e9814a1fb036bf8866aa22664297d370da0052070dc8e57875790785861651",
+          "verificationKeySha256": null
+        },
+        "get_min_deposit": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "11e8209b43067fc6dee338c847f96ec506edb172ff0ba819f23fd96617380fa3",
+          "verificationKeySha256": null
+        },
+        "get_moderation_policy": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "8e2ad4f00cd9a4ff3a0b425077215a64f49dbc3e103d8ce6ebbc4bf253356b9a",
+          "verificationKeySha256": null
+        },
+        "get_moderation_policy_snapshot": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "054490b14a6d57049c19cac3232102e88236bbbc3724673f76065e60b2544638",
+          "verificationKeySha256": null
+        },
+        "get_policy_version": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "3b65c231f5baa78dba0741249d01b41e80d510a887ea778cc84592a3506c3d0a",
+          "verificationKeySha256": null
+        },
+        "get_portal": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "c4d7140b26d07891f61d7c5f3408d6f07fd4b7e9f5ce8e57f2655d67d70e4fb2",
+          "verificationKeySha256": null
+        },
+        "get_post": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "5d97ef678103dbb37edddb9aad8e03957b6d5f757d293e484d15a1c7a5f6c858",
+          "verificationKeySha256": null
+        },
+        "get_post_count": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "5719790d39ee9ef2f7f818a7b1f4829862f21b61603c9e9d1f7a9fef2c9ca117",
+          "verificationKeySha256": null
+        },
+        "get_post_exists": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "3c658f418d39ed12489c1fc6269ce8edc0476feb7d38f99e12c2b080c217a8fd",
+          "verificationKeySha256": null
+        },
+        "get_post_flag_deadline": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "22c522d58d12cdefcd36cf8b72885cc18ee727a7fc5fc30240358f12b814aa94",
+          "verificationKeySha256": null
+        },
+        "get_post_flagged_by": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "78b0bb21818f6c072408dcf2b0021a12043e8b9d104518ae93725a482901f850",
+          "verificationKeySha256": null
+        },
+        "get_post_id": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "4fd96b316351fa402885c6506055c46ef8e0f95128c1971591ac703243a2ca71",
+          "verificationKeySha256": null
+        },
+        "get_post_length": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "74ef5b788cda1748e1942020c5f8a26de1347804f62fd49453e3c3f7c5d3f5bc",
+          "verificationKeySha256": null
+        },
+        "get_post_notes": {
+          "attributes": [
+            "abi_utility"
+          ],
+          "bytecodeSha256": "4487d6ccd44bdc0d6c1b548f25b56fd5a502f8689546dbee317d0289377b1810",
+          "verificationKeySha256": null
+        },
+        "get_post_policy_version": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "3af236afbfd766268891418f3341f7dfc9cfb88d82a2ea30ca5cd54e81823eca",
+          "verificationKeySha256": null
+        },
+        "get_post_time": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "02faa6a17d5e36bb6d6c64ac4cfffad47b2994c37666f530e383e04f7e14dee7",
+          "verificationKeySha256": null
+        },
+        "get_screen_hints": {
+          "attributes": [
+            "abi_utility"
+          ],
+          "bytecodeSha256": "fcc364eea7848672e9b5edd9ba9ce596a885051621681a797fa87b0bff0594fb",
+          "verificationKeySha256": null
+        },
+        "init": {
+          "attributes": [
+            "abi_public",
+            "abi_initializer"
+          ],
+          "bytecodeSha256": "efcce606545cc0c742c5a59d229b4d923d19c16aa4eaef461a8f14c3cd17b34e",
+          "verificationKeySha256": null
+        },
+        "is_portal_set": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "6f73388597d8328abac86efa5c5c39452426764b7e197795febd5f7a4bc12e99",
+          "verificationKeySha256": null
+        },
+        "is_post_flagged": {
+          "attributes": [
+            "abi_public",
+            "abi_view"
+          ],
+          "bytecodeSha256": "a936b491a251157517d0e70ec774da430304e9297f0404fd3bc44565bc2183b7",
+          "verificationKeySha256": null
+        },
+        "post": {
+          "attributes": [
+            "abi_private"
+          ],
+          "bytecodeSha256": "d61c961e889f1ad56004aecaa6fc19f02d6df0a0bf51d086766e631167a9aaaa",
+          "verificationKeySha256": "8685d93ade6790aeda2974c3d8f03d0effb3147b7dc3714ba57284b11b3eb1a5"
+        },
+        "set_moderation_policy": {
+          "attributes": [
+            "abi_public"
+          ],
+          "bytecodeSha256": "2045b3436743c91c6f5ba135af511c15ffdf52b1be012278180479a500502ab2",
+          "verificationKeySha256": null
+        },
+        "transfer_censor": {
+          "attributes": [
+            "abi_public"
+          ],
+          "bytecodeSha256": "6c993c619a9a786901ee067221fa17be9f10ef2a9d48846fbaf5ae5f25d6ec9a",
+          "verificationKeySha256": null
+        },
+        "update_portal": {
+          "attributes": [
+            "abi_private"
+          ],
+          "bytecodeSha256": "eb3513ff9f35682d67720141591a89c8d539d6a55926bb7856aa16fcbd37365f",
+          "verificationKeySha256": "586a0aa05feb8ee7c31713f5c7a2e1286d1361b2b4a47e3e1dfd84629dd67e7c"
+        },
+        "withdraw": {
+          "attributes": [
+            "abi_private"
+          ],
+          "bytecodeSha256": "fe180ec5b5ffd5e88c1a54e5503e86c96454f07cf547d25c664ce9555a8791c3",
+          "verificationKeySha256": "2288708a004037c59fcbae88c19866035c2c95c8e2d471a91d719fde75b04d53"
+        },
+        "offchain_receive": {
+          "attributes": [
+            "abi_utility"
+          ],
+          "bytecodeSha256": "9513ec53d5bdb2d917858c7160092a8d2e8501e3d5bc392e17af4d8400349cda",
+          "verificationKeySha256": null
+        },
+        "public_dispatch": {
+          "attributes": [
+            "abi_public"
+          ],
+          "bytecodeSha256": "cf61eb00e8ee5d14d370eba737dd459bae056b637eda5c7a68205e1f476913d1",
+          "verificationKeySha256": null
+        },
+        "sync_state": {
+          "attributes": [
+            "abi_utility"
+          ],
+          "bytecodeSha256": "453b6c455551a56d84325192bb75ebd68edde32b349271d110a11dd128e7b37b",
+          "verificationKeySha256": null
+        }
+      }
+    },
+    "privateFee": {
+      "path": "apps/src/billboard/private_fee_artifact.json",
+      "sha256": "fbb13295be38ed5672447b8b132357c36eb08c8f85dd5d4e2f9c01a0adec1c8f",
+      "noirVersion": "1.0.0-beta.25+75061fab15986eedee4e7d9104ff87dd9fa4ca10",
+      "functions": {
+        "balance_of": {
+          "attributes": [
+            "abi_utility"
+          ],
+          "bytecodeSha256": "6d81d8379b914138acae96e343c7d445186055695d500a1f29f7c02e850cdddd",
+          "verificationKeySha256": null
+        },
+        "mint": {
+          "attributes": [
+            "abi_private"
+          ],
+          "bytecodeSha256": "5690d1f92d43311997d5958ab1d011855d3dfd9942231c0a3caf49ac3c73faea",
+          "verificationKeySha256": "7c023c954c96d3f5bab443de3b7f230169c45a2d0b936a38ec2674a15af202c9"
+        },
+        "mint_and_pay_fee": {
+          "attributes": [
+            "abi_private"
+          ],
+          "bytecodeSha256": "be1d970f0f459378d90c62bd58ed3d8158bbe3b083ce32faeb33da299c10d16f",
+          "verificationKeySha256": "d26a938524353f14264dc0ec652d6a357c117e6f169aa7c3106357c513b0c19e"
+        },
+        "pay_fee": {
+          "attributes": [
+            "abi_private"
+          ],
+          "bytecodeSha256": "96286525a5726dbb4f7eb9f93097ecfe3e507c523e6b5799a080636f799ea5b8",
+          "verificationKeySha256": "cf2eec5803b86d991e445f49b3548b2ab0f787ab767ff442fdffcd34c4a0c6cd"
+        },
+        "recurse_subtract_balance_internal": {
+          "attributes": [
+            "abi_private",
+            "abi_only_self"
+          ],
+          "bytecodeSha256": "8eb8a689d90a2ab77ac2308925ebc62169d309d1c74c30ce456fb86a1021a6b3",
+          "verificationKeySha256": "319cc2f37302593543577752f63793f46ca7c0cf498faede02d0ea1b47f477d8"
+        },
+        "offchain_receive": {
+          "attributes": [
+            "abi_utility"
+          ],
+          "bytecodeSha256": "9513ec53d5bdb2d917858c7160092a8d2e8501e3d5bc392e17af4d8400349cda",
+          "verificationKeySha256": null
+        },
+        "sync_state": {
+          "attributes": [
+            "abi_utility"
+          ],
+          "bytecodeSha256": "74352be8332808b85ea8077e1b608f4eeac956e8e6cbaf55bc32da15288cab8e",
+          "verificationKeySha256": null
+        },
+        "public_dispatch": {
+          "attributes": [
+            "abi_public"
+          ],
+          "bytecodeSha256": "2bb83cd871c8ceb09b8530578425eefdc038cce35d2773c63e271f78640a3a91",
+          "verificationKeySha256": null
+        }
+      }
+    }
+  },
+  "protocolArtifactsEmbeddedInSdk": [
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/hiding_kernel_to_public.json",
+      "sha256": "85e47b2ceb1dc1c966d09ca0d560c3777a9efb139cfb679822ea0c6c1b83a87c",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/hiding_kernel_to_rollup.json",
+      "sha256": "cff32aa0c97728b5d19692cc0c40f8a13bf66d339134b68455fffd67de58ada0",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_init.json",
+      "sha256": "738a6531ccec45ebf9b330fea4e0b94a87c26b65ba2d3837b61546c3a9bd2eee",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_init_2.json",
+      "sha256": "34462969d08cecc211e5256367a953080398769e487e49dbfcb17f222c88543c",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_init_3.json",
+      "sha256": "01bafe40a1113735dd120652c39701fa92d99392a69bdf8b2de04ee2eabd39d9",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_init_simulated.json",
+      "sha256": "315d81d9fb98862b11d3b506beb809cdc1370889f893eb5bb7ed777731b6170e",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_inner.json",
+      "sha256": "ccb648f91f6e0731223cf7d40969c587400271a23c3b746ec7da7c7819c0a84b",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_inner_2.json",
+      "sha256": "ef86df8fb1e0803adfbc2944d1a8f29406a6ddf7268e3d2c8a22a9fe35b685f3",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_inner_3.json",
+      "sha256": "4ebe82800cf06c7f420e34d95827cc2ec45c9c341aec2aaa36337e6b081ed855",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_inner_simulated.json",
+      "sha256": "a6d80b88f1edd7cec28793c11ddf9d7a6f19c1c2b91b0ace6db084bc82b0dcbf",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_0_0_0_0_64_0_0_0.json",
+      "sha256": "786c6126e804c56aea846c8d52a7be08d6229da2a26a0eb01c8831a12cd89af3",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_0_0_0_64_0_0_0_0.json",
+      "sha256": "b39d3022990fc8b299a4b5c75cc14ee6e76e6dd6766904cd6001fe019bcce722",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_0_0_64_0_0_0_0_0.json",
+      "sha256": "586f9f4c8b9acff1988f899f74e61048cf41e404d6e6ae373091b557a0fd7f36",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_0_64_0_0_0_0_0_0.json",
+      "sha256": "1111f52170976c459604ba51d95226771c6526b4e8ab16cffb591ea69358271f",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_64_0_0_0_0_0_0_0.json",
+      "sha256": "70a053d038184859b3afd9e5ae0240ca9679ebc0c426b1f707a3556001fd9fc4",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_32_32_32_32_16_16_0_0_0.json",
+      "sha256": "d3511b90b5cc3411be61bd6ea5fae0039b5f47ea1f674d9272af76c1db273ebf",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_4_4_4_4_4_4_0_0_0.json",
+      "sha256": "b5a8b42bee5e865949bbd32addf61a34f8a85461dd3093088f501f5bb0c92c65",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_64_0_0_0_0_0_0_0_0.json",
+      "sha256": "8688d8339e8a85d25c43e862a0bd9df20abbb4e18bdd9b65588961e709a9763a",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_0_0_0_0_64_0_0_0.json",
+      "sha256": "e3f6952404d9d34ed233cc1dbd4d214efc1d2a4b4cdd0c81ffa1134a672a6587",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_0_0_0_64_0_0_0_0.json",
+      "sha256": "b3235a3bfdca3a937bdf61ee3b10f44474fa4977095e14b1410f83cb5974e120",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_0_0_64_0_0_0_0_0.json",
+      "sha256": "68244afd780ebff5a29a642a171e559391979c92c7298d95ae17dc6e8a1e1b8f",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_0_64_0_0_0_0_0_0.json",
+      "sha256": "f001f459973887721864f1141c5c454089d0e232ce17ac3691585536955c4d0d",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_64_0_0_0_0_0_0_0.json",
+      "sha256": "67b82fa8d83cea3e8c754cd5fce6c7d98b319e3a0f59b7b96ad858a0f15fe0b0",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_32_32_32_32_16_16_0_0_0.json",
+      "sha256": "97164fdefb5af9c4013d48d54865edad497bb0d888a3cff8d8e5fb108ecd76dd",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_4_4_4_4_4_4_0_0_0.json",
+      "sha256": "938d62754acdae99a42f64a3f6530c20f21d5fd7bc7972887227fb8a6e54ac61",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_64_0_0_0_0_0_0_0_0.json",
+      "sha256": "384ec9988dbf812f1a7dd0f2df1252415eab1d90a6d2be228d920f9853b11eb3",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail.json",
+      "sha256": "970c78d02b879fbdae41878df570db29451297d6c8e677f1cfbb8fec61aa9782",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_0_8_0_8_4_0_4_16_8.json",
+      "sha256": "95d0d81b98e8cba4d6c04a9edac1c536f539e62ae0d315b54d8d32377d926c9d",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_16_16_16_16_16_16_16_16_16.json",
+      "sha256": "112407044cfff29589e7b68a0bbc9804e5db1ae372c9f4948dbbf6d647965f4f",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_32_32_32_32_32_32_32_32_32.json",
+      "sha256": "0e6ba22e4546ed383a161ac014bff5e810b5f1cc213ecaca15108ca23d0d06af",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_4_4_4_4_4_4_4_4_4.json",
+      "sha256": "021dff19591fecce5239bac4b0b4ccc942847ab913c0bdfe3aa48e59f165768f",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_8_8_8_8_8_8_8_8_8.json",
+      "sha256": "5b98c3a185b3fc4a5b5f78cc8409f6a2cf2d0553d6316ba3eb506db9711558b9",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated.json",
+      "sha256": "bcab95d63c90ba4ccf41da73edf66662ae2f8e2cd81fcd05af750f661b5bcc7a",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_0_8_0_8_4_0_4_16_8.json",
+      "sha256": "12800f903b2b85b38293d6b43adeb791b191ecd1f2d001c926f64c00fec2d130",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_16_16_16_16_16_16_16_16_16.json",
+      "sha256": "2051827839e8913d65c0314eabdb15e046f732017657afd5131b11b19d515baa",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_32_32_32_32_32_32_32_32_32.json",
+      "sha256": "4e25e63a4407bf227e21f4de0e2831dd8925b3a805cfdd281a282a71e2caa560",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_4_4_4_4_4_4_4_4_4.json",
+      "sha256": "686847bd2951b12841bf919332a23cb119310266c3d7a2ce8462648f7a395931",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_8_8_8_8_8_8_8_8_8.json",
+      "sha256": "0e37b74fb6f94fa5411bc71585f93bf94a8a79730276a1a89d00a408a80ca7c9",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public.json",
+      "sha256": "80bd93b3f3bf089fcaa7ab70202b22a5492d3bccdd2ffe056a269b4b1cd09a2e",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_0_8_0_8_4_0_4_16_8.json",
+      "sha256": "b636faace695243fda8605febc613eedaa56fe00c388b91a34da8f3a7ff25e61",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_16_16_16_16_16_16_16_16_16.json",
+      "sha256": "556f72dbcce4d1e3aa1d6434099b512be4b746a21b401e42cedf5e44dec9d796",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_32_32_32_32_32_32_32_32_32.json",
+      "sha256": "d96897579d481c32580266a9b933792018d08d7e698cdaa4bd5e229a19a78e79",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_4_4_4_4_4_4_4_4_4.json",
+      "sha256": "f94a974eab9abd20a41230ba8aa5c8dc98e4fdecae3abe2b1263eb55c0636fe3",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_8_8_8_8_8_8_8_8_8.json",
+      "sha256": "dcafd830fd27026f260fb8032abd107aa517567179c347004567646dd15063ee",
+      "sdkInputHashMatches": true,
+      "kind": "proving-artifact"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated.json",
+      "sha256": "59a4e87ac3a3ea65d9c46ef6314df1394c7e6f401a96ef4809c3fd109bbe971c",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_0_8_0_8_4_0_4_16_8.json",
+      "sha256": "9f09f2c325409a5d9e69112da31230d99a4577406d978c65fc54f29a65b1e4e5",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_16_16_16_16_16_16_16_16_16.json",
+      "sha256": "54f93aca5e485cf692abf012b5cdfc506114884f1b96bfebbb64164b9037003e",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_32_32_32_32_32_32_32_32_32.json",
+      "sha256": "6e601f9b6a1e87e4c0a2abe20b993a3b5372ca26e5a638891be6190ca4eb473f",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_4_4_4_4_4_4_4_4_4.json",
+      "sha256": "91dcf6280030b6d9f09d12c5955b9b6150913fd000a4578513fd983c3edad01f",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_8_8_8_8_8_8_8_8_8.json",
+      "sha256": "5e9ceaed886fa61bb5d0f03c0f5dfc739dc110ed7e5751e5f4a1361bce3b2d36",
+      "sdkInputHashMatches": true,
+      "kind": "simulation"
+    }
+  ],
+  "locations": {
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52": {
+      "reviewedSource": {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/nullifier/utils.nr",
+        "sha256": "3e0bda86c100a2c80fa945763939720a1d30915b9ef0d9969154f7b044f24f1f",
+        "archiveByteComparison": "pass"
+      },
+      "currentEmbeddedSource": {
+        "billboard": {
+          "present": true,
+          "sha256": "3e0bda86c100a2c80fa945763939720a1d30915b9ef0d9969154f7b044f24f1f",
+          "matchesP04ReviewedBytes": true
+        },
+        "privateFee": {
+          "present": true,
+          "sha256": "3e0bda86c100a2c80fa945763939720a1d30915b9ef0d9969154f7b044f24f1f",
+          "matchesP04ReviewedBytes": true
+        }
+      }
+    },
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29": {
+      "reviewedSource": {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/oracle/get_contract_instance.nr",
+        "sha256": "d9c296e45885a5a32e20b1f942ca6b00d150afcaf15b1d262f8ebdb239ce8903",
+        "archiveByteComparison": "pass"
+      },
+      "currentEmbeddedSource": {
+        "billboard": {
+          "present": true,
+          "sha256": "d9c296e45885a5a32e20b1f942ca6b00d150afcaf15b1d262f8ebdb239ce8903",
+          "matchesP04ReviewedBytes": true
+        },
+        "privateFee": {
+          "present": false,
+          "sha256": null,
+          "matchesP04ReviewedBytes": false
+        }
+      }
+    },
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messaging.nr:35:9": {
+      "reviewedSource": {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/messaging.nr",
+        "sha256": "62844141beaaf6e3a028043136fc790de417ea48c85ca7c7233f9a6526a919cb",
+        "archiveByteComparison": "pass"
+      },
+      "currentEmbeddedSource": {
+        "billboard": {
+          "present": true,
+          "sha256": "62844141beaaf6e3a028043136fc790de417ea48c85ca7c7233f9a6526a919cb",
+          "matchesP04ReviewedBytes": true
+        },
+        "privateFee": {
+          "present": false,
+          "sha256": null,
+          "matchesP04ReviewedBytes": false
+        }
+      }
+    },
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:356:38": {
+      "reviewedSource": {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/messages/encryption/aes128.nr",
+        "sha256": "33450dc6ed95e6c712dce4f77797dc9e05ec3a69397fbd189411198b25636d78",
+        "archiveByteComparison": "pass"
+      },
+      "currentEmbeddedSource": {
+        "billboard": {
+          "present": true,
+          "sha256": "33450dc6ed95e6c712dce4f77797dc9e05ec3a69397fbd189411198b25636d78",
+          "matchesP04ReviewedBytes": true
+        },
+        "privateFee": {
+          "present": true,
+          "sha256": "33450dc6ed95e6c712dce4f77797dc9e05ec3a69397fbd189411198b25636d78",
+          "matchesP04ReviewedBytes": true
+        }
+      }
+    },
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18": {
+      "reviewedSource": {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/messages/delivery/tag_derivation.nr",
+        "sha256": "63f3433ecf0d9e332cc96ef79482855f1817e99d20ac15a1a9b9da5296bcb25c",
+        "archiveByteComparison": "pass"
+      },
+      "currentEmbeddedSource": {
+        "billboard": {
+          "present": true,
+          "sha256": "63f3433ecf0d9e332cc96ef79482855f1817e99d20ac15a1a9b9da5296bcb25c",
+          "matchesP04ReviewedBytes": true
+        },
+        "privateFee": {
+          "present": true,
+          "sha256": "63f3433ecf0d9e332cc96ef79482855f1817e99d20ac15a1a9b9da5296bcb25c",
+          "matchesP04ReviewedBytes": true
+        }
+      }
+    },
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28": {
+      "reviewedSource": {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/history/storage.nr",
+        "sha256": "c73be49d2d219051e1079cca667cf6f5caa23547ad0a969fcbcada5ce64fa395",
+        "archiveByteComparison": "pass"
+      },
+      "currentEmbeddedSource": {
+        "billboard": {
+          "present": true,
+          "sha256": "c73be49d2d219051e1079cca667cf6f5caa23547ad0a969fcbcada5ce64fa395",
+          "matchesP04ReviewedBytes": true
+        },
+        "privateFee": {
+          "present": false,
+          "sha256": null,
+          "matchesP04ReviewedBytes": false
+        }
+      }
+    },
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:260:25": {
+      "reviewedSource": {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/messages/encryption/aes128.nr",
+        "sha256": "33450dc6ed95e6c712dce4f77797dc9e05ec3a69397fbd189411198b25636d78",
+        "archiveByteComparison": "pass"
+      },
+      "currentEmbeddedSource": {
+        "billboard": {
+          "present": true,
+          "sha256": "33450dc6ed95e6c712dce4f77797dc9e05ec3a69397fbd189411198b25636d78",
+          "matchesP04ReviewedBytes": true
+        },
+        "privateFee": {
+          "present": true,
+          "sha256": "33450dc6ed95e6c712dce4f77797dc9e05ec3a69397fbd189411198b25636d78",
+          "matchesP04ReviewedBytes": true
+        }
+      }
+    },
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/note.nr:46:28": {
+      "reviewedSource": {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/history/note.nr",
+        "sha256": "c4000743423e87df37423c8d21f97c7a4afe22a1b24e1beed4fd2e1d6b438c69",
+        "archiveByteComparison": "pass"
+      },
+      "currentEmbeddedSource": {
+        "billboard": {
+          "present": true,
+          "sha256": "c4000743423e87df37423c8d21f97c7a4afe22a1b24e1beed4fd2e1d6b438c69",
+          "matchesP04ReviewedBytes": true
+        },
+        "privateFee": {
+          "present": false,
+          "sha256": null,
+          "matchesP04ReviewedBytes": false
+        }
+      }
+    },
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51": {
+      "reviewedSource": {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/keys/getters/mod.nr",
+        "sha256": "354144ac27ea16d71b3c090c0c4db02f07dd85b09a8656cf7dcccfb4173a374a",
+        "archiveByteComparison": "pass"
+      },
+      "currentEmbeddedSource": {
+        "billboard": {
+          "present": true,
+          "sha256": "354144ac27ea16d71b3c090c0c4db02f07dd85b09a8656cf7dcccfb4173a374a",
+          "matchesP04ReviewedBytes": true
+        },
+        "privateFee": {
+          "present": true,
+          "sha256": "354144ac27ea16d71b3c090c0c4db02f07dd85b09a8656cf7dcccfb4173a374a",
+          "matchesP04ReviewedBytes": true
+        }
+      }
+    },
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39": {
+      "reviewedSource": {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/note/note_getter.nr",
+        "sha256": "6c974f964063a2bde1ee8fd05f8e5976e2ac9568a301fe7a7106f35f5bf83ad0",
+        "archiveByteComparison": "pass"
+      },
+      "currentEmbeddedSource": {
+        "billboard": {
+          "present": true,
+          "sha256": "6c974f964063a2bde1ee8fd05f8e5976e2ac9568a301fe7a7106f35f5bf83ad0",
+          "matchesP04ReviewedBytes": true
+        },
+        "privateFee": {
+          "present": true,
+          "sha256": "6c974f964063a2bde1ee8fd05f8e5976e2ac9568a301fe7a7106f35f5bf83ad0",
+          "matchesP04ReviewedBytes": true
+        }
+      }
+    },
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38": {
+      "reviewedSource": {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/context/private_context.nr",
+        "sha256": "29a0032aa88697997495a7ef73498d920d29bea222b48bdb3dcff170c2a9ab86",
+        "archiveByteComparison": "pass"
+      },
+      "currentEmbeddedSource": {
+        "billboard": {
+          "present": true,
+          "sha256": "29a0032aa88697997495a7ef73498d920d29bea222b48bdb3dcff170c2a9ab86",
+          "matchesP04ReviewedBytes": true
+        },
+        "privateFee": {
+          "present": true,
+          "sha256": "29a0032aa88697997495a7ef73498d920d29bea222b48bdb3dcff170c2a9ab86",
+          "matchesP04ReviewedBytes": true
+        }
+      }
+    },
+    "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:829:36": {
+      "reviewedSource": {
+        "repository": "aztec-nr",
+        "commit": "22e152679f69a2307fdb1b17f60fd4f51a3fd4f5",
+        "path": "aztec/src/context/private_context.nr",
+        "sha256": "29a0032aa88697997495a7ef73498d920d29bea222b48bdb3dcff170c2a9ab86",
+        "archiveByteComparison": "pass"
+      },
+      "currentEmbeddedSource": {
+        "billboard": {
+          "present": true,
+          "sha256": "29a0032aa88697997495a7ef73498d920d29bea222b48bdb3dcff170c2a9ab86",
+          "matchesP04ReviewedBytes": true
+        },
+        "privateFee": {
+          "present": true,
+          "sha256": "29a0032aa88697997495a7ef73498d920d29bea222b48bdb3dcff170c2a9ab86",
+          "matchesP04ReviewedBytes": true
+        }
+      }
+    }
+  },
+  "occurrences": [
+    {
+      "id": "P04-DIAG-01",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52",
+        "callStack": [
+          {
+            "function": "generate_private_external",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17"
+          },
+          {
+            "function": "assert_is_initialized_private",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:116:39"
+          },
+          {
+            "function": "compute_nullifier_existence_request",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit",
+        "post",
+        "update_portal",
+        "withdraw"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-02",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29",
+        "callStack": [
+          {
+            "function": "generate_private_external",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17"
+          },
+          {
+            "function": "assert_is_initialized_private",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:114:20"
+          },
+          {
+            "function": "get_contract_instance",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit",
+        "post",
+        "update_portal",
+        "withdraw"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-03",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messaging.nr:35:9",
+        "callStack": [
+          {
+            "function": "Billboard::claim_deposit",
+            "location": "billboard_contract/src/main.nr:289:19"
+          },
+          {
+            "function": "PrivateContext::consume_l1_to_l2_message",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:897:25"
+          },
+          {
+            "function": "process_l1_to_l2_message",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messaging.nr:35:9"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messaging.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-04",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:356:38",
+        "callStack": [
+          {
+            "function": "Billboard::claim_deposit",
+            "location": "billboard_contract/src/main.nr:311:19"
+          },
+          {
+            "function": "NoteMessage<Note>::deliver",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9"
+          },
+          {
+            "function": "NoteMessage<Note>::deliver_to",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9"
+          },
+          {
+            "function": "do_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9"
+          },
+          {
+            "function": "do_onchain_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:117:22"
+          },
+          {
+            "function": "remove_constraints_if",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:22:9"
+          },
+          {
+            "function": "do_onchain_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:119:12"
+          },
+          {
+            "function": "<impl MessageEncryption for AES128>::encrypt",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:356:38"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-05",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18",
+        "callStack": [
+          {
+            "function": "Billboard::claim_deposit",
+            "location": "billboard_contract/src/main.nr:311:19"
+          },
+          {
+            "function": "NoteMessage<Note>::deliver",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9"
+          },
+          {
+            "function": "NoteMessage<Note>::deliver_to",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9"
+          },
+          {
+            "function": "do_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9"
+          },
+          {
+            "function": "do_onchain_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19"
+          },
+          {
+            "function": "derive_log_tag",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18"
+          },
+          {
+            "function": "Option<T>::map_or_else",
+            "location": "std/option.nr:94:13"
+          },
+          {
+            "function": "derive_log_tag",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12"
+          },
+          {
+            "function": "default_tag_secret_source",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5"
+          },
+          {
+            "function": "existing_handshake_secrets_or_else",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-06",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28",
+        "callStack": [
+          {
+            "function": "Billboard::claim_deposit",
+            "location": "billboard_contract/src/main.nr:295:45"
+          },
+          {
+            "function": "public_storage_historical_read",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-07",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:260:25",
+        "callStack": [
+          {
+            "function": "Billboard::claim_deposit",
+            "location": "billboard_contract/src/main.nr:311:19"
+          },
+          {
+            "function": "NoteMessage<Note>::deliver",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9"
+          },
+          {
+            "function": "NoteMessage<Note>::deliver_to",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9"
+          },
+          {
+            "function": "do_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9"
+          },
+          {
+            "function": "do_onchain_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:117:22"
+          },
+          {
+            "function": "remove_constraints_if",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:22:9"
+          },
+          {
+            "function": "do_onchain_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:119:12"
+          },
+          {
+            "function": "<impl MessageEncryption for AES128>::encrypt",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:240:13"
+          },
+          {
+            "function": "Option<T>::unwrap_or_else",
+            "location": "std/option.nr:61:13"
+          },
+          {
+            "function": "<impl MessageEncryption for AES128>::encrypt",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:260:25"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-08",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52",
+        "callStack": [
+          {
+            "function": "generate_private_external",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17"
+          },
+          {
+            "function": "assert_is_initialized_private",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:116:39"
+          },
+          {
+            "function": "compute_nullifier_existence_request",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit",
+        "post",
+        "update_portal",
+        "withdraw"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-09",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:260:25",
+        "callStack": [
+          {
+            "function": "Billboard::post",
+            "location": "billboard_contract/src/main.nr:516:25"
+          },
+          {
+            "function": "NoteMessage<Note>::deliver",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9"
+          },
+          {
+            "function": "NoteMessage<Note>::deliver_to",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9"
+          },
+          {
+            "function": "do_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9"
+          },
+          {
+            "function": "do_onchain_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:117:22"
+          },
+          {
+            "function": "remove_constraints_if",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:22:9"
+          },
+          {
+            "function": "do_onchain_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:119:12"
+          },
+          {
+            "function": "<impl MessageEncryption for AES128>::encrypt",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:240:13"
+          },
+          {
+            "function": "Option<T>::unwrap_or_else",
+            "location": "std/option.nr:61:13"
+          },
+          {
+            "function": "<impl MessageEncryption for AES128>::encrypt",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:260:25"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr",
+      "applicationFunctionCandidates": [
+        "post"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-10",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:356:38",
+        "callStack": [
+          {
+            "function": "Billboard::post",
+            "location": "billboard_contract/src/main.nr:516:25"
+          },
+          {
+            "function": "NoteMessage<Note>::deliver",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9"
+          },
+          {
+            "function": "NoteMessage<Note>::deliver_to",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9"
+          },
+          {
+            "function": "do_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9"
+          },
+          {
+            "function": "do_onchain_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:117:22"
+          },
+          {
+            "function": "remove_constraints_if",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:22:9"
+          },
+          {
+            "function": "do_onchain_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:119:12"
+          },
+          {
+            "function": "<impl MessageEncryption for AES128>::encrypt",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:356:38"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr",
+      "applicationFunctionCandidates": [
+        "post"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-11",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29",
+        "callStack": [
+          {
+            "function": "generate_private_external",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17"
+          },
+          {
+            "function": "assert_is_initialized_private",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:114:20"
+          },
+          {
+            "function": "get_contract_instance",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit",
+        "post",
+        "update_portal",
+        "withdraw"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-12",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/note.nr:46:28",
+        "callStack": [
+          {
+            "function": "Billboard::post",
+            "location": "billboard_contract/src/main.nr:395:49"
+          },
+          {
+            "function": "assert_note_existed_by",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/note.nr:46:32"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/note.nr",
+      "applicationFunctionCandidates": [
+        "post"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-13",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28",
+        "callStack": [
+          {
+            "function": "Billboard::post",
+            "location": "billboard_contract/src/main.nr:361:53"
+          },
+          {
+            "function": "public_storage_historical_read",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr",
+      "applicationFunctionCandidates": [
+        "post"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-14",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51",
+        "callStack": [
+          {
+            "function": "Billboard::post",
+            "location": "billboard_contract/src/main.nr:354:35"
+          },
+          {
+            "function": "PrivateSet<Note, &mut PrivateContext>::pop_notes",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:244:17"
+          },
+          {
+            "function": "destroy_note",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:82:21"
+          },
+          {
+            "function": "generate_note_hash_trait_impl",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/notes.nr:90:40"
+          },
+          {
+            "function": "get_public_keys",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr",
+      "applicationFunctionCandidates": [
+        "post"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-15",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39",
+        "callStack": [
+          {
+            "function": "Billboard::post",
+            "location": "billboard_contract/src/main.nr:354:35"
+          },
+          {
+            "function": "PrivateSet<Note, &mut PrivateContext>::pop_notes",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:235:31"
+          },
+          {
+            "function": "get_notes",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr",
+      "applicationFunctionCandidates": [
+        "post"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-16",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38",
+        "callStack": [
+          {
+            "function": "generate_private_external",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:105:53"
+          },
+          {
+            "function": "PrivateContext::in_revertible_phase",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit",
+        "post",
+        "update_portal",
+        "withdraw"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-17",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18",
+        "callStack": [
+          {
+            "function": "Billboard::post",
+            "location": "billboard_contract/src/main.nr:516:25"
+          },
+          {
+            "function": "NoteMessage<Note>::deliver",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9"
+          },
+          {
+            "function": "NoteMessage<Note>::deliver_to",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9"
+          },
+          {
+            "function": "do_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9"
+          },
+          {
+            "function": "do_onchain_private_message_delivery",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19"
+          },
+          {
+            "function": "derive_log_tag",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18"
+          },
+          {
+            "function": "Option<T>::map_or_else",
+            "location": "std/option.nr:94:13"
+          },
+          {
+            "function": "derive_log_tag",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12"
+          },
+          {
+            "function": "default_tag_secret_source",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5"
+          },
+          {
+            "function": "existing_handshake_secrets_or_else",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr",
+      "applicationFunctionCandidates": [
+        "post"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-18",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52",
+        "callStack": [
+          {
+            "function": "generate_private_external",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17"
+          },
+          {
+            "function": "assert_is_initialized_private",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:116:39"
+          },
+          {
+            "function": "compute_nullifier_existence_request",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit",
+        "post",
+        "update_portal",
+        "withdraw"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-19",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28",
+        "callStack": [
+          {
+            "function": "Billboard::update_portal",
+            "location": "billboard_contract/src/main.nr:203:38"
+          },
+          {
+            "function": "public_storage_historical_read",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr",
+      "applicationFunctionCandidates": [
+        "update_portal"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-20",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38",
+        "callStack": [
+          {
+            "function": "generate_private_external",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:105:53"
+          },
+          {
+            "function": "PrivateContext::in_revertible_phase",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit",
+        "post",
+        "update_portal",
+        "withdraw"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-21",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29",
+        "callStack": [
+          {
+            "function": "generate_private_external",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17"
+          },
+          {
+            "function": "assert_is_initialized_private",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:114:20"
+          },
+          {
+            "function": "get_contract_instance",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit",
+        "post",
+        "update_portal",
+        "withdraw"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-22",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39",
+        "callStack": [
+          {
+            "function": "Billboard::withdraw",
+            "location": "billboard_contract/src/main.nr:571:39"
+          },
+          {
+            "function": "PrivateSet<Note, &mut PrivateContext>::pop_notes",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:235:31"
+          },
+          {
+            "function": "get_notes",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr",
+      "applicationFunctionCandidates": [
+        "withdraw"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-23",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:829:36",
+        "callStack": [
+          {
+            "function": "Billboard::withdraw",
+            "location": "billboard_contract/src/main.nr:571:39"
+          },
+          {
+            "function": "PrivateSet<Note, &mut PrivateContext>::pop_notes",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:244:17"
+          },
+          {
+            "function": "destroy_note",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:82:21"
+          },
+          {
+            "function": "generate_note_hash_trait_impl",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/notes.nr:91:30"
+          },
+          {
+            "function": "PrivateContext::request_nhk_app",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:758:9"
+          },
+          {
+            "function": "PrivateContext::request_sk_app",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:829:36"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr",
+      "applicationFunctionCandidates": [
+        "withdraw"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-24",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29",
+        "callStack": [
+          {
+            "function": "generate_private_external",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17"
+          },
+          {
+            "function": "assert_is_initialized_private",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:114:20"
+          },
+          {
+            "function": "get_contract_instance",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit",
+        "post",
+        "update_portal",
+        "withdraw"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-25",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52",
+        "callStack": [
+          {
+            "function": "generate_private_external",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17"
+          },
+          {
+            "function": "assert_is_initialized_private",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:116:39"
+          },
+          {
+            "function": "compute_nullifier_existence_request",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr",
+      "applicationFunctionCandidates": [
+        "claim_deposit",
+        "post",
+        "update_portal",
+        "withdraw"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    },
+    {
+      "id": "P04-DIAG-26",
+      "original": {
+        "heading": "Brillig function call isn't properly covered by a manual constraint",
+        "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51",
+        "callStack": [
+          {
+            "function": "Billboard::withdraw",
+            "location": "billboard_contract/src/main.nr:571:39"
+          },
+          {
+            "function": "PrivateSet<Note, &mut PrivateContext>::pop_notes",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:244:17"
+          },
+          {
+            "function": "destroy_note",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:82:21"
+          },
+          {
+            "function": "generate_note_hash_trait_impl",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/notes.nr:90:40"
+          },
+          {
+            "function": "get_public_keys",
+            "location": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51"
+          }
+        ]
+      },
+      "currentLocationSource": "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr",
+      "applicationFunctionCandidates": [
+        "withdraw"
+      ],
+      "mappingBasis": "Original named Billboard caller retained; framework-generated caller mapped conservatively to all current private entrypoints. This does not demonstrate ACIR reachability.",
+      "status": "unresolved-independent-disposition-and-hostile-witness-coverage"
+    }
+  ],
+  "freshCompilerDiagnostics": "Not rerun by this script; final T01 compile output must be inventoried separately.",
+  "protocolSourceCorrespondence": "Installed artifact hashes are exact. Correspondence to reviewed protocol source, target network verification keys, and discharge of malicious cross-circuit requests remain unestablished here.",
+  "independentDisposition": "Open; agent source review is not X01 approval."
+}

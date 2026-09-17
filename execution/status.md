@@ -11,7 +11,9 @@ Production readiness remains the objective. Engineering continues against the pi
 
 ## Current checkpoint
 
-D01 deployment verification is finishing. Reviewed manifests bind network, actors, economics, policy and artifact identity. Actual portal runtime mutation tests, built-browser recovery checks, 334 integrated checks and isolated operator-package smoke checks pass. Final evidence and commit are being prepared; continue the next ready graph package afterward.
+D01 deployment verification is complete and pushed as caf8813. Reviewed manifests bind network, actors, economics, policy and artifact identity. Actual portal runtime mutation tests, built-browser recovery checks,334 integrated checks and isolated operator-package smoke checks pass.
+
+T01 contract/adversarial qualification is complete:171 Noir/37 Solidity checks, meaningful bounded model mutations, fresh compiler correspondence, genuine screening and ten-author contention pass. Full ten-author run:7m39s, sampled peak1.42GiB; all owned resources cleaned. All57 compiler diagnostics remain documented independent-review obligations. Next: browser user flows and HTTPS hosting.
 
 M03 is blocked: both measured small moderation models fail the unchanged accuracy thresholds. No production model is approved. X03 target-network clearance remains blocked on its dated evidence and must be freshly verified before release. These blockers do not prevent independent internal engineering.
 
@@ -94,3 +96,11 @@ M03 final secondrun332cases/400s:29false positives,19false negatives,zero unexpe
 D01 verification: real Anvil full portal runtime/9 immutable mutation checks pass; review fixed critical read deadlines, class identity, provider cleanup and pre-transaction report validation. Final built-browser/operator-package checks run serially.
 
 D01 complete: source c082d6c6;334 integrated checks, final130 signer checks, actual browser, real Anvil runtime mutation,9offline/report and12operator tests plus isolated package smoke pass. Continue next graph package. External gates and model quality remain incomplete.
+
+T01 active: full contract suites, scoped executable invariant models and preservation/reconciliation of26 compiler diagnostics. Prior Lean claims include vacuous/obsolete models and are not assurance.
+
+T01 current:171 Noir checks completed within540s bound;37 Solidity checks pass; finite models and mutation controls pass. Fresh isolated compiler007 passes privateACIR identity and records57 manualconstraint diagnostics across18sites; all remain open qualifications. Genuine screening/membership-mutation run008 now active under540s/2GiB. U01 scheduling no longer depends on modelquality; M03 remains mandatory for release.
+
+Genuine screening008 passed:335408ms,1377808KiB peak, two correctposts plus exactrandomness/nonce membership rejection and cleanup. Ten-author currentcandidate run010 remains in progress; do not mark T01complete before its result.
+
+Ten-author010 stopped early at449580ms after measured20–22s/post made540scompletion impossible; no qualificationpass. Peak1419920KiB,cleanupcomplete. Investigating2nativeCPUthreads within unchanged2GiB/540s bounds, no parallelproofprocesses or networkprover.

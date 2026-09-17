@@ -1,0 +1,48 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Function inventory changed
++ actual - expected
+
+  [
+    'balance_of',
+    'mint',
+    'mint_and_pay_fee',
+    'offchain_receive',
+    'pay_fee',
+-   'public_dispatch',
+    'recurse_subtract_balance_internal',
+    'sync_state'
+  ]
+
+    at file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/check-compiler-diagnostics.mjs:41:10
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'balance_of',
+    'mint',
+    'mint_and_pay_fee',
+    'offchain_receive',
+    'pay_fee',
+    'recurse_subtract_balance_internal',
+    'sync_state'
+  ],
+  expected: [
+    'balance_of',
+    'mint',
+    'mint_and_pay_fee',
+    'offchain_receive',
+    'pay_fee',
+    'public_dispatch',
+    'recurse_subtract_balance_internal',
+    'sync_state'
+  ],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

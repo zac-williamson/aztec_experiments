@@ -20,7 +20,7 @@ Use the pinned Node24 runtime and Foundry versions in BUILDING.md.
 - `node scripts/test-c01-application.mjs --private-fees`: standalone fee-balance funding, private board claim/withdrawal and actual local L1 refund. Both private-fee profiles retain the nine-minute deadline.
 - `node scripts/test-noir.mjs --filter private_fee`: ownership, replay and insufficient-credit constraints. Positive fee election is covered by genuine transactions because pinned TXE starts calls in the application phase; see `billboard/private_fee_test/INTEGRATION-BOUNDARY.md`.
 
-Native runs are serialized, with a540-second deadline and a sampled2GiB owned-process RSS limit. Browser profiles close after their checks; no heavy jobs run beside native proving.
+Native runs are serialized, with a540-second deadline and a sampled2GiB owned-process RSS limit. The contention and posting-diagnostic profiles use two native client proving threads; other profiles use one. Node verification and world-state hardware concurrency remain one in all profiles. This is a per-process thread setting, not parallel proof jobs. Browser profiles close after their checks; no heavy jobs run beside native proving.
 
 The bridge test uses the installed Aztec SDK's `RollupCheatCodes` and
 `settleEpochOutbox` to advance local epochs and settle actual emitted messages.
@@ -37,3 +37,32 @@ A passing application suite is not deployment clearance or an independent audit.
 Supported-network smoke tests and the release checks remain in the execution graph.
 Historical network-proving experiments remain recorded under execution/evidence;
 they are not development prerequisites and must not be resumed by the graph.
+
+## Contract invariant and diagnostic checks
+
+`python3 fv/model-checks/check.py` explores bounded reachable bridge/screening
+states and requires intentionally broken variants to yield counterexamples. It
+prints interpreter/source identities and exact bounds; it is not an implementation
+equivalence or cryptographic proof. Historical Lean/Verity claims under `fv/` are
+retired and cannot be counted as acceptance.
+
+`node scripts/check-compiler-diagnostics.mjs NEW_OUTPUT_DIRECTORY` performs a fresh
+compile in an owned scratch workspace with a180-second deadline and constraint
+checks enabled. It checks pinned dependency source inventories, declared function
+identity and exact private ACIR against canonical artifacts, accounting explicitly
+for the pinned generated public dispatcher. Raw diagnostic logs are retained;
+passing correspondence does not resolve their security meaning. CurrentT01
+records57 occurrences at18sites across board/private-fee contracts, with all26
+original observations preserved.
+
+The `--screening` genuine application profile now tests altered included-note
+randomness and settled nonce. A test-only node wrapper supplies the authentic
+sibling path only for the exact altered absent leaf at the same anchor. Noir must
+reject its membership constraint, after which the unmodified post must still
+prove and be included. These are constrained-witness rejection probes, not
+completed hostile proofs or a test of arbitrary kernel modifications.
+
+`node scripts/test-c01-application.mjs --contention` qualifies ten distinct authors
+preparing genuine transactions from the same anchor before submission. It retains
+the540-second/2GiB sampled limit. The local one-transaction-per-block geometry
+tests conflict independence and correct publication order, not production TPS.

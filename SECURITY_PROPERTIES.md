@@ -14,3 +14,16 @@ No application invariant is newly certified by this documentation change.
 [The risk register](execution/risk-register.md) records open findings. Actual
 verification will be tied to source and artifact hashes in execution/evidence/
 and independently reviewed before production sign-off.
+
+The historical Lean/Verity files under [fv](fv/README.md) are explicitly retired.
+Their vacuous propositions, inconsistent hash assumption, unpinned external build
+and obsolete state/message models provide no current assurance. In particular,
+the old master unlinkability claim is withdrawn: equal hand-selected observer
+projections of arbitrary states do not prove anonymity of reachable transactions.
+Private-fee funding, timing and host/RPC observations remain relevant.
+
+T01 adds bounded executable transition models alongside actual contract tests.
+These are finite checks with recorded assumptions and deliberately broken controls,
+not machine-checked proofs or a proof of compiler/implementation equivalence.
+Only source-bound executed results recorded in T01 evidence count as completed
+verification; independent review and remaining release gates are unchanged.

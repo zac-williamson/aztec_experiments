@@ -1,3 +1,4 @@
+import { applicationNativeProfile } from './c01-native-profile.mjs';
 // TEST ONLY: deploy disabled portal, prove board update_portal; no send/Ready settlement.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -55,7 +56,7 @@ export async function prepareAndProveC01Ready({ node, preparation, instance, dep
     assert.equal(BigInt(info.rollupVersion), BigInt(rollupVersion));
     assert(instance.deployer.equals(preparation.account.address), 'Expected same deployment account');
     const artifacts = await checkedArtifacts(preparation);
-    const nativeOptions = { backend: BackendType.NativeUnixSocket, bbPath: path.join(directory, 'bb-one-thread'), threads: 1 };
+    const nativeOptions = { backend: BackendType.NativeUnixSocket, ...applicationNativeProfile(directory) };
     const singleton = Barretenberg.getSingleton();
     for (const key of ['backend','bbPath','threads']) assert.equal(singleton.options[key], nativeOptions[key], 'Native singleton mismatch');
     mark('reopen-wallet');

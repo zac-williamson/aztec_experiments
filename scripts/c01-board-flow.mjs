@@ -1,3 +1,4 @@
+import { applicationNativeProfile } from './c01-native-profile.mjs';
 // TEST ONLY: first real client proof for board deployment; no send/inclusion/epoch claims.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -31,24 +32,26 @@ async function boardArtifact() {
   return { artifact: loadContractArtifact(raw), artifactHashes: { [ARTIFACT]: sha(bytes),
     '.build/contracts-manifest.json': sha(manifestBytes) } };
 }
-async function nativeClientOptions(bbBinaryPath) {
+async function nativeClientOptions(bbBinaryPath, directory) {
   assert(typeof bbBinaryPath === 'string' && path.isAbsolute(bbBinaryPath), 'Explicit parent native launcher required');
   assert(process.env.CRS_PATH && path.isAbsolute(process.env.CRS_PATH), 'Verified local CRS required');
-  const options = { backend: BackendType.NativeUnixSocket, bbPath: bbBinaryPath, threads: 1 };
+  const profile = applicationNativeProfile(directory);
+  assert.equal(bbBinaryPath, profile.bbPath, 'Application native launcher differs from selected profile');
+  const options = { backend: BackendType.NativeUnixSocket, ...profile };
   const instance = await Barretenberg.initSingleton(options);
   // Pinned SDK caches the first singleton: merely supplying later options is not sufficient.
   assert.equal(instance.options.backend, options.backend, 'Existing singleton uses another backend');
   assert.equal(instance.options.bbPath, options.bbPath, 'Existing singleton uses another binary');
-  assert.equal(instance.options.threads, 1, 'Existing singleton thread bound differs');
+  assert.equal(instance.options.threads, options.threads, 'Existing singleton thread bound differs');
   return options;
 }
 
 /** All account material stays in memory. Serialize only artifactHashes/funding addresses if needed.
  * Call before genesis construction. Parent owns the global native singleton and its final teardown.
  */
-export async function prepareC01BoardFlow({ bbBinaryPath, authorCount = 1 } = {}) {
+export async function prepareC01BoardFlow({ bbBinaryPath, directory, authorCount = 1 } = {}) {
   assertNodeVersion(); assertAztecPackages();
-  await nativeClientOptions(bbBinaryPath);
+  await nativeClientOptions(bbBinaryPath, directory);
   const prepared = await boardArtifact();
   assert([1,10].includes(authorCount));
   const authorAccounts = await generateSchnorrAccounts(authorCount, 'schnorr_initializerless');
@@ -68,7 +71,7 @@ export async function proveC01BoardDeployment(node, preparation, { rollupAddress
   try {
     assertNodeVersion(); assertAztecPackages();
     assert(path.isAbsolute(directory), 'Parent-owned directory required');
-    const options = await nativeClientOptions(bbBinaryPath ?? path.join(directory, 'bb-one-thread'));
+    const options = await nativeClientOptions(bbBinaryPath ?? applicationNativeProfile(directory).bbPath, directory);
     const checked = await boardArtifact(); assert.deepEqual(checked.artifactHashes, preparation.artifactHashes);
     const info = await node.getNodeInfo();
     assert.equal(Number(info.l1ChainId), 31337); assert.equal(BigInt(info.rollupVersion), BigInt(rollupVersion));
@@ -112,7 +115,7 @@ export async function proveC01BoardDeployment(node, preparation, { rollupAddress
     assert.equal(await getFeeJuiceBalance(account.address, node), balance, 'Prove-only step unexpectedly changed fee balance');
     assert.deepEqual((await boardArtifact()).artifactHashes, preparation.artifactHashes);
     Object.assign(observation, { passed: true, artifactHashes: preparation.artifactHashes, clientProverBackend: options.backend,
-      threads: 1, nodeValidation: validation.result, txHash: tx.getTxHash().toString(), boardAddress: instance.address.toString(),
+      threads: options.threads, nodeValidation: validation.result, txHash: tx.getTxHash().toString(), boardAddress: instance.address.toString(),
       proofBytes: proofBytes.length, proofSha256: sha(proofBytes), feePayerBalance: balance.toString(),
       nextRequired: 'Submit this exact in-memory tx, observe inclusion, then use official test settlement before local Ready activation.' });
     result = observation;

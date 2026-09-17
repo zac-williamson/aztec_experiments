@@ -1157,7 +1157,6 @@
       "depends_on": [
         "W03",
         "F01",
-        "M03",
         "D01"
       ],
       "requirements": [
@@ -1202,7 +1201,7 @@
       "evidence": "evidence/U01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "UI/hosting engineering is independent of model qualification; M02 data/decision interfaces are implemented. M03 remains mandatory through O01/R01 and final release. Do not advertise an approved model.",
       "priority": 19
     },
     {
@@ -1263,7 +1262,7 @@
       "title": "Verify contract invariants and adversarial proof cases",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "C06",
         "A01"
@@ -1286,7 +1285,9 @@
         "billboard/",
         "fv/",
         "SECURITY_PROPERTIES.md",
-        "execution/"
+        "execution/",
+        "scripts/",
+        "TESTING.md"
       ],
       "plan": "tasks/T01.md",
       "actions": [
@@ -1316,7 +1317,7 @@
       "evidence": "evidence/T01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "171 Noir/37 Solidity cases, finite models+3mutants, fresh57diagnostic reconciliation, genuine335s screening and459s ten-author contention pass. Historical formal claims retired; compiler/privacy external disposition remains open. Evidence T01.json.",
       "priority": 21
     },
     {

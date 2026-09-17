@@ -1,3 +1,4 @@
+import { applicationNativeProfile } from './c01-native-profile.mjs';
 // TEST ONLY: genuine batched L1 deposits and private claims; parent owns the deadline.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -55,7 +56,7 @@ export async function prepareC03AuthorClaims({node,preparation,instance,ready,se
     const amount=integer(await read('MIN_DEPOSIT')),totalBefore=integer(await read('totalDeposited'));
     assert(amount>0n&&amount<=integer(await read('MAX_DEPOSIT')));
     const scope={l1ChainId:'31337',rollupAddress,rollupVersion:String(info.rollupVersion),boardAddress:instance.address.toString(),portalAddress};
-    const native={backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1};
+    const native={backend:BackendType.NativeUnixSocket,...applicationNativeProfile(directory)};
     for(const key of ['backend','bbPath','threads'])assert.equal(Barretenberg.getSingleton().options[key],native[key]);
     wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
     for(const account of accounts){const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'contention-author');assert(manager.address.equals(account.address));}

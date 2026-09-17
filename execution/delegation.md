@@ -494,3 +494,17 @@ Recovery reviewer delivered application-nullifier helper and25 fixture tests, na
 - deploy_fixture_integration owns deployment recovery fixture coverage and CLI/report/browser-test review.
 - model_failure_review owns supported operator launch/package closure and provenance tests.
 - Root integrates browser/SDK/entrypoint changes, runs final serial checks and prepares evidence. AI review does not replace external audit.
+
+## T01 contract invariants
+
+- deploy_fixture_integration owns bounded executable invariant models and mutation controls in fv/model-checks/.
+- deployment_gap_review owns retirement/disposition of obsolete fv claims and SECURITY_PROPERTIES.md.
+- model_failure_review owns source-bound26diagnostic reconciliation under execution/evidence/T01/.
+- Root runs serial actual Noir/Solidity suites, integrates and verifies; no missing hostile-witness proof is counted as passed.
+
+## T01 resumed qualification
+
+- model_failure_review implemented the isolated two-thread client profile and lightweight checks; runtime harness frozen before the serial run.
+- deployment_gap_review independently reviews profile selection, singleton initialization, resource bounds and node isolation.
+- deploy_fixture_integration independently reviews acceptance coverage and historical source dispositions.
+- Root runs the ten-author qualification, integrates evidence and continues the next ready package.

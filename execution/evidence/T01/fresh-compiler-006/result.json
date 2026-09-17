@@ -1,0 +1,1009 @@
+{
+  "schemaVersion": 1,
+  "command": [
+    "compile",
+    "--workspace",
+    "--force"
+  ],
+  "compiler": "nargo version = 1.0.0-beta.25\nnoirc version = 1.0.0-beta.25+75061fab15986eedee4e7d9104ff87dd9fa4ca10\n(git version hash: 75061fab15986eedee4e7d9104ff87dd9fa4ca10, is dirty: false)",
+  "compilerSha256": "4e6e7cebf0c96a59b1993f6ff63e4f473be79a311f85009b2408854fd3e02a35",
+  "workspace": "[workspace]\nmembers = [\"billboard_contract\", \"private_fee_contract\"]\n",
+  "inputs": {
+    "noir-dependencies.json": "2862f8e6142d97ae63ca4db2fdc55f1d43c11d534ce785a200478df5b348ed0b",
+    "billboard/billboard_contract/Nargo.toml": "76bb7728190bf974c82e0ecf263a7eecf1802634024481224eb057bfcdba4461",
+    "billboard/billboard_contract/src/lib.nr": "16b594659ca235560c45f5d852cd9c66d73c9ade468dcabedc8ed3c171833e85",
+    "billboard/billboard_contract/src/main.nr": "76e8d71ca6bfc8c49395ccd5009b9dabb1567683cd5304e7475b201a531d37b5",
+    "billboard/private_fee_contract/Nargo.toml": "b8ab4a51a1c46c6952010153af90840a17425cb972785075cb71fe8fa0acbcf2",
+    "billboard/private_fee_contract/src/gas.nr": "622220e369f5d6a8fb9777e6701dfd2705f4c090d74db3e460517f4b73c39a7f",
+    "billboard/private_fee_contract/src/main.nr": "7153c0c27cf41e4350ba35425fbcbbd5222bdc9ec2216b2346ad26d818332037"
+  },
+  "elapsedMs": 44680,
+  "exitCode": 0,
+  "signal": null,
+  "errorCode": null,
+  "constraintChecksDisabled": false,
+  "artifacts": {
+    "Billboard": {
+      "rawArtifactSha256": "a9e44ac06df6eb74fa535d3fc599f1637679d251e3dcacf2d0c9a8273f62c40e",
+      "canonicalArtifactSha256": "50009f964ca8496c645e8bbb4d9a3b18621c9b26a7a2c7376e4f33c3b7e53696",
+      "functions": {
+        "__aztec_nr_internals___publish_post": {
+          "private": false,
+          "rawAcirSha256": "d67e30189bf3297b363cfe511581f6ae178dd61eeaad1e93bc4212526557de5d",
+          "canonicalBytecodeSha256": "d23b6aebc786c341e0e3649461dbf0da7385ebbbb7b68b0d1077feba2cdb2e81"
+        },
+        "__aztec_nr_internals___set_portal_public": {
+          "private": false,
+          "rawAcirSha256": "387f6e1ef6fb1a9c14b1a45e118bb1d4402e80588586184c571753e24ae8540d",
+          "canonicalBytecodeSha256": "33c63d7cb5d6408825c21bc0cc536ff8a5dce01ee63a54da591d23ece3ac5e8f"
+        },
+        "__aztec_nr_internals__claim_deposit": {
+          "private": true,
+          "rawAcirSha256": "4a33058dd337d6f3de14520defd974cb2844b6a5904d149e6e2eb2b409973bbd",
+          "canonicalBytecodeSha256": "4a33058dd337d6f3de14520defd974cb2844b6a5904d149e6e2eb2b409973bbd"
+        },
+        "__aztec_nr_internals__declare_immoral": {
+          "private": false,
+          "rawAcirSha256": "ebb387f7bd654b6e2770d6cde35b0303fdba30baa91669de80aef0e3fa63edba",
+          "canonicalBytecodeSha256": "dc0a6fbcf4e446b6daacdede71a24daf6dae942bfcc1199a4698e4018cce670f"
+        },
+        "__aztec_nr_internals__get_base_cooldown": {
+          "private": false,
+          "rawAcirSha256": "7966509c9300f0d4c04a6f3a9092f99320d30e4d6690188ed535b6814a01f15e",
+          "canonicalBytecodeSha256": "7d000917c009416ec04f21a052d88c9570e822a0716864178bac1732bdedf3b0"
+        },
+        "__aztec_nr_internals__get_censor": {
+          "private": false,
+          "rawAcirSha256": "d0334eeb1ef6b4e4c5e21855e968c306cb5c50e2ea6c51dacb6b2a074f82ac5c",
+          "canonicalBytecodeSha256": "85563dae535f31c288d535d98f1fd4c0d1f6be714ca2ee8f0697eb3fa793b42d"
+        },
+        "__aztec_nr_internals__get_censor_response": {
+          "private": false,
+          "rawAcirSha256": "63a9e5e85a5cd2c7d30fdc1f0f440aca777f8f45d8ed0e3f616f3245283364fa",
+          "canonicalBytecodeSha256": "f3c47f3e21349df57c9bd2cc6c04c83d44e8b07b8becc664dc96a25696dc0ccf"
+        },
+        "__aztec_nr_internals__get_censor_response_length": {
+          "private": false,
+          "rawAcirSha256": "bda750a304c4bde636e8a019360efae8a35ec2b0c2d523984fba132ff80e01db",
+          "canonicalBytecodeSha256": "ecda3e175bdbd8ce00bf94d97a498c1e5eecfb77707de990f4b6ac6d4b69f4a9"
+        },
+        "__aztec_nr_internals__get_censor_window": {
+          "private": false,
+          "rawAcirSha256": "9e462564eb1148aa945b961d9c09d993da524c4562c0fcf783346ec6232b1cd0",
+          "canonicalBytecodeSha256": "ac4213f234113d14b02dc05382390a1692857204f96de4d59e9517a46aa179ed"
+        },
+        "__aztec_nr_internals__get_config_hash": {
+          "private": false,
+          "rawAcirSha256": "4aceb05aa7c745bd024df4c61003c4b4a1c98458bce98501c0a780f2c59ca19e",
+          "canonicalBytecodeSha256": "fccb4e5d0bf713789887c1b16e456e151582a87e3df0c82c36b01cc985b7de00"
+        },
+        "__aztec_nr_internals__get_deployer": {
+          "private": false,
+          "rawAcirSha256": "c76bee410d76642be4d34ceb282dc8f86e9c1dc494b7aa7c7baded769c7c0ff8",
+          "canonicalBytecodeSha256": "cfa3f21e9b69287ca6d6de3f631044716e43d923532e465134c064f15a85537a"
+        },
+        "__aztec_nr_internals__get_deposit_ids": {
+          "private": false,
+          "rawAcirSha256": "efea3bfa3a1eee1a55378aa82a66eccce6aa74d933a991c8fbb3799f3d912075",
+          "canonicalBytecodeSha256": "efea3bfa3a1eee1a55378aa82a66eccce6aa74d933a991c8fbb3799f3d912075"
+        },
+        "__aztec_nr_internals__get_deposit_info": {
+          "private": false,
+          "rawAcirSha256": "7e3f38a9c70d44d78496645ba5005013a6be9890e39a901c0758f0f3540127db",
+          "canonicalBytecodeSha256": "7e3f38a9c70d44d78496645ba5005013a6be9890e39a901c0758f0f3540127db"
+        },
+        "__aztec_nr_internals__get_k_multiplier": {
+          "private": false,
+          "rawAcirSha256": "a351a952e136e4f51128fc27712267e737e7737b52a1ee316ff00b0e9650c194",
+          "canonicalBytecodeSha256": "377c36eb64475640247988a84aed142a38c07393a3ddbbb24432f60eb6b6ce7f"
+        },
+        "__aztec_nr_internals__get_max_deposit": {
+          "private": false,
+          "rawAcirSha256": "ab003d8e5ea11df5aa63423ccefa7d1146cdd4a0019c39dfb5e867e3a71bd55d",
+          "canonicalBytecodeSha256": "aea583a14050db1a8a274dc0fa6433c6d9f2ad0f43c7c640aea6564bfe4c980f"
+        },
+        "__aztec_nr_internals__get_max_save_up": {
+          "private": false,
+          "rawAcirSha256": "77195488b1a660d64fe64267f29fc34d4e70c2f8d5aee3757518408a1c707a39",
+          "canonicalBytecodeSha256": "21e9814a1fb036bf8866aa22664297d370da0052070dc8e57875790785861651"
+        },
+        "__aztec_nr_internals__get_min_deposit": {
+          "private": false,
+          "rawAcirSha256": "8dfaf1af0f9a3ae97fe95b5bb6c2fd0ef24419c85653b2191d49b322dca190b6",
+          "canonicalBytecodeSha256": "11e8209b43067fc6dee338c847f96ec506edb172ff0ba819f23fd96617380fa3"
+        },
+        "__aztec_nr_internals__get_moderation_policy": {
+          "private": false,
+          "rawAcirSha256": "5ca6a520690837bfadc292d1fb6b32a9315712c6697e04bb391adcbe41786678",
+          "canonicalBytecodeSha256": "8e2ad4f00cd9a4ff3a0b425077215a64f49dbc3e103d8ce6ebbc4bf253356b9a"
+        },
+        "__aztec_nr_internals__get_moderation_policy_snapshot": {
+          "private": false,
+          "rawAcirSha256": "121a4c249c11fe9db23a78bedbe22b272260d726d56db6562a39e30a25ebdcd2",
+          "canonicalBytecodeSha256": "054490b14a6d57049c19cac3232102e88236bbbc3724673f76065e60b2544638"
+        },
+        "__aztec_nr_internals__get_policy_version": {
+          "private": false,
+          "rawAcirSha256": "e0a7b8b1a6508fa964f44a8a7d2a2bc66674717e8fb326129bf07de3a6b300d6",
+          "canonicalBytecodeSha256": "3b65c231f5baa78dba0741249d01b41e80d510a887ea778cc84592a3506c3d0a"
+        },
+        "__aztec_nr_internals__get_portal": {
+          "private": false,
+          "rawAcirSha256": "db9a07d417ced3dcaaf708859c972b8e5a8855eece380b5c918ac82698e656e0",
+          "canonicalBytecodeSha256": "c4d7140b26d07891f61d7c5f3408d6f07fd4b7e9f5ce8e57f2655d67d70e4fb2"
+        },
+        "__aztec_nr_internals__get_post": {
+          "private": false,
+          "rawAcirSha256": "474d37954ecd31eb33c4000a001898859ad3bd4489aa6b13881325f49176af2a",
+          "canonicalBytecodeSha256": "5d97ef678103dbb37edddb9aad8e03957b6d5f757d293e484d15a1c7a5f6c858"
+        },
+        "__aztec_nr_internals__get_post_count": {
+          "private": false,
+          "rawAcirSha256": "5c30a104c63cfd4738a28ad4981fec09b9eb67d9fd1575c08e627276160859e4",
+          "canonicalBytecodeSha256": "5719790d39ee9ef2f7f818a7b1f4829862f21b61603c9e9d1f7a9fef2c9ca117"
+        },
+        "__aztec_nr_internals__get_post_exists": {
+          "private": false,
+          "rawAcirSha256": "4f0cd11305c8affdd1139de382622931ae12202b8b0483690a8b26219ea85b02",
+          "canonicalBytecodeSha256": "3c658f418d39ed12489c1fc6269ce8edc0476feb7d38f99e12c2b080c217a8fd"
+        },
+        "__aztec_nr_internals__get_post_flag_deadline": {
+          "private": false,
+          "rawAcirSha256": "d445e887f82216aa13d8584cdc64e3ebddb72e12f208811f0379aa674aff2278",
+          "canonicalBytecodeSha256": "22c522d58d12cdefcd36cf8b72885cc18ee727a7fc5fc30240358f12b814aa94"
+        },
+        "__aztec_nr_internals__get_post_flagged_by": {
+          "private": false,
+          "rawAcirSha256": "f58b4dfbb45fd2bcc4ec18216a9907b58fd13ded9997593be8d7d6d78bb60aa9",
+          "canonicalBytecodeSha256": "78b0bb21818f6c072408dcf2b0021a12043e8b9d104518ae93725a482901f850"
+        },
+        "__aztec_nr_internals__get_post_id": {
+          "private": false,
+          "rawAcirSha256": "5712377228f587efb131f4ab7fd0dcf80b1b1b4d7b09784dcc57cc96c875c9f5",
+          "canonicalBytecodeSha256": "4fd96b316351fa402885c6506055c46ef8e0f95128c1971591ac703243a2ca71"
+        },
+        "__aztec_nr_internals__get_post_length": {
+          "private": false,
+          "rawAcirSha256": "e11c2efd1c5a5fa4c9af7a6bc2ffe79bdc2c28858dc739b4e27e485a57130f2b",
+          "canonicalBytecodeSha256": "74ef5b788cda1748e1942020c5f8a26de1347804f62fd49453e3c3f7c5d3f5bc"
+        },
+        "__aztec_nr_internals__get_post_notes": {
+          "private": false,
+          "rawAcirSha256": "4487d6ccd44bdc0d6c1b548f25b56fd5a502f8689546dbee317d0289377b1810",
+          "canonicalBytecodeSha256": "4487d6ccd44bdc0d6c1b548f25b56fd5a502f8689546dbee317d0289377b1810"
+        },
+        "__aztec_nr_internals__get_post_policy_version": {
+          "private": false,
+          "rawAcirSha256": "0048c1271f8142c0c6043a94b4c7d7aa9a0adddf12ce9fc7ad4242f06b2ff2d8",
+          "canonicalBytecodeSha256": "3af236afbfd766268891418f3341f7dfc9cfb88d82a2ea30ca5cd54e81823eca"
+        },
+        "__aztec_nr_internals__get_post_time": {
+          "private": false,
+          "rawAcirSha256": "ca7df3a5aef9c7522d248b74d77cb12f39c2e33d0aa8585ca919e835df79b56a",
+          "canonicalBytecodeSha256": "02faa6a17d5e36bb6d6c64ac4cfffad47b2994c37666f530e383e04f7e14dee7"
+        },
+        "__aztec_nr_internals__get_screen_hints": {
+          "private": false,
+          "rawAcirSha256": "fcc364eea7848672e9b5edd9ba9ce596a885051621681a797fa87b0bff0594fb",
+          "canonicalBytecodeSha256": "fcc364eea7848672e9b5edd9ba9ce596a885051621681a797fa87b0bff0594fb"
+        },
+        "__aztec_nr_internals__init": {
+          "private": false,
+          "rawAcirSha256": "de1fc0836b7a5ff5ca69b35237b4f170d51edeca23282a514d330e3550fcd7c3",
+          "canonicalBytecodeSha256": "efcce606545cc0c742c5a59d229b4d923d19c16aa4eaef461a8f14c3cd17b34e"
+        },
+        "__aztec_nr_internals__is_portal_set": {
+          "private": false,
+          "rawAcirSha256": "216194685affee545368651bf9447c5944e6ee011349db367b8e4565e2b41add",
+          "canonicalBytecodeSha256": "6f73388597d8328abac86efa5c5c39452426764b7e197795febd5f7a4bc12e99"
+        },
+        "__aztec_nr_internals__is_post_flagged": {
+          "private": false,
+          "rawAcirSha256": "2d67955dadd24071593edda52eec1a5ed8b952c740fdb9209109a783f156a306",
+          "canonicalBytecodeSha256": "a936b491a251157517d0e70ec774da430304e9297f0404fd3bc44565bc2183b7"
+        },
+        "__aztec_nr_internals__post": {
+          "private": true,
+          "rawAcirSha256": "d61c961e889f1ad56004aecaa6fc19f02d6df0a0bf51d086766e631167a9aaaa",
+          "canonicalBytecodeSha256": "d61c961e889f1ad56004aecaa6fc19f02d6df0a0bf51d086766e631167a9aaaa"
+        },
+        "__aztec_nr_internals__set_moderation_policy": {
+          "private": false,
+          "rawAcirSha256": "c31bd36beddbede2aca7287644200c8f5eba83dff52f2d15e5d48414d40b8ce1",
+          "canonicalBytecodeSha256": "2045b3436743c91c6f5ba135af511c15ffdf52b1be012278180479a500502ab2"
+        },
+        "__aztec_nr_internals__transfer_censor": {
+          "private": false,
+          "rawAcirSha256": "903173940671c2f9abdbbe5bf4c8fd0325de21eb575ea77e8fcda8e820e4d3e5",
+          "canonicalBytecodeSha256": "6c993c619a9a786901ee067221fa17be9f10ef2a9d48846fbaf5ae5f25d6ec9a"
+        },
+        "__aztec_nr_internals__update_portal": {
+          "private": true,
+          "rawAcirSha256": "eb3513ff9f35682d67720141591a89c8d539d6a55926bb7856aa16fcbd37365f",
+          "canonicalBytecodeSha256": "eb3513ff9f35682d67720141591a89c8d539d6a55926bb7856aa16fcbd37365f"
+        },
+        "__aztec_nr_internals__withdraw": {
+          "private": true,
+          "rawAcirSha256": "fe180ec5b5ffd5e88c1a54e5503e86c96454f07cf547d25c664ce9555a8791c3",
+          "canonicalBytecodeSha256": "fe180ec5b5ffd5e88c1a54e5503e86c96454f07cf547d25c664ce9555a8791c3"
+        },
+        "offchain_receive": {
+          "private": false,
+          "rawAcirSha256": "9513ec53d5bdb2d917858c7160092a8d2e8501e3d5bc392e17af4d8400349cda",
+          "canonicalBytecodeSha256": "9513ec53d5bdb2d917858c7160092a8d2e8501e3d5bc392e17af4d8400349cda"
+        },
+        "public_dispatch": {
+          "private": false,
+          "rawAcirSha256": "44934f6b22e74f27658ef72c673c6089af3cbf1af98818fecb71292b9ac7b390",
+          "canonicalBytecodeSha256": "cf61eb00e8ee5d14d370eba737dd459bae056b637eda5c7a68205e1f476913d1"
+        },
+        "sync_state": {
+          "private": false,
+          "rawAcirSha256": "453b6c455551a56d84325192bb75ebd68edde32b349271d110a11dd128e7b37b",
+          "canonicalBytecodeSha256": "453b6c455551a56d84325192bb75ebd68edde32b349271d110a11dd128e7b37b"
+        }
+      }
+    }
+  },
+  "passed": false,
+  "manualConstraintDiagnostics": [
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18",
+        "billboard_contract/src/main.nr:425:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:260:25",
+        "billboard_contract/src/main.nr:425:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:117:22",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:22:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:119:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:240:13",
+        "std/option.nr:61:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:260:25"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:1184:13",
+        "billboard_contract/src/main.nr:425:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:89:5",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:53:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/resolved_tagging_strategy.nr:45:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_secret_source.nr:37:23",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/handshake.nr:151:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:1082:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:1184:13"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:114:20",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:105:53",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:116:39",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28",
+        "billboard_contract/src/main.nr:403:26",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/public_immutable.nr:333:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/with_hash.nr:67:20",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messaging.nr:35:9",
+        "billboard_contract/src/main.nr:417:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:897:25",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messaging.nr:35:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/public_immutable.nr:328:41",
+        "billboard_contract/src/main.nr:489:30",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/public_immutable.nr:328:41"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:114:20",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:356:38",
+        "billboard_contract/src/main.nr:619:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:117:22",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:22:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:119:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:356:38"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:105:53",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51",
+        "billboard_contract/src/main.nr:484:29",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:244:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:82:21",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/notes.nr:90:40",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/note.nr:46:28",
+        "billboard_contract/src/main.nr:518:43",
+        "billboard_contract/src/main.nr:135:31",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/note.nr:46:32"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:260:25",
+        "billboard_contract/src/main.nr:619:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:117:22",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:22:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:119:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:240:13",
+        "std/option.nr:61:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:260:25"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39",
+        "billboard_contract/src/main.nr:484:29",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:235:31",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:1184:13",
+        "billboard_contract/src/main.nr:619:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:89:5",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:53:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/resolved_tagging_strategy.nr:45:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_secret_source.nr:37:23",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/handshake.nr:151:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:1082:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:1184:13"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28",
+        "billboard_contract/src/main.nr:489:30",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/public_immutable.nr:333:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/with_hash.nr:67:20",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:116:39",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18",
+        "billboard_contract/src/main.nr:619:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/public_immutable.nr:328:41",
+        "billboard_contract/src/main.nr:307:26",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/public_immutable.nr:328:41"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28",
+        "billboard_contract/src/main.nr:307:26",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/public_immutable.nr:333:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/with_hash.nr:67:20",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:116:39",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:114:20",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:105:53",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/public_immutable.nr:328:41",
+        "billboard_contract/src/main.nr:685:32",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/public_immutable.nr:328:41",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/public_immutable.nr:328:41",
+        "billboard_contract/src/main.nr:683:32",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/public_immutable.nr:328:41"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39",
+        "billboard_contract/src/main.nr:690:31",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:235:31",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28",
+        "billboard_contract/src/main.nr:683:32",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/public_immutable.nr:333:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/with_hash.nr:67:20",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:114:20",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:116:39",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51",
+        "billboard_contract/src/main.nr:690:31",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:244:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:82:21",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/notes.nr:90:40",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:829:36",
+        "billboard_contract/src/main.nr:690:31",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:244:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:82:21",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/notes.nr:91:30",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:758:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:829:36"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:52:37",
+        "private_fee_contract/src/main.nr:164:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:89:5",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:52:37"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:19:13",
+        "private_fee_contract/src/main.nr:164:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:117:22",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:19:13"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52",
+        "private_fee_contract/src/main.nr:153:46",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:150:13",
+        "private_fee_contract/src/main.nr:164:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:113:18",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:149:9",
+        "std/option.nr:61:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:150:13"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18",
+        "private_fee_contract/src/main.nr:164:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:69:26",
+        "private_fee_contract/src/main.nr:164:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:34:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:69:26"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:1184:13",
+        "private_fee_contract/src/main.nr:164:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:89:5",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:53:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/resolved_tagging_strategy.nr:45:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_secret_source.nr:37:23",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/handshake.nr:151:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:1082:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:1184:13"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:55:31",
+        "private_fee_contract/src/main.nr:164:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/balance-set/src/balance_set.nr:56:26",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:159:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:55:31"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:69:26",
+        "private_fee_contract/src/main.nr:102:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:34:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:69:26"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18",
+        "private_fee_contract/src/main.nr:102:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:19:13",
+        "private_fee_contract/src/main.nr:102:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:117:22",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:19:13"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52",
+        "private_fee_contract/src/main.nr:90:46",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:52:37",
+        "private_fee_contract/src/main.nr:102:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:89:5",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:52:37"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:1184:13",
+        "private_fee_contract/src/main.nr:102:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:89:5",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:53:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/resolved_tagging_strategy.nr:45:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_secret_source.nr:37:23",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/handshake.nr:151:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:1082:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:1184:13"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:55:31",
+        "private_fee_contract/src/main.nr:102:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/balance-set/src/balance_set.nr:56:26",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:159:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:55:31"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:829:36",
+        "private_fee_contract/src/main.nr:52:29",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:177:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:193:26",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/balance-set/src/balance_set.nr:87:21",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:244:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:82:21",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/uint-note/src/uint_note.nr:68:22",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:758:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:829:36"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:55:31",
+        "private_fee_contract/src/main.nr:52:29",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:178:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/balance-set/src/balance_set.nr:56:26",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:159:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:55:31"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39",
+        "private_fee_contract/src/main.nr:52:29",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:177:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:193:26",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/balance-set/src/balance_set.nr:87:21",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:235:31",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18",
+        "private_fee_contract/src/main.nr:52:29",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:178:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:52:37",
+        "private_fee_contract/src/main.nr:52:29",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:178:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:89:5",
+        "std/option.nr:94:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:52:37"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51",
+        "private_fee_contract/src/main.nr:52:29",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:177:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:193:26",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/balance-set/src/balance_set.nr:87:21",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:244:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:82:21",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/uint-note/src/uint_note.nr:67:32",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:19:13",
+        "private_fee_contract/src/main.nr:52:29",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:178:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:117:22",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:19:13"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:69:26",
+        "private_fee_contract/src/main.nr:52:29",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:178:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:145:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:34:5",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:69:26"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51",
+        "private_fee_contract/src/main.nr:211:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:193:26",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/balance-set/src/balance_set.nr:87:21",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:244:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:82:21",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/uint-note/src/uint_note.nr:67:32",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:105:53",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:829:36",
+        "private_fee_contract/src/main.nr:211:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:193:26",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/balance-set/src/balance_set.nr:87:21",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:244:17",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:82:21",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/uint-note/src/uint_note.nr:68:22",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:758:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:829:36"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39",
+        "private_fee_contract/src/main.nr:211:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:193:26",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/balance-set/src/balance_set.nr:87:21",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:235:31",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39"
+      ]
+    },
+    {
+      "heading": "Brillig function call isn't properly covered by a manual constraint",
+      "locations": [
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:1184:13",
+        "private_fee_contract/src/main.nr:211:9",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/internal_functions.nr:21:19",
+        "private_fee_contract/src/main.nr:200:13",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/external_functions_stubs.nr:178:32",
+        "/Users/zac/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:1184:13"
+      ]
+    }
+  ],
+  "ownedScratchRemoved": true
+}

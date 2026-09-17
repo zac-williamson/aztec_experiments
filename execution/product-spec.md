@@ -13,8 +13,8 @@ but public posts must not contain a stable identifier joining them. The censor c
 flag posts within the contract's declared window and transfer its own authority;
 it cannot spend collateral or prevent an otherwise valid exit indefinitely. The
 deployer wires exactly one intended portal and configuration before deposits open.
-The fee sponsor pays shared fees under a spending policy without collecting author
-identity. The feed operator reads public data only. Operators can fail or be malicious
+Authors fund an ownerless private-fee contract and spend their private credit.
+No fee sponsor, coupon issuer or fee-service operator is part of the architecture. The feed operator reads public data only. Operators can fail or be malicious
 within these privileges; their interfaces must not implicitly grant more authority.
 
 Adversaries may control other depositors, L1 message senders, other Aztec contracts,
@@ -27,8 +27,8 @@ the base protocol sound.
 
 A chain observer sees L1 funding/deposit/withdrawal bookends, public messages/posts,
 flags, timing and transaction metadata including fee payer. The RPC may observe IP,
-request timing and queries; the frontend host sees delivery requests. A shared fee
-service may see requests and timing. Do not promise anonymity against a colluding
+request timing and queries; the frontend host sees delivery requests. The public funding amount and timing remain visible; private credit does not hide
+those funding bookends. Do not promise anonymity against a colluding
 global network observer or self-identifying text. Minimize request/account coupling,
 logs and telemetry, document remaining exposure, and never equate a hidden function
 argument with full transaction privacy.
@@ -117,7 +117,7 @@ passing results already exist. Implement them in the appropriate package's suite
 | REQ03 | Author screens only authentic notes from the same owner, slot, board and deposit ancestry. | Foreign or skipped history cannot advance progress. | NOTE-01 foreign origin; NOTE-02 wrong owner/slot; NOTE-03 two deposits and old roots; NOTE-04 skipped/too-young links — C02/T01/T02. |
 | REQ04 | Concurrent authors and long-lived accounts retain complete history and finite exit. | Genuine conflicts are surfaced and re-proved; no global-counter starvation or fixed lifetime page cutoff. | SCALE-01 ten same-anchor authors; SCALE-02 1,000 posts/account across cycles; SCALE-03 required hints after 16/32/1,000; SCALE-04 exit during traffic — C03/C04/T04. |
 | REQ05 | Author's checked rate/penalty debt follows the model; no withdrawal/reset or overflow bypass. | Invalid parameters fail before accepting collateral; ineligible actions revert; eligible exit works. | ECON-01 rounding/burst boundaries; ECON-02 flags/withdraw/redeposit; ECON-03 overflow/time fuzz; ECON-04 finite exit — C05/C06/T01/T02. |
-| REQ06 | Chain observer sees no reusable author tag introduced by fees/funding/posting; remaining network/content limits are explicit. | Unsupported fee route or exhausted sponsor never silently exposes per-author fee payer. | PRIV-01 full observable footprint; PRIV-02 repeated posts/accounts/funding; PRIV-03 fee outage/recovery; PRIV-04 RPC/host/sponsor traces — W01/T03. |
+| REQ06 | Chain observer sees no reusable author tag introduced by fees/funding/posting; remaining network/content limits are explicit. | Unsupported fee route or insufficient private credit never silently falls back to a per-author public fee payer. | PRIV-01 full observable footprint; PRIV-02 repeated posts/accounts/funding; PRIV-03 fee outage/recovery; PRIV-04 RPC/host/funding traces — W01/T03. |
 | REQ07 | Wallet secrets remain private; author state reconciles with actual successful receipts across interruption. | Unknown/reverted/dropped/reorged outcomes remain distinct; no duplicate collateral movement. | WALLET-01 backup/restore; WALLET-02 log scan; TX-01 receipt matrix; TX-02 crash every stage; TX-03 >500-block absence/reorg — W02/W03/T04. |
 | REQ08 | Only allowed censor operations use signing authority; every eligible job is durable and policy-correct. | Malformed model data is inert; failed flags retry until deadline or explicit terminal incident. | MOD-01 hostile arguments; MOD-02 restricted signer; MOD-03 lease/crash/retry; MOD-04 empty-board policy refresh; MOD-05 actual model evaluation/deadlines — M01/M02/M03. |
 | REQ09 | Reader needs no wallet; supported authors can use safe accessible browser flows. | Bad content stays text; unavailable proving is explained; feed pagination/reorg errors recover. | FEED-01 incremental/reorg; UI-01 complete browser journey; UI-02 hostile rendering/keyboard; HOST-01 HTTPS/headers/workers — F01/U01/T04. |
@@ -139,7 +139,7 @@ issue to resolve, not an invitation to change the denominator or hide failures.
 | Browser reference | Current stable Chrome/Firefox/Safari desktop; record exact versions. Reference hardware: Apple Silicon with at least 16 GB RAM, and a comparable Linux/Windows Chromium host if available; record actual CPU/RAM. Cold proving p95 <=180 s and warm proving p95 <=90 s over >=30 posts per supported engine, excluding documented chain inclusion/finality waits. Initial public-feed p95 <=3 s over 30 fresh loads at 20 Mbps/100 ms RTT; no private wallet/proving download required for reading. |
 | Transactions | Pending status visible within 1 s of submit acknowledgement. Reconcile a restored client within 60 s of healthy RPC access, excluding proof computation and chain finality. Persist every acknowledged stage; at least three injected interruption points per stage, including immediately before and after response persistence. |
 | Moderation | Holdout corpus >=300 labeled cases with >=50 multilingual and >=50 prompt-injection/formatting cases. False-positive rate <=2% and false-negative rate <=5% on the explicitly labeled policy corpus; separately report ambiguous cases and class denominators. Real model response p95 <=10 s on recorded production-like hardware. Complete eligible flag submission with >=20% of censor window remaining under the declared admission rate; no correctness assumption that the model is infallible. |
-| Moderation load | Baseline supported arrival rate one post/minute sustained and a burst of ten posts, plus a two-hour backlog/recovery trial. Scale sponsor admission or worker capacity only with measured privacy-preserving limits; test ten simultaneous authors independently of sustained admission policy. |
+| Moderation load | Baseline supported arrival rate one post/minute sustained and a burst of ten posts, plus a two-hour backlog/recovery trial. Scale application admission or worker capacity only with measured privacy-preserving limits; test ten simultaneous authors independently of sustained admission policy. |
 | Feed | Query work proportional to new/reorged events plus bounded page size; 100-post pages p95 <=2 s from healthy local service with 10,000 public posts. Demonstrate rollback/replay of at least a three-block reorg fixture. |
 | Operations | Critical injected incidents alert within 60 s; runbook restores service within 30 min after dependencies return. Sponsor tests enforce per-transaction maximum and daily cap exactly, with no uncapped retries. No monetary production budget is inferred: local tests use fake/test-only units; O02 obtains an actual approved cap. |
 | Soak | Fourteen consecutive actual days, >=99.5% application-service availability excluding explicitly itemized base-network outages (report both inclusive and exclusive availability), zero unresolved correctness/privacy incidents, monitoring coverage >=99.9%, and every required failure drill. Material code changes restart affected release evidence and the representative soak. |
@@ -151,7 +151,7 @@ missing environment. Node health does not substitute for official production cle
 
 The implementation may proceed using synthetic moderation policy, fresh local
 identities and bounded fake fee budgets. Before production, obtain actual policy,
-sponsor budget, operator/incident owners and credential restrictions in O02. Prepare
+private-fee route and funding limits, operator/incident owners and credential restrictions in O02. Prepare
 the audit packet in R01 before seeking a reviewer; X01/X02 require independent
 Aztec/Noir and Solidity review. Only X03 can establish current target suitability;
 if V5 is unsuitable, propose the migration delta and get the user's target decision.

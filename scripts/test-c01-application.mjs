@@ -1,3 +1,4 @@
+import { applicationNativeProfile } from './c01-native-profile.mjs';
 // Bounded disposable genuine-verifier qualification; each report records its attempted scope.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -15,7 +16,7 @@ const execFileAsync = promisify(execFile);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function fingerprints() {
   const result = {};
-  for (const name of ['scripts/test-c01-application.mjs','scripts/owned-test-process-tree.mjs','scripts/c01-settle-application-message.mjs','scripts/c01-application-deployment.mjs',
+  for (const name of ['scripts/c01-native-profile.mjs','scripts/test-c01-application.mjs','scripts/owned-test-process-tree.mjs','scripts/c01-settle-application-message.mjs','scripts/c01-application-deployment.mjs',
     'scripts/w03-note-attribution.mjs','shared/application-nullifier.mjs','scripts/w03-proof-recovery.mjs','shared/l2-journal.mjs','shared/transaction-outcomes.mjs','shared/journal-backup.mjs','scripts/prove-application-action.mjs','scripts/w02-wallet-restore.mjs','shared/wallet-backup.js','scripts/w01-private-fee-standalone.mjs','scripts/w01-private-fee-flow.mjs','scripts/w01-private-funding.mjs','shared/private-fee-client.mjs','shared/private-fee-payment.mjs','shared/private-fee-funding.mjs','shared/ethereum-journal.mjs','shared/journal-record.mjs','apps/src/billboard/user/transaction-journal-store.mjs','scripts/c01-settle-ready.mjs','scripts/c01-settle-message.mjs','scripts/c01-bridge-flow.mjs','scripts/c02-screening-flow.mjs','scripts/c03-author-claims.mjs','scripts/c03-contention-flow.mjs','scripts/c01-client-mining.mjs','scripts/c01-deposit-flow.mjs','scripts/c01-exit-flow.mjs','scripts/c01-withdraw-l1.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
     'node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js']) {
     result[name] = sha(await fs.readFile(path.join(ROOT, name)));
@@ -76,7 +77,7 @@ async function worker(directory) {
     const [{getGenesisValues},{getConfigEnvVars},{deployC01ApplicationProtocol}]=await Promise.all([
       import('@aztec/world-state/testing'),import('@aztec/aztec-node/config'),import('./c01-application-deployment.mjs')]);
     let preparation;
-    if(process.env.C01_BOARD_PROOF==='true'){const {prepareC01BoardFlow}=await import('./c01-board-flow.mjs');preparation=await prepareC01BoardFlow({bbBinaryPath:path.join(directory,'bb-one-thread'),directory,authorCount:process.env.C03_CONTENTION==='true'&&process.env.C03_POSTING_DIAGNOSTIC!=='true'?10:1});}
+    if(process.env.C01_BOARD_PROOF==='true'){const {prepareC01BoardFlow}=await import('./c01-board-flow.mjs');preparation=await prepareC01BoardFlow({bbBinaryPath:applicationNativeProfile(directory).bbPath,directory,authorCount:process.env.C03_CONTENTION==='true'&&process.env.C03_POSTING_DIAGNOSTIC!=='true'?10:1});}
     const {genesisArchiveRoot,fundingNeeded,genesis}=await getGenesisValues(preparation?.fundingAddresses??[]);
     const {SecretValue}=await import('@aztec/foundation/config');
     const {EthAddress}=await import('@aztec/foundation/eth-address');
@@ -170,6 +171,9 @@ async function parent() {
     report.networkProofs=false;report.controlledSettlement=settle;report.binarySha256=binarySha;
     assert(!bb.includes("'"));
     await fs.writeFile(path.join(directory,'bb-one-thread'),"#!/bin/sh\nHARDWARE_CONCURRENCY=1 exec '"+bb+"' \"$@\"\n",{flag:'wx',mode:0o700});
+    const applicationThreads=contention?2:1;
+    if(applicationThreads===2)await fs.writeFile(path.join(directory,'bb-two-threads'),"#!/bin/sh\nHARDWARE_CONCURRENCY=2 exec '"+bb+"' \"$@\"\n",{flag:'wx',mode:0o700});
+    report.applicationBBThreads=applicationThreads;report.nodeBBThreads=1;report.worldStateHardwareConcurrency=1;
     await fs.mkdir(path.join(directory,'acvm'),{mode:0o700});
     report.noteAttribution=noteAttribution;report.proofRecovery=proofRecovery;report.privateFeePosting=privateFeePosting;report.privateFees=privateFees;report.startNode=startNode;report.boardProof=boardProof;report.settle=settle;report.bridge=bridge;report.screening=screening;report.contention=contention;report.postingDiagnostic=postingDiagnostic;report.expectedAuthorCount=contention&&!postingDiagnostic?10:1;
     if(postingDiagnostic)report.contentionQualified=false;
@@ -179,7 +183,7 @@ async function parent() {
     const started = performance.now();
     child = spawn('/usr/bin/sandbox-exec', ['-f', profile, '/usr/bin/time', '-l', '-o', resources,
       process.execPath, SELF, '--worker', directory], { cwd: ROOT, detached: true,
-      env: {HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'warn',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',NODE_BACKEND:'js',FORGE_BIN:'/Users/zac/.foundry/bin/forge',C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,C01_START_NODE:String(startNode),C01_BOARD_PROOF:String(boardProof),C01_BOARD_INCLUDE:String(boardInclude),C01_READY:String(readyFlow),C01_SETTLE:String(settle),C01_BRIDGE:String(bridge),W03_NOTE_ATTRIBUTION:String(noteAttribution),W03_PROOF_RECOVERY:String(proofRecovery),W01_PRIVATE_FEE_POST:String(privateFeePosting),W01_PRIVATE_FEES:String(privateFees),C02_SCREENING:String(screening),C03_CONTENTION:String(contention),C03_POSTING_DIAGNOSTIC:String(postingDiagnostic),FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
+      env: {HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'warn',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',C01_APPLICATION_BB_THREADS:String(applicationThreads),NODE_BACKEND:'js',FORGE_BIN:'/Users/zac/.foundry/bin/forge',C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,C01_START_NODE:String(startNode),C01_BOARD_PROOF:String(boardProof),C01_BOARD_INCLUDE:String(boardInclude),C01_READY:String(readyFlow),C01_SETTLE:String(settle),C01_BRIDGE:String(bridge),W03_NOTE_ATTRIBUTION:String(noteAttribution),W03_PROOF_RECOVERY:String(proofRecovery),W01_PRIVATE_FEE_POST:String(privateFeePosting),W01_PRIVATE_FEES:String(privateFees),C02_SCREENING:String(screening),C03_CONTENTION:String(contention),C03_POSTING_DIAGNOSTIC:String(postingDiagnostic),FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
       stdio: ['ignore', 'pipe', 'pipe'] });
     report.pid = child.pid; report.stages = [];
     let stderrBuffer='';

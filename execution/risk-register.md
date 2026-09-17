@@ -1,5 +1,10 @@
 # Active risks
 
+Baseline table descriptions below are historical, not current open/closed status.
+Use graph.json and source-bound task evidence for current qualification. Later
+sections record additional findings and dispositions.
+
+
 P01: none of the implementation findings below is closed by writing the specification.
 
 | Risk | Baseline / owner | Current evidence and resolution |
@@ -44,3 +49,18 @@ Reproduced2026-09-15 with an in-memory fetch observer: the previous shared/app-e
 The wrapper now compares parsed origin and exact configured JSON-RPC pathname, preserves Request headers, and rejects redirects on credential-bearing requests. The baseline observation is `evidence/W01/rpc-credential-baseline.json`; two tests of the actual wrapper pass in `evidence/W01/rpc-credential-boundary-002.log`. Browser release qualification remains part of later client/release verification. This finding does not establish that any real credential was transmitted to a third party.
 
 W01-F01 generated-page follow-up: a second immediately executed wrapper in shared/aztec-lib.js still used substring matching underneath the fixed app-env wrapper. Actual combined-source in-memory reproduction confirms credential leakage to an unrelated URL (rpc-duplicate-wrapper-baseline.json). Removed duplicate installation; all four app entrypoints already call the single app-env setup after it loads. Generated consumer checks and rebuilt pages verify the final boundary.
+
+## T01 current compiler and formal disposition (2026-09-17)
+
+Fresh source-bound compilation records57 manual-constraint occurrences at18sites
+across Billboard and PrivateFPC, including all12 original locations. The increase
+is not a count of vulnerabilities. All occurrences remain open qualifications;
+sixnewsites include private-call counters/returns and the fee contract's explicitly
+unconstrained note-delivery paths. See evidence/T01/fresh-diagnostic-disposition-006.md
+and its complete bound inventory. Relevant application probes reduce uncertainty;
+they do not prove protocol circuits or satisfy independent review.
+
+Historical Lean/Verity models are retired, not repaired or accepted: True-valued
+claims, an inconsistent constant-hash/injectivity assumption and missing fee
+observations cannot support release. The maintained finite state models and
+mutation controls are explicitly scoped specification checks.
