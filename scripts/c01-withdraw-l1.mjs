@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {parseEventLogs,ContractFunctionRevertedError} from 'viem';
+import {OutboxAbi} from '@aztec/l1-artifacts/OutboxAbi';
 import {RollupContract} from '@aztec/ethereum/contracts/rollup';
 import {Fr} from '@aztec/foundation/curves/bn254';
 import {EthAddress} from '@aztec/foundation/eth-address';
@@ -18,7 +19,7 @@ const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const included=receipt=>[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(receipt.status)
   &&receipt.executionResult===TxExecutionResult.SUCCESS&&receipt.blockNumber!=null&&receipt.blockHash!=null;
 
-export async function withdrawC01L1({node,preparation,ready,exitResult,settlement,l1Client,rpcUrl}){
+export async function withdrawC01L1({node,preparation,ready,exitResult,settlement,l1Client,rpcUrl,qualifyBadMembership=false}){
   let stage='preflight';
   const observation={passed:false,scope:'application Outbox consumption and L1 escrow withdrawal with controlled settlement',syntheticSettlement:true};
   const mark=name=>{stage=name;process.stdout.write(`C01_L1_WITHDRAW_STAGE ${name}\n`);};
@@ -80,6 +81,24 @@ export async function withdrawC01L1({node,preparation,ready,exitResult,settlemen
       witness.siblingPath.toBufferArray().map(buffer=>'0x'+buffer.toString('hex'))];
     assert(args[0]>=0n&&args[1]>0n&&args[2]>=0n&&args[3].length<=256);
     await finality();assert.deepEqual(await read('getDeposit',[claim.depositor]),[claim.depositNonce,claim.amount]);
+    if(qualifyBadMembership){
+      mark('reject-corrupted-unconsumed-membership');
+      assert(args[3].length>0,'Bad-membership qualification needs an actual sibling');
+      const before={deposit:await read('getDeposit',[claim.depositor]),liability:await read('totalDeposited'),balance:await l1Client.getBalance({address:portalAddress})};
+      const corrupt=[args[0],args[1],args[2],[...args[3]]];
+      corrupt[3][0]='0x'+(BigInt(corrupt[3][0])^1n).toString(16).padStart(64,'0');
+      assert.notEqual(corrupt[3][0],args[3][0]);
+      const abi=[...portal.abi,...OutboxAbi.filter(item=>item.type==='error')];
+      let rejected=false;
+      try{await l1Client.simulateContract({address:portalAddress,abi,functionName:'withdraw',args:corrupt,account:l1Client.account});}
+      catch(error){const reverted=error?.walk?.(cause=>cause instanceof ContractFunctionRevertedError);
+        rejected=reverted instanceof ContractFunctionRevertedError&&reverted.data?.errorName==='MerkleLib__InvalidRoot';}
+      assert(rejected,'Corrupted genuine membership must decode to MerkleLib__InvalidRoot');
+      assert.deepEqual(await read('getDeposit',[claim.depositor]),before.deposit);
+      assert.equal(await read('totalDeposited'),before.liability);
+      assert.equal(await l1Client.getBalance({address:portalAddress}),before.balance);
+      observation.badMembership={rejected:true,errorName:'MerkleLib__InvalidRoot',mutatedSiblingCount:1,unconsumedOriginalWitness:true,activeReceiptUnchanged:true,liabilityUnchanged:true,portalBalanceUnchanged:true,stage:'L1 eth_call against real settled Outbox; no transaction sent'};
+    }
     mark('withdraw-real-l1');
     const hash=await l1Client.writeContract({address:portalAddress,abi:portal.abi,functionName:'withdraw',args,
       account:l1Client.account,value:0n});
@@ -121,6 +140,7 @@ export async function withdrawC01L1({node,preparation,ready,exitResult,settlemen
       depositorBalanceReconciled:true,repeatWithdrawalRejected:true,
       membership:{epochNumber:String(witness.epochNumber),checkpointCount:witness.numCheckpointsInEpoch,
         leafIndex:String(witness.leafIndex),pathLength:witness.siblingPath.pathSize}});
+    Object.defineProperty(observation,'replay',{enumerable:false,value:{args:[args[0],args[1],args[2],[...args[3]]],portalAddress,depositor:claim.depositor,originalNonce:claim.depositNonce,originalAmount:claim.amount}});
     return observation;
   }catch(error){const failure=new Error(`C01_L1_WITHDRAW_FAILED:${stage}:${error?.name??'Error'}`);
     failure.withdrawalObservation={...observation,passed:false,stage,errorClass:error?.name??'Error',location:error?.stack?.split('\n').filter(line=>line.trimStart().startsWith('at ')).slice(0,3).join('\n')};throw failure;}

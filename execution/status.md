@@ -124,3 +124,11 @@ U01 milestone ae39dd0 pushed. Streaming proof candidate passes16 checks; bounded
 Browser031 stopped at2121728KiB/221171ms before completion; supplemental sampling attributes about1.3GiB toChromium and0.7GiB tocombinedtest/node. Candidate033 defersunusedSDKartifactobjects and removes whole-file hashbuffers inhosting generator.65focusedchecks andfee/deployUI033 pass; genuine034 inprogress with bounded public BBstage observation, no debugger.
 
 U01 blocked: genuine browser proof exceeded aggregate memory in034/036; final038 hosting/config/keyboard/journey and CLI pass. T02 active: implement flagged screening-to-refund journey in existing bounded real-proof harness. No production readiness claim.
+
+Flagged full journey004 running: source review passed; latest-note withdrawal adapter3focusedchecks pass. Real author post, authorized flag, screening penalty, early-withdraw rejection and exact L1 refund are under qualification, not yet passed. Sources frozen during run.
+
+Flagged004 passed428824ms/1642224KiB: real post, flag, screening debt, rejected early withdrawals, eligible exit, exact L1 refund and private fees; cleanup complete. Redeposit006 running with two real lifecycles and precise consumed-claim/exit plus corrupt-membership rejection. Public-testnet suitability remains pending; see review005.
+
+Redeposit006 passed442386ms/1629568KiB with two real claim/exit/refund cycles, unchanged fresh receipt after old claim/exit rejection, corrupted Outbox membership rejection and full cleanup. Final unflagged profile includes authentic wrong-origin Inbox and absent-chain probes, source review pending.
+
+Unflagged+origin007 passed426752ms/1247936KiB, cleanup complete. All three local T02journeys pass. T02 remains blocked on retained protocol/privacy compiler and independent disposition; public qualification unresolved. U01 active for supported single-worker experiment, no changed proof/CRS/resource policies.

@@ -14,6 +14,8 @@ Use the pinned Node24 runtime and Foundry versions in BUILDING.md.
   real post proofs, checking authenticated screening and exact private-note state.
   Uses the same nine-minute bound; writes evidence under `execution/evidence/C02`.
 
+- `node scripts/test-c01-application.mjs --redeposit`: two genuine deposit/claim/exit/refund cycles for the same user, rejecting old claim and consumed exit data against the fresh receipt. Under qualification; same aggregate limits apply.
+- `node scripts/test-c01-application.mjs --flagged-journey` and `--unflagged-journey`: integrated private-fee posting, screening, eligible withdrawal and actual L1 refund. The unflagged profile also rejects an actual wrong-origin Inbox message and missing deposit-chain withdrawal before the valid journey. Successful execution is required before claiming coverage. Evidence is retained under `execution/evidence/T02`.
 - `node scripts/test-c01-application.mjs --private-fee-post`: user-funded private fees, production L1 funding/recovery helpers, first-use claim and subsequent private posting.
 - `node scripts/test-c01-application.mjs --proof-recovery`: genuine stale real-post proof, conflicting private fee spend, encrypted journal restore and same-post replacement.
 - `node scripts/test-c01-application.mjs --note-attribution`: genuine unsubmitted screening proof and withdrawal of the same private deposit note, stale-proof rejection and L1 refund. This qualifies attribution, not a combined regenerated-screening race.

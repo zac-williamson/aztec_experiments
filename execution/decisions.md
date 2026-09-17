@@ -440,3 +440,7 @@ The UI-specific fee/deployment check033 passes with zero RPC/external requests;
 its engine results are explicit fixtures, not payment/deployment proof evidence.
 It checks amount/unknown-outcome guidance, duplicate prevention, recovery export
 and exact deployment-to-public-configuration transfer.
+
+## Integrated application journey qualification
+
+T02 reuses the existing disposable node, actual application proofs and official local Outbox settlement. New flagged/unflagged profiles keep distinct author and authorized moderator identities. Author claim/post/screen/withdraw fees use the existing user-funded private FPC; the test moderator uses its existing genesis-funded public fee balance, which does not qualify production moderator fee privacy. No additional production actor or fee service is introduced. Posted exits explicitly select and verify the latest screened note while retaining the original collateral receipt. Resource bounds remain540seconds and2GiB aggregate; native supervision now also rejects long sampling gaps and elapsed-time overruns.

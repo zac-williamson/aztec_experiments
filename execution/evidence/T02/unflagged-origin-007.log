@@ -1,0 +1,37 @@
+{"stage":"start-disposable-l1","elapsedMs":517}
+{"stage":"prepare-genesis","elapsedMs":662}
+{"stage":"deploy-local-protocol-fixture","elapsedMs":3456}
+{"stage":"wait-for-local-validator-activation","elapsedMs":5481}
+{"stage":"start-application-node","elapsedMs":5511}
+{"stage":"prove-board-deployment","elapsedMs":10083}
+{"stage":"include-board-deployment","elapsedMs":32831}
+{"stage":"prepare-and-prove-ready","elapsedMs":46117}
+{"stage":"include-ready","elapsedMs":63359}
+{"stage":"settle-ready-test-message","elapsedMs":95644}
+{"stage":"private-fee:fund-disposable-user","elapsedMs":113781}
+{"stage":"private-fee:bridge-user-funds","elapsedMs":113800}
+{"stage":"private-fee:wait-inbox","elapsedMs":114376}
+{"stage":"real-deposit-and-claim","elapsedMs":154478}
+{"stage":"claim:reopen-claim-wallet","elapsedMs":154512}
+{"stage":"claim:deposit-real-l1","elapsedMs":154785}
+{"stage":"claim:wrong-origin:send-real-wrong-sender-message","elapsedMs":154901}
+{"stage":"claim:wrong-origin:wait-real-wrong-origin-membership","elapsedMs":154909}
+{"stage":"claim:wrong-origin:reject-wrong-origin-claim","elapsedMs":185577}
+{"stage":"claim:wait-real-inbox-anchor","elapsedMs":185853}
+{"stage":"claim:prove-real-claim","elapsedMs":185858}
+{"stage":"claim:include-real-claim","elapsedMs":209027}
+{"stage":"claim:check-delivered-deposit-note","elapsedMs":219989}
+{"stage":"claim:reject-real-claim-replay","elapsedMs":220166}
+{"stage":"claim:reject-absent-deposit-chain","elapsedMs":220363}
+{"stage":"journey:prove-post","elapsedMs":243082}
+{"stage":"journey:reject-Too early to withdraw -- not all posts screened","elapsedMs":278453}
+{"stage":"journey:prove-standalone-screen","elapsedMs":334535}
+{"stage":"real-posted-exit","elapsedMs":369236}
+{"stage":"exit:reopen-exit-wallet","elapsedMs":369264}
+{"stage":"exit:wait-eligible-canonical-anchor","elapsedMs":369733}
+{"stage":"exit:prove-real-withdrawal","elapsedMs":369740}
+{"stage":"exit:include-real-withdrawal","elapsedMs":387315}
+{"stage":"exit:verify-consumed-note","elapsedMs":404634}
+{"stage":"settle-exit-test-message","elapsedMs":405010}
+{"stage":"withdraw-real-l1-collateral","elapsedMs":422226}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/T02/application-493aed31-a6a2-4e70-9a30-0eea551a8c78.json","passed":true,"profile":"genuine private-fee unflagged post, screening, exit and L1 refund"}

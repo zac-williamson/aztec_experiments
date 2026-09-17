@@ -46,7 +46,7 @@ async function artifacts(preparation,ready){
  * and includes private note/identity/secret material for a later no-post withdrawal.
  * Owns one ephemeral PXE wallet; caller owns sequencer/node/prover shutdown.
  */
-export async function depositAndClaimC01({node,preparation,instance,l1Client,ready,settlement,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,privateFeeAction}){
+export async function depositAndClaimC01({node,preparation,instance,l1Client,ready,settlement,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,privateFeeAction,qualifyWrongOrigin=false}){
   let stage='preflight',wallet,sequencer,previousSequencerConfig;
   const observation={passed:false,scope:'local real deposit and genuine private claim with ordinary checkpoint inclusion',
     syntheticMessages:false,syntheticProofs:false,claimEpochProofAccepted:false};
@@ -117,6 +117,12 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     await canonicalDeposit();
     Object.assign(observation,{depositTxHash:depositHash,depositBlock:String(depositReceipt.blockNumber),depositNonce:String(receipt.nonce),
       amount:String(amount),inboxMessageKey:receipt.key,messageContentChecked:true,artifactHashes:checked.hashes});
+    if(qualifyWrongOrigin){
+      const {qualifyT02WrongOrigin}=await import('./t02-wrong-origin.mjs');
+      observation.origin=await qualifyT02WrongOrigin({wallet,board,node,l1Client,instance,scope,secret,secretHash,content,amount,
+        depositNonce:receipt.nonce,depositor,owner:account.address,mineL1:mine,reportStage:mark});
+      assert(observation.origin.passed);
+    }
     sequencer=node.getSequencer();assert(sequencer,'Ordinary sequencer required');
     const sequencerConfig=sequencer.getSequencer().getConfig();
     previousSequencerConfig={minTxsPerBlock:sequencerConfig.minTxsPerBlock,
@@ -233,6 +239,23 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     observation.replay={rejected:true,reason:'consumed-claim-message',freshAccountRequest:true,
       originalMessageNullifierChecked:true,originalInboxLeafPresent:true,originalNoteUnchanged:true,
       noSecondNote:true,stage:'PXE witness generation; no second proof accepted or transaction sent'};
+    if(qualifyWrongOrigin){
+      mark('reject-absent-deposit-chain');
+      let absent;do{absent=Fr.random();}while(absent.isZero()||absent.equals(chain));
+      const payload=await board.methods.withdraw(absent).request();
+      const fee=await wallet.completeFeeOptions({from:account.address,feePayer:payload.feePayer});
+      const hostile=await wallet.createTxExecutionRequestFromPayloadAndFee(payload,account.address,fee);
+      let rejected=false;
+      try{await wallet.pxe.proveTx(hostile,{scopes:wallet.scopesFrom(account.address,[],undefined),senderForTags:wallet.senderForTagsFrom(account.address,undefined)});}
+      catch(error){let cause=error;const seen=new Set();for(let i=0;cause&&i<8&&!seen.has(cause);i++,cause=cause.cause){seen.add(cause);if(cause.message?.includes('No deposit note found')){rejected=true;break;}}}
+      assert(rejected,'Absent deposit chain must reject specifically for missing note');
+      assert.deepEqual((await board.methods.get_deposit_info(account.address,chain).simulate({from:account.address})).result.map(integer),fields);
+      const after=(await wallet.pxe.debug.getNotes(activeFilter)).filter(note=>note.note.items[1]?.equals(chain));
+      assert.equal(after.length,1);assert(after[0].txHash.equals(tx.getTxHash()));assert(after[0].siloedNullifier.equals(activeBefore[0].siloedNullifier));
+      assert.deepEqual(after[0].note.items.map(integer),activeBefore[0].note.items.map(integer));await canonicalDeposit();
+      observation.absentChain={rejected:true,validNoteUnchanged:true,stage:'constraint execution; no completed proof or submission',scope:'wrong chain selection, not forged authenticated note'};
+      observation.origin.legitimateClaimPositiveControl=true;
+    }
     assert.deepEqual((await artifacts(preparation,ready)).hashes,checked.hashes);
     Object.assign(observation,{passed:true,claimTxHash:tx.getTxHash().toString(),claimBlock:String(claimReceipt.blockNumber),
       claimStatus:claimReceipt.status,executionResult:claimReceipt.executionResult,fee:String(claimReceipt.transactionFee),
@@ -244,6 +267,7 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
       claimReceipt,tx,instance}});
     return observation;
   }catch(error){
+    if(error.originObservation)observation.origin=error.originObservation;
     const failure=new Error(`C01_DEPOSIT_FAILED:${stage}:${error?.name??'Error'}`);
     failure.depositObservation={...observation,passed:false,stage,errorClass:error?.name??'Error',location:error?.stack?.split('\n').filter(line=>line.trimStart().startsWith('at ')).slice(0,3).join('\n')};throw failure;
   }finally{

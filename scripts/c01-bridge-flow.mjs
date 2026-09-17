@@ -9,11 +9,13 @@ import {withC01ClientMining} from './c01-client-mining.mjs';
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 export async function completeC01Bridge({node,config,dateProvider,l1Client,directory,rollupAddress,
-  preparation,instance,ready,settlement,mark,browserControl,screeningOnly=false,contentionOnly=false,privateFees=false,privateFeePosting=false}){
+  preparation,instance,ready,settlement,mark,browserControl,journey,screeningOnly=false,contentionOnly=false,privateFees=false,privateFeePosting=false}){
   const observation={passed:false,scope:'genuine local deposit, private claim, no-post exit and L1 refund',
     applicationProofs:true,controlledSettlement:true,networkProofs:false};
   assert(!node.getProverNode(),'No network prover in application test');
   try{
+    assert(!journey||['flagged','unflagged','redeposit'].includes(journey));
+    assert(!journey||(privateFees&&!privateFeePosting&&!screeningOnly&&!contentionOnly&&!browserControl));
     assert(settlement.passed&&settlement.activation?.depositsEnabled);
     // Supported lifecycle pauses polling without changing circuits or proof results.
 
@@ -29,9 +31,10 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
       }
       if(privateFees){
         const {prepareW01PrivateFees}=await import('./w01-private-fee-flow.mjs');
-        observation.privateFee=await prepareW01PrivateFees({...common,standalone:!privateFeePosting});
+        observation.privateFee=await prepareW01PrivateFees({...common,standalone:!privateFeePosting&&!journey});
         common.authorAccount=observation.privateFee.authorAccount;common.privateFeeAction=observation.privateFee.privateFeeAction;common.discardUnsubmittedFee=observation.privateFee.discardUnsubmittedFee;
       }
+      common.qualifyWrongOrigin=journey==='unflagged';
       mark('real-deposit-and-claim');
       observation.claim=await depositAndClaimC01({...common,ready,settlement});assert(observation.claim.passed);
       if(browserControl){
@@ -52,10 +55,18 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
         observation.screening=await proveAndIncludeC02Screening({...common,claimResult:observation.claim});
         assert(observation.screening.passed);return;
       }
-      mark('real-no-post-exit');
+      if(journey&&journey!=='redeposit'){
+        const {proveAndIncludeT02Screening}=await import('./t02-screening-journey.mjs');
+        observation.journey=await proveAndIncludeT02Screening({...common,claimResult:observation.claim,flagged:journey==='flagged'});
+        assert(observation.journey.passed);
+        common.exitState=observation.journey.exitState;
+        assert(common.exitState,'Posted exit requires explicit verified latest note state');
+        observation.scope=`genuine private-fee ${journey} post, screening, eligible exit and L1 refund`;
+      }
+      mark(journey&&journey!=='redeposit'?'real-posted-exit':'real-no-post-exit');
       observation.exit=await proveAndIncludeC01Exit({...common,claimResult:observation.claim});assert(observation.exit.passed);
       if(privateFees){
-        await observation.privateFee.verify(BigInt(observation.claim.fee)+BigInt(observation.exit.fee));
+        await observation.privateFee.verify(BigInt(observation.claim.fee)+BigInt(observation.exit.fee)+BigInt(observation.journey?.authorFees??0));
         assert.equal(observation.claim.feePayer,observation.privateFee.payer);assert.equal(observation.exit.feePayer,observation.privateFee.payer);
       }
     });
@@ -71,10 +82,17 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
 
     mark('withdraw-real-l1-collateral');
     observation.refund=await withdrawC01L1({node,preparation,ready,exitResult:observation.exit,
-      settlement:observation.exitSettlement,l1Client,rpcUrl:config.l1RpcUrls[0]});
-    assert(observation.refund.passed);observation.passed=true;return observation;
+      settlement:observation.exitSettlement,l1Client,rpcUrl:config.l1RpcUrls[0],qualifyBadMembership:!!journey});
+    assert(observation.refund.passed);
+    if(journey==='redeposit'){
+      const {completeT02Redeposit}=await import('./t02-redeposit-flow.mjs');
+      observation.redeposit=await completeT02Redeposit({node,config,dateProvider,l1Client,directory,rollupAddress,preparation,instance,ready,settlement,mark,
+        privateFee:observation.privateFee,priorClaimResult:observation.claim,priorExitResult:observation.exit,priorRefund:observation.refund});
+      assert(observation.redeposit.passed);observation.scope='genuine private-fee deposit/refund, redeposit replay rejection and second refund';
+    }
+    observation.passed=true;return observation;
   }catch(error){
-    for(const [key,name] of [['browserPost','browserPostObservation'],['privateFee','privateFeeObservation'],[privateFeePosting?'post':'contention','contentionObservation'],['authorClaims','authorClaimsObservation'],['screening','screeningObservation'],['claim','depositObservation'],['exit','exitObservation'],['exitSettlement','settlementObservation'],['refund','withdrawalObservation']]){
+    for(const [key,name] of [['redeposit','redepositObservation'],['journey','journeyObservation'],['browserPost','browserPostObservation'],['privateFee','privateFeeObservation'],[privateFeePosting?'post':'contention','contentionObservation'],['authorClaims','authorClaimsObservation'],['screening','screeningObservation'],['claim','depositObservation'],['exit','exitObservation'],['exitSettlement','settlementObservation'],['refund','withdrawalObservation']]){
       if(error[name])observation[key]=error[name];
     }
     error.bridgeObservation={...observation,passed:false};throw error;

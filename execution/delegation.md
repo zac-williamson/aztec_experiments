@@ -537,3 +537,5 @@ Baseline browser/hosting milestone committed and pushed as ae39dd0 before this c
 
 ## T02 resumed full journey
 Root owns harness orchestration and serial verification. Delegate flagged screening helper and explicit posted-state exit support in disjoint files; no agent may launch heavy proof runs.
+
+Exit-state adapter implemented and focused checks pass; root reviewing and integrating. Flagged/unflagged journey helper implementation remains delegated to deploy_fixture_integration; model_failure_review reviews contract-state expectations; deployment_gap_review reviews root harness/accounting. Heavy runs remain serialized by root.

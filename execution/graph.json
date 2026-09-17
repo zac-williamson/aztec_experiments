@@ -1153,7 +1153,7 @@
       "title": "Complete user flows and production hosting configuration",
       "phase": "engineering",
       "kind": "internal",
-      "status": "blocked",
+      "status": "active",
       "depends_on": [
         "W03",
         "F01",
@@ -1201,13 +1201,8 @@
       ],
       "evidence": "evidence/U01.json",
       "evidence_mode": "historical",
-      "blocker": {
-        "reason": "Genuine browser post has not completed within the unchanged 540s/2GiB whole-test bound; runs034 and036 exceeded aggregate memory during third Chonk accumulation.",
-        "evidence": "evidence/U01/browser-post-034.json; evidence/U01/browser-post-036.json; evidence/U01/disposition-038.md",
-        "unblock": "Complete genuine browser proving and canonical effects verification within the current bound, or obtain an explicitly reviewed resource policy change. No automatic limit increase.",
-        "next_action": "Preserve failed proof evidence and continue independent full application journey tests in T02."
-      },
-      "checkpoint": "Browser proof runs034/036 exceed aggregate2GiB at third accumulation. Hosting/config/keyboard/journey038 and CLI pass. Continue independent T02; no completed browser proof.",
+      "blocker": null,
+      "checkpoint": "Resume browser qualification with supported one-thread WasmWorker experiment justified by memory-options039. Previous failures retained; no CRS/verification/transport/resource-bound change. Build, focused tests, hosting and genuine browserproof serially.",
       "priority": 19
     },
     {
@@ -1331,7 +1326,7 @@
       "title": "Demonstrate full bridge journey with real proofs",
       "phase": "engineering",
       "kind": "internal",
-      "status": "active",
+      "status": "blocked",
       "depends_on": [
         "T01",
         "W03",
@@ -1384,8 +1379,13 @@
       ],
       "evidence": "evidence/T02.json",
       "evidence_mode": "historical",
-      "blocker": null,
-      "checkpoint": "Resume existing real-proof harness: implement flagged post, screening debt, eligible exit and actual Outbox refund with exact state checks; serialized540s/2GiB runs.",
+      "blocker": {
+        "reason": "Local journeys and specified origin/note/replay rejection pass, but work item4 still requires final protocol/private-call/privacy diagnostic correspondence and independent disposition. Public-testnet compatibility remains explicitly unqualified under A04.",
+        "evidence": "evidence/T02/local-qualification-010.md; evidence/T02/compiler-reconciliation-008.md; evidence/T02/public-testnet-review-005.md",
+        "unblock": "Complete the retained adverse protocol/private-call/privacy checks and independent compiler diagnostic disposition; establish applicable public-testnet guidance and verify live network identity before any public qualification. Do not waive original diagnostics.",
+        "next_action": "Preserve passed local evidence and resume supported one-thread U01 browser experiment under unchanged bounds. Carry independent review and target-network gates forward."
+      },
+      "checkpoint": "Three real local profiles pass: flagged004428824ms;redeposit006442386ms;unflagged+origin007426752ms. Full cleanup all. Local journey implementation complete; final protocol/private-call/privacy diagnostic disposition and independent review remain open; public-testnet unqualified.",
       "priority": 22
     },
     {
