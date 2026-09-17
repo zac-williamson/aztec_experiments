@@ -20,6 +20,7 @@ function initPages(pages) {
 
 function showPage(n) {
   if (n < 0 || n >= _pages.length) return;
+  const changed = _currentPage !== n;
   _currentPage = n;
   document.querySelectorAll('.page').forEach((p, i) => {
     p.classList.toggle('active', i === n);
@@ -40,6 +41,12 @@ function showPage(n) {
       next.disabled = false;
     }
   }
+  if(changed)queueMicrotask(()=>{
+    // onShow may immediately skip a completed step. Focus only the final page.
+    if(_currentPage!==n)return;
+    const heading=document.querySelector('.page.active h2');
+    if(heading){heading.setAttribute('tabindex','-1');heading.focus();}
+  });
   if (_pages[n] && _pages[n].onShow) {
     try { _pages[n].onShow(); } catch (e) { console.error('Application operation did not complete.'); }
   }
@@ -159,18 +166,29 @@ function log(msg, type, containerId) {
   return div;
 }
 
-function clearMissingHighlight() {
-  for (const el of document.querySelectorAll('input.missing')) {
-    el.classList.remove('missing');
-  }
+function clearFieldValidation(el) {
+  el.classList.remove('missing');el.removeAttribute('aria-invalid');
+  const errorId=el.id+'-validation-error';
+  const remaining=(el.getAttribute('aria-describedby')||'').split(/\s+/).filter(id=>id&&id!==errorId);
+  if(remaining.length)el.setAttribute('aria-describedby',remaining.join(' '));else el.removeAttribute('aria-describedby');
+  document.getElementById(errorId)?.remove();
 }
-
+function clearMissingHighlight() {
+  for(const el of document.querySelectorAll('input.missing, textarea.missing, select.missing'))clearFieldValidation(el);
+}
+const _validationBoundFields=new WeakSet();
 function highlightMissing(fieldIds) {
-  clearMissingHighlight();
-  for (const id of fieldIds) {
-    const el = document.getElementById(id);
-    if (el) el.classList.add('missing');
+  clearMissingHighlight();let first;
+  for(const id of fieldIds){
+    const el=document.getElementById(id);if(!el)continue;first??=el;
+    el.classList.add('missing');el.setAttribute('aria-invalid','true');
+    const error=document.createElement('p');error.id=id+'-validation-error';error.className='field-error';
+    error.textContent=id==='msgText'?'Enter a message before posting.':id==='depositAmount'?'Enter a valid amount greater than zero.':'Check this field before continuing.';
+    el.insertAdjacentElement('afterend',error);
+    el.setAttribute('aria-describedby',[(el.getAttribute('aria-describedby')||'').trim(),error.id].filter(Boolean).join(' '));
+    if(!_validationBoundFields.has(el)){el.addEventListener('input',()=>clearFieldValidation(el));_validationBoundFields.add(el);}
   }
+  first?.focus();
 }
 
 function clearStatus(containerId) {

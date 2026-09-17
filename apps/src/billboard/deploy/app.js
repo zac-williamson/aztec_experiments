@@ -64,9 +64,9 @@ function getThreadingMode() {
     return 'multi-threaded (crossOriginIsolated)';
   }
   if (location.protocol === 'file:') {
-    return 'single-threaded (file://)';
+    return 'unsupported for wallet actions (file://)';
   }
-  return 'single-threaded (no COOP/COEP headers)';
+  return 'unsupported for wallet actions (missing cross-origin isolation)';
 }
 
 // ============================================================
@@ -110,18 +110,19 @@ async function startDeploy() {
     log('  L2:   ' + result.l2Addr, 'info', 'status');
     log('  L1:   ' + result.portalAddr, 'info', 'status');
 
-    // Add a clickable link to the user app with the portal address pre-filled
-    const statusDiv = document.getElementById('status');
-    if (statusDiv && result.status === 'active') {
-      const linkDiv = document.createElement('div');
-      linkDiv.className = 'status success';
-      linkDiv.style.marginTop = '8px';
-      const a = document.createElement('a');
-      a.href = 'user.html?portal=' + result.portalAddr;
-      a.textContent = 'Open User App (L1 address pre-filled)';
-      a.style.cssText = 'font-size:1.1em; font-weight:bold;';
-      linkDiv.appendChild(a);
-      statusDiv.appendChild(linkDiv);
+    if(result.status==='active') {
+      const holder=document.createElement('div'),status=document.getElementById('status');
+      const connect=document.createElement('button');connect.type='button';connect.textContent='Use this board';
+      const download=document.createElement('button');download.type='button';download.textContent='Download public connection settings';
+      const makePublic=async()=>{
+        const n=extraConfig.deploymentManifest.network,text=document.getElementById('publicFeeGas').value.trim();
+        let privateFee=null;
+        if(text)privateFee={contractAddress:(await window.__aztec.derivePrivateFeeAddress(BILLBOARD_PRIVATE_FEE_ARTIFACT)).toString(),gasSettings:JSON.parse(text)};
+        return BillboardConfig.validate({schemaVersion:1,network:{nodeUrl:n.nodeUrl,ethRpcUrl:n.ethRpcUrl,chainId:n.chainId,rollupVersion:n.rollupVersion,rollupAddress:n.rollup},board:{portalAddress:result.portalAddr.toLowerCase(),contractAddress:result.l2Addr.toLowerCase()},privateFee});
+      };
+      connect.addEventListener('click',async()=>{try{billboardConfigStore.install(await makePublic());location.href='user.html';}catch{log('Could not prepare public settings. Check the fee gas JSON. The deployment report is still available.','error','status');}});
+      download.addEventListener('click',async()=>{try{const config=await makePublic(),url=URL.createObjectURL(new Blob([JSON.stringify(config,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='board-public-config.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch{log('Could not prepare public settings. Check the fee gas JSON. The deployment report is still available.','error','status');}});
+      holder.append(connect,download);status.append(holder);
     }
   } catch (e) {
     log('', 'error', 'status');
@@ -137,13 +138,12 @@ function waitForBundleThenInit() {
   if (window.__aztec && window.__aztec.createPXE) {
     initWalletButtons('walletButtonsContainer', {
       statusId: 'status',
-      ethRpcUrl: ETH_RPC_URL,
       onReady: async () => {
         log('Both wallets ready. Click the Deploy button to begin.', 'success', 'status');
       },
     });
   } else {
-    setTimeout(waitForBundleThenInit, 500);
+    waitForBundle(waitForBundleThenInit);
   }
 }
 waitForBundleThenInit();

@@ -45,7 +45,9 @@
   input, textarea { width: 100%; box-sizing: border-box; padding: 0.55rem; font-size: 0.95rem;
           border-radius: 6px; border: 1px solid #444; background: inherit; color: inherit;
           font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-  input.missing { border-color: #f85149; }
+  input.missing, textarea.missing, select.missing { border-color: #f85149; }
+  .field-error { color: #f85149; font-size: 0.85rem; margin: 0.25rem 0; }
+  button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus-visible, h2[tabindex]:focus-visible { outline: 2px solid #58a6ff; outline-offset: 3px; }
   button { cursor: pointer; border: none; border-radius: 8px; padding: 0.7rem 1rem;
            font-size: 1rem; font-weight: 600; color: #fff; background: #6c4bd6; margin-top: 0.5rem; }
   button:hover { background: #5a3cc0; }
@@ -241,50 +243,266 @@
 </style>
 </head>
 <body>
+<script>
+(function (root) {
+  'use strict';
+  const STORAGE_KEY='billboard.public-config.v1', MAX_BYTES=16384;
+  const FIELD=21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+  function check(ok,message){if(!ok)throw new Error(message);}
+  function exact(value,keys,optional=[]){
+    check(value!==null&&typeof value==='object'&&!Array.isArray(value),'Expected a configuration object');
+    check(Object.keys(value).every(k=>keys.includes(k)||optional.includes(k))&&keys.every(k=>Object.hasOwn(value,k)),'Unknown or missing configuration field');
+  }
+  function uint(value,bits,positive=false){check(typeof value==='string'&&/^(0|[1-9][0-9]*)$/.test(value)&&value.length<=78,'Expected canonical decimal string');const n=BigInt(value);check(n<(1n<<BigInt(bits))&&(!positive||n>0n),'Integer outside allowed range');return value;}
+  function address(value,bytes){check(typeof value==='string'&&new RegExp('^0x[0-9a-f]{'+bytes*2+'}$').test(value),'Expected lowercase canonical address');check(BigInt(value)>0n&&(bytes!==32||BigInt(value)<FIELD),'Address outside allowed range');return value;}
+  function endpoint(value){
+    check(typeof value==='string'&&value.length>0&&value.length<=2048&&!/[\s\\]/.test(value),'Invalid public endpoint');
+    let url;try{url=new URL(value);}catch{throw new Error('Invalid public endpoint');}
+    check(['http:','https:'].includes(url.protocol)&&url.hostname&&!url.username&&!url.password&&!url.search&&!url.hash&&!value.includes('?')&&!value.includes('#'),'Endpoint must be HTTP(S) without credentials, query or fragment');return url.href;
+  }
+  function freeze(value){if(value&&typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value);}return value;}
+  function fee(value){
+    if(value===null||value===undefined)return null;
+    exact(value,['contractAddress','gasSettings']);const g=value.gasSettings;
+    exact(g,['gasLimits','teardownGasLimits','maxFeesPerGas','maxPriorityFeesPerGas']);
+    const out={};for(const name of Object.keys(g)){
+      const gas=name==='gasLimits'||name==='teardownGasLimits',keys=gas?['daGas','l2Gas']:['feePerDaGas','feePerL2Gas'];exact(g[name],keys);out[name]=Object.fromEntries(keys.map(k=>[k,uint(g[name][k],gas?32:128)]));
+    }
+    const da=BigInt(out.gasLimits.daGas),l2=BigInt(out.gasLimits.l2Gas),fda=BigInt(out.maxFeesPerGas.feePerDaGas),fl2=BigInt(out.maxFeesPerGas.feePerL2Gas),maximum=da*fda+l2*fl2;
+    check(da>0n&&l2>0n&&maximum>0n&&maximum<(1n<<128n)&&BigInt(out.teardownGasLimits.daGas)<=da&&BigInt(out.teardownGasLimits.l2Gas)<=l2&&BigInt(out.maxPriorityFeesPerGas.feePerDaGas)<=fda&&BigInt(out.maxPriorityFeesPerGas.feePerL2Gas)<=fl2,'Invalid private fee limits');
+    return {contractAddress:address(value.contractAddress,32),gasSettings:out};
+  }
+  function validate(value){
+    exact(value,['schemaVersion','network','board'],['privateFee']);check(value.schemaVersion===1,'Unsupported configuration version');
+    const n=value.network,b=value.board;exact(n,['nodeUrl','ethRpcUrl','chainId','rollupVersion','rollupAddress']);exact(b,['portalAddress','contractAddress']);
+    return freeze({schemaVersion:1,network:{nodeUrl:endpoint(n.nodeUrl),ethRpcUrl:endpoint(n.ethRpcUrl),chainId:uint(n.chainId,64,true),rollupVersion:uint(n.rollupVersion,32,true),rollupAddress:address(n.rollupAddress,20)},board:{portalAddress:address(b.portalAddress,20),contractAddress:address(b.contractAddress,32)},privateFee:fee(value.privateFee)});
+  }
+  function parse(text){check(typeof text==='string'&&new TextEncoder().encode(text).length<=MAX_BYTES,'Configuration exceeds size limit');let value;try{value=JSON.parse(text);}catch{throw new Error('Invalid configuration JSON');}return validate(value);}
+  function maximumFee(config){const f=validate(config).privateFee;if(!f)return null;const g=f.gasSettings;return (BigInt(g.gasLimits.daGas)*BigInt(g.maxFeesPerGas.feePerDaGas)+BigInt(g.gasLimits.l2Gas)*BigInt(g.maxFeesPerGas.feePerL2Gas)).toString();}
+  function createStore(options={}){
+    let storage=options.storage,eventTarget=options.eventTarget??root,accessError=null;
+    if(!Object.hasOwn(options,'storage'))try{storage=root.localStorage;}catch{accessError='Public configuration storage is unavailable';}
+    let revision=0,state;const listeners=new Set();
+    function update(config,error,persisted){state=freeze({config,revision:++revision,error,persisted});for(const fn of listeners)try{fn(state);}catch{}return state;}
+    function load(text,persisted){try{return update(text===null?null:parse(text),null,persisted);}catch{return update(null,'Stored public configuration is invalid; import it again',false);}}
+    try{if(!storage)throw new Error();load(storage.getItem(STORAGE_KEY),true);}catch{update(null,accessError??'Public configuration storage is unavailable',false);}
+    function onStorage(event){if(event.storageArea&&event.storageArea!==storage)return;if(event.key!==STORAGE_KEY&&event.key!==null)return;load(event.key===null?null:event.newValue,true);}
+    eventTarget?.addEventListener?.('storage',onStorage);
+    return Object.freeze({snapshot:()=>state,
+      install(value){const config=validate(value);let error=null,persisted=true;try{storage.setItem(STORAGE_KEY,JSON.stringify(config));}catch{persisted=false;error='Configuration is active for this page only; storage is unavailable';}return update(config,error,persisted);},
+      clear(){let error=null,persisted=true;try{storage.removeItem(STORAGE_KEY);}catch{persisted=false;error='Configuration cleared for this page only; saved storage could not be removed';}return update(null,error,persisted);},
+      assertCurrent(snapshot){check(snapshot===state,'Board configuration changed; restart this operation');check(state.config!==null,'Import a board configuration first');return state.config;},
+      subscribe(fn){check(typeof fn==='function','Subscriber must be a function');listeners.add(fn);return ()=>listeners.delete(fn);},
+      destroy(){eventTarget?.removeEventListener?.('storage',onStorage);listeners.clear();}
+    });
+  }
+  root.BillboardConfig=Object.freeze({STORAGE_KEY,MAX_BYTES,validate,parse,maximumFee,createStore});
+})(globalThis);
+
+</script>
+<script>
+(function(root){
+  'use strict';
+  function mount(container,store){
+    const api=root.BillboardConfig,doc=container.ownerDocument;
+    const panel=doc.createElement('section');panel.setAttribute('aria-label','Board configuration');
+    function element(tag,text){const node=doc.createElement(tag);if(text)node.textContent=text;panel.append(node);return node;}
+    element('h2','Board configuration');
+    element('p','Import public connection settings for this board. Never paste a wallet backup, password, recovery claim or RPC API key. Endpoints can observe connection metadata; do not share URLs containing secret path tokens.');
+    const summary=element('p'),status=element('p');status.setAttribute('role','status');
+    const label=element('label','Public configuration JSON');const input=doc.createElement('textarea');input.rows=7;input.maxLength=api.MAX_BYTES;label.append(input);
+    const fileLabel=element('label','Choose configuration file');const file=doc.createElement('input');file.type='file';file.accept='.json,application/json';fileLabel.append(file);
+    function button(text,action){const b=element('button',text);b.type='button';b.addEventListener('click',action);return b;}
+    let destroyed=false;
+    const imported=button('Import configuration',()=>{try{store.install(api.parse(input.value));input.value='';status.textContent=store.snapshot().error??'Public configuration imported. Live network checks run when connecting.';}catch(error){status.textContent=error.message;}});
+    file.addEventListener('change',async()=>{const chosen=file.files?.[0];if(!chosen)return;const snapshot=store.snapshot();imported.disabled=true;try{if(chosen.size>api.MAX_BYTES)throw new Error('Configuration exceeds size limit');const text=await chosen.text();if(destroyed)return;if(store.snapshot()!==snapshot)throw new Error('Configuration changed while reading file; select it again');store.install(api.parse(text));input.value='';status.textContent=store.snapshot().error??'Public configuration imported. Live network checks run when connecting.';}catch(error){if(!destroyed)status.textContent=error.message;}finally{if(!destroyed){imported.disabled=false;file.value='';}}});
+    const exported=button('Export configuration',()=>{const {config}=store.snapshot();if(!config)return;const url=URL.createObjectURL(new Blob([JSON.stringify(config,null,2)+'\n'],{type:'application/json'}));const anchor=doc.createElement('a');anchor.href=url;anchor.download='board-public-config.json';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),0);});
+    button('Clear configuration',()=>{store.clear();input.value='';});
+    function render(snapshot){const c=snapshot.config;exported.disabled=!c;
+      summary.textContent=c?`Ethereum chain ${c.network.chainId}; rollup version ${c.network.rollupVersion}. Board ${c.board.contractAddress}. Portal ${c.board.portalAddress}. Node ${c.network.nodeUrl}. Ethereum RPC ${c.network.ethRpcUrl}. ${c.privateFee?`Private fee contract ${c.privateFee.contractAddress}. Maximum charge ${api.maximumFee(c)} Fee Juice base units per transaction; unused gas is not refunded.`:'Public reading only: private fee settings are missing; wallet actions are unavailable.'} Imported settings are not proof of live chain verification.`:'No board configuration selected. Import settings to connect.';
+      status.textContent=snapshot.error??(snapshot.persisted?'Public settings are saved for this browser origin.':'');
+    }
+    const unsubscribe=store.subscribe(render);render(store.snapshot());container.append(panel);
+    return {destroy(){destroyed=true;unsubscribe();panel.remove();}};
+  }
+  root.BillboardConfigUI=Object.freeze({mount});
+})(globalThis);
+
+</script>
+<script>
+// Public settings only. No network or wallet action occurs during bootstrap.
+(function(root){
+  let storage;try{storage=root.localStorage;}catch{}
+  root.billboardConfigStore=root.BillboardConfig.createStore({storage:storage||null,eventTarget:root});
+  const mount=()=>{
+    if(document.getElementById('deploymentManifest'))return;
+    const container=document.createElement('div');container.id='boardConfiguration';container.className='card';
+    document.body.prepend(container);root.BillboardConfigUI.mount(container,root.billboardConfigStore);
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
+})(globalThis);
+
+</script>
+<script>
+(function(root){
+  'use strict';
+  // Pinned BB uses isolated shared WASM memory and module workers. This checks
+  // prerequisites only: it neither loads proving assets nor guarantees a proof fits.
+  const messages={INSECURE_CONTEXT:'Wallet actions require HTTPS or localhost.',SHARED_MEMORY_UNAVAILABLE:'Wallet actions require cross-origin isolation and shared memory.',WASM_UNAVAILABLE:'This browser cannot run the required WebAssembly features.',WORKER_UNAVAILABLE:'Browser workers are unavailable or blocked.',CRYPTO_UNAVAILABLE:'Browser cryptography is unavailable.',LOCKS_UNAVAILABLE:'Browser storage locks are unavailable.',OPFS_UNAVAILABLE:'Private browser file storage is unavailable or blocked. Wallet storage cannot start.',STORAGE_UNAVAILABLE:'Browser storage is unavailable or blocked.',READINESS_TIMEOUT:'Browser capability checks timed out.'};
+  function failure(code){const error=new Error(messages[code]);error.code=code;return error;}
+  function createChecker(env=root,{timeoutMs=5000}={}){
+    let pending,success;
+    function check(){
+      if(success)return Promise.resolve(success);if(pending)return pending;
+      pending=run().then(value=>{success=value;return value;}).finally(()=>{pending=null;});return pending;
+    }
+    async function run(){
+      const cleanup=[];let stopped=false,timer;
+      const name='billboard-readiness-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+      function guard(){if(stopped)throw failure('READINESS_TIMEOUT');}
+      async function stage(code,fn){try{guard();return await fn();}catch(error){throw failure(error?.code==='READINESS_TIMEOUT'?'READINESS_TIMEOUT':code);}}
+      const work=async()=>{
+        if(env.isSecureContext!==true)throw failure('INSECURE_CONTEXT');
+        if(env.crossOriginIsolated!==true||typeof env.SharedArrayBuffer!=='function')throw failure('SHARED_MEMORY_UNAVAILABLE');
+        await stage('WASM_UNAVAILABLE',async()=>{
+          await env.WebAssembly.instantiate(new Uint8Array([0,97,115,109,1,0,0,0]));guard();
+          const memory=new env.WebAssembly.Memory({initial:1,maximum:1,shared:true});if(!(memory.buffer instanceof env.SharedArrayBuffer))throw Error();
+        });
+        await stage('CRYPTO_UNAVAILABLE',()=>env.crypto.subtle.digest('SHA-256',new Uint8Array([1])));
+        await stage('LOCKS_UNAVAILABLE',()=>env.navigator.locks.request(name,{ifAvailable:true},lock=>{if(!lock)throw Error();}));
+        await stage('WORKER_UNAVAILABLE',()=>new Promise((resolve,reject)=>{
+          const url=env.URL.createObjectURL(new env.Blob(['self.onmessage=e=>self.postMessage(e.data)'],{type:'text/javascript'}));cleanup.push(()=>env.URL.revokeObjectURL(url));
+          const worker=new env.Worker(url,{type:'module'});cleanup.push(()=>worker.terminate());
+          worker.onmessage=event=>event.data===name?resolve():reject(Error());worker.onerror=()=>reject(Error());worker.onmessageerror=()=>reject(Error());worker.postMessage(name);
+        }));
+        await stage('OPFS_UNAVAILABLE',async()=>{
+          const directory=await env.navigator.storage.getDirectory();guard();
+          let writable;
+          async function remove(){try{await directory.removeEntry(name);}catch{}}
+          cleanup.push(()=>{void (async()=>{try{await writable?.abort();}catch{}await remove();})();});
+          try{
+            const file=await directory.getFileHandle(name,{create:true});
+            if(stopped){await remove();guard();}
+            writable=await file.createWritable();
+            if(stopped){try{await writable.abort();}catch{}await remove();guard();}
+            await writable.write(name);guard();await writable.close();writable=null;guard();
+            const contents=await file.getFile();guard();if(await contents.text()!==name)throw Error();guard();
+            await directory.removeEntry(name);
+          }catch(error){try{await writable?.abort();}catch{}await remove();throw error;}
+        });
+        await stage('STORAGE_UNAVAILABLE',()=>new Promise((resolve,reject)=>{
+          let db,transaction,deleted=false;
+          function remove(){if(deleted)return null;deleted=true;return env.indexedDB.deleteDatabase(name);}
+          cleanup.push(()=>{try{transaction?.abort();}catch{}try{db?.close();}catch{}try{remove();}catch{}});
+          const request=env.indexedDB.open(name,1);
+          request.onerror=()=>reject(Error());request.onblocked=()=>reject(Error());
+          request.onupgradeneeded=()=>{try{request.result.createObjectStore('probe');}catch{reject(Error());}};
+          request.onsuccess=()=>{
+            db=request.result;if(stopped){db.close();try{env.indexedDB.deleteDatabase(name);}catch{}return;}
+            try{
+              transaction=db.transaction('probe','readwrite');const store=transaction.objectStore('probe');store.put(name,'key');const read=store.get('key');
+              let matches=false;read.onsuccess=()=>{matches=read.result===name;};read.onerror=()=>reject(Error());
+              transaction.onerror=()=>reject(Error());transaction.onabort=()=>reject(Error());transaction.oncomplete=()=>{
+                db.close();if(!matches){reject(Error());return;}try{const deletion=remove();deletion.onsuccess=()=>resolve();deletion.onerror=()=>reject(Error());deletion.onblocked=()=>reject(Error());}catch{reject(Error());}
+              };
+            }catch{reject(Error());}
+          };
+        }));
+        guard();return Object.freeze({ready:true,scope:'Browser prerequisites checked; proof performance and capacity are not guaranteed.'});
+      };
+      try{return await Promise.race([work(),new Promise((resolve,reject)=>{timer=env.setTimeout(()=>{stopped=true;reject(failure('READINESS_TIMEOUT'));},timeoutMs);})]);}
+      finally{stopped=true;env.clearTimeout(timer);for(const dispose of cleanup.reverse())try{dispose();}catch{}}
+    }
+    return Object.freeze({check});
+  }
+  const checker=createChecker();root.BillboardReadiness=Object.freeze({check:checker.check,createChecker});
+})(globalThis);
+
+</script>
+<script>
+(function(root){
+  'use strict';
+  const ABI=['function MIN_DEPOSIT() view returns (uint256)','function MAX_DEPOSIT() view returns (uint256)','function L2_CONTRACT() view returns (bytes32)','function ROLLUP() view returns (address)','function INBOX() view returns (address)','function OUTBOX() view returns (address)','function VERSION() view returns (uint256)','function L1_CHAIN_ID() view returns (uint256)','function CONFIG_HASH() view returns (bytes32)'];
+  const names=['MIN_DEPOSIT','MAX_DEPOSIT','L2_CONTRACT','ROLLUP','INBOX','OUTBOX','VERSION','L1_CHAIN_ID','CONFIG_HASH'];
+  function failure(){return Object.assign(new Error('The configured portal, network or private fee contract could not be verified. Check the public board configuration before making a payment.'),{code:'BB_CONNECTION_VERIFICATION_FAILED'});}
+  async function verify({sdk,ethers,config,privateFeeArtifact,verifyFee=true}={}){
+    let provider;const deadline=Date.now()+20000;
+    try{
+      const selected=root.BillboardConfig.validate(config);
+      if(typeof verifyFee!=='boolean')throw Error();
+      const read=fn=>sdk.boundedTransactionRead(fn,deadline-Date.now());
+      if(verifyFee){
+        if(!selected.privateFee||!privateFeeArtifact)throw Error();
+        const address=await read(()=>sdk.derivePrivateFeeAddress(privateFeeArtifact));
+        if(address.toString()!==selected.privateFee.contractAddress)throw Error();
+      }
+      provider=new ethers.JsonRpcProvider(selected.network.ethRpcUrl);
+      const node=sdk.createAztecNodeClient(selected.network.nodeUrl);
+      const portal=new ethers.Contract(selected.board.portalAddress,ABI,provider);
+      const [network,info,contracts,code,values]=await read(()=>Promise.all([
+        provider.getNetwork(),node.getNodeInfo(),node.getL1ContractAddresses(),provider.getCode(selected.board.portalAddress),
+        Promise.all(names.map(name=>portal[name]()))
+      ]));
+      const immutable=Object.fromEntries(names.map((name,index)=>[name,values[index]]));
+      const same=(a,b)=>BigInt(a.toString())===BigInt(b);
+      if(!same(network.chainId,selected.network.chainId)||!same(info.l1ChainId,selected.network.chainId)||!same(info.rollupVersion,selected.network.rollupVersion)||
+         !same(contracts.rollupAddress,selected.network.rollupAddress)||!same(immutable.L2_CONTRACT,selected.board.contractAddress)||
+         !same(immutable.ROLLUP,selected.network.rollupAddress)||!same(immutable.VERSION,selected.network.rollupVersion)||!same(immutable.L1_CHAIN_ID,selected.network.chainId)||
+         !same(immutable.INBOX,contracts.inboxAddress.toString())||!same(immutable.OUTBOX,contracts.outboxAddress.toString()))throw Error();
+      if(sdk.verifyPortalRuntime(code,sdk.portalRuntimeMetadata,immutable)!==true)throw Error();
+      return Object.freeze({verified:true,privateFeeVerified:verifyFee,portalRuntimeVerified:true,scope:'Bundled portal runtime and configured public identities matched RPC responses; this is not independent cryptographic network verification.'});
+    }catch{throw failure();}
+    finally{try{provider?.destroy();}catch{}}
+  }
+  root.BillboardConnectionCheck=Object.freeze({verify});
+})(globalThis);
+
+</script>
 <p><a href="feed.html">Read messages without a wallet</a></p>
 <script src="public-feed.js"></script>
+<p><a href="fee-juice.html">Fund private transaction fees</a></p>
 
 <h1>Billboard — Censor Panel</h1>
 <p class="small">Flag posts as immoral and manage censorship rights.</p>
-<p class="small"><b>Loads a 56MB bundle + 1.7MB contract artifact. Be patient.</b></p>
+<p class="small">Private transactions require local proving data. Loading progress and browser support are checked before signing.</p>
 <p class="small warn">⚠️ <b>Alpha experimental software.</b> Not meant for production use.</p>
 
 <div class="card">
   <h2>Configuration</h2>
   <input id="secretKey" type="hidden">
   <input id="salt" type="hidden" value="0">
-  <input id="nodeUrl" type="hidden" value="https://v5.mainnet.rpc.aztec-labs.com">
-  <p class="small">Enter the L1 Portal address (from the deploy app), then load the <b>censor's</b> Aztec wallet below. The L2 contract address is derived from the portal on chain. No ETH wallet needed — the censor only operates on L2.</p>
-  <label>L1 Portal Address (0x...)</label>
-  <input id="portalAddr" placeholder="0x... (from the deploy app)">
+  <input id="nodeUrl" type="hidden" value="">
+  <p class="small">Import the public board configuration, then load the <b>censor's</b> Aztec wallet below. The L2 contract address is derived from the portal on chain. An Ethereum wallet is needed only when funding fees; moderation spends your private L2 fee balance.</p>
+  <label for="portalAddr">L1 Portal Address (0x...)</label>
+  <input id="portalAddr" readonly placeholder="Import the public board configuration">
   <div id="walletButtonsContainer"></div>
   <button class="secondary" onclick="recoverSavedTransaction()">Recover saved moderator transaction</button>
-  <div id="setupStatus" class="status-container"></div>
+  <div id="setupStatus" class="status-container" role="status" aria-live="polite"></div>
 </div>
 
 <div class="card">
   <h2>Censor Status</h2>
-  <div id="censorStatusDiv" class="status-container"></div>
+  <div id="censorStatusDiv" class="status-container" role="status" aria-live="polite"></div>
 </div>
 
 <div class="card" id="censorControlsCard" style="display:none;">
   <h2>Flag Post as Immoral</h2>
   <p class="small">Flagged posts are hidden from the billboard view by default, and the poster's cooldown is multiplied by K.</p>
-  <label>Post Index to Flag</label>
+  <label for="censorPostIndex">Post Index to Flag</label>
   <input id="censorPostIndex" type="number" min="0" placeholder="0">
-  <label>Censor Response (optional, up to 1023 bytes)</label>
+  <label for="censorResponseText">Censor Response (optional, up to 200 UTF-8 bytes)</label>
   <textarea id="censorResponseText" rows="3" placeholder="Why this post is immoral..."></textarea>
   <button class="secondary" id="declareImmoralBtn" onclick="doDeclareImmoral()">Flag Post as Immoral</button>
-  <div id="censorActionStatus" class="status-container"></div>
+  <div id="censorActionStatus" class="status-container" role="status" aria-live="polite"></div>
 </div>
 
 <div class="card" id="transferCard" style="display:none;">
   <h2>Transfer Censor Rights</h2>
   <p class="small">Transfer censorship authority to another Aztec address. Only the current censor can do this.</p>
-  <label>New Censor Address (0x...)</label>
+  <label for="newCensorAddr">New Censor Address (0x...)</label>
   <input id="newCensorAddr" placeholder="0x00...">
   <button class="secondary" id="transferCensorBtn" onclick="doTransferCensor()">Transfer Rights</button>
-  <div id="transferStatus" class="status-container"></div>
+  <div id="transferStatus" class="status-container" role="status" aria-live="polite"></div>
 </div>
 
 <div class="card" id="policyCard" style="display:none;">
@@ -293,10 +511,10 @@
     <h3>Current Policy</h3>
     <pre id="policyText" class="policy-text"></pre>
   </div>
-  <label>Update Policy Text (max 1488 bytes)</label>
+  <label for="moderationPolicyInput">Update Policy Text (max 1488 bytes)</label>
   <textarea id="moderationPolicyInput" rows="6" placeholder="Enter new policy text..."></textarea>
   <button class="secondary" id="setPolicyBtn" onclick="doSetModerationPolicy()">Update Policy</button>
-  <div id="policyStatus" class="status-container"></div>
+  <div id="policyStatus" class="status-container" role="status" aria-live="polite"></div>
 </div>
 
 <div class="card billboard-card">
@@ -306,8 +524,8 @@
 </div>
 
 <!-- The 58MB bundle -->
-<script src="aztec_bundle.js"></script>
-<script>window.RPC_CONFIG = {"nodeUrl":"http://127.0.0.1:5080"};window.BILLBOARD_CRS_MANIFEST = {"schemaVersion":2,"aztecVersion":"5.2.0","provenance":{"package":"@aztec/bb.js","version":"5.2.0","source":"node_modules/@aztec/bb.js/dest/node/crs/net_crs.js","sourceSha256":"98182144b264c587733e40e5ed22446d704af132eb36ed0b02b307a99cda4da5","observedAt":"2026-09-12","method":"SHA-256 of exact ranged responses downloaded from the primary URLs. These are locally recorded content pins, not a separate publisher checksum attestation.","pointBudget":"BN254 preserves at least the existing 1048577-point capacity, rounded to the next 131072-point/4MiB compressed chunk. Grumpkin preserves 65537 points. Capacity for production proofs is verified separately."},"files":[{"name":"g1.dat","url":"https://crs.aztec-cdn.foundation/g1_compressed.dat","fallbackUrl":"https://crs.aztec-labs.com/g1_compressed.dat","bytes":37748736,"numPoints":1179648,"format":"bn254-g1-compressed-32-byte","range":{"start":0,"end":37748735},"sha256":"8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416"},{"name":"g2.dat","url":"https://crs.aztec-cdn.foundation/g2.dat","fallbackUrl":"https://crs.aztec-labs.com/g2.dat","bytes":128,"numPoints":1,"format":"bn254-g2-uncompressed-128-byte","range":{"start":0,"end":127},"sha256":"01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f"},{"name":"grumpkin_g1.dat","url":"https://crs.aztec-cdn.foundation/grumpkin_g1_v2.dat","fallbackUrl":"https://crs.aztec-labs.com/grumpkin_g1_v2.dat","bytes":4194368,"numPoints":65537,"format":"grumpkin-g1-v2-uncompressed-64-byte","range":{"start":0,"end":4194367},"sha256":"b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9"}],"derivedG1":{"name":"g1_uncompressed.dat","bytes":75497472,"numPoints":1179648,"format":"bn254-g1-uncompressed-64-byte","sha256":"2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac","derivation":{"method":"bb-srs-init-v1","packageVersion":"5.2.0","inputName":"g1.dat","inputSha256":"8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416","g2Sha256":"01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f","wasmSource":"node_modules/@aztec/bb.js/dest/node/barretenberg_wasm/barretenberg-threads.wasm.gz","wasmSha256":"9106f6164e4714a87ce1cf13ceac4d22109767a16e6fb997f1af7e7fcc81ae45"}}};
+<script src="aztec_bundle.js" onerror="window.__billboardBundleFailed=true"></script>
+<script>window.BILLBOARD_CRS_MANIFEST = {"schemaVersion":2,"aztecVersion":"5.2.0","provenance":{"package":"@aztec/bb.js","version":"5.2.0","source":"node_modules/@aztec/bb.js/dest/node/crs/net_crs.js","sourceSha256":"98182144b264c587733e40e5ed22446d704af132eb36ed0b02b307a99cda4da5","observedAt":"2026-09-12","method":"SHA-256 of exact ranged responses downloaded from the primary URLs. These are locally recorded content pins, not a separate publisher checksum attestation.","pointBudget":"BN254 preserves at least the existing 1048577-point capacity, rounded to the next 131072-point/4MiB compressed chunk. Grumpkin preserves 65537 points. Capacity for production proofs is verified separately."},"files":[{"name":"g1.dat","url":"https://crs.aztec-cdn.foundation/g1_compressed.dat","fallbackUrl":"https://crs.aztec-labs.com/g1_compressed.dat","bytes":37748736,"numPoints":1179648,"format":"bn254-g1-compressed-32-byte","range":{"start":0,"end":37748735},"sha256":"8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416"},{"name":"g2.dat","url":"https://crs.aztec-cdn.foundation/g2.dat","fallbackUrl":"https://crs.aztec-labs.com/g2.dat","bytes":128,"numPoints":1,"format":"bn254-g2-uncompressed-128-byte","range":{"start":0,"end":127},"sha256":"01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f"},{"name":"grumpkin_g1.dat","url":"https://crs.aztec-cdn.foundation/grumpkin_g1_v2.dat","fallbackUrl":"https://crs.aztec-labs.com/grumpkin_g1_v2.dat","bytes":4194368,"numPoints":65537,"format":"grumpkin-g1-v2-uncompressed-64-byte","range":{"start":0,"end":4194367},"sha256":"b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9"}],"derivedG1":{"name":"g1_uncompressed.dat","bytes":75497472,"numPoints":1179648,"format":"bn254-g1-uncompressed-64-byte","sha256":"2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac","derivation":{"method":"bb-srs-init-v1","packageVersion":"5.2.0","inputName":"g1.dat","inputSha256":"8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416","g2Sha256":"01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f","wasmSource":"node_modules/@aztec/bb.js/dest/node/barretenberg_wasm/barretenberg-threads.wasm.gz","wasmSha256":"9106f6164e4714a87ce1cf13ceac4d22109767a16e6fb997f1af7e7fcc81ae45"}}};
 // Shared browser/Node CRS loading. The manifest comes from the source build,
 // never from a cache or CDN. Every local and remote byte is checked before use.
 (function (root) {
@@ -427,9 +645,16 @@
   }
 
   async function initialize(bb, options) {
+    const requestedPoints=options.bn254NumPoints;
+    if(requestedPoints!==undefined && (!Number.isSafeInteger(requestedPoints)||requestedPoints<=0))throw new Error('Invalid BN254 initialization point budget');
     const { files, data, selectedG1 } = await loadVerified(options);
-    const numPoints = selectedG1.numPoints;
-    const bn254 = await bb.srsInitSrs({ pointsBuf: data[selectedG1.name], numPoints, g2Point: data['g2.dat'] });
+    const numPoints=requestedPoints===undefined?selectedG1.numPoints:requestedPoints;
+    if(numPoints>selectedG1.numPoints)throw new Error('BN254 initialization exceeds verified source capacity');
+    // A prefix is usable only AFTER the complete pinned source has passed its
+    // size/hash verification. Match the exact count and wire format for BB.
+    const bytesPerPoint=selectedG1.format==='bn254-g1-uncompressed-64-byte'?64:32;
+    const pointsBuf=numPoints===selectedG1.numPoints?data[selectedG1.name]:data[selectedG1.name].subarray(0,numPoints*bytesPerPoint);
+    const bn254 = await bb.srsInitSrs({ pointsBuf, numPoints, g2Point: data['g2.dat'] });
     // Pinned v5 returns decompressed points only for compressed input. Derived
     // input bypasses decompression, after our mandatory whole-content hash check.
     const responseBytes = selectedG1.format === 'bn254-g1-uncompressed-64-byte' ? 0 : numPoints * 64;
@@ -438,7 +663,7 @@
     }
     const grumpkin = await bb.srsInitGrumpkinSrs({ pointsBuf: data['grumpkin_g1.dat'], numPoints: files.get('grumpkin_g1.dat').numPoints });
     if (grumpkin?.dummy !== 0) throw new Error('Unexpected Grumpkin SRS initialization response');
-    return { g1Format: selectedG1.format };
+    return { g1Format: selectedG1.format, sourceBn254NumPoints: selectedG1.numPoints, initializedBn254NumPoints: numPoints, grumpkinNumPoints: files.get('grumpkin_g1.dat').numPoints };
   }
 
   const api = { validateManifest, readResponse, loadVerified, initialize };
@@ -39374,13 +39599,8 @@ const A = () => window.__aztec;
 // setupRpcAuth() call installs the single checked boundary from app-env.js.
 // ============================================================
 
-// Helper: get the node URL from RPC_CONFIG, falling back to the DOM input
-function getNodeUrl() {
-  const cfg = window.RPC_CONFIG;
-  if (cfg && cfg.nodeUrl) return cfg.nodeUrl;
-  const el = document.getElementById('nodeUrl');
-  return el ? el.value.trim() : '';
-}
+// The shared environment resolves the explicit public configuration/manifest.
+function getNodeUrl() { return _getNodeUrl(); }
 
 // Transient error detection regex (used by multiple retry helpers)
 const TRANSIENT_RE = /temporary internal error|please retry|timeout|fetch|network|connection|ECONNRESET|socket/i;
@@ -39429,21 +39649,14 @@ function wrapWithRetry(obj, label, statusId) {
 }
 
 // ============================================================
-// initCRS -- load SRS data into BarretenbergSync
+// initCRS -- initialize signing primitives and the actual async proving CRS.
+// The PXE wrapper reuses this same verified async singleton.
 // ============================================================
 async function initCRS(statusId) {
-  const a = A();
-  log('Initializing CRS (verifying pinned setup data)...', 'info', statusId);
+  const a=A();
   await a.BarretenbergSync.initSingleton();
-  const crs = window.BillboardCRS;
-  if (!crs) throw new Error('Missing CRS client; rebuild the application');
-  await crs.initialize(a.BarretenbergSync.getSingleton(), {
-    manifest: window.BILLBOARD_CRS_MANIFEST,
-    loadLocal: async file => crs.readResponse(await fetch('crs/' + file.name, { signal: AbortSignal.timeout(120000) }), file),
-    sha256: async data => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', data)), b => b.toString(16).padStart(2, '0')).join(''),
-    log: (message, level) => log('  ' + message, level, statusId),
-  });
-  log('  CRS initialized.', 'success', statusId);
+  await a.initializeBrowserProver();
+  log('Proving setup verified in the application prover.', 'info', statusId);
 }
 
 // ============================================================
@@ -39651,7 +39864,7 @@ function createAztecWallet(pxe, aztecNode, rawNode, statusId, opts = {}) {
       log('  Proving tx (can take minutes)...', 'info', S);
 
       // Split proving from submission so we can retry just the submission.
-      // Re-proving would take another 13+ minutes, which is impractical.
+      // Preserve the proven transaction so uncertain submission never causes an automatic re-proof.
       const feeOpts2 = await this.completeFeeOptions({
         from: opts.from,
         feePayer: executionPayload.feePayer,
@@ -39659,7 +39872,7 @@ function createAztecWallet(pxe, aztecNode, rawNode, statusId, opts = {}) {
       });
       const txRequest = await this.createTxExecutionRequestFromPayloadAndFee(executionPayload, opts.from, feeOpts2);
       const provenTx = await this.pxe.proveTx(txRequest, {
-        scopes: this.scopesFrom(opts.from, opts.additionalScopes),
+        scopes: this.scopesFrom(opts.from, opts.additionalScopes ?? [], opts.sendMessagesAs),
         senderForTags: this.senderForTagsFrom(opts.from, opts.sendMessagesAs),
       });
       const tx = await provenTx.toTx();
@@ -40496,7 +40709,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         });
         const txRequest = await this.createTxExecutionRequestFromPayloadAndFee(executionPayload, opts.from, feeOpts2);
         const provenTx = await this.pxe.proveTx(txRequest, {
-          scopes: this.scopesFrom(opts.from, opts.additionalScopes),
+          scopes: this.scopesFrom(opts.from, opts.additionalScopes ?? [], opts.sendMessagesAs),
           senderForTags: this.senderForTagsFrom(opts.from, opts.sendMessagesAs),
         });
         const tx = await provenTx.toTx();
@@ -40902,6 +41115,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       if (BigInt(chain) !== BigInt(nodeInfo.l1ChainId) || BigInt(network.chainId) !== BigInt(chain) ||
           rollup.toLowerCase() !== rollupAddr.toLowerCase() || BigInt(boundVersion) !== BigInt(version)) throw new Error('Portal and node network scope disagree.');
       l2AddrHex = board.toLowerCase();
+      if(config.expectedBoardAddress && l2AddrHex !== config.expectedBoardAddress.toLowerCase()) throw new Error('Portal does not match the selected board.');
       l2Addr = a.AztecAddress.fromFieldUnsafe(a.Fr.fromHexString(l2AddrHex));
     } finally { scopeProvider.destroy(); }
     log('  L2 billboard: ' + l2AddrHex, 'success');
@@ -42413,6 +42627,7 @@ function initPages(pages) {
 
 function showPage(n) {
   if (n < 0 || n >= _pages.length) return;
+  const changed = _currentPage !== n;
   _currentPage = n;
   document.querySelectorAll('.page').forEach((p, i) => {
     p.classList.toggle('active', i === n);
@@ -42433,6 +42648,12 @@ function showPage(n) {
       next.disabled = false;
     }
   }
+  if(changed)queueMicrotask(()=>{
+    // onShow may immediately skip a completed step. Focus only the final page.
+    if(_currentPage!==n)return;
+    const heading=document.querySelector('.page.active h2');
+    if(heading){heading.setAttribute('tabindex','-1');heading.focus();}
+  });
   if (_pages[n] && _pages[n].onShow) {
     try { _pages[n].onShow(); } catch (e) { console.error('Application operation did not complete.'); }
   }
@@ -42552,18 +42773,29 @@ function log(msg, type, containerId) {
   return div;
 }
 
-function clearMissingHighlight() {
-  for (const el of document.querySelectorAll('input.missing')) {
-    el.classList.remove('missing');
-  }
+function clearFieldValidation(el) {
+  el.classList.remove('missing');el.removeAttribute('aria-invalid');
+  const errorId=el.id+'-validation-error';
+  const remaining=(el.getAttribute('aria-describedby')||'').split(/\s+/).filter(id=>id&&id!==errorId);
+  if(remaining.length)el.setAttribute('aria-describedby',remaining.join(' '));else el.removeAttribute('aria-describedby');
+  document.getElementById(errorId)?.remove();
 }
-
+function clearMissingHighlight() {
+  for(const el of document.querySelectorAll('input.missing, textarea.missing, select.missing'))clearFieldValidation(el);
+}
+const _validationBoundFields=new WeakSet();
 function highlightMissing(fieldIds) {
-  clearMissingHighlight();
-  for (const id of fieldIds) {
-    const el = document.getElementById(id);
-    if (el) el.classList.add('missing');
+  clearMissingHighlight();let first;
+  for(const id of fieldIds){
+    const el=document.getElementById(id);if(!el)continue;first??=el;
+    el.classList.add('missing');el.setAttribute('aria-invalid','true');
+    const error=document.createElement('p');error.id=id+'-validation-error';error.className='field-error';
+    error.textContent=id==='msgText'?'Enter a message before posting.':id==='depositAmount'?'Enter a valid amount greater than zero.':'Check this field before continuing.';
+    el.insertAdjacentElement('afterend',error);
+    el.setAttribute('aria-describedby',[(el.getAttribute('aria-describedby')||'').trim(),error.id].filter(Boolean).join(' '));
+    if(!_validationBoundFields.has(el)){el.addEventListener('input',()=>clearFieldValidation(el));_validationBoundFields.add(el);}
   }
+  first?.focus();
 }
 
 function clearStatus(containerId) {
@@ -42795,8 +43027,33 @@ Object.assign(globalThis, { extractDepositInfo, readBillboardDepositInfo });
 // Mutable log target — apps set this before calling engine functions
 let _currentStatusDiv = 'status';
 
-// ETH RPC URL (not declared in aztec-lib.js, safe to keep)
-const ETH_RPC_URL = window.RPC_CONFIG?.ethRpcUrl || 'https://invictus.ambire.com/ethereum';
+// Connection settings are public, explicit and shared across pages. Deployment
+// uses its reviewed manifest; it never inherits an author's selected board.
+function _getPublicConfig() { return window.billboardConfigStore?.snapshot().config || null; }
+function _getConfigRevision() { return window.billboardConfigStore?.snapshot().revision ?? 0; }
+function _deploymentConfig() {
+  const field=document.getElementById('deploymentManifest');
+  if(!field) return null;
+  if(!window.__aztec?.deploymentManifestConfig) throw new Error('Application is still loading.');
+  try { return window.__aztec.deploymentManifestConfig(JSON.parse(field.value)); }
+  catch { throw new Error('Import a valid reviewed deployment manifest first.'); }
+}
+function _connectionConfig() {
+  const deployment=_deploymentConfig();
+  if(deployment) return deployment;
+  const config=_getPublicConfig();
+  if(!config) throw new Error('Import the board connection configuration first.');
+  return {aztecNodeUrl:config.network.nodeUrl,ethRpcUrl:config.network.ethRpcUrl,
+    portalAddress:config.board.portalAddress,expectedBoardAddress:config.board.contractAddress,
+    expectedNetworkScope:{chainId:config.network.chainId,version:config.network.rollupVersion,rollup:config.network.rollupAddress},
+    privateFee:config.privateFee};
+}
+function _getEthRpcUrl() { return _connectionConfig().ethRpcUrl; }
+window.billboardConfigStore?.subscribe(()=>{
+  if(window.walletState?.aztec || window.walletState?.ethSigner || (typeof _walletBusy!=='undefined' && _walletBusy)) {
+    _invalidateWalletContext(); _updateButtonColors();
+  }
+});
 
 // ============================================================
 // Bundle readiness check
@@ -42811,80 +43068,46 @@ function checkBundle(statusId) {
 }
 
 function waitForBundle(cb) {
-  if (window.__aztec && window.__aztec.createPXE) { cb(); return; }
-  let tries = 0;
-  const interval = setInterval(() => {
-    if ((window.__aztec && window.__aztec.createPXE) || ++tries > 120) {
-      clearInterval(interval);
-      if (window.__aztec && window.__aztec.createPXE) cb();
-    }
-  }, 500);
+  if (window.__aztec?.createPXE) { cb(); return; }
+  let tries=0;
+  const fail=()=>{
+    if(document.getElementById('bundleFailure'))return;
+    const message=document.createElement('p');message.id='bundleFailure';message.setAttribute('role','alert');
+    message.textContent='Wallet software could not load. Check the connection and reload this page. Public messages remain available in the reader.';
+    const link=document.createElement('a');link.href='feed.html';link.textContent='Open public reader';
+    message.append(' ',link);document.body.prepend(message);
+  };
+  if(window.__billboardBundleFailed){fail();return;}
+  const interval=setInterval(()=>{
+    if(window.__aztec?.createPXE){clearInterval(interval);cb();}
+    else if(window.__billboardBundleFailed || ++tries>=120){clearInterval(interval);fail();}
+  },500);
 }
 
 // ============================================================
 // RPC config helpers (use aztec-lib.js's getNodeUrl if available)
 // ============================================================
-function _getNodeUrl() {
-  if (typeof getNodeUrl !== 'undefined') return getNodeUrl();
-  const cfg = window.RPC_CONFIG;
-  return cfg && cfg.nodeUrl ? cfg.nodeUrl : 'https://v5.mainnet.rpc.aztec-labs.com';
-}
-
-function _getApiKey() {
-  if (typeof getApiKey !== 'undefined') return getApiKey();
-  const cfg = window.RPC_CONFIG;
-  return cfg && cfg.apiKey ? cfg.apiKey : '';
-}
-
-// Monkey-patch fetch to add API key header for Aztec RPC
-function setupRpcAuth() {
-  const cfg = window.RPC_CONFIG;
-  if (!cfg || !cfg.apiKey) return;
-  if (window._rpcAuthPatched) return;
-  const apiKey = cfg.apiKey;
-  const origFetch = window.fetch.bind(window);
-  const endpoint = new URL(_getNodeUrl(), window.location.href);
-  if (!['https:', 'http:'].includes(endpoint.protocol)) throw new Error('Invalid Aztec RPC endpoint');
-  window._rpcAuthPatched = true;
-  window.fetch = function(input, init) {
-    const credentials = init?.credentials ?? (input instanceof Request ? input.credentials : undefined);
-    const referrerPolicy = init?.referrerPolicy ?? (input instanceof Request ? input.referrerPolicy : undefined);
-    if (credentials === 'omit' && referrerPolicy === 'no-referrer') return origFetch(input, init);
-    const target = new URL(typeof input === 'string' || input instanceof URL ? String(input) : input.url, window.location.href);
-    // Only this configured JSON-RPC endpoint receives its credential. Substring
-    // matching would also disclose it to unrelated URLs containing the hostname.
-    if (target.origin === endpoint.origin && target.pathname === endpoint.pathname) {
-      const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
-      headers.set('x-aztec-api-key', apiKey);
-      // A redirect must not forward the credential outside the checked endpoint.
-      const options = { ...init, headers, redirect: 'error' };
-      return origFetch(input, options);
-    }
-    return origFetch(input, init);
-  };
-}
+function _getNodeUrl() { return _connectionConfig().aztecNodeUrl; }
+function _getApiKey() { return ''; }
+// Retained entry point for pages; browser-delivered credentials are unsupported.
+function setupRpcAuth() {}
 
 // ============================================================
-// CRS initialization (browser) — tries local files, falls back to CDN
+// CRS initialization (browser) — verified local setup for the actual prover
 // CRS constants are inlined to avoid conflicts with aztec-lib.js
 // ============================================================
 function makeInitCRS() {
   return async function initializeCRS() {
     const a = window.__aztec;
-    const crs = window.BillboardCRS;
-    if (!crs) throw new Error('Missing CRS client; rebuild the application');
     await a.BarretenbergSync.initSingleton();
-    await crs.initialize(a.BarretenbergSync.getSingleton(), {
-      manifest: window.BILLBOARD_CRS_MANIFEST,
-      loadLocal: async file => crs.readResponse(await fetch('crs/' + file.name, { signal: AbortSignal.timeout(120000) }), file),
-      sha256: async data => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', data)), b => b.toString(16).padStart(2, '0')).join(''),
-      log: (message, level) => log('  ' + message, level, _currentStatusDiv),
-    });
+    // The async worker owns proving SRS. The synchronous hashing instance does
+    // not need another full copy of the proving setup.
+    await a.initializeBrowserProver();
   };
 }
 
 // ============================================================
-// PXE store creation (browser: IndexedDB)
+// PXE store creation (browser: supported SQLite OPFS store)
 // ============================================================
 function makeCreateStore() {
   return async function createStore(config) {
@@ -42929,18 +43152,14 @@ function buildConfig(action, extra) {
   if (ws && ws.ethType === 'json') {
     ethWallet = { privateKey: ws.ethSigner.privateKey };
   }
+  const connection=_connectionConfig();
   const config = {
-    aztecNodeUrl: _getNodeUrl(),
-    aztecApiKey: _getApiKey(),
-    ethRpcUrl: ETH_RPC_URL,
+    ...(extra || {}), ...connection,
+    aztecApiKey:'',
     aztecWallet: ws && ws.aztec ? { secretKey: ws.aztec.secretKey, salt: ws.aztec.salt } : null,
-    ethWallet: ethWallet,
-    hasEthSigner: !!ws?.ethSigner,
-    // Public deployment configuration; fee funds belong to this wallet.
-    privateFee: window.billboardPrivateFee,
+    ethWallet, hasEthSigner: !!ws?.ethSigner,
   };
   if (action) config.action = action;
-  if (extra) Object.assign(config, extra);
   return config;
 }
 
@@ -42949,6 +43168,18 @@ function buildConfig(action, extra) {
 // ============================================================
 function publicOperationFailure(error) {
   const messages={
+    INSECURE_CONTEXT:'Wallet actions require HTTPS or localhost.',
+    SHARED_MEMORY_UNAVAILABLE:'Wallet actions require cross-origin isolation and shared memory. Check the hosting configuration or use a supported browser.',
+    WASM_UNAVAILABLE:'This browser cannot run the required WebAssembly features.',
+    WORKER_UNAVAILABLE:'Browser workers are unavailable or blocked. Check the browser and hosting settings.',
+    CRYPTO_UNAVAILABLE:'Browser cryptography is unavailable.',
+    LOCKS_UNAVAILABLE:'Browser storage locks are unavailable; wallet actions cannot safely continue.',
+    BB_BROWSER_PROVER_CONFIGURATION:'Browser proving setup could not be verified. Reload this page and check the locally hosted setup files.',
+    OPFS_UNAVAILABLE:'Private browser file storage is unavailable or blocked. Wallet storage cannot start.',
+    STORAGE_UNAVAILABLE:'Browser storage is unavailable or blocked. Preserve your recovery file before changing browser settings.',
+    READINESS_TIMEOUT:'Browser capability checks timed out. Retry before starting a wallet operation.',
+    BB_CONNECTION_VERIFICATION_FAILED:'The portal, network or private fee contract could not be verified. Check the imported configuration before making a payment.',
+    BB_FEE_CONFIG_REQUIRED:'Import private fee settings before depositing collateral or creating a new Aztec transaction. Recovery remains available.',
     BB_SUBMISSION_UNKNOWN:'Submission outcome is unknown. Keep the transaction record and check its receipt before retrying.',
     PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN:'Fee funding outcome is unknown. Keep its recovery file and check the transaction before retrying.',
     BB_PRIVATE_FEE_AMOUNT:'Deposit more than the configured maximum claim fee.',
@@ -42975,8 +43206,7 @@ function makeCallEngine(engineFn, envExtra) {
     _assertWalletLive();
     const ws=window.walletState, generation=_walletGeneration;
     if(!ws?.aztec?.address) throw new Error('Load an Aztec wallet first.');
-    const portal=()=>document.getElementById('portalAddr')?.value.trim() || '';
-    const identity=()=>JSON.stringify([_getNodeUrl(),ETH_RPC_URL,portal(),ws.aztec?.secretKey,ws.aztec?.salt,ws.ethAccount,ws.ethChainId,window.billboardPrivateFee]);
+    const identity=()=>JSON.stringify([_getConfigRevision(),_connectionConfig(),ws.aztec?.secretKey,ws.aztec?.salt,ws.ethAccount,ws.ethChainId],(_,value)=>typeof value==='bigint'?value.toString():value);
     const expected=identity();
     async function guard() {
       _assertWalletLive();
@@ -42987,6 +43217,22 @@ function makeCallEngine(engineFn, envExtra) {
           _invalidateWalletContext(); throw new Error('Wallet account or chain changed.');
         }
       }
+      _assertWalletLive();
+      if(generation!==_walletGeneration || expected!==identity()) throw new Error('Wallet or deployment configuration changed. Reload before continuing.');
+    }
+    async function verifyBoard() {
+      if(!envExtra?.artifact || document.getElementById('deploymentManifest'))return;
+      const config=_getPublicConfig(),api=window.BillboardPublic;
+      if(!config || !api)throw new Error('Board verification is unavailable.');
+      await api.connectPublicFeed({nodeUrl:config.network.nodeUrl,ethereumUrl:config.network.ethRpcUrl,
+        portalAddress:config.board.portalAddress,expectedConfig:config,metadata:api.metadata,
+        storage:api.browserPublicFeedStorage()});
+      await guard();
+      if(!window.BillboardConnectionCheck)throw new Error('Portal verification is unavailable.');
+      await window.BillboardConnectionCheck.verify({sdk:window.__aztec,ethers,config,
+        privateFeeArtifact:envExtra.privateFeeArtifact,
+        verifyFee:['deposit','claim','post','withdraw','auto','declare-immoral','set-moderation-policy','transfer-censor'].includes(action)});
+      await guard();
     }
     if(!navigator.locks?.request) throw new Error('This browser cannot safely coordinate wallet tabs. Use a browser with Web Locks support.');
     // One operation per full account across tabs, including RPC aliases and networks. No secret in lock name.
@@ -42996,18 +43242,23 @@ function makeCallEngine(engineFn, envExtra) {
       return await navigator.locks.request(lockName,{ifAvailable:true},async lock=>{
         if(!lock) throw new Error('This wallet is busy in another tab.');
         await guard();
+        if(envExtra?.artifact && !document.getElementById('deploymentManifest') && !_getPublicConfig()?.privateFee && ['deposit','claim','post','withdraw','auto','declare-immoral','set-moderation-policy','transfer-censor'].includes(action)) throw Object.assign(new Error('Private fee configuration required.'),{code:'BB_FEE_CONFIG_REQUIRED'});
+        if(!window.BillboardReadiness) throw new Error('Browser capability checks are unavailable.');
+        await window.BillboardReadiness.check();
+        await guard();
+        await verifyBoard();
         _currentStatusDiv=statusDiv;
         const env=buildEnv(envExtra),config=buildConfig(action,extra);
         const prior=config.preProveHook;
         config.contextGuard=guard;
-        config.preProveHook=async value=>{await guard();if(prior)await prior(value);await guard();};
+        config.preProveHook=async value=>{await guard();await verifyBoard();if(prior)await prior(value);await guard();};
         env.getBrowserSigner=async()=>{
           await guard(); if(!ws.ethSigner) throw new Error('Connect an Ethereum wallet first.');
           const signer=ws.ethSigner;
           return new Proxy(signer,{get(target,property){
             const value=Reflect.get(target,property,target);
             if(typeof value!=='function')return value;
-            if(['sendTransaction','signTransaction','signMessage','signTypedData'].includes(property))return async(...args)=>{await guard();return value.apply(target,args);};
+            if(['sendTransaction','signTransaction','signMessage','signTypedData'].includes(property))return async(...args)=>{await guard();await verifyBoard();await guard();return value.apply(target,args);};
             return value.bind(target);
           }});
         };
@@ -43041,13 +43292,9 @@ let _stateResult = null;
 let _billboardInterval = null;
 let _billboardLastCount = -1;
 let _billboardLastBlock = -1;
-let _showCensored = true; // censor always sees censored posts
 
 // Helpers
-function _portalAddr() {
-  const v = (document.getElementById('portalAddr') || {}).value || '';
-  return v.trim();
-}
+function _portalAddr() { return _getPublicConfig()?.board.portalAddress || ''; }
 function _commonConfig() {
   const c = {
     portalAddress: _portalAddr(),
@@ -43076,20 +43323,23 @@ const runCensorEngine = makeCallEngine(runBillboardUser, {
 });
 
 async function callEngine(action,statusDiv,extra={}) {
-  const identity=JSON.stringify([window.walletState?.aztec?.address?.toString(),_portalAddr(),_getNodeUrl()]);
+  const revision=_getConfigRevision();
+  const identity=JSON.stringify([window.walletState?.aztec?.address?.toString(),_portalAddr(),_getNodeUrl(),_getEthRpcUrl(),revision]);
   const result=await runCensorEngine(action,statusDiv,{...extra,acknowledgeTx:journalAcknowledgements.get(identity)});
+  if(revision!==_getConfigRevision())throw Error('Configuration changed. Reconnect.');
   if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
   return result;
 }
 async function recoverSavedTransaction() {
   try {await callEngine('recover','setupStatus',_commonConfig());}
-  catch(error){log(error.message,'error','setupStatus');}
+  catch(error){log(publicOperationFailure(error),'error','setupStatus');}
 }
 
 // ============================================================
 // Setup — load censor wallet, connect to contract
 // ============================================================
 async function loadCensorWalletAndConnect() {
+  const revision=_getConfigRevision();
   const ws = window.walletState;
   if (!ws || !ws.aztec || !ws.aztec.secretKey) throw new Error('Aztec wallet not loaded.');
 
@@ -43098,6 +43348,7 @@ async function loadCensorWalletAndConnect() {
   const result = await callEngine('status', 'setupStatus', {
     ..._commonConfig(),
   });
+  if(revision!==_getConfigRevision())throw Error('Configuration changed. Reconnect.');
   _handles = result.handles;
   _stateResult = result;
 
@@ -43117,6 +43368,7 @@ async function loadCensorWalletAndConnect() {
 // Censor status — am I the censor?
 // ============================================================
 async function checkCensorStatus() {
+  const revision=_getConfigRevision(),handles=_handles;
   const statusDiv = document.getElementById('censorStatusDiv');
   const controlsCard = document.getElementById('censorControlsCard');
   const transferCard = document.getElementById('transferCard');
@@ -43124,43 +43376,47 @@ async function checkCensorStatus() {
   if (!_handles || !_handles.contract) return;
 
   try {
-    const censorResult = await _handles.contract.methods.get_censor().simulate({ from: _handles.address });
+    const censorResult = await handles.contract.methods.get_censor().simulate({ from: handles.address });
     let cv = censorResult;
     if (cv && cv.result !== undefined) cv = cv.result;
     if (cv && cv.value !== undefined) cv = cv.value;
     const censorAddr = cv && cv.toString ? cv.toString() : (cv ? '0x' + BigInt(cv).toString(16).padStart(64, '0') : '0x0');
-    const censorActive = !censorAddr.endsWith('0000000000000000000000000000000000000000');
+    const censorValue=BigInt(censorAddr);
+    if(censorValue<0n||censorValue>=21888242871839275222246405745257275088548364400416034343698204186575808495617n)throw Error('Invalid moderator address');
+    const censorActive = censorValue!==0n;
 
-    let kMult = 64;
+    let kMult = null;
     try {
-      const kResult = await _handles.contract.methods.get_k_multiplier().simulate({ from: _handles.address });
+      const kResult = await handles.contract.methods.get_k_multiplier().simulate({ from: handles.address });
       kMult = Number(extractInt(kResult));
-    } catch (e) {}
+      if(!Number.isSafeInteger(kMult)||kMult<1||kMult>65535)throw Error('Invalid moderator settings');
+    } catch (e) { if(revision!==_getConfigRevision()||handles!==_handles)return;throw Error('Moderator settings unavailable');}
 
+    if(revision!==_getConfigRevision()||handles!==_handles)return;
     if (!censorActive) {
-      statusDiv.innerHTML = '<span class="err">No censor configured for this billboard.</span>';
+      statusDiv.textContent = 'No moderator configured for this board.';
       controlsCard.style.display = 'none';
       transferCard.style.display = 'none';
+      policyCard.style.display = 'none';
       return;
     }
 
     const myAddr = _handles.address.toString();
-    const isCensor = myAddr === censorAddr;
+    const isCensor = BigInt(myAddr) === censorValue;
     if (isCensor) {
-      statusDiv.innerHTML = '<span class="ok">✅ You are the censor (K=' + kMult + '). You can flag posts and transfer rights.</span>';
+      statusDiv.textContent = 'You are the moderator (K=' + kMult + '). You can flag posts and transfer rights.';
       controlsCard.style.display = '';
       transferCard.style.display = '';
       policyCard.style.display = '';
       refreshPolicy();
     } else {
-      statusDiv.innerHTML = '<span class="err">⚠️ You are NOT the censor. The censor for this billboard is: ' + censorAddr + '</span><br>' +
-        '<span class="muted">Load the censor\'s Aztec wallet to manage censorship.</span>';
+      statusDiv.textContent = 'This wallet is not the moderator. Current moderator: '+censorAddr;
       controlsCard.style.display = 'none';
       transferCard.style.display = 'none';
       policyCard.style.display = 'none';
     }
-  } catch (e) {
-    statusDiv.innerHTML = '<span class="err">Could not check censor status: ' + (e.message || e).substring(0, 120) + '</span>';
+  } catch (e) { if(revision!==_getConfigRevision()||handles!==_handles)return;
+    statusDiv.textContent = 'Could not verify moderator status. Reconnect and retry.';
     if (controlsCard) controlsCard.style.display = 'none';
     if (transferCard) transferCard.style.display = 'none';
     if (policyCard) policyCard.style.display = 'none';
@@ -43171,11 +43427,13 @@ async function checkCensorStatus() {
 // Moderation policy — fetch + display + update
 // ============================================================
 async function refreshPolicy() {
+  const revision=_getConfigRevision(),handles=_handles;
   const box = document.getElementById('policyBox');
   const txt = document.getElementById('policyText');
   if (!box || !txt || !_handles || !_handles.contract) return;
   try {
-    const result = await _handles.contract.methods.get_moderation_policy().simulate({ from: _handles.address });
+    const result = await handles.contract.methods.get_moderation_policy().simulate({ from: handles.address });
+    if(revision!==_getConfigRevision()||handles!==_handles)return;
     let fields = result, len = 0;
     if (result && result.result !== undefined) {
       fields = result.result[0] || result.result;
@@ -43186,7 +43444,7 @@ async function refreshPolicy() {
       if (text) { txt.textContent = text; box.style.display = ''; return; }
     }
     box.style.display = 'none';
-  } catch (e) { box.style.display = 'none'; }
+  } catch (e) { if(revision!==_getConfigRevision()||handles!==_handles)return; box.style.display = 'none'; }
 }
 
 async function doSetModerationPolicy() {
@@ -43224,33 +43482,40 @@ async function refreshBillboard() {
   const feed = document.getElementById('billboardFeed');
   const meta = document.getElementById('billboardMeta');
   if (!feed || !_portalAddr()) return;
+  const selectedRevision=_getConfigRevision();
   try {
     const selectedPortal=_portalAddr(),selectedNode=_getNodeUrl();
-    const page=await window.BillboardPublic.readFeed({portalAddress:selectedPortal,nodeUrl:selectedNode,ethereumUrl:ETH_RPC_URL});
-    if(selectedPortal!==_portalAddr()||selectedNode!==_getNodeUrl())return;
-    const posts=page.posts.map(p=>({idx:p.orderIndex,postId:p.postId,msg:p.text,flagged:p.flagged,censorResponse:p.flag?.reason,flaggedBy:p.flag?.censorAddress}));
-    const flaggedCount=posts.filter(p=>p.flagged).length;
-    const isNewPost=page.eventCount>_billboardLastCount&&_billboardLastCount>=0;
+    const page=await window.BillboardPublic.readFeed({portalAddress:selectedPortal,nodeUrl:selectedNode,ethereumUrl:_getEthRpcUrl(),expectedConfig:_getPublicConfig()});
+    if(selectedRevision!==_getConfigRevision())return;
     _billboardLastCount=page.eventCount;_billboardLastBlock=page.lastBlock;
     if(meta)meta.textContent=page.progress.complete?'Latest messages through block '+page.lastBlock:'Loading public history through block '+page.lastBlock;
-    feed.innerHTML = posts.map((p) => {
-      if (p.flagged) {
-        let h = '<div class="billboard-post flagged">' +
-          '<div class="billboard-post-meta"><span class="billboard-post-num">#' + p.idx + '</span> <span class="flagged-badge">FLAGGED</span></div>' +
-          '<div class="billboard-post-text flagged-text">This post was flagged as immoral.</div>';
-        if (p.censorResponse) {
-          h += '<div class="censor-response">Censor says: ' + escapeHtml(p.censorResponse) + '</div>';
-        }
-        h += '</div>';
-        return h;
-      }
-      return '<div class="billboard-post">' +
-        '<div class="billboard-post-meta"><span class="billboard-post-num">#' + p.idx + '</span></div>' +
-        '<div class="billboard-post-text">' + escapeHtml(p.msg) + '</div>' +
-      '</div>';
-    }).join('');
-    if(page.nextCursor){const link=document.createElement('a');link.href='feed.html?portal='+encodeURIComponent(_portalAddr());link.textContent='Read older messages';feed.append(link);}
+    const signature=JSON.stringify([selectedRevision,page.posts.map(post=>[post.postId,post.orderIndex,post.text,post.flagged,post.flag?.reason]),Boolean(page.nextCursor)]);
+    if(feed._renderSignature===signature&&feed.children.length>0)return;
+    const previous=feed._renderRevision===selectedRevision?(feed._postNodes||new Map()):new Map();
+    const active=document.activeElement;let focusedKey=null;
+    for(const [key,saved]of previous)if(active&&saved.article.contains?.(active))focusedKey=key;
+    const olderFocused=active&&active===feed._olderLink;
+    const next=new Map(),nodes=[];
+    for(const post of page.posts){
+      const key=post.postId??String(post.orderIndex),textSignature=JSON.stringify([post.orderIndex,post.text,post.flagged,post.flag?.reason]);
+      const saved=previous.get(key);
+      if(saved?.signature===textSignature){next.set(key,saved);nodes.push(saved.article);continue;}
+      const article=document.createElement('article');article.className='billboard-post';
+      const label=document.createElement('p');label.textContent='#'+post.orderIndex;article.append(label);
+      const content=document.createElement('p');content.textContent=post.text;let details=null,summary=null;
+      if(post.flagged){details=document.createElement('details');summary=document.createElement('summary');summary.textContent='Flagged message — show content';details.open=saved?.details?.open===true;details.append(summary,content);const reason=document.createElement('p');reason.textContent='Moderator reason: '+(post.flag?.reason||'No reason supplied');details.append(reason);article.append(details);}else article.append(content);
+      next.set(key,{article,details,summary,signature:textSignature});nodes.push(article);
+    }
+    if(!page.posts.length){const empty=document.createElement('p');empty.textContent='No messages available yet.';nodes.push(empty);}
+    let olderLink=null;
+    if(page.nextCursor){olderLink=feed._renderRevision===selectedRevision?feed._olderLink:null;if(!olderLink){olderLink=document.createElement('a');olderLink.href='feed.html';olderLink.textContent='Read older messages';}nodes.push(olderLink);}
+    feed.replaceChildren();for(const node of nodes)feed.append(node);
+    if(focusedKey!==null){const saved=next.get(focusedKey);if(saved?.article.contains?.(active))active.focus?.({preventScroll:true});else if(saved?.summary)saved.summary.focus?.({preventScroll:true});else{feed.tabIndex=-1;feed.focus?.({preventScroll:true});}}
+    else if(olderFocused){if(olderLink)olderLink.focus?.({preventScroll:true});else{feed.tabIndex=-1;feed.focus?.({preventScroll:true});}}
+    feed._postNodes=next;feed._olderLink=olderLink;feed._renderRevision=selectedRevision;feed._renderSignature=signature;
+
   } catch (e) {
+    if(selectedRevision!==_getConfigRevision())return;
     if (meta) meta.textContent = 'Could not update messages; displayed content may be stale.';
   }
 }
@@ -43304,32 +43569,39 @@ async function doTransferCensor() {
 // Init — wallet buttons (ETH not required for censor)
 // ============================================================
 // Read L1 portal address from URL param (?portal=0x...) if present
-(function initPortalFromUrl() {
-  const params = new URLSearchParams(location.search);
-  const portal = params.get('portal');
-  if (portal) {
-    const el = document.getElementById('portalAddr');
-    if (el) el.value = portal;
-  }
-})();
+window.billboardConfigStore.subscribe(() => {
+  const previous=_handles;_handles=null;_stateResult=null;
+  stopBillboardFeed();_billboardLastCount=-1;_billboardLastBlock=-1;
+  journalAcknowledgements.clear();
+  for(const id of ['censorCard','censorControlsCard','transferCard','policyCard']){const el=document.getElementById(id);if(el)el.style.display='none';}
+  const portal=document.getElementById('portalAddr');if(portal)portal.value=_portalAddr();
+  const feed=document.getElementById('billboardFeed');if(feed)feed.replaceChildren();
+  const policy=document.getElementById('policyBox');if(policy)policy.style.display='none';
+  const meta=document.getElementById('billboardMeta');if(meta)meta.textContent='Configuration changed. Reconnect to this board.';
+  if(previous?.pxe?.stop)Promise.resolve(previous.pxe.stop()).catch(()=>{});
+
+});
+
+
+const initialPortal=document.getElementById('portalAddr');if(initialPortal)initialPortal.value=_portalAddr();
 
 function waitForBundleThenInit() {
   if (window.__aztec && window.__aztec.createPXE) {
     initWalletButtons('walletButtonsContainer', {
       statusId: 'setupStatus',
-      ethRpcUrl: ETH_RPC_URL,
+      ethRpcUrl: _getPublicConfig()?.network.ethRpcUrl,
       requireEth: false,
       onReady: async () => {
         try {
           await loadCensorWalletAndConnect();
         } catch (e) {
-          log('Setup failed: ' + 'operation did not complete; check configuration and recovery records', 'error', 'setupStatus');
+          log('Setup did not complete. Check your connection and configuration, then reload and restore your encrypted wallet backup to retry. Check saved transactions before sending again.', 'error', 'setupStatus');
           console.error('Application operation did not complete.');
         }
       },
     });
   } else {
-    setTimeout(waitForBundleThenInit, 500);
+    waitForBundle(waitForBundleThenInit);
   }
 }
 waitForBundleThenInit();

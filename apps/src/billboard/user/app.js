@@ -18,14 +18,13 @@ let _handles = null;   // { pxe, wallet, contract, aztecNode, address, l2Addr, .
 let _stateResult = null; // result from status action
 
 // Helper: read L1 portal address from UI input
-function _portalAddr() {
-  const v = (document.getElementById('portalAddr') || {}).value || '';
-  return v.trim();
-}
+function _portalAddr() { return _getPublicConfig()?.board.portalAddress || ''; }
 async function readCurrentDeposit() {
   if (!_handles?.contract) throw new Error('Billboard wallet is not connected.');
-  const info=await readBillboardDepositInfo(_handles.contract,_handles.address,_handles.depositChainId);
-  if (info.amount>0n) _handles.depositChainId=info.depositChainId;
+  const handles=_handles,revision=_getConfigRevision();
+  const info=await readBillboardDepositInfo(handles.contract,handles.address,handles.depositChainId);
+  if(handles!==_handles||revision!==_getConfigRevision())throw Error('Configuration changed. Reconnect.');
+  if (info.amount>0n) handles.depositChainId=info.depositChainId;
   return info;
 }
 
@@ -69,8 +68,10 @@ const runUserEngine = makeCallEngine(runBillboardUser, {
 });
 
 async function callEngine(action,statusDiv,extra={}) {
-  const identity=JSON.stringify([window.walletState?.aztec?.address?.toString(),_portalAddr(),_getNodeUrl()]);
+  const revision=_getConfigRevision();
+  const identity=JSON.stringify([window.walletState?.aztec?.address?.toString(),_portalAddr(),_getNodeUrl(),_getEthRpcUrl(),revision]);
   const result=await runUserEngine(action,statusDiv,{...extra,acknowledgeTx:journalAcknowledgements.get(identity),acknowledgeEthereumTx:ethereumAcknowledgements.get(identity)});
+  if(revision!==_getConfigRevision())throw Error('Configuration changed. Reconnect.');
   // Only a result returned to this live page acknowledges a completed action.
   // Reload deliberately loses acknowledgement, so recovery precedes another send.
   if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
@@ -78,8 +79,23 @@ async function callEngine(action,statusDiv,extra={}) {
   return result;
 }
 async function recoverSavedTransaction() {
-  try {await callEngine('recover','setupStatus',_commonConfig());}
-  catch(error){log(error.message,'error','setupStatus');}
+  const revision=_getConfigRevision();
+  try {
+    await callEngine('recover','setupStatus',_commonConfig());
+    if(revision!==_getConfigRevision())throw Error('Configuration changed. Reconnect.');
+    const refreshed=await callEngine('status','setupStatus',_commonConfig());
+    if(revision!==_getConfigRevision())throw Error('Configuration changed. Reconnect.');
+    _handles=refreshed.handles;_stateResult=refreshed;
+    // Recovery refreshes state; it must not enter the deposit page's automatic
+    // claim branch and thereby start a second transaction.
+    if(refreshed.state==='postable')showPage(2);
+    else if(refreshed.state==='withdrawn_l2_claimable_l1')showPage(4);
+    else if(refreshed.state==='zero_balance_need_deposit')showPage(1);
+    else {
+      showPage(0);
+      log('Recovery checked. The deposit still needs a claim. Continue to Deposit ETH when ready to claim; no new transaction was started by this refresh.','info','setupStatus');
+    }
+  } catch(error){log(publicOperationFailure(error),'error','setupStatus');}
 }
 
 async function recoverSavedEthereum(retry=false) {
@@ -87,7 +103,7 @@ async function recoverSavedEthereum(retry=false) {
     await callEngine('recover-eth','setupStatus',{..._commonConfig(),retryEthereum:retry});
     if(_handles) {const refreshed=await callEngine('status','setupStatus',_commonConfig());_handles=refreshed.handles;_stateResult=refreshed;}
   }
-  catch(error){log(error.message,'error','setupStatus');}
+  catch(error){log(publicOperationFailure(error),'error','setupStatus');}
 }
 
 // ============================================================
@@ -105,6 +121,7 @@ initPages([
 // Page 0: Wallet Setup (fully automatic)
 // ============================================================
 async function loadWalletAndConnect() {
+  const revision=_getConfigRevision();
   const ws = window.walletState;
   if (!ws || !ws.aztec || !ws.aztec.secretKey) throw new Error('Aztec wallet not loaded.');
   if (!ws || !ws.ethSigner) throw new Error('ETH wallet not loaded.');
@@ -113,6 +130,7 @@ async function loadWalletAndConnect() {
   const result = await callEngine('status', 'setupStatus', {
     ..._commonConfig(),
   });
+  if(revision!==_getConfigRevision())throw Error('Configuration changed. Reconnect.');
   _handles = result.handles;
   _stateResult = result;
 
@@ -171,6 +189,7 @@ async function doDepositPage() {
     const amountEth = parseFloat(amountStr);
     if (isNaN(amountEth) || amountEth <= 0) { highlightMissing(['depositAmount']); throw new Error('Invalid amount.'); }
 
+    const operationRevision=_getConfigRevision();
     // Phase 1: Deposit on L1
     log('Making new L1 deposit...', 'info', 'depositStatus');
     let depResult;
@@ -181,11 +200,12 @@ async function doDepositPage() {
       });
     } catch (e) {
       const msg = e.message || String(e);
-      if (/missing revert data|CALL_EXCEPTION|insufficient funds|gas required exceeds/i.test(msg)) {
+      if (/insufficient funds/i.test(msg)) {
         throw new Error('L1 deposit failed: not enough ETH balance for the deposit plus gas fees.');
       }
       throw e;
     }
+    if(operationRevision!==_getConfigRevision())throw Error('Configuration changed. Recover the original deposit before continuing.');
     const depInfo = depResult.depositInfo;
 
     // Phase 2: Wait for L2 ingest + claim on L2
@@ -221,7 +241,6 @@ let _countdownFetchInterval = null;
 let _billboardInterval = null;
 let _billboardLastCount = -1;
 let _billboardLastBlock = -1;
-let _showCensored = false; // user must opt-in to see censored posts
 
 function onShowPost() {
   startPostCountdown();
@@ -229,105 +248,27 @@ function onShowPost() {
   initCensorPanel();
 }
 
+function withdrawalReadiness(info, l2Time) {
+  if(!info || info.amount<=0n)return {ready:false,kind:'unknown',message:'Deposit note unavailable. Refresh or recover the saved transaction; absence does not establish withdrawal.'};
+  if(info.lastScreenedIndex<info.lastRealPostIndex)return {ready:false,kind:'screening',message:'Some real posts still need screening. Wait until their moderation window ends, then advance screening. Each transaction checks up to two earlier posts.'};
+  if(typeof l2Time!=='number'||!Number.isSafeInteger(l2Time)||l2Time<0)return {ready:false,kind:'unknown',message:'Current chain time is unavailable. Retry the status check.'};
+  if(BigInt(l2Time)<info.nextAllowedTime)return {ready:false,kind:'cooldown',message:'Screening is complete; the withdrawal time lock has not expired at the latest chain block.'};
+  return {ready:true,kind:'ready',message:'Screening and time-lock checks pass at the latest chain block. The transaction will verify eligibility again.'};
+}
 function startPostCountdown() {
-  if (_countdownInterval) clearInterval(_countdownInterval);
-  if (_countdownFetchInterval) clearInterval(_countdownFetchInterval);
-  const el = document.getElementById('postCountdown');
-  if (!el || !_handles || !_handles.contract) return;
-
-  let nextAllowedTime = null;
-  let timeOffset = 0;
-  let currentCooldown = 0;
-  let currentMaxSaveUp = 16;
-  let lastScreenedIndex = 0;
-  let lastRealPostIndex = 0;
-
-  async function fetchData() {
-    if (!_handles || !_handles.contract) {
-      el.textContent = 'Billboard contract not registered.';
-      el.className = 'countdown warn';
-      return;
-    }
-    try {
-      const result = await readCurrentDeposit();
-      const { amount, nextAllowedTime: nat, lastScreenedIndex: lsi, lastRealPostIndex: lrpi } = result;
-      if (amount === 0n) {
-        el.textContent = 'No deposit note found. Claim a deposit first.';
-        el.className = 'countdown warn';
-        nextAllowedTime = null;
-        return;
-      }
-      nextAllowedTime = Number(nat);
-      lastScreenedIndex = Number(lsi);
-      lastRealPostIndex = Number(lrpi);
-      // Read deployer-configured cooldown parameters from contract
-      let COOLDOWN_BASE = 3600n;
-      let MIN_DEPOSIT = ethers.parseEther('0.001');
-      let maxSaveUp = 16;
-      try {
-        const cdResult = await _handles.contract.methods.get_base_cooldown().simulate({ from: _handles.address });
-        COOLDOWN_BASE = BigInt(Number(extractInt(cdResult)));
-        const mdResult = await _handles.contract.methods.get_min_deposit().simulate({ from: _handles.address });
-        let minimum = mdResult;
-        if (minimum && minimum.result !== undefined) minimum = minimum.result;
-        if (minimum && minimum.value !== undefined) minimum = minimum.value;
-        MIN_DEPOSIT = BigInt(minimum.toString());
-        const msuResult = await _handles.contract.methods.get_max_save_up().simulate({ from: _handles.address });
-        maxSaveUp = Number(extractInt(msuResult));
-      } catch (e) {}
-      currentCooldown = Number((COOLDOWN_BASE * MIN_DEPOSIT + amount - 1n) / amount);
-      if (currentCooldown < 1) currentCooldown = 1;
-      currentMaxSaveUp = maxSaveUp;
-      const l2Time = await getL2Timestamp(_handles.aztecNode);
-      timeOffset = l2Time - Math.floor(Date.now() / 1000);
-    } catch (e) {
-      if (nextAllowedTime === null) {
-        el.textContent = 'Checking deposit status...';
-        el.className = 'countdown warn';
-      }
-    }
-  }
-
-  function updateDisplay() {
-    if (nextAllowedTime === null) return;
-    const estL2Time = Math.floor(Date.now() / 1000) + timeOffset;
-    const remaining = nextAllowedTime - estL2Time;
-    const cd = currentCooldown || 180;
-    const cdMin = Math.floor(cd / 60);
-    const cdSec = cd % 60;
-    const cdStr = cdMin + ':' + String(cdSec).padStart(2, '0');
-    // Check screening status element
-    const scrEl = document.getElementById('screeningStatus');
-    if (scrEl) {
-      const NO_IDX = 0;
-      if (lastRealPostIndex === NO_IDX) {
-        scrEl.textContent = '';
-        scrEl.className = 'small';
-      } else if (lastScreenedIndex >= lastRealPostIndex) {
-        scrEl.textContent = remaining <= 0 ? '\u2705 All posts screened — eligible to withdraw.' : 'All posts screened; wait for the remaining cooldown before withdrawing.';
-        scrEl.className = remaining <= 0 ? 'small success' : 'small warn';
-      } else {
-        const unscreened = lastRealPostIndex - lastScreenedIndex;
-        scrEl.textContent = '\u26a0\ufe0f ' + unscreened + ' post' + (unscreened > 1 ? 's' : '') + ' need screening — make ' + unscreened + ' dummy post' + (unscreened > 1 ? 's' : '') + ' before withdrawal.';
-        scrEl.className = 'small warn';
-      }
-    }
-    if (remaining <= 0) {
-      const postsAvailable = Math.min(Math.floor(-remaining / cd) + 1, currentMaxSaveUp);
-      el.textContent = '\u2705 Ready to post! (' + postsAvailable + ' post' + (postsAvailable > 1 ? 's' : '') + ' available, then ' + cdStr + ' cooldown)';
-      el.className = 'countdown ready';
-    } else {
-      const mm = Math.floor(remaining / 60);
-      const ss = remaining % 60;
-      el.textContent = '\u23f3 Next post in ' + mm + ':' + String(ss).padStart(2, '0') + ' (0 posts available now, ' + cdStr + ' cooldown)';
-      el.className = 'countdown waiting';
-    }
-  }
-
-  fetchData();
-  updateDisplay();
-  _countdownInterval = setInterval(updateDisplay, 1000);
-  _countdownFetchInterval = setInterval(fetchData, 15000);
+  if(_countdownInterval)clearInterval(_countdownInterval);
+  if(_countdownFetchInterval)clearInterval(_countdownFetchInterval);
+  const revision=_getConfigRevision(),handles=_handles;
+  if(!handles?.contract)return;
+  let busy=false;
+  async function refresh(){if(busy)return;busy=true;try{
+    const info=await readCurrentDeposit(),now=await getL2Timestamp(handles.aztecNode);
+    if(revision!==_getConfigRevision()||handles!==_handles)return;
+    const readiness=withdrawalReadiness(info,now),el=document.getElementById('postCountdown'),screen=document.getElementById('screeningStatus');
+    el.textContent=info.amount>0n?(BigInt(now)>=info.nextAllowedTime?'Posting time lock has expired at the latest chain block.':'Posting time lock remains active at the latest chain block.'):'Deposit status is unavailable; refresh or recover.';
+    el.className='countdown';screen.textContent=readiness.message;screen.className=readiness.ready?'small success':'small warn';
+  }catch{if(revision===_getConfigRevision()){document.getElementById('postCountdown').textContent='Could not refresh chain status. Retry before acting.';document.getElementById('screeningStatus').textContent='Withdrawal eligibility is unknown.';}}finally{busy=false;}}
+  refresh();_countdownFetchInterval=setInterval(refresh,15000);
 }
 
 function startBillboardFeed() {
@@ -344,11 +285,13 @@ function stopBillboardFeed() {
 }
 
 async function refreshPolicy() {
+  const revision=_getConfigRevision(),handles=_handles;
   const box = document.getElementById('policyBox');
   const txt = document.getElementById('policyText');
   if (!box || !txt || !_handles || !_handles.contract) return;
   try {
-    const result = await _handles.contract.methods.get_moderation_policy().simulate({ from: _handles.address });
+    const result = await handles.contract.methods.get_moderation_policy().simulate({ from: handles.address });
+    if(revision!==_getConfigRevision()||handles!==_handles)return;
     let fields = result, len = 0;
     if (result && result.result !== undefined) {
       fields = result.result[0] || result.result;
@@ -359,71 +302,47 @@ async function refreshPolicy() {
       if (text) { txt.textContent = text; box.style.display = ''; return; }
     }
     box.style.display = 'none';
-  } catch (e) { box.style.display = 'none'; }
+  } catch (e) { if(revision!==_getConfigRevision()||handles!==_handles)return; box.style.display = 'none'; }
 }
 
 async function refreshBillboard() {
   const feed = document.getElementById('billboardFeed');
   const meta = document.getElementById('billboardMeta');
   if (!feed || !_portalAddr()) return;
+  const selectedRevision=_getConfigRevision();
   try {
     const selectedPortal=_portalAddr(),selectedNode=_getNodeUrl();
-    const page=await window.BillboardPublic.readFeed({portalAddress:selectedPortal,nodeUrl:selectedNode,ethereumUrl:ETH_RPC_URL});
-    if(selectedPortal!==_portalAddr()||selectedNode!==_getNodeUrl())return;
-    const posts=page.posts.map(p=>({idx:p.orderIndex,postId:p.postId,msg:p.text,flagged:p.flagged,censorResponse:p.flag?.reason,flaggedBy:p.flag?.censorAddress}));
-    const flaggedCount=posts.filter(p=>p.flagged).length;
-    const isNewPost=page.eventCount>_billboardLastCount&&_billboardLastCount>=0;
+    const page=await window.BillboardPublic.readFeed({portalAddress:selectedPortal,nodeUrl:selectedNode,ethereumUrl:_getEthRpcUrl(),expectedConfig:_getPublicConfig()});
+    if(selectedRevision!==_getConfigRevision())return;
     _billboardLastCount=page.eventCount;_billboardLastBlock=page.lastBlock;
     if(meta)meta.textContent=page.progress.complete?'Latest messages through block '+page.lastBlock:'Loading public history through block '+page.lastBlock;
-    // Split posts into visible and censored
-    const visiblePosts = posts.filter(p => !p.flagged);
-    const censoredPosts = posts.filter(p => p.flagged);
-
-    let html = '';
-
-    // Render visible (non-censored) posts
-    if (visiblePosts.length === 0 && censoredPosts.length === 0) {
-      html = '<div class="billboard-empty">No messages yet. Be the first to post!</div>';
-    } else if (visiblePosts.length === 0) {
-      html = '<div class="billboard-empty">All posts have been censored.</div>';
-    } else {
-      html += visiblePosts.map((p, i) => {
-        const newCls = (isNewPost && i === 0) ? ' new' : '';
-        return '<div class="billboard-post' + newCls + '">' +
-          '<div class="billboard-post-meta"><span class="billboard-post-num">#' + p.idx + '</span></div>' +
-          '<div class="billboard-post-text">' + escapeHtml(p.msg) + '</div>' +
-        '</div>';
-      }).join('');
+    const signature=JSON.stringify([selectedRevision,page.posts.map(post=>[post.postId,post.orderIndex,post.text,post.flagged,post.flag?.reason]),Boolean(page.nextCursor)]);
+    if(feed._renderSignature===signature&&feed.children.length>0)return;
+    const previous=feed._renderRevision===selectedRevision?(feed._postNodes||new Map()):new Map();
+    const active=document.activeElement;let focusedKey=null;
+    for(const [key,saved]of previous)if(active&&saved.article.contains?.(active))focusedKey=key;
+    const olderFocused=active&&active===feed._olderLink;
+    const next=new Map(),nodes=[];
+    for(const post of page.posts){
+      const key=post.postId??String(post.orderIndex),textSignature=JSON.stringify([post.orderIndex,post.text,post.flagged,post.flag?.reason]);
+      const saved=previous.get(key);
+      if(saved?.signature===textSignature){next.set(key,saved);nodes.push(saved.article);continue;}
+      const article=document.createElement('article');article.className='billboard-post';
+      const label=document.createElement('p');label.textContent='#'+post.orderIndex;article.append(label);
+      const content=document.createElement('p');content.textContent=post.text;let details=null,summary=null;
+      if(post.flagged){details=document.createElement('details');summary=document.createElement('summary');summary.textContent='Flagged message — show content';details.open=saved?.details?.open===true;details.append(summary,content);const reason=document.createElement('p');reason.textContent='Moderator reason: '+(post.flag?.reason||'No reason supplied');details.append(reason);article.append(details);}else article.append(content);
+      next.set(key,{article,details,summary,signature:textSignature});nodes.push(article);
     }
+    if(!page.posts.length){const empty=document.createElement('p');empty.textContent='No messages available yet.';nodes.push(empty);}
+    let olderLink=null;
+    if(page.nextCursor){olderLink=feed._renderRevision===selectedRevision?feed._olderLink:null;if(!olderLink){olderLink=document.createElement('a');olderLink.href='feed.html';olderLink.textContent='Read older messages';}nodes.push(olderLink);}
+    feed.replaceChildren();for(const node of nodes)feed.append(node);
+    if(focusedKey!==null){const saved=next.get(focusedKey);if(saved?.article.contains?.(active))active.focus?.({preventScroll:true});else if(saved?.summary)saved.summary.focus?.({preventScroll:true});else{feed.tabIndex=-1;feed.focus?.({preventScroll:true});}}
+    else if(olderFocused){if(olderLink)olderLink.focus?.({preventScroll:true});else{feed.tabIndex=-1;feed.focus?.({preventScroll:true});}}
+    feed._postNodes=next;feed._olderLink=olderLink;feed._renderRevision=selectedRevision;feed._renderSignature=signature;
 
-    // Render censored posts only if user opted in
-    if (_showCensored && censoredPosts.length > 0) {
-      html += '<div class="censored-divider"></div>';
-      html += censoredPosts.map((p) => {
-        let h = '<div class="billboard-post censored">' +
-          '<div class="billboard-post-meta"><span class="billboard-post-num">#' + p.idx + '</span> <span class="flagged-badge">FLAGGED</span></div>' +
-          '<div class="billboard-post-text censored-text">' + escapeHtml(p.msg) + '</div>';
-        if (p.censorResponse) {
-          h += '<div class="censor-response">Censor says: ' + escapeHtml(p.censorResponse) + '</div>';
-        }
-        h += '</div>';
-        return h;
-      }).join('');
-    }
-
-    // Add "View censored posts" link at the bottom
-    if (flaggedCount > 0) {
-      if (_showCensored) {
-        html += '<div class="censored-toggle" onclick="toggleCensored(false)">Hide censored posts</div>';
-      } else {
-        html += '<div class="censored-toggle" onclick="confirmViewCensored()">View censored posts (' + flaggedCount + ' hidden)</div>';
-      }
-    }
-
-    feed.innerHTML = html;
-    if(page.nextCursor){const link=document.createElement('a');link.href='feed.html?portal='+encodeURIComponent(_portalAddr());link.textContent='Read older messages';feed.append(link);}
-    if (isNewPost) feed.scrollTop = 0;
   } catch (e) {
+    if(selectedRevision!==_getConfigRevision())return;
     if (meta) meta.textContent = 'Could not update messages; displayed content may be stale.';
   }
 }
@@ -432,207 +351,13 @@ function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Toggle censored post visibility (with confirmation dialog for showing)
-// ============================================================
-// Sudoku challenge — gate for viewing censored posts
-// ============================================================
-
-function _sudokuIsValid(grid, row, col, num) {
-  for (let i = 0; i < 9; i++) {
-    if (grid[row][i] === num) return false;
-    if (grid[i][col] === num) return false;
-  }
-  const br = Math.floor(row / 3) * 3, bc = Math.floor(col / 3) * 3;
-  for (let r = br; r < br + 3; r++)
-    for (let c = bc; c < bc + 3; c++)
-      if (grid[r][c] === num) return false;
-  return true;
-}
-
-function _sudokuGenerateFull() {
-  const grid = Array(9).fill(null).map(() => Array(9).fill(0));
-  function fill() {
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        if (grid[r][c] === 0) {
-          const nums = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
-          for (const n of nums) {
-            if (_sudokuIsValid(grid, r, c, n)) {
-              grid[r][c] = n;
-              if (fill()) return true;
-              grid[r][c] = 0;
-            }
-          }
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-  fill();
-  return grid;
-}
-
-function _sudokuGeneratePuzzle() {
-  const solution = _sudokuGenerateFull();
-  const puzzle = solution.map(row => [...row]);
-  // Easy difficulty: remove ~38 cells, leaving ~43 clues.
-  // Distribute removals evenly across rows so clues don't cluster.
-  // Target: remove ~4 per row (36), then 2 extra from random rows.
-  const removePerRow = Array(9).fill(4);
-  for (let i = 0; i < 2; i++) removePerRow[Math.floor(Math.random() * 9)]++;
-  for (let r = 0; r < 9; r++) {
-    const cols = [0,1,2,3,4,5,6,7,8].sort(() => Math.random() - 0.5);
-    for (let i = 0; i < removePerRow[r]; i++) {
-      puzzle[r][cols[i]] = 0;
-    }
-  }
-  return puzzle;
-}
-
-function _sudokuCheckComplete(grid) {
-  for (let r = 0; r < 9; r++)
-    for (let c = 0; c < 9; c++)
-      if (grid[r][c] === 0) return false;
-  // Check all rows
-  for (let r = 0; r < 9; r++) {
-    const seen = new Set();
-    for (let c = 0; c < 9; c++) {
-      if (seen.has(grid[r][c])) return false;
-      seen.add(grid[r][c]);
-    }
-  }
-  // Check all columns
-  for (let c = 0; c < 9; c++) {
-    const seen = new Set();
-    for (let r = 0; r < 9; r++) {
-      if (seen.has(grid[r][c])) return false;
-      seen.add(grid[r][c]);
-    }
-  }
-  // Check all 3x3 boxes
-  for (let br = 0; br < 9; br += 3) {
-    for (let bc = 0; bc < 9; bc += 3) {
-      const seen = new Set();
-      for (let r = br; r < br + 3; r++)
-        for (let c = bc; c < bc + 3; c++) {
-          if (seen.has(grid[r][c])) return false;
-          seen.add(grid[r][c]);
-        }
-    }
-  }
-  return true;
-}
-
-function confirmViewCensored() {
-  const puzzle = _sudokuGeneratePuzzle();
-  const overlay = document.createElement('div');
-  overlay.className = 'censor-confirm-overlay';
-
-  // Build the sudoku grid HTML
-  let gridHtml = '<div class="sudoku-grid">';
-  for (let r = 0; r < 9; r++) {
-    for (let c = 0; c < 9; c++) {
-      const val = puzzle[r][c];
-      const given = val !== 0;
-      const borderRight = (c % 3 === 2 && c !== 8) ? ' sudoku-border-right' : '';
-      const borderBottom = (r % 3 === 2 && r !== 8) ? ' sudoku-border-bottom' : '';
-      if (given) {
-        gridHtml += '<input class="sudoku-cell given' + borderRight + borderBottom + '" type="text" value="' + val + '" readonly data-r="' + r + '" data-c="' + c + '" data-given="1">';
-      } else {
-        gridHtml += '<input class="sudoku-cell' + borderRight + borderBottom + '" type="text" maxlength="1" data-r="' + r + '" data-c="' + c + '" data-given="0">';
-      }
-    }
-  }
-  gridHtml += '</div>';
-
-  overlay.innerHTML = '<div class="censor-confirm-dialog sudoku-dialog">' +
-    '<h3>\u26a0\ufe0f Prove You Are an \u00dcbermensch</h3>' +
-    '<p class="small">To view censored posts, you must prove that you are an ubermensch. To do this, you must solve a sudoku.</p>' +
-    gridHtml +
-    '<div class="sudoku-status" id="sudokuStatus"></div>' +
-    '<div class="censor-confirm-buttons">' +
-      '<button class="secondary" id="censorCancelBtn">Cancel</button>' +
-    '</div>' +
-  '</div>';
-  document.body.appendChild(overlay);
-
-  // Collect current grid state from inputs
-  function getGrid() {
-    const inputs = overlay.querySelectorAll('.sudoku-cell');
-    const grid = Array(9).fill(null).map(() => Array(9).fill(0));
-    for (const inp of inputs) {
-      const r = parseInt(inp.dataset.r), c = parseInt(inp.dataset.c);
-      const v = parseInt(inp.value);
-      grid[r][c] = isNaN(v) ? 0 : v;
-    }
-    return grid;
-  }
-
-  function checkSolved() {
-    const grid = getGrid();
-    if (_sudokuCheckComplete(grid)) {
-      document.getElementById('sudokuStatus').innerHTML = '<span class="sudoku-solved">\u2705 Magnificent. Censored posts revealed.</span>';
-      setTimeout(() => {
-        if (overlay.parentNode) document.body.removeChild(overlay);
-        _showCensored = true;
-        _billboardLastCount = -1;
-        refreshBillboard();
-      }, 800);
-    }
-  }
-
-  // Wire up input events
-  const inputs = overlay.querySelectorAll('.sudoku-cell');
-  for (const inp of inputs) {
-    if (inp.dataset.given === '1') continue;
-    inp.addEventListener('input', (e) => {
-      // Only allow 1-9
-      let v = e.target.value.replace(/[^1-9]/g, '');
-      e.target.value = v;
-      // Highlight conflicts
-      e.target.classList.remove('sudoku-conflict');
-      if (v) {
-        const r = parseInt(e.target.dataset.r), c = parseInt(e.target.dataset.c);
-        const grid = getGrid();
-        grid[r][c] = 0; // remove self for checking
-        if (!_sudokuIsValid(grid, r, c, parseInt(v))) {
-          e.target.classList.add('sudoku-conflict');
-        }
-      }
-      checkSolved();
-    });
-    // Keyboard navigation
-    inp.addEventListener('keydown', (e) => {
-      const r = parseInt(e.target.dataset.r), c = parseInt(e.target.dataset.c);
-      if (e.key === 'ArrowRight' && c < 8) { e.preventDefault(); overlay.querySelector('[data-r="' + r + '"][data-c="' + (c+1) + '"]').focus(); }
-      if (e.key === 'ArrowLeft' && c > 0) { e.preventDefault(); overlay.querySelector('[data-r="' + r + '"][data-c="' + (c-1) + '"]').focus(); }
-      if (e.key === 'ArrowDown' && r < 8) { e.preventDefault(); overlay.querySelector('[data-r="' + (r+1) + '"][data-c="' + c + '"]').focus(); }
-      if (e.key === 'ArrowUp' && r > 0) { e.preventDefault(); overlay.querySelector('[data-r="' + (r-1) + '"][data-c="' + c + '"]').focus(); }
-      if (e.key === 'Backspace' || e.key === 'Delete') { e.target.value = ''; e.target.classList.remove('sudoku-conflict'); }
-    });
-  }
-
-  document.getElementById('censorCancelBtn').onclick = () => { document.body.removeChild(overlay); };
-  overlay.onclick = (e) => { if (e.target === overlay) document.body.removeChild(overlay); };
-
-  // Focus first empty cell
-  const firstEmpty = overlay.querySelector('.sudoku-cell[data-given="0"]');
-  if (firstEmpty) firstEmpty.focus();
-}
-
-function toggleCensored(show) {
-  _showCensored = show;
-  _billboardLastCount = -1; // force refresh
-  refreshBillboard();
-}
-
 // Post button (non-advancing)
 async function doPost() {
   withBtn('postBtn', 'Posting...', 'postStatus', async () => {
     clearMissingHighlight();
     const msgText = document.getElementById('msgText').value.trim();
     if (!msgText) { highlightMissing(['msgText']); throw new Error('Enter a message.'); }
+    if(new TextEncoder().encode(msgText).length>992)throw new Error('Messages must fit within 992 UTF-8 bytes.');
 
     await callEngine('post', 'postStatus', {
       message: msgText,
@@ -640,7 +365,7 @@ async function doPost() {
     });
 
     document.getElementById('msgText').value = '';
-    log('  Message posted anonymously!', 'success', 'postStatus');
+    log('  Message included. Public content and transaction timing remain observable.', 'success', 'postStatus');
     startPostCountdown();
     refreshBillboard();
   });
@@ -660,33 +385,13 @@ async function doDummyPost() {
 
 // Nav button: eligibility gate — wait for note sync, then advance
 async function doProceedToWithdraw() {
-  const S = 'proceedStatus';
-  if (!_handles || !_handles.contract) throw new Error('Billboard contract not registered.');
-
-  log('Checking withdrawal eligibility...', 'info', S);
-  log('  (Waiting for PXE to sync your deposit note)', 'info', S);
-
-  const maxAttempts = 72;
-  for (let i = 0; i < maxAttempts; i++) {
-    try {
-      const result = await readCurrentDeposit();
-      const { amount } = result;
-
-      if (amount === 0n) {
-        let pxeBlock = '?', nodeBlock = '?';
-        try { pxeBlock = (await _handles.pxe.getSyncedBlockHeader()).getBlockNumber(); } catch (e) {}
-        try { nodeBlock = await _handles.aztecNode.getBlockNumber(); } catch (e) {}
-        log('  [' + (i+1) + '/' + maxAttempts + '] Note not found yet. PXE block: ' + pxeBlock + ', node: ' + nodeBlock, 'info', S);
-      } else {
-        log('  Eligible! Note amount: ' + amount.toString() + ' wei.', 'success', S);
-        return; // auto-advance
-      }
-    } catch (e) {
-      log('  [' + (i+1) + '/' + maxAttempts + '] Check failed: ' + 'operation did not complete; check configuration and recovery records', 'warn', S);
-    }
-    if (i < maxAttempts - 1) await sleep(10000);
-  }
-  throw new Error('Eligibility check timed out after 12 min. The PXE may still be syncing.');
+  const revision=_getConfigRevision(),handles=_handles;
+  if(!handles?.contract)throw Error('Reconnect to check withdrawal eligibility.');
+  const info=await readCurrentDeposit(),now=await getL2Timestamp(handles.aztecNode);
+  if(revision!==_getConfigRevision()||handles!==_handles)throw Error('Configuration changed. Reconnect.');
+  const readiness=withdrawalReadiness(info,now);
+  log(readiness.message,readiness.ready?'success':'warn','proceedStatus');
+  if(!readiness.ready)throw Error(readiness.message);
 }
 
 // ============================================================
@@ -716,6 +421,7 @@ async function doClaimL1Page() {
 // Censor panel
 // ============================================================
 async function initCensorPanel() {
+  const revision=_getConfigRevision(),handles=_handles;
   const card = document.getElementById('censorCard');
   const statusEl = document.getElementById('censorStatus');
   const controls = document.getElementById('censorControls');
@@ -723,19 +429,23 @@ async function initCensorPanel() {
 
   card.style.display = '';
   try {
-    const censorResult = await _handles.contract.methods.get_censor().simulate({ from: _handles.address });
+    const censorResult = await handles.contract.methods.get_censor().simulate({ from: handles.address });
     let cv = censorResult;
     if (cv && cv.result !== undefined) cv = cv.result;
     if (cv && cv.value !== undefined) cv = cv.value;
     const censorAddr = cv && cv.toString ? cv.toString() : (cv ? '0x' + BigInt(cv).toString(16).padStart(64, '0') : '0x0');
-    const censorActive = !censorAddr.endsWith('0000000000000000000000000000000000000000');
+    const censorValue=BigInt(censorAddr);
+    if(censorValue<0n||censorValue>=21888242871839275222246405745257275088548364400416034343698204186575808495617n)throw Error('Invalid moderator address');
+    const censorActive = censorValue!==0n;
 
-    let kMult = 64;
+    let kMult = null;
     try {
-      const kResult = await _handles.contract.methods.get_k_multiplier().simulate({ from: _handles.address });
+      const kResult = await handles.contract.methods.get_k_multiplier().simulate({ from: handles.address });
       kMult = Number(extractInt(kResult));
-    } catch (e) {}
+      if(!Number.isSafeInteger(kMult)||kMult<1||kMult>65535)throw Error('Invalid moderator settings');
+    } catch (e) { if(revision!==_getConfigRevision()||handles!==_handles)return;throw Error('Moderator settings unavailable');}
 
+    if(revision!==_getConfigRevision()||handles!==_handles)return;
     if (!censorActive) {
       statusEl.textContent = 'No censor configured for this billboard.';
       statusEl.className = 'small';
@@ -745,18 +455,19 @@ async function initCensorPanel() {
 
     // Check if the loaded wallet is the censor
     const myAddr = _handles.address.toString();
-    const isCensor = myAddr === censorAddr;
+    const isCensor = BigInt(myAddr) === censorValue;
     if (isCensor) {
-      statusEl.innerHTML = 'You are the censor (K=' + kMult + '). You can flag posts as immoral.';
+      statusEl.textContent = 'You are the censor (K=' + kMult + '). You can flag posts as immoral.';
       statusEl.className = 'small success';
       controls.style.display = '';
     } else {
-      statusEl.innerHTML = 'Censor is active (K=' + kMult + '). Flagged posts are hidden, and screening a flagged post adds ' + (kMult - 1) + ' extra cooldowns to the next post time lock (total ' + kMult + 'x).';
+      statusEl.textContent = 'Censor is active (K=' + kMult + '). Flagged posts are hidden, and screening a flagged post adds ' + (kMult - 1) + ' extra cooldowns to the next post time lock (total ' + kMult + 'x).';
       statusEl.className = 'small warn';
       controls.style.display = 'none';
     }
-  } catch (e) {
-    statusEl.textContent = 'Could not check censor status: ' + (e.message || e).substring(0, 80);
+  } catch (e) { if(revision!==_getConfigRevision()||handles!==_handles)return;
+    controls.style.display='none';
+    statusEl.textContent = 'Could not verify moderator status. Reconnect and retry.';
     statusEl.className = 'small';
   }
 }
@@ -816,14 +527,21 @@ async function doSetModerationPolicy() {
 // Init — wallet buttons with auto-advance on success
 // ============================================================
 // Read L1 portal address from URL param (?portal=0x...) if present
-(function initPortalFromUrl() {
-  const params = new URLSearchParams(location.search);
-  const portal = params.get('portal');
-  if (portal) {
-    const el = document.getElementById('portalAddr');
-    if (el) el.value = portal;
-  }
-})();
+window.billboardConfigStore.subscribe(() => {
+  const previous=_handles;_handles=null;_stateResult=null;
+  stopBillboardFeed();_billboardLastCount=-1;_billboardLastBlock=-1;
+  journalAcknowledgements.clear();
+  for(const id of ['censorCard','censorControlsCard','transferCard','policyCard']){const el=document.getElementById(id);if(el)el.style.display='none';}
+  const portal=document.getElementById('portalAddr');if(portal)portal.value=_portalAddr();
+  const feed=document.getElementById('billboardFeed');if(feed)feed.replaceChildren();
+  const policy=document.getElementById('policyBox');if(policy)policy.style.display='none';
+  const meta=document.getElementById('billboardMeta');if(meta)meta.textContent='Configuration changed. Reconnect to this board.';
+  if(previous?.pxe?.stop)Promise.resolve(previous.pxe.stop()).catch(()=>{});
+  if(_countdownInterval)clearInterval(_countdownInterval);if(_countdownFetchInterval)clearInterval(_countdownFetchInterval);ethereumAcknowledgements.clear();const countdown=document.getElementById('postCountdown');if(countdown)countdown.textContent='Reconnect to check deposit status.';
+});
+
+
+const initialPortal=document.getElementById('portalAddr');if(initialPortal)initialPortal.value=_portalAddr();
 
 function waitForBundleThenInit() {
   if (window.__aztec && window.__aztec.createPXE) {
@@ -831,19 +549,19 @@ function waitForBundleThenInit() {
     if (navNext) navNext.style.display = 'none';
     initWalletButtons('walletButtonsContainer', {
       statusId: 'setupStatus',
-      ethRpcUrl: ETH_RPC_URL,
+      ethRpcUrl: _getPublicConfig()?.network.ethRpcUrl,
       onReady: async () => {
         try {
           await loadWalletAndConnect();
           nextPage();
         } catch (e) {
-          log('Setup failed: ' + 'operation did not complete; check configuration and recovery records', 'error', 'setupStatus');
+          log('Setup did not complete. Check your connection and configuration, then reload and restore your encrypted wallet backup to retry. Check saved transactions before sending again.', 'error', 'setupStatus');
           console.error('Application operation did not complete.');
         }
       },
     });
   } else {
-    setTimeout(waitForBundleThenInit, 500);
+    waitForBundle(waitForBundleThenInit);
   }
 }
 waitForBundleThenInit();

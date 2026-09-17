@@ -117,9 +117,16 @@
   }
 
   async function initialize(bb, options) {
+    const requestedPoints=options.bn254NumPoints;
+    if(requestedPoints!==undefined && (!Number.isSafeInteger(requestedPoints)||requestedPoints<=0))throw new Error('Invalid BN254 initialization point budget');
     const { files, data, selectedG1 } = await loadVerified(options);
-    const numPoints = selectedG1.numPoints;
-    const bn254 = await bb.srsInitSrs({ pointsBuf: data[selectedG1.name], numPoints, g2Point: data['g2.dat'] });
+    const numPoints=requestedPoints===undefined?selectedG1.numPoints:requestedPoints;
+    if(numPoints>selectedG1.numPoints)throw new Error('BN254 initialization exceeds verified source capacity');
+    // A prefix is usable only AFTER the complete pinned source has passed its
+    // size/hash verification. Match the exact count and wire format for BB.
+    const bytesPerPoint=selectedG1.format==='bn254-g1-uncompressed-64-byte'?64:32;
+    const pointsBuf=numPoints===selectedG1.numPoints?data[selectedG1.name]:data[selectedG1.name].subarray(0,numPoints*bytesPerPoint);
+    const bn254 = await bb.srsInitSrs({ pointsBuf, numPoints, g2Point: data['g2.dat'] });
     // Pinned v5 returns decompressed points only for compressed input. Derived
     // input bypasses decompression, after our mandatory whole-content hash check.
     const responseBytes = selectedG1.format === 'bn254-g1-uncompressed-64-byte' ? 0 : numPoints * 64;
@@ -128,7 +135,7 @@
     }
     const grumpkin = await bb.srsInitGrumpkinSrs({ pointsBuf: data['grumpkin_g1.dat'], numPoints: files.get('grumpkin_g1.dat').numPoints });
     if (grumpkin?.dummy !== 0) throw new Error('Unexpected Grumpkin SRS initialization response');
-    return { g1Format: selectedG1.format };
+    return { g1Format: selectedG1.format, sourceBn254NumPoints: selectedG1.numPoints, initializedBn254NumPoints: numPoints, grumpkinNumPoints: files.get('grumpkin_g1.dat').numPoints };
   }
 
   const api = { validateManifest, readResponse, loadVerified, initialize };

@@ -25,6 +25,7 @@ export async function prepareW01PrivateFees({node,preparation,l1Client,directory
     // Explicit test gas cap; normal client/UI shows this maximum charge before signing.
     const gas=(await wallet.completeFeeOptions({from:author.address,feePayer:instance.address})).gasSettings.clone();
     gas.maxFeesPerGas=new GasFees(gas.maxFeesPerGas.feePerDaGas*16n||1n,gas.maxFeesPerGas.feePerL2Gas*16n||1n);
+    observation.payer=instance.address.toString();
     let first=true;let allocated=0n;
     const privateFeeAction=async({wallet:actionWallet,owner,interaction})=>{
       assert(owner.equals(author.address));
@@ -40,7 +41,7 @@ export async function prepareW01PrivateFees({node,preparation,l1Client,directory
       assert.equal(await getFeeJuiceBalance(instance.address,node),BigInt(funded.claim.amount)-fees-BigInt(observation.standalone?.transactionFee??0));
       Object.assign(observation,{passed:true,coldStart:true,privateDebit:String(allocated),privateBalance:String(result),actualProtocolFees:String(fees+BigInt(observation.standalone?.transactionFee??0)),authorPublicBalanceZero:true,payer:instance.address.toString()});
     };
-    Object.defineProperties(observation,{discardUnsubmittedFee:{value:maximum=>{assert(BigInt(maximum)>0n&&allocated>=BigInt(maximum));allocated-=BigInt(maximum);}},authorAccount:{value:author},privateFeeAction:{value:privateFeeAction},verify:{value:verify},close:{value:async()=>{await wallet.stop();wallet=undefined;}}});
+    Object.defineProperties(observation,{browserFixture:{value:{instance,artifact,gas,fundedAmount:BigInt(funded.claim.amount),get allocated(){return allocated;},get wallet(){return wallet;}}},discardUnsubmittedFee:{value:maximum=>{assert(BigInt(maximum)>0n&&allocated>=BigInt(maximum));allocated-=BigInt(maximum);}},authorAccount:{value:author},privateFeeAction:{value:privateFeeAction},verify:{value:verify},close:{value:async()=>{if(wallet){await wallet.stop();wallet=undefined;}}}});
     return observation;
   }catch(error){if(error.privateFeeFundingObservation)observation.funding=error.privateFeeFundingObservation;if(error.privateFeeStandaloneObservation)observation.standalone=error.privateFeeStandaloneObservation;if(wallet)await wallet.stop();error.privateFeeObservation=observation;throw error;}
 }

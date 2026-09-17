@@ -3,7 +3,7 @@ import {connectPublicFeed,browserPublicFeedStorage} from './public-feed-connecti
 export {metadata,connectPublicFeed,browserPublicFeedStorage};
 const connections=new Map();
 export async function readFeed(options){
- const key=JSON.stringify([options.nodeUrl,options.ethereumUrl,options.portalAddress]);
+ const key=JSON.stringify([options.nodeUrl,options.ethereumUrl,options.portalAddress,options.expectedConfig?.network,options.expectedConfig?.board]);
  if(!connections.has(key)){connections.clear();connections.set(key,{connection:connectPublicFeed({...options,metadata,storage:browserPublicFeedStorage()}).catch(e=>{connections.delete(key);throw e;}),sync:null});}
  const entry=connections.get(key),{feed}=await entry.connection;
  entry.sync??=feed.sync().finally(()=>{entry.sync=null;});

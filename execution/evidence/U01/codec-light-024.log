@@ -1,0 +1,22 @@
+✔ browser fixes real SDK prover options and initializes matching singleton before PXE (1.88175ms)
+✔ incompatible cached singleton blocks PXE without replacement (0.978041ms)
+✔ browser custom prover and invalid options cannot bypass supported bound (1.442209ms)
+✔ Node path preserves explicit native options and custom prover without browser singleton (0.495917ms)
+✔ private logging remains silent and initialization failures are redacted (1.322666ms)
+✔ async CRS verification must finish before PXE and concurrent requests share its initialization (1.825167ms)
+✔ failed CRS validation blocks PXE, denies remote fallback and permits clean retry (0.403875ms)
+✔ cached singleton without skipSrsInit is rejected before CRS or PXE (0.251791ms)
+✔ verified loader uses only local files, rejects redirects and hashes bytes before initialization (0.435ms)
+✔ transition focuses final page after automatic completed-step skip (1.514125ms)
+✔ message validation focuses textarea, associates fixed error, preserves help and clears on edit (1.648958ms)
+✔ revalidation removes earlier input and textarea errors and focuses first invalid field (0.433583ms)
+✔ canonical browser aliases retain only upstream no-eval codec (0.387583ms)
+✔ no-eval browser record/map/bigint codecs interoperate with existing persisted bytes (4.7065ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 71.13125

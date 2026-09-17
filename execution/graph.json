@@ -1153,7 +1153,7 @@
       "title": "Complete user flows and production hosting configuration",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "W03",
         "F01",
@@ -1169,7 +1169,8 @@
         "apps/",
         "shared/",
         "deploy/",
-        "docs/"
+        "docs/",
+        "scripts/"
       ],
       "plan": "tasks/U01.md",
       "actions": [
@@ -1201,7 +1202,7 @@
       "evidence": "evidence/U01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "UI/hosting engineering is independent of model qualification; M02 data/decision interfaces are implemented. M03 remains mandatory through O01/R01 and final release. Do not advertise an approved model.",
+      "checkpoint": "Actual HTTPS setup028 passes3968ms/1112752KiB;155 focused checks and GUI state journey029 pass. Uninstrumented real browserpost028 stopped at aggregate2379664KiB/221875ms; cleanup complete, no proof qualified. Investigating pinned SDK eager proof-input allocation/queued work and implementing bounded streaming candidate; unchanged540s/2GiB and all proof verification required.",
       "priority": 19
     },
     {

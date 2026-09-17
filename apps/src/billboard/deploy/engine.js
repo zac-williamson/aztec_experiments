@@ -247,7 +247,7 @@
         });
         const txRequest = await this.createTxExecutionRequestFromPayloadAndFee(executionPayload, opts.from, feeOpts2);
         const provenTx = await this.pxe.proveTx(txRequest, {
-          scopes: this.scopesFrom(opts.from, opts.additionalScopes),
+          scopes: this.scopesFrom(opts.from, opts.additionalScopes ?? [], opts.sendMessagesAs),
           senderForTags: this.senderForTagsFrom(opts.from, opts.sendMessagesAs),
         });
         const tx = await provenTx.toTx();

@@ -1,0 +1,45 @@
+✔ actual WASM, crypto and IndexedDB round trip; concurrent deduplication and success cache (5.783ms)
+✔ fixed capability failures before wallet work and retry after failure (3.59025ms)
+✔ worker construction failure revokes URL without exposing underlying error (0.30825ms)
+✔ hung worker is bounded and terminated (16.407541ms)
+✔ storage open failure remains distinct from unsupported browser (0.378666ms)
+✔ late storage success after timeout closes database and retries deletion (15.559541ms)
+✔ build provenance rejects changed frontend sources paired with old HTML (25.202083ms)
+✔ build provenance rejects output changes and removed output (22.135459ms)
+✔ source removal and newly discovered app invalidate previous build (18.537667ms)
+✔ partial or interrupted builds cannot preserve a valid aggregate manifest (20.1075ms)
+✔ mid-build drift and private RPC overrides cannot be certified (19.382959ms)
+✔ internal symlinks hash the actual source while escapes and cycles reject (14.86625ms)
+✔ obsolete template cannot leave a served HTML page in certified output (18.059625ms)
+✔ unexpected top-level and nested HTML reject certification without deletion (19.322417ms)
+✔ output symlink escapes and cycles cannot bypass the served HTML inventory (14.291584ms)
+✔ canonical immutable public projection and optional private fees (1.16925ms)
+✔ reject secrets, unknown nested fields, malformed identity and endpoints (0.481875ms)
+✔ gas bounds, ordering, total overflow and canonical decimal strings (0.270334ms)
+✔ persistent reload and immutable snapshots invalidate pending operations (0.9135ms)
+✔ cross-tab same-value, corrupt and clear events invalidate; unrelated events do not (0.275ms)
+✔ corrupt or unavailable storage never silently selects a network (0.478333ms)
+✔ withdrawal readiness: eligible (0.453416ms)
+✔ withdrawal readiness: cooldown (0.071833ms)
+✔ withdrawal readiness: unscreened (0.042917ms)
+✔ withdrawal readiness: missing (0.039542ms)
+✔ withdrawal readiness: unsafe chain time (0.042541ms)
+✔ withdrawal readiness: missing chain time (0.070708ms)
+✔ withdrawal readiness: large debt (0.082ms)
+✔ withdrawal readiness: large unscreened sequence (0.044458ms)
+✔ actual navigation gate rejects unpaid debt without polling or signing (0.575083ms)
+✔ actual navigation gate refuses a stale configuration response (0.844834ms)
+✔ user feed uses native details and literal untrusted text (0.52075ms)
+✔ user feed discards responses from old configuration (0.257125ms)
+✔ user has no interpolated HTML or raw remote error output (0.173917ms)
+✔ censor feed uses native details and literal untrusted text (0.349542ms)
+✔ censor feed discards responses from old configuration (0.360209ms)
+✔ censor has no interpolated HTML or raw remote error output (0.059709ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 222.088333

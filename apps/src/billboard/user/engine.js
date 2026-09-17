@@ -365,7 +365,7 @@
         });
         const txRequest = await this.createTxExecutionRequestFromPayloadAndFee(executionPayload, opts.from, feeOpts2);
         const provenTx = await this.pxe.proveTx(txRequest, {
-          scopes: this.scopesFrom(opts.from, opts.additionalScopes),
+          scopes: this.scopesFrom(opts.from, opts.additionalScopes ?? [], opts.sendMessagesAs),
           senderForTags: this.senderForTagsFrom(opts.from, opts.sendMessagesAs),
         });
         const tx = await provenTx.toTx();
@@ -771,6 +771,7 @@
       if (BigInt(chain) !== BigInt(nodeInfo.l1ChainId) || BigInt(network.chainId) !== BigInt(chain) ||
           rollup.toLowerCase() !== rollupAddr.toLowerCase() || BigInt(boundVersion) !== BigInt(version)) throw new Error('Portal and node network scope disagree.');
       l2AddrHex = board.toLowerCase();
+      if(config.expectedBoardAddress && l2AddrHex !== config.expectedBoardAddress.toLowerCase()) throw new Error('Portal does not match the selected board.');
       l2Addr = a.AztecAddress.fromFieldUnsafe(a.Fr.fromHexString(l2AddrHex));
     } finally { scopeProvider.destroy(); }
     log('  L2 billboard: ' + l2AddrHex, 'success');

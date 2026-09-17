@@ -54,13 +54,8 @@ function loadShared(name) {
   return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : null;
 }
 
-// Load RPC config (node URL + API key) and inject as a global
-const rpcConfig = (() => {
-  // Browser configuration is public. Never silently embed the legacy committed credential.
-  const p = process.env.BILLBOARD_RPC_CONFIG || path.join(SHARED, 'rpc-config.example.json');
-  return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : null;
-})();
-
+// Connection settings are imported publicly at runtime; never embed credentials.
+if(process.env.BILLBOARD_RPC_CONFIG) throw new Error('Build-time RPC credentials/configuration are unsupported; import public board configuration in the application.');
 const crsManifest = validateCrsManifest(JSON.parse(fs.readFileSync(path.join(__dirname, '../crs-manifest.json'), 'utf8')));
 const sharedFiles = {
   STYLES: loadShared('styles.css'),
@@ -76,7 +71,7 @@ const sharedFiles = {
 
 // RPC config injection script (must run before aztec-lib.js)
 if (!sharedFiles.CRS_CLIENT) throw new Error('Missing shared CRS client');
-const rpcConfigScript = `<script>window.RPC_CONFIG = ${JSON.stringify(rpcConfig)};window.BILLBOARD_CRS_MANIFEST = ${JSON.stringify(crsManifest)};\n${sharedFiles.CRS_CLIENT}\n</script>`;
+const rpcConfigScript = `<script>window.BILLBOARD_CRS_MANIFEST = ${JSON.stringify(crsManifest)};\n${sharedFiles.CRS_CLIENT}\n</script>`;
 
 // Look for a resource file in the app dir, then parent dir
 function loadResource(appDir, filename) {
@@ -109,6 +104,13 @@ function buildApp(appRelPath) {
   }
 
   let html = fs.readFileSync(templatePath, 'utf8');
+  const configScripts=['public-app-config.js','public-app-config-ui.js','public-app-bootstrap.js','browser-readiness.js','browser-connection-check.js'].map(name=>{
+    const source=loadShared(name);if(!source)throw new Error('Missing browser configuration/capability helper');
+    return `<script>\n${source}\n</script>`;
+  }).join('\n');
+  html=html.replace(/<body(?:\s[^>]*)?>/i,match=>match+'\n'+configScripts);
+
+  html=html.replace('<script src="aztec_bundle.js"></script>','<script src="aztec_bundle.js" onerror="window.__billboardBundleFailed=true"></script>');
   const appJs = fs.readFileSync(appJsPath, 'utf8');
 
   // App-specific resources (look in app dir, then parent)

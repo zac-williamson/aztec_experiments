@@ -8,7 +8,7 @@ const runFeeEngine = makeCallEngine(runFeeJuiceFlow, {
   fundPrivateFees: options => window.__aztec.fundPrivateFees(options),
 });
 async function callEngine(action,statusDiv,extra={}) {
-  const identity=JSON.stringify([window.walletState?.aztec?.address?.toString(),_getNodeUrl()]);
+  const identity=JSON.stringify([window.walletState?.aztec?.address?.toString(),_getConfigRevision(),_getPublicConfig()]);
   const result=await runFeeEngine(action,statusDiv,{...extra,acknowledgeTx:journalAcknowledgements.get(identity),acknowledgeEthereumTx:ethereumAcknowledgements.get(identity)});
   if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
   if(result?.lastEthereumTxHash)ethereumAcknowledgements.set(identity,result.lastEthereumTxHash);
@@ -90,9 +90,11 @@ async function doClaimPage() {
 }
 try {const key=localStorage.getItem('billboard-private-fee-recovery-latest');const saved=key&&localStorage.getItem(key);if(saved)fundingRecord=JSON.parse(saved);}catch(_){}
 function initializePrivateFees() {
-  if (!window.__aztec?.createPXE) {setTimeout(initializePrivateFees,500);return;}
-  initWalletButtons('walletButtonsContainer',{statusId:'setupStatus',ethRpcUrl:ETH_RPC_URL,onReady:async()=>{
+  if (!window.__aztec?.createPXE) {waitForBundle(initializePrivateFees);return;}
+  initWalletButtons('walletButtonsContainer',{statusId:'setupStatus',onReady:async()=>{
     try{await loadWalletAndCheck();}catch(error){log(safeFundingError(error),'error','setupStatus');}
   }});
 }
 initializePrivateFees();
+
+window.billboardConfigStore?.subscribe(()=>{fundingRecord=null;journalAcknowledgements.clear();ethereumAcknowledgements.clear();});

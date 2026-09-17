@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+import {contentSecurityPolicy,generateHosting} from '../deploy/hosting-config.mjs';
+test('CSP hashes exact inline bodies, handlers and constrains RPC origins',()=>{const html='<script>window.x=1;</script><button onclick="go(&quot;x&quot;)">Go</button>';const p=contentSecurityPolicy(html,['https://rpc.example']);for(const body of ['window.x=1;','go("x")'])assert(p.includes(createHash('sha256').update(body).digest('base64')));assert(p.includes("'wasm-unsafe-eval'"));assert(p.includes("connect-src 'self' data: https://rpc.example"));assert(!p.includes('connect-src *'));assert(!p.split(';').find(x=>x.includes('script-src')).includes('data:')); assert(!p.includes("'unsafe-eval'"));assert(!p.split(';').find(x=>x.includes('script-src')).includes("'unsafe-inline'"));assert.throws(()=>contentSecurityPolicy(html,['https://secret@rpc.example']));});
+test('static route allowlist excludes private files and rejects symlinks',t=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'hosting-unit-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));fs.writeFileSync(path.join(dir,'feed.html'),'<script>1</script>');fs.writeFileSync(path.join(dir,'.secret.json'),'{}');fs.writeFileSync(path.join(dir,'source.map'),'{}');fs.writeFileSync(path.join(dir,'wallet.json'),'{}');fs.writeFileSync(path.join(dir,'private-source.js'),'');const r=generateHosting({dist:dir,site:'https://localhost:8443',local:true});assert.deepEqual(r.inventory.map(x=>x.path),['feed.html']);assert(!r.caddyfile.includes('browse'));assert(r.caddyfile.includes('encode zstd gzip'));assert(r.caddyfile.includes('respond 404'));fs.symlinkSync('/etc/passwd',path.join(dir,'bad.json'));assert.throws(()=>generateHosting({dist:dir,site:'https://localhost:8443',local:true}),/symlink/);});

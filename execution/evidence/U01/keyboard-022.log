@@ -1,0 +1,10 @@
+{"passed":false,"stage":"field-labels","errorClass":"AssertionError"}
+file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-u01-keyboard-browser.mjs:49
+catch(error){console.log(JSON.stringify({passed:false,stage,errorClass:error.name}));throw Error('Keyboard UI qualification failed at '+stage);}
+                                                                                           ^
+
+Error: Keyboard UI qualification failed at field-labels
+    at file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-u01-keyboard-browser.mjs:49:92
+
+Node.js v24.21.0
+{"boundedBrowser":false,"elapsedMs":4025,"peakRSSKiB":1162192,"stopReason":null,"ownedTreeAbsent":true}

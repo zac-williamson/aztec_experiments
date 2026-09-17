@@ -1,0 +1,46 @@
+{
+  "startedAt": "2026-09-17T15:59:33.806Z",
+  "script": "scripts/test-u01-hosting-browser.mjs",
+  "args": [
+    ".build/caddy-2.11.4/caddy",
+    "--with-crs"
+  ],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 2097152,
+  "rssMethod": "sampled owned descendant tree; not an OS allocation limit",
+  "passed": true,
+  "samples": [
+    {
+      "elapsedMs": 25,
+      "rssKiB": 864
+    },
+    {
+      "elapsedMs": 1046,
+      "rssKiB": 409856
+    },
+    {
+      "elapsedMs": 2065,
+      "rssKiB": 1020624
+    },
+    {
+      "elapsedMs": 3088,
+      "rssKiB": 1408560
+    }
+  ],
+  "peakRSSKiB": 1408560,
+  "sourceHashes": {
+    "scripts/test-u01-hosting-browser.mjs": "b988e7447b4b3a74890b47d609cc7abaeb6a93c775eca8311a01d4469b3c158f",
+    "scripts/run-bounded-browser-check.mjs": "ac365ab4b1310f2826d9ce6b2b3993d71f1fab40a55c5a99706923e737cfaee0",
+    "scripts/owned-test-process-tree.mjs": "77e972d5bbe21350d61c940afa381f6621b61787bffeae8ffaccbb0bd1a5c9fb",
+    "deploy/hosting-config.mjs": "78e38a47869d5e5d85e9b9ce3170722df7b901be3d4d7813d51673b2c5baa391",
+    ".build/apps-manifest.json": "87fbf8638a9f2e8fac41da5959c1ff39ea11da20e403a0b2c1da9a2dbbc06c9e",
+    ".build/sdk/sdk-manifest.json": "8902630202adb88393625648ef5b5a1cb3f8d1ded053f5e8d24ff0900bfdc221"
+  },
+  "code": 0,
+  "signal": null,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "stopReason": null,
+  "elapsedMs": 3624,
+  "finishedAt": "2026-09-17T15:59:37.434Z"
+}

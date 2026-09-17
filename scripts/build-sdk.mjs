@@ -42,6 +42,8 @@ const relocationPlugin = {
 const options = {
   absWorkingDir: root, bundle: true, platform: 'browser', target: 'es2022',
   mainFields: ['browser', 'module', 'main'], conditions: ['browser'],
+  // Supported upstream CSP-safe codec; all imports share its record extension implementation.
+  alias: { 'msgpackr/index-no-eval': 'msgpackr/index-no-eval', 'msgpackr/unpack-no-eval': 'msgpackr/unpack-no-eval', 'msgpackr': 'msgpackr/index-no-eval', 'msgpackr/pack': 'msgpackr/index-no-eval', 'msgpackr/unpack': 'msgpackr/index-no-eval' },
   plugins: [relocationPlugin, polyfillNode()],
   loader: { '.wasm': 'binary' }, legalComments: 'eof', metafile: true,
   define: { 'process.env.NODE_ENV': '"production"', 'process.env.LOG_LEVEL': '"silent"' }, logLevel: 'warning',

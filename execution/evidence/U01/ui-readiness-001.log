@@ -1,0 +1,24 @@
+✔ withdrawal readiness: eligible (0.392291ms)
+✔ withdrawal readiness: cooldown (0.04125ms)
+✔ withdrawal readiness: unscreened (0.031125ms)
+✔ withdrawal readiness: missing (0.03425ms)
+✔ withdrawal readiness: unsafe chain time (0.039666ms)
+✔ withdrawal readiness: missing chain time (0.028291ms)
+✔ withdrawal readiness: large debt (0.037041ms)
+✔ withdrawal readiness: large unscreened sequence (0.028ms)
+✔ actual navigation gate rejects unpaid debt without polling or signing (0.478417ms)
+✔ actual navigation gate refuses a stale configuration response (0.806708ms)
+✔ user feed uses native details and literal untrusted text (0.469708ms)
+✔ user feed discards responses from old configuration (0.261833ms)
+✔ user has no interpolated HTML or raw remote error output (0.156875ms)
+✔ censor feed uses native details and literal untrusted text (0.292333ms)
+✔ censor feed discards responses from old configuration (0.238042ms)
+✔ censor has no interpolated HTML or raw remote error output (0.041542ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 52.178833

@@ -508,3 +508,22 @@ Recovery reviewer delivered application-nullifier helper and25 fixture tests, na
 - deployment_gap_review independently reviews profile selection, singleton initialization, resource bounds and node isolation.
 - deploy_fixture_integration independently reviews acceptance coverage and historical source dispositions.
 - Root runs the ten-author qualification, integrates evidence and continues the next ready package.
+
+## U01 browser and hosting
+
+- model_failure_review owns new public configuration validation/storage/UI helper and focused tests.
+- deploy_fixture_integration owns author/moderator UI files, truthful withdrawal eligibility and safe accessible rendering.
+- deployment_gap_review owns deploy/ HTTPS distribution configuration and hosting verification scripts/docs.
+- Root owns shared environment/wallet integration, fee/public-reader/deployment connection integration, build/provenance and final serial browser/hosting/proving checks.
+
+## U01 browser application proof integration
+- Root: worker bridge/backup/native-wallet lifecycle, integration and serial verification.
+- deployment_gap_review: parent supervisor and outer aggregate resource bound.
+- deploy_fixture_integration: independent actual submission/proof/effects verification helper.
+- model_failure_review: supported browser PXE thread policy and focused checks.
+Disjoint source ownership; no delegated heavy jobs.
+
+## U01 browser memory and journey follow-up
+- model_failure_review: supported verified BN254 initialization budget in shared/crs-client.js, shared/private-pxe.mjs and focused tests.
+- deployment_gap_review: read-only remaining GUI journey/driver review, evidence only.
+- Root: browser assertion integration, builds and serialized genuine transaction qualification. No delegated heavy jobs.

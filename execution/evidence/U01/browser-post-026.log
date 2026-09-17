@@ -1,0 +1,25 @@
+{"stage":"start-disposable-l1","elapsedMs":230}
+{"stage":"prepare-genesis","elapsedMs":355}
+{"stage":"deploy-local-protocol-fixture","elapsedMs":2099}
+{"stage":"wait-for-local-validator-activation","elapsedMs":3832}
+{"stage":"start-application-node","elapsedMs":3852}
+{"stage":"prove-board-deployment","elapsedMs":6807}
+{"stage":"include-board-deployment","elapsedMs":20229}
+{"stage":"prepare-and-prove-ready","elapsedMs":32519}
+{"stage":"include-ready","elapsedMs":43034}
+{"stage":"settle-ready-test-message","elapsedMs":64229}
+{"stage":"private-fee:fund-disposable-user","elapsedMs":82206}
+{"stage":"private-fee:bridge-user-funds","elapsedMs":82217}
+{"stage":"private-fee:wait-inbox","elapsedMs":82758}
+{"stage":"real-deposit-and-claim","elapsedMs":123025}
+{"stage":"claim:reopen-claim-wallet","elapsedMs":123071}
+{"stage":"claim:deposit-real-l1","elapsedMs":123267}
+{"stage":"claim:wait-real-inbox-anchor","elapsedMs":123272}
+{"stage":"claim:prove-real-claim","elapsedMs":155213}
+{"stage":"claim:include-real-claim","elapsedMs":170349}
+{"stage":"claim:check-delivered-deposit-note","elapsedMs":189800}
+{"stage":"claim:reject-real-claim-replay","elapsedMs":189939}
+{"stage":"browser-prepare-handoff","elapsedMs":190137}
+{"stage":"browser-ready","elapsedMs":212627}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/U01/application-55dbd43f-6540-4317-86da-9647b362fee6.json","passed":false,"profile":"actual browser GUI post from preseeded private-fee funded wallet"}
+{"boundedBrowser":false,"elapsedMs":217483,"peakRSSKiB":2113264,"stopReason":"rss-limit","ownedTreeAbsent":true}

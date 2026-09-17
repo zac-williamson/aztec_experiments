@@ -15,13 +15,8 @@ const A = () => window.__aztec;
 // setupRpcAuth() call installs the single checked boundary from app-env.js.
 // ============================================================
 
-// Helper: get the node URL from RPC_CONFIG, falling back to the DOM input
-function getNodeUrl() {
-  const cfg = window.RPC_CONFIG;
-  if (cfg && cfg.nodeUrl) return cfg.nodeUrl;
-  const el = document.getElementById('nodeUrl');
-  return el ? el.value.trim() : '';
-}
+// The shared environment resolves the explicit public configuration/manifest.
+function getNodeUrl() { return _getNodeUrl(); }
 
 // Transient error detection regex (used by multiple retry helpers)
 const TRANSIENT_RE = /temporary internal error|please retry|timeout|fetch|network|connection|ECONNRESET|socket/i;
@@ -70,21 +65,14 @@ function wrapWithRetry(obj, label, statusId) {
 }
 
 // ============================================================
-// initCRS -- load SRS data into BarretenbergSync
+// initCRS -- initialize signing primitives and the actual async proving CRS.
+// The PXE wrapper reuses this same verified async singleton.
 // ============================================================
 async function initCRS(statusId) {
-  const a = A();
-  log('Initializing CRS (verifying pinned setup data)...', 'info', statusId);
+  const a=A();
   await a.BarretenbergSync.initSingleton();
-  const crs = window.BillboardCRS;
-  if (!crs) throw new Error('Missing CRS client; rebuild the application');
-  await crs.initialize(a.BarretenbergSync.getSingleton(), {
-    manifest: window.BILLBOARD_CRS_MANIFEST,
-    loadLocal: async file => crs.readResponse(await fetch('crs/' + file.name, { signal: AbortSignal.timeout(120000) }), file),
-    sha256: async data => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', data)), b => b.toString(16).padStart(2, '0')).join(''),
-    log: (message, level) => log('  ' + message, level, statusId),
-  });
-  log('  CRS initialized.', 'success', statusId);
+  await a.initializeBrowserProver();
+  log('Proving setup verified in the application prover.', 'info', statusId);
 }
 
 // ============================================================
@@ -292,7 +280,7 @@ function createAztecWallet(pxe, aztecNode, rawNode, statusId, opts = {}) {
       log('  Proving tx (can take minutes)...', 'info', S);
 
       // Split proving from submission so we can retry just the submission.
-      // Re-proving would take another 13+ minutes, which is impractical.
+      // Preserve the proven transaction so uncertain submission never causes an automatic re-proof.
       const feeOpts2 = await this.completeFeeOptions({
         from: opts.from,
         feePayer: executionPayload.feePayer,
@@ -300,7 +288,7 @@ function createAztecWallet(pxe, aztecNode, rawNode, statusId, opts = {}) {
       });
       const txRequest = await this.createTxExecutionRequestFromPayloadAndFee(executionPayload, opts.from, feeOpts2);
       const provenTx = await this.pxe.proveTx(txRequest, {
-        scopes: this.scopesFrom(opts.from, opts.additionalScopes),
+        scopes: this.scopesFrom(opts.from, opts.additionalScopes ?? [], opts.sendMessagesAs),
         senderForTags: this.senderForTagsFrom(opts.from, opts.sendMessagesAs),
       });
       const tx = await provenTx.toTx();

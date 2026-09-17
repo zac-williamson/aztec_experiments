@@ -39,7 +39,9 @@
   input, textarea { width: 100%; box-sizing: border-box; padding: 0.55rem; font-size: 0.95rem;
           border-radius: 6px; border: 1px solid #444; background: inherit; color: inherit;
           font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-  input.missing { border-color: #f85149; }
+  input.missing, textarea.missing, select.missing { border-color: #f85149; }
+  .field-error { color: #f85149; font-size: 0.85rem; margin: 0.25rem 0; }
+  button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus-visible, h2[tabindex]:focus-visible { outline: 2px solid #58a6ff; outline-offset: 3px; }
   button { cursor: pointer; border: none; border-radius: 8px; padding: 0.7rem 1rem;
            font-size: 1rem; font-weight: 600; color: #fff; background: #6c4bd6; margin-top: 0.5rem; }
   button:hover { background: #5a3cc0; }
@@ -233,9 +235,224 @@
   .billboard-loading .spinner { width: 0.9rem; height: 0.9rem; }
 
 </style></head><body>
+<script>
+(function (root) {
+  'use strict';
+  const STORAGE_KEY='billboard.public-config.v1', MAX_BYTES=16384;
+  const FIELD=21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+  function check(ok,message){if(!ok)throw new Error(message);}
+  function exact(value,keys,optional=[]){
+    check(value!==null&&typeof value==='object'&&!Array.isArray(value),'Expected a configuration object');
+    check(Object.keys(value).every(k=>keys.includes(k)||optional.includes(k))&&keys.every(k=>Object.hasOwn(value,k)),'Unknown or missing configuration field');
+  }
+  function uint(value,bits,positive=false){check(typeof value==='string'&&/^(0|[1-9][0-9]*)$/.test(value)&&value.length<=78,'Expected canonical decimal string');const n=BigInt(value);check(n<(1n<<BigInt(bits))&&(!positive||n>0n),'Integer outside allowed range');return value;}
+  function address(value,bytes){check(typeof value==='string'&&new RegExp('^0x[0-9a-f]{'+bytes*2+'}$').test(value),'Expected lowercase canonical address');check(BigInt(value)>0n&&(bytes!==32||BigInt(value)<FIELD),'Address outside allowed range');return value;}
+  function endpoint(value){
+    check(typeof value==='string'&&value.length>0&&value.length<=2048&&!/[\s\\]/.test(value),'Invalid public endpoint');
+    let url;try{url=new URL(value);}catch{throw new Error('Invalid public endpoint');}
+    check(['http:','https:'].includes(url.protocol)&&url.hostname&&!url.username&&!url.password&&!url.search&&!url.hash&&!value.includes('?')&&!value.includes('#'),'Endpoint must be HTTP(S) without credentials, query or fragment');return url.href;
+  }
+  function freeze(value){if(value&&typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value);}return value;}
+  function fee(value){
+    if(value===null||value===undefined)return null;
+    exact(value,['contractAddress','gasSettings']);const g=value.gasSettings;
+    exact(g,['gasLimits','teardownGasLimits','maxFeesPerGas','maxPriorityFeesPerGas']);
+    const out={};for(const name of Object.keys(g)){
+      const gas=name==='gasLimits'||name==='teardownGasLimits',keys=gas?['daGas','l2Gas']:['feePerDaGas','feePerL2Gas'];exact(g[name],keys);out[name]=Object.fromEntries(keys.map(k=>[k,uint(g[name][k],gas?32:128)]));
+    }
+    const da=BigInt(out.gasLimits.daGas),l2=BigInt(out.gasLimits.l2Gas),fda=BigInt(out.maxFeesPerGas.feePerDaGas),fl2=BigInt(out.maxFeesPerGas.feePerL2Gas),maximum=da*fda+l2*fl2;
+    check(da>0n&&l2>0n&&maximum>0n&&maximum<(1n<<128n)&&BigInt(out.teardownGasLimits.daGas)<=da&&BigInt(out.teardownGasLimits.l2Gas)<=l2&&BigInt(out.maxPriorityFeesPerGas.feePerDaGas)<=fda&&BigInt(out.maxPriorityFeesPerGas.feePerL2Gas)<=fl2,'Invalid private fee limits');
+    return {contractAddress:address(value.contractAddress,32),gasSettings:out};
+  }
+  function validate(value){
+    exact(value,['schemaVersion','network','board'],['privateFee']);check(value.schemaVersion===1,'Unsupported configuration version');
+    const n=value.network,b=value.board;exact(n,['nodeUrl','ethRpcUrl','chainId','rollupVersion','rollupAddress']);exact(b,['portalAddress','contractAddress']);
+    return freeze({schemaVersion:1,network:{nodeUrl:endpoint(n.nodeUrl),ethRpcUrl:endpoint(n.ethRpcUrl),chainId:uint(n.chainId,64,true),rollupVersion:uint(n.rollupVersion,32,true),rollupAddress:address(n.rollupAddress,20)},board:{portalAddress:address(b.portalAddress,20),contractAddress:address(b.contractAddress,32)},privateFee:fee(value.privateFee)});
+  }
+  function parse(text){check(typeof text==='string'&&new TextEncoder().encode(text).length<=MAX_BYTES,'Configuration exceeds size limit');let value;try{value=JSON.parse(text);}catch{throw new Error('Invalid configuration JSON');}return validate(value);}
+  function maximumFee(config){const f=validate(config).privateFee;if(!f)return null;const g=f.gasSettings;return (BigInt(g.gasLimits.daGas)*BigInt(g.maxFeesPerGas.feePerDaGas)+BigInt(g.gasLimits.l2Gas)*BigInt(g.maxFeesPerGas.feePerL2Gas)).toString();}
+  function createStore(options={}){
+    let storage=options.storage,eventTarget=options.eventTarget??root,accessError=null;
+    if(!Object.hasOwn(options,'storage'))try{storage=root.localStorage;}catch{accessError='Public configuration storage is unavailable';}
+    let revision=0,state;const listeners=new Set();
+    function update(config,error,persisted){state=freeze({config,revision:++revision,error,persisted});for(const fn of listeners)try{fn(state);}catch{}return state;}
+    function load(text,persisted){try{return update(text===null?null:parse(text),null,persisted);}catch{return update(null,'Stored public configuration is invalid; import it again',false);}}
+    try{if(!storage)throw new Error();load(storage.getItem(STORAGE_KEY),true);}catch{update(null,accessError??'Public configuration storage is unavailable',false);}
+    function onStorage(event){if(event.storageArea&&event.storageArea!==storage)return;if(event.key!==STORAGE_KEY&&event.key!==null)return;load(event.key===null?null:event.newValue,true);}
+    eventTarget?.addEventListener?.('storage',onStorage);
+    return Object.freeze({snapshot:()=>state,
+      install(value){const config=validate(value);let error=null,persisted=true;try{storage.setItem(STORAGE_KEY,JSON.stringify(config));}catch{persisted=false;error='Configuration is active for this page only; storage is unavailable';}return update(config,error,persisted);},
+      clear(){let error=null,persisted=true;try{storage.removeItem(STORAGE_KEY);}catch{persisted=false;error='Configuration cleared for this page only; saved storage could not be removed';}return update(null,error,persisted);},
+      assertCurrent(snapshot){check(snapshot===state,'Board configuration changed; restart this operation');check(state.config!==null,'Import a board configuration first');return state.config;},
+      subscribe(fn){check(typeof fn==='function','Subscriber must be a function');listeners.add(fn);return ()=>listeners.delete(fn);},
+      destroy(){eventTarget?.removeEventListener?.('storage',onStorage);listeners.clear();}
+    });
+  }
+  root.BillboardConfig=Object.freeze({STORAGE_KEY,MAX_BYTES,validate,parse,maximumFee,createStore});
+})(globalThis);
+
+</script>
+<script>
+(function(root){
+  'use strict';
+  function mount(container,store){
+    const api=root.BillboardConfig,doc=container.ownerDocument;
+    const panel=doc.createElement('section');panel.setAttribute('aria-label','Board configuration');
+    function element(tag,text){const node=doc.createElement(tag);if(text)node.textContent=text;panel.append(node);return node;}
+    element('h2','Board configuration');
+    element('p','Import public connection settings for this board. Never paste a wallet backup, password, recovery claim or RPC API key. Endpoints can observe connection metadata; do not share URLs containing secret path tokens.');
+    const summary=element('p'),status=element('p');status.setAttribute('role','status');
+    const label=element('label','Public configuration JSON');const input=doc.createElement('textarea');input.rows=7;input.maxLength=api.MAX_BYTES;label.append(input);
+    const fileLabel=element('label','Choose configuration file');const file=doc.createElement('input');file.type='file';file.accept='.json,application/json';fileLabel.append(file);
+    function button(text,action){const b=element('button',text);b.type='button';b.addEventListener('click',action);return b;}
+    let destroyed=false;
+    const imported=button('Import configuration',()=>{try{store.install(api.parse(input.value));input.value='';status.textContent=store.snapshot().error??'Public configuration imported. Live network checks run when connecting.';}catch(error){status.textContent=error.message;}});
+    file.addEventListener('change',async()=>{const chosen=file.files?.[0];if(!chosen)return;const snapshot=store.snapshot();imported.disabled=true;try{if(chosen.size>api.MAX_BYTES)throw new Error('Configuration exceeds size limit');const text=await chosen.text();if(destroyed)return;if(store.snapshot()!==snapshot)throw new Error('Configuration changed while reading file; select it again');store.install(api.parse(text));input.value='';status.textContent=store.snapshot().error??'Public configuration imported. Live network checks run when connecting.';}catch(error){if(!destroyed)status.textContent=error.message;}finally{if(!destroyed){imported.disabled=false;file.value='';}}});
+    const exported=button('Export configuration',()=>{const {config}=store.snapshot();if(!config)return;const url=URL.createObjectURL(new Blob([JSON.stringify(config,null,2)+'\n'],{type:'application/json'}));const anchor=doc.createElement('a');anchor.href=url;anchor.download='board-public-config.json';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),0);});
+    button('Clear configuration',()=>{store.clear();input.value='';});
+    function render(snapshot){const c=snapshot.config;exported.disabled=!c;
+      summary.textContent=c?`Ethereum chain ${c.network.chainId}; rollup version ${c.network.rollupVersion}. Board ${c.board.contractAddress}. Portal ${c.board.portalAddress}. Node ${c.network.nodeUrl}. Ethereum RPC ${c.network.ethRpcUrl}. ${c.privateFee?`Private fee contract ${c.privateFee.contractAddress}. Maximum charge ${api.maximumFee(c)} Fee Juice base units per transaction; unused gas is not refunded.`:'Public reading only: private fee settings are missing; wallet actions are unavailable.'} Imported settings are not proof of live chain verification.`:'No board configuration selected. Import settings to connect.';
+      status.textContent=snapshot.error??(snapshot.persisted?'Public settings are saved for this browser origin.':'');
+    }
+    const unsubscribe=store.subscribe(render);render(store.snapshot());container.append(panel);
+    return {destroy(){destroyed=true;unsubscribe();panel.remove();}};
+  }
+  root.BillboardConfigUI=Object.freeze({mount});
+})(globalThis);
+
+</script>
+<script>
+// Public settings only. No network or wallet action occurs during bootstrap.
+(function(root){
+  let storage;try{storage=root.localStorage;}catch{}
+  root.billboardConfigStore=root.BillboardConfig.createStore({storage:storage||null,eventTarget:root});
+  const mount=()=>{
+    if(document.getElementById('deploymentManifest'))return;
+    const container=document.createElement('div');container.id='boardConfiguration';container.className='card';
+    document.body.prepend(container);root.BillboardConfigUI.mount(container,root.billboardConfigStore);
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
+})(globalThis);
+
+</script>
+<script>
+(function(root){
+  'use strict';
+  // Pinned BB uses isolated shared WASM memory and module workers. This checks
+  // prerequisites only: it neither loads proving assets nor guarantees a proof fits.
+  const messages={INSECURE_CONTEXT:'Wallet actions require HTTPS or localhost.',SHARED_MEMORY_UNAVAILABLE:'Wallet actions require cross-origin isolation and shared memory.',WASM_UNAVAILABLE:'This browser cannot run the required WebAssembly features.',WORKER_UNAVAILABLE:'Browser workers are unavailable or blocked.',CRYPTO_UNAVAILABLE:'Browser cryptography is unavailable.',LOCKS_UNAVAILABLE:'Browser storage locks are unavailable.',OPFS_UNAVAILABLE:'Private browser file storage is unavailable or blocked. Wallet storage cannot start.',STORAGE_UNAVAILABLE:'Browser storage is unavailable or blocked.',READINESS_TIMEOUT:'Browser capability checks timed out.'};
+  function failure(code){const error=new Error(messages[code]);error.code=code;return error;}
+  function createChecker(env=root,{timeoutMs=5000}={}){
+    let pending,success;
+    function check(){
+      if(success)return Promise.resolve(success);if(pending)return pending;
+      pending=run().then(value=>{success=value;return value;}).finally(()=>{pending=null;});return pending;
+    }
+    async function run(){
+      const cleanup=[];let stopped=false,timer;
+      const name='billboard-readiness-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+      function guard(){if(stopped)throw failure('READINESS_TIMEOUT');}
+      async function stage(code,fn){try{guard();return await fn();}catch(error){throw failure(error?.code==='READINESS_TIMEOUT'?'READINESS_TIMEOUT':code);}}
+      const work=async()=>{
+        if(env.isSecureContext!==true)throw failure('INSECURE_CONTEXT');
+        if(env.crossOriginIsolated!==true||typeof env.SharedArrayBuffer!=='function')throw failure('SHARED_MEMORY_UNAVAILABLE');
+        await stage('WASM_UNAVAILABLE',async()=>{
+          await env.WebAssembly.instantiate(new Uint8Array([0,97,115,109,1,0,0,0]));guard();
+          const memory=new env.WebAssembly.Memory({initial:1,maximum:1,shared:true});if(!(memory.buffer instanceof env.SharedArrayBuffer))throw Error();
+        });
+        await stage('CRYPTO_UNAVAILABLE',()=>env.crypto.subtle.digest('SHA-256',new Uint8Array([1])));
+        await stage('LOCKS_UNAVAILABLE',()=>env.navigator.locks.request(name,{ifAvailable:true},lock=>{if(!lock)throw Error();}));
+        await stage('WORKER_UNAVAILABLE',()=>new Promise((resolve,reject)=>{
+          const url=env.URL.createObjectURL(new env.Blob(['self.onmessage=e=>self.postMessage(e.data)'],{type:'text/javascript'}));cleanup.push(()=>env.URL.revokeObjectURL(url));
+          const worker=new env.Worker(url,{type:'module'});cleanup.push(()=>worker.terminate());
+          worker.onmessage=event=>event.data===name?resolve():reject(Error());worker.onerror=()=>reject(Error());worker.onmessageerror=()=>reject(Error());worker.postMessage(name);
+        }));
+        await stage('OPFS_UNAVAILABLE',async()=>{
+          const directory=await env.navigator.storage.getDirectory();guard();
+          let writable;
+          async function remove(){try{await directory.removeEntry(name);}catch{}}
+          cleanup.push(()=>{void (async()=>{try{await writable?.abort();}catch{}await remove();})();});
+          try{
+            const file=await directory.getFileHandle(name,{create:true});
+            if(stopped){await remove();guard();}
+            writable=await file.createWritable();
+            if(stopped){try{await writable.abort();}catch{}await remove();guard();}
+            await writable.write(name);guard();await writable.close();writable=null;guard();
+            const contents=await file.getFile();guard();if(await contents.text()!==name)throw Error();guard();
+            await directory.removeEntry(name);
+          }catch(error){try{await writable?.abort();}catch{}await remove();throw error;}
+        });
+        await stage('STORAGE_UNAVAILABLE',()=>new Promise((resolve,reject)=>{
+          let db,transaction,deleted=false;
+          function remove(){if(deleted)return null;deleted=true;return env.indexedDB.deleteDatabase(name);}
+          cleanup.push(()=>{try{transaction?.abort();}catch{}try{db?.close();}catch{}try{remove();}catch{}});
+          const request=env.indexedDB.open(name,1);
+          request.onerror=()=>reject(Error());request.onblocked=()=>reject(Error());
+          request.onupgradeneeded=()=>{try{request.result.createObjectStore('probe');}catch{reject(Error());}};
+          request.onsuccess=()=>{
+            db=request.result;if(stopped){db.close();try{env.indexedDB.deleteDatabase(name);}catch{}return;}
+            try{
+              transaction=db.transaction('probe','readwrite');const store=transaction.objectStore('probe');store.put(name,'key');const read=store.get('key');
+              let matches=false;read.onsuccess=()=>{matches=read.result===name;};read.onerror=()=>reject(Error());
+              transaction.onerror=()=>reject(Error());transaction.onabort=()=>reject(Error());transaction.oncomplete=()=>{
+                db.close();if(!matches){reject(Error());return;}try{const deletion=remove();deletion.onsuccess=()=>resolve();deletion.onerror=()=>reject(Error());deletion.onblocked=()=>reject(Error());}catch{reject(Error());}
+              };
+            }catch{reject(Error());}
+          };
+        }));
+        guard();return Object.freeze({ready:true,scope:'Browser prerequisites checked; proof performance and capacity are not guaranteed.'});
+      };
+      try{return await Promise.race([work(),new Promise((resolve,reject)=>{timer=env.setTimeout(()=>{stopped=true;reject(failure('READINESS_TIMEOUT'));},timeoutMs);})]);}
+      finally{stopped=true;env.clearTimeout(timer);for(const dispose of cleanup.reverse())try{dispose();}catch{}}
+    }
+    return Object.freeze({check});
+  }
+  const checker=createChecker();root.BillboardReadiness=Object.freeze({check:checker.check,createChecker});
+})(globalThis);
+
+</script>
+<script>
+(function(root){
+  'use strict';
+  const ABI=['function MIN_DEPOSIT() view returns (uint256)','function MAX_DEPOSIT() view returns (uint256)','function L2_CONTRACT() view returns (bytes32)','function ROLLUP() view returns (address)','function INBOX() view returns (address)','function OUTBOX() view returns (address)','function VERSION() view returns (uint256)','function L1_CHAIN_ID() view returns (uint256)','function CONFIG_HASH() view returns (bytes32)'];
+  const names=['MIN_DEPOSIT','MAX_DEPOSIT','L2_CONTRACT','ROLLUP','INBOX','OUTBOX','VERSION','L1_CHAIN_ID','CONFIG_HASH'];
+  function failure(){return Object.assign(new Error('The configured portal, network or private fee contract could not be verified. Check the public board configuration before making a payment.'),{code:'BB_CONNECTION_VERIFICATION_FAILED'});}
+  async function verify({sdk,ethers,config,privateFeeArtifact,verifyFee=true}={}){
+    let provider;const deadline=Date.now()+20000;
+    try{
+      const selected=root.BillboardConfig.validate(config);
+      if(typeof verifyFee!=='boolean')throw Error();
+      const read=fn=>sdk.boundedTransactionRead(fn,deadline-Date.now());
+      if(verifyFee){
+        if(!selected.privateFee||!privateFeeArtifact)throw Error();
+        const address=await read(()=>sdk.derivePrivateFeeAddress(privateFeeArtifact));
+        if(address.toString()!==selected.privateFee.contractAddress)throw Error();
+      }
+      provider=new ethers.JsonRpcProvider(selected.network.ethRpcUrl);
+      const node=sdk.createAztecNodeClient(selected.network.nodeUrl);
+      const portal=new ethers.Contract(selected.board.portalAddress,ABI,provider);
+      const [network,info,contracts,code,values]=await read(()=>Promise.all([
+        provider.getNetwork(),node.getNodeInfo(),node.getL1ContractAddresses(),provider.getCode(selected.board.portalAddress),
+        Promise.all(names.map(name=>portal[name]()))
+      ]));
+      const immutable=Object.fromEntries(names.map((name,index)=>[name,values[index]]));
+      const same=(a,b)=>BigInt(a.toString())===BigInt(b);
+      if(!same(network.chainId,selected.network.chainId)||!same(info.l1ChainId,selected.network.chainId)||!same(info.rollupVersion,selected.network.rollupVersion)||
+         !same(contracts.rollupAddress,selected.network.rollupAddress)||!same(immutable.L2_CONTRACT,selected.board.contractAddress)||
+         !same(immutable.ROLLUP,selected.network.rollupAddress)||!same(immutable.VERSION,selected.network.rollupVersion)||!same(immutable.L1_CHAIN_ID,selected.network.chainId)||
+         !same(immutable.INBOX,contracts.inboxAddress.toString())||!same(immutable.OUTBOX,contracts.outboxAddress.toString()))throw Error();
+      if(sdk.verifyPortalRuntime(code,sdk.portalRuntimeMetadata,immutable)!==true)throw Error();
+      return Object.freeze({verified:true,privateFeeVerified:verifyFee,portalRuntimeVerified:true,scope:'Bundled portal runtime and configured public identities matched RPC responses; this is not independent cryptographic network verification.'});
+    }catch{throw failure();}
+    finally{try{provider?.destroy();}catch{}}
+  }
+  root.BillboardConnectionCheck=Object.freeze({verify});
+})(globalThis);
+
+</script>
 <h1>Billboard</h1><p>Read public messages without connecting a wallet.</p>
-<div class="card"><label>Portal address<input id="portal" placeholder="0x…"></label><label>Aztec node<input id="node" value="http://127.0.0.1:5080"></label><label>Ethereum RPC<input id="ethereum" value="http://127.0.0.1:8545"></label><button id="connect">Open board</button></div>
-<p id="status" role="status">Enter the board’s connection details.</p><div id="messages"></div><button id="more" hidden>Older messages</button><button id="refresh" hidden>Refresh</button>
+<button id="connect">Open configured board</button>
+<p id="status" role="status">Import the board configuration to read messages.</p><div id="messages"></div><button id="more" hidden>Older messages</button><button id="refresh" hidden>Refresh</button>
 <p class="small">Messages are public and immutable. This reader caches public content on this device. RPC providers can observe reads. Checkpointed posts may change after a chain reorganisation.</p>
 <script src="public-feed.js"></script><script>
 let connection=null,cursor=null,busy=false;
@@ -247,12 +464,19 @@ function render(posts,append){
  if(p.flagged){const detail=document.createElement('details'),summary=document.createElement('summary');summary.textContent='Flagged message — show content';detail.append(summary,text);const reason=document.createElement('p');reason.textContent='Reason: '+p.flag.reason;detail.append(reason);article.append(detail);}else article.append(text);
  element('messages').append(article);}
 }
-async function refresh(append=false){if(busy||!connection)return;busy=true;try{
- const progress=append?null:await connection.feed.sync(),page=await connection.feed.page({limit:50,cursor:append?cursor:null});cursor=page.nextCursor;render(page.posts,append);
+function resetConnection(){connection=null;cursor=null;busy=false;element('messages').replaceChildren();element('more').hidden=true;element('refresh').hidden=true;element('status').textContent='Configuration changed. Open the configured board to verify its live state.';}
+async function refresh(append=false){if(busy||!connection)return;busy=true;const snapshot=billboardConfigStore.snapshot(),selected=connection;try{
+ const progress=append?null:await selected.feed.sync(),page=await selected.feed.page({limit:50,cursor:append?cursor:null});
+ billboardConfigStore.assertCurrent(snapshot);if(connection!==selected)return;
+ cursor=page.nextCursor;render(page.posts,append);
  element('more').hidden=!cursor;element('refresh').hidden=false;element('status').textContent=progress&&!progress.complete?'Loading history through block '+progress.lastBlock+'. Refresh to continue.':'Public messages through block '+page.lastBlock+'.';
-}catch(error){element('status').textContent=error.code==='BB_PUBLIC_FEED_CURSOR_STALE'?'The chain changed. Refresh to restart pagination.':'Could not update messages. Previously displayed data may be stale; retry.';}finally{busy=false;}}
-element('connect').onclick=async()=>{if(busy)return;busy=true;try{connection=await BillboardPublic.connectPublicFeed({portalAddress:element('portal').value.trim(),nodeUrl:element('node').value.trim(),ethereumUrl:element('ethereum').value.trim(),metadata:BillboardPublic.metadata,storage:BillboardPublic.browserPublicFeedStorage()});cursor=null;}catch{connection=null;element('status').textContent='Could not verify this board. Check the address and endpoints.';}finally{busy=false;}await refresh();};
+}catch{if(billboardConfigStore.snapshot()===snapshot)element('status').textContent='Could not update messages. Previously displayed data may be stale; retry.';}finally{if(billboardConfigStore.snapshot()===snapshot)busy=false;}}
+element('connect').onclick=async()=>{if(busy)return;busy=true;const snapshot=billboardConfigStore.snapshot();try{
+ const c=snapshot.config;if(!c)throw Error('Missing configuration');
+ const result=await BillboardPublic.connectPublicFeed({portalAddress:c.board.portalAddress,nodeUrl:c.network.nodeUrl,ethereumUrl:c.network.ethRpcUrl,expectedConfig:c,metadata:BillboardPublic.metadata,storage:BillboardPublic.browserPublicFeedStorage()});
+ billboardConfigStore.assertCurrent(snapshot);connection=result;cursor=null;
+}catch{if(billboardConfigStore.snapshot()===snapshot){resetConnection();element('status').textContent='Could not verify this board. Check the imported configuration and endpoints.';}}finally{if(billboardConfigStore.snapshot()===snapshot)busy=false;}if(billboardConfigStore.snapshot()===snapshot)await refresh();};
 element('more').onclick=()=>refresh(true);element('refresh').onclick=()=>refresh();
-const query=new URLSearchParams(location.search);if(query.has('portal'))element('portal').value=query.get('portal');
+billboardConfigStore.subscribe(resetConnection);
 
 </script></body></html>

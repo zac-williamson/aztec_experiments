@@ -381,3 +381,33 @@ or hosting work. Keep M03 mandatory through O01 and R01 and therefore every
 production release. No quality criterion or release gate is removed or passed;
 U01 must not present an unqualified model as approved. This refines artifact
 dependencies while preserving the production-readiness requirement.
+
+## U01 integration scope
+
+Include scripts/ for focused browser/hosting regression checks and build provenance. Public connection configuration is a strict versioned record, shared across author, fee, moderator and reader pages. It contains no wallet or credential material; imported reports are historical metadata, not live verification. Keep real proof jobs serialized while independent source lanes implement.
+
+## Browser proving instance and setup data (U01)
+
+The SDK's synchronous hashing instance and asynchronous proving worker use
+separate WASM heaps. Earlier cold-CRS checks initialized the synchronous
+instance; they were initialization observations, not qualification of an
+application transaction or its actual proving worker. Browser initialization now
+explicitly creates a two-thread WasmWorker prover with automatic SRS downloads
+disabled and loads the pinned, hash-verified local CRS into that exact instance.
+The synchronous hashing instance no longer retains a duplicate proving CRS.
+Successful/in-flight initialization is cached by actual singleton identity, and
+unverified setup or incompatible earlier initialization fails closed.
+
+The actual async worker hosting check018 passes with local data, zero external
+requests and full cleanup. A genuine GUI application post is independently
+qualified next; successful initialization alone does not satisfy this gate.
+
+## Browser CRS point budget
+
+Use the pinned SDK's standard 524,288 BN254 points for the actual browser Chonk
+prover. Keep the existing full 1,179,648-point setup files and their pinned hashes;
+verify every source byte before selecting the format-correct prefix. G2 and the
+65,537-point Grumpkin setup remain unchanged. Source and applied counts are
+recorded separately. This removes historical overprovisioning, not verification.
+The 71 focused checks pass; actual transaction proof capacity and aggregate
+memory remain subject to the unchanged nine-minute/2 GiB qualification.

@@ -138,7 +138,7 @@ async function qualifyConsumer(consumer) {
     }, 120000);
     timeout.unref();
     const result = await page.evaluate(async consumer => {
-      const bn254Inputs = [];
+      const bn254Inputs = [];let initializedCrsInstance;
       const stage = async (name, action) => {
         const start = performance.now();
         await window.__recordSmokeStage({ stage: name, state: 'started' });
@@ -157,6 +157,7 @@ async function qualifyConsumer(consumer) {
         const originalInitialize = window.BillboardCRS.initialize;
         let invocation = 0;
         window.BillboardCRS.initialize = (bb, options) => {
+          initializedCrsInstance=bb;
           const prefix = 'crs-' + (++invocation);
           const observedBb = new Proxy(bb, { get(target, property) {
             if (['srsInitSrs', 'srsInitGrumpkinSrs'].includes(property)) {
@@ -176,19 +177,24 @@ async function qualifyConsumer(consumer) {
       const compatibilityBuffer = Buffer.from(new Uint8Array([1])).toString('hex');
       if (compatibilityBuffer !== '01') throw new Error('Legacy app Buffer compatibility failed');
       const a = globalThis.__aztec;
-      for (const name of ['preparePrivateFeePayment','derivePrivateFeeAddress','derivePrivateFeeBridgeSecret','fundPrivateFees','recoverPrivateFeeClaim','PrivateFeePaymentMethod','PrivateMintAndPayFeePaymentMethod']) {
+      for (const name of ['initializeBrowserProver','preparePrivateFeePayment','derivePrivateFeeAddress','derivePrivateFeeBridgeSecret','fundPrivateFees','recoverPrivateFeeClaim','PrivateFeePaymentMethod','PrivateMintAndPayFeePaymentMethod']) {
         if (typeof a[name] !== 'function') throw new Error('Bundled private fee export missing: '+name);
       }
       if (!a) throw new Error('SDK global missing');
-      await stage('sync-prover-init', () => a.BarretenbergSync.initSingleton());
+      await stage('sync-primitives-init', () => a.BarretenbergSync.initSingleton());
       if (window.BILLBOARD_CRS_MANIFEST) {
         if (consumer === 'shared-library') await stage('shared-crs-adapter', () => initCRS());
         else if (consumer === 'engine-adapter') await stage('engine-crs-adapter', () => makeInitCRS()());
         else throw new Error('Unknown CRS consumer');
       }
       const hashed = await stage('poseidon', () => a.poseidon2Hash([new a.Fr(1), new a.Fr(2)]));
-      const asyncBb = await stage('async-prover-init', () => a.Barretenberg.new({ threads: 2, skipSrsInit: true }));
-      await stage('async-prover-destroy', () => asyncBb.destroy());
+      if(window.BILLBOARD_CRS_MANIFEST){
+        const actual=a.Barretenberg.getSingleton();
+        if(actual!==initializedCrsInstance || actual.options.backend!=='WasmWorker' || actual.options.threads!==2 || actual.options.skipSrsInit!==true)throw Error('Actual CRS prover policy or instance mismatch');
+      }else{
+        const asyncBb=await stage('standalone-worker-probe',()=>a.Barretenberg.new({threads:2,skipSrsInit:true}));
+        await stage('standalone-worker-destroy',()=>asyncBb.destroy());
+      }
       const log = { debug() {}, info() {}, warn() {}, error() {} };
       const store = await stage('sqlite-open', () => a.AztecSQLiteOPFSStore.open(log, 'sdk-build-smoke', true));
       const map = store.openMap('probe');
@@ -198,7 +204,9 @@ async function qualifyConsumer(consumer) {
       for (const name of ['preparePrivateFeePayment','derivePrivateFeeAddress','fundPrivateFees','recoverPrivateFeeClaim']) {
         if(typeof a[name] !== 'function') throw new Error('Missing private fee export: '+name);
       }
-      return { crs: window.BILLBOARD_CRS_MANIFEST ? 'verified and initialized through ' + consumer : 'skipped', bn254Inputs, legacyBuffer: compatibilityBuffer, exports: Object.keys(a).length, crossOriginIsolated, poseidon: hashed.toString(), sqlite: value, workers: 'initialized and destroyed' };
+      await stage('async-singleton-cleanup',()=>a.Barretenberg.destroySingleton());
+      await stage('sync-singleton-cleanup',()=>a.BarretenbergSync.destroySingleton());
+      return { crs: window.BILLBOARD_CRS_MANIFEST ? 'verified and initialized through ' + consumer : 'skipped', bn254Inputs, legacyBuffer: compatibilityBuffer, exports: Object.keys(a).length, crossOriginIsolated, poseidon: hashed.toString(), sqlite: value, workers: 'actual CRS singleton or no-CRS standalone probe; explicit singleton cleanup', actualCrsSingletonVerified:!!initializedCrsInstance };
     }, consumer);
     clearTimeout(timeout);
     assert.equal(result.sqlite, 'value');
@@ -206,8 +214,8 @@ async function qualifyConsumer(consumer) {
     assert.match(result.poseidon, /^0x[0-9a-f]{64}$/);
     if (withCrs) {
       const provisioned = crsManifest.derivedG1 || crsManifest.files.find(file => file.name === 'g1.dat');
-      assert.deepEqual(result.bn254Inputs, [{ bytes: provisioned.bytes, numPoints: provisioned.numPoints }],
-        'Both consumers must exercise the provisioned G1 representation, without a silent fallback');
+      assert.deepEqual(result.bn254Inputs, [{ bytes: 524288 * (provisioned.format === 'bn254-g1-uncompressed-64-byte' ? 64 : 32), numPoints: 524288 }],
+        'Both consumers must initialize the pinned SDK point budget using the verified provisioned G1 representation');
     }
     assert.deepEqual(faults, []);
     return { consumer, outcome: 'pass', browser: browser.version(), evaluationMs: Math.round(performance.now() - evaluationStarted), ...result };

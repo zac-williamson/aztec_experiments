@@ -38,7 +38,9 @@
   input, textarea { width: 100%; box-sizing: border-box; padding: 0.55rem; font-size: 0.95rem;
           border-radius: 6px; border: 1px solid #444; background: inherit; color: inherit;
           font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-  input.missing { border-color: #f85149; }
+  input.missing, textarea.missing, select.missing { border-color: #f85149; }
+  .field-error { color: #f85149; font-size: 0.85rem; margin: 0.25rem 0; }
+  button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus-visible, h2[tabindex]:focus-visible { outline: 2px solid #58a6ff; outline-offset: 3px; }
   button { cursor: pointer; border: none; border-radius: 8px; padding: 0.7rem 1rem;
            font-size: 1rem; font-weight: 600; color: #fff; background: #6c4bd6; margin-top: 0.5rem; }
   button:hover { background: #5a3cc0; }

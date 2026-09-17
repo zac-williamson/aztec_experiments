@@ -1,0 +1,45 @@
+✔ user generated page binds canonical fee artifact and public config without credential interception (64.951209ms)
+✔ censor generated page binds canonical fee artifact and public config without credential interception (24.253917ms)
+✔ deploy generated page binds canonical fee artifact and public config without credential interception (24.447209ms)
+✔ fee-juice generated page binds canonical fee artifact and public config without credential interception (21.291958ms)
+✔ validated store supplies authoritative connection and fee settings; extra cannot override (2.061084ms)
+✔ private engine errors remain bounded and recognized outcomes actionable (0.905ms)
+✔ readiness and pre-proof hook configuration changes stop continuation (0.812834ms)
+✔ signer proxy stops a stale operation and preserves normal signer methods (1.078583ms)
+✔ config change during provider identity read prevents signing (0.626958ms)
+✔ deployment manifest connection takes authority over stored author board (0.410167ms)
+✔ live board verification rejection blocks engine and forwards exact selected scope (0.375209ms)
+✔ live board verification repeats before proof and prevents rejected proof continuation (0.374625ms)
+✔ live board verification rejection blocks every external signing method (1.451375ms)
+✔ config switch while board verification is pending blocks engine and signing (0.860125ms)
+✔ missing private fee settings block new transactions before readiness, engine or signing (2.197459ms)
+✔ missing private fee settings retain status and recovery access (1.159667ms)
+✔ readiness failures retain fixed public guidance and never raw browser details (2.750667ms)
+✖ actual connection verifier accepts matching imported network/board/class/reverse scope (19.4145ms)
+✔ wrong Ethereum chain rejects before wallet work (0.381333ms)
+✔ different board at portal rejects before wallet work (0.527625ms)
+✔ upgraded board class rejects before wallet work (0.22575ms)
+✔ wrong reverse portal rejects before wallet work (0.332541ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 21
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 178.20175
+
+✖ failing tests:
+
+test at scripts/test-u01-live-scope.mjs:26:1
+✖ actual connection verifier accepts matching imported network/board/class/reverse scope (19.4145ms)
+  Error: Public feed data is incomplete, invalid or no longer canonical. Retry from its last verified checkpoint.
+      at fail (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/public-feed-source.mjs:6:30)
+      at file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/public-feed-source.mjs:79:72
+      at async createPublicFeedSource (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/public-feed-source.mjs:80:14)
+      at async connectPublicFeed (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/shared/public-feed-connection.mjs:30:16)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-u01-live-scope.mjs:26:113)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    code: 'BB_PUBLIC_FEED_UNAVAILABLE'
+  }

@@ -17,8 +17,33 @@
 // Mutable log target — apps set this before calling engine functions
 let _currentStatusDiv = 'status';
 
-// ETH RPC URL (not declared in aztec-lib.js, safe to keep)
-const ETH_RPC_URL = window.RPC_CONFIG?.ethRpcUrl || 'https://invictus.ambire.com/ethereum';
+// Connection settings are public, explicit and shared across pages. Deployment
+// uses its reviewed manifest; it never inherits an author's selected board.
+function _getPublicConfig() { return window.billboardConfigStore?.snapshot().config || null; }
+function _getConfigRevision() { return window.billboardConfigStore?.snapshot().revision ?? 0; }
+function _deploymentConfig() {
+  const field=document.getElementById('deploymentManifest');
+  if(!field) return null;
+  if(!window.__aztec?.deploymentManifestConfig) throw new Error('Application is still loading.');
+  try { return window.__aztec.deploymentManifestConfig(JSON.parse(field.value)); }
+  catch { throw new Error('Import a valid reviewed deployment manifest first.'); }
+}
+function _connectionConfig() {
+  const deployment=_deploymentConfig();
+  if(deployment) return deployment;
+  const config=_getPublicConfig();
+  if(!config) throw new Error('Import the board connection configuration first.');
+  return {aztecNodeUrl:config.network.nodeUrl,ethRpcUrl:config.network.ethRpcUrl,
+    portalAddress:config.board.portalAddress,expectedBoardAddress:config.board.contractAddress,
+    expectedNetworkScope:{chainId:config.network.chainId,version:config.network.rollupVersion,rollup:config.network.rollupAddress},
+    privateFee:config.privateFee};
+}
+function _getEthRpcUrl() { return _connectionConfig().ethRpcUrl; }
+window.billboardConfigStore?.subscribe(()=>{
+  if(window.walletState?.aztec || window.walletState?.ethSigner || (typeof _walletBusy!=='undefined' && _walletBusy)) {
+    _invalidateWalletContext(); _updateButtonColors();
+  }
+});
 
 // ============================================================
 // Bundle readiness check
@@ -33,80 +58,46 @@ function checkBundle(statusId) {
 }
 
 function waitForBundle(cb) {
-  if (window.__aztec && window.__aztec.createPXE) { cb(); return; }
-  let tries = 0;
-  const interval = setInterval(() => {
-    if ((window.__aztec && window.__aztec.createPXE) || ++tries > 120) {
-      clearInterval(interval);
-      if (window.__aztec && window.__aztec.createPXE) cb();
-    }
-  }, 500);
+  if (window.__aztec?.createPXE) { cb(); return; }
+  let tries=0;
+  const fail=()=>{
+    if(document.getElementById('bundleFailure'))return;
+    const message=document.createElement('p');message.id='bundleFailure';message.setAttribute('role','alert');
+    message.textContent='Wallet software could not load. Check the connection and reload this page. Public messages remain available in the reader.';
+    const link=document.createElement('a');link.href='feed.html';link.textContent='Open public reader';
+    message.append(' ',link);document.body.prepend(message);
+  };
+  if(window.__billboardBundleFailed){fail();return;}
+  const interval=setInterval(()=>{
+    if(window.__aztec?.createPXE){clearInterval(interval);cb();}
+    else if(window.__billboardBundleFailed || ++tries>=120){clearInterval(interval);fail();}
+  },500);
 }
 
 // ============================================================
 // RPC config helpers (use aztec-lib.js's getNodeUrl if available)
 // ============================================================
-function _getNodeUrl() {
-  if (typeof getNodeUrl !== 'undefined') return getNodeUrl();
-  const cfg = window.RPC_CONFIG;
-  return cfg && cfg.nodeUrl ? cfg.nodeUrl : 'https://v5.mainnet.rpc.aztec-labs.com';
-}
-
-function _getApiKey() {
-  if (typeof getApiKey !== 'undefined') return getApiKey();
-  const cfg = window.RPC_CONFIG;
-  return cfg && cfg.apiKey ? cfg.apiKey : '';
-}
-
-// Monkey-patch fetch to add API key header for Aztec RPC
-function setupRpcAuth() {
-  const cfg = window.RPC_CONFIG;
-  if (!cfg || !cfg.apiKey) return;
-  if (window._rpcAuthPatched) return;
-  const apiKey = cfg.apiKey;
-  const origFetch = window.fetch.bind(window);
-  const endpoint = new URL(_getNodeUrl(), window.location.href);
-  if (!['https:', 'http:'].includes(endpoint.protocol)) throw new Error('Invalid Aztec RPC endpoint');
-  window._rpcAuthPatched = true;
-  window.fetch = function(input, init) {
-    const credentials = init?.credentials ?? (input instanceof Request ? input.credentials : undefined);
-    const referrerPolicy = init?.referrerPolicy ?? (input instanceof Request ? input.referrerPolicy : undefined);
-    if (credentials === 'omit' && referrerPolicy === 'no-referrer') return origFetch(input, init);
-    const target = new URL(typeof input === 'string' || input instanceof URL ? String(input) : input.url, window.location.href);
-    // Only this configured JSON-RPC endpoint receives its credential. Substring
-    // matching would also disclose it to unrelated URLs containing the hostname.
-    if (target.origin === endpoint.origin && target.pathname === endpoint.pathname) {
-      const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
-      headers.set('x-aztec-api-key', apiKey);
-      // A redirect must not forward the credential outside the checked endpoint.
-      const options = { ...init, headers, redirect: 'error' };
-      return origFetch(input, options);
-    }
-    return origFetch(input, init);
-  };
-}
+function _getNodeUrl() { return _connectionConfig().aztecNodeUrl; }
+function _getApiKey() { return ''; }
+// Retained entry point for pages; browser-delivered credentials are unsupported.
+function setupRpcAuth() {}
 
 // ============================================================
-// CRS initialization (browser) — tries local files, falls back to CDN
+// CRS initialization (browser) — verified local setup for the actual prover
 // CRS constants are inlined to avoid conflicts with aztec-lib.js
 // ============================================================
 function makeInitCRS() {
   return async function initializeCRS() {
     const a = window.__aztec;
-    const crs = window.BillboardCRS;
-    if (!crs) throw new Error('Missing CRS client; rebuild the application');
     await a.BarretenbergSync.initSingleton();
-    await crs.initialize(a.BarretenbergSync.getSingleton(), {
-      manifest: window.BILLBOARD_CRS_MANIFEST,
-      loadLocal: async file => crs.readResponse(await fetch('crs/' + file.name, { signal: AbortSignal.timeout(120000) }), file),
-      sha256: async data => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', data)), b => b.toString(16).padStart(2, '0')).join(''),
-      log: (message, level) => log('  ' + message, level, _currentStatusDiv),
-    });
+    // The async worker owns proving SRS. The synchronous hashing instance does
+    // not need another full copy of the proving setup.
+    await a.initializeBrowserProver();
   };
 }
 
 // ============================================================
-// PXE store creation (browser: IndexedDB)
+// PXE store creation (browser: supported SQLite OPFS store)
 // ============================================================
 function makeCreateStore() {
   return async function createStore(config) {
@@ -151,18 +142,14 @@ function buildConfig(action, extra) {
   if (ws && ws.ethType === 'json') {
     ethWallet = { privateKey: ws.ethSigner.privateKey };
   }
+  const connection=_connectionConfig();
   const config = {
-    aztecNodeUrl: _getNodeUrl(),
-    aztecApiKey: _getApiKey(),
-    ethRpcUrl: ETH_RPC_URL,
+    ...(extra || {}), ...connection,
+    aztecApiKey:'',
     aztecWallet: ws && ws.aztec ? { secretKey: ws.aztec.secretKey, salt: ws.aztec.salt } : null,
-    ethWallet: ethWallet,
-    hasEthSigner: !!ws?.ethSigner,
-    // Public deployment configuration; fee funds belong to this wallet.
-    privateFee: window.billboardPrivateFee,
+    ethWallet, hasEthSigner: !!ws?.ethSigner,
   };
   if (action) config.action = action;
-  if (extra) Object.assign(config, extra);
   return config;
 }
 
@@ -171,6 +158,18 @@ function buildConfig(action, extra) {
 // ============================================================
 function publicOperationFailure(error) {
   const messages={
+    INSECURE_CONTEXT:'Wallet actions require HTTPS or localhost.',
+    SHARED_MEMORY_UNAVAILABLE:'Wallet actions require cross-origin isolation and shared memory. Check the hosting configuration or use a supported browser.',
+    WASM_UNAVAILABLE:'This browser cannot run the required WebAssembly features.',
+    WORKER_UNAVAILABLE:'Browser workers are unavailable or blocked. Check the browser and hosting settings.',
+    CRYPTO_UNAVAILABLE:'Browser cryptography is unavailable.',
+    LOCKS_UNAVAILABLE:'Browser storage locks are unavailable; wallet actions cannot safely continue.',
+    BB_BROWSER_PROVER_CONFIGURATION:'Browser proving setup could not be verified. Reload this page and check the locally hosted setup files.',
+    OPFS_UNAVAILABLE:'Private browser file storage is unavailable or blocked. Wallet storage cannot start.',
+    STORAGE_UNAVAILABLE:'Browser storage is unavailable or blocked. Preserve your recovery file before changing browser settings.',
+    READINESS_TIMEOUT:'Browser capability checks timed out. Retry before starting a wallet operation.',
+    BB_CONNECTION_VERIFICATION_FAILED:'The portal, network or private fee contract could not be verified. Check the imported configuration before making a payment.',
+    BB_FEE_CONFIG_REQUIRED:'Import private fee settings before depositing collateral or creating a new Aztec transaction. Recovery remains available.',
     BB_SUBMISSION_UNKNOWN:'Submission outcome is unknown. Keep the transaction record and check its receipt before retrying.',
     PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN:'Fee funding outcome is unknown. Keep its recovery file and check the transaction before retrying.',
     BB_PRIVATE_FEE_AMOUNT:'Deposit more than the configured maximum claim fee.',
@@ -197,8 +196,7 @@ function makeCallEngine(engineFn, envExtra) {
     _assertWalletLive();
     const ws=window.walletState, generation=_walletGeneration;
     if(!ws?.aztec?.address) throw new Error('Load an Aztec wallet first.');
-    const portal=()=>document.getElementById('portalAddr')?.value.trim() || '';
-    const identity=()=>JSON.stringify([_getNodeUrl(),ETH_RPC_URL,portal(),ws.aztec?.secretKey,ws.aztec?.salt,ws.ethAccount,ws.ethChainId,window.billboardPrivateFee]);
+    const identity=()=>JSON.stringify([_getConfigRevision(),_connectionConfig(),ws.aztec?.secretKey,ws.aztec?.salt,ws.ethAccount,ws.ethChainId],(_,value)=>typeof value==='bigint'?value.toString():value);
     const expected=identity();
     async function guard() {
       _assertWalletLive();
@@ -209,6 +207,22 @@ function makeCallEngine(engineFn, envExtra) {
           _invalidateWalletContext(); throw new Error('Wallet account or chain changed.');
         }
       }
+      _assertWalletLive();
+      if(generation!==_walletGeneration || expected!==identity()) throw new Error('Wallet or deployment configuration changed. Reload before continuing.');
+    }
+    async function verifyBoard() {
+      if(!envExtra?.artifact || document.getElementById('deploymentManifest'))return;
+      const config=_getPublicConfig(),api=window.BillboardPublic;
+      if(!config || !api)throw new Error('Board verification is unavailable.');
+      await api.connectPublicFeed({nodeUrl:config.network.nodeUrl,ethereumUrl:config.network.ethRpcUrl,
+        portalAddress:config.board.portalAddress,expectedConfig:config,metadata:api.metadata,
+        storage:api.browserPublicFeedStorage()});
+      await guard();
+      if(!window.BillboardConnectionCheck)throw new Error('Portal verification is unavailable.');
+      await window.BillboardConnectionCheck.verify({sdk:window.__aztec,ethers,config,
+        privateFeeArtifact:envExtra.privateFeeArtifact,
+        verifyFee:['deposit','claim','post','withdraw','auto','declare-immoral','set-moderation-policy','transfer-censor'].includes(action)});
+      await guard();
     }
     if(!navigator.locks?.request) throw new Error('This browser cannot safely coordinate wallet tabs. Use a browser with Web Locks support.');
     // One operation per full account across tabs, including RPC aliases and networks. No secret in lock name.
@@ -218,18 +232,23 @@ function makeCallEngine(engineFn, envExtra) {
       return await navigator.locks.request(lockName,{ifAvailable:true},async lock=>{
         if(!lock) throw new Error('This wallet is busy in another tab.');
         await guard();
+        if(envExtra?.artifact && !document.getElementById('deploymentManifest') && !_getPublicConfig()?.privateFee && ['deposit','claim','post','withdraw','auto','declare-immoral','set-moderation-policy','transfer-censor'].includes(action)) throw Object.assign(new Error('Private fee configuration required.'),{code:'BB_FEE_CONFIG_REQUIRED'});
+        if(!window.BillboardReadiness) throw new Error('Browser capability checks are unavailable.');
+        await window.BillboardReadiness.check();
+        await guard();
+        await verifyBoard();
         _currentStatusDiv=statusDiv;
         const env=buildEnv(envExtra),config=buildConfig(action,extra);
         const prior=config.preProveHook;
         config.contextGuard=guard;
-        config.preProveHook=async value=>{await guard();if(prior)await prior(value);await guard();};
+        config.preProveHook=async value=>{await guard();await verifyBoard();if(prior)await prior(value);await guard();};
         env.getBrowserSigner=async()=>{
           await guard(); if(!ws.ethSigner) throw new Error('Connect an Ethereum wallet first.');
           const signer=ws.ethSigner;
           return new Proxy(signer,{get(target,property){
             const value=Reflect.get(target,property,target);
             if(typeof value!=='function')return value;
-            if(['sendTransaction','signTransaction','signMessage','signTypedData'].includes(property))return async(...args)=>{await guard();return value.apply(target,args);};
+            if(['sendTransaction','signTransaction','signMessage','signTypedData'].includes(property))return async(...args)=>{await guard();await verifyBoard();await guard();return value.apply(target,args);};
             return value.bind(target);
           }});
         };

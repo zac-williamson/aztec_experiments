@@ -1,0 +1,29 @@
+✔ shared: default scopes (11.365291ms)
+✔ shared: explicit additional scopes (0.549042ms)
+✔ shared: separate tag sender (0.402ms)
+✔ shared: combined scopes and tag sender (0.348292ms)
+✔ shared: accountless deployment tag sender (0.355334ms)
+✔ shared: accountless without tag sender (0.392583ms)
+✔ shared: regression detects the previous undefined-scope call (0.767375ms)
+✔ deploy: default scopes (1.464125ms)
+✔ deploy: explicit additional scopes (0.391416ms)
+✔ deploy: separate tag sender (0.401458ms)
+✔ deploy: combined scopes and tag sender (0.357208ms)
+✔ deploy: accountless deployment tag sender (0.310875ms)
+✔ deploy: accountless without tag sender (0.301708ms)
+✔ deploy: regression detects the previous undefined-scope call (0.776ms)
+✔ user: default scopes (2.502125ms)
+✔ user: explicit additional scopes (0.681916ms)
+✔ user: separate tag sender (0.523792ms)
+✔ user: combined scopes and tag sender (0.442959ms)
+✔ user: accountless deployment tag sender (0.417292ms)
+✔ user: accountless without tag sender (0.430541ms)
+✔ user: regression detects the previous undefined-scope call (1.528333ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 637.498292

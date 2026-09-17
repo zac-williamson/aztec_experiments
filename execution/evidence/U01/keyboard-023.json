@@ -1,0 +1,43 @@
+{
+  "startedAt": "2026-09-17T16:41:14.518Z",
+  "script": "scripts/test-u01-keyboard-browser.mjs",
+  "args": [],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 2097152,
+  "rssMethod": "sampled owned descendant tree; not an OS allocation limit",
+  "passed": true,
+  "samples": [
+    {
+      "elapsedMs": 23,
+      "rssKiB": 560
+    },
+    {
+      "elapsedMs": 1045,
+      "rssKiB": 426784
+    },
+    {
+      "elapsedMs": 2069,
+      "rssKiB": 887024
+    },
+    {
+      "elapsedMs": 3093,
+      "rssKiB": 1032928
+    }
+  ],
+  "peakRSSKiB": 1032928,
+  "sourceHashes": {
+    "scripts/test-u01-keyboard-browser.mjs": "d8cd00b671026aadf3dd23c20a99a00f543d3a2082f55db0dd7f04b3df7f01c3",
+    "scripts/run-bounded-browser-check.mjs": "e5c3ae0f7a19130a607dcf34575af91ed25a394e55097f608ab3dceecaf8e9c2",
+    "scripts/owned-test-process-tree.mjs": "77e972d5bbe21350d61c940afa381f6621b61787bffeae8ffaccbb0bd1a5c9fb",
+    "deploy/hosting-config.mjs": "cc7e823b72908c4c26ce154089396c68a741c785a6b8d977fca0e4e6d000c780",
+    ".build/apps-manifest.json": "e2ea018c9e3cc69a53bbc5308327b5114802634b1a8c1cad9e4d053f72727bbc",
+    ".build/sdk/sdk-manifest.json": "327f04253a2f7489aa2bacd3414b3da3051360fe66cf16c9834601cd72b6f0e9"
+  },
+  "code": 0,
+  "signal": null,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "stopReason": null,
+  "elapsedMs": 3945,
+  "finishedAt": "2026-09-17T16:41:18.464Z"
+}

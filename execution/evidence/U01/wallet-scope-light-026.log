@@ -1,0 +1,35 @@
+✔ user generated page binds canonical fee artifact and public config without credential interception (93.40575ms)
+✔ censor generated page binds canonical fee artifact and public config without credential interception (30.743833ms)
+✔ deploy generated page binds canonical fee artifact and public config without credential interception (28.107041ms)
+✔ fee-juice generated page binds canonical fee artifact and public config without credential interception (21.177333ms)
+✔ CLI reads public configuration and restricted local claim, rejecting links, extra fields, and broad permissions (2.901083ms)
+✔ CLI keeps ambiguous outcomes actionable without exposing private errors (0.158042ms)
+✔ validated store supplies authoritative connection and fee settings; extra cannot override (3.487084ms)
+✔ private engine errors remain bounded and recognized outcomes actionable (1.1255ms)
+✔ readiness and pre-proof hook configuration changes stop continuation (0.709375ms)
+✔ signer proxy stops a stale operation and preserves normal signer methods (1.394541ms)
+✔ config change during provider identity read prevents signing (0.654292ms)
+✔ deployment manifest connection takes authority over stored author board (0.414042ms)
+✔ live board verification rejection blocks engine and forwards exact selected scope (0.437083ms)
+✔ live board verification repeats before proof and prevents rejected proof continuation (0.521125ms)
+✔ live board verification rejection blocks every external signing method (1.897125ms)
+✔ config switch while board verification is pending blocks engine and signing (1.149584ms)
+✔ missing private fee settings block new transactions before readiness, engine or signing (3.491541ms)
+✔ missing private fee settings retain status and recovery access (1.399042ms)
+✔ readiness failures retain fixed public guidance and never raw browser details (3.567625ms)
+✔ runtime and fee helper receives correct authority and fee mode for writes versus recovery (2.311459ms)
+✔ runtime helper rejection blocks entry, pre-proof and external signing (1.346917ms)
+✔ config switch while runtime helper is pending blocks entry, proof and signing (1.467541ms)
+✔ bundle load failure is bounded and offers public reader without raw errors (0.4965ms)
+✔ canonical browser aliases retain only upstream no-eval codec (0.451625ms)
+✔ no-eval browser record/map/bigint codecs interoperate with existing persisted bytes (7.630125ms)
+✔ first SDK import disables Zod eval attempts without weakening object validation (71.174667ms)
+✔ regression detects caught eval probes without the supported runtime policy (30.545125ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 234.374208

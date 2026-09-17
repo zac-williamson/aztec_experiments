@@ -4,7 +4,7 @@ import {createPublicFeed} from './public-feed.mjs';
 const field=n=>'0x'+BigInt(n).toString(16).padStart(64,'0');
 const word=v=>{if(typeof v!=='string'||!/^0x[0-9a-fA-F]{64}$/.test(v))throw Error('Invalid public deployment data.');return BigInt(v);};
 const address=n=>{if(n<=0n||n>=1n<<160n)throw Error('Invalid public deployment address.');return '0x'+n.toString(16).padStart(40,'0');};
-export async function connectPublicFeed({nodeUrl,ethereumUrl,portalAddress,metadata,storage,fetchImpl}){
+export async function connectPublicFeed({nodeUrl,ethereumUrl,portalAddress,metadata,storage,fetchImpl,expectedConfig}){
   if(!/^0x[0-9a-fA-F]{40}$/.test(portalAddress)||BigInt(portalAddress)===0n)throw Error('Enter a valid portal address.');
   portalAddress=portalAddress.toLowerCase();
   const node=publicNode(nodeUrl,{fetchImpl}),eth=publicRpc(ethereumUrl,{fetchImpl});
@@ -12,6 +12,12 @@ export async function connectPublicFeed({nodeUrl,ethereumUrl,portalAddress,metad
   const [board,rollup,version,l1ChainId,chain]=await Promise.all([call('L2_CONTRACT'),call('ROLLUP'),call('VERSION'),call('L1_CHAIN_ID'),eth('eth_chainId')]);
   if(typeof chain!=='string'||!/^0x[0-9a-fA-F]+$/.test(chain)||BigInt(chain)!==l1ChainId)throw Error('Ethereum endpoint does not match this board.');
   const scope={l1ChainId:String(l1ChainId),rollupVersion:String(version),rollupAddress:address(rollup),boardAddress:field(board),portalAddress};
+  if(expectedConfig) {
+    const n=expectedConfig.network,b=expectedConfig.board;
+    if(!n||!b||nodeUrl!==n.nodeUrl||ethereumUrl!==n.ethRpcUrl||scope.l1ChainId!==n.chainId||
+      scope.rollupVersion!==n.rollupVersion||scope.rollupAddress!==n.rollupAddress||
+      scope.boardAddress!==b.contractAddress||scope.portalAddress!==b.portalAddress) throw Error('Live board does not match the imported configuration.');
+  }
   const instance=await node.getContract(scope.boardAddress);
   if(!metadata.classId||instance?.currentContractClassId!==metadata.classId||instance?.originalContractClassId!==metadata.classId)throw Error('Board contract does not match this application release.');
   const head=await node.getBlockData('checkpointed');if(!head?.blockHash)throw Error('No checkpointed board state is available.');

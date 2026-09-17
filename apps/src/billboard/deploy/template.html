@@ -22,14 +22,17 @@
   <textarea id="deploymentManifest" hidden></textarea>
   <p id="manifestSummary" class="small">No configuration imported.</p>
   <input id="secretKey" type="hidden"><input id="salt" type="hidden" value="0">
-  <label>Portal binding transaction (to resume activation)</label>
+  <label for="readyTxHash">Portal binding transaction (to resume activation)</label>
   <input id="readyTxHash" placeholder="Optional transaction hash">
   <label><input type="checkbox" id="retryEthereum"> Retry a saved Ethereum request with its original nonce</label>
 
   <div id="walletButtonsContainer"></div>
+  <label for="publicFeeGas">Private fee gas settings for the public connection file (JSON, optional)</label>
+  <textarea id="publicFeeGas" rows="4" spellcheck="false"></textarea>
+  <p class="small">Use the reviewed gas settings for this release. The ownerless fee contract address is derived from the bundled artifact. Without fee settings the exported file supports public reading only. Each private transaction charges its configured maximum; unused gas is not refunded.</p>
   <button id="deployButton" type="button" onclick="startDeploy()" style="margin-top: 12px; font-size: 1.1em; padding: 10px 24px; cursor: pointer;">Deploy</button>
   <p class="small" id="deployHint">Load both wallets above, then click Deploy.</p>
-  <div id="status" class="status-container" style="max-height: 60vh; overflow-y: auto;"></div>
+  <div id="status" class="status-container" role="status" aria-live="polite" style="max-height: 60vh; overflow-y: auto;"></div>
 </div>
 
 <!-- The 58MB bundle -->

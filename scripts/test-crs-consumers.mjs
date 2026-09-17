@@ -332,3 +332,28 @@ test('browser VM uses full Web Crypto digest verification for derived input', as
   assert.equal(loaded.selectedG1.format, 'bn254-g1-uncompressed-64-byte');
   assert.equal(loaded.data['g1_uncompressed.dat'].byteLength, 75497472);
 });
+
+test('explicit BN254 prefix verifies the full source before passing exact compressed or derived count',async()=>{
+ for(const derived of [false,true]){
+  const bb=stubProver(),observed=[];const opts=(derived?derivedOptions:options)({bn254NumPoints:524288,sha256:bytes=>{observed.push(bytes.byteLength);return hash(bytes);}});
+  const result=await CRS.initialize(bb,opts),source=derived?derivedPayload:payloads['g1.dat'];
+  assert(observed.includes(source.byteLength),'Full source must be hashed');
+  assert.equal(bb.calls[0][1].numPoints,524288);assert.equal(bb.calls[0][1].pointsBuf.byteLength,524288*(derived?64:32));
+  assert.equal(bb.calls[0][1].pointsBuf.buffer,source.buffer);assert.equal(bb.calls[0][1].g2Point,payloads['g2.dat']);
+  assert.equal(bb.calls[1][1].pointsBuf,payloads['grumpkin_g1.dat']);assert.equal(bb.calls[1][1].numPoints,65537);
+  assert.deepEqual(result,{g1Format:derived?'bn254-g1-uncompressed-64-byte':'bn254-g1-compressed-32-byte',sourceBn254NumPoints:1179648,initializedBn254NumPoints:524288,grumpkinNumPoints:65537});
+ }
+});
+test('prefix mode rejects corruption outside retained prefix before any prover call',async()=>{
+ for(const derived of [false,true]){
+  const source=derived?derivedPayload:payloads['g1.dat'],last=source.length-1,original=source[last];source[last]^=1;const bb=stubProver();
+  try{await assert.rejects(CRS.initialize(bb,options({bn254NumPoints:524288,loadLocal:async file=>{if(file.name===(derived?'g1_uncompressed.dat':'g1.dat'))return source;if(file.name.startsWith('g1'))throw Error('No fallback');return payloads[file.name];}})));assert.equal(bb.calls.length,0);}finally{source[last]=original;}
+ }
+});
+test('prefix budget rejects invalid and excessive values, and snapshots caller selection',async()=>{
+ for(const value of [null,0,-1,1.5,'524288',Infinity,1179649]){const bb=stubProver();await assert.rejects(CRS.initialize(bb,derivedOptions({bn254NumPoints:value})));assert.equal(bb.calls.length,0);}
+ const bb=stubProver(),opts=derivedOptions({bn254NumPoints:524288});opts.sha256=bytes=>{opts.bn254NumPoints=1179648;return hash(bytes);};await CRS.initialize(bb,opts);assert.equal(bb.calls[0][1].numPoints,524288);
+});
+test('compressed prefix response must match selected count, not full source count',async()=>{
+ const bb=stubProver();bb.srsInitSrs=async args=>{bb.calls.push(['bn254',args]);return {pointsBuf:new Uint8Array(1179648*64)};};await assert.rejects(CRS.initialize(bb,options({bn254NumPoints:524288})),/Unexpected BN254/);assert.equal(bb.calls.length,1);
+});

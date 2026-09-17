@@ -16,6 +16,11 @@
       immutablesHash:await accountContract.getImmutablesHash(),
     });
     const owner=instance.address,node=a.createAztecNodeClient(config.aztecNodeUrl),info=await node.getNodeInfo();
+    if(config.expectedNetworkScope) {
+      const network=await node.getL1ContractAddresses(),expected=config.expectedNetworkScope;
+      if(String(info.l1ChainId)!==String(expected.chainId) || String(info.rollupVersion)!==String(expected.version) || network.rollupAddress.toString().toLowerCase()!==expected.rollup.toLowerCase()) throw new Error('Fee network does not match the imported configuration.');
+    }
+    if(config.contextGuard)await config.contextGuard();
     const privateFeeAddress=await a.derivePrivateFeeAddress(env.privateFeeArtifact);
     if(privateFeeAddress.toString()!==config.privateFee.contractAddress)throw new Error('Private fee deployment configuration does not match the bundled contract.');
     if(config.action==='status')return {ok:true,address:owner.toString(),feePayer:privateFeeAddress.toString()};

@@ -9,7 +9,7 @@ import {withC01ClientMining} from './c01-client-mining.mjs';
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 export async function completeC01Bridge({node,config,dateProvider,l1Client,directory,rollupAddress,
-  preparation,instance,ready,settlement,mark,screeningOnly=false,contentionOnly=false,privateFees=false,privateFeePosting=false}){
+  preparation,instance,ready,settlement,mark,browserControl,screeningOnly=false,contentionOnly=false,privateFees=false,privateFeePosting=false}){
   const observation={passed:false,scope:'genuine local deposit, private claim, no-post exit and L1 refund',
     applicationProofs:true,controlledSettlement:true,networkProofs:false};
   assert(!node.getProverNode(),'No network prover in application test');
@@ -34,6 +34,11 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
       }
       mark('real-deposit-and-claim');
       observation.claim=await depositAndClaimC01({...common,ready,settlement});assert(observation.claim.passed);
+      if(browserControl){
+        const {completeU01BrowserPost}=await import('./u01-browser-flow.mjs');
+        observation.browserPost=await completeU01BrowserPost({...common,browserControl,claimResult:observation.claim,privateFee:observation.privateFee});
+        assert(observation.browserPost.passed);return;
+      }
       if(privateFeePosting){
         const {proveAndIncludeC03Contention}=await import('./c03-contention-flow.mjs');
         observation.post=await proveAndIncludeC03Contention({...common,
@@ -54,6 +59,7 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
         assert.equal(observation.claim.feePayer,observation.privateFee.payer);assert.equal(observation.exit.feePayer,observation.privateFee.payer);
       }
     });
+    if(browserControl){observation.scope='genuine browser-generated private-fee post after native disposable setup';observation.passed=true;return observation;}
     if(privateFeePosting){observation.scope='genuine user-funded private fees, cold-start claim and private-balance posting';observation.passed=true;return observation;}
     if(contentionOnly){observation.scope='ten genuine authors, same-anchor post preparation and inclusion';observation.passed=true;return observation;}
     if(screeningOnly){observation.scope='genuine deposit, private claim and authenticated post screening';observation.passed=true;return observation;}
@@ -68,7 +74,7 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
       settlement:observation.exitSettlement,l1Client,rpcUrl:config.l1RpcUrls[0]});
     assert(observation.refund.passed);observation.passed=true;return observation;
   }catch(error){
-    for(const [key,name] of [['privateFee','privateFeeObservation'],[privateFeePosting?'post':'contention','contentionObservation'],['authorClaims','authorClaimsObservation'],['screening','screeningObservation'],['claim','depositObservation'],['exit','exitObservation'],['exitSettlement','settlementObservation'],['refund','withdrawalObservation']]){
+    for(const [key,name] of [['browserPost','browserPostObservation'],['privateFee','privateFeeObservation'],[privateFeePosting?'post':'contention','contentionObservation'],['authorClaims','authorClaimsObservation'],['screening','screeningObservation'],['claim','depositObservation'],['exit','exitObservation'],['exitSettlement','settlementObservation'],['refund','withdrawalObservation']]){
       if(error[name])observation[key]=error[name];
     }
     error.bridgeObservation={...observation,passed:false};throw error;
