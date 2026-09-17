@@ -1,0 +1,85 @@
+{
+  "startedAt": "2026-09-17T18:56:52.520Z",
+  "script": "scripts/test-u01-fee-deploy-ui.mjs",
+  "args": [],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 2097152,
+  "rssMethod": "sampled owned descendant tree; not an OS allocation limit",
+  "passed": true,
+  "samples": [
+    {
+      "elapsedMs": 34,
+      "rssKiB": 688
+    },
+    {
+      "elapsedMs": 1178,
+      "rssKiB": 201552
+    },
+    {
+      "elapsedMs": 2280,
+      "rssKiB": 509264
+    },
+    {
+      "elapsedMs": 3322,
+      "rssKiB": 857936
+    },
+    {
+      "elapsedMs": 4396,
+      "rssKiB": 1035520
+    },
+    {
+      "elapsedMs": 5461,
+      "rssKiB": 1081056
+    }
+  ],
+  "peakRSSKiB": 1081056,
+  "sourceHashes": {
+    "scripts/test-u01-fee-deploy-ui.mjs": "23c05ee4775bcaefb5ddb8187a0264f0a74d58703a181051892c3d475fc6f983",
+    "scripts/run-bounded-browser-check.mjs": "37f4b6adaf971a767735f6f17e5e81b120a2b4affc3dc1c013417b84c24f2a8f",
+    "scripts/owned-test-process-tree.mjs": "77e972d5bbe21350d61c940afa381f6621b61787bffeae8ffaccbb0bd1a5c9fb",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "a92283adfe7e0acd856b81a50faf0088d1f5ac9680429a8ef1766f06fb502307",
+    ".build/sdk/sdk-manifest.json": "1e9ec69f4fcde2e512fb2bab7b21a1af05a8686c5f7203ca5224b2aa4d19e965"
+  },
+  "controllerHeapLimitMiB": 64,
+  "maxSamplingGapMs": 1144,
+  "peakProcesses": [
+    {
+      "pid": 30514,
+      "ppid": 30335,
+      "rssKiB": 156656
+    },
+    {
+      "pid": 30521,
+      "ppid": 30514,
+      "rssKiB": 61088
+    },
+    {
+      "pid": 30529,
+      "ppid": 30514,
+      "rssKiB": 96496
+    },
+    {
+      "pid": 30532,
+      "ppid": 30529,
+      "rssKiB": 72464
+    },
+    {
+      "pid": 30533,
+      "ppid": 30529,
+      "rssKiB": 52432
+    },
+    {
+      "pid": 30535,
+      "ppid": 30529,
+      "rssKiB": 641920
+    }
+  ],
+  "code": 0,
+  "signal": null,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "elapsedMs": 6081,
+  "stopReason": null,
+  "finishedAt": "2026-09-17T18:56:58.602Z"
+}

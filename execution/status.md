@@ -132,3 +132,9 @@ Flagged004 passed428824ms/1642224KiB: real post, flag, screening debt, rejected 
 Redeposit006 passed442386ms/1629568KiB with two real claim/exit/refund cycles, unchanged fresh receipt after old claim/exit rejection, corrupted Outbox membership rejection and full cleanup. Final unflagged profile includes authentic wrong-origin Inbox and absent-chain probes, source review pending.
 
 Unflagged+origin007 passed426752ms/1247936KiB, cleanup complete. All three local T02journeys pass. T02 remains blocked on retained protocol/privacy compiler and independent disposition; public qualification unresolved. U01 active for supported single-worker experiment, no changed proof/CRS/resource policies.
+
+U01 single-worker candidate:16focusedchecks and boundedSDK/appsbuild pass. Hosting040 exposed stale auxiliary-worker asset expectation; corrected exact one-worker assertion, hosting041passes5947ms/1237808KiB. Genuine browserproof041 running with sourcefreeze and unchanged full verification/540s/2GiB bounds.
+
+U01 complete: one-thread actual browser proof041 passed with normal verification/canonical state and cleanup;143focusedchecks,CLI,config/keyboard/journey/fee-deploy042 allpass. Current qualification043 supersedes priorbrowserblockeronlyforthistestedconfiguration. T03/T04 retain genuinefullGUI/privacy/device/performance work.
+
+Audit dependency cycle corrected explicitly per review011; no release gate or diagnostic removed. T02 active for named remaining wrong-input and corrupted genuine Inbox witness probes. U01 remains complete on tested one-thread configuration.

@@ -190,9 +190,9 @@ async function qualifyConsumer(consumer) {
       const hashed = await stage('poseidon', () => a.poseidon2Hash([new a.Fr(1), new a.Fr(2)]));
       if(window.BILLBOARD_CRS_MANIFEST){
         const actual=a.Barretenberg.getSingleton();
-        if(actual!==initializedCrsInstance || actual.options.backend!=='WasmWorker' || actual.options.threads!==2 || actual.options.skipSrsInit!==true)throw Error('Actual CRS prover policy or instance mismatch');
+        if(actual!==initializedCrsInstance || actual.options.backend!=='WasmWorker' || actual.options.threads!==1 || actual.options.skipSrsInit!==true)throw Error('Actual CRS prover policy or instance mismatch');
       }else{
-        const asyncBb=await stage('standalone-worker-probe',()=>a.Barretenberg.new({threads:2,skipSrsInit:true}));
+        const asyncBb=await stage('standalone-worker-probe',()=>a.Barretenberg.new({threads:1,skipSrsInit:true}));
         await stage('standalone-worker-destroy',()=>asyncBb.destroy());
       }
       const log = { debug() {}, info() {}, warn() {}, error() {} };

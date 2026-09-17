@@ -444,3 +444,11 @@ and exact deployment-to-public-configuration transfer.
 ## Integrated application journey qualification
 
 T02 reuses the existing disposable node, actual application proofs and official local Outbox settlement. New flagged/unflagged profiles keep distinct author and authorized moderator identities. Author claim/post/screen/withdraw fees use the existing user-funded private FPC; the test moderator uses its existing genesis-funded public fee balance, which does not qualify production moderator fee privacy. No additional production actor or fee service is introduced. Posted exits explicitly select and verify the latest screened note while retaining the original collateral receipt. Resource bounds remain540seconds and2GiB aggregate; native supervision now also rejects long sampling gaps and elapsed-time overruns.
+
+## Supported one-thread browser experiment
+
+After three passing native application journeys, U01 tests one supported WasmWorker thread while keeping all circuits, streaming sequence, local/node verification, full CRS hash checks and resource bounds unchanged. Source review039 shows shared proof memory, so this removes one auxiliary worker rather than halving heap/SRS; no memory or full-proof success claim before measurement. Historical two-thread results remain preserved. Hosting040 failed only its stale auxiliary-asset request assertion; corrected041 checks the main worker and absence of auxiliary requests and passes.
+
+## Correct compiler-review scheduling cycle
+
+Independent graph review011 found an implicit T02→T03→R01→X01→T02 dependency created by generic work wording. Internal packages must produce in-scope adverse tests and explicit unresolved diagnostic ownership; X01 performs authentic independent review, R02 remediation and X02 final closure. R01 prepares the packet before review. All26original/57fresh diagnostics remain open and all release dependencies stay intact. diagnostic-coverage.json names remaining internal L1 input/membership probes in T02, delivery/privacy in T03, discovery/recovery in T04, protocol/VK inventory in R01 and independent soundness in X01/X02. No failed internal test is moved to an external gate. T02 is active to finish its named additional probes.

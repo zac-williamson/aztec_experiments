@@ -1,0 +1,65 @@
+{
+  "originalOccurrences": 26,
+  "originalSites": 12,
+  "freshOccurrences": 57,
+  "freshSites": 18,
+  "closedWarnings": 0,
+  "entries": [
+    {
+      "id": "DIAG-L1-ORIGIN",
+      "owner": "T02",
+      "status": "passed",
+      "evidence": "evidence/T02/application-493aed31-a6a2-4e70-9a30-0eea551a8c78.json",
+      "scope": "Authentic wrong-sender Inbox membership, exact bound-portal lookup rejection and valid claim control."
+    },
+    {
+      "id": "DIAG-L1-INPUTS",
+      "owner": "T02",
+      "status": "planned",
+      "required": "Wrong claim index/content/secret in real proof-enabled fixture; exact rejection and unchanged valid state followed by genuine valid claim."
+    },
+    {
+      "id": "DIAG-L1-MEMBERSHIP",
+      "owner": "T02",
+      "status": "planned",
+      "required": "Alter genuine Inbox sibling/index/root witness at constrained application boundary with test-only oracle seam; exact constraint failure plus valid original claim."
+    },
+    {
+      "id": "DIAG-NOTE-MEMBERSHIP",
+      "owner": "T01",
+      "status": "passed-scoped",
+      "evidence": "evidence/T01/acceptance-012.md",
+      "scope": "Authentic included child note randomness/settled nonce mutations; finite models and TXE separately labelled, not arbitrary kernel proof."
+    },
+    {
+      "id": "DIAG-DELIVERY-PRIVACY",
+      "owner": "T03",
+      "status": "planned",
+      "required": "Measure tagging/default sender, randomized delivery, private fee ownership and fee exhaustion/fallback privacy; distinguish entropy assumptions from observed behavior."
+    },
+    {
+      "id": "DIAG-DISCOVERY-RECOVERY",
+      "owner": "T04",
+      "status": "planned",
+      "required": "Missing/duplicate/extreme note discovery indices, reload/restart and delivery interruptions with genuine supported-browser lifecycle."
+    },
+    {
+      "id": "DIAG-PROTOCOL-INVENTORY",
+      "owner": "R01",
+      "status": "planned",
+      "required": "Exact installed/embedded protocol artifacts and verification keys reconciled with source/version and all diagnostic caller families; no network epoch prover surrogate."
+    },
+    {
+      "id": "DIAG-INDEPENDENT-SOUNDNESS",
+      "owner": "X01",
+      "status": "external-required",
+      "required": "Qualified independent private-call return/end-counter/static-mode, pending/settled request discharge, initialization/class/key authorization, oracle preimages, AES entropy/tagging/privacy assessment across26original/57fresh diagnostics. Reviewer-required hostile cases enter R02."
+    },
+    {
+      "id": "DIAG-FINAL-CLOSURE",
+      "owner": "X02",
+      "status": "external-required",
+      "required": "Authentic independent disposition of final-source findings after R02; T05 refreshes evidence correspondence. No open serious finding waived."
+    }
+  ]
+}

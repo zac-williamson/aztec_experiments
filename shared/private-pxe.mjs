@@ -18,12 +18,12 @@ const browserCrsInitializations=new WeakMap();
 const browserFailure=()=>Object.assign(new Error('Browser proving setup could not be verified. Reload this page and check the locally hosted setup files.'),{code:'BB_BROWSER_PROVER_CONFIGURATION'});
 export async function initializeBrowserProver(supplied) {
   if(supplied!==undefined && (!supplied || typeof supplied!=='object' || Array.isArray(supplied) || typeof supplied.createChonkProof==='function'))throw browserFailure();
-  const proverOrOptions={...supplied,backend:BackendType.WasmWorker,threads:2,skipSrsInit:true};
+  const proverOrOptions={...supplied,backend:BackendType.WasmWorker,threads:1,skipSrsInit:true};
   try {
     // Disable the SDK's automatic NetCrs download. Both initialization policy
     // and verified SRS must belong to this exact async singleton/worker heap.
     const singleton=await Barretenberg.initSingleton({...proverOrOptions,logger:discard});
-    if(singleton.options.backend!==BackendType.WasmWorker || singleton.options.threads!==2 || singleton.options.skipSrsInit!==true)throw browserFailure();
+    if(singleton.options.backend!==BackendType.WasmWorker || singleton.options.threads!==1 || singleton.options.skipSrsInit!==true)throw browserFailure();
     let initialization=browserCrsInitializations.get(singleton);
     if(!initialization){
       initialization=(async()=>{

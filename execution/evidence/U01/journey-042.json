@@ -1,0 +1,93 @@
+{
+  "startedAt": "2026-09-17T18:56:45.070Z",
+  "script": "scripts/test-u01-journey-browser.mjs",
+  "args": [],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 2097152,
+  "rssMethod": "sampled owned descendant tree; not an OS allocation limit",
+  "passed": true,
+  "samples": [
+    {
+      "elapsedMs": 36,
+      "rssKiB": 944
+    },
+    {
+      "elapsedMs": 1081,
+      "rssKiB": 120448
+    },
+    {
+      "elapsedMs": 2137,
+      "rssKiB": 252240
+    },
+    {
+      "elapsedMs": 3187,
+      "rssKiB": 780736
+    },
+    {
+      "elapsedMs": 4245,
+      "rssKiB": 869440
+    },
+    {
+      "elapsedMs": 5277,
+      "rssKiB": 877104
+    },
+    {
+      "elapsedMs": 6313,
+      "rssKiB": 702304
+    },
+    {
+      "elapsedMs": 7341,
+      "rssKiB": 115728
+    }
+  ],
+  "peakRSSKiB": 877104,
+  "sourceHashes": {
+    "scripts/test-u01-journey-browser.mjs": "ed56149368ef69032400376d21f0004dca864b109d2d8d02be0de774cda75282",
+    "scripts/run-bounded-browser-check.mjs": "37f4b6adaf971a767735f6f17e5e81b120a2b4affc3dc1c013417b84c24f2a8f",
+    "scripts/owned-test-process-tree.mjs": "77e972d5bbe21350d61c940afa381f6621b61787bffeae8ffaccbb0bd1a5c9fb",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "a92283adfe7e0acd856b81a50faf0088d1f5ac9680429a8ef1766f06fb502307",
+    ".build/sdk/sdk-manifest.json": "1e9ec69f4fcde2e512fb2bab7b21a1af05a8686c5f7203ca5224b2aa4d19e965"
+  },
+  "controllerHeapLimitMiB": 64,
+  "maxSamplingGapMs": 1058,
+  "peakProcesses": [
+    {
+      "pid": 30459,
+      "ppid": 30458,
+      "rssKiB": 133792
+    },
+    {
+      "pid": 30468,
+      "ppid": 30459,
+      "rssKiB": 55200
+    },
+    {
+      "pid": 30473,
+      "ppid": 30459,
+      "rssKiB": 93152
+    },
+    {
+      "pid": 30477,
+      "ppid": 30473,
+      "rssKiB": 73776
+    },
+    {
+      "pid": 30478,
+      "ppid": 30473,
+      "rssKiB": 50640
+    },
+    {
+      "pid": 30480,
+      "ppid": 30473,
+      "rssKiB": 470544
+    }
+  ],
+  "code": 0,
+  "signal": null,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "elapsedMs": 7397,
+  "stopReason": null,
+  "finishedAt": "2026-09-17T18:56:52.468Z"
+}

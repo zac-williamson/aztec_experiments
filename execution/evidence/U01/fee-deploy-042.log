@@ -1,0 +1,2 @@
+{"passed":true,"scope":"Built HTTPS UI controls with explicit fee/deployment engine fixtures; no real payment, deployment, custody or proof qualification","feeAmountErrorNoSuccess":true,"feeBusyPreventsRepeat":true,"recoveryDownload":true,"unknownOutcomePreservesRecord":true,"pendingDeploymentReport":true,"activePublicConfigPreserved":true,"rpcRequests":0,"externalRequests":0}
+{"boundedBrowser":true,"elapsedMs":6081,"peakRSSKiB":1081056,"stopReason":null,"ownedTreeAbsent":true}
