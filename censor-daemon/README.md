@@ -26,6 +26,7 @@ node censor-daemon/daemon.mjs \
   --eth-rpc "$LOCAL_ETH_RPC_URL" \
   --censor-wallet "$DISPOSABLE_CENSOR_WALLET" \
   --model-image "$REVIEWED_MODEL_IMAGE_WITH_DIGEST" \
+  --model-manifest "$RESOLVED_PLATFORM_MANIFEST" \
   --model "$LOCAL_GGUF_FILE" \
   --model-sha256 "$TRUSTED_MODEL_SHA256" \
   --dry-run --once
@@ -58,6 +59,8 @@ Normal exit, startup errors, SIGINT and SIGTERM trigger removal of both owned co
 | `--node-url` | `http://127.0.0.1:5080` | Aztec node fixed for this process |
 | `--state-dir` | `.moderation-state` | Private durable queue and model identity directory |
 | `--model-image` | Required | Reviewed local image with immutable digest |
+| `--model-manifest` | Required | Exact offline OCI platform manifest matching the image digest |
+| `--model-memory-mib` | `4096` | Explicit container memory limit in MiB |
 | `--model` | Required | Local GGUF file |
 | `--model-sha256` | Required | Trusted 64-character lowercase SHA-256 |
 | `--llama-port` | `5090` | Loopback transport port, 1024–65535 |
@@ -70,7 +73,7 @@ Normal exit, startup errors, SIGINT and SIGTERM trigger removal of both owned co
 | `--dry-run` | Off | Evaluate without submitting flags |
 | `--once` | Off | Exit after one polling iteration |
 
-Model memory is currently limited to 4096 MiB; the transport gets 512 MiB and one CPU. M03 must benchmark an actual pinned model within those bounds before release. The daemon refreshes an atomic onchain policy snapshot each poll and binds every flag to the reviewed policy version. It rejects local/default policy substitutes. Each post uses its captured historical policy from the validated feed. Missing policy content fails closed. Durable SQLite jobs retain decisions, leases, deadlines and receipt progress across restarts; completion requires a finalized successful receipt and its matching canonical flag event. See [the queue runbook](../execution/moderation-queue-runbook.md) for retry, backup, dry-run and attention-state procedures.
+Model memory defaults to 4096 MiB; the transport gets 512 MiB and one CPU. M03 must benchmark an actual pinned model within those bounds before release. The daemon refreshes an atomic onchain policy snapshot each poll and binds every flag to the reviewed policy version. It rejects local/default policy substitutes. Each post uses its captured historical policy from the validated feed. Missing policy content fails closed. Durable SQLite jobs retain decisions, leases, deadlines and receipt progress across restarts; completion requires a finalized successful receipt and its matching canonical flag event. See [the queue runbook](../execution/moderation-queue-runbook.md) for retry, backup, dry-run and attention-state procedures.
 
 ## Tests
 
@@ -95,3 +98,11 @@ Before starting the daemon, fund and claim the censor wallet's private fee balan
 The required `--private-fee-config` points to the public JSON configuration accepted by the user CLI (contract address and gas settings). Its absolute real-file path is validated and fixed when the restricted signer starts, then forwarded to the CLI. Model output cannot override that path, gas route, wallet or operation. Keep the host configuration file under operator control; changing its contents is an operator action, not a model capability. Fee exhaustion remains a visible signing failure until the wallet is funded again.
 
 The daemon also requires `--eth-rpc` explicitly. The restricted signer fixes and forwards this Ethereum endpoint alongside the Aztec node URL; it never selects an ambient shared RPC configuration. HTTP(S) endpoints with embedded credentials or fragments are rejected.
+
+## Reproducible model evaluation
+
+Use `evaluate-model.mjs --corpus censor-daemon/evaluation-corpus.json --output <results.json> --runtime-config <runtime-options.json> --model-manifest <platform-manifest.json>`. The runtime options contain the same pinned image, local weights path/hash, context, threads, port and memory limit used by the daemon. The manifest must be a single platform OCI image, not a multi-platform index; its exact bytes must hash to the image reference. The runtime binds local and running image IDs to the exact config digest or verified platform descriptor, and evaluation rechecks mounted weights after the run. Keep host model files immutable; these checks do not defend against a malicious host operator changing and restoring files between checks.
+
+Each invocation performs at most480seconds of work and records results atomically, then verifies identity and cleans up owned Docker resources. Resume with the same inputs/output to evaluate remaining cases. Exit2 means incomplete or unmet quality/capacity criteria; it is not a successful qualification. Errors remain in the retained sample set. An orphaned output lock after a forced process kill requires checking its recorded PID and owned runtime resources before removing that exact lock; never run concurrent writers. The evaluator never receives a wallet or invokes the signer.
+
+See `docs/moderation-review.md` for corpus provenance and irreversible-flag/review limitations. Model-only analytical capacity does not replace measured flag submission latency or the required elapsed workload trial.

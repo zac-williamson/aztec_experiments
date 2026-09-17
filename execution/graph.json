@@ -1030,7 +1030,7 @@
       "title": "Evaluate moderation quality and define human review operations",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "blocked",
       "depends_on": [
         "M02"
       ],
@@ -1042,7 +1042,8 @@
       "scope": [
         "censor-daemon/",
         "execution/",
-        "docs/"
+        "docs/",
+        "README.md"
       ],
       "plan": "tasks/M03.md",
       "actions": [
@@ -1070,8 +1071,13 @@
       ],
       "evidence": "evidence/M03.json",
       "evidence_mode": "historical",
-      "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "blocker": {
+        "reason": "Both real model candidates fail predeclared classification limits. Final1.7B run:29/159false positives,19/160false negatives,zero unexpectederrors,p95 1.76s. Independent policy/corpus review and actual flag capacity remain unqualified.",
+        "evidence": "evidence/M03/qwen06-evaluation-013.json; evidence/M03/qwen17-evaluation-019.json; evidence/M03/restart-review-017.md",
+        "unblock": "Select and measure a suitable policy/model on independently reviewed held-out examples; meet unchanged quality and capacity criteria. Retain all failed candidate results.",
+        "next_action": "Finish retaining second candidate results, then continue independent D01 deployment engineering; no further small-model tuning against this corpus."
+      },
+      "checkpoint": "Measured332cases twice; no model qualified. See evidence/M03/disposition-021.md. Continue D01.",
       "priority": 17
     },
     {
@@ -1079,7 +1085,7 @@
       "title": "Build fail-closed deployment and configuration verification",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "A01",
         "W01",
@@ -1100,7 +1106,10 @@
         "billboard/portal/",
         "shared/",
         "execution/release/",
-        "scripts/"
+        "scripts/",
+        "censor-daemon/",
+        "apps/src/billboard/user/",
+        "README.md"
       ],
       "plan": "tasks/D01.md",
       "actions": [
@@ -1135,7 +1144,7 @@
       "evidence": "evidence/D01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "Implement reviewed deployment manifest, exact portal runtime/network preflight and supported operator launch/package controls per evidence/D01/implementation-plan.md.",
       "priority": 18
     },
     {

@@ -20,7 +20,7 @@ const root = path.resolve(directory, '..');
 const flags = new Set(['dry-run', 'once']);
 const values = new Set(['portal-address', 'censor-wallet', 'policy', 'llama-port',
   'poll-interval', 'from', 'ctx-size', 'threads', 'node-url', 'model', 'cli',
-  'model-image', 'model-sha256', 'private-fee-config', 'eth-rpc', 'state-dir']);
+  'model-image', 'model-manifest', 'model-memory-mib', 'model-sha256', 'private-fee-config', 'eth-rpc', 'state-dir']);
 function parseArgs(argv) {
   const args = Object.create(null);
   for (let i = 0; i < argv.length; i++) {
@@ -68,7 +68,8 @@ function configuration(argv) {
     threads: integer(args.threads, 4, 1, 16, 'model threads'),
     dryRun: Boolean(args['dry-run']), once: Boolean(args.once),
     modelPath: args.model ? path.resolve(args.model) : undefined,
-    modelImage: args['model-image'], modelSha256: args['model-sha256'],
+    modelMemoryMiB:integer(args['model-memory-mib'],4096,512,32768,'model memory'),
+    modelImage: args['model-image'], modelManifest:args['model-manifest']?path.resolve(args['model-manifest']):undefined, modelSha256: args['model-sha256'],
   });
 }
 function log(message, level = 'info') {
@@ -101,7 +102,9 @@ export async function runDaemon(argv = process.argv.slice(2), { startRuntime = s
   const shutdown=()=>{stopping=true;wait.abort();};process.on('SIGINT',shutdown);process.on('SIGTERM',shutdown);
   try{
     log('Starting isolated model runtime and durable moderation queue.');
-    runtime=await startRuntime({image:config.modelImage,modelPath:config.modelPath,modelSha256:config.modelSha256,port:config.llamaPort,threads:config.threads,ctxSize:config.ctxSize});
+    const startup=new AbortController(),startupTimer=setTimeout(()=>startup.abort(Error('Model startup deadline')),120000);
+    try{runtime=await startRuntime({image:config.modelImage,memoryMiB:config.modelMemoryMiB,imageManifestPath:config.modelManifest,modelPath:config.modelPath,modelSha256:config.modelSha256,port:config.llamaPort,threads:config.threads,ctxSize:config.ctxSize,signal:AbortSignal.any([wait.signal,startup.signal])});}
+    finally{clearTimeout(startupTimer);}
     const identity=persistModelIdentity(config.stateDir,runtime),node=createNode(config.aztecNodeUrl);
     do {
       let complete=false;

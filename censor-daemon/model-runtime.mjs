@@ -1,3 +1,4 @@
+import {verifyRuntimeImage} from './runtime-identity.mjs';
 import {identifyModel,sha256Bytes} from './model-version.mjs';
 import {runtimeConfiguration} from './runtime-configuration.mjs';
 import fs from 'node:fs/promises';
@@ -9,13 +10,13 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
 const execute = promisify(execFile);
-const docker = async args => (await execute('docker', args, { encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024 })).stdout.trim();
+const docker = async (args, options={}) => (await execute('docker', args, { encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024,...options })).stdout.trim();
 const imagePattern = /^[a-zA-Z0-9][a-zA-Z0-9./_:-]*@sha256:[a-f0-9]{64}$/;
 export const PROBE_IMAGE = 'docker.io/library/node@sha256:6dac556d980b7f0e5498d08f08cee0ca67798b4ad6c23964a9214920e67758d0';
 
-export async function hashModel(filename) {
+export async function hashModel(filename,signal) {
   const hash = createHash('sha256');
-  for await (const chunk of createReadStream(filename)) hash.update(chunk);
+  for await (const chunk of createReadStream(filename,{signal})) hash.update(chunk);
   return hash.digest('hex');
 }
 
@@ -31,9 +32,10 @@ export async function validateModelOptions(options) {
   if (typeof options.modelPath !== 'string') throw new Error('A local model file is required');
   const modelPath = await fs.realpath(options.modelPath);
   if (/[\r\n,]/.test(modelPath) || !(await fs.stat(modelPath)).isFile()) throw new Error('Model must be one regular file with a Docker-safe path');
-  if (await hashModel(modelPath) !== options.modelSha256) throw new Error('Model SHA-256 mismatch');
+  if (await hashModel(modelPath,options.signal) !== options.modelSha256) throw new Error('Model SHA-256 mismatch');
   return {
     image: options.image, modelPath, modelSha256: options.modelSha256,
+    signal:options.signal, imageManifestPath:options.imageManifestPath,
     port: integer(options.port, 5090, 1024, 65535, 'port'),
     threads: integer(options.threads, 4, 1, 16, 'thread count'),
     ctxSize: integer(options.ctxSize, 4096, 512, 32768, 'context size'),
@@ -81,10 +83,17 @@ export function checkIsolation(container, network, options, expectedNetwork, ima
 }
 
 async function startContainer(options, entrypoint, args, healthPath) {
+  const runDocker=args=>docker(args,{signal:options.signal});
   const config = await validateModelOptions(options);
   // No pull or native build is implicit. The operator supplies a reviewed image.
-  const image = JSON.parse(await docker(['image', 'inspect', config.image]))[0];
-  const proxyImage = JSON.parse(await docker(['image', 'inspect', PROBE_IMAGE]))[0];
+  const image = JSON.parse(await runDocker(['image', 'inspect', config.image]))[0];
+  let manifestBytes;
+  if(config.imageManifestPath){
+    if((await fs.stat(config.imageManifestPath)).size>1024*1024)throw Error('Platform manifest too large');
+    manifestBytes=await fs.readFile(config.imageManifestPath);
+    verifyRuntimeImage({imageReference:config.image,manifestBytes,image,container:{Image:image.Id,Config:{Image:config.image}}});
+  }
+  const proxyImage = JSON.parse(await runDocker(['image', 'inspect', PROBE_IMAGE]))[0];
   const proxyPath = await fs.realpath(fileURLToPath(new URL('./model-runtime-proxy.cjs', import.meta.url)));
   const suffix = randomUUID();
   const name = `billboard-model-${suffix}`;
@@ -94,22 +103,24 @@ async function startContainer(options, entrypoint, args, healthPath) {
   let proxyNetworkCreated = false;
   let containerId;
   let proxyId;
+  let containerAttempted=false,proxyAttempted=false;
   let stopping;
   const stop = () => stopping ||= (async () => {
     const failures = [];
-    for (const command of [proxyId && ['rm', '--force', proxyId], containerId && ['rm', '--force', containerId],
+    for (const command of [proxyAttempted && ['rm', '--force', `${name}-proxy`], containerAttempted && ['rm', '--force', name],
       networkCreated && ['network', 'rm', networkName], proxyNetworkCreated && ['network', 'rm', proxyNetworkName]].filter(Boolean)) {
-      try { await docker(command); } catch (error) { failures.push(error); }
+      try { await docker(command,{timeout:8000}); } catch (error) { if(!/No such (?:container|network)|network .* not found/i.test(error.stderr||''))failures.push(error); }
     }
     if (failures.length) throw new AggregateError(failures, 'Owned model resources could not all be removed');
   })();
   try {
-    await docker(['network', 'create', '--driver', 'bridge', '--internal', '--ipv6=false',
-      '--opt', 'com.docker.network.bridge.gateway_mode_ipv4=isolated', networkName]);
     networkCreated = true;
-    await docker(['network', 'create', '--driver', 'bridge', proxyNetworkName]);
+    await runDocker(['network', 'create', '--driver', 'bridge', '--internal', '--ipv6=false',
+      '--opt', 'com.docker.network.bridge.gateway_mode_ipv4=isolated', networkName]);
     proxyNetworkCreated = true;
-    containerId = await docker(['create', '--name', name, '--network', networkName,
+    await runDocker(['network', 'create', '--driver', 'bridge', proxyNetworkName]);
+    containerAttempted = true;
+    containerId = await runDocker(['create', '--name', name, '--network', networkName,
       '--network-alias', 'model', '--dns', '127.0.0.1', '--user', '65532:65532', '--read-only',
       '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--pids-limit', '128',
       '--memory', `${config.memoryMiB}m`, '--cpus', String(config.threads),
@@ -118,44 +129,55 @@ async function startContainer(options, entrypoint, args, healthPath) {
       '--env', 'HOME=/tmp', '--label', 'org.billboard.role=isolated-model',
       '--entrypoint', entrypoint, config.image, ...args]);
     const proxyConfig = { ...config, image: PROBE_IMAGE, modelPath: proxyPath, memoryMiB: 512, threads: 1 };
-    proxyId = await docker(['create', '--name', `${name}-proxy`, '--network', proxyNetworkName,
+    proxyAttempted = true;
+    proxyId = await runDocker(['create', '--name', `${name}-proxy`, '--network', proxyNetworkName,
       '--publish', `127.0.0.1:${config.port}:8080`, '--user', '65532:65532', '--read-only',
       '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--pids-limit', '128',
       '--memory', '512m', '--cpus', '1', '--tmpfs', '/tmp:rw,noexec,nosuid,size=268435456,mode=1777',
       '--mount', `type=bind,src=${proxyPath},dst=/proxy/proxy.cjs,readonly`, '--env', 'HOME=/tmp',
       '--label', 'org.billboard.role=model-transport', '--entrypoint', '/usr/local/bin/node',
       PROBE_IMAGE, '/proxy/proxy.cjs']);
-    await docker(['network', 'connect', networkName, proxyId]);
-    const inspect = async () => {
-      const container = JSON.parse(await docker(['inspect', containerId]))[0];
-      const network = JSON.parse(await docker(['network', 'inspect', networkName]))[0];
-      const proxy = JSON.parse(await docker(['inspect', proxyId]))[0];
-      const proxyNetwork = JSON.parse(await docker(['network', 'inspect', proxyNetworkName]))[0];
+    await runDocker(['network', 'connect', networkName, proxyId]);
+    const inspect = async (signal=options.signal) => {
+      const inspectDocker=args=>docker(args,{signal});
+      const container = JSON.parse(await inspectDocker(['inspect', containerId]))[0];
+      const network = JSON.parse(await inspectDocker(['network', 'inspect', networkName]))[0];
+      const proxy = JSON.parse(await inspectDocker(['inspect', proxyId]))[0];
+      const proxyNetwork = JSON.parse(await inspectDocker(['network', 'inspect', proxyNetworkName]))[0];
       checkIsolation(container, network, config, networkName, image.Config.Env || []);
       checkIsolation(proxy, proxyNetwork, proxyConfig, proxyNetworkName, proxyImage.Config.Env || [], true);
       requireIsolation(Object.hasOwn(proxy.NetworkSettings.Networks, networkName), 'proxy attached to model network');
       return { container, network, proxy, proxyNetwork, config, imageEnv: image.Config.Env || [] };
     };
     await inspect();
-    await docker(['start', containerId]);
-    await docker(['start', proxyId]);
+    await runDocker(['start', containerId]);
+    await runDocker(['start', proxyId]);
     let ready = false;
     for (let attempt = 0; attempt < 120; attempt++) {
       try {
-        const response = await fetch(`http://127.0.0.1:${config.port}${healthPath}`, { signal: AbortSignal.timeout(1500) });
+        const response = await fetch(`http://127.0.0.1:${config.port}${healthPath}`, { signal: options.signal?AbortSignal.any([options.signal,AbortSignal.timeout(1500)]):AbortSignal.timeout(1500) });
         if (response.ok) { ready = true; await response.body?.cancel(); break; }
         await response.body?.cancel();
       } catch { /* The model may still be loading. */ }
-      const state = JSON.parse(await docker(['inspect', '--format', '{{json .State}}', containerId]));
+      const state = JSON.parse(await runDocker(['inspect', '--format', '{{json .State}}', containerId]));
       if (!state.Running) throw new Error(`Isolated model exited during startup (code ${state.ExitCode})`);
-      await delay(500);
+      options.signal?.throwIfAborted();
+      await delay(500,undefined,{signal:options.signal});
     }
     if (!ready) throw new Error('Isolated model health check timed out');
-    await inspect();
-    const assets=await Promise.all(['moderation.mjs','runtime-configuration.mjs','model-runtime.mjs'].map(async name=>({name,sha256:sha256Bytes(await fs.readFile(new URL(name,import.meta.url)))})));
-    const configurationBytes=runtimeConfiguration(config,assets),promptBytes=await fs.readFile(new URL('./prompt-template.json',import.meta.url));
+    const running=await inspect();
+    const platformIdentity=config.imageManifestPath?verifyRuntimeImage({imageReference:config.image,manifestBytes,image,container:running.container}):null;
+    if(await hashModel(config.modelPath,options.signal)!==config.modelSha256)throw Error('Model weights changed during startup');
+    const assets=await Promise.all(['moderation.mjs','runtime-configuration.mjs','model-runtime.mjs','runtime-identity.mjs','model-runtime-proxy.cjs'].map(async name=>({name,sha256:sha256Bytes(await fs.readFile(new URL(name,import.meta.url)))})));
+    const configurationBytes=runtimeConfiguration({...config,platformIdentity},assets),promptBytes=await fs.readFile(new URL('./prompt-template.json',import.meta.url));
     const modelIdentity=identifyModel({imageDigest:'0x'+config.image.split('@sha256:')[1],weightsDigest:'0x'+config.modelSha256,configurationBytes,promptBytes});
-    return { port: config.port, containerId, proxyId, inspect, stop, modelIdentity, configurationBytes, promptBytes };
+    const verify=async({signal=AbortSignal.timeout(10000)}={})=>{
+      const current=await inspect(signal);
+      if(manifestBytes)verifyRuntimeImage({imageReference:config.image,manifestBytes,image,container:current.container});
+      if(await hashModel(config.modelPath,signal)!==config.modelSha256)throw Error('Model weights changed during execution');
+      return {weightsVerified:true,platformIdentity};
+    };
+    return { port: config.port, containerId, proxyId, inspect, stop, verify, modelIdentity, platformIdentity, configurationBytes, promptBytes };
   } catch (error) {
     try { await stop(); } catch (cleanup) { throw new AggregateError([error, cleanup], 'Model startup and cleanup failed'); }
     throw error;
@@ -163,6 +185,7 @@ async function startContainer(options, entrypoint, args, healthPath) {
 }
 
 export async function startModelRuntime(options) {
+  if(typeof options.imageManifestPath!=='string')throw new Error('A resolved platform model image manifest is required');
   const config = await validateModelOptions(options);
   return startContainer(config, '/app/llama-server', ['--model', '/model/model.gguf', '--host', '0.0.0.0',
     '--port', '8080', '--threads', String(config.threads), '--ctx-size', String(config.ctxSize)], '/health');
@@ -170,7 +193,7 @@ export async function startModelRuntime(options) {
 
 // Test fixture uses the same isolation profile with a fixed harmless Node image.
 // This is not selectable by any production daemon CLI option or environment flag.
-export async function startIsolationProbe({ probePath, port }) {
+export async function startIsolationProbe({ probePath, port, signal }) {
   return startContainer({ image: PROBE_IMAGE, modelPath: probePath, modelSha256: await hashModel(probePath), port,
-    memoryMiB: 512, threads: 1 }, '/usr/local/bin/node', ['/model/model.gguf'], '/health');
+    memoryMiB: 512, threads: 1, signal }, '/usr/local/bin/node', ['/model/model.gguf'], '/health');
 }

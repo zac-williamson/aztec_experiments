@@ -76,3 +76,15 @@ M02 resumed after usage interruption: SDK/client build passed. Final queue rollo
 M02 verification:208 integrated checks and actual built public/wallet browsers pass. Review repaired model rollover polling/duplicate signing and lost replacement responses, including after deadline. Finalizing superseded unsigned jobs before final combined run. Single latest wallet journal limits historical reorg automation; attention states remain explicit.
 
 M02 complete:344 moderation and208 integrated checks, actual built public/wallet browsers, artifact inventory pass. Model rollover and lost replacement-response defects fixed. Evidence bound to6d2ccd2d. Continue M03 real-model quality/runtime qualification; production gates remain incomplete.
+
+M03 active after pushed2b3c7fc: prepare evaluation corpus/runner, verify actual platform runtime identity, measure real model quality within resource limits. No GGUF or llama runtime image currently present in repository/Docker inventory.
+
+M03 progress: frozen332case corpus (320scored,60multilingual,60injection), bounded resumable evaluator and explicit platform-image/weight verification.369 combined moderation checks and8 real Docker/unit runtime checks pass, including interrupted-start cleanup. Qwen3-0.6B Q8 weights downloaded and SHA verified; pinned llama image retrieval in progress after credential-helper stall and bounded pull timeout. No accuracy measurement yet.
+
+Resumed after shutdown: real332case Qwen0.6B run completed in125s with verified runtime and complete cleanup. Failed quality:67/160false positives,2/160false negatives,47errors. No orphan runtime found. Reviewing failure source before next candidate; no criteria waived.
+
+Second M03 candidate running: pinned Qwen1.7B Q4 at2GiB, corrected unsupported rule-number prompt and explicit input-boundary test; all other semanticlabels unchanged. Original failed report/corpus retained. Results save per case. D01 read-only design lane preparing deployment manifest/runtime verification and launch controls.
+
+M03 blocked on measured classificationquality (both candidates fail unchanged thresholds); final bounded candidate run continues only to retain complete evidence. D01 active: reviewed deployment manifest, exact runtime/network checks and supported clean operator packaging. Scope includes shared/scripts/userCLI/daemon launch. Heavy jobs remain serial.
+
+M03 final secondrun332cases/400s:29false positives,19false negatives,zero unexpectederrors,p95 1.76s; verified runtime and clean shutdown. Quality gate remains blocked, no productionmodel endorsed. D01 runtimeverifier25tests pass, manifest integration in progress.

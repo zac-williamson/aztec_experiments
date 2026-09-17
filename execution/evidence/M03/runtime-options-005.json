@@ -1,0 +1,9 @@
+{
+  "image": "ghcr.io/ggml-org/llama.cpp@sha256:96566e728d352ee6ef041508fb61ee1490f2e5213bfeeb608a1a2bf18def35d7",
+  "modelPath": "/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/censor-daemon/models/Qwen3-0.6B-Q8_0.gguf",
+  "modelSha256": "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031",
+  "memoryMiB": 2048,
+  "threads": 4,
+  "ctxSize": 4096,
+  "port": 5094
+}

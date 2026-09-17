@@ -1,0 +1,13 @@
+✔ resolved platform manifest binds configured and running image config (2.612291ms)
+✔ different manifest bytes, local config, running config or requested image rejected (0.220875ms)
+✔ multi-platform index cannot impersonate platform manifest (0.139416ms)
+✔ startup requires explicit offline platform manifest (0.103084ms)
+✔ model hashing respects an already aborted budget (2.667667ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 59.218875

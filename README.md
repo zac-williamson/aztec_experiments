@@ -82,49 +82,29 @@ The censor can set a text moderation policy on-chain via `set_moderation_policy(
 
 See [SECURITY_PROPERTIES.md](SECURITY_PROPERTIES.md) for the full security analysis with line-by-line code references.
 
-## Automated censorship bot
+## Automated moderation
 
-The `censor-daemon/` directory contains a self-contained daemon that watches the Billboard contract for new posts, runs them through a local LLM (llama.cpp), and automatically flags any that violate the on-chain moderation policy.
+The local moderation daemon evaluates public posts against their exact historical
+onchain policies. It uses an explicitly supplied, digest-pinned llama.cpp Docker
+image and checksum-verified model weights. There is no implicit download, native
+build, default model or fallback policy. Model quality must be measured before
+operating it; current candidate evaluation is not production qualification.
 
-```
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
-│  daemon.mjs │────▶│  llama-server │────▶│  Local LLM      │
-│  (orchestr) │     │  (port 5090)  │     │  (Qwen3.5-2B)   │
-└──────┬──────┘     └──────────────┘     └─────────────────┘
-       │
-       │ subprocess (black-box)
-       ▼
-┌─────────────────────────────┐
-│  cli.mjs  list --json        │  → posts[], censorWindow, policy
-│  cli.mjs  declare-immoral    │  → flags post on-chain
-└─────────────────────────────┘
-```
+The model runs in an isolated container without wallet access. A restricted host
+signer accepts bounded structured verdicts and fixes the wallet, board and RPC
+configuration. SQLite jobs retain decisions, leases, deadlines and transaction
+progress across restarts. A successful child command alone does not complete a
+flag: confirmation requires the finalized canonical receipt and matching event.
 
-From any state, running `node daemon.mjs` will:
+Follow [the daemon setup instructions](censor-daemon/README.md) for the required
+network, wallet, private-fee and model configuration, including a separate state
+directory for dry runs. [The queue runbook](execution/moderation-queue-runbook.md)
+explains recovery and attention states. [Human review documentation](docs/moderation-review.md)
+explains irreversible flags, appeals and censor succession limitations.
 
-1. **Download + compile llama.cpp** (if not already present)
-2. **Download the model** (~1.4 GB Q4_K_M GGUF, Qwen3.5-2B by default)
-3. **Start llama-server** — local OpenAI-compatible API on `127.0.0.1:5090`
-4. **Read contract config** — fetches the on-chain moderation policy, censor window, and max save-up
-5. **Poll the billboard** — shells out to `cli.mjs list --json` to read all posts
-6. **Moderate each post** — sends the post + policy to the LLM, asks "VIOLATION or OK?"
-7. **Flag violations** — shells out to `cli.mjs declare-immoral` to flag the post on-chain
-
-The daemon is a **thin orchestrator** — it never touches the Aztec SDK directly. All on-chain operations go through the existing user CLI as black-box subprocess calls. It is **censor-window-aware**: it prioritizes posts closest to expiring (oldest first), warns on posts with <5 minutes left, and warns on posts already past the censor window.
-
-Policy resolution order: on-chain policy (from `get_moderation_policy()`) → local `policy.txt` → hardcoded default.
-
-```bash
-# Dry-run (evaluate but don't flag on-chain):
-node censor-daemon/daemon.mjs --dry-run --once
-
-# Live (actually flag violations):
-node censor-daemon/daemon.mjs --poll-interval 30
-```
-
-Tests: 23 unit tests (`test_moderation.mjs`) + 14 integration tests (`test_daemon.mjs`) with mock infrastructure — no network or llama.cpp required. Run `bash censor-daemon/run_tests.sh`.
-
-See [censor-daemon/README.md](censor-daemon/README.md) for full details.
+Run `bash censor-daemon/run_tests.sh` for disposable local application fixtures;
+`--with-docker` also checks real container isolation. Actual model evaluation is
+separate and retains false positives, false negatives, errors and latency.
 
 ## The four apps
 

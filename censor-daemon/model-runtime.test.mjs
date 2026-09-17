@@ -108,3 +108,12 @@ test('actual container excludes dummy signer files/env and denies egress to a re
     await fs.rm(directory, { recursive: true, force: true });
   }
 });
+
+
+test('aborted actual startup removes any partially created owned resources', {timeout:45000}, async()=>{
+ const docker=async args=>(await promisify(execFile)('docker',args,{encoding:'utf8',timeout:10000})).stdout.trim().split('\n').filter(Boolean).sort();
+ const resources=async()=>({containers:await docker(['ps','-a','--filter','label=org.billboard.role','--format','{{.Names}}']),networks:(await docker(['network','ls','--format','{{.Name}}'])).filter(n=>n.startsWith('billboard-model-'))});
+ const before=await resources();
+ await assert.rejects(startIsolationProbe({probePath,port:5098,signal:AbortSignal.timeout(400)}));
+ assert.deepEqual(await resources(),before);
+});

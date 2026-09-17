@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.manifest.v1+json",
+  "config": {
+    "mediaType": "application/vnd.oci.image.config.v1+json",
+    "digest": "sha256:9fa269fae8e07c467b455a4cf7de055f038742f46cfb08072703eae60a423dac",
+    "size": 4735
+  },
+  "layers": [
+    {
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:8a38824eedc553ba80cf1eb7df278a003340f7409fd4b9002bce07db8840a9a2",
+      "size": 28941580
+    },
+    {
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:32af66892c76148ec7017ed4178e244e7bb72f7186bfeda52decf124888cd301",
+      "size": 253122954
+    },
+    {
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:5478d24cc1d24fd3e1207cc21ef34ab20f9f4ffa51e4039e8fc5a2fc9c27ae15",
+      "size": 13025142
+    },
+    {
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:f93652011cdb67ead480458aab4e2934e0faa14bb2b3f7462d219cbd97bc5367",
+      "size": 27701
+    },
+    {
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1",
+      "size": 32
+    }
+  ],
+  "annotations": {
+    "org.opencontainers.image.created": "2026-09-16T04:32:51Z",
+    "org.opencontainers.image.description": "LLM inference in C/C++",
+    "org.opencontainers.image.revision": "930e2fa5995789efbf249a8bf61325bb626e417b",
+    "org.opencontainers.image.source": "https://github.com/ggml-org/llama.cpp",
+    "org.opencontainers.image.title": "llama.cpp",
+    "org.opencontainers.image.url": "https://github.com/ggml-org/llama.cpp",
+    "org.opencontainers.image.version": "b10991"
+  }
+}

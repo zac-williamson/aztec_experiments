@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.index.v1+json",
+  "manifests": [
+    {
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:053921c636467974ba058efabd8051ef3a5bdcc58d496e8e2c2f1084fdd66545",
+      "size": 1746,
+      "platform": {
+        "architecture": "amd64",
+        "os": "linux"
+      }
+    },
+    {
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:96566e728d352ee6ef041508fb61ee1490f2e5213bfeeb608a1a2bf18def35d7",
+      "size": 1746,
+      "platform": {
+        "architecture": "arm64",
+        "os": "linux"
+      }
+    },
+    {
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:0076abab82939620efe24f24470aae80a8c86780eb312c0a2addb5af77cdf72d",
+      "size": 1938,
+      "platform": {
+        "architecture": "s390x",
+        "os": "linux"
+      }
+    }
+  ],
+  "annotations": {
+    "org.opencontainers.image.created": "2026-09-16T06:05:34Z",
+    "org.opencontainers.image.description": "LLM inference in C/C++",
+    "org.opencontainers.image.revision": "930e2fa5995789efbf249a8bf61325bb626e417b",
+    "org.opencontainers.image.source": "https://github.com/ggml-org/llama.cpp",
+    "org.opencontainers.image.title": "llama.cpp",
+    "org.opencontainers.image.url": "https://github.com/ggml-org/llama.cpp",
+    "org.opencontainers.image.version": "b10991"
+  }
+}

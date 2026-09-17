@@ -476,3 +476,14 @@ Recovery reviewer delivered application-nullifier helper and25 fixture tests, na
 - moderation_queue_review owns queue rollover regression and fix only.
 - moderation_integration_review independently reviews worker, signer, daemon and receipt integration without editing.
 - Root integrates, verifies serially, documents and commits. AI review is not external audit.
+
+## M03 measured moderation
+
+- moderation_queue_review authored frozen synthetic evaluation corpus and contract-grounded human review documentation; then reviews runtime/evaluator. Labels are provisional, not human gold standard.
+- moderation_integration_review owns bounded resumable real-model evaluator and metric tests.
+- Root owns immutable runtime/platform verification, resource-bounded downloads and real measurement. Heavy checks remain serial.
+
+## M03 restart review
+
+- model_failure_review independently classified failed real-model results, then owns explicit input-boundary corpus/evaluator correction and tests. Semantic labels remain unchanged and original corpus/results retained.
+- Root corrects unsupported rule-number prompt, qualifies larger pinned model with serial bounded runtime, and integrates.
