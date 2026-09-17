@@ -121,12 +121,9 @@ Also supports an `auto` action that runs deposit → wait → claim in one go.
 
 ### 2. Deploy (`billboard/deploy`)
 
-Deploys and links the billboard contracts. The deployment has a circular dependency (L1 portal needs L2 address, L2 contract needs L1 portal address), broken by making the L2 constructor take no arguments and setting the portal later.
+Deployment requires a reviewed manifest containing the network, deployer identities, economics, censor, policy and exact artifact identities. See [deployment instructions](docs/deployment.md) and the [supported operator package](docs/operator-launch.md).
 
-1. **Deploy L2** — Deploys the Noir Billboard contract using universal deploy (address depends only on salt + artifact, not deployer wallet).
-2. **Deploy L1 Portal** — Deploys the Solidity portal via CREATE2 (deterministic from L2 address + rollup + version).
-3. **Link Portal** — Calls `update_portal()` on L2 to store the L1 portal address.
-4. **Cross-Check** — Verifies L1→L2 and L2→L1 references match.
+The engine verifies network identity before proving, deploys or recovers the L2 board, verifies the complete L1 portal runtime and configuration, then binds the portal. A missing CREATE2 proxy uses the actual journaled CREATE address. Deposits remain disabled until the board's Ready message has settled and portal activation is confirmed. A pending report is explicitly incomplete; resume with the same manifest and wallet recovery records.
 
 ### 3. User (`billboard/user`)
 
@@ -324,6 +321,8 @@ Configure `window.billboardPrivateFee` with the canonical contract address and e
 The contract charges the configured maximum transaction fee against private credit; it does not refund unused gas. The pooled FeeJuice balance and L1 funding amount/timing are public. This does not make funding itself unobservable.
 
 ## CLI usage
+
+For real-key operation, use the prepared package and `scripts/operator-launch.sh` as described in [operator launch](docs/operator-launch.md). The direct Node examples below are historical developer examples, not the supported operator entrypoint; deployment now requires [an explicit manifest](docs/deployment.md).
 
 ```bash
 # Billboard user (deposit → claim → post → withdraw → claim-l1)

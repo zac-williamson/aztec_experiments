@@ -1,0 +1,17 @@
+✔ report output accepts new report (11.285125ms)
+✔ report output accepts same intent (6.808166ms)
+✔ report preflight rejects unrelated report before transactions (1.452625ms)
+✔ report preflight rejects dangling symlink before transactions (0.847709ms)
+✔ report preflight rejects missing parent before transactions (0.719417ms)
+✔ result intent mismatch cannot create a misleading report (1.433583ms)
+✔ destination changed during deployment is preserved (8.375333ms)
+✔ offline preparation produces manifest accepted with actual candidate artifacts (806.71975ms)
+✔ offline CLI refuses to replace an existing manifest (1312.319125ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3361.751

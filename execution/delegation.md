@@ -487,3 +487,10 @@ Recovery reviewer delivered application-nullifier helper and25 fixture tests, na
 
 - model_failure_review independently classified failed real-model results, then owns explicit input-boundary corpus/evaluator correction and tests. Semantic labels remain unchanged and original corpus/results retained.
 - Root corrects unsupported rule-number prompt, qualifies larger pinned model with serial bounded runtime, and integrates.
+
+## D01 deployment and operator packaging
+
+- deployment_gap_review owns portal runtime/manifest helpers and serial real Anvil qualification; independently reviews root engine integration.
+- deploy_fixture_integration owns deployment recovery fixture coverage and CLI/report/browser-test review.
+- model_failure_review owns supported operator launch/package closure and provenance tests.
+- Root integrates browser/SDK/entrypoint changes, runs final serial checks and prepares evidence. AI review does not replace external audit.

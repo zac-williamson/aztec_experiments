@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import {assertOperatorEnvironment} from '../../../../scripts/operator-launch.mjs';
+if(process.env.BILLBOARD_OPERATOR_PROFILE==='1')assertOperatorEnvironment();
 // ============================================================
 // cli.mjs — CLI tool for Billboard user flow (Deposit -> Post -> Withdraw)
 // ============================================================

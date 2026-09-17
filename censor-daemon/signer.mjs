@@ -1,3 +1,4 @@
+import {assertOperatorEnvironment} from '../scripts/operator-launch.mjs';
 // Host-side authority. Model output never supplies executable/configuration data.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -88,7 +89,9 @@ export function createSigner(configuration, { run = execFileSync } = {}) {
   });
   // Do not inherit NODE_OPTIONS, NODE_PATH, preload hooks, loader injection,
   // cloud credentials, or model configuration. Model processes get no such env.
-  const env = Object.freeze({ PATH: `${path.dirname(trusted.nodeExecutable)}:/usr/bin:/bin:/usr/sbin:/sbin`,
+  const operator=process.env.BILLBOARD_OPERATOR_PROFILE==='1';
+  if(operator){assertOperatorEnvironment();if(trusted.nodeExecutable!==fs.realpathSync(process.execPath))throw Error('Operator signer must use packaged Node');}
+  const env = Object.freeze({ ...(operator?{BILLBOARD_OPERATOR_PROFILE:'1',OTEL_SDK_DISABLED:'true',OTEL_PROPAGATORS:'none'}:{}),PATH: `${path.dirname(trusted.nodeExecutable)}:/usr/bin:/bin:/usr/sbin:/sbin`,
     HOME: os.homedir(), TMPDIR: os.tmpdir(), LANG: 'C.UTF-8' });
   function call(operation, tail) {
     const argv = Object.freeze([trusted.cliPath, operation,

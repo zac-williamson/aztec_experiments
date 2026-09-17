@@ -1,0 +1,15 @@
+✔ report output accepts new report (11.784209ms)
+✔ report output accepts same intent (6.164167ms)
+✔ report preflight rejects unrelated report before transactions (1.353333ms)
+✔ report preflight rejects dangling symlink before transactions (0.805875ms)
+✔ report preflight rejects missing parent before transactions (0.611542ms)
+✔ result intent mismatch cannot create a misleading report (1.602542ms)
+✔ destination changed during deployment is preserved (7.335ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 88.264542

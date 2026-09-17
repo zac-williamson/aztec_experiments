@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import {assertOperatorEnvironment} from '../../../../scripts/operator-launch.mjs';
+if(process.env.BILLBOARD_OPERATOR_PROFILE==='1')assertOperatorEnvironment();
 // ============================================================
 // cli.mjs — CLI tool for Billboard contract deployment
 // ============================================================
@@ -14,25 +16,12 @@
 // Usage:
 //   node cli.mjs [options]
 //
-// Options:
-//   --contract-salt <num>    Contract deployment salt (default: 2028)
-//   --node-url <url>         Explicit Aztec node URL (required)
-//   --eth-rpc <url>          Ethereum RPC URL
-//   --aztec-wallet <file>    Path to Aztec wallet.json
-//   --eth-wallet <file>      Path to ETH wallet JSON
-//   --censor <addr>          Censor Aztec address (default: 0x0035ab...; use 0x0 to disable)
-//   --k-multiplier <num>     K multiplier for censored cooldown (default: 4)
-//   --min-deposit <eth>      Minimum deposit in ETH (default: 0.002)
-//   --max-deposit <eth>      Required maximum deposit in ETH
-//   --retry-ethereum true  Retry only the saved Ethereum request with its original nonce
-//   --ready-tx <hash>        Original binding transaction to resume Ready activation
-//   --base-cooldown <sec>    Posting cooldown at min deposit in seconds (default: 10)
-//   --censor-window <sec>    Min time censor has to flag a post before screening (default: 3600)
-//   --max-save-up <num>      Max posts that can be saved up for bursting (default: 16)
-//   --moderation-policy <text>  Moderation policy text (default: humorous default)
-// ============================================================
+// Required: --manifest PATH --aztec-wallet PATH --eth-wallet PATH
+// Optional: --ready-tx HASH --retry-ethereum true --report PATH
+// Board/network/actor settings come exclusively from the reviewed manifest.
 
 import fs from 'fs';
+import {deploymentManifestConfig} from '../../../../shared/deployment-manifest.mjs';
 import {createFileJournalStorage} from '../user/transaction-journal-store.mjs';
 import { createHash } from 'node:crypto';
 import BillboardCRS from '../../../../shared/crs-client.js';
@@ -47,37 +36,20 @@ const __realProcess = process; // save before bundle overrides it
 // Parse args
 // ============================================================
 function parseArgs() {
-  const args = {};
-  const argv = process.argv.slice(2);
-  for (let i = 0; i < argv.length; i++) {
-    if (argv[i].startsWith('--') && i + 1 < argv.length) {
-      args[argv[i].slice(2)] = argv[i + 1];
-      i++;
-    }
-  }
+  const args={},allowed=new Set(['manifest','aztec-wallet','eth-wallet','ready-tx','retry-ethereum','report']);
+  for(let i=2;i<process.argv.length;i+=2){const name=process.argv[i].slice(2);if(!process.argv[i].startsWith('--')||!allowed.has(name)||Object.hasOwn(args,name)||!process.argv[i+1])throw new Error('Invalid deployment option');args[name]=process.argv[i+1];}
+  if(!args.manifest)throw new Error('--manifest is required; review explicit network, actors, artifacts and board settings first');
   return args;
 }
-const args = parseArgs();
-
-// ============================================================
-// Config
-// ============================================================
-const network = validateCliNetwork({nodeUrl:args['node-url'],ethRpcUrl:args['eth-rpc']});
-const AZTEC_NODE_URL = network.nodeUrl;
-const AZTEC_API_KEY = __realProcess.env.AZTEC_API_KEY || '';
-const ETH_RPC_URL = network.ethRpcUrl;
-// Defaults match the deploy UI template (salt 2028, 0.002 ETH, 10s, K=4, censor set)
-const CONTRACT_SALT = parseInt(args['contract-salt'] || args['salt']) || 2028;
-const PROJECT_ROOT = path.join(__dirname, '..', '..', '..', '..');
-const AZTEC_WALLET_PATH = args['aztec-wallet'];
-const ETH_WALLET_PATH = args['eth-wallet'];
-const CENSOR_ADDR = args['censor'] || '0x0035abfebdafd10697b8a9a5de2792715602ff077787ca6cfefdab632547189f';
-const K_MULTIPLIER = args['k-multiplier'] ? parseInt(args['k-multiplier']) : 4;
-const MIN_DEPOSIT_ETH = args['min-deposit'] || '0.002';
-const BASE_COOLDOWN = args['base-cooldown'] ? parseInt(args['base-cooldown']) : 10;
-const CENSOR_WINDOW = args['censor-window'] ? parseInt(args['censor-window']) : 3600;
-const MAX_SAVE_UP = args['max-save-up'] ? parseInt(args['max-save-up']) : 16;
-const MODERATION_POLICY = args['moderation-policy'] || null; // null = use default
+const args=parseArgs();
+const manifestFd=fs.openSync(args.manifest,fs.constants.O_RDONLY|fs.constants.O_NOFOLLOW);
+let manifestConfig;
+try{if(!fs.fstatSync(manifestFd).isFile()||fs.fstatSync(manifestFd).size>65536)throw new Error('Invalid deployment manifest file');manifestConfig=deploymentManifestConfig(JSON.parse(fs.readFileSync(manifestFd,'utf8')));}finally{fs.closeSync(manifestFd);}
+const network=validateCliNetwork({nodeUrl:manifestConfig.aztecNodeUrl,ethRpcUrl:manifestConfig.ethRpcUrl});
+const AZTEC_NODE_URL=network.nodeUrl,ETH_RPC_URL=network.ethRpcUrl;
+const AZTEC_API_KEY=__realProcess.env.AZTEC_API_KEY||'';
+const PROJECT_ROOT=path.join(__dirname,'..','..','..','..');
+const AZTEC_WALLET_PATH=args['aztec-wallet'],ETH_WALLET_PATH=args['eth-wallet'];
 
 // ============================================================
 // Monkey-patch fetch BEFORE loading SDK (adds API key for Aztec RPC)
@@ -328,7 +300,7 @@ async function main() {
   log('Billboard CLI Deploy Tool', 'info');
   log('  Using explicit Aztec RPC endpoint.', 'info');
   log('  Using explicit Ethereum RPC endpoint.', 'info');
-  log('  Salt:       ' + CONTRACT_SALT, 'info');
+  log('  Salt:       ' + manifestConfig.contractSalt, 'info');
   log('', 'info');
 
   const {ethWallet,aztecWallet}=loadCliWalletInputs({action:'deploy',aztecWalletPath:AZTEC_WALLET_PATH,ethWalletPath:ETH_WALLET_PATH});
@@ -359,27 +331,24 @@ async function main() {
     artifact,
   };
 
-  const config = {
-    aztecNodeUrl: AZTEC_NODE_URL,
-    aztecApiKey: AZTEC_API_KEY,
-    ethRpcUrl: ETH_RPC_URL,
-    contractSalt: CONTRACT_SALT,
-    aztecWallet, ethWallet,
-    dataDirPrefix: 'pxe_bb_cli_',
-    censor: CENSOR_ADDR,
-    kMultiplier: K_MULTIPLIER,
-    minDepositWei: ethers.parseEther(MIN_DEPOSIT_ETH),
-    maxDepositWei: args['max-deposit'] ? ethers.parseEther(args['max-deposit']) : undefined,
-    readyTxHash: args['ready-tx'],
-    retryEthereum: args['retry-ethereum'] === 'true',
-    baseCooldown: BASE_COOLDOWN,
-    censorWindow: CENSOR_WINDOW,
-    maxSaveUp: MAX_SAVE_UP,
-    moderationPolicy: MODERATION_POLICY, // null => engine uses default
-  };
+  const config = {...manifestConfig,aztecApiKey:AZTEC_API_KEY,aztecWallet,ethWallet,
+    dataDirPrefix:'pxe_bb_cli_',readyTxHash:args['ready-tx'],retryEthereum:args['retry-ethereum']==='true'};
 
+  // Validate and reserve report output before any deployment transaction.
+  const reportPath=path.resolve(args.report||args.manifest+'.report.json');
+  const intentDigest='0x'+createHash('sha256').update(JSON.stringify(manifestConfig.deploymentManifest)).digest('hex');
+  const reportIdentity=()=>{try{const st=fs.lstatSync(reportPath);if(!st.isFile()||st.isSymbolicLink()||st.size>131072)throw Error('Invalid deployment report');return st.dev+':'+st.ino+':'+st.size+':'+st.mtimeMs;}catch(error){if(error.code==='ENOENT')return null;throw error;}};
+  const previousReport=reportIdentity();
+  if(previousReport!==null){const fd=fs.openSync(reportPath,fs.constants.O_RDONLY|fs.constants.O_NOFOLLOW);try{const old=JSON.parse(fs.readFileSync(fd,'utf8'));if(old.schemaVersion!==1||old.intentDigest!==intentDigest)throw Error('Refusing to overwrite unrelated deployment report');}finally{fs.closeSync(fd);}}
+  const temporary=reportPath+'.'+__realProcess.pid+'.tmp';
+  const reportFd=fs.openSync(temporary,'wx',0o600);
   try {
     const result = await globalThis.runDeploy(env, config);
+    if(result.intentDigest!==intentDigest)throw Error('Deployment report identity mismatch');
+    fs.writeFileSync(reportFd,JSON.stringify({schemaVersion:1,recordedAt:new Date().toISOString(),manifest:manifestConfig.deploymentManifest,...result},null,2)+'\n');fs.fsyncSync(reportFd);
+    if(reportIdentity()!==previousReport)throw Error('Deployment report changed during deployment');
+    fs.renameSync(temporary,reportPath);
+    log('Deployment report: '+reportPath,'info');
     log('', 'info');
     log('========================================', 'success');
     log(result.status === 'active' ? '  Deployment complete!' : '  Deployment saved; network settlement pending. Resume with the same settings.', result.status === 'active' ? 'success' : 'info');
@@ -390,8 +359,8 @@ async function main() {
   } catch (e) {
     log('', 'error');
     log('Deployment did not complete. Preserve its transaction records and check receipts before retrying.', 'error');
-    __realProcess.exit(1);
-  }
+    __realProcess.exitCode=1;
+  } finally { fs.closeSync(reportFd); if(fs.existsSync(temporary))fs.unlinkSync(temporary); }
 }
 
 main().catch(e => { log('Deployment setup failed. Check explicit RPC endpoints and private wallet files.', 'error'); __realProcess.exit(1); });

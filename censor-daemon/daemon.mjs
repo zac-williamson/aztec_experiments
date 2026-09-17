@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import {assertOperatorEnvironment} from '../scripts/operator-launch.mjs';
+if(process.env.BILLBOARD_OPERATOR_PROFILE==='1')assertOperatorEnvironment();
 // Host orchestrator. Production model execution always uses the isolated runtime.
 import fs from 'node:fs';
 import {createHash,randomUUID} from 'node:crypto';

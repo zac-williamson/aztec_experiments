@@ -1,3 +1,5 @@
+import {assertOperatorEnvironment} from '../../../../scripts/operator-launch.mjs';
+if(process.env.BILLBOARD_OPERATOR_PROFILE==='1')assertOperatorEnvironment();
 // Offline wallet, collateral-secret and transaction-journal portability.
 import fs from 'node:fs';
 import path from 'node:path';

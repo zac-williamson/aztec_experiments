@@ -25,6 +25,8 @@
     "constructor(address rollup, bytes32 board, uint256 version, uint256 minDeposit, uint256 maxDeposit, bytes32 configHash)",
     "function L2_CONTRACT() view returns (bytes32)",
     "function ROLLUP() view returns (address)",
+    "function INBOX() view returns (address)",
+    "function OUTBOX() view returns (address)",
     "function VERSION() view returns (uint256)",
     "function L1_CHAIN_ID() view returns (uint256)",
     "function MIN_DEPOSIT() view returns (uint256)",
@@ -280,6 +282,17 @@
   // ============================================================
   g.runDeploy = async function(env, config) {
     const { aztec: a, ethers, log, pause, initCRS, createStore, portalBytecode, artifact } = env;
+    const verified=a.verifyDeploymentInputs(config.deploymentManifest,{artifact,portalBytecode,runtimeMetadata:a.portalRuntimeMetadata,config,ethers});
+    const manifest=verified.manifest;
+    const rawNode=a.createAztecNodeClient(config.aztecNodeUrl);
+    const ownedProviders=new Set();
+    try {
+    const preflightProvider=new ethers.JsonRpcProvider(config.ethRpcUrl);
+    ownedProviders.add(preflightProvider);
+    const {nodeInfo,l1Contracts}=await a.preflightDeploymentNetwork(manifest,{node:rawNode,provider:preflightProvider,ethers});
+    const expectedClass=await a.getContractClassFromArtifact(a.loadContractArtifact(artifact));
+    if(expectedClass.id.toString().toLowerCase()!==manifest.artifacts.boardClassId)throw new Error('Deployment board class mismatch');
+
 
     // ============================================================
     // Step 1: Load Aztec wallet
@@ -292,7 +305,7 @@
     }
 
     const saltVal = BigInt(aztecWallet.salt ?? 0);
-    const contractSalt = config.contractSalt || 1;
+    const contractSalt = config.contractSalt;
     const secretKeyHex = aztecWallet.secretKey;
 
     // ============================================================
@@ -318,16 +331,44 @@
     // ============================================================
     log('Step 2: Connecting to Aztec node...', 'info');
     const nodeUrl = config.aztecNodeUrl;
-    const rawNode = a.createAztecNodeClient(nodeUrl);
+
     const aztecNode = wrapWithRetry(rawNode, 'node', log);
-    const nodeInfo = await aztecNode.getNodeInfo();
+
     log('  Chain ID: ' + nodeInfo.l1ChainId, 'info');
     log('  Rollup version: ' + nodeInfo.rollupVersion, 'info');
 
-    const l1Contracts = await aztecNode.getL1ContractAddresses();
+
     const rollupAddr = l1Contracts.rollupAddress.toString();
     const version = nodeInfo.rollupVersion;
     log('  L1 Rollup: ' + rollupAddr, 'info');
+    if(address.toString().toLowerCase()!==manifest.actors.aztecDeployer)throw new Error('Aztec deployer differs from manifest');
+    // Get ETH signer
+    let ethSigner = null;
+    if (config.ethWallet && config.ethWallet.privateKey) {
+      log('  Using ETH wallet from config (local signing)...', 'info');
+      const provider = new ethers.JsonRpcProvider(config.ethRpcUrl);
+      ownedProviders.add(provider);
+      ethSigner = new ethers.Wallet(config.ethWallet.privateKey, provider);
+      log('  ETH address: ' + ethSigner.address, 'info');
+    } else if (env.getBrowserSigner) {
+      log('  Using browser wallet...', 'info');
+      ethSigner = await env.getBrowserSigner();
+    } else {
+      log('  No ETH wallet in config and no browser wallet. Pausing for user to import...', 'info');
+      const ethWalletData = await pause('import-eth-wallet');
+      if (!ethWalletData || !ethWalletData.privateKey) throw new Error('ETH wallet is required.');
+      const provider = new ethers.JsonRpcProvider(config.ethRpcUrl);
+      ownedProviders.add(provider);
+      ethSigner = new ethers.Wallet(ethWalletData.privateKey, provider);
+      log('  ETH address: ' + ethSigner.address, 'info');
+    }
+
+    const provider = ethSigner.provider;
+    if ((await a.boundedTransactionRead(()=>provider.getNetwork(),20000)).chainId !== BigInt(nodeInfo.l1ChainId)) throw new Error('L1 signer and Aztec node chain mismatch');
+
+    if((await ethSigner.getAddress()).toLowerCase()!==manifest.actors.ethereumDeployer)throw new Error('Ethereum deployer differs from manifest');
+    await a.preflightDeploymentNetwork(manifest,{node:rawNode,provider,ethers});
+
 
     // Check fee juice balance
     try {
@@ -415,17 +456,17 @@
     const contractArtifact = a.loadContractArtifact(artifact);
     // Constructor args for init(min_deposit, base_cooldown, censor, k,
     //                          censor_window, max_save_up, policy, policy_len)
-    const minDepositWei = config.minDepositWei ?? ethers.parseEther('0.001');
+    const minDepositWei = config.minDepositWei;
     if (config.maxDepositWei == null) throw new Error('Maximum deposit must be configured for this fresh deployment');
     const maxDepositWei = BigInt(config.maxDepositWei);
-    const baseCooldown = config.baseCooldown || 3600;
+    const baseCooldown = config.baseCooldown;
     if (!config.censor || BigInt(config.censor) === 0n) throw new Error('A nonzero censor must be configured');
     const censorAddr = a.AztecAddress.fromFieldUnsafe(a.Fr.fromHexString(config.censor));
-    const kMultiplier = config.kMultiplier || 64;
-    const censorWindow = config.censorWindow || 3600;
-    const maxSaveUp = config.maxSaveUp || 16;
+    const kMultiplier = config.kMultiplier;
+    const censorWindow = config.censorWindow;
+    const maxSaveUp = config.maxSaveUp;
     // Moderation policy: pack string into Field array (48 fields, 1488 bytes max)
-    const policyText = config.moderationPolicy !== undefined ? config.moderationPolicy : (g.DEFAULT_MODERATION_POLICY || '');
+    const policyText = config.moderationPolicy;
     const packFn = g.packStringToFields;
     if (!packFn) throw new Error('packStringToFields not available (load moderation-policy.js)');
     const { fields: policyFields, len: policyLen } = packFn(policyText);
@@ -505,13 +546,16 @@
       await pxe.registerContract(finalInstance);
     }
 
+    const deployedInstance=await a.boundedTransactionRead(()=>rawNode.getContract(l2Addr),20000);
+    if(!deployedInstance || ['originalContractClassId','currentContractClassId'].some(key=>deployedInstance[key]?.toString().toLowerCase()!==manifest.artifacts.boardClassId))throw new Error('Deployed board original/current class identity mismatch');
     const l2Contract = await a.Contract.at(l2Addr, contractArtifact, wallet);
     log('  Contract registered with PXE.', 'success');
 
     const scalar = result => { const value = result?.result ?? result?.value ?? result; return BigInt((value?.inner ?? value).toString()); };
-    const readPortal = async () => ethers.getAddress('0x' + scalar(await l2Contract.methods.get_portal().simulate({ from: address })).toString(16).padStart(40, '0'));
-    const portalState = await l2Contract.methods.is_portal_set().simulate({ from: address });
-    const portalAlreadySet = (portalState?.result ?? portalState?.value ?? portalState) === true;
+    const readPortal = async () => ethers.getAddress('0x' + scalar(await a.boundedTransactionRead(()=>l2Contract.methods.get_portal().simulate({ from: address }),20000)).toString(16).padStart(40, '0'));
+    const portalState = await a.boundedTransactionRead(()=>l2Contract.methods.is_portal_set().simulate({ from: address }),20000);
+    const portalAlreadySet = portalState?.result ?? portalState?.value ?? portalState;
+    if(typeof portalAlreadySet!=='boolean')throw new Error('Malformed portal binding state');
     if(staleDeployment?.startsWith('bind-portal:')&&portalAlreadySet)throw unresolved();
     const wordHash = (label, words) => {
       const bytes = ethers.AbiCoder.defaultAbiCoder().encode(['bytes32', ...words.map(() => 'uint256')],
@@ -521,7 +565,13 @@
     const configHash = wordHash('AZTEC_BB_CONFIG_V1', [1n, BigInt(nodeInfo.l1ChainId), BigInt(rollupAddr),
       BigInt(l2Addr.toString()), BigInt(version), BigInt(minDepositWei), maxDepositWei,
       BigInt(baseCooldown), BigInt(kMultiplier), BigInt(censorWindow), BigInt(maxSaveUp)]);
-    if (scalar(await l2Contract.methods.get_config_hash().simulate({ from: address })) !== BigInt(configHash)) {
+    const expectedPolicyVersion=await a.deploymentPolicyVersion(l2Addr.toString().toLowerCase(),policyText);
+    const verifyBoardPolicy=async()=>{
+      const [censor,policy]=await a.boundedTransactionRead(()=>Promise.all([l2Contract.methods.get_censor().simulate({from:address}),l2Contract.methods.get_policy_version().simulate({from:address})]),20000);
+      if(scalar(censor)!==BigInt(manifest.board.censor)||scalar(policy)!==BigInt(expectedPolicyVersion))throw new Error('Board censor or policy differs from manifest');
+    };
+    await verifyBoardPolicy();
+    if (scalar(await a.boundedTransactionRead(()=>l2Contract.methods.get_config_hash().simulate({ from: address }),20000)) !== BigInt(configHash)) {
       throw new Error('Deployed board configuration differs from requested configuration');
     }
 
@@ -531,27 +581,6 @@
     log('Step 8: Deploying L1 portal...', 'info');
     const l2AddrHex = '0x' + BigInt(l2Addr.toString()).toString(16).padStart(64, '0');
 
-    // Get ETH signer
-    let ethSigner = null;
-    if (config.ethWallet && config.ethWallet.privateKey) {
-      log('  Using ETH wallet from config (local signing)...', 'info');
-      const provider = new ethers.JsonRpcProvider(config.ethRpcUrl);
-      ethSigner = new ethers.Wallet(config.ethWallet.privateKey, provider);
-      log('  ETH address: ' + ethSigner.address, 'info');
-    } else if (env.getBrowserSigner) {
-      log('  Using browser wallet...', 'info');
-      ethSigner = await env.getBrowserSigner();
-    } else {
-      log('  No ETH wallet in config and no browser wallet. Pausing for user to import...', 'info');
-      const ethWalletData = await pause('import-eth-wallet');
-      if (!ethWalletData || !ethWalletData.privateKey) throw new Error('ETH wallet is required.');
-      const provider = new ethers.JsonRpcProvider(config.ethRpcUrl);
-      ethSigner = new ethers.Wallet(ethWalletData.privateKey, provider);
-      log('  ETH address: ' + ethSigner.address, 'info');
-    }
-
-    const provider = ethSigner.provider;
-    if ((await provider.getNetwork()).chainId !== BigInt(nodeInfo.l1ChainId)) throw new Error('L1 signer and Aztec node chain mismatch');
     if (typeof env.createJournalStorage !== 'function' || typeof a.createEthereumJournal !== 'function') throw Object.assign(new Error('Ethereum deployment recovery storage is required.'), { code: 'BB_JOURNAL_INVALID' });
     const creation = portalCreationBytecode(portalBytecode, PORTAL_ABI, rollupAddr, l2AddrHex, version, minDepositWei, maxDepositWei, configHash, ethers);
     const ethereumScope = { account: address.toString().toLowerCase(), chainId: String(nodeInfo.l1ChainId),
@@ -570,10 +599,13 @@
       predicted=originalPortal;
     }
     log('  Portal address: ' + predicted, 'info');
-    if (await provider.getCode(predicted) === '0x') {
+    if (await a.boundedTransactionRead(()=>provider.getCode(predicted),20000) === '0x') {
       if(staleDeployment?.startsWith('bind-portal:'))throw unresolved();
       if (portalAlreadySet) throw new Error('The bound portal has no code; preserve deployment recovery records.');
-      const hasProxy = await provider.getCode(CREATE2_PROXY) !== '0x';
+      const proxyCode=await a.boundedTransactionRead(()=>provider.getCode(CREATE2_PROXY),20000);
+      const pinnedProxy='0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3';
+      if(proxyCode!=='0x'&&proxyCode.toLowerCase()!==pinnedProxy)throw new Error('Unsupported CREATE2 proxy runtime');
+      const hasProxy=proxyCode!=='0x';
       const result = await ethereumDeployment.send(nonce => {
         const portalAddress = hasProxy ? predicted.toLowerCase() : ethers.getCreateAddress({ from: ethereumScope.depositor, nonce }).toLowerCase();
         return { data: hasProxy ? ethers.concat([ethers.getBytes(l2AddrHex), creation]) : creation, value: '0',
@@ -584,11 +616,13 @@
       log('  Portal deployment confirmed: ' + result.txHash, 'success');
     }
 
+    await a.preflightDeploymentNetwork(manifest,{node:rawNode,provider,ethers});
+    a.verifyPortalRuntime(await a.boundedTransactionRead(()=>provider.getCode(predicted),20000),a.portalRuntimeMetadata,{MIN_DEPOSIT:BigInt(minDepositWei),MAX_DEPOSIT:maxDepositWei,L2_CONTRACT:l2AddrHex,ROLLUP:manifest.network.rollup,INBOX:manifest.network.inbox,OUTBOX:manifest.network.outbox,VERSION:BigInt(version),L1_CHAIN_ID:BigInt(nodeInfo.l1ChainId),CONFIG_HASH:configHash});
     const portal = new ethers.Contract(predicted, PORTAL_ABI, ethSigner);
-    const values = await Promise.all([portal.L2_CONTRACT(), portal.ROLLUP(), portal.VERSION(),
-      portal.L1_CHAIN_ID(), portal.MIN_DEPOSIT(), portal.MAX_DEPOSIT(), portal.CONFIG_HASH()]);
+    const values = await a.boundedTransactionRead(()=>Promise.all([portal.L2_CONTRACT(), portal.ROLLUP(), portal.VERSION(),
+      portal.L1_CHAIN_ID(), portal.MIN_DEPOSIT(), portal.MAX_DEPOSIT(), portal.CONFIG_HASH(),portal.INBOX(),portal.OUTBOX()]),20000);
     const expected = [BigInt(l2AddrHex), BigInt(rollupAddr), BigInt(version), BigInt(nodeInfo.l1ChainId),
-      BigInt(minDepositWei), maxDepositWei, BigInt(configHash)];
+      BigInt(minDepositWei), maxDepositWei, BigInt(configHash),BigInt(manifest.network.inbox),BigInt(manifest.network.outbox)];
     if (values.some((value, index) => BigInt(value) !== expected[index])) throw new Error('Portal configuration mismatch');
 
     const recoveredBindingHash = recoveredDeployment?.operation === 'bind-portal:' + predicted.toLowerCase() &&
@@ -605,10 +639,13 @@
       if ((await readPortal()).toLowerCase() !== predicted.toLowerCase()) throw new Error('Portal binding did not persist');
     }
 
+    await verifyBoardPolicy();
     const ethereumActivation = await a.createEthereumJournal({ ...ethereumOptions, scope: { ...ethereumScope, portal: predicted.toLowerCase() },
       minimumNonce: recoveredCreation ? recoveredCreation.request.nonce + 1 : 0 });
     await ethereumActivation.reconcilePrevious({ retry: config.retryEthereum === true });
-    if (!await portal.depositsEnabled()) {
+    const depositsEnabled=await a.boundedTransactionRead(()=>portal.depositsEnabled(),20000);
+    if(typeof depositsEnabled!=='boolean')throw new Error('Malformed portal deposit state');
+    if (!depositsEnabled) {
       if (!readyTxHash) throw new Error('Portal awaits Ready proof: provide the original readyTxHash to resume activation');
       const ready = wordHash('AZTEC_BB_READY_V1', [1n, BigInt(nodeInfo.l1ChainId), BigInt(predicted),
         BigInt(l2AddrHex), BigInt(version), BigInt(configHash)]);
@@ -620,11 +657,13 @@
       const activation = await activateReady({ node: rawNode, portal, hash, leaf, ethers, log,
         activate: async args => (await ethereumActivation.send({ data: new ethers.Interface(PORTAL_ABI).encodeFunctionData('activate', args),
           value: '0', expected: { kind: 'activate-portal', portal: predicted.toLowerCase(), configHash: configHash.toLowerCase() } })).receipt });
-      if (activation.status !== 'active') return { l2Addr: l2Addr.toString(), portalAddr: predicted, readyTxHash, configHash, status: activation.status };
+      if (activation.status !== 'active') return { l2Addr: l2Addr.toString(), portalAddr: predicted, readyTxHash, configHash, intentDigest:verified.intentDigest, policyVersion:expectedPolicyVersion, status: activation.status };
     }
+    await verifyBoardPolicy();
     log('Board and portal are linked; authenticated Ready enabled deposits.', 'success');
 
-    return { l2Addr: l2Addr.toString(), portalAddr: predicted, readyTxHash, configHash, status: 'active' };
+    return { l2Addr: l2Addr.toString(), portalAddr: predicted, readyTxHash, configHash, intentDigest:verified.intentDigest, policyVersion:expectedPolicyVersion, status: 'active' };
     } finally { await pxe.stop(); }
+    } finally { for(const provider of ownedProviders)provider.destroy(); }
   };
 })();

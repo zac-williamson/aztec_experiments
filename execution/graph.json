@@ -1085,7 +1085,7 @@
       "title": "Build fail-closed deployment and configuration verification",
       "phase": "engineering",
       "kind": "internal",
-      "status": "active",
+      "status": "done",
       "depends_on": [
         "A01",
         "W01",
@@ -1109,7 +1109,8 @@
         "scripts/",
         "censor-daemon/",
         "apps/src/billboard/user/",
-        "README.md"
+        "README.md",
+        "docs/"
       ],
       "plan": "tasks/D01.md",
       "actions": [
@@ -1144,7 +1145,7 @@
       "evidence": "evidence/D01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Implement reviewed deployment manifest, exact portal runtime/network preflight and supported operator launch/package controls per evidence/D01/implementation-plan.md.",
+      "checkpoint": "Complete: reviewed deployment manifests, exact actual runtime/network verification, recoverable truthful setup, clean source-bound operator package. Evidence D01.json; continue next ready package.",
       "priority": 18
     },
     {

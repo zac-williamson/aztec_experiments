@@ -77,7 +77,9 @@ const callDeploy = makeCallEngine((env, config) => runDeploy(env, config), {
   createJournalStorage: () => window.__aztec.createBrowserJournalStorage(),
   createTransactionJournal: options => window.__aztec.createL2Journal({...options, storage: window.__aztec.createBrowserJournalStorage()}),
 });
+let deploymentReportUrl;
 async function startDeploy() {
+  if(deploymentReportUrl){URL.revokeObjectURL(deploymentReportUrl);deploymentReportUrl=null;}
   clearStatus('status');
 
   const threading = getThreadingMode();
@@ -89,41 +91,22 @@ async function startDeploy() {
     return;
   }
 
-  const contractSalt = parseInt(document.getElementById('contractSalt').value) || 1;
-  const censorAddrStr = (document.getElementById('censorAddr').value || '').trim();
-  const kMultiplierStr = (document.getElementById('kMultiplier').value || '').trim();
-  const minDepositEth = (document.getElementById('minDepositEth').value || '0.001').trim();
-  const baseCooldown = parseInt(document.getElementById('baseCooldown').value || '3600');
-  const censorWindow = parseInt(document.getElementById('censorWindow')?.value || '3600');
-  const maxSaveUp = parseInt(document.getElementById('maxSaveUp')?.value || '16');
-  const moderationPolicy = (document.getElementById('moderationPolicy') || {}).value || '';
-  const ws = window.walletState;
-
-  _currentStatusDiv = 'status';
-  const extraConfig = {
-    contractSalt: contractSalt,
-    retryEthereum: document.getElementById('retryEthereum')?.checked === true,
-    dataDirPrefix: 'pxe_bb_',
-  };
-  // Only pass censor config if the user provided values
-  if (censorAddrStr) extraConfig.censor = censorAddrStr;
-  if (kMultiplierStr) extraConfig.kMultiplier = parseInt(kMultiplierStr);
-  // Deployer-configurable parameters
-  extraConfig.minDepositWei = ethers.parseEther(minDepositEth);
-  extraConfig.maxDepositWei = ethers.parseEther(document.getElementById('maxDepositEth').value.trim());
-  extraConfig.readyTxHash = document.getElementById('readyTxHash').value.trim() || undefined;
-  extraConfig.baseCooldown = baseCooldown;
-  extraConfig.censorWindow = censorWindow;
-  extraConfig.maxSaveUp = maxSaveUp;
-  // Moderation policy (empty string => engine uses default)
-  extraConfig.moderationPolicy = moderationPolicy.trim() || undefined;
+  let extraConfig;
+  try{extraConfig=window.__aztec.deploymentManifestConfig(JSON.parse(document.getElementById('deploymentManifest').value));}
+  catch(error){log('Import a valid reviewed deployment manifest before deploying.','error','status');return;}
+  extraConfig.retryEthereum=document.getElementById('retryEthereum')?.checked===true;
+  extraConfig.readyTxHash=document.getElementById('readyTxHash').value.trim()||undefined;
+  extraConfig.dataDirPrefix='pxe_bb_';
+  _currentStatusDiv='status';
 
   try {
     const result = await callDeploy('deploy', 'status', extraConfig);
     log('', 'info', 'status');
     log(result.status === 'active' ? 'Deployment complete. The board is ready to use.' : 'Deployment saved. Network settlement is pending; resume with the same settings later.', result.status === 'active' ? 'success' : 'info', 'status');
+    const report=new Blob([JSON.stringify({schemaVersion:1,manifest:extraConfig.deploymentManifest,...result},null,2)],{type:'application/json'});
+    const reportLink=document.createElement('a');reportLink.textContent='Download deployment report';reportLink.download='deployment-report.json';deploymentReportUrl=URL.createObjectURL(report);reportLink.href=deploymentReportUrl;document.getElementById('status').appendChild(reportLink);
     if (result.readyTxHash) document.getElementById('readyTxHash').value = result.readyTxHash;
-    log('  Salt: ' + (extraConfig.contractSalt || 1), 'info', 'status');
+    log('  Salt: ' + extraConfig.contractSalt, 'info', 'status');
     log('  L2:   ' + result.l2Addr, 'info', 'status');
     log('  L1:   ' + result.portalAddr, 'info', 'status');
 
@@ -152,21 +135,9 @@ async function startDeploy() {
 // ============================================================
 function waitForBundleThenInit() {
   if (window.__aztec && window.__aztec.createPXE) {
-    // Pre-fill moderation policy textarea with the default policy
-    const policyEl = document.getElementById('moderationPolicy');
-    if (policyEl && !policyEl.value.trim() && window.DEFAULT_MODERATION_POLICY) {
-      policyEl.value = window.DEFAULT_MODERATION_POLICY;
-    }
     initWalletButtons('walletButtonsContainer', {
       statusId: 'status',
       ethRpcUrl: ETH_RPC_URL,
-      onAztecLoad: (address) => {
-        const censorInput = document.getElementById('censorAddr');
-        if (censorInput && !censorInput.value.trim() && address) {
-          censorInput.value = address.toString();
-          log('Auto-filled censor address from loaded wallet: ' + address.toString(), 'info', 'status');
-        }
-      },
       onReady: async () => {
         log('Both wallets ready. Click the Deploy button to begin.', 'success', 'status');
       },
@@ -176,3 +147,9 @@ function waitForBundleThenInit() {
   }
 }
 waitForBundleThenInit();
+
+async function importDeploymentManifest(input){
+  const file=input.files?.[0];if(!file)return;
+  try{if(file.size>65536)throw Error();const text=await file.text();const m=window.__aztec.validateDeploymentManifest(JSON.parse(text));document.getElementById('deploymentManifest').value=JSON.stringify(m);document.getElementById('manifestSummary').textContent='Configuration to review: chain '+m.network.chainId+', rollup '+m.network.rollup+', Aztec deployer '+m.actors.aztecDeployer+', Ethereum deployer '+m.actors.ethereumDeployer+', censor '+m.board.censor+'. Deposit range (wei): '+m.board.minDeposit+'–'+m.board.maxDeposit+'. Policy: '+m.board.policy;}
+  catch{document.getElementById('deploymentManifest').value='';document.getElementById('manifestSummary').textContent='Invalid deployment manifest.';}
+}

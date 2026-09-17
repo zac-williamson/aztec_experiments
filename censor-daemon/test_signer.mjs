@@ -232,3 +232,21 @@ test('inspectFlag uses read-only CLI branch without reconciliation',t=>{
 test('inspectFlag accepts empty authenticated journal',t=>{const {signer}=fixture(t,()=>JSON.stringify({...journalOutcome,txHash:null,predecessorTxHashes:[]}));assert.equal(signer.inspectFlag(request).txHash,null);});
 for(const change of [{postId:id(2)},{policyVersion:id(2)},{txHash:'bad'},{txHash:undefined},{txHash:null},{predecessorTxHashes:[id(40)]},{predecessorTxHashes:[id(39),id(39)]},{predecessorTxHashes:['bad']},{predecessorTxHashes:Array.from({length:9},(_,i)=>id(50+i))}])test('inspectFlag rejects malformed/mismatched journal '+JSON.stringify(change),t=>{const {signer}=fixture(t,()=>JSON.stringify({...journalOutcome,...change}));assert.throws(()=>signer.inspectFlag(request));});
 for(const output of ['garbage','{"type":"billboard-moderation-journal-v1",',JSON.stringify(journalOutcome)+'\n'+JSON.stringify(journalOutcome)])test('inspectFlag rejects ambiguous or malformed output',t=>{const {signer}=fixture(t,()=>output);assert.throws(()=>signer.inspectFlag(request));});
+
+test('operator signer retains clean profile in actual child and rejects alternate executable', t => {
+  const keys=['BILLBOARD_OPERATOR_PROFILE','OTEL_SDK_DISABLED','OTEL_PROPAGATORS','NODE_OPTIONS','NODE_PATH',...Object.keys(process.env).filter(k=>k.startsWith('OTEL_'))];
+  const saved=new Map([...new Set(keys)].map(k=>[k,process.env[k]]));
+  try {
+    for(const key of saved.keys())delete process.env[key];
+    Object.assign(process.env,{BILLBOARD_OPERATOR_PROFILE:'1',OTEL_SDK_DISABLED:'true',OTEL_PROPAGATORS:'none'});
+    const {config}=fixture(t);
+    fs.writeFileSync(config.cliPath,'console.log(JSON.stringify({profile:process.env.BILLBOARD_OPERATOR_PROFILE,disabled:process.env.OTEL_SDK_DISABLED,propagators:process.env.OTEL_PROPAGATORS,options:process.env.NODE_OPTIONS??null,modulePath:process.env.NODE_PATH??null,flags:process.execArgv}));\n');
+    const output=JSON.parse(createSigner(config).flag({policyVersion:id(9),postId:id(5),reason:'Spam'}));
+    assert.deepEqual(output,{profile:'1',disabled:'true',propagators:'none',options:null,modulePath:null,flags:[]});
+    assert.throws(()=>createSigner({...config,nodeExecutable:'/bin/sh'}),/must use packaged Node/);
+    process.env.OTEL_PROPAGATORS='baggage';
+    assert.throws(()=>createSigner(config),/supported shell operator launcher/);
+  } finally {
+    for(const [key,value] of saved)if(value===undefined)delete process.env[key];else process.env[key]=value;
+  }
+});

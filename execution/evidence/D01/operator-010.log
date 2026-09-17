@@ -1,0 +1,20 @@
+✔ real shell rejects both preload mechanisms before any Node execution (17.267166ms)
+✔ module search overrides and unsupported telemetry reject before entrypoint (46.2235ms)
+✔ all routes are fixed and receive only cleaned environment, literal arguments (1487.819375ms)
+✔ unknown routes and execution overrides never reach an application (176.616041ms)
+✔ wrong packaged Node pin fails before application (56.668541ms)
+✔ environment helper rejects unsupported propagation and drops arbitrary values (0.483417ms)
+✔ runtime package excludes developer signing dependencies, TXE and path escapes (0.466083ms)
+✔ standalone recovery bundle validates real claim commitments without repository dependencies (1920.813ms)
+✔ inherited PATH cannot choose launcher Node or path helpers (96.84025ms)
+✔ dynamic CLI resources are explicit inventory requirements (0.2115ms)
+✔ package creation fails before creating output when build provenance is missing or stale (4.118584ms)
+✔ stale SDK inputs and changed public metadata are rejected despite matching saved SDK output bytes (1650.407042ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5529.747375

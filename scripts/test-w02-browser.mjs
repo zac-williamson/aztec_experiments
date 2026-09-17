@@ -156,7 +156,8 @@ try {
   const deployResult=await deploy.page.evaluate(async()=>{
     let calls=0;
     window.runDeploy=async()=>{calls++;return{status:'pending-settlement',l2Addr:'0x'+'2'.padStart(64,'0'),portalAddr:'0x'+'22'.repeat(20),readyTxHash:'0x'+'44'.repeat(32)};};
-    document.getElementById('maxDepositEth').value='1';
+    const word=n=>'0x'+BigInt(n).toString(16).padStart(64,'0');
+    document.getElementById('deploymentManifest').value=JSON.stringify({schemaVersion:1,profile:'local-test',network:{nodeUrl:'http://localhost:8080/',ethRpcUrl:'http://localhost:8545/',chainId:'31337',rollupVersion:'5',rollup:'0x'+'33'.repeat(20),inbox:'0x'+'66'.repeat(20),outbox:'0x'+'77'.repeat(20)},actors:{aztecDeployer:window.walletState.aztec.address.toString(),ethereumDeployer:'0x'+'44'.repeat(20)},board:{salt:'1',minDeposit:'1',maxDeposit:'100',baseCooldown:'10',kMultiplier:'64',censorWindow:'10',maxSaveUp:'16',censor:word(1),policy:'Be kind.'},artifacts:{boardJsonSha256:word(1),boardClassId:word(2),portalCreationSha256:word(3),portalRuntimeMetadataSha256:word(4)}});
     await startDeploy();
     const pending=document.getElementById('status').textContent.includes('Network settlement is pending');
     const hashSaved=document.getElementById('readyTxHash').value==='0x'+'44'.repeat(32);

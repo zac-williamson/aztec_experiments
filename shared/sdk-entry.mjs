@@ -54,3 +54,7 @@ export { createJournalBackup } from './journal-backup.mjs';
 export { extractApplicationNullifier } from './application-nullifier.mjs';
 
 export { NoteStatus } from '@aztec/stdlib/note';
+
+export {validateDeploymentManifest,deploymentManifestConfig,verifyDeploymentInputs,preflightDeploymentNetwork,deploymentPolicyVersion} from './deployment-manifest.mjs';
+export {verifyPortalRuntime} from './portal-runtime.mjs';
+export {default as portalRuntimeMetadata} from './portal-runtime.json' with {type:'json'};

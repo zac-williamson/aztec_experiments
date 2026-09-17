@@ -9,13 +9,15 @@ Production readiness remains the objective. Engineering continues against the pi
 - Escrow accounting, replay and reentrancy checks pass. Current artifacts are tied to source, with CI drift guards and an aggregate inventory.
 - Wallet recovery is complete for the supported route: random embedded Aztec keys, encrypted browser backups, exact salts, scoped encrypted CLI checkpoints and account/network/tab guards. Ethereum browser signing uses an external wallet.
 
-## Latest evidence
+## Current checkpoint
 
-125 integrated recovery/application checks and71 artifact checks pass. The actual built browser restores a wallet and collateral secret in a fresh profile, rejects a wrong password and blocks concurrent tabs. A genuine transaction signed with restored credentials claimed and posted using private fees in5m1s total. All owned processes/data cleaned; no network epoch proofs. See evidence/W02.json.
+D01 deployment verification is finishing. Reviewed manifests bind network, actors, economics, policy and artifact identity. Actual portal runtime mutation tests, built-browser recovery checks, 334 integrated checks and isolated operator-package smoke checks pass. Final evidence and commit are being prepared; continue the next ready graph package afterward.
 
-## Next work
+M03 is blocked: both measured small moderation models fail the unchanged accuracy thresholds. No production model is approved. X03 target-network clearance remains blocked on its dated evidence and must be freshly verified before release. These blockers do not prevent independent internal engineering.
 
-Continue the graph with trustworthy receipts and resumable transaction journals: unknown/reverted/reorganized outcomes, interruption recovery and withdrawal discovery beyond the old500-block window. Wallet backups do not yet provide a complete transaction journal. Later product, deployment/operations and final candidate gates remain open.
+## Historical progress log
+
+The entries below record earlier states; the graph and current checkpoint above are authoritative.
 
 W03 active: user Aztec transactions and Ethereum portal deposits/refunds now save encrypted recovery records before submission/signing. Ethereum recovery retains the original sender nonce and checks the exact transaction plus matching portal event; it can recover a refund after the active receipt becomes zero.182 integrated checks and93 artifact/client checks pass. Actual browser reload and real local Ethereum deposit/refund recovery pass, including lost responses and repeated recovery without another payment. See evidence/W03/ethereum-milestone-003.md.
 
@@ -88,3 +90,7 @@ Second M03 candidate running: pinned Qwen1.7B Q4 at2GiB, corrected unsupported r
 M03 blocked on measured classificationquality (both candidates fail unchanged thresholds); final bounded candidate run continues only to retain complete evidence. D01 active: reviewed deployment manifest, exact runtime/network checks and supported clean operator packaging. Scope includes shared/scripts/userCLI/daemon launch. Heavy jobs remain serial.
 
 M03 final secondrun332cases/400s:29false positives,19false negatives,zero unexpectederrors,p95 1.76s; verified runtime and clean shutdown. Quality gate remains blocked, no productionmodel endorsed. D01 runtimeverifier25tests pass, manifest integration in progress.
+
+D01 verification: real Anvil full portal runtime/9 immutable mutation checks pass; review fixed critical read deadlines, class identity, provider cleanup and pre-transaction report validation. Final built-browser/operator-package checks run serially.
+
+D01 complete: source c082d6c6;334 integrated checks, final130 signer checks, actual browser, real Anvil runtime mutation,9offline/report and12operator tests plus isolated package smoke pass. Continue next graph package. External gates and model quality remain incomplete.

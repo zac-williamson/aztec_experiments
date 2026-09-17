@@ -1,3 +1,4 @@
+import {buildPortalRuntime} from './build-portal-runtime.mjs';
 import { build } from 'esbuild';
 import { polyfillNode } from 'esbuild-plugin-polyfill-node';
 import fs from 'node:fs/promises';
@@ -8,6 +9,7 @@ import { assertNodeVersion, assertAztecPackages, pins } from './toolchain.mjs';
 
 assertNodeVersion();
 assertAztecPackages();
+const portalMetadata=buildPortalRuntime();
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const out = path.resolve(root, process.argv[2] || '.build/sdk');
@@ -67,7 +69,7 @@ const assets = [
 ];
 for (const [src, dest] of assets) await fs.copyFile(path.join(root, src), path.join(out, dest));
 const inputs = [...new Set([...Object.keys(main.metafile.inputs), ...Object.keys(workers.metafile.inputs),
-  ...assets.map(([src]) => src), 'scripts/toolchain.mjs', 'toolchain.json'])].sort();
+  ...assets.map(([src]) => src), 'scripts/toolchain.mjs', 'toolchain.json', 'scripts/build-portal-runtime.mjs',...Object.keys(portalMetadata.sources).map(name=>'billboard/portal/'+name)])].sort();
 const inputHashes = {};
 for (const filename of inputs) {
   try { inputHashes[filename] = sha(await fs.readFile(path.resolve(root, filename))); }

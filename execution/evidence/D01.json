@@ -1,0 +1,139 @@
+{
+  "task_id": "D01",
+  "outcome": "pass",
+  "recorded_at": "2026-09-17T14:50:42.948867+00:00",
+  "source_fingerprint": "c082d6c60e99f265b881aa024e46fdffe5651d8da50d0046baeb5da91be3ec36",
+  "source_inventory": "evidence/D01/source-012.json",
+  "artifacts": [
+    {
+      "path": "evidence/D01/source-012.json",
+      "sha256": "b842a9499d0d911d9028e46f8437ed0da51f916af263171178a251d20eb07e57"
+    },
+    {
+      "path": "evidence/D01/acceptance-012.md",
+      "sha256": "3b2a39b69448716fc1ec70d0cb1031152427c86886d41f0e512c4c2d3c94b5a5"
+    },
+    {
+      "path": "evidence/D01/review-012.md",
+      "sha256": "785f8a8201074ef942a7940a020c7af0bb362e042c89613cc07a2fb89ce050e1"
+    },
+    {
+      "path": "evidence/D01/sdk-001.log",
+      "sha256": "58b7d50cbf8b19aff89040273b276237fabde6f94c3a93c34476ca7bde1cae91"
+    },
+    {
+      "path": "evidence/D01/apps-004.log",
+      "sha256": "b266a46000f3028d298423e5aae0a1716b433dd21007a066726c321758346770"
+    },
+    {
+      "path": "evidence/D01/anvil-runtime-002.log",
+      "sha256": "746314036ddb62b4d05daa9581c95411e80259e85cfc4a8792a3948ec166c54e"
+    },
+    {
+      "path": "evidence/D01/integrated-007.log",
+      "sha256": "c7b393d0630476bf9411d323eaa66c236e1743fa966c3075838055a50d7c3b6b"
+    },
+    {
+      "path": "evidence/D01/browser-005.log",
+      "sha256": "54b0c9bacd0b033010f961015ff331ea7221d6fa0180f88e00d4a813558c7d26"
+    },
+    {
+      "path": "evidence/D01/offline-008.log",
+      "sha256": "554a94b6ff28fc08860b63495fc4784a509c17fd872fdb315bf221fc3b4814d4"
+    },
+    {
+      "path": "evidence/D01/operator-010.log",
+      "sha256": "514071344b5323868a1e69985458ebe1d5e3db9239366134f0dd94f17cc4b7ee"
+    },
+    {
+      "path": "evidence/D01/operator-package-smoke-018.json",
+      "sha256": "290b62f7fa37ff84e20a44f50cd7864eca546af2adb161ec31d162c9b6ca6f2c"
+    },
+    {
+      "path": "evidence/D01/operator-package-smoke-018.log",
+      "sha256": "00bed9a967108be3952e681760cfe16585e5a99eb78463c67d14588c067bc665"
+    },
+    {
+      "path": "evidence/D01/signer-009.log",
+      "sha256": "8d08e24a9635d2dd1537e7bfcd59406b5a4032b0115811ec11fbf0be551db050"
+    },
+    {
+      "path": "evidence/D01/artifact-manifest-012.json",
+      "sha256": "2fc1b48385718f41af0fccdfe757bcb691e5a2b5559aac2424a8b5c316572481"
+    },
+    {
+      "path": "evidence/D01/artifacts-012.log",
+      "sha256": "e9da1804d5f99a81fb7e34e39697ef09db0103bd578881a7d620064cfef76a92"
+    }
+  ],
+  "criteria": [
+    {
+      "id": "D01-A01",
+      "result": "pass",
+      "summary": "Actual CREATE recovery and known CREATE2 proxy checks preserve correct address; actual Anvil portal runtime matches all9 immutables and rejects live mutation.",
+      "artifacts": [
+        "evidence/D01/acceptance-012.md",
+        "evidence/D01/integrated-007.log",
+        "evidence/D01/anvil-runtime-002.log",
+        "evidence/D01/browser-005.log",
+        "evidence/D01/offline-008.log"
+      ]
+    },
+    {
+      "id": "D01-A02",
+      "result": "pass",
+      "summary": "Bounded preflight and critical state reads reject network, bridge, artifact, runtime, class, policy, censor and malformed-state mismatches before enabling deposits.",
+      "artifacts": [
+        "evidence/D01/acceptance-012.md",
+        "evidence/D01/integrated-007.log",
+        "evidence/D01/anvil-runtime-002.log",
+        "evidence/D01/browser-005.log",
+        "evidence/D01/offline-008.log"
+      ]
+    },
+    {
+      "id": "D01-A03",
+      "result": "pass",
+      "summary": "Reviewable strict manifest binds exact actors, network, board economics, policy/censor and artifact identities; offline preparation uses actual candidate artifacts.",
+      "artifacts": [
+        "evidence/D01/acceptance-012.md",
+        "evidence/D01/integrated-007.log",
+        "evidence/D01/anvil-runtime-002.log",
+        "evidence/D01/browser-005.log",
+        "evidence/D01/offline-008.log"
+      ]
+    },
+    {
+      "id": "D01-A04",
+      "result": "pass",
+      "summary": "Encrypted deployment/activation recovery, truthful pending browser status and preflighted atomic public report writes pass application/journal/browser checks.",
+      "artifacts": [
+        "evidence/D01/acceptance-012.md",
+        "evidence/D01/integrated-007.log",
+        "evidence/D01/anvil-runtime-002.log",
+        "evidence/D01/browser-005.log",
+        "evidence/D01/offline-008.log"
+      ]
+    },
+    {
+      "id": "D01-A05",
+      "result": "pass",
+      "summary": "Actual pre-Node shell rejects preloads and telemetry baggage; supported signer retains clean profile; current-provenance package excludes vulnerable developer tooling and passes isolated real-route/recovery checks.",
+      "artifacts": [
+        "evidence/D01/acceptance-012.md",
+        "evidence/D01/integrated-007.log",
+        "evidence/D01/operator-package-smoke-018.json",
+        "evidence/D01/operator-010.log",
+        "evidence/D01/signer-009.log"
+      ]
+    }
+  ],
+  "review": {
+    "kind": "self-review",
+    "reviewer": "root with deployment_gap_review, deploy_fixture_integration and model_failure_review AI lanes",
+    "summary": "Integration reviews fixed bounded reads, final class verification, report preflight, provider cleanup and package input provenance. See scoped evidence and explicit external limitations.",
+    "artifacts": [
+      "evidence/D01/review-012.md"
+    ]
+  }
+}
