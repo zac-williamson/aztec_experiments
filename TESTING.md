@@ -68,3 +68,30 @@ completed hostile proofs or a test of arbitrary kernel modifications.
 preparing genuine transactions from the same anchor before submission. It retains
 the540-second/2GiB sampled limit. The local one-transaction-per-block geometry
 tests conflict independence and correct publication order, not production TPS.
+
+## Browser lifecycle and restart recovery
+
+Run these serially through the aggregate supervisor, which includes browser,
+native fixture and controller processes in the same 540-second / 2GiB bounds.
+Use a new evidence output filename for each run:
+
+```sh
+node scripts/run-bounded-browser-check.mjs scripts/test-c01-application.mjs execution/evidence/T04/lifecycle-NNN.json --browser-journey
+node scripts/run-bounded-browser-check.mjs scripts/test-c01-application.mjs execution/evidence/T04/recovery-NNN.json --browser-post-recovery
+```
+
+The lifecycle profile performs actual UI deposit, claim, post, screening,
+withdrawal and Ethereum refund. A fresh native wallet then verifies canonical
+transactions, the private note chain, consumed nullifiers and fee accounting.
+Private fee credit is funded natively beforehand; the disposable Ethereum wallet
+adapter does not qualify third-party wallet extensions. Lifecycle022 passed in
+483244ms with sampled aggregate peak1729856KiB and complete owned cleanup.
+
+The recovery profile withholds the response only after a genuine post submission
+is accepted, closes the full browser before normal in-process reconciliation,
+and reopens the same temporary profile. The UI restores the same wallet identity
+without importing journal records, then recovers the original saved transaction.
+Native verification requires one accepted submission, one canonical post and one
+private fee debit. It does not count discarded or unsubmitted proofs. Successful
+source/unit checks alone do not qualify this scenario; inspect its actual run
+report and cleanup. Recovery025 passed this scenario in274958ms with sampled aggregate peak1772256KiB and complete owned cleanup. Other interrupted stages and browsers remain separate qualification.
