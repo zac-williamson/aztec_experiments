@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.27;
-import {RootPublisher} from "./PortalV1.t.sol";
+import {RootPublisher} from "test/PortalV1.t.sol";
 
 /// Test-only controlled root publisher; no rollup proof verification.
 /// The version getter supplies the interface exercised by the real monitor.

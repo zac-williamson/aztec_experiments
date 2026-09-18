@@ -1,11 +1,11 @@
 # Current delegated work
 
-Root integrates and serializes all expensive work. Current recovery025 inputs are frozen. Internal AI review does not replace external review.
+Root integrates and serializes expensive checks. Completed lifecycle022, recovery025 and monitor020 results are retained. No internal review substitutes for external review.
 
 | Lane | Agent | Exclusive write ownership | Deliverable |
 |---|---|---|---|
-| Operational drill implementation | scheduler_improvements | scripts/test-o01-monitor-failover-anvil.mjs; scripts/o01-monitor-drill-transport.mjs; billboard/portal/test/MonitorRootPublisher.sol; execution/evidence/O01/implementation014 note | Real portal packaged monitor failover, no builds/live run until recovery ends |
-| Operational command design | claim_failure_diagnosis | execution/evidence/O01/censor-command-drill-plan-015.md | Read-only command/fixture design for genuine censor handover and policy update |
-| Browser recovery integration | root | Assigned T04 source paths and execution records | Supervise genuine recovery025; integrate results and serialize checks |
+| Governance application test | claim_failure_diagnosis | scripts/o01-censor-command-flow.mjs; execution/evidence/O01/censor-flow-022.md | Actual packaged transfer and successor policy; implementation complete |
+| Governance IO and independent review | scheduler_improvements | scripts/o01-censor-command-io.mjs; scripts/test-o01-censor-command-io.mjs; execution/evidence/O01/censor-io-022.md; execution/evidence/O01/censor-review-023.md | Bounded official RPC/process IO and read-only integrated review |
+| Integration | root | Shared coordinator source, graph and evidence records | Normalize fixture account, validate package, run one genuine bounded profile |
 
-Lifecycle022 passed full GUI journey in483244ms, peak1729856KiB and complete cleanup. Recovery integration has31 passing focused checks and completed source review, including fixed late-launch cleanup. Genuine restart qualification remains pending025. Privacy analysis014 retains observed RPC disclosure and classifier limits.
+Current plan uses a disabled genuine portal for CLI identity lookup, no Ready/deposit/settlement. Two cold private-fee claims are consumed by actual packaged WASM governance commands. Each command has180s; aggregate540s/2GiB unchanged. Actual performance remains unqualified.21 integrated cheap checks and full1934-file package verification pass023. Original package stays read-only; per-run copy/cache belongs to owned temporary directory.

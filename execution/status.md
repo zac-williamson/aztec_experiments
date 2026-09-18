@@ -6,7 +6,8 @@ Objective state: **running**. Completed packages: 22/35.
 
 ## In progress
 
-- **Implement observability, incident and recovery runbooks (O01)** — Actual packaged monitor failover020 passed1121ms: balanced1000wei escrow, unavailable endpoint, alternatebalanced; unchanged block/nonce, owned cleanup complete. Transport cancellation regression019 fixed socket-close race. Remaining O01 genuine censor transfer/policy commands; plan015 and integration proposal underway.
+- **Implement observability, incident and recovery runbooks (O01)** — Censor024 failed contract-inventory preflight5183ms clean. Monitor fixture isolated outside release contract tree; original contractInputs equality restored without manifest edit025. Isolated test compile026 and real monitor026 pass1201ms. Censor027 now starts against unchanged production artifacts.
+  Investigation: 2/2 attempts. Reassessment required. Inspect censor027 outcome and cleanup. At failure budget diagnose source before another genuine run.
 - **Verify end-to-end privacy and funding footprint (T03)** — Lifecycle022 current-source privacy analysis014:1495 RPC observations,5 author contract lookups,18 traversal truncations; four canonical transactions use shared payer with no exact author match in inspected fields. Repeated/cross-author comparison and distinct funder/coinbase remain; no unlinkability claim.
 - **Run browser, recovery, concurrency and load matrix (T04)** — Lifecycle022 full GUI passed483244ms/1729856KiB. Recovery025 genuine accepted-post response loss and full browser restart passed274958ms/1772256KiB; one submission, canonical post and private debit; owned cleanup complete. Browser/load/concurrency and other interruption matrix remain.
 

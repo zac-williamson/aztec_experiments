@@ -19,7 +19,7 @@ const execFileAsync = promisify(execFile);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function fingerprints() {
   const result = {};
-  for (const name of ['scripts/t04-browser-journey.mjs','scripts/t04-browser-journey-verify.mjs','scripts/t04-browser-post-recovery.mjs','scripts/t04-post-response-loss.mjs','scripts/run-bounded-browser-check.mjs','scripts/u01-browser-flow.mjs','scripts/u01-browser-post-verify.mjs','scripts/u01-browser-post.mjs','scripts/u01-browser-rpc.mjs','scripts/t03-rpc-observer.mjs','scripts/t03-public-footprint.mjs','deploy/hosting-config.mjs','scripts/c01-native-profile.mjs','scripts/test-c01-application.mjs','scripts/c01-browser-supervision.mjs','scripts/c01-browser-fatal.mjs','scripts/owned-test-process-tree.mjs','scripts/c01-settle-application-message.mjs','scripts/c01-application-deployment.mjs',
+  for (const name of ['scripts/o01-censor-command-flow.mjs','scripts/o01-censor-command-io.mjs','scripts/t04-browser-journey.mjs','scripts/t04-browser-journey-verify.mjs','scripts/t04-browser-post-recovery.mjs','scripts/t04-post-response-loss.mjs','scripts/run-bounded-browser-check.mjs','scripts/u01-browser-flow.mjs','scripts/u01-browser-post-verify.mjs','scripts/u01-browser-post.mjs','scripts/u01-browser-rpc.mjs','scripts/t03-rpc-observer.mjs','scripts/t03-public-footprint.mjs','deploy/hosting-config.mjs','scripts/c01-native-profile.mjs','scripts/test-c01-application.mjs','scripts/c01-browser-supervision.mjs','scripts/c01-browser-fatal.mjs','scripts/owned-test-process-tree.mjs','scripts/c01-settle-application-message.mjs','scripts/c01-application-deployment.mjs',
     'scripts/w03-note-attribution.mjs','shared/application-nullifier.mjs','scripts/w03-proof-recovery.mjs','shared/l2-journal.mjs','shared/transaction-outcomes.mjs','shared/journal-backup.mjs','scripts/prove-application-action.mjs','scripts/w02-wallet-restore.mjs','shared/wallet-backup.js','scripts/w01-private-fee-standalone.mjs','scripts/w01-private-fee-flow.mjs','scripts/w01-private-funding.mjs','shared/private-fee-client.mjs','shared/private-fee-payment.mjs','shared/private-fee-funding.mjs','shared/ethereum-journal.mjs','shared/journal-record.mjs','apps/src/billboard/user/transaction-journal-store.mjs','scripts/c01-settle-ready.mjs','scripts/c01-settle-message.mjs','scripts/c01-bridge-flow.mjs','scripts/c02-screening-flow.mjs','scripts/t02-screening-journey.mjs','scripts/t02-redeposit-flow.mjs','scripts/t02-wrong-origin.mjs','scripts/t02-claim-boundary.mjs','scripts/test-t02-claim-boundary.mjs','node_modules/@aztec/pxe/src/node/caching_aztec_node.ts','node_modules/@aztec/pxe/dest/node/caching_aztec_node.js','node_modules/@aztec/pxe/src/pxe.ts','node_modules/@aztec/pxe/dest/pxe.js','node_modules/@aztec/pxe/src/block_synchronizer/block_synchronizer.ts','node_modules/@aztec/pxe/dest/block_synchronizer/block_synchronizer.js','node_modules/@aztec/l1-artifacts/dest/InboxAbi.js','node_modules/@aztec/l1-artifacts/l1-contracts/src/core/messagebridge/Inbox.sol','scripts/t02-redeposit-replay.mjs','node_modules/@aztec/l1-artifacts/dest/OutboxAbi.js','node_modules/@aztec/l1-artifacts/l1-contracts/src/core/messagebridge/Outbox.sol','scripts/c03-author-claims.mjs','scripts/c03-contention-flow.mjs','scripts/c01-client-mining.mjs','scripts/c01-deposit-flow.mjs','scripts/c01-exit-flow.mjs','scripts/c01-withdraw-l1.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
     'node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js']) {
     result[name] = sha(await fs.readFile(path.join(ROOT, name)));
@@ -107,6 +107,7 @@ async function worker(directory) {
       import('@aztec/world-state/testing'),import('@aztec/aztec-node/config'),import('./c01-application-deployment.mjs')]);
     let preparation;
     if(process.env.C01_BOARD_PROOF==='true'){const {prepareC01BoardFlow}=await import('./c01-board-flow.mjs');preparation=await prepareC01BoardFlow({bbBinaryPath:applicationNativeProfile(directory).bbPath,directory,authorCount:process.env.C03_CONTENTION==='true'&&process.env.C03_POSTING_DIAGNOSTIC!=='true'?10:1});}
+    if(process.env.O01_CENSOR_COMMANDS==='true'){const {restoreApplicationAuthor}=await import('./w02-wallet-restore.mjs');const restored=await restoreApplicationAuthor(preparation.account);preparation.account=restored.author;preparation.authorAccounts[0]=restored.author;preparation.fundingAddresses=preparation.authorAccounts.map(account=>account.address);output.censorIdentity=restored.observation;}
     const {genesisArchiveRoot,fundingNeeded,genesis}=await getGenesisValues(preparation?.fundingAddresses??[]);
     const {SecretValue}=await import('@aztec/foundation/config');
     const {EthAddress}=await import('@aztec/foundation/eth-address');
@@ -146,7 +147,7 @@ async function worker(directory) {
       assert(output.node.passed);
     }
     output.passed=true;
-  }catch(error){if(error.registrationObservation)output.registration=error.registrationObservation;if(error.deploymentObservation)output.deployment=error.deploymentObservation;if(error.boardObservation)output.board=error.boardObservation;if(error.readyObservation)output.ready=error.readyObservation;if(error.settlementObservation)output.settlement=error.settlementObservation;if(error.bridgeObservation)output.bridge=error.bridgeObservation;output.failure={stage,errorClass:error.name,code:error.code??null,location:error.stack?.split('\n').filter(l=>l.trimStart().startsWith('at ')).slice(0,3).join('\n')};}
+  }catch(error){if(error.censorCommandObservation)output.censorCommands=error.censorCommandObservation;if(error.registrationObservation)output.registration=error.registrationObservation;if(error.deploymentObservation)output.deployment=error.deploymentObservation;if(error.boardObservation)output.board=error.boardObservation;if(error.readyObservation)output.ready=error.readyObservation;if(error.settlementObservation)output.settlement=error.settlementObservation;if(error.bridgeObservation)output.bridge=error.bridgeObservation;output.failure={stage,errorClass:error.name,code:error.code??null,location:error.stack?.split('\n').filter(l=>l.trimStart().startsWith('at ')).slice(0,3).join('\n')};}
   finally{
     if(anvil){anvil.kill('SIGTERM');output.anvilExit=await Promise.race([anvilClosed,pause(3000).then(()=>null)]);if(!output.anvilExit){anvil.kill('SIGKILL');output.anvilExit=await Promise.race([anvilClosed,pause(3000).then(()=>null)]);}if(!output.anvilExit)output.passed=false;}
     try{const {Barretenberg,BarretenbergSync}=await import('@aztec/bb.js');await Barretenberg.destroySingleton();BarretenbergSync.destroySingleton();output.singletonsStopped=true;}catch{output.passed=false;}
@@ -155,11 +156,34 @@ async function worker(directory) {
     await fs.writeFile(path.join(directory,'worker-result.json'),JSON.stringify(output,null,2)+'\n');process.exitCode=output.passed?0:1;
   }
 }
+
+// Only a locally prepared, fully hash-checked package may supply executable input.
+export async function verifyCensorPackage(){
+  const descriptor=JSON.parse(await fs.readFile(path.join(ROOT,'.build/o01-operator-package.json'),'utf8'));
+  assert.deepEqual(Object.keys(descriptor).sort(),['manifestSha256','root','schemaVersion']);
+  assert.equal(descriptor.schemaVersion,1);assert(path.isAbsolute(descriptor.root));
+  const root=await fs.realpath(descriptor.root);assert(root.startsWith(path.join(ROOT,'.build')+path.sep));
+  const bytes=await fs.readFile(path.join(root,'operator-package.json'));assert.equal(sha(bytes),descriptor.manifestSha256);
+  const manifest=JSON.parse(bytes);assert.equal(manifest.profile,'operator');assert(Array.isArray(manifest.files)&&manifest.files.length>0);
+  const seen=new Set();
+  for(const file of manifest.files){
+    assert(typeof file.path==='string'&&!path.isAbsolute(file.path)&&!file.path.split('/').includes('..')&&!seen.has(file.path));seen.add(file.path);
+    const filename=path.join(root,file.path);assert.equal(await fs.realpath(filename),filename);assert((await fs.lstat(filename)).isFile());
+    const hash=createHash('sha256');for await(const chunk of createReadStream(filename))hash.update(chunk);assert.equal(hash.digest('hex'),file.sha256);
+  }
+  for(const name of ['scripts/operator-launch.sh','scripts/operator-launch.mjs','toolchain.json','apps/src/billboard/user/cli.mjs','apps/src/billboard/user/engine.js','shared/public-app-config.js','.build/sdk/sdk-manifest.json','crs-manifest.json']){
+    assert(seen.has(name));assert.equal(sha(await fs.readFile(path.join(root,name))),sha(await fs.readFile(path.join(ROOT,name))));
+  }
+  return {root,manifestSha256:sha(bytes),verifiedFiles:seen.size};
+}
+
 async function parent() {
   assertNodeVersion(); assertAztecPackages();
   assert.equal(process.platform, 'darwin', 'This bounded no-network profile is qualified for macOS only');
   assert.equal(process.arch, 'arm64', 'This harness pins the installed arm64 BB binary');
-  assert(process.argv.length===2||(process.argv.length===3&&['--redeposit','--flagged-journey','--unflagged-journey','--browser-post','--browser-journey','--browser-post-recovery','--node','--board-proof','--include','--ready','--settle','--bridge','--screening','--contention','--posting-diagnostic','--private-fees','--private-fee-post','--proof-recovery','--note-attribution'].includes(process.argv[2])),'Unsupported harness arguments');
+  assert(process.argv.length===2||(process.argv.length===3&&['--censor-commands','--redeposit','--flagged-journey','--unflagged-journey','--browser-post','--browser-journey','--browser-post-recovery','--node','--board-proof','--include','--ready','--settle','--bridge','--screening','--contention','--posting-diagnostic','--private-fees','--private-fee-post','--proof-recovery','--note-attribution'].includes(process.argv[2])),'Unsupported harness arguments');
+  const censorCommands=process.argv[2]==='--censor-commands';
+  const operatorPackage=censorCommands?await verifyCensorPackage():undefined;
   const journey=process.argv[2]==='--redeposit'?'redeposit':process.argv[2]==='--flagged-journey'?'flagged':process.argv[2]==='--unflagged-journey'?'unflagged':'';
   const browserJourney=process.argv[2]==='--browser-journey';
   const browserRecovery=process.argv[2]==='--browser-post-recovery';
@@ -176,21 +200,22 @@ async function parent() {
   const bridge=privateFees||contention||screening||process.argv[2]==='--bridge';
   const settle=bridge||process.argv[2]==='--settle';
   const readyFlow=process.argv[2]==='--ready'||settle;
-  const boardInclude=process.argv[2]==='--include'||readyFlow;
+  const boardInclude=censorCommands||process.argv[2]==='--include'||readyFlow;
   const boardProof=process.argv[2]==='--board-proof'||boardInclude;
   const startNode=process.argv[2]==='--node'||boardProof;
   const id = randomUUID();
-  const evidence = path.join(ROOT, (browserJourney||browserRecovery)?'execution/evidence/T04':journey?'execution/evidence/T02':browserPost?'execution/evidence/U01':privateFees?'execution/evidence/W01':contention?'execution/evidence/C03':screening?'execution/evidence/C02':'execution/evidence/C01', `application-${id}.json`);
+  const evidence = path.join(ROOT, censorCommands?'execution/evidence/O01':(browserJourney||browserRecovery)?'execution/evidence/T04':journey?'execution/evidence/T02':browserPost?'execution/evidence/U01':privateFees?'execution/evidence/W01':contention?'execution/evidence/C03':screening?'execution/evidence/C02':'execution/evidence/C01', `application-${id}.json`);
   await fs.mkdir(path.join(ROOT, '.build'), { recursive: true });
   // Short private path keeps native Unix socket names below macOS sockaddr_un limits.
   const directory = await fs.mkdtemp(browserPost?path.join(process.env.BILLBOARD_TEST_TMPDIR,'c01-'):'/private/tmp/c01-application-');
-  const report = { schemaVersion: 1, profile: browserRecovery?'genuine browser post acceptance, lost response, full browser restart and read-only original receipt recovery':browserJourney?'genuine GUI deposit claim post screening withdrawal refund with native warm private fees':journey==='redeposit' ? 'genuine private-fee deposit/refund, redeposit replay rejection and second refund' : journey ? `genuine private-fee ${journey} post, screening, exit and L1 refund` : browserPost ? 'actual browser GUI post from preseeded private-fee funded wallet' : noteAttribution ? 'genuine same-note dummy and withdrawal attribution, private fees and refund' : proofRecovery ? 'genuine stale post proof, private credit conflict and journal-linked replacement' : privateFeePosting ? 'genuine user-funded private fees, cold start and posting' : privateFees ? 'genuine user-funded private fees, claim/exit/refund' : postingDiagnostic ? 'one-author genuine posting diagnostic; not contention qualification' : contention ? 'ten genuine authors preparing posts from one anchor' : screening ? 'application deposit, posting and authenticated screening proofs' : bridge ? 'application proofs, controlled settlement, deposit/claim/exit/refund' : settle ? 'application Ready proof and controlled settlement' : readyFlow ? 'genuine Ready proof and ordinary inclusion' : boardInclude ? 'genuine board proof and ordinary inclusion' : boardProof ? 'genuine board client proof' : startNode ? 'local protocol fixture and application node startup' : 'official local protocol deployment fixture only',
+  const report = { schemaVersion: 1, profile: censorCommands?'genuine packaged censor succession and policy commands; no Ready or deposit':browserRecovery?'genuine browser post acceptance, lost response, full browser restart and read-only original receipt recovery':browserJourney?'genuine GUI deposit claim post screening withdrawal refund with native warm private fees':journey==='redeposit' ? 'genuine private-fee deposit/refund, redeposit replay rejection and second refund' : journey ? `genuine private-fee ${journey} post, screening, exit and L1 refund` : browserPost ? 'actual browser GUI post from preseeded private-fee funded wallet' : noteAttribution ? 'genuine same-note dummy and withdrawal attribution, private fees and refund' : proofRecovery ? 'genuine stale post proof, private credit conflict and journal-linked replacement' : privateFeePosting ? 'genuine user-funded private fees, cold start and posting' : privateFees ? 'genuine user-funded private fees, claim/exit/refund' : postingDiagnostic ? 'one-author genuine posting diagnostic; not contention qualification' : contention ? 'ten genuine authors preparing posts from one anchor' : screening ? 'application deposit, posting and authenticated screening proofs' : bridge ? 'application proofs, controlled settlement, deposit/claim/exit/refund' : settle ? 'application Ready proof and controlled settlement' : readyFlow ? 'genuine Ready proof and ordinary inclusion' : boardInclude ? 'genuine board proof and ordinary inclusion' : boardProof ? 'genuine board client proof' : startNode ? 'local protocol fixture and application node startup' : 'official local protocol deployment fixture only',
     startedAt: new Date().toISOString(), deadlineMs: DEADLINE_MS, passed: false, testsApplicationOrEpoch: boardProof, rssLimitKiB:RSS_LIMIT_KIB, rssSampleIntervalMs:1000, rssMethod:'sampled PPID descendant tree with remembered process identities/groups; not OS allocation limit', rssSamples:[], peakTreeRSSKiB:0 };
   let child, finished, timer, outerTimer, killPromise, rssTimer, rssPending, browserChild, browserPromise, browserControl;
   let childClosed=false,stopSampling=false;
   const interruptHandlers = [];
   try {
     report.sourceHashes = await fingerprints();
+    if(operatorPackage)report.operatorPackage={manifestSha256:operatorPackage.manifestSha256,verifiedFiles:operatorPackage.verifiedFiles};
     if(browserPost){
       const net=await import('node:net'),reservation=net.createServer();
       await new Promise((resolve,reject)=>{reservation.once('error',reject);reservation.listen(0,'127.0.0.1',resolve);});
@@ -217,7 +242,7 @@ async function parent() {
     if(applicationThreads===2)await fs.writeFile(path.join(directory,'bb-two-threads'),"#!/bin/sh\nHARDWARE_CONCURRENCY=2 exec '"+bb+"' \"$@\"\n",{flag:'wx',mode:0o700});
     report.applicationBBThreads=applicationThreads;report.nodeBBThreads=1;report.worldStateHardwareConcurrency=1;
     await fs.mkdir(path.join(directory,'acvm'),{mode:0o700});
-    report.browserRecovery=browserRecovery;report.browserJourney=browserJourney;report.journey=journey;report.browserPost=browserPost;report.noteAttribution=noteAttribution;report.proofRecovery=proofRecovery;report.privateFeePosting=privateFeePosting;report.privateFees=privateFees;report.startNode=startNode;report.boardProof=boardProof;report.settle=settle;report.bridge=bridge;report.screening=screening;report.contention=contention;report.postingDiagnostic=postingDiagnostic;report.expectedAuthorCount=contention&&!postingDiagnostic?10:1;
+    report.censorCommands=censorCommands;report.browserRecovery=browserRecovery;report.browserJourney=browserJourney;report.journey=journey;report.browserPost=browserPost;report.noteAttribution=noteAttribution;report.proofRecovery=proofRecovery;report.privateFeePosting=privateFeePosting;report.privateFees=privateFees;report.startNode=startNode;report.boardProof=boardProof;report.settle=settle;report.bridge=bridge;report.screening=screening;report.contention=contention;report.postingDiagnostic=postingDiagnostic;report.expectedAuthorCount=contention&&!postingDiagnostic?10:1;
     if(postingDiagnostic)report.contentionQualified=false;
     const profile=path.join(directory,'local-only.sb');
     await fs.writeFile(profile, '(version 1)\n(allow default)\n(deny network-outbound (remote ip "*:*"))\n(allow network-outbound (remote ip "localhost:*"))\n(deny network-inbound (local ip "*:*"))\n(allow network-inbound (local ip "localhost:*"))\n');
@@ -225,7 +250,7 @@ async function parent() {
     const started = performance.now();
     child = spawn('/usr/bin/sandbox-exec', ['-f', profile, '/usr/bin/time', '-l', '-o', resources,
       process.execPath, SELF, '--worker', directory], { cwd: ROOT, detached: true,
-      env: {HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'warn',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',C01_APPLICATION_BB_THREADS:String(applicationThreads),NODE_BACKEND:'js',FORGE_BIN:'/Users/zac/.foundry/bin/forge',C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,T02_JOURNEY:journey,U01_BROWSER_POST:String(browserPost),C01_START_NODE:String(startNode),C01_BOARD_PROOF:String(boardProof),C01_BOARD_INCLUDE:String(boardInclude),C01_READY:String(readyFlow),C01_SETTLE:String(settle),C01_BRIDGE:String(bridge),W03_NOTE_ATTRIBUTION:String(noteAttribution),W03_PROOF_RECOVERY:String(proofRecovery),W01_PRIVATE_FEE_POST:String(privateFeePosting),W01_PRIVATE_FEES:String(privateFees),C02_SCREENING:String(screening),C03_CONTENTION:String(contention),C03_POSTING_DIAGNOSTIC:String(postingDiagnostic),FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
+      env: {HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'warn',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',C01_APPLICATION_BB_THREADS:String(applicationThreads),NODE_BACKEND:'js',FORGE_BIN:'/Users/zac/.foundry/bin/forge',C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,T02_JOURNEY:journey,U01_BROWSER_POST:String(browserPost),O01_CENSOR_COMMANDS:String(censorCommands),...(operatorPackage?{O01_OPERATOR_PACKAGE:operatorPackage.root}:{}),C01_START_NODE:String(startNode),C01_BOARD_PROOF:String(boardProof),C01_BOARD_INCLUDE:String(boardInclude),C01_READY:String(readyFlow),C01_SETTLE:String(settle),C01_BRIDGE:String(bridge),W03_NOTE_ATTRIBUTION:String(noteAttribution),W03_PROOF_RECOVERY:String(proofRecovery),W01_PRIVATE_FEE_POST:String(privateFeePosting),W01_PRIVATE_FEES:String(privateFees),C02_SCREENING:String(screening),C03_CONTENTION:String(contention),C03_POSTING_DIAGNOSTIC:String(postingDiagnostic),FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
       stdio: [browserPost?'pipe':'ignore', 'pipe', 'pipe'] });
     if(browserPost){child.stdin.on('error',()=>{});child.stdin.end(JSON.stringify(browserControl));}
     report.pid = child.pid; report.stages = [];
@@ -388,6 +413,8 @@ async function parent() {
     process.exitCode = report.passed ? 0 : 1;
   }
 }
-if(process.argv[2]==='--browser-worker'&&process.argv.length===4)await browserWorker(path.resolve(process.argv[3]));
-else if (process.argv[2] === '--worker' && process.argv.length === 4) await worker(path.resolve(process.argv[3]));
-else await parent();
+if(process.argv[1]&&path.resolve(process.argv[1])===SELF){
+ if(process.argv[2]==='--browser-worker'&&process.argv.length===4)await browserWorker(path.resolve(process.argv[3]));
+ else if(process.argv[2]==='--worker'&&process.argv.length===4)await worker(path.resolve(process.argv[3]));
+ else await parent();
+}

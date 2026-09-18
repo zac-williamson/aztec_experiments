@@ -53,6 +53,12 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
       assert(observation.board.passed);
       if(include){mark('include-board-deployment');const {includeC01Board}=await import('./c01-board-inclusion.mjs');
         observation.inclusion=await includeC01Board({node,tx:observation.board.tx,rpcUrl:config.l1RpcUrls[0],dateProvider});
+        if(process.env.O01_CENSOR_COMMANDS==='true'){
+          assert(process.env.C01_READY!=='true'&&process.env.C01_BRIDGE!=='true');
+          const {runO01CensorCommands}=await import('./o01-censor-command-flow.mjs');
+          observation.censorCommands=await runO01CensorCommands({node,preparation,instance:observation.board.instance,deploymentReceipt:observation.inclusion,deployment,directory,dateProvider,packageRoot:process.env.O01_OPERATOR_PACKAGE,rpcUrl:config.l1RpcUrls[0],mark});
+          assert(observation.censorCommands.passed);
+        }
         if(process.env.C01_READY==='true'){
           mark('prepare-and-prove-ready');
           const {prepareAndProveC01Ready}=await import('./c01-ready-flow.mjs');
@@ -81,7 +87,7 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
             }
           }
         }
-        observation.sequencerStarted=true;observation.scope=observation.bridge?.contention?.passed?(process.env.C03_POSTING_DIAGNOSTIC==='true'?'one-author genuine posting diagnostic; not contention qualification':'ten genuine authors preparing posts from one anchor'):observation.bridge?.screening?.passed?'application posting and authenticated screening proofs':observation.bridge?.passed?'application proofs, controlled settlement, deposit/claim/exit/refund':observation.settlement?.passed?'controlled Ready settlement and enabled portal':'genuine client proof and ordinary checkpoint inclusion; no epoch proof acceptance';observation.epochSchedulingStarted=false;observation.idleProverAgentCreated=false;}
+        observation.sequencerStarted=true;observation.scope=observation.censorCommands?.passed?'genuine packaged censor transfer and policy update using private fees; disabled portal only':observation.bridge?.contention?.passed?(process.env.C03_POSTING_DIAGNOSTIC==='true'?'one-author genuine posting diagnostic; not contention qualification':'ten genuine authors preparing posts from one anchor'):observation.bridge?.screening?.passed?'application posting and authenticated screening proofs':observation.bridge?.passed?'application proofs, controlled settlement, deposit/claim/exit/refund':observation.settlement?.passed?'controlled Ready settlement and enabled portal':'genuine client proof and ordinary checkpoint inclusion; no epoch proof acceptance';observation.epochSchedulingStarted=false;observation.idleProverAgentCreated=false;}
 
     }
     observation.passed=true;

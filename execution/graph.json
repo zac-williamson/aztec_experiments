@@ -1256,7 +1256,7 @@
       "evidence": "evidence/O01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Actual packaged monitor failover020 passed1121ms: balanced1000wei escrow, unavailable endpoint, alternatebalanced; unchanged block/nonce, owned cleanup complete. Transport cancellation regression019 fixed socket-close race. Remaining O01 genuine censor transfer/policy commands; plan015 and integration proposal underway.",
+      "checkpoint": "Censor024 failed contract-inventory preflight5183ms clean. Monitor fixture isolated outside release contract tree; original contractInputs equality restored without manifest edit025. Isolated test compile026 and real monitor026 pass1201ms. Censor027 now starts against unchanged production artifacts.",
       "priority": 20,
       "execution_lane": "operations",
       "write_paths": [
@@ -1281,8 +1281,20 @@
         "scripts/test-o01-monitor-failover-anvil.mjs",
         "scripts/o01-monitor-drill-transport.mjs",
         "billboard/portal/test/MonitorRootPublisher.sol",
-        "scripts/test-o01-monitor-drill-transport.mjs"
-      ]
+        "scripts/test-o01-monitor-drill-transport.mjs",
+        "scripts/test-c01-application.mjs",
+        "scripts/c01-real-node.mjs",
+        "scripts/o01-censor-command-flow.mjs",
+        "scripts/o01-censor-command-io.mjs",
+        "scripts/test-o01-censor-command-io.mjs",
+        "scripts/fixtures/o01-monitor/MonitorRootPublisher.sol"
+      ],
+      "investigation": {
+        "hypothesis": "Actual packaged transfer and successor policy commands can use genuine cold private fee claims within unchanged540s/2GiB.21 affected checks and package1934-file verification pass023; source review no blocker. WASM compressed CRS performance unmeasured.",
+        "attempts": 2,
+        "max_attempts": 2,
+        "next_action": "Inspect censor027 outcome and cleanup. At failure budget diagnose source before another genuine run."
+      }
     },
     {
       "id": "T01",
@@ -1558,8 +1570,6 @@
       "execution_lane": "browser-recovery",
       "write_paths": [
         "execution/evidence/T04/",
-        "scripts/test-c01-application.mjs",
-        "scripts/c01-real-node.mjs",
         "scripts/c01-bridge-flow.mjs",
         "scripts/u01-browser-post.mjs",
         "scripts/u01-browser-flow.mjs",

@@ -1,0 +1,55 @@
+--- a/scripts/test-c01-application.mjs
++++ b/scripts/test-c01-application.mjs
+@@ -159,7 +159,8 @@
+   assertNodeVersion(); assertAztecPackages();
+   assert.equal(process.platform, 'darwin', 'This bounded no-network profile is qualified for macOS only');
+   assert.equal(process.arch, 'arm64', 'This harness pins the installed arm64 BB binary');
+-  assert(process.argv.length===2||(process.argv.length===3&&['--redeposit','--flagged-journey','--unflagged-journey','--browser-post','--browser-journey','--browser-post-recovery','--node','--board-proof','--include','--ready','--settle','--bridge','--screening','--contention','--posting-diagnostic','--private-fees','--private-fee-post','--proof-recovery','--note-attribution'].includes(process.argv[2])),'Unsupported harness arguments');
++  assert(process.argv.length===2||(process.argv.length===3&&['--censor-commands','--redeposit','--flagged-journey','--unflagged-journey','--browser-post','--browser-journey','--browser-post-recovery','--node','--board-proof','--include','--ready','--settle','--bridge','--screening','--contention','--posting-diagnostic','--private-fees','--private-fee-post','--proof-recovery','--note-attribution'].includes(process.argv[2])),'Unsupported harness arguments');
++  const censorCommands=process.argv[2]==='--censor-commands';
+   const journey=process.argv[2]==='--redeposit'?'redeposit':process.argv[2]==='--flagged-journey'?'flagged':process.argv[2]==='--unflagged-journey'?'unflagged':'';
+   const browserJourney=process.argv[2]==='--browser-journey';
+   const browserRecovery=process.argv[2]==='--browser-post-recovery';
+@@ -176,15 +177,15 @@
+   const bridge=privateFees||contention||screening||process.argv[2]==='--bridge';
+   const settle=bridge||process.argv[2]==='--settle';
+   const readyFlow=process.argv[2]==='--ready'||settle;
+-  const boardInclude=process.argv[2]==='--include'||readyFlow;
++  const boardInclude=censorCommands||process.argv[2]==='--include'||readyFlow;
+   const boardProof=process.argv[2]==='--board-proof'||boardInclude;
+   const startNode=process.argv[2]==='--node'||boardProof;
+   const id = randomUUID();
+-  const evidence = path.join(ROOT, (browserJourney||browserRecovery)?'execution/evidence/T04':journey?'execution/evidence/T02':browserPost?'execution/evidence/U01':privateFees?'execution/evidence/W01':contention?'execution/evidence/C03':screening?'execution/evidence/C02':'execution/evidence/C01', `application-${id}.json`);
++  const evidence = path.join(ROOT, censorCommands?'execution/evidence/O01':(browserJourney||browserRecovery)?'execution/evidence/T04':journey?'execution/evidence/T02':browserPost?'execution/evidence/U01':privateFees?'execution/evidence/W01':contention?'execution/evidence/C03':screening?'execution/evidence/C02':'execution/evidence/C01', `application-${id}.json`);
+   await fs.mkdir(path.join(ROOT, '.build'), { recursive: true });
+   // Short private path keeps native Unix socket names below macOS sockaddr_un limits.
+   const directory = await fs.mkdtemp(browserPost?path.join(process.env.BILLBOARD_TEST_TMPDIR,'c01-'):'/private/tmp/c01-application-');
+-  const report = { schemaVersion: 1, profile: browserRecovery?'genuine browser post acceptance, lost response, full browser restart and read-only original receipt recovery':browserJourney?'genuine GUI deposit claim post screening withdrawal refund with native warm private fees':journey==='redeposit' ? 'genuine private-fee deposit/refund, redeposit replay rejection and second refund' : journey ? `genuine private-fee ${journey} post, screening, exit and L1 refund` : browserPost ? 'actual browser GUI post from preseeded private-fee funded wallet' : noteAttribution ? 'genuine same-note dummy and withdrawal attribution, private fees and refund' : proofRecovery ? 'genuine stale post proof, private credit conflict and journal-linked replacement' : privateFeePosting ? 'genuine user-funded private fees, cold start and posting' : privateFees ? 'genuine user-funded private fees, claim/exit/refund' : postingDiagnostic ? 'one-author genuine posting diagnostic; not contention qualification' : contention ? 'ten genuine authors preparing posts from one anchor' : screening ? 'application deposit, posting and authenticated screening proofs' : bridge ? 'application proofs, controlled settlement, deposit/claim/exit/refund' : settle ? 'application Ready proof and controlled settlement' : readyFlow ? 'genuine Ready proof and ordinary inclusion' : boardInclude ? 'genuine board proof and ordinary inclusion' : boardProof ? 'genuine board client proof' : startNode ? 'local protocol fixture and application node startup' : 'official local protocol deployment fixture only',
++  const report = { schemaVersion: 1, profile: censorCommands?'genuine packaged censor succession and policy commands; no Ready or deposit':browserRecovery?'genuine browser post acceptance, lost response, full browser restart and read-only original receipt recovery':browserJourney?'genuine GUI deposit claim post screening withdrawal refund with native warm private fees':journey==='redeposit' ? 'genuine private-fee deposit/refund, redeposit replay rejection and second refund' : journey ? `genuine private-fee ${journey} post, screening, exit and L1 refund` : browserPost ? 'actual browser GUI post from preseeded private-fee funded wallet' : noteAttribution ? 'genuine same-note dummy and withdrawal attribution, private fees and refund' : proofRecovery ? 'genuine stale post proof, private credit conflict and journal-linked replacement' : privateFeePosting ? 'genuine user-funded private fees, cold start and posting' : privateFees ? 'genuine user-funded private fees, claim/exit/refund' : postingDiagnostic ? 'one-author genuine posting diagnostic; not contention qualification' : contention ? 'ten genuine authors preparing posts from one anchor' : screening ? 'application deposit, posting and authenticated screening proofs' : bridge ? 'application proofs, controlled settlement, deposit/claim/exit/refund' : settle ? 'application Ready proof and controlled settlement' : readyFlow ? 'genuine Ready proof and ordinary inclusion' : boardInclude ? 'genuine board proof and ordinary inclusion' : boardProof ? 'genuine board client proof' : startNode ? 'local protocol fixture and application node startup' : 'official local protocol deployment fixture only',
+     startedAt: new Date().toISOString(), deadlineMs: DEADLINE_MS, passed: false, testsApplicationOrEpoch: boardProof, rssLimitKiB:RSS_LIMIT_KIB, rssSampleIntervalMs:1000, rssMethod:'sampled PPID descendant tree with remembered process identities/groups; not OS allocation limit', rssSamples:[], peakTreeRSSKiB:0 };
+   let child, finished, timer, outerTimer, killPromise, rssTimer, rssPending, browserChild, browserPromise, browserControl;
+   let childClosed=false,stopSampling=false;
+@@ -225,7 +226,7 @@
+     const started = performance.now();
+     child = spawn('/usr/bin/sandbox-exec', ['-f', profile, '/usr/bin/time', '-l', '-o', resources,
+       process.execPath, SELF, '--worker', directory], { cwd: ROOT, detached: true,
+-      env: {HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'warn',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',C01_APPLICATION_BB_THREADS:String(applicationThreads),NODE_BACKEND:'js',FORGE_BIN:'/Users/zac/.foundry/bin/forge',C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,T02_JOURNEY:journey,U01_BROWSER_POST:String(browserPost),C01_START_NODE:String(startNode),C01_BOARD_PROOF:String(boardProof),C01_BOARD_INCLUDE:String(boardInclude),C01_READY:String(readyFlow),C01_SETTLE:String(settle),C01_BRIDGE:String(bridge),W03_NOTE_ATTRIBUTION:String(noteAttribution),W03_PROOF_RECOVERY:String(proofRecovery),W01_PRIVATE_FEE_POST:String(privateFeePosting),W01_PRIVATE_FEES:String(privateFees),C02_SCREENING:String(screening),C03_CONTENTION:String(contention),C03_POSTING_DIAGNOSTIC:String(postingDiagnostic),FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
++      env: {HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'warn',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',C01_APPLICATION_BB_THREADS:String(applicationThreads),NODE_BACKEND:'js',FORGE_BIN:'/Users/zac/.foundry/bin/forge',C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,T02_JOURNEY:journey,U01_BROWSER_POST:String(browserPost),O01_CENSOR_COMMANDS:String(censorCommands),C01_START_NODE:String(startNode),C01_BOARD_PROOF:String(boardProof),C01_BOARD_INCLUDE:String(boardInclude),C01_READY:String(readyFlow),C01_SETTLE:String(settle),C01_BRIDGE:String(bridge),W03_NOTE_ATTRIBUTION:String(noteAttribution),W03_PROOF_RECOVERY:String(proofRecovery),W01_PRIVATE_FEE_POST:String(privateFeePosting),W01_PRIVATE_FEES:String(privateFees),C02_SCREENING:String(screening),C03_CONTENTION:String(contention),C03_POSTING_DIAGNOSTIC:String(postingDiagnostic),FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
+       stdio: [browserPost?'pipe':'ignore', 'pipe', 'pipe'] });
+     if(browserPost){child.stdin.on('error',()=>{});child.stdin.end(JSON.stringify(browserControl));}
+     report.pid = child.pid; report.stages = [];
+--- a/scripts/c01-real-node.mjs
++++ b/scripts/c01-real-node.mjs
+@@ -53,6 +53,12 @@
+       assert(observation.board.passed);
+       if(include){mark('include-board-deployment');const {includeC01Board}=await import('./c01-board-inclusion.mjs');
+         observation.inclusion=await includeC01Board({node,tx:observation.board.tx,rpcUrl:config.l1RpcUrls[0],dateProvider});
++        if(process.env.O01_CENSOR_COMMANDS==='true'){
++          assert(process.env.C01_READY!=='true'&&process.env.C01_BRIDGE!=='true');
++          const {runO01CensorCommands}=await import('./o01-censor-command-flow.mjs');
++          observation.censorCommands=await runO01CensorCommands({node,preparation,instance:observation.board.instance,deploymentReceipt:observation.inclusion,deployment,directory,dateProvider,rpcUrl:config.l1RpcUrls[0],mark});
++          assert(observation.censorCommands.passed);
++        }
+         if(process.env.C01_READY==='true'){
+           mark('prepare-and-prove-ready');
+           const {prepareAndProveC01Ready}=await import('./c01-ready-flow.mjs');

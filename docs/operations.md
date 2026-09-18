@@ -146,7 +146,7 @@ checks at signing and receipt reconciliation remain authoritative.
 
 The packaged monitor's healthy → unavailable → alternate healthy path is
 exercised by `scripts/test-o01-monitor-failover-anvil.mjs`. Prepare a current
-operator package and the offline regression portal fixtures first, then pass the
+operator package and isolated monitor fixture first (`FOUNDRY_PROFILE=regression forge build --offline --contracts ../../scripts/fixtures/o01-monitor` from `billboard/portal`), then pass the
 package's absolute directory and a new evidence JSON filename to that script.
 It uses a real locally deployed portal with a nonzero deposit and controlled
 bridge activation. It checks the unchanged canonical block, balance, liabilities

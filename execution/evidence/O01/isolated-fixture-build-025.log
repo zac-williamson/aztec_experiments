@@ -1,0 +1,9 @@
+Compiling 101 files with Solc 0.8.27
+Solc 0.8.27 finished in 119.52ms
+Error: Compiler run failed:
+Error (6275): Source "/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/portal/test/PortalV1.t.sol" not found: File not found. Searched the following locations: "/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/portal".
+ParserError: Source "/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/portal/test/PortalV1.t.sol" not found: File not found. Searched the following locations: "/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/billboard/portal".
+ --> /Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/scripts/fixtures/o01-monitor/MonitorRootPublisher.sol:3:1:
+  |
+3 | import {RootPublisher} from "../../../billboard/portal/test/PortalV1.t.sol";
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

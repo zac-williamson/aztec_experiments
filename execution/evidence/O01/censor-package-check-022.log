@@ -1,0 +1,19 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert(seen.has(name))
+
+    at verifyCensorPackage (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-c01-application.mjs:175:5)
+    at async file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/[eval1]:1:89 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.21.0
