@@ -14,6 +14,8 @@ import { EthAddress } from '@aztec/foundation/eth-address';
 
 const backupSource = await fs.readFile(new URL('../shared/wallet-backup.js',import.meta.url),'utf8');
 const claimSource=await fs.readFile(new URL('../shared/claim-secret-store.js',import.meta.url),'utf8');
+const configSource=await fs.readFile(new URL('../shared/public-app-config.js',import.meta.url),'utf8');
+const appEnvSource=await fs.readFile(new URL('../shared/app-env.js',import.meta.url),'utf8');
 const appSource = await fs.readFile(new URL('../apps/src/billboard/user/app.js',import.meta.url),'utf8');
 const engineSource = await fs.readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8');
 const scope={l1ChainId:'31337',rollupAddress:'0x1111111111111111111111111111111111111111',rollupVersion:'1',
@@ -25,10 +27,16 @@ const aadFor=(s,h)=>JSON.stringify(['AZTEC_BB_CLAIM_STORE_V2',s.l1ChainId,s.roll
 const ownerId=createHash('sha256').update('AZTEC_BB_CLAIM_BACKUP_OWNER_V2\0'+walletSecret+walletSalt).digest('hex');
 const keyFor=(s,h)=>ownerId+':'+aadFor(s,h);
 function appContext() {
-  const context={crypto:webcrypto,indexedDB:new IDBFactory(),TextEncoder,TextDecoder,Uint8Array,URLSearchParams,console,
+  const context={crypto:webcrypto,indexedDB:new IDBFactory(),TextEncoder,TextDecoder,Uint8Array,URL,URLSearchParams,console,log(){},
     location:{search:''},document:{getElementById:()=>null},__aztec:{createPXE(){}},ETH_RPC_URL:'',
     checkBundle:()=>true,setupRpcAuth(){},makeCallEngine:()=>()=>{},runBillboardUser(){},initPages(){},initWalletButtons(){}};
-  context.window=context;vm.createContext(context);vm.runInContext(backupSource,context,{filename:'shared/wallet-backup.js'});vm.runInContext(claimSource,context);vm.runInContext(appSource,context,{filename:'user/app.js'});return context;
+  context.window=context;vm.createContext(context);
+  // Match current browser initialization: the real public configuration store
+  // and shared environment exist before the app subscribes or initializes UI.
+  vm.runInContext(configSource,context,{filename:'shared/public-app-config.js'});
+  context.billboardConfigStore=context.BillboardConfig.createStore({storage:null});
+  vm.runInContext(appEnvSource,context,{filename:'shared/app-env.js'});
+  vm.runInContext(backupSource,context,{filename:'shared/wallet-backup.js'});vm.runInContext(claimSource,context);vm.runInContext(appSource,context,{filename:'user/app.js'});return context;
 }
 async function editEnvelope(context,key,transform) {
   const db=await new Promise((resolve,reject)=>{const req=context.indexedDB.open('aztec-billboard-claim-secrets-v2',1);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});

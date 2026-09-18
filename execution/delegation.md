@@ -1,18 +1,14 @@
 # Current delegated work
 
-Root integrates shared files, updates graph state, commits/pushes authorized work
-and supervises the only expensive test process. Each lane reports observed
-results and limitations. AI review is not external audit.
+Root integrates, commits/pushes authorized work and runs one expensive job at a time.
+Graph state controls package completion. Internal AI reviews do not replace external review.
 
-| Lane | Owner | Write ownership | Deliverable |
+| Lane | Agent | Exclusive write ownership | Deliverable |
 |---|---|---|---|
-| Operations | scheduler_improvements | deploy/operations-monitor.mjs; scripts/test-operations-monitor.mjs; docs/operations.md; execution/evidence/O01/ | Bounded read-only monitor and failure checks |
-| Privacy preparation | claim_failure_diagnosis | Read-only | RPC observer seam and fee fallback coverage; claim isolation delivered |
-| Integration | root | Graph and policy documents; scripts/test-c01-application.mjs | Review, affected checks, bounded genuine journey, evidence |
+| Privacy | workflow_review | apps/src/billboard/user/engine.js; scripts/test-public-read-privacy.mjs | Minimize caller-independent public read metadata; preserve private scope and SDK class checks |
+| Operations | claim_failure_diagnosis | execution/evidence/O01/credential-provenance-007.md | Sanitized historical credential inventory; no values or external rotation |
+| Browser recovery | scheduler_improvements | T04 harness paths in graph.json | Implement genuine GUI lifecycle and independent canonical verifier using existing bounded harness |
+| Integration | root | Other assigned graph paths | Evidence integration, serialized checks, coherent commits and revised execution |
 
-Historical assignments remain in history/delegation-before-workflow-revision-2026-09-18.md.
-No old agent/process name is evidence of a currently running task.
-
-Workflow43tests and independent review passed. Claim-isolation3tests passed;
-root supervises genuine run015 with its source inputs frozen. Operations owns
-new disjoint files only. Root prepares the review packet without claiming freeze.
+Browser run044 and packaged smoke006 completed and cleaned up. No heavy process is active.
+Historical assignments: history/delegation-before-workflow-revision-2026-09-18.md.

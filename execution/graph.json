@@ -1256,7 +1256,7 @@
       "evidence": "evidence/O01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Escrow monitor implemented and six checks pass. Add structured moderation health from existing job store and remove raw provider/model error output; no new service or signing behavior.",
+      "checkpoint": "Packaged monitor/health and credential inventory integrated. Implement bounded checkpointed L2 feed lag against existing public-node API; informational only, preserve signing semantics. Genuine operator drills/delivery remain.",
       "priority": 20,
       "execution_lane": "operations",
       "write_paths": [
@@ -1269,7 +1269,15 @@
         "censor-daemon/daemon.mjs",
         "censor-daemon/worker.mjs",
         "censor-daemon/test_health.mjs",
-        "censor-daemon/test_health_integration.mjs"
+        "censor-daemon/test_health_integration.mjs",
+        "censor-daemon/test_daemon.mjs",
+        "scripts/operator-launch.mjs",
+        "scripts/test-operator-package.mjs",
+        "docs/operator-launch.md",
+        "scripts/operator-launch.sh",
+        "shared/rpc-config.json",
+        "censor-daemon/feed-health.mjs",
+        "censor-daemon/test_feed_health.mjs"
       ]
     },
     {
@@ -1410,7 +1418,7 @@
       "title": "Verify end-to-end privacy and funding footprint",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "T02",
         "U01",
@@ -1427,7 +1435,9 @@
       "scope": [
         "apps/",
         "shared/",
-        "execution/"
+        "execution/",
+        "scripts/",
+        "docs/"
       ],
       "plan": "tasks/T03.md",
       "actions": [
@@ -1457,15 +1467,32 @@
       "evidence": "evidence/T03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
-      "priority": 23
+      "checkpoint": "Actual browser privacy observation passes, RPC author lookup is SDK class-validation requirement. Caller-independent public getters unnecessarily simulate with author sender; implement validated neutral reads without changing private queries or class checks. Historical funder match aliases fixture coinbase; no funding-leak claim.",
+      "priority": 23,
+      "execution_lane": "application",
+      "write_paths": [
+        "scripts/u01-browser-rpc.mjs",
+        "scripts/t03-rpc-observer.mjs",
+        "scripts/test-t03-rpc-observer.mjs",
+        "scripts/test-private-fee-client.mjs",
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/u01-browser-post-verify.mjs",
+        "scripts/w01-private-fee-flow.mjs",
+        "scripts/t03-public-footprint.mjs",
+        "scripts/test-t03-public-footprint.mjs",
+        "docs/privacy.md",
+        "execution/evidence/T03/",
+        "execution/evidence/U01/privacy-observation-044.json",
+        "apps/src/billboard/user/engine.js",
+        "scripts/test-public-read-privacy.mjs"
+      ]
     },
     {
       "id": "T04",
       "title": "Run browser, recovery, concurrency and load matrix",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "T02",
         "U01"
@@ -1514,18 +1541,37 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
+      "checkpoint": "Implement minimal full GUI collateral claim/post/screen/withdraw/refund using existing runner; native warm private-fee setup disclosed. Preserve540s/2GiB; one measured attempt after source review. Design002 identifies settlement rendezvous outside client mining.",
       "priority": 24,
       "completion_requires": [
         "O01"
-      ]
+      ],
+      "execution_lane": "browser-recovery",
+      "write_paths": [
+        "execution/evidence/T04/",
+        "scripts/test-c01-application.mjs",
+        "scripts/c01-real-node.mjs",
+        "scripts/c01-bridge-flow.mjs",
+        "scripts/u01-browser-post.mjs",
+        "scripts/u01-browser-flow.mjs",
+        "scripts/t04-browser-journey.mjs",
+        "scripts/t04-browser-journey-verify.mjs",
+        "scripts/test-t04-browser-journey.mjs",
+        "scripts/test-c01-user.mjs"
+      ],
+      "investigation": {
+        "hypothesis": "Existing browser worker reused across genuine GUI lifecycle fits unchanged540s/2GiB; source timing estimate459-499s requires measurement.",
+        "attempts": 0,
+        "max_attempts": 1,
+        "next_action": "Implement and review lifecycle driver and independent canonical verifier, then one bounded run; reassess measured stage on failure."
+      }
     },
     {
       "id": "R01",
       "title": "Freeze review candidate and prepare independent audit packet",
       "phase": "release",
       "kind": "internal",
-      "status": "active",
+      "status": "blocked",
       "depends_on": [
         "T01",
         "D01",
@@ -1569,8 +1615,13 @@
       ],
       "evidence": "evidence/R01.json",
       "evidence_mode": "historical",
-      "blocker": null,
-      "checkpoint": "Early review scope and evidence index prepared. Installed inventory002 records81 protocol/circuit artifacts and80 embedded package inputs;53 embedded artifact hashes match. Final caller/site mapping and candidate freeze wait for remaining qualification; no audit claim.",
+      "blocker": {
+        "reason": "Early scope, historical evidence index and installed protocol inventory are prepared; the final review candidate cannot be frozen before privacy, browser/workload and model qualification.",
+        "evidence": "release/review-preparation.md; evidence/R01/preparation-index-001.json; evidence/R01/protocol-inventory-002.json",
+        "unblock": "T03/T04/M03 completion provides qualified candidate inputs; reconcile final diagnostic caller map and freeze exact source/artifacts.",
+        "next_action": "Continue application privacy, browser/recovery and operations lanes; reopen final packet work when qualification inputs are available."
+      },
+      "checkpoint": "Early preparation delivered; final candidate freeze awaits remaining internal qualification. No reviewer engagement or audit claim.",
       "priority": 25,
       "completion_requires": [
         "T03",

@@ -6,18 +6,21 @@ Objective state: **running**. Completed packages: 22/35.
 
 ## In progress
 
-- **Implement observability, incident and recovery runbooks (O01)** — Escrow monitor implemented and six checks pass. Add structured moderation health from existing job store and remove raw provider/model error output; no new service or signing behavior.
-- **Freeze review candidate and prepare independent audit packet (R01)** — Early review scope and evidence index prepared. Installed inventory002 records81 protocol/circuit artifacts and80 embedded package inputs;53 embedded artifact hashes match. Final caller/site mapping and candidate freeze wait for remaining qualification; no audit claim.
+- **Implement observability, incident and recovery runbooks (O01)** — Packaged monitor/health and credential inventory integrated. Implement bounded checkpointed L2 feed lag against existing public-node API; informational only, preserve signing semantics. Genuine operator drills/delivery remain.
+- **Verify end-to-end privacy and funding footprint (T03)** — Actual browser privacy observation passes, RPC author lookup is SDK class-validation requirement. Caller-independent public getters unnecessarily simulate with author sender; implement validated neutral reads without changing private queries or class checks. Historical funder match aliases fixture coinbase; no funding-leak claim.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Implement minimal full GUI collateral claim/post/screen/withdraw/refund using existing runner; native warm private-fee setup disclosed. Preserve540s/2GiB; one measured attempt after source review. Design002 identifies settlement rendezvous outside client mining.
+  Investigation: 0/1 attempts. Implement and review lifecycle driver and independent canonical verifier, then one bounded run; reassess measured stage on failure.
 
 ## Ready internal work
 
-- **Verify end-to-end privacy and funding footprint (T03)** — Not started. Read the task plan and verify prerequisites.
-- **Run browser, recovery, concurrency and load matrix (T04)** — Not started. Read the task plan and verify prerequisites.
+None.
 
 ## Blocked
 
 - **Evaluate moderation quality and define human review operations (M03)** — Two model candidates failed quality. No approved production model; operations and browser engineering proceed independently.
   Blocker: Both real model candidates fail predeclared classification limits. Final1.7B run:29/159false positives,19/160false negatives,zero unexpectederrors,p95 1.76s. Independent policy/corpus review and actual flag capacity remain unqualified. Next action: Prepare a bounded model/policy qualification proposal using held-out human-reviewed labels; continue independent application, operations and review-packet work.
+- **Freeze review candidate and prepare independent audit packet (R01)** — Early preparation delivered; final candidate freeze awaits remaining internal qualification. No reviewer engagement or audit claim.
+  Blocker: Early scope, historical evidence index and installed protocol inventory are prepared; the final review candidate cannot be frozen before privacy, browser/workload and model qualification. Next action: Continue application privacy, browser/recovery and operations lanes; reopen final packet work when qualification inputs are available.
 - **Verify current target-network production suitability (X03)** — External production release gate only; internal work continues.
   Blocker: Official V5 incident guidance still asks new deployments to pause in the bounded2026-09-12 recheck. No subsequent applicable official clearance was found. Package5.2 interoperability guidance does not establish incident closure or live target agreement. Next action: Continue internal engineering, complete V5 compatibility work in P04, and refresh X03 before release. Do not infer clearance from a successful local build.
 
