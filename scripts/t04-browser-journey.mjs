@@ -8,11 +8,22 @@ const stages=new Set(['claim','post','screen','exit','refund']);
 const hash=/^0x[0-9a-f]{64}$/;
 export function validateBrowserControl(value){
  assert(value&&typeof value==='object'&&!Array.isArray(value));
- assert.deepEqual(Object.keys(value).sort(),['backupPassword','browserJourney','origin','rpcToken']);
- assert.equal(typeof value.browserJourney,'boolean');
+ assert.deepEqual(Object.keys(value).sort(),['backupPassword','browserJourney','browserRecovery','origin','rpcToken']);
+ assert.equal(typeof value.browserJourney,'boolean');assert.equal(typeof value.browserRecovery,'boolean');assert(!(value.browserJourney&&value.browserRecovery));
  const origin=new URL(value.origin);assert(origin.protocol==='https:'&&origin.hostname==='127.0.0.1'&&origin.pathname==='/'&&!origin.username&&!origin.password&&!origin.search&&!origin.hash);
  assert(typeof value.rpcToken==='string'&&/^[a-zA-Z0-9_-]{24,256}$/.test(value.rpcToken));
  assert(typeof value.backupPassword==='string'&&/^[a-zA-Z0-9_-]{24,256}$/.test(value.backupPassword));
+ return value;
+}
+// Shared parent-worker validator: exercise the actual producer/consumer boundary.
+export function validateBrowserWorkerControl(value,{directory}){
+ const controlKeys=['backupPassword','browserJourney','browserRecovery','origin','rpcToken'];
+ assert(value&&typeof value==='object'&&!Array.isArray(value));
+ validateBrowserControl(Object.fromEntries(controlKeys.map(key=>[key,value[key]])));
+ const handoffKeys=['nodeUrl','ethereumUrl','publicConfig','backupPath','ethereumAccount','message',...(value.browserJourney?['browserJourney','depositAmount']:[])];
+ assert.deepEqual(Object.keys(value).sort(),[...new Set([...handoffKeys,...controlKeys,'timeoutMs'])].sort());
+ validateBrowserHandoff(Object.fromEntries(handoffKeys.map(key=>[key,value[key]])),{directory,browserJourney:value.browserJourney});
+ assert(Number.isSafeInteger(value.timeoutMs)&&value.timeoutMs>0&&value.timeoutMs<=480000);
  return value;
 }
 export function createBrowserHandoff(base,{directory,browserJourney=false,depositAmount}={}){

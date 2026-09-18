@@ -8,8 +8,8 @@ Objective state: **running**. Completed packages: 22/35.
 
 - **Implement observability, incident and recovery runbooks (O01)** — Escrow/daemon monitoring, bounded checkpointed feed lag, sanitized credential inventory and removal integrated; package smoke011 passes. Drillgapreview010 reuses actual D01/W03/T02 evidence and identifies genuine censor handover/policy and monitor failover drills. Operator delivery/replacement remain external O02 inputs.
 - **Verify end-to-end privacy and funding footprint (T03)** — Claim readiness and claim-only retry integrated;106 focused tests pass010, canonical app build011 passes, independent internal source review no blocker. Actual GUI lifecycle qualification next; underlying SDK read cancellation not claimed.
-- **Run browser, recovery, concurrency and load matrix (T04)** — 019 fourAztecGUIstages canonical; driver64MiBheapOOM atrefund confirmedowncrash. Driver128MiB insideunchanged2GiB; fixedfatal classification, failure rendezvous and publicstage persistence integrated.27affected checks pass020. Recoveryhelpers12checks pass021 but notintegrated/qualified. Lifecycle022 begins sameapplicationbuild.
-  Investigation: 1/1 attempts. Reassessment required. Inspect lifecycle022 result/cleanup; no resource-limit increase or blindrepeat. If passed integrate independentbrowserrestarthelpers next.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Lifecycle022 passed full genuine GUI deposit, claim, post, screening, withdrawal and L1 refund in 483244ms, peak1729856KiB; owned tree absent and temporary directory removed. Integrating accepted-post response loss and full browser restart qualification next. Recovery023 integration passes31 focused tests024; source reviews recorded. Recovery025 started with unchanged 540s/2GiB bounds.
+  Investigation: 1/2 attempts. Inspect genuine recovery025 result and cleanup before further changes or attempts.
 
 ## Ready internal work
 

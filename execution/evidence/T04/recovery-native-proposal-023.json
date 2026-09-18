@@ -1,0 +1,5 @@
+{
+  "baseFile": "scripts/u01-browser-flow.mjs",
+  "baseSha256": "b66db6bca625cf44fc37058865c70ce3e5947361960f1d5dad6781928d623552",
+  "scope": "Prepared patch only; active lifecycle022 source unchanged; apply and test after run."
+}

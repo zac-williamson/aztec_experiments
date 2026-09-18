@@ -1546,7 +1546,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "019 fourAztecGUIstages canonical; driver64MiBheapOOM atrefund confirmedowncrash. Driver128MiB insideunchanged2GiB; fixedfatal classification, failure rendezvous and publicstage persistence integrated.27affected checks pass020. Recoveryhelpers12checks pass021 but notintegrated/qualified. Lifecycle022 begins sameapplicationbuild.",
+      "checkpoint": "Lifecycle022 passed full genuine GUI deposit, claim, post, screening, withdrawal and L1 refund in 483244ms, peak1729856KiB; owned tree absent and temporary directory removed. Integrating accepted-post response loss and full browser restart qualification next. Recovery023 integration passes31 focused tests024; source reviews recorded. Recovery025 started with unchanged 540s/2GiB bounds.",
       "priority": 24,
       "completion_requires": [
         "O01"
@@ -1576,10 +1576,10 @@
         "scripts/test-c01-browser-fatal.mjs"
       ],
       "investigation": {
-        "hypothesis": "019 abort is confirmed driverV8heapOOM at64MiB, not totalmemorybound or applicationfailure.128MiB driverbudget plus partialevidence persistence and fixedfatalclassifier tested; full GUI refund/finalverification still required.",
+        "hypothesis": "Accepted-post response loss and full browser restart should reconcile persisted transaction without resubmission or duplicate private debit; standalone helpers pass12 checks, integration pending.",
         "attempts": 1,
-        "max_attempts": 1,
-        "next_action": "Inspect lifecycle022 result/cleanup; no resource-limit increase or blindrepeat. If passed integrate independentbrowserrestarthelpers next."
+        "max_attempts": 2,
+        "next_action": "Inspect genuine recovery025 result and cleanup before further changes or attempts."
       }
     },
     {
