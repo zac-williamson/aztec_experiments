@@ -102,3 +102,18 @@ For an interrupted flag, use its exact saved post ID, policy version and reason.
 To reconcile through the supported signer path, use the same command and exact saved values, replace `--inspect-only` with `--reconcile-previous`, and add `--private-fee-config "$FEE_CONFIG"`. That operation can submit a replacement when journal/reconciliation rules permit; it is not read-only. Unknown or pending outcomes must remain unresolved rather than triggering blind resubmission. Normally restart the daemon with its existing `--state-dir` and matching signer configuration so its durable queue coordinates this work.
 
 Do not use generic `recover --censor-wallet` as shorthand: the CLI selects the censor wallet only for moderation actions and explicit censor `list`, not generic recovery. For author actions, `recover` checks the saved Aztec transaction; `recover-eth` checks the saved Ethereum request and `--retry-ethereum` explicitly retries its original nonce/details. Keep author and moderator recovery contexts distinct. No recovery command extends an expired moderation window.
+
+## Historical provider credential
+
+The original repository carried an Aztec Labs V5 RPC credential in
+`shared/rpc-config.json`. The unused configuration file has been removed from the
+current tree. Its value must not be copied into documentation, public configuration,
+or a deployment. Git history still contains the exposure; deleting the file does
+not revoke the credential. External revocation has not been verified.
+
+The deployment owner must arrange replacement/revocation with the provider and
+apply appropriate origin, scope and usage restrictions before production. Record
+only the provider, credential identifier and completed action in the private
+operator record. The public configuration validator rejects query credentials
+and URL user information, but cannot determine whether an arbitrary URL path
+contains a provider token; exported endpoint paths must also be public-safe.
