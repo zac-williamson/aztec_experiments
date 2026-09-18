@@ -79,3 +79,22 @@ test('rejects extra public entrypoint hidden behind generated dispatcher',async(
   const extra={...artifact.functions.find(f=>f.name==='pay_fee'),name:'admin_drain',functionType:'public'};
   await assert.rejects(()=>derivePrivateFeeInstance({...artifact,nonDispatchPublicFunctions:[extra]}),e=>e.code==='PRIVATE_FEE_ARTIFACT_INVALID');
 });
+
+test('one-unit private-credit shortfall rejects without author public balance, funding or submission',async()=>{
+ const {input,state}=fixture();state.balance=1299n;let forbidden=0;
+ input.node.getPublicStorageAt=input.node.sendTx=input.wallet.sendTx=input.wallet.proveTx=async()=>{forbidden++;throw Error('Public fallback forbidden');};
+ await assert.rejects(preparePrivateFeePayment(input),e=>e.code==='PRIVATE_FEE_BALANCE_INSUFFICIENT');
+ assert.equal(forbidden,0);assert.equal(state.reads,1);assert.equal(state.balance,1299n);
+});
+test('balance and identity provider failures never produce a fallback payment or expose error details',async()=>{
+ for(const target of ['balance','wallet-chain','node-chain','contract']){
+  const {input}=fixture();let forbidden=0;const fail=async()=>{throw Error('PRIVATE_INPUT_MARKER');};
+  if(target==='balance')input.wallet.executeUtility=fail;
+  if(target==='wallet-chain')input.wallet.getChainInfo=fail;
+  if(target==='node-chain')input.node.getNodeInfo=fail;
+  if(target==='contract')input.node.getContract=fail;
+  input.node.getPublicStorageAt=input.node.sendTx=input.wallet.sendTx=input.wallet.proveTx=async()=>{forbidden++;};
+  await assert.rejects(preparePrivateFeePayment(input),e=>e.code==='PRIVATE_FEE_PREPARATION_FAILED'&&!e.message.includes('PRIVATE_INPUT_MARKER'));
+  assert.equal(forbidden,0);
+ }
+});

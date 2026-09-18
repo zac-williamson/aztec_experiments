@@ -11,7 +11,7 @@ async function boundedBody(stream){let size=0;const parts=[];for await(const par
 function respond(res,status,value){res.writeHead(status,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(value));}
 async function listen(handler){const server=http.createServer(handler);server.requestTimeout=20000;server.headersTimeout=10000;server.keepAliveTimeout=1000;await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});return server;}
 function stop(server){return new Promise(resolve=>{server.close(resolve);server.closeAllConnections();});}
-export async function startU01BrowserRpc({node,anvilUrl,ethereumAccount,origin,token}){
+export async function startU01BrowserRpc({node,anvilUrl,ethereumAccount,origin,token,observer}){
  const target=new URL(anvilUrl),expectedOrigin=new URL(origin);
  if(target.protocol!=='http:'||target.hostname!=='127.0.0.1'||!target.port||target.username||target.password||target.search||target.hash||target.pathname!=='/')throw Error('Explicit loopback Anvil URL required');
  if(!['https:','http:'].includes(expectedOrigin.protocol)||expectedOrigin.origin!==origin||!['127.0.0.1','localhost'].includes(expectedOrigin.hostname))throw Error('Exact local browser origin required');
@@ -22,15 +22,23 @@ export async function startU01BrowserRpc({node,anvilUrl,ethereumAccount,origin,t
  async function forward(body){const controller=new AbortController();controllers.add(controller);const timer=setTimeout(()=>controller.abort(),15000);try{const result=await fetch(target,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal:controller.signal,redirect:'error'});if(!result.ok)throw Error();return JSON.parse(await boundedBody(result.body));}finally{clearTimeout(timer);controllers.delete(controller);}}
  const network=await forward({jsonrpc:'2.0',id:1,method:'eth_chainId',params:[]});if(network.result!=='0x7a69')throw Error('Disposable chain 31337 required');
  function authorized(req){const value=req.headers['x-u01-test-token'];return !closed&&req.headers.origin===origin&&typeof value==='string'&&Buffer.byteLength(value)===secret.length&&timingSafeEqual(Buffer.from(value),secret)&&req.method==='POST'&&req.url==='/';}
- const rpc=createNamespacedSafeJsonRpcServer({node:[node,AztecNodeApiSchema],aztec:[node,AztecNodeApiSchema]},{maxBatchSize:100,maxBodySizeBytes:10*1024*1024,corsAllowedOrigins:[origin],corsAllowedHeaders:['content-type','x-u01-test-token'],log:silent});
+ // Observation is optional and must never change transport or application outcomes.
+ function begin(channel,method,args){try{return observer?.begin(channel,method,args)??(()=>{});}catch{return ()=>{};}}
+ function finish(done,success){try{done(success);}catch{}}
+ const observedNode=observer?new Proxy(node,{get(target,key){const value=Reflect.get(target,key,target);if(typeof value!=='function')return value;
+  if(!Object.hasOwn(AztecNodeApiSchema,key))return value.bind(target);
+  return async(...args)=>{const done=begin('aztec',key,args);try{const result=await value.apply(target,args);finish(done,true);return result;}catch(error){finish(done,false);throw error;}};
+ }}):node;
+ const rpc=createNamespacedSafeJsonRpcServer({node:[observedNode,AztecNodeApiSchema],aztec:[observedNode,AztecNodeApiSchema]},{maxBatchSize:100,maxBodySizeBytes:10*1024*1024,corsAllowedOrigins:[origin],corsAllowedHeaders:['content-type','x-u01-test-token'],log:silent});
  const callback=rpc.getApp().callback();let nodeServer,ethereumServer;
  try{
   nodeServer=await listen((req,res)=>{if(!authorized(req))return respond(res,403,{error:'Forbidden'});callback(req,res);});
   ethereumServer=await listen(async(req,res)=>{if(!authorized(req))return respond(res,403,{error:'Forbidden'});try{
    const payload=JSON.parse(await boundedBody(req));
    const batch=Array.isArray(payload);if(batch&&(payload.length===0||payload.length>32))throw Error();
-   async function execute(body){try{if(!body||Array.isArray(body)||body.jsonrpc!=='2.0'||typeof body.method!=='string'||!Array.isArray(body.params)||!['number','string'].includes(typeof body.id))throw Error();
-   if(['eth_accounts','eth_requestAccounts'].includes(body.method)){if(body.params.length)throw Error();return {jsonrpc:'2.0',id:body.id,result:[account]};}
+   async function execute(body){let done=()=>{};try{if(!body||Array.isArray(body)||body.jsonrpc!=='2.0'||typeof body.method!=='string'||!Array.isArray(body.params)||!['number','string'].includes(typeof body.id))throw Error();
+   done=begin('ethereum',body.method,body.params);
+   if(['eth_accounts','eth_requestAccounts'].includes(body.method)){if(body.params.length)throw Error();finish(done,true);return {jsonrpc:'2.0',id:body.id,result:[account]};}
    if(!METHODS.has(body.method))throw Error();
    if(body.method==='eth_sendTransaction'){
     const tx=body.params[0];if(body.params.length!==1||!tx||typeof tx!=='object'||Array.isArray(tx)||typeof tx.from!=='string'||tx.from.toLowerCase()!==account)throw Error();
@@ -39,8 +47,8 @@ export async function startU01BrowserRpc({node,anvilUrl,ethereumAccount,origin,t
    if(body.method==='eth_sendRawTransaction'){
     if(body.params.length!==1||typeof body.params[0]!=='string')throw Error();const tx=Transaction.from(body.params[0]);if(tx.from?.toLowerCase()!==account||tx.chainId!==31337n)throw Error();
    }
-   return await forward(body);
-   }catch{return {jsonrpc:'2.0',id:body&&['number','string'].includes(typeof body.id)?body.id:null,error:{code:-32600,message:'Fixture request rejected'}};}}
+   const result=await forward(body);finish(done,!result.error);return result;
+   }catch{finish(done,false);return {jsonrpc:'2.0',id:body&&['number','string'].includes(typeof body.id)?body.id:null,error:{code:-32600,message:'Fixture request rejected'}};}}
    if(batch){const ids=payload.map(x=>x?.id);if(new Set(ids).size!==ids.length)throw Error();respond(res,200,await Promise.all(payload.map(execute)));}
    else {const result=await execute(payload);respond(res,result.error?.message==='Fixture request rejected'?400:200,result);}
   }catch{if(!res.headersSent)respond(res,400,{jsonrpc:'2.0',id:null,error:{code:-32600,message:'Fixture request rejected'}});else res.destroy();}});

@@ -402,3 +402,26 @@ test('saved moderator request cannot spend fees after authority transfers away',
   recover:async()=>{throw Object.assign(new Error('stale'),{code:'BB_RECOVERY_REQUIRED'});},inspect:async()=>({operation}),allowReplacement:async()=>{},setOperation:()=>{}});
  await assert.rejects(h.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(h.requests.length,0);
 });
+
+// Real production preparer composed with real routing; only wallet/node state is a fixture.
+import {preparePrivateFeePayment,derivePrivateFeeInstance} from '../shared/private-fee-client.mjs';
+import {loadContractArtifact} from '@aztec/stdlib/abi';
+import {BarretenbergSync} from '@aztec/bb.js';
+import {after} from 'node:test';
+after(async()=>{await BarretenbergSync.destroySingleton();});
+test('real preparer failures stop every routed action before proof/send/funding and preserve bootstrap input',async()=>{
+ const artifact=loadContractArtifact(JSON.parse(await readFile(new URL('../apps/src/billboard/private_fee_artifact.json',import.meta.url),'utf8')));
+ const instance=await derivePrivateFeeInstance(artifact),author=AztecAddress.fromFieldUnsafe(new Fr(42));
+ for(const kind of ['claim','post','withdraw','declare_immoral','set_moderation_policy','transfer_censor'])for(const mode of ['shortfall','balance-error','bootstrap-error']){
+  const c=context();let calls=0;const forbidden=async()=>{calls++;throw Error('Should never prove, fund or send');};
+  const wallet={getChainInfo:async()=>({chainId:new Fr(1),version:new Fr(2)}),registerContract:async()=>{},executeUtility:async()=>{if(mode==='balance-error')throw Error('PRIVATE_INPUT_MARKER');return {result:[new Fr(1099)],offchainEffects:[],anchorBlockTimestamp:1n};},sendTx:forbidden,proveTx:forbidden};
+  const node={getNodeInfo:async()=>({l1ChainId:1,rollupVersion:2}),getContract:async()=>instance,sendTx:forbidden,getPublicStorageAt:forbidden};
+  const config={privateFee:{contractAddress:instance.address.toString(),gasSettings:gas()}};
+  if(mode==='bootstrap-error')config.privateFeeClaim={amount:'1099',salt:new Fr(5),leafIndex:new Fr(6)};
+  const before=JSON.stringify(config.privateFeeClaim??null);
+  const contract={methods:new Proxy({},{get:()=>()=>({send:forbidden})})};
+  const sender=c.BillboardPrivateFeeRouting.createPrivateFeeSender({a:{GasSettings,preparePrivateFeePayment},config,privateFeeArtifact:artifact,contract,wallet,node,owner:author,scope:{l1ChainId:'1',rollupVersion:'2'}});
+  await assert.rejects(sender(kind,[]),e=>e.code==='BB_PRIVATE_FEE_PREPARATION_FAILED'&&!e.message.includes('PRIVATE_INPUT_MARKER'));
+  assert.equal(calls,0);assert.equal(JSON.stringify(config.privateFeeClaim??null),before);
+ }
+});

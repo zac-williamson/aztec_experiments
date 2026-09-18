@@ -1,0 +1,17 @@
+✔ actual SDK types distinguish shared payer, missing roles and zero effect counts (8.037333ms)
+✔ detects author in public fields without confusing ciphertext match with clear public argument (5.44175ms)
+✔ detects direct author payer and rejects wrong effect or ambiguous/unknown roles (6.201958ms)
+✔ real SDK public call decoding exposes sender and target, including teardown (62.756625ms)
+✔ classifies exact roles and fixed method without retaining input secrets (1.19175ms)
+✔ actual SDK fields are exact occurrences; encoded bytes and substrings are not (0.208459ms)
+✔ unknown methods and capacity are counted without persisting arbitrary names (0.072875ms)
+✔ deep arguments flag bounded classification and snapshots cannot mutate retained rows (0.076ms)
+✔ actual local RPC fixture preserves successes, failures, authorization and receiver with observation (231.114958ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 765.102417

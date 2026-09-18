@@ -8,7 +8,9 @@ import {loadContractArtifact} from '@aztec/stdlib/abi';
 import {NoteStatus} from '@aztec/stdlib/note';
 import {Tx,TxHash,TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
 import {getFeeJuiceBalance} from '@aztec/aztec.js/utils';
-import {derivePrivateFeeInstance} from '../shared/private-fee-client.mjs';
+import {derivePrivateFeeInstance,preparePrivateFeePayment} from '../shared/private-fee-client.mjs';
+import {GasSettings} from '@aztec/stdlib/gas';
+import {classifyT03PublicFootprint} from './t03-public-footprint.mjs';
 const number=x=>BigInt(x.toString());
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const included=r=>[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(r.status)&&r.executionResult===TxExecutionResult.SUCCESS&&r.blockNumber!=null&&r.blockHash!=null;
@@ -21,7 +23,7 @@ async function feeContract(wallet,privateFee){
 const filter=(instance,account)=>({contractAddress:instance.address,owner:account.address,scopes:[account.address],status:NoteStatus.ACTIVE});
 // Returns note preimages in memory: deliberately NOT a sanitized observation.
 export async function prepareU01BrowserPostVerification({node,wallet,account,preparation,instance,claimResult,privateFee,maximumFee}){
- const gas=privateFee.gasSettings??privateFee.gas;maximumFee??=privateFee.maximumFee??(gas?BigInt(gas.gasLimits.daGas)*BigInt(gas.maxFeesPerGas.feePerDaGas)+BigInt(gas.gasLimits.l2Gas)*BigInt(gas.maxFeesPerGas.feePerL2Gas):undefined);
+ const gas=privateFee.gasSettings??privateFee.gas??privateFee.browserFixture?.gas;maximumFee??=privateFee.maximumFee??(gas?BigInt(gas.gasLimits.daGas)*BigInt(gas.maxFeesPerGas.feePerDaGas)+BigInt(gas.gasLimits.l2Gas)*BigInt(gas.maxFeesPerGas.feePerL2Gas):undefined);
  assert(claimResult.passed&&claimResult.exactDeliveredNoteChecked);
  await wallet.registerContract(instance,preparation.artifact);const fee=await feeContract(wallet,privateFee);await wallet.pxe.sync();
  const board=Contract.at(instance.address,preparation.artifact,wallet);
@@ -34,7 +36,21 @@ export async function prepareU01BrowserPostVerification({node,wallet,account,pre
  const beforeFeeBalance=number((await fee.methods.balance_of(account.address).simulate({from:account.address})).result);
  assert(BigInt(maximumFee)>0n&&beforeFeeBalance>=BigInt(maximumFee));
  const beforePayerBalance=await getFeeJuiceBalance((await derivePrivateFeeInstance(JSON.parse(await fs.readFile(new URL('../apps/src/billboard/private_fee_artifact.json',import.meta.url),'utf8')))).address,node);
- return{oldNote,oldFields:fields,beforePostCount,beforeFeeBalance,beforePayerBalance,maximumFee:BigInt(maximumFee),account,captures:new Map()};
+ // Genuine-state exhaustion is a preparation failure, not another expensive proof.
+ const excessiveGas=GasSettings.fromBuffer(gas.toBuffer());
+ excessiveGas.maxFeesPerGas.feePerL2Gas=beforeFeeBalance/BigInt(excessiveGas.gasLimits.l2Gas)+1n;
+ let forbiddenCalls=0;
+ const guard=target=>new Proxy(target,{get(object,key){if(['sendTx','proveTx'].includes(key))return ()=>{forbiddenCalls++;throw Error('Unexpected submission during exhaustion probe');};const value=Reflect.get(object,key,object);return typeof value==='function'?value.bind(object):value;}});
+ const rawFee=JSON.parse(await fs.readFile(new URL('../apps/src/billboard/private_fee_artifact.json',import.meta.url),'utf8'));
+ await assert.rejects(preparePrivateFeePayment({wallet:guard(wallet),node:guard(node),owner:account.address,privateFeeAddress:privateFee.payer,privateFeeArtifact:rawFee,expectedChainId:claimResult.claim.scope.l1ChainId,expectedVersion:claimResult.claim.scope.rollupVersion,gasSettings:excessiveGas}),error=>error.code==='PRIVATE_FEE_BALANCE_INSUFFICIENT');
+ assert.equal(forbiddenCalls,0);
+ assert.equal(number((await fee.methods.balance_of(account.address).simulate({from:account.address})).result),beforeFeeBalance);
+ assert.equal(await getFeeJuiceBalance(account.address,node),0n);
+ assert.equal(await getFeeJuiceBalance((await derivePrivateFeeInstance(rawFee)).address,node),beforePayerBalance);
+ const afterNotes=(await wallet.pxe.debug.getNotes(filter(instance,account))).filter(n=>n.note.items.length===8&&number(n.note.items[1])===number(claimResult.claim.depositChainId));
+ assert.equal(afterNotes.length,1);assert(afterNotes[0].siloedNullifier.equals(oldNote.siloedNullifier));assert.deepEqual(afterNotes[0].note.items.map(number),oldNote.note.items.map(number));
+ const feeExhaustion={passed:true,stage:'actual private balance preparation; no proof or submission',privateBalanceUnchanged:true,publicBalancesUnchanged:true,depositNoteUnchanged:true,forbiddenCalls};
+ return{oldNote,oldFields:fields,beforePostCount,beforeFeeBalance,beforePayerBalance,maximumFee:BigInt(maximumFee),account,captures:new Map(),feeExhaustion};
 }
 // Install only for the browser submission window. All submissions still use the
 // original node method and normal verifier. Capture proof bytes solely in memory.
@@ -83,5 +99,6 @@ export async function verifyU01BrowserPost({node,preparation,instance,claimResul
  const afterFeeBalance=number((await fee.methods.balance_of(account.address).simulate({from:account.address})).result);assert.equal(afterFeeBalance,BigInt(beforeFeeBalance)-BigInt(maximumFee));assert.equal(await getFeeJuiceBalance(account.address,node),0n);
  const feeInstance=await derivePrivateFeeInstance(JSON.parse(await fs.readFile(new URL('../apps/src/billboard/private_fee_artifact.json',import.meta.url),'utf8')));
  const afterPayerBalance=await getFeeJuiceBalance(feeInstance.address,node);assert.equal(afterPayerBalance,BigInt(beforePayerBalance)-BigInt(receipt.transactionFee.toString()));
- return{passed:true,scope:'one genuine browser-proved first post; native fixture preparation and read-only verification',applicationProofs:true,networkProofs:false,txHash:String(txHash),proofSha256:sha(tx.chonkProof.toBuffer()),nodePreSubmissionValidation:'valid',normalNodeVerification:true,status:receipt.status,executionResult:receipt.executionResult,blockNumber:String(receipt.blockNumber),blockHash:receipt.blockHash.toString(),postId:id.toString(),feePayer:tx.data.feePayer.toString(),transactionFee:String(receipt.transactionFee),exactDepositNullifier:true,exactReplacementNote:true,exactPostNote:true,exactCooldown:true,publicContentChecked:true,privateFeeDebitChecked:true,publicFeePayerDebitChecked:true,authorPublicFeeBalanceZero:true};
+ const publicFootprint=classifyT03PublicFootprint({tx,effect:effect.data,roles:{author:account.address,sharedPayer:privateFee.payer,board:instance.address}});
+ return{publicFootprint,passed:true,scope:'one genuine browser-proved first post; native fixture preparation and read-only verification',applicationProofs:true,networkProofs:false,txHash:String(txHash),proofSha256:sha(tx.chonkProof.toBuffer()),nodePreSubmissionValidation:'valid',normalNodeVerification:true,status:receipt.status,executionResult:receipt.executionResult,blockNumber:String(receipt.blockNumber),blockHash:receipt.blockHash.toString(),postId:id.toString(),feePayer:tx.data.feePayer.toString(),transactionFee:String(receipt.transactionFee),exactDepositNullifier:true,exactReplacementNote:true,exactPostNote:true,exactCooldown:true,publicContentChecked:true,privateFeeDebitChecked:true,publicFeePayerDebitChecked:true,authorPublicFeeBalanceZero:true};
 }

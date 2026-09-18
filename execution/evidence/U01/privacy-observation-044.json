@@ -1,0 +1,1184 @@
+{
+  "startedAt": "2026-09-18T10:34:39.475Z",
+  "script": "scripts/test-c01-application.mjs",
+  "args": [
+    "--browser-post"
+  ],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 2097152,
+  "rssMethod": "sampled owned descendant tree; not an OS allocation limit",
+  "passed": true,
+  "samples": [
+    {
+      "elapsedMs": 30,
+      "rssKiB": 912
+    },
+    {
+      "elapsedMs": 1050,
+      "rssKiB": 410736
+    },
+    {
+      "elapsedMs": 2076,
+      "rssKiB": 544800
+    },
+    {
+      "elapsedMs": 3107,
+      "rssKiB": 643264
+    },
+    {
+      "elapsedMs": 4142,
+      "rssKiB": 660832
+    },
+    {
+      "elapsedMs": 5163,
+      "rssKiB": 730048
+    },
+    {
+      "elapsedMs": 6183,
+      "rssKiB": 703216
+    },
+    {
+      "elapsedMs": 7217,
+      "rssKiB": 863504
+    },
+    {
+      "elapsedMs": 8239,
+      "rssKiB": 854752
+    },
+    {
+      "elapsedMs": 9264,
+      "rssKiB": 993536
+    },
+    {
+      "elapsedMs": 10285,
+      "rssKiB": 974384
+    },
+    {
+      "elapsedMs": 11305,
+      "rssKiB": 1065808
+    },
+    {
+      "elapsedMs": 12325,
+      "rssKiB": 1041136
+    },
+    {
+      "elapsedMs": 13346,
+      "rssKiB": 1023152
+    },
+    {
+      "elapsedMs": 14366,
+      "rssKiB": 869568
+    },
+    {
+      "elapsedMs": 15389,
+      "rssKiB": 801600
+    },
+    {
+      "elapsedMs": 16409,
+      "rssKiB": 707280
+    },
+    {
+      "elapsedMs": 17429,
+      "rssKiB": 714944
+    },
+    {
+      "elapsedMs": 18451,
+      "rssKiB": 570544
+    },
+    {
+      "elapsedMs": 19471,
+      "rssKiB": 578752
+    },
+    {
+      "elapsedMs": 20506,
+      "rssKiB": 799024
+    },
+    {
+      "elapsedMs": 21552,
+      "rssKiB": 688528
+    },
+    {
+      "elapsedMs": 22580,
+      "rssKiB": 640688
+    },
+    {
+      "elapsedMs": 23605,
+      "rssKiB": 554208
+    },
+    {
+      "elapsedMs": 24634,
+      "rssKiB": 561296
+    },
+    {
+      "elapsedMs": 25657,
+      "rssKiB": 566192
+    },
+    {
+      "elapsedMs": 26685,
+      "rssKiB": 570480
+    },
+    {
+      "elapsedMs": 27704,
+      "rssKiB": 565968
+    },
+    {
+      "elapsedMs": 28727,
+      "rssKiB": 504544
+    },
+    {
+      "elapsedMs": 29751,
+      "rssKiB": 383344
+    },
+    {
+      "elapsedMs": 30772,
+      "rssKiB": 407232
+    },
+    {
+      "elapsedMs": 31799,
+      "rssKiB": 457648
+    },
+    {
+      "elapsedMs": 32826,
+      "rssKiB": 616688
+    },
+    {
+      "elapsedMs": 33851,
+      "rssKiB": 727904
+    },
+    {
+      "elapsedMs": 34874,
+      "rssKiB": 798736
+    },
+    {
+      "elapsedMs": 35900,
+      "rssKiB": 612304
+    },
+    {
+      "elapsedMs": 36924,
+      "rssKiB": 534128
+    },
+    {
+      "elapsedMs": 37945,
+      "rssKiB": 557808
+    },
+    {
+      "elapsedMs": 38967,
+      "rssKiB": 530848
+    },
+    {
+      "elapsedMs": 39988,
+      "rssKiB": 545648
+    },
+    {
+      "elapsedMs": 41009,
+      "rssKiB": 589200
+    },
+    {
+      "elapsedMs": 42029,
+      "rssKiB": 583696
+    },
+    {
+      "elapsedMs": 43053,
+      "rssKiB": 747408
+    },
+    {
+      "elapsedMs": 44075,
+      "rssKiB": 752992
+    },
+    {
+      "elapsedMs": 45109,
+      "rssKiB": 742224
+    },
+    {
+      "elapsedMs": 46135,
+      "rssKiB": 689312
+    },
+    {
+      "elapsedMs": 47164,
+      "rssKiB": 626400
+    },
+    {
+      "elapsedMs": 48191,
+      "rssKiB": 630112
+    },
+    {
+      "elapsedMs": 49220,
+      "rssKiB": 613376
+    },
+    {
+      "elapsedMs": 50252,
+      "rssKiB": 579328
+    },
+    {
+      "elapsedMs": 51277,
+      "rssKiB": 559280
+    },
+    {
+      "elapsedMs": 52306,
+      "rssKiB": 563776
+    },
+    {
+      "elapsedMs": 53368,
+      "rssKiB": 308016
+    },
+    {
+      "elapsedMs": 54403,
+      "rssKiB": 235648
+    },
+    {
+      "elapsedMs": 55433,
+      "rssKiB": 239152
+    },
+    {
+      "elapsedMs": 56465,
+      "rssKiB": 298512
+    },
+    {
+      "elapsedMs": 57487,
+      "rssKiB": 302864
+    },
+    {
+      "elapsedMs": 58516,
+      "rssKiB": 306288
+    },
+    {
+      "elapsedMs": 59542,
+      "rssKiB": 310400
+    },
+    {
+      "elapsedMs": 60576,
+      "rssKiB": 314096
+    },
+    {
+      "elapsedMs": 61607,
+      "rssKiB": 318704
+    },
+    {
+      "elapsedMs": 62633,
+      "rssKiB": 352048
+    },
+    {
+      "elapsedMs": 63686,
+      "rssKiB": 408704
+    },
+    {
+      "elapsedMs": 64713,
+      "rssKiB": 418368
+    },
+    {
+      "elapsedMs": 65747,
+      "rssKiB": 420864
+    },
+    {
+      "elapsedMs": 66769,
+      "rssKiB": 424784
+    },
+    {
+      "elapsedMs": 67804,
+      "rssKiB": 423776
+    },
+    {
+      "elapsedMs": 68832,
+      "rssKiB": 424816
+    },
+    {
+      "elapsedMs": 69867,
+      "rssKiB": 424848
+    },
+    {
+      "elapsedMs": 70896,
+      "rssKiB": 422352
+    },
+    {
+      "elapsedMs": 71925,
+      "rssKiB": 422448
+    },
+    {
+      "elapsedMs": 72954,
+      "rssKiB": 422480
+    },
+    {
+      "elapsedMs": 73989,
+      "rssKiB": 422496
+    },
+    {
+      "elapsedMs": 75017,
+      "rssKiB": 363392
+    },
+    {
+      "elapsedMs": 76051,
+      "rssKiB": 365824
+    },
+    {
+      "elapsedMs": 77084,
+      "rssKiB": 366160
+    },
+    {
+      "elapsedMs": 78110,
+      "rssKiB": 365968
+    },
+    {
+      "elapsedMs": 79132,
+      "rssKiB": 367408
+    },
+    {
+      "elapsedMs": 80159,
+      "rssKiB": 368192
+    },
+    {
+      "elapsedMs": 81187,
+      "rssKiB": 371744
+    },
+    {
+      "elapsedMs": 82210,
+      "rssKiB": 562160
+    },
+    {
+      "elapsedMs": 83236,
+      "rssKiB": 559760
+    },
+    {
+      "elapsedMs": 84263,
+      "rssKiB": 552000
+    },
+    {
+      "elapsedMs": 85289,
+      "rssKiB": 553664
+    },
+    {
+      "elapsedMs": 86320,
+      "rssKiB": 550288
+    },
+    {
+      "elapsedMs": 87354,
+      "rssKiB": 554464
+    },
+    {
+      "elapsedMs": 88380,
+      "rssKiB": 552912
+    },
+    {
+      "elapsedMs": 89410,
+      "rssKiB": 534464
+    },
+    {
+      "elapsedMs": 90439,
+      "rssKiB": 402320
+    },
+    {
+      "elapsedMs": 91474,
+      "rssKiB": 404560
+    },
+    {
+      "elapsedMs": 92504,
+      "rssKiB": 289984
+    },
+    {
+      "elapsedMs": 93537,
+      "rssKiB": 297584
+    },
+    {
+      "elapsedMs": 94568,
+      "rssKiB": 287680
+    },
+    {
+      "elapsedMs": 95590,
+      "rssKiB": 291296
+    },
+    {
+      "elapsedMs": 96621,
+      "rssKiB": 278544
+    },
+    {
+      "elapsedMs": 97656,
+      "rssKiB": 282064
+    },
+    {
+      "elapsedMs": 98686,
+      "rssKiB": 285856
+    },
+    {
+      "elapsedMs": 99707,
+      "rssKiB": 384768
+    },
+    {
+      "elapsedMs": 100734,
+      "rssKiB": 387936
+    },
+    {
+      "elapsedMs": 101764,
+      "rssKiB": 388080
+    },
+    {
+      "elapsedMs": 102794,
+      "rssKiB": 386336
+    },
+    {
+      "elapsedMs": 103817,
+      "rssKiB": 395824
+    },
+    {
+      "elapsedMs": 104850,
+      "rssKiB": 395984
+    },
+    {
+      "elapsedMs": 105872,
+      "rssKiB": 396208
+    },
+    {
+      "elapsedMs": 106901,
+      "rssKiB": 396384
+    },
+    {
+      "elapsedMs": 107924,
+      "rssKiB": 369824
+    },
+    {
+      "elapsedMs": 108956,
+      "rssKiB": 363904
+    },
+    {
+      "elapsedMs": 109981,
+      "rssKiB": 370368
+    },
+    {
+      "elapsedMs": 111007,
+      "rssKiB": 383184
+    },
+    {
+      "elapsedMs": 112032,
+      "rssKiB": 379376
+    },
+    {
+      "elapsedMs": 113063,
+      "rssKiB": 353056
+    },
+    {
+      "elapsedMs": 114094,
+      "rssKiB": 266112
+    },
+    {
+      "elapsedMs": 115115,
+      "rssKiB": 238832
+    },
+    {
+      "elapsedMs": 116138,
+      "rssKiB": 355200
+    },
+    {
+      "elapsedMs": 117167,
+      "rssKiB": 360352
+    },
+    {
+      "elapsedMs": 118200,
+      "rssKiB": 355392
+    },
+    {
+      "elapsedMs": 119223,
+      "rssKiB": 358224
+    },
+    {
+      "elapsedMs": 120246,
+      "rssKiB": 362528
+    },
+    {
+      "elapsedMs": 121279,
+      "rssKiB": 367440
+    },
+    {
+      "elapsedMs": 122299,
+      "rssKiB": 288976
+    },
+    {
+      "elapsedMs": 123323,
+      "rssKiB": 507088
+    },
+    {
+      "elapsedMs": 124351,
+      "rssKiB": 508928
+    },
+    {
+      "elapsedMs": 125372,
+      "rssKiB": 499440
+    },
+    {
+      "elapsedMs": 126404,
+      "rssKiB": 501568
+    },
+    {
+      "elapsedMs": 127433,
+      "rssKiB": 503008
+    },
+    {
+      "elapsedMs": 128466,
+      "rssKiB": 507008
+    },
+    {
+      "elapsedMs": 129486,
+      "rssKiB": 506448
+    },
+    {
+      "elapsedMs": 130506,
+      "rssKiB": 450288
+    },
+    {
+      "elapsedMs": 131526,
+      "rssKiB": 461952
+    },
+    {
+      "elapsedMs": 132551,
+      "rssKiB": 465520
+    },
+    {
+      "elapsedMs": 133586,
+      "rssKiB": 468048
+    },
+    {
+      "elapsedMs": 134618,
+      "rssKiB": 472128
+    },
+    {
+      "elapsedMs": 135649,
+      "rssKiB": 474176
+    },
+    {
+      "elapsedMs": 136670,
+      "rssKiB": 480176
+    },
+    {
+      "elapsedMs": 137695,
+      "rssKiB": 469344
+    },
+    {
+      "elapsedMs": 138725,
+      "rssKiB": 451360
+    },
+    {
+      "elapsedMs": 139751,
+      "rssKiB": 407136
+    },
+    {
+      "elapsedMs": 140779,
+      "rssKiB": 363968
+    },
+    {
+      "elapsedMs": 141801,
+      "rssKiB": 369072
+    },
+    {
+      "elapsedMs": 142833,
+      "rssKiB": 373504
+    },
+    {
+      "elapsedMs": 143861,
+      "rssKiB": 379488
+    },
+    {
+      "elapsedMs": 144889,
+      "rssKiB": 381392
+    },
+    {
+      "elapsedMs": 145913,
+      "rssKiB": 374528
+    },
+    {
+      "elapsedMs": 146940,
+      "rssKiB": 365200
+    },
+    {
+      "elapsedMs": 147972,
+      "rssKiB": 371040
+    },
+    {
+      "elapsedMs": 148995,
+      "rssKiB": 280880
+    },
+    {
+      "elapsedMs": 150021,
+      "rssKiB": 282320
+    },
+    {
+      "elapsedMs": 151045,
+      "rssKiB": 381984
+    },
+    {
+      "elapsedMs": 152073,
+      "rssKiB": 387040
+    },
+    {
+      "elapsedMs": 153123,
+      "rssKiB": 375056
+    },
+    {
+      "elapsedMs": 154147,
+      "rssKiB": 375136
+    },
+    {
+      "elapsedMs": 155167,
+      "rssKiB": 442992
+    },
+    {
+      "elapsedMs": 156187,
+      "rssKiB": 539424
+    },
+    {
+      "elapsedMs": 157208,
+      "rssKiB": 647200
+    },
+    {
+      "elapsedMs": 158231,
+      "rssKiB": 653312
+    },
+    {
+      "elapsedMs": 159252,
+      "rssKiB": 719920
+    },
+    {
+      "elapsedMs": 160281,
+      "rssKiB": 660672
+    },
+    {
+      "elapsedMs": 161303,
+      "rssKiB": 658016
+    },
+    {
+      "elapsedMs": 162327,
+      "rssKiB": 755856
+    },
+    {
+      "elapsedMs": 163373,
+      "rssKiB": 786432
+    },
+    {
+      "elapsedMs": 164395,
+      "rssKiB": 743488
+    },
+    {
+      "elapsedMs": 165415,
+      "rssKiB": 761120
+    },
+    {
+      "elapsedMs": 166435,
+      "rssKiB": 804640
+    },
+    {
+      "elapsedMs": 167456,
+      "rssKiB": 824656
+    },
+    {
+      "elapsedMs": 168475,
+      "rssKiB": 785152
+    },
+    {
+      "elapsedMs": 169496,
+      "rssKiB": 702768
+    },
+    {
+      "elapsedMs": 170518,
+      "rssKiB": 657968
+    },
+    {
+      "elapsedMs": 171551,
+      "rssKiB": 676960
+    },
+    {
+      "elapsedMs": 172581,
+      "rssKiB": 623024
+    },
+    {
+      "elapsedMs": 173608,
+      "rssKiB": 208512
+    },
+    {
+      "elapsedMs": 174630,
+      "rssKiB": 252560
+    },
+    {
+      "elapsedMs": 175655,
+      "rssKiB": 291408
+    },
+    {
+      "elapsedMs": 176687,
+      "rssKiB": 334832
+    },
+    {
+      "elapsedMs": 177720,
+      "rssKiB": 350864
+    },
+    {
+      "elapsedMs": 178747,
+      "rssKiB": 364832
+    },
+    {
+      "elapsedMs": 179772,
+      "rssKiB": 378208
+    },
+    {
+      "elapsedMs": 180797,
+      "rssKiB": 390928
+    },
+    {
+      "elapsedMs": 181825,
+      "rssKiB": 395056
+    },
+    {
+      "elapsedMs": 182847,
+      "rssKiB": 353344
+    },
+    {
+      "elapsedMs": 183874,
+      "rssKiB": 356592
+    },
+    {
+      "elapsedMs": 184902,
+      "rssKiB": 377520
+    },
+    {
+      "elapsedMs": 185925,
+      "rssKiB": 381120
+    },
+    {
+      "elapsedMs": 186954,
+      "rssKiB": 316336
+    },
+    {
+      "elapsedMs": 187978,
+      "rssKiB": 336592
+    },
+    {
+      "elapsedMs": 189006,
+      "rssKiB": 375664
+    },
+    {
+      "elapsedMs": 190028,
+      "rssKiB": 591472
+    },
+    {
+      "elapsedMs": 191055,
+      "rssKiB": 583968
+    },
+    {
+      "elapsedMs": 192083,
+      "rssKiB": 537136
+    },
+    {
+      "elapsedMs": 193113,
+      "rssKiB": 495872
+    },
+    {
+      "elapsedMs": 194137,
+      "rssKiB": 498256
+    },
+    {
+      "elapsedMs": 195163,
+      "rssKiB": 502832
+    },
+    {
+      "elapsedMs": 196194,
+      "rssKiB": 512416
+    },
+    {
+      "elapsedMs": 197227,
+      "rssKiB": 524800
+    },
+    {
+      "elapsedMs": 198260,
+      "rssKiB": 529984
+    },
+    {
+      "elapsedMs": 199282,
+      "rssKiB": 536224
+    },
+    {
+      "elapsedMs": 200312,
+      "rssKiB": 524448
+    },
+    {
+      "elapsedMs": 201339,
+      "rssKiB": 356304
+    },
+    {
+      "elapsedMs": 202361,
+      "rssKiB": 345536
+    },
+    {
+      "elapsedMs": 203388,
+      "rssKiB": 337120
+    },
+    {
+      "elapsedMs": 204417,
+      "rssKiB": 362224
+    },
+    {
+      "elapsedMs": 205456,
+      "rssKiB": 384304
+    },
+    {
+      "elapsedMs": 206496,
+      "rssKiB": 385840
+    },
+    {
+      "elapsedMs": 207521,
+      "rssKiB": 392320
+    },
+    {
+      "elapsedMs": 208553,
+      "rssKiB": 396000
+    },
+    {
+      "elapsedMs": 209585,
+      "rssKiB": 398128
+    },
+    {
+      "elapsedMs": 210619,
+      "rssKiB": 390080
+    },
+    {
+      "elapsedMs": 211677,
+      "rssKiB": 414352
+    },
+    {
+      "elapsedMs": 212707,
+      "rssKiB": 531024
+    },
+    {
+      "elapsedMs": 213732,
+      "rssKiB": 513216
+    },
+    {
+      "elapsedMs": 214761,
+      "rssKiB": 474432
+    },
+    {
+      "elapsedMs": 215792,
+      "rssKiB": 804240
+    },
+    {
+      "elapsedMs": 216822,
+      "rssKiB": 805856
+    },
+    {
+      "elapsedMs": 217852,
+      "rssKiB": 1065712
+    },
+    {
+      "elapsedMs": 218887,
+      "rssKiB": 1166720
+    },
+    {
+      "elapsedMs": 219916,
+      "rssKiB": 1185824
+    },
+    {
+      "elapsedMs": 220957,
+      "rssKiB": 1127856
+    },
+    {
+      "elapsedMs": 221981,
+      "rssKiB": 1075328
+    },
+    {
+      "elapsedMs": 223004,
+      "rssKiB": 1337536
+    },
+    {
+      "elapsedMs": 224028,
+      "rssKiB": 1249728
+    },
+    {
+      "elapsedMs": 225052,
+      "rssKiB": 1329408
+    },
+    {
+      "elapsedMs": 226077,
+      "rssKiB": 1181680
+    },
+    {
+      "elapsedMs": 227103,
+      "rssKiB": 1159344
+    },
+    {
+      "elapsedMs": 228128,
+      "rssKiB": 1263024
+    },
+    {
+      "elapsedMs": 229151,
+      "rssKiB": 1237968
+    },
+    {
+      "elapsedMs": 230176,
+      "rssKiB": 1166656
+    },
+    {
+      "elapsedMs": 231201,
+      "rssKiB": 1222720
+    },
+    {
+      "elapsedMs": 232220,
+      "rssKiB": 1101456
+    },
+    {
+      "elapsedMs": 233254,
+      "rssKiB": 866288
+    },
+    {
+      "elapsedMs": 234277,
+      "rssKiB": 805968
+    },
+    {
+      "elapsedMs": 235300,
+      "rssKiB": 912288
+    },
+    {
+      "elapsedMs": 236329,
+      "rssKiB": 1009584
+    },
+    {
+      "elapsedMs": 237353,
+      "rssKiB": 1082448
+    },
+    {
+      "elapsedMs": 238383,
+      "rssKiB": 943472
+    },
+    {
+      "elapsedMs": 239404,
+      "rssKiB": 937776
+    },
+    {
+      "elapsedMs": 240435,
+      "rssKiB": 923456
+    },
+    {
+      "elapsedMs": 241459,
+      "rssKiB": 1006784
+    },
+    {
+      "elapsedMs": 242486,
+      "rssKiB": 970192
+    },
+    {
+      "elapsedMs": 243513,
+      "rssKiB": 988464
+    },
+    {
+      "elapsedMs": 244538,
+      "rssKiB": 959392
+    },
+    {
+      "elapsedMs": 245562,
+      "rssKiB": 1004848
+    },
+    {
+      "elapsedMs": 246586,
+      "rssKiB": 1118576
+    },
+    {
+      "elapsedMs": 247632,
+      "rssKiB": 1325664
+    },
+    {
+      "elapsedMs": 248655,
+      "rssKiB": 1055392
+    },
+    {
+      "elapsedMs": 249682,
+      "rssKiB": 1004944
+    },
+    {
+      "elapsedMs": 250709,
+      "rssKiB": 1002448
+    },
+    {
+      "elapsedMs": 251738,
+      "rssKiB": 942192
+    },
+    {
+      "elapsedMs": 252770,
+      "rssKiB": 824464
+    },
+    {
+      "elapsedMs": 253799,
+      "rssKiB": 835360
+    },
+    {
+      "elapsedMs": 254833,
+      "rssKiB": 844848
+    },
+    {
+      "elapsedMs": 255865,
+      "rssKiB": 842320
+    },
+    {
+      "elapsedMs": 256895,
+      "rssKiB": 847824
+    },
+    {
+      "elapsedMs": 257921,
+      "rssKiB": 867936
+    },
+    {
+      "elapsedMs": 258943,
+      "rssKiB": 869120
+    },
+    {
+      "elapsedMs": 259979,
+      "rssKiB": 770400
+    },
+    {
+      "elapsedMs": 261005,
+      "rssKiB": 771664
+    },
+    {
+      "elapsedMs": 262031,
+      "rssKiB": 711888
+    },
+    {
+      "elapsedMs": 263054,
+      "rssKiB": 441008
+    },
+    {
+      "elapsedMs": 264085,
+      "rssKiB": 589120
+    },
+    {
+      "elapsedMs": 265118,
+      "rssKiB": 589264
+    },
+    {
+      "elapsedMs": 266150,
+      "rssKiB": 589280
+    },
+    {
+      "elapsedMs": 267180,
+      "rssKiB": 589440
+    },
+    {
+      "elapsedMs": 268206,
+      "rssKiB": 589456
+    },
+    {
+      "elapsedMs": 269237,
+      "rssKiB": 588864
+    },
+    {
+      "elapsedMs": 270270,
+      "rssKiB": 589568
+    },
+    {
+      "elapsedMs": 271296,
+      "rssKiB": 589568
+    },
+    {
+      "elapsedMs": 272327,
+      "rssKiB": 449744
+    },
+    {
+      "elapsedMs": 273355,
+      "rssKiB": 450176
+    },
+    {
+      "elapsedMs": 274388,
+      "rssKiB": 450576
+    },
+    {
+      "elapsedMs": 275414,
+      "rssKiB": 494768
+    }
+  ],
+  "peakRSSKiB": 1337536,
+  "sourceHashes": {
+    "scripts/test-c01-application.mjs": "f8315961acc70d01b2d7903e506f16553b86261cf695592149e12e509d9208f2",
+    "scripts/run-bounded-browser-check.mjs": "37f4b6adaf971a767735f6f17e5e81b120a2b4affc3dc1c013417b84c24f2a8f",
+    "scripts/owned-test-process-tree.mjs": "77e972d5bbe21350d61c940afa381f6621b61787bffeae8ffaccbb0bd1a5c9fb",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "a92283adfe7e0acd856b81a50faf0088d1f5ac9680429a8ef1766f06fb502307",
+    ".build/sdk/sdk-manifest.json": "1e9ec69f4fcde2e512fb2bab7b21a1af05a8686c5f7203ca5224b2aa4d19e965"
+  },
+  "controllerHeapLimitMiB": 64,
+  "maxSamplingGapMs": 1062,
+  "peakProcesses": [
+    {
+      "pid": 50858,
+      "ppid": 50839,
+      "rssKiB": 54112
+    },
+    {
+      "pid": 50863,
+      "ppid": 50858,
+      "rssKiB": 496
+    },
+    {
+      "pid": 50865,
+      "ppid": 50863,
+      "rssKiB": 245024
+    },
+    {
+      "pid": 50869,
+      "ppid": 50865,
+      "rssKiB": 35920
+    },
+    {
+      "pid": 50877,
+      "ppid": 50865,
+      "rssKiB": 3376
+    },
+    {
+      "pid": 50898,
+      "ppid": 50865,
+      "rssKiB": 3456
+    },
+    {
+      "pid": 50951,
+      "ppid": 50865,
+      "rssKiB": 6176
+    },
+    {
+      "pid": 52676,
+      "ppid": 50858,
+      "rssKiB": 83952
+    },
+    {
+      "pid": 52685,
+      "ppid": 52676,
+      "rssKiB": 41472
+    },
+    {
+      "pid": 52691,
+      "ppid": 52676,
+      "rssKiB": 86816
+    },
+    {
+      "pid": 52703,
+      "ppid": 52691,
+      "rssKiB": 51152
+    },
+    {
+      "pid": 52705,
+      "ppid": 52691,
+      "rssKiB": 44096
+    },
+    {
+      "pid": 52707,
+      "ppid": 52691,
+      "rssKiB": 675904
+    },
+    {
+      "pid": 52718,
+      "ppid": 50865,
+      "rssKiB": 3776
+    },
+    {
+      "pid": 52776,
+      "ppid": 50858,
+      "rssKiB": 1808
+    }
+  ],
+  "code": 0,
+  "signal": null,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "elapsedMs": 275840,
+  "stopReason": null,
+  "finishedAt": "2026-09-18T10:39:15.349Z"
+}
