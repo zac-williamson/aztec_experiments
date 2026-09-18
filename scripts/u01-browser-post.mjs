@@ -7,6 +7,7 @@ import {spawn,execFileSync} from 'node:child_process';
 import {once} from 'node:events';
 import {chromium} from 'playwright';
 import {generateHosting} from '../deploy/hosting-config.mjs';
+import {readJourneyUiDiagnostic,safeJourneyDriverFailure} from './t04-browser-journey.mjs';
 import {ROOT,assertNodeVersion} from './toolchain.mjs';
 
 export async function runU01BrowserPost({directory,origin,nodeUrl,ethereumUrl,rpcToken,publicConfig,backupPath,backupPassword,ethereumAccount,message,timeoutMs=480000,diagnostic=false,observeProofStages=false,onStage=()=>{},journeyDriver,depositAmount}) {
@@ -16,7 +17,7 @@ export async function runU01BrowserPost({directory,origin,nodeUrl,ethereumUrl,rp
  const mark=value=>{stage=value;onStage(value);};
  const external=new Set(),csp=new Set(),paths=new Set(),failedHttp=new Map(),cspDetails=[];
  const publicPath=value=>/^\/(?:rpc\/(?:aztec|ethereum)|(?:user|feed|censor|deploy|fee-juice)\.html|(?:aztec_bundle|public-feed|bb-main.worker|bb-thread.worker|sqlite.worker|sqlite3-opfs-async-proxy)\.js|(?:sqlite3|acvm_js_bg|noirc_abi_wasm_bg)\.wasm|crs\/(?:crs-manifest\.json|g1\.dat|g1_uncompressed\.dat|g2\.dat|grumpkin_g1\.dat))$/.test(value)?value:'other-local-path';
- const observation={passed:false,sourceStage:stage,elapsedMs:0,diagnosticInstrumentation:diagnostic,proofStageObservation:observeProofStages,performanceQualified:false,diagnosticScope:diagnostic?'Error formatter and catch breakpoint observation; original application behavior preserved.':'No formatter wrapper or debugger enabled; GUI wall time only, not isolated proof performance.'};
+ const observation={passed:false,sourceStage:stage,elapsedMs:0,diagnosticInstrumentation:diagnostic,proofStageObservation:observeProofStages,performanceQualified:false,diagnosticScope:diagnostic&&journeyDriver?'Formatter-only observation with fixed driver/UI diagnostics; no breakpoint or engine/prover replacement.':diagnostic?'Error formatter and catch breakpoint observation; original application behavior preserved.':'No formatter wrapper or debugger enabled; GUI wall time only, not isolated proof performance.'};
  const requireValue=(condition)=>{if(!condition)throw Error('Invalid disposable browser test parameters');};
  const local=value=>{const u=new URL(value);requireValue(['http:','https:'].includes(u.protocol)&&u.hostname==='127.0.0.1'&&u.port&&!u.username&&!u.password&&!u.search&&!u.hash&&u.pathname==='/');return u;};
  const site=local(origin),node=local(nodeUrl),ethereum=local(ethereumUrl);
@@ -79,7 +80,7 @@ export async function runU01BrowserPost({directory,origin,nodeUrl,ethereumUrl,rp
     globalThis.__u01CaptureError=function(error){
      try{
       const names=new Set(['Error','TypeError','RangeError','ReferenceError','SyntaxError','EvalError','URIError','AggregateError','DOMException','RuntimeError','CompileError','LinkError']);
-      const codes=new Set(['BB_OPERATION_FAILED','BB_CONNECTION_VERIFICATION_FAILED','BB_FEE_CONFIG_REQUIRED','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID','BB_PRIVATE_FEE_AMOUNT','BB_PRIVATE_FEE_ACTION_FAILED','BB_PRIVATE_FEE_CLAIM_FAILED','PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN','INSECURE_CONTEXT','SHARED_MEMORY_UNAVAILABLE','WASM_UNAVAILABLE','WORKER_UNAVAILABLE','CRYPTO_UNAVAILABLE','LOCKS_UNAVAILABLE','STORAGE_UNAVAILABLE','OPFS_UNAVAILABLE','READINESS_TIMEOUT']);
+      const codes=new Set(['BB_DEPOSIT_MESSAGE_PENDING','BB_ETH_SUBMISSION_UNKNOWN','BB_ETH_TRANSACTION_FAILED','BB_ETH_RECOVERY_REQUIRED','BB_RECOVERY_UNKNOWN','BB_NO_SAVED_ETHEREUM_TRANSACTION','BB_OPERATION_FAILED','BB_CONNECTION_VERIFICATION_FAILED','BB_FEE_CONFIG_REQUIRED','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID','BB_PRIVATE_FEE_AMOUNT','BB_PRIVATE_FEE_ACTION_FAILED','BB_PRIVATE_FEE_CLAIM_FAILED','PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN','INSECURE_CONTEXT','SHARED_MEMORY_UNAVAILABLE','WASM_UNAVAILABLE','WORKER_UNAVAILABLE','CRYPTO_UNAVAILABLE','LOCKS_UNAVAILABLE','STORAGE_UNAVAILABLE','OPFS_UNAVAILABLE','READINESS_TIMEOUT']);
       const chain=[],seen=new Set();let current=error;
       while(current!==null&&current!==undefined&&chain.length<5&&!seen.has(current)){
        seen.add(current);const constructor=current?.constructor?.name,frames=[];
@@ -108,10 +109,10 @@ export async function runU01BrowserPost({directory,origin,nodeUrl,ethereumUrl,rp
    await page.waitForFunction(()=>!!globalThis.walletState?.aztec?.address||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});requireValue(await page.evaluate(()=>!!globalThis.walletState?.aztec?.address));
    mark('wallet-connect-and-status');const setupStarted=Date.now();await page.locator('#wbEthBrowserBtn').click();
    if(journeyDriver){
-    requireValue(typeof journeyDriver==='function'&&!diagnostic&&!observeProofStages);
+    requireValue(typeof journeyDriver==='function'&&!observeProofStages);
     await page.waitForFunction(()=>document.getElementById('page-1')?.classList.contains('active')||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
     requireValue(await page.locator('#page-1').isVisible());observation.walletSetupMs=Date.now()-setupStarted;
-    observation.journey=await journeyDriver({page,directory,message,depositAmount,remaining:()=>timeoutMs-(Date.now()-started),signal:lifecycleAbort.signal,mark});
+    observation.journey=await journeyDriver({page,directory,message,depositAmount,remaining:()=>timeoutMs-(Date.now()-started),signal:lifecycleAbort.signal,mark,onSubstage:value=>{observation.driverSubstage=value;}});
     requireValue(observation.journey.passed===true&&external.size===0&&csp.size===0);observation.passed=true;return;
    }
    await page.waitForFunction(()=>{const button=document.getElementById('postBtn');return (button&&button.getClientRects().length>0)||!!document.querySelector('#setupStatus .error');},{},{timeout:remaining()});requireValue(await page.locator('#postBtn').isVisible());observation.walletSetupMs=Date.now()-setupStarted;
@@ -160,10 +161,11 @@ export async function runU01BrowserPost({directory,origin,nodeUrl,ethereumUrl,rp
    requireValue(external.size===0&&csp.size===0);observation.passed=true;
   };
   await Promise.race([workflow(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Browser test deadline')),remaining());})]);
- }catch {observation.passed=false;observation.failure='Browser post failed or timed out; raw provider/browser errors intentionally omitted.';}
+ }catch(error) {if(journeyDriver)observation.driverFailure=safeJourneyDriverFailure(error,observation.driverSubstage);observation.passed=false;observation.failure='Browser post failed or timed out; raw provider/browser errors intentionally omitted.';}
  finally {
   lifecycleAbort.abort();
   if(page&&!page.isClosed()){
+   if(journeyDriver)try{observation.journeyUiDiagnostic=await Promise.race([page.evaluate(readJourneyUiDiagnostic),new Promise(resolve=>{const timer=setTimeout(()=>resolve({unavailable:true}),1000);timer.unref();})]);}catch{observation.journeyUiDiagnostic={unavailable:true};}
    try{observation.uiDiagnostic=await Promise.race([page.evaluate(()=>{
     const texts=['setupStatus','postStatus','depositBalanceCheck'].map(id=>document.getElementById(id)?.textContent||'').join(' ');
     // Fixed UI strings only; no provider message, wallet value or RPC payload leaves the page.

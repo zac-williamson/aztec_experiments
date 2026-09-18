@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import vm from 'node:vm';
-import {webcrypto} from 'node:crypto';
+import {webcrypto,randomUUID} from 'node:crypto';
 import {Barretenberg,BackendType} from '@aztec/bb.js';
 import {EmbeddedWallet} from '@aztec/wallets/embedded';
 import {loadContractArtifact} from '@aztec/stdlib/abi';
@@ -14,6 +14,34 @@ import {startU01BrowserRpc} from './u01-browser-rpc.mjs';
 import {createT03RpcObserver} from './t03-rpc-observer.mjs';
 import {prepareU01BrowserPostVerification,captureU01BrowserSubmissions,verifyU01BrowserPost} from './u01-browser-post-verify.mjs';
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+// TEST ONLY: ordinary checkpoint production makes newly deposited Inbox messages
+// available. Restore the caller's configuration before later lifecycle waits.
+export function createT04CheckpointScope(sequencer){
+ const config=sequencer.getSequencer().getConfig();
+ const previous={minTxsPerBlock:config.minTxsPerBlock,buildCheckpointIfEmpty:config.buildCheckpointIfEmpty};
+ let active=false;
+ return {
+  enable(){if(active)return;active=true;sequencer.updateConfig({minTxsPerBlock:0,buildCheckpointIfEmpty:true});},
+  restore(){if(!active)return;sequencer.updateConfig(previous);active=false;},
+ };
+}
+
+export async function runT04Cleanup(steps){
+ const failures=[];
+ for(const step of steps)try{await step();}catch(error){failures.push(error);}
+ if(failures.length)throw new AggregateError(failures,'T04_CLEANUP_FAILED');
+}
+
+// Only the observer's bounded, sanitized schema crosses this failure rendezvous.
+// Persist before potentially slow wallet/RPC cleanup so the supervisor can retain it.
+async function preserveBrowserRpcFootprint(directory,observer,observation){
+ if(!observer)return;
+ const summary=observer.snapshot();observation.rpcFootprint=summary;
+ const target=path.join(directory,'browser-rpc-footprint.json'),temporary=target+'.'+randomUUID()+'.tmp';
+ try{await fs.writeFile(temporary,JSON.stringify(summary),{mode:0o600,flag:'wx'});await fs.rename(temporary,target);}
+ finally{await fs.rm(temporary,{force:true});}
+}
+
 
 export async function completeU01BrowserPost({node,preparation,instance,l1Client,directory,rpcUrl,
   browserControl,claimResult,privateFee,reportStage:mark}){
@@ -78,7 +106,7 @@ export async function completeU01BrowserPost({node,preparation,instance,l1Client
     observation.verification=await verifyU01BrowserPost({node,preparation,instance,claimResult,privateFee,
       txHash:result.publicTransactionHashes?.at(-1),message,evidence:{...evidence,wallet:verificationWallet}});
     assert(observation.verification.passed);Object.assign(privateFee,{passed:true,scope:'native cold-start claim and independently verified browser private-balance post'});observation.browserApplicationProof=true;observation.passed=true;return observation;
-  }catch(error){if(rpcObserver)observation.rpcFootprint=rpcObserver.snapshot();error.browserPostObservation=observation;throw error;}
+  }catch(error){await preserveBrowserRpcFootprint(directory,rpcObserver,observation).catch(()=>{observation.rpcFootprintPreservationFailed=true;});error.browserPostObservation=observation;throw error;}
   finally{capture?.close();await rpc?.close();await verificationWallet?.stop();await fs.rm(backupPath,{force:true});}
 }
 
@@ -100,25 +128,27 @@ export async function prepareT04BrowserJourney({node,preparation,instance,l1Clie
  const before={liability:await read('totalDeposited'),portalBalance:await l1Client.getBalance({address:scope.portalAddress}),privateBalance:fixture.fundedAmount-fixture.allocated,maximumFee:fixture.gas.getFeeLimit().toBigInt(),payerBalance:await getFeeJuiceBalance(fixture.instance.address,node)};
  const transactions={},captures=new Map(),observation={passed:false,stage:'prepare',warmNativePrivateFees:true,networkProofs:false};
  const message='T04 genuine GUI deposit claim post screen withdraw refund';
- const backupPath=path.join(directory,'browser-wallet.encrypted.json');let rpc,capture,wallet;
+ const backupPath=path.join(directory,'browser-wallet.encrypted.json');let rpc,capture,wallet,observer;
+ const claimCheckpoints=createT04CheckpointScope(node.getSequencer());
  const deadline=Date.now()+480000;
  const waitFile=async name=>{while(Date.now()<deadline){try{const text=await fs.readFile(path.join(directory,name),'utf8');assert(Buffer.byteLength(text)<=65536);return JSON.parse(text);}catch(error){if(error.code!=='ENOENT')throw error;}try{const failed=JSON.parse(await fs.readFile(path.join(directory,'browser-result.json'),'utf8'));assert(failed.passed,'Browser stopped before lifecycle completed');}catch(error){if(error.code!=='ENOENT')throw error;}await pause(100);}throw Error('T04_STAGE_DEADLINE');};
  const release=async stage=>{const target=path.join(directory,'browser-journey-'+stage+'-verified.json'),tmp=target+'.tmp';await fs.writeFile(tmp,JSON.stringify({stage,verified:true}),{mode:0o600,flag:'wx'});await fs.rename(tmp,target);};
  const stageTx=async stage=>{observation.stage=stage;const signal=validateJourneySignal(await waitFile('browser-journey-'+stage+'.json'));assert.equal(signal.stage,stage);const used=new Set(Object.values(transactions).map(t=>t.tx.getTxHash().toString()));const fresh=signal.transactionHashes.filter(hash=>captures.has(hash)&&!used.has(hash));assert.equal(fresh.length,1,'Exactly one new actual Aztec submission for '+stage);const result=await verifyJourneyIncludedTransaction({node,captures,txHash:fresh[0],expectedPayer:privateFee.payer});assert(!result.tx.chonkProof.isEmpty());transactions[stage]=result;return result;};
  const eligible=async timestamp=>{const seq=node.getSequencer(),current=seq.getSequencer().getConfig(),previous={minTxsPerBlock:current.minTxsPerBlock,buildCheckpointIfEmpty:current.buildCheckpointIfEmpty};seq.updateConfig({minTxsPerBlock:0,buildCheckpointIfEmpty:true});try{while(Date.now()<deadline){const b=await node.getBlock('checkpointed');if(b&&BigInt(b.header.globalVariables.timestamp.toString())>=timestamp)return;await pause(500);}throw Error('T04_ELIGIBILITY_DEADLINE');}finally{seq.updateConfig(previous);}};
- const cleanup=async()=>{capture?.close();await rpc?.close();await wallet?.stop();await fs.rm(backupPath,{force:true});};
+ const cleanup=()=>runT04Cleanup([()=>claimCheckpoints.restore(),()=>preserveBrowserRpcFootprint(directory,observer,observation).catch(()=>{observation.rpcFootprintPreservationFailed=true;}),()=>capture?.close(),()=>rpc?.close(),()=>wallet?.stop(),()=>fs.rm(backupPath,{force:true})]);
  try{
   const context=vm.createContext({crypto:webcrypto,TextEncoder,TextDecoder,Uint8Array});vm.runInContext(await fs.readFile(path.join(ROOT,'shared/wallet-backup.js'),'utf8'),context);
   const encrypted=await context.BillboardWalletBackup.encrypt({schemaVersion:1,wallet:{secretKey:account.secret.toString(),salt:account.salt.toString()},claims:[]},browserControl.backupPassword);await fs.writeFile(backupPath,JSON.stringify(encrypted),{mode:0o600});
   const gasSettings=Object.fromEntries(['gasLimits','teardownGasLimits','maxFeesPerGas','maxPriorityFeesPerGas'].map(name=>[name,Object.fromEntries((name.endsWith('Gas')?['feePerDaGas','feePerL2Gas']:['daGas','l2Gas']).map(key=>[key,String(fixture.gas[name][key])]))]));
   const publicConfig={schemaVersion:1,network:{nodeUrl:browserControl.origin+'/rpc/aztec',ethRpcUrl:browserControl.origin+'/rpc/ethereum',chainId:scope.l1ChainId,rollupVersion:scope.rollupVersion,rollupAddress:scope.rollupAddress},board:{portalAddress:scope.portalAddress,contractAddress:scope.boardAddress},privateFee:{contractAddress:fixture.instance.address.toString(),gasSettings}};
   await privateFee.close();await Barretenberg.destroySingleton();
-  capture=captureU01BrowserSubmissions(node,{captures});const observer=createT03RpcObserver({roles:{author:account.address.toString(),payer:privateFee.payer,board:scope.boardAddress,funder:depositor}});
+  capture=captureU01BrowserSubmissions(node,{captures});observer=createT03RpcObserver({roles:{author:account.address.toString(),payer:privateFee.payer,board:scope.boardAddress,funder:depositor}});
   rpc=await startU01BrowserRpc({node,anvilUrl:rpcUrl,ethereumAccount:depositor,origin:browserControl.origin,token:browserControl.rpcToken,observer});
+  claimCheckpoints.enable();
   await fs.writeFile(path.join(directory,'browser-ready.json'),JSON.stringify(createBrowserHandoff({nodeUrl:rpc.nodeUrl,ethereumUrl:rpc.ethereumUrl,publicConfig,backupPath,ethereumAccount:depositor,message},{directory,browserJourney:true,depositAmount:formatEther(amount)})),{mode:0o600});mark('browser-ready');
   let receipt,refundBefore;
   return {observation,cleanup,async untilExit(){
-   const claim=await stageTx('claim');const [depositNonce,activeAmount]=await read('getDeposit',[depositor]);assert(depositNonce>0n);assert.equal(activeAmount,amount);assert.equal(await read('totalDeposited'),before.liability+amount);assert.equal(await l1Client.getBalance({address:scope.portalAddress}),before.portalBalance+amount);
+   const claim=await stageTx('claim');claimCheckpoints.restore();const [depositNonce,activeAmount]=await read('getDeposit',[depositor]);assert(depositNonce>0n);assert.equal(activeAmount,amount);assert.equal(await read('totalDeposited'),before.liability+amount);assert.equal(await l1Client.getBalance({address:scope.portalAddress}),before.portalBalance+amount);
    const logs=await l1Client.getLogs({address:scope.portalAddress,event:portal.abi.find(e=>e.type==='event'&&e.name==='Deposited'),fromBlock:BigInt(ready.portalDeploymentBlock),toBlock:'latest'});const deposits=logs.filter(e=>e.args.depositor.toLowerCase()===depositor&&e.args.nonce===depositNonce);assert.equal(deposits.length,1);const depositEvent=deposits[0];assert.equal(depositEvent.args.amount,amount);const depositReceipt=await l1Client.getTransactionReceipt({hash:depositEvent.transactionHash}),depositTx=await l1Client.getTransaction({hash:depositEvent.transactionHash});assert.equal(depositReceipt.transactionHash,depositEvent.transactionHash);assert.equal(depositEvent.blockHash,depositReceipt.blockHash);assert.equal(depositReceipt.status,'success');const receiptDeposits=parseEventLogs({abi:portal.abi,eventName:'Deposited',strict:true,logs:depositReceipt.logs.filter(log=>log.address.toLowerCase()===scope.portalAddress)});assert.equal(receiptDeposits.length,1);assert.deepEqual(receiptDeposits[0].args,depositEvent.args);assert.equal((await l1Client.getBlock({blockNumber:depositReceipt.blockNumber})).hash,depositReceipt.blockHash);assert.equal(depositTx.from.toLowerCase(),depositor);assert.equal(depositTx.to.toLowerCase(),scope.portalAddress);assert.equal(depositTx.value,amount);observation.deposit={txHash:depositEvent.transactionHash,canonicalReceipt:true,exactEvent:true,amount:String(amount),nonce:String(depositNonce)};
    receipt={scope,depositor,depositNonce,amount,...journeyExitLeaf({scope,depositor,depositNonce,amount})};
    await eligible(claim.anchorTimestamp+base);await release('claim');

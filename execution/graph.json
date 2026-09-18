@@ -1467,7 +1467,7 @@
       "evidence": "evidence/T03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Neutral public reads complete in engine and six direct UI calls; affected30tests and final appbuild007 pass. Await T04 genuine trace to verify final build. Historical044 remains pre-change evidence; repeated/crossauthor/funding/recovery privacy still open.",
+      "checkpoint": "010diagnostic confirms realETHdeposit succeeded and claim failed beforeproof. Source shows claim lacks Inbox readiness and UI retains no-depositstate on claimfailure. Implement bounded wallet-anchor message preflight and claim-only retry state, preserveprivatefees and journal.",
       "priority": 23,
       "execution_lane": "application",
       "write_paths": [
@@ -1486,7 +1486,9 @@
         "apps/src/billboard/user/engine.js",
         "scripts/test-public-read-privacy.mjs",
         "apps/src/billboard/user/app.js",
-        "apps/src/billboard/censor/app.js"
+        "apps/src/billboard/censor/app.js",
+        "shared/app-env.js",
+        "scripts/test-deposit-message-ready.mjs"
       ]
     },
     {
@@ -1543,7 +1545,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "005handoffguard defect fixed with actual sharedproducer/consumer roundtrip tests006; seven helper/RPC tests pass and syntaxclean. New bounded007 attempt after source-backed reassessment, unchanged540s/2GiB; no prior GUIpass claimed.",
+      "checkpoint": "010 diagnostics151182ms1730592KiB clean: ETHdeposit/secret save succeeded, claim fails preproof. Source missingreadiness; fixturemust enableordinaryemptycheckpoints duringGUIclaim. No additionalrun until application+fixture fixes and lightweight tests.",
       "priority": 24,
       "completion_requires": [
         "O01"
@@ -1560,13 +1562,14 @@
         "scripts/t04-browser-journey-verify.mjs",
         "scripts/test-t04-browser-journey.mjs",
         "scripts/test-c01-user.mjs",
-        "scripts/run-bounded-browser-check.mjs"
+        "scripts/run-bounded-browser-check.mjs",
+        "scripts/test-t04-checkpoint-scope.mjs"
       ],
       "investigation": {
-        "hypothesis": "005 failed before browser because parent accepted only legacydescriptor keys. Both actual producers now share mode-specific validated builder with parent/worker, offline roundtrip regression006 passes; run007 tests corrected seam and fullGUI lifecycle.",
+        "hypothesis": "007 missing deposit diagnostics prevent distinguishing driver assertion from application early error. Existing safeformatter observation plus fixedphase markers and retainedRPCsummary should locate failure without logging secrets or changing application behavior.",
         "attempts": 1,
         "max_attempts": 1,
-        "next_action": "Run frozen007 once; record exact outcome and inspect any new failure before retry. Earlier005 failure retained."
+        "next_action": "Source-backed remedy: retain authenticatedmessagekey, bounded wallet-anchor readiness beforeoneproof, claim-onlyUIretry, normalemptycheckpoint fixture duringclaim. Requalify after tests; do notlabelpreviousunknown as provenSDKcause."
       }
     },
     {

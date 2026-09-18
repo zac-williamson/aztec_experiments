@@ -1,0 +1,25 @@
+{"stage":"start-disposable-l1","elapsedMs":194}
+{"stage":"prepare-genesis","elapsedMs":315}
+{"stage":"deploy-local-protocol-fixture","elapsedMs":2037}
+{"stage":"wait-for-local-validator-activation","elapsedMs":3347}
+{"stage":"start-application-node","elapsedMs":3364}
+{"stage":"prove-board-deployment","elapsedMs":6109}
+{"stage":"include-board-deployment","elapsedMs":19368}
+{"stage":"prepare-and-prove-ready","elapsedMs":31634}
+{"stage":"include-ready","elapsedMs":41921}
+{"stage":"settle-ready-test-message","elapsedMs":63127}
+{"stage":"private-fee:fund-disposable-user","elapsedMs":81088}
+{"stage":"private-fee:bridge-user-funds","elapsedMs":81097}
+{"stage":"private-fee:wait-inbox","elapsedMs":81636}
+{"stage":"private-fee:prove-standalone-funding","elapsedMs":121943}
+{"stage":"private-fee:include-standalone-funding","elapsedMs":133187}
+{"stage":"browser-ready","elapsedMs":144262}
+{"browserStage":"local-https","elapsedMs":144508}
+{"browserStage":"browser-start","elapsedMs":145006}
+{"browserStage":"wallet-software","elapsedMs":145570}
+{"browserStage":"public-config-import","elapsedMs":146443}
+{"browserStage":"encrypted-wallet-restore","elapsedMs":146516}
+{"browserStage":"wallet-connect-and-status","elapsedMs":146780}
+{"browserStage":"gui-deposit-claim","elapsedMs":149133}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/T04/application-f04d718d-2b79-465a-8ba2-b660d911b489.json","passed":false,"profile":"genuine GUI deposit claim post screening withdrawal refund with native warm private fees"}
+{"boundedBrowser":false,"elapsedMs":151182,"peakRSSKiB":1730592,"stopReason":null,"ownedTreeAbsent":true}

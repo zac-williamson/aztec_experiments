@@ -62,7 +62,20 @@ export function transactionHashes(text){
  assert.equal(typeof text,'string');
  return [...new Set([...text.matchAll(/(?:Transaction hash:|Tx hash:|L1 refund transaction:)\s*(0x[0-9a-fA-F]{64})/g)].map(match=>match[1].toLowerCase()))];
 }
-export async function driveT04BrowserJourney({page,directory,message,depositAmount,remaining,signal,mark}){
+export function safeJourneyDriverFailure(error,substage){
+ const stages=new Set(['wait-deposit-page','fill-amount','click-deposit','await-deposit-claim','claim-checkpoint','post','screen','withdraw','refund']);
+ const names=new Set(['Error','TypeError','RangeError','ReferenceError','SyntaxError','AssertionError','TimeoutError','DOMException']);
+ return {substage:stages.has(substage)?substage:'other',exceptionClass:names.has(error?.name)?error.name:'OtherError'};
+}
+// Self-contained for page.evaluate: only fixed booleans leave the page.
+export function readJourneyUiDiagnostic(){
+ const text=id=>globalThis.document.getElementById(id)?.textContent||'';
+ const hasError=id=>!!globalThis.document.querySelector('#'+id+' .error');
+ const deposit=text('depositStatus'),withdraw=text('withdrawStatus'),refund=text('claimL1Status');
+ const milestones={depositStarted:deposit.includes('Making new L1 deposit'),claimSecretSaved:deposit.includes('Claim secret saved locally'),depositConfirmed:deposit.includes('Deposit confirmed'),waitingForClaim:deposit.includes('Waiting for L2 to ingest deposit'),claimComplete:deposit.includes('Deposit claimed on L2!'),withdrawalIncluded:withdraw.includes('L2->L1 message sent.'),refundSubmitted:refund.includes('L1 refund transaction:'),refundComplete:refund.includes('ETH claimed successfully!')};
+ return {depositHasError:hasError('depositStatus'),withdrawHasError:hasError('withdrawStatus'),refundHasError:hasError('claimL1Status'),milestones};
+}
+export async function driveT04BrowserJourney({page,directory,message,depositAmount,remaining,signal,mark,onSubstage=()=>{}}){
  assert(typeof depositAmount==='string'&&/^(?:0|[1-9]\d*)\.\d{1,18}$/.test(depositAmount));
  const stagesObserved=[];
  const checkpoint=async(stage,statusId)=>{
@@ -77,19 +90,19 @@ export async function driveT04BrowserJourney({page,directory,message,depositAmou
   assert.equal(await page.locator('#'+statusId+' .error').count(),0);
   assert((await page.locator('#'+statusId).textContent()).includes(predicate));
  };
- mark('gui-deposit-claim');await page.locator('#page-1').waitFor({state:'visible',timeout:remaining()});
- await page.locator('#depositAmount').fill(depositAmount);await page.locator('#navNext').click();
- await finish('depositStatus','Deposit claimed on L2!');await page.locator('#postBtn').waitFor({state:'visible',timeout:remaining()});
- await checkpoint('claim','depositStatus'); // parent verifies actual claim and releases eligible post anchor
- mark('actual-gui-post');await page.locator('#msgText').fill(message);await page.locator('#postBtn').click();
+ onSubstage('wait-deposit-page');mark('gui-deposit-claim');await page.locator('#page-1').waitFor({state:'visible',timeout:remaining()});
+ onSubstage('fill-amount');await page.locator('#depositAmount').fill(depositAmount);onSubstage('click-deposit');await page.locator('#navNext').click();
+ onSubstage('await-deposit-claim');await finish('depositStatus','Deposit claimed on L2!');await page.locator('#postBtn').waitFor({state:'visible',timeout:remaining()});
+ onSubstage('claim-checkpoint');await checkpoint('claim','depositStatus'); // parent verifies actual claim and releases eligible post anchor
+ onSubstage('post');mark('actual-gui-post');await page.locator('#msgText').fill(message);await page.locator('#postBtn').click();
  await finish('postStatus','Message included. Public content and transaction timing remain observable.');
  await checkpoint('post','postStatus'); // parent waits for real moderation-window eligibility
- mark('gui-screen');await page.locator('#dummyPostBtn').click();await finish('postStatus','Dummy post complete');
+ onSubstage('screen');mark('gui-screen');await page.locator('#dummyPostBtn').click();await finish('postStatus','Dummy post complete');
  await checkpoint('screen','postStatus'); // parent verifies latest note and eligible exit anchor
- mark('gui-withdraw');await page.locator('#navNext').click();await page.locator('#page-3').waitFor({state:'visible',timeout:remaining()});
+ onSubstage('withdraw');mark('gui-withdraw');await page.locator('#navNext').click();await page.locator('#page-3').waitFor({state:'visible',timeout:remaining()});
  await page.locator('#navNext').click();await page.locator('#page-4').waitFor({state:'visible',timeout:remaining()});
  await checkpoint('exit','withdrawStatus'); // mining must unwind; official actual-message settlement then release
- mark('gui-refund');await page.locator('#navNext').click();
+ onSubstage('refund');mark('gui-refund');await page.locator('#navNext').click();
  await finish('claimL1Status','ETH claimed successfully!');
  await checkpoint('refund','claimL1Status');
  return {passed:true,stagesObserved,warmNativePrivateFees:true,externalWalletExtension:false};

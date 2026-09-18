@@ -1,0 +1,21 @@
+✔ classifies exact roles and fixed method without retaining input secrets (0.852125ms)
+✔ actual SDK fields are exact occurrences; encoded bytes and substrings are not (0.2ms)
+✔ unknown methods and capacity are counted without persisting arbitrary names (0.072459ms)
+✔ deep arguments flag bounded classification and snapshots cannot mutate retained rows (0.074666ms)
+✔ actual local RPC fixture preserves successes, failures, authorization and receiver with observation (128.284125ms)
+✔ rendezvous accepts only fixed stages and bounded unique public transaction identifiers (7.321875ms)
+✔ atomic rendezvous cannot overwrite a prior stage or accept an unverified release (6.20425ms)
+✔ missing release respects remaining parent budget (0.520708ms)
+✔ canonical exit rejects wrong leaf, duplicate leaf, wrong nullifier and ineligible anchor (310.434834ms)
+✔ aborted lifecycle terminates a rendezvous even with a clamped legacy time callback (109.634584ms)
+✔ actual shared producer builder roundtrips both strict parent handoff modes (3.654792ms)
+✔ journey diagnostic outputs fixed milestones and allowlisted exception only (0.289167ms)
+✔ local fixture preserves node serialization and confines Ethereum authority (109.299042ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 670.249792

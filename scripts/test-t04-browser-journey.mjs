@@ -44,3 +44,12 @@ test('actual shared producer builder roundtrips both strict parent handoff modes
  const control={browserJourney:true,origin:'https://127.0.0.1:1234',rpcToken:'a'.repeat(32),backupPassword:'b'.repeat(32)};assert.equal(validateBrowserControl(control),control);
  assert.throws(()=>validateBrowserControl({...control,arbitrary:'SECRET'}));assert.throws(()=>validateBrowserControl({...control,browserJourney:'true'}));
 });
+test('journey diagnostic outputs fixed milestones and allowlisted exception only',async()=>{
+ const {readJourneyUiDiagnostic,safeJourneyDriverFailure}=await import('./t04-browser-journey.mjs');
+ const previous=globalThis.document;
+ try{globalThis.document={getElementById:id=>({textContent:id==='depositStatus'?'Making new L1 deposit Claim secret saved locally SECRET_PRIVATE_KEY':id==='withdrawStatus'?'SECRET_WITNESS':'ETH claimed successfully! SECRET_RPC_URL'}),querySelector:selector=>selector==='#depositStatus .error'?{}:null};
+  const result=readJourneyUiDiagnostic();assert.equal(result.depositHasError,true);assert.equal(result.milestones.claimSecretSaved,true);assert.equal(result.milestones.depositConfirmed,false);assert.equal(result.milestones.refundComplete,true);assert.ok(!JSON.stringify(result).includes('SECRET'));
+ }finally{globalThis.document=previous;}
+ assert.deepEqual(safeJourneyDriverFailure({name:'AssertionError',message:'SECRET',code:'SECRET'},'await-deposit-claim'),{exceptionClass:'AssertionError',substage:'await-deposit-claim'});
+ assert.deepEqual(safeJourneyDriverFailure({name:'SECRET'},'SECRET'),{exceptionClass:'OtherError',substage:'other'});
+});

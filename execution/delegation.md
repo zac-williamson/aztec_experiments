@@ -1,16 +1,15 @@
 # Current delegated work
 
-Root integrates, commits/pushes authorized work and runs one expensive job at a time.
-Graph state controls package completion. Internal AI reviews do not replace external review.
+Root integrates and runs one expensive job at a time. Graph controls completion;
+internal AI review does not replace external review.
 
 | Lane | Agent | Exclusive write ownership | Deliverable |
 |---|---|---|---|
-| Operations | claim_failure_diagnosis | censor-daemon/feed-health.mjs; censor-daemon/test_feed_health.mjs; censor-daemon/daemon.mjs; docs/operations.md; O01 feed-lag evidence | Bounded checkpointed L2 feed-lag observation; no signing changes |
-| Browser recovery | scheduler_improvements | T04 harness paths in graph.json except scripts/test-c01-user.mjs | Genuine GUI lifecycle and independent canonical verifier using existing bounded harness |
-| Operations review | workflow_review | execution/evidence/O01/drill-gap-review-010.md | Read-only evidence reuse and smallest missing operator drill |
-| Integration | root | Other assigned graph paths | Evidence integration, serialized checks, coherent commits and revised execution |
+| Application | workflow_review | apps/src/billboard/user/engine.js; apps/src/billboard/user/app.js; shared/app-env.js; scripts/test-deposit-message-ready.mjs | Bounded Inbox readiness before claim; claim-only retry after confirmed deposit; cheap regressions |
+| Browser recovery | scheduler_improvements | scripts/u01-browser-flow.mjs; scripts/test-t04-checkpoint-scope.mjs | Ordinary empty checkpoints before GUI claim, restored on success/failure |
+| Independent review | claim_failure_diagnosis | Read-only | Pinned SDK and receipt identity review, then implementation review |
+| Integration/operations | root | Other assigned graph paths and execution records | Integrate evidence, serialize builds/proofs, continue operational drills |
 
-Public-read change and custody fixture repair integrated. Browser run044 and packaged smoke006 completed and cleaned up. No heavy process is active.
-Historical assignments: history/delegation-before-workflow-revision-2026-09-18.md.
-
-Full GUI lifecycle005: all application/harness inputs frozen; root runs one bounded test. Agent implementation/review complete. No other heavy job permitted.
+Diagnostic010 completed with cleanup; no heavy job active. ETH deposit succeeded,
+claim failed before proof. Missing witness is a source-supported hypothesis, not
+an observed RPC result. No further expensive attempt until fixes and cheap checks.

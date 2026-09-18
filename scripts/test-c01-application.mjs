@@ -50,7 +50,7 @@ async function writeBrowserResult(directory,result) {
 }
 async function browserWorker(directory) {
   let result={passed:false,failure:'Browser driver did not complete'};
-  try {const control=await readPrivateControl();const {validateBrowserControl,validateBrowserHandoff}=await import('./t04-browser-journey.mjs');validateBrowserControl(Object.fromEntries(['backupPassword','browserJourney','origin','rpcToken'].map(key=>[key,control[key]])));const handoffKeys=['nodeUrl','ethereumUrl','publicConfig','backupPath','ethereumAccount','message',...(control.browserJourney?['browserJourney','depositAmount']:[])];assert.deepEqual(Object.keys(control).sort(),[...new Set([...handoffKeys,'backupPassword','browserJourney','origin','rpcToken','timeoutMs'])].sort());validateBrowserHandoff(Object.fromEntries(handoffKeys.map(key=>[key,control[key]])),{directory,browserJourney:control.browserJourney});assert(Number.isSafeInteger(control.timeoutMs)&&control.timeoutMs>0&&control.timeoutMs<=480000);const {runU01BrowserPost}=await import('./u01-browser-post.mjs');const journeyDriver=control.browserJourney?(await import('./t04-browser-journey.mjs')).driveT04BrowserJourney:undefined;result=await runU01BrowserPost({...control,journeyDriver,directory,observeProofStages:!control.browserJourney,onStage:stage=>process.stdout.write(JSON.stringify({browserStage:stage})+'\n')});}
+  try {const control=await readPrivateControl();const {validateBrowserControl,validateBrowserHandoff}=await import('./t04-browser-journey.mjs');validateBrowserControl(Object.fromEntries(['backupPassword','browserJourney','origin','rpcToken'].map(key=>[key,control[key]])));const handoffKeys=['nodeUrl','ethereumUrl','publicConfig','backupPath','ethereumAccount','message',...(control.browserJourney?['browserJourney','depositAmount']:[])];assert.deepEqual(Object.keys(control).sort(),[...new Set([...handoffKeys,'backupPassword','browserJourney','origin','rpcToken','timeoutMs'])].sort());validateBrowserHandoff(Object.fromEntries(handoffKeys.map(key=>[key,control[key]])),{directory,browserJourney:control.browserJourney});assert(Number.isSafeInteger(control.timeoutMs)&&control.timeoutMs>0&&control.timeoutMs<=480000);const {runU01BrowserPost}=await import('./u01-browser-post.mjs');const journeyDriver=control.browserJourney?(await import('./t04-browser-journey.mjs')).driveT04BrowserJourney:undefined;result=await runU01BrowserPost({...control,journeyDriver,directory,diagnostic:control.browserJourney,observeProofStages:!control.browserJourney,onStage:stage=>process.stdout.write(JSON.stringify({browserStage:stage})+'\n')});}
   catch {result={passed:false,failure:'Browser driver failed; raw errors omitted'};}
   await writeBrowserResult(directory,result);process.exitCode=result.passed?0:1;
 }
@@ -254,7 +254,16 @@ async function parent() {
         browserChild.stdin.on('error',()=>{});browserChild.stdin.end(JSON.stringify({...descriptor,...browserControl,timeoutMs:Math.min(480000,Math.floor(remaining))}));
         const exit=await ended;report.browserExit=exit;
         try{report.browser=JSON.parse(await fs.readFile(path.join(directory,'browser-result.json'),'utf8'));}catch{}
-        if(exit.code!==0||report.browser?.passed!==true)stop('browser-post-failed');
+        if(exit.code!==0||report.browser?.passed!==true){
+          // Let the native coordinator persist its already-sanitized observer
+          // summary before the existing owned-tree stop. Global timers stay live.
+          const graceUntil=Math.min(performance.now()+1500,started+DEADLINE_MS-1000);
+          while(!childClosed&&!report.stopReason&&performance.now()<graceUntil){
+            try{await fs.access(path.join(directory,'browser-rpc-footprint.json'));break;}catch(error){if(error.code!=='ENOENT')break;}
+            await pause(50);
+          }
+          stop('browser-post-failed');
+        }
       }catch {await writeBrowserResult(directory,{passed:false,failure:'Parent browser orchestration failed'}).catch(()=>{});stop('browser-orchestration-failed');}
     }
     let previousSampleElapsed=0;
@@ -349,6 +358,10 @@ async function parent() {
     for (const [signal, handler] of interruptHandlers) process.removeListener(signal, handler);
     try { if (child?.pid) await cleanGroup(child.pid); report.processGroupAbsent = !child?.pid || !await groupExists(child.pid);report.descendantTreeAbsent=report.processGroupAbsent; }
     catch (error) { report.passed = false; report.descendantTreeAbsent=false;report.processGroupAbsent=false;report.cleanupErrorClass = error.name; }
+    if(browserPost){
+      try{const text=await fs.readFile(path.join(directory,'browser-rpc-footprint.json'),'utf8');assert(Buffer.byteLength(text)<=1024*1024);const footprint=JSON.parse(text);assert.equal(footprint.schema,'t03-rpc-footprint-v1');report.browserRpcFootprint=footprint;}
+      catch(error){if(error.code!=='ENOENT')report.browserRpcFootprintUnavailable=true;}
+    }
     if(report.descendantTreeAbsent===true&&report.browserTreeAbsent!==false&&!report.cleanupErrorClass){
       try { await fs.rm(directory, { recursive: true, force: true }); report.temporaryDirectoryRemoved = true; }
       catch (error) { report.passed = false; report.temporaryDirectoryRemoved = false; report.directoryCleanupErrorClass = error.name; }

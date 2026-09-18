@@ -1,0 +1,12 @@
+✔ claim checkpoint scope restores original settings after included claim and repeated cleanup (1.176833ms)
+✔ claim failure and pre-handoff failure restore the original checkpoint settings (0.323833ms)
+✔ failed restoration remains retryable rather than claiming restoration succeeded (0.105667ms)
+✔ restoration failure cannot skip RPC, wallet or backup cleanup (0.117083ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1044.167959
