@@ -8,8 +8,8 @@ Objective state: **running**. Completed packages: 22/35.
 
 - **Implement observability, incident and recovery runbooks (O01)** — Escrow/daemon monitoring, bounded checkpointed feed lag, sanitized credential inventory and removal integrated; package smoke011 passes. Drillgapreview010 reuses actual D01/W03/T02 evidence and identifies genuine censor handover/policy and monitor failover drills. Operator delivery/replacement remain external O02 inputs.
 - **Verify end-to-end privacy and funding footprint (T03)** — Claim readiness and claim-only retry integrated;106 focused tests pass010, canonical app build011 passes, independent internal source review no blocker. Actual GUI lifecycle qualification next; underlying SDK read cancellation not claimed.
-- **Run browser, recovery, concurrency and load matrix (T04)** — Source-backed repair frozen: authenticated message readiness before private fees; pending UI retries original claim; ordinary empty checkpoints before browser handoff and robust cleanup.106 integrated checks+app build pass. One bounded lifecycle014 begins, unchanged540s/2GiB.
-  Investigation: 1/1 attempts. Reassessment required. Inspect lifecycle014 actual result and cleanup immediately; no rerun without diagnosis if failure.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Lifecycle014 stopped on explicit BB_DEPOSIT_MESSAGE_PENDING after20s readiness, before proof/fees;176098ms1638880KiB, cleanup complete. Confirmed ETH deposit and saved secret. Driver incorrectly treats legitimate pending as terminal. Add max3 actual claim-only GUI attempts with exact pending/state/hash checks; no retry on other errors.
+  Investigation: 1/1 attempts. Reassessment required. Implement/review/test bounded GUI pending retry; preserve production20s logicalwait and540s/2GiB. No rerun until source-backed driver correction passes.
 
 ## Ready internal work
 

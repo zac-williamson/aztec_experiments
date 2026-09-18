@@ -740,7 +740,9 @@ function doNavAction() {
       console.error('Application operation did not complete.');
       btn.disabled = false;
       btn.classList.remove('working');
-      btn.textContent = origText;
+      // An action may complete one phase before failing the next (deposit → claim).
+      // Preserve its updated retry label rather than restoring the completed action.
+      if(btn.textContent === (p.busyText || 'Working...'))btn.textContent = origText;
     });
 }
 
@@ -40643,6 +40645,9 @@ function publicOperationFailure(error) {
     BB_ETH_TRANSACTION_FAILED:'The Ethereum request reverted or was replaced. Check its saved request before starting another payment.',
     BB_RECOVERY_REQUIRED:'Recover the saved Aztec transaction from Wallet Setup before sending another transaction.',
     BB_JOURNAL_INVALID:'Transaction recovery storage could not be authenticated or saved. Preserve this browser profile and recovery records before continuing.',
+    BB_DEPOSIT_MESSAGE_PENDING:'Your ETH deposit is confirmed. Its message is not yet available to claim; retry this same claim later. Do not deposit again.',
+    BB_DEPOSIT_MESSAGE_UNAVAILABLE:'Your ETH deposit is confirmed, but message availability could not be checked. Restore the connection and retry the original claim; do not deposit again.',
+    BB_DEPOSIT_MESSAGE_INVALID:'The deposit message does not match its receipt. Preserve the original transaction and recover it before continuing.',
     BB_NO_SAVED_TRANSACTION:'No saved Aztec transaction exists for this wallet and board.',
     BB_RECOVERY_UNKNOWN:'Recovery state could not be verified. Keep your recovery records and retry the lookup; do not create a replacement deposit.',
     BB_SETTLEMENT_PENDING:'Your withdrawal is recorded. Network settlement is pending; retry the Ethereum claim later.',

@@ -1546,7 +1546,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Source-backed repair frozen: authenticated message readiness before private fees; pending UI retries original claim; ordinary empty checkpoints before browser handoff and robust cleanup.106 integrated checks+app build pass. One bounded lifecycle014 begins, unchanged540s/2GiB.",
+      "checkpoint": "Lifecycle014 stopped on explicit BB_DEPOSIT_MESSAGE_PENDING after20s readiness, before proof/fees;176098ms1638880KiB, cleanup complete. Confirmed ETH deposit and saved secret. Driver incorrectly treats legitimate pending as terminal. Add max3 actual claim-only GUI attempts with exact pending/state/hash checks; no retry on other errors.",
       "priority": 24,
       "completion_requires": [
         "O01"
@@ -1570,7 +1570,7 @@
         "hypothesis": "010 showed confirmedETHdeposit then preproofclaimfailure; source missingInboxreadiness and fixturecheckpointprogression. Both repaired with tested claim-only retry. Genuine lifecycle014 qualifies repaired path, not presumed old SDK cause.",
         "attempts": 1,
         "max_attempts": 1,
-        "next_action": "Inspect lifecycle014 actual result and cleanup immediately; no rerun without diagnosis if failure."
+        "next_action": "Implement/review/test bounded GUI pending retry; preserve production20s logicalwait and540s/2GiB. No rerun until source-backed driver correction passes."
       }
     },
     {
