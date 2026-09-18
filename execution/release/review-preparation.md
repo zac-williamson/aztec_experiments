@@ -29,10 +29,16 @@ Each expensive run is serialized, limited to 540 seconds and sampled 2 GiB.
 - execution/evidence/T02/: three successful native full lifecycles, wrong-origin,
   replay and bad Outbox membership checks. Failed claim-boundary013 is retained;
   diagnosis014 identifies test-induced PXE witness-cache contamination. Its repair
-  still requires the genuine positive-control run015 outcome.
+  passed genuine positive-control run015 in384341ms; qualification-016.md records
+  the cache restoration and exact valid application journey.
 - execution/evidence/U01/qualification-043.md: actual browser proof/inclusion and
   private-fee effects on one measured host. Fixture-driven UI checks are separately
   labelled. This does not qualify a full browser deposit-to-refund lifecycle.
+- execution/evidence/T04/application-f8db2d4c-9d49-4199-a943-85db9fdb3bd0.json:
+  complete current Chromium deposit-to-refund lifecycle448614ms, canonical
+  application effects and cleanup. Browser matrix and interruption coverage remain.
+- execution/evidence/O01.json: packaged moderator handover, policy change,
+  restart reconciliation, monitoring and encrypted recovery acceptance.
 - execution/evidence/W03.json: durable recovery scope and exact linked artifacts.
 - execution/evidence/D01.json: deployment/runtime verification and operator package.
 - execution/evidence/A02/residual-release-register.json: exact historical residual
@@ -55,13 +61,14 @@ exclude a component merely because its direct dependency is marked development.
 
 ## What prevents final packet completion
 
-1. Finish the claim-boundary positive control and reconcile final test sources.
+1. Reconcile final test sources with the completed claim-boundary positive control.
 2. Complete public transaction/RPC/funding privacy traces and truthful user claims.
 3. Complete the supported browser, recovery and workload qualification, including
    remaining genuine lifecycle and interruption cases.
 4. Qualify an actual moderation model against suitable independently reviewed
    held-out labels; the two current candidates failed.
-5. Complete operational monitoring and reproducible failure/rotation drills.
+5. Reconcile completed internal operations evidence with final sources and collect
+   external operator ownership/configuration acceptance.
 6. Freeze source, distributable/build-input manifest, protocol/VK inventory and
    current diagnostic/dependency mapping. Historical passes are not a final snapshot.
 

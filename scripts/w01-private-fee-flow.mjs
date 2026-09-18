@@ -13,7 +13,7 @@ import {derivePrivateFeeInstance,preparePrivateFeePayment} from '../shared/priva
 import {bridgePrivateFeeCredit} from './w01-private-funding.mjs';
 import {ROOT} from './toolchain.mjs';
 import {restoreApplicationAuthor} from './w02-wallet-restore.mjs';
-export async function prepareW01PrivateFees({node,preparation,l1Client,directory,rpcUrl,mineL1,standalone=false,reportStage:mark}){
+export async function prepareW01PrivateFees({node,preparation,l1Client,directory,fundingDirectory,rpcUrl,mineL1,standalone=false,reportStage:mark}){
   const observation={passed:false,ownerless:true,offchainIssuer:false,operatorFunding:false,chargesMaximumFee:true};let wallet;
   try{
     const raw=JSON.parse(await fs.readFile(path.join(ROOT,'apps/src/billboard/private_fee_artifact.json'))),artifact=loadContractArtifact(raw),instance=await derivePrivateFeeInstance(raw),info=await node.getNodeInfo();
@@ -21,7 +21,9 @@ export async function prepareW01PrivateFees({node,preparation,l1Client,directory
     const restored=await restoreApplicationAuthor(generated);const author=restored.author;observation.walletRestore=restored.observation;assert(!author.address.equals(preparation.account.address));assert.equal(await getFeeJuiceBalance(author.address,node),0n);
     wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:{backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1},autoSync:false,syncChainTip:'checkpointed'}});
     await wallet.createSchnorrInitializerlessAccount(author.secret,author.salt,author.signingKey,'private-fee-test-author');await wallet.registerContract(instance,artifact);
-    const funded=await bridgePrivateFeeCredit({node,l1Client,wallet,directory,rpcUrl,walletSecret:author.secret,walletSalt:author.salt,privateFeeArtifact:raw,owner:author.address,payer:instance.address,mineL1,mark});observation.funding=funded.observation;
+    assert(path.isAbsolute(fundingDirectory));
+    const poolBefore=await getFeeJuiceBalance(instance.address,node);
+    const funded=await bridgePrivateFeeCredit({node,l1Client,wallet,directory:fundingDirectory,rpcUrl,walletSecret:author.secret,walletSalt:author.salt,privateFeeArtifact:raw,owner:author.address,payer:instance.address,mineL1,mark});observation.funding=funded.observation;
     // Explicit test gas cap; normal client/UI shows this maximum charge before signing.
     const gas=(await wallet.completeFeeOptions({from:author.address,feePayer:instance.address})).gasSettings.clone();
     gas.maxFeesPerGas=new GasFees(gas.maxFeesPerGas.feePerDaGas*16n||1n,gas.maxFeesPerGas.feePerL2Gas*16n||1n);
@@ -38,10 +40,10 @@ export async function prepareW01PrivateFees({node,preparation,l1Client,directory
       await wallet.pxe.sync();const {result}=await Contract.at(instance.address,artifact,wallet).methods.balance_of(author.address).simulate({from:author.address});
       assert.equal(BigInt(result.toString()),BigInt(funded.claim.amount)-allocated);
       assert.equal(await getFeeJuiceBalance(author.address,node),0n);
-      assert.equal(await getFeeJuiceBalance(instance.address,node),BigInt(funded.claim.amount)-fees-BigInt(observation.standalone?.transactionFee??0));
-      Object.assign(observation,{passed:true,coldStart:true,privateDebit:String(allocated),privateBalance:String(result),actualProtocolFees:String(fees+BigInt(observation.standalone?.transactionFee??0)),authorPublicBalanceZero:true,payer:instance.address.toString()});
+      assert.equal(await getFeeJuiceBalance(instance.address,node),poolBefore+BigInt(funded.claim.amount)-fees-BigInt(observation.standalone?.transactionFee??0));
+      Object.assign(observation,{passed:true,coldStart:true,poolBefore:String(poolBefore),privateDebit:String(allocated),privateBalance:String(result),actualProtocolFees:String(fees+BigInt(observation.standalone?.transactionFee??0)),authorPublicBalanceZero:true,payer:instance.address.toString()});
     };
-    Object.defineProperties(observation,{browserFixture:{value:{instance,artifact,gas,fundedAmount:BigInt(funded.claim.amount),get allocated(){return allocated;},get wallet(){return wallet;}}},discardUnsubmittedFee:{value:maximum=>{assert(BigInt(maximum)>0n&&allocated>=BigInt(maximum));allocated-=BigInt(maximum);}},authorAccount:{value:author},privateFeeAction:{value:privateFeeAction},verify:{value:verify},close:{value:async()=>{if(wallet){await wallet.stop();wallet=undefined;}}}});
+    Object.defineProperties(observation,{fundingSender:{value:funded.sender},browserFixture:{value:{instance,artifact,gas,fundedAmount:BigInt(funded.claim.amount),get allocated(){return allocated;},get wallet(){return wallet;}}},discardUnsubmittedFee:{value:maximum=>{assert(BigInt(maximum)>0n&&allocated>=BigInt(maximum));allocated-=BigInt(maximum);}},authorAccount:{value:author},privateFeeAction:{value:privateFeeAction},verify:{value:verify},close:{value:async()=>{if(wallet){await wallet.stop();wallet=undefined;}}}});
     return observation;
   }catch(error){if(error.privateFeeFundingObservation)observation.funding=error.privateFeeFundingObservation;if(error.privateFeeStandaloneObservation)observation.standalone=error.privateFeeStandaloneObservation;if(wallet)await wallet.stop();error.privateFeeObservation=observation;throw error;}
 }

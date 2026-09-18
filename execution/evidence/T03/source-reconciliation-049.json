@@ -1,0 +1,49 @@
+{
+  "T03": {
+    "report": "evidence/T03/application-ba9199a9-b7f2-45a3-90e5-5e3532fff5aa.json",
+    "recordedFiles": 82,
+    "changed": []
+  },
+  "T04": {
+    "report": "evidence/T04/application-f8db2d4c-9d49-4199-a943-85db9fdb3bd0.json",
+    "recordedFiles": 103,
+    "changed": [
+      {
+        "path": "scripts/t03-public-footprint.mjs",
+        "tested": "c5ad1114fd505221eb9ac6c2c54f3d3aee0a058421b8a95abef15a96ba4f650a",
+        "current": "9614c0037b32cd12f9507f160c0bd91ee78acbd7462761f036de20a1839d8bd0"
+      },
+      {
+        "path": "scripts/w01-private-fee-flow.mjs",
+        "tested": "8ba4f29a9f993416419b8ebcf7361d8bd706c191254bac1c576929f0a5e401ff",
+        "current": "160df5fb717cdfd1005ef3f42c8ff138d1e366a045728c944eb4664eb05e5404"
+      },
+      {
+        "path": "scripts/w01-private-funding.mjs",
+        "tested": "8f64a1bb86289a787acde0b6370399019bf5834740fe0c373d2f88307e2e3080",
+        "current": "7c12d22dd0c71db748c1acfd4b73dd4b13585741be4034e7d2e3987572c9990e"
+      },
+      {
+        "path": "scripts/t02-screening-journey.mjs",
+        "tested": "e161d1a64b03bc2dbd8cd7b8eafaee00880a611abb143ef52d1b2a80f5ec43e6",
+        "current": "7e551dd2b5e3202a64710d387154f030e11c09ef0ab63c1f1852cdbd001b6e61"
+      },
+      {
+        "path": "scripts/testing/assets.mjs",
+        "tested": "46a0e1ba69e222e239bba9230a29798c5152e40d0a7b92b2081fbd2f3bfe3d8d",
+        "current": "03a5537018e0ccacdd2ab1430a47b22859158d705c39ad52e5faad3ebc1e40cf"
+      },
+      {
+        "path": "scripts/testing/scenario-flows.mjs",
+        "tested": "940c937fb4a7c2e7546302b16efbac4f64cf265274d12984f44957a516a91f0b",
+        "current": "b6422894956113fb4957d70b37b55bbc488c0174db86d34579a29c6729da93c7"
+      },
+      {
+        "path": "scripts/testing/scenarios.mjs",
+        "tested": "6d298a6fd2864527828b8632d9902fcf98a01b43e2ede25d73cf0b9007c45255",
+        "current": "14efb3f3eb366c1006a3d64e9b3bfbf97fd87e8048d24bb853a1fb9912aa8af1"
+      }
+    ]
+  },
+  "disposition": "Run049 all82inputs unchanged. Browser048 application outputs, RPC observer and driver unchanged. Changed helpers add T03 role comparisons, owner-specific funding directories and exact shared-pool baselines; original single-author arithmetic remains baselinezero. T02 extraction unused by browser lifecycle. Scenario/assets wiring adds explicit privacy scenario. Current browser restart050 will additionally qualify shared funding changes; full browser matrix remains T04. No claim that048 freshly tested changed inputs."
+}

@@ -5,9 +5,9 @@ investigate and review read-only; root integrates findings. No per-package file 
 
 - Root: simplify coordination, integrate fixes and resume application qualification.
 - scheduler_improvements: independent structural review of graph coordination and
-  scripts/testing, focusing on lifecycle ownership, complexity and no fallbacks.
+  scripts/testing and shared sequential post extraction, focusing on lifecycle ownership, complexity and no fallbacks.
 
 The user rescinded stop-on-failure. Preserve evidence and repair underlying failures
 autonomously. Historical results do not qualify changed source.
 
-- claim_failure_diagnosis: read-only actual bundled PXE synchronization reproduction; no expensive chain runs.
+- claim_failure_diagnosis: read-only two-author private-fee scenario design and review; no expensive chain runs.

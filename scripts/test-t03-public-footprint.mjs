@@ -6,7 +6,7 @@ import {Tx,TxEffect,HashedValues} from '@aztec/stdlib/tx';
 import {PublicDataWrite} from '@aztec/stdlib/avm';
 import {PartialPrivateTailPublicInputsForPublic,PublicCallRequest} from '@aztec/stdlib/kernel';
 import {PrivateLog,PublicLog} from '@aztec/stdlib/logs';
-import {classifyT03PublicFootprint} from './t03-public-footprint.mjs';
+import {classifyT03PublicFootprint,compareT03PublicFootprints} from './t03-public-footprint.mjs';
 const address=n=>new AztecAddress(new Fr(n));
 function fixture(){
  const tx=Tx.random(),effect=TxEffect.empty();effect.txHash=tx.getTxHash();
@@ -56,4 +56,23 @@ test('real SDK public call decoding exposes sender and target, including teardow
  assert.equal(result.rolePresence.publicCallSenders.author,true);
  assert.equal(result.rolePresence.publicCallTargets.board,true);
  assert.equal(result.rolePresence.publicCallCalldata.author,true);
+});
+
+test('pairwise observations count only distinct nonzero opaque matches and retain no values',()=>{
+ const a=fixture(),b=fixture();a.name='A1';b.name='A2';
+ a.effect.noteHashes=[Fr.ZERO,new Fr(711),new Fr(711)];b.effect.noteHashes=[Fr.ZERO,new Fr(711)];
+ a.effect.nullifiers=[new Fr(812)];b.effect.nullifiers=[new Fr(813)];
+ a.effect.privateLogs=[PrivateLog.fromBlobFields(2,[new Fr(914),new Fr(915)])];
+ b.effect.privateLogs=[PrivateLog.fromBlobFields(2,[new Fr(914),new Fr(916)])];
+ const result=compareT03PublicFootprints(a,b);
+ assert.deepEqual(result.identicalNonzeroPublicIdentifiers,{noteCommitments:1,nullifiers:0,privateDeliveryTags:1});
+ assert.equal(result.sharedFeePayer,true);
+ assert(!JSON.stringify(result).includes(new Fr(711).toString()));
+ assert.throws(()=>compareT03PublicFootprints(a,a));
+});
+test('keeps collateral, fee funding and coinbase identities distinct',()=>{
+ const f=fixture();Object.assign(f.roles,{collateralFunder:'0x11',otherCollateralFunder:'0x12',feeFunder:'0x13',otherFeeFunder:'0x14',coinbase:'0x15'});
+ f.effect.publicLogs.push(new PublicLog(f.roles.board,[new Fr(0x13),new Fr(0x15)]));
+ const seen=classifyT03PublicFootprint(f).rolePresence.publicLogFields;
+ assert.equal(seen.feeFunder,true);assert.equal(seen.coinbase,true);assert.equal(seen.collateralFunder,false);assert.equal(seen.otherFeeFunder,false);
 });

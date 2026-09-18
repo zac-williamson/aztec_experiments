@@ -26,9 +26,9 @@ guaranteed deletable.
 
 ## Evidence and remaining qualification
 
-Genuine native journeys and one previously qualified browser post use the shared
-fee payer, reconcile private credit and leave the author's public FeeJuice balance
-at zero. Focused production-preparer and routing tests reject credit shortfalls,
+Genuine native journeys and the complete Chromium deposit-to-refund journey use
+the shared fee payer, reconcile private credit and leave the author's public
+FeeJuice balance at zero. Focused production-preparer and routing tests reject credit shortfalls,
 identity/configuration errors and provider failures before action submission.
 These results do not establish a population-level anonymity set.
 
@@ -40,8 +40,13 @@ identifiers, encoded calldata or statistical correlation. RPC argument byte
 buckets are not network packet sizes. Encrypted delivery fields being public is
 not evidence that their plaintext is public.
 
-Repeated-post and cross-author comparisons, funding correlation, recovery and
-full supported-browser journeys remain part of qualification. Independent review
+A genuine same-board test now covers two posts by one author and one by a second
+author, with distinct collateral and fee funders. All three used the shared payer;
+the inspected public fields contained no exact author or funder address, and no
+nonzero note commitment, nullifier or delivery tag repeated across the three posts.
+These equality checks do not establish cryptographic unlinkability. Funding
+correlation, recovery and the complete supported-browser matrix remain bounded by
+their separately recorded evidence. Independent review
 must assess cryptographic assumptions. This document deliberately does not claim
 protection against arbitrary timing/content analysis, hostile local devices,
 malicious endpoints or global network observers.
@@ -56,8 +61,9 @@ including upgrade/class validation. The application does not bypass those checks
 A local or separately trusted endpoint changes this trust boundary; it does not
 remove network-origin or timing information from every observer.
 
-The disposable test fixture reuses its Ethereum funding identity as the local
-sequencer coinbase. Exact funder matches inside transaction objects therefore
+The browser lifecycle fixture (run048) reuses its Ethereum funding identity as
+the local sequencer coinbase. The separate two-author test (run049) uses distinct
+collateral funders, fee funders and coinbase. Exact funder matches inside transaction objects therefore
 cannot, by themselves, establish author-specific funding linkage. The recorded
 role-only trace does not preserve enough field context to attribute every match.
 The separate public-field classifier and Ethereum funding observations must be
@@ -66,6 +72,9 @@ interpreted with that limitation.
 Caller-independent public getters now use the SDK's neutral sender, so those
 simulation inputs do not unnecessarily carry the author or moderator account.
 Focused tests verify the installed SDK constructs a zero sender and fee payer for
-these static reads. Private queries retain their owner scope. The next genuine
-browser trace must qualify the integrated change; the recorded first observation
-predates it, and the separate account-class RPC lookup remains.
+these static reads. Private queries retain their owner scope. The complete browser lifecycle now qualifies this change for its recorded source:
+its trace retained 1,339 dispatched observations, including five author account-class
+lookups and 18 argument classifications truncated by the observation limit. No
+other retained row reported the author address. The truncation prevents a complete
+absence claim, and the account-class lookup remains. See
+`execution/evidence/T03/browser-observations-048.md`.

@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import {Tx,TxEffect} from '@aztec/stdlib/tx';
 
-const ROLES=['author','otherAuthor','sharedPayer','board','moderator','funder'];
+const ROLES=['author','otherAuthor','sharedPayer','board','moderator','funder','collateralFunder','otherCollateralFunder','feeFunder','otherFeeFunder','coinbase'];
 function scalar(value){
  const text=value?.toString();
  assert(typeof text==='string'&&/^0x[0-9a-fA-F]{1,64}$/.test(text),'Expected public field/address');
@@ -54,4 +54,23 @@ export function classifyT03PublicFootprint({tx,effect,roles}){
   rolePresence,
   limits:'Does not test derived identifiers, linkability across transactions, funding timing, RPC metadata, proof bytes, protocol constants or contract-class contents. Private delivery tags/payload are public serialized fields, not decrypted private data. Absence of exact matches is not proof of anonymity.',
  };
+}
+
+// Compare public opaque identifiers without retaining them in evidence.
+export function compareT03PublicFootprints(left,right){
+ for(const record of [left,right]){
+  assert(record.tx instanceof Tx&&record.effect instanceof TxEffect);
+  assert(record.tx.getTxHash().equals(record.effect.txHash));
+ }
+ assert(!left.tx.getTxHash().equals(right.tx.getTxHash()));
+ const fields=effect=>({noteCommitments:effect.noteHashes,nullifiers:effect.nullifiers,
+  privateDeliveryTags:effect.privateLogs.flatMap(log=>log.getEmittedFields().slice(0,1))});
+ const a=fields(left.effect),b=fields(right.effect),matches={};
+ for(const key of Object.keys(a)){
+  const values=new Set(a[key].map(scalar).filter(value=>value!==0n));
+  const other=new Set(b[key].map(scalar).filter(value=>value!==0n));
+  matches[key]=[...values].filter(value=>other.has(value)).length;
+ }
+ return {left:left.name,right:right.name,sharedFeePayer:left.tx.data.feePayer.equals(right.tx.data.feePayer),
+  identicalNonzeroPublicIdentifiers:matches,limits:'Equality counts only; no inference that unequal commitments or tags are unlinkable.'};
 }

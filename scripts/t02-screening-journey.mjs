@@ -6,18 +6,14 @@ import {createHash} from 'node:crypto';
 import {Contract} from '@aztec/aztec.js/contracts';
 import {Barretenberg,BackendType} from '@aztec/bb.js';
 import {Fr} from '@aztec/foundation/curves/bn254';
-import {poseidon2HashWithSeparator} from '@aztec/foundation/crypto/poseidon';
 import {loadContractArtifact} from '@aztec/stdlib/abi';
 import {NoteStatus} from '@aztec/stdlib/note';
-import {TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
 import {EmbeddedWallet} from '@aztec/wallets/embedded';
 import {contractInputs} from './artifact-provenance.mjs';
 import {ROOT,assertNodeVersion,assertAztecPackages} from './toolchain.mjs';
 const BOARD='apps/src/billboard/billboard_artifact.json';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const integer=value=>BigInt(value.toString());
-const included=receipt=>[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(receipt.status)
-  &&receipt.executionResult===TxExecutionResult.SUCCESS&&receipt.blockNumber!=null&&receipt.blockHash!=null;
 async function artifact(preparation){
   const bytes=await fs.readFile(path.join(ROOT,'.build/contracts-manifest.json')),manifest=JSON.parse(bytes);
   assert.equal(sha(bytes),preparation.artifactHashes['.build/contracts-manifest.json']);
@@ -27,11 +23,12 @@ async function artifact(preparation){
 }
 
 import {proveApplicationAction} from './prove-application-action.mjs';
+import {exactApplicationDeposit,eligibleApplicationAnchor,includeApplicationAction,postUnflaggedApplicationMessage} from './application-post.mjs';
 
 // Parent owns the real node, ordinary mining and aggregate 540s/2GiB bound.
 export async function proveAndIncludeT02Screening({node,preparation,instance,claimResult,l1Client,
  directory,rpcUrl,mineL1,reportStage,authorAccount,privateFeeAction,discardUnsubmittedFee,flagged=true}) {
- let wallet,sequencer,previousConfig,stage='preflight';
+ let wallet,stage='preflight';
  const observation={passed:false,flagged,applicationProofs:true,networkProofs:false,transactions:[]};
  const mark=name=>{stage=name;reportStage?.('journey:'+name);};
  try {
@@ -56,32 +53,16 @@ export async function proveAndIncludeT02Screening({node,preparation,instance,cla
   assert((await query('get_censor')).equals(moderator.address));
   const logical=async()=>(await query('get_deposit_info',account.address,claim.depositChainId)).map(integer);
   const filter={contractAddress:instance.address,owner:account.address,status:NoteStatus.ACTIVE,scopes:[account.address]};
-  async function exact(fields,hash){
-   const notes=(await wallet.pxe.debug.getNotes({...filter,storageSlot:boardArtifact.storageLayout.deposits.slot})).filter(n=>n.note.items[1]?.equals(claim.depositChainId));
-   assert.equal(notes.length,1);const note=notes[0];assert.equal(note.txHash.toString(),hash.toString());
-   assert(note.owner.equals(account.address)&&note.contractAddress.equals(instance.address));
-   assert.deepEqual(note.note.items.map(integer),[fields[0]+(fields[2]<<32n),fields[1],fields[3],fields[4],fields[5],fields[7],fields[6]+(fields[8]<<64n)+(fields[9]<<128n),fields[10]]);
-   assert(!note.siloedNullifier.isZero());return note;
-  }
+  const exact=(fields,txHash)=>exactApplicationDeposit({wallet,artifact:boardArtifact,instance,owner:account.address,chain:claim.depositChainId,fields,txHash});
   let fields=await logical();assert.deepEqual(fields,claim.logicalFields);assert.deepEqual(fields.slice(5,10),[0n,0n,0n,0n,0n]);
   let currentHash=claim.tx.getTxHash(),currentNote=await exact(fields,currentHash);
   const base=integer(await query('get_base_cooldown')),minimum=integer(await query('get_min_deposit'));
   const cooldown=(base*minimum+claim.amount-1n)/claim.amount,maxSave=integer(await query('get_max_save_up')),k=integer(await query('get_k_multiplier'));
   assert(cooldown>0n&&cooldown<=60n&&k>1n);
-  sequencer=node.getSequencer();const cfg=sequencer.getSequencer().getConfig();previousConfig={minTxsPerBlock:cfg.minTxsPerBlock,buildCheckpointIfEmpty:cfg.buildCheckpointIfEmpty};
-  async function eligible(time){
-   sequencer.updateConfig({minTxsPerBlock:0,buildCheckpointIfEmpty:true});let anchor;const deadline=Date.now()+120000;
-   try{do{await wallet.pxe.sync();anchor=await wallet.pxe.getSyncedBlockHeader();if(integer(anchor.globalVariables.timestamp)>=time)break;await mineL1();}while(Date.now()<deadline);
-    assert(integer(anchor.globalVariables.timestamp)>=time);assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),(await anchor.hash()).toString());return anchor;
-   }finally{sequencer.updateConfig(previousConfig);}
-  }
+  const eligible=timestamp=>eligibleApplicationAnchor({node,wallet,mineL1,timestamp});
   async function include(result,label,oldNote){
-   const {proven,tx}=result;assert(!proven.chonkProof.isEmpty());assert.equal((await node.isValidTx(tx)).result,'valid');await node.sendTx(tx);
-   let receipt;const deadline=Date.now()+120000;do{receipt=await node.getTxReceipt(tx.getTxHash());if(included(receipt))break;assert.notEqual(receipt.status,TxStatus.DROPPED);await mineL1();}while(Date.now()<deadline);
-   assert(included(receipt));assert.equal((await node.getBlock(receipt.blockNumber)).hash.toString(),receipt.blockHash.toString());
-   const effect=await node.getTxEffect(tx.getTxHash());assert(effect?.data);assert.equal(Number(effect.l2BlockNumber),Number(receipt.blockNumber));assert.equal(effect.l2BlockHash.toString(),receipt.blockHash.toString());
-   if(oldNote)assert.equal(effect.data.nullifiers.filter(n=>n.equals(oldNote.siloedNullifier)).length,1);
-   await wallet.pxe.sync();observation.transactions.push({stage:label,txHash:tx.getTxHash().toString(),proofSha256:sha(proven.chonkProof.toBuffer()),blockNumber:String(receipt.blockNumber),fee:String(receipt.transactionFee),feePayer:tx.data.feePayer.toString(),nodeValidation:'valid',status:receipt.status,executionResult:receipt.executionResult});return tx;
+   const included=await includeApplicationAction({node,wallet,mineL1,...result,spentNullifier:oldNote?oldNote.siloedNullifier:null});
+   observation.transactions.push({stage:label,...included.summary});return included.tx;
   }
   async function rejectWithdrawal(reason){
    mark('reject-'+reason);let rejected=false;
@@ -99,18 +80,13 @@ export async function proveAndIncludeT02Screening({node,preparation,instance,cla
    observation.rejections??=[];observation.rejections.push({reason,stage:'constraint execution; no completed proof or submission',noteUnchanged:true});
   }
   const pack=(text,size)=>{const bytes=Buffer.alloc(31);Buffer.from(text).copy(bytes);return [new Fr(BigInt('0x'+bytes.toString('hex'))),...Array.from({length:size-1},()=>Fr.ZERO)];};
-  const text='T02 genuine journey post',msg=pack(text,32),nonce=Fr.random();assert(!nonce.isZero());
-  const postId=await poseidon2HashWithSeparator([Fr.ONE,instance.address.toField(),nonce],0x42420102),count=integer(await query('get_post_count'));
-  let anchor=await eligible(fields[10]),old=fields;mark('prove-post');
-  const post=await proveApplicationAction({payerMode:'private',wallet,owner:account.address,interaction:board.methods.post(claim.depositChainId,nonce,msg,Buffer.byteLength(text),false,undefined,undefined),privateFeeAction});
-  assert.deepEqual(post.tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer());
-  await include(post,'post',currentNote);fields=await logical();
+  mark('prove-post');
+  const post=await postUnflaggedApplicationMessage({node,wallet,mineL1,artifact:boardArtifact,instance,owner:account.address,chain:claim.depositChainId,state:{fields,txHash:currentHash},text:'T02 genuine journey post',privateFeeAction});
+  observation.transactions.push({stage:'post',...post.summary});
+  fields=post.state.fields;currentHash=post.state.txHash;currentNote=post.depositNote;
+  const postId=post.postId,postNotes=[post.postNote],count=integer(await query('get_post_count'))-1n;
+  let anchor=post.anchor,old;
   const advance=(before,now,flags)=>{const floor=now>cooldown*(maxSave-1n)?now-cooldown*(maxSave-1n):0n;return (before>floor?before:floor)+cooldown*(1n+(k-1n)*flags);};
-  assert.deepEqual(fields.slice(0,5),old.slice(0,5));assert.notEqual(fields[5],0n);assert.equal(fields[6],1n);assert.equal(fields[7],0n);assert.equal(fields[8],0n);assert.equal(fields[9],1n);assert.equal(fields[10],advance(old[10],integer(anchor.globalVariables.timestamp),0n));
-  currentHash=post.tx.getTxHash();currentNote=await exact(fields,currentHash);
-  const postNotes=(await wallet.pxe.debug.getNotes(filter)).filter(n=>n.txHash.equals(currentHash)&&n.note.items.length===7);assert.equal(postNotes.length,1);
-  assert.deepEqual(postNotes[0].note.items.map(integer),[1n,integer(claim.depositChainId),1n,integer(postId),integer(anchor.globalVariables.timestamp),0n,0n]);
-  assert.equal(integer(await query('get_post_count')),count+1n);assert.equal(integer(await query('get_post_id',count)),integer(postId));assert.deepEqual((await query('get_post',postId)).map(integer),msg.map(integer));assert.equal(integer(await query('get_post_length',postId)),BigInt(Buffer.byteLength(text)));
   const mature=integer(await query('get_post_flag_deadline',postId)),published=integer(await query('get_post_time',postId)),window=integer(await query('get_censor_window'));
   assert.equal(mature,published+window);observation.flagWindow={publishedAt:String(published),deadline:String(mature),window:String(window)};
   if(flagged){mark('prove-moderator-flag');const reason='T02 policy violation',reasonFields=pack(reason,7),version=await query('get_post_policy_version',postId);
@@ -131,5 +107,5 @@ export async function proveAndIncludeT02Screening({node,preparation,instance,cla
   await artifact(preparation);Object.assign(observation,{passed:true,exactReplacementNotes:true,publicPostChecked:true,screenedSequence:'1',lastRealSequence:'1',penaltyMultiplier:String(flagged?k:1n),withdrawalDue:String(fields[10]),authorFees:String(observation.transactions.filter(tx=>tx.stage!=='flag').reduce((sum,tx)=>sum+BigInt(tx.fee),0n))});
   Object.defineProperty(observation,'exitState',{value:{logicalFields:fields,txHash:currentHash.toString()},enumerable:false});return observation;
  }catch(error){const failure=new Error('T02_SCREENING_FAILED:'+stage+':'+(error?.name??'Error'));failure.journeyObservation={...observation,passed:false,stage,errorClass:error?.name??'Error',location:error?.stack?.split('\n').filter(line=>line.trimStart().startsWith('at ')&&!line.includes('://')).slice(0,3).join('\n')};throw failure;}
- finally{if(sequencer&&previousConfig)sequencer.updateConfig(previousConfig);if(wallet){await wallet.stop();observation.walletStopped=true;}}
+ finally{if(wallet){await wallet.stop();observation.walletStopped=true;}}
 }

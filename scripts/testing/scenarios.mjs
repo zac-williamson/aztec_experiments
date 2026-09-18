@@ -4,6 +4,12 @@ const run = name => async ctx => (await import('./scenario-flows.mjs'))[name](ct
 // Explicit named scenarios. Unknown names fail; there are no compatibility aliases.
 const records = [
   Object.freeze({
+    name: 'repeated-private-posts', deadlineMs: 540000, evidenceTask: 'T03',
+    description: 'Same-board A1 A2 B1 private-fee public footprint',
+    fixture: 'activated-board', authors: 1, applicationThreads: 1, browser: 'none',
+    run: run('repeatedPrivatePosts'),
+  }),
+  Object.freeze({
     name: 'node', deadlineMs: 60000, evidenceTask: 'C01',
     description: 'Ordinary verifier node startup',
     fixture: 'node', authors: 1, applicationThreads: 1, browser: 'none',

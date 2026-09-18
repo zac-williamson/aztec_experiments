@@ -10,6 +10,9 @@ import {describeFailure} from './supervisor.mjs';
 const execFileAsync=promisify(execFile);
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+// Explicit local timing, shared by protocol deployment and its node. Keep the
+// normal two-checkpoint Inbox delay within the application's readiness window.
+export const LOCAL_TIMING=Object.freeze({ethereumSlotDuration:1,aztecSlotDuration:5,blockDurationMs:1000,aztecEpochDuration:4,inboxLag:2});
 export async function runFixture(directory, scenario, browserControl, operatorPackage) {
   let stage='startup', anvil, identity;
   const originalStdout=process.stdout.write.bind(process.stdout), originalStderr=process.stderr.write.bind(process.stderr);
@@ -68,7 +71,7 @@ export async function runFixture(directory, scenario, browserControl, operatorPa
     let bn254Key;do{bn254Key=Fr.random().toBigInt();}while(bn254Key===0n);
     const config={...getConfigEnvVars(),l1RpcUrls:[rpcUrl],l1ChainId:31337,
       realProofs:true,useAutomineSequencer:false,automineEnableProveEpoch:false,
-      p2pEnabled:false,ethereumSlotDuration:1,aztecSlotDuration:12,blockDurationMs:2000,aztecEpochDuration:4,aztecProofSubmissionEpochs:64,
+      p2pEnabled:false,...LOCAL_TIMING,aztecProofSubmissionEpochs:64,
       aztecTargetCommitteeSize:1,slasherEnabled:false,
       initialValidators:[{attester:validatorAddress,withdrawer:validatorAddress,bn254SecretKey:new SecretValue(bn254Key)}]};
     mark('deploy-local-protocol-fixture');

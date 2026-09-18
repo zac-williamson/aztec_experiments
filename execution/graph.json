@@ -1391,7 +1391,7 @@
       "title": "Verify end-to-end privacy and funding footprint",
       "phase": "engineering",
       "kind": "internal",
-      "status": "active",
+      "status": "done",
       "depends_on": [
         "T02",
         "U01",
@@ -1422,7 +1422,7 @@
       "acceptance": [
         {
           "id": "T03-A01",
-          "description": "No reusable public author fee-payer or funding linkage remains in the supported anonymous posting flow."
+          "description": "Supported posting uses a shared private fee payer and introduces no reusable author-specific identifier linking posts through public fee-payment or funding fields. Qualification includes repeated-author and cross-author observations; public bridge identities, amounts, timing and residual correlation limits are explicitly documented. Internal tests do not establish cryptographic unlinkability."
         },
         {
           "id": "T03-A02",
@@ -1430,7 +1430,7 @@
         },
         {
           "id": "T03-A03",
-          "description": "Fee exhaustion, recovery and fallback paths preserve the promised privacy behavior."
+          "description": "Fee exhaustion and recovery preserve private payment; failures reject explicitly without switching to public author fees, automatic funding or another payment route."
         },
         {
           "id": "T03-A04",
@@ -1440,7 +1440,7 @@
       "evidence": "evidence/T03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Lifecycle022 current-source privacy analysis014:1495 RPC observations,5 author contract lookups,18 traversal truncations; four canonical transactions use shared payer with no exact author match in inspected fields. Repeated/cross-author comparison and distinct funder/coinbase remain; no unlinkability claim.",
+      "checkpoint": "Scoped internal privacy qualification accepted: actual same-board A1,A2,B1 passed367706ms/1395760KiB, distinct funders and exact private/pool accounting; current113fee and6classifier checks, browser048RPC observations, explicit correlation/truncation limits and independent internal review. T04 restart/browser matrix and external cryptographic assessment remain separate.",
       "priority": 23,
       "execution_lane": "application"
     },
@@ -1498,7 +1498,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Lifecycle022 full GUI passed483244ms/1729856KiB. Recovery025 genuine accepted-post response loss and full browser restart passed274958ms/1772256KiB; one submission, canonical post and private debit; owned cleanup complete. Browser/load/concurrency and other interruption matrix remain.",
+      "checkpoint": "Browser lifecycle048 passed448614ms/1084208KiB; browser restart050 passed216113ms/1698992KiB, exactoriginal post/private debit, completecleanup. Next explicit Firefox/WebKit capability/posting qualification and actual IndexedDB longhistory selection/reopen; no new runner or fallback.",
       "priority": 24,
       "completion_requires": [
         "O01"

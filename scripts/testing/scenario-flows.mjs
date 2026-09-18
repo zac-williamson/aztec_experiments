@@ -1,3 +1,4 @@
+import {observeRepeatedPrivatePosts} from '../t03-repeated-posts.mjs';
 import assert from 'node:assert/strict';
 import {withActivatedBoard} from '../c01-bridge-flow.mjs';
 import {prepareW01PrivateFees} from '../w01-private-fee-flow.mjs';
@@ -17,7 +18,7 @@ const complete=async()=>{
 };
 async function fees(s,standalone){
   s.privateFee=await prepareW01PrivateFees({
-    ...s.common,standalone
+    ...s.common,fundingDirectory:s.directory,standalone
   });
   assert(s.privateFee.funding.passed);
   s.observation.privateFee=s.privateFee;
@@ -231,4 +232,8 @@ export function browserLifecycle(ctx){
       assert(s.observation.browserJourney.passed);
     };
   });
+}
+
+export function repeatedPrivatePosts(ctx){
+ return withActivatedBoard(ctx,async s=>{await observeRepeatedPrivatePosts(s);return complete;});
 }

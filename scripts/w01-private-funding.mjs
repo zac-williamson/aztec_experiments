@@ -58,9 +58,10 @@ export async function bridgePrivateFeeCredit({node,l1Client,wallet,owner,walletS
       do{await wallet.pxe.sync();const anchor=await wallet.pxe.getSyncedBlockHeader();witness=await node.getL1ToL2MessageMembershipWitness(anchor.getBlockNumber(),Fr.fromString(event.key));if(witness)break;await mineL1();}while(Date.now()<deadline);
       assert(witness,'Private fee Inbox membership timeout');assert.equal(witness[0],event.index);
     }finally{sequencer.updateConfig(saved);}
-    return {claim,observation:{passed:true,realL1Deposit:true,amount:String(amount),l1TxHash:record.txHash,recipient:payer.toString(),
+    const result={claim,observation:{passed:true,realL1Deposit:true,amount:String(amount),l1TxHash:record.txHash,recipient:payer.toString(),
       independentL1Sender:true,testFaucetFunding:true,productionFundingHelper:true,productionRecoveryHelper:true,
       publicRecoveryPersistedBeforeDeposit:true,depositSends,privateSecretsStored:false}};
+    Object.defineProperty(result,'sender',{value:sender});return result;
   }catch(error){
     error.privateFeeFundingObservation={passed:false,diagnostic:error.diagnostic??null,recoveryHasTxHash:!!error.recoveryRecord?.txHash};
     throw error;

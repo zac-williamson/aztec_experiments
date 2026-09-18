@@ -27,6 +27,7 @@ There are no implicit defaults, cascading environment flags or legacy aliases. T
 | `activated-board` | Ready binding, actual emitted message and controlled portal activation |
 | `censor-commands` | Packaged moderator handover and successor policy change with private fees |
 | `private-fees` | Private fee funding, collateral claim, exit and Ethereum refund |
+| `repeated-private-posts` | Same-board A1, A2, B1 with distinct collateral and fee funders; exact public-field and private-fee accounting |
 | `private-fee-post` | Cold private fee claim and private-balance posting |
 | `flagged-journey`, `unflagged-journey` | Posting, screening, eligible exit and refund |
 | `redeposit` | Second deposit/refund and replay rejection |

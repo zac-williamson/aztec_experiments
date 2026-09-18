@@ -15,3 +15,13 @@ test('scenario resource choices retain established native budgets',async()=>{
  assert.equal(getScenario('contention').applicationThreads,2);
  for(const name of ['browser-post','browser-journey','browser-post-recovery','private-fees','censor-commands'])assert.equal(getScenario(name).applicationThreads,1);
 });
+
+test('local timing has an SDK-valid build window and Inbox readiness headroom',async()=>{
+ const {LOCAL_TIMING}=await import('./testing/fixture-worker.mjs');
+ const {buildProposerTimetable}=await import('@aztec/stdlib/timetable');
+ const timetable=buildProposerTimetable(LOCAL_TIMING,{slotDuration:LOCAL_TIMING.aztecSlotDuration,ethereumSlotDuration:LOCAL_TIMING.ethereumSlotDuration,l1GenesisTime:0n});
+ assert(timetable.getMaxBlocksPerCheckpoint()>=1);
+ assert.equal(LOCAL_TIMING.inboxLag,2);
+ const nominalBridgeSeconds=(LOCAL_TIMING.inboxLag+1)*LOCAL_TIMING.aztecSlotDuration+LOCAL_TIMING.blockDurationMs/1000+LOCAL_TIMING.ethereumSlotDuration;
+ assert(nominalBridgeSeconds<20,'Local protocol delay must fit the unchanged browser readiness bound');
+});

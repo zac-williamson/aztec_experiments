@@ -38,8 +38,10 @@
     {
       "id": "DIAG-DELIVERY-PRIVACY",
       "owner": "T03",
-      "status": "planned",
-      "required": "Measure tagging/default sender, randomized delivery, private fee ownership and fee exhaustion/fallback privacy; distinguish entropy assumptions from observed behavior."
+      "status": "passed-scoped",
+      "required": "Measure tagging/default sender, randomized delivery, private fee ownership and fee exhaustion/fallback privacy; distinguish entropy assumptions from observed behavior.",
+      "evidence": "evidence/T03/qualification-049.md",
+      "scope": "Actual same-board A1,A2,B1 Tx/TxEffect equality observations, distinct funders/coinbase, exact shared fee accounting; complete Chromium lifecycle/RPC trace and neutral public query sender; explicit insufficient-credit/provider rejection. Does not establish entropy, derived-tag unlinkability, exhaustive RPC traversal or cryptographic privacy; X01/X02 retain independent assessment of all26original/57fresh diagnostic occurrences."
     },
     {
       "id": "DIAG-DISCOVERY-RECOVERY",

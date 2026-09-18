@@ -2,12 +2,11 @@
 
 Generated from graph.json; edit checkpoints and blockers there, then run graph.py render.
 
-Objective state: **running**. Completed packages: 23/35.
+Objective state: **running**. Completed packages: 24/35.
 
 ## In progress
 
-- **Verify end-to-end privacy and funding footprint (T03)** — Lifecycle022 current-source privacy analysis014:1495 RPC observations,5 author contract lookups,18 traversal truncations; four canonical transactions use shared payer with no exact author match in inspected fields. Repeated/cross-author comparison and distinct funder/coinbase remain; no unlinkability claim.
-- **Run browser, recovery, concurrency and load matrix (T04)** — Lifecycle022 full GUI passed483244ms/1729856KiB. Recovery025 genuine accepted-post response loss and full browser restart passed274958ms/1772256KiB; one submission, canonical post and private debit; owned cleanup complete. Browser/load/concurrency and other interruption matrix remain.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Browser lifecycle048 passed448614ms/1084208KiB; browser restart050 passed216113ms/1698992KiB, exactoriginal post/private debit, completecleanup. Next explicit Firefox/WebKit capability/posting qualification and actual IndexedDB longhistory selection/reopen; no new runner or fallback.
 
 ## Ready internal work
 

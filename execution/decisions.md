@@ -469,3 +469,20 @@ failed run013 and budget two expensive attempts for its stated diagnosis. No
 application test, quality threshold, external review or soak is declared passed
 by this workflow change. policy-provenance.md distinguishes engineering defaults
 from user instructions; defaults may be reconsidered explicitly, not silently.
+
+
+## 2026-09-18 — T03 privacy acceptance precision
+
+Independent internal review (scheduler_improvements) identified that T03-A01's
+unqualified “no funding linkage” exceeded REQ06's documented anonymity model and
+D03/D04: Ethereum collateral and fee bridging publish sender, amount and timing.
+Clarify A01 to require shared private fees and no reusable author-specific public
+fee/funding identifier linking ordinary posts, with actual repeated/cross-author
+observations and explicit residual correlations. Deterministic identity leakage
+still fails. This does not assert anonymous bridging or cryptographic unlinkability;
+independent review remains required. The change is a documented architectural
+clarification before run049 is assessed, not a relaxation of a failed test.
+
+A03's obsolete “fallback paths” wording is replaced with explicit rejection and
+private recovery without alternate fee routes, matching the user's no-fallback
+instruction. Existing no-public-payment/exhaustion checks remain required.

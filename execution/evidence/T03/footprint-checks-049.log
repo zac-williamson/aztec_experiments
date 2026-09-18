@@ -1,0 +1,14 @@
+✔ actual SDK types distinguish shared payer, missing roles and zero effect counts (8.335333ms)
+✔ detects author in public fields without confusing ciphertext match with clear public argument (5.882541ms)
+✔ detects direct author payer and rejects wrong effect or ambiguous/unknown roles (7.29525ms)
+✔ real SDK public call decoding exposes sender and target, including teardown (267.193ms)
+✔ pairwise observations count only distinct nonzero opaque matches and retain no values (18.695583ms)
+✔ keeps collateral, fee funding and coinbase identities distinct (8.35175ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 964.175917
