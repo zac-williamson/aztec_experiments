@@ -8,8 +8,8 @@ Objective state: **running**. Completed packages: 22/35.
 
 - **Implement observability, incident and recovery runbooks (O01)** — Escrow/daemon monitoring, bounded checkpointed feed lag, sanitized credential inventory and removal integrated; package smoke011 passes. Drillgapreview010 reuses actual D01/W03/T02 evidence and identifies genuine censor handover/policy and monitor failover drills. Operator delivery/replacement remain external O02 inputs.
 - **Verify end-to-end privacy and funding footprint (T03)** — Claim readiness and claim-only retry integrated;106 focused tests pass010, canonical app build011 passes, independent internal source review no blocker. Actual GUI lifecycle qualification next; underlying SDK read cancellation not claimed.
-- **Run browser, recovery, concurrency and load matrix (T04)** — Pending-only GUI retry integrated: exact safe message, actual timestamped log regression, same receipt/state, no priorclaimsubmission, max3attempts.16 focused tests pass016. Lifecycle017 starts with unchanged production source and540s/2GiB.
-  Investigation: 1/1 attempts. Reassessment required. Inspect lifecycle017 outcome and cleanup before any further run; preserve limits and diagnose any new failure.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Pinned exit-leaf API fixed and tested against Solidity/independenthash; refund parser tests; supervisor realchild failure propagation tests.23focused checks pass018, source review no furtherAPIdefect. Partial canonicalstage summaries now retained. Lifecycle019 begins with same application build and540s/2GiB.
+  Investigation: 1/1 attempts. Reassessment required. Inspect lifecycle019 actual outcome immediately; no blind rerun on new failure. Preserve partial canonical stages and cleanup.
 
 ## Ready internal work
 

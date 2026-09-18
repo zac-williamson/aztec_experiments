@@ -19,13 +19,14 @@ export async function verifyJourneyIncludedTransaction({node,captures,txHash,exp
  assert.equal(receipt.txHash.toString(),txHash);assert(receipt.blockNumber!=null&&receipt.blockHash!=null);
  const block=await node.getBlock(receipt.blockNumber);assert(block);assert.equal(block.hash.toString(),receipt.blockHash.toString());
  const effect=await node.getTxEffect(hash);assert(effect?.data);assert.equal(Number(effect.l2BlockNumber),Number(receipt.blockNumber));assert.equal(effect.l2BlockHash.toString(),receipt.blockHash.toString());
+ assert.equal(effect.data.txHash.toString(),txHash,'Public effect transaction identity mismatch');
  const anchor=tx.data.constants.anchorBlockHeader,anchorBlock=await node.getBlock(anchor.getBlockNumber());assert(anchorBlock);assert.equal(anchorBlock.hash.toString(),(await anchor.hash()).toString());
  return {tx,receipt,effect:effect.data,anchorTimestamp:BigInt(anchor.globalVariables.timestamp.toString())};
 }
 export function journeyExitLeaf({scope,depositor,depositNonce,amount}){
  assert(BigInt(depositNonce)>0n&&BigInt(amount)>0n);
  const content=sha256ToField([Buffer.from(encodeEscrowCommitment('exit',scope,{depositor,depositNonce:String(depositNonce),amount:String(amount)}))]);
- const leaf=computeL2ToL1MessageHash({l2Sender:AztecAddress.fromString(scope.boardAddress),l1Recipient:EthAddress.fromString(scope.portalAddress),content,rollupVersion:new Fr(BigInt(scope.rollupVersion)),chainId:new Fr(BigInt(scope.l1ChainId))});
+ const leaf=computeL2ToL1MessageHash({l2Sender:AztecAddress.fromStringUnsafe(scope.boardAddress),l1Recipient:EthAddress.fromString(scope.portalAddress),content,rollupVersion:new Fr(BigInt(scope.rollupVersion)),chainId:new Fr(BigInt(scope.l1ChainId))});
  return {content,leaf};
 }
 export function assertJourneyExit({effect,leaf,consumedNullifier,anchorTimestamp,nextAllowedTime}){

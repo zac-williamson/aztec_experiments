@@ -1546,7 +1546,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Pending-only GUI retry integrated: exact safe message, actual timestamped log regression, same receipt/state, no priorclaimsubmission, max3attempts.16 focused tests pass016. Lifecycle017 starts with unchanged production source and540s/2GiB.",
+      "checkpoint": "Pinned exit-leaf API fixed and tested against Solidity/independenthash; refund parser tests; supervisor realchild failure propagation tests.23focused checks pass018, source review no furtherAPIdefect. Partial canonicalstage summaries now retained. Lifecycle019 begins with same application build and540s/2GiB.",
       "priority": 24,
       "completion_requires": [
         "O01"
@@ -1564,13 +1564,16 @@
         "scripts/test-t04-browser-journey.mjs",
         "scripts/test-c01-user.mjs",
         "scripts/run-bounded-browser-check.mjs",
-        "scripts/test-t04-checkpoint-scope.mjs"
+        "scripts/test-t04-checkpoint-scope.mjs",
+        "scripts/test-t04-journey-verifier.mjs",
+        "scripts/test-c01-browser-supervision.mjs",
+        "scripts/c01-browser-supervision.mjs"
       ],
       "investigation": {
-        "hypothesis": "014 establishes legitimate20s pending. Pinned Inboxlag2 and fixture12s slots require >20s nominal availability; corrected driver exercises bounded claim-only retry rather than treating safe pending as terminal.",
+        "hypothesis": "017 passed genuineGUIclaim; failure was deterministic verifier API mismatch and missingfailedcoordinator propagation. Both now exercised by cheap actualhelper/child regressions; next run qualifies remaining GUI lifecycle.",
         "attempts": 1,
         "max_attempts": 1,
-        "next_action": "Inspect lifecycle017 outcome and cleanup before any further run; preserve limits and diagnose any new failure."
+        "next_action": "Inspect lifecycle019 actual outcome immediately; no blind rerun on new failure. Preserve partial canonical stages and cleanup."
       }
     },
     {

@@ -1,0 +1,31 @@
+✔ real failed coordinator promptly stops waiting browser and preserves native report (240.864ms)
+✔ successful coordinator allows real browser to finish afterward without cancellation (366.5575ms)
+✔ timeout, signal and spawn error stop before browser wait; missing browser is supported (0.288084ms)
+✔ rendezvous accepts only fixed stages and bounded unique public transaction identifiers (7.65875ms)
+✔ atomic rendezvous cannot overwrite a prior stage or accept an unverified release (6.295917ms)
+✔ missing release respects remaining parent budget (0.599375ms)
+✔ canonical exit rejects wrong leaf, duplicate leaf, wrong nullifier and ineligible anchor (342.370333ms)
+✔ aborted lifecycle terminates a rendezvous even with a clamped legacy time callback (107.173541ms)
+✔ actual shared producer builder roundtrips both strict parent handoff modes (2.768459ms)
+✔ journey diagnostic outputs fixed milestones and allowlisted exception only (0.199917ms)
+✔ pending claim retries once through supplied GUI action then succeeds (0.129084ms)
+✔ unexpected claim errors never retry (0.104125ms)
+✔ repeated pending claims stop after three total attempts (0.132084ms)
+✔ receipt changes, lost pending controls and existing submission prohibit further retry (0.226875ms)
+✔ actual shared log timestamp is removed once before strict pending classification (29.438417ms)
+✔ claim checkpoint scope restores original settings after included claim and repeated cleanup (0.722708ms)
+✔ claim failure and pre-handoff failure restore the original checkpoint settings (0.233ms)
+✔ failed restoration remains retryable rather than claiming restoration succeeded (0.087125ms)
+✔ restoration failure cannot skip RPC, wallet or backup cleanup (0.10325ms)
+✔ actual journey exit helper matches frozen Solidity commitment and independently serialized message leaf (3.746875ms)
+✔ exit helper binds receipt and domain inputs and rejects malformed/out-of-range shapes (3.536417ms)
+✔ actual exit assertion rejects duplicate/missing leaves, wrong spent note and premature anchor (0.453667ms)
+✔ actual refund verifier decodes a real ABI event and rejects wrong receipt identity/accounting (5.5825ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1043.383709
