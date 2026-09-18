@@ -72,7 +72,7 @@ class GraphTests(unittest.TestCase):
         nodes = self.g["nodes"][:count]
         for index, n in enumerate(nodes):
             n.update(status="active", completion_requires=n["depends_on"], depends_on=[],
-                     execution_lane=f"lane-{index}", write_paths=[f"fixture/lane-{index}"])
+                     execution_lane=f"lane-{index}")
         return nodes
 
     def test_parallel_disjoint_lanes_allowed(self):
@@ -83,27 +83,14 @@ class GraphTests(unittest.TestCase):
         self.parallel_fixture(4)
         self.assertTrue(any("three-package" in e for e in graph.graph_errors(self.g)))
 
-    def test_parallel_requires_explicit_ownership_and_distinct_lanes(self):
+    def test_parallel_requires_distinct_lanes(self):
         a, b = self.parallel_fixture()
         b["execution_lane"] = a["execution_lane"]
-        del b["write_paths"]
-        errors = graph.graph_errors(self.g)
-        self.assertTrue(any("distinct execution_lane" in e for e in errors))
-        self.assertTrue(any("write_paths required" in e for e in errors))
+        self.assertTrue(any("distinct execution_lane" in e for e in graph.graph_errors(self.g)))
 
-    def test_parallel_parent_child_write_overlap_rejected(self):
-        a, b = self.parallel_fixture()
-        a["write_paths"] = ["fixture/shared"]
-        b["write_paths"] = ["fixture/shared/subdir/file.py"]
-        self.assertTrue(any("overlap" in e for e in graph.graph_errors(self.g)))
-        b["write_paths"] = ["fixture/shared-other"]
-        self.assertEqual(graph.graph_errors(self.g), [])
-
-    def test_write_paths_reject_escape_and_globs(self):
-        for path in ("../escape", "/absolute", "scripts/*.mjs"):
-            with self.subTest(path=path):
-                self.node("P01")["write_paths"] = [path]
-                self.assertTrue(graph.graph_errors(self.g))
+    def test_duplicate_ownership_model_rejected(self):
+        self.node("P01")["write_paths"] = ["shared/helpers.js"]
+        self.assertTrue(any("sole source writer" in e for e in graph.graph_errors(self.g)))
 
     def test_legacy_single_active_allowed(self):
         self.g["execution_state"] = "running"

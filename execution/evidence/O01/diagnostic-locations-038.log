@@ -1,0 +1,17 @@
+✔ official RPC schema reaches original node and captures exactly accepted transactions (142.167959ms)
+✔ failed send is not accepted, and close disposes a hanging real HTTP request (31.564667ms)
+✔ command parser keeps exact public hashes and fixed markers only (0.722ms)
+✔ actual child process runner preserves literal arguments, isolated env and fixed output (38.757292ms)
+✔ timeout and excess output terminate owned child groups (138.617ms)
+✔ known command stages and failure codes retain no arbitrary output (0.267916ms)
+✔ CLI reads public configuration and restricted local claim, rejecting links, extra fields, and broad permissions (2.307708ms)
+✔ CLI keeps ambiguous outcomes actionable without exposing private errors (0.182333ms)
+✔ CLI diagnostics contain only fixed source locations, never error text or paths (0.568917ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1156.049917

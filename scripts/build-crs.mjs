@@ -17,55 +17,52 @@ export function verifyCrsBytes(bytes, asset) {
 // Bound the response while streaming, before trusting Content-Length or buffering
 // the complete body. A CDN ignoring Range must never cause a multi-GB download.
 export async function downloadCrsAsset(asset, fetcher = fetch) {
-  const failures = [];
-  for (const url of [asset.url, asset.fallbackUrl].filter(Boolean)) {
-    let response;
-    try {
-      response = await fetcher(url, {
-        headers: { Range: `bytes=${asset.range.start}-${asset.range.end}`, 'Accept-Encoding': 'identity' },
-        signal: AbortSignal.timeout(120000),
-      });
-      if (response.status !== 206) throw new Error(`Expected HTTP 206, received ${response.status}`);
-      const range = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers.get('content-range') || '');
-      if (!range || Number(range[1]) !== asset.range.start || Number(range[2]) !== asset.range.end || Number(range[3]) <= asset.range.end) {
-        throw new Error('Unexpected Content-Range');
-      }
-      const length = response.headers.get('content-length');
-      if (length !== null && Number(length) !== asset.bytes) throw new Error('Unexpected Content-Length');
-      const encoding = response.headers.get('content-encoding');
-      if (encoding && encoding !== 'identity') throw new Error('Unexpected Content-Encoding');
-      if (!response.body) throw new Error('Missing CRS response body');
-      const reader = response.body.getReader();
-      const chunks = [];
-      let total = 0;
-      try {
-        for (;;) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          total += value.length;
-          if (total > asset.bytes) throw new Error('CRS response exceeded pinned byte limit');
-          chunks.push(Buffer.from(value));
-        }
-      } finally {
-        await reader.cancel().catch(() => {});
-        reader.releaseLock();
-      }
-      return verifyCrsBytes(Buffer.concat(chunks, total), asset);
-    } catch (error) {
-      await response?.body?.cancel().catch(() => {});
-      failures.push(`${url}: ${error.message}`);
+  const url = asset.url;
+  let response;
+  try {
+    response = await fetcher(url, {
+      headers: { Range: `bytes=${asset.range.start}-${asset.range.end}`, 'Accept-Encoding': 'identity' },
+      signal: AbortSignal.timeout(120000),
+    });
+    if (response.status !== 206) throw new Error(`Expected HTTP 206, received ${response.status}`);
+    const range = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers.get('content-range') || '');
+    if (!range || Number(range[1]) !== asset.range.start || Number(range[2]) !== asset.range.end || Number(range[3]) <= asset.range.end) {
+      throw new Error('Unexpected Content-Range');
     }
+    const length = response.headers.get('content-length');
+    if (length !== null && Number(length) !== asset.bytes) throw new Error('Unexpected Content-Length');
+    const encoding = response.headers.get('content-encoding');
+    if (encoding && encoding !== 'identity') throw new Error('Unexpected Content-Encoding');
+    if (!response.body) throw new Error('Missing CRS response body');
+    const reader = response.body.getReader();
+    const chunks = [];
+    let total = 0;
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        total += value.length;
+        if (total > asset.bytes) throw new Error('CRS response exceeded pinned byte limit');
+        chunks.push(Buffer.from(value));
+      }
+    } finally {
+      await reader.cancel().catch(() => {});
+      reader.releaseLock();
+    }
+    return verifyCrsBytes(Buffer.concat(chunks, total), asset);
+  } catch (error) {
+    await response?.body?.cancel().catch(() => {});
+    throw error;
   }
-  throw new Error(`Unable to provision ${asset.name}: ${failures.join('; ')}`);
 }
 
 export async function verifiedFile(filename, asset) {
   try {
     const stat = await fs.stat(filename);
-    if (stat.size !== asset.bytes) return undefined;
+    if (stat.size !== asset.bytes) throw new Error(`CRS length mismatch: ${asset.name}`);
     return verifyCrsBytes(await fs.readFile(filename), asset);
   } catch (error) {
-    if (error.code === 'ENOENT' || error.message.startsWith('CRS checksum mismatch:')) return undefined;
+    if (error.code === 'ENOENT') return undefined;
     throw error;
   }
 }
@@ -140,22 +137,18 @@ export async function buildCrs(outputDirectory = path.join(ROOT, 'apps/dist/crs'
   }
   verifyDerivationWasm(manifest, await fs.readFile(path.join(ROOT, manifest.derivedG1.derivation.wasmSource)));
   const output = path.resolve(outputDirectory);
-  const cache = path.join(ROOT, '.build/crs-cache');
   await fs.mkdir(output, { recursive: true });
-  await fs.mkdir(cache, { recursive: true });
   for (const asset of manifest.files) {
     const target = path.join(output, asset.name);
-    const cached = path.join(cache, asset.sha256 + '.dat');
-    const bytes = await verifiedFile(target, asset) || await verifiedFile(cached, asset) || await downloadCrsAsset(asset);
-    for (const filename of [cached, target]) await atomicWriteVerified(filename, bytes, asset);
+    const existing = await verifiedFile(target, asset);
+    if (existing === undefined) await atomicWriteVerified(target, await downloadCrsAsset(asset), asset);
     console.log(`Verified CRS ${asset.name}: ${asset.bytes} bytes, SHA-256 ${asset.sha256}`);
   }
   const derived = manifest.derivedG1;
   const target = path.join(output, derived.name);
-  const cached = path.join(cache, derived.sha256 + '.dat');
-  let bytes = await verifiedFile(target, derived) || await verifiedFile(cached, derived);
+  let bytes = await verifiedFile(target, derived);
   if (!bytes) {
-    const temporary = path.join(cache, `derive-${process.pid}-${randomUUID()}.dat`);
+    const temporary = path.join(output, `derive-${process.pid}-${randomUUID()}.dat`);
     try {
       await runCrsChild([path.join(ROOT, 'scripts/derive-crs-worker.mjs'), output, temporary]);
       bytes = await verifiedFile(temporary, derived);
@@ -164,7 +157,7 @@ export async function buildCrs(outputDirectory = path.join(ROOT, 'apps/dist/crs'
       await fs.rm(temporary, { force: true });
     }
   }
-  for (const filename of [cached, target]) await atomicWriteVerified(filename, bytes, derived);
+  await atomicWriteVerified(target, bytes, derived);
   console.log(`Verified derived CRS ${derived.name}: ${derived.bytes} bytes, SHA-256 ${derived.sha256}`);
   await atomicWriteVerified(path.join(output, 'crs-manifest.json'), manifestBytes,
     { name: 'crs-manifest.json', bytes: manifestBytes.length, sha256: sha256(manifestBytes) });

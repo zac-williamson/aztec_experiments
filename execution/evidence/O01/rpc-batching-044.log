@@ -1,0 +1,15 @@
+✔ official RPC schema reaches original node and captures exactly accepted transactions (479.679208ms)
+✔ official client simultaneous reads cross the RPC adapter as a batch (8.722625ms)
+✔ failed send is not accepted, and close disposes a hanging real HTTP request (32.914667ms)
+✔ command parser keeps exact public hashes and fixed markers only (0.748541ms)
+✔ actual child process runner preserves literal arguments, isolated env and fixed output (55.767042ms)
+✔ timeout and excess output terminate owned child groups (156.369875ms)
+✔ known command stages and failure codes retain no arbitrary output (0.278583ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3124.924458

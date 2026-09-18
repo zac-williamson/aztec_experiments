@@ -240,30 +240,6 @@ function startBlockMonitor(aztecNode) {
 // Aztec simulate() returns { value: ... } where the structure depends
 // on the return type. These helpers handle common cases.
 
-// Extract an EthAddress (struct { inner: Field }) from a sim result
-function extractEthAddress(simResult) {
-  let val = simResult && simResult.value !== undefined ? simResult.value : simResult;
-  // EthAddress is { inner: Fr }
-  if (val && typeof val === 'object' && val.inner !== undefined) val = val.inner;
-  // Fr has toString() that returns hex
-  if (val && typeof val === 'object' && val.toString) {
-    const s = val.toString();
-    try { return '0x' + BigInt(s).toString(16).padStart(40, '0'); } catch (e) {}
-  }
-  // Fallback: try direct BigInt conversion
-  try { return '0x' + BigInt(val).toString(16).padStart(40, '0'); } catch (e) {}
-  // Fallback: try as array of fields (EthAddress can serialize as [inner])
-  if (Array.isArray(val) && val.length > 0) {
-    try {
-      const inner = val[0] && val[0].toString ? val[0].toString() : val[0];
-      return '0x' + BigInt(inner).toString(16).padStart(40, '0');
-    } catch (e) {}
-  }
-  // Last resort: log what we got
-  console.warn('Could not decode Ethereum address.');
-  return '0x0000000000000000000000000000000000000000';
-}
-
 // Extract a u32/u64/u128 integer from a sim result
 function extractInt(simResult) {
   let val = simResult;
@@ -287,7 +263,7 @@ function extractFieldArray(simResult) {
   let val = simResult;
   if (simResult && simResult.result !== undefined) val = simResult.result;
   else if (simResult && simResult.value !== undefined) val = simResult.value;
-  if (!Array.isArray(val)) return [];
+  if (!Array.isArray(val)) throw new Error('Expected field array');
   return val.map(v => {
     if (v && v.toString) return BigInt(v.toString());
     return BigInt(v);
@@ -338,64 +314,6 @@ async function readBillboardDepositInfo(contract, owner, selectedChain) {
 function toAztec(bi, decimals = 4) {
   const factor = 10n ** BigInt(decimals);
   return (Number(bi * factor / 10n ** 18n) / Number(factor)).toFixed(decimals);
-}
-
-// ============================================================
-// CREATE2 deterministic deployment
-// ============================================================
-// Uses the 0xSequence Create2 Deployer proxy on Ethereum mainnet:
-//   0x4e59b44847b379578588920cA78FbF26c0B4956C
-//
-// The proxy is a minimal CREATE2 wrapper: calldata = [32-byte salt][init code],
-// it does create2(value, 0, calldatasize-32, salt). The deployed address is
-//   keccak256(0xff ++ proxy ++ salt ++ keccak256(initCode))[12:]
-// which is independent of the caller's address, nonce, or gas price.
-//
-// We use the L2 contract address (itself deterministic from the wallet) as the
-// salt, so the L1 portal address is fully determined by the wallet.
-
-const CREATE2_PROXY = '0x4e59b44847b379578588920cA78FbF26c0B4956C';
-
-// Build the full creation bytecode (init code) for the portal: linked bytecode + encoded constructor args
-function portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, maxDeposit, configHash) {
-  const iface = new ethers.Interface(portalAbi);
-  const encodedArgs = iface.encodeDeploy([rollup, l2AddrHex, BigInt(version), BigInt(minDeposit), BigInt(maxDeposit), configHash]);
-  return ethers.concat([portalBytecode, encodedArgs]); // Uint8Array
-}
-
-// Compute the CREATE2 address of the portal (off-chain, no tx needed)
-function computePortalAddress(portalBytecode, portalAbi, l2AddrHex, rollup, version, minDeposit, maxDeposit, configHash) {
-  const creation = portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, maxDeposit, configHash);
-  const salt = ethers.getBytes(l2AddrHex); // 32 bytes
-  const initCodeHash = ethers.keccak256(creation);
-  return ethers.getCreate2Address(CREATE2_PROXY, salt, initCodeHash);
-}
-
-// Deploy via the CREATE2 proxy. Returns { address, tx, alreadyDeployed }.
-// If the proxy is not present on the current chain, returns { fallback: true }
-// and the caller should deploy directly via ContractFactory.
-async function create2DeployPortal(signer, portalBytecode, portalAbi, l2AddrHex, rollup, version, minDeposit, maxDeposit, configHash) {
-  const provider = signer.provider;
-  const creation = portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, maxDeposit, configHash);
-  const salt = ethers.getBytes(l2AddrHex);
-  const predicted = computePortalAddress(portalBytecode, portalAbi, l2AddrHex, rollup, version, minDeposit, maxDeposit, configHash);
-
-  // Check if portal already exists at the predicted address
-  const existingCode = await provider.getCode(predicted);
-  if (existingCode !== '0x') {
-    return { address: predicted, alreadyDeployed: true };
-  }
-
-  // Check if the CREATE2 proxy exists on this chain
-  const proxyCode = await provider.getCode(CREATE2_PROXY);
-  if (proxyCode === '0x') {
-    return { fallback: true, predicted };
-  }
-
-  // Deploy via proxy: data = salt(32 bytes) + creation bytecode
-  const data = ethers.concat([salt, creation]);
-  const tx = await signer.sendTransaction({ to: CREATE2_PROXY, data, value: 0 });
-  return { address: predicted, tx, alreadyDeployed: false };
 }
 
 // Explicit exports also support the CLI's CommonJS loading of this shared script.

@@ -1,0 +1,38 @@
+✔ compares checkpointed L2 heights, never proposed or checkpoint sequence identifiers (1.419ms)
+✔ typed SDK-style headers and hashes produce the same comparison (0.343125ms)
+✔ reorg, missing data, malformed heights and identity mismatch remain unknown (1.40375ms)
+✔ missing checkpoint does not invoke RPC (0.447166ms)
+✖ actual hanging HTTP calls abort within transport deadline and cannot imply zero lag (1175.372458ms)
+✔ health output allowlists counts and omits all extra fields (0.798625ms)
+✔ ingestion age is measured and missing or future state fails closed (0.679084ms)
+✔ deadline boundary and included-awaiting-finality distinguish warning from failure (0.206417ms)
+✔ known diagnostics are fixed classifications; arbitrary message/code never escape (0.4995ms)
+✔ signer error secrets are omitted, unknown signing survives restart, exhaustion fences signing (18.007625ms)
+✔ expired obligations remain visible and feed failure never advances ingestion time (3.75425ms)
+✔ already flagged unsigned work is not an expired/manual obligation (3.003ms)
+✔ actual daemon startup log omits arbitrary argument/error contents (50.218083ms)
+✔ fresh feed with failed evaluation reports retry warning while ordinary queued work stays healthy (8.359667ms)
+✔ balanced, deficit and forced-ETH surplus have distinct actionable outputs (0.849541ms)
+✔ unavailable and hung RPC are bounded and never expose exception contents (22.086292ms)
+✔ stale, future, malformed and inactive observations cannot report healthy (0.579291ms)
+✔ invalid configuration does not invoke RPC and errors omit original input (0.102708ms)
+✔ real RPC adapter pins all reads to one canonical block and verifies installed runtime (7.913458ms)
+✔ wrong chain, board and runtime are rejected with fixed identity alert (4.155875ms)
+✔ real hanging HTTP requests are aborted and their sockets close on monitor disposal (89.689917ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 20
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1871.61275
+
+✖ failing tests:
+
+test at censor-daemon/test_feed_health.mjs:21:1
+✖ actual hanging HTTP calls abort within transport deadline and cannot imply zero lag (1175.372458ms)
+  Error: Aborted feed requests retained sockets
+      at Timeout._onTimeout (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/censor-daemon/test_feed_health.mjs:27:111)
+      at listOnTimeout (node:internal/timers:685:17)
+      at process.processTimers (node:internal/timers:618:7)

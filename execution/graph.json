@@ -1210,7 +1210,7 @@
       "title": "Implement observability, incident and recovery runbooks",
       "phase": "engineering",
       "kind": "internal",
-      "status": "active",
+      "status": "done",
       "depends_on": [
         "D01",
         "M02",
@@ -1256,45 +1256,9 @@
       "evidence": "evidence/O01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Censor024 failed contract-inventory preflight5183ms clean. Monitor fixture isolated outside release contract tree; original contractInputs equality restored without manifest edit025. Isolated test compile026 and real monitor026 pass1201ms. Censor027 now starts against unchanged production artifacts.",
+      "checkpoint": "Internal operations accepted: actual packaged private-fee handover/policy/restart045 passed236765ms/1289472KiB; originalreceipt and zeroadditional sendattempts.21alerts/25RPCchecks and fresh packagedmonitor/smoke pass. Independent structural/acceptance review complete; O02 operator duties remain external.",
       "priority": 20,
-      "execution_lane": "operations",
-      "write_paths": [
-        "deploy/operations-monitor.mjs",
-        "scripts/test-operations-monitor.mjs",
-        "docs/operations.md",
-        "execution/evidence/O01/",
-        "censor-daemon/job-store.mjs",
-        "censor-daemon/health.mjs",
-        "censor-daemon/daemon.mjs",
-        "censor-daemon/worker.mjs",
-        "censor-daemon/test_health.mjs",
-        "censor-daemon/test_health_integration.mjs",
-        "censor-daemon/test_daemon.mjs",
-        "scripts/operator-launch.mjs",
-        "scripts/test-operator-package.mjs",
-        "docs/operator-launch.md",
-        "scripts/operator-launch.sh",
-        "shared/rpc-config.json",
-        "censor-daemon/feed-health.mjs",
-        "censor-daemon/test_feed_health.mjs",
-        "scripts/test-o01-monitor-failover-anvil.mjs",
-        "scripts/o01-monitor-drill-transport.mjs",
-        "billboard/portal/test/MonitorRootPublisher.sol",
-        "scripts/test-o01-monitor-drill-transport.mjs",
-        "scripts/test-c01-application.mjs",
-        "scripts/c01-real-node.mjs",
-        "scripts/o01-censor-command-flow.mjs",
-        "scripts/o01-censor-command-io.mjs",
-        "scripts/test-o01-censor-command-io.mjs",
-        "scripts/fixtures/o01-monitor/MonitorRootPublisher.sol"
-      ],
-      "investigation": {
-        "hypothesis": "Actual packaged transfer and successor policy commands can use genuine cold private fee claims within unchanged540s/2GiB.21 affected checks and package1934-file verification pass023; source review no blocker. WASM compressed CRS performance unmeasured.",
-        "attempts": 2,
-        "max_attempts": 2,
-        "next_action": "Inspect censor027 outcome and cleanup. At failure budget diagnose source before another genuine run."
-      }
+      "execution_lane": "operations"
     },
     {
       "id": "T01",
@@ -1420,14 +1384,7 @@
       "blocker": null,
       "checkpoint": "Scoped local qualification complete: full flagged/redeposit and current unflagged015384341ms/1325568KiB; claim boundary and cache isolation positivecontrol pass. Publictestnet and external review remain later release obligations.",
       "priority": 22,
-      "execution_lane": "application",
-      "write_paths": [
-        "scripts/c01-deposit-flow.mjs",
-        "scripts/t02-claim-boundary.mjs",
-        "scripts/test-c01-application.mjs",
-        "scripts/test-t02-claim-boundary.mjs",
-        "execution/evidence/T02/"
-      ]
+      "execution_lane": "application"
     },
     {
       "id": "T03",
@@ -1485,28 +1442,7 @@
       "blocker": null,
       "checkpoint": "Lifecycle022 current-source privacy analysis014:1495 RPC observations,5 author contract lookups,18 traversal truncations; four canonical transactions use shared payer with no exact author match in inspected fields. Repeated/cross-author comparison and distinct funder/coinbase remain; no unlinkability claim.",
       "priority": 23,
-      "execution_lane": "application",
-      "write_paths": [
-        "scripts/u01-browser-rpc.mjs",
-        "scripts/t03-rpc-observer.mjs",
-        "scripts/test-t03-rpc-observer.mjs",
-        "scripts/test-private-fee-client.mjs",
-        "scripts/test-engine-private-fee.mjs",
-        "scripts/u01-browser-post-verify.mjs",
-        "scripts/w01-private-fee-flow.mjs",
-        "scripts/t03-public-footprint.mjs",
-        "scripts/test-t03-public-footprint.mjs",
-        "docs/privacy.md",
-        "execution/evidence/T03/",
-        "execution/evidence/U01/privacy-observation-044.json",
-        "apps/src/billboard/user/engine.js",
-        "scripts/test-public-read-privacy.mjs",
-        "apps/src/billboard/user/app.js",
-        "apps/src/billboard/censor/app.js",
-        "shared/app-env.js",
-        "scripts/test-deposit-message-ready.mjs",
-        "shared/helpers.js"
-      ]
+      "execution_lane": "application"
     },
     {
       "id": "T04",
@@ -1567,29 +1503,7 @@
       "completion_requires": [
         "O01"
       ],
-      "execution_lane": "browser-recovery",
-      "write_paths": [
-        "execution/evidence/T04/",
-        "scripts/c01-bridge-flow.mjs",
-        "scripts/u01-browser-post.mjs",
-        "scripts/u01-browser-flow.mjs",
-        "scripts/t04-browser-journey.mjs",
-        "scripts/t04-browser-journey-verify.mjs",
-        "scripts/test-t04-browser-journey.mjs",
-        "scripts/test-c01-user.mjs",
-        "scripts/run-bounded-browser-check.mjs",
-        "scripts/test-t04-checkpoint-scope.mjs",
-        "scripts/test-t04-journey-verifier.mjs",
-        "scripts/test-c01-browser-supervision.mjs",
-        "scripts/c01-browser-supervision.mjs",
-        "scripts/t04-post-response-loss.mjs",
-        "scripts/test-t04-post-response-loss.mjs",
-        "scripts/t04-browser-post-recovery.mjs",
-        "scripts/test-t04-browser-post-recovery.mjs",
-        "scripts/c01-browser-fatal.mjs",
-        "scripts/test-c01-browser-fatal.mjs",
-        "TESTING.md"
-      ]
+      "execution_lane": "browser-recovery"
     },
     {
       "id": "R01",
@@ -1653,11 +1567,7 @@
         "T04",
         "M03"
       ],
-      "execution_lane": "release-preparation",
-      "write_paths": [
-        "execution/release/review-preparation.md",
-        "execution/evidence/R01/"
-      ]
+      "execution_lane": "release-preparation"
     },
     {
       "id": "X01",

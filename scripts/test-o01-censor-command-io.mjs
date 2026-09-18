@@ -8,8 +8,16 @@ test('official RPC schema reaches original node and captures exactly accepted tr
  try{
   const client=createAztecNodeClient(rpc.url);assert.equal(await client.getBlockNumber(),7);
   const tx=Tx.random();await tx.recomputeHash();await client.sendTx(tx);assert.equal(sends,1);assert.equal(rpc.captures.size,1);assert(rpc.captures.get(tx.getTxHash().toString()).toBuffer().equals(tx.toBuffer()));
-  await assert.rejects(client.sendTx(tx));assert.equal(sends,1);
+  await assert.rejects(client.sendTx(tx));assert.equal(sends,1);assert.equal(rpc.sendAttempts,2);
  }finally{await rpc.close();}assert.equal(node.sendTx,original);await rpc.close();
+});
+test('official client simultaneous reads cross the RPC adapter as a batch',async()=>{
+ let reads=0;const rpc=await openO01CommandRpc({node:{getBlockNumber:async()=>{reads++;return 7;},sendTx:async()=>{}}});
+ try{
+  const client=createAztecNodeClient(rpc.url);
+  assert.deepEqual(await Promise.all([client.getBlockNumber(),client.getBlockNumber()]),[7,7]);
+  assert.equal(reads,2);
+ }finally{await rpc.close();}
 });
 test('failed send is not accepted, and close disposes a hanging real HTTP request',async()=>{
  const node={getBlockNumber:()=>new Promise(()=>{}),sendTx:async()=>{throw Error('PRIVATE_NODE_ERROR');}};const original=node.sendTx,rpc=await openO01CommandRpc({node});
@@ -39,4 +47,17 @@ test('timeout and excess output terminate owned child groups',{timeout:15000},as
   const directory=await fixture(t,mode==='hang'?"setInterval(()=>{},1000)":"console.log('x'.repeat(8192));setInterval(()=>{},1000)");
   const result=await runO01PackagedCommand({packageRoot:directory,directory,args:['author','transfer-censor'],timeoutMs:mode==='hang'?100:3000});assert.equal(result.code,1);assert(result.markers.includes(mode==='hang'?'TIMEOUT':'OUTPUT_LIMIT'));assert(result.elapsedMs<6000);
  }
+});
+
+test('known command stages and failure codes retain no arbitrary output',()=>{
+ const parser=createO01CommandOutput();
+ parser.push('[12:00:00] Step 5: Creating PXE...\n[12:00:00] FATAL: BB_CLI_PROVER_CONFIGURATION: private detail\nprivate detail\n');
+ assert.deepEqual(parser.finish(),{txHashes:[],markers:['BB_CLI_PROVER_CONFIGURATION','CREATE_PXE']});
+});
+
+test('confirmed journal receipt keeps only its exact hash',()=>{
+ const parser=createO01CommandOutput();
+ parser.push('[12:00:00] To start another action, acknowledge the confirmed transaction with --acknowledge-tx '+hash+'\n');
+ parser.push('[12:00:00] To start another action, acknowledge the confirmed transaction with --acknowledge-tx SECRET\n');
+ assert.deepEqual(parser.finish(),{txHashes:[hash],markers:[]});
 });

@@ -1,97 +1,49 @@
-# Application tests
+# Test hierarchy
 
-Use the pinned Node24 runtime and Foundry versions in BUILDING.md.
+Use the pinned Node 24 and Foundry versions in BUILDING.md. Run serially, in this order:
 
-- `npm run test:application:unit`: contract execution in TXE, Solidity portal tests,
-  and client/artifact tests. TXE supplies test messages and note-tree fixtures;
-  these tests check application constraints, not network proving.
-- `npm run test:application:bridge`: real application transaction proofs and node
-  verification, actual local Inbox claims and Outbox consumption, portal activation,
-  deposit-note delivery/burn, refund accounting and duplicate rejection. The parent
-  enforces a nine-minute deadline and cleans its owned processes on failure.
+1. `npm run test:harness` checks the supervisor with tiny real processes, strict scenario selection, command IO and browser handoff contracts. No blockchain or prover starts.
+2. `npm run test:components` checks application boundaries, setup verification and client behavior. `npm run test:application:unit` additionally executes Noir/TXE and Solidity constraints. These do not establish genuine transaction acceptance.
+3. Build the release assets, then run the actual offline CLI initialization check: `node scripts/test-cli-prover-offline.mjs`. Package checks must pass before testing packaged commands.
+4. `npm run test:e2e -- SCENARIO` runs one explicit scenario. Start with `node`, then `included-board`, then `activated-board` before exercising complete journeys.
 
-- `node scripts/test-c01-application.mjs --screening`: real deposit claim and two
-  real post proofs, checking authenticated screening and exact private-note state.
-  Uses the same nine-minute bound; writes evidence under `execution/evidence/C02`.
+Preserve a failed harness check's stage, command outcome and cleanup outcome. Diagnose and fix the underlying cause, then verify the repair; the user has authorized autonomous continuation. Delegate an independent structural review whenever changing the harness. No alternate backend, fee payer, data source or test scenario may stand in for a failed path.
 
-- `node scripts/test-c01-application.mjs --redeposit`: two genuine deposit/claim/exit/refund cycles for the same user, rejecting old claim and consumed exit data against the fresh receipt. Under qualification; same aggregate limits apply.
-- `node scripts/test-c01-application.mjs --flagged-journey` and `--unflagged-journey`: integrated private-fee posting, screening, eligible withdrawal and actual L1 refund. The unflagged profile also rejects an actual wrong-origin Inbox message and missing deposit-chain withdrawal before the valid journey. Successful execution is required before claiming coverage. Evidence is retained under `execution/evidence/T02`.
-- `node scripts/test-c01-application.mjs --private-fee-post`: user-funded private fees, production L1 funding/recovery helpers, first-use claim and subsequent private posting.
-- `node scripts/test-c01-application.mjs --proof-recovery`: genuine stale real-post proof, conflicting private fee spend, encrypted journal restore and same-post replacement.
-- `node scripts/test-c01-application.mjs --note-attribution`: genuine unsubmitted screening proof and withdrawal of the same private deposit note, stale-proof rejection and L1 refund. This qualifies attribution, not a combined regenerated-screening race.
-- `node scripts/test-c01-application.mjs --private-fees`: standalone fee-balance funding, private board claim/withdrawal and actual local L1 refund. Both private-fee profiles retain the nine-minute deadline.
-- `node scripts/test-noir.mjs --filter private_fee`: ownership, replay and insufficient-credit constraints. Positive fee election is covered by genuine transactions because pinned TXE starts calls in the application phase; see `billboard/private_fee_test/INTEGRATION-BOUNDARY.md`.
+## Structure
 
-Native runs are serialized, with a540-second deadline and a sampled2GiB owned-process RSS limit. The contention and posting-diagnostic profiles use two native client proving threads; other profiles use one. Node verification and world-state hardware concurrency remain one in all profiles. This is a per-process thread setting, not parallel proof jobs. Browser profiles close after their checks; no heavy jobs run beside native proving.
+- `scripts/testing/supervisor.mjs` owns application-test child processes, the single 540-second deadline, sampled aggregate 2 GiB limit and cleanup. Browser and native children share this owner; do not wrap these scenarios in another supervisor.
+- `fixture-worker.mjs` creates the disposable local chain. `c01-real-node.mjs` owns the verifier node and builds the explicitly requested board fixture.
+- `scenarios.mjs` declares the supported scenarios. `scenario-flows.mjs` states each action sequence. Proof and assertion helpers remain ordinary functions.
+- `assets.mjs` checks source identity, prover setup and operator package contents. Build or asset failures stop before proving.
 
-The bridge test uses the installed Aztec SDK's `RollupCheatCodes` and
-`settleEpochOutbox` to advance local epochs and settle actual emitted messages.
-Network epoch proofs, protocol verifier qualification and Ethereum finality are
-outside this application test. Settlement is explicitly labelled test-controlled;
-application proofs and message membership/consumption are still checked.
+There are no implicit defaults, cascading environment flags or legacy aliases. The old empty invocation and `--bridge`, `--ready`, `--settle`, `--include`, `--posting-diagnostic` routes are removed. Their unique deployment/binding assertions belong to the included/activated fixtures; private-fee journeys replace the public-fee bridge route.
 
-No custom AVM build, server prover, epoch proving CRS or Docker is needed for these
-checks. The installed native client prover and normal application proving assets
-are used. The old `test-c01-real-network.mjs` entrypoint is retired and fails with
-a pointer to the application test instead of launching network proving.
+## Scenarios
 
-A passing application suite is not deployment clearance or an independent audit.
-Supported-network smoke tests and the release checks remain in the execution graph.
-Historical network-proving experiments remain recorded under execution/evidence;
-they are not development prerequisites and must not be resumed by the graph.
+| Scenario | What it checks |
+|---|---|
+| `node` | Disposable node startup and genuine transaction verifier configuration |
+| `included-board` | Real board deployment proof and ordinary inclusion |
+| `activated-board` | Ready binding, actual emitted message and controlled portal activation |
+| `censor-commands` | Packaged moderator handover and successor policy change with private fees |
+| `private-fees` | Private fee funding, collateral claim, exit and Ethereum refund |
+| `private-fee-post` | Cold private fee claim and private-balance posting |
+| `flagged-journey`, `unflagged-journey` | Posting, screening, eligible exit and refund |
+| `redeposit` | Second deposit/refund and replay rejection |
+| `proof-recovery` | Stale post proof and journal-linked replacement |
+| `note-attribution` | Same-note screening/withdrawal attribution |
+| `contention` | Ten authors posting from one anchor; explicitly genesis-funded constraint fixture |
+| `screening` | Authenticated screening constraints; explicitly genesis-funded constraint fixture |
+| `browser-post` | Actual GUI posting after native private-fee setup |
+| `browser-journey` | GUI deposit, claim, post, screening, withdrawal and refund |
+| `browser-post-recovery` | Accepted post, lost response, browser restart and original transaction recovery |
 
-## Contract invariant and diagnostic checks
+The two genesis-funded constraint scenarios test application authorization and conflicts. They do not qualify private fee anonymity and never select their payer after a private-payment failure.
 
-`python3 fv/model-checks/check.py` explores bounded reachable bridge/screening
-states and requires intentionally broken variants to yield counterexamples. It
-prints interpreter/source identities and exact bounds; it is not an implementation
-equivalence or cryptographic proof. Historical Lean/Verity claims under `fv/` are
-retired and cannot be counted as acceptance.
+## Boundaries
 
-`node scripts/check-compiler-diagnostics.mjs NEW_OUTPUT_DIRECTORY` performs a fresh
-compile in an owned scratch workspace with a180-second deadline and constraint
-checks enabled. It checks pinned dependency source inventories, declared function
-identity and exact private ACIR against canonical artifacts, accounting explicitly
-for the pinned generated public dispatcher. Raw diagnostic logs are retained;
-passing correspondence does not resolve their security meaning. CurrentT01
-records57 occurrences at18sites across board/private-fee contracts, with all26
-original observations preserved.
+Application transactions are genuinely proved and checked by the node. Local bridge tests use the installed SDK's explicit Outbox settlement controls. Network epoch proving, Ethereum finality and protocol verifier qualification are outside the application test. No network prover, custom AVM build or Docker is required.
 
-The `--screening` genuine application profile now tests altered included-note
-randomness and settled nonce. A test-only node wrapper supplies the authentic
-sibling path only for the exact altered absent leaf at the same anchor. Noir must
-reject its membership constraint, after which the unmodified post must still
-prove and be included. These are constrained-witness rejection probes, not
-completed hostile proofs or a test of arbitrary kernel modifications.
+Fixture-only budgets are 60 seconds for node startup, 120 seconds for board inclusion and 180 seconds for activation. Full journeys retain 540 seconds. All expensive runs are serial, below ten minutes, and use disposable identities. Native contention uses two client threads; other profiles use one. Resource limits do not establish production capacity. No automatic retries or threshold increases are allowed. Rerun affected checks after diagnosing and repairing the underlying failure.
 
-`node scripts/test-c01-application.mjs --contention` qualifies ten distinct authors
-preparing genuine transactions from the same anchor before submission. It retains
-the540-second/2GiB sampled limit. The local one-transaction-per-block geometry
-tests conflict independence and correct publication order, not production TPS.
-
-## Browser lifecycle and restart recovery
-
-Run these serially through the aggregate supervisor, which includes browser,
-native fixture and controller processes in the same 540-second / 2GiB bounds.
-Use a new evidence output filename for each run:
-
-```sh
-node scripts/run-bounded-browser-check.mjs scripts/test-c01-application.mjs execution/evidence/T04/lifecycle-NNN.json --browser-journey
-node scripts/run-bounded-browser-check.mjs scripts/test-c01-application.mjs execution/evidence/T04/recovery-NNN.json --browser-post-recovery
-```
-
-The lifecycle profile performs actual UI deposit, claim, post, screening,
-withdrawal and Ethereum refund. A fresh native wallet then verifies canonical
-transactions, the private note chain, consumed nullifiers and fee accounting.
-Private fee credit is funded natively beforehand; the disposable Ethereum wallet
-adapter does not qualify third-party wallet extensions. Lifecycle022 passed in
-483244ms with sampled aggregate peak1729856KiB and complete owned cleanup.
-
-The recovery profile withholds the response only after a genuine post submission
-is accepted, closes the full browser before normal in-process reconciliation,
-and reopens the same temporary profile. The UI restores the same wallet identity
-without importing journal records, then recovers the original saved transaction.
-Native verification requires one accepted submission, one canonical post and one
-private fee debit. It does not count discarded or unsubmitted proofs. Successful
-source/unit checks alone do not qualify this scenario; inspect its actual run
-report and cleanup. Recovery025 passed this scenario in274958ms with sampled aggregate peak1772256KiB and complete owned cleanup. Other interrupted stages and browsers remain separate qualification.
+Historical results remain bound to their original source snapshots. The new harness must be qualified from the bottom up before it can replace those results. A passing application suite is neither deployment clearance nor independent review. Browser coverage, load, audit, soak and target-network clearance remain separate graph requirements.

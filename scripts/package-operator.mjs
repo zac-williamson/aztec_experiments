@@ -1,3 +1,4 @@
+import BillboardCRS from '../shared/crs-client.js';
 // Runtime distribution only: never copy repository node_modules wholesale.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,6 +23,10 @@ export function checkOperatorBuild(root=ROOT){
  const sdk=checkSdk(root),frontend=checkFrontend(root);
  if(!Object.hasOwn(frontend.outputs,'apps/dist/public-feed-metadata.json'))throw Error('Missing public feed metadata provenance');
  return {sdk,frontend};
+}
+export function operatorCrsResources(manifest){
+ const {files,derivedG1}=BillboardCRS.validateManifest(manifest);
+ return [...files.values(),derivedG1].map(file=>({path:'apps/dist/crs/'+file.name,sha256:file.sha256}));
 }
 export function runtimeInventory(root=ROOT,{nodePath,hashFiles=true,recoveryBundle=null}={}){
  const files=new Map(),packages=new Map(),scanned=new Set();
@@ -56,7 +61,7 @@ export function runtimeInventory(root=ROOT,{nodePath,hashFiles=true,recoveryBund
  for(const input of Object.keys(sdk.inputs))assertPermittedPath(input);
  add('.build/sdk/sdk-manifest.json');
  for(const [name,digest] of Object.entries(sdk.outputs)){if(path.basename(name)!==name)throw Error('Invalid SDK output path');add('.build/sdk/'+name,undefined,digest);}
- for(const item of JSON.parse(fs.readFileSync(path.join(root,'crs-manifest.json'))).files){if(path.basename(item.name)!==item.name)throw Error('Invalid CRS output path');add('apps/dist/crs/'+item.name,undefined,item.sha256);}
+ for(const item of operatorCrsResources(JSON.parse(fs.readFileSync(path.join(root,'crs-manifest.json')))))add(item.path,undefined,item.sha256);
  if(nodePath){regular(nodePath);if(fs.lstatSync(nodePath).isSymbolicLink())throw Error('Pinned Node must not be a symlink');add('runtime/bin/node',path.resolve(nodePath));}
  return {schemaVersion:1,profile:'operator',packages:[...packages.values()].sort((a,b)=>a.path.localeCompare(b.path)),files:[...files.values()].sort((a,b)=>a.path.localeCompare(b.path))};
 }

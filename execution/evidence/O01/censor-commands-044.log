@@ -1,0 +1,23 @@
+{"role":"fixture","stage":"start-disposable-l1","elapsedMs":1835}
+{"role":"fixture","stage":"prepare-genesis","elapsedMs":1962}
+{"role":"fixture","stage":"deploy-local-protocol-fixture","elapsedMs":6037}
+{"role":"fixture","stage":"wait-for-local-validator-activation","elapsedMs":8915}
+{"role":"fixture","stage":"start-application-node","elapsedMs":8943}
+{"role":"fixture","stage":"prove-board-deployment","elapsedMs":13665}
+{"role":"fixture","stage":"o01-package-copy","elapsedMs":43848}
+{"role":"fixture","stage":"o01-identity","elapsedMs":46030}
+{"role":"fixture","stage":"o01-verify-initialization","elapsedMs":47116}
+{"role":"fixture","stage":"o01-portal","elapsedMs":47436}
+{"role":"fixture","stage":"o01-funding-A","elapsedMs":47560}
+{"role":"fixture","stage":"private-fee:fund-disposable-user","elapsedMs":48016}
+{"role":"fixture","stage":"private-fee:bridge-user-funds","elapsedMs":48040}
+{"role":"fixture","stage":"private-fee:wait-inbox","elapsedMs":48689}
+{"role":"fixture","stage":"o01-command-A","elapsedMs":82122}
+{"role":"fixture","stage":"o01-verify-A","elapsedMs":145142}
+{"role":"fixture","stage":"o01-funding-B","elapsedMs":145523}
+{"role":"fixture","stage":"private-fee:fund-disposable-user","elapsedMs":145728}
+{"role":"fixture","stage":"private-fee:bridge-user-funds","elapsedMs":145738}
+{"role":"fixture","stage":"private-fee:wait-inbox","elapsedMs":146257}
+{"role":"fixture","stage":"o01-command-B","elapsedMs":182431}
+{"role":"fixture","stage":"o01-verify-B","elapsedMs":228690}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/O01/application-a68dd80a-a807-4f8c-b7a7-3f00c958d82a.json","passed":true,"scenario":"censor-commands"}

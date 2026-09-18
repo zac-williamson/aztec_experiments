@@ -89,25 +89,6 @@ def dependency_edges(n):
     return n.get("depends_on", []) + n.get("completion_requires", [])
 
 
-def write_paths(n):
-    paths = n.get("write_paths")
-    if not isinstance(paths, list) or not paths:
-        raise ValueError("nonempty write_paths required")
-    result = []
-    for name in paths:
-        if not isinstance(name, str) or any(c in name for c in "*?[]"):
-            raise ValueError("write_paths must be literal relative paths, not globs")
-        path = confined(REPO, name)
-        if path in result:
-            raise ValueError("duplicate write_paths")
-        result.append(path)
-    return result
-
-
-def overlap(left, right):
-    return any(a.is_relative_to(b) or b.is_relative_to(a) for a in left for b in right)
-
-
 def exhausted(n):
     investigation = n.get("investigation")
     return investigation is not None and investigation["attempts"] >= investigation["max_attempts"]
@@ -170,10 +151,7 @@ def graph_errors(g):
         if "execution_lane" in n and (not isinstance(n["execution_lane"], str) or not n["execution_lane"].strip()):
             errors.append(f"{ident}: invalid execution_lane")
         if "write_paths" in n:
-            try:
-                write_paths(n)
-            except ValueError as exc:
-                errors.append(f"{ident}: {exc}")
+            errors.append(f"{ident}: per-package write ownership is retired; root is the sole source writer")
         if "investigation" in n:
             inv = n["investigation"]
             if (not isinstance(inv, dict)
@@ -199,7 +177,7 @@ def graph_errors(g):
     if len(active) > 3:
         errors.append("three-package work limit exceeded: " + ", ".join(active))
     if len(active) > 1:
-        lanes, owners = set(), []
+        lanes = set()
         for ident in active:
             n = by_id[ident]
             lane = n.get("execution_lane")
@@ -209,14 +187,6 @@ def graph_errors(g):
                 errors.append(f"{ident}: parallel work requires distinct execution_lane")
             else:
                 lanes.add(lane)
-            try:
-                paths = write_paths(n)
-                for other, other_paths in owners:
-                    if overlap(paths, other_paths):
-                        errors.append(f"{ident}: write_paths overlap active package {other}")
-                owners.append((ident, paths))
-            except ValueError as exc:
-                errors.append(f"{ident}: parallel work {exc}")
     if covered_req != reqs or covered_findings != findings:
         errors.append("unassigned requirement or baseline finding")
     if any("malformed/duplicate" in error for error in errors):
@@ -383,7 +353,7 @@ def render_task(n):
              f"- Prerequisites: {', '.join(n['depends_on']) or 'none'}",
              f"- Required before completion: {', '.join(n.get('completion_requires', [])) or 'none additional'}",
              f"- Execution lane: {n.get('execution_lane', 'single-package default')}",
-             f"- Exclusive write paths: {', '.join(n.get('write_paths', [])) or 'assign before parallel execution'}",
+             "- Source integration: root only; delegated investigation and review are read-only",
              f"- Requirements: {', '.join(n['requirements'])}",
              f"- Baseline findings: {', '.join(n['findings']) or 'production component / release requirement'}",
              f"- Evidence: execution/{n['evidence']}", f"- Evidence binding: {n['evidence_mode']}", "",
@@ -441,7 +411,7 @@ def render_status(g):
         if not nodes:
             lines.append("None.")
         lines.append("")
-    lines += ["Completion remains subject to all acceptance evidence and release gates. Ready means start prerequisites are met, not that parallel write ownership is available.", ""]
+    lines += ["Completion remains subject to all acceptance evidence and release gates. Ready means start prerequisites are met, not that investigation capacity is available.", ""]
     return "\n".join(lines)
 
 
@@ -461,7 +431,7 @@ def next_steps(g):
             lines.append(f"NEXT {n['id']}: {n['title']}\nRead execution/{n['plan']}\nCheckpoint: {n['checkpoint']}")
     candidates = internal if running else internal[1:]
     if candidates:
-        lines.append("Independent internal candidates (assign disjoint write ownership and a free lane before activation):")
+        lines.append("Independent internal candidates (assign a free investigation lane before activation; root integrates source):")
         for n in candidates:
             label = "REASSESS" if exhausted(n) else "READY"
             lines.append(f"  {label} {n['id']}: {n['title']} — execution/{n['plan']}")

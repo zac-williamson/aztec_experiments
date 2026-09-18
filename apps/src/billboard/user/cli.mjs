@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {initializeCliSimulator} from '../../../../shared/cli-simulator.mjs';
 import {assertOperatorEnvironment} from '../../../../scripts/operator-launch.mjs';
 if(process.env.BILLBOARD_OPERATOR_PROFILE==='1')assertOperatorEnvironment();
 // ============================================================
@@ -183,7 +184,7 @@ for (const [k, v] of Object.entries(_modPolicy)) {
 
 require(path.join(PROJECT_ROOT, 'shared', 'helpers.js'));
 const engineCode = fs.readFileSync(path.join(__dirname, 'engine.js'), 'utf8');
-eval(engineCode);
+eval(engineCode+'\n//# sourceURL=billboard-user-engine.js');
 
 // ============================================================
 // Load Aztec SDK from the browser bundle (WASM, no native binary)
@@ -245,7 +246,7 @@ async function loadAztecSDK() {
   }
   if (!bundleCode) throw new Error('Could not find aztec_bundle.js in ' + bundlePaths.join(', '));
 
-  const bundleFn = new Function(bundleCode + '; return __aztec;');
+  const bundleFn = new Function(bundleCode + '; return __aztec;\n//# sourceURL=billboard-sdk.js');
   const a = bundleFn();
 
   // Keep polyfill Buffer, patch isBuffer/copy/equals, add read/write methods
@@ -313,11 +314,12 @@ async function loadAztecSDK() {
     }
   }
 
+  initializeCliSimulator(a, PROJECT_ROOT);
   return a;
 }
 
 // ============================================================
-// CRS init (Node.js: use bundle's BarretenbergSync = WASM)
+// Node hashing and proving use separate, explicitly initialized singleton backends.
 // ============================================================
 let _crsDone = false;
 async function initCRSNode(a) {
@@ -325,15 +327,21 @@ async function initCRSNode(a) {
   const manifest = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, 'crs-manifest.json'), 'utf8'));
   log('  Initializing BarretenbergSync (WASM)...', 'info');
   await a.BarretenbergSync.initSingleton();
-  await BillboardCRS.initialize(a.BarretenbergSync.getSingleton(), {
+  // Sync is for hashing only. The asynchronous prover gets the verified local SRS.
+  globalThis.BillboardCRS = BillboardCRS;
+  await a.initializeCliProver({
     manifest,
     loadLocal: async file => {
+      if (typeof file.name !== 'string' || path.basename(file.name) !== file.name) throw new Error('Invalid local CRS file');
       const localPath = path.join(PROJECT_ROOT, 'apps', 'dist', 'crs', file.name);
-      if (fs.statSync(localPath).size !== file.bytes) throw new Error('Cached CRS size mismatch: ' + file.name);
-      return new Uint8Array(fs.readFileSync(localPath));
+      const fd = fs.openSync(localPath, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+      try {
+        const stat = fs.fstatSync(fd);
+        if (!stat.isFile() || stat.size !== file.bytes) throw new Error('Cached CRS size mismatch');
+        return new Uint8Array(fs.readFileSync(fd));
+      } finally { fs.closeSync(fd); }
     },
     sha256: data => createHash('sha256').update(data).digest('hex'),
-    log: (message, level) => log('  ' + message, level),
   });
   _crsDone = true;
   log('  CRS initialized.', 'success');
@@ -554,6 +562,9 @@ function readPrivateFeeJson(filename, secret) {
 function formatCliPrivateFeeFailure(error) {
   const messages = {
     BB_PRIVATE_FEE_CONFIGURATION: 'Private fee configuration or claim file could not be loaded.',
+    BB_CLI_PROVER_CONFIGURATION: 'Local CLI proving setup could not be verified.',
+    BB_PRIVATE_FEE_PREPARATION_FAILED: 'Private fee preparation failed before submission.',
+    BB_PRIVATE_FEE_ACTION_FAILED: 'Private fee action failed. Check the saved transaction outcome.',
     BB_SUBMISSION_UNKNOWN: 'Transaction submission outcome is unknown. Check its outcome before another attempt.',
     BB_TRANSACTION_FAILED: 'The transaction did not complete successfully. Check its receipt before another attempt.',
     BB_STATE_CONFLICT: 'Transaction state changed. Refresh and create a new proof before another attempt.',
@@ -587,4 +598,24 @@ function formatCliFailure(error) {
   if (args['private-fee-config'] || args['private-fee-claim-file'] || ['BB_NO_SAVED_ETHEREUM_TRANSACTION','BB_ETH_RECOVERY_REQUIRED','BB_ETH_SUBMISSION_UNKNOWN','BB_ETH_TRANSACTION_FAILED','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID','BB_NO_SAVED_TRANSACTION','BB_RECOVERY_UNKNOWN','BB_SETTLEMENT_PENDING','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT'].includes(error?.code)) return formatCliPrivateFeeFailure(error);
   return 'Command failed. Preserve wallet/cache and check any transaction outcome before retrying.';
 }
-main().catch(e => { log('FATAL: ' + formatCliFailure(e), 'error'); __realProcess.exit(1); });
+function cliFailureLocations(error) {
+  const locations=new Set();
+  for(const frame of Array.isArray(error?.noirErrorStack)?error.noirErrorStack:[]) {
+    if(frame&&typeof frame.filePath==='string'&&Number.isSafeInteger(frame.line)&&frame.line>=0&&Number.isSafeInteger(frame.column)&&frame.column>=0) {
+      const name=frame.filePath.split('/').at(-1);
+      if(/^[a-zA-Z0-9_]{1,64}\.nr$/.test(name))locations.add(name+':'+frame.line+':'+frame.column);
+    }
+  }
+  // Aztec SimulationError supplies a Noir stack; its cause retains the JS site.
+  for(let depth=0;error&&depth<4;depth++,error=error.cause) {
+    for(const line of String(error.stack??'').split('\n').filter(line=>line.trimStart().startsWith('at '))) {
+      for(const match of line.matchAll(/(billboard-user-engine|billboard-sdk)\.js:(\d+):(\d+)/g))locations.add(match[1]+'.js:'+match[2]+':'+match[3]);
+    }
+  }
+  return [...locations].slice(0,4);
+}
+main().catch(e => {
+  log('FATAL: ' + formatCliFailure(e), 'error');
+  for(const location of cliFailureLocations(e))log('Failure location: '+location,'error');
+  __realProcess.exit(1);
+});

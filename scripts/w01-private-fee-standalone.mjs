@@ -15,7 +15,7 @@ export async function proveAndIncludePrivateFeeStandalone({wallet,owner,privateF
     assert(anchorBlock);assert.equal(anchorBlock.hash.toString(),(await anchor.hash()).toString());
     await mark?.('private-fee:prove-standalone-funding');
     const started=performance.now();
-    const {payload,tx}=await proveApplicationAction({wallet,owner,interaction:new BatchCall(wallet,[]),privateFeeAction});
+    const {payload,tx}=await proveApplicationAction({payerMode:'private',wallet,owner,interaction:new BatchCall(wallet,[]),privateFeeAction});
     observation.proofMilliseconds=Math.round(performance.now()-started);
     assert.deepEqual(payload.calls.map(call=>call.name),['claim','mint_and_pay_fee'],'Standalone funding must contain only the two private fee calls');
     assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer(),'Funding changed selected anchor');

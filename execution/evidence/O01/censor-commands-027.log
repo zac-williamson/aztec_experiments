@@ -1,0 +1,11 @@
+{"stage":"start-disposable-l1","elapsedMs":238}
+{"stage":"prepare-genesis","elapsedMs":359}
+{"stage":"deploy-local-protocol-fixture","elapsedMs":2176}
+{"stage":"wait-for-local-validator-activation","elapsedMs":3645}
+{"stage":"start-application-node","elapsedMs":3665}
+{"stage":"prove-board-deployment","elapsedMs":6698}
+{"stage":"include-board-deployment","elapsedMs":20458}
+{"stage":"o01-package-copy","elapsedMs":32767}
+{"stage":"o01-identity","elapsedMs":33806}
+{"stage":"o01-portal","elapsedMs":34420}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/O01/application-2f7bb747-b9ca-486c-8a94-9b50f14a28db.json","passed":false,"profile":"genuine packaged censor succession and policy commands; no Ready or deposit"}

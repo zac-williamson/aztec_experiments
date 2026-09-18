@@ -32,15 +32,14 @@ for (const [name, reply, error] of [
   });
 }
 
-test('falls back only to another response matching the same content pin', async () => {
+test('rejects the first invalid download without consulting another destination', async () => {
   const urls = [];
   const fallback = { ...asset, fallbackUrl: 'https://fallback.example.invalid/test.dat' };
-  const actual = await downloadCrsAsset(fallback, async url => {
+  await assert.rejects(downloadCrsAsset(fallback, async url => {
     urls.push(url);
     return url === asset.url ? response(new Uint8Array([3, 2, 1])) : response(bytes);
-  });
-  assert.deepEqual(urls, [asset.url, fallback.fallbackUrl]);
-  assert.deepEqual(actual, Buffer.from(bytes));
+  }), /CRS checksum mismatch/);
+  assert.deepEqual(urls, [asset.url]);
 });
 
 const fs = await import('node:fs/promises');
@@ -87,12 +86,12 @@ test('rejects actual WASM bytes that do not match the declared gzip pin', () => 
   assert.throws(() => verifyDerivationWasm(manifest, Buffer.from('corrupt WASM')), /WASM provenance mismatch/);
 });
 
-test('verifies cached bytes and repairs a same-length corruption with an atomic write', async () => {
+test('rejects cache corruption before an explicitly requested atomic replacement', async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'crs-atomic-'));
   const target = path.join(dir, 'test.dat');
   try {
     await fs.writeFile(target, new Uint8Array([3, 2, 1]));
-    assert.equal(await verifiedFile(target, asset), undefined);
+    await assert.rejects(verifiedFile(target, asset), /CRS checksum mismatch/);
     await atomicWriteVerified(target, bytes, asset);
     assert.deepEqual(await verifiedFile(target, asset), Buffer.from(bytes));
     assert.deepEqual(await fs.readdir(dir), ['test.dat']);

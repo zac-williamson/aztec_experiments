@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "kind": "actual-operator-package-smoke",
+  "status": "pass",
+  "durationMs": 5840,
+  "files": 1936,
+  "bytes": 332588246,
+  "inventorySha256": "3732dbcf6164f0e9fedce08f11af865007335b68cfa64c162b2b30cdba12dc98",
+  "packages": [
+    {
+      "name": "@adraffy/ens-normalize",
+      "version": "1.11.1",
+      "path": "node_modules/@adraffy/ens-normalize"
+    },
+    {
+      "name": "aes-js",
+      "version": "4.0.0-beta.5",
+      "path": "node_modules/aes-js"
+    },
+    {
+      "name": "ethers",
+      "version": "6.17.0",
+      "path": "node_modules/ethers"
+    },
+    {
+      "name": "@noble/curves",
+      "version": "1.2.0",
+      "path": "node_modules/ethers/node_modules/@noble/curves"
+    },
+    {
+      "name": "@noble/hashes",
+      "version": "1.3.2",
+      "path": "node_modules/ethers/node_modules/@noble/hashes"
+    },
+    {
+      "name": "tslib",
+      "version": "2.7.0",
+      "path": "node_modules/ethers/node_modules/tslib"
+    },
+    {
+      "name": "fake-indexeddb",
+      "version": "6.2.5",
+      "path": "node_modules/fake-indexeddb"
+    },
+    {
+      "name": "ws",
+      "version": "8.21.0",
+      "path": "node_modules/ws"
+    }
+  ],
+  "checks": [
+    "Explicit runtime resources and monitor/health identity closure present; no symlinks or forbidden dependency paths",
+    "author: real application validation reached",
+    "deploy: real application validation reached",
+    "moderator: real application validation reached",
+    "recover-wallet: real application validation reached",
+    "Real packaged monitor and moderator reject invalid input without leaking supplied content",
+    "Packaged ethers 6 and IndexedDB resolve without repository node_modules",
+    "Actual packaged shell rejects preloads and baggage before application startup",
+    "Packaged recovery exports/restores genuine claim commitment; wrong password and overwrite rejected"
+  ],
+  "limitations": [
+    "No network transactions, proving, deployment or real model startup performed."
+  ],
+  "cleanup": "complete"
+}

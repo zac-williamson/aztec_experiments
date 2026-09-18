@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {initializeCliSimulator} from '../../../../shared/cli-simulator.mjs';
 import {assertOperatorEnvironment} from '../../../../scripts/operator-launch.mjs';
 if(process.env.BILLBOARD_OPERATOR_PROFILE==='1')assertOperatorEnvironment();
 // ============================================================
@@ -240,11 +241,12 @@ async function loadAztecSDK() {
   }
 
   // Return all exports the engine needs
+  initializeCliSimulator(a, PROJECT_ROOT);
   return a;
 }
 
 // ============================================================
-// CRS init (Node.js: use bundle's BarretenbergSync = WASM)
+// Node hashing and proving use separate, explicitly initialized singleton backends.
 // ============================================================
 let _crsDone = false;
 async function initCRSNode(a) {
@@ -252,15 +254,21 @@ async function initCRSNode(a) {
   const manifest = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, 'crs-manifest.json'), 'utf8'));
   log('  Initializing BarretenbergSync (WASM)...', 'info');
   await a.BarretenbergSync.initSingleton();
-  await BillboardCRS.initialize(a.BarretenbergSync.getSingleton(), {
+  // Sync is for hashing only. The asynchronous prover gets the verified local SRS.
+  globalThis.BillboardCRS = BillboardCRS;
+  await a.initializeCliProver({
     manifest,
     loadLocal: async file => {
+      if (typeof file.name !== 'string' || path.basename(file.name) !== file.name) throw new Error('Invalid local CRS file');
       const localPath = path.join(PROJECT_ROOT, 'apps', 'dist', 'crs', file.name);
-      if (fs.statSync(localPath).size !== file.bytes) throw new Error('Cached CRS size mismatch: ' + file.name);
-      return new Uint8Array(fs.readFileSync(localPath));
+      const fd = fs.openSync(localPath, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+      try {
+        const stat = fs.fstatSync(fd);
+        if (!stat.isFile() || stat.size !== file.bytes) throw new Error('Cached CRS size mismatch');
+        return new Uint8Array(fs.readFileSync(fd));
+      } finally { fs.closeSync(fd); }
     },
     sha256: data => createHash('sha256').update(data).digest('hex'),
-    log: (message, level) => log('  ' + message, level),
   });
   _crsDone = true;
   log('  CRS initialized.', 'success');

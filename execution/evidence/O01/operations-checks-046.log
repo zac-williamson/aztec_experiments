@@ -1,0 +1,29 @@
+✔ compares checkpointed L2 heights, never proposed or checkpoint sequence identifiers (0.872459ms)
+✔ typed SDK-style headers and hashes produce the same comparison (0.116667ms)
+✔ reorg, missing data, malformed heights and identity mismatch remain unknown (0.401667ms)
+✔ missing checkpoint does not invoke RPC (0.078208ms)
+✔ actual hanging HTTP calls abort within transport deadline and cannot imply zero lag (159.086708ms)
+✔ health output allowlists counts and omits all extra fields (0.486875ms)
+✔ ingestion age is measured and missing or future state fails closed (0.385208ms)
+✔ deadline boundary and included-awaiting-finality distinguish warning from failure (0.128083ms)
+✔ known diagnostics are fixed classifications; arbitrary message/code never escape (0.666208ms)
+✔ signer error secrets are omitted, unknown signing survives restart, exhaustion fences signing (13.612917ms)
+✔ expired obligations remain visible and feed failure never advances ingestion time (4.739833ms)
+✔ already flagged unsigned work is not an expired/manual obligation (4.392083ms)
+✔ actual daemon startup log omits arbitrary argument/error contents (50.51975ms)
+✔ fresh feed with failed evaluation reports retry warning while ordinary queued work stays healthy (4.511458ms)
+✔ balanced, deficit and forced-ETH surplus have distinct actionable outputs (1.048625ms)
+✔ unavailable and hung RPC are bounded and never expose exception contents (21.846792ms)
+✔ stale, future, malformed and inactive observations cannot report healthy (0.811583ms)
+✔ invalid configuration does not invoke RPC and errors omit original input (0.189542ms)
+✔ real RPC adapter pins all reads to one canonical block and verifies installed runtime (19.701458ms)
+✔ wrong chain, board and runtime are rejected with fixed identity alert (4.333625ms)
+✔ real hanging HTTP requests are aborted and their sockets close on monitor disposal (98.60425ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 755.09175

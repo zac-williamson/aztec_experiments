@@ -19,14 +19,16 @@ evidence that the application is already fixed.
 
 ## Execution agreement
 
-- The user explicitly authorized substantial subagent delegation on 2026-09-11.
-  Use bounded parallel implementation, verification and review lanes with disjoint
-  file ownership. Keep dependency gates intact; root integrates and verifies each
-  work package before completion. Record live delegation in execution/delegation.md.
-- Before editing, record the active task, execution lane, write paths and checkpoint
-  in graph.json; regenerate status.md with graph.py render.
-  Read its prerequisites, acceptance criteria, and relevant source. Up to three
-  independent lanes may be active; all expensive tests stay serialized.
+- Root is the sole source writer and integrator in this shared checkout. Delegate
+  bounded investigation and independent review in parallel; agents return findings
+  or proposed patches without editing files or running expensive tests. This avoids
+  competing writes by construction, without per-package ownership lists.
+- Before editing, record the active task, execution lane and checkpoint in graph.json
+  and regenerate status.md. Keep dependency gates intact. Up to three work packages
+  may be active; root serializes expensive tests and integrates reviewed changes.
+- Record live delegation in execution/delegation.md. Whenever the harness changes,
+  delegate an independent structural review focused on simplicity, modularity,
+  duplicate lifecycle ownership, hidden retries and fallback paths.
 - Resolve uncertainties with small local experiments before relying on them.
   Keep suspected findings distinct from reproduced failures.
 - Implement, test, review, and integrate each coherent change. Do not mark done
@@ -83,3 +85,12 @@ Investigation retries require a recorded hypothesis and bounded attempt budget.
 After exhaustion, diagnose or redesign before another expensive run; continue
 independent lanes. Qualification defaults and user requirements are distinguished
 in execution/policy-provenance.md; do not silently waive release criteria.
+
+## Harness reliability (user instruction, 2026-09-18)
+
+Use explicit test scenarios and a bottom-up test hierarchy. No fallback paths in
+the harness or application: fix the underlying defect. Preserve failure and cleanup
+evidence, diagnose and repair harness problems autonomously, and verify the fix.
+The user rescinded the stop-on-failure instruction. Keep bounded investigations;
+do not repeat expensive runs without a changed, evidence-backed hypothesis.
+Planning graph checks belong at coordination boundaries, not inside application tests.

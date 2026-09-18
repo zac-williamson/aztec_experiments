@@ -6,16 +6,16 @@ import {spawn} from 'node:child_process';
 import {createNamespacedSafeJsonRpcServer} from '@aztec/foundation/json-rpc/server';
 import {AztecNodeApiSchema} from '@aztec/stdlib/interfaces/client';
 import {Tx} from '@aztec/stdlib/tx';
-import {OwnedBuildTree} from './owned-test-process-tree.mjs';
 const silent=Object.assign(()=>{},{trace(){},debug(){},verbose(){},info(){},warn(){},error(){},fatal(){}});
 const failure=code=>Object.assign(Error(code),{code});
 export async function openO01CommandRpc({node}){
  assert.equal(typeof node.sendTx,'function');
  const own=Object.getOwnPropertyDescriptor(node,'sendTx'),original=node.sendTx,captures=new Map(),seen=new Set();
- const sockets=new Set(),requests=new Set();let closed=false,closePromise,release;
+ const sockets=new Set(),requests=new Set();let closed=false,closePromise,release,sendAttempts=0;
  const stopped=new Promise(resolve=>{release=resolve;});
  const wrapper=async function(tx,...args){
   if(closed)throw failure('O01_RPC_CLOSED');
+  sendAttempts++;
   const copy=Tx.fromBuffer(tx.toBuffer()),hash=copy.getTxHash().toString();
   if(seen.has(hash))throw failure('O01_DUPLICATE_TX');
   if(seen.size>=16)throw failure('O01_CAPTURE_LIMIT');seen.add(hash);
@@ -26,7 +26,7 @@ export async function openO01CommandRpc({node}){
  };
  node.sendTx=wrapper;
  const exposed=new Proxy(node,{get(target,key){const value=Reflect.get(target,key,target);if(typeof value!=='function')return value;return (...args)=>{if(closed)throw failure('O01_RPC_CLOSED');return Promise.race([Promise.resolve().then(()=>value.apply(target,args)),stopped.then(()=>{throw failure('O01_RPC_CLOSED');})]);};}});
- const rpc=createNamespacedSafeJsonRpcServer({node:[exposed,AztecNodeApiSchema],aztec:[exposed,AztecNodeApiSchema]},{maxBatchSize:1,maxBodySizeBytes:10*1024*1024,log:silent});
+ const rpc=createNamespacedSafeJsonRpcServer({node:[exposed,AztecNodeApiSchema],aztec:[exposed,AztecNodeApiSchema]},{maxBodySizeBytes:10*1024*1024,log:silent});
  const callback=rpc.getApp().callback();
  const server=http.createServer((req,res)=>{
   if(closed||req.method!=='POST'||req.url!=='/'||req.headers.origin){res.writeHead(403);res.end();return;}
@@ -48,7 +48,7 @@ export async function openO01CommandRpc({node}){
  }
  try{await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});}
  catch(error){await close();throw error;}
- return {url:'http://127.0.0.1:'+server.address().port+'/',captures,close};
+ return {url:'http://127.0.0.1:'+server.address().port+'/',captures,get sendAttempts(){return sendAttempts;},close};
 }
 
 // Parse only whole, known application log records. Never expose arbitrary errors,
@@ -57,7 +57,24 @@ export function createO01CommandOutput(){
  const hashes=new Set(),markers=new Set();const tails={stdout:'',stderr:''};let bytes=0,overflow=false;
  function line(raw){
   const text=raw.replace(/\x1b\[[0-9;]*m/g,'').replace(/^\[[^\[\]\r\n]{1,40}\] /,'').trim();
-  const hash=text.match(/^Transaction hash: (0x[0-9a-fA-F]{64})$/);if(hash)hashes.add(hash[1].toLowerCase());
+  const stages={
+   'SDK loaded.':'SDK_LOADED','Step 1: Deriving account keys...':'DERIVE_ACCOUNT',
+   'Step 2: Connecting to Aztec node...':'CONNECT_NODE','Step 3: Computing contract addresses...':'RESOLVE_BOARD',
+   'Step 4: Initializing CRS...':'INITIALIZE_CRS','CRS ready.':'CRS_READY',
+   'Step 5: Creating PXE...':'CREATE_PXE','PXE created.':'PXE_READY',
+   'Step 6: Registering account with PXE...':'REGISTER_ACCOUNT','Account registered.':'ACCOUNT_REGISTERED',
+   'Billboard contract registered.':'BOARD_REGISTERED','Syncing PXE with node...':'SYNC_PXE','Wallet ready.':'WALLET_READY',
+   'Storing signing key capsule...':'STORE_CAPSULE','Capsule stored.':'CAPSULE_STORED',
+   'Checking L2 deposit note...':'READ_DEPOSIT','No L2 deposit note found.':'NO_DEPOSIT',
+   'Registering censor account with PXE...':'REGISTER_CENSOR',
+   'Storing censor signing key capsule...':'STORE_CENSOR_CAPSULE','Censor capsule stored.':'CENSOR_CAPSULE_STORED',
+  };
+  if(Object.hasOwn(stages,text))markers.add(stages[text]);
+  const location=text.match(/^Failure location: ((?:(?:billboard-user-engine|billboard-sdk)\.js|[a-zA-Z0-9_]{1,64}\.nr):\d+:\d+)$/);
+  if(location)markers.add(location[1]);
+  const failureCode=text.match(/^FATAL: (BB_CLI_PROVER_CONFIGURATION|BB_PRIVATE_FEE_PREPARATION_FAILED|BB_PRIVATE_FEE_ACTION_FAILED): /);
+  if(failureCode)markers.add(failureCode[1]);
+  const hash=text.match(/^(?:Transaction hash: |To start another action, acknowledge the confirmed transaction with --acknowledge-tx )(0x[0-9a-fA-F]{64})$/);if(hash)hashes.add(hash[1].toLowerCase());
   if(/^TX confirmed! Block: \d+, Status: [a-z-]+$/i.test(text))markers.add('TX_CONFIRMED');
   if(text==='Moderation policy updated.')markers.add('MODERATION_POLICY_UPDATED');
   if(/^New censor on-chain: 0x[0-9a-fA-F]{64}$/.test(text))markers.add('NEW_CENSOR_ON_CHAIN');
@@ -70,17 +87,19 @@ export function createO01CommandOutput(){
 export async function runO01PackagedCommand({packageRoot,args,directory,timeoutMs=120000}){
  assert(path.isAbsolute(packageRoot)&&path.isAbsolute(directory));assert(Array.isArray(args)&&args.every(value=>typeof value==='string'&&!value.includes('\0')));assert(args[0]==='author');
  assert(Number.isSafeInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=480000);
- const started=Date.now(),output=createO01CommandOutput();let timer,child,tree,stopReason,cleanup;
- const stop=reason=>{stopReason??=reason;if(tree&&!cleanup){cleanup=tree.cleanup();cleanup.catch(()=>{});}};
+ const started=Date.now(),output=createO01CommandOutput();let stopReason;
+ const child=spawn('/bin/sh',[path.join(packageRoot,'scripts/operator-launch.sh'),...args],{cwd:directory,env:{HOME:directory,TMPDIR:directory,PATH:'/usr/bin:/bin'},stdio:['ignore','pipe','pipe']});
+ const stop=reason=>{stopReason=reason;child.kill('SIGKILL');child.stdout.destroy();child.stderr.destroy();};
+ for(const stream of ['stdout','stderr'])child[stream].on('data',data=>{output.push(data,stream);if(output.overflow)stop('OUTPUT_LIMIT');});
+ const timer=setTimeout(()=>stop('TIMEOUT'),timeoutMs);
  let exit;
- try{
-  child=spawn('/bin/sh',[path.join(packageRoot,'scripts/operator-launch.sh'),...args],{cwd:directory,detached:true,env:{HOME:directory,TMPDIR:directory,PATH:'/usr/bin:/bin'},stdio:['ignore','pipe','pipe']});
-  const ended=new Promise(resolve=>{child.once('error',()=>resolve({code:null,signal:null,spawnFailed:true}));child.once('close',(code,signal)=>resolve({code,signal}));});
-  if(Number.isSafeInteger(child.pid))tree=new OwnedBuildTree(child.pid);
-  for(const name of ['stdout','stderr'])child[name].on('data',data=>{output.push(data,name);if(output.overflow)stop('OUTPUT_LIMIT');});
-  timer=setTimeout(()=>stop('TIMEOUT'),timeoutMs);
-  exit=await ended;
- }finally{clearTimeout(timer);if(tree){cleanup??=tree.cleanup();await cleanup;assert.equal((await tree.sample()).members.length,0);}}
- const parsed=output.finish();if(stopReason)parsed.markers.push(stopReason);if(exit?.spawnFailed)parsed.markers.push('SPAWN_FAILED');else if(exit?.signal&&!stopReason)parsed.markers.push('SIGNAL_EXIT');
- return {code:Number.isInteger(exit?.code)?exit.code:1,txHashes:parsed.txHashes,markers:[...new Set(parsed.markers)].sort(),elapsedMs:Date.now()-started};
+ try {exit=await new Promise(resolve=>{
+   child.once('error',()=>resolve({code:1,signal:null,spawnFailed:true}));
+   child.once('close',(code,signal)=>resolve({code,signal}));
+ });}finally{clearTimeout(timer);}
+ const parsed=output.finish();
+ if(stopReason)parsed.markers.push(stopReason);
+ if(exit.spawnFailed)parsed.markers.push('SPAWN_FAILED');
+ if(exit.signal)parsed.markers.push('SIGNAL_EXIT');
+ return {code:stopReason||exit.code!==0?1:0,txHashes:parsed.txHashes,markers:[...new Set(parsed.markers)].sort(),elapsedMs:Date.now()-started};
 }

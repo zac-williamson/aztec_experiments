@@ -1,0 +1,678 @@
+{
+  "schemaVersion": 2,
+  "scenario": "censor-commands",
+  "profile": "Packaged censor succession and policy commands",
+  "startedAt": "2026-09-18T16:37:28.157Z",
+  "passed": false,
+  "stages": [
+    {
+      "role": "fixture",
+      "stage": "start-disposable-l1",
+      "elapsedMs": 1340
+    },
+    {
+      "role": "fixture",
+      "stage": "prepare-genesis",
+      "elapsedMs": 1474
+    },
+    {
+      "role": "fixture",
+      "stage": "deploy-local-protocol-fixture",
+      "elapsedMs": 3845
+    },
+    {
+      "role": "fixture",
+      "stage": "wait-for-local-validator-activation",
+      "elapsedMs": 5601
+    },
+    {
+      "role": "fixture",
+      "stage": "start-application-node",
+      "elapsedMs": 5629
+    },
+    {
+      "role": "fixture",
+      "stage": "prove-board-deployment",
+      "elapsedMs": 9986
+    },
+    {
+      "role": "fixture",
+      "stage": "o01-package-copy",
+      "elapsedMs": 43803
+    },
+    {
+      "role": "fixture",
+      "stage": "o01-identity",
+      "elapsedMs": 45208
+    },
+    {
+      "role": "fixture",
+      "stage": "o01-portal",
+      "elapsedMs": 46119
+    },
+    {
+      "role": "fixture",
+      "stage": "o01-funding-A",
+      "elapsedMs": 46249
+    },
+    {
+      "role": "fixture",
+      "stage": "private-fee:fund-disposable-user",
+      "elapsedMs": 46878
+    },
+    {
+      "role": "fixture",
+      "stage": "private-fee:bridge-user-funds",
+      "elapsedMs": 46918
+    },
+    {
+      "role": "fixture",
+      "stage": "private-fee:wait-inbox",
+      "elapsedMs": 47683
+    },
+    {
+      "role": "fixture",
+      "stage": "o01-command-A",
+      "elapsedMs": 73637
+    }
+  ],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 2097152,
+  "peakTreeRSSKiB": 1171792,
+  "rssSamples": [
+    {
+      "elapsedMs": 1001,
+      "rssKiB": 234720
+    },
+    {
+      "elapsedMs": 2045,
+      "rssKiB": 453968
+    },
+    {
+      "elapsedMs": 3098,
+      "rssKiB": 566544
+    },
+    {
+      "elapsedMs": 4132,
+      "rssKiB": 452368
+    },
+    {
+      "elapsedMs": 5173,
+      "rssKiB": 643136
+    },
+    {
+      "elapsedMs": 6223,
+      "rssKiB": 463168
+    },
+    {
+      "elapsedMs": 7257,
+      "rssKiB": 507664
+    },
+    {
+      "elapsedMs": 8290,
+      "rssKiB": 212032
+    },
+    {
+      "elapsedMs": 9323,
+      "rssKiB": 226512
+    },
+    {
+      "elapsedMs": 10356,
+      "rssKiB": 734720
+    },
+    {
+      "elapsedMs": 11391,
+      "rssKiB": 754560
+    },
+    {
+      "elapsedMs": 12421,
+      "rssKiB": 832592
+    },
+    {
+      "elapsedMs": 13452,
+      "rssKiB": 1007696
+    },
+    {
+      "elapsedMs": 14485,
+      "rssKiB": 1026112
+    },
+    {
+      "elapsedMs": 15518,
+      "rssKiB": 1048704
+    },
+    {
+      "elapsedMs": 16551,
+      "rssKiB": 1064880
+    },
+    {
+      "elapsedMs": 17583,
+      "rssKiB": 1039712
+    },
+    {
+      "elapsedMs": 18613,
+      "rssKiB": 1140800
+    },
+    {
+      "elapsedMs": 19645,
+      "rssKiB": 1171792
+    },
+    {
+      "elapsedMs": 20675,
+      "rssKiB": 1067264
+    },
+    {
+      "elapsedMs": 21705,
+      "rssKiB": 1033808
+    },
+    {
+      "elapsedMs": 22735,
+      "rssKiB": 813712
+    },
+    {
+      "elapsedMs": 23767,
+      "rssKiB": 794352
+    },
+    {
+      "elapsedMs": 24797,
+      "rssKiB": 720624
+    },
+    {
+      "elapsedMs": 25838,
+      "rssKiB": 689744
+    },
+    {
+      "elapsedMs": 26870,
+      "rssKiB": 636928
+    },
+    {
+      "elapsedMs": 27901,
+      "rssKiB": 693856
+    },
+    {
+      "elapsedMs": 28933,
+      "rssKiB": 638704
+    },
+    {
+      "elapsedMs": 29964,
+      "rssKiB": 642224
+    },
+    {
+      "elapsedMs": 30994,
+      "rssKiB": 685472
+    },
+    {
+      "elapsedMs": 32029,
+      "rssKiB": 663424
+    },
+    {
+      "elapsedMs": 33084,
+      "rssKiB": 591408
+    },
+    {
+      "elapsedMs": 34116,
+      "rssKiB": 535648
+    },
+    {
+      "elapsedMs": 35148,
+      "rssKiB": 519968
+    },
+    {
+      "elapsedMs": 36186,
+      "rssKiB": 521696
+    },
+    {
+      "elapsedMs": 37231,
+      "rssKiB": 523424
+    },
+    {
+      "elapsedMs": 38265,
+      "rssKiB": 519904
+    },
+    {
+      "elapsedMs": 39305,
+      "rssKiB": 473696
+    },
+    {
+      "elapsedMs": 40344,
+      "rssKiB": 478832
+    },
+    {
+      "elapsedMs": 41375,
+      "rssKiB": 482624
+    },
+    {
+      "elapsedMs": 42405,
+      "rssKiB": 483008
+    },
+    {
+      "elapsedMs": 43435,
+      "rssKiB": 586416
+    },
+    {
+      "elapsedMs": 44466,
+      "rssKiB": 600304
+    },
+    {
+      "elapsedMs": 45498,
+      "rssKiB": 307936
+    },
+    {
+      "elapsedMs": 46531,
+      "rssKiB": 476240
+    },
+    {
+      "elapsedMs": 47718,
+      "rssKiB": 317824
+    },
+    {
+      "elapsedMs": 48792,
+      "rssKiB": 276480
+    },
+    {
+      "elapsedMs": 49887,
+      "rssKiB": 215648
+    },
+    {
+      "elapsedMs": 50940,
+      "rssKiB": 214016
+    },
+    {
+      "elapsedMs": 52091,
+      "rssKiB": 317936
+    },
+    {
+      "elapsedMs": 53232,
+      "rssKiB": 276656
+    },
+    {
+      "elapsedMs": 54271,
+      "rssKiB": 362192
+    },
+    {
+      "elapsedMs": 55304,
+      "rssKiB": 359168
+    },
+    {
+      "elapsedMs": 56357,
+      "rssKiB": 382016
+    },
+    {
+      "elapsedMs": 57392,
+      "rssKiB": 384992
+    },
+    {
+      "elapsedMs": 58435,
+      "rssKiB": 388400
+    },
+    {
+      "elapsedMs": 59472,
+      "rssKiB": 395680
+    },
+    {
+      "elapsedMs": 60505,
+      "rssKiB": 385808
+    },
+    {
+      "elapsedMs": 61565,
+      "rssKiB": 403280
+    },
+    {
+      "elapsedMs": 62605,
+      "rssKiB": 243104
+    },
+    {
+      "elapsedMs": 63855,
+      "rssKiB": 267392
+    },
+    {
+      "elapsedMs": 64889,
+      "rssKiB": 282016
+    },
+    {
+      "elapsedMs": 65965,
+      "rssKiB": 304944
+    },
+    {
+      "elapsedMs": 66998,
+      "rssKiB": 324656
+    },
+    {
+      "elapsedMs": 68034,
+      "rssKiB": 348800
+    },
+    {
+      "elapsedMs": 69072,
+      "rssKiB": 331504
+    },
+    {
+      "elapsedMs": 70112,
+      "rssKiB": 307520
+    },
+    {
+      "elapsedMs": 71186,
+      "rssKiB": 341136
+    },
+    {
+      "elapsedMs": 72218,
+      "rssKiB": 375664
+    },
+    {
+      "elapsedMs": 73253,
+      "rssKiB": 378464
+    },
+    {
+      "elapsedMs": 74284,
+      "rssKiB": 392512
+    },
+    {
+      "elapsedMs": 75318,
+      "rssKiB": 374736
+    },
+    {
+      "elapsedMs": 76357,
+      "rssKiB": 426976
+    },
+    {
+      "elapsedMs": 77395,
+      "rssKiB": 686960
+    },
+    {
+      "elapsedMs": 78445,
+      "rssKiB": 951184
+    },
+    {
+      "elapsedMs": 79504,
+      "rssKiB": 728448
+    },
+    {
+      "elapsedMs": 80536,
+      "rssKiB": 794928
+    },
+    {
+      "elapsedMs": 81593,
+      "rssKiB": 246368
+    },
+    {
+      "elapsedMs": 82626,
+      "rssKiB": 246000
+    },
+    {
+      "elapsedMs": 83666,
+      "rssKiB": 250352
+    },
+    {
+      "elapsedMs": 84704,
+      "rssKiB": 252096
+    },
+    {
+      "elapsedMs": 85738,
+      "rssKiB": 253776
+    },
+    {
+      "elapsedMs": 86773,
+      "rssKiB": 255360
+    },
+    {
+      "elapsedMs": 87808,
+      "rssKiB": 257232
+    },
+    {
+      "elapsedMs": 88845,
+      "rssKiB": 258752
+    },
+    {
+      "elapsedMs": 89878,
+      "rssKiB": 259344
+    },
+    {
+      "elapsedMs": 90918,
+      "rssKiB": 259376
+    },
+    {
+      "elapsedMs": 91956,
+      "rssKiB": 259984
+    },
+    {
+      "elapsedMs": 92994,
+      "rssKiB": 176352
+    },
+    {
+      "elapsedMs": 94033,
+      "rssKiB": 143808
+    }
+  ],
+  "failures": [
+    {
+      "stage": "fixture-exit"
+    }
+  ],
+  "children": [
+    {
+      "role": "fixture",
+      "code": 1,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/o01-censor-command-flow.mjs": "c7648e863b2c7704cb829aa211c5def8af3d67bb3fd8760b6c057ff2b8edcc8f",
+    "scripts/o01-censor-command-io.mjs": "7c5f3dd6136a85cedd1f1e6eee2ca646d41f032e31daee59fb2a24aba3e50c4b",
+    "scripts/t04-browser-journey.mjs": "93a136faa82a69216845bbc936ffcc3f01fa82072c3895cf8b1402eb7f2beeaa",
+    "scripts/t04-browser-journey-verify.mjs": "aadf14364acaea689e1ccf22d00bcffb748f488fa93c57809035dca27820d33b",
+    "scripts/t04-browser-post-recovery.mjs": "0a19469f7e539608996469a60838441537f9ad02db44f0128a9103c8796cdfa4",
+    "scripts/t04-post-response-loss.mjs": "e2252661599cd245a749cb5d5a02be97be3eaee8446e67c8cda0d1c815fee46f",
+    "scripts/run-bounded-browser-check.mjs": "3d63a2f2fefb39ddfab74deaaa0eb8d9da2aa290ed38dc2907b6c37dc8694b50",
+    "scripts/u01-browser-flow.mjs": "ddfb3ac7449dc7929cdbb9de3237a080f68c4839c22473bbd113002f4967dcf4",
+    "scripts/u01-browser-post-verify.mjs": "e9c78f95848c5594529711b3a49114e76530373777fab9b32e7d29b817f639ea",
+    "scripts/u01-browser-post.mjs": "f7cb929735b6b78916f70b0aad478aca8b4a335523980cee7844896648a2a274",
+    "scripts/u01-browser-rpc.mjs": "1bfe26453a4a89074b7083a065151aca16c4e6b54ba7a99c7068c3349943e734",
+    "scripts/t03-rpc-observer.mjs": "733b7cd2d1329794df5cfac9483b463c1ed2c7c0e7990b0feb983a9f106d876c",
+    "scripts/t03-public-footprint.mjs": "c5ad1114fd505221eb9ac6c2c54f3d3aee0a058421b8a95abef15a96ba4f650a",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    "scripts/c01-native-profile.mjs": "a3e5b526210247329bf1c936d3590e826db8fcf5e0cc6700d266986ec15967d0",
+    "scripts/test-c01-application.mjs": "3268aebedef1afa5ae1ee23158a425de1918f73e26ba2366e5112ff6f45c19a8",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "scripts/c01-settle-application-message.mjs": "7399875d97f5dfd82a3787d8c39390fd9fc6673c8ce06d5bc41464515c3fef4b",
+    "scripts/c01-application-deployment.mjs": "a81fe20b22967ce6e3d6c1f751ee93ed6c9fef5e8553cf4037534780dec11fa2",
+    "scripts/w03-note-attribution.mjs": "c5f3be63dc9752a2276931717ef53d387d7b46f064d92092f41f87f46947d168",
+    "shared/application-nullifier.mjs": "67b056f3e58f88d9a31549c94af6aa7f652690689e9fdf2a56d5b602c8199570",
+    "scripts/w03-proof-recovery.mjs": "283fd365422e535cc30ea0a3844bbfd5c2399f4240e36ef4f1581d3f0fc03210",
+    "shared/l2-journal.mjs": "a971ef9f8a94f6ab30756f425c8cb6228bbafe653791f6e4208e945bb110d380",
+    "shared/transaction-outcomes.mjs": "981eb3f048356a85dd9833b1b612bdcb4dcd71c41af3af38d36717198b576dc1",
+    "shared/journal-backup.mjs": "5a5292c781f442c07b51769b62c856c60821dbf95a00cb5e8c79f6ea5c2ea512",
+    "scripts/prove-application-action.mjs": "312671bc05c83ecc0d391bda1f53ffca59c2d530d119c331c8eb18f202504c2c",
+    "scripts/w02-wallet-restore.mjs": "b3ad3ebb0a4f7cd369608cc2ae31cf4060a6400bc6bb2e739f693d96feec2331",
+    "shared/wallet-backup.js": "8df8f15fe92adb0d1628ac64cbd3bd61761594dbd7a83eeb04655640d3d64a8b",
+    "scripts/w01-private-fee-standalone.mjs": "d4e1e122e64864e3c371d70cbcb1b44152bc08899ac9ea60646c2eddcf7ea48d",
+    "scripts/w01-private-fee-flow.mjs": "8ba4f29a9f993416419b8ebcf7361d8bd706c191254bac1c576929f0a5e401ff",
+    "scripts/w01-private-funding.mjs": "8f64a1bb86289a787acde0b6370399019bf5834740fe0c373d2f88307e2e3080",
+    "shared/private-fee-client.mjs": "5098aaf46bd3bcdb5302e45186b2dc43cf3bcd70d0cd74aa1b063ff50432fe4b",
+    "shared/private-fee-payment.mjs": "9863e2e4b2abd3c7e9839be307668c9794a758bde2cd3ca8c4351575710b5f09",
+    "shared/private-fee-funding.mjs": "3a640f2557d4f5183a42c3b81c9902ea36f0a2c6fb846eb4b90bd136416b53a8",
+    "shared/ethereum-journal.mjs": "b30902ed978aa226fe236bdea50857e92a108dc91b492aaa8236acbacfd545ed",
+    "shared/journal-record.mjs": "549c91da1ea11706769edc28fba6b1c1ad0fa58c845e784cc7462353726d5a08",
+    "apps/src/billboard/user/transaction-journal-store.mjs": "abb9af112709a4e4ed3197de86ef058a4b06e3c63b1588861f6411b1629c443a",
+    "scripts/c01-settle-ready.mjs": "cf0a0e4a531e938b601f4fdf13ce336a9d453435f3df70e2be38f6d2e2d93d1c",
+    "scripts/c01-settle-message.mjs": "4e9bc2eeb7dad873311045c49f89b0b53c5ccd4f34d0516924e47338773ed132",
+    "scripts/c01-bridge-flow.mjs": "689ab68736d338ef5edc34e9d49c5e33b726e55dcda7867ba019b2c1305ee723",
+    "scripts/c02-screening-flow.mjs": "d4a6a11fffd568baeac42a7041f961533ae5127893fc0f1c659339e0a9b6f727",
+    "scripts/t02-screening-journey.mjs": "e161d1a64b03bc2dbd8cd7b8eafaee00880a611abb143ef52d1b2a80f5ec43e6",
+    "scripts/t02-redeposit-flow.mjs": "6f54801b7836a6a6558056df41521fadeac3470b619b6fa0d05d5414ef979b99",
+    "scripts/t02-wrong-origin.mjs": "712dccd2872af6e7b76f3dcce86640f9a1de5b7f24530151eb97335af17f65d5",
+    "scripts/t02-claim-boundary.mjs": "3c2040636d06531206e2fa1687f59ed1276ee41594aa2dd625613497959f7ba3",
+    "scripts/test-t02-claim-boundary.mjs": "d1ba5ba5428f25337fbb5594d990fb4cae41fe7b836b6ea81118d83e74d01681",
+    "node_modules/@aztec/pxe/src/node/caching_aztec_node.ts": "f3b27595e524d8d1be93039d213f88bed03fb9ec63c49a6e493d33210a24f714",
+    "node_modules/@aztec/pxe/dest/node/caching_aztec_node.js": "2c8d8a2d8762b673bc300f9876d8d86775d4fab361c0816b9f07a1dfe5ee9e6b",
+    "node_modules/@aztec/pxe/src/pxe.ts": "6dbb267d5effc5f5f7cda123fb8a28581f306ec8a84e6737eeae5c5f9b8fefd6",
+    "node_modules/@aztec/pxe/dest/pxe.js": "e93807fc9202a13235669b823fe07fdccfef2cebe70834da7c19644d2f3ed669",
+    "node_modules/@aztec/pxe/src/block_synchronizer/block_synchronizer.ts": "3c8db66275b427ac31547953af91a4d6ecd2c83c770b997a8b6f09ca4b458765",
+    "node_modules/@aztec/pxe/dest/block_synchronizer/block_synchronizer.js": "0f302a5f0abe83e0e9e2927067e048e757365678919a2799190cac82e4f8848a",
+    "node_modules/@aztec/l1-artifacts/dest/InboxAbi.js": "ab433ac523c2594bafd018cb956b40579f538eef30f03a10f41365ba78638f2c",
+    "node_modules/@aztec/l1-artifacts/l1-contracts/src/core/messagebridge/Inbox.sol": "c3373e0ee7c76e137124d2f4856330f639fa94569d39f10907181a908827faa3",
+    "scripts/t02-redeposit-replay.mjs": "4044535728da5bfb84e3d0e5864573ab9f511c20668da51e664b7e7a1f496429",
+    "node_modules/@aztec/l1-artifacts/dest/OutboxAbi.js": "65fee6c3076781794fd145fa79d382c3ce74af246b8da29523123aa4a06c9023",
+    "node_modules/@aztec/l1-artifacts/l1-contracts/src/core/messagebridge/Outbox.sol": "de268cae33268c6ce8538d687b3612b090d37052a270846e233717520f9df212",
+    "scripts/c03-author-claims.mjs": "656dde4e8d738ae4df3b72a45936e4760ee5b9846a3fe6d04672bfc7aa41d91a",
+    "scripts/c03-contention-flow.mjs": "399026e12695227a0488f5da9b786215067faafebddb8d8805233263f155f32b",
+    "scripts/c01-client-mining.mjs": "a10abf9d1798fac6ddae89a0f62ce2b3e30b9ddd69a77512d5f83f8dc33ff332",
+    "scripts/c01-deposit-flow.mjs": "2995be91451bb0900e59a89cfd20a5ce8395c417cb63ae25adc3119884a0bd51",
+    "scripts/c01-exit-flow.mjs": "97b17b61356b110220af6c623f3c3205dbe862c5398f69be2872fb9510c3b476",
+    "scripts/c01-withdraw-l1.mjs": "de76adb8ed43e51e83fd390fa147dcbdc6d99757deaa5907050b68a33aaaad92",
+    "scripts/c01-ready-flow.mjs": "ee295327d94b76fa267f9c7b290759b0a3c19cb5e3493b2ee6ec123dd54a7e98",
+    "scripts/c01-board-inclusion.mjs": "46a43363765aff5460820ac2c33b636e3b6b8ef310830255b1ed549328db09ed",
+    "scripts/c01-board-flow.mjs": "be79f63b193246681bb1d62b17d578682d5f515b061572c2ea25d9819137146a",
+    "scripts/c01-real-node.mjs": "425728e050640cc3d06554e0c6dea1e208c5aaf1608ce725a6d053d2d5a8a872",
+    "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+    "package-lock.json": "4d7cbef3eb1a06797a08b0458ca7c0df93566efd72979573416d95c546372c93",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js": "f84940700d4fe17c4bb94fb27199085fb057c567ff745e90c21352cd47a091c3",
+    "scripts/testing/assets.mjs": "46a0e1ba69e222e239bba9230a29798c5152e40d0a7b92b2081fbd2f3bfe3d8d",
+    "scripts/testing/browser-worker.mjs": "ea8274bd33ab1e637f53d87a8673b4b718b147114e49beeadb64c55cc5dc4eeb",
+    "scripts/testing/fixture-worker.mjs": "d06a928c0b852f99acc22afe19ba04afea18de546784339b30242f5584b5022f",
+    "scripts/testing/process-tree.test.mjs": "8779a55199ed6a475faa6ceee7ad4c8eb866ce3b16b7a661ebbf042fdcd255a2",
+    "scripts/testing/run-application.mjs": "683796feb2c50547c20941a2727803f720a6f340c4be70e0503791834f96f87b",
+    "scripts/testing/scenario-flows.mjs": "940c937fb4a7c2e7546302b16efbac4f64cf265274d12984f44957a516a91f0b",
+    "scripts/testing/scenarios.mjs": "6d298a6fd2864527828b8632d9902fcf98a01b43e2ede25d73cf0b9007c45255",
+    "scripts/testing/supervisor.mjs": "30f7f0b553f9961f05c542cbd118a6e78b6290bbd56bb8e24b37fb2f3e794a3e",
+    "scripts/testing/supervisor.test.mjs": "3d7225f3e3a07d0673cf426bc16424721e7e65e7856c20789bdc45ce698c9a8f"
+  },
+  "operatorPackage": {
+    "root": "/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/o01-cli-package-035",
+    "manifestSha256": "28413a38a812fb4df9c679f3e2d9a2191bc8b4d29f4c126ace1ee63a06bb9938",
+    "verifiedFiles": 1935
+  },
+  "setup": [
+    {
+      "name": "bn254_g1.dat",
+      "sha256": "2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac",
+      "bytes": 75497472
+    },
+    {
+      "name": "bn254_g2.dat",
+      "sha256": "01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f",
+      "bytes": 128
+    },
+    {
+      "name": "grumpkin_g1_v2.flat.dat",
+      "sha256": "b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9",
+      "bytes": 4194368
+    }
+  ],
+  "networkProofs": false,
+  "controlledSettlement": false,
+  "binarySha256": "208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031",
+  "applicationBBThreads": 1,
+  "nodeBBThreads": 1,
+  "worldStateHardwareConcurrency": 1,
+  "worker": {
+    "passed": false,
+    "profile": "application transaction proofs with official local protocol fixture and controlled settlement",
+    "nonlocalNetworkDenied": true,
+    "censorIdentity": {
+      "encryptedRoundTrip": true,
+      "freshRestoreContext": true,
+      "fullSaltPreserved": true,
+      "derivedSigningKeyFromRestoredSecret": true,
+      "sameApplicationAddress": true,
+      "applicationSigningDerivation": true,
+      "noIndependentTestSigningKeyReused": true
+    },
+    "deployment": {
+      "passed": true,
+      "profile": "official SDK local application fixture",
+      "realVerifier": false,
+      "networkProofs": false,
+      "rollupVersion": "1424461043",
+      "addresses": {
+        "rollupAddress": "0x04dd213cbb7bd61a9245f9fed97b4a21d42fdc2a",
+        "registryAddress": "0x755a31809992a598426fc84d9b909ab26858abec",
+        "inboxAddress": "0x20f07d2970e64ce58fd145d0e3bf30021249a149",
+        "outboxAddress": "0x502acb1f0634e5a95b01039941bbf889e6eedb89",
+        "feeJuiceAddress": "0x9932a8653a0a432bcacf6205fb06bc5999bf1302",
+        "feeJuicePortalAddress": "0x1bb8117bf3f5de02062f821ba17bb463f3550cfa",
+        "coinIssuerAddress": "0x40717e5dd52d18017679cb93f9f52b1a9e806c49",
+        "rewardDistributorAddress": "0x1cc2e6bf443f5ddcac0aa2a3760f0028f78e251c",
+        "governanceProposerAddress": "0xd869374acb278e0a19a81a2ee00dc6f824e30e75",
+        "governanceAddress": "0x1cdfa6388326d5655fea417d105cdc34ecc7ddbd",
+        "stakingAssetAddress": "0xf34b1dadfc089ea72f4dc67149cd10297c1767f4",
+        "feeAssetHandlerAddress": "0x76be5f75757ffa639b5a655824158de7ab5d3f5c",
+        "stakingAssetHandlerAddress": "0x4985af107195c4bacf86bb157a0c5888aea3e8c1",
+        "zkPassportVerifierAddress": "0x15482f7f27fe7eaccc8aa24ae1d3af256b8e3837",
+        "gseAddress": "0x6f9cbc154a6ef4ef78cc3ce6b0a7eebf3837eb06",
+        "dateGatedRelayerAddress": "0x436ec7a23511e57caf9af94e9720e0c43b415092"
+      }
+    },
+    "validatorActivation": {
+      "committee": [
+        "0x6551416df46c355266131612427593ecbb6475c6"
+      ],
+      "ordinaryTimeAdvancesSeconds": [
+        {
+          "seconds": 48,
+          "timestamp": "1789749535",
+          "epoch": "1",
+          "committee": null
+        },
+        {
+          "seconds": 48,
+          "timestamp": "1789749583",
+          "epoch": "2",
+          "committee": null
+        },
+        {
+          "seconds": 48,
+          "timestamp": "1789749631",
+          "epoch": "3",
+          "committee": null
+        }
+      ]
+    },
+    "censorCommands": {
+      "passed": false,
+      "packagedCommands": true,
+      "networkProofs": false,
+      "readyProof": false,
+      "collateralDeposit": false,
+      "commands": [],
+      "stage": "command-A",
+      "commandResults": [
+        {
+          "action": "transfer-censor",
+          "code": 1,
+          "txHashes": [],
+          "markers": [
+            "PRIVATE_FEE_FAILED"
+          ],
+          "elapsedMs": 7748
+        }
+      ],
+      "failure": {
+        "errorClass": "AssertionError",
+        "frames": [
+          "o01-censor-command-flow.mjs:69:650"
+        ]
+      },
+      "cleanupComplete": true
+    },
+    "failure": {
+      "stage": "o01-command-A",
+      "errorClass": "Error",
+      "code": null,
+      "frames": [
+        "o01-censor-command-flow.mjs:84:399",
+        "c01-real-node.mjs:69:18",
+        "fixture-worker.mjs:98:19",
+        "test-c01-application.mjs:14:5"
+      ]
+    },
+    "anvilExit": {
+      "code": null,
+      "signal": "SIGKILL"
+    },
+    "singletonsStopped": true
+  },
+  "elapsedMs": 94863,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "finishedAt": "2026-09-18T16:39:03.060Z"
+}

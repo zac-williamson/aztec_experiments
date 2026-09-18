@@ -62,41 +62,15 @@ test('journey diagnostic outputs fixed milestones and allowlisted exception only
  assert.deepEqual(safeJourneyDriverFailure({name:'SECRET'},'SECRET'),{exceptionClass:'OtherError',substage:'other'});
 });
 
-const {retryT04PendingClaim,T04_PENDING_CLAIM_MESSAGE}=await import('./t04-browser-journey.mjs');
-const pendingClaim=()=>({success:false,errors:[T04_PENDING_CLAIM_MESSAGE],depositHash:hash,existingVisible:true,newVisible:false,pageVisible:true,transactionHashes:[]});
-test('pending claim retries once through supplied GUI action then succeeds',async()=>{
- let reads=0,retries=0;const result=await retryT04PendingClaim({remaining:()=>1000,outcome:async()=>++reads===1?pendingClaim():{...pendingClaim(),success:true,errors:[]},retry:async receipt=>{assert.equal(receipt,hash);retries++;}});
- assert.deepEqual(result,{claimAttempts:2,claimRetries:1});assert.equal(retries,1);
-});
-test('unexpected claim errors never retry',async()=>{
- for(const errors of [['unavailable'],[T04_PENDING_CLAIM_MESSAGE,'invalid receipt']]){
- let retries=0;await assert.rejects(retryT04PendingClaim({remaining:()=>1000,outcome:async()=>({...pendingClaim(),errors}),retry:async()=>retries++}),/UNEXPECTED_ERROR/);assert.equal(retries,0);
- }
-});
-test('repeated pending claims stop after three total attempts',async()=>{
- let reads=0,retries=0;await assert.rejects(retryT04PendingClaim({remaining:()=>1000,outcome:async()=>{reads++;return pendingClaim();},retry:async()=>retries++}),/ATTEMPTS_EXHAUSTED/);assert.equal(reads,3);assert.equal(retries,2);
-});
-test('receipt changes, lost pending controls and existing submission prohibit further retry',async()=>{
- for(const change of [{depositHash:'0x'+'cd'.repeat(32)},{newVisible:true},{existingVisible:false},{pageVisible:false},{transactionHashes:[hash]}]){
- let reads=0,retries=0;await assert.rejects(retryT04PendingClaim({remaining:()=>1000,outcome:async()=>++reads===1?pendingClaim():{...pendingClaim(),...change},retry:async()=>retries++}));assert.equal(retries,1);
- }
-});
-
-test('actual shared log timestamp is removed once before strict pending classification',async()=>{
- const vm=await import('node:vm');const {normalizeT04StatusMessage}=await import('./t04-browser-journey.mjs');
- const children=[],container={appendChild:element=>children.push(element)};
- const context=vm.createContext({document:{getElementById:()=>container,createElement:()=>({})}});
- vm.runInContext(await fs.readFile(new URL('../shared/helpers.js',import.meta.url),'utf8'),context);
- context.message=T04_PENDING_CLAIM_MESSAGE;vm.runInContext("log(message,'error','depositStatus')",context);
- const rendered=children[0].textContent;assert.notEqual(rendered,T04_PENDING_CLAIM_MESSAGE);
- assert.equal(normalizeT04StatusMessage(rendered),T04_PENDING_CLAIM_MESSAGE);
- let attempts=0,retries=0;
- await retryT04PendingClaim({remaining:()=>1000,outcome:async()=>++attempts===1?{...pendingClaim(),errors:[normalizeT04StatusMessage(rendered)]}:{...pendingClaim(),success:true,errors:[]},retry:async()=>retries++});assert.equal(retries,1);
- for(const unsafe of ['[12:34:56] '+rendered,'[12:34:56] unexpected '+T04_PENDING_CLAIM_MESSAGE,'['+'1'.repeat(41)+'] '+T04_PENDING_CLAIM_MESSAGE]){
- let clicked=0;await assert.rejects(retryT04PendingClaim({remaining:()=>1000,outcome:async()=>({...pendingClaim(),errors:[normalizeT04StatusMessage(unsafe)]}),retry:async()=>clicked++}),/UNEXPECTED_ERROR/);assert.equal(clicked,0);
- }
- context.message='RPC unavailable';vm.runInContext("log(message,'error','depositStatus')",context);
- assert.equal(normalizeT04StatusMessage(children[1].textContent),'RPC unavailable');
+test('actual browser journey stops after one deposit action when claim reports an error',async()=>{
+ const {driveT04BrowserJourney}=await import('./t04-browser-journey.mjs');
+ let clicks=0;
+ const page={
+  waitForFunction:async()=>{},
+  locator:selector=>({waitFor:async()=>{},fill:async()=>{},click:async()=>{assert.equal(selector,'#navNext');clicks++;},count:async()=>1}),
+ };
+ await assert.rejects(driveT04BrowserJourney({page,directory:'/unused',message:'message',depositAmount:'0.001',remaining:()=>1000,mark(){}}));
+ assert.equal(clicks,1);
 });
 
 // Persist only bounded public canonical progress, never captured proof/note data.

@@ -18,7 +18,7 @@ export async function replaceW03StalePost({wallet,node,account,claim,board,postA
  const first=await createL2Journal({...options,storage});first.setOperation(operation);await first.prepare(original.tx,await first.assertCanStart());
  assert.equal((await node.isValidTx(original.tx)).result,'valid');
  await mark('prove-private-credit-conflict');
- const conflict=await proveApplicationAction({wallet,owner:account.address,interaction:new BatchCall(wallet,[]),privateFeeAction});
+ const conflict=await proveApplicationAction({payerMode:'private',wallet,owner:account.address,interaction:new BatchCall(wallet,[]),privateFeeAction});
  assert.equal((await node.isValidTx(conflict.tx)).result,'valid');
  await mark('include-private-credit-conflict');await node.sendTx(conflict.tx);
  const deadline=Date.now()+60000;let receipt;
@@ -35,7 +35,7 @@ export async function replaceW03StalePost({wallet,node,account,claim,board,postA
  await resumed.allowReplacement(operation);const previous=await resumed.assertCanStart();
  await wallet.pxe.sync();const anchor=await wallet.pxe.getSyncedBlockHeader();
  await mark('prove-journal-linked-replacement');const started=performance.now();
- const replacement=await proveApplicationAction({wallet,owner:account.address,interaction:board.methods.post(...postArgs),privateFeeAction});
+ const replacement=await proveApplicationAction({payerMode:'private',wallet,owner:account.address,interaction:board.methods.post(...postArgs),privateFeeAction});
  observation.replacementProofMilliseconds=Math.round(performance.now()-started);
  assert.equal((await node.isValidTx(replacement.tx)).result,'valid');
  await resumed.prepare(replacement.tx,previous);

@@ -44,9 +44,12 @@
     "test:cli-sdk": "node scripts/test-cli-sdk.mjs",
     "test:dependencies": "node --test scripts/test-dependency-*.mjs",
     "test:c01-clients": "node --test scripts/test-c01-user.mjs scripts/test-c01-deploy-activation.mjs scripts/test-artifacts.mjs",
-    "test:application:bridge": "node scripts/test-c01-application.mjs --bridge",
+    "test:application:bridge": "node scripts/test-c01-application.mjs private-fees",
     "test:application:unit": "npm run test:c01-clients && npm run test:noir && npm run test:portal",
-    "test:portal": "cd billboard/portal && FOUNDRY_PROFILE=regression forge test --offline"
+    "test:portal": "cd billboard/portal && FOUNDRY_PROFILE=regression forge test --offline",
+    "test:harness": "node scripts/test-harness.mjs harness",
+    "test:components": "node scripts/test-harness.mjs components",
+    "test:e2e": "node scripts/test-c01-application.mjs"
   },
   "overrides": {
     "systeminformation": "5.31.7",

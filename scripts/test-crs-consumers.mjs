@@ -24,7 +24,7 @@ fixtureManifest.derivedG1.derivation.g2Sha256 = fixtureManifest.files.find(f => 
 function options(extra = {}) {
   return {
     manifest: structuredClone(fixtureManifest),
-    loadLocal: async file => payloads[file.name],
+    loadLocal: async file => file.name === 'g1_uncompressed.dat' ? derivedPayload : payloads[file.name],
     sha256: hash,
     fetch: async () => { throw new Error('Unexpected network request'); },
     ...extra,
@@ -50,62 +50,36 @@ function stubProver() {
   };
 }
 
-test('all verified local bytes reach SRS with the pinned v5 point counts', async () => {
+test('required local derived G1, G2 and Grumpkin initialize the pinned point counts', async () => {
   const bb = stubProver();
   const result = await CRS.initialize(bb, options());
-  assert.equal(result.g1Format, 'bn254-g1-compressed-32-byte');
+  assert.equal(result.g1Format, 'bn254-g1-uncompressed-64-byte');
   assert.equal(bb.calls.length, 2);
   assert.equal(bb.calls[0][1].numPoints, 1179648);
-  assert.equal(bb.calls[0][1].pointsBuf.byteLength, 1179648 * 32);
+  assert.equal(bb.calls[0][1].pointsBuf.byteLength, 1179648 * 64);
   assert.equal(bb.calls[1][1].numPoints, 65537);
-  assert.equal(bb.calls[1][1].pointsBuf.byteLength, 65537 * 64);
 });
 
-test('old uncompressed-size local BN254 data is rejected before any prover call', async () => {
-  const bb = stubProver();
-  await assert.rejects(CRS.initialize(bb, options({
-    loadLocal: async file => file.name === 'g1.dat' ? new Uint8Array((2 ** 20 + 1) * 64) : payloads[file.name],
-    fetch: async () => { throw new Error('offline fixture'); },
-  })), /No verified CRS data/);
-  assert.equal(bb.calls.length, 0);
-});
-
-test('corrupt same-size cache and CDN bytes cannot initialize SRS', async () => {
-  const bb = stubProver();
-  await assert.rejects(CRS.initialize(bb, options({
-    loadLocal: async file => file.name === 'g2.dat' ? new Uint8Array(128) : payloads[file.name],
-    fetch: async () => new Response(new Uint8Array(128), { status: 200 }),
-  })), /SHA-256 mismatch/);
-  assert.equal(bb.calls.length, 0);
-});
-
-test('bad local cache and bad first CDN fall back only to hash-verified second CDN bytes', async () => {
-  const requests = [];
-  await CRS.loadVerified(options({
-    loadLocal: async file => file.name === 'g2.dat' ? new Uint8Array(128) : payloads[file.name],
-    fetch: async (url, init) => {
-      requests.push([url, init.headers.Range]);
-      return new Response(requests.length === 1 ? new Uint8Array(128) : payloads['g2.dat'], { status: 206 });
-    },
-  }));
-  assert.deepEqual(requests, [
-    ['https://crs.aztec-cdn.foundation/g2.dat', 'bytes=0-127'],
-    ['https://crs.aztec-labs.com/g2.dat', 'bytes=0-127'],
-  ]);
-});
-
-for (const [name, remote, range] of [
-  ['g1.dat', 'g1_compressed.dat', 'bytes=0-37748735'],
-  ['grumpkin_g1.dat', 'grumpkin_g1_v2.dat', 'bytes=0-4194367'],
-]) {
-  test(`${name} uses the official v5 CDN filename and exact range`, async () => {
-    const requests = [];
-    await CRS.loadVerified(options({
-      loadLocal: async file => { if (file.name === name) throw new Error('not cached'); return payloads[file.name]; },
-      fetch: async (url, init) => { requests.push([url, init.headers.Range]); return new Response(payloads[name], { status: 206 }); },
-    }));
-    assert.deepEqual(requests, [['https://crs.aztec-cdn.foundation/' + remote, range]]);
-  });
+for (const name of ['g1_uncompressed.dat', 'g2.dat', 'grumpkin_g1.dat']) {
+  for (const mode of ['missing', 'corrupt', 'truncated']) {
+    test(`${name} ${mode} stops without alternate reads, network requests or prover calls`, async () => {
+      const bb = stubProver(), reads = [], requests = [];
+      await assert.rejects(CRS.initialize(bb, options({
+        loadLocal: async file => {
+          reads.push(file.name);
+          const data = file.name === 'g1_uncompressed.dat' ? derivedPayload : payloads[file.name];
+          if (file.name !== name) return data;
+          if (mode === 'missing') throw Error('Required local file missing');
+          if (mode === 'truncated') return data.subarray(0, -1);
+          const corrupt = data.slice(); corrupt[corrupt.length - 1] ^= 1; return corrupt;
+        },
+        fetch: async url => { requests.push(url); throw Error('Network must not be called'); },
+      })), /Required local file missing|CRS (size|SHA-256) mismatch/);
+      const order = ['g1_uncompressed.dat', 'g2.dat', 'grumpkin_g1.dat'];
+      assert.deepEqual(reads, order.slice(0, order.indexOf(name) + 1));
+      assert.deepEqual(requests, []); assert.equal(bb.calls.length, 0);
+    });
+  }
 }
 
 for (const [label, mutation] of [
@@ -195,7 +169,7 @@ test('BN254 initialization rejection prevents Grumpkin initialization', async ()
 
 test('unexpected BN254 response cannot be reported as initialized', async () => {
   const bb = stubProver();
-  bb.srsInitSrs = async () => ({ pointsBuf: new Uint8Array(0) });
+  bb.srsInitSrs = async () => ({ pointsBuf: new Uint8Array(64) });
   await assert.rejects(CRS.initialize(bb, options()), /Unexpected BN254/);
   assert.equal(bb.calls.length, 0);
 });
@@ -213,7 +187,7 @@ test('browser loading uses the same checks with Web Crypto SHA-256', async () =>
   const loaded = await context.BillboardCRS.loadVerified(options({
     sha256: async data => Array.from(new Uint8Array(await webcrypto.subtle.digest('SHA-256', data)), b => b.toString(16).padStart(2, '0')).join(''),
   }));
-  assert.equal(loaded.data['g1.dat'].byteLength, 37748736);
+  assert.equal(loaded.data['g1_uncompressed.dat'].byteLength, 75497472);
 });
 
 test('verified local derived bytes skip compressed reads and use the documented empty response', async () => {
@@ -233,57 +207,20 @@ test('verified local derived bytes skip compressed reads and use the documented 
   assert.equal(bb.calls[1][1].numPoints, 65537);
 });
 
-test('derived corruption after the first two points falls back before any bad bytes reach SRS', async () => {
-  const bb = stubProver();
-  const position = Math.floor(derivedPayload.byteLength / 2);
-  derivedPayload[position] ^= 1;
-  try {
-    const result = await CRS.initialize(bb, derivedOptions());
-    assert.equal(result.g1Format, 'bn254-g1-compressed-32-byte');
-    assert.equal(bb.calls[0][1].pointsBuf, payloads['g1.dat']);
-  } finally { derivedPayload[position] ^= 1; }
-});
-
 for (const [label, data] of [
   ['truncated derived input', () => derivedPayload.subarray(0, -1)],
   ['oversized derived input', () => new Uint8Array(75497473)],
   ['cache metadata wrapper', () => ({ bytes: derivedPayload, sha256: fixtureManifest.derivedG1.sha256 })],
 ]) {
-  test(`${label} is rejected before hash verification and uses verified compressed fallback`, async () => {
-    const hashes = [];
-    const bb = stubProver();
-    const invalid = data();
-    await CRS.initialize(bb, derivedOptions({
+  test(`${label} stops before hashing or invoking the prover`, async () => {
+    const hashes = [], bb = stubProver(), invalid = data();
+    await assert.rejects(CRS.initialize(bb, derivedOptions({
       loadLocal: async file => file.name === 'g1_uncompressed.dat' ? invalid : payloads[file.name],
       sha256: bytes => { hashes.push(bytes); return hash(bytes); },
-    }));
-    assert.ok(!hashes.includes(invalid));
-    assert.equal(bb.calls[0][1].pointsBuf, payloads['g1.dat']);
+    })), /CRS size mismatch/);
+    assert.equal(hashes.length, 0); assert.equal(bb.calls.length, 0);
   });
 }
-
-test('corrupt derived bytes plus invalid compressed sources never invoke the prover', async () => {
-  const bb = stubProver();
-  const position = 3 * 64;
-  derivedPayload[position] ^= 1;
-  try {
-    await assert.rejects(CRS.initialize(bb, derivedOptions({
-      loadLocal: async file => file.name === 'g1_uncompressed.dat' ? derivedPayload : undefined,
-      fetch: async () => { throw new Error('offline fixture'); },
-    })), /No verified CRS data/);
-    assert.equal(bb.calls.length, 0);
-  } finally { derivedPayload[position] ^= 1; }
-});
-
-test('missing derived and compressed local input fetches only the pinned compressed CDN bytes', async () => {
-  const requests = [];
-  const loaded = await CRS.loadVerified(options({
-    loadLocal: async file => { if (file.name.startsWith('g1')) throw new Error('not cached'); return payloads[file.name]; },
-    fetch: async (url, init) => { requests.push([url, init.headers.Range]); return new Response(payloads['g1.dat'], { status: 206 }); },
-  }));
-  assert.equal(loaded.selectedG1.format, 'bn254-g1-compressed-32-byte');
-  assert.deepEqual(requests, [['https://crs.aztec-cdn.foundation/g1_compressed.dat', 'bytes=0-37748735']]);
-});
 
 test('loader cannot replace the trusted metadata snapshot', async () => {
   let checked = false;
@@ -305,9 +242,8 @@ test('mismatched derived content pin never accepts bytes through supplied cache 
   const manifest = structuredClone(fixtureManifest);
   manifest.derivedG1.sha256 = '0'.repeat(64);
   const bb = stubProver();
-  const result = await CRS.initialize(bb, derivedOptions({ manifest }));
-  assert.equal(result.g1Format, 'bn254-g1-compressed-32-byte');
-  assert.equal(bb.calls[0][1].pointsBuf, payloads['g1.dat']);
+  await assert.rejects(CRS.initialize(bb, derivedOptions({ manifest })), /SHA-256 mismatch/);
+  assert.equal(bb.calls.length, 0);
 });
 
 for (const [label, response] of [
@@ -333,27 +269,27 @@ test('browser VM uses full Web Crypto digest verification for derived input', as
   assert.equal(loaded.data['g1_uncompressed.dat'].byteLength, 75497472);
 });
 
-test('explicit BN254 prefix verifies the full source before passing exact compressed or derived count',async()=>{
- for(const derived of [false,true]){
-  const bb=stubProver(),observed=[];const opts=(derived?derivedOptions:options)({bn254NumPoints:524288,sha256:bytes=>{observed.push(bytes.byteLength);return hash(bytes);}});
-  const result=await CRS.initialize(bb,opts),source=derived?derivedPayload:payloads['g1.dat'];
-  assert(observed.includes(source.byteLength),'Full source must be hashed');
-  assert.equal(bb.calls[0][1].numPoints,524288);assert.equal(bb.calls[0][1].pointsBuf.byteLength,524288*(derived?64:32));
-  assert.equal(bb.calls[0][1].pointsBuf.buffer,source.buffer);assert.equal(bb.calls[0][1].g2Point,payloads['g2.dat']);
-  assert.equal(bb.calls[1][1].pointsBuf,payloads['grumpkin_g1.dat']);assert.equal(bb.calls[1][1].numPoints,65537);
-  assert.deepEqual(result,{g1Format:derived?'bn254-g1-uncompressed-64-byte':'bn254-g1-compressed-32-byte',sourceBn254NumPoints:1179648,initializedBn254NumPoints:524288,grumpkinNumPoints:65537});
- }
+test('explicit BN254 prefix verifies the complete derived source before selecting points', async () => {
+  const bb = stubProver(), observed = [];
+  const result = await CRS.initialize(bb, options({bn254NumPoints: 524288, sha256: bytes => { observed.push(bytes.byteLength); return hash(bytes); }}));
+  assert(observed.includes(derivedPayload.byteLength));
+  assert.equal(bb.calls[0][1].numPoints, 524288);
+  assert.equal(bb.calls[0][1].pointsBuf.byteLength, 524288 * 64);
+  assert.equal(bb.calls[0][1].pointsBuf.buffer, derivedPayload.buffer);
+  assert.equal(bb.calls[0][1].g2Point, payloads['g2.dat']);
+  assert.equal(bb.calls[1][1].pointsBuf, payloads['grumpkin_g1.dat']);
+  assert.deepEqual(result, {g1Format:'bn254-g1-uncompressed-64-byte',sourceBn254NumPoints:1179648,initializedBn254NumPoints:524288,grumpkinNumPoints:65537});
 });
-test('prefix mode rejects corruption outside retained prefix before any prover call',async()=>{
- for(const derived of [false,true]){
-  const source=derived?derivedPayload:payloads['g1.dat'],last=source.length-1,original=source[last];source[last]^=1;const bb=stubProver();
-  try{await assert.rejects(CRS.initialize(bb,options({bn254NumPoints:524288,loadLocal:async file=>{if(file.name===(derived?'g1_uncompressed.dat':'g1.dat'))return source;if(file.name.startsWith('g1'))throw Error('No fallback');return payloads[file.name];}})));assert.equal(bb.calls.length,0);}finally{source[last]=original;}
- }
+test('corruption beyond the retained prefix fails before any prover call', async () => {
+  const bb = stubProver(), last = derivedPayload.length - 1;
+  derivedPayload[last] ^= 1;
+  try { await assert.rejects(CRS.initialize(bb, options({bn254NumPoints:524288})), /SHA-256 mismatch/); assert.equal(bb.calls.length, 0); }
+  finally { derivedPayload[last] ^= 1; }
 });
 test('prefix budget rejects invalid and excessive values, and snapshots caller selection',async()=>{
  for(const value of [null,0,-1,1.5,'524288',Infinity,1179649]){const bb=stubProver();await assert.rejects(CRS.initialize(bb,derivedOptions({bn254NumPoints:value})));assert.equal(bb.calls.length,0);}
  const bb=stubProver(),opts=derivedOptions({bn254NumPoints:524288});opts.sha256=bytes=>{opts.bn254NumPoints=1179648;return hash(bytes);};await CRS.initialize(bb,opts);assert.equal(bb.calls[0][1].numPoints,524288);
 });
-test('compressed prefix response must match selected count, not full source count',async()=>{
+test('derived prefix rejects an unexpected nonempty initialization response',async()=>{
  const bb=stubProver();bb.srsInitSrs=async args=>{bb.calls.push(['bn254',args]);return {pointsBuf:new Uint8Array(1179648*64)};};await assert.rejects(CRS.initialize(bb,options({bn254NumPoints:524288})),/Unexpected BN254/);assert.equal(bb.calls.length,1);
 });

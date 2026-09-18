@@ -1,0 +1,33 @@
+✔ compares checkpointed L2 heights, never proposed or checkpoint sequence identifiers (1.464583ms)
+✔ typed SDK-style headers and hashes produce the same comparison (0.144792ms)
+✔ reorg, missing data, malformed heights and identity mismatch remain unknown (1.002ms)
+✔ missing checkpoint does not invoke RPC (0.078958ms)
+✔ actual hanging HTTP calls abort within transport deadline and cannot imply zero lag (161.8775ms)
+✔ full-history index refuses to checkpoint an omitted publication order (4.433708ms)
+✔ an index starting from genesis refuses a nonzero first publication order (0.370375ms)
+✔ orphaned flag disappears when its page is rolled back (0.778041ms)
+✔ different payloads at one canonical event position never commit (0.179333ms)
+✔ unavailable historical checkpoint preserves all cached events (0.251625ms)
+✔ identical policy can be published repeatedly under the same content version (0.248375ms)
+✔ conflicting text cannot reuse a policy content version (0.505667ms)
+✔ post without its preceding policy publication cannot enter full-history cache (0.253666ms)
+✔ sync deadline covers the aggregate RPC sequence, not each read independently (30.820208ms)
+✔ connection reads pinned immutable slots at one block and matches both contract class IDs (24.396708ms)
+✔ matching public slots cannot bypass a wrong currentContractClassId (6.094416ms)
+✔ matching public slots cannot bypass a wrong originalContractClassId (9.56175ms)
+✔ connection rejects conflicting immutable slot 1 (6.669958ms)
+✔ connection rejects conflicting immutable slot 3 (6.195125ms)
+✔ connection rejects conflicting immutable slot 4 (4.905167ms)
+✔ connection rejects conflicting immutable slot 5 (6.695458ms)
+✔ restored public cache rejects additional private payload fields (1.14025ms)
+✔ policy A then B then A identifies A as the current restored policy (2.555916ms)
+✔ rejected http-error response cancels its unread body (20.82775ms)
+✔ rejected oversized response cancels its unread body (3.463166ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 459.094833

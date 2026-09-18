@@ -17,11 +17,11 @@ export async function completeT02Redeposit({node,config,dateProvider,l1Client,di
     await withC01ClientMining({rpcUrl:config.l1RpcUrls[0],dateProvider,observation},async mineL1=>{
       const common={node,preparation,instance,l1Client,directory,rpcUrl:config.l1RpcUrls[0],dateProvider,mineL1,reportStage,
         authorAccount:privateFee.authorAccount,privateFeeAction:privateFee.privateFeeAction,discardUnsubmittedFee:privateFee.discardUnsubmittedFee};
-      observation.claim=await depositAndClaimC01({...common,ready,settlement});assert(observation.claim.passed);
+      observation.claim=await depositAndClaimC01({...common,ready,settlement,payerMode:'private'});assert(observation.claim.passed);
       reportStage('reject-old-claim-and-exit');
       observation.replay=await qualifyT02RedepositReplay({...common,ready,priorClaimResult,claimResult:observation.claim,priorRefund});assert(observation.replay.passed);
       // A fresh receipt starts with an unposted note; never reuse the prior exit state.
-      observation.exit=await proveAndIncludeC01Exit({...common,claimResult:observation.claim});assert(observation.exit.passed);
+      observation.exit=await proveAndIncludeC01Exit({...common,claimResult:observation.claim,noteAttribution:false});assert(observation.exit.passed);
       reportStage('verify-cumulative-private-fees');
       await privateFee.verify([priorClaimResult.fee,priorExitResult.fee,observation.claim.fee,observation.exit.fee].reduce((sum,fee)=>sum+BigInt(fee),0n));
       assert.equal(observation.claim.feePayer,privateFee.payer);assert.equal(observation.exit.feePayer,privateFee.payer);

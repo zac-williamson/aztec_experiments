@@ -19,11 +19,28 @@ test('reorg, missing data, malformed heights and identity mismatch remain unknow
 });
 test('missing checkpoint does not invoke RPC',async()=>{let calls=0;const node={getNodeInfo(){calls++;}};assert.equal((await observeFeedLag({node,scope,checkpoint:null})).code,'FEED_LAG_UNKNOWN');assert.equal(calls,0);});
 test('actual hanging HTTP calls abort within transport deadline and cannot imply zero lag',async t=>{
- const sockets=new Set();let requests=0;const server=http.createServer((req,res)=>{requests++;req.resume();});server.on('connection',socket=>{sockets.add(socket);socket.on('close',()=>sockets.delete(socket));});
- await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>{server.closeAllConnections();server.close();});
+ const sockets=new Set(),requestSockets=new Set(),requestClosures=[];let requests=0;
+ const server=http.createServer((req,res)=>{
+  requests++;req.resume();
+  if(!requestSockets.has(req.socket)){
+   requestSockets.add(req.socket);
+   requestClosures.push(new Promise(resolve=>req.socket.once('close',resolve)));
+  }
+ });
+ server.on('connection',socket=>{sockets.add(socket);socket.on('close',()=>sockets.delete(socket));});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ t.after(async()=>{
+  const closed=new Promise(resolve=>server.close(resolve));
+  for(const socket of sockets)socket.destroy();
+  await closed;
+ });
  const node=publicNode(`http://127.0.0.1:${server.address().port}`,{timeoutMs:150});
- const started=Date.now();const r=await observeFeedLag({node,scope,checkpoint});assert.equal(r.code,'FEED_LAG_UNKNOWN');assert(!('lagL2Blocks'in r));assert.equal(requests,3);assert(Date.now()-started<1500);
- const closing=Promise.all([...sockets].map(socket=>new Promise(resolve=>socket.once('close',resolve))));const closed=new Promise(resolve=>server.close(resolve));
- await Promise.race([Promise.all([closing,closed]),new Promise((_,reject)=>{const timer=setTimeout(()=>reject(Error('Aborted feed requests retained sockets')),1000);timer.unref();})]);
- await new Promise(resolve=>setImmediate(resolve));assert.equal(sockets.size,0);
+ const started=Date.now();const r=await observeFeedLag({node,scope,checkpoint});
+ assert.equal(r.code,'FEED_LAG_UNKNOWN');assert(!('lagL2Blocks'in r));assert.equal(requests,3);assert(Date.now()-started<1500);
+ // Node fetch may open an idle replacement connection after aborting. Check
+ // actual request cancellation here; the fixture owns all connections at cleanup.
+ let timer;
+ try{await Promise.race([Promise.all(requestClosures),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Aborted feed requests retained sockets')),1000);})]);}
+ finally{clearTimeout(timer);}
+ for(const socket of requestSockets)assert(socket.destroyed);
 });

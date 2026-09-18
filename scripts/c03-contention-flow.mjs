@@ -38,13 +38,17 @@ function packedText(text){
  * No state injection, server prover, proof worker fanout or automatic retry.
  */
 export async function proveAndIncludeC03Contention({node,preparation,instance,authorClaims,
-  l1Client,rpcUrl,directory,mineL1,reportStage,dateProvider,privateFeeAction,discardUnsubmittedFee}){
+  l1Client,rpcUrl,directory,mineL1,reportStage,dateProvider,privateFeeAction,discardUnsubmittedFee,proofRecovery,payerMode}){
+  assert(['private','genesis'].includes(payerMode),'Explicit fixture payer mode required');
+  if(payerMode==='private')assert.equal(typeof privateFeeAction,'function');
+  else assert.equal(privateFeeAction,undefined,'Genesis fixture must not receive private fee route');
   let wallet,sequencer,previousConfig,progressPath,stage='preflight';
   const count=preparation.authorAccounts.length;
-  assert([1,10].includes(count));assert(count===10||process.env.C03_POSTING_DIAGNOSTIC==='true'||typeof privateFeeAction==='function');
+  assert.equal(typeof proofRecovery,'boolean');
+  assert.equal(count,payerMode==='private'?1:10,'Scenario author count must match explicit payer mode');
   const started=performance.now();
   const listeners=[];
-  const observation={passed:false,scope:privateFeeAction?'one author genuine private-fee posting; not concurrency qualification':count===10?'ten real distinct-author post proofs prepared at one canonical anchor':'one-author posting diagnostic, not concurrency qualification',
+  const observation={passed:false,scope:payerMode==='private'?'one author genuine private-fee posting; not concurrency qualification':'ten real distinct-author post proofs prepared at one canonical anchor',
     applicationProofs:true,networkProofs:false,authorCount:count,contentionQualified:false,posts:[],allPreparedBeforeSubmission:false};
   // Atomically replace only sanitized observations; no accounts, note preimages or transaction bytes.
   const persist=async()=>{if(!progressPath)return;
@@ -145,10 +149,10 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
       const postArgs=[claim.depositChainId,nonce,message.fields,message.length,false,undefined,undefined];
       assert.deepEqual((await wallet.pxe.getSyncedBlockHeader()).toBuffer(),anchorBytes);
       await mark('prove-author-'+index);const started=performance.now();
-      let preparedProof=await proveApplicationAction({wallet,owner:account.address,
+      let preparedProof=await proveApplicationAction({payerMode,wallet,owner:account.address,
         interaction:board.methods.post(...postArgs),
-        privateFeeAction:privateFeeAction?context=>privateFeeAction({...context,kind:'post',args:postArgs}):undefined});
-      if(process.env.W03_PROOF_RECOVERY==='true') {
+        privateFeeAction:payerMode==='private'?context=>privateFeeAction({...context,kind:'post',args:postArgs}):undefined});
+      if(proofRecovery) {
         assert.equal(count,1);assert(privateFeeAction&&discardUnsubmittedFee);
         const {replaceW03StalePost}=await import('./w03-proof-recovery.mjs');
         const recovered=await replaceW03StalePost({wallet,node,account,claim,board,postArgs,original:preparedProof,privateFeeAction,discardUnsubmittedFee,directory,mineL1,mark});

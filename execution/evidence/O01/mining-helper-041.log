@@ -1,0 +1,10 @@
+✔ ordinary L1 mining continues during work and stops on success and failure (6700.147083ms)
+✔ mined-clock synchronization prevents accumulated drift across a long proof batch (9.855584ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7100.399083

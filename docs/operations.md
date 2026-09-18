@@ -42,14 +42,45 @@ node --test scripts/test-operations-monitor.mjs
 
 These inexpensive tests inject balanced/deficit/surplus state, stale and future timestamps, inactivity, transport failure and a hanging request. The RPC adapter tests encode actual ABI responses and reconstruct the installed runtime, verify hash-pinned reads, and reject wrong chain, board and bytecode. They are local test doubles: they are not a live deployment rehearsal or evidence of production availability.
 
-## Work remaining before operational acceptance
+## Qualification and remaining work
 
-- Add and exercise public feed lag and moderation-deadline monitoring against the daemon's actual durable state; confirm who receives and responds to each alert.
-- Add privacy-preserving private-fee failure and transaction-outcome aggregation; an escrow balance says nothing about individual private fee funds. No central monitor should collect users' private balances or funding secrets.
-- Exercise moderation signer availability and recovery without collecting credentials in logs; document supported authority rotation from actual contract capabilities rather than inventing an administrator pause/rotation feature.
-- Rehearse RPC failover, deployment/activation reconciliation, wallet/private-fee recovery, credential replacement and rollback/exit limitations with disposable identities. Validate that client recovery retains pending transaction journals and does not resend unknown outcomes.
-- Record historical exposed provider credentials by location/provider only, never by reproducing values; require operator replacement/restriction and named ownership.
-- Integrate observation delivery and missing-run detection with the operator's chosen existing monitoring infrastructure, then rehearse alerts and acknowledgement. This document and these fixture tests do not satisfy the full operations acceptance package.
+Implemented checks cover escrow balances/liabilities, moderation deadlines and
+signing fences, and checkpointed feed lag. The sections below describe their exact
+scope. The historical provider credential is identified below without its value.
+The packaged monitor has a real local failover rehearsal; this does not establish
+independent production-provider agreement.
+
+Local packaged qualification covers authority handover, successor policy changes,
+and a fresh process reconciling the identical confirmed policy operation from its
+preserved journal. It verified the original receipt, zero additional submission
+attempts, and unchanged fee credit and policy. This does not qualify every interrupted
+or unknown-outcome case. An escrow observation cannot establish private fee solvency;
+do not collect users' balances or funding secrets centrally.
+
+Deployment acceptance separately requires named alert responders, notification
+and missing-run delivery tests, provider credential revocation/replacement, and
+approved production endpoints. Local fixtures cannot satisfy those responsibilities.
+
+## Private fee funding outage
+
+1. Preserve the wallet, fee recovery record, transaction journals, PXE data and daemon
+   state directory. Do not delete a pending operation to make another submission possible.
+2. Inspect the exact saved operation. For moderator flags use the inspection command
+   below; for authors use the appropriate Aztec or Ethereum recovery action. A timeout
+   does not establish failure. Keep unknown or pending outcomes unresolved.
+3. Restore endpoint access or fund the same configured private fee account through
+   the supported funding flow. Preserve the funding receipt/recovery record. Do not
+   switch to a public payer or substitute a different identity.
+4. Reconcile the original operation before submitting again. Only the existing journal
+   rules may authorize a replacement; retain the original nonce/details for Ethereum
+   recovery. For the daemon, restart with its original state directory and matching signer.
+5. Check canonical inclusion and resulting application state before clearing the incident.
+   A recovered fee balance does not extend an expired moderation deadline.
+
+The full local private-fee funding, deposit claim, withdrawal and refund journey
+passed in 354421 ms with 744928 KiB peak owned memory (evidence
+`execution/evidence/W01/application-ecdd9aac-44b7-4c35-8a9f-5f2b4fb9a923.json`).
+This is normal-path qualification, not a claim that every outage step has been rehearsed.
 
 ## Moderation health output
 
@@ -65,7 +96,7 @@ A `RETRYABLE_WORK_FAILED` warning reports failed evaluation/context work even wh
 
 ## Authority handover and saved moderator recovery
 
-The following are supported application commands, not evidence that the operational drill has been completed. Use disposable identities for the rehearsal. In a prepared operator package, replace the placeholders with already verified public configuration and private wallet file paths. Keep wallet files private (`0600`) and retain the existing daemon state directory, PXE state and transaction journals.
+The following application commands passed a local packaged handover/policy rehearsal with disposable identities and genuine private-fee proofs. Confirmed-policy reconciliation also passed after a process restart; unknown-outcome interruption remains a separate recovery case. Use disposable identities when repeating the rehearsal. In a prepared operator package, replace the placeholders with already verified public configuration and private wallet file paths. Keep wallet files private (`0600`) and retain the existing daemon state directory, PXE state and transaction journals.
 
 Stop the old daemon gracefully and preserve its state before handover. If any signing intent is unresolved, inspect and reconcile that exact saved operation first; rotating or deleting files does not establish that its transaction failed. Confirm that the successor account and its private fee funding are usable before transferring authority.
 
@@ -86,6 +117,8 @@ An intentional policy change uses the current censor and takes literal public te
   --censor-wallet "$CURRENT_CENSOR_WALLET" --private-fee-config "$FEE_CONFIG" \
   --moderation-policy "$PUBLIC_POLICY_TEXT"
 ```
+
+To reconcile that same saved policy operation after a restart, repeat its exact command with `--reconcile-previous`, preserving the wallet, PXE directory and transaction journal. The local rehearsal returned the original canonical receipt without an additional submission or fee debit. This is not permission to replace an unknown operation with a different policy.
 
 Confirm the resulting published policy/version and retain historical policies for previously published posts. A new policy does not authorize evaluating older posts under the wrong policy. Configuration changes are public actions; do not place credentials or private instructions in policy text.
 

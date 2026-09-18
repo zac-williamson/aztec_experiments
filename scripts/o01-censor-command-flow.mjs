@@ -10,6 +10,7 @@ import {getFeeJuiceBalance} from '@aztec/aztec.js/utils';
 import {EmbeddedWallet} from '@aztec/wallets/embedded';
 import {Barretenberg,BackendType} from '@aztec/bb.js';
 import {GasFees} from '@aztec/stdlib/gas';
+import {Fr} from '@aztec/foundation/curves/bn254';
 import {loadContractArtifact} from '@aztec/stdlib/abi';
 import {TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
 import {derivePrivateFeeInstance} from '../shared/private-fee-client.mjs';
@@ -20,14 +21,12 @@ import {restoreApplicationAuthor} from './w02-wallet-restore.mjs';
 import {applicationNativeProfile} from './c01-native-profile.mjs';
 import {openO01CommandRpc,runO01PackagedCommand} from './o01-censor-command-io.mjs';
 import {ROOT} from './toolchain.mjs';
-const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+import {withC01ClientMining} from './c01-client-mining.mjs';
 const n=x=>BigInt(x.toString());
-export async function runO01CensorCommands({node,preparation,instance,deploymentReceipt,deployment,directory,dateProvider,rpcUrl,mark,packageRoot}){
- const observation={passed:false,packagedCommands:true,networkProofs:false,readyProof:false,collateralDeposit:false,commands:[]};
+async function runCensorCommands({node,preparation,instance,deploymentReceipt,deployment,directory,rpcUrl,mark,packageRoot,mine,observation}){
  const stage=value=>{observation.stage=value;mark('o01-'+value);};
- const owned=path.join(directory,'o01-censor-commands');let wallet,rpc,stop=false,mining,miningError;
+ const owned=path.join(directory,'o01-censor-commands');let wallet,rpc;
  const client=deployment.l1Client;
- const mine=async()=>{await client.request({method:'evm_mine',params:[]});const block=await client.getBlock();dateProvider.setTime(Number(block.timestamp)*1000);await pause(200);};
  const closeWallet=async()=>{if(wallet){await wallet.stop();wallet=undefined;}};
  const openWallet=async(owner,proverEnabled=true)=>{wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled,autoSync:false,syncChainTip:'checkpointed',proverOrOptions:{backend:BackendType.NativeUnixSocket,...applicationNativeProfile(directory)}}});await wallet.createSchnorrInitializerlessAccount(owner.secret,owner.salt,owner.signingKey,'o01');await wallet.registerContract(instance,preparation.artifact);return wallet;};
  const query=async(name,...args)=>(await Contract.at(instance.address,preparation.artifact,wallet).methods[name](...args).simulate({from:NO_FROM})).result;
@@ -39,7 +38,12 @@ export async function runO01CensorCommands({node,preparation,instance,deployment
   const b=(await restoreApplicationAuthor((await generateSchnorrAccounts(1,'schnorr_initializerless'))[0])).author;
   assert(!a.address.equals(b.address));
   await openWallet(a);assert.equal(n(await query('get_censor')),n(a.address));
-  const configHash=(await query('get_config_hash')).toString(),minimum=n(await query('get_min_deposit')),maximum=n(await query('get_max_deposit'));
+  stage('verify-initialization');
+  const published=await node.getContract(instance.address);
+  assert.equal(published.initializationHash.toString(),instance.initializationHash.toString());
+  const discovered=(await Contract.at(instance.address,preparation.artifact,wallet).methods.get_deposit_ids(a.address,0).simulate({from:a.address})).result;
+  assert.deepEqual(discovered,Array(10).fill(0n));observation.nativeDepositDiscoveryPassed=true;
+  const configHash=new Fr(n(await query('get_config_hash'))).toString(),minimum=n(await query('get_min_deposit')),maximum=n(await query('get_max_deposit'));
   stage('portal');const portalArtifact=JSON.parse(await fs.readFile(path.join(ROOT,'billboard/portal/out/BillboardPortal.sol/BillboardPortal.json'))),metadata=JSON.parse(await fs.readFile(path.join(ROOT,'shared/portal-runtime.json')));
   assert.equal(createHash('sha256').update(Buffer.from(portalArtifact.bytecode.object.replace(/^0x/,''),'hex')).digest('hex'),metadata.creationBytecodeSha256);
   const rollup=deployment.l1ContractAddresses.rollupAddress.toString(),version=BigInt(deployment.rollupVersion);
@@ -63,9 +67,11 @@ export async function runO01CensorCommands({node,preparation,instance,deployment
    const files={wallet:{secretKey:owner.secret.toString(),salt:owner.salt.toString()},fee:{contractAddress:feeInstance.address.toString(),gasSettings},claim:Object.fromEntries(['amount','salt','leafIndex'].map(key=>[key,funded.claim[key].toString()]))};
    for(const [name,value]of Object.entries(files))await fs.writeFile(path.join(ownerDir,name+'.json'),JSON.stringify(value),{mode:0o600,flag:'wx'});
    const poolBefore=await getFeeJuiceBalance(feeInstance.address,node);await closeWallet();await Barretenberg.destroySingleton();
-   const beforeHashes=new Set(rpc.captures.keys());stop=false;miningError=undefined;mining=(async()=>{try{while(!stop)await mine();}catch{miningError=true;}})();
+   const beforeHashes=new Set(rpc.captures.keys());
    const action=index===0?'transfer-censor':'set-moderation-policy';stage(index===0?'command-A':'command-B');
-   let result;try{result=await runO01PackagedCommand({packageRoot:commandPackage,directory:ownerDir,timeoutMs:180000,args:['author',action,'--censor-wallet',path.join(ownerDir,'wallet.json'),'--node-url',rpc.url,'--eth-rpc',rpcUrl,'--portal-address',portal,'--private-fee-config',path.join(ownerDir,'fee.json'),'--private-fee-claim-file',path.join(ownerDir,'claim.json'),'--pxe-dir','o01_'+index+'_',...(index===0?['--new-censor',b.address.toString()]:['--moderation-policy',policy])]});}finally{stop=true;await mining;mining=undefined;}observation.commandResults??=[];observation.commandResults.push({action,...result});assert(!miningError);assert.equal(result.code,0);
+   const command={packageRoot:commandPackage,directory:ownerDir,timeoutMs:180000,args:['author',action,'--censor-wallet',path.join(ownerDir,'wallet.json'),'--node-url',rpc.url,'--eth-rpc',rpcUrl,'--portal-address',portal,'--private-fee-config',path.join(ownerDir,'fee.json'),'--private-fee-claim-file',path.join(ownerDir,'claim.json'),'--pxe-dir','o01_'+index+'_',...(index===0?['--new-censor',b.address.toString()]:['--moderation-policy',policy])]};
+   const result=await runO01PackagedCommand(command);observation.commandResults??=[];observation.commandResults.push({action,...result});
+   assert.equal(result.code,0);
    stage(index===0?'verify-A':'verify-B');const hashes=[...rpc.captures.keys()].filter(hash=>!beforeHashes.has(hash));assert.equal(hashes.length,1);const tx=rpc.captures.get(hashes[0]);assert(!tx.chonkProof.isEmpty());assert.equal(tx.data.feePayer.toString(),feeInstance.address.toString());
    const receipt=await node.getTxReceipt(tx.getTxHash());assert([TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(receipt.status));assert.equal(receipt.executionResult,TxExecutionResult.SUCCESS);assert.equal(receipt.txHash.toString(),hashes[0]);assert.equal((await node.getBlock(receipt.blockNumber)).hash.toString(),receipt.blockHash.toString());
    const effect=await node.getTxEffect(tx.getTxHash());assert.equal(effect.data.txHash.toString(),hashes[0]);assert.equal(effect.l2BlockHash.toString(),receipt.blockHash.toString());
@@ -77,14 +83,35 @@ export async function runO01CensorCommands({node,preparation,instance,deployment
    if(index===0)assert.equal(n(await query('get_policy_version')),oldPolicy);
    else{const [fields,length]=await query('get_moderation_policy');assert.equal(Number(length),Buffer.byteLength(policy));const packed=Buffer.concat(fields.map(field=>Buffer.from(n(field).toString(16).padStart(62,'0'),'hex')));assert.equal(packed.subarray(0,Number(length)).toString(),policy);assert(packed.subarray(Number(length)).every(byte=>byte===0));assert.equal(n(await query('get_policy_version')),expectedVersion);}
    observation.commands.push({action,txHash:hashes[0],canonical:true,sharedPayer:true,maximumFee:String(maxFee),privateCredit:String(credit),protocolFee:String(receipt.transactionFee),elapsedMs:result.elapsedMs});await closeWallet();
+   if(index===1){
+    const submissions=rpc.sendAttempts,pool=await getFeeJuiceBalance(feeInstance.address,node);
+    await Barretenberg.destroySingleton();stage('restart-successor');
+    const recovered=await runO01PackagedCommand({...command,args:[...command.args,'--reconcile-previous'],timeoutMs:30000});
+    observation.recovery={passed:false,...recovered};
+    assert.equal(recovered.code,0);assert.deepEqual(recovered.txHashes,[hashes[0]]);
+    assert.equal(rpc.sendAttempts,submissions);assert.equal(await getFeeJuiceBalance(feeInstance.address,node),pool);
+    await openWallet(owner,false);await wallet.registerContract(feeInstance,feeArtifact);await wallet.pxe.sync();
+    const balance=n((await Contract.at(feeInstance.address,feeArtifact,wallet).methods.balance_of(owner.address).simulate({from:owner.address})).result);
+    assert.equal(balance,credit);assert.equal(n(await query('get_policy_version')),expectedVersion);
+    assert.equal(n(await query('get_censor')),n(b.address));await closeWallet();
+    Object.assign(observation.recovery,{passed:true,originalReceipt:true,additionalSubmissions:0,privateBalanceUnchanged:true,policyUnchanged:true});
+   }
   }
   assert.equal(await read('totalDeposited'),0n);assert.equal(await client.getBalance({address:portal}),0n);assert.equal(await read('depositsEnabled'),false);
   Object.assign(observation,{passed:true,incumbentPublicBalanceBeforeCommands:String(publicBefore[0]),successorPublicBalanceZero:true,publicBalancesUnchanged:true,policyVersion:String(expectedVersion),portalDisabled:true});return observation;
- }catch(cause){observation.failure={errorClass:['Error','AssertionError','TypeError','RangeError','SyntaxError'].includes(cause?.name)?cause.name:'Error',frames:String(cause?.stack??'').split('\n').filter(line=>line.trimStart().startsWith('at ')&&/o01-censor-command-flow\.mjs:\d+:\d+\)?$/.test(line.trim())).map(line=>line.match(/o01-censor-command-flow\.mjs:\d+:\d+/)[0]).slice(0,3)};const error=Error('O01_CENSOR_COMMAND_FLOW_FAILED');error.censorCommandObservation=observation;throw error;}
+ }catch(cause){observation.failure={errorClass:['Error','AssertionError','TypeError','RangeError','SyntaxError'].includes(cause?.name)?cause.name:'Error',frames:String(cause?.stack??'').split('\n').filter(line=>line.trimStart().startsWith('at ')&&/(?:o01-censor-command-flow|w01-private-funding)\.mjs:\d+:\d+\)?$/.test(line.trim())).map(line=>line.match(/(?:o01-censor-command-flow|w01-private-funding)\.mjs:\d+:\d+/)[0]).slice(0,3)};const error=Error('O01_CENSOR_COMMAND_FLOW_FAILED');error.censorCommandObservation=observation;throw error;}
  finally{
-  stop=true;const failures=[];
-  for(const [name,cleanup]of [['mining',async()=>{if(mining)await mining;}],['wallet',closeWallet],['rpc',async()=>{await rpc?.close();}],['directory',()=>fs.rm(owned,{recursive:true,force:true})]])try{await cleanup();}catch{failures.push(name);}
+  const failures=[];
+  for(const [name,cleanup]of [['wallet',closeWallet],['rpc',async()=>{await rpc?.close();}],['directory',()=>fs.rm(owned,{recursive:true,force:true})]])try{await cleanup();}catch{failures.push(name);}
   observation.cleanupComplete=failures.length===0;
   if(failures.length){observation.passed=false;observation.cleanupFailures=failures;const error=Error('O01_CENSOR_COMMAND_CLEANUP_FAILED');error.censorCommandObservation=observation;throw error;}
  }
+}
+
+export async function runO01CensorCommands(input) {
+ const observation={passed:false,packagedCommands:true,networkProofs:false,readyProof:false,collateralDeposit:false,commands:[]};
+ try {
+  return await withC01ClientMining({rpcUrl:input.rpcUrl,dateProvider:input.dateProvider,observation},
+   mine=>runCensorCommands({...input,mine,observation}));
+ }catch(error){observation.passed=false;error.censorCommandObservation=observation;throw error;}
 }

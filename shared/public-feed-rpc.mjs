@@ -14,7 +14,7 @@ export function publicRpc(url,{fetchImpl=globalThis.fetch,timeoutMs=20000,maxByt
       const result=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
       if(result.jsonrpc!=='2.0'||result.id!==requestId||result.error||!Object.hasOwn(result,'result'))throw Error();return result.result;
     } catch {throw Object.assign(new Error('Public RPC request failed. Cached data was preserved.'),{code:'BB_PUBLIC_FEED_UNAVAILABLE'});}
-    finally {clearTimeout(timer);}
+    finally {clearTimeout(timer);controller.abort();}
   };
 }
 export function publicNode(url,options){const rpc=publicRpc(url,options);return Object.freeze({

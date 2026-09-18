@@ -36,7 +36,7 @@ explicitly scheduled; do not fabricate elapsed time.
 
 1. Validate the graph; check git state and the latest checkpoint.
 2. Resume active work and inspect ready independent packages. Maintain at most
-   three explicit execution lanes with disjoint write paths. Prioritize removing
+   three explicit investigation lanes; root remains the sole source writer. Prioritize removing
    delivery blockers; fixed priority is a tie-breaker, not a reason to repeat a
    stalled experiment. Keep all expensive builds/proofs/browser runs serialized.
 3. Confirm prerequisite outputs and their interfaces against the current source.
@@ -112,7 +112,7 @@ continue independent work. A new hypothesis must cite what was learned, not mere
 reset the counter. `next` flags exhausted investigations for reassessment.
 
 Only root integrates shared files and runs expensive checks. Delegate bounded
-implementation or review with explicit paths, deliverable and acceptance checks;
+investigation or review with explicit scope, findings or proposed patches, and acceptance checks;
 prefer two useful lanes to three busy agents. Freeze the input files of each
 active heavy test, not the entire unrelated project. Change-specific checks run
 after integration; broad repeats require changed inputs or an unresolved concern.
@@ -126,3 +126,12 @@ The three delivery lanes are application completion, operational readiness and
 release preparation. Release-only requirements remain enforceable but do not
 block independent engineering. See policy-provenance.md for user requirements
 versus proposed qualification defaults. No new orchestration service is needed.
+
+## Integration ownership
+
+Root alone edits this shared checkout. Subagents investigate and review read-only,
+returning findings or proposed patches for root to integrate. This is a collaboration
+rule, not a filesystem security boundary. The graph tracks work and evidence, not
+file leases; application tests do not depend on graph state. Every harness change
+receives independent structural review. Diagnose and fix failures autonomously under
+the user's revised instruction, preserving failed-run evidence.

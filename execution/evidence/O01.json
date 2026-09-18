@@ -1,0 +1,119 @@
+{
+  "task_id": "O01",
+  "outcome": "pass",
+  "recorded_at": "2026-09-18T17:47:51.697904+00:00",
+  "source_fingerprint": "36519cac599e6b70796e2458d8e19e5cdf5fd675793dc2d72621fa7172913826",
+  "source_inventory": "evidence/O01/source-046.json",
+  "artifacts": [
+    {
+      "path": "evidence/O01/source-046.json",
+      "sha256": "2d7426af2b32b5735e38e0a22460fedc5c01682688a2ce2f5c5da3e7254e16a3"
+    },
+    {
+      "path": "evidence/O01/qualification-046.md",
+      "sha256": "845a3a0f575d40d503b3a41773ce30969209ee9ccf3fc43a57e81d049a26bbf9"
+    },
+    {
+      "path": "evidence/O01/acceptance-review-046.md",
+      "sha256": "90addb4e32c62ed0b0e4d57b9d9c2c8d8cbd14aba7310acfb817369bb1a21955"
+    },
+    {
+      "path": "evidence/O01/application-9a786967-5f22-4ddd-a30e-a2060bbea042.json",
+      "sha256": "93f4a8fdda8b01d940b6bdc54858135c75fbfafcbe95f7008b88ea448e408881"
+    },
+    {
+      "path": "evidence/O01/monitor-failover-046.json",
+      "sha256": "551f5beaac1ac9b4c0967c5712f275b253cb4a1c09261725fe2763b836893fef"
+    },
+    {
+      "path": "evidence/O01/package-smoke-046.json",
+      "sha256": "15ea00c5acbbcb3c55084b0c8a65bda310cb79853e67bcf13cf17d38905ccc46"
+    },
+    {
+      "path": "evidence/O01/operations-checks-046.log",
+      "sha256": "054249cfeeeb78fe666e45e87a6b95abde2adc9a3a9a0939029acbc4be71f16b"
+    },
+    {
+      "path": "evidence/O01/public-rpc-before-046.log",
+      "sha256": "d1fd73c93c1db9614180bd13fa385f042978906fadb698cbeed558acc8502568"
+    },
+    {
+      "path": "evidence/O01/public-rpc-after-046.log",
+      "sha256": "6d4af3ba2ac667a95f264ba8dcff621c975b2a707b1e593bf7dd675df0b3acd8"
+    },
+    {
+      "path": "evidence/O01/recovery-io-045.log",
+      "sha256": "126aba67d3c85856b68bffe50061b6e9be3f0a74aa72a148f676e91912b2e3e8"
+    },
+    {
+      "path": "evidence/O01/harness-validation-045.log",
+      "sha256": "bbe2c659b8447e4069c982810995780626653baad35ac7a45173d215958c6721"
+    },
+    {
+      "path": "evidence/O01/rpc-batching-fix-044.md",
+      "sha256": "fb303191a8b68cfb41b862e2c6349201156f3adba92c6046efce38cc2295cbcd"
+    },
+    {
+      "path": "evidence/O01/feed-request-cancellation-046.md",
+      "sha256": "b79ec9c8b38abeb99973c8ed42e29711c9cd2b123e06c626f142780ee9011ffe"
+    },
+    {
+      "path": "evidence/O01/public-rpc-cancellation-046.md",
+      "sha256": "578acd1dd08174c3d9e63ac1cb998748dbb4b39dffbff3e19e904a4c751dafd9"
+    },
+    {
+      "path": "evidence/O01/credential-provenance-007.md",
+      "sha256": "1280da0b5b6582a85c809d8d4c4eb815c57601a53faf8cd8e9f5cb4ee573c85d"
+    }
+  ],
+  "criteria": [
+    {
+      "id": "O01-A01",
+      "result": "pass",
+      "summary": "Current injected alerts distinguish failures with fixed actionable classifications; actual request cancellation verified; no private data in observations.",
+      "artifacts": [
+        "evidence/O01/operations-checks-046.log",
+        "evidence/O01/public-rpc-after-046.log",
+        "evidence/O01/recovery-io-045.log",
+        "evidence/O01/qualification-046.md"
+      ]
+    },
+    {
+      "id": "O01-A02",
+      "result": "pass",
+      "summary": "Balanced, deficit and forced-ETH surplus cases checked; fresh packaged monitor reads genuine nonzero portal liabilities/balance, with unavailable endpoint and explicit alternate.",
+      "artifacts": [
+        "evidence/O01/operations-checks-046.log",
+        "evidence/O01/monitor-failover-046.json",
+        "evidence/O01/qualification-046.md"
+      ]
+    },
+    {
+      "id": "O01-A03",
+      "result": "pass",
+      "summary": "Packaged handover and successor policy proofs canonical; fresh successor process reconciles preserved operation with original receipt, zero send attempts and unchanged fees/policy. Runbooks state rollback/exit/unknown-outcome limitations; deployment prerequisites retained.",
+      "artifacts": [
+        "evidence/O01/application-9a786967-5f22-4ddd-a30e-a2060bbea042.json",
+        "evidence/O01/package-smoke-046.json",
+        "evidence/O01/qualification-046.md"
+      ]
+    },
+    {
+      "id": "O01-A04",
+      "result": "pass",
+      "summary": "Historical exposed provider credential identified and source removal disposition recorded without reproducing its value; external revocation/replacement/restriction remain O02.",
+      "artifacts": [
+        "evidence/O01/credential-provenance-007.md",
+        "evidence/O01/qualification-046.md"
+      ]
+    }
+  ],
+  "review": {
+    "kind": "delegated-internal-review",
+    "reviewer": "scheduler_improvements; root integration",
+    "summary": "Independent internal acceptance and structural review; no blocker. Production operator acceptance and outside audit remain separate.",
+    "artifacts": [
+      "evidence/O01/acceptance-review-046.md"
+    ]
+  }
+}

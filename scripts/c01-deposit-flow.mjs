@@ -24,7 +24,6 @@ import {proveApplicationAction} from './prove-application-action.mjs';
 const BOARD='apps/src/billboard/billboard_artifact.json';
 const PORTAL='billboard/portal/out/BillboardPortal.sol/BillboardPortal.json';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
-const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const integer=value=>BigInt(value.toString());
 const included=receipt=>[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(receipt.status)
   &&receipt.executionResult===TxExecutionResult.SUCCESS&&receipt.blockNumber!=null&&receipt.blockHash!=null;
@@ -46,17 +45,17 @@ async function artifacts(preparation,ready){
  * and includes private note/identity/secret material for a later no-post withdrawal.
  * Owns one ephemeral PXE wallet; caller owns sequencer/node/prover shutdown.
  */
-export async function depositAndClaimC01({node,preparation,instance,l1Client,ready,settlement,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,privateFeeAction,qualifyWrongOrigin=false}){
+export async function depositAndClaimC01({node,preparation,instance,l1Client,ready,settlement,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,privateFeeAction,payerMode,qualifyWrongOrigin=false}){
+  assert(['private','genesis'].includes(payerMode),'Explicit fixture payer mode required');
+  if(payerMode==='private')assert.equal(typeof privateFeeAction,'function');
+  else assert.equal(privateFeeAction,undefined,'Genesis fixture must not receive private fee route');
   let stage='preflight',wallet,sequencer,previousSequencerConfig;
   const observation={passed:false,scope:'local real deposit and genuine private claim with ordinary checkpoint inclusion',
     syntheticMessages:false,syntheticProofs:false,claimEpochProofAccepted:false};
   const mark=name=>{stage=name;reportStage?.('claim:'+name);process.stdout.write(`C01_DEPOSIT_STAGE ${name}\n`);};
-  const mine=mineL1??(async()=>{
-    await l1Client.request({method:'evm_mine',params:[]});
-    const block=await l1Client.getBlock();
-    if(Number(block.timestamp)>dateProvider.nowInSeconds())dateProvider.setTime(Number(block.timestamp)*1000);
-    await pause(1000);
-  });
+  assert.equal(typeof mineL1,'function','Explicit fixture miner required');
+  assert(authorAccount?.address,'Explicit fixture author required');
+  const mine=mineL1;
   try{
     assertNodeVersion();assertAztecPackages();assert(settlement.passed&&settlement.activation?.depositsEnabled);
     assert(ready.passed&&ready.readyEmitted);assert(path.isAbsolute(directory));
@@ -81,7 +80,7 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     const boundaryModule=qualifyWrongOrigin?await import('./t02-claim-boundary.mjs'):undefined;
     const probe=boundaryModule?.createT02InboxProbeNode(node);
     wallet=await EmbeddedWallet.create(probe?.node??node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
-    const account=authorAccount??preparation.account;
+    const account=authorAccount;
     const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'c01-disposable');
     assert(manager.address.equals(account.address));await wallet.registerContract(instance,checked.board);await wallet.pxe.sync();
     const board=Contract.at(instance.address,checked.board,wallet);
@@ -156,11 +155,11 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
       observation.boundary=await boundaryModule.qualifyT02ClaimBoundary({wallet,board,node,probe,owner:account.address,claimArgs,scope,content,secret,secretHash,message,anchor,witness,depositChainId:chain,l1Client,reportStage:mark});
       assert(observation.boundary.passed);
     }
-    const {request,proven,tx}=await proveApplicationAction({wallet,owner:account.address,
+    const {request,proven,tx}=await proveApplicationAction({payerMode,wallet,owner:account.address,
       interaction:board.methods.claim_deposit(...claimArgs),
-      privateFeeAction:privateFeeAction?context=>privateFeeAction({...context,kind:'claim',args:claimArgs}):undefined});
+      privateFeeAction:payerMode==='private'?context=>privateFeeAction({...context,kind:'claim',args:claimArgs}):undefined});
     observation.feePayer=tx.data.feePayer.toString();
-    observation.privateFees=!!privateFeeAction;
+    observation.privateFees=payerMode==='private';
     assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer(),'Claim changed selected anchor');
     await canonicalDeposit();assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),canonicalAnchor.hash.toString());
     assert.equal((await node.isValidTx(tx)).result,'valid');

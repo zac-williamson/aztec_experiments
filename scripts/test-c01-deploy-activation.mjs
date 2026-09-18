@@ -102,3 +102,25 @@ test('a stalled Ready RPC has a bounded unknown outcome without activation',asyn
   }),{code:'BB_RECOVERY_UNKNOWN'});
   assert.equal(sent,false);
 });
+
+const pinnedCreate2Runtime='0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3';
+for (const [label, code, accepted] of [['missing','0x',false],['unrecognized','0x6000',false],['pinned',pinnedCreate2Runtime,true]]) {
+  test(`deployment ${label} CREATE2 proxy is checked before wallet or proving work`, async () => {
+    const calls=[], context=vm.createContext({setTimeout,clearTimeout});
+    vm.runInContext(source,context,{filename:'deploy/engine.js'});
+    const stop=Error('PREFLIGHT_COMPLETE');
+    class Provider {
+      async getCode(address) {calls.push('proxy');assert.equal(address.toLowerCase(),'0x4e59b44847b379578588920ca78fbf26c0b4956c');return code;}
+      destroy(){calls.push('destroy');}
+    }
+    const aztec={
+      verifyDeploymentInputs(){return {manifest:{}};},createAztecNodeClient(){return {};},
+      async preflightDeploymentNetwork(){calls.push('network');return {};},
+      async boundedTransactionRead(read){return read();},
+      loadContractArtifact(){calls.push('artifact');throw stop;},
+    };
+    const env={aztec,ethers:{JsonRpcProvider:Provider},pause(){calls.push('wallet');throw Error('Unexpected wallet access');},initCRS(){calls.push('prover');throw Error('Unexpected proving setup');}};
+    await assert.rejects(context.runDeploy(env,{}),accepted?error=>error===stop:/Required CREATE2 proxy runtime is missing or unsupported/);
+    assert.deepEqual(calls,accepted?['network','proxy','artifact','destroy']:['network','proxy','destroy']);
+  });
+}

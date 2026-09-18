@@ -1,5 +1,5 @@
 // Shared browser/Node CRS loading. The manifest comes from the source build,
-// never from a cache or CDN. Every local and remote byte is checked before use.
+// never from a cache or CDN. Every complete local asset is checked before use.
 (function (root) {
   'use strict';
   const expected = {
@@ -46,7 +46,7 @@
   async function readResponse(response, file) {
     if (!response.ok || (response.status !== 200 && response.status !== 206)) {
       // A rejected response may still have a streaming body. Release it before
-      // the caller starts its next verified local/CDN fallback.
+      // the caller receives the failure.
       await response.body?.cancel().catch(() => {});
       throw new Error('CRS HTTP ' + response.status);
     }
@@ -75,45 +75,21 @@
     }
   }
 
-  async function loadVerified({ manifest, loadLocal, sha256, fetch: fetchFn = root.fetch.bind(root), log = () => {} }) {
+  async function loadVerified({ manifest, loadLocal, sha256, log = () => {} }) {
     const { files, derivedG1 } = validateManifest(manifest);
     const loaded = {};
-    async function verify(data, file) {
+    // Runtime setup has one source: the deployment's verified local assets.
+    // Do not switch representation or destination after a missing/corrupt file.
+    for (const file of [derivedG1, files.get('g2.dat'), files.get('grumpkin_g1.dat')]) {
+      const data = await loadLocal(file);
       if (!ArrayBuffer.isView(data) || data.BYTES_PER_ELEMENT !== 1 || data.byteLength !== file.bytes) {
         throw new Error('CRS size mismatch: ' + file.name);
       }
       if (await sha256(data) !== file.sha256) throw new Error('CRS SHA-256 mismatch: ' + file.name);
-      return data;
+      loaded[file.name] = data;
+      log('Verified local ' + file.name, 'info');
     }
-    let selectedG1 = files.get('g1.dat');
-    try {
-      loaded[derivedG1.name] = await verify(await loadLocal(derivedG1), derivedG1);
-      selectedG1 = derivedG1;
-      log('Verified local ' + derivedG1.name, 'info');
-    } catch (error) {
-      log('Local derived G1 unavailable or invalid (' + error.message + '); using verified compressed data.', 'warn');
-    }
-    for (const [name, file] of files) {
-      if (name === 'g1.dat' && selectedG1 === derivedG1) continue;
-      try {
-        loaded[name] = await verify(await loadLocal(file), file);
-        log('Verified local ' + name, 'info');
-        continue;
-      } catch (error) {
-        log('Local ' + name + ' unavailable or invalid (' + error.message + '); trying pinned CDN data.', 'warn');
-      }
-      let lastError;
-      for (const url of [file.url, file.fallbackUrl]) {
-        try {
-          const response = await fetchFn(url, { headers: { Range: 'bytes=0-' + (file.bytes - 1) }, signal: AbortSignal.timeout(120000) });
-          loaded[name] = await verify(await readResponse(response, file), file);
-          log('Verified CDN ' + name, 'info');
-          break;
-        } catch (error) { lastError = error; }
-      }
-      if (!loaded[name]) throw new Error('No verified CRS data for ' + name + ': ' + lastError?.message);
-    }
-    return { files, data: loaded, selectedG1 };
+    return { files, data: loaded, selectedG1: derivedG1 };
   }
 
   async function initialize(bb, options) {
@@ -124,12 +100,12 @@
     if(numPoints>selectedG1.numPoints)throw new Error('BN254 initialization exceeds verified source capacity');
     // A prefix is usable only AFTER the complete pinned source has passed its
     // size/hash verification. Match the exact count and wire format for BB.
-    const bytesPerPoint=selectedG1.format==='bn254-g1-uncompressed-64-byte'?64:32;
+    const bytesPerPoint=64;
     const pointsBuf=numPoints===selectedG1.numPoints?data[selectedG1.name]:data[selectedG1.name].subarray(0,numPoints*bytesPerPoint);
     const bn254 = await bb.srsInitSrs({ pointsBuf, numPoints, g2Point: data['g2.dat'] });
     // Pinned v5 returns decompressed points only for compressed input. Derived
     // input bypasses decompression, after our mandatory whole-content hash check.
-    const responseBytes = selectedG1.format === 'bn254-g1-uncompressed-64-byte' ? 0 : numPoints * 64;
+    const responseBytes = 0;
     if (!ArrayBuffer.isView(bn254?.pointsBuf) || bn254.pointsBuf.BYTES_PER_ELEMENT !== 1 || bn254.pointsBuf.byteLength !== responseBytes) {
       throw new Error('Unexpected BN254 SRS initialization response');
     }

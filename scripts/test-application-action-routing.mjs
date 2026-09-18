@@ -21,18 +21,32 @@ function fixture(payer=privatePayer) {
   return {seen,wallet,interaction,prepared};
 }
 test('private fee proof preserves payment options, gas and owner context',async()=>{
-  const f=fixture();await proveApplicationAction({wallet:f.wallet,owner,privateFeeAction:async()=>f.prepared});
+  const f=fixture();await proveApplicationAction({payerMode:'private',wallet:f.wallet,owner,privateFeeAction:async()=>f.prepared});
   assert.equal(f.seen.request.from,owner);assert.deepEqual(f.seen.request.payload.auth,f.prepared.options.authWitnesses);
   assert.deepEqual(f.seen.fee.gasSettings,{bounded:true});assert.deepEqual(f.seen.proofOptions.scopes,[owner]);
   assert.equal(f.seen.proofOptions.senderForTags,owner);
 });
 test('actual proven author payer rejects despite privatePayer preparation',async()=>{
-  const f=fixture(owner);await assert.rejects(proveApplicationAction({wallet:f.wallet,owner,privateFeeAction:async()=>f.prepared}),/Actual proven fee payer mismatch/);
+  const f=fixture(owner);await assert.rejects(proveApplicationAction({payerMode:'private',wallet:f.wallet,owner,privateFeeAction:async()=>f.prepared}),/Actual proven fee payer mismatch/);
 });
 test('private fee route rejects a wrong account or exposed author payer',async()=>{
   for(const change of [p=>{p.options.from=NO_FROM;},p=>{p.expectedFeePayer=owner;}]){
     const f=fixture();change(f.prepared);
-    await assert.rejects(proveApplicationAction({wallet:f.wallet,owner,privateFeeAction:async()=>f.prepared}));
+    await assert.rejects(proveApplicationAction({payerMode:'private',wallet:f.wallet,owner,privateFeeAction:async()=>f.prepared}));
     assert.equal(f.seen.request,undefined);
   }
+});
+
+test('payer mode is required and never inferred from an available callback',async()=>{
+  for(const options of [{}, {privateFeeAction:async()=>{}}, {payerMode:'private'},
+    {payerMode:'genesis',privateFeeAction:async()=>{}}, {payerMode:'unknown'}]){
+    const f=fixture();
+    await assert.rejects(proveApplicationAction({wallet:f.wallet,owner,interaction:f.interaction,...options}));
+    assert.equal(f.seen.request,undefined);
+  }
+});
+test('explicit genesis fixture uses only the account payer',async()=>{
+  const f=fixture(owner);
+  await proveApplicationAction({payerMode:'genesis',wallet:f.wallet,owner,interaction:f.interaction});
+  assert.equal(f.seen.request.from,owner);
 });

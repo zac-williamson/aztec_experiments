@@ -290,6 +290,8 @@
     const preflightProvider=new ethers.JsonRpcProvider(config.ethRpcUrl);
     ownedProviders.add(preflightProvider);
     const {nodeInfo,l1Contracts}=await a.preflightDeploymentNetwork(manifest,{node:rawNode,provider:preflightProvider,ethers});
+    const proxyCode=await a.boundedTransactionRead(()=>preflightProvider.getCode(CREATE2_PROXY),20000);
+    if(typeof proxyCode!=='string'||proxyCode.toLowerCase()!=='0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3')throw new Error('Required CREATE2 proxy runtime is missing or unsupported');
     const expectedClass=await a.getContractClassFromArtifact(a.loadContractArtifact(artifact));
     if(expectedClass.id.toString().toLowerCase()!==manifest.artifacts.boardClassId)throw new Error('Deployment board class mismatch');
 
@@ -602,15 +604,10 @@
     if (await a.boundedTransactionRead(()=>provider.getCode(predicted),20000) === '0x') {
       if(staleDeployment?.startsWith('bind-portal:'))throw unresolved();
       if (portalAlreadySet) throw new Error('The bound portal has no code; preserve deployment recovery records.');
-      const proxyCode=await a.boundedTransactionRead(()=>provider.getCode(CREATE2_PROXY),20000);
-      const pinnedProxy='0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3';
-      if(proxyCode!=='0x'&&proxyCode.toLowerCase()!==pinnedProxy)throw new Error('Unsupported CREATE2 proxy runtime');
-      const hasProxy=proxyCode!=='0x';
-      const result = await ethereumDeployment.send(nonce => {
-        const portalAddress = hasProxy ? predicted.toLowerCase() : ethers.getCreateAddress({ from: ethereumScope.depositor, nonce }).toLowerCase();
-        return { data: hasProxy ? ethers.concat([ethers.getBytes(l2AddrHex), creation]) : creation, value: '0',
-          expected: { kind: hasProxy ? 'create2-portal' : 'create-portal', portal: portalAddress } };
-      });
+      const result = await ethereumDeployment.send(() => ({
+        data: ethers.concat([ethers.getBytes(l2AddrHex), creation]), value: '0',
+        expected: { kind: 'create2-portal', portal: predicted.toLowerCase() },
+      }));
       recoveredCreation = result;
       predicted = result.request.expected.portal;
       log('  Portal deployment confirmed: ' + result.txHash, 'success');

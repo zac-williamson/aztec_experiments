@@ -16,15 +16,8 @@ export function parseProcessSnapshot(stdout){
   return members;
 }
 export async function readProcessSnapshot(read=()=>execFileAsync('/bin/ps',['-axo','pid=,ppid=,pgid=,rss=,lstart=,stat='],{timeout:2000,maxBuffer:4*1024*1024,env:{PATH:'/usr/bin:/bin',LC_ALL:'C'}})){
-  // A process can disappear while ps reads its counters. Retry one inconsistent
-  // snapshot or interrupted reader in full; never omit a malformed row or invent resource data.
-  for(let attempt=0;attempt<2;attempt++){
-    try { const {stdout}=await read();return parseProcessSnapshot(stdout); }
-    catch(error){
-      const transient=error.code==='BB_PROCESS_SNAPSHOT_FORMAT'||error.killed===true||error.signal==='SIGPIPE';
-      if(!transient||attempt===1)throw error;
-    }
-  }
+  const {stdout}=await read();
+  return parseProcessSnapshot(stdout);
 }
 function signalOwned(id,signal){
   try{process.kill(id,signal);}catch(error){if(!['ESRCH','EPERM'].includes(error.code))throw error;}
@@ -66,23 +59,19 @@ export class OwnedBuildTree {
     for(const row of this.members)signalOwned(row.pid,signal);
   }
   async cleanup(){
-    // Always terminate remembered children even if the diagnostic read fails
-    // after freezing them. Otherwise the parent can wait forever on stopped work.
-    this.signalRemembered('SIGSTOP');
-    try{
-      for(let i=0;i<3;i++){
-        const {members}=await this.sample();if(members.length===0)return;
-        this.signalRemembered('SIGSTOP');
+    // One shutdown path. A failed process snapshot is an error, never retried.
+    try {
+      await this.sample();
+      this.signalRemembered('SIGKILL');
+      const end=Date.now()+5000;
+      while(Date.now()<end){
+        if((await this.sample()).members.length===0)return;
+        await sleep(100);
       }
-    }catch{/* Fresh verification below is still required before claiming cleanup. */}
-    finally{this.signalRemembered('SIGKILL');}
-    const end=Date.now()+5000;let lastError;
-    while(Date.now()<end){
-      try{const {members}=await this.sample();if(members.length===0)return;lastError=null;}
-      catch(error){lastError=error;}
-      this.signalRemembered('SIGKILL');await sleep(100);
+      throw Object.assign(new Error('Owned descendants did not exit'),{code:'HARNESS_CLEANUP_TIMEOUT'});
+    }catch(error){
+      this.signalRemembered('SIGKILL');
+      throw error;
     }
-    if(lastError)throw lastError;
-    assert.equal((await this.sample()).members.length,0,'Owned build descendants remain');
   }
 }

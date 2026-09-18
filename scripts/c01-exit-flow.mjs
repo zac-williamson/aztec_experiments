@@ -21,7 +21,6 @@ import {qualifyDummyNoteAttribution} from './w03-note-attribution.mjs';
 const BOARD='apps/src/billboard/billboard_artifact.json';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const integer=value=>BigInt(value.toString());
-const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const included=receipt=>[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(receipt.status)
   &&receipt.executionResult===TxExecutionResult.SUCCESS&&receipt.blockNumber!=null&&receipt.blockHash!=null;
 async function artifact(preparation){
@@ -55,20 +54,20 @@ export function selectExitState(claim,exitState) {
 /** Same disposable in-memory identity as the preceding claim. Only enumerable fields may be logged.
  * The parent owns the native proof deadline/resource supervisor and node/prover shutdown.
  */
-export async function proveAndIncludeC01Exit({node,preparation,instance,claimResult,l1Client,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,privateFeeAction,discardUnsubmittedFee,exitState}){
+export async function proveAndIncludeC01Exit({node,preparation,instance,claimResult,l1Client,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,privateFeeAction,discardUnsubmittedFee,exitState,noteAttribution}){
+  assert.equal(typeof noteAttribution,'boolean');
+  assert.equal(typeof privateFeeAction,'function');
   let wallet,sequencer,previousConfig,stage='preflight';
   const observation={passed:false,scope:'genuine no-post L2 withdrawal and ordinary checkpoint inclusion',
     syntheticProofs:false,syntheticSettlement:false,exitEpochProofAccepted:false,l1Withdrawn:false};
   const mark=name=>{stage=name;reportStage?.('exit:'+name);process.stdout.write(`C01_EXIT_STAGE ${name}\n`);};
-  const mine=mineL1??(async()=>{
-    await l1Client.request({method:'evm_mine',params:[]});const block=await l1Client.getBlock();
-    if(Number(block.timestamp)>dateProvider.nowInSeconds())dateProvider.setTime(Number(block.timestamp)*1000);
-    await sleep(1000);
-  });
+  assert.equal(typeof mineL1,'function','Explicit fixture miner required');
+  assert(authorAccount?.address,'Explicit fixture author required');
+  const mine=mineL1;
   try{
     assertNodeVersion();assertAztecPackages();assert(claimResult.passed&&claimResult.exactDeliveredNoteChecked);
     const claim=claimResult.claim;assert(claim&&claim.instance.address.equals(instance.address));
-    assert(!(exitState!==undefined&&process.env.W03_NOTE_ATTRIBUTION==='true'),'Explicit post-exit state and W03 attribution are separate profiles');
+    assert(!(exitState!==undefined&&noteAttribution),'Explicit post-exit state and W03 attribution are separate profiles');
     const selected=selectExitState(claim,exitState),expectedFields=selected.logicalFields,nextAllowedTime=selected.nextAllowedTime;
     const selectedTxHash=TxHash.fromString(selected.txHash);
     if(exitState!==undefined)observation.scope='genuine screened-post L2 withdrawal and ordinary checkpoint inclusion';
@@ -89,7 +88,7 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
     for(const key of ['backend','bbPath','threads'])assert.equal(Barretenberg.getSingleton().options[key],native[key]);
     mark('reopen-exit-wallet');
     wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
-    const account=authorAccount??preparation.account;
+    const account=authorAccount;
     const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'c01-disposable');
     assert(manager.address.equals(account.address));await wallet.registerContract(instance,boardArtifact);await wallet.pxe.sync();
     const board=Contract.at(instance.address,boardArtifact,wallet);
@@ -129,19 +128,19 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
       {depositor:claim.depositor,depositNonce:String(claim.depositNonce),amount:String(claim.amount)}))]);
     const leaf=computeL2ToL1MessageHash({l2Sender:instance.address,l1Recipient:EthAddress.fromString(claim.scope.portalAddress),
       content,rollupVersion:new Fr(BigInt(claim.scope.rollupVersion)),chainId:new Fr(31337n)});
-    if(process.env.W03_NOTE_ATTRIBUTION==='true') {
+    if(noteAttribution) {
       mark('prove-unsubmitted-dummy-attribution');
       observation.noteAttribution=await qualifyDummyNoteAttribution({wallet,board,owner:account.address,
         depositChainId:claim.depositChainId,originalNote,node,privateFeeAction,discardUnsubmittedFee});
       assert.deepEqual(await logical(),expectedFields,'Unsubmitted dummy must not advance the deposit');
     }
     mark('prove-real-withdrawal');
-    const {proven,tx}=await proveApplicationAction({wallet,owner:account.address,
+    const {proven,tx}=await proveApplicationAction({payerMode:'private',wallet,owner:account.address,
       interaction:board.methods.withdraw(claim.depositChainId),
-      privateFeeAction:privateFeeAction?context=>privateFeeAction({...context,kind:'withdraw',args:[claim.depositChainId]}):undefined});
+      privateFeeAction:context=>privateFeeAction({...context,kind:'withdraw',args:[claim.depositChainId]})});
     if(observation.noteAttribution)await observation.noteAttribution.verifyWithdrawal(proven,tx);
     observation.feePayer=tx.data.feePayer.toString();
-    observation.privateFees=!!privateFeeAction;
+    observation.privateFees=true;
     // Additional diagnostic proving can let PXE select a newer checkpoint.
     // Verify the actual proven anchor, rather than require the earlier preflight
     // checkpoint byte-for-byte; withdrawal eligibility must hold at this anchor.

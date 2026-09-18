@@ -88,13 +88,13 @@ export async function proveAndIncludeT02Screening({node,preparation,instance,cla
    let prepared;
    try {
     const interaction=board.methods.withdraw(claim.depositChainId);
-    prepared=privateFeeAction?await privateFeeAction({wallet,owner:account.address,interaction}):{interaction,options:{from:account.address,additionalScopes:[]}};
+    prepared=await privateFeeAction({wallet,owner:account.address,interaction});
     const options=prepared.options,payload=await prepared.interaction.request(options);
     const fee=await wallet.completeFeeOptions({from:options.from,feePayer:payload.feePayer,gasSettings:options.fee?.gasSettings});
     const request=await wallet.createTxExecutionRequestFromPayloadAndFee(payload,options.from,fee);
     await wallet.pxe.proveTx(request,{scopes:wallet.scopesFrom(options.from,options.additionalScopes??[],options.sendMessagesAs),senderForTags:wallet.senderForTagsFrom(options.from,options.sendMessagesAs)});
    } catch(error){const seen=new Set();for(let cause=error;cause&&!seen.has(cause);cause=cause.cause){seen.add(cause);if(cause.message?.includes(reason)){rejected=true;break;}}}
-   finally{if(privateFeeAction&&prepared){assert.equal(typeof discardUnsubmittedFee,'function');discardUnsubmittedFee(BigInt(prepared.maximumFee));}}
+   finally{if(prepared){assert.equal(typeof discardUnsubmittedFee,'function');discardUnsubmittedFee(BigInt(prepared.maximumFee));}}
    assert(rejected,'Expected exact withdrawal constraint rejection');assert.deepEqual(await logical(),fields);await exact(fields,currentHash);
    observation.rejections??=[];observation.rejections.push({reason,stage:'constraint execution; no completed proof or submission',noteUnchanged:true});
   }
@@ -102,7 +102,7 @@ export async function proveAndIncludeT02Screening({node,preparation,instance,cla
   const text='T02 genuine journey post',msg=pack(text,32),nonce=Fr.random();assert(!nonce.isZero());
   const postId=await poseidon2HashWithSeparator([Fr.ONE,instance.address.toField(),nonce],0x42420102),count=integer(await query('get_post_count'));
   let anchor=await eligible(fields[10]),old=fields;mark('prove-post');
-  const post=await proveApplicationAction({wallet,owner:account.address,interaction:board.methods.post(claim.depositChainId,nonce,msg,Buffer.byteLength(text),false,undefined,undefined),privateFeeAction});
+  const post=await proveApplicationAction({payerMode:'private',wallet,owner:account.address,interaction:board.methods.post(claim.depositChainId,nonce,msg,Buffer.byteLength(text),false,undefined,undefined),privateFeeAction});
   assert.deepEqual(post.tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer());
   await include(post,'post',currentNote);fields=await logical();
   const advance=(before,now,flags)=>{const floor=now>cooldown*(maxSave-1n)?now-cooldown*(maxSave-1n):0n;return (before>floor?before:floor)+cooldown*(1n+(k-1n)*flags);};
@@ -114,12 +114,12 @@ export async function proveAndIncludeT02Screening({node,preparation,instance,cla
   const mature=integer(await query('get_post_flag_deadline',postId)),published=integer(await query('get_post_time',postId)),window=integer(await query('get_censor_window'));
   assert.equal(mature,published+window);observation.flagWindow={publishedAt:String(published),deadline:String(mature),window:String(window)};
   if(flagged){mark('prove-moderator-flag');const reason='T02 policy violation',reasonFields=pack(reason,7),version=await query('get_post_policy_version',postId);
-   const flag=await proveApplicationAction({wallet,owner:moderator.address,interaction:board.methods.declare_immoral(postId,version,reasonFields,Buffer.byteLength(reason))});
+   const flag=await proveApplicationAction({payerMode:'genesis',wallet,owner:moderator.address,interaction:board.methods.declare_immoral(postId,version,reasonFields,Buffer.byteLength(reason))});
    await include(flag,'flag');const flagBlock=await node.getBlock(Number(observation.transactions.at(-1).blockNumber));const flaggedAt=integer(flagBlock.header.globalVariables.timestamp);assert(flaggedAt<mature);observation.flagWindow.flaggedAt=String(flaggedAt);assert.equal(await query('is_post_flagged',postId),true);assert((await query('get_post_flagged_by',postId)).equals(moderator.address));assert.deepEqual((await query('get_censor_response',postId)).map(integer),reasonFields.map(integer));assert.equal(integer(await query('get_censor_response_length',postId)),BigInt(Buffer.byteLength(reason)));
   }else assert.equal(await query('is_post_flagged',postId),false);
   await rejectWithdrawal('Too early to withdraw -- not all posts screened');
   anchor=await eligible(fields[10]>mature?fields[10]:mature);const [child,grandchild]=await query('get_screen_hints',account.address,claim.depositChainId);assert(child&&!grandchild);assert(child.owner.equals(account.address)&&child.contract_address.equals(instance.address));assert.equal(integer(child.note.sequence),1n);assert.equal(integer(child.randomness),integer(postNotes[0].randomness));
-  old=fields;mark('prove-standalone-screen');const screen=await proveApplicationAction({wallet,owner:account.address,interaction:board.methods.post(claim.depositChainId,Fr.ZERO,Array.from({length:32},()=>Fr.ZERO),0,true,child,undefined),privateFeeAction});
+  old=fields;mark('prove-standalone-screen');const screen=await proveApplicationAction({payerMode:'private',wallet,owner:account.address,interaction:board.methods.post(claim.depositChainId,Fr.ZERO,Array.from({length:32},()=>Fr.ZERO),0,true,child,undefined),privateFeeAction});
   assert.deepEqual(screen.tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer());await include(screen,'screen',currentNote);fields=await logical();
   assert.deepEqual(fields.slice(0,5),old.slice(0,5));assert.notEqual(fields[5],old[5]);assert.notEqual(fields[5],0n);assert.equal(fields[6],2n);assert.equal(fields[7],old[5]);assert.equal(fields[8],1n);assert.equal(fields[9],1n);assert.equal(fields[10],advance(old[10],integer(anchor.globalVariables.timestamp),flagged?1n:0n));
   currentHash=screen.tx.getTxHash();currentNote=await exact(fields,currentHash);assert.equal(integer(await query('get_post_count')),count+1n);
