@@ -1,0 +1,18 @@
+{
+  "kind": "owned-browser-driver-crash-classification",
+  "pid": 78704,
+  "captureTime": "2026-09-18 12:59:53.8363 +0100",
+  "signal": "SIGABRT",
+  "matchesOuterRunOwnedPid": true,
+  "fatalHeapOutOfMemory": true,
+  "fixedMatchedCategories": [
+    "node::OOMErrorHandler",
+    "V8::FatalProcessOutOfMemory",
+    "Heap::FatalProcessOutOfMemory"
+  ],
+  "driverOldSpaceLimitMiB": 64,
+  "aggregatePeakRSSKiB": 1397568,
+  "aggregateLimitKiB": 2097152,
+  "rawCrashReportRetained": false,
+  "crashReportSha256": "017ce5417f7789876ca3b3c4d984ea306d5268cad490362a5c2a6acc54de3ffc"
+}

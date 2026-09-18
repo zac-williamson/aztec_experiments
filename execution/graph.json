@@ -1546,7 +1546,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Pinned exit-leaf API fixed and tested against Solidity/independenthash; refund parser tests; supervisor realchild failure propagation tests.23focused checks pass018, source review no furtherAPIdefect. Partial canonicalstage summaries now retained. Lifecycle019 begins with same application build and540s/2GiB.",
+      "checkpoint": "019 fourAztecGUIstages canonical; driver64MiBheapOOM atrefund confirmedowncrash. Driver128MiB insideunchanged2GiB; fixedfatal classification, failure rendezvous and publicstage persistence integrated.27affected checks pass020. Recoveryhelpers12checks pass021 but notintegrated/qualified. Lifecycle022 begins sameapplicationbuild.",
       "priority": 24,
       "completion_requires": [
         "O01"
@@ -1567,13 +1567,19 @@
         "scripts/test-t04-checkpoint-scope.mjs",
         "scripts/test-t04-journey-verifier.mjs",
         "scripts/test-c01-browser-supervision.mjs",
-        "scripts/c01-browser-supervision.mjs"
+        "scripts/c01-browser-supervision.mjs",
+        "scripts/t04-post-response-loss.mjs",
+        "scripts/test-t04-post-response-loss.mjs",
+        "scripts/t04-browser-post-recovery.mjs",
+        "scripts/test-t04-browser-post-recovery.mjs",
+        "scripts/c01-browser-fatal.mjs",
+        "scripts/test-c01-browser-fatal.mjs"
       ],
       "investigation": {
-        "hypothesis": "017 passed genuineGUIclaim; failure was deterministic verifier API mismatch and missingfailedcoordinator propagation. Both now exercised by cheap actualhelper/child regressions; next run qualifies remaining GUI lifecycle.",
+        "hypothesis": "019 abort is confirmed driverV8heapOOM at64MiB, not totalmemorybound or applicationfailure.128MiB driverbudget plus partialevidence persistence and fixedfatalclassifier tested; full GUI refund/finalverification still required.",
         "attempts": 1,
         "max_attempts": 1,
-        "next_action": "Inspect lifecycle019 actual outcome immediately; no blind rerun on new failure. Preserve partial canonical stages and cleanup."
+        "next_action": "Inspect lifecycle022 result/cleanup; no resource-limit increase or blindrepeat. If passed integrate independentbrowserrestarthelpers next."
       }
     },
     {

@@ -90,3 +90,11 @@ test('actual shared log timestamp is removed once before strict pending classifi
  context.message='RPC unavailable';vm.runInContext("log(message,'error','depositStatus')",context);
  assert.equal(normalizeT04StatusMessage(children[1].textContent),'RPC unavailable');
 });
+
+// Persist only bounded public canonical progress, never captured proof/note data.
+test('partial canonical progress is ordered, bounded, public-only and copied',async()=>{
+ const {validateVerifiedBrowserStages}=await import('./t04-browser-journey.mjs');
+ const one={stage:'claim',txHash:hash,blockHash:'0x'+'cd'.repeat(32),blockNumber:'2',canonicalReceipt:true,normalNodeVerification:true};
+ const input={schemaVersion:1,stages:[one]},copy=validateVerifiedBrowserStages(input);copy.stages[0].blockNumber='3';assert.equal(input.stages[0].blockNumber,'2');
+ for(const value of [{...input,secret:'secret'},{schemaVersion:1,stages:[]},{schemaVersion:1,stages:[{...one,stage:'exit'}]},{schemaVersion:1,stages:[{...one,proof:'secret'}]},{schemaVersion:1,stages:[{...one,canonicalReceipt:false}]},{schemaVersion:1,stages:[{...one,blockNumber:'0'}]},{schemaVersion:1,stages:[one,{...one,stage:'post'}]}])assert.throws(()=>validateVerifiedBrowserStages(value));
+});

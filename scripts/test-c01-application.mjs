@@ -1,3 +1,4 @@
+import {createBrowserFatalClassifier} from './c01-browser-fatal.mjs';
 import {awaitCoordinatorAndBrowser} from './c01-browser-supervision.mjs';
 import { applicationNativeProfile } from './c01-native-profile.mjs';
 // Bounded disposable genuine-verifier qualification; each report records its attempted scope.
@@ -18,7 +19,7 @@ const execFileAsync = promisify(execFile);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function fingerprints() {
   const result = {};
-  for (const name of ['scripts/t04-browser-journey.mjs','scripts/t04-browser-journey-verify.mjs','scripts/run-bounded-browser-check.mjs','scripts/u01-browser-flow.mjs','scripts/u01-browser-post-verify.mjs','scripts/u01-browser-post.mjs','scripts/u01-browser-rpc.mjs','scripts/t03-rpc-observer.mjs','scripts/t03-public-footprint.mjs','deploy/hosting-config.mjs','scripts/c01-native-profile.mjs','scripts/test-c01-application.mjs','scripts/c01-browser-supervision.mjs','scripts/owned-test-process-tree.mjs','scripts/c01-settle-application-message.mjs','scripts/c01-application-deployment.mjs',
+  for (const name of ['scripts/t04-browser-journey.mjs','scripts/t04-browser-journey-verify.mjs','scripts/run-bounded-browser-check.mjs','scripts/u01-browser-flow.mjs','scripts/u01-browser-post-verify.mjs','scripts/u01-browser-post.mjs','scripts/u01-browser-rpc.mjs','scripts/t03-rpc-observer.mjs','scripts/t03-public-footprint.mjs','deploy/hosting-config.mjs','scripts/c01-native-profile.mjs','scripts/test-c01-application.mjs','scripts/c01-browser-supervision.mjs','scripts/c01-browser-fatal.mjs','scripts/owned-test-process-tree.mjs','scripts/c01-settle-application-message.mjs','scripts/c01-application-deployment.mjs',
     'scripts/w03-note-attribution.mjs','shared/application-nullifier.mjs','scripts/w03-proof-recovery.mjs','shared/l2-journal.mjs','shared/transaction-outcomes.mjs','shared/journal-backup.mjs','scripts/prove-application-action.mjs','scripts/w02-wallet-restore.mjs','shared/wallet-backup.js','scripts/w01-private-fee-standalone.mjs','scripts/w01-private-fee-flow.mjs','scripts/w01-private-funding.mjs','shared/private-fee-client.mjs','shared/private-fee-payment.mjs','shared/private-fee-funding.mjs','shared/ethereum-journal.mjs','shared/journal-record.mjs','apps/src/billboard/user/transaction-journal-store.mjs','scripts/c01-settle-ready.mjs','scripts/c01-settle-message.mjs','scripts/c01-bridge-flow.mjs','scripts/c02-screening-flow.mjs','scripts/t02-screening-journey.mjs','scripts/t02-redeposit-flow.mjs','scripts/t02-wrong-origin.mjs','scripts/t02-claim-boundary.mjs','scripts/test-t02-claim-boundary.mjs','node_modules/@aztec/pxe/src/node/caching_aztec_node.ts','node_modules/@aztec/pxe/dest/node/caching_aztec_node.js','node_modules/@aztec/pxe/src/pxe.ts','node_modules/@aztec/pxe/dest/pxe.js','node_modules/@aztec/pxe/src/block_synchronizer/block_synchronizer.ts','node_modules/@aztec/pxe/dest/block_synchronizer/block_synchronizer.js','node_modules/@aztec/l1-artifacts/dest/InboxAbi.js','node_modules/@aztec/l1-artifacts/l1-contracts/src/core/messagebridge/Inbox.sol','scripts/t02-redeposit-replay.mjs','node_modules/@aztec/l1-artifacts/dest/OutboxAbi.js','node_modules/@aztec/l1-artifacts/l1-contracts/src/core/messagebridge/Outbox.sol','scripts/c03-author-claims.mjs','scripts/c03-contention-flow.mjs','scripts/c01-client-mining.mjs','scripts/c01-deposit-flow.mjs','scripts/c01-exit-flow.mjs','scripts/c01-withdraw-l1.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
     'node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js']) {
     result[name] = sha(await fs.readFile(path.join(ROOT, name)));
@@ -247,15 +248,21 @@ async function parent() {
         assert((await fs.lstat(descriptor.backupPath)).isFile());
         if(report.stopReason)throw Error('Browser launch cancelled');
         const remaining=DEADLINE_MS-(performance.now()-started)-10000;assert(remaining>0);
-        report.browserDriverHeapLimitMiB=64;
-        browserChild=spawn(process.execPath,['--max-old-space-size=64',SELF,'--browser-worker',directory],{cwd:ROOT,detached:true,stdio:['pipe','pipe','ignore'],env:{PATH:path.dirname(process.execPath)+':/usr/bin:/bin',HOME:process.env.HOME,TMPDIR:directory,NODE_OPTIONS:'',...(process.env.PLAYWRIGHT_BROWSERS_PATH?{PLAYWRIGHT_BROWSERS_PATH:process.env.PLAYWRIGHT_BROWSERS_PATH}:{})}});
+        report.browserDriverHeapLimitMiB=128;
+        browserChild=spawn(process.execPath,['--max-old-space-size=128',SELF,'--browser-worker',directory],{cwd:ROOT,detached:true,stdio:['pipe','pipe','pipe'],env:{PATH:path.dirname(process.execPath)+':/usr/bin:/bin',HOME:process.env.HOME,TMPDIR:directory,NODE_OPTIONS:'',...(process.env.PLAYWRIGHT_BROWSERS_PATH?{PLAYWRIGHT_BROWSERS_PATH:process.env.PLAYWRIGHT_BROWSERS_PATH}:{})}});
+        const fatalClassifier=createBrowserFatalClassifier();browserChild.stderr.on('data',bytes=>fatalClassifier.push(bytes));
         let progress='';browserChild.stdout.on('data',bytes=>{progress+=bytes.toString();if(progress.length>4096){progress='';return;}let newline;while((newline=progress.indexOf('\n'))>=0){const line=progress.slice(0,newline);progress=progress.slice(newline+1);try{const {browserStage}=JSON.parse(line);if(!['local-https','browser-start','wallet-software','public-config-import','encrypted-wallet-restore','wallet-connect-and-status','actual-gui-post','gui-deposit-claim','gui-screen','gui-withdraw','gui-refund','prover-start','prover-load','prover-accumulate','prover-finalize','prover-hiding-key','prover-verify','prover-compress'].includes(browserStage))continue;const record={browserStage,elapsedMs:Math.round(performance.now()-started)};(report.browserStages??=[]).push(record);console.log(JSON.stringify(record));}catch{}}});
         const ended=new Promise((resolve,reject)=>{browserChild.once('error',reject);browserChild.once('close',(code,signal)=>resolve({code,signal}));});
         assert(Number.isSafeInteger(browserChild.pid));await treeFor(browserChild.pid).sample();
         browserChild.stdin.on('error',()=>{});browserChild.stdin.end(JSON.stringify({...descriptor,...browserControl,timeoutMs:Math.min(480000,Math.floor(remaining))}));
         const exit=await ended;report.browserExit=exit;
+        if(fatalClassifier.snapshot().category)report.browserFatalCategory=fatalClassifier.snapshot().category;
         try{report.browser=JSON.parse(await fs.readFile(path.join(directory,'browser-result.json'),'utf8'));}catch{}
         if(exit.code!==0||report.browser?.passed!==true){
+          if(!report.browser){
+            report.browser={passed:false,failure:'Browser driver exited without result; raw errors omitted'};
+            await writeBrowserResult(directory,report.browser);
+          }
           // Let the native coordinator persist its already-sanitized observer
           // summary before the existing owned-tree stop. Global timers stay live.
           const graceUntil=Math.min(performance.now()+1500,started+DEADLINE_MS-1000);
@@ -359,6 +366,10 @@ async function parent() {
     try { if (child?.pid) await cleanGroup(child.pid); report.processGroupAbsent = !child?.pid || !await groupExists(child.pid);report.descendantTreeAbsent=report.processGroupAbsent; }
     catch (error) { report.passed = false; report.descendantTreeAbsent=false;report.processGroupAbsent=false;report.cleanupErrorClass = error.name; }
     if(browserPost){
+      try{
+        const text=await fs.readFile(path.join(directory,'browser-verified-stages.json'),'utf8');assert(Buffer.byteLength(text)<=65536);
+        const {validateVerifiedBrowserStages}=await import('./t04-browser-journey.mjs');report.verifiedBrowserStages=validateVerifiedBrowserStages(JSON.parse(text));
+      }catch(error){if(error.code!=='ENOENT')report.verifiedBrowserStagesUnavailable=true;}
       try{const text=await fs.readFile(path.join(directory,'browser-rpc-footprint.json'),'utf8');assert(Buffer.byteLength(text)<=1024*1024);const footprint=JSON.parse(text);assert.equal(footprint.schema,'t03-rpc-footprint-v1');report.browserRpcFootprint=footprint;}
       catch(error){if(error.code!=='ENOENT')report.browserRpcFootprintUnavailable=true;}
     }

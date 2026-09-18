@@ -32,6 +32,18 @@ export function validateBrowserHandoff(value,{directory,browserJourney}){
  globalThis.BillboardConfig.validate(value.publicConfig);
  return value;
 }
+export function validateVerifiedBrowserStages(value){
+ assert(value&&Object.keys(value).sort().join(',')==='schemaVersion,stages');
+ assert(value.schemaVersion===1&&Array.isArray(value.stages)&&value.stages.length>=1&&value.stages.length<=4);
+ const order=['claim','post','screen','exit'],seen=new Set();
+ for(const [index,item] of value.stages.entries()){
+  assert(item&&Object.keys(item).sort().join(',')==='blockHash,blockNumber,canonicalReceipt,normalNodeVerification,stage,txHash');
+  assert(item.stage===order[index]&&typeof item.txHash==='string'&&typeof item.blockHash==='string'&&hash.test(item.txHash)&&hash.test(item.blockHash));
+  assert(typeof item.blockNumber==='string'&&/^[1-9][0-9]{0,19}$/.test(item.blockNumber));
+  assert(item.canonicalReceipt===true&&item.normalNodeVerification===true&&!seen.has(item.txHash));seen.add(item.txHash);
+ }
+ return {schemaVersion:1,stages:value.stages.map(item=>({...item}))};
+}
 export function validateJourneySignal(value){
  assert(value&&typeof value==='object'&&!Array.isArray(value));
  assert.deepEqual(Object.keys(value).sort(),['stage','transactionHashes']);
