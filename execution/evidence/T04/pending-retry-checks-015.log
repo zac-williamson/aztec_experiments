@@ -1,0 +1,23 @@
+✔ rendezvous accepts only fixed stages and bounded unique public transaction identifiers (6.672917ms)
+✔ atomic rendezvous cannot overwrite a prior stage or accept an unverified release (6.687125ms)
+✔ missing release respects remaining parent budget (0.654375ms)
+✔ canonical exit rejects wrong leaf, duplicate leaf, wrong nullifier and ineligible anchor (325.899334ms)
+✔ aborted lifecycle terminates a rendezvous even with a clamped legacy time callback (103.711167ms)
+✔ actual shared producer builder roundtrips both strict parent handoff modes (2.805125ms)
+✔ journey diagnostic outputs fixed milestones and allowlisted exception only (0.389ms)
+✔ pending claim retries once through supplied GUI action then succeeds (0.151917ms)
+✔ unexpected claim errors never retry (0.141959ms)
+✔ repeated pending claims stop after three total attempts (0.086167ms)
+✔ receipt changes, lost pending controls and existing submission prohibit further retry (0.176875ms)
+✔ claim checkpoint scope restores original settings after included claim and repeated cleanup (0.705375ms)
+✔ claim failure and pre-handoff failure restore the original checkpoint settings (0.2445ms)
+✔ failed restoration remains retryable rather than claiming restoration succeeded (0.087ms)
+✔ restoration failure cannot skip RPC, wallet or backup cleanup (0.109667ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1122.865042

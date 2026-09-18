@@ -75,6 +75,31 @@ export function readJourneyUiDiagnostic(){
  const milestones={depositStarted:deposit.includes('Making new L1 deposit'),claimSecretSaved:deposit.includes('Claim secret saved locally'),depositConfirmed:deposit.includes('Deposit confirmed'),waitingForClaim:deposit.includes('Waiting for L2 to ingest deposit'),claimComplete:deposit.includes('Deposit claimed on L2!'),withdrawalIncluded:withdraw.includes('L2->L1 message sent.'),refundSubmitted:refund.includes('L1 refund transaction:'),refundComplete:refund.includes('ETH claimed successfully!')};
  return {depositHasError:hasError('depositStatus'),withdrawHasError:hasError('withdrawStatus'),refundHasError:hasError('claimL1Status'),milestones};
 }
+// shared/helpers.js log() adds one localized timestamp, not part of the message.
+export function normalizeT04StatusMessage(text){
+ assert(typeof text==='string'&&text.length<=2048,'T04_STATUS_MESSAGE_INVALID');
+ const prefix=text.match(/^\[([^\[\]\r\n]{1,40})\] /u);
+ if(prefix&&/\p{N}/u.test(prefix[1]))return text.slice(prefix[0].length);
+ return text;
+}
+export const T04_PENDING_CLAIM_MESSAGE='Your ETH deposit is confirmed. Its message is not yet available to claim; retry this same claim later. Do not deposit again.';
+const navigationFailure='ERROR: operation did not complete; check configuration and recovery records';
+export async function retryT04PendingClaim({outcome,retry,remaining}){
+ let originalHash;
+ for(let attempt=1;attempt<=3;attempt++){
+  assert(remaining()>0,'T04_CLAIM_DEADLINE');
+  const state=await outcome();
+  if(state.success){assert.equal(state.errors.length,0);if(originalHash)assert.equal(state.depositHash,originalHash);return {claimAttempts:attempt,claimRetries:attempt-1};}
+  assert(state.errors.includes(T04_PENDING_CLAIM_MESSAGE),'T04_CLAIM_UNEXPECTED_ERROR');
+  assert(state.errors.every(message=>message===T04_PENDING_CLAIM_MESSAGE||message===navigationFailure),'T04_CLAIM_UNEXPECTED_ERROR');
+  assert(state.existingVisible&&!state.newVisible&&state.pageVisible,'T04_CLAIM_STATE_CHANGED');
+  assert(hash.test(state.depositHash),'T04_CLAIM_RECEIPT_MISSING');
+  if(originalHash)assert.equal(state.depositHash,originalHash,'T04_CLAIM_RECEIPT_CHANGED');else originalHash=state.depositHash;
+  assert.equal(state.transactionHashes.length,0,'T04_CLAIM_ALREADY_SUBMITTED');
+  assert(attempt<3,'T04_CLAIM_PENDING_ATTEMPTS_EXHAUSTED');assert(remaining()>0,'T04_CLAIM_DEADLINE');
+  await retry(state.depositHash);
+ }
+}
 export async function driveT04BrowserJourney({page,directory,message,depositAmount,remaining,signal,mark,onSubstage=()=>{}}){
  assert(typeof depositAmount==='string'&&/^(?:0|[1-9]\d*)\.\d{1,18}$/.test(depositAmount));
  const stagesObserved=[];
@@ -92,7 +117,20 @@ export async function driveT04BrowserJourney({page,directory,message,depositAmou
  };
  onSubstage('wait-deposit-page');mark('gui-deposit-claim');await page.locator('#page-1').waitFor({state:'visible',timeout:remaining()});
  onSubstage('fill-amount');await page.locator('#depositAmount').fill(depositAmount);onSubstage('click-deposit');await page.locator('#navNext').click();
- onSubstage('await-deposit-claim');await finish('depositStatus','Deposit claimed on L2!');await page.locator('#postBtn').waitFor({state:'visible',timeout:remaining()});
+ onSubstage('await-deposit-claim');
+ const claimProgress=await retryT04PendingClaim({remaining,outcome:async()=>{
+  await page.waitForFunction(()=>{const box=document.getElementById('depositStatus');return box?.querySelector('.error')||box?.textContent.includes('Deposit claimed on L2!');},null,{timeout:remaining()});
+  const status=await page.locator('#depositStatus').textContent();
+  return {success:status.includes('Deposit claimed on L2!'),errors:(await page.locator('#depositStatus .error').allTextContents()).map(normalizeT04StatusMessage),depositHash:await page.locator('#existingTxHash').inputValue(),existingVisible:await page.locator('#recoverDepositSection').isVisible(),newVisible:await page.locator('#newDepositSection').isVisible(),pageVisible:await page.locator('#page-1').isVisible(),transactionHashes:transactionHashes(status)};
+ },retry:async depositHash=>{
+  await page.waitForFunction(()=>{const button=document.getElementById('navNext');return button&&!button.disabled&&button.getClientRects().length>0;},null,{timeout:remaining()});
+  assert.equal(await page.locator('#existingTxHash').inputValue(),depositHash);
+  assert(await page.locator('#recoverDepositSection').isVisible());assert(!(await page.locator('#newDepositSection').isVisible()));
+  assert(await page.locator('#page-1').isVisible());assert.equal((await page.locator('#navNext').textContent()).trim(),'Claim deposit →');
+  assert.equal(transactionHashes(await page.locator('#depositStatus').textContent()).length,0);
+  await page.locator('#navNext').click();
+ }});
+ await page.locator('#postBtn').waitFor({state:'visible',timeout:remaining()});
  onSubstage('claim-checkpoint');await checkpoint('claim','depositStatus'); // parent verifies actual claim and releases eligible post anchor
  onSubstage('post');mark('actual-gui-post');await page.locator('#msgText').fill(message);await page.locator('#postBtn').click();
  await finish('postStatus','Message included. Public content and transaction timing remain observable.');
@@ -105,5 +143,5 @@ export async function driveT04BrowserJourney({page,directory,message,depositAmou
  onSubstage('refund');mark('gui-refund');await page.locator('#navNext').click();
  await finish('claimL1Status','ETH claimed successfully!');
  await checkpoint('refund','claimL1Status');
- return {passed:true,stagesObserved,warmNativePrivateFees:true,externalWalletExtension:false};
+ return {passed:true,stagesObserved,...claimProgress,warmNativePrivateFees:true,externalWalletExtension:false};
 }

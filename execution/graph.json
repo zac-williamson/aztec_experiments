@@ -1546,7 +1546,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Lifecycle014 stopped on explicit BB_DEPOSIT_MESSAGE_PENDING after20s readiness, before proof/fees;176098ms1638880KiB, cleanup complete. Confirmed ETH deposit and saved secret. Driver incorrectly treats legitimate pending as terminal. Add max3 actual claim-only GUI attempts with exact pending/state/hash checks; no retry on other errors.",
+      "checkpoint": "Pending-only GUI retry integrated: exact safe message, actual timestamped log regression, same receipt/state, no priorclaimsubmission, max3attempts.16 focused tests pass016. Lifecycle017 starts with unchanged production source and540s/2GiB.",
       "priority": 24,
       "completion_requires": [
         "O01"
@@ -1567,10 +1567,10 @@
         "scripts/test-t04-checkpoint-scope.mjs"
       ],
       "investigation": {
-        "hypothesis": "010 showed confirmedETHdeposit then preproofclaimfailure; source missingInboxreadiness and fixturecheckpointprogression. Both repaired with tested claim-only retry. Genuine lifecycle014 qualifies repaired path, not presumed old SDK cause.",
+        "hypothesis": "014 establishes legitimate20s pending. Pinned Inboxlag2 and fixture12s slots require >20s nominal availability; corrected driver exercises bounded claim-only retry rather than treating safe pending as terminal.",
         "attempts": 1,
         "max_attempts": 1,
-        "next_action": "Implement/review/test bounded GUI pending retry; preserve production20s logicalwait and540s/2GiB. No rerun until source-backed driver correction passes."
+        "next_action": "Inspect lifecycle017 outcome and cleanup before any further run; preserve limits and diagnose any new failure."
       }
     },
     {

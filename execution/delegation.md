@@ -5,11 +5,11 @@ internal AI review does not replace external review.
 
 | Lane | Agent | Exclusive write ownership | Deliverable |
 |---|---|---|---|
-| Application | workflow_review | apps/src/billboard/user/engine.js; apps/src/billboard/user/app.js; shared/app-env.js; scripts/test-deposit-message-ready.mjs | Bounded Inbox readiness before claim; claim-only retry after confirmed deposit; cheap regressions |
-| Browser recovery | scheduler_improvements | scripts/u01-browser-flow.mjs; scripts/test-t04-checkpoint-scope.mjs | Ordinary empty checkpoints before GUI claim, restored on success/failure |
-| Independent review | claim_failure_diagnosis | Read-only | Pinned SDK and receipt identity review, then implementation review |
-| Integration/operations | root | Other assigned graph paths and execution records | Integrate evidence, serialize builds/proofs, continue operational drills |
+| Browser recovery | scheduler_improvements | scripts/t04-browser-journey.mjs; scripts/test-t04-browser-journey.mjs | Exact pending-only bounded actual GUI retry; actual log-prefix regression |
+| Independent review | claim_failure_diagnosis | Evidence note only; source read-only | Pinned Inbox lag and retry safety |
+| Next recovery design | workflow_review | Read-only | Accepted-post response loss and full browser restart without stale journal restore |
+| Integration | root | Other assigned graph paths and execution records | Integrate evidence, serialize checks and genuine run |
 
-Diagnostic010 completed with cleanup; no heavy job active. ETH deposit succeeded,
-claim failed before proof. Missing witness is a source-supported hypothesis, not
-an observed RPC result. No further expensive attempt until fixes and cheap checks.
+Lifecycle014 ended safe pending with complete cleanup. Source/fixture fixes are
+integrated; next run awaits pending-only driver correction and tests. No proof
+retry loop or repeated ETH deposit is permitted. Internal reviews are not audits.
