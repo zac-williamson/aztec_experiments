@@ -1,0 +1,61 @@
+✔ compares checkpointed L2 heights, never proposed or checkpoint sequence identifiers (0.815458ms)
+✔ typed SDK-style headers and hashes produce the same comparison (0.104833ms)
+✔ reorg, missing data, malformed heights and identity mismatch remain unknown (0.518584ms)
+✔ missing checkpoint does not invoke RPC (0.067709ms)
+✔ actual hanging HTTP calls abort within transport deadline and cannot imply zero lag (162.930042ms)
+✔ health output allowlists counts and omits all extra fields (1.491416ms)
+✔ ingestion age is measured and missing or future state fails closed (0.668083ms)
+✔ deadline boundary and included-awaiting-finality distinguish warning from failure (0.142167ms)
+✔ known diagnostics are fixed classifications; arbitrary message/code never escape (0.6135ms)
+✔ signer error secrets are omitted, unknown signing survives restart, exhaustion fences signing (22.153917ms)
+✔ expired obligations remain visible and feed failure never advances ingestion time (3.140125ms)
+✔ already flagged unsigned work is not an expired/manual obligation (2.999625ms)
+✔ actual daemon startup log omits arbitrary argument/error contents (50.019291ms)
+✔ fresh feed with failed evaluation reports retry warning while ordinary queued work stays healthy (3.346209ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 249.550625
+=== Daemon Integration Tests (with mock infra) ===
+
+  ✓ dry-run flags violation in output but does not call declare-immoral
+  ✓ dry-run with OK verdict does not flag
+  ✓ skips already-flagged posts
+  ✓ empty public text fails input validation before model evaluation
+  ✓ reasoning-only model output is an observable failure and cannot flag
+  ✓ processes multiple posts with mixed verdicts
+  ✓ missing --portal-address exits with error
+  ✓ --from cannot bypass durable moderation jobs
+  ✓ non-dry-run calls declare-immoral via CLI
+  ✓ reads policy from contract output
+  ✓ rejects a local policy override instead of signing with fallback text
+  ✓ warns on posts past the censor window
+  ✓ warns on posts about to expire in censor window
+  ✓ processes oldest unflagged posts first (censor window urgency)
+  ✓ model cannot add a destination, operation or post index to a verdict
+  ✓ failed signing is not reported as a completed successful job
+  ✓ production CLI cannot bypass model isolation with skip-bootstrap
+  ✓ old post policy fails closed without model or signer action
+  ✓ empty contract policy fails closed without model or signer action
+  ✓ restart retains completed decisions without re-evaluating or resubmitting
+  ✓ submitted receipt without finality remains durable and restart does not resend
+  ✓ historical policy bytes are used for an older post after policy update
+  ✓ private fee configuration is mandatory at daemon startup
+  ✓ Ethereum endpoint is mandatory at daemon startup
+
+=== Results ===
+  Passed: 24
+  Failed: 0
+✔ censor-daemon/test_daemon.mjs (3009.342292ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3017.709084

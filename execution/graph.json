@@ -1256,7 +1256,7 @@
       "evidence": "evidence/O01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Packaged monitor/health and credential inventory integrated. Implement bounded checkpointed L2 feed lag against existing public-node API; informational only, preserve signing semantics. Genuine operator drills/delivery remain.",
+      "checkpoint": "Escrow/daemon monitoring, bounded checkpointed feed lag, sanitized credential inventory and removal integrated; package smoke011 passes. Drillgapreview010 reuses actual D01/W03/T02 evidence and identifies genuine censor handover/policy and monitor failover drills. Operator delivery/replacement remain external O02 inputs.",
       "priority": 20,
       "execution_lane": "operations",
       "write_paths": [
@@ -1467,7 +1467,7 @@
       "evidence": "evidence/T03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Actual browser privacy observation passes, RPC author lookup is SDK class-validation requirement. Caller-independent public getters unnecessarily simulate with author sender; implement validated neutral reads without changing private queries or class checks. Historical funder match aliases fixture coinbase; no funding-leak claim.",
+      "checkpoint": "Neutral public reads implemented6053dc0;99focusedtests and rebuiltapps pass. Historical browser044 demonstrates actual post/private-fee rejection and RPCclass lookup; await new T04 genuine trace for changed reads. Repeated/crossauthor/funding/recovery qualification remains; funderfixturealias is not leak evidence.",
       "priority": 23,
       "execution_lane": "application",
       "write_paths": [
@@ -1557,7 +1557,8 @@
         "scripts/t04-browser-journey.mjs",
         "scripts/t04-browser-journey-verify.mjs",
         "scripts/test-t04-browser-journey.mjs",
-        "scripts/test-c01-user.mjs"
+        "scripts/test-c01-user.mjs",
+        "scripts/run-bounded-browser-check.mjs"
       ],
       "investigation": {
         "hypothesis": "Existing browser worker reused across genuine GUI lifecycle fits unchanged540s/2GiB; source timing estimate459-499s requires measurement.",

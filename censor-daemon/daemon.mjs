@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import {createHash,randomUUID} from 'node:crypto';
 import {scopeKey} from '../shared/protocol-schema.mjs';
 import {publicNode} from '../shared/public-feed-rpc.mjs';
+import {observeFeedLag} from './feed-health.mjs';
 import {summarizeModerationHealth, moderationFailure, safeModerationDiagnostic} from './health.mjs';
 import {openJobStore} from './job-store.mjs';
 import {processModerationCycle} from './worker.mjs';
@@ -108,13 +109,14 @@ export async function runDaemon(argv = process.argv.slice(2), { startRuntime = s
     const startup=new AbortController(),startupTimer=setTimeout(()=>startup.abort(Error('Model startup deadline')),120000);
     try{runtime=await startRuntime({image:config.modelImage,memoryMiB:config.modelMemoryMiB,imageManifestPath:config.modelManifest,modelPath:config.modelPath,modelSha256:config.modelSha256,port:config.llamaPort,threads:config.threads,ctxSize:config.ctxSize,signal:AbortSignal.any([wait.signal,startup.signal])});}
     finally{clearTimeout(startupTimer);}
-    const identity=persistModelIdentity(config.stateDir,runtime),node=createNode(config.aztecNodeUrl);
+    const identity=persistModelIdentity(config.stateDir,runtime),node=createNode(config.aztecNodeUrl),healthNode=createNode(config.aztecNodeUrl,{timeoutMs:5000});
     do {
       let complete=false;
       try{
         if(!store){const data=signer.list(),id=createHash('sha256').update(scopeKey(data.scope)).digest('hex');store=openJobStore({filename:path.join(config.stateDir,id+'.sqlite'),scope:data.scope,modelVersion:identity.modelVersion});storeScope=data.scope;}
         const result=await processModerationCycle({store,signer,node,scope:storeScope,worker,log,dryRun:config.dryRun,stopping:()=>stopping,evaluate:(post,policy)=>moderatePost(post,policy,runtime.port)});
         complete=result.complete;log(JSON.stringify(summarizeModerationHealth({status:result.status,staleAfterMs:Math.max(config.pollInterval*3000,60000)})));
+        if(!stopping)log(JSON.stringify(await observeFeedLag({node:healthNode,scope:storeScope,checkpoint:result.status.checkpoint})));
       }catch(error){let status;try{status=store?.status();}catch{}log(JSON.stringify({...summarizeModerationHealth({status,cycleFailed:true,staleAfterMs:Math.max(config.pollInterval*3000,60000)}),diagnostic:safeModerationDiagnostic(error)}),'error');}
       if(config.once){if(!complete)throw new Error('Moderation jobs remain unresolved or require attention; saved work will resume next run');log('All posts processed (--once mode).');break;}
       if(!stopping)await delay(config.pollInterval*1000,undefined,{signal:wait.signal}).catch(error=>{if(error.name!=='AbortError')throw error;});

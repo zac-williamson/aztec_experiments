@@ -55,7 +55,7 @@ These inexpensive tests inject balanced/deficit/surplus state, stale and future 
 
 The existing daemon now emits a `billboard-moderation-health-v1` JSON summary after each cycle (inside its timestamped log line). It uses the existing SQLite job store; no new service or database is required. The summary exposes aggregate unsigned work, unresolved signing, manual signing fences, included transactions awaiting finality, expired obligations, manual attention, the last ingested checkpoint height, and time since successful ingestion.
 
-Ingestion age is **not chain lag**: a healthy RPC can repeatedly return the same checkpoint. No extra head polling is performed. Successful ingestion time is recorded atomically with the existing checkpoint, survives restart, and does not advance on a failed feed read. Old databases without that setting report `INGESTION_UNKNOWN` until their next successful ingestion.
+Ingestion age is **not chain lag**: a healthy RPC can repeatedly return the same checkpoint. The separate bounded feed-lag observation below compares checkpointed L2 heights. Successful ingestion time is recorded atomically with the existing checkpoint, survives restart, and does not advance on a failed feed read. Old databases without that setting report `INGESTION_UNKNOWN` until their next successful ingestion.
 
 `SIGNING_FENCED` requires inspection of the saved intent/journal before further signing. Never delete SQLite state or transaction journals to clear it. `SIGNING_UNRESOLVED` means an outcome remains unknown; `AWAITING_FINALITY` means a successful included receipt exists but final canonical completion remains outstanding. Benign unsigned already-flagged and superseded-model records are excluded from missed-work alerts. Expired/manual-review obligations remain visible even though they are terminal queue states. Dry-run violations still require manual attention and cannot report production completion.
 
@@ -117,3 +117,27 @@ only the provider, credential identifier and completed action in the private
 operator record. The public configuration validator rejects query credentials
 and URL user information, but cannot determine whether an arbitrary URL path
 contains a provider token; exported endpoint paths must also be public-safe.
+
+### Checkpointed feed lag
+
+After each completed moderation cycle, the daemon emits a separate
+`billboard-feed-lag-v1` observation. It compares the feed's last verified **L2 block
+height** with the configured node's checkpointed L2 tip: blocks whose enclosing
+checkpoint has been published on Ethereum. It does not compare proposed blocks,
+checkpoint sequence numbers or finalized height. A separate read-only client makes
+three parallel requests with five-second HTTP timeouts; signing/reconciliation
+client timeouts are unchanged. No polling loop or service is added.
+
+The observation checks node chain/rollup identity and the saved feed block's
+canonical hash. Matching progress reports `FEED_AT_CHECKPOINTED_TIP`; positive
+`lagL2Blocks` reports `FEED_BEHIND_CHECKPOINTED_TIP` as an advisory warning. Check
+catch-up and moderation deadlines; positive lag alone does not prove an expired
+obligation. Missing data, mismatched hashes, regression, wrong identity or timeout
+reports `FEED_LAG_UNKNOWN`, never zero lag. This is relative to that node, not an
+independent measure of global network freshness or elapsed lag time.
+
+Ingestion age remains a separate health measure. Feed-lag observation failures do
+not mutate jobs, authorize signing or change whether `--once` work completed.
+External monitoring should alert on missing daemon output as well as reported
+warnings. Reorgs during a health snapshot remain possible; existing canonical
+checks at signing and receipt reconciliation remain authoritative.

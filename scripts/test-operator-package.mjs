@@ -20,7 +20,7 @@ export async function smokeOperatorPackage(){
   for(let parent=directory;parent!==path.dirname(parent);parent=path.dirname(parent))assert(!fs.existsSync(path.join(parent,'node_modules')),'Package smoke location inherits external dependencies');
   for(const file of inventory.files){assertPermittedPath(file.path);assert(!fs.lstatSync(path.join(target,file.path)).isSymbolicLink());}
   for(const resource of OPERATOR_RESOURCES)assert(fs.existsSync(path.join(target,resource)),resource);
-  for(const required of ['deploy/operations-monitor.mjs','censor-daemon/health.mjs','shared/public-app-config.js','shared/portal-runtime.mjs','shared/portal-runtime.json'])assert(inventory.files.some(file=>file.path===required),required);
+  for(const required of ['deploy/operations-monitor.mjs','censor-daemon/health.mjs','censor-daemon/feed-health.mjs','shared/public-app-config.js','shared/portal-runtime.mjs','shared/portal-runtime.json'])assert(inventory.files.some(file=>file.path===required),required);
   checks.push('Explicit runtime resources and monitor/health identity closure present; no symlinks or forbidden dependency paths');
   const shell=path.join(target,'scripts/operator-launch.sh');
   function run(args,{input='',env={}}={}){const result=spawnSync('/bin/sh',[shell,...args],{cwd:directory,env:{HOME:directory,PATH:'/usr/bin:/bin',...env},input,encoding:'utf8',timeout:15000,maxBuffer:1024*1024});assert(!result.error,result.error?.message);assert(!/ERR_MODULE_NOT_FOUND|Cannot find module|Cannot find package|ENOENT:.*(?:engine|artifact|bytecode|\.mjs|\.cjs)/.test(result.stderr+result.stdout),result.stderr+result.stdout);return result;}
