@@ -85,6 +85,34 @@ def check_artifacts(items, base):
     return paths
 
 
+def dependency_edges(n):
+    return n.get("depends_on", []) + n.get("completion_requires", [])
+
+
+def write_paths(n):
+    paths = n.get("write_paths")
+    if not isinstance(paths, list) or not paths:
+        raise ValueError("nonempty write_paths required")
+    result = []
+    for name in paths:
+        if not isinstance(name, str) or any(c in name for c in "*?[]"):
+            raise ValueError("write_paths must be literal relative paths, not globs")
+        path = confined(REPO, name)
+        if path in result:
+            raise ValueError("duplicate write_paths")
+        result.append(path)
+    return result
+
+
+def overlap(left, right):
+    return any(a.is_relative_to(b) or b.is_relative_to(a) for a in left for b in right)
+
+
+def exhausted(n):
+    investigation = n.get("investigation")
+    return investigation is not None and investigation["attempts"] >= investigation["max_attempts"]
+
+
 def graph_errors(g):
     errors = []
     nodes = g.get("nodes", [])
@@ -128,15 +156,31 @@ def graph_errors(g):
         for key in ("scope", "actions", "acceptance", "requirements"):
             if not isinstance(n.get(key), list) or not n[key]:
                 errors.append(f"{ident}: empty {key}")
-        dependencies = n.get("depends_on", [])
-        if not isinstance(dependencies, list) or len(set(dependencies)) != len(dependencies):
-            errors.append(f"{ident}: malformed/duplicate dependencies")
-            dependencies = []
-        for dep in dependencies:
-            if dep not in by_id or dep == ident:
-                errors.append(f"{ident}: missing/self dependency {dep}")
-            elif n.get("status") in {"active", "verification", "review", "done"} and by_id[dep].get("status") != "done":
-                errors.append(f"{ident}: prerequisite {dep} is not done")
+        for key in ("depends_on", "completion_requires"):
+            dependencies = n.get(key, [])
+            if (not isinstance(dependencies, list) or any(not isinstance(d, str) for d in dependencies)
+                    or len(set(dependencies)) != len(dependencies)):
+                errors.append(f"{ident}: malformed/duplicate {key} dependencies")
+                continue
+            for dep in dependencies:
+                if dep not in by_id or dep == ident:
+                    errors.append(f"{ident}: missing/self dependency {dep}")
+                elif (n.get("status") == "done" or key == "depends_on" and n.get("status") in {"active", "verification", "review"}) and by_id[dep].get("status") != "done":
+                    errors.append(f"{ident}: {key} prerequisite {dep} is not done")
+        if "execution_lane" in n and (not isinstance(n["execution_lane"], str) or not n["execution_lane"].strip()):
+            errors.append(f"{ident}: invalid execution_lane")
+        if "write_paths" in n:
+            try:
+                write_paths(n)
+            except ValueError as exc:
+                errors.append(f"{ident}: {exc}")
+        if "investigation" in n:
+            inv = n["investigation"]
+            if (not isinstance(inv, dict)
+                    or any(not isinstance(inv.get(k), str) or not inv[k].strip() for k in ("hypothesis", "next_action"))
+                    or type(inv.get("attempts")) is not int or inv["attempts"] < 0
+                    or type(inv.get("max_attempts")) is not int or inv["max_attempts"] < 1):
+                errors.append(f"{ident}: malformed investigation")
         if set(n.get("requirements", [])) - reqs or set(n.get("findings", [])) - findings:
             errors.append(f"{ident}: unknown requirement/finding")
         covered_req.update(n.get("requirements", []))
@@ -152,10 +196,29 @@ def graph_errors(g):
                 errors.append(f"{ident}: incomplete blocker record")
         elif n.get("blocker") is not None:
             errors.append(f"{ident}: blocker must be null unless blocked")
+    if len(active) > 3:
+        errors.append("three-package work limit exceeded: " + ", ".join(active))
     if len(active) > 1:
-        errors.append("default single-package work limit exceeded: " + ", ".join(active))
+        lanes, owners = set(), []
+        for ident in active:
+            n = by_id[ident]
+            lane = n.get("execution_lane")
+            if not isinstance(lane, str) or not lane.strip() or lane in lanes:
+                errors.append(f"{ident}: parallel work requires distinct execution_lane")
+            else:
+                lanes.add(lane)
+            try:
+                paths = write_paths(n)
+                for other, other_paths in owners:
+                    if overlap(paths, other_paths):
+                        errors.append(f"{ident}: write_paths overlap active package {other}")
+                owners.append((ident, paths))
+            except ValueError as exc:
+                errors.append(f"{ident}: parallel work {exc}")
     if covered_req != reqs or covered_findings != findings:
         errors.append("unassigned requirement or baseline finding")
+    if any("malformed/duplicate" in error for error in errors):
+        return errors
     seen, visiting = set(), set()
     def walk(ident):
         if ident in visiting:
@@ -164,7 +227,7 @@ def graph_errors(g):
         if ident in seen or ident not in by_id:
             return
         visiting.add(ident)
-        for dep in by_id[ident].get("depends_on", []):
+        for dep in dependency_edges(by_id[ident]):
             walk(dep)
         visiting.remove(ident)
         seen.add(ident)
@@ -179,7 +242,7 @@ def graph_errors(g):
             if ident in ancestors or ident not in by_id:
                 return
             ancestors.add(ident)
-            for dep in by_id[ident].get("depends_on", []):
+            for dep in dependency_edges(by_id[ident]):
                 gather(dep)
         gather(terminal)
         if ancestors != set(ids):
@@ -316,6 +379,9 @@ def render_task(n):
     lines = [f"# {n['id']} — {n['title']}", "", "Generated from execution/graph.json. Edit the graph, then run graph.py render.", "",
              f"- Phase: {n['phase']}", f"- Type: {n['kind']}",
              f"- Prerequisites: {', '.join(n['depends_on']) or 'none'}",
+             f"- Required before completion: {', '.join(n.get('completion_requires', [])) or 'none additional'}",
+             f"- Execution lane: {n.get('execution_lane', 'single-package default')}",
+             f"- Exclusive write paths: {', '.join(n.get('write_paths', [])) or 'assign before parallel execution'}",
              f"- Requirements: {', '.join(n['requirements'])}",
              f"- Baseline findings: {', '.join(n['findings']) or 'production component / release requirement'}",
              f"- Evidence: execution/{n['evidence']}", f"- Evidence binding: {n['evidence_mode']}", "",
@@ -336,14 +402,68 @@ def render(g, base=HERE):
         path = confined(base, n["plan"])
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(render_task(n))
-    lines = ["# Execution graph", "", "Generated from graph.json. Each arrow is a required prerequisite.", "", "```mermaid", "flowchart TD"]
+    lines = ["# Execution graph", "", "Generated from graph.json. Solid arrows are start prerequisites; dotted arrows are completion prerequisites.", "", "```mermaid", "flowchart TD"]
     for n in g["nodes"]:
         title = n["title"].replace('"', "'")
         lines.append(f'    {n["id"]}["{n["id"]}: {title}"]')
         lines.extend(f"    {dep} --> {n['id']}" for dep in n["depends_on"])
+        lines.extend(f"    {dep} -.-> {n['id']}" for dep in n.get("completion_requires", []))
     lines += ["```", "", "## Work packages", "", "| ID | Package | Prerequisites | Kind |", "|---|---|---|---|"]
     lines.extend(f"| [{n['id']}]({n['plan']}) | {n['title']} | {', '.join(n['depends_on']) or 'none'} | {n['kind']} |" for n in g['nodes'])
     (base / "GRAPH.md").write_text("\n".join(lines)+"\n")
+    (base / "status.md").write_text(render_status(g))
+
+
+def render_status(g):
+    lines = ["# Current execution status", "", "Generated from graph.json; edit checkpoints and blockers there, then run graph.py render.", "",
+             f"Objective state: **{g['execution_state']}**. Completed packages: {sum(n['status'] == 'done' for n in g['nodes'])}/{len(g['nodes'])}.", ""]
+    for title, nodes in (
+        ("In progress", [n for n in g["nodes"] if n["status"] in {"active", "verification", "review"}]),
+        ("Ready internal work", [n for n in available(g) if n["kind"] == "internal"]),
+        ("Blocked", [n for n in g["nodes"] if n["status"] == "blocked"]),
+    ):
+        lines += [f"## {title}", ""]
+        for n in nodes:
+            lines += [f"- **{n['title']} ({n['id']})** — {n['checkpoint']}"]
+            if n.get("blocker"):
+                lines += [f"  Blocker: {n['blocker']['reason']} Next action: {n['blocker']['next_action']}"]
+            if n.get("investigation"):
+                inv = n["investigation"]
+                lines += [f"  Investigation: {inv['attempts']}/{inv['max_attempts']} attempts. {'Reassessment required. ' if exhausted(n) else ''}{inv['next_action']}"]
+        if not nodes:
+            lines.append("None.")
+        lines.append("")
+    lines += ["Completion remains subject to all acceptance evidence and release gates. Ready means start prerequisites are met, not that parallel write ownership is available.", ""]
+    return "\n".join(lines)
+
+
+def next_steps(g):
+    if g['execution_state'] == 'paused':
+        return "Paused; wait for user resume before execution."
+    lines = []
+    if g['execution_state'] == 'awaiting_start':
+        lines.append("Prepared; awaiting user 'start'. On start set execution_state=running, then execute:")
+    running = [n for n in g['nodes'] if n['status'] in {'active', 'verification', 'review'}]
+    ready = available(g)
+    internal = [n for n in ready if n['kind'] == 'internal']
+    for n in running or internal[:1]:
+        if exhausted(n):
+            lines.append(f"REASSESS {n['id']}: {n['title']} — investigation budget exhausted. {n['investigation']['next_action']}")
+        else:
+            lines.append(f"NEXT {n['id']}: {n['title']}\nRead execution/{n['plan']}\nCheckpoint: {n['checkpoint']}")
+    candidates = internal if running else internal[1:]
+    if candidates:
+        lines.append("Independent internal candidates (assign disjoint write ownership and a free lane before activation):")
+        for n in candidates:
+            label = "REASSESS" if exhausted(n) else "READY"
+            lines.append(f"  {label} {n['id']}: {n['title']} — execution/{n['plan']}")
+    external = [n for n in ready if n['kind'] == 'external']
+    if external:
+        lines.append("External gates ready for evidence collection (read-only checks may be performed without asking):")
+        lines.extend(f"  {n['id']}: {n['title']} — execution/{n['plan']}" for n in external)
+    if not running and not internal:
+        lines.append("No ready internal work. Complete available external evidence, or resolve recorded blockers; do not claim production readiness prematurely.")
+    return "\n".join(lines)
 
 
 def main():
@@ -368,7 +488,7 @@ def main():
             print("\n".join(errors), file=sys.stderr)
             return 1
         render(g)
-        print(f"Rendered {len(g['nodes'])} task plans and GRAPH.md.")
+        print(f"Rendered {len(g['nodes'])} task plans, GRAPH.md and status.md.")
         return 0
     errors = validate(g)
     if errors:
@@ -386,23 +506,7 @@ def main():
             if n['status'] == 'blocked':
                 print(f"BLOCKER {n['id']}: {json.dumps(n['blocker'])}")
     else:
-        if g['execution_state'] == 'awaiting_start':
-            print("Prepared; awaiting user 'start'. On start set execution_state=running, then execute:")
-        if g['execution_state'] == 'paused':
-            print("Paused; wait for user resume before execution.")
-            return 0
-        running = [n for n in g['nodes'] if n['status'] in {'active', 'verification', 'review'}]
-        ready = available(g)
-        chosen = running or [n for n in ready if n['kind'] == 'internal'][:1]
-        for n in chosen:
-            print(f"NEXT {n['id']}: {n['title']}\nRead execution/{n['plan']}\nCheckpoint: {n['checkpoint']}")
-        external = [n for n in ready if n['kind'] == 'external']
-        if external:
-            print("External gates ready for evidence collection (read-only checks may be performed without asking):")
-            for n in external:
-                print(f"  {n['id']}: {n['title']} — execution/{n['plan']}")
-        if not chosen:
-            print("No ready internal work. Complete available external evidence, or resolve recorded blockers; do not claim production readiness prematurely.")
+        print(next_steps(g))
     return 0
 
 

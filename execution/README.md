@@ -27,7 +27,7 @@ From the repository root:
     python3 -m unittest discover -s execution/tests -v
 
 `next` is read-only: it selects work; it does not run code, spawn agents, or send
-transactions. `render` refreshes task documents and GRAPH.md after graph edits.
+transactions. `render` refreshes task documents, GRAPH.md and the generated current status.md after graph edits.
 These files preserve context across runs. They do not schedule background runs
 or keep a stopped session alive. Real elapsed-time tests must be supervised or
 explicitly scheduled; do not fabricate elapsed time.
@@ -35,9 +35,10 @@ explicitly scheduled; do not fabricate elapsed time.
 ## Work loop
 
 1. Validate the graph; check git state and the latest checkpoint.
-2. Resume the active package, or select the first ready internal package.
-   Selection uses ascending priority: the shell boundary repair follows the
-   toolchain, and fee feasibility is addressed before lengthy contract work.
+2. Resume active work and inspect ready independent packages. Maintain at most
+   three explicit execution lanes with disjoint write paths. Prioritize removing
+   delivery blockers; fixed priority is a tie-breaker, not a reason to repeat a
+   stalled experiment. Keep all expensive builds/proofs/browser runs serialized.
 3. Confirm prerequisite outputs and their interfaces against the current source.
    If a change invalidates an assumption, reopen affected verification and record why.
 4. Set status `active`, capture a specific next action, and work within scope.
@@ -46,8 +47,8 @@ explicitly scheduled; do not fabricate elapsed time.
 6. Save `evidence/<ID>.json` and its referenced files. All criteria require results
    and artifact hashes. A regression test should fail for the known bad behavior
    and pass after the repair when that comparison is practical.
-7. Mark `done` only after the evidence passes validation. Update status.md and
-   decisions.md. Continue to the next ready package during the active run.
+7. Mark `done` only after the evidence passes validation. Regenerate status.md from the graph and update
+   decisions.md only for material decisions. Continue to the next ready package during the active run.
 
 `planned → active → verification → review → done` is the normal lifecycle.
 `blocked` requires a reason, evidence of the obstacle, a concrete unblock condition,
@@ -59,7 +60,9 @@ its downstream dependent tasks to `planned`, and update the checkpoint. Regenera
 only the evidence affected by the change, with independent disposition where
 required. An expired network check is a reason to refresh that check, not to stop
 unrelated engineering. If a downstream task is already active, preserve its work
-and make it planned before reopening its prerequisite. Keep one active package.
+and make it planned before reopening its prerequisite. Use bounded independent lanes; a package may start once depends_on is done,
+but cannot finish until completion_requires is also done. Never call preparation
+completed qualification.
 
 ## Evidence rules
 
@@ -97,3 +100,29 @@ by additional agents or more generated tests.
 
 Do not begin the whole graph by designing a separate orchestration product. This
 repository's small graph and validator are sufficient to begin implementation.
+
+## Investigation and delegation controls
+
+Every repeated failure investigation records a hypothesis, attempts, max_attempts
+and a concrete next_action in its node. Default budget: two expensive attempts
+per hypothesis; the existing per-run time/memory limits remain unchanged. Record
+the actual outcome immediately when the process exits, before another run. At
+the budget, stop retries and make a source-backed diagnosis or redesign decision;
+continue independent work. A new hypothesis must cite what was learned, not merely
+reset the counter. `next` flags exhausted investigations for reassessment.
+
+Only root integrates shared files and runs expensive checks. Delegate bounded
+implementation or review with explicit paths, deliverable and acceptance checks;
+prefer two useful lanes to three busy agents. Freeze the input files of each
+active heavy test, not the entire unrelated project. Change-specific checks run
+after integration; broad repeats require changed inputs or an unresolved concern.
+
+`status.md` is generated from graph state. Do not append narratives there. Older
+status is retained in history/. Evidence retains failures and measurements; the
+graph checkpoint contains the latest result and next action. Update checkpoints
+when a process finishes; a restart must not infer that a recorded process lives.
+
+The three delivery lanes are application completion, operational readiness and
+release preparation. Release-only requirements remain enforceable but do not
+block independent engineering. See policy-provenance.md for user requirements
+versus proposed qualification defaults. No new orchestration service is needed.

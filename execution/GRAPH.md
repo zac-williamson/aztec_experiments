@@ -1,6 +1,6 @@
 # Execution graph
 
-Generated from graph.json. Each arrow is a required prerequisite.
+Generated from graph.json. Solid arrows are start prerequisites; dotted arrows are completion prerequisites.
 
 ```mermaid
 flowchart TD
@@ -56,7 +56,7 @@ flowchart TD
     D01 --> U01
     O01["O01: Implement observability, incident and recovery runbooks"]
     D01 --> O01
-    M03 --> O01
+    M02 --> O01
     U01 --> O01
     T01["T01: Verify contract invariants and adversarial proof cases"]
     C06 --> T01
@@ -74,13 +74,14 @@ flowchart TD
     T04["T04: Run browser, recovery, concurrency and load matrix"]
     T02 --> T04
     U01 --> T04
-    O01 --> T04
+    O01 -.-> T04
     R01["R01: Freeze review candidate and prepare independent audit packet"]
     T01 --> R01
-    T03 --> R01
-    T04 --> R01
-    M03 --> R01
+    D01 --> R01
     A02 --> R01
+    T03 -.-> R01
+    T04 -.-> R01
+    M03 -.-> R01
     X01["X01: Obtain independent Aztec and Solidity review"]
     R01 --> X01
     R02["R02: Remediate independent findings and prepare final candidate"]
@@ -131,12 +132,12 @@ flowchart TD
 | [M03](tasks/M03.md) | Evaluate moderation quality and define human review operations | M02 | internal |
 | [D01](tasks/D01.md) | Build fail-closed deployment and configuration verification | A01, W01, C06, A02 | internal |
 | [U01](tasks/U01.md) | Complete user flows and production hosting configuration | W03, F01, D01 | internal |
-| [O01](tasks/O01.md) | Implement observability, incident and recovery runbooks | D01, M03, U01 | internal |
+| [O01](tasks/O01.md) | Implement observability, incident and recovery runbooks | D01, M02, U01 | internal |
 | [T01](tasks/T01.md) | Verify contract invariants and adversarial proof cases | C06, A01 | internal |
 | [T02](tasks/T02.md) | Demonstrate full bridge journey with real proofs | T01, W03, M02, D01, F01 | internal |
 | [T03](tasks/T03.md) | Verify end-to-end privacy and funding footprint | T02, U01, W01 | internal |
-| [T04](tasks/T04.md) | Run browser, recovery, concurrency and load matrix | T02, U01, O01 | internal |
-| [R01](tasks/R01.md) | Freeze review candidate and prepare independent audit packet | T01, T03, T04, M03, A02 | internal |
+| [T04](tasks/T04.md) | Run browser, recovery, concurrency and load matrix | T02, U01 | internal |
+| [R01](tasks/R01.md) | Freeze review candidate and prepare independent audit packet | T01, D01, A02 | internal |
 | [X01](tasks/X01.md) | Obtain independent Aztec and Solidity review | R01 | external |
 | [R02](tasks/R02.md) | Remediate independent findings and prepare final candidate | X01 | internal |
 | [X02](tasks/X02.md) | Obtain independent audit closure for final source | R02 | external |

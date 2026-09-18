@@ -1075,9 +1075,9 @@
         "reason": "Both real model candidates fail predeclared classification limits. Final1.7B run:29/159false positives,19/160false negatives,zero unexpectederrors,p95 1.76s. Independent policy/corpus review and actual flag capacity remain unqualified.",
         "evidence": "evidence/M03/qwen06-evaluation-013.json; evidence/M03/qwen17-evaluation-019.json; evidence/M03/restart-review-017.md",
         "unblock": "Select and measure a suitable policy/model on independently reviewed held-out examples; meet unchanged quality and capacity criteria. Retain all failed candidate results.",
-        "next_action": "Finish retaining second candidate results, then continue independent D01 deployment engineering; no further small-model tuning against this corpus."
+        "next_action": "Prepare a bounded model/policy qualification proposal using held-out human-reviewed labels; continue independent application, operations and review-packet work."
       },
-      "checkpoint": "Measured332cases twice; no model qualified. See evidence/M03/disposition-021.md. Continue D01.",
+      "checkpoint": "Two model candidates failed quality. No approved production model; operations and browser engineering proceed independently.",
       "priority": 17
     },
     {
@@ -1213,7 +1213,7 @@
       "status": "planned",
       "depends_on": [
         "D01",
-        "M03",
+        "M02",
         "U01"
       ],
       "requirements": [
@@ -1380,8 +1380,22 @@
       "evidence": "evidence/T02.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Three genuine local profiles passed; publictestnet explicitly unqualified. Corrected implicit audit scheduling cycle without waiving gates. Finish named internal L1 wrong-index/content/secret and corrupted membership witness probes before local package closure.",
-      "priority": 22
+      "checkpoint": "Run013 failed after all five negative probes rejected: legitimate claim then hit Message not in state. Diagnose test-wallet witness reuse with a small regression before one bounded full rerun.",
+      "priority": 22,
+      "execution_lane": "application",
+      "write_paths": [
+        "scripts/c01-deposit-flow.mjs",
+        "scripts/t02-claim-boundary.mjs",
+        "scripts/test-c01-application.mjs",
+        "scripts/test-t02-claim-boundary.mjs",
+        "execution/evidence/T02/"
+      ],
+      "investigation": {
+        "hypothesis": "The hostile sibling witness survives in PXE cache and contaminates the subsequent legitimate claim; establish source-backed cause before changing code.",
+        "attempts": 1,
+        "max_attempts": 2,
+        "next_action": "Inspect pinned witness-cache lifecycle and isolate hostile test context. Lightweight regression first; one real journey rerun. If failure persists, reassess test architecture before further proving."
+      }
     },
     {
       "id": "T03",
@@ -1446,8 +1460,7 @@
       "status": "planned",
       "depends_on": [
         "T02",
-        "U01",
-        "O01"
+        "U01"
       ],
       "requirements": [
         "REQ04",
@@ -1494,7 +1507,10 @@
       "evidence_mode": "historical",
       "blocker": null,
       "checkpoint": "Not started. Read the task plan and verify prerequisites.",
-      "priority": 24
+      "priority": 24,
+      "completion_requires": [
+        "O01"
+      ]
     },
     {
       "id": "R01",
@@ -1504,9 +1520,7 @@
       "status": "planned",
       "depends_on": [
         "T01",
-        "T03",
-        "T04",
-        "M03",
+        "D01",
         "A02"
       ],
       "requirements": [
@@ -1548,8 +1562,13 @@
       "evidence": "evidence/R01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
-      "priority": 25
+      "checkpoint": "Prepare review scope and existing evidence inventory early; final packet completion still requires privacy, workload and model qualification.",
+      "priority": 25,
+      "completion_requires": [
+        "T03",
+        "T04",
+        "M03"
+      ]
     },
     {
       "id": "X01",

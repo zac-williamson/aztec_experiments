@@ -23,8 +23,10 @@ evidence that the application is already fixed.
   Use bounded parallel implementation, verification and review lanes with disjoint
   file ownership. Keep dependency gates intact; root integrates and verifies each
   work package before completion. Record live delegation in execution/delegation.md.
-- Before editing, record the active task and checkpoint in graph.json and status.md.
-  Read its prerequisites, acceptance criteria, and relevant source.
+- Before editing, record the active task, execution lane, write paths and checkpoint
+  in graph.json; regenerate status.md with graph.py render.
+  Read its prerequisites, acceptance criteria, and relevant source. Up to three
+  independent lanes may be active; all expensive tests stay serialized.
 - Resolve uncertainties with small local experiments before relying on them.
   Keep suspected findings distinct from reproduced failures.
 - Implement, test, review, and integrate each coherent change. Do not mark done
@@ -73,5 +75,11 @@ objective incomplete.
 
 Production-ready means a reproducible, reviewed release package ready for an
 authorized operator to deploy. Live production deployment is a separate action.
-Retargeting from the requested Aztec V5 mainnet to a different protocol requires
-a documented compatibility assessment and the user's decision.
+The user intends a V6 production transition when available. Continue the pinned
+V5 engineering candidate; assess V6 compatibility before migration and retain
+current network suitability as a release gate. Do not infer live deployment authority.
+
+Investigation retries require a recorded hypothesis and bounded attempt budget.
+After exhaustion, diagnose or redesign before another expensive run; continue
+independent lanes. Qualification defaults and user requirements are distinguished
+in execution/policy-provenance.md; do not silently waive release criteria.

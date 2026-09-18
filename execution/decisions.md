@@ -23,20 +23,20 @@ commercial or policy decision. P01 validates them and records material changes.
 |---|---|---|
 | D01 | Preserve ETH escrow and centrally administered moderation. | A new admission mechanism or trust model needs a concrete proposal and user decision. |
 | D02 | Preserve meaningful flag penalties across withdrawal/redeposit; keep a usable exit. | P01 defines exact economics; if implementation requires a material custody/trust change, escalate that choice before dependent changes. |
-| D03 | Shared sponsored or supported private fees; no reusable public user fee-payer identity. | W01 compares supported mechanisms locally. Production sponsor budget and owner must be supplied before operating it. |
+| D03 | Ownerless user-funded private fees; no coupon service or reusable public author fee-payer identity. | Explicit user direction supersedes the original sponsor default. Public funding and cold-start correlation must be disclosed. |
 | D04 | Describe anonymity against chain observers with explicit limits for content, timing, RPC and host observations. Minimize metadata and default telemetry. | Do not promise network anonymity or hide a new identity-bearing relay behind a privacy claim. |
 | D05 | Keep public immutable content and existing onchain flag semantics initially. Provide clear policy and human review/support workflow; UI hiding is reversible. | Reversing an onchain penalty/flag or introducing an appeal authority is a product and protocol change requiring a decision. |
 | D06 | Support current stable desktop Chrome, Firefox and Safari at the time of release testing. Public feed works without loading a private wallet. | Measure proving support first. Unsupported posting environments must be detected and explained; removing a promised browser requires a decision. Mobile read access is in scope; mobile proving is measured and explicitly disclosed, not silently promised. |
 | D07 | Local development and test-only deployments use fresh disposable identities. | No existing user wallet, real funds, purchases, reviewer outreach or live production deployment without explicit authority. |
 | D08 | Deliver a deployable release package and runbooks, then obtain authorization for actual production deployment. | “Production ready” cannot mean “already deployed,” and cannot be declared while required release evidence is missing. |
-| D09 | Requested target remains Aztec V5 mainnet; verify current official guidance and exact version compatibility. | If the target is unsuitable, continue compatible local work and present the migration delta; do not silently substitute V6 or waive the network gate. |
+| D09 | Pinned V5 engineering candidate; user intends full production on V6 when available. | Prepare a concrete compatibility assessment before migration. Current network clearance and actual deployment authorization remain separate. |
 | D10 | No unilateral administrator sweep or timeout refund that leaves valid L2 claims. | C06 designs recovery only where it preserves liabilities and invalidates/reconciles claims. Irrecoverable lost-key cases are documented honestly. |
 | D11 | Independent Aztec/Noir and Solidity review, real-proof end-to-end validation, and 14 consecutive days of representative soak are mandatory. | A second AI pass or mocked test does not substitute. No automatic waiver. |
 
 ## Material inputs to collect without blocking independent engineering
 
 - Named production owner, moderation operator and incident contact.
-- Sponsorship spending limit and funding/replenishment authority.
+- Operator infrastructure budget and user-facing private-fee funding/recovery support.
 - Final moderation policy and response/appeal process.
 - Independent reviewer access/engagement (prepare the package before requesting it).
 - Production infrastructure accounts and budget; replace/restrict previously exposed credentials.
@@ -452,3 +452,20 @@ After three passing native application journeys, U01 tests one supported WasmWor
 ## Correct compiler-review scheduling cycle
 
 Independent graph review011 found an implicit T02→T03→R01→X01→T02 dependency created by generic work wording. Internal packages must produce in-scope adverse tests and explicit unresolved diagnostic ownership; X01 performs authentic independent review, R02 remediation and X02 final closure. R01 prepares the packet before review. All26original/57fresh diagnostics remain open and all release dependencies stay intact. diagnostic-coverage.json names remaining internal L1 input/membership probes in T02, delivery/privacy in T03, discovery/recovery in T04, protocol/VK inventory in R01 and independent soundness in X01/X02. No failed internal test is moved to an external gate. T02 is active to finish its named additional probes.
+
+## 2026-09-18 — execution workflow revision
+
+User authorized implementing the workflow review and continuing. Separate start
+dependencies from completion dependencies: operational engineering consumes the
+moderation interfaces, not a passing model benchmark; browser engineering starts
+before operational drills finish; audit-packet preparation starts before final
+privacy/load/model qualification. All remain prerequisites for the appropriate
+completed qualification or release. Up to three disjoint execution lanes replace
+the single-package limit; heavy jobs remain serialized and bounded.
+
+Preserve the prior status in history/status-before-workflow-revision-2026-09-18.md;
+generate current status instead of appending contradictory narratives. Record
+failed run013 and budget two expensive attempts for its stated diagnosis. No
+application test, quality threshold, external review or soak is declared passed
+by this workflow change. policy-provenance.md distinguishes engineering defaults
+from user instructions; defaults may be reconsidered explicitly, not silently.

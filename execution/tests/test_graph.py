@@ -63,8 +63,132 @@ class GraphTests(unittest.TestCase):
         graph.verify_evidence(self.node(ident), self.g, self.base, self.fingerprint, self.now)
 
     def test_prepared_graph_and_rendered_plans_validate(self):
-        self.assertEqual(graph.validate(self.g), [])
+        graph.render(self.g, self.base)
+        self.assertEqual(graph.validate(self.g, self.base), [])
         self.assertEqual([n["id"] for n in graph.available(self.g)], ["P01"])
+
+    def parallel_fixture(self, count=2):
+        self.g["execution_state"] = "running"
+        nodes = self.g["nodes"][:count]
+        for index, n in enumerate(nodes):
+            n.update(status="active", completion_requires=n["depends_on"], depends_on=[],
+                     execution_lane=f"lane-{index}", write_paths=[f"fixture/lane-{index}"])
+        return nodes
+
+    def test_parallel_disjoint_lanes_allowed(self):
+        self.parallel_fixture(3)
+        self.assertEqual(graph.graph_errors(self.g), [])
+
+    def test_parallel_four_packages_rejected(self):
+        self.parallel_fixture(4)
+        self.assertTrue(any("three-package" in e for e in graph.graph_errors(self.g)))
+
+    def test_parallel_requires_explicit_ownership_and_distinct_lanes(self):
+        a, b = self.parallel_fixture()
+        b["execution_lane"] = a["execution_lane"]
+        del b["write_paths"]
+        errors = graph.graph_errors(self.g)
+        self.assertTrue(any("distinct execution_lane" in e for e in errors))
+        self.assertTrue(any("write_paths required" in e for e in errors))
+
+    def test_parallel_parent_child_write_overlap_rejected(self):
+        a, b = self.parallel_fixture()
+        a["write_paths"] = ["fixture/shared"]
+        b["write_paths"] = ["fixture/shared/subdir/file.py"]
+        self.assertTrue(any("overlap" in e for e in graph.graph_errors(self.g)))
+        b["write_paths"] = ["fixture/shared-other"]
+        self.assertEqual(graph.graph_errors(self.g), [])
+
+    def test_write_paths_reject_escape_and_globs(self):
+        for path in ("../escape", "/absolute", "scripts/*.mjs"):
+            with self.subTest(path=path):
+                self.node("P01")["write_paths"] = [path]
+                self.assertTrue(graph.graph_errors(self.g))
+
+    def test_legacy_single_active_allowed(self):
+        self.g["execution_state"] = "running"
+        n = self.node("P01")
+        n["status"] = "active"
+        n.pop("execution_lane", None)
+        n.pop("write_paths", None)
+        self.assertEqual(graph.graph_errors(self.g), [])
+
+    def test_completion_edges_allow_start_but_prevent_completion(self):
+        self.g["execution_state"] = "running"
+        n = self.node("P02")
+        n["depends_on"] = []
+        n["completion_requires"] = ["P01"]
+        self.assertIn(n, graph.available(self.g))
+        n["status"] = "active"
+        self.assertEqual(graph.graph_errors(self.g), [])
+        n["status"] = "done"
+        self.assertTrue(any("completion_requires prerequisite P01" in e for e in graph.graph_errors(self.g)))
+
+    def test_completion_edges_detect_cycle(self):
+        self.node("P01")["completion_requires"] = ["P02"]
+        self.assertTrue(any("cycle" in e for e in graph.graph_errors(self.g)))
+
+    def test_completion_edges_retain_terminal_ancestry(self):
+        terminal = self.node("R04")
+        terminal["depends_on"].remove("O02")
+        terminal["completion_requires"] = ["O02"]
+        self.assertEqual(graph.graph_errors(self.g), [])
+        self.assertIn("Required before completion: O02", graph.render_task(terminal))
+
+    def test_operations_start_independent_of_model_but_review_completion_is_gated(self):
+        self.g["execution_state"] = "running"
+        # Mark start ancestors complete; leave moderation explicitly blocked.
+        def complete_start(ident):
+            for dep in self.node(ident)["depends_on"]:
+                complete_start(dep)
+                self.node(dep)["status"] = "done"
+        complete_start("O01")
+        complete_start("R01")
+        self.node("M03")["status"] = "blocked"
+        self.node("M03")["blocker"] = dict(reason="Accuracy", evidence="fixture", unblock="Qualified model", next_action="Review candidate")
+        self.assertIn(self.node("O01"), graph.available(self.g))
+        self.assertIn(self.node("R01"), graph.available(self.g))
+        self.node("R01")["status"] = "active"
+        self.assertEqual(graph.graph_errors(self.g), [])
+        self.node("R01")["status"] = "done"
+        self.assertTrue(any("R01: completion_requires prerequisite M03" in e for e in graph.graph_errors(self.g)))
+
+    def test_malformed_completion_edges_rejected_without_crash(self):
+        for value in ("P01", ["P01", "P01"], [{}]):
+            self.node("P02")["completion_requires"] = value
+            self.assertTrue(any("malformed/duplicate" in e for e in graph.graph_errors(self.g)))
+
+    def test_investigation_budget_requires_reassessment_and_keeps_candidates_visible(self):
+        self.g["execution_state"] = "running"
+        self.node("P01")["status"] = "done"
+        self.node("P02")["status"] = "done"
+        n = self.node("M01")
+        n["status"] = "active"
+        n["investigation"] = {"hypothesis": "Fixture hypothesis", "attempts": 2,
+                              "max_attempts": 2, "next_action": "Review evidence before another run"}
+        output = graph.next_steps(self.g)
+        self.assertIn("REASSESS M01", output)
+        self.assertNotIn("NEXT M01", output)
+        self.assertIn("Independent internal candidates", output)
+        self.assertIn("READY", output)
+
+    def test_malformed_investigation_rejected(self):
+        valid = {"hypothesis": "hypothesis", "attempts": 0, "max_attempts": 2, "next_action": "inspect"}
+        for key, value in (("hypothesis", ""), ("attempts", True), ("attempts", -1),
+                           ("max_attempts", 0), ("next_action", None)):
+            with self.subTest(key=key, value=value):
+                self.node("P01")["investigation"] = dict(valid, **{key: value})
+                self.assertTrue(any("malformed investigation" in e for e in graph.graph_errors(self.g)))
+
+    def test_render_status_replaces_stale_text_with_current_checkpoint(self):
+        self.g["execution_state"] = "running"
+        self.node("P01")["status"] = "active"
+        self.node("P01")["checkpoint"] = "Current fixture observation"
+        (self.base / "status.md").write_text("Stale activity")
+        graph.render(self.g, self.base)
+        status = (self.base / "status.md").read_text()
+        self.assertIn("Current fixture observation", status)
+        self.assertNotIn("Stale activity", status)
 
     def test_risk_priority_selects_shell_boundary_after_toolchain(self):
         self.node("P01")["status"] = self.node("P02")["status"] = "done"
