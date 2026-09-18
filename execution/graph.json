@@ -1256,7 +1256,7 @@
       "evidence": "evidence/O01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Escrow/daemon monitoring, bounded checkpointed feed lag, sanitized credential inventory and removal integrated; package smoke011 passes. Drillgapreview010 reuses actual D01/W03/T02 evidence and identifies genuine censor handover/policy and monitor failover drills. Operator delivery/replacement remain external O02 inputs. Plan013 selects independent real portal/wall-clock Anvil monitor failover drill with controlled bridge root; implementation delegated, no heavy run until recovery025 ends.",
+      "checkpoint": "Actual packaged monitor failover020 passed1121ms: balanced1000wei escrow, unavailable endpoint, alternatebalanced; unchanged block/nonce, owned cleanup complete. Transport cancellation regression019 fixed socket-close race. Remaining O01 genuine censor transfer/policy commands; plan015 and integration proposal underway.",
       "priority": 20,
       "execution_lane": "operations",
       "write_paths": [
@@ -1280,7 +1280,8 @@
         "censor-daemon/test_feed_health.mjs",
         "scripts/test-o01-monitor-failover-anvil.mjs",
         "scripts/o01-monitor-drill-transport.mjs",
-        "billboard/portal/test/MonitorRootPublisher.sol"
+        "billboard/portal/test/MonitorRootPublisher.sol",
+        "scripts/test-o01-monitor-drill-transport.mjs"
       ]
     },
     {

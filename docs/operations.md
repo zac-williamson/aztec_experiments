@@ -141,3 +141,20 @@ not mutate jobs, authorize signing or change whether `--once` work completed.
 External monitoring should alert on missing daemon output as well as reported
 warnings. Reorgs during a health snapshot remain possible; existing canonical
 checks at signing and receipt reconciliation remain authoritative.
+
+### Local command qualification
+
+The packaged monitor's healthy → unavailable → alternate healthy path is
+exercised by `scripts/test-o01-monitor-failover-anvil.mjs`. Prepare a current
+operator package and the offline regression portal fixtures first, then pass the
+package's absolute directory and a new evidence JSON filename to that script.
+It uses a real locally deployed portal with a nonzero deposit and controlled
+bridge activation. It checks the unchanged canonical block, balance, liabilities
+and operator nonce across the three commands. It uses normal wall time and the
+production monitor's freshness checks. No Aztec node or network prover is needed.
+
+Recorded run020 passed in1121ms with full owned cleanup. This qualifies manual
+endpoint replacement against two local transports to the same chain; it does not
+establish independent production-provider agreement or live-network clearance.
+The transport cancellation regression also verifies rejection of mutation requests
+and zero remaining sockets/requests after disposal.

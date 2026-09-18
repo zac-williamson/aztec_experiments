@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 22/35.
 
 ## In progress
 
-- **Implement observability, incident and recovery runbooks (O01)** — Escrow/daemon monitoring, bounded checkpointed feed lag, sanitized credential inventory and removal integrated; package smoke011 passes. Drillgapreview010 reuses actual D01/W03/T02 evidence and identifies genuine censor handover/policy and monitor failover drills. Operator delivery/replacement remain external O02 inputs. Plan013 selects independent real portal/wall-clock Anvil monitor failover drill with controlled bridge root; implementation delegated, no heavy run until recovery025 ends.
+- **Implement observability, incident and recovery runbooks (O01)** — Actual packaged monitor failover020 passed1121ms: balanced1000wei escrow, unavailable endpoint, alternatebalanced; unchanged block/nonce, owned cleanup complete. Transport cancellation regression019 fixed socket-close race. Remaining O01 genuine censor transfer/policy commands; plan015 and integration proposal underway.
 - **Verify end-to-end privacy and funding footprint (T03)** — Lifecycle022 current-source privacy analysis014:1495 RPC observations,5 author contract lookups,18 traversal truncations; four canonical transactions use shared payer with no exact author match in inspected fields. Repeated/cross-author comparison and distinct funder/coinbase remain; no unlinkability claim.
 - **Run browser, recovery, concurrency and load matrix (T04)** — Lifecycle022 full GUI passed483244ms/1729856KiB. Recovery025 genuine accepted-post response loss and full browser restart passed274958ms/1772256KiB; one submission, canonical post and private debit; owned cleanup complete. Browser/load/concurrency and other interruption matrix remain.
 
