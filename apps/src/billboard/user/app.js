@@ -290,7 +290,7 @@ async function refreshPolicy() {
   const txt = document.getElementById('policyText');
   if (!box || !txt || !_handles || !_handles.contract) return;
   try {
-    const result = await handles.contract.methods.get_moderation_policy().simulate({ from: handles.address });
+    const result = await handles.contract.methods.get_moderation_policy().simulate({ from: window.__aztec.NO_FROM });
     if(revision!==_getConfigRevision()||handles!==_handles)return;
     let fields = result, len = 0;
     if (result && result.result !== undefined) {
@@ -429,7 +429,7 @@ async function initCensorPanel() {
 
   card.style.display = '';
   try {
-    const censorResult = await handles.contract.methods.get_censor().simulate({ from: handles.address });
+    const censorResult = await handles.contract.methods.get_censor().simulate({ from: window.__aztec.NO_FROM });
     let cv = censorResult;
     if (cv && cv.result !== undefined) cv = cv.result;
     if (cv && cv.value !== undefined) cv = cv.value;
@@ -440,7 +440,7 @@ async function initCensorPanel() {
 
     let kMult = null;
     try {
-      const kResult = await handles.contract.methods.get_k_multiplier().simulate({ from: handles.address });
+      const kResult = await handles.contract.methods.get_k_multiplier().simulate({ from: window.__aztec.NO_FROM });
       kMult = Number(extractInt(kResult));
       if(!Number.isSafeInteger(kMult)||kMult<1||kMult>65535)throw Error('Invalid moderator settings');
     } catch (e) { if(revision!==_getConfigRevision()||handles!==_handles)return;throw Error('Moderator settings unavailable');}

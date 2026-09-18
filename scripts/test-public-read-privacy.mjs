@@ -37,3 +37,15 @@ test('installed SDK maps NO_FROM public-static simulation to zero sender and fee
  assert(captured.data.feePayer.isZero());
  const calls=captured.getPublicCallRequestsWithCalldata();assert.equal(calls.length,1);assert(calls[0].request.msgSender.isZero());assert(calls[0].request.contractAddress.equals(call.to));
 });
+
+test('direct author and censor UI public reads also use the SDK neutral sender',async()=>{
+ for(const page of ['user','censor']){
+  const text=await fs.readFile(new URL(`../apps/src/billboard/${page}/app.js`,import.meta.url),'utf8');
+  const calls=[...text.matchAll(/\.methods\.(get_moderation_policy|get_censor|get_k_multiplier)\(\)\.simulate\((\{[^}]*\})\)/g)];
+  assert.equal(calls.length,3,`${page} public UI reads`);
+  for(const call of calls){
+   const options=vm.runInNewContext('('+call[2]+')',{window:{__aztec:{NO_FROM}},handles:{address:'PRIVATE_OWNER'}});
+   assert.equal(options.from,NO_FROM,`${page}/${call[1]}`);
+  }
+ }
+});

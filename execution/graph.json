@@ -1467,7 +1467,7 @@
       "evidence": "evidence/T03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Neutral public reads implemented6053dc0;99focusedtests and rebuiltapps pass. Historical browser044 demonstrates actual post/private-fee rejection and RPCclass lookup; await new T04 genuine trace for changed reads. Repeated/crossauthor/funding/recovery qualification remains; funderfixturealias is not leak evidence.",
+      "checkpoint": "Neutral public reads complete in engine and six direct UI calls; affected30tests and final appbuild007 pass. Await T04 genuine trace to verify final build. Historical044 remains pre-change evidence; repeated/crossauthor/funding/recovery privacy still open.",
       "priority": 23,
       "execution_lane": "application",
       "write_paths": [
@@ -1484,7 +1484,9 @@
         "execution/evidence/T03/",
         "execution/evidence/U01/privacy-observation-044.json",
         "apps/src/billboard/user/engine.js",
-        "scripts/test-public-read-privacy.mjs"
+        "scripts/test-public-read-privacy.mjs",
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/censor/app.js"
       ]
     },
     {
