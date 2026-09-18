@@ -1,0 +1,12 @@
+# Claim boundary source review 012 — 2026-09-17
+
+Independent read-only review of `scripts/t02-claim-boundary.mjs` and `scripts/c01-deposit-flow.mjs` hook. No heavy test or source edits. No material blocker found; execution qualification remains required.
+
+- Pinned Aztec.nr `aztec/src/messaging.nr:18–42` hashes caller-supplied message index with sender/recipient/content/secret hash, then constrains the derived sibling-path root against the anchor root with `Message not in state`. Oracle-returned `_leaf_index` is deliberately ignored. Helper now mutates only a sibling; its supplied-index case instead checks altered message-hash absence. These are distinct claims.
+- Pinned PXE `utility_execution_oracle.ts:518` requests membership using the anchor header hash. Proxy matches that exact hash and exact message, fetches the genuine witness first, compares index/path, permits exactly one substitution, preserves the index and clones the path before changing one field. Other methods remain bound to the original node. No fabricated root or replacement node state supplies the baseline.
+- Real node checks independently bind membership to the canonical checkpoint root and prove the original message unspent. Four input probes change nonce, caller index, secret or valid-range amount and require the exact changed hash to be absent, then the exact missing-message error. Unrelated account/fee/validation failures cannot count as success.
+- Corrupted sibling probe requires the specific Noir root constraint error and exactly one substitution. Cleanup disarms the proxy on every exit. Original escrow, absent deposit notes, original nullifier absence and selected anchor remain unchanged.
+- Root hook constructs PXE with the proxy but passes the real node into independent checks. After helper completion, genuine claim proving, node validation, canonical inclusion and exact note checks supply the positive control; the positive-control marker is only set afterward.
+- Reports expose fixed case names, stages and booleans, not secret, hash preimages or note contents. These are witness-generation/constraint rejection tests, not completed hostile cryptographic proofs or independent protocol proving-system clearance.
+
+Minor diagnostic limitation: a failure before substitution is followed by the final exact-count assertion, which can mask the original exception. It fails closed and cannot produce a false pass; improve only if execution diagnosis requires it.

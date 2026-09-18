@@ -1,0 +1,27 @@
+{"stage":"start-disposable-l1","elapsedMs":296}
+{"stage":"prepare-genesis","elapsedMs":428}
+{"stage":"deploy-local-protocol-fixture","elapsedMs":2586}
+{"stage":"wait-for-local-validator-activation","elapsedMs":4421}
+{"stage":"start-application-node","elapsedMs":4445}
+{"stage":"prove-board-deployment","elapsedMs":8357}
+{"stage":"include-board-deployment","elapsedMs":28506}
+{"stage":"prepare-and-prove-ready","elapsedMs":41792}
+{"stage":"include-ready","elapsedMs":57258}
+{"stage":"settle-ready-test-message","elapsedMs":89534}
+{"stage":"private-fee:fund-disposable-user","elapsedMs":107609}
+{"stage":"private-fee:bridge-user-funds","elapsedMs":107623}
+{"stage":"private-fee:wait-inbox","elapsedMs":108192}
+{"stage":"real-deposit-and-claim","elapsedMs":148346}
+{"stage":"claim:reopen-claim-wallet","elapsedMs":148393}
+{"stage":"claim:deposit-real-l1","elapsedMs":148672}
+{"stage":"claim:wrong-origin:send-real-wrong-sender-message","elapsedMs":148781}
+{"stage":"claim:wrong-origin:wait-real-wrong-origin-membership","elapsedMs":148788}
+{"stage":"claim:wrong-origin:reject-wrong-origin-claim","elapsedMs":179478}
+{"stage":"claim:wait-real-inbox-anchor","elapsedMs":179728}
+{"stage":"claim:prove-real-claim","elapsedMs":179733}
+{"stage":"claim:claim-boundary:reject-receipt-nonce","elapsedMs":179799}
+{"stage":"claim:claim-boundary:reject-message-index","elapsedMs":179942}
+{"stage":"claim:claim-boundary:reject-secret","elapsedMs":180103}
+{"stage":"claim:claim-boundary:reject-receipt-amount","elapsedMs":180252}
+{"stage":"claim:claim-boundary:reject-malformed-authentic-sibling","elapsedMs":180417}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/T02/application-9a30a5ad-7d6c-4334-a3a7-69b9903158a5.json","passed":false,"profile":"genuine private-fee unflagged post, screening, exit and L1 refund"}

@@ -78,7 +78,9 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     const native={backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1};
     for(const key of ['backend','bbPath','threads'])assert.equal(Barretenberg.getSingleton().options[key],native[key]);
     mark('reopen-claim-wallet');
-    wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
+    const boundaryModule=qualifyWrongOrigin?await import('./t02-claim-boundary.mjs'):undefined;
+    const probe=boundaryModule?.createT02InboxProbeNode(node);
+    wallet=await EmbeddedWallet.create(probe?.node??node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
     const account=authorAccount??preparation.account;
     const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'c01-disposable');
     assert(manager.address.equals(account.address));await wallet.registerContract(instance,checked.board);await wallet.pxe.sync();
@@ -150,6 +152,10 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     assert.equal(canonicalAnchor.hash.toString(),(await anchor.hash()).toString());
     mark('prove-real-claim');
     const claimArgs=[EthAddress.fromString(depositor),amount,receipt.nonce,secret,new Fr(receipt.index)];
+    if(boundaryModule){
+      observation.boundary=await boundaryModule.qualifyT02ClaimBoundary({wallet,board,node,probe,owner:account.address,claimArgs,scope,content,secret,secretHash,message,anchor,witness,depositChainId:chain,l1Client,reportStage:mark});
+      assert(observation.boundary.passed);
+    }
     const {request,proven,tx}=await proveApplicationAction({wallet,owner:account.address,
       interaction:board.methods.claim_deposit(...claimArgs),
       privateFeeAction:privateFeeAction?context=>privateFeeAction({...context,kind:'claim',args:claimArgs}):undefined});
@@ -255,6 +261,7 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
       assert.deepEqual(after[0].note.items.map(integer),activeBefore[0].note.items.map(integer));await canonicalDeposit();
       observation.absentChain={rejected:true,validNoteUnchanged:true,stage:'constraint execution; no completed proof or submission',scope:'wrong chain selection, not forged authenticated note'};
       observation.origin.legitimateClaimPositiveControl=true;
+      observation.boundary.legitimateClaimPositiveControl=true;
     }
     assert.deepEqual((await artifacts(preparation,ready)).hashes,checked.hashes);
     Object.assign(observation,{passed:true,claimTxHash:tx.getTxHash().toString(),claimBlock:String(claimReceipt.blockNumber),
@@ -268,6 +275,7 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     return observation;
   }catch(error){
     if(error.originObservation)observation.origin=error.originObservation;
+    if(error.boundaryObservation)observation.boundary=error.boundaryObservation;
     const failure=new Error(`C01_DEPOSIT_FAILED:${stage}:${error?.name??'Error'}`);
     failure.depositObservation={...observation,passed:false,stage,errorClass:error?.name??'Error',location:error?.stack?.split('\n').filter(line=>line.trimStart().startsWith('at ')).slice(0,3).join('\n')};throw failure;
   }finally{

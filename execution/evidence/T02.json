@@ -1,0 +1,114 @@
+{
+  "task_id": "T02",
+  "outcome": "pass",
+  "recorded_at": "2026-09-18T10:29:10.686258+00:00",
+  "source_fingerprint": "46f82646b70f68e08b15fbcb902b2517fab79993f0f43653777313f1ac5c08f0",
+  "source_inventory": "evidence/T02/source-016.json",
+  "artifacts": [
+    {
+      "path": "evidence/T02/source-016.json",
+      "sha256": "47144e6129fe3a8581c8ab06f457f71045180ffdaa3da79c6e3c5fac2b64a28c"
+    },
+    {
+      "path": "evidence/T02/qualification-016.md",
+      "sha256": "16b75fb16e6250bc2b1992478c4cf07929cf4306101c1e634dcee3e127d128d8"
+    },
+    {
+      "path": "evidence/T02/completion-review-016.md",
+      "sha256": "a64222c827596e26c097341bb492ea93f4fbbbb9222705ca11b5861ac3130ecd"
+    },
+    {
+      "path": "evidence/T02/source-reconciliation-016.json",
+      "sha256": "f87180a960e0276e72c9c0171ad4b41b12f50a0cc2a31c7229aa0d2037083b8f"
+    },
+    {
+      "path": "evidence/T02/claim-boundary-diagnosis-014.md",
+      "sha256": "3a88e08bdfeb802d354f8ff67df054d84e7dd90fa3225ac70031d3c3ec275127"
+    },
+    {
+      "path": "evidence/T02/claim-boundary-review-012.md",
+      "sha256": "2cde733bb8ffb37c05b9c149e3ea6b8a4ff5fe11bac4923a4a6bbee85c55c3de"
+    },
+    {
+      "path": "evidence/T02/dependency-review-011.md",
+      "sha256": "8a5b21699832b9a53f5802f94811e2c46b888034863c60600f67290aeef7620a"
+    },
+    {
+      "path": "evidence/T02/compiler-reconciliation-008.json",
+      "sha256": "a64a05ddf5c97f5553d2358981c5598e8c91494ba87f73bb6e81d4c64753679b"
+    },
+    {
+      "path": "evidence/T02/public-testnet-review-005.md",
+      "sha256": "a9423e08e017509cb9b805a59335e4e19d52bcccb95fdd70000a99f73641c033"
+    },
+    {
+      "path": "evidence/T02/application-294e5d3a-f794-4316-94ef-86195d42b1f1.json",
+      "sha256": "d8d057c82d27c3a07457bfa54d264a9df5a9c4c16b1c95285280c11731045420"
+    },
+    {
+      "path": "evidence/T02/application-b6698c24-7c15-4035-81cd-b3af28f32dc8.json",
+      "sha256": "ab1b2779b68ae5687790ec3bfe7ad0650b9dd10186a62abbeb46f766e6c1f951"
+    },
+    {
+      "path": "evidence/T02/application-8e1f7520-b3e2-4e0f-8c08-f86438636509.json",
+      "sha256": "64678481040d28d3f73772c4d43873deb048f32fc986015142f227708957b066"
+    },
+    {
+      "path": "evidence/T02/application-9a30a5ad-7d6c-4334-a3a7-69b9903158a5.json",
+      "sha256": "008b579e4ec36b7717bc7d121ef7204089565a5a26cb41fb063526577ae77c46"
+    },
+    {
+      "path": "evidence/T02/claim-boundary-015.log",
+      "sha256": "934888ecd3001446c4ab4db533b3e80afd69b814d0ec28ffd8953acf755ad4cb"
+    }
+  ],
+  "criteria": [
+    {
+      "id": "T02-A01",
+      "result": "pass",
+      "summary": "Genuine flagged, unflagged and redeposit application lifecycles pass with real proofs and controlled protocol settlement.",
+      "artifacts": [
+        "evidence/T02/qualification-016.md",
+        "evidence/T02/completion-review-016.md",
+        "evidence/T02/application-8e1f7520-b3e2-4e0f-8c08-f86438636509.json"
+      ]
+    },
+    {
+      "id": "T02-A02",
+      "result": "pass",
+      "summary": "Notes, nullifiers, receipts, screening economics, public effects, private author fee debits and exact collateral refunds checked.",
+      "artifacts": [
+        "evidence/T02/qualification-016.md",
+        "evidence/T02/completion-review-016.md",
+        "evidence/T02/application-8e1f7520-b3e2-4e0f-8c08-f86438636509.json"
+      ]
+    },
+    {
+      "id": "T02-A03",
+      "result": "pass",
+      "summary": "Actual wrong origin/input/sibling/replay/absent-chain and withdrawal eligibility rejections retain valid positive controls; explicit constraint/lookup scopes.",
+      "artifacts": [
+        "evidence/T02/qualification-016.md",
+        "evidence/T02/completion-review-016.md",
+        "evidence/T02/application-8e1f7520-b3e2-4e0f-8c08-f86438636509.json"
+      ]
+    },
+    {
+      "id": "T02-A04",
+      "result": "pass",
+      "summary": "Documented public-testnet blocker branch satisfied; no public compatibility pass claimed.",
+      "artifacts": [
+        "evidence/T02/public-testnet-review-005.md",
+        "evidence/T02/qualification-016.md"
+      ]
+    }
+  ],
+  "review": {
+    "kind": "internal-agent-review",
+    "reviewer": "workflow_review with root integration",
+    "summary": "Scoped acceptance and source reconciliation reviewed; external review and final release remain incomplete.",
+    "artifacts": [
+      "evidence/T02/completion-review-016.md"
+    ]
+  }
+}

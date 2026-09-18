@@ -203,6 +203,8 @@ def graph_errors(g):
         for ident in active:
             n = by_id[ident]
             lane = n.get("execution_lane")
+            if isinstance(lane, str):
+                lane = lane.strip()
             if not isinstance(lane, str) or not lane.strip() or lane in lanes:
                 errors.append(f"{ident}: parallel work requires distinct execution_lane")
             else:
@@ -394,6 +396,11 @@ def render_task(n):
              "## Verification and handoff", "",
              "Record exact commands, environment, sanitized output, source inventory, expected/observed behavior and limitations. Use execution/evidence/README.md. Tests must exercise the behavior and fail for the relevant bad case where practical; mocked evidence cannot satisfy a real-proof criterion. Perform a separate diff/assumption review after implementation. Keep external review requirements distinct from self-review.", "",
              "If blocked, record reason, evidence, unblock condition and next action in graph.json; continue another ready package. Before marking done, verify all criteria and prerequisite states, save linked evidence, run graph.py validate, and update status.md. No unchecked criterion may be silently waived.", ""]
+    if n.get("investigation"):
+        inv = n["investigation"]
+        lines += ["## Bounded investigation", "", f"Hypothesis: {inv['hypothesis']}", "",
+                  f"Attempts: {inv['attempts']}/{inv['max_attempts']}. At the limit, reassess before another experiment.", "",
+                  f"Next action: {inv['next_action']}", ""]
     return "\n".join(lines)
 
 
@@ -421,6 +428,7 @@ def render_status(g):
         ("In progress", [n for n in g["nodes"] if n["status"] in {"active", "verification", "review"}]),
         ("Ready internal work", [n for n in available(g) if n["kind"] == "internal"]),
         ("Blocked", [n for n in g["nodes"] if n["status"] == "blocked"]),
+        ("External evidence ready", [n for n in available(g) if n["kind"] == "external"]),
     ):
         lines += [f"## {title}", ""]
         for n in nodes:

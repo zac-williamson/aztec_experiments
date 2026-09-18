@@ -1,0 +1,967 @@
+{
+  "recordedAt": "2026-09-18T10:23:59.651475+00:00",
+  "scope": "Installed artifact and embedded build-input byte inventory only; not circuit soundness, complete diagnostic mapping, or final freeze",
+  "sdkManifestSha256": "1e9ec69f4fcde2e512fb2bab7b21a1af05a8686c5f7203ca5224b2aa4d19e965",
+  "artifacts": [
+    {
+      "path": "node_modules/@aztec/protocol-contracts/artifacts/ContractClassRegistry.json",
+      "packageVersion": "5.2.0",
+      "sha256": "6b48f644efddcb2816f15ddbf8c97ae9f83a3566c117ff590b92ba263a6faa09",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "functionNames": [
+        "publish",
+        "public_dispatch"
+      ]
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/artifacts/ContractInstanceRegistry.json",
+      "packageVersion": "5.2.0",
+      "sha256": "3e1e1dd4e740f3138a1dacacfcdbc641a0cbba415653bd17fbca11056bede3b3",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "functionNames": [
+        "get_update_delay",
+        "public_dispatch",
+        "publish_for_public_execution",
+        "set_update_delay",
+        "update"
+      ]
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/artifacts/FeeJuice.json",
+      "packageVersion": "5.2.0",
+      "sha256": "76d36975f05b1734e6737c828f0e4af63a32e10ee3d029ad39cf009c1753eb0c",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "functionNames": [
+        "_increase_public_balance",
+        "balance_of_public",
+        "check_balance",
+        "claim",
+        "claim_and_end_setup",
+        "public_dispatch"
+      ]
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/chonk_verifier_public.json",
+      "packageVersion": "5.2.0",
+      "sha256": "a24e4e202b36a0cbcb21d15e89f4aadd8a3a55d610a1485c81c8b717dff62ccb",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "7aeb0879afba6b2a8e2c89d6d392e586e2abfec1ab19382423fed0eba982e0f5"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/hiding_kernel_to_public.json",
+      "packageVersion": "5.2.0",
+      "sha256": "85e47b2ceb1dc1c966d09ca0d560c3777a9efb139cfb679822ea0c6c1b83a87c",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "d403120d8579fb718cf6258be3ed8b467ead70d7277ff6cb7cccbb6815d058af"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/hiding_kernel_to_rollup.json",
+      "packageVersion": "5.2.0",
+      "sha256": "cff32aa0c97728b5d19692cc0c40f8a13bf66d339134b68455fffd67de58ada0",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "38e35747ff94aa77bc505f8c359fce3dc2a893ccad0c2c5c6c070bd6c70fc14d"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/parity_base.json",
+      "packageVersion": "5.2.0",
+      "sha256": "429ce3ba64ebb4a1c1c0674cff23cc2a0bb3896e56cab37d215ed03289f4394e",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "51934d703f932d1cea4e7379245fbf57aaf9530519c732b63c815cc4c185dd91"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/parity_root.json",
+      "packageVersion": "5.2.0",
+      "sha256": "39cd2852237492a048645155aa89dacfaf5851ec8a508c63979c4b44f1a3875e",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "3e4d50e2019bbb1e5e711bc237099e39db52b839d296e7718d410bad579d261d"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_init.json",
+      "packageVersion": "5.2.0",
+      "sha256": "738a6531ccec45ebf9b330fea4e0b94a87c26b65ba2d3837b61546c3a9bd2eee",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "46ac0955ce66c97918f0460c06a35336d26144e600e0897d1754c3eda1894036"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_init_2.json",
+      "packageVersion": "5.2.0",
+      "sha256": "34462969d08cecc211e5256367a953080398769e487e49dbfcb17f222c88543c",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "789d0d15f4d4c15fb69660b519ee31a2c9031e1559d5dc50721f334c1b3436ea"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_init_3.json",
+      "packageVersion": "5.2.0",
+      "sha256": "01bafe40a1113735dd120652c39701fa92d99392a69bdf8b2de04ee2eabd39d9",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "03aa0525090f458e8a2f850c41646cb34b78790b5ba03572391aac5f691577b3"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_init_simulated.json",
+      "packageVersion": "5.2.0",
+      "sha256": "315d81d9fb98862b11d3b506beb809cdc1370889f893eb5bb7ed777731b6170e",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_inner.json",
+      "packageVersion": "5.2.0",
+      "sha256": "ccb648f91f6e0731223cf7d40969c587400271a23c3b746ec7da7c7819c0a84b",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "1ec9847c31c174b30128bf5e67aba847cbf9a16db91c472d6573a478ffc7df47"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_inner_2.json",
+      "packageVersion": "5.2.0",
+      "sha256": "ef86df8fb1e0803adfbc2944d1a8f29406a6ddf7268e3d2c8a22a9fe35b685f3",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "145489ac114f6f868fc2395e440597c6a72fc80f8f2c868bc1c705d3e7533be4"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_inner_3.json",
+      "packageVersion": "5.2.0",
+      "sha256": "4ebe82800cf06c7f420e34d95827cc2ec45c9c341aec2aaa36337e6b081ed855",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "927992a8be9899b00f43f5382f0078ddb8a2319a9aedfa914c05e19eb464b486"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_inner_simulated.json",
+      "packageVersion": "5.2.0",
+      "sha256": "a6d80b88f1edd7cec28793c11ddf9d7a6f19c1c2b91b0ace6db084bc82b0dcbf",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset.json",
+      "packageVersion": "5.2.0",
+      "sha256": "c07613538a87e09e40e4eda55aaaafc37af5e5a18f1cbd4be4136c24784a3409",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "067f939a8120816ecaaf794477ee78184b28e50e1fa4f15fae3a572fa0cc91d0"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_0_0_0_0_64_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "786c6126e804c56aea846c8d52a7be08d6229da2a26a0eb01c8831a12cd89af3",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "8a84b4569b27dfd746691a1e647189669572e4a9603f2c9d3eba958e3510d551"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_0_0_0_64_0_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "b39d3022990fc8b299a4b5c75cc14ee6e76e6dd6766904cd6001fe019bcce722",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "a66088afc9cb69edb1905a3ea40e47cf1c78abdfc5eb4b60709012f7aabb6d6c"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_0_0_64_0_0_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "586f9f4c8b9acff1988f899f74e61048cf41e404d6e6ae373091b557a0fd7f36",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "6c647415d7d093c85538099cf9bcde77aba30403970c780dcb8978b1c8db1b5c"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_0_64_0_0_0_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "1111f52170976c459604ba51d95226771c6526b4e8ab16cffb591ea69358271f",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "ba39750626e87522accee9203501ebca0b78d399c39b6005773bac902ce09370"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_64_0_0_0_0_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "70a053d038184859b3afd9e5ae0240ca9679ebc0c426b1f707a3556001fd9fc4",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "b2fc3092c07de1c213bc85afe343e04945670bd78dd8201b6a1c3773339bf8c8"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_32_32_32_32_16_16_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "d3511b90b5cc3411be61bd6ea5fae0039b5f47ea1f674d9272af76c1db273ebf",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "787ca992ba48bf5fc0e9e35942afeea35bdf94e403bc88b440ff9dde39e37913"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_4_4_4_4_4_4_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "b5a8b42bee5e865949bbd32addf61a34f8a85461dd3093088f501f5bb0c92c65",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "0fcaafcef8965bfe0600b77de37e018dd7013231fce7b144e0c6e6fc7b656371"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_64_0_0_0_0_0_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "8688d8339e8a85d25c43e862a0bd9df20abbb4e18bdd9b65588961e709a9763a",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "55b49da15f5a974591be35882be3443ed542b719b1a3d3d1418ff30b0bf0b858"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated.json",
+      "packageVersion": "5.2.0",
+      "sha256": "7c5b06b489e9c1fd87bde401abb98344ca2fcbd61480ccc1665aaf1cf150056b",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_0_0_0_0_64_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "e3f6952404d9d34ed233cc1dbd4d214efc1d2a4b4cdd0c81ffa1134a672a6587",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_0_0_0_64_0_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "b3235a3bfdca3a937bdf61ee3b10f44474fa4977095e14b1410f83cb5974e120",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_0_0_64_0_0_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "68244afd780ebff5a29a642a171e559391979c92c7298d95ae17dc6e8a1e1b8f",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_0_64_0_0_0_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "f001f459973887721864f1141c5c454089d0e232ce17ac3691585536955c4d0d",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_64_0_0_0_0_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "67b82fa8d83cea3e8c754cd5fce6c7d98b319e3a0f59b7b96ad858a0f15fe0b0",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_32_32_32_32_16_16_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "97164fdefb5af9c4013d48d54865edad497bb0d888a3cff8d8e5fb108ecd76dd",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_4_4_4_4_4_4_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "938d62754acdae99a42f64a3f6530c20f21d5fd7bc7972887227fb8a6e54ac61",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_64_0_0_0_0_0_0_0_0.json",
+      "packageVersion": "5.2.0",
+      "sha256": "384ec9988dbf812f1a7dd0f2df1252415eab1d90a6d2be228d920f9853b11eb3",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail.json",
+      "packageVersion": "5.2.0",
+      "sha256": "970c78d02b879fbdae41878df570db29451297d6c8e677f1cfbb8fec61aa9782",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "433c86d501c922b64c86c9655cb2b1457186eed3f1cd8756d27ce5732c5a2087"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_0_8_0_8_4_0_4_16_8.json",
+      "packageVersion": "5.2.0",
+      "sha256": "95d0d81b98e8cba4d6c04a9edac1c536f539e62ae0d315b54d8d32377d926c9d",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "f1b52fd1fdcbe3ee4f5365e6224b4da3cb7436805208c6562583a0c1cdf261a2"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_16_16_16_16_16_16_16_16_16.json",
+      "packageVersion": "5.2.0",
+      "sha256": "112407044cfff29589e7b68a0bbc9804e5db1ae372c9f4948dbbf6d647965f4f",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "f08182fce3295c06c93f516c55b70b269af26212f08350cce9b0e7f0030eb411"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_32_32_32_32_32_32_32_32_32.json",
+      "packageVersion": "5.2.0",
+      "sha256": "0e6ba22e4546ed383a161ac014bff5e810b5f1cc213ecaca15108ca23d0d06af",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "5d225331e66a1070fee4f2963fbeee7a28fb568d6e88081e6bd3c2182ea50435"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_4_4_4_4_4_4_4_4_4.json",
+      "packageVersion": "5.2.0",
+      "sha256": "021dff19591fecce5239bac4b0b4ccc942847ab913c0bdfe3aa48e59f165768f",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "5860c56a76867ddd90346d7ddca541c88c36dbfe9436e2aa96226709bcb2ac87"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_8_8_8_8_8_8_8_8_8.json",
+      "packageVersion": "5.2.0",
+      "sha256": "5b98c3a185b3fc4a5b5f78cc8409f6a2cf2d0553d6316ba3eb506db9711558b9",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "f8dd889a453156c6728da25b70fb15775966b8829c8543f4a93a2f19661956a8"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated.json",
+      "packageVersion": "5.2.0",
+      "sha256": "bcab95d63c90ba4ccf41da73edf66662ae2f8e2cd81fcd05af750f661b5bcc7a",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_0_8_0_8_4_0_4_16_8.json",
+      "packageVersion": "5.2.0",
+      "sha256": "12800f903b2b85b38293d6b43adeb791b191ecd1f2d001c926f64c00fec2d130",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_16_16_16_16_16_16_16_16_16.json",
+      "packageVersion": "5.2.0",
+      "sha256": "2051827839e8913d65c0314eabdb15e046f732017657afd5131b11b19d515baa",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_32_32_32_32_32_32_32_32_32.json",
+      "packageVersion": "5.2.0",
+      "sha256": "4e25e63a4407bf227e21f4de0e2831dd8925b3a805cfdd281a282a71e2caa560",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_4_4_4_4_4_4_4_4_4.json",
+      "packageVersion": "5.2.0",
+      "sha256": "686847bd2951b12841bf919332a23cb119310266c3d7a2ce8462648f7a395931",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_8_8_8_8_8_8_8_8_8.json",
+      "packageVersion": "5.2.0",
+      "sha256": "0e37b74fb6f94fa5411bc71585f93bf94a8a79730276a1a89d00a408a80ca7c9",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public.json",
+      "packageVersion": "5.2.0",
+      "sha256": "80bd93b3f3bf089fcaa7ab70202b22a5492d3bccdd2ffe056a269b4b1cd09a2e",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "70f0847949e93bcbfe317d0a52e3e9333799fb3f90c1c3565fd3c936d88f26cf"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_0_8_0_8_4_0_4_16_8.json",
+      "packageVersion": "5.2.0",
+      "sha256": "b636faace695243fda8605febc613eedaa56fe00c388b91a34da8f3a7ff25e61",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "7dcbdef215ceef46d9fd67fdc2a815f404882be223b03a4097a832cda9e23dac"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_16_16_16_16_16_16_16_16_16.json",
+      "packageVersion": "5.2.0",
+      "sha256": "556f72dbcce4d1e3aa1d6434099b512be4b746a21b401e42cedf5e44dec9d796",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "892d7b234c6b5ddf259d8df4f95d34973dd55efc0bdd6f3c44dfe9f7a865ae54"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_32_32_32_32_32_32_32_32_32.json",
+      "packageVersion": "5.2.0",
+      "sha256": "d96897579d481c32580266a9b933792018d08d7e698cdaa4bd5e229a19a78e79",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "c695d0985a4dfd18211d03de14e01b7742d7c560ab0b8b173d26f9ebb46c0b52"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_4_4_4_4_4_4_4_4_4.json",
+      "packageVersion": "5.2.0",
+      "sha256": "f94a974eab9abd20a41230ba8aa5c8dc98e4fdecae3abe2b1263eb55c0636fe3",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "aa0173842b134faaedb3b799570c7c9c48a49583cc19e5a8f2a83fed97d372d8"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_8_8_8_8_8_8_8_8_8.json",
+      "packageVersion": "5.2.0",
+      "sha256": "dcafd830fd27026f260fb8032abd107aa517567179c347004567646dd15063ee",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true,
+      "verificationKeyEncodingSha256": "7b13df93cbbef0a7693e35badd1a7adb88b70bdb5dc2b252b4fc1236b84dd876"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated.json",
+      "packageVersion": "5.2.0",
+      "sha256": "59a4e87ac3a3ea65d9c46ef6314df1394c7e6f401a96ef4809c3fd109bbe971c",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_0_8_0_8_4_0_4_16_8.json",
+      "packageVersion": "5.2.0",
+      "sha256": "9f09f2c325409a5d9e69112da31230d99a4577406d978c65fc54f29a65b1e4e5",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_16_16_16_16_16_16_16_16_16.json",
+      "packageVersion": "5.2.0",
+      "sha256": "54f93aca5e485cf692abf012b5cdfc506114884f1b96bfebbb64164b9037003e",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_32_32_32_32_32_32_32_32_32.json",
+      "packageVersion": "5.2.0",
+      "sha256": "6e601f9b6a1e87e4c0a2abe20b993a3b5372ca26e5a638891be6190ca4eb473f",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_4_4_4_4_4_4_4_4_4.json",
+      "packageVersion": "5.2.0",
+      "sha256": "91dcf6280030b6d9f09d12c5955b9b6150913fd000a4578513fd983c3edad01f",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_8_8_8_8_8_8_8_8_8.json",
+      "packageVersion": "5.2.0",
+      "sha256": "5e9ceaed886fa61bb5d0f03c0f5dfc739dc110ed7e5751e5f4a1361bce3b2d36",
+      "recordedAsBrowserInput": true,
+      "browserInputMatches": true
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_block_merge.json",
+      "packageVersion": "5.2.0",
+      "sha256": "d32ca75905bdb47f57cd47c460fad88f5ebe674a7ef23fdeecadbc9abd267348",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "466da6f3febec2c1542ad554bb164a67ad0c1176aafcd9a5a009ddf946c68d53"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_block_root.json",
+      "packageVersion": "5.2.0",
+      "sha256": "16c454cfde7e2203e9220b66a7f584bcd4493eafc17f8166d0d453b527ed455d",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "cf7165e6aa480a4afa0cfcefaaf252b3e4f06c40fb1668e0ade726b4c45169a9"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_block_root_first.json",
+      "packageVersion": "5.2.0",
+      "sha256": "f121613a9f39e6446fe440bb016ff7da298eae647933dc1287444795dbb631f8",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "fede7c8f2d65998ab5e4defbdf5b8ed6bd5796b9fc9052e948fbecf12cc4af62"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_block_root_first_empty_tx.json",
+      "packageVersion": "5.2.0",
+      "sha256": "632544bd14099b3b92e127253d5ae87a768dcbbab262fa098f17c5a08534f0e6",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "348da986285f03be74825325d552c4d0eacafcec6c4288e8cf83868714fec67b"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_block_root_first_simulated.json",
+      "packageVersion": "5.2.0",
+      "sha256": "166ec0a5103cfb2d375752b106eaf97e8311c7adf8a9eb1bdf7b7a5700be376b",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_block_root_first_single_tx.json",
+      "packageVersion": "5.2.0",
+      "sha256": "a4dc0f2d5f26f9b400fc6d75a9b203f6eddabe6260ab7fd1f46f7535ff2ab2e0",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "ca2de15700f5873a9f075b87caa0725afa51d34274d1405b472186d63e642c0f"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_block_root_first_single_tx_simulated.json",
+      "packageVersion": "5.2.0",
+      "sha256": "02f3cfebd79b496a7df4183a6f016d4808d3cb1ce85e29da3df239b74b913fd0",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_block_root_simulated.json",
+      "packageVersion": "5.2.0",
+      "sha256": "14342c4c48b657df64cf8ceb535fc4dc09e33731dd46d90f6ad33af153715605",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_block_root_single_tx.json",
+      "packageVersion": "5.2.0",
+      "sha256": "878d587c8350effd2677649a850aa109e26189a2c5edf1a61a4d802c49c1c945",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "cc0f810ffb6c1f9648d2bb1baa36aca71cab06dd9478601cf38eb563236f541f"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_block_root_single_tx_simulated.json",
+      "packageVersion": "5.2.0",
+      "sha256": "3a90cf5d2515971a67d8910cfb70de6f252139823181975599b9a2cdbe9c4b3d",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_checkpoint_merge.json",
+      "packageVersion": "5.2.0",
+      "sha256": "80ee8ddef9dd9349ace12207f82e2ce8120e90d177a91abd43e7cfa9429a4f9c",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "55752a00fc8efcfbeff0237cef7f2f84284a1c6f293888b693dbf1ec612c8e51"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_checkpoint_padding.json",
+      "packageVersion": "5.2.0",
+      "sha256": "8e9b00531edf18405e516cbb443ec3c59e205e329a18e0e9fbcdd55cef1cd900",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "f6e94d39431237bb3cbeee6538f57db8071c51114615b0cea918b06da02ac2cc"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_checkpoint_root.json",
+      "packageVersion": "5.2.0",
+      "sha256": "36ea8bed331f5fef8bae8add16364cfdb24ee5465219c9d0f28766c762efb059",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "f60ab3ef29fdb815e32f8699e0531cfc3e2e47eafbfb7d668633e7d6d18f11b7"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_checkpoint_root_simulated.json",
+      "packageVersion": "5.2.0",
+      "sha256": "3f449136c45001c6b70310fba826eaba2f891297f2fa964d818e7317f5774b5e",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_checkpoint_root_single_block.json",
+      "packageVersion": "5.2.0",
+      "sha256": "12b2fd4b3ba6b08c909d6503aaa5f9358e9431ca05749913d6910c60f0281d96",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "4b170f8119d204b4c1995c6bc460a80b22f4e56b37877cc076be0973a29bd7d5"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_checkpoint_root_single_block_simulated.json",
+      "packageVersion": "5.2.0",
+      "sha256": "584674e1ffcbb0781e487fcd897cef93f7be5ac450ecc0ad6396e0b9f23c36fd",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_root.json",
+      "packageVersion": "5.2.0",
+      "sha256": "ed393a2149c6992212ec2c9d83f1837f8431446ce85453598fb4a62aebec16b9",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "c6cf0731b8eb16cc950ba29ba7c732a688dc8f8469292b68414d8f905a80cf11"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_tx_base_private.json",
+      "packageVersion": "5.2.0",
+      "sha256": "d66ec56488493ed6060249ee8a976a9e8b606bdb62ee34c2d7261c4e6aacab83",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "70425c6e9f0116cf15c2c6c2cd224d811fc77de369f353d5a2eb47568c265ab1"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_tx_base_private_simulated.json",
+      "packageVersion": "5.2.0",
+      "sha256": "70791fe7daaad750a84d3e33adad33245cb35f6f894d314e0440ed9fd2e9ab1e",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_tx_base_public.json",
+      "packageVersion": "5.2.0",
+      "sha256": "8c7c0944c007fcd8845c71aee99a4c886d7b74781128be7c2a223bee96c9399a",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "0a6ec8b569e05039a07f722629426b511e504f746d85d24d74a39fbab58b4857"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_tx_base_public_simulated.json",
+      "packageVersion": "5.2.0",
+      "sha256": "354dd927788752992d1bc8e0c7cbd5a4e12334066b64840f05be87e7b01a7d46",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_tx_merge.json",
+      "packageVersion": "5.2.0",
+      "sha256": "1911d450bc7ace4544e6f05eb922f3cea12dee41230cc7d5c42cf43134bb21c1",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "d5080cb0e113994df8550d4e7cb09bca104a23705223553b6166c545e9fc798f"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/ts_types.json",
+      "packageVersion": "5.2.0",
+      "sha256": "e74a1a1186c0b8218c20b13b90b8dd1ca83dfd7c38ca7b61a652bea64c480280",
+      "recordedAsBrowserInput": false,
+      "browserInputMatches": null,
+      "verificationKeyEncodingSha256": "21fa5d30c8d245dcd097262baa3c02ce471eb568b52a89acaeccd7941bea292b"
+    }
+  ],
+  "embeddedPackageInputs": [
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/hiding_kernel_to_public.json",
+      "sha256": "85e47b2ceb1dc1c966d09ca0d560c3777a9efb139cfb679822ea0c6c1b83a87c"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/hiding_kernel_to_rollup.json",
+      "sha256": "cff32aa0c97728b5d19692cc0c40f8a13bf66d339134b68455fffd67de58ada0"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_init.json",
+      "sha256": "738a6531ccec45ebf9b330fea4e0b94a87c26b65ba2d3837b61546c3a9bd2eee"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_init_2.json",
+      "sha256": "34462969d08cecc211e5256367a953080398769e487e49dbfcb17f222c88543c"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_init_3.json",
+      "sha256": "01bafe40a1113735dd120652c39701fa92d99392a69bdf8b2de04ee2eabd39d9"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_init_simulated.json",
+      "sha256": "315d81d9fb98862b11d3b506beb809cdc1370889f893eb5bb7ed777731b6170e"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_inner.json",
+      "sha256": "ccb648f91f6e0731223cf7d40969c587400271a23c3b746ec7da7c7819c0a84b"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_inner_2.json",
+      "sha256": "ef86df8fb1e0803adfbc2944d1a8f29406a6ddf7268e3d2c8a22a9fe35b685f3"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_inner_3.json",
+      "sha256": "4ebe82800cf06c7f420e34d95827cc2ec45c9c341aec2aaa36337e6b081ed855"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_inner_simulated.json",
+      "sha256": "a6d80b88f1edd7cec28793c11ddf9d7a6f19c1c2b91b0ace6db084bc82b0dcbf"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_0_0_0_0_64_0_0_0.json",
+      "sha256": "786c6126e804c56aea846c8d52a7be08d6229da2a26a0eb01c8831a12cd89af3"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_0_0_0_64_0_0_0_0.json",
+      "sha256": "b39d3022990fc8b299a4b5c75cc14ee6e76e6dd6766904cd6001fe019bcce722"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_0_0_64_0_0_0_0_0.json",
+      "sha256": "586f9f4c8b9acff1988f899f74e61048cf41e404d6e6ae373091b557a0fd7f36"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_0_64_0_0_0_0_0_0.json",
+      "sha256": "1111f52170976c459604ba51d95226771c6526b4e8ab16cffb591ea69358271f"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_0_64_0_0_0_0_0_0_0.json",
+      "sha256": "70a053d038184859b3afd9e5ae0240ca9679ebc0c426b1f707a3556001fd9fc4"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_32_32_32_32_16_16_0_0_0.json",
+      "sha256": "d3511b90b5cc3411be61bd6ea5fae0039b5f47ea1f674d9272af76c1db273ebf"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_4_4_4_4_4_4_0_0_0.json",
+      "sha256": "b5a8b42bee5e865949bbd32addf61a34f8a85461dd3093088f501f5bb0c92c65"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_64_0_0_0_0_0_0_0_0.json",
+      "sha256": "8688d8339e8a85d25c43e862a0bd9df20abbb4e18bdd9b65588961e709a9763a"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_0_0_0_0_64_0_0_0.json",
+      "sha256": "e3f6952404d9d34ed233cc1dbd4d214efc1d2a4b4cdd0c81ffa1134a672a6587"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_0_0_0_64_0_0_0_0.json",
+      "sha256": "b3235a3bfdca3a937bdf61ee3b10f44474fa4977095e14b1410f83cb5974e120"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_0_0_64_0_0_0_0_0.json",
+      "sha256": "68244afd780ebff5a29a642a171e559391979c92c7298d95ae17dc6e8a1e1b8f"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_0_64_0_0_0_0_0_0.json",
+      "sha256": "f001f459973887721864f1141c5c454089d0e232ce17ac3691585536955c4d0d"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_0_64_0_0_0_0_0_0_0.json",
+      "sha256": "67b82fa8d83cea3e8c754cd5fce6c7d98b319e3a0f59b7b96ad858a0f15fe0b0"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_32_32_32_32_16_16_0_0_0.json",
+      "sha256": "97164fdefb5af9c4013d48d54865edad497bb0d888a3cff8d8e5fb108ecd76dd"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_4_4_4_4_4_4_0_0_0.json",
+      "sha256": "938d62754acdae99a42f64a3f6530c20f21d5fd7bc7972887227fb8a6e54ac61"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_simulated_64_0_0_0_0_0_0_0_0.json",
+      "sha256": "384ec9988dbf812f1a7dd0f2df1252415eab1d90a6d2be228d920f9853b11eb3"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail.json",
+      "sha256": "970c78d02b879fbdae41878df570db29451297d6c8e677f1cfbb8fec61aa9782"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_0_8_0_8_4_0_4_16_8.json",
+      "sha256": "95d0d81b98e8cba4d6c04a9edac1c536f539e62ae0d315b54d8d32377d926c9d"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_16_16_16_16_16_16_16_16_16.json",
+      "sha256": "112407044cfff29589e7b68a0bbc9804e5db1ae372c9f4948dbbf6d647965f4f"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_32_32_32_32_32_32_32_32_32.json",
+      "sha256": "0e6ba22e4546ed383a161ac014bff5e810b5f1cc213ecaca15108ca23d0d06af"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_4_4_4_4_4_4_4_4_4.json",
+      "sha256": "021dff19591fecce5239bac4b0b4ccc942847ab913c0bdfe3aa48e59f165768f"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_8_8_8_8_8_8_8_8_8.json",
+      "sha256": "5b98c3a185b3fc4a5b5f78cc8409f6a2cf2d0553d6316ba3eb506db9711558b9"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated.json",
+      "sha256": "bcab95d63c90ba4ccf41da73edf66662ae2f8e2cd81fcd05af750f661b5bcc7a"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_0_8_0_8_4_0_4_16_8.json",
+      "sha256": "12800f903b2b85b38293d6b43adeb791b191ecd1f2d001c926f64c00fec2d130"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_16_16_16_16_16_16_16_16_16.json",
+      "sha256": "2051827839e8913d65c0314eabdb15e046f732017657afd5131b11b19d515baa"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_32_32_32_32_32_32_32_32_32.json",
+      "sha256": "4e25e63a4407bf227e21f4de0e2831dd8925b3a805cfdd281a282a71e2caa560"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_4_4_4_4_4_4_4_4_4.json",
+      "sha256": "686847bd2951b12841bf919332a23cb119310266c3d7a2ce8462648f7a395931"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_simulated_8_8_8_8_8_8_8_8_8.json",
+      "sha256": "0e37b74fb6f94fa5411bc71585f93bf94a8a79730276a1a89d00a408a80ca7c9"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public.json",
+      "sha256": "80bd93b3f3bf089fcaa7ab70202b22a5492d3bccdd2ffe056a269b4b1cd09a2e"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_0_8_0_8_4_0_4_16_8.json",
+      "sha256": "b636faace695243fda8605febc613eedaa56fe00c388b91a34da8f3a7ff25e61"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_16_16_16_16_16_16_16_16_16.json",
+      "sha256": "556f72dbcce4d1e3aa1d6434099b512be4b746a21b401e42cedf5e44dec9d796"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_32_32_32_32_32_32_32_32_32.json",
+      "sha256": "d96897579d481c32580266a9b933792018d08d7e698cdaa4bd5e229a19a78e79"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_4_4_4_4_4_4_4_4_4.json",
+      "sha256": "f94a974eab9abd20a41230ba8aa5c8dc98e4fdecae3abe2b1263eb55c0636fe3"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_8_8_8_8_8_8_8_8_8.json",
+      "sha256": "dcafd830fd27026f260fb8032abd107aa517567179c347004567646dd15063ee"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated.json",
+      "sha256": "59a4e87ac3a3ea65d9c46ef6314df1394c7e6f401a96ef4809c3fd109bbe971c"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_0_8_0_8_4_0_4_16_8.json",
+      "sha256": "9f09f2c325409a5d9e69112da31230d99a4577406d978c65fc54f29a65b1e4e5"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_16_16_16_16_16_16_16_16_16.json",
+      "sha256": "54f93aca5e485cf692abf012b5cdfc506114884f1b96bfebbb64164b9037003e"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_32_32_32_32_32_32_32_32_32.json",
+      "sha256": "6e601f9b6a1e87e4c0a2abe20b993a3b5372ca26e5a638891be6190ca4eb473f"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_4_4_4_4_4_4_4_4_4.json",
+      "sha256": "91dcf6280030b6d9f09d12c5955b9b6150913fd000a4578513fd983c3edad01f"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/artifacts/private_kernel_reset_tail_to_public_simulated_8_8_8_8_8_8_8_8_8.json",
+      "sha256": "5e9ceaed886fa61bb5d0f03c0f5dfc739dc110ed7e5751e5f4a1361bce3b2d36"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/artifacts/client/lazy.js",
+      "sha256": "58a85d37d5df41083ffda2b1ee1b82ed8d4f5113338201ec8a19b06d30b1b599"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/artifacts/types.js",
+      "sha256": "dce9cc29d24fbc57f6dbed9892fd5aba44eb37e04407f6aba00688c40a09440d"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/artifacts/vks/tree.js",
+      "sha256": "5913a9b8e98140af7a3d04c1658629b19f1d8510f39a42f9e36297af27302d6c"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/client_artifacts_helper.js",
+      "sha256": "116e837814f742228b5547a166c55ba6a7a0417ed382422d774ab964d5b62f48"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/conversion/client.js",
+      "sha256": "d77844d8ad1b6bef37a7ea963624ebb3318a87d79a37a9306fe2f44a35ceb4ec"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/conversion/common.js",
+      "sha256": "f2d62906a30d2a0b12e7b3dcd3f310c6862d620f0a0c4da6d182b7983503ce90"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/entrypoint/client/common.js",
+      "sha256": "3f6f01cc618dc268f3f5c2eb20b910ddca32f94c369cbdc3ec365b0416135bb6"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/entrypoint/client/lazy.js",
+      "sha256": "3a6ca7c545235108c76a5840d747bf742251a9282976a0a7f0536f1b866333d4"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/entrypoint/vk-tree.js",
+      "sha256": "fc716a72d87dc93329a2ddb87c7a25f81f9ca5926dfd2e4252d53457788b8f56"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/execution/client.js",
+      "sha256": "553e02f9e396f8736bc551ddc73ce7eeca1e25b0e80bec2156d3779f9e6576a3"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/private_kernel_reset_types.js",
+      "sha256": "2a796cd37ec5a3842185aeda4ca461e61ce6f2b9fc04d0706a03c69f79bc9f02"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/utils/client/foreign_call_handler.js",
+      "sha256": "82ea3c63d6b881b0a7d093ba769fb008bb53c99b4dad1507cda3d7ebfae08d00"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/utils/private_kernel_reset.js",
+      "sha256": "be041269926155c36a462ba6e65470e989f41176e7e85146e7cda1cd84b57b1b"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/utils/vk_json.js",
+      "sha256": "7964f273f411d0a6497d00ece8b3cdb488a2692af7aca8d21bcccaf07de73f9c"
+    },
+    {
+      "path": "node_modules/@aztec/noir-protocol-circuits-types/dest/vk_tree.js",
+      "sha256": "565eaf192492dced4a0371012ea77a798c7bc1e503f799ebafa82a691d608539"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/artifacts/ContractClassRegistry.json",
+      "sha256": "6b48f644efddcb2816f15ddbf8c97ae9f83a3566c117ff590b92ba263a6faa09"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/artifacts/ContractInstanceRegistry.json",
+      "sha256": "3e1e1dd4e740f3138a1dacacfcdbc641a0cbba415653bd17fbca11056bede3b3"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/artifacts/FeeJuice.json",
+      "sha256": "76d36975f05b1734e6737c828f0e4af63a32e10ee3d029ad39cf009c1753eb0c"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/dest/class-registry/contract_class_published_event.js",
+      "sha256": "63a7629f16cca9e6643637a2e13c2be9291f557d1935020d6028259eb29b4bd4"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/dest/class-registry/lazy.js",
+      "sha256": "9bddcfcdc39e30291a4cf2d51e9eaf7e81b919db2cc3238656b3a401d3524746"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/dest/fee-juice/index.js",
+      "sha256": "4ac5ee053616114493396b5aed19830d55a440b08b01b4f4b574281616f5c2ba"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/dest/fee-juice/lazy.js",
+      "sha256": "7b6104b3977341877dad34a507dc33f97380e63af4fbf152fe49e546a9a66745"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/dest/index.js",
+      "sha256": "db1b953de53478b1a13f2be137c23377bffbaf7864072c3fce033bd5eb0d2a04"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/dest/instance-registry/contract_instance_published_event.js",
+      "sha256": "7804698fd8183896491da1934b3635438c1a90fe0fdbcaecf998f5ed5a5b3d48"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/dest/instance-registry/contract_instance_updated_event.js",
+      "sha256": "615380d291ae04a4ec4ce4d049c51dcce76e842f8aa40037c07bef091ec45e04"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/dest/instance-registry/lazy.js",
+      "sha256": "f8c935b1bfe2521688c211846e1d54129dff5e3202dcc45edbf89c1f5d3fa676"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/dest/make_protocol_contract.js",
+      "sha256": "e4824f47aa56f9d2ccb55afba77947b89ae58a839b6e0d29c35511dd8e915571"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/dest/protocol_contract.js",
+      "sha256": "a361d58911aee3ac49fdc5824d7c025fc2cc6457cafaded0aeb0026bb1545c25"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/dest/protocol_contract_data.js",
+      "sha256": "d1f2e34c80f1a8bc3741279f94887f8cece6dd405bb30020b039985f83ed1e57"
+    },
+    {
+      "path": "node_modules/@aztec/protocol-contracts/dest/provider/lazy.js",
+      "sha256": "053980dccc93dd9e29bffce8c0fca8ebbf6c0a4c840e890095afff636390b5a7"
+    }
+  ],
+  "limitations": [
+    "Installed artifacts may include server/simulated circuits unused by browser; presence does not imply execution.",
+    "VK hash covers exact serialized JSON value, not independent validity.",
+    "Diagnostic caller-site mapping and independent disposition remain incomplete."
+  ]
+}

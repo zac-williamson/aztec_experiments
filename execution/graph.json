@@ -1210,7 +1210,7 @@
       "title": "Implement observability, incident and recovery runbooks",
       "phase": "engineering",
       "kind": "internal",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "D01",
         "M02",
@@ -1226,7 +1226,8 @@
         "services/",
         "deploy/",
         "docs/",
-        "execution/"
+        "execution/",
+        "scripts/"
       ],
       "plan": "tasks/O01.md",
       "actions": [
@@ -1255,8 +1256,21 @@
       "evidence": "evidence/O01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Not started. Read the task plan and verify prerequisites.",
-      "priority": 20
+      "checkpoint": "Escrow monitor implemented and six checks pass. Add structured moderation health from existing job store and remove raw provider/model error output; no new service or signing behavior.",
+      "priority": 20,
+      "execution_lane": "operations",
+      "write_paths": [
+        "deploy/operations-monitor.mjs",
+        "scripts/test-operations-monitor.mjs",
+        "docs/operations.md",
+        "execution/evidence/O01/",
+        "censor-daemon/job-store.mjs",
+        "censor-daemon/health.mjs",
+        "censor-daemon/daemon.mjs",
+        "censor-daemon/worker.mjs",
+        "censor-daemon/test_health.mjs",
+        "censor-daemon/test_health_integration.mjs"
+      ]
     },
     {
       "id": "T01",
@@ -1326,7 +1340,7 @@
       "title": "Demonstrate full bridge journey with real proofs",
       "phase": "engineering",
       "kind": "internal",
-      "status": "active",
+      "status": "done",
       "depends_on": [
         "T01",
         "W03",
@@ -1380,7 +1394,7 @@
       "evidence": "evidence/T02.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Run013 failed after all five negative probes rejected: legitimate claim then hit Message not in state. Diagnose test-wallet witness reuse with a small regression before one bounded full rerun.",
+      "checkpoint": "Scoped local qualification complete: full flagged/redeposit and current unflagged015384341ms/1325568KiB; claim boundary and cache isolation positivecontrol pass. Publictestnet and external review remain later release obligations.",
       "priority": 22,
       "execution_lane": "application",
       "write_paths": [
@@ -1389,13 +1403,7 @@
         "scripts/test-c01-application.mjs",
         "scripts/test-t02-claim-boundary.mjs",
         "execution/evidence/T02/"
-      ],
-      "investigation": {
-        "hypothesis": "The hostile sibling witness survives in PXE cache and contaminates the subsequent legitimate claim; establish source-backed cause before changing code.",
-        "attempts": 1,
-        "max_attempts": 2,
-        "next_action": "Inspect pinned witness-cache lifecycle and isolate hostile test context. Lightweight regression first; one real journey rerun. If failure persists, reassess test architecture before further proving."
-      }
+      ]
     },
     {
       "id": "T03",
@@ -1517,7 +1525,7 @@
       "title": "Freeze review candidate and prepare independent audit packet",
       "phase": "release",
       "kind": "internal",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "T01",
         "D01",
@@ -1562,12 +1570,17 @@
       "evidence": "evidence/R01.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Prepare review scope and existing evidence inventory early; final packet completion still requires privacy, workload and model qualification.",
+      "checkpoint": "Early review scope and evidence index prepared. Installed inventory002 records81 protocol/circuit artifacts and80 embedded package inputs;53 embedded artifact hashes match. Final caller/site mapping and candidate freeze wait for remaining qualification; no audit claim.",
       "priority": 25,
       "completion_requires": [
         "T03",
         "T04",
         "M03"
+      ],
+      "execution_lane": "release-preparation",
+      "write_paths": [
+        "execution/release/review-preparation.md",
+        "execution/evidence/R01/"
       ]
     },
     {
