@@ -1,0 +1,15 @@
+✔ rendezvous accepts only fixed stages and bounded unique public transaction identifiers (6.91425ms)
+✔ atomic rendezvous cannot overwrite a prior stage or accept an unverified release (5.860583ms)
+✔ missing release respects remaining parent budget (0.632083ms)
+✔ canonical exit rejects wrong leaf, duplicate leaf, wrong nullifier and ineligible anchor (439.409875ms)
+✔ aborted lifecycle terminates a rendezvous even with a clamped legacy time callback (108.103541ms)
+✔ actual shared producer builder roundtrips both strict parent handoff modes (4.79575ms)
+✔ local fixture preserves node serialization and confines Ethereum authority (139.221208ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 810.580959

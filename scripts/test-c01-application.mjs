@@ -17,7 +17,7 @@ const execFileAsync = promisify(execFile);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function fingerprints() {
   const result = {};
-  for (const name of ['scripts/u01-browser-flow.mjs','scripts/u01-browser-post-verify.mjs','scripts/u01-browser-post.mjs','scripts/u01-browser-rpc.mjs','scripts/t03-rpc-observer.mjs','scripts/t03-public-footprint.mjs','deploy/hosting-config.mjs','scripts/c01-native-profile.mjs','scripts/test-c01-application.mjs','scripts/owned-test-process-tree.mjs','scripts/c01-settle-application-message.mjs','scripts/c01-application-deployment.mjs',
+  for (const name of ['scripts/t04-browser-journey.mjs','scripts/t04-browser-journey-verify.mjs','scripts/run-bounded-browser-check.mjs','scripts/u01-browser-flow.mjs','scripts/u01-browser-post-verify.mjs','scripts/u01-browser-post.mjs','scripts/u01-browser-rpc.mjs','scripts/t03-rpc-observer.mjs','scripts/t03-public-footprint.mjs','deploy/hosting-config.mjs','scripts/c01-native-profile.mjs','scripts/test-c01-application.mjs','scripts/owned-test-process-tree.mjs','scripts/c01-settle-application-message.mjs','scripts/c01-application-deployment.mjs',
     'scripts/w03-note-attribution.mjs','shared/application-nullifier.mjs','scripts/w03-proof-recovery.mjs','shared/l2-journal.mjs','shared/transaction-outcomes.mjs','shared/journal-backup.mjs','scripts/prove-application-action.mjs','scripts/w02-wallet-restore.mjs','shared/wallet-backup.js','scripts/w01-private-fee-standalone.mjs','scripts/w01-private-fee-flow.mjs','scripts/w01-private-funding.mjs','shared/private-fee-client.mjs','shared/private-fee-payment.mjs','shared/private-fee-funding.mjs','shared/ethereum-journal.mjs','shared/journal-record.mjs','apps/src/billboard/user/transaction-journal-store.mjs','scripts/c01-settle-ready.mjs','scripts/c01-settle-message.mjs','scripts/c01-bridge-flow.mjs','scripts/c02-screening-flow.mjs','scripts/t02-screening-journey.mjs','scripts/t02-redeposit-flow.mjs','scripts/t02-wrong-origin.mjs','scripts/t02-claim-boundary.mjs','scripts/test-t02-claim-boundary.mjs','node_modules/@aztec/pxe/src/node/caching_aztec_node.ts','node_modules/@aztec/pxe/dest/node/caching_aztec_node.js','node_modules/@aztec/pxe/src/pxe.ts','node_modules/@aztec/pxe/dest/pxe.js','node_modules/@aztec/pxe/src/block_synchronizer/block_synchronizer.ts','node_modules/@aztec/pxe/dest/block_synchronizer/block_synchronizer.js','node_modules/@aztec/l1-artifacts/dest/InboxAbi.js','node_modules/@aztec/l1-artifacts/l1-contracts/src/core/messagebridge/Inbox.sol','scripts/t02-redeposit-replay.mjs','node_modules/@aztec/l1-artifacts/dest/OutboxAbi.js','node_modules/@aztec/l1-artifacts/l1-contracts/src/core/messagebridge/Outbox.sol','scripts/c03-author-claims.mjs','scripts/c03-contention-flow.mjs','scripts/c01-client-mining.mjs','scripts/c01-deposit-flow.mjs','scripts/c01-exit-flow.mjs','scripts/c01-withdraw-l1.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
     'node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js']) {
     result[name] = sha(await fs.readFile(path.join(ROOT, name)));
@@ -50,7 +50,7 @@ async function writeBrowserResult(directory,result) {
 }
 async function browserWorker(directory) {
   let result={passed:false,failure:'Browser driver did not complete'};
-  try {const control=await readPrivateControl();const {runU01BrowserPost}=await import('./u01-browser-post.mjs');result=await runU01BrowserPost({...control,directory,observeProofStages:true,onStage:stage=>process.stdout.write(JSON.stringify({browserStage:stage})+'\n')});}
+  try {const control=await readPrivateControl();const {validateBrowserControl,validateBrowserHandoff}=await import('./t04-browser-journey.mjs');validateBrowserControl(Object.fromEntries(['backupPassword','browserJourney','origin','rpcToken'].map(key=>[key,control[key]])));const handoffKeys=['nodeUrl','ethereumUrl','publicConfig','backupPath','ethereumAccount','message',...(control.browserJourney?['browserJourney','depositAmount']:[])];assert.deepEqual(Object.keys(control).sort(),[...new Set([...handoffKeys,'backupPassword','browserJourney','origin','rpcToken','timeoutMs'])].sort());validateBrowserHandoff(Object.fromEntries(handoffKeys.map(key=>[key,control[key]])),{directory,browserJourney:control.browserJourney});assert(Number.isSafeInteger(control.timeoutMs)&&control.timeoutMs>0&&control.timeoutMs<=480000);const {runU01BrowserPost}=await import('./u01-browser-post.mjs');const journeyDriver=control.browserJourney?(await import('./t04-browser-journey.mjs')).driveT04BrowserJourney:undefined;result=await runU01BrowserPost({...control,journeyDriver,directory,observeProofStages:!control.browserJourney,onStage:stage=>process.stdout.write(JSON.stringify({browserStage:stage})+'\n')});}
   catch {result={passed:false,failure:'Browser driver failed; raw errors omitted'};}
   await writeBrowserResult(directory,result);process.exitCode=result.passed?0:1;
 }
@@ -65,7 +65,7 @@ async function worker(directory) {
   const mark=name=>{stage=name;originalStdout(JSON.stringify({stage,elapsedMs:Math.round(performance.now())})+'\n');};
   try {
     assertNodeVersion();assertAztecPackages();
-    const browserControl=process.env.U01_BROWSER_POST==='true'?await readPrivateControl():undefined;
+    const browserControl=process.env.U01_BROWSER_POST==='true'?(await import('./t04-browser-journey.mjs')).validateBrowserControl(await readPrivateControl()):undefined;
     const {pins}=await import('./toolchain.mjs');
     assert.equal(sha(await fs.readFile(process.env.FOUNDRY_SOLC)),'738dcdc6afddeb505ee4e4ef24f1c1fdba2b8c924e614cbbf5801a5b062dd683');
     const anvilPath='/Users/zac/.foundry/bin/anvil';
@@ -157,9 +157,10 @@ async function parent() {
   assertNodeVersion(); assertAztecPackages();
   assert.equal(process.platform, 'darwin', 'This bounded no-network profile is qualified for macOS only');
   assert.equal(process.arch, 'arm64', 'This harness pins the installed arm64 BB binary');
-  assert(process.argv.length===2||(process.argv.length===3&&['--redeposit','--flagged-journey','--unflagged-journey','--browser-post','--node','--board-proof','--include','--ready','--settle','--bridge','--screening','--contention','--posting-diagnostic','--private-fees','--private-fee-post','--proof-recovery','--note-attribution'].includes(process.argv[2])),'Unsupported harness arguments');
+  assert(process.argv.length===2||(process.argv.length===3&&['--redeposit','--flagged-journey','--unflagged-journey','--browser-post','--browser-journey','--node','--board-proof','--include','--ready','--settle','--bridge','--screening','--contention','--posting-diagnostic','--private-fees','--private-fee-post','--proof-recovery','--note-attribution'].includes(process.argv[2])),'Unsupported harness arguments');
   const journey=process.argv[2]==='--redeposit'?'redeposit':process.argv[2]==='--flagged-journey'?'flagged':process.argv[2]==='--unflagged-journey'?'unflagged':'';
-  const browserPost=process.argv[2]==='--browser-post';
+  const browserJourney=process.argv[2]==='--browser-journey';
+  const browserPost=process.argv[2]==='--browser-post'||browserJourney;
   if(browserPost)assert.equal(process.env.U01_BOUNDED_BROWSER,'true','Browser post requires aggregate bounded browser supervisor');
   const postingDiagnostic=process.argv[2]==='--posting-diagnostic';
   const contention=postingDiagnostic||process.argv[2]==='--contention';
@@ -175,11 +176,11 @@ async function parent() {
   const boardProof=process.argv[2]==='--board-proof'||boardInclude;
   const startNode=process.argv[2]==='--node'||boardProof;
   const id = randomUUID();
-  const evidence = path.join(ROOT, journey?'execution/evidence/T02':browserPost?'execution/evidence/U01':privateFees?'execution/evidence/W01':contention?'execution/evidence/C03':screening?'execution/evidence/C02':'execution/evidence/C01', `application-${id}.json`);
+  const evidence = path.join(ROOT, browserJourney?'execution/evidence/T04':journey?'execution/evidence/T02':browserPost?'execution/evidence/U01':privateFees?'execution/evidence/W01':contention?'execution/evidence/C03':screening?'execution/evidence/C02':'execution/evidence/C01', `application-${id}.json`);
   await fs.mkdir(path.join(ROOT, '.build'), { recursive: true });
   // Short private path keeps native Unix socket names below macOS sockaddr_un limits.
   const directory = await fs.mkdtemp(browserPost?path.join(process.env.BILLBOARD_TEST_TMPDIR,'c01-'):'/private/tmp/c01-application-');
-  const report = { schemaVersion: 1, profile: journey==='redeposit' ? 'genuine private-fee deposit/refund, redeposit replay rejection and second refund' : journey ? `genuine private-fee ${journey} post, screening, exit and L1 refund` : browserPost ? 'actual browser GUI post from preseeded private-fee funded wallet' : noteAttribution ? 'genuine same-note dummy and withdrawal attribution, private fees and refund' : proofRecovery ? 'genuine stale post proof, private credit conflict and journal-linked replacement' : privateFeePosting ? 'genuine user-funded private fees, cold start and posting' : privateFees ? 'genuine user-funded private fees, claim/exit/refund' : postingDiagnostic ? 'one-author genuine posting diagnostic; not contention qualification' : contention ? 'ten genuine authors preparing posts from one anchor' : screening ? 'application deposit, posting and authenticated screening proofs' : bridge ? 'application proofs, controlled settlement, deposit/claim/exit/refund' : settle ? 'application Ready proof and controlled settlement' : readyFlow ? 'genuine Ready proof and ordinary inclusion' : boardInclude ? 'genuine board proof and ordinary inclusion' : boardProof ? 'genuine board client proof' : startNode ? 'local protocol fixture and application node startup' : 'official local protocol deployment fixture only',
+  const report = { schemaVersion: 1, profile: browserJourney?'genuine GUI deposit claim post screening withdrawal refund with native warm private fees':journey==='redeposit' ? 'genuine private-fee deposit/refund, redeposit replay rejection and second refund' : journey ? `genuine private-fee ${journey} post, screening, exit and L1 refund` : browserPost ? 'actual browser GUI post from preseeded private-fee funded wallet' : noteAttribution ? 'genuine same-note dummy and withdrawal attribution, private fees and refund' : proofRecovery ? 'genuine stale post proof, private credit conflict and journal-linked replacement' : privateFeePosting ? 'genuine user-funded private fees, cold start and posting' : privateFees ? 'genuine user-funded private fees, claim/exit/refund' : postingDiagnostic ? 'one-author genuine posting diagnostic; not contention qualification' : contention ? 'ten genuine authors preparing posts from one anchor' : screening ? 'application deposit, posting and authenticated screening proofs' : bridge ? 'application proofs, controlled settlement, deposit/claim/exit/refund' : settle ? 'application Ready proof and controlled settlement' : readyFlow ? 'genuine Ready proof and ordinary inclusion' : boardInclude ? 'genuine board proof and ordinary inclusion' : boardProof ? 'genuine board client proof' : startNode ? 'local protocol fixture and application node startup' : 'official local protocol deployment fixture only',
     startedAt: new Date().toISOString(), deadlineMs: DEADLINE_MS, passed: false, testsApplicationOrEpoch: boardProof, rssLimitKiB:RSS_LIMIT_KIB, rssSampleIntervalMs:1000, rssMethod:'sampled PPID descendant tree with remembered process identities/groups; not OS allocation limit', rssSamples:[], peakTreeRSSKiB:0 };
   let child, finished, timer, outerTimer, killPromise, rssTimer, rssPending, browserChild, browserPromise, browserControl;
   let childClosed=false,stopSampling=false;
@@ -190,7 +191,7 @@ async function parent() {
       const net=await import('node:net'),reservation=net.createServer();
       await new Promise((resolve,reject)=>{reservation.once('error',reject);reservation.listen(0,'127.0.0.1',resolve);});
       const port=reservation.address().port;await new Promise(resolve=>reservation.close(resolve));
-      browserControl={origin:'https://127.0.0.1:'+port,rpcToken:randomBytes(32).toString('hex'),backupPassword:randomBytes(32).toString('base64url')};
+      browserControl={browserJourney,origin:'https://127.0.0.1:'+port,rpcToken:randomBytes(32).toString('hex'),backupPassword:randomBytes(32).toString('base64url')};
       Object.assign(report.sourceHashes,await browserFingerprints());
     }
     const crs=path.join(directory,'crs');await fs.mkdir(crs);
@@ -212,7 +213,7 @@ async function parent() {
     if(applicationThreads===2)await fs.writeFile(path.join(directory,'bb-two-threads'),"#!/bin/sh\nHARDWARE_CONCURRENCY=2 exec '"+bb+"' \"$@\"\n",{flag:'wx',mode:0o700});
     report.applicationBBThreads=applicationThreads;report.nodeBBThreads=1;report.worldStateHardwareConcurrency=1;
     await fs.mkdir(path.join(directory,'acvm'),{mode:0o700});
-    report.journey=journey;report.browserPost=browserPost;report.noteAttribution=noteAttribution;report.proofRecovery=proofRecovery;report.privateFeePosting=privateFeePosting;report.privateFees=privateFees;report.startNode=startNode;report.boardProof=boardProof;report.settle=settle;report.bridge=bridge;report.screening=screening;report.contention=contention;report.postingDiagnostic=postingDiagnostic;report.expectedAuthorCount=contention&&!postingDiagnostic?10:1;
+    report.browserJourney=browserJourney;report.journey=journey;report.browserPost=browserPost;report.noteAttribution=noteAttribution;report.proofRecovery=proofRecovery;report.privateFeePosting=privateFeePosting;report.privateFees=privateFees;report.startNode=startNode;report.boardProof=boardProof;report.settle=settle;report.bridge=bridge;report.screening=screening;report.contention=contention;report.postingDiagnostic=postingDiagnostic;report.expectedAuthorCount=contention&&!postingDiagnostic?10:1;
     if(postingDiagnostic)report.contentionQualified=false;
     const profile=path.join(directory,'local-only.sb');
     await fs.writeFile(profile, '(version 1)\n(allow default)\n(deny network-outbound (remote ip "*:*"))\n(allow network-outbound (remote ip "localhost:*"))\n(deny network-inbound (local ip "*:*"))\n(allow network-inbound (local ip "localhost:*"))\n');
@@ -239,13 +240,15 @@ async function parent() {
       try {
         if(report.stopReason)throw Error('Browser launch cancelled');
         const descriptor=JSON.parse(await fs.readFile(path.join(directory,'browser-ready.json'),'utf8'));
-        assert.deepEqual(Object.keys(descriptor).sort(),['nodeUrl','ethereumUrl','publicConfig','backupPath','ethereumAccount','message'].sort());
-        assert(path.resolve(descriptor.backupPath).startsWith(directory+path.sep));
+        const {validateBrowserHandoff}=await import('./t04-browser-journey.mjs');
+        validateBrowserHandoff(descriptor,{directory,browserJourney});
+        assert.equal(await fs.realpath(descriptor.backupPath),descriptor.backupPath);
+        assert((await fs.lstat(descriptor.backupPath)).isFile());
         if(report.stopReason)throw Error('Browser launch cancelled');
         const remaining=DEADLINE_MS-(performance.now()-started)-10000;assert(remaining>0);
         report.browserDriverHeapLimitMiB=64;
         browserChild=spawn(process.execPath,['--max-old-space-size=64',SELF,'--browser-worker',directory],{cwd:ROOT,detached:true,stdio:['pipe','pipe','ignore'],env:{PATH:path.dirname(process.execPath)+':/usr/bin:/bin',HOME:process.env.HOME,TMPDIR:directory,NODE_OPTIONS:'',...(process.env.PLAYWRIGHT_BROWSERS_PATH?{PLAYWRIGHT_BROWSERS_PATH:process.env.PLAYWRIGHT_BROWSERS_PATH}:{})}});
-        let progress='';browserChild.stdout.on('data',bytes=>{progress+=bytes.toString();if(progress.length>4096){progress='';return;}let newline;while((newline=progress.indexOf('\n'))>=0){const line=progress.slice(0,newline);progress=progress.slice(newline+1);try{const {browserStage}=JSON.parse(line);if(!['local-https','browser-start','wallet-software','public-config-import','encrypted-wallet-restore','wallet-connect-and-status','actual-gui-post','prover-start','prover-load','prover-accumulate','prover-finalize','prover-hiding-key','prover-verify','prover-compress'].includes(browserStage))continue;const record={browserStage,elapsedMs:Math.round(performance.now()-started)};(report.browserStages??=[]).push(record);console.log(JSON.stringify(record));}catch{}}});
+        let progress='';browserChild.stdout.on('data',bytes=>{progress+=bytes.toString();if(progress.length>4096){progress='';return;}let newline;while((newline=progress.indexOf('\n'))>=0){const line=progress.slice(0,newline);progress=progress.slice(newline+1);try{const {browserStage}=JSON.parse(line);if(!['local-https','browser-start','wallet-software','public-config-import','encrypted-wallet-restore','wallet-connect-and-status','actual-gui-post','gui-deposit-claim','gui-screen','gui-withdraw','gui-refund','prover-start','prover-load','prover-accumulate','prover-finalize','prover-hiding-key','prover-verify','prover-compress'].includes(browserStage))continue;const record={browserStage,elapsedMs:Math.round(performance.now()-started)};(report.browserStages??=[]).push(record);console.log(JSON.stringify(record));}catch{}}});
         const ended=new Promise((resolve,reject)=>{browserChild.once('error',reject);browserChild.once('close',(code,signal)=>resolve({code,signal}));});
         assert(Number.isSafeInteger(browserChild.pid));await treeFor(browserChild.pid).sample();
         browserChild.stdin.on('error',()=>{});browserChild.stdin.end(JSON.stringify({...descriptor,...browserControl,timeoutMs:Math.min(480000,Math.floor(remaining))}));

@@ -1,0 +1,18 @@
+{"stage":"start-disposable-l1","elapsedMs":242}
+{"stage":"prepare-genesis","elapsedMs":367}
+{"stage":"deploy-local-protocol-fixture","elapsedMs":2233}
+{"stage":"wait-for-local-validator-activation","elapsedMs":3579}
+{"stage":"start-application-node","elapsedMs":3596}
+{"stage":"prove-board-deployment","elapsedMs":6522}
+{"stage":"include-board-deployment","elapsedMs":20156}
+{"stage":"prepare-and-prove-ready","elapsedMs":32913}
+{"stage":"include-ready","elapsedMs":44007}
+{"stage":"settle-ready-test-message","elapsedMs":66218}
+{"stage":"private-fee:fund-disposable-user","elapsedMs":84156}
+{"stage":"private-fee:bridge-user-funds","elapsedMs":84165}
+{"stage":"private-fee:wait-inbox","elapsedMs":84703}
+{"stage":"private-fee:prove-standalone-funding","elapsedMs":125052}
+{"stage":"private-fee:include-standalone-funding","elapsedMs":136594}
+{"stage":"browser-ready","elapsedMs":147481}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/T04/application-a3279d8d-b9ef-40bb-94a7-a3f70a67ad91.json","passed":false,"profile":"genuine GUI deposit claim post screening withdrawal refund with native warm private fees"}
+{"boundedBrowser":false,"elapsedMs":148443,"peakRSSKiB":1041408,"stopReason":null,"ownedTreeAbsent":true}

@@ -1543,7 +1543,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Implement minimal full GUI collateral claim/post/screen/withdraw/refund using existing runner; native warm private-fee setup disclosed. Preserve540s/2GiB; one measured attempt after source review. Design002 identifies settlement rendezvous outside client mining.",
+      "checkpoint": "005handoffguard defect fixed with actual sharedproducer/consumer roundtrip tests006; seven helper/RPC tests pass and syntaxclean. New bounded007 attempt after source-backed reassessment, unchanged540s/2GiB; no prior GUIpass claimed.",
       "priority": 24,
       "completion_requires": [
         "O01"
@@ -1563,10 +1563,10 @@
         "scripts/run-bounded-browser-check.mjs"
       ],
       "investigation": {
-        "hypothesis": "Existing browser worker reused across genuine GUI lifecycle fits unchanged540s/2GiB; source timing estimate459-499s requires measurement.",
-        "attempts": 0,
+        "hypothesis": "005 failed before browser because parent accepted only legacydescriptor keys. Both actual producers now share mode-specific validated builder with parent/worker, offline roundtrip regression006 passes; run007 tests corrected seam and fullGUI lifecycle.",
+        "attempts": 1,
         "max_attempts": 1,
-        "next_action": "Implement and review lifecycle driver and independent canonical verifier, then one bounded run; reassess measured stage on failure."
+        "next_action": "Run frozen007 once; record exact outcome and inspect any new failure before retry. Earlier005 failure retained."
       }
     },
     {

@@ -12,6 +12,7 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
   preparation,instance,ready,settlement,mark,browserControl,journey,screeningOnly=false,contentionOnly=false,privateFees=false,privateFeePosting=false}){
   const observation={passed:false,scope:'genuine local deposit, private claim, no-post exit and L1 refund',
     applicationProofs:true,controlledSettlement:true,networkProofs:false};
+  let browserJourney;
   assert(!node.getProverNode(),'No network prover in application test');
   try{
     assert(!journey||['flagged','unflagged','redeposit'].includes(journey));
@@ -31,8 +32,13 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
       }
       if(privateFees){
         const {prepareW01PrivateFees}=await import('./w01-private-fee-flow.mjs');
-        observation.privateFee=await prepareW01PrivateFees({...common,standalone:!privateFeePosting&&!journey});
+        observation.privateFee=await prepareW01PrivateFees({...common,standalone:browserControl?.browserJourney||(!privateFeePosting&&!journey)});
         common.authorAccount=observation.privateFee.authorAccount;common.privateFeeAction=observation.privateFee.privateFeeAction;common.discardUnsubmittedFee=observation.privateFee.discardUnsubmittedFee;
+      }
+      if(browserControl?.browserJourney){
+        const {prepareT04BrowserJourney}=await import('./u01-browser-flow.mjs');
+        browserJourney=await prepareT04BrowserJourney({...common,browserControl,privateFee:observation.privateFee,ready});
+        observation.exit=await browserJourney.untilExit();return;
       }
       common.qualifyWrongOrigin=journey==='unflagged';
       mark('real-deposit-and-claim');
@@ -70,6 +76,11 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
         assert.equal(observation.claim.feePayer,observation.privateFee.payer);assert.equal(observation.exit.feePayer,observation.privateFee.payer);
       }
     });
+    if(browserJourney){
+      mark('settle-exit-test-message');
+      observation.exitSettlement=await settleC01Message({node,config,dateProvider,l1Client,directory,rollupAddress,txHash:observation.exit.txHash,expectedLeaf:observation.exit.expectedExitLeaf,kind:'exit',proofSearchFromBlock:BigInt(ready.portalDeploymentBlock),startProver:false});
+      observation.browserJourney=await browserJourney.finishAfterSettlement(observation.exitSettlement);assert(observation.browserJourney.passed);observation.scope='genuine GUI collateral deposit claim post screening withdrawal and refund, native warm private fees';observation.passed=true;return observation;
+    }
     if(browserControl){observation.scope='genuine browser-generated private-fee post after native disposable setup';observation.passed=true;return observation;}
     if(privateFeePosting){observation.scope='genuine user-funded private fees, cold-start claim and private-balance posting';observation.passed=true;return observation;}
     if(contentionOnly){observation.scope='ten genuine authors, same-anchor post preparation and inclusion';observation.passed=true;return observation;}
@@ -92,12 +103,14 @@ export async function completeC01Bridge({node,config,dateProvider,l1Client,direc
     }
     observation.passed=true;return observation;
   }catch(error){
-    for(const [key,name] of [['redeposit','redepositObservation'],['journey','journeyObservation'],['browserPost','browserPostObservation'],['privateFee','privateFeeObservation'],[privateFeePosting?'post':'contention','contentionObservation'],['authorClaims','authorClaimsObservation'],['screening','screeningObservation'],['claim','depositObservation'],['exit','exitObservation'],['exitSettlement','settlementObservation'],['refund','withdrawalObservation']]){
+    if(browserJourney)observation.browserJourney={...browserJourney.observation,passed:false};
+    for(const [key,name] of [['browserJourney','browserJourneyObservation'],['redeposit','redepositObservation'],['journey','journeyObservation'],['browserPost','browserPostObservation'],['privateFee','privateFeeObservation'],[privateFeePosting?'post':'contention','contentionObservation'],['authorClaims','authorClaimsObservation'],['screening','screeningObservation'],['claim','depositObservation'],['exit','exitObservation'],['exitSettlement','settlementObservation'],['refund','withdrawalObservation']]){
       if(error[name])observation[key]=error[name];
     }
     error.bridgeObservation={...observation,passed:false};throw error;
   }finally{
     // Parent shuts the node down immediately; do not start new work during teardown.
+    await browserJourney?.cleanup?.();
     await observation.privateFee?.close?.();
     observation.networkProverCreated=false;
   }
