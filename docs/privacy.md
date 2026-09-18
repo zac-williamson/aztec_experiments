@@ -62,3 +62,10 @@ cannot, by themselves, establish author-specific funding linkage. The recorded
 role-only trace does not preserve enough field context to attribute every match.
 The separate public-field classifier and Ethereum funding observations must be
 interpreted with that limitation.
+
+Caller-independent public getters now use the SDK's neutral sender, so those
+simulation inputs do not unnecessarily carry the author or moderator account.
+Focused tests verify the installed SDK constructs a zero sender and fee payer for
+these static reads. Private queries retain their owner scope. The next genuine
+browser trace must qualify the integrated change; the recorded first observation
+predates it, and the separate account-class RPC lookup remains.

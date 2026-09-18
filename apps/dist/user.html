@@ -40855,6 +40855,9 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     return text;
   }
 
+  // Caller-independent public views use the SDK default sender (NO_FROM).
+  // This avoids placing the private account in public RPC simulation inputs.
+  // Private utility reads and signed operations retain their original owner.
   async function resolvePostId(a, contract, address, target) {
     let id;
     if (target.postId !== undefined && target.postId !== null) {
@@ -40862,9 +40865,9 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     } else {
       if (target.postIndex === undefined || target.postIndex === null) throw new Error('Post ID or order required');
       const order = safePostOrder(target.postIndex);
-      id = canonicalPostId(a, await contract.methods.get_post_id(BigInt(order)).simulate({ from: address }));
+      id = canonicalPostId(a, await contract.methods.get_post_id(BigInt(order)).simulate({ from: a.NO_FROM }));
     }
-    const exists = unwrapPostValue(await contract.methods.get_post_exists(new a.Fr(BigInt(id))).simulate({ from: address }));
+    const exists = unwrapPostValue(await contract.methods.get_post_exists(new a.Fr(BigInt(id))).simulate({ from: a.NO_FROM }));
     if (exists !== true) throw new Error('Unknown post ID');
     return id;
   }
@@ -40922,7 +40925,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
   }
 
   async function readPolicySnapshot(a, contract, address) {
-    const snapshot = unwrapPostValue(await contract.methods.get_moderation_policy_snapshot().simulate({ from: address }));
+    const snapshot = unwrapPostValue(await contract.methods.get_moderation_policy_snapshot().simulate({ from: a.NO_FROM }));
     if (!Array.isArray(snapshot) || snapshot.length !== 3 || !Array.isArray(snapshot[0]) || snapshot[0].length !== 48) throw new Error('Invalid policy snapshot');
     const byteLength = safePostOrder(unwrapPostValue(snapshot[1]).toString());
     if (byteLength < 1 || byteLength > 1488) throw new Error('Invalid policy snapshot length');
@@ -40931,7 +40934,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
 
   async function moderationArguments(a, contract, address, postIdField, text, expectedPolicyVersion) {
     const packed = packModerationReason(text);
-    const version = canonicalPostId(a, await contract.methods.get_post_policy_version(postIdField).simulate({ from: address }));
+    const version = canonicalPostId(a, await contract.methods.get_post_policy_version(postIdField).simulate({ from: a.NO_FROM }));
     if (expectedPolicyVersion !== undefined && canonicalPostId(a, expectedPolicyVersion, true) !== version) throw new Error('Post policy changed or does not match the reviewed policy');
     return [postIdField, new a.Fr(BigInt(version)), packed.fields.map(value => new a.Fr(value)), packed.byteLength];
   }
@@ -41559,11 +41562,11 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         let minDepositL2 = ethers.parseEther('0.001');
         let maxSaveUp = 16;
         if (contract) {
-          const cdR = await contract.methods.get_base_cooldown().simulate({ from: address });
+          const cdR = await contract.methods.get_base_cooldown().simulate({ from: a.NO_FROM });
           baseCooldown = BigInt(extractInt(cdR));
-          const mdR = await contract.methods.get_min_deposit().simulate({ from: address });
+          const mdR = await contract.methods.get_min_deposit().simulate({ from: a.NO_FROM });
           minDepositL2 = BigInt(unwrapPostValue(mdR).toString());
-          const msuR = await contract.methods.get_max_save_up().simulate({ from: address });
+          const msuR = await contract.methods.get_max_save_up().simulate({ from: a.NO_FROM });
           maxSaveUp = Number(extractInt(msuR));
         }
         const userCd = Number((baseCooldown * minDepositL2 + l2NoteInfo.amount - 1n) / l2NoteInfo.amount);
@@ -41755,7 +41758,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       }
       if(resumedModeratorOperation) {
         if(operation!==resumedModeratorOperation)throw Object.assign(new Error('The saved moderator request differs from the current action.'),{code:'BB_RECOVERY_REQUIRED'});
-        const current=unwrapPostValue(await a.boundedTransactionRead(()=>censorContract.methods.get_censor().simulate({from:censorAddress}),20000));
+        const current=unwrapPostValue(await a.boundedTransactionRead(()=>censorContract.methods.get_censor().simulate({ from: a.NO_FROM }),20000));
         if(new a.Fr(BigInt(current.toString())).toString()!==censorAddress.toString())throw Object.assign(new Error('This wallet no longer has moderator authority.'),{code:'BB_RECOVERY_REQUIRED'});
       }
       transactionJournal.setOperation(operation);
@@ -41919,7 +41922,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       if(resumedPost&&operation!==JSON.stringify(resumedPost))throw Object.assign(new Error('Saved post intent changed.'),{code:'BB_RECOVERY_REQUIRED'});
       if(typeof transactionJournal?.setOperation!=='function')throw Object.assign(new Error('Post recovery storage is required.'),{code:'BB_JOURNAL_INVALID'});
       const postId=await a.poseidon2HashWithSeparator([new a.Fr(1),l2Addr.toField(),postNonce],0x42420102);
-      const exists=unwrapPostValue(await contract.methods.get_post_exists(postId).simulate({from:address}));
+      const exists=unwrapPostValue(await contract.methods.get_post_exists(postId).simulate({ from: a.NO_FROM }));
       if(exists!==false)throw Object.assign(new Error('Post publication must be reconciled before another proof.'),{code:'BB_RECOVERY_REQUIRED'});
       transactionJournal.setOperation(operation);
       const result = await sendPrivate('post', [
@@ -41985,21 +41988,21 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       const jsonOutput = !!config.jsonOutput;
 
       if (!jsonOutput) log('Loading posts...', 'info');
-      const countResult = await contract.methods.get_post_count().simulate({ from: address });
+      const countResult = await contract.methods.get_post_count().simulate({ from: a.NO_FROM });
       const count = safePostOrder(countResult);
       if (!jsonOutput) log('  Post count: ' + count, 'info');
 
       // Check censor config
       let censorAddr = null, kMult = 64;
       try {
-        const censorResult = await contract.methods.get_censor().simulate({ from: address });
+        const censorResult = await contract.methods.get_censor().simulate({ from: a.NO_FROM });
         let cv = censorResult;
         if (cv && cv.result !== undefined) cv = cv.result;
         if (cv && cv.value !== undefined) cv = cv.value;
         censorAddr = cv && cv.toString ? cv.toString() : (cv ? '0x' + BigInt(cv).toString(16).padStart(64, '0') : null);
       } catch (e) {}
       try {
-        const kResult = await contract.methods.get_k_multiplier().simulate({ from: address });
+        const kResult = await contract.methods.get_k_multiplier().simulate({ from: a.NO_FROM });
         kMult = extractInt(kResult);
       } catch (e) {}
       const censorActive = censorAddr && !censorAddr.endsWith('0000000000000000000000000000000000000000');
@@ -42008,11 +42011,11 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       // Read censor_window and max_save_up
       let censorWindow = 0, maxSaveUp = 0;
       try {
-        const cwResult = await contract.methods.get_censor_window().simulate({ from: address });
+        const cwResult = await contract.methods.get_censor_window().simulate({ from: a.NO_FROM });
         censorWindow = Number(extractInt(cwResult));
       } catch (e) {}
       try {
-        const msuResult = await contract.methods.get_max_save_up().simulate({ from: address });
+        const msuResult = await contract.methods.get_max_save_up().simulate({ from: a.NO_FROM });
         maxSaveUp = Number(extractInt(msuResult));
       } catch (e) {}
       if (censorWindow > 0 && !jsonOutput) log('  Censor window: ' + censorWindow + 's', 'info');
@@ -42048,15 +42051,15 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         try {
           postId = await resolvePostId(a, contract, address, { postIndex: i });
           const idField = new a.Fr(BigInt(postId));
-          const postResult = await contract.methods.get_post(idField).simulate({ from: address });
+          const postResult = await contract.methods.get_post(idField).simulate({ from: a.NO_FROM });
           const vals = extractFieldArray(postResult);
-          const length = await contract.methods.get_post_length(idField).simulate({ from: address });
+          const length = await contract.methods.get_post_length(idField).simulate({ from: a.NO_FROM });
           const msg = decodePostMessage(vals, length);
 
           // Check if flagged
           let flagged = false;
           try {
-            const flagResult = await contract.methods.is_post_flagged(idField).simulate({ from: address });
+            const flagResult = await contract.methods.is_post_flagged(idField).simulate({ from: a.NO_FROM });
             let fv = flagResult;
             if (fv && fv.result !== undefined) fv = fv.result;
             if (fv && fv.value !== undefined) fv = fv.value;
@@ -42067,13 +42070,13 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
           let censorResponse = null, flaggedBy = null;
           if (flagged) {
             try {
-              const respResult = await contract.methods.get_censor_response(idField).simulate({ from: address });
+              const respResult = await contract.methods.get_censor_response(idField).simulate({ from: a.NO_FROM });
               const respVals = extractFieldArray(respResult);
-              const reasonLength = await contract.methods.get_censor_response_length(idField).simulate({ from: address });
+              const reasonLength = await contract.methods.get_censor_response_length(idField).simulate({ from: a.NO_FROM });
               censorResponse = decodeModerationReason(respVals, unwrapPostValue(reasonLength));
             } catch (e) {}
             try {
-              const fbResult = await contract.methods.get_post_flagged_by(idField).simulate({ from: address });
+              const fbResult = await contract.methods.get_post_flagged_by(idField).simulate({ from: a.NO_FROM });
               let fbv = fbResult;
               if (fbv && fbv.result !== undefined) fbv = fbv.result;
               if (fbv && fbv.value !== undefined) fbv = fbv.value;
@@ -42084,12 +42087,12 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
           // Read post timestamp (for censor window calculations)
           let timestamp = 0;
           try {
-            const timeResult = await contract.methods.get_post_time(idField).simulate({ from: address });
+            const timeResult = await contract.methods.get_post_time(idField).simulate({ from: a.NO_FROM });
             timestamp = Number(extractInt(timeResult));
           } catch (e) {}
 
-          const postPolicyVersion = canonicalPostId(a, await contract.methods.get_post_policy_version(idField).simulate({ from: address }));
-          const flagDeadline = String(unwrapPostValue(await contract.methods.get_post_flag_deadline(idField).simulate({ from: address })));
+          const postPolicyVersion = canonicalPostId(a, await contract.methods.get_post_policy_version(idField).simulate({ from: a.NO_FROM }));
+          const flagDeadline = String(unwrapPostValue(await contract.methods.get_post_flag_deadline(idField).simulate({ from: a.NO_FROM })));
           if (jsonOutput) {
             _jsonPosts.push({ policyVersion: postPolicyVersion, flagDeadline, index: i, orderIndex: String(i), postId, text: msg || '', flagged, censorResponse, flaggedBy, timestamp });
           } else if (flagged) {
@@ -42192,7 +42195,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
             // Read censor_window to know how long to wait before screening is possible
             let censorWindow = 3600n;
             try {
-              const cwResult = await contract.methods.get_censor_window().simulate({ from: address });
+              const cwResult = await contract.methods.get_censor_window().simulate({ from: a.NO_FROM });
               censorWindow = BigInt(extractInt(cwResult));
             } catch (e) {}
             // Make dummy posts until screening catches up
@@ -42516,7 +42519,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
 
       // Verify: read back the flagged_by record
       try {
-        const flaggedByResult = await contract.methods.get_post_flagged_by(postIdField).simulate({ from: address });
+        const flaggedByResult = await contract.methods.get_post_flagged_by(postIdField).simulate({ from: a.NO_FROM });
         let fbv = flaggedByResult;
         if (fbv && fbv.result !== undefined) fbv = fbv.result;
         if (fbv && fbv.value !== undefined) fbv = fbv.value;
@@ -42550,7 +42553,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
 
       // Verify
       try {
-        const newCensorResult = await contract.methods.get_censor().simulate({ from: address });
+        const newCensorResult = await contract.methods.get_censor().simulate({ from: a.NO_FROM });
         let ncv = newCensorResult;
         if (ncv && ncv.result !== undefined) ncv = ncv.result;
         if (ncv && ncv.value !== undefined) ncv = ncv.value;
