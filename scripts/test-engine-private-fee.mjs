@@ -6,6 +6,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import {test} from 'node:test';
+import {SiblingPath} from '@aztec/foundation/trees';
+import {L1_TO_L2_MSG_TREE_HEIGHT} from '@aztec/constants';
 import {Fr} from '@aztec/foundation/curves/bn254';
 import {Gas,GasFees,GasSettings} from '@aztec/stdlib/gas';
 import {NO_FROM} from '@aztec/aztec.js/account';
@@ -81,10 +83,10 @@ function mainHarness(action,isDummy=false) {
   const depositor='0x0000000000000000000000000000000000000004';
   const secret=new Fr(8),secretHash=new Fr(9),amount=1000000000000000n;
   const iface=new ethers.Interface(['event Deposited(address indexed depositor,uint64 nonce,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
-  const event=iface.encodeEventLog(iface.getEvent('Deposited'),[depositor,7n,amount,secretHash.toString(),ethers.ZeroHash,42n]);
+  const event=iface.encodeEventLog(iface.getEvent('Deposited'),[depositor,7n,amount,secretHash.toString(),new Fr(77).toString(),42n]);
   const provider={getCode:async()=> '0x01',getNetwork:async()=>({chainId:31337n}),destroy(){},getBlock:async()=>({hash:'canonical-eth'}),getTransactionReceipt:async hash=>({hash,status:1,blockNumber:1,blockHash:'canonical-eth',logs:[{address:portal,...event}]})};
   class Portal {L2_CONTRACT=async()=>board.toString();L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>rollup;VERSION=async()=>1n;getDeposit=async()=>({nonce:7n,amount});}
-  const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:1}),getL1ContractAddresses:async()=>({rollupAddress:rollup}),getBlockNumber:async()=>1,
+  const node={getL1ToL2MessageMembershipWitness:async()=>[42n,new SiblingPath(L1_TO_L2_MSG_TREE_HEIGHT,Array.from({length:L1_TO_L2_MSG_TREE_HEIGHT},()=>Fr.ONE.toBuffer()))],getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:1}),getL1ContractAddresses:async()=>({rollupAddress:rollup}),getBlockNumber:async()=>1,
     getBlock:async number=>({number,hash:'block',timestamp:100,body:{txEffects:[]}}),getBlocks:async(from,count)=>Array.from({length:count},(_,i)=>({number:Number(from)+i,hash:'block',body:{txEffects:[]}})),getContract:async()=>({address:board}),getPublicStorageAt:async()=>{authorBalanceReads++;throw new Error('Author fee lookup forbidden');}};
   const note=()=>({schemaVersion:1n,depositChainId:5n,depositNonce:7n,amount:missingNote||(action==='claim'&&!sent)?0n:amount,nextAllowedTime:0n,lastRealPostIndex:0n,lastScreenedIndex:0n,headSequence:0n,...noteOverrides});
   c.readBillboardDepositInfo=async()=>note();
@@ -98,7 +100,7 @@ function mainHarness(action,isDummy=false) {
     SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;getSigningPublicKey=async()=>({x:Fr.ONE,y:Fr.ONE});},
     getContractInstanceFromInstantiationParams:async()=>({address:addr}),computePartialAddress:async()=>Fr.ZERO,
     createAztecNodeClient:()=>node,loadContractArtifact:x=>x,
-    createPXE:async()=>({debug:{getNotes:async filter=>{assert.equal(filter.status,NoteStatus.ACTIVE);const n=note();return [{owner:addr,contractAddress:board,storageSlot:Fr.ONE,siloedNullifier:new Fr(7),note:{items:[1n+(n.depositNonce<<32n),5n,amount,BigInt(depositor),0n,0n,n.headSequence+(n.lastScreenedIndex<<64n)+(n.lastRealPostIndex<<128n),n.nextAllowedTime].map(v=>new Fr(v))}}];}},registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{}}),AccountManager:{create:async()=>({address:addr})},Contract:{at:async()=>({methods})},
+    createPXE:async()=>({debug:{getNotes:async filter=>{assert.equal(filter.status,NoteStatus.ACTIVE);const n=note();return [{owner:addr,contractAddress:board,storageSlot:Fr.ONE,siloedNullifier:new Fr(7),note:{items:[1n+(n.depositNonce<<32n),5n,amount,BigInt(depositor),0n,0n,n.headSequence+(n.lastScreenedIndex<<64n)+(n.lastRealPostIndex<<128n),n.nextAllowedTime].map(v=>new Fr(v))}}];}},registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{},getSyncedBlockHeader:async()=>({hash:async()=>new Fr(78)})}),AccountManager:{create:async()=>({address:addr})},Contract:{at:async()=>({methods})},
     computeSecretHash:async()=>secretHash,poseidon2HashWithSeparator:async()=>new Fr(5),
     preparePrivateFeePayment:async input=>{requests.push(input);return {paymentMethod:'private-method',gasSettings:gas()};},
   };
@@ -424,4 +426,19 @@ test('real preparer failures stop every routed action before proof/send/funding 
   await assert.rejects(sender(kind,[]),e=>e.code==='BB_PRIVATE_FEE_PREPARATION_FAILED'&&!e.message.includes('PRIVATE_INPUT_MARKER'));
   assert.equal(calls,0);assert.equal(JSON.stringify(config.privateFeeClaim??null),before);
  }
+});
+
+test('actual claim readiness rejects absent, failed and wrong-index membership before fees or submission',async()=>{
+ for(const mode of ['missing','rpc','wrong-index']){
+  const h=mainHarness('claim');let sends=0;h.onAction(()=>sends++);
+  const read=h.node.getL1ToL2MessageMembershipWitness;let reads=0;
+  h.node.getL1ToL2MessageMembershipWitness=async()=>{reads++;if(mode==='rpc')throw Error('private RPC');if(mode==='missing'){if(reads===1)return undefined;return new Promise(()=>{});}const w=await read();return[43n,w[1]];};
+  await assert.rejects(h.run(),e=>e.code===(mode==='wrong-index'?'BB_DEPOSIT_MESSAGE_INVALID':'BB_DEPOSIT_MESSAGE_UNAVAILABLE'));
+  assert.equal(h.requests.length,0);assert.equal(h.operations.length,0);assert.equal(sends,0);
+ }
+});
+test('actual claim waits for delayed exact receipt key then prepares fees and submits once',async()=>{
+ const h=mainHarness('claim');let reads=0,sends=0;const read=h.node.getL1ToL2MessageMembershipWitness;
+ h.node.getL1ToL2MessageMembershipWitness=async(hash,key)=>{assert.equal(hash.toString(),new Fr(78).toString());assert.equal(key.toString(),new Fr(77).toString());return ++reads===1?undefined:read();};
+ h.onAction(()=>sends++);await h.run();assert.equal(reads,2);assert.equal(sends,1);assert.equal(h.requests.length,1);
 });

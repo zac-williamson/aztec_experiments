@@ -102,7 +102,9 @@ function doNavAction() {
       console.error('Application operation did not complete.');
       btn.disabled = false;
       btn.classList.remove('working');
-      btn.textContent = origText;
+      // An action may complete one phase before failing the next (deposit → claim).
+      // Preserve its updated retry label rather than restoring the completed action.
+      if(btn.textContent === (p.busyText || 'Working...'))btn.textContent = origText;
     });
 }
 

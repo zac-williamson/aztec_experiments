@@ -643,6 +643,43 @@
   }
   g.BillboardPrivateFeeRouting = Object.freeze({ requirePrivateFeeConfiguration, createPrivateFeeSender, createAztecWallet });
 
+  // Read-only readiness check at a refreshed current PXE anchor. Proving may refresh it again.
+  // Missing messages never allocate fees, prove, submit, or repeat an L1 deposit.
+  async function waitForDepositMessage({a,wallet,node,key,index,contextGuard,timeoutMs=20000,pollMs=1000}) {
+    const pending=()=>Object.assign(new Error('The confirmed deposit is not yet available to claim. Retry the same claim later.'),{code:'BB_DEPOSIT_MESSAGE_PENDING'});
+    const unavailable=()=>Object.assign(new Error('Deposit message availability could not be checked. Retry the original claim after restoring the connection.'),{code:'BB_DEPOSIT_MESSAGE_UNAVAILABLE'});
+    const invalid=()=>Object.assign(new Error('Deposit message membership does not match the confirmed receipt.'),{code:'BB_DEPOSIT_MESSAGE_INVALID'});
+    if(!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>20000||!Number.isInteger(pollMs)||pollMs<1)throw invalid();
+    let message,expected;
+    try{if(typeof key!=='string'||!/^0x[0-9a-fA-F]{64}$/.test(key))throw invalid();message=new a.Fr(BigInt(key));expected=BigInt(index);if(expected<0n||expected>=1n<<36n)throw invalid();}catch{throw invalid();}
+    const deadline=Date.now()+timeoutMs;
+    const bounded=async fn=>{
+      const left=deadline-Date.now();if(left<=0)throw pending();
+      let timer;try{return await Promise.race([Promise.resolve().then(fn),new Promise((_,reject)=>{timer=setTimeout(()=>reject(pending()),left);})]);}finally{clearTimeout(timer);}
+    };
+    while(Date.now()<deadline){
+      if(contextGuard)await bounded(contextGuard);
+      let witness;
+      try{
+        await bounded(()=>wallet.pxe.sync());
+        const header=await bounded(()=>wallet.pxe.getSyncedBlockHeader());
+        const hash=await bounded(()=>header.hash());
+        witness=await bounded(()=>node.getL1ToL2MessageMembershipWitness(hash,message));
+      }catch{throw unavailable();}
+      if(contextGuard)await bounded(contextGuard);
+      if(witness!==undefined){
+        if(!Array.isArray(witness)||witness.length!==2||typeof witness[0]!=='bigint'||witness[0]!==expected||
+           witness[1]?.pathSize!==36||typeof witness[1]?.toFields!=='function')throw invalid();
+        // Pinned Aztec 5.2 Inbox height is36. Normal proving verifies the root.
+        try{const fields=witness[1].toFields();if(!Array.isArray(fields)||fields.length!==36||fields.some(field=>!(field instanceof a.Fr)))throw invalid();}catch{throw invalid();}
+        return;
+      }
+      await new Promise(resolve=>setTimeout(resolve,Math.min(pollMs,Math.max(0,deadline-Date.now()))));
+    }
+    throw pending();
+  }
+  g.BillboardDepositReadiness=Object.freeze({waitForDepositMessage});
+
   async function readScreeningHints(contract, owner, depositChainId) {
     try {
       let result = await contract.methods.get_screen_hints(owner, depositChainId).simulate({from: owner});
@@ -1265,7 +1302,7 @@
       const paid=await ethereumJournal.send({data:new ethers.Interface(PORTAL_ABI).encodeFunctionData('deposit',[secretHash]),value:amount.toString(),
         expected:{kind:'deposit',nonce:expectedNonce.toString(),amount:amount.toString(),secretHash}});
       const event=paid.event;
-      depositInfo = { amount, leafIndex: event.index, depositNonce: event.nonce, secret: record.secret, secretHash, txHash: paid.txHash };
+      depositInfo = { amount, key:event.key, leafIndex: event.index, depositNonce: event.nonce, secret: record.secret, secretHash, txHash: paid.txHash };
       portalL1Balance = amount; portalDepositNonce = event.nonce;
       log('Deposit confirmed. Receipt nonce: ' + event.nonce.toString(), 'success');
     }
@@ -1275,27 +1312,26 @@
       secretStore();
       const active = await new ethers.Contract(portalAddr,PORTAL_ABI,provider).getDeposit(l1Account);
       if (BigInt(active.nonce) === 0n || BigInt(active.amount) === 0n) throw new Error('No active L1 receipt to recover.');
-      let event, txHash;
-      if (config.reuseTxHash) {
-        const receipt = await provider.getTransactionReceipt(config.reuseTxHash);
-        if (!receipt || receipt.status !== 1) throw new Error('No successful deposit receipt found.');
-        const receiptHash=receipt.hash??receipt.transactionHash;
-        if(typeof receiptHash!=='string'||receiptHash.toLowerCase()!==config.reuseTxHash.toLowerCase()||
-          !receipt.blockHash||!Number.isSafeInteger(receipt.blockNumber)||receipt.blockNumber<1)throw Object.assign(new Error('Saved deposit receipt identity is unavailable.'),{code:'BB_RECOVERY_UNKNOWN'});
-        const block=await provider.getBlock(receipt.blockNumber);
-        if(block?.hash!==receipt.blockHash)throw Object.assign(new Error('Saved deposit receipt is not canonical.'),{code:'BB_RECOVERY_UNKNOWN'});
-        event = parsedDeposit(receipt); txHash = config.reuseTxHash;
-      } else {
+      let txHash=config.reuseTxHash;
+      if (!txHash) {
         const events = await findAllDeposits(ethers,provider,portalAddr,l1Account,log);
         const matches = events.filter(item => item.depositNonce === BigInt(active.nonce) && item.amount === BigInt(active.amount));
         if (matches.length !== 1) throw new Error('Could not uniquely locate the active receipt; provide its transaction hash.');
-        const found = matches[0];
-        event = { amount: found.amount, nonce: found.depositNonce, index: found.index, secretHash: found.secretHash };
-        txHash = found.txHash;
+        txHash=matches[0].txHash;
       }
+      // Search results locate the transaction only; authenticate its canonical
+      // receipt before using the portal's emitted Inbox message key.
+      const receipt=await provider.getTransactionReceipt(txHash);
+      if(!receipt||receipt.status!==1)throw Object.assign(new Error('Successful deposit receipt unavailable.'),{code:'BB_RECOVERY_UNKNOWN'});
+      const receiptHash=receipt.hash??receipt.transactionHash;
+      if(typeof receiptHash!=='string'||receiptHash.toLowerCase()!==txHash.toLowerCase()||!receipt.blockHash||
+         !Number.isSafeInteger(receipt.blockNumber)||receipt.blockNumber<1)throw Object.assign(new Error('Saved deposit receipt identity is unavailable.'),{code:'BB_RECOVERY_UNKNOWN'});
+      const block=await provider.getBlock(receipt.blockNumber);
+      if(block?.hash!==receipt.blockHash)throw Object.assign(new Error('Saved deposit receipt is not canonical.'),{code:'BB_RECOVERY_UNKNOWN'});
+      const event=parsedDeposit(receipt);
       if (event.nonce !== BigInt(active.nonce) || event.amount !== BigInt(active.amount)) throw new Error('Deposit event does not match the active receipt.');
       const secret = await restoreSecret(event.secretHash);
-      depositInfo = { amount:event.amount, leafIndex:event.index, depositNonce:event.nonce, secret,
+      depositInfo = { amount:event.amount, key:event.key, leafIndex:event.index, depositNonce:event.nonce, secret,
         secretHash:event.secretHash.toLowerCase(), txHash };
       portalL1Balance=event.amount; portalDepositNonce=event.nonce;
       log('Recovered the active receipt using its saved claim secret.', 'success');
@@ -1407,6 +1443,8 @@
         log('  No claim needed. You can post or withdraw.', 'success');
         return;
       }
+
+      await waitForDepositMessage({a,wallet,node:aztecNode,key:depositInfo.key,index:leafIndex,contextGuard:config.contextGuard});
 
       // One attempt per action. Message availability and uncertain submission
       // remain retryable outcomes; never run a ten-minute blind retry loop.
@@ -1968,34 +2006,6 @@
     // ============================================================
     // Wait for L1->L2 message to become claimable (simulates claim_deposit)
     // ============================================================
-    async function waitForL2Ingest() {
-      if (!contract) return;
-      if (!depositInfo) return;
-      log('  Waiting for L2 to ingest the L1 deposit (usually ~5-10 min)...', 'info');
-      const depositorField = a.Fr.fromHexString(l1Account);
-      const secret = new a.Fr(BigInt(depositInfo.secret));
-      const deadline = Date.now() + 15 * 60 * 1000; // 15 min max
-      while (Date.now() < deadline) {
-        try {
-          await contract.methods.claim_deposit(
-            depositorField, depositInfo.amount, depositInfo.depositNonce, secret, depositInfo.leafIndex
-          ).simulate({ from: address });
-          log('  L1->L2 message is available!', 'success');
-          return;
-        } catch (e) { if (e?.code === 'BB_DEPOSIT_READ') throw e;
-          const msg = (e.message || '').toLowerCase();
-          if (msg.includes('message') || msg.includes('l1') || msg.includes('membership') || msg.includes('not found')) {
-            log('  Not ready yet, waiting 20s...', 'info');
-            await sleep(20000);
-          } else {
-            log('  Check failed: ' + 'request did not complete', 'warn');
-            await sleep(20000);
-          }
-        }
-      }
-      throw new Error('L1->L2 message not available after 15 min. Try claiming later.');
-    }
-
     // ============================================================
     // Helper: load censor wallet + create censor-bound contract
     // ============================================================
@@ -2173,7 +2183,7 @@
       } else {
         await doDeposit();
       }
-      result.depositInfo = depositInfo ? { amount:depositInfo.amount,leafIndex:depositInfo.leafIndex,
+      result.depositInfo = depositInfo ? { amount:depositInfo.amount,key:depositInfo.key,leafIndex:depositInfo.leafIndex,
         depositNonce:depositInfo.depositNonce,secretHash:depositInfo.secretHash,txHash:depositInfo.txHash } : null;
     } else if (action === 'claim') {
       await doClaim();
@@ -2203,9 +2213,7 @@
         log('\n--- Phase 1: Deposit ---', 'info');
         if (!config.depositAmount) throw new Error('Deposit amount required for auto mode (use --amount <eth>).');
         await doDeposit();
-        // Wait for L2 ingest
-        log('\n--- Waiting for L2 to ingest L1 deposit (~5-10 min) ---', 'info');
-        await waitForL2Ingest();
+        // doClaim performs the bounded read-only message readiness check.
       } else if (stateStatus === 'deposited_l1_not_claimed_l2') {
         log('\n--- Phase 1: Reusing existing L1 deposit ---', 'info');
         await doReuseDeposit();

@@ -7,9 +7,9 @@ Objective state: **running**. Completed packages: 22/35.
 ## In progress
 
 - **Implement observability, incident and recovery runbooks (O01)** — Escrow/daemon monitoring, bounded checkpointed feed lag, sanitized credential inventory and removal integrated; package smoke011 passes. Drillgapreview010 reuses actual D01/W03/T02 evidence and identifies genuine censor handover/policy and monitor failover drills. Operator delivery/replacement remain external O02 inputs.
-- **Verify end-to-end privacy and funding footprint (T03)** — 010diagnostic confirms realETHdeposit succeeded and claim failed beforeproof. Source shows claim lacks Inbox readiness and UI retains no-depositstate on claimfailure. Implement bounded wallet-anchor message preflight and claim-only retry state, preserveprivatefees and journal.
-- **Run browser, recovery, concurrency and load matrix (T04)** — 010 diagnostics151182ms1730592KiB clean: ETHdeposit/secret save succeeded, claim fails preproof. Source missingreadiness; fixturemust enableordinaryemptycheckpoints duringGUIclaim. No additionalrun until application+fixture fixes and lightweight tests.
-  Investigation: 1/1 attempts. Reassessment required. Source-backed remedy: retain authenticatedmessagekey, bounded wallet-anchor readiness beforeoneproof, claim-onlyUIretry, normalemptycheckpoint fixture duringclaim. Requalify after tests; do notlabelpreviousunknown as provenSDKcause.
+- **Verify end-to-end privacy and funding footprint (T03)** — Claim readiness and claim-only retry integrated;106 focused tests pass010, canonical app build011 passes, independent internal source review no blocker. Actual GUI lifecycle qualification next; underlying SDK read cancellation not claimed.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Source-backed repair frozen: authenticated message readiness before private fees; pending UI retries original claim; ordinary empty checkpoints before browser handoff and robust cleanup.106 integrated checks+app build pass. One bounded lifecycle014 begins, unchanged540s/2GiB.
+  Investigation: 1/1 attempts. Reassessment required. Inspect lifecycle014 actual result and cleanup immediately; no rerun without diagnosis if failure.
 
 ## Ready internal work
 

@@ -1467,7 +1467,7 @@
       "evidence": "evidence/T03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "010diagnostic confirms realETHdeposit succeeded and claim failed beforeproof. Source shows claim lacks Inbox readiness and UI retains no-depositstate on claimfailure. Implement bounded wallet-anchor message preflight and claim-only retry state, preserveprivatefees and journal.",
+      "checkpoint": "Claim readiness and claim-only retry integrated;106 focused tests pass010, canonical app build011 passes, independent internal source review no blocker. Actual GUI lifecycle qualification next; underlying SDK read cancellation not claimed.",
       "priority": 23,
       "execution_lane": "application",
       "write_paths": [
@@ -1488,7 +1488,8 @@
         "apps/src/billboard/user/app.js",
         "apps/src/billboard/censor/app.js",
         "shared/app-env.js",
-        "scripts/test-deposit-message-ready.mjs"
+        "scripts/test-deposit-message-ready.mjs",
+        "shared/helpers.js"
       ]
     },
     {
@@ -1545,7 +1546,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "010 diagnostics151182ms1730592KiB clean: ETHdeposit/secret save succeeded, claim fails preproof. Source missingreadiness; fixturemust enableordinaryemptycheckpoints duringGUIclaim. No additionalrun until application+fixture fixes and lightweight tests.",
+      "checkpoint": "Source-backed repair frozen: authenticated message readiness before private fees; pending UI retries original claim; ordinary empty checkpoints before browser handoff and robust cleanup.106 integrated checks+app build pass. One bounded lifecycle014 begins, unchanged540s/2GiB.",
       "priority": 24,
       "completion_requires": [
         "O01"
@@ -1566,10 +1567,10 @@
         "scripts/test-t04-checkpoint-scope.mjs"
       ],
       "investigation": {
-        "hypothesis": "007 missing deposit diagnostics prevent distinguishing driver assertion from application early error. Existing safeformatter observation plus fixedphase markers and retainedRPCsummary should locate failure without logging secrets or changing application behavior.",
+        "hypothesis": "010 showed confirmedETHdeposit then preproofclaimfailure; source missingInboxreadiness and fixturecheckpointprogression. Both repaired with tested claim-only retry. Genuine lifecycle014 qualifies repaired path, not presumed old SDK cause.",
         "attempts": 1,
         "max_attempts": 1,
-        "next_action": "Source-backed remedy: retain authenticatedmessagekey, bounded wallet-anchor readiness beforeoneproof, claim-onlyUIretry, normalemptycheckpoint fixture duringclaim. Requalify after tests; do notlabelpreviousunknown as provenSDKcause."
+        "next_action": "Inspect lifecycle014 actual result and cleanup immediately; no rerun without diagnosis if failure."
       }
     },
     {

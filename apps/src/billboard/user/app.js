@@ -177,6 +177,10 @@ function onShowDeposit() {
 }
 
 async function doDepositPage() {
+  async function claimExisting(extra) {
+    try{return await callEngine('claim','depositStatus',extra);}
+    catch(error){const safe=publicOperationFailure(error);log(safe.message,'error','depositStatus');throw safe;}
+  }
   const state = _stateResult ? _stateResult.state : 'unknown';
 
   if (state === 'postable') { nextPage(); return; }
@@ -207,11 +211,18 @@ async function doDepositPage() {
     }
     if(operationRevision!==_getConfigRevision())throw Error('Configuration changed. Recover the original deposit before continuing.');
     const depInfo = depResult.depositInfo;
+    // Persist the completed phase before attempting the separate L2 claim.
+    // A delayed message or rejected claim must never offer another ETH deposit.
+    _stateResult={...(_stateResult||{}),state:'deposited_l1_not_claimed_l2',depositInfo:depInfo};
+    const existing=document.getElementById('existingTxHash');if(existing)existing.value=depInfo.txHash;
+    const newSection=document.getElementById('newDepositSection');if(newSection)newSection.style.display='none';
+    const recoverSection=document.getElementById('recoverDepositSection');if(recoverSection)recoverSection.style.display='';
+    const nav=document.getElementById('navNext');if(nav)nav.textContent='Claim deposit →';
 
     // Phase 2: Wait for L2 ingest + claim on L2
     log('', 'info', 'depositStatus');
     log('Waiting for L2 to ingest deposit, then claiming...', 'info', 'depositStatus');
-    await callEngine('claim', 'depositStatus', {
+    await claimExisting({
       ..._commonConfig(),
       reuseTxHash: depInfo.txHash,
     });
@@ -223,11 +234,11 @@ async function doDepositPage() {
   }
 
   // deposited_l1_not_claimed_l2: claim the existing deposit
-  const txHash = document.getElementById('existingTxHash').value.trim();
+  const txHash = _stateResult?.depositInfo?.txHash || document.getElementById('existingTxHash').value.trim();
   const extra = { ..._commonConfig() };
   if (txHash) extra.reuseTxHash = txHash;
   log('Claiming existing deposit on L2...', 'info', 'depositStatus');
-  await callEngine('claim', 'depositStatus', extra);
+  await claimExisting(extra);
   log('Deposit claimed on L2! Proceeding to post page.', 'success', 'depositStatus');
   _stateResult.state = 'postable';
   nextPage();
