@@ -1,3 +1,4 @@
+import {safeModerationDiagnostic} from './health.mjs';
 import {scopeKey} from '../shared/protocol-schema.mjs';
 import {reconcileFlag} from './flag-outcome.mjs';
 
@@ -84,10 +85,10 @@ export async function processModerationCycle({store,signer,node,scope,evaluate,w
       else {store.transition(key,token,{state:'reconciling',errorCode:'SIGNER_OUTCOME_UNKNOWN'});release();}}
     catch{/* Expired/revoked leases are reconciled by the store; never sign again here. */}
    }
-   log('Post '+record.post.orderIndex+' remains unresolved: '+(error.code||'FAILED'),'error');
+   log('Moderation work remains unresolved: '+safeModerationDiagnostic(error)+'; inspect durable state before retrying.','error');
   }
  }
  const records=store.list(),pending=records.filter(r=>!superseded(r)&&!['evaluated-ok','confirmed-flag'].includes(r.job.state)&&!(r.job.state==='manual-review'&&['FLAG_ALREADY_PRESENT',...(dryRun?['DRY_RUN_VIOLATION']:[])].includes(r.errorCode)));
- for(const record of records.filter(r=>!superseded(r)&&['expired','manual-review'].includes(r.job.state)&&r.errorCode!=='FLAG_ALREADY_PRESENT'))log('Post '+record.post.orderIndex+' requires attention: '+record.errorCode,'warn');
+ for(const record of records.filter(r=>!superseded(r)&&['expired','manual-review'].includes(r.job.state)&&r.errorCode!=='FLAG_ALREADY_PRESENT'))log('Moderation work requires operator attention; inspect durable state.','warn');
  return {complete:pending.length===0,status:store.status()};
 }

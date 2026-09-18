@@ -20,15 +20,20 @@ export async function smokeOperatorPackage(){
   for(let parent=directory;parent!==path.dirname(parent);parent=path.dirname(parent))assert(!fs.existsSync(path.join(parent,'node_modules')),'Package smoke location inherits external dependencies');
   for(const file of inventory.files){assertPermittedPath(file.path);assert(!fs.lstatSync(path.join(target,file.path)).isSymbolicLink());}
   for(const resource of OPERATOR_RESOURCES)assert(fs.existsSync(path.join(target,resource)),resource);
-  checks.push('Explicit runtime resources present; no symlinks or forbidden dependency paths');
+  for(const required of ['deploy/operations-monitor.mjs','censor-daemon/health.mjs','shared/public-app-config.js','shared/portal-runtime.mjs','shared/portal-runtime.json'])assert(inventory.files.some(file=>file.path===required),required);
+  checks.push('Explicit runtime resources and monitor/health identity closure present; no symlinks or forbidden dependency paths');
   const shell=path.join(target,'scripts/operator-launch.sh');
   function run(args,{input='',env={}}={}){const result=spawnSync('/bin/sh',[shell,...args],{cwd:directory,env:{HOME:directory,PATH:'/usr/bin:/bin',...env},input,encoding:'utf8',timeout:15000,maxBuffer:1024*1024});assert(!result.error,result.error?.message);assert(!/ERR_MODULE_NOT_FOUND|Cannot find module|Cannot find package|ENOENT:.*(?:engine|artifact|bytecode|\.mjs|\.cjs)/.test(result.stderr+result.stdout),result.stderr+result.stdout);return result;}
   for(const [route,args,expected]of [
    ['author',['status','--node-url','http://127.0.0.1:1','--eth-rpc','http://127.0.0.1:1'],/portal-address.*required/],
    ['deploy',[],/--manifest.*required|deployment manifest.*required|reviewed.*manifest/i],
-   ['moderator',[],/--portal-address is required/],
+   ['moderator',[],/MODERATION_UNAVAILABLE/],
    ['recover-wallet',[],/Recovery operation failed/],
   ]){const result=run([route,...args]);assert.notEqual(result.status,0);assert.match(result.stdout+result.stderr,expected);checks.push(route+': real application validation reached');}
+  const invalidConfig=path.join(directory,'invalid-monitor.json');fs.writeFileSync(invalidConfig,JSON.stringify({secret:'PACKAGE_MONITOR_SECRET'}));
+  const monitor=run(['monitor',invalidConfig]);assert.equal(monitor.status,2);assert.equal(JSON.parse(monitor.stdout).code,'MONITOR_CONFIG_INVALID');assert(!/PACKAGE_MONITOR_SECRET|invalid-monitor/.test(monitor.stdout+monitor.stderr));
+  const moderator=run(['moderator','--PACKAGE_SECRET']);assert.notEqual(moderator.status,0);assert.match(moderator.stdout,/MODERATION_UNAVAILABLE/);assert(!/PACKAGE_SECRET/.test(moderator.stdout+moderator.stderr));
+  checks.push('Real packaged monitor and moderator reject invalid input without leaking supplied content');
   const dependencyTest=path.join(target,'dependency-smoke.mjs');
   fs.writeFileSync(dependencyTest,"import {Wallet} from 'ethers';import {IDBFactory} from 'fake-indexeddb';if(typeof Wallet!=='function'||typeof IDBFactory!=='function')throw Error('Invalid native closure');console.log('closure ready');");
   const closure=spawnSync(path.join(target,'runtime/bin/node'),[dependencyTest],{cwd:directory,encoding:'utf8',env:{PATH:'/usr/bin:/bin'},timeout:10000});assert.equal(closure.status,0,closure.stderr);assert.match(closure.stdout,/closure ready/);fs.unlinkSync(dependencyTest);checks.push('Packaged ethers 6 and IndexedDB resolve without repository node_modules');

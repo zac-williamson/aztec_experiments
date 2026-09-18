@@ -12,7 +12,7 @@ if ! /usr/bin/env | /usr/bin/awk '
  END { exit bad ? 1 : 0 }'; then
   echo 'Unsupported telemetry configuration; operator telemetry is disabled' >&2; exit 64
 fi
-case "${1-}" in author|deploy|moderator|recover-wallet) ;; *) echo 'Use author, deploy, moderator or recover-wallet' >&2; exit 64;; esac
+case "${1-}" in author|deploy|moderator|monitor|recover-wallet) ;; *) echo 'Use author, deploy, moderator, monitor or recover-wallet' >&2; exit 64;; esac
 root=$(CDPATH= cd -- "$(/usr/bin/dirname -- "$0")/.." && pwd -P)
 [ -x "$root/runtime/bin/node" ] || { echo 'Pinned packaged Node is missing' >&2; exit 64; }
 # Fresh process: no inherited global propagator, instrumentation, Node flags or proxies.

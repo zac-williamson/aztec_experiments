@@ -307,7 +307,7 @@ async function main() {
         '--model', path.join(__dirname, 'test_dummy_model.gguf'),
       ]);
 
-      assertTrue(result.stdout.includes('manual-review'),
+      assertTrue(result.stdout.includes('\"manual-review\":1'),
         'should skip already-flagged posts');
       assertTrue(mockServer.requests.length === 0,
         'should not call LLM for flagged posts');
@@ -489,7 +489,7 @@ async function main() {
 
       assertTrue(result.stdout.includes('flag finalized'),
         'should flag post in non-dry-run mode');
-      assertTrue(result.stdout.includes('confirmed-flag'),
+      assertTrue(result.stdout.includes('\"confirmed-flag\":1'),
         'should confirm flagging');
       const signed = mockCli.calls().filter(args => args[0] === 'declare-immoral');
       for (const argv of signed) {
@@ -706,12 +706,12 @@ async function main() {
     const result = await runDaemon(['--portal-address', '0x' + '12'.repeat(20),
       '--censor-wallet', MOCK_WALLET, '--skip-bootstrap', '--once'], 30000, { production: true });
     assertTrue(result.exitCode !== 0, 'unsupported isolation bypass must fail');
-    assertTrue(result.stdout.includes('managed isolated model runtime'), 'operator receives migration guidance');
+    assertTrue(result.stdout.includes('ISOLATED_RUNTIME_REQUIRED'), 'operator receives migration guidance');
   });
 
   for (const [label, behavior, diagnostic] of [
-    ['old post policy', { posts: [{ index: 0, text: 'Spam', flagged: false, policyVersion: OTHER_POLICY_VERSION }] }, 'Historical policy unavailable'],
-    ['empty contract policy', { posts: [{ index: 0, text: 'Spam', flagged: false }], policy: '' }, 'Invalid historical policy'],
+    ['old post policy', { posts: [{ index: 0, text: 'Spam', flagged: false, policyVersion: OTHER_POLICY_VERSION }] }, 'POLICY_UNAVAILABLE'],
+    ['empty contract policy', { posts: [{ index: 0, text: 'Spam', flagged: false }], policy: '' }, 'POLICY_INVALID'],
   ]) {
     await test(label + ' fails closed without model or signer action', async () => {
       const mockCli = new MockCli(MOCK_CLI, behavior);

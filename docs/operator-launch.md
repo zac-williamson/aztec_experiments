@@ -14,6 +14,7 @@ Packaged commands:
 ./scripts/operator-launch.sh author <action> <application options>
 ./scripts/operator-launch.sh deploy <deployment options>
 ./scripts/operator-launch.sh moderator <moderation options>
+./scripts/operator-launch.sh monitor /absolute/path/to/exported-public-board-config.json
 ./scripts/operator-launch.sh recover-wallet <recovery options>
 ```
 
@@ -58,3 +59,7 @@ new dynamic resources require an explicit inventory update and renewed checks.
 No launcher can protect against an administrator replacing its code, modifying its
 runtime, or running another executable. A Node launcher alone also cannot undo a
 preload that ran before it; this is why the shell wrapper is the supported entrypoint.
+
+The `monitor` route performs the bounded read-only escrow observation described in
+[operations.md](operations.md). Its import closure and trusted portal runtime metadata
+are included in the package inventory. It does not load a signer or submit transactions.

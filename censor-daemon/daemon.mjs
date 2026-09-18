@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import {createHash,randomUUID} from 'node:crypto';
 import {scopeKey} from '../shared/protocol-schema.mjs';
 import {publicNode} from '../shared/public-feed-rpc.mjs';
+import {summarizeModerationHealth, moderationFailure, safeModerationDiagnostic} from './health.mjs';
 import {openJobStore} from './job-store.mjs';
 import {processModerationCycle} from './worker.mjs';
 import {identifyModel} from './model-version.mjs';
@@ -113,8 +114,8 @@ export async function runDaemon(argv = process.argv.slice(2), { startRuntime = s
       try{
         if(!store){const data=signer.list(),id=createHash('sha256').update(scopeKey(data.scope)).digest('hex');store=openJobStore({filename:path.join(config.stateDir,id+'.sqlite'),scope:data.scope,modelVersion:identity.modelVersion});storeScope=data.scope;}
         const result=await processModerationCycle({store,signer,node,scope:storeScope,worker,log,dryRun:config.dryRun,stopping:()=>stopping,evaluate:(post,policy)=>moderatePost(post,policy,runtime.port)});
-        complete=result.complete;log('Moderation queue: '+JSON.stringify(result.status.counts));
-      }catch(error){log('Moderation cycle remains unresolved: '+(error.code||'FAILED')+': '+error.message,'error');}
+        complete=result.complete;log(JSON.stringify(summarizeModerationHealth({status:result.status,staleAfterMs:Math.max(config.pollInterval*3000,60000)})));
+      }catch(error){let status;try{status=store?.status();}catch{}log(JSON.stringify({...summarizeModerationHealth({status,cycleFailed:true,staleAfterMs:Math.max(config.pollInterval*3000,60000)}),diagnostic:safeModerationDiagnostic(error)}),'error');}
       if(config.once){if(!complete)throw new Error('Moderation jobs remain unresolved or require attention; saved work will resume next run');log('All posts processed (--once mode).');break;}
       if(!stopping)await delay(config.pollInterval*1000,undefined,{signal:wait.signal}).catch(error=>{if(error.name!=='AbortError')throw error;});
     }while(!stopping);
@@ -122,5 +123,5 @@ export async function runDaemon(argv = process.argv.slice(2), { startRuntime = s
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  runDaemon().catch(error => { log('FATAL: ' + error.message, 'error'); process.exitCode = 1; });
+  runDaemon().catch(error => { log(JSON.stringify(moderationFailure(error)), 'error'); process.exitCode = 1; });
 }

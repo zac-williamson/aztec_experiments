@@ -98,7 +98,7 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
    for(const record of rows())if(record.job.modelVersion!==modelVersion&&!record.intent&&!record.job.transactionHash&&!terminal.has(record.job.state)){
     record.job.state='manual-review';record.errorCode='MODEL_SUPERSEDED';record.lease=null;put(record);
    }
-   settingSet.run('checkpoint',JSON.stringify({number:checkpoint.number,hash:checkpoint.hash}));return {jobs:incoming.length,checkpoint:copy(checkpoint)};
+   settingSet.run('checkpoint',JSON.stringify({number:checkpoint.number,hash:checkpoint.hash}));settingSet.run('lastSuccessfulIngestAt',String(time));return {jobs:incoming.length,checkpoint:copy(checkpoint)};
   });
  }
  function leaseNext({worker}){
@@ -183,6 +183,30 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
    put(record);return copy(record);
   });
  }
- function status(){const all=rows(),counts={};for(const r of all)counts[r.job.state]=(counts[r.job.state]??0)+1;return {counts,checkpoint:JSON.parse(settingGet.get('checkpoint')?.value??'null'),oldestDeadline:all.filter(r=>!terminal.has(r.job.state)).map(r=>r.job.deadline).sort((a,b)=>BigInt(a)<BigInt(b)?-1:1)[0]??null};}
+ function status(){
+  const all=rows(),counts={},time=clock(),seconds=BigInt(Math.floor(time/1000));
+  const health={retryableErrors:0,unresolvedSigning:0,manualSigningFences:0,awaitingFinality:0,expiredObligations:0,manualAttention:0,unsignedPending:0,earliestUnsignedDeadline:null};
+  for(const r of all){
+   counts[r.job.state]=(counts[r.job.state]??0)+1;
+   if(r.job.state==='retryable-error')health.retryableErrors++;
+   const included=includedSuccess(r),fence=r.job.state==='manual-review'&&r.intent&&!included&&r.receipt?.executionResult!=='reverted';
+   if(fence)health.manualSigningFences++;
+   if(signing.has(r.job.state)&&!(r.job.state==='submitted'&&included))health.unresolvedSigning++;
+   if(r.job.state==='submitted'&&included)health.awaitingFinality++;
+   const benign=r.job.state==='manual-review'&&((r.errorCode==='MODEL_SUPERSEDED'&&!r.intent&&!r.job.transactionHash)||(r.errorCode==='FLAG_ALREADY_PRESENT'&&!r.intent));
+   if(benign||['evaluated-ok','confirmed-flag'].includes(r.job.state))continue;
+   if(r.job.state==='manual-review')health.manualAttention++;
+   if(r.job.state==='expired'||(!included&&BigInt(r.job.deadline)<=seconds))health.expiredObligations++;
+   if(!r.intent&&!terminal.has(r.job.state)){
+    health.unsignedPending++;
+    if(health.earliestUnsignedDeadline===null||BigInt(r.job.deadline)<BigInt(health.earliestUnsignedDeadline))health.earliestUnsignedDeadline=r.job.deadline;
+   }
+  }
+  const saved=settingGet.get('lastSuccessfulIngestAt')?.value;
+  const lastSuccessfulIngestAt=saved!==undefined&&/^[0-9]+$/.test(saved)&&Number.isSafeInteger(Number(saved))?Number(saved):null;
+  return {counts,checkpoint:JSON.parse(settingGet.get('checkpoint')?.value??'null'),lastSuccessfulIngestAt,health,
+   oldestDeadline:all.filter(r=>!terminal.has(r.job.state)).map(r=>r.job.deadline).sort((a,b)=>BigInt(a)<BigInt(b)?-1:1)[0]??null};
+ }
+
  return Object.freeze({ingestSnapshot,leaseNext,renew,release,transition,get:key=>{const r=getRecord(key);return r?copy(r):null;},list:()=>copy(rows()),status,close:()=>db.close()});
 }

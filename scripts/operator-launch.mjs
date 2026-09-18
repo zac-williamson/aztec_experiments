@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {spawnSync} from 'node:child_process';
-export const ROUTES=Object.freeze({author:'apps/src/billboard/user/cli.mjs',deploy:'apps/src/billboard/deploy/cli.mjs',moderator:'censor-daemon/daemon.mjs','recover-wallet':'apps/src/billboard/user/recovery-cli.mjs'});
+export const ROUTES=Object.freeze({author:'apps/src/billboard/user/cli.mjs',deploy:'apps/src/billboard/deploy/cli.mjs',moderator:'censor-daemon/daemon.mjs',monitor:'deploy/operations-monitor.mjs','recover-wallet':'apps/src/billboard/user/recovery-cli.mjs'});
 export function assertOperatorEnvironment(env=process.env){
  if(env.BILLBOARD_OPERATOR_PROFILE!=='1'||env.NODE_OPTIONS||env.NODE_PATH||env.OTEL_SDK_DISABLED!=='true'||env.OTEL_PROPAGATORS!=='none')throw Error('Use the supported shell operator launcher');
  for(const key of Object.keys(env))if(key.startsWith('OTEL_')&&!['OTEL_SDK_DISABLED','OTEL_PROPAGATORS'].includes(key))throw Error('Unsupported telemetry configuration');
