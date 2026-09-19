@@ -56,3 +56,18 @@ autonomously. Historical results do not qualify changed source.
 - application_change_review: reconciled actual C04 file hashes with9089663
   rather than its pre-change HEAD; recommended five focused current history tests
   because later C05 maturity/cooldown paths changed. Native/client084 pass.
+
+- application_change_review: approved unfunded setup extraction; funded/reopen087
+  passes. Approved coldfee coordinator after adding canonical collateral receipt
+  and sole fee-deposit/token movement checks.
+- webkit_failure_review: approved explicit browserMode integration and plain shared
+  status/checkpoint/publication helpers, strict handoffs and coldfee error observer.
+  Focused17checks and full harness089 pass before actual coldfee090.
+
+## Cold-fee gas repair 093
+
+Root owns edits and serialized checks. application_change_review reviews the shared gas normalization and real-engine regressions; webkit_failure_review reviews the single-boundary browser observer simplification. Both are read-only; no model overrides.
+
+093 integrated reviews: application_change_review approved shared normalization and real-engine tests; webkit_failure_review approved the single original error boundary and bounded sanitization. No correctness or structural blockers.
+
+094: webkit_failure_review approved uncached explicit L1 snapshot heights and preserved exact token accounting; no retries or fallback. application_change_review supplied the next withdrawal-recovery integration design and independent assertions.

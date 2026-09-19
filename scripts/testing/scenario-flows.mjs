@@ -1,3 +1,4 @@
+import {observeColdBrowserFees} from '../t04-cold-browser-fees.mjs';
 import {observeWithdrawalTraffic} from '../t04-withdraw-traffic.mjs';
 import path from 'node:path';
 import {observeWalletAbsence} from '../t04-wallet-absence.mjs';
@@ -199,7 +200,7 @@ export function screening(ctx){
 }
 export function browserPost(ctx){
   return withActivatedBoard(ctx,async s=>{
-    assert(s.browserControl&&!s.browserControl.browserJourney&&!s.browserControl.browserRecovery);
+    assert(s.browserControl?.browserMode==='post');
     await fees(s,false);
     await claim(s,false,'private');
     s.observation.browserPost=await completeU01BrowserPost({
@@ -211,7 +212,7 @@ export function browserPost(ctx){
 }
 export function browserRecovery(ctx){
   return withActivatedBoard(ctx,async s=>{
-    assert(s.browserControl?.browserRecovery&&!s.browserControl.browserJourney);
+    assert(s.browserControl?.browserMode==='recovery');
     await fees(s,false);
     await claim(s,false,'private');
     s.observation.browserPost=await completeU01BrowserPost({
@@ -223,7 +224,7 @@ export function browserRecovery(ctx){
 }
 export function browserLifecycle(ctx){
   return withActivatedBoard(ctx,async s=>{
-    assert(s.browserControl?.browserJourney);
+    assert(s.browserControl?.browserMode==='lifecycle');
     await fees(s,true);
     s.browserJourney=await prepareT04BrowserJourney({
       ...s.common,browserControl:s.browserControl,privateFee:s.privateFee,ready:s.ready
@@ -252,4 +253,12 @@ export function walletAbsence(ctx){
 
 export function withdrawalTraffic(ctx){
  return withActivatedBoard(ctx,async s=>{await observeWithdrawalTraffic(s);return complete;});
+}
+
+export function browserFunding(ctx){
+ return withActivatedBoard(ctx,async s=>{
+  assert.equal(s.browserControl?.browserMode,'funding');
+  s.observation.browserFunding=await observeColdBrowserFees({...s.common,browserControl:s.browserControl,ready:s.ready});
+  assert(s.observation.browserFunding.passed);return complete;
+ });
 }

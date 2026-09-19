@@ -38,6 +38,7 @@ There are no implicit defaults, cascading environment flags or legacy aliases. T
 | `contention` | Ten authors posting from one anchor; explicitly genesis-funded constraint fixture |
 | `screening` | Authenticated screening constraints; explicitly genesis-funded constraint fixture |
 | `browser-firefox-post`, `browser-webkit-post` | Explicit engine private-fee posting; no automatic browser substitution |
+| `browser-cold-fees` | Actual fee-page deposit and private claim from zero credit, then paid collateral claim and post |
 | `browser-post` | Actual GUI posting after native private-fee setup |
 | `browser-journey`, `browser-firefox-journey`, `browser-webkit-journey` | Explicit engine GUI deposit, claim, post, screening, withdrawal and refund |
 | `browser-post-recovery` | Accepted post, lost response, browser restart and original transaction recovery |

@@ -90,18 +90,18 @@ export async function completeU01BrowserPost({node,preparation,instance,l1Client
     // node verifier remains active; no network prover has ever been created.
     await privateFee.close();await Barretenberg.destroySingleton();
     capture=captureU01BrowserSubmissions(node,evidence);
-    if(browserControl.browserRecovery){const {installT04PostResponseLoss}=await import('./t04-post-response-loss.mjs');responseLoss=await installT04PostResponseLoss({node,directory});}
+    if((browserControl.browserMode==='recovery')){const {installT04PostResponseLoss}=await import('./t04-post-response-loss.mjs');responseLoss=await installT04PostResponseLoss({node,directory});}
     rpcObserver=createT03RpcObserver({roles:{author:account.address.toString(),payer:fixture.instance.address.toString(),board:instance.address.toString(),funder:l1Client.account.address}});
     rpc=await startU01BrowserRpc({node,anvilUrl:rpcUrl,ethereumAccount:l1Client.account.address,origin,token:rpcToken,observer:rpcObserver});
     const message='U01 genuine browser private-fee post';
-    await fs.writeFile(path.join(directory,'browser-ready.json'),JSON.stringify(createBrowserHandoff({nodeUrl:rpc.nodeUrl,ethereumUrl:rpc.ethereumUrl,publicConfig,backupPath,ethereumAccount:l1Client.account.address,message},{directory,browserJourney:false})),{mode:0o600});
+    await fs.writeFile(path.join(directory,'browser-ready.json'),JSON.stringify(createBrowserHandoff({nodeUrl:rpc.nodeUrl,ethereumUrl:rpc.ethereumUrl,publicConfig,backupPath,ethereumAccount:l1Client.account.address,message},{directory,browserMode:browserControl.browserMode})),{mode:0o600});
     mark('browser-ready');
     let result;
     // The parent enforces the overall nine-minute budget including native setup.
     for(;;){try{result=JSON.parse(await fs.readFile(path.join(directory,'browser-result.json'),'utf8'));break;}catch(error){if(error.code!=='ENOENT')throw error;}await pause(200);}
     observation.browser=result;assert.equal(result.passed,true,'Real browser UI post did not complete');
     assert.equal(result.browserClosed,true);assert.equal(result.ownedServerStopped,true);
-    if(browserControl.browserRecovery){
+    if((browserControl.browserMode==='recovery')){
       const loss=responseLoss.snapshot();assert(loss.accepted&&loss.sendCalls===1&&!loss.closed);
       assert(result.recovery?.passed&&result.recovery.fullBrowserRestart&&result.recovery.samePersistentProfile&&result.recovery.journalsImported===false);
       assert.equal(result.recovery.transactionHash,loss.transactionHash);assert.deepEqual(result.publicTransactionHashes,[loss.transactionHash]);assert.equal(evidence.captures.size,1);
@@ -154,7 +154,7 @@ export async function prepareT04BrowserJourney({node,preparation,instance,l1Clie
   capture=captureU01BrowserSubmissions(node,{captures});observer=createT03RpcObserver({roles:{author:account.address.toString(),payer:privateFee.payer,board:scope.boardAddress,funder:depositor}});
   rpc=await startU01BrowserRpc({node,anvilUrl:rpcUrl,ethereumAccount:depositor,origin:browserControl.origin,token:browserControl.rpcToken,observer});
   claimCheckpoints.enable();
-  await fs.writeFile(path.join(directory,'browser-ready.json'),JSON.stringify(createBrowserHandoff({nodeUrl:rpc.nodeUrl,ethereumUrl:rpc.ethereumUrl,publicConfig,backupPath,ethereumAccount:depositor,message},{directory,browserJourney:true,depositAmount:formatEther(amount)})),{mode:0o600});mark('browser-ready');
+  await fs.writeFile(path.join(directory,'browser-ready.json'),JSON.stringify(createBrowserHandoff({nodeUrl:rpc.nodeUrl,ethereumUrl:rpc.ethereumUrl,publicConfig,backupPath,ethereumAccount:depositor,message},{directory,browserMode:'lifecycle',depositAmount:formatEther(amount)})),{mode:0o600});mark('browser-ready');
   let receipt,refundBefore;
   return {observation,cleanup,async untilExit(){
    const claim=await stageTx('claim');claimCheckpoints.restore();const [depositNonce,activeAmount]=await read('getDeposit',[depositor]);assert(depositNonce>0n);assert.equal(activeAmount,amount);assert.equal(await read('totalDeposited'),before.liability+amount);assert.equal(await l1Client.getBalance({address:scope.portalAddress}),before.portalBalance+amount);

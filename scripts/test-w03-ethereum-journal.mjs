@@ -45,18 +45,38 @@ for(const backend of ['file','indexeddb']) {
   const restored=await f.newSession({signer:null});assert.equal((await restored.recover()).txHash,result.txHash);assert.equal(f.requests.length,1);
   await (await f.newSession({acknowledgeTx:result.txHash})).assertCanStart();
  },kind));
- test(`${backend}: lost response before hash storage finds original sender/nonce without another send`,()=>use(async f=>{
+ for(const kind of ['deposit','withdraw']) {
+ test(`${backend}: ${kind}: lost response before hash storage finds original sender/nonce without another send`,()=>use(async f=>{
   f.mode('lost');await assert.rejects((await f.newSession()).send(f.intent),e=>e.code==='BB_ETH_SUBMISSION_UNKNOWN'&&!e.message.includes('PRIVATE_SENTINEL'));
   const result=await (await f.newSession()).recover();assert.equal(result.outcome,'success');assert.equal(f.requests.length,1);assert.equal(result.receipt.blockNumber,11);
- }));
- test(`${backend}: rejection/crash before broadcast retains exact nonce, calldata and value for explicit retry`,()=>use(async f=>{
+ },kind));
+ test(`${backend}: ${kind}: rejection/crash before broadcast retains exact nonce, calldata and value for explicit retry`,()=>use(async f=>{
   f.mode('reject');await assert.rejects((await f.newSession()).send(f.intent),{code:'BB_ETH_SUBMISSION_UNKNOWN'});
   await assert.rejects((await f.newSession()).recover(),{code:'BB_ETH_RECOVERY_REQUIRED'});assert.equal(f.requests.length,1);
   f.mode('normal');await (await f.newSession()).recover({retry:true});assert.equal(f.requests.length,2);assert.deepEqual(f.requests[0],f.requests[1]);
- }));
- test(`${backend}: storage failure stops before wallet request`,()=>use(async f=>{
+ },kind));
+ test(`${backend}: ${kind}: storage failure stops before wallet request`,()=>use(async f=>{
   const journal=await f.newSession({storage:{read:async()=>null,compareAndSwap:async()=>{throw new Error('disk full');}}});await assert.rejects(journal.send(f.intent),{code:'BB_JOURNAL_INVALID'});assert.equal(f.requests.length,0);
- }));
+ },kind));
+ }
+ for(const kind of ['deposit','withdraw'])for(const boundary of ['before','after'])test(`${backend}: ${kind} interruption ${boundary} hash persistence recovers original mined transaction`,()=>use(async(f,{storage})=>{
+  let writes=0;
+  const interrupted={read:key=>storage.read(key),compareAndSwap:async(...args)=>{
+   writes++;
+   if(writes===2&&boundary==='before')throw Error('interrupted before hash write');
+   await storage.compareAndSwap(...args);
+   if(writes===2&&boundary==='after')throw Error('interrupted after hash write');
+  }};
+  await assert.rejects((await f.newSession({storage:interrupted})).send(f.intent),{code:'BB_JOURNAL_INVALID'});
+  assert.equal(writes,2);assert.equal(f.requests.length,1);assert.equal(f.transactions.size,1);
+  const originalHash=f.transactions.keys().next().value;
+  const recovered=await (await f.newSession({signer:null})).recover();
+  assert.equal(recovered.outcome,'success');assert.equal(recovered.txHash,originalHash);
+  assert.equal(String(recovered.event.nonce),f.intent.expected.nonce);assert.equal(String(recovered.event.amount),f.intent.expected.amount);
+  assert.equal(recovered.event.depositor.toLowerCase(),f.scope.depositor);
+  assert.equal(f.requests.length,1);assert.equal(f.requests[0].data,f.intent.data);assert.equal(String(f.requests[0].value),f.intent.value);
+  assert.equal((await (await f.newSession({signer:null})).recover()).txHash,originalHash);assert.equal(f.requests.length,1);
+ },kind));
  test(`${backend}: concurrent intent saves authorize only one signer request`,()=>use(async f=>{
   const a=await f.newSession(),b=await f.newSession();await Promise.allSettled([a.send(f.intent),b.send(f.intent)]);assert.equal(f.requests.length,1);
  }));

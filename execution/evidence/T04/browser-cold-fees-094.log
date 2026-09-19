@@ -1,0 +1,23 @@
+{"role":"fixture","stage":"start-disposable-l1","elapsedMs":689}
+{"role":"fixture","stage":"prepare-genesis","elapsedMs":811}
+{"role":"fixture","stage":"deploy-local-protocol-fixture","elapsedMs":2562}
+{"role":"fixture","stage":"wait-for-local-validator-activation","elapsedMs":3821}
+{"role":"fixture","stage":"start-application-node","elapsedMs":3842}
+{"role":"fixture","stage":"prove-board-deployment","elapsedMs":6639}
+{"role":"fixture","stage":"cold-fee:prepare-unfunded-wallet","elapsedMs":73259}
+{"role":"fixture","stage":"browser-ready","elapsedMs":73767}
+{"role":"browser","stage":"local-https","elapsedMs":73952}
+{"role":"browser","stage":"browser-start","elapsedMs":74563}
+{"role":"browser","stage":"wallet-software","elapsedMs":75459}
+{"role":"browser","stage":"public-config-import","elapsedMs":76143}
+{"role":"browser","stage":"encrypted-wallet-restore","elapsedMs":76288}
+{"role":"browser","stage":"wallet-connect-and-status","elapsedMs":76562}
+{"role":"browser","stage":"gui-fee-deposit","elapsedMs":76815}
+{"role":"browser","stage":"gui-fee-claim","elapsedMs":86736}
+{"role":"fixture","stage":"browser-fee-claim-verified","elapsedMs":124693}
+{"role":"browser","stage":"gui-funded-board","elapsedMs":124719}
+{"role":"browser","stage":"gui-deposit-claim","elapsedMs":127782}
+{"role":"fixture","stage":"browser-claim-verified","elapsedMs":172549}
+{"role":"browser","stage":"actual-gui-post","elapsedMs":186112}
+{"role":"fixture","stage":"browser-post-verified","elapsedMs":227661}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/T04/application-8966fbca-65ee-47c3-ad0c-b492440d94b4.json","passed":true,"scenario":"browser-cold-fees"}

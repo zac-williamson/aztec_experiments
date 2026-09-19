@@ -1499,18 +1499,12 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Firefox lifecycle084 passes378008ms/3598176KiB; mobile reader083passes. All5currentcontract history085 tests pass, native1100record084 and client3tests pass. Next WebKit full lifecycle086, same driver/bounds, source frozen.",
+      "checkpoint": "Cold-fee094 PASS: actual browser Ethereum deposit, private fee claim, collateral claim and post; exact canonical token/private/payer accounting. 241206ms, peak2287200KiB, full cleanup. Ethereum persistence-boundary095 tests47/47 and independent review pass. Next accepted-withdrawal browser recovery using existing runner.",
       "priority": 24,
       "completion_requires": [
         "O01"
       ],
-      "execution_lane": "browser-recovery",
-      "investigation": {
-        "hypothesis": "WebKit26.6 realpost074 and portable Firefox fulljourney084 pass; same independently reviewed lifecycle driver should qualify WebKit deposit through refund within540s/4GiB.",
-        "attempts": 1,
-        "max_attempts": 1,
-        "next_action": "Inspect WebKit086 canonical stages, fee accounting, result and cleanup; diagnose failure without unchanged retry."
-      }
+      "execution_lane": "browser-recovery"
     },
     {
       "id": "R01",

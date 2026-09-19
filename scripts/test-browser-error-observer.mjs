@@ -23,3 +23,16 @@ test('portable error observer preserves formatter behavior and exports only boun
   assert.equal(globalThis.__u01FormatterDiagnostics.length,16);
  } finally {for(const [key,value] of Object.entries(saved)){if(value===undefined)delete globalThis[key];else globalThis[key]=value;}}
 });
+
+test('common formatter captures fee-page coordinates and preserves its result',()=>{
+ const saved=Object.fromEntries(['location','publicOperationFailure','__u01FormatterDiagnostics','__u01CaptureError'].map(key=>[key,globalThis[key]]));
+ try{
+  globalThis.location={origin:'https://localhost:1234'};
+  globalThis.publicOperationFailure=()=> 'Keep your recovery record';
+  installBrowserErrorObserver();
+  const error=new Error('SECRET');error.stack='private@https://localhost:1234/fee-juice.html:12:13';
+  assert.equal(globalThis.publicOperationFailure(error),'Keep your recovery record');
+  assert.deepEqual(globalThis.__u01FormatterDiagnostics[0].chain[0].frames,[{file:'/fee-juice.html',line:12,column:13}]);
+  assert(!JSON.stringify(globalThis.__u01FormatterDiagnostics).includes('SECRET'));
+ }finally{for(const[key,value]of Object.entries(saved)){if(value===undefined)delete globalThis[key];else globalThis[key]=value;}}
+});

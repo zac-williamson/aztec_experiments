@@ -5,9 +5,9 @@ retain their source snapshots; final-source reconciliation remains T05 work.
 
 | Area | Existing evidence | Remaining distinct work |
 |---|---|---|
-| Browser lifecycle | Chromium048 and Firefox084 deposit through refund; WebKit074 genuine individual post | Full WebKit lifecycle; actual stable release browser qualification, including installed Safari |
-| Private fee funding UI | Genuine native funding/claim; browser adapter and persistence tests | Actual fee-juice.html cold bridge/private claim and subsequent paid action |
-| Recovery | Chromium050 accepted post response loss and full persistent browser restart; W03 receipt/persistence and chain tests | Map three interruption points per stage to existing tests; genuine distinct claim/screen/exit recovery and one mined Ethereum response-loss integration |
+| Browser lifecycle | Chromium048, Firefox084 and WebKit086 deposit through refund | Actual stable release browser qualification, including installed Safari |
+| Private fee funding UI | Cold-browser094 passes actual fee-juice.html deposit/private claim, collateral claim and paid post with exact accounting | Final-source reconciliation and external-wallet route |
+| Recovery | Chromium050 accepted post response loss and full persistent browser restart; W03 receipt/persistence and chain tests | Map three interruption points per stage to existing tests; genuine distinct claim/screen/exit browser recovery. Existing real-Anvil W03 deposit/refund and fee-funding tests already cover mined response loss with file-journal restart; browser integration is separate |
 | History | C04 17/33 stateful TXE lifecycles, seeded1,002note authenticated continuation/exit, actual1,100record native/browser persistence | Current native-store084 passes11checks at1,100synthetic records in302ms and client checks3/3; contract/ABI final-source reconciliation remains |
 | Concurrency and traffic | Ten same-anchor authors with genesis fixture fees; two private-fee authors and original withdrawal proof076 | Reconcile source; do not claim ten-author private-fee throughput or single-block inclusion |
 | Long absence | Native persisted wallet075 reopens after simulated30days, authenticates retained state and posts | Not a real elapsed soak or browser crash qualification |
@@ -24,4 +24,4 @@ History source reconciliation: C04 source-final hashes match9089663, while its
 recorded HEAD a208406 predates then-uncommitted C04 changes. Compare the hashed
 files, not HEAD alone. Independent review found successor/hint queries and history
 tests unchanged. Later C05 maturity/cooldown/recovery changes justify rerunning
-only the five existing `test_history` contract tests on current source.
+only the five existing `test_history` contract tests on current source. All five passed in contract-history-085.log; final candidate binding remains T05.

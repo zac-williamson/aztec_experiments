@@ -6,8 +6,7 @@ Objective state: **running**. Completed packages: 24/35.
 
 ## In progress
 
-- **Run browser, recovery, concurrency and load matrix (T04)** — Firefox lifecycle084 passes378008ms/3598176KiB; mobile reader083passes. All5currentcontract history085 tests pass, native1100record084 and client3tests pass. Next WebKit full lifecycle086, same driver/bounds, source frozen.
-  Investigation: 1/1 attempts. Reassessment required. Inspect WebKit086 canonical stages, fee accounting, result and cleanup; diagnose failure without unchanged retry.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Cold-fee094 PASS: actual browser Ethereum deposit, private fee claim, collateral claim and post; exact canonical token/private/payer accounting. 241206ms, peak2287200KiB, full cleanup. Ethereum persistence-boundary095 tests47/47 and independent review pass. Next accepted-withdrawal browser recovery using existing runner.
 
 ## Ready internal work
 

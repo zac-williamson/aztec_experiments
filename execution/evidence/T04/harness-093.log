@@ -1,0 +1,119 @@
+
+> test:harness
+> node scripts/test-harness.mjs harness
+
+✔ one owner preserves child outcome and verifies cleanup (51.313917ms)
+✔ failed child is reported and does not lose its result during cleanup (48.278459ms)
+✔ deadline terminates and reaps a real hanging process (276.795959ms)
+✔ malformed worker output is a harness failure, not discarded (49.506042ms)
+✔ cleanup failure preserves the completed command and fails overall (23.014875ms)
+✔ scenario selection is explicit and has no legacy/default route (0.632458ms)
+✔ first malformed record prevents subsequent stage callbacks (49.806958ms)
+✔ peak memory retains only process identity and measured RSS (0.374167ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 539.452292
+✔ actual descendant accounting includes memory in a child-created process group and cleans it (124.967125ms)
+✔ remembered descendant identity survives parent exit and remains counted and terminated (137.697792ms)
+✔ snapshot failure after freezing cannot leave actual owned children stopped (124.092583ms)
+✔ malformed process snapshots fail on the first read (0.269459ms)
+✔ interrupted process snapshot is reported without retry (0.097583ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 425.261792
+✔ private prover profile defaults to one and explicitly supports two (0.690167ms)
+✔ invalid counts and relative directories fail before singleton initialization (0.931958ms)
+✔ scenario resource choices retain established native budgets (0.594875ms)
+✔ local timing has an SDK-valid build window and Inbox readiness headroom (62.20475ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 130.918458
+✔ private fee proof preserves payment options, gas and owner context (0.794709ms)
+✔ actual proven author payer rejects despite privatePayer preparation (0.394584ms)
+✔ private fee route rejects a wrong account or exposed author payer (0.165541ms)
+✔ payer mode is required and never inferred from an available callback (0.479125ms)
+✔ explicit genesis fixture uses only the account payer (0.103292ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 175.163167
+✔ official RPC schema reaches original node and captures exactly accepted transactions (130.787708ms)
+✔ official client simultaneous reads cross the RPC adapter as a batch (5.339792ms)
+✔ failed send is not accepted, and close disposes a hanging real HTTP request (29.140833ms)
+✔ command parser keeps exact public hashes and fixed markers only (0.567833ms)
+✔ actual child process runner preserves literal arguments, isolated env and fixed output (33.798625ms)
+✔ timeout and excess output terminate owned child groups (135.040833ms)
+✔ known command stages and failure codes retain no arbitrary output (0.181625ms)
+✔ confirmed journal receipt keeps only its exact hash (0.087375ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 787.115166
+✔ rendezvous accepts only fixed stages and bounded unique public transaction identifiers (3.880416ms)
+✔ atomic rendezvous cannot overwrite a prior stage or accept an unverified release (5.254125ms)
+✔ missing release respects remaining parent budget (0.452542ms)
+✔ canonical exit rejects wrong leaf, duplicate leaf, wrong nullifier and ineligible anchor (167.41625ms)
+✔ aborted lifecycle terminates a rendezvous even with a clamped legacy time callback (104.185667ms)
+✔ browser modes roundtrip strictly across the real handoff boundary (6.788208ms)
+✔ journey diagnostic outputs fixed milestones and allowlisted exception only (0.23725ms)
+✔ actual browser journey stops after one deposit action when claim reports an error (0.234583ms)
+✔ partial canonical progress is ordered, bounded, public-only and copied (0.35575ms)
+✔ non-Chromium lifecycle scenarios retain one explicit engine and existing bounds (0.434084ms)
+✔ cold funding driver never claims or deposits again after a failed deposit (0.447417ms)
+✔ handoff accepts actual SDK whole-token formatting and rejects invalid amounts (0.674041ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 367.511833
+✔ portable error observer preserves formatter behavior and exports only bounded safe fields (1.747667ms)
+✔ common formatter captures fee-page coordinates and preserves its result (0.187542ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 39.296416
+✔ actual control flow posts once, restarts once, restores identity and invokes only recovery (102.803334ms)
+✔ schema-v2 backup is rejected before post even when its stale journal list is empty (145.233792ms)
+✔ stale acceptance file and expired deadline cannot restart or post (97.657458ms)
+✔ acceptance requires exact schema, actual acceptance and exactly one send (2.55525ms)
+✔ restart must close prior browser and retain profile/origin before reimport (96.905459ms)
+✔ late physical closure cannot count as crash before automatic reconciliation (97.377333ms)
+✔ recent acceptance cannot hide a submission request already older than the crash bound (96.784792ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 679.451667

@@ -47,7 +47,7 @@ export async function derivePrivateFeeBridgeSecret({salt,owner}) {
   return poseidon2HashWithSeparator([fixedSalt,address(owner).toField()],3952304070);
 }
 export async function derivePrivateFeeBridgeSecretHash(input) { return computeSecretHash(await derivePrivateFeeBridgeSecret(input)); }
-function snapshotGas(value) {
+export function normalizePrivateFeeGasSettings(value) {
   check(value,'PRIVATE_FEE_CONFIGURATION_REQUIRED');
   const da=uint(value.gasLimits?.daGas,32),l2=uint(value.gasLimits?.l2Gas,32);
   const tda=uint(value.teardownGasLimits?.daGas,32),tl2=uint(value.teardownGasLimits?.l2Gas,32);
@@ -68,7 +68,7 @@ async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,e
   check(privateFeeAddress&&privateFeeArtifact,'PRIVATE_FEE_CONFIGURATION_REQUIRED');
   const author=address(owner),payer=address(privateFeeAddress),chainId=uint(expectedChainId,64),version=uint(expectedVersion,32);
   check(!author.equals(payer),'PRIVATE_FEE_OWNER_IS_PAYER');
-  const fixed=snapshotGas(gasSettings);
+  const fixed=normalizePrivateFeeGasSettings(gasSettings);
   const [walletChain,nodeInfo]=await Promise.all([wallet.getChainInfo(),node.getNodeInfo()]);
   check(uint(walletChain.chainId,64)===chainId&&uint(walletChain.version,32)===version&&uint(nodeInfo.l1ChainId,64)===chainId&&uint(nodeInfo.rollupVersion,32)===version,'PRIVATE_FEE_CHAIN_MISMATCH');
   const artifact=artifactOf(privateFeeArtifact),canonical=await derivePrivateFeeInstance(artifact);

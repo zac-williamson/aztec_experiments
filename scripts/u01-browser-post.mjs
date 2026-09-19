@@ -12,15 +12,17 @@ import {readJourneyUiDiagnostic,safeJourneyDriverFailure} from './t04-browser-jo
 import {runT04BrowserPostRecovery} from './t04-browser-post-recovery.mjs';
 import {ROOT,assertNodeVersion} from './toolchain.mjs';
 
-export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,ethereumUrl,rpcToken,publicConfig,backupPath,backupPassword,ethereumAccount,message,timeoutMs=480000,diagnostic=false,observeProofStages=false,onStage=()=>{},journeyDriver,depositAmount,browserRecovery=false}) {
+export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,ethereumUrl,rpcToken,publicConfig,backupPath,backupPassword,ethereumAccount,message,timeoutMs=480000,diagnostic=false,observeProofStages=false,onStage=()=>{},journeyDriver,depositAmount,fundingAmount,browserMode}) {
  assertNodeVersion();
+ const browserRecovery=browserMode==='recovery';
+ if(!['post','lifecycle','recovery','funding'].includes(browserMode))throw Error('Invalid browser mode');
  const lifecycleAbort=new AbortController();
  const started=Date.now();let browser,context,child,timer,page,debuggerSession,stage='validation';
  const browserProfile=path.join(directory,'browser-profile');let ownsBrowserProfile=false;
  const mark=value=>{stage=value;onStage(value);};
  const external=new Set(),csp=new Set(),paths=new Set(),failedHttp=new Map(),cspDetails=[];
  const publicPath=value=>/^\/(?:rpc\/(?:aztec|ethereum)|(?:user|feed|censor|deploy|fee-juice)\.html|(?:aztec_bundle|public-feed|bb-main.worker|bb-thread.worker|sqlite.worker|sqlite3-opfs-async-proxy)\.js|(?:sqlite3|acvm_js_bg|noirc_abi_wasm_bg)\.wasm|crs\/(?:crs-manifest\.json|g1\.dat|g1_uncompressed\.dat|g2\.dat|grumpkin_g1\.dat))$/.test(value)?value:'other-local-path';
- const observation={passed:false,browserEngine,sourceStage:stage,elapsedMs:0,diagnosticInstrumentation:diagnostic,proofStageObservation:observeProofStages,performanceQualified:false,diagnosticScope:diagnostic&&journeyDriver?'Formatter-only observation with fixed driver/UI diagnostics; no breakpoint or engine/prover replacement.':diagnostic?'Error formatter and catch breakpoint observation; original application behavior preserved.':'Fixed error-category observer; no debugger. GUI wall time only, not isolated proof performance.'};
+ const observation={passed:false,browserEngine,browserMode,sourceStage:stage,elapsedMs:0,diagnosticInstrumentation:diagnostic,proofStageObservation:observeProofStages,performanceQualified:false,diagnosticScope:diagnostic&&journeyDriver?'Formatter-only observation with fixed driver/UI diagnostics; no breakpoint or engine/prover replacement.':diagnostic?'Error formatter and catch breakpoint observation; original application behavior preserved.':'Fixed error-category observer; no debugger. GUI wall time only, not isolated proof performance.'};
  const requireValue=(condition)=>{if(!condition)throw Error('Invalid disposable browser test parameters');};
  requireValue(['chromium','firefox','webkit'].includes(browserEngine));
  requireValue(browserEngine==='chromium'||(!browserRecovery&&!diagnostic));
@@ -31,6 +33,7 @@ export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,
  requireValue(site.protocol==='https:'&&node.protocol==='http:'&&ethereum.protocol==='http:');
  requireValue(path.isAbsolute(directory)&&path.isAbsolute(backupPath)&&/^[a-zA-Z0-9_-]{24,256}$/.test(rpcToken)&&/^0x[0-9a-fA-F]{40}$/.test(ethereumAccount));
  requireValue(typeof diagnostic==='boolean'&&typeof browserRecovery==='boolean');
+ requireValue(['lifecycle','funding'].includes(browserMode)===(typeof journeyDriver==='function'));
  requireValue(!browserRecovery||(!journeyDriver&&!observeProofStages&&!diagnostic));
  requireValue(Number.isSafeInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=480000&&typeof message==='string'&&message.trim()===message&&Buffer.byteLength(message)>0&&Buffer.byteLength(message)<=992);
  const config=structuredClone(publicConfig);config.network.nodeUrl=site.origin+'/rpc/aztec';config.network.ethRpcUrl=site.origin+'/rpc/ethereum';
@@ -87,7 +90,7 @@ export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,
    fs.mkdirSync(browserProfile,{mode:0o700});ownsBrowserProfile=true;
    await openContext();
    page=await context.newPage();page.setDefaultTimeout(Math.min(20000,remaining()));
-   mark('wallet-software');const navigationStarted=Date.now();await page.goto(site.origin+'/user.html');
+   mark('wallet-software');const navigationStarted=Date.now();await page.goto(site.origin+(browserMode==='funding'?'/fee-juice.html':'/user.html'));
    await page.waitForFunction(()=>globalThis.__aztec?.createPXE&&document.getElementById('wbAztecFile'),{},{timeout:remaining()});observation.sdkReadyMs=Date.now()-navigationStarted;
    await page.evaluate(installBrowserErrorObserver);
    mark('public-config-import');await page.getByLabel('Public configuration JSON',{exact:true}).fill(JSON.stringify(config));await page.getByRole('button',{name:'Import configuration',exact:true}).click();
@@ -97,9 +100,16 @@ export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,
    mark('wallet-connect-and-status');const setupStarted=Date.now();await page.locator('#wbEthBrowserBtn').click();
    if(journeyDriver){
     requireValue(typeof journeyDriver==='function'&&!observeProofStages);
-    await page.waitForFunction(()=>document.getElementById('page-1')?.classList.contains('active')||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
-    requireValue(await page.locator('#page-1').isVisible());observation.walletSetupMs=Date.now()-setupStarted;
-    observation.journey=await journeyDriver({page,directory,message,depositAmount,remaining:()=>timeoutMs-(Date.now()-started),signal:lifecycleAbort.signal,mark,onSubstage:value=>{observation.driverSubstage=value;}});
+    if(browserMode==='funding'){
+     await page.waitForFunction(()=>document.getElementById('azaddr')?.value||document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
+     requireValue(await page.locator('#setupStatus .error').count()===0);
+    }else{
+     requireValue(browserMode==='lifecycle');
+     await page.waitForFunction(()=>document.getElementById('page-1')?.classList.contains('active')||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
+     requireValue(await page.locator('#page-1').isVisible());
+    }
+    observation.walletSetupMs=Date.now()-setupStarted;
+    observation.journey=await journeyDriver({page,directory,message,depositAmount,fundingAmount,backupPath,backupPassword,remaining:()=>timeoutMs-(Date.now()-started),signal:lifecycleAbort.signal,mark,onSubstage:value=>{observation.driverSubstage=value;}});
     requireValue(observation.journey.passed===true&&external.size===0&&csp.size===0);observation.passed=true;return;
    }
    await page.waitForFunction(()=>{const button=document.getElementById('postBtn');return (button&&button.getClientRects().length>0)||!!document.querySelector('#setupStatus .error');},{},{timeout:remaining()});requireValue(await page.locator('#postBtn').isVisible());observation.walletSetupMs=Date.now()-setupStarted;
@@ -186,5 +196,5 @@ export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,
   for(const name of ['u01-browser-Caddyfile','u01-browser-cert.pem','u01-browser-key.pem'])fs.rmSync(path.join(directory,name),{force:true});
   if(ownsBrowserProfile)try{fs.rmSync(browserProfile,{recursive:true,force:true});}catch{observation.passed=false;observation.recoveryProfileCleanupFailed=true;}
  }
- return {...observation,sourceStage:stage,elapsedMs:Date.now()-started,externalRequestCount:external.size,failedHttp:[...failedHttp.values()],cspDirectives:[...csp],cspDetails,requestedPaths:[...paths].sort(),ownedServerStopped:!child||child.exitCode!==null||child.signalCode!==null,browserClosed:!browser||!browser.isConnected(),scope:browserRecovery?'Actual GUI accepted-post response-loss recovery after full persistent-browser restart; parent must verify canonical effects and no repeat submission.':journeyDriver?'Actual GUI lifecycle driver; parent canonical verification is required.': 'Actual GUI post from preseeded disposable funded wallet; parent must verify canonical node effects. Not a full deposit-to-withdraw journey.'};
+ return {...observation,sourceStage:stage,elapsedMs:Date.now()-started,externalRequestCount:external.size,failedHttp:[...failedHttp.values()],cspDirectives:[...csp],cspDetails,requestedPaths:[...paths].sort(),ownedServerStopped:!child||child.exitCode!==null||child.signalCode!==null,browserClosed:!browser||!browser.isConnected(),scope:browserMode==='funding'?'Actual GUI cold fee deposit/claim and paid board claim/post; parent canonical verification required.':browserRecovery?'Actual GUI accepted-post response-loss recovery after full persistent-browser restart; parent must verify canonical effects and no repeat submission.':journeyDriver?'Actual GUI lifecycle driver; parent canonical verification is required.': 'Actual GUI post from preseeded disposable funded wallet; parent must verify canonical node effects. Not a full deposit-to-withdraw journey.'};
 }

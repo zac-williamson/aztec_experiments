@@ -10,11 +10,12 @@ export async function runBrowser(directory,control) {
   let result;
   try {
     const {validateBrowserWorkerControl,driveT04BrowserJourney}=await import('../t04-browser-journey.mjs');
+    const {driveT04BrowserFunding}=await import('../t04-browser-funding.mjs');
     const {runU01BrowserPost}=await import('../u01-browser-post.mjs');
     validateBrowserWorkerControl(control,{directory});
     result=await runU01BrowserPost({...control,directory,
-      journeyDriver:control.browserJourney?driveT04BrowserJourney:undefined,
-      diagnostic:false,observeProofStages:!control.browserJourney&&!control.browserRecovery,
+      journeyDriver:control.browserMode==='lifecycle'?driveT04BrowserJourney:control.browserMode==='funding'?driveT04BrowserFunding:undefined,
+      diagnostic:false,observeProofStages:control.browserMode==='post',
       onStage:stage=>console.log(JSON.stringify({stage}))});
   }catch(error){result={passed:false,failure:describeFailure(error)};}
   await fs.writeFile(path.join(directory,'browser-result.json'),JSON.stringify(result)+'\n',{flag:'wx',mode:0o600});

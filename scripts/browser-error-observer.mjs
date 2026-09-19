@@ -14,7 +14,7 @@ export function installBrowserErrorObserver() {
        if(typeof current?.stack==='string')for(const line of current.stack.split('\n').slice(0,17)){
         const match=line.match(/(https?:\/\/[^\s)]+):(\d+):(\d+)/);if(!match)continue;
         const u=new URL(match[1]),row=Number(match[2]),column=Number(match[3]);
-        if(u.origin===location.origin&&['/user.html','/aztec_bundle.js'].includes(u.pathname)&&Number.isSafeInteger(row)&&Number.isSafeInteger(column))frames.push({file:u.pathname,line:row,column});
+        if(u.origin===location.origin&&['/user.html','/fee-juice.html','/aztec_bundle.js'].includes(u.pathname)&&Number.isSafeInteger(row)&&Number.isSafeInteger(column))frames.push({file:u.pathname,line:row,column});
        }
        // Raw messages stay inside this page. Only fixed category booleans leave.
        const message=typeof current?.message==='string'?current.message:'';

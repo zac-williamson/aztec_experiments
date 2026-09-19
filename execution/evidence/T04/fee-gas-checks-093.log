@@ -1,0 +1,47 @@
+✔ portable error observer preserves formatter behavior and exports only bounded safe fields (2.709917ms)
+✔ common formatter captures fee-page coordinates and preserves its result (0.156458ms)
+✔ funding deposits to shared address and passes mandatory recovery callback (1.870625ms)
+✔ standalone claim uses standard author entrypoint with only private fee payload, then stops PXE (0.796417ms)
+✔ browser recovery storage preserves earlier deposits and refuses conflicting replacements or secrets (0.584208ms)
+✔ deposit below claim fee is rejected before requesting L1 funding (0.379583ms)
+✔ private fee claim refuses missing or unresolved recovery storage before consuming bridge information (0.70875ms)
+✔ private fee success recovery requires no Ethereum signer, bridge claim file or PXE (0.321583ms)
+✔ private fee reverted recovery requires no Ethereum signer, bridge claim file or PXE (0.24425ms)
+✔ fee Ethereum approved recovery is explicit and does not start an L2 proof (0.283958ms)
+✔ fee Ethereum funded recovery is explicit and does not start an L2 proof (0.286125ms)
+✔ fee Ethereum reverted recovery is explicit and does not start an L2 proof (0.306ms)
+✔ fee Ethereum replaced recovery is explicit and does not start an L2 proof (0.279375ms)
+✔ claim persists exact public funding identity before preparation without duplicating secrets (0.368125ms)
+✔ stale private fee claim restores saved funding record even when UI holds another deposit (0.691416ms)
+✔ BB_SUBMISSION_UNKNOWN does not regenerate private fee claim (0.380875ms)
+✔ BB_TRANSACTION_FAILED does not regenerate private fee claim (0.324917ms)
+✔ live old claim cannot authorize replacement (0.367875ms)
+✔ saved fee claim rejects owner (0.360458ms)
+✔ saved fee claim rejects kind (0.347958ms)
+✔ saved fee claim rejects unknown-record-key (0.394084ms)
+✔ changed canonical message index blocks regenerated claim before proving (0.477458ms)
+✔ canonical funding validation failure blocks regenerated claim (0.397791ms)
+✔ private fee funding reconciliation has a bounded deadline (5.806833ms)
+✔ deposit accepts canonical decimal-string public gas configuration with the real SDK (0.519333ms)
+✔ deposit equal to maximum fee is rejected before signer or funding (0.295375ms)
+✔ malformed gas is rejected before signer or funding (0.539167ms)
+✔ rendezvous accepts only fixed stages and bounded unique public transaction identifiers (5.64ms)
+✔ atomic rendezvous cannot overwrite a prior stage or accept an unverified release (5.018ms)
+✔ missing release respects remaining parent budget (0.505875ms)
+✔ canonical exit rejects wrong leaf, duplicate leaf, wrong nullifier and ineligible anchor (298.215833ms)
+✔ aborted lifecycle terminates a rendezvous even with a clamped legacy time callback (105.0805ms)
+✔ browser modes roundtrip strictly across the real handoff boundary (6.799292ms)
+✔ journey diagnostic outputs fixed milestones and allowlisted exception only (0.23975ms)
+✔ actual browser journey stops after one deposit action when claim reports an error (0.229916ms)
+✔ partial canonical progress is ordered, bounded, public-only and copied (0.349167ms)
+✔ non-Chromium lifecycle scenarios retain one explicit engine and existing bounds (1.308834ms)
+✔ cold funding driver never claims or deposits again after a failed deposit (0.850167ms)
+✔ handoff accepts actual SDK whole-token formatting and rejects invalid amounts (0.838166ms)
+ℹ tests 39
+ℹ suites 0
+ℹ pass 39
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 506.431958

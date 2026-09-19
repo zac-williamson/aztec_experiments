@@ -1,0 +1,22 @@
+✔ private prover profile defaults to one and explicitly supports two (1.21925ms)
+✔ invalid counts and relative directories fail before singleton initialization (0.8675ms)
+✔ scenario resource choices retain established native budgets (0.682041ms)
+✔ local timing has an SDK-valid build window and Inbox readiness headroom (127.064291ms)
+✔ rendezvous accepts only fixed stages and bounded unique public transaction identifiers (5.510875ms)
+✔ atomic rendezvous cannot overwrite a prior stage or accept an unverified release (6.175458ms)
+✔ missing release respects remaining parent budget (0.489958ms)
+✔ canonical exit rejects wrong leaf, duplicate leaf, wrong nullifier and ineligible anchor (318.401208ms)
+✔ aborted lifecycle terminates a rendezvous even with a clamped legacy time callback (104.414167ms)
+✔ browser modes roundtrip strictly across the real handoff boundary (8.268209ms)
+✔ journey diagnostic outputs fixed milestones and allowlisted exception only (0.264333ms)
+✔ actual browser journey stops after one deposit action when claim reports an error (0.280833ms)
+✔ partial canonical progress is ordered, bounded, public-only and copied (0.388084ms)
+✔ non-Chromium lifecycle scenarios retain one explicit engine and existing bounds (0.523584ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 523.397209

@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {Fr} from '@aztec/foundation/curves/bn254';
+import {normalizePrivateFeeGasSettings} from '../shared/private-fee-client.mjs';
 import {boundedTransactionRead} from '../shared/transaction-outcomes.mjs';
 const source=fs.readFileSync(new URL('../apps/src/fee-juice/engine.js',import.meta.url),'utf8');
 function harness(){
@@ -11,7 +12,7 @@ function harness(){
  const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5}),getL1ContractAddresses:async()=>({rollupAddress:'rollup',feeJuicePortalAddress:'fee-portal'})};
  const pxe={registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{},stop:async()=>calls.push('stop')};
  const context=vm.createContext({BillboardPrivateFeeRouting:{createAztecWallet:(...args)=>{wallet.journal=args.at(-1).transactionJournal;return wallet;}}});vm.runInContext(source,context);
- const a={Fr,boundedTransactionRead,GasSettings:{from:()=>({getFeeLimit:()=>new Fr(10)})},deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
+ const a={Fr,boundedTransactionRead,normalizePrivateFeeGasSettings,deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
   SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;},
   getContractInstanceFromInstantiationParams:async()=>({address:owner}),derivePrivateFeeAddress:async()=>payer,createAztecNodeClient:()=>node,
   computePartialAddress:async()=>Fr.ONE,createPXE:async()=>pxe,AccountManager:{create:async()=>({address:owner})},
@@ -22,7 +23,7 @@ function harness(){
  const journal={assertCanStart:async()=>calls.push('journal-preflight'),setOperation:operation=>calls.push(['operation',operation]),lastTxHash:'saved-hash'};
  const env={createJournalStorage:()=>({}),createTransactionJournal:async input=>{calls.push(['journal',input]);return journal;},aztec:a,privateFeeArtifact:{},log:message=>calls.push(['log',message]),initCRS:async()=>{},createStore:async()=>({}),getBrowserSigner:async()=>({provider:{}}),ethers:{parseUnits:()=>100n},
  fundPrivateFees:async input=>{calls.push(['fund',input]);const record={nonce:'1'};await input.saveRecovery(record);return record;}};
- const config={aztecWallet:{secretKey:Fr.ONE.toString(),salt:0},privateFee:{contractAddress:'shared',gasSettings:{}},fundingRecord:{schema:'private-fee-funding-v1',chainId:'31337',version:'5',rollupAddress:'rollup',portalAddress:'fee-portal',tokenAddress:'token',privateFeeAddress:'shared',sender:'sender',nonce:'1',amount:'100',txHash:Fr.ONE.toString()},saveRecovery:async record=>calls.push(['save',record]),depositAmount:'0.1'};
+ const config={aztecWallet:{secretKey:Fr.ONE.toString(),salt:0},privateFee:{contractAddress:'shared',gasSettings:{gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'0',l2Gas:'0'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}},fundingRecord:{schema:'private-fee-funding-v1',chainId:'31337',version:'5',rollupAddress:'rollup',portalAddress:'fee-portal',tokenAddress:'token',privateFeeAddress:'shared',sender:'sender',nonce:'1',amount:'100',txHash:Fr.ONE.toString()},saveRecovery:async record=>calls.push(['save',record]),depositAmount:'0.1'};
  return {calls,owner,claim,a,env,config,wallet,journal,run:action=>context.runFeeJuiceFlow(env,{...config,action})};
 }
 test('funding deposits to shared address and passes mandatory recovery callback',async()=>{
@@ -48,7 +49,7 @@ test('browser recovery storage preserves earlier deposits and refuses conflictin
 });
 
 test('deposit below claim fee is rejected before requesting L1 funding',async()=>{
- const h=harness();h.a.GasSettings.from=()=>({getFeeLimit:()=>new Fr(101)});
+ const h=harness();h.env.ethers.parseUnits=()=>79n;
  await assert.rejects(h.run('deposit'),/must exceed/);assert(!h.calls.some(c=>c[0]==='fund'));
 });
 
@@ -120,4 +121,19 @@ test('private fee funding reconciliation has a bounded deadline',async()=>{
  const h=await staleHarness();h.a.recoverPrivateFeeClaim=async()=>new Promise(()=>{});
  h.a.boundedTransactionRead=(fn,timeout)=>{assert.equal(timeout,20000);return boundedTransactionRead(fn,5);};
  await assert.rejects(h.run('recover-l2'),{code:'BB_SUBMISSION_UNKNOWN'});assert(!h.calls.some(c=>c[0]==='prepare'||c[0]==='send'));
+});
+
+test('deposit accepts canonical decimal-string public gas configuration with the real SDK',async()=>{
+ const h=harness();
+ h.config.privateFee.gasSettings={gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'0',l2Gas:'0'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}};
+ await h.run('deposit');assert.equal(h.calls.filter(c=>c[0]==='fund').length,1);
+});
+
+test('deposit equal to maximum fee is rejected before signer or funding',async()=>{
+ const h=harness();h.env.ethers.parseUnits=()=>80n;h.env.getBrowserSigner=()=>assert.fail('signer must not be requested');
+ await assert.rejects(h.run('deposit'),{code:'BB_PRIVATE_FEE_AMOUNT'});assert(!h.calls.some(c=>c[0]==='fund'));
+});
+test('malformed gas is rejected before signer or funding',async()=>{
+ const h=harness();h.config.privateFee.gasSettings.gasLimits.daGas='01';h.env.getBrowserSigner=()=>assert.fail('signer must not be requested');
+ await assert.rejects(h.run('deposit'),{code:'PRIVATE_FEE_INVALID_VALUE'});assert(!h.calls.some(c=>c[0]==='fund'));
 });

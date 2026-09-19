@@ -19313,7 +19313,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     if(config.action==='deposit'){
       if(typeof env.fundPrivateFees!=='function')throw new Error('Private fee funding support is unavailable.');
       const amount=env.ethers.parseUnits(config.depositAmount,18);
-      const feeLimit=a.GasSettings.from(config.privateFee.gasSettings).getFeeLimit().toBigInt();
+      const feeLimit=a.normalizePrivateFeeGasSettings(config.privateFee.gasSettings).maximumFee;
       if(feeLimit<=0n || amount<=feeLimit){const error=new Error('Deposit must exceed the configured maximum claim fee.');error.code='BB_PRIVATE_FEE_AMOUNT';throw error;}
       const record=await env.fundPrivateFees({node,owner,privateFeeAddress,privateFeeArtifact:env.privateFeeArtifact,
         walletSecret:config.aztecWallet.secretKey,walletSalt:salt.toString(),journalStorage:env.createJournalStorage(),acknowledgeEthereumTx:config.acknowledgeEthereumTx,contextGuard:config.contextGuard,expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion),
