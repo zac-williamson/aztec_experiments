@@ -39,7 +39,6 @@ if(process.env.BILLBOARD_OPERATOR_PROFILE==='1')assertOperatorEnvironment();
 //   --base-cooldown <sec>      (deprecated, ignored — derived from chain)
 //   --msg <text>             Message to post (for post/auto, alias: --message)
 //   --dummy                   Make a dummy post (advances screening, no content)
-//   --reuse                  Reuse an existing deposit instead of making a new one
 //   --reuse-tx <hash>        Reuse a specific deposit by L1 tx hash
 //   --withdraw-tx <hash>     L2 withdrawal tx hash (for claim-l1, skip scan)
 //   --expected-policy-version <field>  Bind flag to the reviewed policy
@@ -377,13 +376,14 @@ async function main() {
   log('  Portal address: ' + PORTAL_ADDRESS, 'info');
   log('', 'info');
 
+  if (Object.hasOwn(args,'reuse')) throw new Error('Use --reuse-tx <deposit transaction hash>; automatic deposit discovery is not supported.');
   // Validate action-specific requirements
-  if ((ACTION === 'deposit' || ACTION === 'auto') && !args['reuse'] && !args['reuse-tx'] && !args['amount']) {
-    log('ERROR: --amount <eth> required for deposit/auto (or use --reuse/--reuse-tx)', 'error');
+  if ((ACTION === 'deposit' || ACTION === 'auto') && !args['reuse-tx'] && !args['amount']) {
+    log('ERROR: --amount <eth> required for deposit/auto (or use --reuse-tx)', 'error');
     __realProcess.exit(1);
   }
   // Enforce 0.025 ETH max on deposits (alpha experimental software)
-  if ((ACTION === 'deposit' || ACTION === 'auto') && !args['reuse'] && !args['reuse-tx'] && args['amount']) {
+  if ((ACTION === 'deposit' || ACTION === 'auto') && !args['reuse-tx'] && args['amount']) {
     const amt = parseFloat(args['amount']);
     if (!isNaN(amt) && amt > 0.025) {
       log('ERROR: Maximum deposit is 0.025 ETH. This is alpha experimental software, not for production use.', 'error');
@@ -467,7 +467,6 @@ async function main() {
 
     message: args['msg'] || args['message'],
     isDummy: !!args['dummy'],
-    reuse: args['reuse'],
     reuseTxHash: args['reuse-tx'],
     withdrawTxHash: args['withdraw-tx'],
     postId: args['post-id'],

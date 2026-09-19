@@ -1,0 +1,95 @@
+✖ list rejects failed get_censor instead of inventing configuration (15.131833ms)
+✖ list rejects failed get_k_multiplier instead of inventing configuration (1.7475ms)
+✖ list rejects failed get_censor_window instead of inventing configuration (3.661333ms)
+✖ list rejects failed get_max_save_up instead of inventing configuration (4.319666ms)
+✖ automatic withdrawal rejects unknown moderation window before screening (44.994542ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 725.045042
+
+✖ failing tests:
+
+test at scripts/test-engine-private-fee.mjs:473:93
+✖ list rejects failed get_censor instead of inventing configuration (15.131833ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-private-fee.mjs:475:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /configuration unavailable/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/test-engine-private-fee.mjs:473:93
+✖ list rejects failed get_k_multiplier instead of inventing configuration (1.7475ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-private-fee.mjs:475:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /configuration unavailable/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/test-engine-private-fee.mjs:473:93
+✖ list rejects failed get_censor_window instead of inventing configuration (3.661333ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-private-fee.mjs:475:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /configuration unavailable/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/test-engine-private-fee.mjs:473:93
+✖ list rejects failed get_max_save_up instead of inventing configuration (4.319666ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-private-fee.mjs:475:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /configuration unavailable/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/test-engine-private-fee.mjs:478:1
+✖ automatic withdrawal rejects unknown moderation window before screening (44.994542ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /window unavailable/. Input:
+  
+  'Error: Withdraw timed out: could not advance screening with dummy posts. real posts exist but none screened yet'
+  
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-private-fee.mjs:481:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: Withdraw timed out: could not advance screening with dummy posts. real posts exist but none screened yet
+        at doWithdraw (evalmachine.<anonymous>:1874:37)
+        at async g.runBillboardUser (evalmachine.<anonymous>:2243:9)
+        at async waitForActual (node:assert:646:5)
+        at async strict.rejects (node:assert:769:25)
+        at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-private-fee.mjs:481:2)
+        at async Test.run (node:internal/test_runner/test:1409:7)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:974:7),
+    expected: /window unavailable/,
+    operator: 'rejects',
+    diff: 'simple'
+  }

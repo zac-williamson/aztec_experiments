@@ -154,13 +154,8 @@ function onShowDeposit() {
   } else if (state === 'deposited_l1_not_claimed_l2') {
     if (newSection) newSection.style.display = 'none';
     if (recoverSection) recoverSection.style.display = '';
-    if (navBtn) navBtn.style.display = 'none';
-    log('Active L1 deposit found. Auto-claiming on L2...', 'info', 'depositBalanceCheck');
-    doDepositPage().catch(e => {
-      log('Auto-claim failed: ' + 'operation did not complete; check configuration and recovery records', 'error', 'depositBalanceCheck');
-      console.error('Application operation did not complete.');
-      if (navBtn) { navBtn.style.display = ''; navBtn.textContent = 'Retry \u2192'; }
-    });
+    if (navBtn) { navBtn.style.display = ''; navBtn.textContent = 'Claim deposit →'; }
+    log('Enter the deposit transaction hash from your Ethereum wallet or recovery record.', 'info', 'depositBalanceCheck');
   } else if (state === 'postable') {
     log('Deposit already claimed on L2. Proceeding to post page.', 'success', 'depositBalanceCheck');
     if (navBtn) navBtn.style.display = 'none';
@@ -236,7 +231,8 @@ async function doDepositPage() {
   // deposited_l1_not_claimed_l2: claim the existing deposit
   const txHash = _stateResult?.depositInfo?.txHash || document.getElementById('existingTxHash').value.trim();
   const extra = { ..._commonConfig() };
-  if (txHash) extra.reuseTxHash = txHash;
+  if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) { highlightMissing(['existingTxHash']); throw new Error('Enter the deposit transaction hash from your Ethereum wallet or recovery record.'); }
+  extra.reuseTxHash = txHash;
   log('Claiming existing deposit on L2...', 'info', 'depositStatus');
   await claimExisting(extra);
   log('Deposit claimed on L2! Proceeding to post page.', 'success', 'depositStatus');

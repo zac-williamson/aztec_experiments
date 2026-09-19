@@ -29,15 +29,15 @@ test('aborted lifecycle terminates a rendezvous even with a clamped legacy time 
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'t04-signal-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
  const abort=new AbortController(),waiting=waitJourneyRelease(dir,'exit',()=>1,abort.signal);abort.abort();await assert.rejects(waiting,/T04_RENDEZVOUS_ABORTED/);
 });
-test('actual shared producer builder roundtrips all three strict parent-worker modes',async()=>{
+test('actual shared producer builder roundtrips all five explicit browser scenarios',async()=>{
  const {createBrowserHandoff,validateBrowserHandoff,validateBrowserControl,validateBrowserWorkerControl}=await import('./t04-browser-journey.mjs');
  const directory='/private/tmp/t04-fixture',address='0x'+'12'.repeat(20),board='0x'+'01'.repeat(32);
  const publicConfig={schemaVersion:1,network:{nodeUrl:'https://127.0.0.1:1234/rpc/aztec',ethRpcUrl:'https://127.0.0.1:1234/rpc/ethereum',chainId:'31337',rollupVersion:'1',rollupAddress:address},board:{portalAddress:address,contractAddress:board}};
  const base={nodeUrl:'http://127.0.0.1:1235',ethereumUrl:'http://127.0.0.1:1236',publicConfig,backupPath:directory+'/browser-wallet.encrypted.json',ethereumAccount:address,message:'Fixture GUI message'};
- for(const [browserJourney,browserRecovery] of [[false,false],[true,false],[false,true]]){
+ for(const [browserEngine,browserJourney,browserRecovery] of [['chromium',false,false],['chromium',true,false],['chromium',false,true],['firefox',false,false],['webkit',false,false]]){
   const actual=createBrowserHandoff(base,{directory,browserJourney,depositAmount:'0.001'});
   assert.deepEqual(validateBrowserHandoff(JSON.parse(JSON.stringify(actual)),{directory,browserJourney}),actual);
-  const privateControl={browserJourney,browserRecovery,origin:'https://127.0.0.1:1234',rpcToken:'a'.repeat(32),backupPassword:'b'.repeat(32)};
+  const privateControl={browserEngine,browserJourney,browserRecovery,origin:'https://127.0.0.1:1234',rpcToken:'a'.repeat(32),backupPassword:'b'.repeat(32)};
   validateBrowserControl(privateControl);
   const merged={...actual,...privateControl,timeoutMs:480000};
   assert.deepEqual(validateBrowserWorkerControl(JSON.parse(JSON.stringify(merged)),{directory}),merged);
@@ -49,7 +49,8 @@ test('actual shared producer builder roundtrips all three strict parent-worker m
   for(const mutation of [{...actual,secret:'SECRET'},{...actual,backupPath:'/private/tmp/elsewhere/browser-wallet.encrypted.json'},{...actual,backupPath:directory+'/../escape'},{...actual,nodeUrl:'https://outside.example'}])assert.throws(()=>validateBrowserHandoff(mutation,{directory,browserJourney}));
  }
  for(const depositAmount of ['0.0','-1.0','1e-3','1.0000000000000000001'])assert.throws(()=>createBrowserHandoff(base,{directory,browserJourney:true,depositAmount}));
- const control={browserJourney:true,browserRecovery:false,origin:'https://127.0.0.1:1234',rpcToken:'a'.repeat(32),backupPassword:'b'.repeat(32)};assert.equal(validateBrowserControl(control),control);
+ const control={browserEngine:'chromium',browserJourney:true,browserRecovery:false,origin:'https://127.0.0.1:1234',rpcToken:'a'.repeat(32),backupPassword:'b'.repeat(32)};assert.equal(validateBrowserControl(control),control);
+ for(const browserEngine of [undefined,'unknown','firefox','webkit'])assert.throws(()=>validateBrowserControl({...control,browserEngine}));
  assert.throws(()=>validateBrowserControl({...control,arbitrary:'SECRET'}));assert.throws(()=>validateBrowserControl({...control,browserJourney:'true'}));assert.throws(()=>validateBrowserControl({...control,browserRecovery:true}));
 });
 test('journey diagnostic outputs fixed milestones and allowlisted exception only',async()=>{

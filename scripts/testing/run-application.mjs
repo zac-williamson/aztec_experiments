@@ -47,11 +47,13 @@ export async function runApplication(name) {
     const operatorPackage=name==='censor-commands'?await verifyCensorPackage():undefined;
     if(operatorPackage)report.operatorPackage=operatorPackage;
     if(browser){
+      assert(['chromium','firefox','webkit'].includes(scenario.browserEngine));
+      const engines=await import('playwright');await fs.access(engines[scenario.browserEngine].executablePath());
       Object.assign(report.sourceHashes,await browserFingerprints());
       const reservation=net.createServer();
       await new Promise((resolve,reject)=>{reservation.once('error',reject);reservation.listen(0,'127.0.0.1',resolve);});
       const port=reservation.address().port;await new Promise(resolve=>reservation.close(resolve));
-      control={browserJourney:scenario.browser==='lifecycle',browserRecovery:scenario.browser==='recovery',origin:'https://127.0.0.1:'+port,rpcToken:randomBytes(32).toString('hex'),backupPassword:randomBytes(32).toString('base64url')};
+      control={browserEngine:scenario.browserEngine,browserJourney:scenario.browser==='lifecycle',browserRecovery:scenario.browser==='recovery',origin:'https://127.0.0.1:'+port,rpcToken:randomBytes(32).toString('hex'),backupPassword:randomBytes(32).toString('base64url')};
     }
     const {crs,profile}=await prepareRuntime(directory,scenario,report);
     const exit=await supervisor.start('fixture','/usr/bin/sandbox-exec',['-f',profile,process.execPath,ENTRY,'fixture-worker',name,directory],{

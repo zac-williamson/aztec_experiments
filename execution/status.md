@@ -6,7 +6,8 @@ Objective state: **running**. Completed packages: 24/35.
 
 ## In progress
 
-- **Run browser, recovery, concurrency and load matrix (T04)** — Browser lifecycle048 passed448614ms/1084208KiB; browser restart050 passed216113ms/1698992KiB, exactoriginal post/private debit, completecleanup. Next explicit Firefox/WebKit capability/posting qualification and actual IndexedDB longhistory selection/reopen; no new runner or fallback.
+- **Run browser, recovery, concurrency and load matrix (T04)** — WebKit074 real private-fee post PASS268196ms, GUI73901ms, peak2171472KiB under user-approved4GiB; canonical node effects and all cleanup pass. Timestamp/cooldown corrections pass116 checks. Next: persisted native-wallet reopen after simulated30day absence.
+  Investigation: 0/1 attempts. Integrate reviewed wallet persistence into existing helper/scenario; verify bottom-up then run one bounded long-absence application test.
 
 ## Ready internal work
 

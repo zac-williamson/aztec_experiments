@@ -87,22 +87,28 @@ const records = [
     fixture: 'activated-board', authors: 1, applicationThreads: 1, browser: 'none',
     run: run('screening'),
   }),
+  ...['firefox','webkit'].map(browserEngine=>Object.freeze({
+    name: 'browser-'+browserEngine+'-post', deadlineMs: 540000, evidenceTask: 'T04',
+    description: 'Actual '+browserEngine+' private-fee post',
+    fixture: 'activated-board', authors: 1, applicationThreads: 1, browser: 'post', browserEngine,
+    run: run('browserPost'),
+  })),
   Object.freeze({
     name: 'browser-post', deadlineMs: 540000, evidenceTask: 'U01',
     description: 'Actual browser private-fee post',
-    fixture: 'activated-board', authors: 1, applicationThreads: 1, browser: 'post',
+    fixture: 'activated-board', authors: 1, applicationThreads: 1, browser: 'post', browserEngine: 'chromium',
     run: run('browserPost'),
   }),
   Object.freeze({
     name: 'browser-journey', deadlineMs: 540000, evidenceTask: 'T04',
     description: 'Actual browser deposit through refund lifecycle',
-    fixture: 'activated-board', authors: 1, applicationThreads: 1, browser: 'lifecycle',
+    fixture: 'activated-board', authors: 1, applicationThreads: 1, browser: 'lifecycle', browserEngine: 'chromium',
     run: run('browserLifecycle'),
   }),
   Object.freeze({
     name: 'browser-post-recovery', deadlineMs: 540000, evidenceTask: 'T04',
     description: 'Accepted browser post and full-process recovery',
-    fixture: 'activated-board', authors: 1, applicationThreads: 1, browser: 'recovery',
+    fixture: 'activated-board', authors: 1, applicationThreads: 1, browser: 'recovery', browserEngine: 'chromium',
     run: run('browserRecovery'),
   }),
 ];

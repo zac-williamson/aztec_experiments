@@ -1,3 +1,8 @@
+import {jsonStringify,jsonParseWithSchema} from '@aztec/foundation/json-rpc';
+import {BlockResponseSchema} from '@aztec/stdlib/interfaces/client';
+import {BlockHeader} from '@aztec/stdlib/tx';
+import {BlockHash} from '@aztec/stdlib/block';
+import {AppendOnlyTreeSnapshot} from '@aztec/stdlib/trees';
 import {createHistoryCursor} from '../shared/history-cursor.mjs';
 import {TxHash} from '@aztec/stdlib/tx';
 import * as transactionOutcomes from '../shared/transaction-outcomes.mjs';
@@ -74,7 +79,7 @@ import {EthAddress} from '@aztec/foundation/eth-address';
 import {NoteStatus} from '@aztec/stdlib/note';
 import {sha256ToField} from '@aztec/foundation/crypto/sha256';
 function mainHarness(action,isDummy=false) {
-  const c=context(),requests=[],logs=[],operations=[];let sent=false,authorBalanceReads=0,postExists=!['post','recover'].includes(action),missingNote=false,noteOverrides={},actionHook=null,censorValue=null;
+  const c=context(),requests=[],logs=[],operations=[];let sent=false,authorBalanceReads=0,postExists=!['post','recover'].includes(action),missingNote=false,noteOverrides={},actionHook=null,readHook=null,censorValue=null;
   // Timers only represent UI yields in this inert test; no network/proof work is performed.
   c.setTimeout=callback=>setTimeout(callback,0);
   const addr=AztecAddress.fromFieldUnsafe(new Fr(12));
@@ -87,12 +92,12 @@ function mainHarness(action,isDummy=false) {
   const provider={getCode:async()=> '0x01',getNetwork:async()=>({chainId:31337n}),destroy(){},getBlock:async()=>({hash:'canonical-eth'}),getTransactionReceipt:async hash=>({hash,status:1,blockNumber:1,blockHash:'canonical-eth',logs:[{address:portal,...event}]})};
   class Portal {L2_CONTRACT=async()=>board.toString();L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>rollup;VERSION=async()=>1n;getDeposit=async()=>({nonce:7n,amount});}
   const node={getL1ToL2MessageMembershipWitness:async()=>[42n,new SiblingPath(L1_TO_L2_MSG_TREE_HEIGHT,Array.from({length:L1_TO_L2_MSG_TREE_HEIGHT},()=>Fr.ONE.toBuffer()))],getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:1}),getL1ContractAddresses:async()=>({rollupAddress:rollup}),getBlockNumber:async()=>1,
-    getBlock:async number=>({number,hash:'block',timestamp:100,body:{txEffects:[]}}),getBlocks:async(from,count)=>Array.from({length:count},(_,i)=>({number:Number(from)+i,hash:'block',body:{txEffects:[]}})),getContract:async()=>({address:board}),getPublicStorageAt:async()=>{authorBalanceReads++;throw new Error('Author fee lookup forbidden');}};
+    getBlock:async number=>({number,hash:'block',header:{globalVariables:{timestamp:100n}},body:{txEffects:[]}}),getBlocks:async(from,count)=>Array.from({length:count},(_,i)=>({number:Number(from)+i,hash:'block',body:{txEffects:[]}})),getContract:async()=>({address:board}),getPublicStorageAt:async()=>{authorBalanceReads++;throw new Error('Author fee lookup forbidden');}};
   const note=()=>({schemaVersion:1n,depositChainId:5n,depositNonce:7n,amount:missingNote||(action==='claim'&&!sent)?0n:amount,nextAllowedTime:0n,lastRealPostIndex:0n,lastScreenedIndex:0n,headSequence:0n,...noteOverrides});
   c.readBillboardDepositInfo=async()=>note();
   const methods=new Proxy({}, {get:(_target,name)=>{
     if(['post','withdraw','claim_deposit','transfer_censor','declare_immoral','set_moderation_policy'].includes(name)) return (...args)=>({send:async opts=>{assert.equal(opts.from,addr);assert.equal(opts.fee.paymentMethod,'private-method');if(actionHook)await actionHook(name,args);sent=true;requests.at(-1).action={kind:action,args};return {receipt:{status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)}};}});
-    return ()=>({simulate:async()=>name==='get_censor'?(censorValue??addr.toField()):name==='get_post_exists'?postExists:name==='get_screen_hints'?[null,null]:1n});
+    return ()=>({simulate:async()=>{if(readHook)await readHook(name);return name==='get_censor'?(censorValue??addr.toField()):name==='get_post_exists'?postExists:name==='get_screen_hints'?[null,null]:1n;}});
   }});
   class BaseWallet {constructor(pxe){this.pxe=pxe;}}
   const a={...transactionOutcomes,NoteStatus,Fr,AztecAddress,EthAddress,NO_FROM,GasSettings,BaseWallet,sha256ToField,Buffer,
@@ -117,7 +122,7 @@ function mainHarness(action,isDummy=false) {
     node.getBlocks=async()=>[{number:1,hash:'block',body:{txEffects:[{txHash,l2ToL1Msgs:[leaf]}]}}];
     node.getTxReceipt=async()=>({txHash,status:'checkpointed',executionResult,blockNumber:1,blockHash:'block'});
   }
-  return {run:()=>c.runBillboardUser(env,config),setWithdrawalHistory,env,config,node,provider,Portal,requests,logs,operations,setCensor:value=>censorValue=value,setMissingNote:value=>missingNote=value,setNoteState:value=>noteOverrides=value,onAction:value=>actionHook=value,setPostExists:value=>postExists=value,authorBalanceReads:()=>authorBalanceReads,secret};
+  return {setTimer:fn=>{c.setTimeout=fn;},run:()=>c.runBillboardUser(env,config),setWithdrawalHistory,env,config,node,provider,Portal,requests,logs,operations,setCensor:value=>censorValue=value,setMissingNote:value=>missingNote=value,setNoteState:value=>noteOverrides=value,onAction:value=>actionHook=value,onRead:value=>readHook=value,setPostExists:value=>postExists=value,authorBalanceReads:()=>authorBalanceReads,secret};
 }
 for(const [action,dummy] of [['claim',false],['post',false],['post',true],['withdraw',false]]) {
   test(`actual main ${action}${dummy?' dummy':''} uses standard author call with private fee payment`,async()=>{
@@ -442,3 +447,98 @@ test('actual claim waits for delayed exact receipt key then prepares fees and su
  h.node.getL1ToL2MessageMembershipWitness=async(hash,key)=>{assert.equal(hash.toString(),new Fr(78).toString());assert.equal(key.toString(),new Fr(77).toString());return ++reads===1?undefined:read();};
  h.onAction(()=>sends++);await h.run();assert.equal(reads,2);assert.equal(sends,1);assert.equal(h.requests.length,1);
 });
+
+test('node failures are surfaced after one request, before private fee work',async()=>{
+ const h=mainHarness('post');let calls=0;
+ h.node.getNodeInfo=async()=>{calls++;throw Error('network unavailable');};
+ await assert.rejects(h.run(),/network unavailable/);
+ assert.equal(calls,1);assert.equal(h.requests.length,0);
+});
+test('contract registration failures are surfaced after one attempt',async()=>{
+ const h=mainHarness('post'),create=h.env.aztec.createPXE;let calls=0;
+ h.env.aztec.createPXE=async(...args)=>({...await create(...args),registerContractClass:async()=>{calls++;throw Error('temporary internal error');}});
+ await assert.rejects(h.run(),/temporary internal error/);
+ assert.equal(calls,1);assert.equal(h.requests.length,0);
+});
+test('cached wallet sync failure stops the next operation before fee preparation',async()=>{
+ const h=mainHarness('post'),create=h.env.aztec.createPXE;let fail=false,creates=0;
+ h.env.aztec.createPXE=async(...args)=>{creates++;return {...await create(...args),sync:async()=>{if(fail)throw Error('sync unavailable');}};};
+ await h.run();const count=h.requests.length;fail=true;
+ await assert.rejects(h.run(),/sync unavailable/);
+ assert.equal(h.requests.length,count);assert.equal(creates,1);
+});
+test('simulation failure is not retried and cannot start proving',async()=>{
+ const c=context();c.setTimeout=callback=>setTimeout(callback,0);let simulations=0,proofs=0;
+ class BaseWallet{constructor(pxe){this.pxe=pxe;}async completeFeeOptions(){return {};}async simulateViaEntrypoint(){simulations++;throw Error('temporary internal error');}}
+ const wallet=c.BillboardPrivateFeeRouting.createAztecWallet({BaseWallet,GasSettings}, {proveTx:async()=>{proofs++;}}, {},{},()=>{},Fr.ONE,{});
+ await assert.rejects(wallet.sendTx({}, {from:owner,fee:{}}),/temporary internal error/);
+ assert.equal(simulations,1);assert.equal(proofs,0);
+});
+
+for(const method of ['get_censor','get_k_multiplier','get_censor_window','get_max_save_up'])test(`list rejects failed ${method} instead of inventing configuration`,async()=>{
+ const h=mainHarness('list');h.onRead(name=>{if(name===method)throw Error('configuration unavailable');});
+ await assert.rejects(h.run(),/configuration unavailable/);
+ assert(!h.logs.some(text=>text.includes('posts loaded')));
+});
+test('failed board lookup is not classified as an absent deployment',async()=>{
+ const h=mainHarness('post');h.node.getContract=async()=>{throw Error('lookup unavailable');};
+ await assert.rejects(h.run(),/lookup unavailable/);assert.equal(h.requests.length,0);
+});
+test('failed portal binding read prevents application actions',async()=>{
+ const h=mainHarness('post');let calls=0;h.env.ethers.Contract=class extends h.Portal {L2_CONTRACT=async()=>{if(++calls===1)return new Fr(11).toString();throw Error('binding unavailable');};};
+ await assert.rejects(h.run(),/Could not verify the L1 wallet and receipt/);assert.equal(h.requests.length,0);
+});
+test('automatic screening propagates a failed state refresh without another attempt',async()=>{
+ const h=mainHarness('auto');h.config.message='';h.setNoteState({headSequence:1n,lastRealPostIndex:1n,lastScreenedIndex:0n});
+ let operation,attempts=0,syncs=0;const create=h.env.aztec.createPXE;
+ h.env.aztec.createPXE=async(...args)=>({...await create(...args),sync:async()=>{if(++syncs>1)throw new TypeError('refresh failed');}});
+ h.env.createTransactionJournal=async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},setOperation:value=>operation=value,inspect:async()=>({operation,applicationNullifier:new Fr(7).toString()}),allowReplacement:async()=>{}});
+ h.onAction(async()=>{attempts++;throw Object.assign(Error('expired anchor'),{code:'BB_STATE_CONFLICT',stateReasons:['Block header not found']});});
+ await assert.rejects(h.run(),/refresh failed/);assert.equal(attempts,1);assert.equal(syncs,2);
+});
+test('list cannot report an unreadable flag as an unflagged post',async()=>{
+ const h=mainHarness('list'),at=h.env.aztec.Contract.at;let flagReads=0;
+ const textFields=Array(32).fill(0n);textFields[0]=120n << 240n;
+ const policyFields=Array(48).fill(0n);policyFields[0]=120n << 240n;
+ const replies={get_moderation_policy_snapshot:[policyFields,1,new Fr(1)],get_post:textFields,get_post_length:1};
+ h.env.aztec.Contract.at=async(...args)=>{const contract=await at(...args);return {methods:new Proxy(contract.methods,{get(target,name){
+  if(name==='is_post_flagged')return ()=>({simulate:async()=>{flagReads++;throw Error('flag unavailable');}});
+  if(Object.hasOwn(replies,name))return ()=>({simulate:async()=>replies[name]});
+  return target[name];
+ }})};};
+ await assert.rejects(h.run(),/flag unavailable/);assert.equal(flagReads,1);assert(!h.logs.some(text=>text.includes('posts loaded')));
+});
+for(const hash of [undefined,'0x123','not-a-hash'])test(`deposit recovery rejects ${String(hash)} without scanning or payment`,async()=>{
+ const h=mainHarness('claim');h.config.reuseTxHash=hash;let scans=0;
+ h.provider.getLogs=async()=>{scans++;throw Error('forbidden discovery');};
+ await assert.rejects(h.run(),/deposit transaction hash/);assert.equal(scans,0);assert.equal(h.requests.length,0);
+});
+test('bare reuse cannot turn recovery into a new deposit',async()=>{
+ const h=mainHarness('deposit');h.config.reuse=true;delete h.config.reuseTxHash;
+ await assert.rejects(h.run(),/--reuse-tx/);assert.equal(h.requests.length,0);
+});
+test('confirmed claim with failed sync reports confirmation and prevents further actions',async()=>{
+ const h=mainHarness('claim'),create=h.env.aztec.createPXE;let confirmed=false,postClaimSyncs=0;
+ h.onAction(()=>{confirmed=true;});
+ h.env.aztec.createPXE=async(...args)=>({...await create(...args),sync:async()=>{if(confirmed){postClaimSyncs++;throw Error('sync failed');}}});
+ h.env.aztec.boundedTransactionRead=operation=>operation();
+ await assert.rejects(h.run(),error=>error.code==='BB_WALLET_SYNC_PENDING'&&error.message.includes('Claim confirmed'));
+ assert.equal(h.requests.length,1);assert.equal(postClaimSyncs,1);
+});
+
+ test('post reads time from the pinned RPC BlockResponse schema',async()=>{
+ const h=mainHarness('post'),header=BlockHeader.empty();header.globalVariables.timestamp=100n;
+ const block=jsonParseWithSchema(jsonStringify({header,archive:AppendOnlyTreeSnapshot.empty(),hash:BlockHash.ZERO,checkpointNumber:1,indexWithinCheckpoint:0,number:1}),BlockResponseSchema);
+ assert.equal(block.timestamp,undefined);
+ h.node.getBlock=async()=>block;
+ await h.run();assert.equal(h.requests.length,1);
+ });
+ for(const advance of [true,false])test(`automatic screening rechecks chain cooldown (advancing=${advance})`,async()=>{
+ const h=mainHarness('auto');h.config.message='';h.setNoteState({headSequence:1n,lastRealPostIndex:1n,lastScreenedIndex:0n,nextAllowedTime:230n});
+ let now=100n,waits=0,actions=0;
+ h.node.getBlock=async()=>({header:{globalVariables:{timestamp:now}}});
+ h.setTimer((callback,ms)=>{if(ms>=15000){waits++;if(advance)now+=BigInt(ms/1000);}return setTimeout(callback,0);});
+ h.onAction(()=>{actions++;assert(now>=230n,'screening submitted before chain eligibility');throw Error('stop after eligibility');});
+ await assert.rejects(h.run());
+ assert.equal(actions,advance?1:0);assert.equal(waits,advance?3:20);
+ });

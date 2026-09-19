@@ -1,0 +1,26 @@
+{"role":"fixture","stage":"start-disposable-l1","elapsedMs":1011}
+{"role":"fixture","stage":"prepare-genesis","elapsedMs":1145}
+{"role":"fixture","stage":"deploy-local-protocol-fixture","elapsedMs":3645}
+{"role":"fixture","stage":"wait-for-local-validator-activation","elapsedMs":6882}
+{"role":"fixture","stage":"start-application-node","elapsedMs":6908}
+{"role":"fixture","stage":"prove-board-deployment","elapsedMs":10441}
+{"role":"fixture","stage":"private-fee:fund-disposable-user","elapsedMs":74731}
+{"role":"fixture","stage":"private-fee:bridge-user-funds","elapsedMs":74743}
+{"role":"fixture","stage":"private-fee:wait-inbox","elapsedMs":75321}
+{"role":"fixture","stage":"claim:reopen-claim-wallet","elapsedMs":92454}
+{"role":"fixture","stage":"claim:deposit-real-l1","elapsedMs":92772}
+{"role":"fixture","stage":"claim:wait-real-inbox-anchor","elapsedMs":92781}
+{"role":"fixture","stage":"claim:prove-real-claim","elapsedMs":104494}
+{"role":"fixture","stage":"claim:include-real-claim","elapsedMs":121696}
+{"role":"fixture","stage":"claim:check-delivered-deposit-note","elapsedMs":131656}
+{"role":"fixture","stage":"claim:reject-real-claim-replay","elapsedMs":131804}
+{"role":"fixture","stage":"browser-prepare-handoff","elapsedMs":131982}
+{"role":"fixture","stage":"browser-ready","elapsedMs":158622}
+{"role":"browser","stage":"local-https","elapsedMs":158863}
+{"role":"browser","stage":"browser-start","elapsedMs":159450}
+{"role":"browser","stage":"wallet-software","elapsedMs":161269}
+{"role":"browser","stage":"public-config-import","elapsedMs":162678}
+{"role":"browser","stage":"encrypted-wallet-restore","elapsedMs":162838}
+{"role":"browser","stage":"wallet-connect-and-status","elapsedMs":163355}
+{"role":"browser","stage":"actual-gui-post","elapsedMs":167894}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/T04/application-daf4a2ea-a39a-4f84-bc28-93ef605aab0c.json","passed":false,"scenario":"browser-webkit-post"}

@@ -62,7 +62,10 @@ This does not delete saved encrypted transaction journals.
 3. Return to the author page and reconnect the wallets. Deposit ETH collateral
    within this board's configured limits. This collateral is separate from the
    AZTEC fee balance. The interface claims the collateral on L2 after its bridge
-   message becomes available. Keep recovery records if interrupted.
+   message becomes available. Keep recovery records if interrupted. To resume an
+   existing deposit, enter its Ethereum transaction hash from the wallet or saved
+   recovery record and choose **Claim deposit**. The app validates that exact
+   receipt; it does not guess from a partial event-history scan.
 4. Post your message. Content is public. **Refresh chain status** checks the
    latest chain timestamp and your note; it does not predict future inclusion.
    **Advance screening** submits a private dummy post, checking up to two earlier
@@ -101,8 +104,13 @@ The board's current authorization and historical post policy remain authoritativ
 Wallet actions check HTTPS/localhost secure context, cross-origin isolation,
 shared memory, WebAssembly, workers, cryptography, Web Locks and writable browser
 storage. Passing these checks does not establish that a proof fits available
-memory or meets a performance target. Current recorded browser checks cover fresh
-Chromium test contexts; other browsers/devices remain unqualified until tested.
+memory or meets a performance target. Recorded Chromium application journeys cover real transaction proofs. WebKit
+26.6 normal-profile checks cover storage, encrypted wallet creation, synthetic
+1,100-note persisted history/reopen and one real private-fee post with canonical
+node verification. This does not yet qualify its full deposit-to-withdraw journey.
+Firefox146 proof generation exceeded the nine-minute test budget. Consult current
+release evidence before claiming support. Private/incognito WebKit storage is not
+supported by this wallet; readiness rejects it.
 If a prerequisite is unavailable, do not bypass the check; public reading remains
 a separate wallet-free path.
 
@@ -112,3 +120,9 @@ visible. RPC services and frontend hosts can observe IP addresses and request
 patterns. Browser-delivered API keys cannot be secret; configuration must not
 contain credentials, query tokens or secret-bearing endpoint paths. Read the
 release privacy assessment for the measured guarantees and remaining limits.
+
+For CLI recovery, use `--reuse-tx <Ethereum deposit transaction hash>` and the saved
+claim secret. Bare `--reuse` is rejected. Restarting `auto` with an unclaimed
+existing deposit requires that hash; a deposit created in the same run already
+provides it. If a claim is confirmed but wallet synchronization fails, preserve
+its receipt and refresh before another action. Do not make another deposit.

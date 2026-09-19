@@ -52,9 +52,9 @@
     </div>
     <!-- Section B: Recover existing deposit (shown when L1 balance > 0) -->
     <div id="recoverDepositSection" style="display:none;">
-      <p class="small">You have an active deposit on L1. Processing starts automatically — no button click needed. The app will find your deposit, check its L2 status, and either claim it on L2 (if not yet claimed) or proceed to claim your ETH on L1 (if already withdrawn).</p>
-      <label for="existingTxHash">Deposit Tx Hash (optional — leave blank to auto-scan)</label>
-      <input id="existingTxHash" placeholder="0x... (optional, auto-scan if blank)">
+      <p class="small">You have an active deposit on Ethereum. Enter its transaction hash from your Ethereum wallet or recovery record, then claim it on Aztec.</p>
+      <label for="existingTxHash">Deposit transaction hash (required)</label>
+      <input id="existingTxHash" placeholder="0x...">
     </div>
     <div id="depositStatus" class="status-container" role="status" aria-live="polite"></div>
   </div>

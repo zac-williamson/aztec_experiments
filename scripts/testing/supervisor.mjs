@@ -12,7 +12,7 @@ export function describeFailure(error) {
 }
 
 export class Supervisor {
-  constructor({deadlineMs=540000,rssLimitKiB=2097152,report}) {
+  constructor({deadlineMs=540000,rssLimitKiB=4194304,report}) {
     this.deadlineMs=deadlineMs;this.rssLimitKiB=rssLimitKiB;this.report=report;
     this.started=performance.now();this.children=[];this.pending=Promise.resolve();this.closed=false;
     Object.assign(report,{deadlineMs,rssLimitKiB,peakTreeRSSKiB:0,rssSamples:[],failures:[],children:[]});
@@ -34,9 +34,16 @@ export class Supervisor {
       const previous=this.report.rssSamples.at(-1)?.elapsedMs ?? 0;
       if(elapsedMs-previous>10000)throw Object.assign(Error('Resource sampling missed deadline'),{code:'HARNESS_SAMPLING_GAP'});
       let rssKiB=Math.ceil(process.memoryUsage().rss/1024);
-      for(const child of this.children)rssKiB+=(await child.tree.sample()).rssKiB;
+      const processes=[{role:'supervisor',pid:process.pid,ppid:process.ppid,rssKiB}];
+      for(const child of this.children){
+        const sample=await child.tree.sample();rssKiB+=sample.rssKiB;
+        for(const {pid,ppid,rssKiB} of sample.members)processes.push({role:child.role,pid,ppid,rssKiB});
+      }
       this.report.rssSamples.push({elapsedMs,rssKiB});
-      this.report.peakTreeRSSKiB=Math.max(this.report.peakTreeRSSKiB,rssKiB);
+      if(rssKiB>this.report.peakTreeRSSKiB){
+        this.report.peakTreeRSSKiB=rssKiB;
+        this.report.peakMemory={elapsedMs,processes};
+      }
       if(rssKiB>=this.rssLimitKiB)this.fail('memory-limit');
     }catch(error){this.fail('resource-sampling',error);}
     if(!this.closed && !this.report.failures.length)this.schedule();

@@ -67,11 +67,15 @@ Dynamic handlers must use addEventListener or correspond to explicitly hashed
 literal handlers; altered strings must not require weakening script policy.
 
 Run `node --test scripts/test-u01-hosting.mjs` for generator checks. The serial
-`node scripts/test-u01-hosting-browser.mjs /absolute/path/to/caddy` rehearsal creates
+`node scripts/test-u01-hosting-browser.mjs chromium /absolute/path/to/caddy` rehearsal creates
 an owned disposable TLS certificate, runs Caddy on loopback and opens actual built
-public HTML in a fresh Chromium context. It checks isolation, headers, denied paths,
+public HTML in a fresh disposable persistent normal profile. Select exactly
+`chromium`, `firefox` or `webkit`; there is no alternate launch mode on failure. It checks isolation, headers, denied paths,
 byte ranges, MIME types, OPFS read/write, a worker and compilation of actual ACVM
-WASM. The certificate exception is confined to this disposable test context; the
+WASM. It also runs the shared synthetic 1,100-note workload against the actual
+application IndexedDB store, including close/reopen and exact successor selection.
+It uses a test-only same-origin bundle, without production note-insertion APIs.
+The certificate exception is confined to this disposable test context; the
 system trust store is not changed. Server/browser/temp resources are cleaned.
 This is hosting/capability evidence, not a successful Aztec proof, Safari/Firefox
 qualification or proof of acceptable wallet proving performance. Root executes

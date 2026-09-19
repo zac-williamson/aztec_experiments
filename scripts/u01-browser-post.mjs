@@ -1,26 +1,31 @@
 // TEST ONLY: a real GUI post using a disposable Anvil wallet adapter. No engine,
 // PXE, prover, receipt or Aztec node behavior is replaced by this driver.
 import fs from 'node:fs';
+import {installBrowserErrorObserver} from './browser-error-observer.mjs';
 import path from 'node:path';
 import https from 'node:https';
 import {spawn,execFileSync} from 'node:child_process';
 import {once} from 'node:events';
-import {chromium} from 'playwright';
+import {chromium,firefox,webkit} from 'playwright';
 import {generateHosting} from '../deploy/hosting-config.mjs';
 import {readJourneyUiDiagnostic,safeJourneyDriverFailure} from './t04-browser-journey.mjs';
 import {runT04BrowserPostRecovery} from './t04-browser-post-recovery.mjs';
 import {ROOT,assertNodeVersion} from './toolchain.mjs';
 
-export async function runU01BrowserPost({directory,origin,nodeUrl,ethereumUrl,rpcToken,publicConfig,backupPath,backupPassword,ethereumAccount,message,timeoutMs=480000,diagnostic=false,observeProofStages=false,onStage=()=>{},journeyDriver,depositAmount,browserRecovery=false}) {
+export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,ethereumUrl,rpcToken,publicConfig,backupPath,backupPassword,ethereumAccount,message,timeoutMs=480000,diagnostic=false,observeProofStages=false,onStage=()=>{},journeyDriver,depositAmount,browserRecovery=false}) {
  assertNodeVersion();
  const lifecycleAbort=new AbortController();
  const started=Date.now();let browser,context,child,timer,page,debuggerSession,stage='validation';
- const recoveryProfile=path.join(directory,'browser-recovery-profile');let ownsRecoveryProfile=false;
+ const browserProfile=path.join(directory,'browser-profile');let ownsBrowserProfile=false;
  const mark=value=>{stage=value;onStage(value);};
  const external=new Set(),csp=new Set(),paths=new Set(),failedHttp=new Map(),cspDetails=[];
  const publicPath=value=>/^\/(?:rpc\/(?:aztec|ethereum)|(?:user|feed|censor|deploy|fee-juice)\.html|(?:aztec_bundle|public-feed|bb-main.worker|bb-thread.worker|sqlite.worker|sqlite3-opfs-async-proxy)\.js|(?:sqlite3|acvm_js_bg|noirc_abi_wasm_bg)\.wasm|crs\/(?:crs-manifest\.json|g1\.dat|g1_uncompressed\.dat|g2\.dat|grumpkin_g1\.dat))$/.test(value)?value:'other-local-path';
- const observation={passed:false,sourceStage:stage,elapsedMs:0,diagnosticInstrumentation:diagnostic,proofStageObservation:observeProofStages,performanceQualified:false,diagnosticScope:diagnostic&&journeyDriver?'Formatter-only observation with fixed driver/UI diagnostics; no breakpoint or engine/prover replacement.':diagnostic?'Error formatter and catch breakpoint observation; original application behavior preserved.':'No formatter wrapper or debugger enabled; GUI wall time only, not isolated proof performance.'};
+ const observation={passed:false,browserEngine,sourceStage:stage,elapsedMs:0,diagnosticInstrumentation:diagnostic,proofStageObservation:observeProofStages,performanceQualified:false,diagnosticScope:diagnostic&&journeyDriver?'Formatter-only observation with fixed driver/UI diagnostics; no breakpoint or engine/prover replacement.':diagnostic?'Error formatter and catch breakpoint observation; original application behavior preserved.':'Fixed error-category observer; no debugger. GUI wall time only, not isolated proof performance.'};
  const requireValue=(condition)=>{if(!condition)throw Error('Invalid disposable browser test parameters');};
+ requireValue(['chromium','firefox','webkit'].includes(browserEngine));
+ requireValue(browserEngine==='chromium'||(!browserRecovery&&!journeyDriver&&!diagnostic));
+ const selectedBrowser={chromium,firefox,webkit}[browserEngine];
+ const launchOptions={headless:true,...(browserEngine==='chromium'?{args:['--js-flags=--max-old-space-size=768']}:{})};
  const local=value=>{const u=new URL(value);requireValue(['http:','https:'].includes(u.protocol)&&u.hostname==='127.0.0.1'&&u.port&&!u.username&&!u.password&&!u.search&&!u.hash&&u.pathname==='/');return u;};
  const site=local(origin),node=local(nodeUrl),ethereum=local(ethereumUrl);
  requireValue(site.protocol==='https:'&&node.protocol==='http:'&&ethereum.protocol==='http:');
@@ -72,55 +77,19 @@ export async function runU01BrowserPost({directory,origin,nodeUrl,ethereumUrl,rp
    },{account:ethereumAccount});
    };
    const openContext=async()=>{
-    if(browserRecovery){
-     const launched=await chromium.launchPersistentContext(recoveryProfile,{headless:true,ignoreHTTPSErrors:true,acceptDownloads:false,args:['--js-flags=--max-old-space-size=768']});
-     if(lifecycleAbort.signal.aborted){await launched.close();throw Error('Browser lifecycle ended');}
-     context=launched;browser=context.browser();requireValue(browser);
-    }else{
-     const launched=await chromium.launch({headless:true,args:['--js-flags=--max-old-space-size=768']});
-     if(lifecycleAbort.signal.aborted){await launched.close();throw Error('Browser lifecycle ended');}
-     browser=launched;context=await browser.newContext({ignoreHTTPSErrors:true,acceptDownloads:false});
-    }
+    const launched=await selectedBrowser.launchPersistentContext(browserProfile,{...launchOptions,ignoreHTTPSErrors:true,acceptDownloads:false});
+    if(lifecycleAbort.signal.aborted){await launched.close();throw Error('Browser lifecycle ended');}
+    context=launched;browser=context.browser();requireValue(browser);
+    observation.browserVersion=browser.version();
     requireValue(!lifecycleAbort.signal.aborted);await configureContext(context);requireValue(!lifecycleAbort.signal.aborted);
    };
    mark('browser-start');
-   if(browserRecovery){fs.mkdirSync(recoveryProfile,{mode:0o700});ownsRecoveryProfile=true;}
+   fs.mkdirSync(browserProfile,{mode:0o700});ownsBrowserProfile=true;
    await openContext();
    page=await context.newPage();page.setDefaultTimeout(Math.min(20000,remaining()));
    mark('wallet-software');const navigationStarted=Date.now();await page.goto(site.origin+'/user.html');
    await page.waitForFunction(()=>globalThis.__aztec?.createPXE&&document.getElementById('wbAztecFile'),{},{timeout:remaining()});observation.sdkReadyMs=Date.now()-navigationStarted;
-   if(diagnostic){
-   // Diagnostic run only: observe the original error at the existing formatter
-   // boundary, then call that formatter with the same receiver and arguments.
-   await page.evaluate(()=>{
-    const original=globalThis.publicOperationFailure;if(typeof original!=='function')throw Error('Diagnostic formatter unavailable');
-    globalThis.__u01FormatterDiagnostics=[];
-    globalThis.__u01CaptureError=function(error){
-     try{
-      const names=new Set(['Error','TypeError','RangeError','ReferenceError','SyntaxError','EvalError','URIError','AggregateError','DOMException','RuntimeError','CompileError','LinkError']);
-      const codes=new Set(['BB_DEPOSIT_MESSAGE_PENDING','BB_DEPOSIT_MESSAGE_INVALID','BB_DEPOSIT_MESSAGE_UNAVAILABLE','BB_ETH_SUBMISSION_UNKNOWN','BB_ETH_TRANSACTION_FAILED','BB_ETH_RECOVERY_REQUIRED','BB_RECOVERY_UNKNOWN','BB_NO_SAVED_ETHEREUM_TRANSACTION','BB_OPERATION_FAILED','BB_CONNECTION_VERIFICATION_FAILED','BB_FEE_CONFIG_REQUIRED','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID','BB_PRIVATE_FEE_AMOUNT','BB_PRIVATE_FEE_ACTION_FAILED','BB_PRIVATE_FEE_CLAIM_FAILED','PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN','INSECURE_CONTEXT','SHARED_MEMORY_UNAVAILABLE','WASM_UNAVAILABLE','WORKER_UNAVAILABLE','CRYPTO_UNAVAILABLE','LOCKS_UNAVAILABLE','STORAGE_UNAVAILABLE','OPFS_UNAVAILABLE','READINESS_TIMEOUT']);
-      const chain=[],seen=new Set();let current=error;
-      while(current!==null&&current!==undefined&&chain.length<5&&!seen.has(current)){
-       seen.add(current);const constructor=current?.constructor?.name,frames=[];
-       if(typeof current?.stack==='string')for(const line of current.stack.split('\n').slice(1,17)){
-        if(!/^\s*at\s/.test(line))continue;const match=line.match(/(https?:\/\/[^\s)]+):(\d+):(\d+)/);if(!match)continue;
-        const u=new URL(match[1]),row=Number(match[2]),column=Number(match[3]);
-        if(u.origin===location.origin&&['/user.html','/aztec_bundle.js'].includes(u.pathname)&&Number.isSafeInteger(row)&&Number.isSafeInteger(column))frames.push({file:u.pathname,line:row,column});
-       }
-       // Raw messages stay inside this page. Only fixed category booleans leave.
-       const message=typeof current?.message==='string'?current.message:'';
-       const categories={memory:/out of memory|memory allocation|allocat(?:e|ion).*memory|memory.*grow|grow.*memory/i.test(message),outOfBounds:/out.of.bounds/i.test(message),srs:/\b(?:srs|crs)\b|structured reference string/i.test(message),assertion:/assert(?:ion)?(?: failed| failure)?/i.test(message),typeError:constructor==='TypeError'||/\btypeerror\b/i.test(message)};
-       chain.push({constructor:names.has(constructor)?constructor:'OtherError',code:codes.has(current?.code)?current.code:null,frames,categories});current=current?.cause;
-      }
-      return {chain};
-     }catch{return {sanitizerFailed:true};}
-    };
-    globalThis.publicOperationFailure=function(...args){
-     try{if(globalThis.__u01FormatterDiagnostics.length<16)globalThis.__u01FormatterDiagnostics.push(globalThis.__u01CaptureError(args[0]));}catch{}
-     return Reflect.apply(original,this,args);
-    };
-   });
-   }
+   await page.evaluate(installBrowserErrorObserver);
    mark('public-config-import');await page.getByLabel('Public configuration JSON',{exact:true}).fill(JSON.stringify(config));await page.getByRole('button',{name:'Import configuration',exact:true}).click();
    await page.waitForFunction(()=>globalThis.billboardConfigStore?.snapshot().config!==null);
    mark('encrypted-wallet-restore');await page.locator('#wbPassword').fill(backupPassword);await page.locator('#wbAztecFile').setInputFiles(backupPath);
@@ -194,7 +163,7 @@ export async function runU01BrowserPost({directory,origin,nodeUrl,ethereumUrl,rp
    await page.waitForFunction(()=>{const text=document.getElementById('postStatus')?.textContent||'';return text.includes('Message included. Public content and transaction timing remain observable.')||!!document.querySelector('#postStatus .error');},{},{timeout:remaining()});
    observation.guiPostElapsedMs=Date.now()-postStarted;
    const text=await page.locator('#postStatus').textContent();requireValue(text.includes('Message included. Public content and transaction timing remain observable.'));observation.publicTransactionHashes=[...new Set([...text.matchAll(/Transaction hash:\s*(0x[0-9a-fA-F]{64})/g)].map(x=>x[1].toLowerCase()))];
-   observation.proofTimingMs=null;observation.proofTimingScope='GUI post elapsed includes setup/simulation/proving/submission; no prover method was instrumented or replaced.';
+   observation.proofTimingMs=null;observation.proofTimingScope=observeProofStages?'GUI elapsed includes preparation and submission; fixed prover method-entry phases observed without changing arguments or returned promises.':'GUI elapsed includes preparation, proving and submission; no prover method observation.';
    requireValue(external.size===0&&csp.size===0);observation.passed=true;
   };
   await Promise.race([workflow(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Browser test deadline')),remaining());})]);
@@ -207,13 +176,15 @@ export async function runU01BrowserPost({directory,origin,nodeUrl,ethereumUrl,rp
     const texts=['setupStatus','postStatus','depositBalanceCheck'].map(id=>document.getElementById(id)?.textContent||'').join(' ');
     // Fixed UI strings only; no provider message, wallet value or RPC payload leaves the page.
     const markers={walletFailure:'Wallet operation did not complete.',setupFailure:'Setup did not complete.',operationFailure:'ERROR: operation did not complete',configurationFailure:'configuration changed',provingStarted:'Proving tx (can take minutes)',provingComplete:'Proving complete. Submitting to node',messageIncluded:'Message included. Public content and transaction timing remain observable.'};
-    return {formatterDiagnostics:globalThis.__u01FormatterDiagnostics??[],walletRestored:!!globalThis.walletState?.aztec?.address,ethereumConnected:!!globalThis.walletState?.ethSigner,postVisible:!!document.getElementById('postBtn')?.getClientRects().length,postBusy:document.getElementById('postBtn')?.disabled===true,setupHasError:!!document.querySelector('#setupStatus .error'),postHasError:!!document.querySelector('#postStatus .error'),markers:Object.fromEntries(Object.entries(markers).map(([name,text])=>[name,texts.toLowerCase().includes(text.toLowerCase())]))};
+    const postText=document.getElementById('postStatus')?.textContent||'';
+    const progress=['Reusing cached PXE/wallet setup.','Posting message (','Time lock check passed.','Fetching screening hints...','Pre-flight passed.'];
+    return {postProgress:progress.map(text=>postText.includes(text)),formatterDiagnostics:globalThis.__u01FormatterDiagnostics??[],walletRestored:!!globalThis.walletState?.aztec?.address,ethereumConnected:!!globalThis.walletState?.ethSigner,postVisible:!!document.getElementById('postBtn')?.getClientRects().length,postBusy:document.getElementById('postBtn')?.disabled===true,setupHasError:!!document.querySelector('#setupStatus .error'),postHasError:!!document.querySelector('#postStatus .error'),markers:Object.fromEntries(Object.entries(markers).map(([name,text])=>[name,texts.toLowerCase().includes(text.toLowerCase())]))};
    }),new Promise(resolve=>{const t=setTimeout(()=>resolve({unavailable:true}),1000);t.unref();})]);}catch{observation.uiDiagnostic={unavailable:true};}
   }
   clearTimeout(timer);await debuggerSession?.send('Debugger.resume').catch(()=>{});await debuggerSession?.detach().catch(()=>{});await context?.close().catch(()=>{});await browser?.close().catch(()=>{});
   if(child&&child.exitCode===null&&child.signalCode===null){const closed=once(child,'close');child.kill('SIGTERM');const kill=setTimeout(()=>child.kill('SIGKILL'),2000);await closed;clearTimeout(kill);}
   for(const name of ['u01-browser-Caddyfile','u01-browser-cert.pem','u01-browser-key.pem'])fs.rmSync(path.join(directory,name),{force:true});
-  if(ownsRecoveryProfile)try{fs.rmSync(recoveryProfile,{recursive:true,force:true});}catch{observation.passed=false;observation.recoveryProfileCleanupFailed=true;}
+  if(ownsBrowserProfile)try{fs.rmSync(browserProfile,{recursive:true,force:true});}catch{observation.passed=false;observation.recoveryProfileCleanupFailed=true;}
  }
  return {...observation,sourceStage:stage,elapsedMs:Date.now()-started,externalRequestCount:external.size,failedHttp:[...failedHttp.values()],cspDirectives:[...csp],cspDetails,requestedPaths:[...paths].sort(),ownedServerStopped:!child||child.exitCode!==null||child.signalCode!==null,browserClosed:!browser||!browser.isConnected(),scope:browserRecovery?'Actual GUI accepted-post response-loss recovery after full persistent-browser restart; parent must verify canonical effects and no repeat submission.':journeyDriver?'Actual GUI lifecycle driver; parent canonical verification is required.': 'Actual GUI post from preseeded disposable funded wallet; parent must verify canonical node effects. Not a full deposit-to-withdraw journey.'};
 }

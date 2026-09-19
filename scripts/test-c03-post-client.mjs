@@ -112,17 +112,7 @@ test('outer post retry cannot override an inner dummy spent-right refusal',async
     assert.equal(innerRefresh,0);
   }
 });
-test('auto screening propagates unresolved transaction outcomes and retains a timing wait control',async()=>{
-  for(const code of ['BB_STATE_CONFLICT','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_TRANSACTION_DROPPED','BB_DEPOSIT_READ']){
-    const failure=Object.assign(new Error('controlled outcome'),{code});let waits=0,attempts=0;
-    const workflow=async()=>{for(let i=0;i<2;i++){try{attempts++;throw failure;}
-      catch(error){if(!codec.screeningFailureCanWait(error))throw error;waits++;}}};
-    await assert.rejects(workflow,error=>error===failure);assert.equal(attempts,1);assert.equal(waits,0);
-  }
-  const timing=new Error('Too early to post');assert.equal(codec.screeningFailureCanWait(timing),true);
-  assert.equal(codec.dummyStateCanRetry({stateReasons:[]}),false);
-  assert.equal(codec.dummyStateCanRetry({stateReasons:['Block header not found','Existing nullifier']}),false);
-});
+
 
 test('nested dummy anchor recovery retains one two-refresh budget',async()=>{
   let attempts=0,innerRefresh=0,outerRefresh=0;
@@ -139,4 +129,8 @@ test('saved post operation requires the original canonical nonce, chain and vali
   {kind:'dummy'},{schemaVersion:2},{additional:'not part of the operation'}]){
   assert.throws(()=>codec.parsePostOperation({Fr},JSON.stringify({...operation,...change})),{code:'BB_JOURNAL_INVALID'});
  }
+});
+test('dummy state refresh rejects empty and mixed conflict reasons',()=>{
+ assert.equal(codec.dummyStateCanRetry({stateReasons:[]}),false);
+ assert.equal(codec.dummyStateCanRetry({stateReasons:['Block header not found','Existing nullifier']}),false);
 });

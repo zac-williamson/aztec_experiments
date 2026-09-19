@@ -1,0 +1,67 @@
+{
+  "script": "scripts/test-u01-journey-browser.mjs",
+  "args": [],
+  "passed": true,
+  "observations": [
+    {
+      "passed": true,
+      "scope": "Actual built HTTPS DOM with explicit UI-state engine and read-result fixtures; no genuine wallet/transaction/proof qualification",
+      "statusNavigation": true,
+      "postBusyPreventsRepeat": true,
+      "untrustedTextLiteral": true,
+      "screeningAndTimeGates": true,
+      "withdrawalActionExplicit": true,
+      "pendingSettlementKeepsClaimPage": true,
+      "recoveryRefreshAllStates": true,
+      "explicitReceiptRecovery": true,
+      "rpcRequests": 0,
+      "externalRequests": 0
+    }
+  ],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 2097152,
+  "peakTreeRSSKiB": 679216,
+  "rssSamples": [
+    {
+      "elapsedMs": 1002,
+      "rssKiB": 251248
+    },
+    {
+      "elapsedMs": 2037,
+      "rssKiB": 679216
+    },
+    {
+      "elapsedMs": 3085,
+      "rssKiB": 486080
+    },
+    {
+      "elapsedMs": 4117,
+      "rssKiB": 432656
+    },
+    {
+      "elapsedMs": 5155,
+      "rssKiB": 458384
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "ui",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/test-u01-journey-browser.mjs": "e53e77df2b8be4bbdc18a4844a36ba7fc444c345751d3e226474ed2c63c31a62",
+    "scripts/run-bounded-browser-check.mjs": "e491caac9d748b724b5f731cd2854d566a2cd1f753105b7dab4ea818232787bb",
+    "scripts/testing/supervisor.mjs": "30f7f0b553f9961f05c542cbd118a6e78b6290bbd56bb8e24b37fb2f3e794a3e",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "f80203eefb90b6884ff28a907a75475982adfb8803d909a333909e76da64cbbc",
+    ".build/sdk/sdk-manifest.json": "07e31fce69ce979600aec6a9c34ab5190a0b466a25ab300900216d095659603b"
+  },
+  "elapsedMs": 5967,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true
+}

@@ -11,6 +11,7 @@ const tiers={
     'scripts/test-application-action-routing.mjs',
     'scripts/test-o01-censor-command-io.mjs',
     'scripts/test-t04-browser-journey.mjs',
+    'scripts/test-browser-error-observer.mjs',
     'scripts/test-t04-browser-post-recovery.mjs',
   ],
   components:[

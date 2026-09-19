@@ -1467,7 +1467,8 @@
         "apps/",
         "billboard/test/",
         "censor-daemon/",
-        "execution/"
+        "execution/",
+        "scripts/"
       ],
       "plan": "tasks/T04.md",
       "actions": [
@@ -1498,12 +1499,18 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Browser lifecycle048 passed448614ms/1084208KiB; browser restart050 passed216113ms/1698992KiB, exactoriginal post/private debit, completecleanup. Next explicit Firefox/WebKit capability/posting qualification and actual IndexedDB longhistory selection/reopen; no new runner or fallback.",
+      "checkpoint": "WebKit074 real private-fee post PASS268196ms, GUI73901ms, peak2171472KiB under user-approved4GiB; canonical node effects and all cleanup pass. Timestamp/cooldown corrections pass116 checks. Next: persisted native-wallet reopen after simulated30day absence.",
       "priority": 24,
       "completion_requires": [
         "O01"
       ],
-      "execution_lane": "browser-recovery"
+      "execution_lane": "browser-recovery",
+      "investigation": {
+        "hypothesis": "Pinned EmbeddedWallet supports persistent PXE/account stores; close/reopen same directory without re-registration should preserve exact deposit note and private credit across simulated30day absence. Official local checkpoint retention prevents pruning; no network proof.",
+        "attempts": 0,
+        "max_attempts": 1,
+        "next_action": "Integrate reviewed wallet persistence into existing helper/scenario; verify bottom-up then run one bounded long-absence application test."
+      }
     },
     {
       "id": "R01",

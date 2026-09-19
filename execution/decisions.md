@@ -486,3 +486,14 @@ clarification before run049 is assessed, not a relaxation of a failed test.
 A03's obsolete “fallback paths” wording is replaced with explicit rejection and
 private recovery without alternate fee routes, matching the user's no-fallback
 instruction. Existing no-public-payment/exhaustion checks remain required.
+
+
+## 2026-09-19 — user-authorized application memory limit
+
+The user explicitly requested raising the application test aggregate memory limit
+to4GiB after run072 exceeded2GiB during native fixture deployment. Set the sole
+application supervisor default to4194304KiB; UI component checks sharing this
+supervisor receive the same limit. Keep scenario deadlines unchanged
+(540seconds maximum), process ownership, sampling and cleanup intact. Historical
+2GiB results retain their original bounds. No additional fixture heap cap or
+alternate execution path is introduced.

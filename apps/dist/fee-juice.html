@@ -17231,7 +17231,6 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
   // ============================================================
   // Constants
   // ============================================================
-  const TRANSIENT_RE = /temporary internal error|please retry|timeout|fetch|network|connection|ECONNRESET|socket/i;
 
   const MSG_FIELDS = 32;
   const MSG_BYTES = MSG_FIELDS * 31; // 31 bytes per field
@@ -17301,46 +17300,6 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     return whole.toString() + '.' + frac.toString().padStart(18, '0').replace(/0+$/, '');
   }
 
-  // Retry wrapper for transient errors
-  async function retry(fn, label, log, maxRetries = 8) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try { return await fn(); }
-      catch (err) {
-        const isTransient = TRANSIENT_RE.test(err.message || '');
-        if (!isTransient || attempt === maxRetries) throw err;
-        const delay = 2000 * attempt;
-        if (label) log('  [' + label + '] transient error (attempt ' + attempt + '/' + maxRetries + '), retrying in ' + delay/1000 + 's...', 'warn');
-        await sleep(delay);
-      }
-    }
-  }
-
-  // Wrap a node client with retry proxy
-  function wrapWithRetry(obj, label, log) {
-    return new Proxy(obj, {
-      get(target, prop) {
-        const val = target[prop];
-        if (typeof val !== 'function') return val;
-        return async (...args) => {
-          for (let attempt = 1; attempt <= 8; attempt++) {
-            try { return await val.apply(target, args); }
-            catch (err) {
-              const isTransient = TRANSIENT_RE.test(err.message || '');
-              if (!isTransient || attempt === 8) throw err;
-              const delay = 2000 * attempt;
-              if (label) log('  [' + label + '.' + String(prop) + '] transient error (attempt ' + attempt + '/8), retrying in ' + delay/1000 + 's...', 'warn');
-              await sleep(delay);
-            }
-          }
-        };
-      }
-    });
-  }
-
-  // A cancellation ends the operation. Never open another signing request
-  // automatically or rebuild a transaction after an ambiguous submission.
-  async function withUserRetry(fn, _label) { return fn(); }
-
   function generateSecret(a) {
     let secret;
     do { secret = a.Fr.random(); } while (secret.toBigInt() === 0n);
@@ -17357,62 +17316,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     return a.sha256ToField([g.Buffer.from(ethers.getBytes(encoded))]);
   }
 
-  // Find all deposit events for an address on the portal by scanning L1 logs.
-  // Returns array of { amount, secretHash, key, index, txHash, depositNonce } sorted by index ascending.
-  // Scans newest-to-oldest. Once deposits are found, continues scanning a few more chunks
-  // for any other recent deposits, then stops (avoiding a 2+ minute scan of empty history).
-  async function findAllDeposits(ethers, provider, portalAddr, l1Account, log) {
-    const paddedAddr = '0x000000000000000000000000' + l1Account.toLowerCase().replace(/^0x/, '');
-    log('  Searching for Deposited events from ' + l1Account + '...', 'info');
-    log('  Portal: ' + portalAddr, 'info');
 
-    const currentBlock = await provider.getBlockNumber();
-    const CHUNK = 10000;
-    const MAX_LOOKBACK = 200000;
-    const EXTRA_AFTER_FIND = 3; // extra chunks to scan after first find
-    let logs = [];
-    let chunksSinceFind = 0;
-    let foundAny = false;
-    let scanned = 0;
-    for (let end = currentBlock; end >= Math.max(0, currentBlock - MAX_LOOKBACK); end -= CHUNK) {
-      const from = Math.max(0, end - CHUNK + 1);
-      scanned++;
-      try {
-        const chunk = await provider.getLogs({
-          address: portalAddr,
-          topics: [ethers.id(DEPOSIT_SIGNATURE), paddedAddr],
-          fromBlock: from,
-          toBlock: end,
-        });
-        if (chunk.length > 0) {
-          logs = logs.concat(chunk);
-          log('  Found ' + chunk.length + ' event(s) in blocks ' + from + '-' + end, 'info');
-          foundAny = true;
-          chunksSinceFind = 0;
-        } else if (foundAny) {
-          chunksSinceFind++;
-          if (chunksSinceFind >= EXTRA_AFTER_FIND) {
-            log('  No more deposits in recent history. Stopping scan.', 'info');
-            break;
-          }
-        }
-      } catch (e) {
-        log('  Range ' + from + '-' + end + ' could not be read', 'warn');
-      }
-    }
-    log('  Scanned ' + scanned + ' chunk(s), total ' + logs.length + ' deposit event(s).', 'info');
-    if (logs.length === 0) return [];
-
-    const deposits = [];
-    for (const logEntry of logs) {
-      const parsed = new ethers.Interface(PORTAL_ABI).parseLog(logEntry);
-      if (!parsed || parsed.name !== 'Deposited' || parsed.args.depositor.toLowerCase() !== l1Account.toLowerCase()) throw new Error('Invalid deposit event');
-      const { amount, secretHash, key, index, nonce: depositNonce } = parsed.args;
-      deposits.push({ amount, secretHash, key, index, txHash: logEntry.transactionHash, depositNonce });
-    }
-    deposits.sort((a, b) => Number(a.index - b.index));
-    return deposits;
-  }
 
   // Scoped V1 exit content inside the canonical L2-to-L1 envelope.
   function computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, amount, depositNonce, version, chainId) {
@@ -17535,13 +17439,10 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
           forEstimation: !fixedGas,
         });
 
-        const simResult = await retry(
-          () => this.simulateViaEntrypoint(executionPayload, {
-            from: opts.from, feeOptions, skipTxValidation: true, skipFeeEnforcement: true,
-            additionalScopes: opts.additionalScopes, sendMessagesAs: opts.sendMessagesAs,
-          }),
-          'simulation', log, 5
-        );
+        const simResult = await this.simulateViaEntrypoint(executionPayload, {
+          from: opts.from, feeOptions, skipTxValidation: true, skipFeeEnforcement: true,
+          additionalScopes: opts.additionalScopes, sendMessagesAs: opts.sendMessagesAs,
+        });
 
         const gu = simResult.gasUsed;
         const pad = 1 + this._estimatedGasPadding;
@@ -17780,16 +17681,11 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
   // Dummy attempts own their bounded retry controller; the outer dispatcher never retries them.
   function postStateCanRetry(isDummy, _error) { return !isDummy; }
 
-  function screeningFailureCanWait(error) {
-    // Tagged transaction/custody outcomes must reach the caller, never an outer wait/retry loop.
-    return !(typeof error?.code === 'string' && error.code.startsWith('BB_'));
-  }
-
   function dummyStateCanRetry(error) {
     return Array.isArray(error?.stateReasons) && error.stateReasons.length > 0 && error.stateReasons.every(reason => reason === 'Block header not found');
   }
 
-  g.BillboardPostCodec = Object.freeze({ parsePostOperation, safePostOrder, canonicalPostId, resolvePostId, packPostMessage, decodePostMessage, withFreshPostState, dummyStateCanRetry, postStateCanRetry, screeningFailureCanWait });
+  g.BillboardPostCodec = Object.freeze({ parsePostOperation, safePostOrder, canonicalPostId, resolvePostId, packPostMessage, decodePostMessage, withFreshPostState, dummyStateCanRetry, postStateCanRetry });
 
   function privateFeeFailure(code = 'BB_PRIVATE_FEE_UNAVAILABLE') {
     const error = new Error(code === 'BB_PRIVATE_FEE_UNAVAILABLE'
@@ -17956,6 +17852,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     const contractSalt = config.contractSalt || 1;
     const secretKeyHex = aztecWallet.secretKey;
     let action = config.action || 'status';
+    if(config.reuse)throw new Error('Provide the saved deposit transaction hash with --reuse-tx.');
     if (config.inspectOnly && action !== 'declare-immoral') throw new Error('Journal inspection requires declare-immoral.');
     if (!config.inspectOnly && ['claim', 'post', 'withdraw', 'auto', 'declare-immoral', 'transfer-censor', 'set-moderation-policy'].includes(action)) requirePrivateFeeConfiguration(a, config, env.privateFeeArtifact);
 
@@ -17983,7 +17880,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     log('Step 2: Connecting to Aztec node...', 'info');
     const nodeUrl = config.aztecNodeUrl;
     const rawNode = a.createAztecNodeClient(nodeUrl);
-    const aztecNode = wrapWithRetry(rawNode, 'node', log);
+    const aztecNode = rawNode;
     const nodeInfo = await aztecNode.getNodeInfo();
     log('  Chain ID: ' + nodeInfo.l1ChainId, 'info');
     log('  Rollup version: ' + nodeInfo.rollupVersion, 'info');
@@ -18117,7 +18014,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     // Check if L2 contract is deployed
     let l2Deployed = false;
     let existingInstance = null;
-    try { existingInstance = await aztecNode.getContract(l2Addr); } catch (e) { /* not deployed */ }
+    existingInstance = await aztecNode.getContract(l2Addr);
     if (existingInstance) {
       l2Deployed = true;
       log('  Billboard contract IS deployed on L2.', 'success');
@@ -18150,21 +18047,11 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       portalDeployed = code !== '0x';
       if (portalDeployed) {
         const portal = new ethers.Contract(portalAddr, PORTAL_ABI, provider);
-        try {
-          const l2Contract = await portal.L2_CONTRACT();
-          const onchainHex = '0x' + l2Contract.slice(2).toLowerCase().padStart(64, '0');
-          const expectedHex = l2AddrHex.toLowerCase().replace(/^0x/, '').padStart(64, '0');
-          if (onchainHex !== '0x' + expectedHex) {
-            log('  WARNING: Portal L2_CONTRACT mismatch!', 'warn');
-            log('  Portal says: ' + onchainHex, 'warn');
-            log('  Expected:    ' + ('0x' + expectedHex), 'warn');
-            portalDeployed = false;
-          } else {
-            log('  Portal verified on L1.', 'success');
-          }
-        } catch (e) {
-          log('  Warning: could not read L2_CONTRACT from portal: ' + 'request did not complete', 'warn');
-        }
+        const l2Contract = await portal.L2_CONTRACT();
+        const onchainHex = '0x' + l2Contract.slice(2).toLowerCase().padStart(64, '0');
+        const expectedHex = '0x' + l2AddrHex.toLowerCase().replace(/^0x/, '').padStart(64, '0');
+        if (onchainHex !== expectedHex) throw new Error('Portal L2 contract binding mismatch.');
+        log('  Portal verified on L1.', 'success');
         if(l1Account) {const active = await portal.getDeposit(l1Account);
         portalL1Balance = BigInt(active.amount); portalDepositNonce = BigInt(active.nonce);}
       } else {
@@ -18261,7 +18148,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         wallet._transactionJournal = transactionJournal;
         contract = cached.contract;
         // Re-sync to pick up latest state
-        try { await pxe.sync(); } catch (e) {}
+        await pxe.sync();
       } else {
         // ============================================================
         // Step 4: Initialize CRS
@@ -18292,13 +18179,13 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         log('  Account registered.', 'success');
 
         log('  Registering Schnorr initializerless account contract...', 'info');
-        await retry(() => pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact), 'register', log, 5);
-        await retry(() => pxe.registerContract(instance), 'register', log, 5);
+        await pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact);
+        await pxe.registerContract(instance);
         log('  Contract registered.', 'success');
 
         log('  Registering billboard contract with PXE...', 'info');
-        await retry(() => pxe.registerContractClass(contractArtifact), 'register-bb', log, 5);
-        await retry(() => pxe.registerContract(existingInstance), 'register-bb', log, 5);
+        await pxe.registerContractClass(contractArtifact);
+        await pxe.registerContract(existingInstance);
         log('  Billboard contract registered.', 'success');
 
         log('  Syncing PXE with node...', 'info');
@@ -18517,15 +18404,9 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       secretStore();
       const active = await new ethers.Contract(portalAddr,PORTAL_ABI,provider).getDeposit(l1Account);
       if (BigInt(active.nonce) === 0n || BigInt(active.amount) === 0n) throw new Error('No active L1 receipt to recover.');
-      let txHash=config.reuseTxHash;
-      if (!txHash) {
-        const events = await findAllDeposits(ethers,provider,portalAddr,l1Account,log);
-        const matches = events.filter(item => item.depositNonce === BigInt(active.nonce) && item.amount === BigInt(active.amount));
-        if (matches.length !== 1) throw new Error('Could not uniquely locate the active receipt; provide its transaction hash.');
-        txHash=matches[0].txHash;
-      }
-      // Search results locate the transaction only; authenticate its canonical
-      // receipt before using the portal's emitted Inbox message key.
+      const txHash=config.reuseTxHash;
+      if(typeof txHash!=='string'||!/^0x[0-9a-fA-F]{64}$/.test(txHash))throw new Error('Provide the deposit transaction hash from your Ethereum wallet or recovery record.');
+      // Authenticate the exact canonical receipt before using its Inbox key.
       const receipt=await provider.getTransactionReceipt(txHash);
       if(!receipt||receipt.status!==1)throw Object.assign(new Error('Successful deposit receipt unavailable.'),{code:'BB_RECOVERY_UNKNOWN'});
       const receiptHash=receipt.hash??receipt.transactionHash;
@@ -18657,7 +18538,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       const receipt = result.receipt;
       log('  Claim confirmed. Tx hash: ' + receipt.txHash + ', block: ' + receipt.blockNumber, 'success');
       try { await a.boundedTransactionRead(()=>wallet.pxe.sync(),20000); }
-      catch { log('  Claim confirmed; wallet synchronization is pending. Refresh before the next action.', 'warn'); }
+      catch { throw Object.assign(new Error('Claim confirmed; wallet synchronization is pending. Refresh before the next action.'),{code:'BB_WALLET_SYNC_PENDING'}); }
 
     }
 
@@ -18686,16 +18567,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       if (isDummy) {
         log('Making dummy post (advances screening, stores no content)...', 'info');
         // Pre-flight: check note exists + time lock expired
-        let infoResult = null;
-        for (let i = 0; i < 3; i++) {
-          try {
-            infoResult = await readDepositInfo();
-            const { amount } = infoResult;
-            if (amount > 0n) break;
-          } catch (e) { if (e?.code === 'BB_DEPOSIT_READ') throw e;}
-          if (i < 2) await sleep(5000);
-        }
-        if (!infoResult) throw new Error('Could not read deposit info.');
+        const infoResult = await readDepositInfo();
         const { amount, nextAllowedTime } = infoResult;
         if (amount === 0n) throw new Error('No deposit note found. Claim a deposit first.');
         let now = BigInt(await getL2Timestamp(a, aztecNode));
@@ -18715,16 +18587,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       log('Posting message (' + byteLength + ' bytes)...', 'info');
 
       // Pre-flight: check note exists + time lock expired
-      let infoResult = null;
-      for (let i = 0; i < 3; i++) {
-        try {
-          infoResult = await readDepositInfo();
-          const { amount } = infoResult;
-          if (amount > 0n) break;
-        } catch (e) { if (e?.code === 'BB_DEPOSIT_READ') throw e;}
-        if (i < 2) await sleep(5000);
-      }
-      if (!infoResult) throw new Error('Could not read deposit info.');
+      const infoResult = await readDepositInfo();
       const { amount, nextAllowedTime } = infoResult;
       if (amount === 0n) throw new Error('No deposit note found. Claim a deposit first.');
       let now = BigInt(await getL2Timestamp(a, aztecNode));
@@ -18828,50 +18691,38 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       if (!jsonOutput) log('  Post count: ' + count, 'info');
 
       // Check censor config
-      let censorAddr = null, kMult = 64;
-      try {
-        const censorResult = await contract.methods.get_censor().simulate({ from: a.NO_FROM });
-        let cv = censorResult;
-        if (cv && cv.result !== undefined) cv = cv.result;
-        if (cv && cv.value !== undefined) cv = cv.value;
-        censorAddr = cv && cv.toString ? cv.toString() : (cv ? '0x' + BigInt(cv).toString(16).padStart(64, '0') : null);
-      } catch (e) {}
-      try {
-        const kResult = await contract.methods.get_k_multiplier().simulate({ from: a.NO_FROM });
-        kMult = extractInt(kResult);
-      } catch (e) {}
+      const censorResult = await contract.methods.get_censor().simulate({ from: a.NO_FROM });
+      let cv = censorResult;
+      if (cv && cv.result !== undefined) cv = cv.result;
+      if (cv && cv.value !== undefined) cv = cv.value;
+      const censorAddr = cv && cv.toString ? cv.toString() : (cv ? '0x' + BigInt(cv).toString(16).padStart(64, '0') : null);
+      const kResult = await contract.methods.get_k_multiplier().simulate({ from: a.NO_FROM });
+      const kMult = extractInt(kResult);
       const censorActive = censorAddr && !censorAddr.endsWith('0000000000000000000000000000000000000000');
       if (censorActive && !jsonOutput) log('  Censor: ACTIVE (K=' + kMult + ')', 'warn');
 
       // Read censor_window and max_save_up
-      let censorWindow = 0, maxSaveUp = 0;
-      try {
-        const cwResult = await contract.methods.get_censor_window().simulate({ from: a.NO_FROM });
-        censorWindow = Number(extractInt(cwResult));
-      } catch (e) {}
-      try {
-        const msuResult = await contract.methods.get_max_save_up().simulate({ from: a.NO_FROM });
-        maxSaveUp = Number(extractInt(msuResult));
-      } catch (e) {}
+      const cwResult = await contract.methods.get_censor_window().simulate({ from: a.NO_FROM });
+      const censorWindow = Number(extractInt(cwResult));
+      const msuResult = await contract.methods.get_max_save_up().simulate({ from: a.NO_FROM });
+      const maxSaveUp = Number(extractInt(msuResult));
       if (censorWindow > 0 && !jsonOutput) log('  Censor window: ' + censorWindow + 's', 'info');
       if (maxSaveUp > 0 && !jsonOutput) log('  Max save-up: ' + maxSaveUp, 'info');
 
       // Read moderation policy from contract
       let policyText = null, policyVersion = null;
-      try {
-        const snapshot = await readPolicySnapshot(a, contract, address);
-        const policyFields = snapshot.fields;
-        const policyLen = snapshot.byteLength;
-        policyVersion = snapshot.version;
-        if (policyLen > 0 && g.unpackFieldsToString) {
-          policyText = g.unpackFieldsToString(policyFields, policyLen);
-          if (policyText && !jsonOutput) {
-            log('  --- Moderation Policy ---', 'info');
-            for (const line of policyText.split('\n')) log('  | ' + line, 'info');
-            log('  -------------------------', 'info');
-          }
+      const snapshot = await readPolicySnapshot(a, contract, address);
+      const policyFields = snapshot.fields;
+      const policyLen = snapshot.byteLength;
+      policyVersion = snapshot.version;
+      if (policyLen > 0 && g.unpackFieldsToString) {
+        policyText = g.unpackFieldsToString(policyFields, policyLen);
+        if (policyText && !jsonOutput) {
+          log('  --- Moderation Policy ---', 'info');
+          for (const line of policyText.split('\n')) log('  | ' + line, 'info');
+          log('  -------------------------', 'info');
         }
-      } catch (e) {}
+      }
 
       if (count === 0) {
         if (jsonOutput) { console.log(JSON.stringify({ count: 0, posts: [], censor: censorAddr, kMultiplier: kMult, policy: policyText || '', policyVersion, censorWindow, maxSaveUp })); }
@@ -18882,67 +18733,49 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       const _jsonPosts = [];
 
       for (let i = 0; i < count; i++) {
-        let postId = null;
-        try {
-          postId = await resolvePostId(a, contract, address, { postIndex: i });
-          const idField = new a.Fr(BigInt(postId));
-          const postResult = await contract.methods.get_post(idField).simulate({ from: a.NO_FROM });
-          const vals = extractFieldArray(postResult);
-          const length = await contract.methods.get_post_length(idField).simulate({ from: a.NO_FROM });
-          const msg = decodePostMessage(vals, length);
+        const postId = await resolvePostId(a, contract, address, { postIndex: i });
+        const idField = new a.Fr(BigInt(postId));
+        const postResult = await contract.methods.get_post(idField).simulate({ from: a.NO_FROM });
+        const vals = extractFieldArray(postResult);
+        const length = await contract.methods.get_post_length(idField).simulate({ from: a.NO_FROM });
+        const msg = decodePostMessage(vals, length);
 
-          // Check if flagged
-          let flagged = false;
-          try {
-            const flagResult = await contract.methods.is_post_flagged(idField).simulate({ from: a.NO_FROM });
-            let fv = flagResult;
-            if (fv && fv.result !== undefined) fv = fv.result;
-            if (fv && fv.value !== undefined) fv = fv.value;
-            flagged = fv && (fv === true || BigInt(fv.toString ? fv.toString() : fv) > 0n);
-          } catch (e) {}
+        // Check if flagged
+        let flagged = false;
+        const flagResult = await contract.methods.is_post_flagged(idField).simulate({ from: a.NO_FROM });
+        let fv = flagResult;
+        if (fv && fv.result !== undefined) fv = fv.result;
+        if (fv && fv.value !== undefined) fv = fv.value;
+        flagged = fv && (fv === true || BigInt(fv.toString ? fv.toString() : fv) > 0n);
 
-          // Collect censor response and flagged_by for flagged posts
-          let censorResponse = null, flaggedBy = null;
-          if (flagged) {
-            try {
-              const respResult = await contract.methods.get_censor_response(idField).simulate({ from: a.NO_FROM });
-              const respVals = extractFieldArray(respResult);
-              const reasonLength = await contract.methods.get_censor_response_length(idField).simulate({ from: a.NO_FROM });
-              censorResponse = decodeModerationReason(respVals, unwrapPostValue(reasonLength));
-            } catch (e) {}
-            try {
-              const fbResult = await contract.methods.get_post_flagged_by(idField).simulate({ from: a.NO_FROM });
-              let fbv = fbResult;
-              if (fbv && fbv.result !== undefined) fbv = fbv.result;
-              if (fbv && fbv.value !== undefined) fbv = fbv.value;
-              flaggedBy = fbv?.inner ? fbv.inner.toString() : (fbv?.toString ? fbv.toString() : fbv);
-            } catch (e) {}
-          }
+        // Collect censor response and flagged_by for flagged posts
+        let censorResponse = null, flaggedBy = null;
+        if (flagged) {
+          const respResult = await contract.methods.get_censor_response(idField).simulate({ from: a.NO_FROM });
+          const respVals = extractFieldArray(respResult);
+          const reasonLength = await contract.methods.get_censor_response_length(idField).simulate({ from: a.NO_FROM });
+          censorResponse = decodeModerationReason(respVals, unwrapPostValue(reasonLength));
+          const fbResult = await contract.methods.get_post_flagged_by(idField).simulate({ from: a.NO_FROM });
+          let fbv = fbResult;
+          if (fbv && fbv.result !== undefined) fbv = fbv.result;
+          if (fbv && fbv.value !== undefined) fbv = fbv.value;
+          flaggedBy = fbv?.inner ? fbv.inner.toString() : (fbv?.toString ? fbv.toString() : fbv);
+        }
 
-          // Read post timestamp (for censor window calculations)
-          let timestamp = 0;
-          try {
-            const timeResult = await contract.methods.get_post_time(idField).simulate({ from: a.NO_FROM });
-            timestamp = Number(extractInt(timeResult));
-          } catch (e) {}
+        // Read post timestamp (for censor window calculations)
+        const timeResult = await contract.methods.get_post_time(idField).simulate({ from: a.NO_FROM });
+        const timestamp = Number(extractInt(timeResult));
 
-          const postPolicyVersion = canonicalPostId(a, await contract.methods.get_post_policy_version(idField).simulate({ from: a.NO_FROM }));
-          const flagDeadline = String(unwrapPostValue(await contract.methods.get_post_flag_deadline(idField).simulate({ from: a.NO_FROM })));
-          if (jsonOutput) {
-            _jsonPosts.push({ policyVersion: postPolicyVersion, flagDeadline, index: i, orderIndex: String(i), postId, text: msg || '', flagged, censorResponse, flaggedBy, timestamp });
-          } else if (flagged) {
-            log('  [' + i + '] ' + postId + ' [FLAGGED] ' + (msg || '(binary data)'), 'warn');
-            if (censorResponse) log('         ↳ Censor: ' + censorResponse, 'warn');
-            if (flaggedBy) log('         ↳ Flagged by: ' + flaggedBy, 'warn');
-          } else {
-            log('  [' + i + '] ' + postId + ' ' + (msg || '(binary data)'), 'info');
-          }
-        } catch (err) {
-          if (jsonOutput) {
-            _jsonPosts.push({ index: i, orderIndex: String(i), postId, text: '', flagged: false, error: 'Post could not be read' });
-          } else {
-            log('  [' + i + '] Error: ' + 'request did not complete', 'error');
-          }
+        const postPolicyVersion = canonicalPostId(a, await contract.methods.get_post_policy_version(idField).simulate({ from: a.NO_FROM }));
+        const flagDeadline = String(unwrapPostValue(await contract.methods.get_post_flag_deadline(idField).simulate({ from: a.NO_FROM })));
+        if (jsonOutput) {
+          _jsonPosts.push({ policyVersion: postPolicyVersion, flagDeadline, index: i, orderIndex: String(i), postId, text: msg || '', flagged, censorResponse, flaggedBy, timestamp });
+        } else if (flagged) {
+          log('  [' + i + '] ' + postId + ' [FLAGGED] ' + (msg || '(binary data)'), 'warn');
+          if (censorResponse) log('         ↳ Censor: ' + censorResponse, 'warn');
+          if (flaggedBy) log('         ↳ Flagged by: ' + flaggedBy, 'warn');
+        } else {
+          log('  [' + i + '] ' + postId + ' ' + (msg || '(binary data)'), 'info');
         }
       }
       if (jsonOutput) {
@@ -19027,20 +18860,10 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         if (!canWithdraw) {
           if (config.action === 'auto') {
             log('  Withdraw not ready: ' + waitReason + '. Will make dummy posts to advance screening.', 'info');
-            // Read censor_window to know how long to wait before screening is possible
-            let censorWindow = 3600n;
-            try {
-              const cwResult = await contract.methods.get_censor_window().simulate({ from: a.NO_FROM });
-              censorWindow = BigInt(extractInt(cwResult));
-            } catch (e) {}
             // Make dummy posts until screening catches up
             for (let attempt = 0; attempt < 20; attempt++) {
               // Wait until next_allowed_time (so we can make a dummy post)
-              let info3 = null;
-              try {
-                const r3 = await readDepositInfo();
-                info3 = r3;
-              } catch (e) { if (e?.code === 'BB_DEPOSIT_READ') throw e; break; }
+              const info3 = await readDepositInfo();
               if (info3.amount === 0n) { canWithdraw = true; break; }
               if (info3.lastRealPostIndex === NO_REAL_POST) {
                 let now3 = BigInt(await getL2Timestamp(a, aztecNode));
@@ -19060,19 +18883,10 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
                 const waitSec = Number(info3.nextAllowedTime - now4);
                 log('  Waiting ' + waitSec + 's for cooldown before dummy post...', 'info');
                 await sleep(Math.min(waitSec * 1000 + 5000, 60000));
+                continue;
               }
-              // Also wait for censor_window to pass (so child post is old enough to screen)
-              // The child post's timestamp must be <= now - censor_window
-              // We don't know exact child timestamp, but it's the most recent real post
-              // In practice, waiting for next_allowed_time + censor_window should suffice
               log('  Making dummy post #' + (attempt + 1) + ' to advance screening...', 'info');
-              try {
-                await doDummyPost();
-              } catch (e) { if (!screeningFailureCanWait(e)) throw e;
-                log('  Dummy post failed: ' + 'request did not complete', 'warn');
-                // If it's a timing issue, wait and retry
-                await sleep(30000);
-              }
+              await doDummyPost();
               // Check if we can withdraw now
               await sleep(5000);
             }
@@ -19203,8 +19017,8 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     async function getL2Timestamp(a, aztecNode) {
       const blockNum = await aztecNode.getBlockNumber();
       const block = await aztecNode.getBlock(blockNum);
-      const ts = block.timestamp || block.header?.globalVariables?.timestamp || block.header?.timestamp;
-      if (ts === undefined || ts === null) throw new Error('Could not get L2 timestamp from block');
+      const ts = block?.header?.globalVariables?.timestamp;
+      if ((typeof ts !== 'bigint' && typeof ts !== 'number') || !Number.isSafeInteger(Number(ts)) || ts < 0) throw new Error('Could not get a valid L2 timestamp from block');
       return Number(ts);
     }
 
@@ -19248,7 +19062,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       log('  Registering censor account with PXE...', 'info');
       const censorDerivedKeys = await a.deriveKeys(censorSk);
       await pxe.registerAccount(censorDerivedKeys, censorPartialAddress);
-      await retry(() => pxe.registerContract(censorInstance), 'register-censor', log, 5);
+      await pxe.registerContract(censorInstance);
       log('  Censor account registered.', 'success');
 
       const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk, {preProveHook:config.preProveHook,contextGuard:config.contextGuard,transactionJournal});
@@ -19377,7 +19191,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     let result = { ok: true, state: stateStatus };
 
     if (action === 'deposit') {
-      if (config.reuseTxHash || config.reuse === 'true' || config.reuse === true) {
+      if (config.reuseTxHash) {
         await doReuseDeposit();
         log('', 'success');
         log('Deposit recovered. Run the claim action to claim it on L2.', 'success');
@@ -20094,6 +19908,7 @@ function publicOperationFailure(error) {
     BB_ETH_RECOVERY_REQUIRED:'Check the saved Ethereum request in Wallet Setup before starting another payment.',
     BB_ETH_SUBMISSION_UNKNOWN:'Ethereum submission is uncertain. Keep this browser profile and check the saved Ethereum request in Wallet Setup.',
     BB_ETH_TRANSACTION_FAILED:'The Ethereum request reverted or was replaced. Check its saved request before starting another payment.',
+    BB_WALLET_SYNC_PENDING:'Your claim is confirmed, but wallet synchronization failed. Keep the saved receipt and refresh before posting; do not make another deposit.',
     BB_RECOVERY_REQUIRED:'Recover the saved Aztec transaction from Wallet Setup before sending another transaction.',
     BB_JOURNAL_INVALID:'Transaction recovery storage could not be authenticated or saved. Preserve this browser profile and recovery records before continuing.',
     BB_DEPOSIT_MESSAGE_PENDING:'Your ETH deposit is confirmed. Its message is not yet available to claim; retry this same claim later. Do not deposit again.',

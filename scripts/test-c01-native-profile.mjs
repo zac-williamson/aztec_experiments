@@ -13,7 +13,7 @@ test('invalid counts and relative directories fail before singleton initializati
 test('scenario resource choices retain established native budgets',async()=>{
  const {getScenario}=await import('./testing/scenarios.mjs');
  assert.equal(getScenario('contention').applicationThreads,2);
- for(const name of ['browser-post','browser-journey','browser-post-recovery','private-fees','censor-commands'])assert.equal(getScenario(name).applicationThreads,1);
+ for(const name of ['browser-firefox-post','browser-webkit-post','browser-post','browser-journey','browser-post-recovery','private-fees','censor-commands'])assert.equal(getScenario(name).applicationThreads,1);
 });
 
 test('local timing has an SDK-valid build window and Inbox readiness headroom',async()=>{

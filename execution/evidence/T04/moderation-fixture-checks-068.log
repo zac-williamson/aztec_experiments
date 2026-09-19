@@ -1,0 +1,11 @@
+✔ seven-field reasons enforce byte length, UTF-8 and exact padding (1.433917ms)
+✔ flag carries immutable post policy and rejects a mismatched reviewed version (0.335791ms)
+✔ policy content and version are read atomically without independent latest-state reads (0.120125ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 322.813583

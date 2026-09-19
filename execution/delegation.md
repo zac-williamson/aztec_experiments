@@ -11,3 +11,21 @@ The user rescinded stop-on-failure. Preserve evidence and repair underlying fail
 autonomously. Historical results do not qualify changed source.
 
 - claim_failure_diagnosis: read-only two-author private-fee scenario design and review; no expensive chain runs.
+
+- browser_harness_review: read-only browser observation/history structural review and
+  failure propagation test review. Confirmed Firefox053 excluded portable phase
+  observation by exact reconstructed hash; approved current observation. Required
+  full CSP-safe aliases, actual CSP-event assertion and explicit cache reuse count;
+  root integrated those corrections.
+- webkit_storage_cause: read-only upstream diagnosis. Confirmed private WebKit
+  contexts intentionally reject OPFS, and persistent support needs newer pinned
+  WebKit. No browser/dependency change is made while Firefox057 inputs are frozen.
+
+- webkit_failure_review: active read-only review of WebKit068 pre-proof failure and
+  portable sanitized error observation; no edits or expensive runs.
+
+- application_change_review: completed read-only review; identified cooldown wait
+  bug, verified actual RPC timestamp schema after correcting initial L2Block
+  assumption, approved integrated fixes and regression coverage.
+- webkit_failure_review: now investigating the minimum persistent native-wallet
+  reopen scenario for long absence. Root runs WebKit072; source inputs frozen.

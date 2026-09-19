@@ -11,7 +11,7 @@ Preserve a failed harness check's stage, command outcome and cleanup outcome. Di
 
 ## Structure
 
-- `scripts/testing/supervisor.mjs` owns application-test child processes, the single 540-second deadline, sampled aggregate 2 GiB limit and cleanup. Browser and native children share this owner; do not wrap these scenarios in another supervisor.
+- `scripts/testing/supervisor.mjs` owns application-test child processes, the single 540-second deadline, sampled aggregate 4 GiB limit and cleanup. Browser and native children share this owner; do not wrap these scenarios in another supervisor.
 - `fixture-worker.mjs` creates the disposable local chain. `c01-real-node.mjs` owns the verifier node and builds the explicitly requested board fixture.
 - `scenarios.mjs` declares the supported scenarios. `scenario-flows.mjs` states each action sequence. Proof and assertion helpers remain ordinary functions.
 - `assets.mjs` checks source identity, prover setup and operator package contents. Build or asset failures stop before proving.
@@ -35,6 +35,7 @@ There are no implicit defaults, cascading environment flags or legacy aliases. T
 | `note-attribution` | Same-note screening/withdrawal attribution |
 | `contention` | Ten authors posting from one anchor; explicitly genesis-funded constraint fixture |
 | `screening` | Authenticated screening constraints; explicitly genesis-funded constraint fixture |
+| `browser-firefox-post`, `browser-webkit-post` | Explicit engine private-fee posting; no automatic browser substitution |
 | `browser-post` | Actual GUI posting after native private-fee setup |
 | `browser-journey` | GUI deposit, claim, post, screening, withdrawal and refund |
 | `browser-post-recovery` | Accepted post, lost response, browser restart and original transaction recovery |

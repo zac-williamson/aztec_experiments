@@ -1,0 +1,125 @@
+{
+  "script": "scripts/test-u01-hosting-browser.mjs",
+  "args": [
+    "firefox"
+  ],
+  "passed": true,
+  "observations": [
+    {
+      "passed": true,
+      "browserEngine": "firefox",
+      "browserVersion": "146.0.1",
+      "sdkTransfer": {
+        "encoding": "gzip",
+        "compressedBytes": 28403308,
+        "decodedBytes": 51981586,
+        "decodedHashMatchesBuild": true
+      },
+      "leafDeadlineMs": 120000,
+      "sdkNavigationReadyMs": 1214,
+      "crsMeasurement": null,
+      "checks": {
+        "secure": true,
+        "isolated": true,
+        "shared": "function",
+        "opfs": "ok",
+        "wasm": true,
+        "worker": "function",
+        "publicLoaded": true
+      },
+      "privateChecks": {
+        "ready": true,
+        "privateWorkersInitialized": true,
+        "sqlite": "value",
+        "isolated": true
+      },
+      "encryptedWalletCreated": true,
+      "externalRequests": 0,
+      "privateWorkerAssets": [
+        "/bb-main.worker.js",
+        "/sqlite.worker.js",
+        "/sqlite3.wasm"
+      ],
+      "rangeRequests": true,
+      "privatePathsDenied": true,
+      "actualBuiltPublicPage": true,
+      "actualBuiltWalletPage": true,
+      "actualAcvmWasmCompiled": true,
+      "crsInitialized": false,
+      "crsPaths": [],
+      "provingQualified": false,
+      "tlsScope": "disposable certificate; browser exception scoped to fresh test context"
+    },
+    {
+      "passed": true,
+      "ownedServerStopped": true,
+      "temporaryDirectoryRemoved": true
+    }
+  ],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 2097152,
+  "peakTreeRSSKiB": 855936,
+  "rssSamples": [
+    {
+      "elapsedMs": 1004,
+      "rssKiB": 166832
+    },
+    {
+      "elapsedMs": 2125,
+      "rssKiB": 368432
+    },
+    {
+      "elapsedMs": 3178,
+      "rssKiB": 115760
+    },
+    {
+      "elapsedMs": 4234,
+      "rssKiB": 214640
+    },
+    {
+      "elapsedMs": 5314,
+      "rssKiB": 341872
+    },
+    {
+      "elapsedMs": 6420,
+      "rssKiB": 575520
+    },
+    {
+      "elapsedMs": 7470,
+      "rssKiB": 828384
+    },
+    {
+      "elapsedMs": 8537,
+      "rssKiB": 843936
+    },
+    {
+      "elapsedMs": 9610,
+      "rssKiB": 855936
+    },
+    {
+      "elapsedMs": 10653,
+      "rssKiB": 764512
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "ui",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/test-u01-hosting-browser.mjs": "682dd4512d22ddc5d0c58c01d2807e82ebbd38e9a9f0692eb577579dbf523b1a",
+    "scripts/run-bounded-browser-check.mjs": "3d63a2f2fefb39ddfab74deaaa0eb8d9da2aa290ed38dc2907b6c37dc8694b50",
+    "scripts/testing/supervisor.mjs": "30f7f0b553f9961f05c542cbd118a6e78b6290bbd56bb8e24b37fb2f3e794a3e",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "2ab7da702e896cdca7e66bb1bd2669ad98a7eb034c1b552fc5484974035dd683",
+    ".build/sdk/sdk-manifest.json": "a254ec279defb7408bc0fd1cceb3080d976be98c619e1883a956eecf936615e8"
+  },
+  "elapsedMs": 10940,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true
+}

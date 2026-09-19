@@ -1,0 +1,9 @@
+file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/check-artifacts.mjs:39
+  if (JSON.stringify(manifest.inputs) !== JSON.stringify(contractInputs(root))) throw new Error('Contract build inputs changed; rebuild contracts');
+                                                                                      ^
+
+Error: Contract build inputs changed; rebuild contracts
+    at checkArtifacts (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/check-artifacts.mjs:39:87)
+    at file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/apps/build.mjs:41:1
+
+Node.js v24.21.0

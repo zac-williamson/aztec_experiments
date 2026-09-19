@@ -42,10 +42,11 @@ async function main(){
   }}};
   // Clearly synthetic non-funded wallet object solely satisfies UI prerequisites.
   window.walletState.aztec={secretKey:'0x'+'0'.repeat(63)+'1',salt:'0x'+'0'.repeat(64),address:handles.address};window.walletState.ethSigner={};
-  globalThis.callEngine=async(action,status)=>{
+  globalThis.callEngine=async(action,status,extra)=>{
    fixture.calls.push(action);
    if(action==='status')return {state:fixture.state,handles,l2Addr:handles.address.toString(),portalAddr:'0x'+'22'.repeat(20)};
    if(action==='recover'){fixture.state=fixture.recoveryState;return {state:'transaction_recovered'};}
+   if(action==='claim'){fixture.claimHash=extra.reuseTxHash;fixture.state='postable';return {ok:true};}
    if(action==='post'){if(fixture.holdPost)await new Promise(resolve=>fixture.releasePost=resolve);return {ok:true};}
    if(action==='withdraw'){fixture.state='withdrawn_l2_claimable_l1';return {ok:true};}
    if(action==='claim-l1'){
@@ -75,8 +76,18 @@ async function main(){
   await page.getByRole('button',{name:'Recover saved Aztec transaction',exact:true}).click();await page.waitForFunction(({target,before})=>document.getElementById('page-'+target).classList.contains('active')&&__journeyFixture.calls.length>=before+2&&__journeyFixture.calls.at(-1)==='status',{target,before});
   assert.deepEqual(await page.evaluate(before=>__journeyFixture.calls.slice(before),before),['recover','status']);
  }
- assert.match(await page.locator('#setupStatus').textContent(),/deposit still needs a claim/);assert.deepEqual(external,[]);assert.equal(posts,0);
- console.log(JSON.stringify({passed:true,scope:'Actual built HTTPS DOM with explicit UI-state engine and read-result fixtures; no genuine wallet/transaction/proof qualification',statusNavigation:true,postBusyPreventsRepeat:true,untrustedTextLiteral:true,screeningAndTimeGates:true,withdrawalActionExplicit:true,pendingSettlementKeepsClaimPage:true,recoveryRefreshAllStates:true,rpcRequests:0,externalRequests:0}));
+ assert.match(await page.locator('#setupStatus').textContent(),/deposit still needs a claim/);
+ stage='explicit-deposit-recovery';
+ const beforeClaim=await page.evaluate(()=>{const count=__journeyFixture.calls.length;showPage(1);return count;});
+ assert.equal(await page.evaluate(()=>__journeyFixture.calls.length),beforeClaim,'Showing recovery must not start a claim');
+ await page.locator('#navNext').click();await page.waitForFunction(()=>!document.getElementById('navNext').disabled);
+ assert.equal(await page.evaluate(()=>__journeyFixture.calls.length),beforeClaim,'Missing receipt must not call the engine');
+ const receiptHash='0x'+'34'.repeat(32);await page.locator('#existingTxHash').fill(receiptHash);
+ await page.locator('#navNext').click();await page.locator('#page-2').waitFor({state:'visible'});
+ assert.equal(await page.evaluate(()=>__journeyFixture.claimHash),receiptHash);
+ assert.deepEqual(await page.evaluate(before=>__journeyFixture.calls.slice(before),beforeClaim),['claim']);
+ assert.deepEqual(external,[]);assert.equal(posts,0);
+ console.log(JSON.stringify({passed:true,scope:'Actual built HTTPS DOM with explicit UI-state engine and read-result fixtures; no genuine wallet/transaction/proof qualification',statusNavigation:true,postBusyPreventsRepeat:true,untrustedTextLiteral:true,screeningAndTimeGates:true,withdrawalActionExplicit:true,pendingSettlementKeepsClaimPage:true,recoveryRefreshAllStates:true,explicitReceiptRecovery:true,rpcRequests:0,externalRequests:0}));
 }
 try{await Promise.race([main(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Journey UI test exceeded 60 seconds')),60000);})]);}
 catch(error){console.log(JSON.stringify({passed:false,stage,errorClass:error.name}));throw Error('Journey UI fixture qualification failed at '+stage);}

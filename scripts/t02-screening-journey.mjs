@@ -25,7 +25,7 @@ async function artifact(preparation){
 import {proveApplicationAction} from './prove-application-action.mjs';
 import {exactApplicationDeposit,eligibleApplicationAnchor,includeApplicationAction,postUnflaggedApplicationMessage} from './application-post.mjs';
 
-// Parent owns the real node, ordinary mining and aggregate 540s/2GiB bound.
+// Parent owns the real node, ordinary mining and aggregate 540s/4GiB bound.
 export async function proveAndIncludeT02Screening({node,preparation,instance,claimResult,l1Client,
  directory,rpcUrl,mineL1,reportStage,authorAccount,privateFeeAction,discardUnsubmittedFee,flagged=true}) {
  let wallet,stage='preflight';

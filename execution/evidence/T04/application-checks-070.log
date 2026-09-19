@@ -1,0 +1,333 @@
+✔ browser actual module persists ciphertext and interoperates with Node AES-GCM (12.113292ms)
+✔ browser actual custody rejects wrong wallet, ciphertext corruption and moved scope (5.167458ms)
+✔ browser save observes transaction abort and never reports durable success (2.449916ms)
+✔ actual engine codec matches frozen claim, boundary and exit commitments (7.921792ms)
+✔ actual public deposit flow saves and reads back before send; returns event receipt nonce without secret (9.973458ms)
+✔ actual deposit flow fails closed for missing store, failed durability and disabled portal (4.036166ms)
+✔ actual deposit flow fails closed for mismatched read-back and existing receipt (2.582833ms)
+✔ actual recovery requires the current event nonce and exact saved secret hash without signing fallback (7.069458ms)
+✔ large stable Field identity is preserved without Number conversion (0.897708ms)
+✔ order parsing rejects truncation and unsafe integer aliases (0.235ms)
+✔ message byte length and canonical padding round trip multi-byte text (2.249584ms)
+✔ moderation resolves displayed order once and thereafter carries only identity (1.04925ms)
+✔ unknown identity and unsafe order stop before signing (0.323084ms)
+✔ state conflict causes refresh and a new attempt, never resubmission of old proof (0.626542ms)
+✔ uncertain submission never triggers automatic new proof or resend (0.461792ms)
+✔ exact already-known transaction is reconciled without resending (0.316291ms)
+✔ failed, proposed, dropped and mismatched receipts never report success (0.246292ms)
+✔ queued drop requires structured pinned conflict validation before fresh proof (0.552083ms)
+✔ state refresh has a bounded retry budget (0.191125ms)
+✔ receipt becoming included during revalidation prevents fresh proof (0.164709ms)
+✔ dummy retries reject ambiguous spent-right conflicts and allow only invalid anchor refresh (0.327084ms)
+✔ outer post retry cannot override an inner dummy spent-right refusal (0.273666ms)
+✔ nested dummy anchor recovery retains one two-refresh budget (0.133333ms)
+✔ saved post operation requires the original canonical nonce, chain and valid message (0.974083ms)
+✔ dummy state refresh rejects empty and mixed conflict reasons (0.060833ms)
+✔ normal author calls carry only private payment method and bootstrap claim is consumed once (3.503583ms)
+✔ unknown submission is preserved without retry and private errors are redacted (3.417334ms)
+✔ missing private fee configuration fails before account work for every private action (2.378083ms)
+✔ actual wallet keeps configured gas and normal account scope/tag through simulation and proof (31.648541ms)
+✔ actual main claim uses standard author call with private fee payment (19.740958ms)
+✔ actual main post uses standard author call with private fee payment (3.113042ms)
+✔ actual main post dummy uses standard author call with private fee payment (2.189083ms)
+✔ actual main withdraw uses standard author call with private fee payment (1.999125ms)
+✔ moderator calls use their normal account with private fee payment (2.120667ms)
+✔ inherited object names never select an application method (0.599375ms)
+✔ actual main private post works with no Ethereum signer (2.034667ms)
+✔ actual main fails before PXE when RPC identity changed after CLI preflight (1.110333ms)
+✔ settlement pending returns after one witness lookup, without ninety-minute polling (2.558459ms)
+✔ witness RPC failure remains unknown, never a false unclaimed or paid result (1.813833ms)
+✔ consumed/error text is not evidence of a refund: false (2.87675ms)
+✔ consumed/error text is not evidence of a refund: true (1.596041ms)
+✔ actual main refuses a private send when durable journal is unavailable (1.136875ms)
+✔ actual main recovery avoids proving and Ethereum signing and reports revert distinctly (2.869917ms)
+✔ Ethereum recovery handles already refunded receipts before checking active deposit (3.069917ms)
+✔ actual moderator declare-immoral uses the active wallet's durable journal (1.904167ms)
+✔ actual moderator declare-immoral refuses an unresolved previous transaction before preparing a fee (1.008125ms)
+✔ actual moderator set-moderation-policy uses the active wallet's durable journal (1.738583ms)
+✔ actual moderator set-moderation-policy refuses an unresolved previous transaction before preparing a fee (0.933417ms)
+✔ actual moderator transfer-censor uses the active wallet's durable journal (1.4545ms)
+✔ actual moderator transfer-censor refuses an unresolved previous transaction before preparing a fee (0.965208ms)
+✔ moderator wallet cannot bypass journal ownership by supplying a second key (1.15875ms)
+✔ moderator recovery success distinguishes an already completed identical transfer from a failed one (1.390709ms)
+✔ moderator recovery reverted distinguishes an already completed identical transfer from a failed one (1.331792ms)
+✔ moderator recovery with unknown outcome cannot prepare another private fee payment (0.981458ms)
+✔ actual recovery dispatcher restores the saved message and nonce before requesting a fresh post proof (2.535292ms)
+✔ already published stable identity blocks a replacement before fee preparation (1.75375ms)
+✔ recovery cannot silently regenerate a dummy operation (1.16575ms)
+✔ recovery cannot silently regenerate a withdraw operation (6.588625ms)
+✔ recovery cannot silently regenerate a claim operation (0.844791ms)
+✔ claim  records its own operation rather than stale real-post metadata (7.854125ms)
+✔ post dummy records its own operation rather than stale real-post metadata (1.306708ms)
+✔ withdraw  records its own operation rather than stale real-post metadata (0.999ms)
+✔ missing withdrawal note never proves success when history contains no exit (4.089792ms)
+✔ missing withdrawal note never proves success when history is unavailable (1.647084ms)
+✔ missing withdrawal note can recover an exact successful canonical exit without paying again (3.879083ms)
+✔ missing withdrawal note cannot recover a reverted exit (1.82325ms)
+✔ an exit for another selected deposit cannot complete withdrawal (2.728625ms)
+✔ withdrawal recovery without original claim custody cannot guess deposit ownership (2.257291ms)
+✔ withdrawal absence reconciliation has a deadline even if its receipt read stalls (22.593ms)
+✔ saved dummy requires the same source screening sequence (unchanged) (1.786625ms)
+✔ saved dummy requires the same source screening sequence (changed) (1.093917ms)
+✔ saved withdraw requires the same source screening sequence (unchanged) (1.057084ms)
+✔ saved withdraw requires the same source screening sequence (changed) (0.877917ms)
+✔ actual wallet passes attributed application spend to the durable journal before submission (0.826041ms)
+✔ successful retried screening releases its step guard before the following withdrawal (3.238291ms)
+✔ stale claim restores exact original receipt and claim identity without depositing again (4.536084ms)
+✔ stale claim rejects changed amount before another fee payment (3.215167ms)
+✔ stale claim rejects changed depositNonce before another fee payment (3.273834ms)
+✔ stale claim rejects changed leafIndex before another fee payment (3.254959ms)
+✔ stale claim rejects changed depositChain before another fee payment (2.813917ms)
+✔ stale claim rejects changed secretHash before another fee payment (3.1385ms)
+✔ stale claim rejects changed depositor before another fee payment (2.823833ms)
+✔ an existing note is not confirmation of an unresolved saved claim transaction (3.734375ms)
+✔ failed claim does not enter the former thirty-attempt loop (4.312416ms)
+✔ saved claim rejects a receipt returned for another transaction (1.916833ms)
+✔ saved claim rejects a reorged Ethereum receipt (5.738834ms)
+✔ saved claim receipt reads time out before any proof or fee preparation (22.814458ms)
+✔ explicit recovery restores exact saved transfer-censor arguments (2.931334ms)
+✔ explicit recovery restores exact saved set-moderation-policy arguments (2.882ms)
+✔ explicit recovery restores exact saved declare-immoral arguments (2.57325ms)
+✔ daemon stale transaction reconciliation regenerates the same job (2.129333ms)
+✔ daemon stale transaction reconciliation rejects another job (2.191292ms)
+✔ saved moderator request cannot spend fees after authority transfers away (2.073583ms)
+✔ real preparer failures stop every routed action before proof/send/funding and preserve bootstrap input (565.536417ms)
+✔ actual claim readiness rejects absent, failed and wrong-index membership before fees or submission (15.645125ms)
+✔ actual claim waits for delayed exact receipt key then prepares fees and submits once (5.76625ms)
+✔ node failures are surfaced after one request, before private fee work (0.829792ms)
+✔ contract registration failures are surfaced after one attempt (0.815125ms)
+✔ cached wallet sync failure stops the next operation before fee preparation (1.771166ms)
+✔ simulation failure is not retried and cannot start proving (0.446084ms)
+✔ list rejects failed get_censor instead of inventing configuration (1.208958ms)
+✔ list rejects failed get_k_multiplier instead of inventing configuration (0.872125ms)
+✔ list rejects failed get_censor_window instead of inventing configuration (0.963083ms)
+✔ list rejects failed get_max_save_up instead of inventing configuration (0.854708ms)
+✔ failed board lookup is not classified as an absent deployment (0.699167ms)
+✔ failed portal binding read prevents application actions (0.837292ms)
+✔ automatic screening propagates a failed state refresh without another attempt (1.216084ms)
+✔ list cannot report an unreadable flag as an unflagged post (1.496041ms)
+✔ deposit recovery rejects undefined without scanning or payment (3.773625ms)
+✔ deposit recovery rejects 0x123 without scanning or payment (1.831667ms)
+✔ deposit recovery rejects not-a-hash without scanning or payment (1.9845ms)
+✔ bare reuse cannot turn recovery into a new deposit (1.11875ms)
+✔ confirmed claim with failed sync reports confirmation and prevents further actions (2.872ms)
+✖ post reads time from the pinned RPC BlockResponse schema (4.435083ms)
+✔ automatic screening rechecks chain cooldown (advancing=true) (5.081917ms)
+✔ automatic screening rechecks chain cooldown (advancing=false) (25.247917ms)
+ℹ tests 116
+ℹ suites 0
+ℹ pass 115
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1468.425792
+
+✖ failing tests:
+
+test at scripts/test-engine-private-fee.mjs:528:2
+✖ post reads time from the pinned RPC BlockResponse schema (4.435083ms)
+  ZodError: [
+    {
+      "expected": "string",
+      "code": "invalid_type",
+      "path": [
+        "header",
+        "lastArchive",
+        "root"
+      ],
+      "message": "Invalid input: expected string, received Fr"
+    },
+    {
+      "expected": "string",
+      "code": "invalid_type",
+      "path": [
+        "header",
+        "state",
+        "l1ToL2MessageTree",
+        "root"
+      ],
+      "message": "Invalid input: expected string, received Fr"
+    },
+    {
+      "expected": "string",
+      "code": "invalid_type",
+      "path": [
+        "header",
+        "state",
+        "partial",
+        "noteHashTree",
+        "root"
+      ],
+      "message": "Invalid input: expected string, received Fr"
+    },
+    {
+      "expected": "string",
+      "code": "invalid_type",
+      "path": [
+        "header",
+        "state",
+        "partial",
+        "nullifierTree",
+        "root"
+      ],
+      "message": "Invalid input: expected string, received Fr"
+    },
+    {
+      "expected": "string",
+      "code": "invalid_type",
+      "path": [
+        "header",
+        "state",
+        "partial",
+        "publicDataTree",
+        "root"
+      ],
+      "message": "Invalid input: expected string, received Fr"
+    },
+    {
+      "expected": "string",
+      "code": "invalid_type",
+      "path": [
+        "header",
+        "spongeBlobHash"
+      ],
+      "message": "Invalid input: expected string, received Fr"
+    },
+    {
+      "expected": "string",
+      "code": "invalid_type",
+      "path": [
+        "header",
+        "globalVariables",
+        "chainId"
+      ],
+      "message": "Invalid input: expected string, received Fr"
+    },
+    {
+      "expected": "string",
+      "code": "invalid_type",
+      "path": [
+        "header",
+        "globalVariables",
+        "version"
+      ],
+      "message": "Invalid input: expected string, received Fr"
+    },
+    {
+      "expected": "string",
+      "code": "invalid_type",
+      "path": [
+        "header",
+        "globalVariables",
+        "coinbase"
+      ],
+      "message": "Invalid input: expected string, received EthAddress"
+    },
+    {
+      "code": "invalid_union",
+      "errors": [
+        [
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": [],
+            "message": "Invalid input: expected string, received AztecAddress"
+          }
+        ],
+        [
+          {
+            "code": "invalid_union",
+            "errors": [
+              [
+                {
+                  "expected": "string",
+                  "code": "invalid_type",
+                  "path": [],
+                  "message": "Invalid input: expected string, received AztecAddress"
+                }
+              ],
+              [
+                {
+                  "code": "invalid_value",
+                  "values": [
+                    "Buffer"
+                  ],
+                  "path": [
+                    "type"
+                  ],
+                  "message": "Invalid input: expected \"Buffer\""
+                },
+                {
+                  "expected": "array",
+                  "code": "invalid_type",
+                  "path": [
+                    "data"
+                  ],
+                  "message": "Invalid input: expected array, received undefined"
+                }
+              ],
+              [
+                {
+                  "code": "invalid_type",
+                  "expected": "Buffer",
+                  "path": [],
+                  "message": "Invalid input: expected Buffer, received AztecAddress"
+                }
+              ]
+            ],
+            "path": [],
+            "message": "Invalid input"
+          }
+        ]
+      ],
+      "path": [
+        "header",
+        "globalVariables",
+        "feeRecipient"
+      ],
+      "message": "Invalid input"
+    },
+    {
+      "expected": "string",
+      "code": "invalid_type",
+      "path": [
+        "header",
+        "totalFees"
+      ],
+      "message": "Invalid input: expected string, received Fr"
+    },
+    {
+      "expected": "string",
+      "code": "invalid_type",
+      "path": [
+        "header",
+        "totalManaUsed"
+      ],
+      "message": "Invalid input: expected string, received Fr"
+    },
+    {
+      "expected": "string",
+      "code": "invalid_type",
+      "path": [
+        "archive",
+        "root"
+      ],
+      "message": "Invalid input: expected string, received Fr"
+    },
+    {
+      "expected": "string",
+      "code": "invalid_type",
+      "path": [
+        "hash"
+      ],
+      "message": "Invalid input: expected string, received BlockHash"
+    }
+  ]
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-private-fee.mjs:530:34)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

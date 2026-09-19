@@ -1,0 +1,94 @@
+{
+  "script": "scripts/test-u01-hosting-browser.mjs",
+  "args": [
+    "webkit"
+  ],
+  "passed": false,
+  "observations": [
+    {
+      "passed": false,
+      "sourceStage": "public-page",
+      "errorClass": "Error",
+      "cspBlocked": []
+    },
+    {
+      "passed": false,
+      "ownedServerStopped": true,
+      "temporaryDirectoryRemoved": true
+    }
+  ],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 2097152,
+  "peakTreeRSSKiB": 362432,
+  "rssSamples": [
+    {
+      "elapsedMs": 1001,
+      "rssKiB": 260160
+    },
+    {
+      "elapsedMs": 2036,
+      "rssKiB": 362432
+    },
+    {
+      "elapsedMs": 3070,
+      "rssKiB": 124096
+    },
+    {
+      "elapsedMs": 4124,
+      "rssKiB": 125792
+    },
+    {
+      "elapsedMs": 5182,
+      "rssKiB": 124864
+    },
+    {
+      "elapsedMs": 6400,
+      "rssKiB": 136048
+    },
+    {
+      "elapsedMs": 7568,
+      "rssKiB": 124832
+    },
+    {
+      "elapsedMs": 8621,
+      "rssKiB": 125600
+    },
+    {
+      "elapsedMs": 9760,
+      "rssKiB": 127104
+    },
+    {
+      "elapsedMs": 10804,
+      "rssKiB": 162480
+    },
+    {
+      "elapsedMs": 11928,
+      "rssKiB": 240256
+    }
+  ],
+  "failures": [
+    {
+      "stage": "ui-exit"
+    }
+  ],
+  "children": [
+    {
+      "role": "ui",
+      "code": 1,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/test-u01-hosting-browser.mjs": "682dd4512d22ddc5d0c58c01d2807e82ebbd38e9a9f0692eb577579dbf523b1a",
+    "scripts/run-bounded-browser-check.mjs": "3d63a2f2fefb39ddfab74deaaa0eb8d9da2aa290ed38dc2907b6c37dc8694b50",
+    "scripts/testing/supervisor.mjs": "30f7f0b553f9961f05c542cbd118a6e78b6290bbd56bb8e24b37fb2f3e794a3e",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "2ab7da702e896cdca7e66bb1bd2669ad98a7eb034c1b552fc5484974035dd683",
+    ".build/sdk/sdk-manifest.json": "a254ec279defb7408bc0fd1cceb3080d976be98c619e1883a956eecf936615e8"
+  },
+  "elapsedMs": 12566,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true
+}

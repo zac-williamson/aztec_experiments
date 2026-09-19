@@ -1,0 +1,79 @@
+✖ node failures are surfaced after one request, before private fee work (27.094083ms)
+✖ contract registration failures are surfaced after one attempt (8.2195ms)
+✖ cached wallet sync failure stops the next operation before fee preparation (4.619708ms)
+✖ simulation failure is not retried and cannot start proving (4.95075ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 975.649666
+
+✖ failing tests:
+
+test at scripts/test-engine-private-fee.mjs:446:1
+✖ node failures are surfaced after one request, before private fee work (27.094083ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  8 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-private-fee.mjs:450:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 8,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test-engine-private-fee.mjs:452:1
+✖ contract registration failures are surfaced after one attempt (8.2195ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  5 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-private-fee.mjs:456:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 5,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test-engine-private-fee.mjs:458:1
+✖ cached wallet sync failure stops the next operation before fee preparation (4.619708ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-private-fee.mjs:462:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /sync unavailable/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/test-engine-private-fee.mjs:465:1
+✖ simulation failure is not retried and cannot start proving (4.95075ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  5 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-private-fee.mjs:470:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 5,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

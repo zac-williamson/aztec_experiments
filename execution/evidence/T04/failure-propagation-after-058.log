@@ -1,0 +1,132 @@
+✔ large stable Field identity is preserved without Number conversion (0.585666ms)
+✔ order parsing rejects truncation and unsafe integer aliases (0.256375ms)
+✔ message byte length and canonical padding round trip multi-byte text (1.505042ms)
+✔ moderation resolves displayed order once and thereafter carries only identity (0.613084ms)
+✔ unknown identity and unsafe order stop before signing (0.158208ms)
+✔ state conflict causes refresh and a new attempt, never resubmission of old proof (0.4455ms)
+✔ uncertain submission never triggers automatic new proof or resend (0.273333ms)
+✔ exact already-known transaction is reconciled without resending (0.164458ms)
+✔ failed, proposed, dropped and mismatched receipts never report success (0.1845ms)
+✔ queued drop requires structured pinned conflict validation before fresh proof (0.384167ms)
+✔ state refresh has a bounded retry budget (0.117667ms)
+✔ receipt becoming included during revalidation prevents fresh proof (0.102875ms)
+✔ dummy retries reject ambiguous spent-right conflicts and allow only invalid anchor refresh (0.137084ms)
+✔ outer post retry cannot override an inner dummy spent-right refusal (0.12725ms)
+✔ auto screening propagates unresolved transaction outcomes and retains a timing wait control (0.1065ms)
+✔ nested dummy anchor recovery retains one two-refresh budget (0.098917ms)
+✔ saved post operation requires the original canonical nonce, chain and valid message (0.449625ms)
+✔ normal author calls carry only private payment method and bootstrap claim is consumed once (2.481959ms)
+✔ unknown submission is preserved without retry and private errors are redacted (2.247333ms)
+✔ missing private fee configuration fails before account work for every private action (2.053666ms)
+✔ actual wallet keeps configured gas and normal account scope/tag through simulation and proof (22.866708ms)
+✔ actual main claim uses standard author call with private fee payment (19.904125ms)
+✔ actual main post uses standard author call with private fee payment (1.91425ms)
+✔ actual main post dummy uses standard author call with private fee payment (1.106833ms)
+✔ actual main withdraw uses standard author call with private fee payment (1.005833ms)
+✔ moderator calls use their normal account with private fee payment (1.03475ms)
+✔ inherited object names never select an application method (0.327875ms)
+✔ actual main private post works with no Ethereum signer (0.951666ms)
+✔ actual main fails before PXE when RPC identity changed after CLI preflight (0.508542ms)
+✔ settlement pending returns after one witness lookup, without ninety-minute polling (1.44475ms)
+✔ witness RPC failure remains unknown, never a false unclaimed or paid result (1.232625ms)
+✔ consumed/error text is not evidence of a refund: false (1.827542ms)
+✔ consumed/error text is not evidence of a refund: true (2.406542ms)
+✔ actual main refuses a private send when durable journal is unavailable (0.773542ms)
+✔ actual main recovery avoids proving and Ethereum signing and reports revert distinctly (1.459417ms)
+✔ Ethereum recovery handles already refunded receipts before checking active deposit (1.870166ms)
+✔ actual moderator declare-immoral uses the active wallet's durable journal (1.154333ms)
+✔ actual moderator declare-immoral refuses an unresolved previous transaction before preparing a fee (1.512542ms)
+✔ actual moderator set-moderation-policy uses the active wallet's durable journal (1.327125ms)
+✔ actual moderator set-moderation-policy refuses an unresolved previous transaction before preparing a fee (0.646459ms)
+✔ actual moderator transfer-censor uses the active wallet's durable journal (0.755959ms)
+✔ actual moderator transfer-censor refuses an unresolved previous transaction before preparing a fee (0.576916ms)
+✔ moderator wallet cannot bypass journal ownership by supplying a second key (0.678208ms)
+✔ moderator recovery success distinguishes an already completed identical transfer from a failed one (0.673958ms)
+✔ moderator recovery reverted distinguishes an already completed identical transfer from a failed one (0.654333ms)
+✔ moderator recovery with unknown outcome cannot prepare another private fee payment (0.720875ms)
+✔ actual recovery dispatcher restores the saved message and nonce before requesting a fresh post proof (1.514583ms)
+✔ already published stable identity blocks a replacement before fee preparation (0.740625ms)
+✔ recovery cannot silently regenerate a dummy operation (0.4615ms)
+✔ recovery cannot silently regenerate a withdraw operation (0.525667ms)
+✔ recovery cannot silently regenerate a claim operation (0.440375ms)
+✔ claim  records its own operation rather than stale real-post metadata (6.814458ms)
+✔ post dummy records its own operation rather than stale real-post metadata (1.306583ms)
+✔ withdraw  records its own operation rather than stale real-post metadata (1.941333ms)
+✔ missing withdrawal note never proves success when history contains no exit (12.198416ms)
+✔ missing withdrawal note never proves success when history is unavailable (1.569167ms)
+✔ missing withdrawal note can recover an exact successful canonical exit without paying again (2.793208ms)
+✔ missing withdrawal note cannot recover a reverted exit (1.32075ms)
+✔ an exit for another selected deposit cannot complete withdrawal (1.983459ms)
+✔ withdrawal recovery without original claim custody cannot guess deposit ownership (2.269292ms)
+✔ withdrawal absence reconciliation has a deadline even if its receipt read stalls (23.118625ms)
+✔ saved dummy requires the same source screening sequence (unchanged) (1.306ms)
+✔ saved dummy requires the same source screening sequence (changed) (0.768917ms)
+✔ saved withdraw requires the same source screening sequence (unchanged) (0.657125ms)
+✔ saved withdraw requires the same source screening sequence (changed) (0.667833ms)
+✔ actual wallet passes attributed application spend to the durable journal before submission (0.564292ms)
+✔ successful retried screening releases its step guard before the following withdrawal (3.861666ms)
+✔ stale claim restores exact original receipt and claim identity without depositing again (3.931916ms)
+✔ stale claim rejects changed amount before another fee payment (2.374041ms)
+✔ stale claim rejects changed depositNonce before another fee payment (2.091709ms)
+✔ stale claim rejects changed leafIndex before another fee payment (2.113667ms)
+✔ stale claim rejects changed depositChain before another fee payment (2.236458ms)
+✔ stale claim rejects changed secretHash before another fee payment (2.151208ms)
+✔ stale claim rejects changed depositor before another fee payment (1.892583ms)
+✔ an existing note is not confirmation of an unresolved saved claim transaction (2.830458ms)
+✔ failed claim does not enter the former thirty-attempt loop (3.704959ms)
+✔ saved claim rejects a receipt returned for another transaction (1.570583ms)
+✔ saved claim rejects a reorged Ethereum receipt (1.398833ms)
+✔ saved claim receipt reads time out before any proof or fee preparation (22.944083ms)
+✔ explicit recovery restores exact saved transfer-censor arguments (2.206958ms)
+✔ explicit recovery restores exact saved set-moderation-policy arguments (2.097625ms)
+✔ explicit recovery restores exact saved declare-immoral arguments (1.463458ms)
+✔ daemon stale transaction reconciliation regenerates the same job (1.300417ms)
+✔ daemon stale transaction reconciliation rejects another job (1.175458ms)
+✔ saved moderator request cannot spend fees after authority transfers away (1.302875ms)
+✔ real preparer failures stop every routed action before proof/send/funding and preserve bootstrap input (661.185417ms)
+✔ actual claim readiness rejects absent, failed and wrong-index membership before fees or submission (13.816833ms)
+✔ actual claim waits for delayed exact receipt key then prepares fees and submits once (5.211167ms)
+✔ node failures are surfaced after one request, before private fee work (0.520708ms)
+✔ contract registration failures are surfaced after one attempt (0.553583ms)
+✔ cached wallet sync failure stops the next operation before fee preparation (0.976ms)
+✔ simulation failure is not retried and cannot start proving (0.299459ms)
+✔ list rejects failed get_censor instead of inventing configuration (0.77475ms)
+✔ list rejects failed get_k_multiplier instead of inventing configuration (0.560334ms)
+✔ list rejects failed get_censor_window instead of inventing configuration (0.572084ms)
+✔ list rejects failed get_max_save_up instead of inventing configuration (0.584333ms)
+✔ failed board lookup is not classified as an absent deployment (0.758667ms)
+✖ failed portal binding read prevents application actions (1.285708ms)
+ℹ tests 98
+ℹ suites 0
+ℹ pass 97
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1432.670125
+
+✖ failing tests:
+
+test at scripts/test-engine-private-fee.mjs:482:1
+✖ failed portal binding read prevents application actions (1.285708ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Could not verify the L1 wallet and receipt/. Input:
+  
+  'Error: binding unavailable'
+  
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-private-fee.mjs:484:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: binding unavailable
+        at h.env.ethers.Contract.L2_CONTRACT (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-private-fee.mjs:483:104)
+        at g.runBillboardUser (evalmachine.<anonymous>:766:21)
+        at async waitForActual (node:assert:646:5)
+        at async strict.rejects (node:assert:769:25)
+        at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-engine-private-fee.mjs:484:2)
+        at async Test.run (node:internal/test_runner/test:1409:7)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:974:7),
+    expected: /Could not verify the L1 wallet and receipt/,
+    operator: 'rejects',
+    diff: 'simple'
+  }

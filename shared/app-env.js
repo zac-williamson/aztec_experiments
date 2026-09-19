@@ -180,6 +180,7 @@ function publicOperationFailure(error) {
     BB_ETH_RECOVERY_REQUIRED:'Check the saved Ethereum request in Wallet Setup before starting another payment.',
     BB_ETH_SUBMISSION_UNKNOWN:'Ethereum submission is uncertain. Keep this browser profile and check the saved Ethereum request in Wallet Setup.',
     BB_ETH_TRANSACTION_FAILED:'The Ethereum request reverted or was replaced. Check its saved request before starting another payment.',
+    BB_WALLET_SYNC_PENDING:'Your claim is confirmed, but wallet synchronization failed. Keep the saved receipt and refresh before posting; do not make another deposit.',
     BB_RECOVERY_REQUIRED:'Recover the saved Aztec transaction from Wallet Setup before sending another transaction.',
     BB_JOURNAL_INVALID:'Transaction recovery storage could not be authenticated or saved. Preserve this browser profile and recovery records before continuing.',
     BB_DEPOSIT_MESSAGE_PENDING:'Your ETH deposit is confirmed. Its message is not yet available to claim; retry this same claim later. Do not deposit again.',
