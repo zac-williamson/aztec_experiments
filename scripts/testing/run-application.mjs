@@ -47,8 +47,8 @@ export async function runApplication(name) {
     const operatorPackage=name==='censor-commands'?await verifyCensorPackage():undefined;
     if(operatorPackage)report.operatorPackage=operatorPackage;
     if(browser){
-      assert(['chromium','firefox','webkit'].includes(scenario.browserEngine));
-      const engines=await import('playwright');await fs.access(engines[scenario.browserEngine].executablePath());
+      assert(['chromium','chrome','firefox','webkit'].includes(scenario.browserEngine));
+      const engines=await import('playwright');await fs.access(scenario.browserEngine==='chrome'?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':engines[scenario.browserEngine].executablePath());
       Object.assign(report.sourceHashes,await browserFingerprints());
       const reservation=net.createServer();
       await new Promise((resolve,reject)=>{reservation.once('error',reject);reservation.listen(0,'127.0.0.1',resolve);});

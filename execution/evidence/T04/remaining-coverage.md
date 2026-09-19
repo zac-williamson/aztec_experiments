@@ -5,7 +5,7 @@ retain their source snapshots; final-source reconciliation remains T05 work.
 
 | Area | Existing evidence | Remaining distinct work |
 |---|---|---|
-| Browser lifecycle | Chromium048, Firefox084 and WebKit086 deposit through refund | Actual stable release browser qualification, including installed Safari |
+| Browser lifecycle | Chromium048, Firefox084, WebKit086 and installed Chrome102 deposit through refund | Remaining actual release-browser qualification, including installed Safari |
 | Private fee funding UI | Cold-browser094 passes actual fee-juice.html deposit/private claim, collateral claim and paid post with exact accounting | Final-source reconciliation and external-wallet route |
 | Recovery | Chromium050 accepted post and096 accepted withdrawal response loss with full persistent browser restart; W03 receipt/persistence and chain tests | Layered map in recovery-coverage-095.md: durable boundary095/097, fresh-engine claim/screen100, builtUI reload101, real-Anvil mined response loss. Final-source reconciliation remains; no per-stage genuine-browser duplication claimed |
 | History | C04 17/33 stateful TXE lifecycles, seeded1,002note authenticated continuation/exit, actual1,100record native/browser persistence | Current native-store084 passes11checks at1,100synthetic records in302ms and client checks3/3; contract/ABI final-source reconciliation remains |

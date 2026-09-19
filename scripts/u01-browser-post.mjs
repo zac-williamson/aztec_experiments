@@ -24,10 +24,10 @@ export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,
  const publicPath=value=>/^\/(?:rpc\/(?:aztec|ethereum)|(?:user|feed|censor|deploy|fee-juice)\.html|(?:aztec_bundle|public-feed|bb-main.worker|bb-thread.worker|sqlite.worker|sqlite3-opfs-async-proxy)\.js|(?:sqlite3|acvm_js_bg|noirc_abi_wasm_bg)\.wasm|crs\/(?:crs-manifest\.json|g1\.dat|g1_uncompressed\.dat|g2\.dat|grumpkin_g1\.dat))$/.test(value)?value:'other-local-path';
  const observation={passed:false,browserEngine,browserMode,sourceStage:stage,elapsedMs:0,diagnosticInstrumentation:diagnostic,proofStageObservation:observeProofStages,performanceQualified:false,diagnosticScope:diagnostic&&journeyDriver?'Formatter-only observation with fixed driver/UI diagnostics; no breakpoint or engine/prover replacement.':diagnostic?'Error formatter and catch breakpoint observation; original application behavior preserved.':'Fixed error-category observer; no debugger. GUI wall time only, not isolated proof performance.'};
  const requireValue=(condition)=>{if(!condition)throw Error('Invalid disposable browser test parameters');};
- requireValue(['chromium','firefox','webkit'].includes(browserEngine));
+ requireValue(['chromium','chrome','firefox','webkit'].includes(browserEngine));
  requireValue(browserEngine==='chromium'||(!browserRecovery&&!diagnostic));
- const selectedBrowser={chromium,firefox,webkit}[browserEngine];
- const launchOptions={headless:true,...(browserEngine==='chromium'?{args:['--js-flags=--max-old-space-size=768']}:{})};
+ const selectedBrowser={chromium,chrome:chromium,firefox,webkit}[browserEngine];
+ const launchOptions={headless:true,...(browserEngine==='chrome'?{executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{}),...(['chromium','chrome'].includes(browserEngine)?{args:['--js-flags=--max-old-space-size=768']}:{})};
  const local=value=>{const u=new URL(value);requireValue(['http:','https:'].includes(u.protocol)&&u.hostname==='127.0.0.1'&&u.port&&!u.username&&!u.password&&!u.search&&!u.hash&&u.pathname==='/');return u;};
  const site=local(origin),node=local(nodeUrl),ethereum=local(ethereumUrl);
  requireValue(site.protocol==='https:'&&node.protocol==='http:'&&ethereum.protocol==='http:');

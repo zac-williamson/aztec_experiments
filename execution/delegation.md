@@ -79,3 +79,7 @@ Root owns edits and serialized checks. application_change_review reviews the sha
 097 component review: application_change_review approved intent preservation and actual-wallet durable preparation/confirmation integration. Explicit distinction retained between fixture response-loss state and genuine browser RPC-response loss.
 
 098: application_change_review approved cached projection/direct slicing; strengthened failed-save same-instance check integrated. webkit_failure_review approved distinct cold/warm browser methodology and reuse of bounded supervisor with128MB fixture heap, unchanged aggregate4GiB/540s, actual served-file hashes.
+
+102 installed Chrome qualification: root selects the exact installed executable in the existing runner; webkit_failure_review reviews no fallback/new lifecycle and engine validation; source inputs freeze during genuine journey.
+
+103: application_change_review supplied the minimal real-extension Ethereum test design and is inspecting pinned MetaMask onboarding selectors read-only. Root verified the official archive digest; no user profile used. Chrome102 passed and its source freeze is released.

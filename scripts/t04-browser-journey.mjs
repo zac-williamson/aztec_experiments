@@ -10,7 +10,7 @@ export function validateBrowserControl(value){
  assert(value&&typeof value==='object'&&!Array.isArray(value));
  assert.deepEqual(Object.keys(value).sort(),['backupPassword','browserEngine','browserMode','origin','rpcToken']);
  assert(['post','lifecycle','recovery','withdraw-recovery','funding'].includes(value.browserMode));
- assert(['chromium','firefox','webkit'].includes(value.browserEngine));
+ assert(['chromium','chrome','firefox','webkit'].includes(value.browserEngine));
  assert(!['recovery','withdraw-recovery'].includes(value.browserMode)||value.browserEngine==='chromium');
  const origin=new URL(value.origin);assert(origin.protocol==='https:'&&origin.hostname==='127.0.0.1'&&origin.pathname==='/'&&!origin.username&&!origin.password&&!origin.search&&!origin.hash);
  assert(typeof value.rpcToken==='string'&&/^[a-zA-Z0-9_-]{24,256}$/.test(value.rpcToken));
