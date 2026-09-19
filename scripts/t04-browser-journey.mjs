@@ -9,9 +9,9 @@ const hash=/^0x[0-9a-f]{64}$/;
 export function validateBrowserControl(value){
  assert(value&&typeof value==='object'&&!Array.isArray(value));
  assert.deepEqual(Object.keys(value).sort(),['backupPassword','browserEngine','browserMode','origin','rpcToken']);
- assert(['post','lifecycle','recovery','funding'].includes(value.browserMode));
+ assert(['post','lifecycle','recovery','withdraw-recovery','funding'].includes(value.browserMode));
  assert(['chromium','firefox','webkit'].includes(value.browserEngine));
- assert(value.browserMode!=='recovery'||value.browserEngine==='chromium');
+ assert(!['recovery','withdraw-recovery'].includes(value.browserMode)||value.browserEngine==='chromium');
  const origin=new URL(value.origin);assert(origin.protocol==='https:'&&origin.hostname==='127.0.0.1'&&origin.pathname==='/'&&!origin.username&&!origin.password&&!origin.search&&!origin.hash);
  assert(typeof value.rpcToken==='string'&&/^[a-zA-Z0-9_-]{24,256}$/.test(value.rpcToken));
  assert(typeof value.backupPassword==='string'&&/^[a-zA-Z0-9_-]{24,256}$/.test(value.backupPassword));
@@ -33,7 +33,7 @@ export function createBrowserHandoff(base,{directory,browserMode,depositAmount,f
  return validateBrowserHandoff(value,{directory,browserMode});
 }
 export function validateBrowserHandoff(value,{directory,browserMode}){
- assert(value&&typeof value==='object'&&!Array.isArray(value));assert(['post','lifecycle','recovery','funding'].includes(browserMode));assert(path.isAbsolute(directory));
+ assert(value&&typeof value==='object'&&!Array.isArray(value));assert(['post','lifecycle','recovery','withdraw-recovery','funding'].includes(browserMode));assert(path.isAbsolute(directory));
  const keys=['nodeUrl','ethereumUrl','publicConfig','backupPath','ethereumAccount','message'];
  const amounts=['lifecycle','funding'].includes(browserMode)?['depositAmount']:[];if(browserMode==='funding')amounts.push('fundingAmount');
  keys.push(...amounts);assert.deepEqual(Object.keys(value).sort(),keys.sort());

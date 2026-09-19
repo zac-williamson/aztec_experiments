@@ -38,3 +38,18 @@ account after recovery to discover the pending refund in the UI. Do not claim a
 completed Ethereum refund or introduce settlement into this recovery scenario.
 
 Ethereum component boundary extension now passes47 tests across file/IndexedDB and deposit/withdraw, including interruptions immediately before/after hash persistence. Original hash/event and no second send checked; independent review approved. Evidence: ethereum-recovery-boundaries-095.log. These are simulated chain responses with actual storage adapters, not additional genuine proofs.
+
+L2 component extension097 now passes145 combined journal/engine checks; the final
+wallet integration extension passes91 engine checks. Four real operation-record
+shapes survive prepared, accepted-response-loss-state, before-confirmed and
+after-confirmed boundaries on file/IndexedDB. Original transaction bytes/hash,
+operation and screening/withdrawal nullifier binding are preserved with one total
+submission. The matrix's response-loss throw follows its fixture send; it proves
+retained journal state, not production RPC promise handling.
+
+The actual wallet also rejects submission after failed durable preparation and
+recovers an actual encrypted journal after interruption at local confirmation,
+without another proof or send. SDK transactions, prover and chain responses are
+fixtures; this is not additional cryptographic integration evidence. Independent
+application_change_review approved. Claim-specific sync-failure restarted
+completion and genuine accepted claim/screen browser cases remain distinct gaps.

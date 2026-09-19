@@ -212,7 +212,7 @@ export function browserPost(ctx){
 }
 export function browserRecovery(ctx){
   return withActivatedBoard(ctx,async s=>{
-    assert(s.browserControl?.browserMode==='recovery');
+    assert(['recovery','withdraw-recovery'].includes(s.browserControl?.browserMode));
     await fees(s,false);
     await claim(s,false,'private');
     s.observation.browserPost=await completeU01BrowserPost({

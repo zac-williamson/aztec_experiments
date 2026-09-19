@@ -43,6 +43,24 @@ for(const backend of ['file','indexeddb']) {
   const restarted=await f.newSession();await assert.rejects(restarted.assertCanStart(),{code:'BB_RECOVERY_REQUIRED'});
   const acknowledged=await f.newSession({acknowledgeTx:f.tx.getTxHash().toString()});assert.equal((await acknowledged.assertCanStart()).tx.getTxHash().toString(),f.tx.getTxHash().toString());
  }));
+ // Actual engine intent shapes; transaction proofs and node responses are fixtures.
+ for(const kind of ['claim','post','dummy','withdraw'])for(const boundary of ['prepared','response-lost','before-confirmed','after-confirmed'])test(`${backend}: ${kind} preserves exact intent at ${boundary}`,()=>withStorage(async f=>{
+  const depositChain=field(),operation=JSON.stringify(kind==='claim'
+   ?{schemaVersion:1,kind,depositor:address(),amount:'1000000000000000',depositNonce:'7',leafIndex:'42',secretHash:field(),transactionHash:field(),depositChain}
+   :kind==='post'?{schemaVersion:1,kind,nonce:field(),message:'original saved text',depositChain}
+   :{schemaVersion:1,kind,depositChain,headSequence:'0'});
+  const applicationNullifier=['dummy','withdraw'].includes(kind)?f.tx.data.getNonEmptyNullifiers()[0].toString():undefined;
+  const first=await f.newSession();first.setOperation(operation);await first.prepare(f.tx,await first.assertCanStart(),{applicationNullifier});
+  if(boundary==='response-lost'){
+   const send=f.node.sendTx;await assert.rejects((async()=>{await send(f.tx);throw Error('accepted response lost');})());
+  }else if(boundary!=='prepared')await f.node.sendTx(f.tx);
+  if(boundary==='after-confirmed')first.confirmed(await f.node.getTxReceipt(f.tx.getTxHash()));
+  const fresh=await f.newSession(),saved=await fresh.inspect();
+  assert.equal(saved.operation,operation);assert.equal(saved.txHash,f.tx.getTxHash().toString());assert.equal(saved.applicationNullifier,applicationNullifier);
+  const receipt=await fresh.recover();assert.equal(receipt.txHash.toString(),saved.txHash);assert.equal(receipt.executionResult,'success');
+  assert.deepEqual(f.sent,[Buffer.from(f.tx.toBuffer())]);
+  const reopened=await f.newSession();assert.equal((await reopened.inspect()).operation,operation);await reopened.recover();assert.equal(f.sent.length,1);
+ }));
  test(`${backend}: canonical recheck rejects previously acknowledged receipt after reorg`,()=>withStorage(async f=>{
   const j=await f.newSession();await j.prepare(f.tx,await j.assertCanStart());f.setStatus('checkpointed');f.reorg();
   await assert.rejects((await f.newSession({acknowledgeTx:f.tx.getTxHash().toString()})).assertCanStart(),{code:'BB_SUBMISSION_UNKNOWN'});

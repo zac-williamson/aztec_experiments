@@ -4,7 +4,8 @@ import {BlockHeader} from '@aztec/stdlib/tx';
 import {BlockHash} from '@aztec/stdlib/block';
 import {AppendOnlyTreeSnapshot} from '@aztec/stdlib/trees';
 import {createHistoryCursor} from '../shared/history-cursor.mjs';
-import {TxHash} from '@aztec/stdlib/tx';
+import {Tx,TxHash} from '@aztec/stdlib/tx';
+import {createL2Journal} from '../shared/l2-journal.mjs';
 import * as transactionOutcomes from '../shared/transaction-outcomes.mjs';
 // Actual application routing, with explicit node/proof/payment-preparer doubles.
 import assert from 'node:assert/strict';
@@ -308,7 +309,7 @@ for(const kind of ['dummy','withdraw'])for(const changed of [false,true])test(`s
 });
 
 test('actual wallet passes attributed application spend to the durable journal before submission',async()=>{
- const c=context(),calls=[],txHash=new Fr(91),appNullifier=new Fr(92),tx={getTxHash:()=>txHash};
+ const c=context(),calls=[],txHash=new Fr(91),appNullifier=new Fr(92);let tx={getTxHash:()=>txHash};
  const receipt={txHash,status:'checkpointed',executionResult:'success',blockNumber:1,blockHash:'block'};
  class BaseWallet {
   constructor(pxe){this.pxe=pxe;}
@@ -327,6 +328,27 @@ test('actual wallet passes attributed application spend to the durable journal b
  a.extractApplicationNullifier=async()=>{throw Object.assign(new Error('unsupported'),{code:'BB_APPLICATION_ATTRIBUTION_UNSUPPORTED'});};
  await assert.rejects(wallet.sendTx({}, {from:owner,fee:{gasSettings:gas()}}),{code:'BB_APPLICATION_ATTRIBUTION_UNSUPPORTED'});
  assert.equal(calls.filter(x=>x==='submit').length,1);
+ a.extractApplicationNullifier=async()=>appNullifier;
+ journal.prepare=async()=>{throw Object.assign(Error('storage unavailable'),{code:'BB_JOURNAL_INVALID'});};
+ await assert.rejects(wallet.sendTx({}, {from:owner,fee:{gasSettings:gas()}}),{code:'BB_JOURNAL_INVALID'});
+ assert.equal(calls.filter(x=>x==='submit').length,1);
+ // Exercise the actual encrypted journal at the wallet's confirmation boundary.
+ // The SDK transaction/prover and chain responses remain explicit fixtures.
+ tx=Tx.random({randomProof:true});receipt.txHash=tx.getTxHash();
+ const nullifier=tx.data.getNonEmptyNullifiers()[0].toString(),records=new Map();
+ const storage={read:async key=>records.get(key)??null,compareAndSwap:async(key,previous,next)=>{assert.equal(records.get(key)??null,previous);records.set(key,next);}};
+ const options={storage,walletSecret:Fr.ONE.toString(),walletSalt:Fr.ZERO.toString(),Tx,node,
+  scope:{account:Fr.ONE.toString(),chainId:'31337',rollup:'0x'+'01'.repeat(20),version:'5',board:new Fr(2).toString(),portal:'0x'+'02'.repeat(20)}};
+ const durable=await createL2Journal(options),operation=JSON.stringify({schemaVersion:1,kind:'withdraw',depositChain:new Fr(5).toString(),headSequence:'0'});
+ durable.setOperation(operation);durable.confirmed=()=>{throw Error('interrupted at local confirmation');};wallet._transactionJournal=durable;
+ a.extractApplicationNullifier=async()=>Fr.fromString(nullifier);
+ let proofs=0;pxe.proveTx=async()=>{proofs++;return proven;};
+ await assert.rejects(wallet.sendTx({}, {from:owner,fee:{gasSettings:gas()}}),/interrupted at local confirmation/);
+ assert.equal(proofs,1);assert.equal(calls.filter(x=>x==='submit').length,2);
+ const reopened=await createL2Journal(options),saved=await reopened.inspect();
+ assert.equal(saved.operation,operation);assert.equal(saved.applicationNullifier,nullifier);assert.equal(saved.txHash,tx.getTxHash().toString());
+ assert.equal((await reopened.recover()).txHash.toString(),saved.txHash);
+ assert.equal(proofs,1);assert.equal(calls.filter(x=>x==='submit').length,2);
 });
 
 test('successful retried screening releases its step guard before the following withdrawal',async()=>{

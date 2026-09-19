@@ -102,3 +102,28 @@ export async function verifyU01BrowserPost({node,preparation,instance,claimResul
  const publicFootprint=classifyT03PublicFootprint({tx,effect:effect.data,roles:{author:account.address,sharedPayer:privateFee.payer,board:instance.address}});
  return{publicFootprint,passed:true,scope:'one genuine browser-proved first post; native fixture preparation and read-only verification',applicationProofs:true,networkProofs:false,txHash:String(txHash),proofSha256:sha(tx.chonkProof.toBuffer()),nodePreSubmissionValidation:'valid',normalNodeVerification:true,status:receipt.status,executionResult:receipt.executionResult,blockNumber:String(receipt.blockNumber),blockHash:receipt.blockHash.toString(),postId:id.toString(),feePayer:tx.data.feePayer.toString(),transactionFee:String(receipt.transactionFee),exactDepositNullifier:true,exactReplacementNote:true,exactPostNote:true,exactCooldown:true,publicContentChecked:true,privateFeeDebitChecked:true,publicFeePayerDebitChecked:true,authorPublicFeeBalanceZero:true};
 }
+
+// Independent withdrawal oracle: the old note is consumed and Ethereum escrow
+// remains outstanding. No settlement or refund is submitted by this scenario.
+export async function verifyU01BrowserWithdrawal({node,preparation,instance,claimResult,privateFee,txHash,evidence,l1Client,portalAbi,escrowBefore}){
+ const {verifyJourneyIncludedTransaction,journeyExitLeaf,assertJourneyExit}=await import('./t04-browser-journey-verify.mjs');
+ const {wallet,account,oldNote,oldFields,beforeFeeBalance,beforePayerBalance,maximumFee}=evidence;
+ const included=await verifyJourneyIncludedTransaction({node,captures:evidence.captures,txHash,expectedPayer:String(privateFee.payer)});
+ const {scope,depositor,depositChainId}=claimResult.claim;
+ const {leaf}=journeyExitLeaf({scope,depositor,depositNonce:oldFields[2],amount:oldFields[3]});
+ assertJourneyExit({...included,leaf,consumedNullifier:oldNote.siloedNullifier,nextAllowedTime:oldFields[10]});
+ await wallet.registerContract(instance,preparation.artifact);const fee=await feeContract(wallet,privateFee);await wallet.pxe.sync();
+ const board=Contract.at(instance.address,preparation.artifact,wallet),query=async(name,...args)=>(await board.methods[name](...args).simulate({from:account.address})).result;
+ assert.deepEqual((await query('get_deposit_info',account.address,depositChainId)).map(number),Array(11).fill(0n));
+ assert.equal(number(await query('get_post_count')),0n);
+ const notes=await wallet.pxe.debug.getNotes(filter(instance,account));
+ assert(!notes.some(note=>note.note.items.length===8&&note.note.items[1].equals(depositChainId)));
+ assert.equal(number((await fee.methods.balance_of(account.address).simulate({from:account.address})).result),beforeFeeBalance-maximumFee);
+ assert.equal(await getFeeJuiceBalance(account.address,node),0n);
+ assert.equal(await getFeeJuiceBalance(included.tx.data.feePayer,node),beforePayerBalance-number(included.receipt.transactionFee));
+ const read=(functionName,args=[])=>l1Client.readContract({address:scope.portalAddress,abi:portalAbi,functionName,args});
+ assert.deepEqual(await read('getDeposit',[depositor]),[oldFields[2],oldFields[3]]);
+ assert.equal(await read('totalDeposited'),escrowBefore.liability);
+ assert.equal(await l1Client.getBalance({address:scope.portalAddress}),escrowBefore.balance);
+ return {passed:true,txHash,proofSha256:sha(included.tx.chonkProof.toBuffer()),exactExitLeaf:leaf.toString(),exactConsumedNullifier:true,noActiveDeposit:true,postCountUnchanged:true,privateFeeDebitChecked:true,publicFeePayerDebitChecked:true,authorPublicFeeBalanceZero:true,ethereumRefundPending:true};
+}

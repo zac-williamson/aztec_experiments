@@ -14,8 +14,8 @@ import {ROOT,assertNodeVersion} from './toolchain.mjs';
 
 export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,ethereumUrl,rpcToken,publicConfig,backupPath,backupPassword,ethereumAccount,message,timeoutMs=480000,diagnostic=false,observeProofStages=false,onStage=()=>{},journeyDriver,depositAmount,fundingAmount,browserMode}) {
  assertNodeVersion();
- const browserRecovery=browserMode==='recovery';
- if(!['post','lifecycle','recovery','funding'].includes(browserMode))throw Error('Invalid browser mode');
+ const browserRecovery=['recovery','withdraw-recovery'].includes(browserMode);
+ if(!['post','lifecycle','recovery','withdraw-recovery','funding'].includes(browserMode))throw Error('Invalid browser mode');
  const lifecycleAbort=new AbortController();
  const started=Date.now();let browser,context,child,timer,page,debuggerSession,stage='validation';
  const browserProfile=path.join(directory,'browser-profile');let ownsBrowserProfile=false;
@@ -114,10 +114,10 @@ export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,
    }
    await page.waitForFunction(()=>{const button=document.getElementById('postBtn');return (button&&button.getClientRects().length>0)||!!document.querySelector('#setupStatus .error');},{},{timeout:remaining()});requireValue(await page.locator('#postBtn').isVisible());observation.walletSetupMs=Date.now()-setupStarted;
    if(browserRecovery){
-    mark('actual-gui-post');
+    mark(browserMode==='withdraw-recovery'?'actual-gui-withdraw':'actual-gui-post');
     const persistedConfig=await page.evaluate(()=>JSON.stringify(globalThis.billboardConfigStore.snapshot().config));
     requireValue(typeof persistedConfig==='string'&&persistedConfig!=='null');
-    const recovery=await runT04BrowserPostRecovery({page,directory,remaining:()=>timeoutMs-(Date.now()-started),signal:lifecycleAbort.signal,backupPath,backupPassword,message,restart:async()=>{
+    const recovery=await runT04BrowserPostRecovery({action:browserMode==='withdraw-recovery'?'withdraw':'post',page,directory,remaining:()=>timeoutMs-(Date.now()-started),signal:lifecycleAbort.signal,backupPath,backupPassword,message,restart:async()=>{
      mark('browser-restart');const oldBrowser=browser;
      await context.close();requireValue(!oldBrowser.isConnected());const closedAtMs=Date.now();
      requireValue(!lifecycleAbort.signal.aborted);await openContext();
@@ -196,5 +196,5 @@ export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,
   for(const name of ['u01-browser-Caddyfile','u01-browser-cert.pem','u01-browser-key.pem'])fs.rmSync(path.join(directory,name),{force:true});
   if(ownsBrowserProfile)try{fs.rmSync(browserProfile,{recursive:true,force:true});}catch{observation.passed=false;observation.recoveryProfileCleanupFailed=true;}
  }
- return {...observation,sourceStage:stage,elapsedMs:Date.now()-started,externalRequestCount:external.size,failedHttp:[...failedHttp.values()],cspDirectives:[...csp],cspDetails,requestedPaths:[...paths].sort(),ownedServerStopped:!child||child.exitCode!==null||child.signalCode!==null,browserClosed:!browser||!browser.isConnected(),scope:browserMode==='funding'?'Actual GUI cold fee deposit/claim and paid board claim/post; parent canonical verification required.':browserRecovery?'Actual GUI accepted-post response-loss recovery after full persistent-browser restart; parent must verify canonical effects and no repeat submission.':journeyDriver?'Actual GUI lifecycle driver; parent canonical verification is required.': 'Actual GUI post from preseeded disposable funded wallet; parent must verify canonical node effects. Not a full deposit-to-withdraw journey.'};
+ return {...observation,sourceStage:stage,elapsedMs:Date.now()-started,externalRequestCount:external.size,failedHttp:[...failedHttp.values()],cspDirectives:[...csp],cspDetails,requestedPaths:[...paths].sort(),ownedServerStopped:!child||child.exitCode!==null||child.signalCode!==null,browserClosed:!browser||!browser.isConnected(),scope:browserMode==='funding'?'Actual GUI cold fee deposit/claim and paid board claim/post; parent canonical verification required.':browserRecovery?'Actual GUI accepted-transaction response-loss recovery after full persistent-browser restart; parent must verify canonical effects and no repeat submission.':journeyDriver?'Actual GUI lifecycle driver; parent canonical verification is required.': 'Actual GUI post from preseeded disposable funded wallet; parent must verify canonical node effects. Not a full deposit-to-withdraw journey.'};
 }

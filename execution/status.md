@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 24/35.
 
 ## In progress
 
-- **Run browser, recovery, concurrency and load matrix (T04)** — Cold-fee094 PASS: actual browser Ethereum deposit, private fee claim, collateral claim and post; exact canonical token/private/payer accounting. 241206ms, peak2287200KiB, full cleanup. Ethereum persistence-boundary095 tests47/47 and independent review pass. Next accepted-withdrawal browser recovery using existing runner.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Withdrawal-recovery096 PASS 209997ms, peak2336992KiB, full cleanup: real accepted withdrawal, physical browser restart, original hash/one send/one fee, exact consumed note/exit, no active deposit, unchanged Ethereum escrow and pending refund UI. Component097 preservation and wallet confirmation checks pass, independently reviewed. Integrate then continue remaining recovery/qualification.
 
 ## Ready internal work
 

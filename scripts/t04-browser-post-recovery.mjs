@@ -22,7 +22,8 @@ export async function verifyT04IdentityOnlyBackup(backupPath,password){
  assert(payload.schemaVersion===1&&!Object.hasOwn(payload,'journals'),'Recovery fixture must use schema-v1 backup without journals');
  return {schemaVersion:1,journalsImported:false};
 }
-export async function runT04BrowserPostRecovery({page,directory,remaining,signal,restart,backupPath,backupPassword,message}){
+export async function runT04BrowserPostRecovery({page,directory,remaining,signal,restart,backupPath,backupPassword,message,action='post'}){
+ assert(['post','withdraw'].includes(action));
  assert(path.isAbsolute(directory)&&path.isAbsolute(backupPath)&&typeof remaining==='function'&&typeof restart==='function');
  const acceptancePath=path.join(directory,acceptedName),origin=new URL(page.url()).origin;
  let abort;
@@ -32,8 +33,14 @@ export async function runT04BrowserPostRecovery({page,directory,remaining,signal
  try{
   await bounded(()=>verifyT04IdentityOnlyBackup(backupPath,backupPassword));
   await assert.rejects(fs.access(acceptancePath),{code:'ENOENT'});
-  await bounded(()=>page.locator('#msgText').fill(message));
-  await bounded(()=>page.locator('#postBtn').click());
+  if(action==='post'){
+   await bounded(()=>page.locator('#msgText').fill(message));
+   await bounded(()=>page.locator('#postBtn').click());
+  }else{
+   await bounded(()=>page.locator('#navNext').click());
+   await bounded(()=>page.locator('#page-3').waitFor({state:'visible',timeout:remaining()}));
+   await bounded(()=>page.locator('#navNext').click());
+  }
   let accepted;
   for(;;){
    accepted=await bounded(async()=>{try{const stat=await fs.stat(acceptancePath);assert(stat.isFile()&&stat.size<=1024);return validateT04PostAcceptance(JSON.parse(await fs.readFile(acceptancePath,'utf8')));}catch(error){if(error.code==='ENOENT')return undefined;throw error;}});
@@ -53,11 +60,19 @@ export async function runT04BrowserPostRecovery({page,directory,remaining,signal
   // No ETH connection: it would auto-navigate away from the recovery controls.
   const button=page.getByRole('button',{name:'Recover saved Aztec transaction',exact:true});
   assert(await bounded(()=>button.isVisible()));await bounded(()=>button.click());
-  await bounded(()=>page.waitForFunction(hash=>{const text=document.getElementById('setupStatus')?.textContent||'';return (text.includes('Saved transaction succeeded. Hash: '+hash)&&document.getElementById('page-2')?.classList.contains('active'))||!!document.querySelector('#setupStatus .error');},accepted.transactionHash,{timeout:remaining()}));
+  await bounded(()=>page.waitForFunction(({hash,expectedPage})=>{const text=document.getElementById('setupStatus')?.textContent||'';return (text.includes('Saved transaction succeeded. Hash: '+hash)&&document.getElementById(expectedPage)?.classList.contains('active'))||!!document.querySelector('#setupStatus .error');},{hash:accepted.transactionHash,expectedPage:action==='post'?'page-2':'page-1'},{timeout:remaining()}));
   const status=await bounded(()=>page.locator('#setupStatus').textContent());
   assert(status.includes('Saved transaction succeeded. Hash: '+accepted.transactionHash));
   assert(!await bounded(()=>page.locator('#setupStatus .error').count()));
-  const result={passed:true,transactionHash:accepted.transactionHash,fullBrowserRestart:true,samePersistentProfile:true,journalsImported:false,recoveryControl:'Recover saved Aztec transaction',closureAfterAcceptanceMs:fresh.closedAtMs-accepted.acceptedAtMs,closureAfterRequestMs:fresh.closedAtMs-accepted.requestStartedAtMs,scope:'Actual UI accepted-post recovery; parent must verify original canonical effects, one accepted transaction, no restart submission and one fee debit. Submission capture does not count discarded or unsubmitted proofs'};
+  if(action==='withdraw'){
+   // Reconnect only after recovering the original L2 transaction. The app then
+   // discovers outstanding escrow; never click the refund submission button.
+   await bounded(()=>page.locator('#navBack').click());
+   await bounded(()=>page.locator('#page-0').waitFor({state:'visible',timeout:remaining()}));
+   await bounded(()=>page.locator('#wbEthBrowserBtn').click());
+   await bounded(()=>page.locator('#page-4').waitFor({state:'visible',timeout:remaining()}));
+  }
+  const result={passed:true,action,ethereumRefundPending:action==='withdraw',transactionHash:accepted.transactionHash,fullBrowserRestart:true,samePersistentProfile:true,journalsImported:false,recoveryControl:'Recover saved Aztec transaction',closureAfterAcceptanceMs:fresh.closedAtMs-accepted.acceptedAtMs,closureAfterRequestMs:fresh.closedAtMs-accepted.requestStartedAtMs,scope:'Actual UI accepted-transaction recovery; parent must verify original canonical effects, one accepted transaction, no restart submission and one fee debit. Submission capture does not count discarded or unsubmitted proofs'};
   Object.defineProperty(result,'page',{value:page,enumerable:false});return result;
  }catch{throw safeError();}
  finally{signal?.removeEventListener('abort',abort);}

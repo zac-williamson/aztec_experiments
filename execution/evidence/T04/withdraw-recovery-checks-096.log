@@ -1,0 +1,29 @@
+✔ rendezvous accepts only fixed stages and bounded unique public transaction identifiers (5.081875ms)
+✔ atomic rendezvous cannot overwrite a prior stage or accept an unverified release (4.5145ms)
+✔ missing release respects remaining parent budget (0.479709ms)
+✔ canonical exit rejects wrong leaf, duplicate leaf, wrong nullifier and ineligible anchor (377.847917ms)
+✔ aborted lifecycle terminates a rendezvous even with a clamped legacy time callback (101.99525ms)
+✔ browser modes roundtrip strictly across the real handoff boundary (9.127083ms)
+✔ journey diagnostic outputs fixed milestones and allowlisted exception only (0.297083ms)
+✔ actual browser journey stops after one deposit action when claim reports an error (0.289ms)
+✔ partial canonical progress is ordered, bounded, public-only and copied (0.486834ms)
+✔ non-Chromium lifecycle scenarios retain one explicit engine and existing bounds (0.8055ms)
+✔ cold funding driver never claims or deposits again after a failed deposit (0.605959ms)
+✔ handoff accepts actual SDK whole-token formatting and rejects invalid amounts (0.843542ms)
+✔ actual control flow posts once, restarts once, restores identity and invokes only recovery (105.727334ms)
+✔ schema-v2 backup is rejected before post even when its stale journal list is empty (151.858208ms)
+✔ stale acceptance file and expired deadline cannot restart or post (101.279583ms)
+✔ acceptance requires exact schema, actual acceptance and exactly one send (2.912542ms)
+✔ restart must close prior browser and retain profile/origin before reimport (101.090875ms)
+✔ late physical closure cannot count as crash before automatic reconciliation (101.083917ms)
+✔ recent acceptance cannot hide a submission request already older than the crash bound (100.14625ms)
+✔ withdrawal recovers once then reconnects Ethereum to display pending refund without submitting it (100.053292ms)
+✔ unknown recovery action is rejected before interacting with the page (50.619084ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 861.463417

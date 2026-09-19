@@ -71,3 +71,9 @@ Root owns edits and serialized checks. application_change_review reviews the sha
 093 integrated reviews: application_change_review approved shared normalization and real-engine tests; webkit_failure_review approved the single original error boundary and bounded sanitization. No correctness or structural blockers.
 
 094: webkit_failure_review approved uncached explicit L1 snapshot heights and preserved exact token accounting; no retries or fallback. application_change_review supplied the next withdrawal-recovery integration design and independent assertions.
+
+096: root integrates explicit withdrawal recovery in the existing lifecycle. Independent application oracle and harness structure reviews assigned to application_change_review and webkit_failure_review. No additional runner or retries.
+
+096 integrated review: both reviewers approved before genuine run; application reviewer explicitly requires real execution of the new exit oracle before qualification.
+
+097 component review: application_change_review approved intent preservation and actual-wallet durable preparation/confirmation integration. Explicit distinction retained between fixture response-loss state and genuine browser RPC-response loss.

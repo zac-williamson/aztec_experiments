@@ -4,6 +4,12 @@ const run = name => async ctx => (await import('./scenario-flows.mjs'))[name](ct
 // Explicit named scenarios. Unknown names fail; there are no compatibility aliases.
 const records = [
   Object.freeze({
+    name:'browser-withdraw-recovery',deadlineMs:540000,evidenceTask:'T04',
+    description:'Accepted browser withdrawal and full-process recovery with refund pending',
+    fixture:'activated-board',authors:1,applicationThreads:1,browser:'withdraw-recovery',browserEngine:'chromium',
+    run:run('browserRecovery'),
+  }),
+  Object.freeze({
     name:'browser-cold-fees',deadlineMs:540000,evidenceTask:'T04',
     description:'Browser cold private-fee funding followed by paid claim and post',
     fixture:'activated-board',authors:1,applicationThreads:1,browser:'funding',browserEngine:'chromium',
