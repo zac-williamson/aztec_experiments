@@ -29,3 +29,15 @@ autonomously. Historical results do not qualify changed source.
   assumption, approved integrated fixes and regression coverage.
 - webkit_failure_review: now investigating the minimum persistent native-wallet
   reopen scenario for long absence. Root runs WebKit072; source inputs frozen.
+
+- webkit_failure_review: completed independent review of persistent native-wallet
+  reopen, checkpoint retention and absence scenario integration; approved.
+- application_change_review: reviews withdrawal across another author's traffic.
+  Caught portal's one-active-deposit-per-L1-account restriction before execution;
+  root uses two disposable collateral accounts. Pool-accounting integration next.
+
+- webkit_failure_review: completed shared/deploy adapter structural review. Approved
+  removal of generic retries and explicit canonical timestamp access. Reviewing
+  corrected CREATE2 runtime fixture after a stale fixture failed existing preflight.
+- application_change_review: completed withdrawal-traffic integration review; run076
+  passed original-proof ordering, exact exit attribution and fee accounting.

@@ -13,13 +13,15 @@ import {derivePrivateFeeInstance,preparePrivateFeePayment} from '../shared/priva
 import {bridgePrivateFeeCredit} from './w01-private-funding.mjs';
 import {ROOT} from './toolchain.mjs';
 import {restoreApplicationAuthor} from './w02-wallet-restore.mjs';
-export async function prepareW01PrivateFees({node,preparation,l1Client,directory,fundingDirectory,rpcUrl,mineL1,standalone=false,reportStage:mark}){
+export async function prepareW01PrivateFees({node,preparation,l1Client,directory,fundingDirectory,rpcUrl,mineL1,standalone=false,persistentDirectory,reportStage:mark}){
   const observation={passed:false,ownerless:true,offchainIssuer:false,operatorFunding:false,chargesMaximumFee:true};let wallet;
   try{
     const raw=JSON.parse(await fs.readFile(path.join(ROOT,'apps/src/billboard/private_fee_artifact.json'))),artifact=loadContractArtifact(raw),instance=await derivePrivateFeeInstance(raw),info=await node.getNodeInfo();
     const [generated]=await generateSchnorrAccounts(1,'schnorr_initializerless');
     const restored=await restoreApplicationAuthor(generated);const author=restored.author;observation.walletRestore=restored.observation;assert(!author.address.equals(preparation.account.address));assert.equal(await getFeeJuiceBalance(author.address,node),0n);
-    wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:{backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1},autoSync:false,syncChainTip:'checkpointed'}});
+    if(persistentDirectory!==undefined)assert(path.isAbsolute(persistentDirectory)&&path.dirname(persistentDirectory)===directory);
+    const openWallet=()=>EmbeddedWallet.create(node,{ephemeral:persistentDirectory===undefined,pxe:{...(persistentDirectory===undefined?{}:{dataDirectory:persistentDirectory}),proverEnabled:true,proverOrOptions:{backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1},autoSync:false,syncChainTip:'checkpointed'}});
+    wallet=await openWallet();
     await wallet.createSchnorrInitializerlessAccount(author.secret,author.salt,author.signingKey,'private-fee-test-author');await wallet.registerContract(instance,artifact);
     assert(path.isAbsolute(fundingDirectory));
     const poolBefore=await getFeeJuiceBalance(instance.address,node);
@@ -36,14 +38,15 @@ export async function prepareW01PrivateFees({node,preparation,l1Client,directory
       return {maximumFee:prepared.metadata.maximumFee,interaction,options:{from:owner,additionalScopes:[owner],fee:{paymentMethod:prepared.paymentMethod,gasSettings:prepared.gasSettings}},expectedFeePayer:instance.address};
     };
     if(standalone){const {proveAndIncludePrivateFeeStandalone}=await import('./w01-private-fee-standalone.mjs');observation.standalone=await proveAndIncludePrivateFeeStandalone({wallet,owner:author.address,privateFeeAction,node,mineL1,mark});}
-    const verify=async(fees)=>{
+    const verify=async(fees,netOtherPoolChange=0n)=>{
+      assert.equal(typeof netOtherPoolChange,'bigint');
       await wallet.pxe.sync();const {result}=await Contract.at(instance.address,artifact,wallet).methods.balance_of(author.address).simulate({from:author.address});
       assert.equal(BigInt(result.toString()),BigInt(funded.claim.amount)-allocated);
       assert.equal(await getFeeJuiceBalance(author.address,node),0n);
-      assert.equal(await getFeeJuiceBalance(instance.address,node),poolBefore+BigInt(funded.claim.amount)-fees-BigInt(observation.standalone?.transactionFee??0));
-      Object.assign(observation,{passed:true,coldStart:true,poolBefore:String(poolBefore),privateDebit:String(allocated),privateBalance:String(result),actualProtocolFees:String(fees+BigInt(observation.standalone?.transactionFee??0)),authorPublicBalanceZero:true,payer:instance.address.toString()});
+      assert.equal(await getFeeJuiceBalance(instance.address,node),poolBefore+BigInt(funded.claim.amount)-fees-BigInt(observation.standalone?.transactionFee??0)+netOtherPoolChange);
+      Object.assign(observation,{passed:true,coldStart:true,poolBefore:String(poolBefore),netOtherPoolChange:String(netOtherPoolChange),privateDebit:String(allocated),privateBalance:String(result),actualProtocolFees:String(fees+BigInt(observation.standalone?.transactionFee??0)),authorPublicBalanceZero:true,payer:instance.address.toString()});
     };
-    Object.defineProperties(observation,{fundingSender:{value:funded.sender},browserFixture:{value:{instance,artifact,gas,fundedAmount:BigInt(funded.claim.amount),get allocated(){return allocated;},get wallet(){return wallet;}}},discardUnsubmittedFee:{value:maximum=>{assert(BigInt(maximum)>0n&&allocated>=BigInt(maximum));allocated-=BigInt(maximum);}},authorAccount:{value:author},privateFeeAction:{value:privateFeeAction},verify:{value:verify},close:{value:async()=>{if(wallet){await wallet.stop();wallet=undefined;}}}});
+    Object.defineProperties(observation,{fundingSender:{value:funded.sender},browserFixture:{value:{instance,artifact,gas,fundedAmount:BigInt(funded.claim.amount),get allocated(){return allocated;},get wallet(){return wallet;}}},discardUnsubmittedFee:{value:maximum=>{assert(BigInt(maximum)>0n&&allocated>=BigInt(maximum));allocated-=BigInt(maximum);}},authorAccount:{value:author},privateFeeAction:{value:privateFeeAction},verify:{value:verify},reopen:{value:async()=>{assert(persistentDirectory!==undefined&&!wallet);wallet=await openWallet();}},close:{value:async()=>{if(wallet){await wallet.stop();wallet=undefined;}}}});
     return observation;
   }catch(error){if(error.privateFeeFundingObservation)observation.funding=error.privateFeeFundingObservation;if(error.privateFeeStandaloneObservation)observation.standalone=error.privateFeeStandaloneObservation;if(wallet)await wallet.stop();error.privateFeeObservation=observation;throw error;}
 }

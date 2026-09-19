@@ -1,0 +1,21 @@
+{"role":"fixture","stage":"start-disposable-l1","elapsedMs":261}
+{"role":"fixture","stage":"prepare-genesis","elapsedMs":373}
+{"role":"fixture","stage":"deploy-local-protocol-fixture","elapsedMs":1843}
+{"role":"fixture","stage":"wait-for-local-validator-activation","elapsedMs":2880}
+{"role":"fixture","stage":"start-application-node","elapsedMs":2896}
+{"role":"fixture","stage":"prove-board-deployment","elapsedMs":5491}
+{"role":"fixture","stage":"private-fee:fund-disposable-user","elapsedMs":70575}
+{"role":"fixture","stage":"private-fee:bridge-user-funds","elapsedMs":70585}
+{"role":"fixture","stage":"private-fee:wait-inbox","elapsedMs":71148}
+{"role":"fixture","stage":"claim:reopen-claim-wallet","elapsedMs":88512}
+{"role":"fixture","stage":"claim:deposit-real-l1","elapsedMs":88689}
+{"role":"fixture","stage":"claim:wait-real-inbox-anchor","elapsedMs":88694}
+{"role":"fixture","stage":"claim:prove-real-claim","elapsedMs":100632}
+{"role":"fixture","stage":"claim:include-real-claim","elapsedMs":114897}
+{"role":"fixture","stage":"claim:check-delivered-deposit-note","elapsedMs":123054}
+{"role":"fixture","stage":"claim:reject-real-claim-replay","elapsedMs":123178}
+{"role":"fixture","stage":"absence:first-post","elapsedMs":123388}
+{"role":"fixture","stage":"absence:close-wallet","elapsedMs":176227}
+{"role":"fixture","stage":"absence:reopen-wallet","elapsedMs":179911}
+{"role":"fixture","stage":"absence:second-post","elapsedMs":191141}
+{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/T04/application-c303664b-da84-4811-968f-8850ad2ebe7c.json","passed":true,"scenario":"wallet-absence"}

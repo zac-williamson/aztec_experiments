@@ -497,3 +497,10 @@ supervisor receive the same limit. Keep scenario deadlines unchanged
 (540seconds maximum), process ownership, sampling and cleanup intact. Historical
 2GiB results retain their original bounds. No additional fixture heap cap or
 alternate execution path is introduced.
+
+## 2026-09-19 — model access preference
+
+Do not request Cyber/Daybreak model overrides, including for delegated agents.
+If such access appears necessary, explain the specific task-related reason to
+the user before requesting it. An unsupported app-inserted access-program field
+cannot be fixed by changing application code or removing a source article.

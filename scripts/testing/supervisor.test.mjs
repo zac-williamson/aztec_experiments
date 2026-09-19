@@ -44,7 +44,7 @@ test('cleanup failure preserves the completed command and fails overall',{timeou
 });
 test('scenario selection is explicit and has no legacy/default route',()=>{
   for(const name of [undefined,'--bridge','bridge','--node','posting-diagnostic'])assert.throws(()=>getScenario(name));
-  for(const name of ['node','included-board','activated-board','censor-commands','private-fees','private-fee-post','flagged-journey','unflagged-journey','redeposit','proof-recovery','note-attribution','contention','screening','browser-post','browser-journey','browser-post-recovery','browser-firefox-post','browser-webkit-post','repeated-private-posts']){
+  for(const name of ['node','included-board','activated-board','censor-commands','private-fees','private-fee-post','flagged-journey','unflagged-journey','redeposit','proof-recovery','note-attribution','contention','screening','browser-post','browser-journey','browser-post-recovery','browser-firefox-post','browser-webkit-post','repeated-private-posts','wallet-absence','withdrawal-traffic']){
     const scenario=getScenario(name);assert(Object.isFrozen(scenario));assert.equal(scenario.name,name);assert.equal(typeof scenario.run,'function');
   }
   for(const engine of ['firefox','webkit'])assert.equal(getScenario('browser-'+engine+'-post').browserEngine,engine);

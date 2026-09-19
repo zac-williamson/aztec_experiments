@@ -1197,52 +1197,6 @@ const A = () => window.__aztec;
 // The shared environment resolves the explicit public configuration/manifest.
 function getNodeUrl() { return _getNodeUrl(); }
 
-// Transient error detection regex (used by multiple retry helpers)
-const TRANSIENT_RE = /temporary internal error|please retry|timeout|fetch|network|connection|ECONNRESET|socket/i;
-
-// ============================================================
-// createRetryFn -- returns a retry helper that logs to statusId
-// ============================================================
-function createRetryFn(statusId, label, maxRetries = 5) {
-  return async function retry(fn) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try { return await fn(); }
-      catch (err) {
-        const isTransient = TRANSIENT_RE.test(err.message || '');
-        if (!isTransient || attempt === maxRetries) throw err;
-        const delay = 2000 * attempt;
-        if (label) log('  [' + label + '] transient error (attempt ' + attempt + '/' + maxRetries + '), retrying in ' + delay/1000 + 's...', 'warn', statusId);
-        await new Promise(r => setTimeout(r, delay));
-      }
-    }
-  };
-}
-
-// ============================================================
-// wrapWithRetry -- wraps an aztecNode client in a retrying Proxy
-// ============================================================
-function wrapWithRetry(obj, label, statusId) {
-  return new Proxy(obj, {
-    get(target, prop) {
-      const val = target[prop];
-      if (typeof val !== 'function') return val;
-      return async (...args) => {
-        const maxRetries = 8;
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-          try { return await val.apply(target, args); }
-          catch (err) {
-            const isTransient = TRANSIENT_RE.test(err.message || '');
-            if (!isTransient || attempt === maxRetries) throw err;
-            const delay = 2000 * attempt;
-            if (label) log('  [' + label + '.' + String(prop) + '] transient error (attempt ' + attempt + '/' + maxRetries + '), retrying in ' + delay/1000 + 's...', 'warn', statusId);
-            await new Promise(r => setTimeout(r, delay));
-          }
-        }
-      };
-    }
-  });
-}
-
 // ============================================================
 // initCRS -- initialize signing primitives and the actual async proving CRS.
 // The PXE wrapper reuses this same verified async singleton.
@@ -1375,14 +1329,14 @@ function loadWallet(fileInputId) {
 // createAztecWallet -- create a wallet with gas estimation + prove/submit split
 // ============================================================
 // Returns a wallet instance (subclass of BaseWallet) that:
-// 1. Simulates to estimate gas (with retry)
+// 1. Simulates once to estimate gas
 // 2. Pads gas by 10%
 // 3. Calls optional preProveHook (can abort before wasting time on proving)
 // 4. Proves the tx (slow, no retry)
-// 5. Submits with extended retry (20 attempts, up to 30s delays)
-// 6. Polls for receipt with retry
+// 5. Submits once and reconciles the exact transaction
+// 6. Checks the canonical receipt
 //
-// rawNode is the unwrapped aztecNode client (for controlled retry on submit).
+// rawNode is the node client used for submission and receipt reconciliation.
 // statusId is the DOM element ID for logging.
 // opts.preProveHook: async function({ gasLimits, maxFee, feeOptions }) called
 //   after gas estimation but before proving. If it throws, proving is aborted.
@@ -1424,15 +1378,14 @@ function createAztecWallet(pxe, aztecNode, rawNode, statusId, opts = {}) {
         forEstimation: true,
       });
 
-      const simRetry = createRetryFn(S, 'simulation', 5);
-      const simResult = await simRetry(() => this.simulateViaEntrypoint(executionPayload, {
+      const simResult = await this.simulateViaEntrypoint(executionPayload, {
         from: opts.from,
         feeOptions,
         skipTxValidation: true,
         skipFeeEnforcement: true,
         additionalScopes: opts.additionalScopes,
         sendMessagesAs: opts.sendMessagesAs,
-      }));
+      });
 
       const gu = simResult.gasUsed;
       const pad = 1 + this._estimatedGasPadding;
@@ -1458,7 +1411,7 @@ function createAztecWallet(pxe, aztecNode, rawNode, statusId, opts = {}) {
 
       log('  Proving tx (can take minutes)...', 'info', S);
 
-      // Split proving from submission so we can retry just the submission.
+      // Separate proving from submission and canonical receipt reconciliation.
       // Preserve the proven transaction so uncertain submission never causes an automatic re-proof.
       const feeOpts2 = await this.completeFeeOptions({
         from: opts.from,
@@ -1529,11 +1482,11 @@ async function ensureAztecSetup(state, statusId, opts = {}) {
   state.partialAddress = partialAddress;
   state.instance = instance;
 
-  // Step 2: Create node client with retry
+  // Step 2: Create node client
   log('Step 2: Connecting to Aztec node...', 'info', S);
   const rawNode = a.createAztecNodeClient(nodeUrl);
   state.rawNode = rawNode;
-  const aztecNode = wrapWithRetry(rawNode, 'node', S);
+  const aztecNode = rawNode;
   state.aztecNode = aztecNode;
   const nodeInfo = await aztecNode.getNodeInfo();
   log('  Chain ID: ' + nodeInfo.chainId, 'info', S);
@@ -1580,9 +1533,8 @@ async function ensureAztecSetup(state, statusId, opts = {}) {
 
   // Step 6: Register account contract class
   log('Step 6: Registering Schnorr initializerless account contract...', 'info', S);
-  const retry = createRetryFn(S, 'register', 5);
-  await retry(() => pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact));
-  await retry(() => pxe.registerContract(instance));
+  await pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact);
+  await pxe.registerContract(instance);
   log('  Contract registered.', 'success', S);
 
   // Now sync -- the PXE will process all blocks with the account and contract
@@ -1649,13 +1601,12 @@ function extractErrorMessage(err) {
 // getL2Timestamp -- get current L2 block timestamp
 // ============================================================
 async function getL2Timestamp(aztecNode) {
-  const node = aztecNode || (state && state.aztecNode);
+  const node = aztecNode;
   if (!node) throw new Error('No Aztec node available');
   const blockNum = await node.getBlockNumber();
   const block = await node.getBlock(blockNum);
-  // v5 L2Block has a .timestamp getter = header.globalVariables.timestamp
-  const ts = block.timestamp || block.header?.globalVariables?.timestamp || block.header?.timestamp;
-  if (ts === undefined || ts === null) throw new Error('Could not get L2 timestamp from block');
+  const ts = block?.header?.globalVariables?.timestamp;
+  if ((typeof ts !== 'bigint' && typeof ts !== 'number') || !Number.isSafeInteger(Number(ts)) || ts < 0) throw new Error('Could not get a valid L2 timestamp from block');
   return Number(ts);
 }
 

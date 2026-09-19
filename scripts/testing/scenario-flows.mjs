@@ -1,3 +1,6 @@
+import {observeWithdrawalTraffic} from '../t04-withdraw-traffic.mjs';
+import path from 'node:path';
+import {observeWalletAbsence} from '../t04-wallet-absence.mjs';
 import {observeRepeatedPrivatePosts} from '../t03-repeated-posts.mjs';
 import assert from 'node:assert/strict';
 import {withActivatedBoard} from '../c01-bridge-flow.mjs';
@@ -16,9 +19,9 @@ import {runO01CensorCommands} from '../o01-censor-command-flow.mjs';
 
 const complete=async()=>{
 };
-async function fees(s,standalone){
+async function fees(s,standalone,persistentDirectory){
   s.privateFee=await prepareW01PrivateFees({
-    ...s.common,fundingDirectory:s.directory,standalone
+    ...s.common,fundingDirectory:s.directory,standalone,persistentDirectory
   });
   assert(s.privateFee.funding.passed);
   s.observation.privateFee=s.privateFee;
@@ -236,4 +239,17 @@ export function browserLifecycle(ctx){
 
 export function repeatedPrivatePosts(ctx){
  return withActivatedBoard(ctx,async s=>{await observeRepeatedPrivatePosts(s);return complete;});
+}
+
+export function walletAbsence(ctx){
+ return withActivatedBoard(ctx,async s=>{
+  await fees(s,false,path.join(s.directory,'persisted-wallet'));
+  await claim(s,false,'private');
+  await observeWalletAbsence(s);
+  return complete;
+ });
+}
+
+export function withdrawalTraffic(ctx){
+ return withActivatedBoard(ctx,async s=>{await observeWithdrawalTraffic(s);return complete;});
 }

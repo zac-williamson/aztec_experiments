@@ -18,7 +18,6 @@
   // ============================================================
   // Constants
   // ============================================================
-  const TRANSIENT_RE = /temporary internal error|please retry|timeout|fetch|network|connection|ECONNRESET|socket/i;
   const CREATE2_PROXY = '0x4e59b44847b379578588920cA78FbF26c0B4956C';
 
   const PORTAL_ABI = [
@@ -39,7 +38,6 @@
   // ============================================================
   // Helpers
   // ============================================================
-  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
   // This is also the maintained behavioral test seam; runDeploy uses this exact path.
   async function activateReady({ node, portal, hash, leaf, ethers, log,
@@ -122,42 +120,6 @@
     return (Number(bi * factor / 10n ** 18n) / Number(factor)).toFixed(decimals);
   }
 
-  // Retry wrapper for transient errors
-  async function retry(fn, label, log, maxRetries = 8) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try { return await fn(); }
-      catch (err) {
-        const isTransient = TRANSIENT_RE.test(err.message || '');
-        if (!isTransient || attempt === maxRetries) throw err;
-        const delay = 2000 * attempt;
-        if (label) log('  [' + label + '] transient error (attempt ' + attempt + '/' + maxRetries + '), retrying in ' + delay/1000 + 's...', 'warn');
-        await sleep(delay);
-      }
-    }
-  }
-
-  // Wrap a node client with retry proxy
-  function wrapWithRetry(obj, label, log) {
-    return new Proxy(obj, {
-      get(target, prop) {
-        const val = target[prop];
-        if (typeof val !== 'function') return val;
-        return async (...args) => {
-          for (let attempt = 1; attempt <= 8; attempt++) {
-            try { return await val.apply(target, args); }
-            catch (err) {
-              const isTransient = TRANSIENT_RE.test(err.message || '');
-              if (!isTransient || attempt === 8) throw err;
-              const delay = 2000 * attempt;
-              if (label) log('  [' + label + '.' + String(prop) + '] transient error (attempt ' + attempt + '/8), retrying in ' + delay/1000 + 's...', 'warn');
-              await sleep(delay);
-            }
-          }
-        };
-      }
-    });
-  }
-
   // CREATE2 portal address computation
   function portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, maxDeposit, configHash, ethers) {
     const iface = new ethers.Interface(portalAbi);
@@ -173,7 +135,7 @@
   }
 
   // ============================================================
-  // Aztec Wallet (custom BaseWallet with gas estimation + retry)
+  // Aztec Wallet (custom BaseWallet with gas estimation and receipt reconciliation)
   // ============================================================
   function createAztecWallet(a, pxe, aztecNode, rawNode, log, secretKey, opts = {}) {
     class AztecWallet extends a.BaseWallet {
@@ -212,13 +174,10 @@
           forEstimation: true,
         });
 
-        const simResult = await retry(
-          () => this.simulateViaEntrypoint(executionPayload, {
+        const simResult = await this.simulateViaEntrypoint(executionPayload, {
             from: opts.from, feeOptions, skipTxValidation: true, skipFeeEnforcement: true,
             additionalScopes: opts.additionalScopes, sendMessagesAs: opts.sendMessagesAs,
-          }),
-          'simulation', log, 5
-        );
+        });
 
         const gu = simResult.gasUsed;
         const pad = 1 + this._estimatedGasPadding;
@@ -334,7 +293,7 @@
     log('Step 2: Connecting to Aztec node...', 'info');
     const nodeUrl = config.aztecNodeUrl;
 
-    const aztecNode = wrapWithRetry(rawNode, 'node', log);
+    const aztecNode = rawNode;
 
     log('  Chain ID: ' + nodeInfo.l1ChainId, 'info');
     log('  Rollup version: ' + nodeInfo.rollupVersion, 'info');
@@ -421,8 +380,8 @@
     log('  Account registered.', 'success');
 
     log('  Registering Schnorr initializerless account contract...', 'info');
-    await retry(() => pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact), 'register', log, 5);
-    await retry(() => pxe.registerContract(instance), 'register', log, 5);
+    await pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact);
+    await pxe.registerContract(instance);
     log('  Contract registered.', 'success');
 
     log('  Syncing PXE with node...', 'info');

@@ -9,13 +9,13 @@ import {BlockHash} from '@aztec/stdlib/block';
 import * as outcomes from '../shared/transaction-outcomes.mjs';
 const hash=TxHash.zero();
 const mined=(executionResult='success',status='checkpointed')=>MinedTxReceipt.from({txHash:hash,status,executionResult,transactionFee:0n,blockHash:BlockHash.ZERO,blockNumber:1,slotNumber:1,txIndexInBlock:0,epochNumber:0});
-function fixture(consumer,{receipts=[mined()],submitError,proofError,blockHash=BlockHash.ZERO,validation={result:'valid'},preProveHook,transactionJournal}={}) {
- let now=0;const logs=[],calls={proof:0,submit:0,receipt:0};
+function fixture(consumer,{receipts=[mined()],submitError,proofError,simulationError,blockHash=BlockHash.ZERO,validation={result:'valid'},preProveHook,transactionJournal}={}) {
+ let now=0;const logs=[],calls={simulation:0,proof:0,submit:0,receipt:0};
  const gas={l2Gas:100,daGas:10,mul(){return this;},computeFee(){return{toBigInt:()=>1n};}};
  class BaseWallet {
   constructor(pxe){this.pxe=pxe;}
   completeFeeOptions=async()=>({gasSettings:{maxFeesPerGas:{},maxPriorityFeesPerGas:{}}});
-  simulateViaEntrypoint=async()=>({gasUsed:{totalGas:gas,teardownGas:gas}});
+  simulateViaEntrypoint=async()=>{calls.simulation++;if(simulationError)throw simulationError;return {gasUsed:{totalGas:gas,teardownGas:gas}};};
   createTxExecutionRequestFromPayloadAndFee=async()=>({});
   scopesFrom=()=>[];senderForTagsFrom=()=>undefined;
  }
@@ -64,4 +64,18 @@ for(const consumer of ['user','deploy'])for(const boundary of ['assertCanStart',
 for(const consumer of ['user','deploy'])test(`${consumer}: exact transaction is saved before send and acknowledged only after canonical success`,async()=>{
  let f;const events=[];const journal={assertCanStart:async()=>{events.push('read');return {encoded:'prior'};},prepare:async(tx,prior)=>{assert.equal(tx.getTxHash().toString(),hash.toString());assert.equal(prior.encoded,'prior');assert.equal(f.calls.proof,1);assert.equal(f.calls.submit,0);events.push('save');},confirmed:receipt=>{assert.equal(f.calls.submit,1);assert.equal(receipt.executionResult,'success');events.push('confirmed');}};
  f=fixture(consumer,{transactionJournal:journal});await f.send();assert.deepEqual(events,['read','save','confirmed']);
+});
+
+for(const consumer of ['shared','deploy','user'])test(`${consumer}: simulation transport failure stops after one attempt`,async()=>{
+ const failure=Error('network timeout'),f=fixture(consumer,{simulationError:failure});
+ await assert.rejects(f.send(),error=>error===failure);
+ assert.equal(f.calls.simulation,1);assert.equal(f.calls.proof,0);assert.equal(f.calls.submit,0);
+});
+test('shared timestamp reads the canonical header, including zero',async()=>{
+ const c=vm.createContext({});vm.runInContext(fs.readFileSync(new URL('../shared/aztec-lib.js',import.meta.url),'utf8'),c);
+ for(const timestamp of [0n,100n]){
+  const node={getBlockNumber:async()=>1,getBlock:async()=>({timestamp:999n,header:{globalVariables:{timestamp}}})};
+  assert.equal(await c.getL2Timestamp(node),Number(timestamp));
+ }
+ for(const timestamp of [undefined,-1n,2n**60n,'100'])await assert.rejects(c.getL2Timestamp({getBlockNumber:async()=>1,getBlock:async()=>({header:{globalVariables:{timestamp}}})}));
 });

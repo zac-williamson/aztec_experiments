@@ -28,6 +28,8 @@ There are no implicit defaults, cascading environment flags or legacy aliases. T
 | `censor-commands` | Packaged moderator handover and successor policy change with private fees |
 | `private-fees` | Private fee funding, collateral claim, exit and Ethereum refund |
 | `repeated-private-posts` | Same-board A1, A2, B1 with distinct collateral and fee funders; exact public-field and private-fee accounting |
+| `wallet-absence` | Persistent native wallet reopen after simulated30day absence; exact deposit, screening and private-fee credit |
+| `withdrawal-traffic` | Original withdrawal proof survives another author post; that author continues posting afterward |
 | `private-fee-post` | Cold private fee claim and private-balance posting |
 | `flagged-journey`, `unflagged-journey` | Posting, screening, eligible exit and refund |
 | `redeposit` | Second deposit/refund and replay rejection |

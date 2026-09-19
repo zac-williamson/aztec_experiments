@@ -1499,17 +1499,17 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "WebKit074 real private-fee post PASS268196ms, GUI73901ms, peak2171472KiB under user-approved4GiB; canonical node effects and all cleanup pass. Timestamp/cooldown corrections pass116 checks. Next: persisted native-wallet reopen after simulated30day absence.",
+      "checkpoint": "WebKit074, wallet-absence075 and withdrawal-traffic076 real application checks pass with cleanup. Shared/deploy retry removal passes100 checks, corrected deployment-recovery fixture33/33, app build077 and independent reviews pass. Next: current Firefox155 actual posting qualification.",
       "priority": 24,
       "completion_requires": [
         "O01"
       ],
       "execution_lane": "browser-recovery",
       "investigation": {
-        "hypothesis": "Pinned EmbeddedWallet supports persistent PXE/account stores; close/reopen same directory without re-registration should preserve exact deposit note and private credit across simulated30day absence. Official local checkpoint retention prevents pruning; no network proof.",
+        "hypothesis": "Firefox146 failed old proof workload; pinned Firefox155 normal-profile storage/history passes. Current app fixes canonical RPC timestamp and removes hidden adapter retries. Qualify actual private post on updated browser once with4GiB/540s and existing proof-phase observation.",
         "attempts": 0,
         "max_attempts": 1,
-        "next_action": "Integrate reviewed wallet persistence into existing helper/scenario; verify bottom-up then run one bounded long-absence application test."
+        "next_action": "Verify rebuilt app and deployment recovery checks, then one current Firefox post078; no unchanged repeat."
       }
     },
     {

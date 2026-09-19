@@ -17,6 +17,8 @@ import {expectedPortalRuntime,verifyPortalRuntime} from '../shared/portal-runtim
 const runtimeMetadata=JSON.parse(await readFile(new URL('../shared/portal-runtime.json',import.meta.url),'utf8'));
 import {boundedTransactionRead} from '../shared/transaction-outcomes.mjs';
 const source=await readFile(new URL('../apps/src/billboard/deploy/engine.js',import.meta.url),'utf8');
+const create2Proxy='0x4e59b44847b379578588920ca78fbf26c0b4956c';
+const create2Runtime='0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3';
 const field=n=>'0x'+BigInt(n).toString(16).padStart(64,'0');
 class FixtureTx {
  constructor(kind,proof=0){this.kind=kind;this.proof=proof;}
@@ -62,7 +64,7 @@ function fixture({lostBinding=false,lostDeploy=false,existing=true,staleDeploy=f
    }}),
   }};
  const runtimeValues={L2_CONTRACT:board.toString(),ROLLUP:rollup,VERSION:5n,L1_CHAIN_ID:31337n,MIN_DEPOSIT:1n,MAX_DEPOSIT:100n,CONFIG_HASH:configHash,INBOX:inbox,OUTBOX:outbox};
- let destroyed=0;const provider={destroy(){destroyed++;},getNetwork:async()=>({chainId:31337n}),getCode:async address=>[rollup,inbox,outbox].includes(address.toLowerCase())?'0x6000':expectedPortalRuntime(runtimeMetadata,runtimeValues)};
+ let destroyed=0;const provider={destroy(){destroyed++;},getNetwork:async()=>({chainId:31337n}),getCode:async address=>address.toLowerCase()===create2Proxy?create2Runtime:[rollup,inbox,outbox].includes(address.toLowerCase())?'0x6000':expectedPortalRuntime(runtimeMetadata,runtimeValues)};
  const portal={getInbox:async()=>inbox,getOutbox:async()=>outbox,INBOX:async()=>inbox,OUTBOX:async()=>outbox,L2_CONTRACT:async()=>board.toString(),ROLLUP:async()=>rollup,VERSION:async()=>5n,L1_CHAIN_ID:async()=>31337n,MIN_DEPOSIT:async()=>1n,MAX_DEPOSIT:async()=>100n,CONFIG_HASH:async()=>configHash,depositsEnabled:async()=>false};
  const env={aztec:a,ethers:{...ethers,JsonRpcProvider:class{constructor(){return provider;}},Contract:class{constructor(){return portal;}}},log(){},pause(){throw new Error('unexpected pause');},initCRS:async()=>{},createStore:async()=>({}),artifact:{},portalBytecode:'0x6000',
   getBrowserSigner:async()=>({provider,getAddress:async()=>sender}),createJournalStorage:()=>storage,
@@ -106,7 +108,7 @@ test('stale binding cannot silently accept another binding that appeared meanwhi
  await assert.rejects(f.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(f.bindings,1);
 });
 test('stale binding cannot redeploy a missing original Ethereum portal',async()=>{
- const f=fixture({staleBinding:true});await assert.rejects(f.run(),/synthetic stale proof/);f.clearLoss();const previous=f.provider.getCode;f.provider.getCode=async address=>[f.manifest.network.rollup,f.manifest.network.inbox,f.manifest.network.outbox].includes(address.toLowerCase())?previous(address):'0x';
+ const f=fixture({staleBinding:true});await assert.rejects(f.run(),/synthetic stale proof/);f.clearLoss();const previous=f.provider.getCode;f.provider.getCode=async address=>[create2Proxy,f.manifest.network.rollup,f.manifest.network.inbox,f.manifest.network.outbox].includes(address.toLowerCase())?previous(address):'0x';
  await assert.rejects(f.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(f.bindings,1);
 });
 
@@ -130,7 +132,7 @@ for(const kind of ['missing manifest','Aztec actor','Ethereum actor','chain','br
 });
 for(const kind of ['runtime','inbox','outbox','policy','censor'])test(`existing deployment rejects ${kind} mismatch before binding`,async()=>{
  const f=fixture();
- if(kind==='runtime'){const original=f.provider.getCode;f.provider.getCode=async address=>{const code=await original(address);return code==='0x6000'?code:code+'00';};}
+ if(kind==='runtime'){const original=f.provider.getCode;f.provider.getCode=async address=>{const code=await original(address);return address.toLowerCase()===create2Proxy||code==='0x6000'?code:code+'00';};}
  if(kind==='inbox')f.portal.INBOX=async()=> '0x'+'a'.repeat(40);
  if(kind==='outbox')f.portal.OUTBOX=async()=> '0x'+'a'.repeat(40);
  if(kind==='policy'||kind==='censor'){const original=f.env.aztec.Contract.at;f.env.aztec.Contract.at=async(...args)=>{const contract=await original(...args);contract.methods[kind==='policy'?'get_policy_version':'get_censor']=()=>({simulate:async()=>99n});return contract;};}

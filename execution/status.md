@@ -6,8 +6,8 @@ Objective state: **running**. Completed packages: 24/35.
 
 ## In progress
 
-- **Run browser, recovery, concurrency and load matrix (T04)** — WebKit074 real private-fee post PASS268196ms, GUI73901ms, peak2171472KiB under user-approved4GiB; canonical node effects and all cleanup pass. Timestamp/cooldown corrections pass116 checks. Next: persisted native-wallet reopen after simulated30day absence.
-  Investigation: 0/1 attempts. Integrate reviewed wallet persistence into existing helper/scenario; verify bottom-up then run one bounded long-absence application test.
+- **Run browser, recovery, concurrency and load matrix (T04)** — WebKit074, wallet-absence075 and withdrawal-traffic076 real application checks pass with cleanup. Shared/deploy retry removal passes100 checks, corrected deployment-recovery fixture33/33, app build077 and independent reviews pass. Next: current Firefox155 actual posting qualification.
+  Investigation: 0/1 attempts. Verify rebuilt app and deployment recovery checks, then one current Firefox post078; no unchanged repeat.
 
 ## Ready internal work
 
