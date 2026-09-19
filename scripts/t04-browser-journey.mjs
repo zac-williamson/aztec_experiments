@@ -11,7 +11,7 @@ export function validateBrowserControl(value){
  assert.deepEqual(Object.keys(value).sort(),['backupPassword','browserEngine','browserJourney','browserRecovery','origin','rpcToken']);
  assert.equal(typeof value.browserJourney,'boolean');assert.equal(typeof value.browserRecovery,'boolean');assert(!(value.browserJourney&&value.browserRecovery));
  assert(['chromium','firefox','webkit'].includes(value.browserEngine));
- assert(!(value.browserJourney||value.browserRecovery)||value.browserEngine==='chromium');
+ assert(!value.browserRecovery||value.browserEngine==='chromium');
  const origin=new URL(value.origin);assert(origin.protocol==='https:'&&origin.hostname==='127.0.0.1'&&origin.pathname==='/'&&!origin.username&&!origin.password&&!origin.search&&!origin.hash);
  assert(typeof value.rpcToken==='string'&&/^[a-zA-Z0-9_-]{24,256}$/.test(value.rpcToken));
  assert(typeof value.backupPassword==='string'&&/^[a-zA-Z0-9_-]{24,256}$/.test(value.backupPassword));

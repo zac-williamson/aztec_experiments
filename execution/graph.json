@@ -1473,7 +1473,7 @@
       "plan": "tasks/T04.md",
       "actions": [
         "Test the agreed current browser/device matrix and supported wallet routes with reproducible hardware/network metadata.",
-        "Run the required 10-author and 1,000-lifetime-post workloads, long absence, repeated deposits and withdrawal during traffic.",
+        "Qualify long history using the recorded C04 layered method: boundary lifecycles, authenticated seeded continuation/exit beyond 1,000 records, and actual persisted PXE/browser history measurements. Reconcile against current sources. Retain ten-author same-anchor concurrency evidence with its genesis-fee limitation; test long absence, repeated deposits and withdrawal during traffic. Do not claim 1,000 executed publications or single-block throughput.",
         "Inject reorgs, RPC delays/outages, crash/reload, duplicate submissions, signer failure and private fee credit exhaustion.",
         "Measure and address cold browser proving-data initialization: P04 observed 109.6 seconds for 1,179,648 BN254 points on one host during other verification work. Qualify representative startup/proving latency and capacity with actual workloads; separate smoke-test budgets do not establish production performance.",
         "Measure cold SDK delivery/parse/readiness separately from SRS initialization on supported hosts. Reconcile any lazy-loading/code-splitting change with full output manifests, worker paths and actual browser journeys; retain source-bound timeout failures as diagnostic evidence."
@@ -1499,17 +1499,17 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "WebKit074, wallet-absence075 and withdrawal-traffic076 real application checks pass with cleanup. Shared/deploy retry removal passes100 checks, corrected deployment-recovery fixture33/33, app build077 and independent reviews pass. Next: current Firefox155 actual posting qualification.",
+      "checkpoint": "Firefox lifecycle084 passes378008ms/3598176KiB; mobile reader083passes. All5currentcontract history085 tests pass, native1100record084 and client3tests pass. Next WebKit full lifecycle086, same driver/bounds, source frozen.",
       "priority": 24,
       "completion_requires": [
         "O01"
       ],
       "execution_lane": "browser-recovery",
       "investigation": {
-        "hypothesis": "Firefox146 failed old proof workload; pinned Firefox155 normal-profile storage/history passes. Current app fixes canonical RPC timestamp and removes hidden adapter retries. Qualify actual private post on updated browser once with4GiB/540s and existing proof-phase observation.",
-        "attempts": 0,
+        "hypothesis": "WebKit26.6 realpost074 and portable Firefox fulljourney084 pass; same independently reviewed lifecycle driver should qualify WebKit deposit through refund within540s/4GiB.",
+        "attempts": 1,
         "max_attempts": 1,
-        "next_action": "Verify rebuilt app and deployment recovery checks, then one current Firefox post078; no unchanged repeat."
+        "next_action": "Inspect WebKit086 canonical stages, fee accounting, result and cleanup; diagnose failure without unchanged retry."
       }
     },
     {

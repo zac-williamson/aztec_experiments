@@ -51,6 +51,9 @@
   button.secondary:hover { background: #444; }
   button.working, .nav-next.working { opacity: 0.8; }
 
+  /* Public identifiers and user text must fit narrow reading screens. */
+  #boardConfiguration, #messages article { overflow-wrap: anywhere; }
+
   /* Wallet buttons */
   .wallet-btns { display: flex; flex-direction: column; gap: 0.6rem; }
   button.wallet-btn { background: #333; font-weight: 500; font-size: 0.9rem; }

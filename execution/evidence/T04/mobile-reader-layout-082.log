@@ -1,0 +1,25 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Configuration must fit the actual mobile viewport before connecting
++ actual - expected
+
+  {
+    client: 390,
++   inner: 683,
++   scroll: 683
+-   inner: 390,
+-   scroll: 390
+  }
+
+    at file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-public-feed-browser.mjs:37:175 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: { inner: 683, scroll: 683, client: 390 },
+  expected: { inner: 390, scroll: 390, client: 390 },
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

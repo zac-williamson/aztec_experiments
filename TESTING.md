@@ -39,7 +39,7 @@ There are no implicit defaults, cascading environment flags or legacy aliases. T
 | `screening` | Authenticated screening constraints; explicitly genesis-funded constraint fixture |
 | `browser-firefox-post`, `browser-webkit-post` | Explicit engine private-fee posting; no automatic browser substitution |
 | `browser-post` | Actual GUI posting after native private-fee setup |
-| `browser-journey` | GUI deposit, claim, post, screening, withdrawal and refund |
+| `browser-journey`, `browser-firefox-journey`, `browser-webkit-journey` | Explicit engine GUI deposit, claim, post, screening, withdrawal and refund |
 | `browser-post-recovery` | Accepted post, lost response, browser restart and original transaction recovery |
 
 The two genesis-funded constraint scenarios test application authorization and conflicts. They do not qualify private fee anonymity and never select their payer after a private-payment failure.

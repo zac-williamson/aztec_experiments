@@ -504,3 +504,16 @@ Do not request Cyber/Daybreak model overrides, including for delegated agents.
 If such access appears necessary, explain the specific task-related reason to
 the user before requesting it. An unsupported app-inserted access-program field
 cannot be fixed by changing application code or removing a source article.
+
+
+## 2026-09-19 — reconcile long-history qualification wording
+
+T04's shorthand “1,000-lifetime-post workloads” conflicted with the existing C04
+decision, which explicitly uses layered testing instead of a repetitive 1,001-proof
+run. Align REQ04 and T04's action with that method; preserve historical evidence.
+17/33-post stateful TXE lifecycles are not cryptographic proofs; the 1,002-note
+contract fixture and 1,100 persisted NoteDao records are seeded/synthetic. Actual
+application proofs separately qualify integration. Ten-author same-anchor evidence
+uses genesis-funded fixture fees; two-author private-fee traffic is distinct.
+Current-source reconciliation and measured storage scaling remain required. This
+is reconciliation with an existing decision, not a waiver of a failed workload.

@@ -108,7 +108,9 @@ memory or meets a performance target. Recorded Chromium application journeys cov
 26.6 normal-profile checks cover storage, encrypted wallet creation, synthetic
 1,100-note persisted history/reopen and one real private-fee post with canonical
 node verification. This does not yet qualify its full deposit-to-withdraw journey.
-Firefox146 proof generation exceeded the nine-minute test budget. Consult current
+Firefox155 passes the full deposit, claim, post, screening, withdrawal and refund
+journey in6minutes18seconds on the recorded host, using native-prepared private
+fee credit and a disposable Ethereum wallet adapter. The earlier Firefox146 timeout remains historical evidence. Consult current
 release evidence before claiming support. Private/incognito WebKit storage is not
 supported by this wallet; readiness rejects it.
 If a prerequisite is unavailable, do not bypass the check; public reading remains

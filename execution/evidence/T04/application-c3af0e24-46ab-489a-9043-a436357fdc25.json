@@ -1,0 +1,3176 @@
+{
+  "schemaVersion": 2,
+  "scenario": "browser-firefox-post",
+  "profile": "Actual firefox private-fee post",
+  "startedAt": "2026-09-19T16:19:35.660Z",
+  "passed": true,
+  "stages": [
+    {
+      "role": "fixture",
+      "stage": "start-disposable-l1",
+      "elapsedMs": 454
+    },
+    {
+      "role": "fixture",
+      "stage": "prepare-genesis",
+      "elapsedMs": 567
+    },
+    {
+      "role": "fixture",
+      "stage": "deploy-local-protocol-fixture",
+      "elapsedMs": 2018
+    },
+    {
+      "role": "fixture",
+      "stage": "wait-for-local-validator-activation",
+      "elapsedMs": 2961
+    },
+    {
+      "role": "fixture",
+      "stage": "start-application-node",
+      "elapsedMs": 2976
+    },
+    {
+      "role": "fixture",
+      "stage": "prove-board-deployment",
+      "elapsedMs": 5459
+    },
+    {
+      "role": "fixture",
+      "stage": "private-fee:fund-disposable-user",
+      "elapsedMs": 70515
+    },
+    {
+      "role": "fixture",
+      "stage": "private-fee:bridge-user-funds",
+      "elapsedMs": 70523
+    },
+    {
+      "role": "fixture",
+      "stage": "private-fee:wait-inbox",
+      "elapsedMs": 71118
+    },
+    {
+      "role": "fixture",
+      "stage": "claim:reopen-claim-wallet",
+      "elapsedMs": 88465
+    },
+    {
+      "role": "fixture",
+      "stage": "claim:deposit-real-l1",
+      "elapsedMs": 88630
+    },
+    {
+      "role": "fixture",
+      "stage": "claim:wait-real-inbox-anchor",
+      "elapsedMs": 88635
+    },
+    {
+      "role": "fixture",
+      "stage": "claim:prove-real-claim",
+      "elapsedMs": 100650
+    },
+    {
+      "role": "fixture",
+      "stage": "claim:include-real-claim",
+      "elapsedMs": 115001
+    },
+    {
+      "role": "fixture",
+      "stage": "claim:check-delivered-deposit-note",
+      "elapsedMs": 123120
+    },
+    {
+      "role": "fixture",
+      "stage": "claim:reject-real-claim-replay",
+      "elapsedMs": 123248
+    },
+    {
+      "role": "fixture",
+      "stage": "browser-prepare-handoff",
+      "elapsedMs": 123402
+    },
+    {
+      "role": "fixture",
+      "stage": "browser-ready",
+      "elapsedMs": 153960
+    },
+    {
+      "role": "browser",
+      "stage": "local-https",
+      "elapsedMs": 154120
+    },
+    {
+      "role": "browser",
+      "stage": "browser-start",
+      "elapsedMs": 154600
+    },
+    {
+      "role": "browser",
+      "stage": "wallet-software",
+      "elapsedMs": 156048
+    },
+    {
+      "role": "browser",
+      "stage": "public-config-import",
+      "elapsedMs": 156821
+    },
+    {
+      "role": "browser",
+      "stage": "encrypted-wallet-restore",
+      "elapsedMs": 156871
+    },
+    {
+      "role": "browser",
+      "stage": "wallet-connect-and-status",
+      "elapsedMs": 157117
+    },
+    {
+      "role": "browser",
+      "stage": "actual-gui-post",
+      "elapsedMs": 159487
+    },
+    {
+      "role": "browser",
+      "stage": "prover-start",
+      "elapsedMs": 162183
+    },
+    {
+      "role": "browser",
+      "stage": "prover-load",
+      "elapsedMs": 162198
+    },
+    {
+      "role": "browser",
+      "stage": "prover-accumulate",
+      "elapsedMs": 162225
+    },
+    {
+      "role": "browser",
+      "stage": "prover-load",
+      "elapsedMs": 162726
+    },
+    {
+      "role": "browser",
+      "stage": "prover-accumulate",
+      "elapsedMs": 162755
+    },
+    {
+      "role": "browser",
+      "stage": "prover-load",
+      "elapsedMs": 163273
+    },
+    {
+      "role": "browser",
+      "stage": "prover-accumulate",
+      "elapsedMs": 163694
+    },
+    {
+      "role": "browser",
+      "stage": "prover-load",
+      "elapsedMs": 167828
+    },
+    {
+      "role": "browser",
+      "stage": "prover-accumulate",
+      "elapsedMs": 167956
+    },
+    {
+      "role": "browser",
+      "stage": "prover-load",
+      "elapsedMs": 170764
+    },
+    {
+      "role": "browser",
+      "stage": "prover-accumulate",
+      "elapsedMs": 170965
+    },
+    {
+      "role": "browser",
+      "stage": "prover-load",
+      "elapsedMs": 177016
+    },
+    {
+      "role": "browser",
+      "stage": "prover-accumulate",
+      "elapsedMs": 177032
+    },
+    {
+      "role": "browser",
+      "stage": "prover-finalize",
+      "elapsedMs": 177095
+    },
+    {
+      "role": "browser",
+      "stage": "prover-hiding-key",
+      "elapsedMs": 188220
+    },
+    {
+      "role": "browser",
+      "stage": "prover-verify",
+      "elapsedMs": 189114
+    },
+    {
+      "role": "browser",
+      "stage": "prover-compress",
+      "elapsedMs": 189305
+    },
+    {
+      "role": "fixture",
+      "stage": "browser-verify-canonical-post",
+      "elapsedMs": 206890
+    }
+  ],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 3624240,
+  "rssSamples": [
+    {
+      "elapsedMs": 1002,
+      "rssKiB": 612080
+    },
+    {
+      "elapsedMs": 2018,
+      "rssKiB": 835600
+    },
+    {
+      "elapsedMs": 3037,
+      "rssKiB": 969968
+    },
+    {
+      "elapsedMs": 4058,
+      "rssKiB": 1072288
+    },
+    {
+      "elapsedMs": 5075,
+      "rssKiB": 1172080
+    },
+    {
+      "elapsedMs": 6091,
+      "rssKiB": 1518688
+    },
+    {
+      "elapsedMs": 7107,
+      "rssKiB": 1621936
+    },
+    {
+      "elapsedMs": 8130,
+      "rssKiB": 1878320
+    },
+    {
+      "elapsedMs": 9145,
+      "rssKiB": 1959520
+    },
+    {
+      "elapsedMs": 10160,
+      "rssKiB": 1985152
+    },
+    {
+      "elapsedMs": 11177,
+      "rssKiB": 2149312
+    },
+    {
+      "elapsedMs": 12193,
+      "rssKiB": 2178240
+    },
+    {
+      "elapsedMs": 13209,
+      "rssKiB": 2157728
+    },
+    {
+      "elapsedMs": 14225,
+      "rssKiB": 2159712
+    },
+    {
+      "elapsedMs": 15241,
+      "rssKiB": 2165264
+    },
+    {
+      "elapsedMs": 16257,
+      "rssKiB": 2170224
+    },
+    {
+      "elapsedMs": 17274,
+      "rssKiB": 2171840
+    },
+    {
+      "elapsedMs": 18290,
+      "rssKiB": 2200800
+    },
+    {
+      "elapsedMs": 19308,
+      "rssKiB": 2202880
+    },
+    {
+      "elapsedMs": 20327,
+      "rssKiB": 2204336
+    },
+    {
+      "elapsedMs": 21354,
+      "rssKiB": 2204496
+    },
+    {
+      "elapsedMs": 22383,
+      "rssKiB": 2204608
+    },
+    {
+      "elapsedMs": 23415,
+      "rssKiB": 2204752
+    },
+    {
+      "elapsedMs": 24446,
+      "rssKiB": 2160528
+    },
+    {
+      "elapsedMs": 25470,
+      "rssKiB": 2127872
+    },
+    {
+      "elapsedMs": 26505,
+      "rssKiB": 2128688
+    },
+    {
+      "elapsedMs": 27535,
+      "rssKiB": 2128864
+    },
+    {
+      "elapsedMs": 28567,
+      "rssKiB": 2129040
+    },
+    {
+      "elapsedMs": 29591,
+      "rssKiB": 2140512
+    },
+    {
+      "elapsedMs": 30606,
+      "rssKiB": 2205952
+    },
+    {
+      "elapsedMs": 31621,
+      "rssKiB": 2264192
+    },
+    {
+      "elapsedMs": 32637,
+      "rssKiB": 2271904
+    },
+    {
+      "elapsedMs": 33653,
+      "rssKiB": 2295664
+    },
+    {
+      "elapsedMs": 34670,
+      "rssKiB": 2295680
+    },
+    {
+      "elapsedMs": 35686,
+      "rssKiB": 2295696
+    },
+    {
+      "elapsedMs": 36702,
+      "rssKiB": 2295968
+    },
+    {
+      "elapsedMs": 37718,
+      "rssKiB": 2295984
+    },
+    {
+      "elapsedMs": 38735,
+      "rssKiB": 2296176
+    },
+    {
+      "elapsedMs": 39751,
+      "rssKiB": 2352944
+    },
+    {
+      "elapsedMs": 40767,
+      "rssKiB": 2268048
+    },
+    {
+      "elapsedMs": 41784,
+      "rssKiB": 1882672
+    },
+    {
+      "elapsedMs": 42819,
+      "rssKiB": 1868432
+    },
+    {
+      "elapsedMs": 43849,
+      "rssKiB": 1869776
+    },
+    {
+      "elapsedMs": 44882,
+      "rssKiB": 1871296
+    },
+    {
+      "elapsedMs": 45916,
+      "rssKiB": 1872672
+    },
+    {
+      "elapsedMs": 46944,
+      "rssKiB": 1874096
+    },
+    {
+      "elapsedMs": 47965,
+      "rssKiB": 1875456
+    },
+    {
+      "elapsedMs": 48996,
+      "rssKiB": 1876816
+    },
+    {
+      "elapsedMs": 50027,
+      "rssKiB": 1878208
+    },
+    {
+      "elapsedMs": 51045,
+      "rssKiB": 1872720
+    },
+    {
+      "elapsedMs": 52078,
+      "rssKiB": 1874912
+    },
+    {
+      "elapsedMs": 53097,
+      "rssKiB": 1876304
+    },
+    {
+      "elapsedMs": 54116,
+      "rssKiB": 1877872
+    },
+    {
+      "elapsedMs": 55143,
+      "rssKiB": 1879360
+    },
+    {
+      "elapsedMs": 56172,
+      "rssKiB": 1880800
+    },
+    {
+      "elapsedMs": 57200,
+      "rssKiB": 1884496
+    },
+    {
+      "elapsedMs": 58231,
+      "rssKiB": 1891968
+    },
+    {
+      "elapsedMs": 59260,
+      "rssKiB": 1893376
+    },
+    {
+      "elapsedMs": 60291,
+      "rssKiB": 1895728
+    },
+    {
+      "elapsedMs": 61313,
+      "rssKiB": 1895744
+    },
+    {
+      "elapsedMs": 62343,
+      "rssKiB": 1896000
+    },
+    {
+      "elapsedMs": 63380,
+      "rssKiB": 1830144
+    },
+    {
+      "elapsedMs": 64413,
+      "rssKiB": 1830224
+    },
+    {
+      "elapsedMs": 65436,
+      "rssKiB": 1830224
+    },
+    {
+      "elapsedMs": 66469,
+      "rssKiB": 1830224
+    },
+    {
+      "elapsedMs": 67498,
+      "rssKiB": 1830224
+    },
+    {
+      "elapsedMs": 68528,
+      "rssKiB": 1764384
+    },
+    {
+      "elapsedMs": 69544,
+      "rssKiB": 1764496
+    },
+    {
+      "elapsedMs": 70572,
+      "rssKiB": 1833040
+    },
+    {
+      "elapsedMs": 71591,
+      "rssKiB": 1809616
+    },
+    {
+      "elapsedMs": 72620,
+      "rssKiB": 1809920
+    },
+    {
+      "elapsedMs": 73638,
+      "rssKiB": 1810032
+    },
+    {
+      "elapsedMs": 74655,
+      "rssKiB": 1791040
+    },
+    {
+      "elapsedMs": 75682,
+      "rssKiB": 1791200
+    },
+    {
+      "elapsedMs": 76712,
+      "rssKiB": 1791328
+    },
+    {
+      "elapsedMs": 77742,
+      "rssKiB": 1791440
+    },
+    {
+      "elapsedMs": 78774,
+      "rssKiB": 1645552
+    },
+    {
+      "elapsedMs": 79796,
+      "rssKiB": 1663920
+    },
+    {
+      "elapsedMs": 80825,
+      "rssKiB": 1664032
+    },
+    {
+      "elapsedMs": 81852,
+      "rssKiB": 1664224
+    },
+    {
+      "elapsedMs": 82881,
+      "rssKiB": 1671488
+    },
+    {
+      "elapsedMs": 83914,
+      "rssKiB": 1681104
+    },
+    {
+      "elapsedMs": 84940,
+      "rssKiB": 1681328
+    },
+    {
+      "elapsedMs": 85973,
+      "rssKiB": 1550752
+    },
+    {
+      "elapsedMs": 87007,
+      "rssKiB": 1553424
+    },
+    {
+      "elapsedMs": 88039,
+      "rssKiB": 1559344
+    },
+    {
+      "elapsedMs": 89072,
+      "rssKiB": 1589936
+    },
+    {
+      "elapsedMs": 90104,
+      "rssKiB": 1601536
+    },
+    {
+      "elapsedMs": 91137,
+      "rssKiB": 1607984
+    },
+    {
+      "elapsedMs": 92166,
+      "rssKiB": 1616832
+    },
+    {
+      "elapsedMs": 93197,
+      "rssKiB": 1642144
+    },
+    {
+      "elapsedMs": 94229,
+      "rssKiB": 1654464
+    },
+    {
+      "elapsedMs": 95256,
+      "rssKiB": 1654672
+    },
+    {
+      "elapsedMs": 96287,
+      "rssKiB": 1659728
+    },
+    {
+      "elapsedMs": 97322,
+      "rssKiB": 1540240
+    },
+    {
+      "elapsedMs": 98352,
+      "rssKiB": 1544944
+    },
+    {
+      "elapsedMs": 99372,
+      "rssKiB": 1545984
+    },
+    {
+      "elapsedMs": 100391,
+      "rssKiB": 1559456
+    },
+    {
+      "elapsedMs": 101424,
+      "rssKiB": 1635168
+    },
+    {
+      "elapsedMs": 102439,
+      "rssKiB": 1580784
+    },
+    {
+      "elapsedMs": 103456,
+      "rssKiB": 1712448
+    },
+    {
+      "elapsedMs": 104472,
+      "rssKiB": 1746960
+    },
+    {
+      "elapsedMs": 105488,
+      "rssKiB": 1677760
+    },
+    {
+      "elapsedMs": 106506,
+      "rssKiB": 1684352
+    },
+    {
+      "elapsedMs": 107521,
+      "rssKiB": 1822320
+    },
+    {
+      "elapsedMs": 108536,
+      "rssKiB": 1862720
+    },
+    {
+      "elapsedMs": 109552,
+      "rssKiB": 1573248
+    },
+    {
+      "elapsedMs": 110569,
+      "rssKiB": 1587456
+    },
+    {
+      "elapsedMs": 111585,
+      "rssKiB": 1588464
+    },
+    {
+      "elapsedMs": 112602,
+      "rssKiB": 1639680
+    },
+    {
+      "elapsedMs": 113618,
+      "rssKiB": 1639792
+    },
+    {
+      "elapsedMs": 114636,
+      "rssKiB": 1658880
+    },
+    {
+      "elapsedMs": 115651,
+      "rssKiB": 1659312
+    },
+    {
+      "elapsedMs": 116678,
+      "rssKiB": 1661968
+    },
+    {
+      "elapsedMs": 117707,
+      "rssKiB": 1662528
+    },
+    {
+      "elapsedMs": 118740,
+      "rssKiB": 1665248
+    },
+    {
+      "elapsedMs": 119770,
+      "rssKiB": 1665424
+    },
+    {
+      "elapsedMs": 120801,
+      "rssKiB": 1666256
+    },
+    {
+      "elapsedMs": 121835,
+      "rssKiB": 1607104
+    },
+    {
+      "elapsedMs": 122856,
+      "rssKiB": 1612416
+    },
+    {
+      "elapsedMs": 123879,
+      "rssKiB": 1628592
+    },
+    {
+      "elapsedMs": 124910,
+      "rssKiB": 1626464
+    },
+    {
+      "elapsedMs": 125951,
+      "rssKiB": 1563600
+    },
+    {
+      "elapsedMs": 126981,
+      "rssKiB": 1563760
+    },
+    {
+      "elapsedMs": 128014,
+      "rssKiB": 1563760
+    },
+    {
+      "elapsedMs": 129055,
+      "rssKiB": 1563776
+    },
+    {
+      "elapsedMs": 130087,
+      "rssKiB": 1563792
+    },
+    {
+      "elapsedMs": 131118,
+      "rssKiB": 1568064
+    },
+    {
+      "elapsedMs": 132145,
+      "rssKiB": 1566288
+    },
+    {
+      "elapsedMs": 133176,
+      "rssKiB": 1566336
+    },
+    {
+      "elapsedMs": 134206,
+      "rssKiB": 1566368
+    },
+    {
+      "elapsedMs": 135235,
+      "rssKiB": 1569344
+    },
+    {
+      "elapsedMs": 136269,
+      "rssKiB": 1571184
+    },
+    {
+      "elapsedMs": 137298,
+      "rssKiB": 1571312
+    },
+    {
+      "elapsedMs": 138327,
+      "rssKiB": 1571472
+    },
+    {
+      "elapsedMs": 139346,
+      "rssKiB": 1571968
+    },
+    {
+      "elapsedMs": 140366,
+      "rssKiB": 1574256
+    },
+    {
+      "elapsedMs": 141401,
+      "rssKiB": 1514992
+    },
+    {
+      "elapsedMs": 142435,
+      "rssKiB": 1504928
+    },
+    {
+      "elapsedMs": 143454,
+      "rssKiB": 1487552
+    },
+    {
+      "elapsedMs": 144486,
+      "rssKiB": 1389520
+    },
+    {
+      "elapsedMs": 145521,
+      "rssKiB": 1349872
+    },
+    {
+      "elapsedMs": 146537,
+      "rssKiB": 1334384
+    },
+    {
+      "elapsedMs": 147554,
+      "rssKiB": 1338000
+    },
+    {
+      "elapsedMs": 148571,
+      "rssKiB": 1334896
+    },
+    {
+      "elapsedMs": 149587,
+      "rssKiB": 1335120
+    },
+    {
+      "elapsedMs": 150603,
+      "rssKiB": 1334384
+    },
+    {
+      "elapsedMs": 151620,
+      "rssKiB": 1334640
+    },
+    {
+      "elapsedMs": 152637,
+      "rssKiB": 1337568
+    },
+    {
+      "elapsedMs": 153654,
+      "rssKiB": 1392560
+    },
+    {
+      "elapsedMs": 154670,
+      "rssKiB": 1262608
+    },
+    {
+      "elapsedMs": 155702,
+      "rssKiB": 2128112
+    },
+    {
+      "elapsedMs": 156736,
+      "rssKiB": 2720032
+    },
+    {
+      "elapsedMs": 157771,
+      "rssKiB": 3119712
+    },
+    {
+      "elapsedMs": 158808,
+      "rssKiB": 3339728
+    },
+    {
+      "elapsedMs": 159841,
+      "rssKiB": 3291424
+    },
+    {
+      "elapsedMs": 160874,
+      "rssKiB": 3227568
+    },
+    {
+      "elapsedMs": 161905,
+      "rssKiB": 3286256
+    },
+    {
+      "elapsedMs": 162936,
+      "rssKiB": 3624240
+    },
+    {
+      "elapsedMs": 163967,
+      "rssKiB": 3551600
+    },
+    {
+      "elapsedMs": 164999,
+      "rssKiB": 3481600
+    },
+    {
+      "elapsedMs": 166030,
+      "rssKiB": 3481776
+    },
+    {
+      "elapsedMs": 167060,
+      "rssKiB": 3536944
+    },
+    {
+      "elapsedMs": 168092,
+      "rssKiB": 3589584
+    },
+    {
+      "elapsedMs": 169123,
+      "rssKiB": 3489536
+    },
+    {
+      "elapsedMs": 170155,
+      "rssKiB": 3483824
+    },
+    {
+      "elapsedMs": 171186,
+      "rssKiB": 3547824
+    },
+    {
+      "elapsedMs": 172217,
+      "rssKiB": 3547808
+    },
+    {
+      "elapsedMs": 173248,
+      "rssKiB": 3543344
+    },
+    {
+      "elapsedMs": 174280,
+      "rssKiB": 3544816
+    },
+    {
+      "elapsedMs": 175312,
+      "rssKiB": 3545472
+    },
+    {
+      "elapsedMs": 176343,
+      "rssKiB": 3546048
+    },
+    {
+      "elapsedMs": 177374,
+      "rssKiB": 3607440
+    },
+    {
+      "elapsedMs": 178407,
+      "rssKiB": 3609120
+    },
+    {
+      "elapsedMs": 179438,
+      "rssKiB": 3609808
+    },
+    {
+      "elapsedMs": 180469,
+      "rssKiB": 3586896
+    },
+    {
+      "elapsedMs": 181499,
+      "rssKiB": 3587360
+    },
+    {
+      "elapsedMs": 182530,
+      "rssKiB": 3505888
+    },
+    {
+      "elapsedMs": 183561,
+      "rssKiB": 3506768
+    },
+    {
+      "elapsedMs": 184592,
+      "rssKiB": 3507568
+    },
+    {
+      "elapsedMs": 185623,
+      "rssKiB": 3508448
+    },
+    {
+      "elapsedMs": 186655,
+      "rssKiB": 3508912
+    },
+    {
+      "elapsedMs": 187686,
+      "rssKiB": 3509104
+    },
+    {
+      "elapsedMs": 188717,
+      "rssKiB": 3532096
+    },
+    {
+      "elapsedMs": 189749,
+      "rssKiB": 3611680
+    },
+    {
+      "elapsedMs": 190789,
+      "rssKiB": 3611776
+    },
+    {
+      "elapsedMs": 191842,
+      "rssKiB": 3611856
+    },
+    {
+      "elapsedMs": 192893,
+      "rssKiB": 3611968
+    },
+    {
+      "elapsedMs": 193948,
+      "rssKiB": 3545360
+    },
+    {
+      "elapsedMs": 195002,
+      "rssKiB": 3536848
+    },
+    {
+      "elapsedMs": 196057,
+      "rssKiB": 3536880
+    },
+    {
+      "elapsedMs": 197107,
+      "rssKiB": 3537040
+    },
+    {
+      "elapsedMs": 198163,
+      "rssKiB": 3538528
+    },
+    {
+      "elapsedMs": 199213,
+      "rssKiB": 3461872
+    },
+    {
+      "elapsedMs": 200260,
+      "rssKiB": 3470336
+    },
+    {
+      "elapsedMs": 201313,
+      "rssKiB": 3470384
+    },
+    {
+      "elapsedMs": 202366,
+      "rssKiB": 3470672
+    },
+    {
+      "elapsedMs": 203414,
+      "rssKiB": 3470688
+    },
+    {
+      "elapsedMs": 204470,
+      "rssKiB": 3380288
+    },
+    {
+      "elapsedMs": 205533,
+      "rssKiB": 1203488
+    },
+    {
+      "elapsedMs": 206591,
+      "rssKiB": 1202080
+    },
+    {
+      "elapsedMs": 207629,
+      "rssKiB": 881728
+    },
+    {
+      "elapsedMs": 208668,
+      "rssKiB": 881728
+    },
+    {
+      "elapsedMs": 209716,
+      "rssKiB": 881728
+    },
+    {
+      "elapsedMs": 210764,
+      "rssKiB": 883072
+    },
+    {
+      "elapsedMs": 211808,
+      "rssKiB": 883088
+    },
+    {
+      "elapsedMs": 212854,
+      "rssKiB": 883088
+    },
+    {
+      "elapsedMs": 213906,
+      "rssKiB": 885184
+    },
+    {
+      "elapsedMs": 214955,
+      "rssKiB": 887712
+    },
+    {
+      "elapsedMs": 216007,
+      "rssKiB": 889008
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "fixture",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    },
+    {
+      "role": "browser",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/application-post.mjs": "83e8c5cf2c40c72366cad311fedd2d5f7b60a2802bf46b34132d8f853f522ba2",
+    "scripts/t04-wallet-absence.mjs": "21d1f3db506d84c5637a789df03e64f868b556d917406d0d5d422b88e4cea305",
+    "scripts/t04-withdraw-traffic.mjs": "65287cbeda2dd20f88927b06b75634ce5d122594a0bbad63cf9c256ca8885157",
+    "scripts/t03-repeated-posts.mjs": "6ef74b804bab60f35fe7639975e2b0c7eea3de6cd6aaf5125032a58b3bd4aaae",
+    "scripts/o01-censor-command-flow.mjs": "6aedccd6b98d9d5c6e532d6fb264f7bb45a9ce63469611eca2375287392ff44c",
+    "scripts/o01-censor-command-io.mjs": "b781bc73a7c117267ccd0898a7b561d83f4265b87e6e80ae41a84c2902021a12",
+    "scripts/t04-browser-journey.mjs": "f7d49fb29306659a1812ce811ff364acb6232059688d93af98e3fd87b9dba5b6",
+    "scripts/t04-browser-journey-verify.mjs": "aadf14364acaea689e1ccf22d00bcffb748f488fa93c57809035dca27820d33b",
+    "scripts/t04-browser-post-recovery.mjs": "0a19469f7e539608996469a60838441537f9ad02db44f0128a9103c8796cdfa4",
+    "scripts/t04-post-response-loss.mjs": "e2252661599cd245a749cb5d5a02be97be3eaee8446e67c8cda0d1c815fee46f",
+    "scripts/run-bounded-browser-check.mjs": "e491caac9d748b724b5f731cd2854d566a2cd1f753105b7dab4ea818232787bb",
+    "scripts/u01-browser-flow.mjs": "ddfb3ac7449dc7929cdbb9de3237a080f68c4839c22473bbd113002f4967dcf4",
+    "scripts/u01-browser-post-verify.mjs": "e9c78f95848c5594529711b3a49114e76530373777fab9b32e7d29b817f639ea",
+    "scripts/u01-browser-post.mjs": "8357f25549df2a61724a1423bfed3d44e1706449838818061ab0c7febee37f7d",
+    "scripts/browser-error-observer.mjs": "728941adb1f0d3b42de2a682020d7ae205a0b8dd5567d1a350feea4fbf186784",
+    "scripts/u01-browser-rpc.mjs": "1bfe26453a4a89074b7083a065151aca16c4e6b54ba7a99c7068c3349943e734",
+    "scripts/t03-rpc-observer.mjs": "733b7cd2d1329794df5cfac9483b463c1ed2c7c0e7990b0feb983a9f106d876c",
+    "scripts/t03-public-footprint.mjs": "9614c0037b32cd12f9507f160c0bd91ee78acbd7462761f036de20a1839d8bd0",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    "scripts/c01-native-profile.mjs": "a3e5b526210247329bf1c936d3590e826db8fcf5e0cc6700d266986ec15967d0",
+    "scripts/test-c01-application.mjs": "3268aebedef1afa5ae1ee23158a425de1918f73e26ba2366e5112ff6f45c19a8",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "scripts/c01-settle-application-message.mjs": "7399875d97f5dfd82a3787d8c39390fd9fc6673c8ce06d5bc41464515c3fef4b",
+    "scripts/c01-application-deployment.mjs": "a81fe20b22967ce6e3d6c1f751ee93ed6c9fef5e8553cf4037534780dec11fa2",
+    "scripts/w03-note-attribution.mjs": "c5f3be63dc9752a2276931717ef53d387d7b46f064d92092f41f87f46947d168",
+    "shared/application-nullifier.mjs": "67b056f3e58f88d9a31549c94af6aa7f652690689e9fdf2a56d5b602c8199570",
+    "scripts/w03-proof-recovery.mjs": "283fd365422e535cc30ea0a3844bbfd5c2399f4240e36ef4f1581d3f0fc03210",
+    "shared/l2-journal.mjs": "a971ef9f8a94f6ab30756f425c8cb6228bbafe653791f6e4208e945bb110d380",
+    "shared/transaction-outcomes.mjs": "981eb3f048356a85dd9833b1b612bdcb4dcd71c41af3af38d36717198b576dc1",
+    "shared/journal-backup.mjs": "5a5292c781f442c07b51769b62c856c60821dbf95a00cb5e8c79f6ea5c2ea512",
+    "scripts/prove-application-action.mjs": "312671bc05c83ecc0d391bda1f53ffca59c2d530d119c331c8eb18f202504c2c",
+    "scripts/w02-wallet-restore.mjs": "b3ad3ebb0a4f7cd369608cc2ae31cf4060a6400bc6bb2e739f693d96feec2331",
+    "shared/wallet-backup.js": "8df8f15fe92adb0d1628ac64cbd3bd61761594dbd7a83eeb04655640d3d64a8b",
+    "scripts/w01-private-fee-standalone.mjs": "d4e1e122e64864e3c371d70cbcb1b44152bc08899ac9ea60646c2eddcf7ea48d",
+    "scripts/w01-private-fee-flow.mjs": "4ac0a357b664a92670135c201d96a65d479f4199c5d3cb0d4cc7b2046ea0d97c",
+    "scripts/w01-private-funding.mjs": "7c12d22dd0c71db748c1acfd4b73dd4b13585741be4034e7d2e3987572c9990e",
+    "shared/private-fee-client.mjs": "5098aaf46bd3bcdb5302e45186b2dc43cf3bcd70d0cd74aa1b063ff50432fe4b",
+    "shared/private-fee-payment.mjs": "9863e2e4b2abd3c7e9839be307668c9794a758bde2cd3ca8c4351575710b5f09",
+    "shared/private-fee-funding.mjs": "3a640f2557d4f5183a42c3b81c9902ea36f0a2c6fb846eb4b90bd136416b53a8",
+    "shared/ethereum-journal.mjs": "b30902ed978aa226fe236bdea50857e92a108dc91b492aaa8236acbacfd545ed",
+    "shared/journal-record.mjs": "549c91da1ea11706769edc28fba6b1c1ad0fa58c845e784cc7462353726d5a08",
+    "apps/src/billboard/user/transaction-journal-store.mjs": "abb9af112709a4e4ed3197de86ef058a4b06e3c63b1588861f6411b1629c443a",
+    "scripts/c01-settle-ready.mjs": "cf0a0e4a531e938b601f4fdf13ce336a9d453435f3df70e2be38f6d2e2d93d1c",
+    "scripts/c01-settle-message.mjs": "4e9bc2eeb7dad873311045c49f89b0b53c5ccd4f34d0516924e47338773ed132",
+    "scripts/c01-bridge-flow.mjs": "689ab68736d338ef5edc34e9d49c5e33b726e55dcda7867ba019b2c1305ee723",
+    "scripts/c02-screening-flow.mjs": "d4a6a11fffd568baeac42a7041f961533ae5127893fc0f1c659339e0a9b6f727",
+    "scripts/t02-screening-journey.mjs": "c8657f485515251728d54cca090f4d165786c71de1e440cf96fe967b0e1089d0",
+    "scripts/t02-redeposit-flow.mjs": "6f54801b7836a6a6558056df41521fadeac3470b619b6fa0d05d5414ef979b99",
+    "scripts/t02-wrong-origin.mjs": "712dccd2872af6e7b76f3dcce86640f9a1de5b7f24530151eb97335af17f65d5",
+    "scripts/t02-claim-boundary.mjs": "3c2040636d06531206e2fa1687f59ed1276ee41594aa2dd625613497959f7ba3",
+    "scripts/test-t02-claim-boundary.mjs": "d1ba5ba5428f25337fbb5594d990fb4cae41fe7b836b6ea81118d83e74d01681",
+    "node_modules/@aztec/pxe/src/node/caching_aztec_node.ts": "f3b27595e524d8d1be93039d213f88bed03fb9ec63c49a6e493d33210a24f714",
+    "node_modules/@aztec/pxe/dest/node/caching_aztec_node.js": "2c8d8a2d8762b673bc300f9876d8d86775d4fab361c0816b9f07a1dfe5ee9e6b",
+    "node_modules/@aztec/pxe/src/pxe.ts": "6dbb267d5effc5f5f7cda123fb8a28581f306ec8a84e6737eeae5c5f9b8fefd6",
+    "node_modules/@aztec/pxe/dest/pxe.js": "e93807fc9202a13235669b823fe07fdccfef2cebe70834da7c19644d2f3ed669",
+    "node_modules/@aztec/pxe/src/block_synchronizer/block_synchronizer.ts": "3c8db66275b427ac31547953af91a4d6ecd2c83c770b997a8b6f09ca4b458765",
+    "node_modules/@aztec/pxe/dest/block_synchronizer/block_synchronizer.js": "0f302a5f0abe83e0e9e2927067e048e757365678919a2799190cac82e4f8848a",
+    "node_modules/@aztec/l1-artifacts/dest/InboxAbi.js": "ab433ac523c2594bafd018cb956b40579f538eef30f03a10f41365ba78638f2c",
+    "node_modules/@aztec/l1-artifacts/l1-contracts/src/core/messagebridge/Inbox.sol": "c3373e0ee7c76e137124d2f4856330f639fa94569d39f10907181a908827faa3",
+    "scripts/t02-redeposit-replay.mjs": "4044535728da5bfb84e3d0e5864573ab9f511c20668da51e664b7e7a1f496429",
+    "node_modules/@aztec/l1-artifacts/dest/OutboxAbi.js": "65fee6c3076781794fd145fa79d382c3ce74af246b8da29523123aa4a06c9023",
+    "node_modules/@aztec/l1-artifacts/l1-contracts/src/core/messagebridge/Outbox.sol": "de268cae33268c6ce8538d687b3612b090d37052a270846e233717520f9df212",
+    "scripts/c03-author-claims.mjs": "656dde4e8d738ae4df3b72a45936e4760ee5b9846a3fe6d04672bfc7aa41d91a",
+    "scripts/c03-contention-flow.mjs": "399026e12695227a0488f5da9b786215067faafebddb8d8805233263f155f32b",
+    "scripts/c01-client-mining.mjs": "a10abf9d1798fac6ddae89a0f62ce2b3e30b9ddd69a77512d5f83f8dc33ff332",
+    "scripts/c01-deposit-flow.mjs": "2995be91451bb0900e59a89cfd20a5ce8395c417cb63ae25adc3119884a0bd51",
+    "scripts/c01-exit-flow.mjs": "97b17b61356b110220af6c623f3c3205dbe862c5398f69be2872fb9510c3b476",
+    "scripts/c01-withdraw-l1.mjs": "de76adb8ed43e51e83fd390fa147dcbdc6d99757deaa5907050b68a33aaaad92",
+    "scripts/c01-ready-flow.mjs": "ee295327d94b76fa267f9c7b290759b0a3c19cb5e3493b2ee6ec123dd54a7e98",
+    "scripts/c01-board-inclusion.mjs": "46a43363765aff5460820ac2c33b636e3b6b8ef310830255b1ed549328db09ed",
+    "scripts/c01-board-flow.mjs": "be79f63b193246681bb1d62b17d578682d5f515b061572c2ea25d9819137146a",
+    "scripts/c01-real-node.mjs": "425728e050640cc3d06554e0c6dea1e208c5aaf1608ce725a6d053d2d5a8a872",
+    "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+    "package-lock.json": "3ac2d895f6eddffba40c8889c1d88cb73c48571530595433da27c7bb4ad6b805",
+    "toolchain.json": "d9242f804526ae88e6baaf9d59d363ddc3cd2e4341e3a4344f4efa367a9a654a",
+    "node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js": "f84940700d4fe17c4bb94fb27199085fb057c567ff745e90c21352cd47a091c3",
+    "scripts/testing/assets.mjs": "263b42130637c3383d41b05502c517aa50469220ab0edb9a4a13782cafd0adab",
+    "scripts/testing/browser-worker.mjs": "ea8274bd33ab1e637f53d87a8673b4b718b147114e49beeadb64c55cc5dc4eeb",
+    "scripts/testing/fixture-worker.mjs": "5abeed2dc2b62021cc9d0d05729fe52b9e35c7e1a3008d02be35880864c2e17c",
+    "scripts/testing/process-tree.test.mjs": "8779a55199ed6a475faa6ceee7ad4c8eb866ce3b16b7a661ebbf042fdcd255a2",
+    "scripts/testing/run-application.mjs": "c2099555095b3c472bae1d5b5ac21b4fcefa0d054f8d7970b6cccd0b80934455",
+    "scripts/testing/scenario-flows.mjs": "ef0befe5a9b2fc9d8b83195e0c40b17203eec9cfde3f31598f46d30fcfadceaa",
+    "scripts/testing/scenarios.mjs": "ef911454ebd3c085701910f139cf1d6e6e2e1d7d735f0f03f181742ab33ec390",
+    "scripts/testing/supervisor.mjs": "518d827972d68cce7bab14f56df6483a260f5f5dc4082b50e2e4bbd80b0723f2",
+    "scripts/testing/supervisor.test.mjs": "2cc8fe9e3ef9d58ef47a6124c29ff001a98821efe44555c976f0c295d2e9bce7",
+    ".build/apps-manifest.json": "cda4cfcd3fc5619a33005a20fd6029a32427fd123f2d3d9751f7df1ae621516e",
+    ".build/sdk/sdk-manifest.json": "07e31fce69ce979600aec6a9c34ab5190a0b466a25ab300900216d095659603b",
+    "apps/dist/acvm_js_bg.wasm": "bcd66e862a95a57f7f2ae3cb97e24d007d2ad710ac7490262c3c92a5b823775d",
+    "apps/dist/aztec_bundle.js": "4ded72f210ad7dff01ab7c8391cfc2457b109cea8b9396eb679ec023b4787bcd",
+    "apps/dist/bb-main.worker.js": "568e68dd87fc2bd1cb945422f7a52aa442c661f2c9bb7156307f01d25edce564",
+    "apps/dist/bb-thread.worker.js": "f06a7e630a5d1e3d13353c2c89d3646c19b5a731f0055e49af17c499deae0086",
+    "apps/dist/censor.html": "9e7e7d2f6423e5a9daef0870564abd5519e8f7d391f21125789098b5353e0ac7",
+    "apps/dist/crs/crs-manifest.json": "4927de3e03d69f4e640a841f9421dd0b93819b5e3d42c142d12ee079d5a402be",
+    "apps/dist/crs/g1.dat": "8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416",
+    "apps/dist/crs/g1_uncompressed.dat": "2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac",
+    "apps/dist/crs/g2.dat": "01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f",
+    "apps/dist/crs/grumpkin_g1.dat": "b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9",
+    "apps/dist/deploy.html": "9fad62ec020859c22d030f2ceff2af55465042cf28d0cdc100f168ffde7db0f6",
+    "apps/dist/fee-juice.html": "92ee7db194048cca40ce994bfff130693e356d6ceb4ac1e77a6e43b4e0884492",
+    "apps/dist/feed.html": "95444a54de103498fe65a0b7f177fcb86515d400fc6d7210bb52dc599d38aa2e",
+    "apps/dist/noirc_abi_wasm_bg.wasm": "2cbd4bb57d2cd47e8e14fb78ddf597b6b6d5f0cf7717c54692242967786bf334",
+    "apps/dist/public-feed-metadata.json": "b252099056f947d9c161da850f0b78161d940579931834e9e1becc100e489559",
+    "apps/dist/public-feed.js": "4fe9852f791662b4fe3d3e565bf98fa7de4f08f0898e09b5cc2302c554d25b08",
+    "apps/dist/sdk-manifest.json": "07e31fce69ce979600aec6a9c34ab5190a0b466a25ab300900216d095659603b",
+    "apps/dist/sqlite.worker.js": "e7e1a1a13817cabdcfbb6b190ff6541dc20e0227e2e0f95238fa52af6e10d95c",
+    "apps/dist/sqlite3-opfs-async-proxy.js": "4ea2bcbd715b0d56089fc871ea241f8c5985d8669d1ddecaab4d56a8da806ce9",
+    "apps/dist/sqlite3.wasm": "e7600bc6d59b1459362c8c2d4686f733e26d58041b3cdc599929661ecfeb21ae",
+    "apps/dist/user.html": "73f5f4b1e8dcd28e0e28a50657431b4ab96995637caf8d6bf22dc1cbe555a0f0"
+  },
+  "setup": [
+    {
+      "name": "bn254_g1.dat",
+      "sha256": "2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac",
+      "bytes": 75497472
+    },
+    {
+      "name": "bn254_g2.dat",
+      "sha256": "01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f",
+      "bytes": 128
+    },
+    {
+      "name": "grumpkin_g1_v2.flat.dat",
+      "sha256": "b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9",
+      "bytes": 4194368
+    }
+  ],
+  "networkProofs": false,
+  "controlledSettlement": true,
+  "binarySha256": "208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031",
+  "applicationBBThreads": 1,
+  "nodeBBThreads": 1,
+  "worldStateHardwareConcurrency": 1,
+  "peakMemory": {
+    "elapsedMs": 162936,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 41911,
+        "ppid": 1375,
+        "rssKiB": 119168
+      },
+      {
+        "role": "fixture",
+        "pid": 41922,
+        "ppid": 41911,
+        "rssKiB": 714368
+      },
+      {
+        "role": "fixture",
+        "pid": 41926,
+        "ppid": 41922,
+        "rssKiB": 64992
+      },
+      {
+        "role": "fixture",
+        "pid": 41933,
+        "ppid": 41922,
+        "rssKiB": 6624
+      },
+      {
+        "role": "fixture",
+        "pid": 41946,
+        "ppid": 41922,
+        "rssKiB": 32528
+      },
+      {
+        "role": "fixture",
+        "pid": 41966,
+        "ppid": 41922,
+        "rssKiB": 13312
+      },
+      {
+        "role": "fixture",
+        "pid": 42314,
+        "ppid": 41922,
+        "rssKiB": 4336
+      },
+      {
+        "role": "browser",
+        "pid": 42307,
+        "ppid": 41911,
+        "rssKiB": 140448
+      },
+      {
+        "role": "browser",
+        "pid": 42311,
+        "ppid": 42307,
+        "rssKiB": 66176
+      },
+      {
+        "role": "browser",
+        "pid": 42312,
+        "ppid": 42307,
+        "rssKiB": 552192
+      },
+      {
+        "role": "browser",
+        "pid": 42316,
+        "ppid": 42312,
+        "rssKiB": 34272
+      },
+      {
+        "role": "browser",
+        "pid": 42317,
+        "ppid": 42312,
+        "rssKiB": 195600
+      },
+      {
+        "role": "browser",
+        "pid": 42318,
+        "ppid": 42312,
+        "rssKiB": 38336
+      },
+      {
+        "role": "browser",
+        "pid": 42320,
+        "ppid": 42312,
+        "rssKiB": 175856
+      },
+      {
+        "role": "browser",
+        "pid": 42324,
+        "ppid": 42312,
+        "rssKiB": 33680
+      },
+      {
+        "role": "browser",
+        "pid": 42326,
+        "ppid": 42312,
+        "rssKiB": 1432352
+      }
+    ]
+  },
+  "browser": {
+    "passed": true,
+    "browserEngine": "firefox",
+    "sourceStage": "actual-gui-post",
+    "elapsedMs": 52754,
+    "diagnosticInstrumentation": false,
+    "proofStageObservation": true,
+    "performanceQualified": false,
+    "diagnosticScope": "Fixed error-category observer; no debugger. GUI wall time only, not isolated proof performance.",
+    "browserVersion": "155.0",
+    "sdkReadyMs": 771,
+    "walletSetupMs": 2366,
+    "guiPostElapsedMs": 45176,
+    "publicTransactionHashes": [
+      "0x1e6c72238af934f7f95d69f913596f8893645e54ea65744410cab83d037b6eb9"
+    ],
+    "proofTimingMs": null,
+    "proofTimingScope": "GUI elapsed includes preparation and submission; fixed prover method-entry phases observed without changing arguments or returned promises.",
+    "uiDiagnostic": {
+      "postProgress": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "formatterDiagnostics": [],
+      "walletRestored": true,
+      "ethereumConnected": true,
+      "postVisible": true,
+      "postBusy": false,
+      "setupHasError": false,
+      "postHasError": false,
+      "markers": {
+        "walletFailure": false,
+        "setupFailure": false,
+        "operationFailure": false,
+        "configurationFailure": false,
+        "provingStarted": true,
+        "provingComplete": true,
+        "messageIncluded": true
+      }
+    },
+    "externalRequestCount": 0,
+    "failedHttp": [],
+    "cspDirectives": [],
+    "cspDetails": [],
+    "requestedPaths": [
+      "/acvm_js_bg.wasm",
+      "/aztec_bundle.js",
+      "/bb-main.worker.js",
+      "/crs/g1_uncompressed.dat",
+      "/crs/g2.dat",
+      "/crs/grumpkin_g1.dat",
+      "/noirc_abi_wasm_bg.wasm",
+      "/public-feed.js",
+      "/rpc/aztec",
+      "/rpc/ethereum",
+      "/user.html"
+    ],
+    "ownedServerStopped": true,
+    "browserClosed": true,
+    "scope": "Actual GUI post from preseeded disposable funded wallet; parent must verify canonical node effects. Not a full deposit-to-withdraw journey."
+  },
+  "worker": {
+    "passed": true,
+    "profile": "application transaction proofs with official local protocol fixture and controlled settlement",
+    "nonlocalNetworkDenied": true,
+    "deployment": {
+      "passed": true,
+      "profile": "official SDK local application fixture",
+      "realVerifier": false,
+      "networkProofs": false,
+      "rollupVersion": "1979007289",
+      "addresses": {
+        "rollupAddress": "0x04730e695948026016474963d6072343de28ca6d",
+        "registryAddress": "0x31a10b2487fda89de4454c282a32f9686b2ea459",
+        "inboxAddress": "0xb7c00f51c90fc6f6fd1bbcfa2f3d2b2ccddfd9c4",
+        "outboxAddress": "0x735d1cbe7321e3a3b09aa9da6da2d5d58067b886",
+        "feeJuiceAddress": "0x7d50e0c7e14af68661008c003b038b563d3ed748",
+        "feeJuicePortalAddress": "0xb677f6ae3b1b1f736355b576e97be6b2eae2b5dd",
+        "coinIssuerAddress": "0xd59b64a06cd516f047ec9befaacc832c3f5cf243",
+        "rewardDistributorAddress": "0x16327b1e55ac9d8a3552c4a5b7b489ca265e0cb4",
+        "governanceProposerAddress": "0x1a92551e01dd4b6979e2f716a02081160458abaf",
+        "governanceAddress": "0xc8ea82ba587218db2db71fe4c0988b5cf8ffc4cd",
+        "stakingAssetAddress": "0x2b2a42b12489ab5d12993b71f25db6e21b1044b0",
+        "feeAssetHandlerAddress": "0x61c09e166dd9bc3fe6bb00cdb1ad962701b60628",
+        "stakingAssetHandlerAddress": "0xa66ef69ddac575fa48dd39555d7994c9bf6462fb",
+        "zkPassportVerifierAddress": "0xc9c8babaa614ed88d37c7fdfd0b579819d6bf663",
+        "gseAddress": "0xdc048a10dc836e9bbd36075d178ceeb76387dc6f",
+        "dateGatedRelayerAddress": "0x1f579c98370fc697928a9d7747c71f52bf4fe1ad"
+      }
+    },
+    "validatorActivation": {
+      "committee": [
+        "0x46aef8bae9a2f85f8629e554b7d9696af5fbc3bf"
+      ],
+      "ordinaryTimeAdvancesSeconds": [
+        {
+          "seconds": 20,
+          "timestamp": "1789834832",
+          "epoch": "1",
+          "committee": null
+        },
+        {
+          "seconds": 20,
+          "timestamp": "1789834852",
+          "epoch": "2",
+          "committee": null
+        },
+        {
+          "seconds": 20,
+          "timestamp": "1789834872",
+          "epoch": "3",
+          "committee": null
+        }
+      ]
+    },
+    "node": {
+      "passed": true,
+      "scope": "Actual firefox private-fee post",
+      "realProofs": true,
+      "proverSubsystemCreated": false,
+      "ordinarySequencerConstructed": true,
+      "sequencerStarted": true,
+      "rollupVersion": 1979007289,
+      "board": {
+        "passed": true,
+        "scope": "real client deployment transaction proof and node admission validation only",
+        "initializerVisibility": "public; client proof authenticates private account/transaction path",
+        "sent": false,
+        "included": false,
+        "epochProofAccepted": false,
+        "proofMs": 12123,
+        "artifactHashes": {
+          "apps/src/billboard/billboard_artifact.json": "50009f964ca8496c645e8bbb4d9a3b18621c9b26a7a2c7376e4f33c3b7e53696",
+          ".build/contracts-manifest.json": "691d398b21235e528356b46e52ec37432fbdbc7439ab5df4bbe2bfa2aa9659ca"
+        },
+        "clientProverBackend": "NativeUnixSocket",
+        "threads": 1,
+        "nodeValidation": "valid",
+        "txHash": "0x02225070faad17c39effba79e702b457290f4d97901ebf9fd74b5ef12da3b0c6",
+        "boardAddress": "0x0e34199d0921d3612c39e2559556abc9a03fe2a8a40f7a954789242a2ac27d09",
+        "proofBytes": 112292,
+        "proofSha256": "8d1a4ff30e3efa4880f789f2c812eb2a05e1cf3c1fe3d8703c91d9a60511685b",
+        "feePayerBalance": "10000000000000000000000",
+        "nextRequired": "Submit this exact in-memory tx, observe inclusion, then use official test settlement before local Ready activation.",
+        "walletStopped": true
+      },
+      "inclusion": {
+        "passed": true,
+        "txHash": "0x02225070faad17c39effba79e702b457290f4d97901ebf9fd74b5ef12da3b0c6",
+        "status": "checkpointed",
+        "executionResult": "success",
+        "blockNumber": "1",
+        "transactionFee": "493292316067600000",
+        "ordinarySequencer": true,
+        "syntheticSettlement": false,
+        "epochProofAccepted": false,
+        "clockProfile": "controlled disposable L1 mining and node clock synchronization; no throughput/finality claim",
+        "adjustments": [
+          {
+            "block": "41",
+            "timestamp": "1789834873"
+          },
+          {
+            "block": "42",
+            "timestamp": "1789834874"
+          },
+          {
+            "block": "43",
+            "timestamp": "1789834875"
+          },
+          {
+            "block": "44",
+            "timestamp": "1789834876"
+          },
+          {
+            "block": "45",
+            "timestamp": "1789834877"
+          },
+          {
+            "block": "46",
+            "timestamp": "1789834878"
+          },
+          {
+            "block": "47",
+            "timestamp": "1789834879"
+          },
+          {
+            "block": "48",
+            "timestamp": "1789834880"
+          },
+          {
+            "block": "49",
+            "timestamp": "1789834881"
+          },
+          {
+            "block": "50",
+            "timestamp": "1789834882"
+          },
+          {
+            "block": "51",
+            "timestamp": "1789834883"
+          },
+          {
+            "block": "52",
+            "timestamp": "1789834884"
+          },
+          {
+            "block": "53",
+            "timestamp": "1789834885"
+          }
+        ]
+      },
+      "ready": {
+        "passed": true,
+        "scope": "disabled portal deployment and genuine update_portal client proof",
+        "bindingSubmitted": true,
+        "readyEmitted": true,
+        "epochProofAccepted": false,
+        "portalActivated": true,
+        "portalAddress": "0x8a0ead7911b2a19b997a08d3d70af799ef01b435",
+        "portalDeploymentTxHash": "0x8ecf985b9b6f25fe7b1f426f5c9d5fd3c24388a2a867e621681b8f6505493644",
+        "portalDeploymentBlock": "55",
+        "depositsEnabled": false,
+        "boardAddress": "0x0e34199d0921d3612c39e2559556abc9a03fe2a8a40f7a954789242a2ac27d09",
+        "configHash": "0x0057661bbebfbc6b143c4de400eab07c754b3489a6f6aaf61bbb252d565ad602",
+        "artifactHashes": {
+          "apps/src/billboard/billboard_artifact.json": "50009f964ca8496c645e8bbb4d9a3b18621c9b26a7a2c7376e4f33c3b7e53696",
+          "billboard/portal/out/BillboardPortal.sol/BillboardPortal.json": "9b3e7d2d68354f32f0ae9dd19ced53ddcff1eba6d7784f2952110c74fe106bfb",
+          ".build/contracts-manifest.json": "691d398b21235e528356b46e52ec37432fbdbc7439ab5df4bbe2bfa2aa9659ca"
+        },
+        "txHash": "0x23feb5e5b5a83918c934fdd5ba516d6c1443da73c5af84191a041c01db0deb8e",
+        "nodeValidation": "valid",
+        "proofSha256": "8189b0e3ba1da24e2aa74ea61f5042b65058d90b5df302fd1f193f2c854bdd5f",
+        "expectedReadyContent": "0x009646d90cddfbe83c36a05cc2f532aa964e135f156d15f71230829b89e7394e",
+        "expectedReadyLeaf": "0x00b46e45c3e1dbdfc0fc31c692a467acb5e662e84ab7a728dc31c7afba17ba71",
+        "nextRequired": "Include exact binding tx; require SUCCESS and actual Ready leaf, official test settlement of the emitted message before local portal activation.",
+        "walletStopped": true,
+        "controlledSettlement": true
+      },
+      "readyInclusion": {
+        "passed": true,
+        "txHash": "0x23feb5e5b5a83918c934fdd5ba516d6c1443da73c5af84191a041c01db0deb8e",
+        "status": "checkpointed",
+        "executionResult": "success",
+        "blockNumber": "2",
+        "transactionFee": "2647413043000000",
+        "ordinarySequencer": true,
+        "syntheticSettlement": false,
+        "epochProofAccepted": false,
+        "clockProfile": "controlled disposable L1 mining and node clock synchronization; no throughput/finality claim",
+        "adjustments": [
+          {
+            "block": "56",
+            "timestamp": "1789834888"
+          },
+          {
+            "block": "57",
+            "timestamp": "1789834889"
+          },
+          {
+            "block": "58",
+            "timestamp": "1789834890"
+          },
+          {
+            "block": "59",
+            "timestamp": "1789834891"
+          },
+          {
+            "block": "60",
+            "timestamp": "1789834892"
+          },
+          {
+            "block": "61",
+            "timestamp": "1789834893"
+          },
+          {
+            "block": "62",
+            "timestamp": "1789834894"
+          },
+          {
+            "block": "63",
+            "timestamp": "1789834895"
+          },
+          {
+            "block": "64",
+            "timestamp": "1789834896"
+          },
+          {
+            "block": "65",
+            "timestamp": "1789834897"
+          },
+          {
+            "block": "66",
+            "timestamp": "1789834898"
+          },
+          {
+            "block": "67",
+            "timestamp": "1789834899"
+          },
+          {
+            "block": "68",
+            "timestamp": "1789834900"
+          },
+          {
+            "block": "69",
+            "timestamp": "1789834901"
+          },
+          {
+            "block": "70",
+            "timestamp": "1789834902"
+          },
+          {
+            "block": "71",
+            "timestamp": "1789834903"
+          },
+          {
+            "block": "72",
+            "timestamp": "1789834904"
+          }
+        ]
+      },
+      "settlement": {
+        "passed": true,
+        "scope": "controlled test settlement, test-controlled Ready membership and enabled portal",
+        "kind": "ready",
+        "deadlineMs": 60000,
+        "testControlled": true,
+        "syntheticSettlement": true,
+        "proofReceipts": [],
+        "finalized": false,
+        "epochs": [
+          {
+            "epoch": 4,
+            "firstCheckpoint": 1,
+            "lastCheckpoint": 1,
+            "testControlledCheckpoint": 1
+          },
+          {
+            "epoch": 5,
+            "firstCheckpoint": 2,
+            "lastCheckpoint": 2,
+            "testControlledCheckpoint": 2
+          }
+        ],
+        "sequencerPaused": true,
+        "sequencerResumed": true,
+        "targetCheckpoint": 2,
+        "messageBlock": "2",
+        "messageBlockHash": "0x2a612efa17e60911d0d66aeb6f7e777c8cfd46bbfc3e1f19b87ac7759d4e3331",
+        "messageTxHash": "0x23feb5e5b5a83918c934fdd5ba516d6c1443da73c5af84191a041c01db0deb8e",
+        "expectedLeaf": "0x00b46e45c3e1dbdfc0fc31c692a467acb5e662e84ab7a728dc31c7afba17ba71",
+        "initialProvenCheckpoint": 0,
+        "forcedProvenCheckpoint": 2,
+        "localEpoch": 6,
+        "membership": {
+          "epochNumber": 5,
+          "checkpointCount": 1,
+          "leafIndex": "0",
+          "pathLength": 5,
+          "root": "0x00b39a039b74bffcc679258fe98afb9be66963416318782509718bf67381d6aa"
+        },
+        "localSettlement": {
+          "l1Block": "74",
+          "l1Hash": "0xf76b345cbf9dab831ea35b8d3b8323c527a120c126cb852dd26499ded4e16380",
+          "scope": "local storage forced by official test helpers; neither epoch proof nor economic finality"
+        },
+        "elapsedMs": 11795,
+        "activation": {
+          "txHash": "0x612c455f8d4a1da1450af05c4e1e0df5dbe79fa5323d6e3ef949d5b8e1a1a537",
+          "blockNumber": "75",
+          "blockHash": "0x030263c824d9640b507d5756f3ba66d31acf88ba0eede4eedd3409993e1a9e2a",
+          "depositsEnabled": true
+        }
+      },
+      "bridge": {
+        "passed": true,
+        "scope": "Actual firefox private-fee post",
+        "applicationProofs": true,
+        "controlledSettlement": true,
+        "networkProofs": false,
+        "clientMining": {
+          "passed": true,
+          "ordinaryBlocksMined": 137,
+          "stopped": true,
+          "maxObservedClockLeadSeconds": 0,
+          "clockSynchronization": "every mined block, including correction of wall-clock lead",
+          "lastBlock": "233",
+          "lastTimestamp": "1789835078"
+        },
+        "privateFee": {
+          "passed": true,
+          "ownerless": true,
+          "offchainIssuer": false,
+          "operatorFunding": false,
+          "chargesMaximumFee": true,
+          "walletRestore": {
+            "encryptedRoundTrip": true,
+            "freshRestoreContext": true,
+            "fullSaltPreserved": true,
+            "derivedSigningKeyFromRestoredSecret": true,
+            "sameApplicationAddress": true,
+            "applicationSigningDerivation": true,
+            "noIndependentTestSigningKeyReused": true
+          },
+          "funding": {
+            "passed": true,
+            "realL1Deposit": true,
+            "amount": "1000000000000000000000",
+            "l1TxHash": "0x53a51448cd52aa89256f7c4396d3d5aec9d7f3117cec40342ed2b1a3603dc99e",
+            "recipient": "0x19536930b58cb5a4664142f4d19aa7c5c1ba72d25f0cdb70c6e6ebe22af5c0af",
+            "independentL1Sender": true,
+            "testFaucetFunding": true,
+            "productionFundingHelper": true,
+            "productionRecoveryHelper": true,
+            "publicRecoveryPersistedBeforeDeposit": true,
+            "depositSends": 1,
+            "privateSecretsStored": false
+          },
+          "payer": "0x19536930b58cb5a4664142f4d19aa7c5c1ba72d25f0cdb70c6e6ebe22af5c0af",
+          "scope": "native cold-start claim and independently verified browser private-balance post"
+        },
+        "claim": {
+          "passed": true,
+          "scope": "local real deposit and genuine private claim with ordinary checkpoint inclusion",
+          "syntheticMessages": false,
+          "syntheticProofs": false,
+          "claimEpochProofAccepted": false,
+          "depositTxHash": "0xaa1811abb938592c9b1d81237a8997d75ae506affbad15c908d3577ba73e17b9",
+          "depositBlock": "102",
+          "depositNonce": "1",
+          "amount": "1000000000000000",
+          "inboxMessageKey": "0x00281520922fd0089b2a503cf94e9667e189c8a05d21c2fbd8d6a925892b10b9",
+          "messageContentChecked": true,
+          "artifactHashes": {
+            "apps/src/billboard/billboard_artifact.json": "50009f964ca8496c645e8bbb4d9a3b18621c9b26a7a2c7376e4f33c3b7e53696",
+            "billboard/portal/out/BillboardPortal.sol/BillboardPortal.json": "9b3e7d2d68354f32f0ae9dd19ced53ddcff1eba6d7784f2952110c74fe106bfb",
+            ".build/contracts-manifest.json": "691d398b21235e528356b46e52ec37432fbdbc7439ab5df4bbe2bfa2aa9659ca"
+          },
+          "feePayer": "0x19536930b58cb5a4664142f4d19aa7c5c1ba72d25f0cdb70c6e6ebe22af5c0af",
+          "privateFees": true,
+          "claimTxHash": "0x00956a70ed04f089a461ec2f23b3a596281707be6c09a925bd6a223b970012a7",
+          "proofSha256": "2874555757f057c4594ccb9162a2b532f37a9b890d4ac6ef0367f5fbeccddbb7",
+          "nodeValidation": "valid",
+          "inclusionSnapshots": [
+            {
+              "status": "pending",
+              "executionResult": null,
+              "blockNumber": null,
+              "l1Block": "132",
+              "l1Timestamp": "1789834977",
+              "nodeTime": 1789834977
+            },
+            {
+              "status": "pending",
+              "executionResult": null,
+              "blockNumber": null,
+              "l1Block": "133",
+              "l1Timestamp": "1789834978",
+              "nodeTime": 1789834978
+            },
+            {
+              "status": "pending",
+              "executionResult": null,
+              "blockNumber": null,
+              "l1Block": "134",
+              "l1Timestamp": "1789834979",
+              "nodeTime": 1789834979
+            },
+            {
+              "status": "proposed",
+              "executionResult": "success",
+              "blockNumber": 10,
+              "l1Block": "135",
+              "l1Timestamp": "1789834980",
+              "nodeTime": 1789834980
+            },
+            {
+              "status": "proposed",
+              "executionResult": "success",
+              "blockNumber": 10,
+              "l1Block": "136",
+              "l1Timestamp": "1789834981",
+              "nodeTime": 1789834981
+            },
+            {
+              "status": "proposed",
+              "executionResult": "success",
+              "blockNumber": 10,
+              "l1Block": "137",
+              "l1Timestamp": "1789834982",
+              "nodeTime": 1789834982
+            },
+            {
+              "status": "proposed",
+              "executionResult": "success",
+              "blockNumber": 10,
+              "l1Block": "138",
+              "l1Timestamp": "1789834983",
+              "nodeTime": 1789834983
+            },
+            {
+              "status": "proposed",
+              "executionResult": "success",
+              "blockNumber": 10,
+              "l1Block": "139",
+              "l1Timestamp": "1789834984",
+              "nodeTime": 1789834984
+            },
+            {
+              "status": "checkpointed",
+              "executionResult": "success",
+              "blockNumber": 10,
+              "l1Block": "141",
+              "l1Timestamp": "1789834986",
+              "nodeTime": 1789834986
+            }
+          ],
+          "replay": {
+            "rejected": true,
+            "reason": "consumed-claim-message",
+            "freshAccountRequest": true,
+            "originalMessageNullifierChecked": true,
+            "originalInboxLeafPresent": true,
+            "originalNoteUnchanged": true,
+            "noSecondNote": true,
+            "stage": "PXE witness generation; no second proof accepted or transaction sent"
+          },
+          "claimBlock": "10",
+          "claimStatus": "checkpointed",
+          "executionResult": "success",
+          "fee": "9011568800000",
+          "anchorBlock": 8,
+          "membershipRootChecked": true,
+          "logicalFieldCount": 11,
+          "physicalFieldCount": 8,
+          "exactDeliveredNoteChecked": true,
+          "nextRequired": "Wait eligibility; prove/include no-post exit, then use official test Outbox settlement and withdraw L1.",
+          "walletStopped": true
+        },
+        "browserPost": {
+          "passed": true,
+          "nativeSetup": true,
+          "browserApplicationProof": true,
+          "networkProofs": false,
+          "feeExhaustion": {
+            "passed": true,
+            "stage": "actual private balance preparation; no proof or submission",
+            "privateBalanceUnchanged": true,
+            "publicBalancesUnchanged": true,
+            "depositNoteUnchanged": true,
+            "forbiddenCalls": 0
+          },
+          "browser": {
+            "passed": true,
+            "browserEngine": "firefox",
+            "sourceStage": "actual-gui-post",
+            "elapsedMs": 52754,
+            "diagnosticInstrumentation": false,
+            "proofStageObservation": true,
+            "performanceQualified": false,
+            "diagnosticScope": "Fixed error-category observer; no debugger. GUI wall time only, not isolated proof performance.",
+            "browserVersion": "155.0",
+            "sdkReadyMs": 771,
+            "walletSetupMs": 2366,
+            "guiPostElapsedMs": 45176,
+            "publicTransactionHashes": [
+              "0x1e6c72238af934f7f95d69f913596f8893645e54ea65744410cab83d037b6eb9"
+            ],
+            "proofTimingMs": null,
+            "proofTimingScope": "GUI elapsed includes preparation and submission; fixed prover method-entry phases observed without changing arguments or returned promises.",
+            "uiDiagnostic": {
+              "postProgress": [
+                true,
+                true,
+                true,
+                true,
+                true
+              ],
+              "formatterDiagnostics": [],
+              "walletRestored": true,
+              "ethereumConnected": true,
+              "postVisible": true,
+              "postBusy": false,
+              "setupHasError": false,
+              "postHasError": false,
+              "markers": {
+                "walletFailure": false,
+                "setupFailure": false,
+                "operationFailure": false,
+                "configurationFailure": false,
+                "provingStarted": true,
+                "provingComplete": true,
+                "messageIncluded": true
+              }
+            },
+            "externalRequestCount": 0,
+            "failedHttp": [],
+            "cspDirectives": [],
+            "cspDetails": [],
+            "requestedPaths": [
+              "/acvm_js_bg.wasm",
+              "/aztec_bundle.js",
+              "/bb-main.worker.js",
+              "/crs/g1_uncompressed.dat",
+              "/crs/g2.dat",
+              "/crs/grumpkin_g1.dat",
+              "/noirc_abi_wasm_bg.wasm",
+              "/public-feed.js",
+              "/rpc/aztec",
+              "/rpc/ethereum",
+              "/user.html"
+            ],
+            "ownedServerStopped": true,
+            "browserClosed": true,
+            "scope": "Actual GUI post from preseeded disposable funded wallet; parent must verify canonical node effects. Not a full deposit-to-withdraw journey."
+          },
+          "rpcFootprint": {
+            "schema": "t03-rpc-footprint-v1",
+            "scope": "fixture RPC arguments only; exact address/field occurrences, not anonymity proof or wire-byte capture",
+            "excluded": "Requests rejected before fixture dispatch, including Aztec schema/auth failures; response contents",
+            "observations": 298,
+            "unknownMethods": 0,
+            "truncated": 0,
+            "classificationTruncatedObservations": 12,
+            "truncationOccurred": true,
+            "rows": [
+              {
+                "channel": "ethereum",
+                "method": "eth_chainId",
+                "timeBucketSeconds": 3,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 15
+              },
+              {
+                "channel": "ethereum",
+                "method": "eth_call",
+                "timeBucketSeconds": 3,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 19
+              },
+              {
+                "channel": "aztec",
+                "method": "getContract",
+                "timeBucketSeconds": 3,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "board"
+                ],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockData",
+                "timeBucketSeconds": 3,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getPublicStorageAt",
+                "timeBucketSeconds": 3,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "board"
+                ],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 5
+              },
+              {
+                "channel": "aztec",
+                "method": "getNodeInfo",
+                "timeBucketSeconds": 3,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 5
+              },
+              {
+                "channel": "aztec",
+                "method": "getL1ContractAddresses",
+                "timeBucketSeconds": 3,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "ethereum",
+                "method": "eth_getCode",
+                "timeBucketSeconds": 3,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 3
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockNumber",
+                "timeBucketSeconds": 3,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlock",
+                "timeBucketSeconds": 3,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockData",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 8
+              },
+              {
+                "channel": "aztec",
+                "method": "getChainTips",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 5
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlock",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 4
+              },
+              {
+                "channel": "aztec",
+                "method": "getContract",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "author"
+                ],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getContract",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "board"
+                ],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 3
+              },
+              {
+                "channel": "aztec",
+                "method": "getContract",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getPrivateLogsByTags",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getPrivateLogsByTags",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "4097-65536",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 3
+              },
+              {
+                "channel": "aztec",
+                "method": "findLeavesIndexes",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 3
+              },
+              {
+                "channel": "ethereum",
+                "method": "eth_chainId",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 9
+              },
+              {
+                "channel": "aztec",
+                "method": "getPredictedMinFees",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 6
+              },
+              {
+                "channel": "aztec",
+                "method": "getNodeInfo",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 5
+              },
+              {
+                "channel": "aztec",
+                "method": "simulatePublicCalls",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "65537-1048576",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "funder"
+                ],
+                "classificationTruncated": true,
+                "outcome": "success",
+                "count": 6
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockNumber",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 3
+              },
+              {
+                "channel": "ethereum",
+                "method": "eth_call",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 17
+              },
+              {
+                "channel": "aztec",
+                "method": "getPublicStorageAt",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "board"
+                ],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 10
+              },
+              {
+                "channel": "aztec",
+                "method": "getPublicLogsByTags",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "board"
+                ],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 3
+              },
+              {
+                "channel": "aztec",
+                "method": "getL1ContractAddresses",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "ethereum",
+                "method": "eth_getCode",
+                "timeBucketSeconds": 5,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "ethereum",
+                "method": "eth_chainId",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 9
+              },
+              {
+                "channel": "ethereum",
+                "method": "eth_getCode",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "ethereum",
+                "method": "eth_call",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 6
+              },
+              {
+                "channel": "aztec",
+                "method": "getContract",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "board"
+                ],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getChainTips",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 6
+              },
+              {
+                "channel": "aztec",
+                "method": "getPredictedMinFees",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 4
+              },
+              {
+                "channel": "aztec",
+                "method": "simulatePublicCalls",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "65537-1048576",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "funder"
+                ],
+                "classificationTruncated": true,
+                "outcome": "success",
+                "count": 4
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockNumber",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlock",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getNodeInfo",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getContract",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "payer"
+                ],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getPrivateLogsByTags",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "4097-65536",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 3
+              },
+              {
+                "channel": "aztec",
+                "method": "findLeavesIndexes",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 3
+              },
+              {
+                "channel": "aztec",
+                "method": "getPublicStorageAt",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "board"
+                ],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 10
+              },
+              {
+                "channel": "aztec",
+                "method": "getPublicDataWitness",
+                "timeBucketSeconds": 6,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getPrivateLogsByTags",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "4097-65536",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "findLeavesIndexes",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "simulatePublicCalls",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "65537-1048576",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "funder",
+                  "payer"
+                ],
+                "classificationTruncated": true,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "ethereum",
+                "method": "eth_chainId",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 6
+              },
+              {
+                "channel": "ethereum",
+                "method": "eth_call",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 13
+              },
+              {
+                "channel": "aztec",
+                "method": "getContract",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "board"
+                ],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockData",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getPublicStorageAt",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "board"
+                ],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 5
+              },
+              {
+                "channel": "aztec",
+                "method": "getNodeInfo",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getL1ContractAddresses",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "ethereum",
+                "method": "eth_getCode",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getChainTips",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getPublicDataWitness",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 3
+              },
+              {
+                "channel": "aztec",
+                "method": "getNoteHashMembershipWitness",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getNullifierMembershipWitness",
+                "timeBucketSeconds": 7,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 3
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockData",
+                "timeBucketSeconds": 10,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockData",
+                "timeBucketSeconds": 15,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockData",
+                "timeBucketSeconds": 20,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockData",
+                "timeBucketSeconds": 25,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockData",
+                "timeBucketSeconds": 30,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "ethereum",
+                "method": "eth_chainId",
+                "timeBucketSeconds": 35,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getChainTips",
+                "timeBucketSeconds": 35,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockNumber",
+                "timeBucketSeconds": 35,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlock",
+                "timeBucketSeconds": 35,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockData",
+                "timeBucketSeconds": 35,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "sendTx",
+                "timeBucketSeconds": 35,
+                "argumentSizeBucket": "65537-1048576",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "funder",
+                  "payer"
+                ],
+                "classificationTruncated": true,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getTxReceipt",
+                "timeBucketSeconds": 35,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockData",
+                "timeBucketSeconds": 40,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getTxReceipt",
+                "timeBucketSeconds": 40,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockData",
+                "timeBucketSeconds": 45,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getTxReceipt",
+                "timeBucketSeconds": 45,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getChainTips",
+                "timeBucketSeconds": 50,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlock",
+                "timeBucketSeconds": 50,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 3
+              },
+              {
+                "channel": "aztec",
+                "method": "getContract",
+                "timeBucketSeconds": 50,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "board"
+                ],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "findLeavesIndexes",
+                "timeBucketSeconds": 50,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 2
+              },
+              {
+                "channel": "aztec",
+                "method": "getContract",
+                "timeBucketSeconds": 50,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getPrivateLogsByTags",
+                "timeBucketSeconds": 50,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getBlockData",
+                "timeBucketSeconds": 50,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 8
+              },
+              {
+                "channel": "aztec",
+                "method": "getPrivateLogsByTags",
+                "timeBucketSeconds": 50,
+                "argumentSizeBucket": "4097-65536",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 3
+              },
+              {
+                "channel": "aztec",
+                "method": "getPublicLogsByTags",
+                "timeBucketSeconds": 50,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [
+                  "board"
+                ],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 3
+              },
+              {
+                "channel": "aztec",
+                "method": "getTxReceipt",
+                "timeBucketSeconds": 50,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "aztec",
+                "method": "getPrivateLogsByTags",
+                "timeBucketSeconds": 50,
+                "argumentSizeBucket": "257-4096",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              },
+              {
+                "channel": "ethereum",
+                "method": "eth_chainId",
+                "timeBucketSeconds": 50,
+                "argumentSizeBucket": "1-256",
+                "sizeScope": "sum of argument scalar bytes; not wire size",
+                "roles": [],
+                "classificationTruncated": false,
+                "outcome": "success",
+                "count": 1
+              }
+            ]
+          },
+          "verification": {
+            "publicFootprint": {
+              "schemaVersion": 1,
+              "scope": "Exact known-role equality in named public transaction/effect fields; no witness or decrypted-note inspection",
+              "matching": "Whole field numeric equality; no substring scan; commitments and delivery matches do not decode identities",
+              "sharedFeePayer": true,
+              "authorIsPublicFeePayer": false,
+              "counts": {
+                "publicCalls": 1,
+                "publicCalldataFields": 35,
+                "publicDataWrites": 40,
+                "publicLogs": 1,
+                "noteCommitments": 3,
+                "nullifiers": 5,
+                "l2ToL1MessageHashes": 0,
+                "privateDeliveryLogs": 3,
+                "privateDeliveryEmittedFields": 48,
+                "contractClassLogs": 0
+              },
+              "rolePresence": {
+                "feePayer": {
+                  "author": false,
+                  "otherAuthor": null,
+                  "sharedPayer": true,
+                  "board": false,
+                  "moderator": null,
+                  "funder": null,
+                  "collateralFunder": null,
+                  "otherCollateralFunder": null,
+                  "feeFunder": null,
+                  "otherFeeFunder": null,
+                  "coinbase": null
+                },
+                "publicCallSenders": {
+                  "author": false,
+                  "otherAuthor": null,
+                  "sharedPayer": false,
+                  "board": true,
+                  "moderator": null,
+                  "funder": null,
+                  "collateralFunder": null,
+                  "otherCollateralFunder": null,
+                  "feeFunder": null,
+                  "otherFeeFunder": null,
+                  "coinbase": null
+                },
+                "publicCallTargets": {
+                  "author": false,
+                  "otherAuthor": null,
+                  "sharedPayer": false,
+                  "board": true,
+                  "moderator": null,
+                  "funder": null,
+                  "collateralFunder": null,
+                  "otherCollateralFunder": null,
+                  "feeFunder": null,
+                  "otherFeeFunder": null,
+                  "coinbase": null
+                },
+                "publicCallCalldata": {
+                  "author": false,
+                  "otherAuthor": null,
+                  "sharedPayer": false,
+                  "board": false,
+                  "moderator": null,
+                  "funder": null,
+                  "collateralFunder": null,
+                  "otherCollateralFunder": null,
+                  "feeFunder": null,
+                  "otherFeeFunder": null,
+                  "coinbase": null
+                },
+                "publicWriteSlots": {
+                  "author": false,
+                  "otherAuthor": null,
+                  "sharedPayer": false,
+                  "board": false,
+                  "moderator": null,
+                  "funder": null,
+                  "collateralFunder": null,
+                  "otherCollateralFunder": null,
+                  "feeFunder": null,
+                  "otherFeeFunder": null,
+                  "coinbase": null
+                },
+                "publicWriteValues": {
+                  "author": false,
+                  "otherAuthor": null,
+                  "sharedPayer": false,
+                  "board": false,
+                  "moderator": null,
+                  "funder": null,
+                  "collateralFunder": null,
+                  "otherCollateralFunder": null,
+                  "feeFunder": null,
+                  "otherFeeFunder": null,
+                  "coinbase": null
+                },
+                "publicLogContracts": {
+                  "author": false,
+                  "otherAuthor": null,
+                  "sharedPayer": false,
+                  "board": true,
+                  "moderator": null,
+                  "funder": null,
+                  "collateralFunder": null,
+                  "otherCollateralFunder": null,
+                  "feeFunder": null,
+                  "otherFeeFunder": null,
+                  "coinbase": null
+                },
+                "publicLogFields": {
+                  "author": false,
+                  "otherAuthor": null,
+                  "sharedPayer": false,
+                  "board": false,
+                  "moderator": null,
+                  "funder": null,
+                  "collateralFunder": null,
+                  "otherCollateralFunder": null,
+                  "feeFunder": null,
+                  "otherFeeFunder": null,
+                  "coinbase": null
+                },
+                "noteCommitments": {
+                  "author": false,
+                  "otherAuthor": null,
+                  "sharedPayer": false,
+                  "board": false,
+                  "moderator": null,
+                  "funder": null,
+                  "collateralFunder": null,
+                  "otherCollateralFunder": null,
+                  "feeFunder": null,
+                  "otherFeeFunder": null,
+                  "coinbase": null
+                },
+                "nullifiers": {
+                  "author": false,
+                  "otherAuthor": null,
+                  "sharedPayer": false,
+                  "board": false,
+                  "moderator": null,
+                  "funder": null,
+                  "collateralFunder": null,
+                  "otherCollateralFunder": null,
+                  "feeFunder": null,
+                  "otherFeeFunder": null,
+                  "coinbase": null
+                },
+                "l2ToL1MessageHashes": {
+                  "author": false,
+                  "otherAuthor": null,
+                  "sharedPayer": false,
+                  "board": false,
+                  "moderator": null,
+                  "funder": null,
+                  "collateralFunder": null,
+                  "otherCollateralFunder": null,
+                  "feeFunder": null,
+                  "otherFeeFunder": null,
+                  "coinbase": null
+                },
+                "privateDeliveryTags": {
+                  "author": false,
+                  "otherAuthor": null,
+                  "sharedPayer": false,
+                  "board": false,
+                  "moderator": null,
+                  "funder": null,
+                  "collateralFunder": null,
+                  "otherCollateralFunder": null,
+                  "feeFunder": null,
+                  "otherFeeFunder": null,
+                  "coinbase": null
+                },
+                "privateDeliveryPayloadFields": {
+                  "author": false,
+                  "otherAuthor": null,
+                  "sharedPayer": false,
+                  "board": false,
+                  "moderator": null,
+                  "funder": null,
+                  "collateralFunder": null,
+                  "otherCollateralFunder": null,
+                  "feeFunder": null,
+                  "otherFeeFunder": null,
+                  "coinbase": null
+                }
+              },
+              "limits": "Does not test derived identifiers, linkability across transactions, funding timing, RPC metadata, proof bytes, protocol constants or contract-class contents. Private delivery tags/payload are public serialized fields, not decrypted private data. Absence of exact matches is not proof of anonymity."
+            },
+            "passed": true,
+            "scope": "one genuine browser-proved first post; native fixture preparation and read-only verification",
+            "applicationProofs": true,
+            "networkProofs": false,
+            "txHash": "0x1e6c72238af934f7f95d69f913596f8893645e54ea65744410cab83d037b6eb9",
+            "proofSha256": "1d33988adfcf355fb43132b3915928c8f8e365dee7d765c7474e8098fdab625c",
+            "nodePreSubmissionValidation": "valid",
+            "normalNodeVerification": true,
+            "status": "checkpointed",
+            "executionResult": "success",
+            "blockNumber": "18",
+            "blockHash": "0x20babb567d0f62f2da7d2f638685ca3df4e55ed321961adaf8d195635ecb69b6",
+            "postId": "0x2a661adadb6e158f2f78f2b3e5b50520eda258d8682980f96b08776df2bedc2b",
+            "feePayer": "0x19536930b58cb5a4664142f4d19aa7c5c1ba72d25f0cdb70c6e6ebe22af5c0af",
+            "transactionFee": "29062197000000",
+            "exactDepositNullifier": true,
+            "exactReplacementNote": true,
+            "exactPostNote": true,
+            "exactCooldown": true,
+            "publicContentChecked": true,
+            "privateFeeDebitChecked": true,
+            "publicFeePayerDebitChecked": true,
+            "authorPublicFeeBalanceZero": true
+          }
+        },
+        "networkProverCreated": false,
+        "cleanupComplete": true
+      },
+      "epochSchedulingStarted": false,
+      "idleProverAgentCreated": false,
+      "nodeStopped": true
+    },
+    "anvilExit": {
+      "code": null,
+      "signal": "SIGKILL"
+    },
+    "singletonsStopped": true
+  },
+  "elapsedMs": 216753,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "finishedAt": "2026-09-19T16:23:12.420Z"
+}

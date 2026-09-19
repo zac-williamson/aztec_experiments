@@ -111,6 +111,12 @@ const records = [
     fixture: 'activated-board', authors: 1, applicationThreads: 1, browser: 'post', browserEngine: 'chromium',
     run: run('browserPost'),
   }),
+  ...['firefox','webkit'].map(browserEngine=>Object.freeze({
+    name: 'browser-'+browserEngine+'-journey', deadlineMs: 540000, evidenceTask: 'T04',
+    description: 'Actual '+browserEngine+' deposit through refund lifecycle',
+    fixture: 'activated-board', authors: 1, applicationThreads: 1, browser: 'lifecycle', browserEngine,
+    run: run('browserLifecycle'),
+  })),
   Object.freeze({
     name: 'browser-journey', deadlineMs: 540000, evidenceTask: 'T04',
     description: 'Actual browser deposit through refund lifecycle',

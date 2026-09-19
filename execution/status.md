@@ -6,8 +6,8 @@ Objective state: **running**. Completed packages: 24/35.
 
 ## In progress
 
-- **Run browser, recovery, concurrency and load matrix (T04)** — WebKit074, wallet-absence075 and withdrawal-traffic076 real application checks pass with cleanup. Shared/deploy retry removal passes100 checks, corrected deployment-recovery fixture33/33, app build077 and independent reviews pass. Next: current Firefox155 actual posting qualification.
-  Investigation: 0/1 attempts. Verify rebuilt app and deployment recovery checks, then one current Firefox post078; no unchanged repeat.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Firefox lifecycle084 passes378008ms/3598176KiB; mobile reader083passes. All5currentcontract history085 tests pass, native1100record084 and client3tests pass. Next WebKit full lifecycle086, same driver/bounds, source frozen.
+  Investigation: 1/1 attempts. Reassessment required. Inspect WebKit086 canonical stages, fee accounting, result and cleanup; diagnose failure without unchanged retry.
 
 ## Ready internal work
 

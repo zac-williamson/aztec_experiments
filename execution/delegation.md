@@ -41,3 +41,18 @@ autonomously. Historical results do not qualify changed source.
   corrected CREATE2 runtime fixture after a stale fixture failed existing preflight.
 - application_change_review: completed withdrawal-traffic integration review; run076
   passed original-proof ordering, exact exit attribution and fee accounting.
+
+- application_change_review: read-only review of remaining T04 acceptance gaps;
+  confirmed layered-history wording conflict against the recorded C04 decision.
+- webkit_failure_review: read-only structural review of reusing the existing full
+  lifecycle driver for Firefox/WebKit; no new runner or fallback is proposed.
+
+- webkit_failure_review: approved portable full lifecycle integration and mobile
+  reader regression/fix; no alternate runner, forced clicks or overflow clipping.
+- application_change_review: completed cold browser fee funding design review.
+  Native setup must stop before token approval/bridge/private claim; reuse current
+  browser context and supervisor with independent canonical fee accounting.
+
+- application_change_review: reconciled actual C04 file hashes with9089663
+  rather than its pre-change HEAD; recommended five focused current history tests
+  because later C05 maturity/cooldown paths changed. Native/client084 pass.

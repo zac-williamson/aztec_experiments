@@ -23,7 +23,7 @@ export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,
  const observation={passed:false,browserEngine,sourceStage:stage,elapsedMs:0,diagnosticInstrumentation:diagnostic,proofStageObservation:observeProofStages,performanceQualified:false,diagnosticScope:diagnostic&&journeyDriver?'Formatter-only observation with fixed driver/UI diagnostics; no breakpoint or engine/prover replacement.':diagnostic?'Error formatter and catch breakpoint observation; original application behavior preserved.':'Fixed error-category observer; no debugger. GUI wall time only, not isolated proof performance.'};
  const requireValue=(condition)=>{if(!condition)throw Error('Invalid disposable browser test parameters');};
  requireValue(['chromium','firefox','webkit'].includes(browserEngine));
- requireValue(browserEngine==='chromium'||(!browserRecovery&&!journeyDriver&&!diagnostic));
+ requireValue(browserEngine==='chromium'||(!browserRecovery&&!diagnostic));
  const selectedBrowser={chromium,firefox,webkit}[browserEngine];
  const launchOptions={headless:true,...(browserEngine==='chromium'?{args:['--js-flags=--max-old-space-size=768']}:{})};
  const local=value=>{const u=new URL(value);requireValue(['http:','https:'].includes(u.protocol)&&u.hostname==='127.0.0.1'&&u.port&&!u.username&&!u.password&&!u.search&&!u.hash&&u.pathname==='/');return u;};

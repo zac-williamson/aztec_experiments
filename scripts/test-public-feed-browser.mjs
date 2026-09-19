@@ -9,8 +9,9 @@ import {ROOT} from './toolchain.mjs';
 const metadata=JSON.parse(fs.readFileSync(path.join(ROOT,'.build/public-feed/metadata.json'))),hex=n=>'0x'+BigInt(n).toString(16).padStart(64,'0'),portal='0x'+'2'.repeat(40),rollup='0x'+'1'.repeat(40),blockHash=hex(100),classId=metadata.classId;
 const pack=(s,n)=>{const b=Buffer.alloc(n*31);b.write(s);return Array.from({length:n},(_,i)=>hex(BigInt('0x'+b.subarray(i*31,(i+1)*31).toString('hex'))));};
 const event=(type,fields,index)=>({logData:[metadata.eventTags[type],...fields],blockNumber:1,blockHash,blockTimestamp:'100',txHash:hex(1000+index),txIndexWithinBlock:0,logIndexWithinTx:index});
-const policy=event('PolicyPublished',[hex(1),hex(30),hex(6),...pack('Policy',48)],0),posts=Array.from({length:55},(_,i)=>{const text=i===54?'Public <img src="https://invalid.test/leak"> café 🌍':'Message '+i;return event('PostPublished',[hex(1),hex(i+100),hex(i),hex(100),hex(200),hex(30),hex(Buffer.byteLength(text)),...pack(text,32)],i+1);});
-const logs={PolicyPublished:[policy],PostPublished:posts,PostFlagged:[]},requests=[],methods=[];let logRequests=0;
+const policy=event('PolicyPublished',[hex(1),hex(30),hex(6),...pack('Policy',48)],0),posts=Array.from({length:55},(_,i)=>{const text=i===54?'Public <img src="https://invalid.test/leak"> café 🌍 '+ 'x'.repeat(850):'Message '+i;return event('PostPublished',[hex(1),hex(i+100),hex(i),hex(100),hex(200),hex(30),hex(Buffer.byteLength(text)),...pack(text,32)],i+1);});
+const reason='Review '+ 'r'.repeat(180),flag=event('PostFlagged',[hex(1),hex(154),hex(30),hex(101),hex(9),hex(Buffer.byteLength(reason)),...pack(reason,7)],56);
+const logs={PolicyPublished:[policy],PostPublished:posts,PostFlagged:[flag]},requests=[],methods=[];let logRequests=0;
 const server=http.createServer(async(req,res)=>{try{
  requests.push(req.url);
  if(req.method==='POST'){
@@ -29,17 +30,21 @@ const server=http.createServer(async(req,res)=>{try{
  }catch{res.writeHead(500);res.end('test server failure');}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port,tmp=fs.mkdtempSync(path.join(os.tmpdir(),'public-feed-browser-'));let browser;
 try{
- browser=await chromium.launch({headless:true});const context=await browser.newContext(),page=await context.newPage();page.setDefaultTimeout(15000);const forbidden=[];
+ browser=await chromium.launch({headless:true});const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage();page.setDefaultTimeout(15000);const forbidden=[];
  await context.route('**/*',route=>{const u=route.request().url();if(!u.startsWith(origin+'/')){forbidden.push(u);return route.abort();}return route.continue();});
  await page.goto(origin+'/feed.html');
  const publicConfig={schemaVersion:1,network:{nodeUrl:origin+'/node',ethRpcUrl:origin+'/eth',chainId:'31337',rollupVersion:'5',rollupAddress:rollup},board:{portalAddress:portal,contractAddress:hex(3)},privateFee:null};
- await page.getByLabel('Public configuration JSON').fill(JSON.stringify(publicConfig));await page.getByRole('button',{name:'Import configuration',exact:true}).click();await page.locator('#connect').click();
+ await page.getByLabel('Public configuration JSON').fill(JSON.stringify(publicConfig));await page.getByRole('button',{name:'Import configuration',exact:true}).click();assert.deepEqual(await page.evaluate(()=>({inner:window.innerWidth,scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth})),{inner:390,scroll:390,client:390},'Configuration must fit the actual mobile viewport before connecting');await page.locator('#connect').click();
  await page.waitForFunction(()=>document.querySelectorAll('#messages article').length===50);assert.match(await page.locator('#messages').textContent(),/Public <img/);assert.equal(await page.locator('#messages img').count(),0);
+ await page.locator('#messages details summary').click();assert.equal(await page.locator('#messages details').getAttribute('open'),'');
+ assert((await page.locator('#messages details').textContent()).includes('Reason: '+reason));
+ assert.equal(await page.evaluate(()=>window.innerWidth),390,'Mobile viewport metadata must be effective');
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'Mobile reader must not overflow horizontally');
  await page.locator('#more').click();await page.waitForFunction(()=>document.querySelectorAll('#messages article').length===55);assert.equal(await page.locator('#more').isHidden(),true);
  const initialLogs=logRequests;await page.reload();await page.locator('#connect').click();await page.waitForFunction(()=>document.querySelectorAll('#messages article').length===50);assert.equal(logRequests,initialLogs);
  assert.equal(await page.evaluate(()=>typeof window.__aztec),'undefined');assert.deepEqual(await page.evaluate(async()=> (await indexedDB.databases()).map(d=>d.name)),['aztec-billboard-public-feed-v1']);assert.deepEqual(forbidden,[]);
  const cliOutput=await new Promise((resolve,reject)=>{const child=spawn(process.execPath,[path.join(ROOT,'apps/src/billboard/user/cli.mjs'),'list','--json','--portal-address',portal,'--node-url',origin+'/node','--eth-rpc',origin+'/eth','--public-feed-cache',path.join(tmp,'cache')],{cwd:tmp,stdio:['ignore','pipe','pipe']});let out='',err='';const timer=setTimeout(()=>{child.kill('SIGKILL');reject(Error('CLI deadline'));},20000);child.stdout.on('data',b=>out+=b);child.stderr.on('data',b=>err+=b);child.on('error',reject);child.on('exit',code=>{clearTimeout(timer);code===0?resolve(out):reject(Error('CLI failed: '+err.slice(-300)+' '+out.slice(-300)));});});
  const data=JSON.parse(cliOutput.trim());assert.equal(data.posts.length,55);assert.equal(data.count,55);assert.equal(data.policy,'Policy');assert.equal(fs.existsSync(path.join(tmp,'.pxe-cache-v2')),false);
  assert(!requests.some(x=>/wasm|crs|aztec_bundle|wallet|worker/.test(x)));
- console.log(JSON.stringify({passed:true,actualBuiltBrowser:true,walletFree:true,publicBundleBytes:fs.statSync(path.join(ROOT,'apps/dist/public-feed.js')).size,paginatedPosts:55,reloadNoLogRescan:true,actualCliWithoutWallet:true,noProvingAssetRequests:true,publicOnlyDatabase:true,escapedContent:true,controlledRpc:true}));
+ console.log(JSON.stringify({passed:true,actualBuiltBrowser:true,walletFree:true,publicBundleBytes:fs.statSync(path.join(ROOT,'apps/dist/public-feed.js')).size,paginatedPosts:55,reloadNoLogRescan:true,actualCliWithoutWallet:true,noProvingAssetRequests:true,publicOnlyDatabase:true,escapedContent:true,controlledRpc:true,mobileViewport:{width:390,height:844},flaggedDisclosure:true,longContentNoHorizontalOverflow:true}));
 }finally{await browser?.close();await new Promise(r=>server.close(r));fs.rmSync(tmp,{recursive:true,force:true});}
