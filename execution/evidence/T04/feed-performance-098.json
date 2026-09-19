@@ -1,0 +1,87 @@
+{
+  "script": "scripts/test-public-feed-browser.mjs",
+  "args": [
+    "--performance"
+  ],
+  "passed": false,
+  "observations": [],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 498336,
+  "rssSamples": [
+    {
+      "elapsedMs": 1001,
+      "rssKiB": 498336
+    }
+  ],
+  "failures": [
+    {
+      "stage": "ui-exit"
+    }
+  ],
+  "children": [
+    {
+      "role": "ui",
+      "code": null,
+      "signal": "SIGABRT",
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/test-public-feed-browser.mjs": "afb4b89113e5fa6d9458083f2d57f151d63e20986446f14b95978b1db2075596",
+    "shared/public-feed.mjs": "3e9011a6761bbaf53d0dabd572ac6a08a7bf89452cbca51636c23d97caa5ed90",
+    "shared/public-feed-source.mjs": "a860aaab73c0b0eeb53286bd090230baee2daefb96023ce33f476513e9bde3ca",
+    "apps/dist/public-feed.js": "351907fa8d9ed42a5fe76a566f99adae9f69f1ef6f958b0c10ed956c5158e646",
+    "apps/dist/feed.html": "a9b09d557dcbb1823de68b9f59f0909a94c0716ab7066ab399e6fcbe575e17a6",
+    "scripts/run-bounded-browser-check.mjs": "7a81a50a6d8fdaba35b1e1d77edfd8499335aa38d3cd8a253f882599fbb2559a",
+    "scripts/testing/supervisor.mjs": "518d827972d68cce7bab14f56df6483a260f5f5dc4082b50e2e4bbd80b0723f2",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "3e4129c22e50f893c40fced2bba641a9e8f508b52a7e64e2ab15d5d0c74ef430",
+    ".build/sdk/sdk-manifest.json": "60a236a3b6266f48ee493da885b34815cf152163ed4ec57b103ced683035fc07"
+  },
+  "peakMemory": {
+    "elapsedMs": 1001,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 59542,
+        "ppid": 1375,
+        "rssKiB": 54448
+      },
+      {
+        "role": "ui",
+        "pid": 59556,
+        "ppid": 59542,
+        "rssKiB": 142656
+      },
+      {
+        "role": "ui",
+        "pid": 59557,
+        "ppid": 59556,
+        "rssKiB": 88800
+      },
+      {
+        "role": "ui",
+        "pid": 59558,
+        "ppid": 59557,
+        "rssKiB": 59104
+      },
+      {
+        "role": "ui",
+        "pid": 59559,
+        "ppid": 59557,
+        "rssKiB": 43472
+      },
+      {
+        "role": "ui",
+        "pid": 59560,
+        "ppid": 59557,
+        "rssKiB": 109856
+      }
+    ]
+  },
+  "elapsedMs": 1881,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true
+}

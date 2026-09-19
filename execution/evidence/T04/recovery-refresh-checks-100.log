@@ -1,0 +1,17 @@
+✔ recovery reconciles postable without another transaction (2.305792ms)
+✔ recovery reconciles withdrawn_l2_claimable_l1 without another transaction (0.304292ms)
+✔ recovery reconciles zero_balance_need_deposit without another transaction (0.253125ms)
+✔ recovery reconciles deposited_l1_not_claimed_l2 without another transaction (0.43975ms)
+✔ failed recover leaves current state intact (0.379583ms)
+✔ failed status leaves current state intact (0.319792ms)
+✔ changed scope at recover cannot replace current state (0.254542ms)
+✔ changed scope at status cannot replace current state (0.940459ms)
+✔ setup failure provides explicit safe reload and recovery guidance (0.094625ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 50.995416

@@ -80,7 +80,7 @@ import {EthAddress} from '@aztec/foundation/eth-address';
 import {NoteStatus} from '@aztec/stdlib/note';
 import {sha256ToField} from '@aztec/foundation/crypto/sha256';
 function mainHarness(action,isDummy=false) {
-  const c=context(),requests=[],logs=[],operations=[];let sent=false,authorBalanceReads=0,postExists=!['post','recover'].includes(action),missingNote=false,noteOverrides={},actionHook=null,readHook=null,censorValue=null;
+  let c=context();const requests=[],logs=[],operations=[];let actionReceipt={status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)},sent=false,authorBalanceReads=0,postExists=!['post','recover'].includes(action),missingNote=false,noteOverrides={},actionHook=null,readHook=null,censorValue=null;
   // Timers only represent UI yields in this inert test; no network/proof work is performed.
   c.setTimeout=callback=>setTimeout(callback,0);
   const addr=AztecAddress.fromFieldUnsafe(new Fr(12));
@@ -97,7 +97,7 @@ function mainHarness(action,isDummy=false) {
   const note=()=>({schemaVersion:1n,depositChainId:5n,depositNonce:7n,amount:missingNote||(action==='claim'&&!sent)?0n:amount,nextAllowedTime:0n,lastRealPostIndex:0n,lastScreenedIndex:0n,headSequence:0n,...noteOverrides});
   c.readBillboardDepositInfo=async()=>note();
   const methods=new Proxy({}, {get:(_target,name)=>{
-    if(['post','withdraw','claim_deposit','transfer_censor','declare_immoral','set_moderation_policy'].includes(name)) return (...args)=>({send:async opts=>{assert.equal(opts.from,addr);assert.equal(opts.fee.paymentMethod,'private-method');if(actionHook)await actionHook(name,args);sent=true;requests.at(-1).action={kind:action,args};return {receipt:{status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)}};}});
+    if(['post','withdraw','claim_deposit','transfer_censor','declare_immoral','set_moderation_policy'].includes(name)) return (...args)=>({send:async opts=>{assert.equal(opts.from,addr);assert.equal(opts.fee.paymentMethod,'private-method');if(actionHook)await actionHook(name,args);sent=true;requests.at(-1).action={kind:action,args};return {receipt:actionReceipt};}});
     return ()=>({simulate:async()=>{if(readHook)await readHook(name);return name==='get_censor'?(censorValue??addr.toField()):name==='get_post_exists'?postExists:name==='get_screen_hints'?[null,null]:1n;}});
   }});
   class BaseWallet {constructor(pxe){this.pxe=pxe;}}
@@ -123,7 +123,7 @@ function mainHarness(action,isDummy=false) {
     node.getBlocks=async()=>[{number:1,hash:'block',body:{txEffects:[{txHash,l2ToL1Msgs:[leaf]}]}}];
     node.getTxReceipt=async()=>({txHash,status:'checkpointed',executionResult,blockNumber:1,blockHash:'block'});
   }
-  return {setTimer:fn=>{c.setTimeout=fn;},run:()=>c.runBillboardUser(env,config),setWithdrawalHistory,env,config,node,provider,Portal,requests,logs,operations,setCensor:value=>censorValue=value,setMissingNote:value=>missingNote=value,setNoteState:value=>noteOverrides=value,onAction:value=>actionHook=value,onRead:value=>readHook=value,setPostExists:value=>postExists=value,authorBalanceReads:()=>authorBalanceReads,secret};
+  return {restartEngine:()=>{c=context();c.setTimeout=callback=>setTimeout(callback,0);c.readBillboardDepositInfo=async()=>note();},setActionReceipt:value=>actionReceipt=value,setTimer:fn=>{c.setTimeout=fn;},run:()=>c.runBillboardUser(env,config),setWithdrawalHistory,env,config,node,provider,Portal,requests,logs,operations,setCensor:value=>censorValue=value,setMissingNote:value=>missingNote=value,setNoteState:value=>noteOverrides=value,onAction:value=>actionHook=value,onRead:value=>readHook=value,setPostExists:value=>postExists=value,authorBalanceReads:()=>authorBalanceReads,secret};
 }
 for(const [action,dummy] of [['claim',false],['post',false],['post',true],['withdraw',false]]) {
   test(`actual main ${action}${dummy?' dummy':''} uses standard author call with private fee payment`,async()=>{
@@ -564,3 +564,37 @@ test('confirmed claim with failed sync reports confirmation and prevents further
  await assert.rejects(h.run());
  assert.equal(actions,advance?1:0);assert.equal(waits,advance?3:20);
  });
+
+for(const kind of ['claim','dummy'])test(`accepted ${kind} survives engine restart and changed UI intent through the real encrypted journal`,async()=>{
+ const h=mainHarness(kind==='claim'?'claim':'post',kind==='dummy'),tx=Tx.random({randomProof:true}),records=new Map();
+ const receipt={txHash:tx.getTxHash(),status:'checkpointed',executionResult:'success',blockNumber:1,blockHash:'block'};
+ const storage={read:async key=>records.get(key)??null,compareAndSwap:async(key,previous,next)=>{assert.equal(records.get(key)??null,previous);records.set(key,next);}};
+ let journal,included=false,failSync=true,acceptedActions=0;
+ h.env.createTransactionJournal=async options=>journal=await createL2Journal({...options,storage,Tx,node:h.node});
+ h.node.getTxReceipt=async hash=>{assert.equal(hash.toString(),tx.getTxHash().toString());return {...receipt,status:included?'checkpointed':'dropped'};};
+ h.node.sendTx=async()=>assert.fail('Accepted operation must not be resubmitted');
+ h.setActionReceipt(receipt);
+ if(kind==='dummy')h.setNoteState({headSequence:1n,lastRealPostIndex:1n,lastScreenedIndex:0n});
+ const create=h.env.aztec.createPXE;
+ h.env.aztec.createPXE=async(...args)=>({...await create(...args),sync:async()=>{if(kind==='claim'&&included&&failSync)throw Error('confirmed claim sync interrupted');}});
+ h.env.aztec.boundedTransactionRead=fn=>fn();
+ h.onAction(async()=>{
+  const binding=kind==='dummy'?{applicationNullifier:tx.data.getNonEmptyNullifiers()[0].toString()}:{};
+  await journal.prepare(tx,await journal.assertCanStart(),binding);included=true;acceptedActions++;
+  if(kind==='dummy'){
+   h.setNoteState({headSequence:2n,lastRealPostIndex:1n,lastScreenedIndex:1n});
+   throw Object.assign(Error('accepted screening response lost'),{code:'BB_SUBMISSION_UNKNOWN'});
+  }
+  journal.confirmed(receipt);
+ });
+ await assert.rejects(h.run(),{code:kind==='claim'?'BB_WALLET_SYNC_PENDING':'BB_SUBMISSION_UNKNOWN'});
+ const original=await journal.inspect();assert.equal(JSON.parse(original.operation).kind,kind);assert.equal(original.txHash,tx.getTxHash().toString());
+ if(kind==='dummy')assert.equal(original.applicationNullifier,tx.data.getNonEmptyNullifiers()[0].toString());
+ // A new engine invocation must reconcile persisted intent, not current controls.
+ h.config.action='recover';h.config.message='different UI text';h.config.isDummy=false;h.config.reuseTxHash=new Fr(999).toString();
+ h.restartEngine();const started=performance.now(),recovered=await h.run();
+ assert.equal(recovered.state,'transaction_recovered');assert.equal(recovered.lastL2TxHash,original.txHash);
+ assert.equal((await journal.inspect()).operation,original.operation);assert.equal(acceptedActions,1);assert.equal(h.requests.length,1);
+ failSync=false;h.config.action='status';const refreshed=await h.run();assert.equal(refreshed.state,'postable');
+ assert.equal(acceptedActions,1);assert.equal(h.requests.length,1);assert(performance.now()-started<60000);
+});

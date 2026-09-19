@@ -1,0 +1,23 @@
+{
+  "scope": "Conservative upper bounds from existing genuine-run stages on healthy local RPC, not an isolated benchmark or public-network guarantee",
+  "cases": [
+    {
+      "evidence": "application-5a39a48b-dc01-4077-874d-1230984c0c0a.json",
+      "from": "browser-restart",
+      "through": "browser closed before parent canonical verification",
+      "upperBoundMs": 14643,
+      "includes": "browser closure/relaunch, wallet restore, recovery/status UI and browser/server cleanup",
+      "excludes": "preceding transaction proof construction",
+      "passed60SecondBudget": true
+    },
+    {
+      "evidence": "application-d84fbac2-0b74-4b49-bdaa-f0019dce8c6c.json",
+      "from": "browser-restart",
+      "through": "browser closed before parent canonical verification",
+      "upperBoundMs": 14358,
+      "includes": "browser closure/relaunch, wallet restore, recovery/status UI and browser/server cleanup",
+      "excludes": "preceding transaction proof construction",
+      "passed60SecondBudget": true
+    }
+  ]
+}

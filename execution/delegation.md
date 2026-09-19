@@ -77,3 +77,5 @@ Root owns edits and serialized checks. application_change_review reviews the sha
 096 integrated review: both reviewers approved before genuine run; application reviewer explicitly requires real execution of the new exit oracle before qualification.
 
 097 component review: application_change_review approved intent preservation and actual-wallet durable preparation/confirmation integration. Explicit distinction retained between fixture response-loss state and genuine browser RPC-response loss.
+
+098: application_change_review approved cached projection/direct slicing; strengthened failed-save same-instance check integrated. webkit_failure_review approved distinct cold/warm browser methodology and reuse of bounded supervisor with128MB fixture heap, unchanged aggregate4GiB/540s, actual served-file hashes.

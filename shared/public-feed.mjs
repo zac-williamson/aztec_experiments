@@ -16,7 +16,7 @@ export function createPublicFeed({ scope, source, storage, startBlock=1, rangeSi
   if (![startBlock,rangeSize,pagesPerSync,maxEvents,maxCheckpoints,maxRollbackChecks,timeoutMs].every(integer) ||
       rangeSize<1||rangeSize>1000||pagesPerSync<1||pagesPerSync>20||maxEvents<1||maxCheckpoints<1||maxRollbackChecks<1||timeoutMs<1||timeoutMs>60000) throw fail('Invalid public feed limits.');
   const key=`public-feed-v1:${scopeKey(scope)}:${startBlock}`;
-  let state=null, busy=false;
+  let state=null, projection=null, busy=false;
   const fresh=()=>({schemaVersion:1,scope,startBlock,epoch:globalThis.crypto.randomUUID(),revision:0,checkpoints:[],events:[]});
   function validate(value) {
     if(!value||Object.keys(value).sort().join()!=='checkpoints,epoch,events,revision,schemaVersion,scope,startBlock'||value.schemaVersion!==1||scopeKey(value.scope)!==scopeKey(scope)||value.startBlock!==startBlock||
@@ -25,11 +25,10 @@ export function createPublicFeed({ scope, source, storage, startBlock=1, rangeSi
     for(const c of value.checkpoints){if(!c||Object.keys(c).sort().join()!=='hash,number'||!integer(c.number)||c.number<=previous||!hash(c.hash))throw fail('Invalid public feed checkpoint.');previous=c.number;}
     let last=null;const ids=new Set();
     for(const e of value.events){validateFeedEvent(e,scope);const p=position(e);if(!p.every(integer)||p[0]<startBlock||p[0]>previous||last&&compare(last,e)>=0||ids.has(identity(e)))throw fail('Invalid public feed event order.');ids.add(identity(e));last=e;}
-    project(value.events);
-    return value;
+    return {state:value,projection:project(value.events)};
   }
-  async function load(){if(!state){const stored=await storage.get(key);state=stored==null?fresh():validate(typeof stored==='string'?JSON.parse(stored):stored);}return state;}
-  async function save(next){validate(next);await storage.set(key,JSON.stringify(next));state=next;}
+  async function load(){if(!state){const stored=await storage.get(key),checked=validate(stored==null?fresh():typeof stored==='string'?JSON.parse(stored):stored);state=checked.state;projection=checked.projection;}return state;}
+  async function save(next){const checked=validate(next);await storage.set(key,JSON.stringify(next));state=checked.state;projection=checked.projection;}
   function project(events){
     const posts=new Map(),orders=new Set(),policies=new Map();let expectedOrder=0n;
     for(const e of events){const p=e.payload;
@@ -37,7 +36,7 @@ export function createPublicFeed({ scope, source, storage, startBlock=1, rangeSi
       else if(e.type==='PostPublished'){if(!policies.has(p.policyVersion))throw fail('Public post policy is missing from history.');if(BigInt(p.orderIndex)!==expectedOrder++)throw fail('Public post history has a gap.');if(posts.has(p.postId)||orders.has(p.orderIndex))throw fail('Duplicate public post identity.');posts.set(p.postId,{...p,publication:e.position,flagged:false,flag:null});orders.add(p.orderIndex);}
       else {const post=posts.get(p.postId);if(!post||post.policyVersion!==p.policyVersion||post.flagged)throw fail('Invalid public flag history.');post.flagged=true;post.flag={...p,position:e.position};}
     }
-    return {posts:[...posts.values()].sort((a,b)=>BigInt(a.orderIndex)>BigInt(b.orderIndex)?-1:1),policies:[...policies.values()]};
+    return {posts:[...posts.values()].reverse(),policies:[...policies.values()]};
   }
   async function sync(){
     if(busy)throw fail('Public feed update already in progress.');busy=true;
@@ -72,10 +71,15 @@ export function createPublicFeed({ scope, source, storage, startBlock=1, rangeSi
   function status(){return {lastBlock:state?.checkpoints.at(-1)?.number??startBlock-1,eventCount:state?.events.length??0,revision:state?.revision??0,checkpoint:state?.checkpoints.at(-1)??null};}
   async function page({limit=50,cursor=null}={}){
     await load();if(!integer(limit)||limit<1||limit>200)throw fail('Invalid public feed page size.');
-    const {posts,policies}=project(state.events);let upper=posts[0]?.orderIndex??null,before=null;
-    if(cursor){if(typeof cursor!=='object'||Object.keys(cursor).sort().join()!=='before,epoch,key,revision,upper'||cursor.key!==key||cursor.epoch!==state.epoch||cursor.revision!==state.revision||![cursor.upper,cursor.before].every(v=>typeof v==='string'&&/^(0|[1-9][0-9]*)$/.test(v)))throw Object.assign(fail('Public feed changed; restart pagination.'),{code:'BB_PUBLIC_FEED_CURSOR_STALE'});upper=cursor.upper;before=cursor.before;}
-    const eligible=upper===null?[]:posts.filter(p=>BigInt(p.orderIndex)<=BigInt(upper)&&(before===null||BigInt(p.orderIndex)<BigInt(before)));
-    const selected=eligible.slice(0,limit),nextCursor=eligible.length>limit?{key,epoch:state.epoch,revision:state.revision,upper,before:selected.at(-1).orderIndex}:null;
+    const {posts,policies}=projection;let upper=posts[0]?.orderIndex??null,before=null;
+    if(cursor){if(typeof cursor!=='object'||Object.keys(cursor).sort().join()!=='before,epoch,key,revision,upper'||cursor.key!==key||cursor.epoch!==state.epoch||cursor.revision!==state.revision||![cursor.upper,cursor.before].every(v=>typeof v==='string'&&v.length<=20&&/^(0|[1-9][0-9]*)$/.test(v)))throw Object.assign(fail('Public feed changed; restart pagination.'),{code:'BB_PUBLIC_FEED_CURSOR_STALE'});upper=cursor.upper;before=cursor.before;}
+    // Validated publication order is contiguous from zero. Select the snapshot
+    // window directly; page queries never scan or sort the cached event history.
+    let highest=BigInt(posts.length)-1n;
+    if(upper!==null&&BigInt(upper)<highest)highest=BigInt(upper);
+    if(before!==null&&BigInt(before)-1n<highest)highest=BigInt(before)-1n;
+    const start=highest<0n?posts.length:posts.length-1-Number(highest);
+    const selected=posts.slice(start,start+limit),nextCursor=start+selected.length<posts.length?{key,epoch:state.epoch,revision:state.revision,upper,before:selected.at(-1).orderIndex}:null;
     return copy({posts:selected,policies,nextCursor,...status()});
   }
   return Object.freeze({sync,page,status,key});

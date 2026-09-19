@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 24/35.
 
 ## In progress
 
-- **Run browser, recovery, concurrency and load matrix (T04)** — Withdrawal-recovery096 PASS 209997ms, peak2336992KiB, full cleanup: real accepted withdrawal, physical browser restart, original hash/one send/one fee, exact consumed note/exit, no active deposit, unchanged Ethereum escrow and pending refund UI. Component097 preservation and wallet confirmation checks pass, independently reviewed. Integrate then continue remaining recovery/qualification.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Feed099 and layered recovery100/101 passed. Cached-page regression,69feed checks,93fresh-engine restart checks,58receipt checks, full harness and builtUI reload qualified with reviewed scope. Genuine restart upper bounds14.643s/14.358s. Integrate completed work, then qualify installed stable Chrome; remaining proof performance/external wallet/device/release gates stay open.
 
 ## Ready internal work
 

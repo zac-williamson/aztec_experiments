@@ -53,3 +53,31 @@ without another proof or send. SDK transactions, prover and chain responses are
 fixtures; this is not additional cryptographic integration evidence. Independent
 application_change_review approved. Claim-specific sync-failure restarted
 completion and genuine accepted claim/screen browser cases remain distinct gaps.
+
+## Layered application-specific closure100/101
+
+Actual engine claim and screening recovery now runs in a fresh VM with real
+encrypted journals, controlled canonical receipts and synthetic SDK transactions.
+Claim is interrupted after confirmation during sync; screening after acceptance.
+Changing current UI intent does not replace saved intent or cause another action.
+Both recover the original hash and subsequently refresh state.93engine checks
+pass; independent application review approved. Contract state transitions remain
+explicit fixtures here, separately qualified by genuine journeys.
+
+The built HTTPS UI reload check101 passes with persisted public configuration and
+only recover/status dispatch before navigation. Its explicit callEngine fixture
+is not another engine/journal/proof integration. Run100 failed first because its
+old timestamp fixture did not match current RPC; that fixture was corrected without
+a timeout or application change. Independent structure review approved.
+
+Genuine post050 and withdrawal096 stages bound complete browser restart/restore/
+reconciliation/cleanup at14.643s and14.358s respectively, excluding preceding proof
+construction; see recovery-timing-100.json. These are conservative healthy-local-RPC
+bounds, not total-run-time claims or public-network guarantees.
+
+The earlier preparation-001 suggestion of one genuine crash run per operation was
+an implementation plan, not a distinct governing criterion. The current hierarchy
+uses genuine post/withdraw crash integration, all-stage durable-boundary tests,
+actual engine claim/screen restart and builtUI reload routing. This avoids a second
+mechanism or redundant proof matrix while retaining REQ07/T04 interruption coverage.
+It does not close unrelated stable-browser, wallet, performance, soak or release gates.
