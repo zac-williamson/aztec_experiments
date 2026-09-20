@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {spawnSync} from 'node:child_process';
+import {spawn,spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {ROUTES,operatorCommand,assertOperatorEnvironment,operatorEnvironment} from './operator-launch.mjs';
 import {assertPermittedPath} from './package-operator.mjs';
@@ -57,4 +57,19 @@ test('stale SDK inputs and changed public metadata are rejected despite matching
  const sdkInput=path.join(dir,'shared/sdk-entry.mjs');fs.unlinkSync(sdkInput);fs.writeFileSync(sdkInput,'// changed after SDK build');assert.throws(()=>checkOperatorBuild(dir),/SDK input changed/);
  fs.unlinkSync(sdkInput);fs.linkSync(path.join(root,'shared/sdk-entry.mjs'),sdkInput);
  const metadata=path.join(dir,'apps/dist/public-feed-metadata.json');fs.unlinkSync(metadata);fs.writeFileSync(metadata,'{}');assert.throws(()=>checkOperatorBuild(dir),/Frontend (?:input|output) drift/);
+});
+
+test('shell launcher preserves daemon PID and lets SIGTERM cleanup finish', {timeout:10000}, async t=>{
+ const f=setup(t),marker=path.join(f.dir,'stopped');
+ fs.writeFileSync(path.join(f.dir,ROUTES.moderator),`import fs from 'node:fs';
+ process.on('SIGTERM',()=>setTimeout(()=>{fs.writeFileSync(${JSON.stringify(marker)},'clean');process.exit(0);},50));
+ setInterval(()=>{},1000);console.log(process.pid);`);
+ const child=spawn('/bin/sh',[path.join(f.dir,'scripts/operator-launch.sh'),'moderator'],{detached:true,env:{HOME:os.homedir(),PATH:process.env.PATH},stdio:['ignore','pipe','pipe']});
+ t.after(()=>{try{process.kill(-child.pid,'SIGKILL');}catch(error){if(error.code!=='ESRCH')throw error;}});
+ const exited=new Promise((resolve,reject)=>{child.once('error',reject);child.once('exit',(code,signal)=>resolve({code,signal}));});
+ const pid=await new Promise((resolve,reject)=>{let output='';child.stdout.on('data',chunk=>{output+=chunk;if(output.includes('\n'))resolve(Number(output.trim()));});child.once('error',reject);child.once('exit',()=>reject(Error('Daemon exited before readiness')));});
+ assert.equal(pid,child.pid);
+ child.kill('SIGTERM');
+ assert.deepEqual(await exited,{code:0,signal:null});
+ assert.equal(fs.readFileSync(marker,'utf8'),'clean');
 });

@@ -121,7 +121,7 @@ export async function runDaemon(argv = process.argv.slice(2), { startRuntime = s
       if(config.once){if(!complete)throw new Error('Moderation jobs remain unresolved or require attention; saved work will resume next run');log('All posts processed (--once mode).');break;}
       if(!stopping)await delay(config.pollInterval*1000,undefined,{signal:wait.signal}).catch(error=>{if(error.name!=='AbortError')throw error;});
     }while(!stopping);
-  }finally{process.off('SIGINT',shutdown);process.off('SIGTERM',shutdown);store?.close();if(runtime)await runtime.stop();}
+  }finally{process.off('SIGINT',shutdown);process.off('SIGTERM',shutdown);try{store?.close();}finally{if(runtime)await runtime.stop();}}
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

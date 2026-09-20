@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
-import {spawnSync} from 'node:child_process';
 export const ROUTES=Object.freeze({author:'apps/src/billboard/user/cli.mjs',deploy:'apps/src/billboard/deploy/cli.mjs',moderator:'censor-daemon/daemon.mjs',monitor:'deploy/operations-monitor.mjs','recover-wallet':'apps/src/billboard/user/recovery-cli.mjs'});
 export function assertOperatorEnvironment(env=process.env){
  if(env.BILLBOARD_OPERATOR_PROFILE!=='1'||env.NODE_OPTIONS||env.NODE_PATH||env.OTEL_SDK_DISABLED!=='true'||env.OTEL_PROPAGATORS!=='none')throw Error('Use the supported shell operator launcher');
@@ -24,9 +23,6 @@ export function main(){
  const pins=JSON.parse(fs.readFileSync(path.join(root,'toolchain.json'),'utf8'));
  if(process.versions.node!==pins.node||fs.realpathSync(process.execPath)!==fs.realpathSync(path.join(root,'runtime/bin/node')))throw Error('Incorrect packaged Node runtime');
  const {entry,args}=operatorCommand(root,process.argv.slice(2));
- const child=spawnSync(process.execPath,[entry,...args],{env:operatorEnvironment(root),stdio:'inherit',shell:false});
- if(child.error)throw child.error;
- if(child.signal)throw Error('Operator command interrupted: '+child.signal);
- process.exitCode=child.status??1;
+ process.execve(process.execPath,[process.execPath,entry,...args],operatorEnvironment(root));
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){try{main();}catch(error){console.error(error.message);process.exitCode=64;}}
