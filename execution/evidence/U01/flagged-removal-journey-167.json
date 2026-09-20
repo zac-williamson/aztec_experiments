@@ -1,0 +1,115 @@
+{
+  "script": "scripts/test-u01-journey-browser.mjs",
+  "args": [],
+  "passed": true,
+  "observations": [
+    {
+      "passed": true,
+      "scope": "Actual built HTTPS DOM with explicit UI-state engine and read-result fixtures; no genuine wallet/transaction/proof qualification",
+      "statusNavigation": true,
+      "postBusyPreventsRepeat": true,
+      "untrustedTextLiteral": true,
+      "screeningAndTimeGates": true,
+      "withdrawalActionExplicit": true,
+      "pendingSettlementKeepsClaimPage": true,
+      "recoveryRefreshAllStates": true,
+      "reloadRecoveryNavigation": true,
+      "explicitReceiptRecovery": true,
+      "rpcRequests": 0,
+      "externalRequests": 0
+    }
+  ],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 979104,
+  "rssSamples": [
+    {
+      "elapsedMs": 1002,
+      "rssKiB": 718496
+    },
+    {
+      "elapsedMs": 2024,
+      "rssKiB": 979104
+    },
+    {
+      "elapsedMs": 3048,
+      "rssKiB": 759600
+    },
+    {
+      "elapsedMs": 4074,
+      "rssKiB": 750144
+    },
+    {
+      "elapsedMs": 5096,
+      "rssKiB": 752512
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "ui",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/test-u01-journey-browser.mjs": "243b92b3fc7d096c01e422135fd0e2c76e9a4e11e44ae752dadfcfe15103bcee",
+    "scripts/run-bounded-browser-check.mjs": "945d3f6ca1dc8012469a8bfe6c9ce7c724974e953d963785cad152112f969670",
+    "scripts/testing/supervisor.mjs": "518d827972d68cce7bab14f56df6483a260f5f5dc4082b50e2e4bbd80b0723f2",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "9b6e0d3cc2ba693d3d8ffa028c4744dce6edfa782c43b76e0da3996712e0d9d7",
+    ".build/sdk/sdk-manifest.json": "7bd69a82badd0d658e01c80bda196a75001f1d3fbbd7f1ca12a7340f21296aca"
+  },
+  "peakMemory": {
+    "elapsedMs": 2024,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 68235,
+        "ppid": 23665,
+        "rssKiB": 54992
+      },
+      {
+        "role": "ui",
+        "pid": 68244,
+        "ppid": 68235,
+        "rssKiB": 145808
+      },
+      {
+        "role": "ui",
+        "pid": 68248,
+        "ppid": 68244,
+        "rssKiB": 55456
+      },
+      {
+        "role": "ui",
+        "pid": 68249,
+        "ppid": 68244,
+        "rssKiB": 93136
+      },
+      {
+        "role": "ui",
+        "pid": 68250,
+        "ppid": 68249,
+        "rssKiB": 67536
+      },
+      {
+        "role": "ui",
+        "pid": 68251,
+        "ppid": 68249,
+        "rssKiB": 51712
+      },
+      {
+        "role": "ui",
+        "pid": 68253,
+        "ppid": 68249,
+        "rssKiB": 510464
+      }
+    ]
+  },
+  "elapsedMs": 5951,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true
+}

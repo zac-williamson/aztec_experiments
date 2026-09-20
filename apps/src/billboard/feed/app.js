@@ -3,8 +3,8 @@ const element=id=>document.getElementById(id);
 function render(posts,append){
  if(!append)element('messages').replaceChildren();
  for(const p of posts){const article=document.createElement('article');article.className='card';const label=document.createElement('p');label.textContent='#'+p.orderIndex;article.append(label);
- const text=document.createElement('p');text.textContent=p.text;
- if(p.flagged){const detail=document.createElement('details'),summary=document.createElement('summary');summary.textContent='Flagged message — show content';detail.append(summary,text);const reason=document.createElement('p');reason.textContent='Reason: '+p.flag.reason;detail.append(reason);article.append(detail);}else article.append(text);
+ const text=document.createElement('p');text.textContent=p.flagged?'Message removed by moderator.':p.text;article.append(text);
+ if(p.flagged){const reason=document.createElement('p');reason.textContent='Reason: '+p.flag.reason;article.append(reason);}
  element('messages').append(article);}
 }
 function resetConnection(){connection=null;cursor=null;busy=false;element('messages').replaceChildren();element('more').hidden=true;element('refresh').hidden=true;element('status').textContent='Configuration changed. Open the configured board to verify its live state.';}
