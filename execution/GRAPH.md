@@ -75,6 +75,8 @@ flowchart TD
     T02 --> T04
     U01 --> T04
     O01 -.-> T04
+    U02 -.-> T04
+    U03 -.-> T04
     R01["R01: Freeze review candidate and prepare independent audit packet"]
     T01 --> R01
     D01 --> R01
@@ -106,6 +108,10 @@ flowchart TD
     O02 --> R04
     A02["A02: Resolve production dependency advisories"]
     P04 --> A02
+    U02["U02: Open each board directly without user configuration"]
+    U01 --> U02
+    U03["U03: Browse and discover boards"]
+    U02 --> U03
 ```
 
 ## Work packages
@@ -147,3 +153,5 @@ flowchart TD
 | [O02](tasks/O02.md) | Confirm operator ownership and production configuration | O01, D01 | external |
 | [R04](tasks/R04.md) | Sign off the production-ready release package | T05, T06, X02, X03, O02 | internal |
 | [A02](tasks/A02.md) | Resolve production dependency advisories | P04 | internal |
+| [U02](tasks/U02.md) | Open each board directly without user configuration | U01 | internal |
+| [U03](tasks/U03.md) | Browse and discover boards | U02 | internal |

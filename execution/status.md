@@ -2,20 +2,19 @@
 
 Generated from graph.json; edit checkpoints and blockers there, then run graph.py render.
 
-Objective state: **running**. Completed packages: 24/35.
+Objective state: **running**. Completed packages: 24/37.
 
 ## In progress
 
-- **Run browser, recovery, concurrency and load matrix (T04)** — 157 PASS: five conflict regressions, frontend provenance, component tier and built-reader browser check. Source-confirmed multi-tab stale connection fixed without immediate retry; reviewers approved. Add new shared modules to frontend source inventory. Commit/push, then design full board GUI real-MetaMask qualification using existing lifecycle; parallel moderation blocker review.
+- **Evaluate moderation quality and define human review operations (M03)** — First EC2 Qwen3.5-9B diagnostic12/12correct,noerrors,p95 22.27s;cleanup verified,old moderator healthy after restart. Second fixed12-case context/quotation/fiction/injection/980byte diagnostic now running SSMa5a884f1-ee97-4e95-a97a-44730bb282c2,420s budget,EXIT trap restarts service. Collect results and verify restart. Small provisional labels do not close production quality/capacity gates.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Current-artifact MetaMask full browser journey passed451077ms,peak3.57GiB,cleanup complete,evidence application-dac7e9b2-4d9f-4d1e-b902-593b8a783d69.json. New board/portal deployed and linked;binding0x1e79a74e7f21e8562ef5774a846d0f5a18fac12be774f5a9c83143a6db1acc0f checkpointed89867,awaits finality. Original deployment Ethereum request reconciled without rebroadcast. Continue activation after settlement and author-fee measurements;public frontend/moderator remain old board. User UI requirements queued U02 direct links/no configuration and U03 browse boards.
 
 ## Ready internal work
 
-None.
+- **Open each board directly without user configuration (U02)** — User requested this work on 2026-09-20 after viewing the hosted configuration-first page. Queued after the current deployment and browser checks; not implemented.
 
 ## Blocked
 
-- **Evaluate moderation quality and define human review operations (M03)** — Two model candidates failed quality. No approved production model; operations and browser engineering proceed independently.
-  Blocker: Both real model candidates fail predeclared classification limits. Final1.7B run:29/159false positives,19/160false negatives,zero unexpectederrors,p95 1.76s. Independent policy/corpus review and actual flag capacity remain unqualified. Next action: Prepare a bounded model/policy qualification proposal using held-out human-reviewed labels; continue independent application, operations and review-packet work.
 - **Freeze review candidate and prepare independent audit packet (R01)** — Early preparation delivered; final candidate freeze awaits remaining internal qualification. No reviewer engagement or audit claim.
   Blocker: Early scope, historical evidence index and installed protocol inventory are prepared; the final review candidate cannot be frozen before privacy, browser/workload and model qualification. Next action: Continue application privacy, browser/recovery and operations lanes; reopen final packet work when qualification inputs are available.
 - **Verify current target-network production suitability (X03)** — External production release gate only; internal work continues.

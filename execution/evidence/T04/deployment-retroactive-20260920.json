@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-20T22:06:39.761Z",
+  "manifest": {
+    "schemaVersion": 1,
+    "profile": "operator",
+    "network": {
+      "nodeUrl": "https://v5.testnet.rpc.aztec-labs.com",
+      "ethRpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
+      "chainId": "11155111",
+      "rollupVersion": "1821665230",
+      "rollup": "0xd73a91bdcf6891c7642f3e460036e1ef2cc23178",
+      "inbox": "0x3047dbf2b7dd9f58ac41113525480f94745a4f7c",
+      "outbox": "0x905f80009bbef9d9426675b45009922971ed42ff"
+    },
+    "actors": {
+      "aztecDeployer": "0x2c605429e751a3688317dd9991efb0acb110fca2662ee8d22905655b28716446",
+      "ethereumDeployer": "0x997339dee91f61757a6b2dca5cf8bc169e83688f"
+    },
+    "board": {
+      "salt": "2026092002",
+      "minDeposit": "1000000000000",
+      "maxDeposit": "10000000000000",
+      "baseCooldown": "60",
+      "kMultiplier": "2",
+      "censorWindow": "3600",
+      "maxSaveUp": "2",
+      "censor": "0x139ac64b3dd83f326fcdcf6d6de10bdf9b515ffe750f6e3f8564daeec21d2367",
+      "policy": "Test board: flag credible threats of violence against people. Do not flag ordinary criticism, disagreement, or clearly fictional discussion."
+    },
+    "artifacts": {
+      "boardJsonSha256": "0xcda73d030fc67574f3a5c93eb6f15fe79d7e590d5665d1274575cb379b88a32f",
+      "boardClassId": "0x2d81d5c6d643d9041bde4a0f2767daa1197860dcaaad84b530d5870111085af4",
+      "portalCreationSha256": "0x2a06647c6e0a1e39bff75711c1499dffca01f8027bc3cc066a6b0f4c3ee8968b",
+      "portalRuntimeMetadataSha256": "0xfc688448ce8eb3eb9c9c5c312f7c59272827be1df81307f9ce75bb47d475a579"
+    }
+  },
+  "l2Addr": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9",
+  "portalAddr": "0x794df4e4af56748e9eb5cc3ea75a73961d9f9566",
+  "readyTxHash": "0x1e79a74e7f21e8562ef5774a846d0f5a18fac12be774f5a9c83143a6db1acc0f",
+  "configHash": "0x00cff0692abdd472d477d8e21f33ca1ad3776732f14d305a9d15a4a59098ae81",
+  "intentDigest": "0xf07305242b07ca8f5525aec0c4e7d133af4222c3ca4e132ed73d6484fc7bd7f0",
+  "policyVersion": "0x007d4ea98fa3dc943f1f30752d943c32df21e6b8923f3771a01eafec8591eb2c",
+  "status": "pending-settlement"
+}
