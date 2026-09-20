@@ -64,16 +64,17 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
   if(BigInt(deadline)!==BigInt(publishedAt)+BigInt(policy.censorWindow))throw fail('Post deadline does not match its historical policy window');
   return {postId:post.postId,policyVersion:post.policyVersion,text:text(post.text,992),publishedAt,flagDeadline:deadline,orderIndex,flagged:post.flagged};
  }
- function ingestSnapshot({checkpoint,posts,policies}){
+ function ingestSnapshot({checkpoint,posts,policies,currentPolicyVersion}){
   if(!plain(checkpoint)||!integer(checkpoint.number)||checkpoint.number<1||!hex(checkpoint.hash)||!Array.isArray(posts)||posts.length>10000||!Array.isArray(policies)||policies.length>10000)throw fail('Invalid public snapshot');
   const known=new Map();
   for(const policy of policies){if(!plain(policy)||!hex(policy.policyVersion)||known.has(policy.policyVersion))throw fail('Invalid historical policy');const censorWindow=decimal(String(policy.censorWindow),32);if(censorWindow==='0')throw fail('Invalid policy window');known.set(policy.policyVersion,{policyVersion:policy.policyVersion,text:text(policy.text,1488),censorWindow});}
+  if(!hex(currentPolicyVersion)||!known.has(currentPolicyVersion))throw fail('Current policy unavailable');
   const incoming=posts.map(post=>snapshotPost(post,known)),ids=new Set(incoming.map(post=>post.postId));if(ids.size!==incoming.length)throw fail('Duplicate snapshot post');
   return transaction(()=>{
-   const time=clock();expiredLeases(time);const present=new Set();
+   const time=clock();expiredLeases(time);
    for(const post of incoming){
-    const job={schemaVersion:1,scope,postId:post.postId,policyVersion:post.policyVersion,modelVersion,publishedAt:post.publishedAt,deadline:post.flagDeadline,state:'queued',attempt:'0',transactionHash:null};
-    const key=moderationJobKey(job);present.add(key);const old=getRecord(key),policy=known.get(post.policyVersion);
+    const job={schemaVersion:1,scope,postId:post.postId,policyVersion:currentPolicyVersion,modelVersion,publishedAt:post.publishedAt,deadline:post.flagDeadline,state:'queued',attempt:'0',transactionHash:null};
+    const key=moderationJobKey(job);const old=getRecord(key),policy=known.get(currentPolicyVersion);
     if(old){
      if(JSON.stringify(old.policy)!==JSON.stringify(policy))throw fail('Policy content changed under the same version');
      if(JSON.stringify({...old.post,flagged:post.flagged})!==JSON.stringify(post)){
@@ -81,7 +82,7 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
       if(old.history.length>=8){old.orphaned=true;old.replacementInput={post,policy};old.job.state='manual-review';old.lease=null;old.errorCode='INPUT_HISTORY_LIMIT';put(old);continue;}
       old.history.push({post:old.post,policy:old.policy,decision:old.decision,job:old.job});
       old.job=job;old.decision=null;old.receipt=null;old.flagEvent=null;old.errorCode=null;old.retryAt=0;old.reconcileAttempts=0;old.lease=null;
-     } else if(!old.intent&&(old.errorCode==='MODEL_SUPERSEDED'||(old.orphaned&&old.errorCode==='POST_ORPHANED'))){
+     } else if(!old.intent&&(['MODEL_SUPERSEDED','POLICY_SUPERSEDED'].includes(old.errorCode)||(old.orphaned&&old.errorCode==='POST_ORPHANED'))){
       old.job=job;old.decision=null;old.errorCode=null;old.retryAt=0;old.lease=null;
      }
      old.post=post;old.orphaned=false;old.replacementInput=null;
@@ -89,14 +90,14 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
      put(old);
     }else put({key,job:{...job,state:post.flagged?'manual-review':'queued'},post,policy,lease:null,decision:null,intent:null,receipt:null,flagEvent:null,errorCode:post.flagged?'FLAG_ALREADY_PRESENT':null,retryAt:0,reconcileAttempts:0,orphaned:false,history:[],replacementInput:null});
    }
-   for(const record of rows())if(record.job.modelVersion===modelVersion&&!present.has(record.key)&&!record.orphaned){
+   for(const record of rows())if(record.job.modelVersion===modelVersion&&!ids.has(record.job.postId)&&!record.orphaned){
     record.orphaned=true;record.receipt=null;record.job.state=signing.has(record.job.state)?'reconciling':'manual-review';record.lease=null;record.errorCode='POST_ORPHANED';put(record);
    }
    // Retire only unsigned unfinished work from the previous model. Keep its
    // public evidence, but do not leave an unleaseable obligation forever pending.
    // Revoking an evaluation lease is safe: its worker must renew before intent.
-   for(const record of rows())if(record.job.modelVersion!==modelVersion&&!record.intent&&!record.job.transactionHash&&!terminal.has(record.job.state)){
-    record.job.state='manual-review';record.errorCode='MODEL_SUPERSEDED';record.lease=null;put(record);
+   for(const record of rows())if((record.job.modelVersion!==modelVersion||record.job.policyVersion!==currentPolicyVersion)&&!record.intent&&!record.job.transactionHash&&!terminal.has(record.job.state)){
+    record.job.state='manual-review';record.errorCode=record.job.modelVersion!==modelVersion?'MODEL_SUPERSEDED':'POLICY_SUPERSEDED';record.lease=null;put(record);
    }
    settingSet.run('checkpoint',JSON.stringify({number:checkpoint.number,hash:checkpoint.hash}));settingSet.run('lastSuccessfulIngestAt',String(time));return {jobs:incoming.length,checkpoint:copy(checkpoint)};
   });
@@ -124,7 +125,6 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
      }
     } else {
      if(record.orphaned){record.job.state='manual-review';record.errorCode='POST_ORPHANED';put(record);continue;}
-     if(BigInt(record.job.deadline)<=BigInt(Math.floor(time/1000))){record.job.state='expired';record.errorCode='DEADLINE_EXPIRED';put(record);continue;}
      if(BigInt(record.job.attempt)>=BigInt(maxAttempts)){record.job.state='manual-review';record.errorCode='RETRIES_EXHAUSTED';put(record);continue;}
      record.job.state='leased';record.job.attempt=String(BigInt(record.job.attempt)+1n);
     }
@@ -146,7 +146,6 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
     if(!plain(change.decision)||change.decision.isViolation!==(change.state==='submit-intent'))throw fail('Valid model decision required');
     record.decision={isViolation:change.decision.isViolation,...(change.decision.isViolation?{reason:text(change.decision.reason,200)}:{})};
     if(change.state==='submit-intent'){
-     if(BigInt(record.job.deadline)<=BigInt(Math.floor(clock()/1000)))throw fail('Flag deadline expired before submission');
      record.intent={postId:record.job.postId,policyVersion:record.job.policyVersion,reason:record.decision.reason};
     }
    }
@@ -184,7 +183,7 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
   });
  }
  function status(){
-  const all=rows(),counts={},time=clock(),seconds=BigInt(Math.floor(time/1000));
+  const all=rows(),counts={};
   const health={retryableErrors:0,unresolvedSigning:0,manualSigningFences:0,awaitingFinality:0,expiredObligations:0,manualAttention:0,unsignedPending:0,earliestUnsignedDeadline:null};
   for(const r of all){
    counts[r.job.state]=(counts[r.job.state]??0)+1;
@@ -193,13 +192,13 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
    if(fence)health.manualSigningFences++;
    if(signing.has(r.job.state)&&!(r.job.state==='submitted'&&included))health.unresolvedSigning++;
    if(r.job.state==='submitted'&&included)health.awaitingFinality++;
-   const benign=r.job.state==='manual-review'&&((r.errorCode==='MODEL_SUPERSEDED'&&!r.intent&&!r.job.transactionHash)||(r.errorCode==='FLAG_ALREADY_PRESENT'&&!r.intent));
+   const benign=r.job.state==='manual-review'&&((['MODEL_SUPERSEDED','POLICY_SUPERSEDED'].includes(r.errorCode)&&!r.intent&&!r.job.transactionHash)||(r.errorCode==='FLAG_ALREADY_PRESENT'&&!r.intent));
    if(benign||['evaluated-ok','confirmed-flag'].includes(r.job.state))continue;
    if(r.job.state==='manual-review')health.manualAttention++;
-   if(r.job.state==='expired'||(!included&&BigInt(r.job.deadline)<=seconds))health.expiredObligations++;
+   if(r.job.state==='expired')health.expiredObligations++;
    if(!r.intent&&!terminal.has(r.job.state)){
     health.unsignedPending++;
-    if(health.earliestUnsignedDeadline===null||BigInt(r.job.deadline)<BigInt(health.earliestUnsignedDeadline))health.earliestUnsignedDeadline=r.job.deadline;
+
    }
   }
   const saved=settingGet.get('lastSuccessfulIngestAt')?.value;

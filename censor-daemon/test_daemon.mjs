@@ -575,7 +575,7 @@ async function main() {
   });
 
   // Test 12: Censor window — warns on posts past the window
-  await test('warns on posts past the censor window', async () => {
+  await test('evaluates posts past the collateral penalty window', async () => {
     const nowSec = Math.floor(Date.now() / 1000);
     const posts = [
       { index: 0, text: 'Old spam post', flagged: false, timestamp: nowSec - 7200 }, // 2h ago, past 1h window
@@ -596,10 +596,8 @@ async function main() {
         '--model', path.join(__dirname, 'test_dummy_model.gguf'),
       ]);
 
-      assertTrue(result.exitCode!==0,'expired job requires attention');
-      assertEqual(mockServer.requests.length,0,'expired job cannot start inference or signing');
-      assertTrue(result.stdout.includes('expired'),
-        'should warn that post is past the censor window');
+      assertEqual(result.exitCode,0,result.stdout+result.stderr);
+      assertEqual(mockServer.requests.length,1,'Old post must still reach the model');
     } finally {
       await mockServer.stop();
       mockCli.cleanup();
@@ -607,7 +605,7 @@ async function main() {
   });
 
   // Test 13: Censor window — warns on posts about to expire
-  await test('warns on posts about to expire in censor window', async () => {
+  await test('does not expire moderation when collateral penalty window approaches', async () => {
     const nowSec = Math.floor(Date.now() / 1000);
     const posts = [
       { index: 0, text: 'Recent spam', flagged: false, timestamp: nowSec - 3400 }, // ~3min left in 1h window
@@ -628,8 +626,9 @@ async function main() {
         '--model', path.join(__dirname, 'test_dummy_model.gguf'),
       ]);
 
-      assertTrue(result.stdout.includes('deadline approaching'),
-        'should warn that post censor window is expiring soon');
+      assertEqual(result.exitCode,0,result.stdout+result.stderr);
+      assertEqual(mockServer.requests.length,1,'Post remains eligible for review');
+      assertTrue(!result.stdout.includes('deadline approaching'),'Removal has no deadline');
     } finally {
       await mockServer.stop();
       mockCli.cleanup();
@@ -751,11 +750,11 @@ async function main() {
       assertEqual(server.requests.length,1,'saved verdict reused');assertEqual(mockCli.calls().filter(a=>a[0]==='declare-immoral'&&!a.includes('--inspect-only')).length,1,'pending submission never resent');
     }finally{await server.stop();mockCli.cleanup();}
   });
-  await test('historical policy bytes are used for an older post after policy update',async()=>{
+  await test('current policy is used for an older post after policy update',async()=>{
     const historical=' Original policy \n';
     const mockCli=new MockCli(MOCK_CLI,{posts:[{index:0,text:'Old policy post',flagged:false,policyVersion:OTHER_POLICY_VERSION}],policies:[{policyVersion:OTHER_POLICY_VERSION,text:historical,censorWindow:'3600'},{policyVersion:POLICY_VERSION,text:'No spam',censorWindow:'3600'}]});
     const server=new MockLlamaServer(0,()=>({content:'OK'}));await server.start();
-    try{const result=await runDaemon(['--portal-address',SCOPE.portalAddress,'--censor-wallet',MOCK_WALLET,'--cli',MOCK_CLI,'--llama-port',String(server.port),'--once']);assertEqual(result.exitCode,0,result.stdout+result.stderr);assertEqual(server.policies[0],historical,'historical policy exact bytes');}
+    try{const result=await runDaemon(['--portal-address',SCOPE.portalAddress,'--censor-wallet',MOCK_WALLET,'--cli',MOCK_CLI,'--llama-port',String(server.port),'--once']);assertEqual(result.exitCode,0,result.stdout+result.stderr);assertEqual(server.policies[0],'No spam','current policy exact bytes');}
     finally{await server.stop();mockCli.cleanup();}
   });
 

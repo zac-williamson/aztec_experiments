@@ -15,7 +15,7 @@ function fixture(t,options={}){
  const store=open();t.after(()=>{for(const item of stores)try{item.close();}catch{}fs.rmSync(dir,{recursive:true,force:true});});
  const policies=[{policyVersion:hex(10),text:'No spam',censorWindow:'1000'}];
  const post=(id=1,publishedAt='1000')=>({postId:hex(id),policyVersion:hex(10),text:'Public message',publishedAt,flagDeadline:String(BigInt(publishedAt)+1000n),orderIndex:String(id-1),flagged:false});
- const snapshot=(posts=[post()])=>({checkpoint:{number:10,hash:hex(100)},posts,policies});
+ const snapshot=(posts=[post()])=>({currentPolicyVersion:hex(10),checkpoint:{number:10,hash:hex(100)},posts,policies});
  return {store,open,config,post,snapshot,policies,setTime:value=>time=value,getTime:()=>time};
 }
 const lease=store=>store.leaseNext({worker:'worker'});
@@ -39,7 +39,7 @@ test('finalized successful receipt plus matching canonical flag completes job',t
 for(const mutation of ['pending','reverted','wrong-post','wrong-hash','wrong-reason'])test(`cannot confirm with ${mutation} evidence`,t=>{const f=fixture(t);f.store.ingestSnapshot(f.snapshot());const job=lease(f.store);submitted(f.store,job);const e=evidence(job);if(mutation==='pending')e.receipt.status='checkpointed';if(mutation==='reverted')e.receipt.executionResult='reverted';if(mutation==='wrong-post')e.flagEvent.payload.postId=hex(2);if(mutation==='wrong-hash')e.receipt.blockHash=hex(99);if(mutation==='wrong-reason')e.flagEvent.payload.reason='Different';assert.throws(()=>f.store.transition(job.key,job.lease.token,{state:'confirmed-flag',...e}));assert.equal(f.store.get(job.key).job.state,'submitted');});
 test('known finalized revert becomes retryable without losing job',t=>{const f=fixture(t);f.store.ingestSnapshot(f.snapshot());const job=lease(f.store);submitted(f.store,job);const retried=f.store.transition(job.key,job.lease.token,{state:'retryable-error',receipt:evidence(job,'reverted').receipt,errorCode:'REVERTED'});assert.equal(retried.job.transactionHash,null);assert.equal(lease(f.store).job.attempt,'2');});
 test('unknown submitted outcome cannot become ordinary retry',t=>{const f=fixture(t);f.store.ingestSnapshot(f.snapshot());const job=lease(f.store);submitted(f.store,job);assert.throws(()=>f.store.transition(job.key,job.lease.token,{state:'retryable-error'}));});
-test('deadline priority, expiry and exhausted attempts are explicit',t=>{const f=fixture(t,{maxAttempts:1});f.store.ingestSnapshot(f.snapshot([f.post(1,'1100'),f.post(2,'1000')]));const first=lease(f.store);assert.equal(first.job.postId,hex(2));f.store.transition(first.key,first.lease.token,{state:'retryable-error'});const second=lease(f.store);assert.equal(second.job.postId,hex(1));assert.equal(f.store.get(first.key).job.state,'manual-review');f.store.release(second.key,second.lease.token);f.setTime(2200000);assert.equal(lease(f.store),null);assert.equal(f.store.get(second.key).job.state,'expired');});
+test('collateral-window priority and exhausted attempts are explicit',t=>{const f=fixture(t,{maxAttempts:1});f.store.ingestSnapshot(f.snapshot([f.post(1,'1100'),f.post(2,'1000')]));const first=lease(f.store);assert.equal(first.job.postId,hex(2));f.store.transition(first.key,first.lease.token,{state:'retryable-error'});const second=lease(f.store);assert.equal(second.job.postId,hex(1));assert.equal(f.store.get(first.key).job.state,'manual-review');f.store.release(second.key,second.lease.token);f.setTime(2200000);assert.equal(lease(f.store),null);assert.equal(f.store.get(second.key).job.state,'manual-review');assert.equal(f.store.get(second.key).errorCode,'RETRIES_EXHAUSTED');});
 test('orphaned submitted post remains reconciling; unsubmitted post becomes manual review',t=>{const f=fixture(t);f.store.ingestSnapshot(f.snapshot([f.post(1),f.post(2)]));const job=lease(f.store);submitted(f.store,job);f.store.ingestSnapshot(f.snapshot([]));assert.equal(f.store.get(job.key).job.state,'reconciling');assert.equal(f.store.list().find(r=>r.key!==job.key).job.state,'manual-review');assert(f.store.list().every(r=>r.orphaned));});
 test('historical policy is bound separately from current policy and empty board checkpoint persists',t=>{const f=fixture(t);f.policies.push({policyVersion:hex(11),text:'New policy',censorWindow:'1000'});f.store.ingestSnapshot(f.snapshot());assert.equal(f.store.list()[0].policy.text,'No spam');f.store.ingestSnapshot(f.snapshot([]));assert.equal(f.store.status().checkpoint.number,10);});
 test('reconciliation exhaustion cannot permit unrelated signing',t=>{const f=fixture(t,{maxReconcileAttempts:1});f.store.ingestSnapshot(f.snapshot([f.post(),f.post(2)]));const job=lease(f.store);intent(f.store,job);f.store.release(job.key,job.lease.token);const recovery=lease(f.store);f.store.release(recovery.key,recovery.lease.token);assert.equal(lease(f.store),null);assert.equal(lease(f.store),null);assert.equal(f.store.get(job.key).errorCode,'RECONCILIATION_EXHAUSTED');});
@@ -89,9 +89,9 @@ test('known successful submission finality polling does not exhaust unknown-outc
  for(let i=0;i<5;i++){const pending=lease(f.store);assert.equal(pending.job.state,'submitted');f.store.release(pending.key,pending.lease.token);}
  assert.equal(f.store.get(job.key).reconcileAttempts,0);
 });
-test('missing historical policy cannot commit jobs or advance feed checkpoint',t=>{const f=fixture(t);const snapshot=f.snapshot();snapshot.policies=[];assert.throws(()=>f.store.ingestSnapshot(snapshot),/Historical policy/);assert.equal(f.store.list().length,0);assert.equal(f.store.status().checkpoint,null);});
+test('missing historical policy cannot commit jobs or advance feed checkpoint',t=>{const f=fixture(t);const snapshot=f.snapshot();snapshot.policies=[];assert.throws(()=>f.store.ingestSnapshot(snapshot),/policy unavailable/);assert.equal(f.store.list().length,0);assert.equal(f.store.status().checkpoint,null);});
 test('already flagged public post is observational manual review, never invented model success',t=>{const f=fixture(t);f.store.ingestSnapshot(f.snapshot([{...f.post(),flagged:true}]));const observed=f.store.list()[0];assert.equal(observed.job.state,'manual-review');assert.equal(observed.errorCode,'FLAG_ALREADY_PRESENT');assert.equal(observed.decision,null);assert.equal(observed.job.transactionHash,null);assert.equal(lease(f.store),null);});
-test('expiry during inference prevents creation of a signing intent',t=>{const f=fixture(t,{leaseMs:900000});f.store.ingestSnapshot(f.snapshot([f.post(1,'1')]));const job=lease(f.store);assert(job);f.setTime(1001000);assert.throws(()=>intent(f.store,job),/deadline/);assert.equal(f.store.get(job.key).intent,null);});
+test('collateral deadline does not prevent a removal intent',t=>{const f=fixture(t,{leaseMs:900000});f.store.ingestSnapshot(f.snapshot([f.post(1,'1')]));const job=lease(f.store);assert(job);f.setTime(1001000);intent(f.store,job);assert.equal(f.store.get(job.key).intent.postId,job.job.postId);});
 test('reorged successful receipt cannot bypass uncertainty fence through manual review',t=>{
  const f=fixture(t);f.store.ingestSnapshot(f.snapshot([f.post(),f.post(2)]));const job=lease(f.store);intent(f.store,job);
  f.store.transition(job.key,job.lease.token,{state:'submitted',transactionHash:hex(50),receipt:{...evidence(job).receipt,status:'checkpointed'}});
@@ -149,4 +149,17 @@ test('model upgrade preserves terminal failures and durable unresolved signing i
 test('returning to an earlier model requeues only its explicitly superseded unsigned work',t=>{
  const f=fixture(t);f.store.ingestSnapshot(f.snapshot());const old=f.store.list()[0];f.config.modelVersion=hex(5);const upgraded=f.open();upgraded.ingestSnapshot(f.snapshot());
  f.store.ingestSnapshot(f.snapshot());const active=lease(f.store);assert.equal(active.key,old.key);assert.equal(active.job.state,'leased');assert.equal(active.errorCode,null);
+});
+
+test('new policy reevaluates old allowed posts and retains publication metadata',t=>{
+ const f=fixture(t);f.store.ingestSnapshot(f.snapshot());const old=lease(f.store);f.store.transition(old.key,old.lease.token,{state:'evaluated-ok',decision:{isViolation:false}});
+ f.policies.push({policyVersion:hex(11),text:'New rules',censorWindow:'1000'});f.setTime(3000000);
+ f.store.ingestSnapshot({...f.snapshot(),currentPolicyVersion:hex(11)});const next=lease(f.store);
+ assert.equal(next.policy.text,'New rules');assert.equal(next.job.policyVersion,hex(11));assert.equal(next.post.policyVersion,hex(10));assert.equal(next.orphaned,false);
+});
+test('policy update preserves included prior-policy receipt and intent',t=>{
+ const f=fixture(t);f.store.ingestSnapshot(f.snapshot());const old=lease(f.store);intent(f.store,old);
+ const proof={...evidence(old).receipt,status:'checkpointed'};f.store.transition(old.key,old.lease.token,{state:'submitted',transactionHash:hex(50),receipt:proof});f.store.release(old.key,old.lease.token);
+ f.policies.push({policyVersion:hex(11),text:'New rules',censorWindow:'1000'});f.store.ingestSnapshot({...f.snapshot(),currentPolicyVersion:hex(11)});
+ const saved=f.store.get(old.key);assert.equal(saved.orphaned,false);assert.deepEqual(saved.receipt,proof);assert(saved.intent);assert.equal(lease(f.store).key,old.key);
 });
