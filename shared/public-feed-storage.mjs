@@ -1,3 +1,4 @@
+export function publicFeedConflict(){return Object.assign(Error('Public feed changed in another tab. Reopen the board to refresh it.'),{code:'PUBLIC_FEED_CONFLICT'});}
 // Storage adapters return one consistent snapshot and atomically commit ranges/head.
 export async function readFeedSnapshot(read,key,maxRanges){
  const head=(await read(key))??null,ranges=[];

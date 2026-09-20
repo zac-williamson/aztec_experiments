@@ -7,7 +7,7 @@ const manifestName = '.build/apps-manifest.json';
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const required = [
   'apps/build.mjs', 'scripts/build-public-feed.mjs',
-  ...['public-feed.mjs','public-feed-source.mjs','public-feed-metadata.mjs','public-feed-rpc.mjs','public-feed-connection.mjs','public-feed-browser.mjs','protocol-schema.mjs','transaction-outcomes.mjs'].map(x=>`shared/${x}`), 'scripts/frontend-provenance.mjs', 'scripts/check-artifacts.mjs',
+  ...['public-feed.mjs','public-feed-projection.mjs','public-feed-storage.mjs','public-feed-source.mjs','public-feed-metadata.mjs','public-feed-rpc.mjs','public-feed-connection.mjs','public-feed-browser.mjs','protocol-schema.mjs','transaction-outcomes.mjs'].map(x=>`shared/${x}`), 'scripts/frontend-provenance.mjs', 'scripts/check-artifacts.mjs',
   'scripts/check-sdk.mjs', 'scripts/build-crs.mjs', 'scripts/toolchain.mjs',
   'package.json', 'package-lock.json', 'crs-manifest.json',
   '.build/contracts-manifest.json', '.build/sdk/sdk-manifest.json', 'apps/dist/crs/crs-manifest.json',

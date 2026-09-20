@@ -473,7 +473,7 @@ async function refresh(append=false){if(busy||!connection)return;busy=true;const
  billboardConfigStore.assertCurrent(snapshot);if(connection!==selected)return;
  cursor=page.nextCursor;render(page.posts,append);
  element('more').hidden=!cursor;element('refresh').hidden=false;element('status').textContent=progress&&!progress.complete?'Loading history through block '+progress.lastBlock+'. Refresh to continue.':'Public messages through block '+page.lastBlock+'.';
-}catch{if(billboardConfigStore.snapshot()===snapshot)element('status').textContent='Could not update messages. Previously displayed data may be stale; retry.';}finally{if(billboardConfigStore.snapshot()===snapshot)busy=false;}}
+}catch(error){if(billboardConfigStore.snapshot()===snapshot){if(error.code==='PUBLIC_FEED_CONFLICT'){connection=null;cursor=null;element('more').hidden=true;element('refresh').hidden=true;element('status').textContent='Another tab updated this board. Displayed messages may be stale. Open configured board to refresh.';}else element('status').textContent='Could not update messages. Previously displayed data may be stale; retry.';}}finally{if(billboardConfigStore.snapshot()===snapshot)busy=false;}}
 element('connect').onclick=async()=>{if(busy)return;busy=true;const snapshot=billboardConfigStore.snapshot();try{
  const c=snapshot.config;if(!c)throw Error('Missing configuration');
  const result=await BillboardPublic.connectPublicFeed({portalAddress:c.board.portalAddress,nodeUrl:c.network.nodeUrl,ethereumUrl:c.network.ethRpcUrl,expectedConfig:c,metadata:BillboardPublic.metadata,storage:BillboardPublic.browserPublicFeedStorage()});

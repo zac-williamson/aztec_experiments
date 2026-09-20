@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 24/35.
 
 ## In progress
 
-- **Run browser, recovery, concurrency and load matrix (T04)** — 155 feed performance PASS: cold-reader p95 1.629s, cached page p95 0.2ms, 10000-post hydration 2.631s. 156 harness/components/source checks and 48 graph tests PASS. Integrate verified incremental cache, bounded RPCs, real-wallet collateral/refund, Anvil receipt fix and proof timing. Next: review multi-tab reader recovery, then remaining application qualification; performance cohort136 remains incomplete.
+- **Run browser, recovery, concurrency and load matrix (T04)** — 157 PASS: five conflict regressions, frontend provenance, component tier and built-reader browser check. Source-confirmed multi-tab stale connection fixed without immediate retry; reviewers approved. Add new shared modules to frontend source inventory. Commit/push, then design full board GUI real-MetaMask qualification using existing lifecycle; parallel moderation blocker review.
 
 ## Ready internal work
 

@@ -1,0 +1,13 @@
+✔ sqlite atomic ranges, competing writers and snapshot rollback (52.055875ms)
+✔ indexeddb atomic ranges, competing writers and snapshot rollback (17.660209ms)
+✔ competing native cache writers recover by reopening without losing committed ranges (35.65425ms)
+✔ browser reader discards only conflicted connections and does not retry the failed request (9.700958ms)
+✔ standalone reader preserves stale messages and requires explicit reopening after conflict (4.055917ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 347.645125

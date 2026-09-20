@@ -1,4 +1,4 @@
-import {readFeedSnapshot} from './public-feed-storage.mjs';
+import {readFeedSnapshot,publicFeedConflict} from './public-feed-storage.mjs';
 import {publicNode,publicRpc} from './public-feed-rpc.mjs';
 import {createPublicFeedSource} from './public-feed-source.mjs';
 import {createPublicFeed} from './public-feed.mjs';
@@ -43,12 +43,12 @@ export function browserPublicFeedStorage(){
       tx.oncomplete=()=>resolve(result);tx.onerror=tx.onabort=()=>reject(failure??Error('Public cache read failed.'));
     });},
     async commit(key,previous,next,range,removed){const d=await db();return new Promise((resolve,reject)=>{
-      const tx=d.transaction('public','readwrite',{durability:'strict'}),store=tx.objectStore('public'),r=store.get(key);
-      r.onsuccess=()=>{if((r.result??null)!==previous){tx.abort();return;}
+      const tx=d.transaction('public','readwrite',{durability:'strict'}),store=tx.objectStore('public'),r=store.get(key);let failure;
+      r.onsuccess=()=>{if((r.result??null)!==previous){failure=publicFeedConflict();tx.abort();return;}
         if(range)store.add(range.value,`${key}:range:${range.id}`);
         store.put(next,key);for(const id of removed)store.delete(`${key}:range:${id}`);
       };
-      tx.oncomplete=()=>resolve();tx.onerror=tx.onabort=()=>reject(Error('Public cache commit failed; reopen to reconcile concurrent changes.'));
+      tx.oncomplete=()=>resolve();tx.onerror=tx.onabort=()=>reject(failure??Error('Public cache commit failed.'));
     });},
   };
 }
