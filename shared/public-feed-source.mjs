@@ -119,17 +119,20 @@ export async function createPublicFeedSource({node,scope,artifact,eventTags,meta
     if(!natural(toBlock)||!natural(fromBlock)||fromBlock<1||toBlock<fromBlock||toBlock-fromBlock+1>maxRange)throw fail();
     const deadline=Date.now()+timeoutMs;
     return read(async()=>{
-      const events=[];let pages=0;
-      for(const type of PUBLIC_FEED_TYPES){
+      const events=[];let pages=0,failed=false;
+      await Promise.all(PUBLIC_FEED_TYPES.map(async type=>{
+       try {
         let afterLog;
         for(;;){
+          if(failed)return;
           if(Date.now()>=deadline||++pages>maxPages)throw fail();
           const page=await readPage({type,fromBlock,toBlock:toBlock+1,referenceBlock,afterLog});
           if(Date.now()>=deadline)throw fail();
           events.push(...page.events);if(events.length>maxEvents)throw fail();
           if(page.done)break;afterLog=page.nextCursor;
         }
-      }
+       }catch(error){failed=true;throw error;}
+      }));
       events.sort((a,b)=>compare(coordinate(a.position),coordinate(b.position)));
       for(let i=1;i<events.length;i++)if(compare(coordinate(events[i-1].position),coordinate(events[i].position))===0)throw fail();
       // The index checks its canonical anchor after this call; every query is

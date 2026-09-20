@@ -9,15 +9,14 @@ import {once} from 'node:events';
 import {randomBytes,createHash} from 'node:crypto';
 import {Wallet,ContractFactory,JsonRpcProvider} from 'ethers';
 import {verifyPortalRuntime} from '../shared/portal-runtime.mjs';
-import {ROOT,pins,assertNodeVersion} from './toolchain.mjs';
+import {ROOT,assertNodeVersion,anvilBinary} from './toolchain.mjs';
 assertNodeVersion();
 const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'bb-runtime-live-'));
 let anvil,provider,watchdog,passed=false,stage='startup';
 const field=()=> '0x'+randomBytes(31).toString('hex').padStart(64,'0');
 try {
- assert(execFileSync('anvil',['--version'],{encoding:'utf8'}).includes(pins.foundry));
  const listener=net.createServer();await new Promise(resolve=>listener.listen(0,'127.0.0.1',resolve));const port=listener.address().port;await new Promise(resolve=>listener.close(resolve));
- anvil=spawn('anvil',['--host','127.0.0.1','--port',String(port),'--chain-id','31337','--accounts','0','--silent'],{cwd:temporary,stdio:'ignore'});
+ anvil=spawn(anvilBinary(),['--host','127.0.0.1','--port',String(port),'--chain-id','31337','--accounts','0','--silent'],{cwd:temporary,stdio:'ignore'});
  watchdog=setTimeout(()=>anvil.kill('SIGKILL'),60000);
  const url='http://127.0.0.1:'+port;
  let ready=false;for(let i=0;i<50;i++){try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_chainId',params:[]}),signal:AbortSignal.timeout(200)});ready=(await r.json()).result==='0x7a69';}catch{}if(ready)break;await new Promise(resolve=>setTimeout(resolve,50));}assert(ready);

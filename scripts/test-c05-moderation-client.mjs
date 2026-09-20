@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 import {Fr} from '@aztec/foundation/curves/bn254';
 import {NO_FROM} from '@aztec/aztec.js/account';
-const context=vm.createContext({console,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});
+const context=vm.createContext({performance,console,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});
 vm.runInContext(await readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8'),context);
 const codec=context.BillboardModerationCodec;
 test('seven-field reasons enforce byte length, UTF-8 and exact padding',()=>{

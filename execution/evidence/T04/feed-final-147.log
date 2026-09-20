@@ -1,0 +1,47 @@
+✔ full-history index refuses to checkpoint an omitted publication order (3.672167ms)
+✔ an index starting from genesis refuses a nonzero first publication order (0.544458ms)
+✔ orphaned flag disappears when its page is rolled back (0.86ms)
+✔ different payloads at one canonical event position never commit (0.203708ms)
+✔ unavailable historical checkpoint preserves all cached events (0.3355ms)
+✔ identical policy can be published repeatedly under the same content version (0.333417ms)
+✔ conflicting text cannot reuse a policy content version (0.256958ms)
+✔ post without its preceding policy publication cannot enter full-history cache (0.27375ms)
+✔ sync deadline covers the aggregate RPC sequence, not each read independently (29.44225ms)
+✔ connection reads pinned immutable slots at one block and matches both contract class IDs (32.29475ms)
+✔ matching public slots cannot bypass a wrong currentContractClassId (5.8905ms)
+✔ matching public slots cannot bypass a wrong originalContractClassId (7.981583ms)
+✔ connection rejects conflicting immutable slot 1 (5.590625ms)
+✔ connection rejects conflicting immutable slot 3 (6.434875ms)
+✔ connection rejects conflicting immutable slot 4 (5.66675ms)
+✔ connection rejects conflicting immutable slot 5 (6.961041ms)
+✔ restored public cache rejects additional private payload fields (0.749417ms)
+✔ policy A then B then A identifies A as the current restored policy (0.366583ms)
+✔ restored range rejects duplicate identity disguised by transaction index (1.545667ms)
+✔ sqlite atomic ranges, competing writers and snapshot rollback (21.2105ms)
+✔ indexeddb atomic ranges, competing writers and snapshot rollback (4.902292ms)
+✔ wallet-free cache resumes bounded pages without rescanning completed history (7.107416ms)
+✔ snapshot pagination neither duplicates nor misses posts when newer ones arrive (0.947709ms)
+✔ same-height reorg rolls back affected pages and invalidates pagination (0.839833ms)
+✔ flag-only block updates a cached post without scanning its publication (0.4755ms)
+✔ failed atomic persistence retains prior checkpoint and retries same page (0.470583ms)
+✔ chain change during fetch never commits fetched events (1.081541ms)
+✔ identical event duplicates deduplicate; conflicting payloads fail (0.582625ms)
+✔ unexpected private fields, wrong scope and out-of-range results cannot enter cache (0.268ms)
+✔ bounded rollback can discard cache and rebuild after deep reorg (0.738125ms)
+✔ capacity failure is explicit and does not advance past missing events (0.416958ms)
+✔ RPC failure preserves cached data and cursor (0.254875ms)
+✔ malformed restored cache and concurrent sync are rejected (3.244708ms)
+✔ paging a validated restored history does not reread persisted ranges (0.624834ms)
+✔ one-event append after10000posts writes only new range and small head (281.312666ms)
+✔ failed atomic commit leaves storage and visible state unchanged (0.437167ms)
+✔ competing writers cannot overwrite a committed head (1.288792ms)
+✔ three-block rollback restores moved policies, posts and flags exactly (0.708834ms)
+✔ page policy output is bounded by selected posts plus current policy (20.9975ms)
+ℹ tests 39
+ℹ suites 0
+ℹ pass 39
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 386.866709

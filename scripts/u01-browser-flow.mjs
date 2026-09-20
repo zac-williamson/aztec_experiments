@@ -9,10 +9,10 @@ import {Barretenberg,BackendType} from '@aztec/bb.js';
 import {EmbeddedWallet} from '@aztec/wallets/embedded';
 import {loadContractArtifact} from '@aztec/stdlib/abi';
 import {ROOT} from './toolchain.mjs';
-import {createBrowserHandoff} from './t04-browser-journey.mjs';
+import {validateJourneySignal,createBrowserHandoff} from './t04-browser-journey.mjs';
 import {startU01BrowserRpc} from './u01-browser-rpc.mjs';
 import {createT03RpcObserver} from './t03-rpc-observer.mjs';
-import {prepareU01BrowserPostVerification,captureU01BrowserSubmissions,verifyU01BrowserPost,verifyU01BrowserWithdrawal} from './u01-browser-post-verify.mjs';
+import {prepareU01BrowserPostVerification,captureU01BrowserPostBaseline,captureU01BrowserSubmissions,verifyU01BrowserPost,verifyU01BrowserWithdrawal} from './u01-browser-post-verify.mjs';
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 // TEST ONLY: ordinary checkpoint production makes newly deposited Inbox messages
 // available. Restore the caller's configuration before later lifecycle waits.
@@ -46,6 +46,7 @@ async function preserveBrowserRpcFootprint(directory,observer,observation){
 export async function completeU01BrowserPost({node,preparation,instance,l1Client,directory,rpcUrl,
   browserControl,claimResult,privateFee,reportStage:mark}){
   let rpc,capture,verificationWallet,rpcObserver,responseLoss;
+  const performanceMode=browserControl.browserMode==='performance';
   const recovery=['recovery','withdraw-recovery'].includes(browserControl.browserMode),withdrawal=browserControl.browserMode==='withdraw-recovery';
   const observation={passed:false,nativeSetup:true,browserApplicationProof:false,networkProofs:false};
   const {origin,rpcToken,backupPassword}=browserControl;
@@ -102,6 +103,32 @@ export async function completeU01BrowserPost({node,preparation,instance,l1Client
     const message='U01 genuine browser private-fee post';
     await fs.writeFile(path.join(directory,'browser-ready.json'),JSON.stringify(createBrowserHandoff({nodeUrl:rpc.nodeUrl,ethereumUrl:rpc.ethereumUrl,publicConfig,backupPath,ethereumAccount:l1Client.account.address,message},{directory,browserMode:browserControl.browserMode})),{mode:0o600});
     mark('browser-ready');
+    if(performanceMode){
+      assert(evidence.beforeFeeBalance>=2n*evidence.maximumFee);
+      verificationWallet=await openVerificationWallet();
+      let baseline={...evidence,wallet:verificationWallet};const checks=[];
+      for(const [index,stage] of ['post','warm-post'].entries()){
+        let signal;
+        for(;;){
+          try{signal=validateJourneySignal(JSON.parse(await fs.readFile(path.join(directory,'browser-journey-'+stage+'.json'),'utf8')));break;}catch(error){if(error.code!=='ENOENT')throw error;}
+          try{const ended=JSON.parse(await fs.readFile(path.join(directory,'browser-result.json'),'utf8'));assert(ended.passed,'Performance browser stopped before verification');throw Error('Performance browser ended before signal');}catch(error){if(error.code!=='ENOENT')throw error;}
+          await pause(100);
+        }
+        assert.equal(signal.stage,stage);assert.equal(signal.transactionHashes.length,1);assert.equal(evidence.captures.size,index+1);
+        const checked=await verifyU01BrowserPost({node,preparation,instance,claimResult,privateFee,txHash:signal.transactionHashes[0],message:index===0?message:message+' warm',evidence:baseline});checks.push(checked);
+        mark('performance-'+stage+'-verified');
+        if(index===0){
+          baseline=await captureU01BrowserPostBaseline({node,preparation,instance,claimResult,privateFee,evidence:baseline});assert.equal(baseline.beforePostCount,1n);
+          const checkpoints=createT04CheckpointScope(node.getSequencer());checkpoints.enable();
+          try{const deadline=Date.now()+120000;let eligible=false;
+            while(Date.now()<deadline){const block=await node.getBlock('checkpointed');if(block&&BigInt(block.header.globalVariables.timestamp.toString())>=baseline.oldFields[10]){eligible=true;break;}await pause(500);}assert(eligible,'Warm-post cooldown did not become eligible');
+          }finally{checkpoints.restore();}
+        }
+        const target=path.join(directory,'browser-journey-'+stage+'-verified.json'),temporary=target+'.tmp';await fs.writeFile(temporary,JSON.stringify({stage,verified:true}),{mode:0o600,flag:'wx'});await fs.rename(temporary,target);
+      }
+      assert.notEqual(checks[0].txHash,checks[1].txHash);assert.notEqual(checks[0].proofSha256,checks[1].proofSha256);
+      observation.verification={passed:true,posts:checks,privateFeeDebits:'2',sameWallet:true,performanceQualified:false};
+    }
     let result;
     // The parent enforces the overall nine-minute budget including native setup.
     for(;;){try{result=JSON.parse(await fs.readFile(path.join(directory,'browser-result.json'),'utf8'));break;}catch(error){if(error.code!=='ENOENT')throw error;}await pause(200);}
@@ -118,9 +145,10 @@ export async function completeU01BrowserPost({node,preparation,instance,l1Client
     }
     await rpc.close();observation.rpcFootprint=rpcObserver.snapshot();rpc=undefined;capture.close();capture=undefined;
     mark(withdrawal?'browser-verify-canonical-withdrawal':'browser-verify-canonical-post');
-    verificationWallet=await openVerificationWallet();
+    if(performanceMode){assert.deepEqual(result.publicTransactionHashes,observation.verification.posts.map(post=>post.txHash));assert.equal(result.journey.samples.length,2);}
+    else {verificationWallet=await openVerificationWallet();
     observation.verification=await (withdrawal?verifyU01BrowserWithdrawal:verifyU01BrowserPost)({node,preparation,instance,claimResult,privateFee,
-      txHash:result.publicTransactionHashes?.at(-1),message,evidence:{...evidence,wallet:verificationWallet},l1Client,portalAbi,escrowBefore});
+      txHash:result.publicTransactionHashes?.at(-1),message,evidence:{...evidence,wallet:verificationWallet},l1Client,portalAbi,escrowBefore});}
     assert(observation.verification.passed);Object.assign(privateFee,{passed:true,scope:'native cold-start claim and independently verified browser private-fee action'});observation.browserApplicationProof=true;observation.passed=true;return observation;
   }catch(error){await preserveBrowserRpcFootprint(directory,rpcObserver,observation).catch(()=>{observation.rpcFootprintPreservationFailed=true;});error.browserPostObservation=observation;throw error;}
   finally{await runT04Cleanup([()=>responseLoss?.close(),()=>capture?.close(),()=>rpc?.close(),()=>verificationWallet?.stop(),()=>fs.rm(backupPath,{force:true})]);}

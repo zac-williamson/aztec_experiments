@@ -81,7 +81,7 @@ test('browser save observes transaction abort and never reports durable success'
   try {await assert.rejects(store.save(scope,record),/did not commit/);} finally {proto.transaction=original;db.close();}
   assert.equal(await store.load(scope,record.secretHash),null);
 });
-function engineContext(){const context={console,Buffer,TextEncoder,setTimeout,clearTimeout};vm.createContext(context);vm.runInContext(engineSource,context,{filename:'user/engine.js'});return context;}
+function engineContext(){const context={performance,console,Buffer,TextEncoder,setTimeout,clearTimeout};vm.createContext(context);vm.runInContext(engineSource,context,{filename:'user/engine.js'});return context;}
 test('actual engine codec matches frozen claim, boundary and exit commitments',async()=>{
   const c=engineContext();const vectors=JSON.parse(await fs.readFile(new URL('../execution/interface-fixtures/commitments-v1.json',import.meta.url)));
   for(const vector of vectors.cases.filter(x=>['claim','claim-boundary','exit'].includes(x.name))){

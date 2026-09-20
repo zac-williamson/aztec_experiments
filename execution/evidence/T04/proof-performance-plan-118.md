@@ -29,3 +29,11 @@ and source hashes. Require distinct run IDs and retain failed attempts. For30
 samples, nearest-rank p95 is the29th ordered observation. Installed-browser support
 and bundled-engine performance remain separate claims. No new scheduler/service
 or general-purpose orchestration framework is needed.
+
+## September20 scheduling revision
+
+Campaign136 remains a fixed30-slot cohort; retain all observations and missing slots.
+After attempt02, defer its remaining runs while closing actual feed synchronization
+and wallet integration gaps. It is incomplete and cannot qualify; no failed samples
+are replaced. Final-source performance qualification remains required. This avoids
+spending hours qualifying a source candidate already known to need application edits.

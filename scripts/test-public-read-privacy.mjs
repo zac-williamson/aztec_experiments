@@ -11,7 +11,7 @@ import {GasSettings} from '@aztec/stdlib/gas';
 import {BlockHeader} from '@aztec/stdlib/tx';
 import {BaseWallet} from '@aztec/wallet-sdk/base-wallet';
 const source=await fs.readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8');
-const context=vm.createContext({console,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});vm.runInContext(source,context);
+const context=vm.createContext({performance,console,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});vm.runInContext(source,context);
 const views=['get_post_id','get_post_exists','get_moderation_policy_snapshot','get_post_policy_version','get_base_cooldown','get_min_deposit','get_max_save_up','get_censor','get_post_count','get_k_multiplier','get_censor_window','get_post','get_post_length','is_post_flagged','get_censor_response','get_censor_response_length','get_post_flagged_by','get_post_time','get_post_flag_deadline'];
 test('every caller-independent public getter supplies supported SDK NO_FROM',()=>{
  for(const name of views){

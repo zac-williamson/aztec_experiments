@@ -83,3 +83,16 @@ test('runtime source imports only local modules without SDK or proving assets',(
  const source=fs.readFileSync(new URL('../shared/public-feed-source.mjs',import.meta.url),'utf8');
  assert(!source.includes('@aztec/'));assert(!source.includes('import('));
 });
+test('independent tag queries overlap while retaining the aggregate page budget',async()=>{
+ const f=fixture(),read=f.node.getPublicLogsByTags;let active=0,peak=0;const releases=[];
+ f.node.getPublicLogsByTags=async q=>{active++;peak=Math.max(peak,active);await new Promise(r=>releases.push(r));try{return await read(q);}finally{active--;}};
+ const source=await f.create(),pending=source.getEvents({fromBlock:1,toBlock:1,referenceBlock:hash.toString()});
+ await new Promise(r=>setImmediate(r));const observed=peak;for(const release of releases)release();
+ assert.equal((await pending).length,3);assert.equal(observed,3);assert.equal(peak,3);
+});
+test('failed tag stream stops sibling pagination after already-issued reads',async()=>{
+ const f=fixture({pageSize:1}),read=f.node.getPublicLogsByTags;let calls=0;const releases=[];
+ f.node.getPublicLogsByTags=async q=>{calls++;if(calls===1)throw Error('unavailable tag');await new Promise(r=>releases.push(r));return read(q);};
+ const source=await f.create();await assert.rejects(source.getEvents({fromBlock:1,toBlock:1,referenceBlock:hash.toString()}));
+ assert.equal(calls,3);for(const release of releases)release();await new Promise(r=>setImmediate(r));assert.equal(calls,3);
+});

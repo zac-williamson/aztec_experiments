@@ -21,6 +21,14 @@
 // ============================================================
 
 ;(function() {
+  // Fixed names only; retain at most one completed interval and one pending mark
+  // per boundary. No transaction or wallet data enters browser timing records.
+  async function measured(name, operation) {
+    const key='billboard.'+name;
+    performance.clearMarks(key);performance.clearMeasures(key);performance.mark(key);
+    const result=await operation();
+    performance.measure(key,key);performance.clearMarks(key);return result;
+  }
   const g = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : this);
 
   // ============================================================
@@ -265,11 +273,11 @@
           from: opts.from, feePayer: executionPayload.feePayer, gasSettings: finalGasSettings,
         });
         const txRequest = await this.createTxExecutionRequestFromPayloadAndFee(executionPayload, opts.from, feeOpts2);
-        const provenTx = await this.pxe.proveTx(txRequest, {
+        const provenTx = await measured('proveTx',()=>this.pxe.proveTx(txRequest, {
           scopes: this.scopesFrom(opts.from, opts.additionalScopes ?? [], opts.sendMessagesAs),
           senderForTags: this.senderForTagsFrom(opts.from, opts.sendMessagesAs),
-        });
-        const tx = await provenTx.toTx();
+        }));
+        const tx = await measured('toTx',()=>provenTx.toTx());
         const txHash = tx.getTxHash();
         log('  Proving complete. Submitting to node...', 'success');
 
@@ -949,7 +957,7 @@
         // Step 4: Initialize CRS
         // ============================================================
         log('Step 4: Initializing CRS...', 'info');
-        await initCRS();
+        await measured('crs',()=>initCRS());
         log('  CRS ready.', 'success');
 
         // ============================================================
@@ -959,10 +967,10 @@
         const dataDirPrefix = (config.dataDirPrefix || 'pxe_bb_') + address.toString().slice(0, 16) + '_';
         const storeConfig = { ...l1Contracts, l1ChainId: nodeInfo.l1ChainId, accountAddress: address.toString(), dataDirectory: dataDirPrefix + l1Contracts.rollupAddress };
         const store = await createStore(storeConfig);
-        pxe = await a.createPXE(aztecNode, {
+        pxe = await measured('pxe',()=>a.createPXE(aztecNode, {
           proverEnabled: true, autoSync: true,
           dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
-        }, { store });
+        }, { store }));
         log('  PXE created.', 'success');
 
         // ============================================================

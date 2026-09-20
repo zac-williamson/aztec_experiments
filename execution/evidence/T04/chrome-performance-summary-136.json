@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "engine": "chrome",
+  "attemptedPairs": 2,
+  "completedPairs": 1,
+  "failedPairs": 1,
+  "qualified": false,
+  "coldProof": {
+    "samples": 1,
+    "p50Ms": 24509.990000009537,
+    "p95Ms": 24509.990000009537,
+    "maxMs": 24509.990000009537
+  },
+  "warmProof": {
+    "samples": 1,
+    "p50Ms": 24035.405000001192,
+    "p95Ms": 24035.405000001192,
+    "maxMs": 24035.405000001192
+  },
+  "coldMeasuredInitializationAndProof": {
+    "samples": 1,
+    "p50Ms": 25573.490000009537,
+    "p95Ms": 25573.490000009537,
+    "maxMs": 25573.490000009537
+  },
+  "attempts": [
+    {
+      "log": "chrome-performance-136-01.log",
+      "status": "passed",
+      "report": "application-f760208c-1076-40b2-aa73-ea4b3af07c6b.json",
+      "sha256": "4e87c22c5ffce8b6da621c71868f47dd9ec83fb6caaf83ea77bd4539b814fad2"
+    },
+    {
+      "log": "chrome-performance-136-02.log",
+      "status": "failed",
+      "report": "application-87b429b7-9748-4742-a06f-c43aee8e2bb5.json",
+      "sha256": "df2c4b84b25bf43bfa3b199e7be0319376c4c9d3fd13cba1e6c3abe690f397a7",
+      "reason": "Incomplete, failed, duplicate or inconsistent evidence; inspect the retained report."
+    },
+    {
+      "log": "chrome-performance-136-03.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-04.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-05.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-06.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-07.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-08.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-09.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-10.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-11.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-12.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-13.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-14.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-15.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-16.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-17.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-18.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-19.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-20.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-21.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-22.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-23.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-24.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-25.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-26.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-27.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-28.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-29.log",
+      "status": "not_started"
+    },
+    {
+      "log": "chrome-performance-136-30.log",
+      "status": "not_started"
+    }
+  ],
+  "scope": "Nearest-rank statistics of valid pairs. Incomplete/failed cohorts cannot qualify. Pilot excluded; no failed attempt replaced."
+}

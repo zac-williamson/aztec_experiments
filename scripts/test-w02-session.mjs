@@ -39,7 +39,7 @@ test('engine witness errors and initial provider errors are both redacted',async
 });
 test('lossless salts and public cache identity separate account/network/deployment',()=>{
  const app=source('apps/src/billboard/user/engine.js'),start=app.indexOf('  function _setupKey('),end=app.indexOf('  // ============================================================',start);
- const c=vm.createContext({});vm.runInContext(app.slice(start,end),c);
+ const c=vm.createContext({performance,});vm.runInContext(app.slice(start,end),c);
  const salt=(1n<<200n)+17n;assert.equal(c.walletSalt('0x'+salt.toString(16)),salt);assert.equal(c.walletSalt(salt.toString()),salt);
  for(const bad of [-1,Number.MAX_SAFE_INTEGER+1,'1e4','-1','0x'+'f'.repeat(64),null])assert.throws(()=>c.walletSalt(bad));
  const cfg={aztecNodeUrl:'n',ethRpcUrl:'e',portalAddress:'0xabc',aztecWallet:{secretKey:'private-marker'}},node={l1ChainId:1,rollupVersion:2};

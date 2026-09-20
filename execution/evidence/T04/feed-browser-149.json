@@ -1,0 +1,106 @@
+{
+  "script": "scripts/test-public-feed-browser.mjs",
+  "args": [],
+  "passed": true,
+  "observations": [
+    {
+      "passed": true,
+      "actualBuiltBrowser": true,
+      "walletFree": true,
+      "publicBundleBytes": 26754,
+      "paginatedPosts": 55,
+      "reloadNoLogRescan": true,
+      "actualCliWithoutWallet": true,
+      "noProvingAssetRequests": true,
+      "publicOnlyDatabase": true,
+      "escapedContent": true,
+      "controlledRpc": true,
+      "mobileViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "flaggedDisclosure": true,
+      "longContentNoHorizontalOverflow": true
+    }
+  ],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 498768,
+  "rssSamples": [
+    {
+      "elapsedMs": 1001,
+      "rssKiB": 498768
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "ui",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/test-public-feed-browser.mjs": "55eddef59be9ab83878dc6455d03bf78647261f23c7102c9acec7e341d818464",
+    "shared/public-feed-projection.mjs": "8f102b9a0661945410d7b7c8b06018f62a23042f8660e0fbffce24931265c89a",
+    "shared/public-feed-storage.mjs": "022cc21a3b38ea574465ec6b4d705daab31a9db0c3f39a63fbe50f5aab6f0b24",
+    "shared/public-feed-file-storage.mjs": "94608358546bd04ba3195148891ddc3282b1c7d6c6ae59feb4ad061c70645a99",
+    "shared/public-feed-connection.mjs": "1f1f39a564cf55f8990dbb59c2574ebd3f74a2aa274f60d72b702cc78d467715",
+    "shared/public-feed-cli.mjs": "985dee9c875bf116789a502b27dfe89eaf24f1e91c53c98ff2fab4e51dc817d4",
+    "shared/public-feed.mjs": "5d11a1e1935fc1af4174578521822442c219eb4ee0849543c789269c4a6bd85f",
+    "shared/public-feed-source.mjs": "a860aaab73c0b0eeb53286bd090230baee2daefb96023ce33f476513e9bde3ca",
+    "apps/dist/public-feed.js": "74d0113241c69c49a808c928b2d419aa2e57a6327a3f58dfddb1be3598850c64",
+    "apps/dist/feed.html": "a9b09d557dcbb1823de68b9f59f0909a94c0716ab7066ab399e6fcbe575e17a6",
+    "scripts/run-bounded-browser-check.mjs": "b2b1b8a588f9aceb582ecfb1c58f23939dfce74f93dc55aa59498046d0bc1978",
+    "scripts/testing/supervisor.mjs": "518d827972d68cce7bab14f56df6483a260f5f5dc4082b50e2e4bbd80b0723f2",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "a9eb441b4ebcab23b0fd0bd28d7a147ce1f8cea0fb64dfb814ee97d2c88529cc",
+    ".build/sdk/sdk-manifest.json": "6c6a247abf436ad3093f742d18af864a8e88229befe8dd31eebd06e083d60283"
+  },
+  "peakMemory": {
+    "elapsedMs": 1001,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 80453,
+        "ppid": 1375,
+        "rssKiB": 42240
+      },
+      {
+        "role": "ui",
+        "pid": 80465,
+        "ppid": 80453,
+        "rssKiB": 128064
+      },
+      {
+        "role": "ui",
+        "pid": 80466,
+        "ppid": 80465,
+        "rssKiB": 92880
+      },
+      {
+        "role": "ui",
+        "pid": 80467,
+        "ppid": 80466,
+        "rssKiB": 59104
+      },
+      {
+        "role": "ui",
+        "pid": 80468,
+        "ppid": 80466,
+        "rssKiB": 43984
+      },
+      {
+        "role": "ui",
+        "pid": 80469,
+        "ppid": 80466,
+        "rssKiB": 132496
+      }
+    ]
+  },
+  "elapsedMs": 1216,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true
+}

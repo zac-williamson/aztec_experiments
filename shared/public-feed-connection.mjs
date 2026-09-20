@@ -1,3 +1,4 @@
+import {readFeedSnapshot} from './public-feed-storage.mjs';
 import {publicNode,publicRpc} from './public-feed-rpc.mjs';
 import {createPublicFeedSource} from './public-feed-source.mjs';
 import {createPublicFeed} from './public-feed.mjs';
@@ -18,9 +19,9 @@ export async function connectPublicFeed({nodeUrl,ethereumUrl,portalAddress,metad
       scope.rollupVersion!==n.rollupVersion||scope.rollupAddress!==n.rollupAddress||
       scope.boardAddress!==b.contractAddress||scope.portalAddress!==b.portalAddress) throw Error('Live board does not match the imported configuration.');
   }
-  const instance=await node.getContract(scope.boardAddress);
+  const [instance,head]=await Promise.all([node.getContract(scope.boardAddress),node.getBlockData('checkpointed')]);
   if(!metadata.classId||instance?.currentContractClassId!==metadata.classId||instance?.originalContractClassId!==metadata.classId)throw Error('Board contract does not match this application release.');
-  const head=await node.getBlockData('checkpointed');if(!head?.blockHash)throw Error('No checkpointed board state is available.');
+  if(!head?.blockHash)throw Error('No checkpointed board state is available.');
   // Pinned PublicImmutable stores Packable fields at consecutive slots, followed
   // by their hash. Config consists of ten scalar fields in declaration order.
   const read=async slot=>word(await node.getPublicStorageAt({hash:head.blockHash},scope.boardAddress,field(slot)));
@@ -33,6 +34,21 @@ export async function connectPublicFeed({nodeUrl,ethereumUrl,portalAddress,metad
 }
 let publicDatabase;
 export function browserPublicFeedStorage(){
-  const db=()=>publicDatabase??=new Promise((resolve,reject)=>{const r=indexedDB.open('aztec-billboard-public-feed-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('public');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(Error('Public feed storage unavailable.'));});
-  return {async get(key){const d=await db();return new Promise((resolve,reject)=>{const r=d.transaction('public').objectStore('public').get(key);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(Error('Public cache read failed.'));});},async set(key,value){const d=await db();return new Promise((resolve,reject)=>{const tx=d.transaction('public','readwrite');tx.objectStore('public').put(value,key);tx.oncomplete=()=>resolve();tx.onerror=tx.onabort=()=>reject(Error('Public cache save failed.'));});}};
+  const db=()=>publicDatabase??=new Promise((resolve,reject)=>{const r=indexedDB.open('aztec-billboard-public-feed-v2',1);r.onupgradeneeded=()=>r.result.createObjectStore('public');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(Error('Public feed storage unavailable.'));});
+  return {
+    async load(key,maxRanges){const d=await db();return new Promise((resolve,reject)=>{
+      const tx=d.transaction('public'),store=tx.objectStore('public');let result,failure;
+      const read=k=>new Promise((yes,no)=>{const r=store.get(k);r.onsuccess=()=>yes(r.result??null);r.onerror=()=>no(r.error);});
+      readFeedSnapshot(read,key,maxRanges).then(value=>{result=value;},error=>{failure=error;tx.abort();});
+      tx.oncomplete=()=>resolve(result);tx.onerror=tx.onabort=()=>reject(failure??Error('Public cache read failed.'));
+    });},
+    async commit(key,previous,next,range,removed){const d=await db();return new Promise((resolve,reject)=>{
+      const tx=d.transaction('public','readwrite',{durability:'strict'}),store=tx.objectStore('public'),r=store.get(key);
+      r.onsuccess=()=>{if((r.result??null)!==previous){tx.abort();return;}
+        if(range)store.add(range.value,`${key}:range:${range.id}`);
+        store.put(next,key);for(const id of removed)store.delete(`${key}:range:${id}`);
+      };
+      tx.oncomplete=()=>resolve();tx.onerror=tx.onabort=()=>reject(Error('Public cache commit failed; reopen to reconcile concurrent changes.'));
+    });},
+  };
 }

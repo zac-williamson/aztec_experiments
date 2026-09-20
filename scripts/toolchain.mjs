@@ -39,3 +39,10 @@ export function assertAztecPackages() {
     if (installed !== version) throw new Error(`Installed ${name}@${installed} differs from ${version}; run npm ci`);
   }
 }
+
+export function anvilBinary() {
+  const binary = path.join(ROOT, `.build/anvil-${pins.anvil.release}/anvil`);
+  const version = execFileSync(binary, ["--version"], { encoding: "utf8", timeout: 10000 });
+  if (!version.includes(`Version: ${pins.anvil.version}\n`) || !version.includes(pins.anvil.commit)) throw new Error(`Expected Anvil ${pins.anvil.release}`);
+  return binary;
+}

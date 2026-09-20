@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {ROOT,assertNodeVersion} from './toolchain.mjs';
+import {ROOT,assertNodeVersion,anvilBinary} from './toolchain.mjs';
 import {Supervisor,describeFailure} from './testing/supervisor.mjs';
 assertNodeVersion();
 const [script,output,...args]=process.argv.slice(2);
@@ -17,7 +17,7 @@ const directory=await fs.mkdtemp('/private/tmp/board-ui-');
 const report={script,args,passed:false,observations:[]};
 const owner=new Supervisor({deadlineMs:walletExtension?120000:540000,report});
 try{
- const names=[script,...(walletExtension?['scripts/toolchain.mjs','shared/private-fee-client.mjs','apps/src/billboard/private_fee_artifact.json','apps/dist/fee-juice.html','apps/dist/aztec_bundle.js','shared/wallet-backup.js','shared/wallet-buttons.js','shared/private-fee-funding.mjs','shared/ethereum-journal.mjs','apps/src/fee-juice/engine.js','.build/metamask-13.49.0/metamask-chrome-13.49.0.zip','.build/portal-tests/out/PortalV1.t.sol/RootPublisher.json','package-lock.json']:[]),...(publicFeed?['shared/public-feed.mjs','shared/public-feed-source.mjs','apps/dist/public-feed.js','apps/dist/feed.html']:[]),...(script==='scripts/test-u01-hosting-browser.mjs'?['scripts/browser-history-entry.mjs','scripts/screening-history-fixture.mjs','shared/sdk-store.mjs','package-lock.json']:[]),'scripts/run-bounded-browser-check.mjs','scripts/testing/supervisor.mjs','scripts/owned-test-process-tree.mjs','deploy/hosting-config.mjs','.build/apps-manifest.json','.build/sdk/sdk-manifest.json'];
+ const names=[script,...(walletExtension?[path.relative(ROOT,anvilBinary()),'toolchain.json','scripts/t04-extension-collateral.mjs','shared/protocol-commitments.mjs','billboard/portal/out/BillboardPortal.sol/BillboardPortal.json','scripts/toolchain.mjs','shared/private-fee-client.mjs','apps/src/billboard/private_fee_artifact.json','apps/dist/fee-juice.html','apps/dist/aztec_bundle.js','shared/wallet-backup.js','shared/wallet-buttons.js','shared/private-fee-funding.mjs','shared/ethereum-journal.mjs','apps/src/fee-juice/engine.js','.build/metamask-13.49.0/metamask-chrome-13.49.0.zip','.build/portal-tests/out/PortalV1.t.sol/RootPublisher.json','package-lock.json']:[]),...(publicFeed?['shared/public-feed-projection.mjs','shared/public-feed-storage.mjs','shared/public-feed-file-storage.mjs','shared/public-feed-connection.mjs','shared/public-feed-cli.mjs','shared/public-feed.mjs','shared/public-feed-source.mjs','apps/dist/public-feed.js','apps/dist/feed.html']:[]),...(script==='scripts/test-u01-hosting-browser.mjs'?['scripts/browser-history-entry.mjs','scripts/screening-history-fixture.mjs','shared/sdk-store.mjs','package-lock.json']:[]),'scripts/run-bounded-browser-check.mjs','scripts/testing/supervisor.mjs','scripts/owned-test-process-tree.mjs','deploy/hosting-config.mjs','.build/apps-manifest.json','.build/sdk/sdk-manifest.json'];
  const fingerprints=async()=>Object.fromEntries(await Promise.all(names.map(async name=>[name,createHash('sha256').update(await fs.readFile(path.join(ROOT,name))).digest('hex')])));
  report.sourceHashes=await fingerprints();
  const exit=await owner.start('ui',process.execPath,['--max-old-space-size='+String(walletExtension?256:publicFeed?128:64),path.join(ROOT,script),...args],{

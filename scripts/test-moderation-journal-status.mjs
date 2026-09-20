@@ -7,7 +7,7 @@ import {AztecAddress} from '@aztec/stdlib/aztec-address';
 const source=await readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8');
 const policy=await readFile(new URL('../shared/moderation-policy.js',import.meta.url),'utf8');
 function fixture(saved){
- const c=vm.createContext({TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});vm.runInContext(policy,c);vm.runInContext(source,c);
+ const c=vm.createContext({performance,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});vm.runInContext(policy,c);vm.runInContext(source,c);
  const address=AztecAddress.fromFieldUnsafe(new Fr(1)),board=new Fr(2).toString(),rollup='0x'+'11'.repeat(20),portal='0x'+'22'.repeat(20);
  const fail=()=>assert.fail('Read-only inspection reached a mutating/proving/PXE operation');let inspected=0;
  const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:1}),getL1ContractAddresses:async()=>({rollupAddress:rollup}),getBlockNumber:async()=>1};

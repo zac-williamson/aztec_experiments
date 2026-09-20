@@ -1,0 +1,262 @@
+✔ matching synthetic artifacts and recorded sources pass (9.935166ms)
+✔ stale deploy Noir copy is rejected (6.089ms)
+✔ stale censor Noir copy is rejected (5.027542ms)
+✔ missing verification key is rejected even when all consumer copies agree (5.536042ms)
+✔ empty private function set is rejected even when all consumer copies agree (5.488375ms)
+✔ only public functions is rejected even when all consumer copies agree (5.144708ms)
+✔ untranspiled artifact is rejected even when all consumer copies agree (7.210041ms)
+✔ truthy non-boolean transpilation marker is rejected even when all consumer copies agree (5.397709ms)
+✔ stale portal bytecode is rejected: apps/src/billboard/portal_bytecode.txt (5.005416ms)
+✔ stale portal bytecode is rejected: apps/src/billboard/deploy/portal_bytecode.txt (4.84625ms)
+✔ portal source drift is rejected by embedded compiler provenance (5.775208ms)
+✔ missing Solidity source provenance is rejected (5.898583ms)
+✔ string-encoded Solidity metadata remains supported (6.140875ms)
+✔ Noir source drift requires a rebuild (4.952708ms)
+✔ Noir dependency declaration drift requires a rebuild (5.40175ms)
+✔ root dependency lock drift requires a rebuild (5.601667ms)
+✔ portal dependency lock drift requires a rebuild (5.395ms)
+✔ compiler configuration drift requires a rebuild (5.177917ms)
+✔ toolchain pins drift requires a rebuild (6.650833ms)
+✔ contract builder drift requires a rebuild (5.636625ms)
+✔ Noir debug-path normalizer drift requires a rebuild (5.246833ms)
+✔ Noir dependency verifier drift requires a rebuild (5.050417ms)
+✔ Noir dependency pins drift requires a rebuild (5.177584ms)
+✔ new Noir source omitted from the old manifest requires a rebuild (5.115167ms)
+✔ contract manifest input hash tampering is rejected (5.848958ms)
+✔ contract manifest noir hash tampering is rejected (5.062ms)
+✔ contract manifest portal hash tampering is rejected (4.881458ms)
+✔ synchronized altered Noir artifacts still fail the recorded build hash (5.086916ms)
+✔ synchronized altered portal bytecode still fails the recorded build hash (5.556625ms)
+✔ privateFee key, extra route and stale content fail closed (6.398ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 316.519208
+✔ rejected http-error response cancels its unread body (19.820583ms)
+✔ rejected oversized response cancels its unread body (3.267541ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 68.276791
+✔ Node proving fails closed before initialization and rejects backend/custom prover overrides (1.515833ms)
+✔ verified CLI setup routes exact direct-WASM singleton through streaming prover and WASM simulator (0.527292ms)
+✔ failed local verification, wrong existing backend and replaced singleton cannot prove (1.296459ms)
+✔ Node read-only PXE retains SDK behavior without proving setup (0.249916ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 69.814125
+✔ apps/src/billboard/user/cli.mjs initializes hashing only then async local prover once (4.673ms)
+✔ apps/src/billboard/user/cli.mjs rejects missing, truncated, modified and symlink local bytes without caching success (9.576125ms)
+✔ apps/src/billboard/deploy/cli.mjs initializes hashing only then async local prover once (1.758042ms)
+✔ apps/src/billboard/deploy/cli.mjs rejects missing, truncated, modified and symlink local bytes without caching success (7.528042ms)
+✔ actual operator CRS inventory includes derived bytes and all original hash pins (0.876625ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 69.701334
+✔ required local derived G1, G2 and Grumpkin initialize the pinned point counts (28.0665ms)
+✔ g1_uncompressed.dat missing stops without alternate reads, network requests or prover calls (0.66675ms)
+✔ g1_uncompressed.dat corrupt stops without alternate reads, network requests or prover calls (39.118167ms)
+✔ g1_uncompressed.dat truncated stops without alternate reads, network requests or prover calls (0.26125ms)
+✔ g2.dat missing stops without alternate reads, network requests or prover calls (25.202583ms)
+✔ g2.dat corrupt stops without alternate reads, network requests or prover calls (24.858084ms)
+✔ g2.dat truncated stops without alternate reads, network requests or prover calls (24.93025ms)
+✔ grumpkin_g1.dat missing stops without alternate reads, network requests or prover calls (25.466917ms)
+✔ grumpkin_g1.dat corrupt stops without alternate reads, network requests or prover calls (26.724ms)
+✔ grumpkin_g1.dat truncated stops without alternate reads, network requests or prover calls (25.505375ms)
+✔ missing manifest is rejected before any data request (0.218375ms)
+✔ different SDK release is rejected before any data request (0.094666ms)
+✔ old schema is rejected before any data request (0.057667ms)
+✔ wrong compressed format is rejected before any data request (0.056792ms)
+✔ wrong G2 format is rejected before any data request (0.052042ms)
+✔ wrong Grumpkin format is rejected before any data request (0.0545ms)
+✔ old point count is rejected before any data request (0.049917ms)
+✔ old Grumpkin filename is rejected before any data request (0.046ms)
+✔ unexpected network destination is rejected before any data request (0.044375ms)
+✔ duplicate file is rejected before any data request (0.061625ms)
+✔ invalid range is rejected before any data request (0.055292ms)
+✔ missing derived entry is rejected before any data request (0.060834ms)
+✔ wrong derived name is rejected before any data request (0.052084ms)
+✔ wrong derived length is rejected before any data request (0.046084ms)
+✔ wrong derived point count is rejected before any data request (0.052209ms)
+✔ wrong derived format is rejected before any data request (0.057583ms)
+✔ invalid derived digest is rejected before any data request (0.042ms)
+✔ derived remote URL is rejected before any data request (0.055125ms)
+✔ missing provenance is rejected before any data request (0.044834ms)
+✔ wrong derivation method is rejected before any data request (0.054083ms)
+✔ wrong derivation SDK is rejected before any data request (0.042042ms)
+✔ wrong derivation input name is rejected before any data request (0.041834ms)
+✔ mismatched derivation input pin is rejected before any data request (0.051542ms)
+✔ mismatched derivation G2 pin is rejected before any data request (0.0545ms)
+✔ wrong derivation WASM path is rejected before any data request (0.044708ms)
+✔ wrong derivation WASM digest is rejected before any data request (0.04075ms)
+✔ extra derivation metadata is rejected before any data request (0.0405ms)
+✔ truncated body cannot be loaded (10.263625ms)
+✔ oversized body cannot be loaded (0.141958ms)
+✔ oversized content length cannot be loaded (0.285916ms)
+✔ HTTP failure cannot be loaded (0.044417ms)
+✔ empty successful response cannot be loaded (0.053208ms)
+✔ oversized streamed response is cancelled instead of reading remaining bytes (0.305875ms)
+✔ non-ending HTTP error response is cancelled before rejection (0.082541ms)
+✔ HTTP error response remains the rejection reason when cancellation fails (0.069708ms)
+✔ BN254 initialization rejection prevents Grumpkin initialization (26.953542ms)
+✔ unexpected BN254 response cannot be reported as initialized (26.734958ms)
+✔ unexpected Grumpkin response cannot be reported as initialized (26.447958ms)
+✔ browser loading uses the same checks with Web Crypto SHA-256 (37.683417ms)
+✔ verified local derived bytes skip compressed reads and use the documented empty response (26.625334ms)
+✔ truncated derived input stops before hashing or invoking the prover (0.171125ms)
+✔ oversized derived input stops before hashing or invoking the prover (0.17775ms)
+✔ cache metadata wrapper stops before hashing or invoking the prover (0.061542ms)
+✔ loader cannot replace the trusted metadata snapshot (27.758041ms)
+✔ mismatched derived content pin never accepts bytes through supplied cache metadata (25.500667ms)
+✔ derived initialization rejects nonempty output and does not initialize Grumpkin (27.522625ms)
+✔ derived initialization rejects missing output and does not initialize Grumpkin (26.893917ms)
+✔ derived initialization rejects wrong element type and does not initialize Grumpkin (26.979375ms)
+✔ browser VM uses full Web Crypto digest verification for derived input (32.512416ms)
+✔ explicit BN254 prefix verifies the complete derived source before selecting points (26.62725ms)
+✔ corruption beyond the retained prefix fails before any prover call (25.44175ms)
+✔ prefix budget rejects invalid and excessive values, and snapshots caller selection (53.242ms)
+✔ derived prefix rejects an unexpected nonempty initialization response (28.04025ms)
+ℹ tests 63
+ℹ suites 0
+ℹ pass 63
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 790.8935
+✔ accepts the exact pinned partial response and requests identity encoding (11.429333ms)
+✔ rejects ignored Range (0.44125ms)
+✔ rejects wrong range (0.22225ms)
+✔ rejects oversized stream (0.377375ms)
+✔ rejects truncated stream (0.173791ms)
+✔ rejects checksum mismatch (0.129875ms)
+✔ rejects the first invalid download without consulting another destination (0.202916ms)
+✔ schema2 separates the72MiB derived asset from bounded network assets (0.5935ms)
+✔ rejects derived provenance: wrong Grumpkin format (0.152166ms)
+✔ rejects derived provenance: wrong Grumpkin point count (0.096333ms)
+✔ rejects derived provenance: wrong Grumpkin byte length (0.050958ms)
+✔ rejects derived provenance: wrong G2 point count (0.0395ms)
+✔ rejects derived provenance: changed source URL (0.037541ms)
+✔ rejects derived provenance: old schema (0.044333ms)
+✔ rejects derived provenance: missing derived asset (0.053584ms)
+✔ rejects derived provenance: changed output pin (0.052542ms)
+✔ rejects derived provenance: oversized derived output (0.056875ms)
+✔ rejects derived provenance: wrong points (0.048625ms)
+✔ rejects derived provenance: unreviewed method (0.060875ms)
+✔ rejects derived provenance: package mismatch (0.044959ms)
+✔ rejects derived provenance: input checksum mismatch (0.041167ms)
+✔ rejects derived provenance: G2 checksum mismatch (0.04375ms)
+✔ rejects derived provenance: untrusted WASM path (0.048083ms)
+✔ rejects derived provenance: unreviewed WASM hash (0.05425ms)
+✔ rejects derived provenance: unexpected derivation field (0.040709ms)
+✔ rejects derived provenance: oversized network asset (0.036625ms)
+✔ rejects actual WASM bytes that do not match the declared gzip pin (0.071708ms)
+✔ rejects cache corruption before an explicitly requested atomic replacement (4.027417ms)
+✔ rename failure retains previous target and removes the temporary file (1.111334ms)
+✔ corruption during temporary write is rejected before replacing target (0.908125ms)
+✔ invalid derived bytes never create or replace a target (0.355875ms)
+✔ derivation timeout kills and closes its actual child, restoring signal listeners (104.456917ms)
+✔ derivation interruption kills and closes its actual child (0.751875ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 172.850083
+✔ browser fixes real SDK prover options and initializes matching singleton before PXE (1.392917ms)
+✔ incompatible cached singleton blocks PXE without replacement (1.103166ms)
+✔ browser custom prover and invalid options cannot bypass supported bound (1.341083ms)
+✔ Node path preserves explicit native options and custom prover without browser singleton (1.078167ms)
+✔ private logging remains silent and initialization failures are redacted (0.619417ms)
+✔ async CRS verification must finish before PXE and concurrent requests share its initialization (2.060833ms)
+✔ failed CRS validation blocks PXE, denies remote fallback and permits clean retry (0.576625ms)
+✔ cached singleton without skipSrsInit is rejected before CRS or PXE (0.2925ms)
+✔ verified loader uses only local files, rejects redirects and hashes bytes before initialization (0.491875ms)
+✔ browser injects streaming prover using the same simulator and preserves verified proof fields/compression (0.686959ms)
+✔ streaming proof failure cannot return a proof (0.35675ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 48.028083
+✔ ordered per-step inputs, hiding VK, local verification and compressed fields match upstream (1.46225ms)
+✔ each failed command stops all later work and redacts underlying data (3.278125ms)
+✔ invalid proof cannot reach compression or caller (0.32975ms)
+✔ overlap cannot poison active job; failed singleton is quarantined and fresh instance works (1.006916ms)
+✔ missing compressed output is rejected even after valid local verification (0.30425ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 65.141209
+✔ browser actual module persists ciphertext and interoperates with Node AES-GCM (7.403125ms)
+✔ browser actual custody rejects wrong wallet, ciphertext corruption and moved scope (3.090834ms)
+✔ browser save observes transaction abort and never reports durable success (1.771666ms)
+✔ actual engine codec matches frozen claim, boundary and exit commitments (6.078667ms)
+✔ actual public deposit flow saves and reads back before send; returns event receipt nonce without secret (7.183625ms)
+✔ actual deposit flow fails closed for missing store, failed durability and disabled portal (2.580167ms)
+✔ actual deposit flow fails closed for mismatched read-back and existing receipt (1.728208ms)
+✔ actual recovery requires the current event nonce and exact saved secret hash without signing fallback (3.913584ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 228.067917
+✔ pinned internal L2Block hash method differs from public node BlockResponse hash value (3.358958ms)
+✔ deployment returns pending immediately, then a resumed check forwards the exact finalized witness (1.720208ms)
+✔ unfinalized receipt never requests a witness or activates (0.328875ms)
+✔ missing witness never activates a finalized transaction (0.457ms)
+✔ reverted receipt fails closed before witness lookup (0.389416ms)
+✔ missing success receipt fails closed before witness lookup (0.2725ms)
+✔ dropped receipt fails closed before witness lookup (0.22475ms)
+✔ unknown receipt fails closed before witness lookup (0.241958ms)
+✔ wrong transaction receipt fails closed before witness lookup (0.506416ms)
+✔ missing block hash receipt fails closed before witness lookup (0.50975ms)
+✔ pending and proposed receipts do not qualify even with a high finalized tip (0.339917ms)
+✔ receipt block must still match canonical block at its height (0.518333ms)
+✔ re-inclusion during witness resolution returns pending; resume checks the new block (0.815083ms)
+✔ drop during witness resolution prevents activation (0.7555ms)
+✔ malformed finalized tip cannot satisfy the finality comparison (0.37925ms)
+✔ activation requires successful L1 receipt and enabled portal {"activationStatus":0} (0.480334ms)
+✔ activation requires successful L1 receipt and enabled portal {"enabled":false} (0.471542ms)
+✔ a stalled Ready RPC has a bounded unknown outcome without activation (9.876125ms)
+✔ deployment missing CREATE2 proxy is checked before wallet or proving work (0.981958ms)
+✔ deployment unrecognized CREATE2 proxy is checked before wallet or proving work (0.333792ms)
+✔ deployment pinned CREATE2 proxy is checked before wallet or proving work (0.309292ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 448.519958

@@ -1,6 +1,6 @@
 # Test hierarchy
 
-Use the pinned Node 24 and Foundry versions in BUILDING.md. Run serially, in this order:
+Use the pinned Node24, Forge and project-local Anvil versions in BUILDING.md. Run serially, in this order:
 
 1. `npm run test:harness` checks the supervisor with tiny real processes, strict scenario selection, command IO and browser handoff contracts. No blockchain or prover starts.
 2. `npm run test:components` checks application boundaries, setup verification and client behavior. `npm run test:application:unit` additionally executes Noir/TXE and Solidity constraints. These do not establish genuine transaction acceptance.
@@ -39,6 +39,7 @@ There are no implicit defaults, cascading environment flags or legacy aliases. T
 | `screening` | Authenticated screening constraints; explicitly genesis-funded constraint fixture |
 | `browser-firefox-post`, `browser-webkit-post` | Explicit engine private-fee posting; no automatic browser substitution |
 | `browser-cold-fees` | Actual fee-page deposit and private claim from zero credit, then paid collateral claim and post |
+| `browser-chrome-performance`, `browser-firefox-performance`, `browser-webkit-performance` | Two independently verified posts in one browser; measure cold and warm proving intervals separately from inclusion. A single run does not qualify percentiles. |
 | `browser-post` | Actual GUI posting after native private-fee setup |
 | `browser-journey`, `browser-firefox-journey`, `browser-webkit-journey` | Explicit engine GUI deposit, claim, post, screening, withdrawal and refund |
 | `browser-post-recovery` | Accepted post, lost response, browser restart and original transaction recovery |
@@ -52,3 +53,19 @@ Application transactions are genuinely proved and checked by the node. Local bri
 Fixture-only budgets are 60 seconds for node startup, 120 seconds for board inclusion and 180 seconds for activation. Full journeys retain 540 seconds. All expensive runs are serial, below ten minutes, and use disposable identities. Native contention uses two client threads; other profiles use one. Resource limits do not establish production capacity. No automatic retries or threshold increases are allowed. Rerun affected checks after diagnosing and repairing the underlying failure.
 
 Historical results remain bound to their original source snapshots. The new harness must be qualified from the bottom up before it can replace those results. A passing application suite is neither deployment clearance nor independent review. Browser coverage, load, audit, soak and target-network clearance remain separate graph requirements.
+
+## Public feed persistence checks
+
+Component checks cover incremental projection, concurrent writers, atomic range/head
+updates, snapshot rollback, forged cache rejection and write volume after10000posts.
+The CLI uses built-in Node24SQLite; browsers use IndexedDB. The existing built-feed
+browser check reopens multiple nativeIndexedDB ranges and invokes the realCLI.
+No wallet/prover is needed for reading. Initial cache replay is linear; subsequent
+append/rollback work follows changed ranges, and pages return only needed policies
+plus the current policy.
+
+The focused MetaMask check uses actual extension approvals and Ethereum contracts
+for fee funding, collateral/refund and encrypted-journal recovery. Its controlled
+Outbox roots qualify Ethereum integration, not an L2 exit or the full board GUI.
+The cappedEIP1559 receipt regression in the local-mining test prevents reintroducing
+the Anvil1.4.1 receipt-accounting defect.

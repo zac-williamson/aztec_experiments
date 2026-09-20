@@ -106,3 +106,17 @@ proof-performance-plan-118.md for the subsequent latency campaign.
 131–133: application reviewer approved canonical-reader separation after catching two remaining Contract instances bound to the signer; root corrected both. Harness reviewer approved exact localRPC allowlist, then pinned address parser correction after131.132 passed actual extension funding/recovery. Root now runs133 integrated Chrome journey; all actual source inputs frozen while live.
 
 134 preparation: webkit_failure_review approved removing temporary diagnostic monkeypatches after132. Root removed them only from the separate extension worker, which is absent from133 input fingerprints. Required setup chainChanged synchronization and all canonical acceptance checks remain. No additional heavy run overlaps133.
+
+135: application_change_review designed existing-fixture two-post measurement, then caught prior-link and screening-maturity assumptions in the new second-post oracle. Root corrected them; final review approved. webkit_failure_review approved existing lifecycle/rendezvous reuse, required unambiguous measured-interval naming and stale-timing regression, and approved final collector. Root retains sole writes; installedChrome pilot serializes under540s/4GiB.
+
+136: webkit_failure_review approved read-only cohort aggregator after root included CRS/PXE initialization in cold acceptance. Six synthetic structural tests cover denominator, missing/failed/duplicate attempts, metadata consistency and timing thresholds. application_change_review is independently reviewing remaining engineering scope/provenance; no source writes or heavy jobs delegated.
+
+137 preparation: webkit_failure_review approved extension collateral helper after requiring independent canonical transaction/event checks, receipt nonces and source fingerprints. Root integrated all three. Reuses existing lifecycle/supervisor; no fallback or L2 exit claim.
+
+141–144: webkit_failure_review traced upstream Anvil receipt bug independently; approved strict separate Anvil pin/resolver and six caller migrations, exact fee regression and binary fingerprints. Root added official archive URL/hash provenance and removed temporary financial diagnostics after143passed. Forge unchanged.
+
+146–147: application_change_review caught missing restored-range duplicate identity check; root restored perrangeSet. Both reviewers identified persistentorphans and unboundedpolicyoutput. Root replaced two-step persistence with atomic range/head/deletion transactions (SQLiteCLI, IndexedDBbrowser), snapshotload, selectedpolicies+current. Simplified projection to maps/currentpolicy, removing linkedlist.39checks pass; applicationreview approved and requires actualbrowserIDB verification. Harnessreview remains assigned.
+
+147–149 final review: both agents approved atomicSQLite/IndexedDB storage and boundedpolicy output. SQLiteconcurrency test caught rollbackjournal locking; WAL correction passes snapshot+rollback check. Nativebrowser149 passes two-range reopen and actualCLI. No new service/retry/fallback.
+
+154–155: both independent reviewers approved bounded parallel RPCs and retained global budgets/canonical checks. Harness reviewer caught sibling pagination continuing after failure; root added shared failure stop and barrier regression. Temporary diagnostic mode removed; ordinary 30-sample performance run155 passes unchanged targets. Root alone integrated and ran tests.

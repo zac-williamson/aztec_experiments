@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import {AztecNodeApiSchema} from '@aztec/stdlib/interfaces/client';
 const source=fs.readFileSync(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8');
-const c=vm.createContext({setTimeout,clearTimeout});vm.runInContext(source,c);
+const c=vm.createContext({performance,setTimeout,clearTimeout});vm.runInContext(source,c);
 const find=c.BillboardWithdrawalHistory.findWithdrawTxHash,field=n=>({toBigInt:()=>BigInt(n)});
 function fixture({height=1100,withdrawal=3,missing=false,rpcFail=false,reorg=false,reverted=false}={}){
  let calls=0;const blocks=Array.from({length:height},(_,i)=>({number:i+1,hash:'block-'+(i+1),body:{txEffects:i+1===withdrawal?[{txHash:'withdrawal',l2ToL1Msgs:[field(0),field(99)]}]:[]}}));

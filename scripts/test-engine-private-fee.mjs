@@ -19,7 +19,7 @@ import {Gas,GasFees,GasSettings} from '@aztec/stdlib/gas';
 import {NO_FROM} from '@aztec/aztec.js/account';
 const source=await readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8');
 const policySource=await readFile(new URL('../shared/moderation-policy.js',import.meta.url),'utf8');
-function context(){const c=vm.createContext({console,Buffer,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});vm.runInContext(policySource,c);vm.runInContext(source,c);return c;}
+function context(){const c=vm.createContext({performance,console,Buffer,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});vm.runInContext(policySource,c);vm.runInContext(source,c);return c;}
 const gas=()=>new GasSettings(new Gas(100,200),new Gas(1,2),new GasFees(3n,4n),new GasFees(0n,0n));
 function fixture(failure){
  const c=context(),prepared=[],sends=[],owner={toString:()=> 'owner'};

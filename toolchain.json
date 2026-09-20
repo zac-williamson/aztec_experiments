@@ -29,5 +29,28 @@
     "https://install.aztec.network/5.2.0/versions",
     "https://api.github.com/repos/noir-lang/noir/releases/tags/v1.0.0-beta.25",
     "https://nodejs.org/en/blog/release/v24.21.0"
-  ]
+  ],
+  "anvil": {
+    "release": "1.7.0",
+    "version": "1.6.0-v1.7.0",
+    "commit": "f83bad912a9dba7bf0371def1e70bb1896048356",
+    "assets": {
+      "darwin-arm64": {
+        "url": "https://github.com/foundry-rs/foundry/releases/download/v1.7.0/foundry_v1.7.0_darwin_arm64.tar.gz",
+        "sha256": "5883d247ea14d2fff8f70393aef68762bc79e608604c48a3940d8e33ef4daab6"
+      },
+      "darwin-x64": {
+        "url": "https://github.com/foundry-rs/foundry/releases/download/v1.7.0/foundry_v1.7.0_darwin_amd64.tar.gz",
+        "sha256": "ab04da5a40131df6235f14c963a91c97b7c4bba275571e508490950fef5c8211"
+      },
+      "linux-arm64": {
+        "url": "https://github.com/foundry-rs/foundry/releases/download/v1.7.0/foundry_v1.7.0_linux_arm64.tar.gz",
+        "sha256": "4be51b29d81f46f5f8913caf9b458db4b6f04f51565fbd59a0d11f69a4be2f77"
+      },
+      "linux-x64": {
+        "url": "https://github.com/foundry-rs/foundry/releases/download/v1.7.0/foundry_v1.7.0_linux_amd64.tar.gz",
+        "sha256": "88501301c43e2cb3231009e68bd76af17cc0f7e9981f9d37ceabc6b857febb2f"
+      }
+    }
+  }
 }

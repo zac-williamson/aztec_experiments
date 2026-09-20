@@ -1,3 +1,4 @@
+import {memoryFeedStorage} from './public-feed-memory-fixture.mjs';
 // Independent F01 regression probes; RPC and public cache are controlled doubles.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -7,7 +8,7 @@ const scope={l1ChainId:'1',rollupVersion:'1',rollupAddress:'0x'+'1'.repeat(40),p
 function fixture(options={}){
  const state=new Map(),events=[{schemaVersion:1,scope,type:'PolicyPublished',position:{blockNumber:'1',blockHash:hex(101),txHash:hex(501),txIndexWithinBlock:'0',logIndexWithinTx:'0'},payload:{policyVersion:hex(10),text:'Public policy',censorWindow:'10'}}],blocks=new Map([1,2,3,4].map(n=>[n,{number:n,hash:hex(100+n)}]));let head=2;
  const source={getHead:async()=>blocks.get(head),getBlock:async number=>blocks.get(number),getEvents:async({fromBlock,toBlock})=>events.filter(e=>+e.position.blockNumber>=fromBlock&&+e.position.blockNumber<=toBlock)};
- const storage={get:async key=>state.get(key),set:async(key,value)=>state.set(key,value)};
+ const storage=memoryFeedStorage(state);
  const feed=createPublicFeed({scope,source,storage,rangeSize:2,...options});
  const post=(block,order)=>({schemaVersion:1,scope,type:'PostPublished',position:{blockNumber:String(block),blockHash:blocks.get(block).hash,txHash:hex(200+block),txIndexWithinBlock:'0',logIndexWithinTx:block===1?'1':'0'},payload:{postId:hex(300+block),orderIndex:String(order),text:'public',publishedAt:String(block),flagDeadline:'100',policyVersion:hex(10)}});
  return {feed,post,events,state,blocks,source,storage,setHead:n=>head=n};
@@ -69,7 +70,7 @@ function connectionFixture(){
   else throw Error('Unexpected RPC method');
   return new Response(JSON.stringify({jsonrpc:'2.0',id:request.id,result}),{status:200});
  };
- const run=()=>connectPublicFeed({nodeUrl:'http://localhost:8080',ethereumUrl:'http://localhost:8545',portalAddress:scope.portalAddress,metadata,storage:{get:async()=>null,set:async()=>{}},fetchImpl});
+ const run=()=>connectPublicFeed({nodeUrl:'http://localhost:8080',ethereumUrl:'http://localhost:8545',portalAddress:scope.portalAddress,metadata,storage:memoryFeedStorage(new Map()),fetchImpl});
  return {run,slots,instance,calls};
 }
 test('connection reads pinned immutable slots at one block and matches both contract class IDs',async()=>{
@@ -84,12 +85,18 @@ for(const slot of [1,3,4,5])test(`connection rejects conflicting immutable slot 
 });
 test('restored public cache rejects additional private payload fields',async()=>{
  const f=fixture();f.events.push(f.post(1,0));await f.feed.sync();
- const stored=JSON.parse(f.state.get(f.feed.key));stored.events[0].secret='private';f.state.set(f.feed.key,JSON.stringify(stored));
+ const head=JSON.parse(f.state.get(f.feed.key)),key=f.feed.key+':range:'+head.latest;const stored=JSON.parse(f.state.get(key));stored.events[0].secret='private';f.state.set(key,JSON.stringify(stored));
  const reopened=createPublicFeed({scope,source:f.source,storage:f.storage,rangeSize:2});await assert.rejects(reopened.page());
 });
 test('policy A then B then A identifies A as the current restored policy',async()=>{
  const f=fixture();f.setHead(4);
  const second=policy(f,2,'Policy B');second.payload.policyVersion=hex(11);
  f.events.push(second,policy(f,3));await f.feed.sync();
- const policies=(await f.feed.page()).policies;assert.deepEqual(policies.map(p=>p.policyVersion),[hex(11),hex(10)]);assert.equal(policies.at(-1).text,'Public policy');
+ const policies=(await f.feed.page()).policies;assert.deepEqual(policies.map(p=>p.policyVersion),[hex(10)]);assert.equal(policies.at(-1).text,'Public policy');
+});
+test('restored range rejects duplicate identity disguised by transaction index',async()=>{
+ const f=fixture();await f.feed.sync();const head=JSON.parse(f.state.get(f.feed.key)),key=f.feed.key+':range:'+head.latest;
+ const range=JSON.parse(f.state.get(key)),duplicate=structuredClone(range.events[0]);duplicate.position.txIndexWithinBlock='1';range.events.push(duplicate);
+ f.state.set(key,JSON.stringify(range));head.eventCount++;f.state.set(f.feed.key,JSON.stringify(head));
+ const reopened=createPublicFeed({scope,source:f.source,storage:f.storage,rangeSize:2});await assert.rejects(reopened.page(),/event order/);
 });

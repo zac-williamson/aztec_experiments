@@ -1,0 +1,261 @@
+{
+  "script": "scripts/test-public-feed-browser.mjs",
+  "args": [
+    "--cold-timing"
+  ],
+  "passed": true,
+  "observations": [
+    {
+      "passed": true,
+      "coldDiagnostic": {
+        "navigationMs": 238.92541700000015,
+        "connectMs": 534,
+        "syncMs": 1150.699999988079,
+        "pageMs": 0.20000000298023224,
+        "operations": [
+          {
+            "name": "load",
+            "elapsedMs": 1.5999999940395355
+          },
+          {
+            "name": "commit",
+            "elapsedMs": 1.1000000089406967
+          }
+        ],
+        "posts": 50,
+        "lastBlock": 4,
+        "rpc": [
+          {
+            "endpoint": "/eth",
+            "startMs": 243.5,
+            "durationMs": 105.8999999910593
+          },
+          {
+            "endpoint": "/eth",
+            "startMs": 243.5,
+            "durationMs": 106.59999999403954
+          },
+          {
+            "endpoint": "/eth",
+            "startMs": 243.59999999403954,
+            "durationMs": 107.20000000298023
+          },
+          {
+            "endpoint": "/eth",
+            "startMs": 243.70000000298023,
+            "durationMs": 107.59999999403954
+          },
+          {
+            "endpoint": "/eth",
+            "startMs": 243.79999999701977,
+            "durationMs": 108
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 352.20000000298023,
+            "durationMs": 105.29999999701977
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 458.79999999701977,
+            "durationMs": 103.70000000298023
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 563.2000000029802,
+            "durationMs": 103.5
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 564.5999999940395,
+            "durationMs": 103.5
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 564.7000000029802,
+            "durationMs": 102.59999999403954
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 564.8999999910593,
+            "durationMs": 103.70000000298023
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 565,
+            "durationMs": 104.29999999701977
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 670,
+            "durationMs": 106
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 778.5999999940395,
+            "durationMs": 104.40000000596046
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 883.5,
+            "durationMs": 104.70000000298023
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 990.0999999940395,
+            "durationMs": 107
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 1099.5,
+            "durationMs": 128.8999999910593
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 1232,
+            "durationMs": 129.70000000298023
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 1365.2000000029802,
+            "durationMs": 124.29999999701977
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 1493.2000000029802,
+            "durationMs": 107
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 1604.2000000029802,
+            "durationMs": 106.79999999701977
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 1712,
+            "durationMs": 104.5
+          },
+          {
+            "endpoint": "/node",
+            "startMs": 1817.2999999970198,
+            "durationMs": 104.40000000596046
+          }
+        ]
+      },
+      "qualifiesPerformance": false
+    },
+    {
+      "passed": true,
+      "actualBuiltBrowser": true,
+      "walletFree": true,
+      "publicBundleBytes": 26754,
+      "paginatedPosts": 55,
+      "reloadNoLogRescan": true,
+      "actualCliWithoutWallet": true,
+      "noProvingAssetRequests": true,
+      "publicOnlyDatabase": true,
+      "escapedContent": true,
+      "controlledRpc": true,
+      "mobileViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "flaggedDisclosure": true,
+      "longContentNoHorizontalOverflow": true
+    }
+  ],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 664496,
+  "rssSamples": [
+    {
+      "elapsedMs": 1001,
+      "rssKiB": 533808
+    },
+    {
+      "elapsedMs": 2018,
+      "rssKiB": 652480
+    },
+    {
+      "elapsedMs": 3032,
+      "rssKiB": 664496
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "ui",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/test-public-feed-browser.mjs": "9f05c6eb2b389b033a525a65bd6751634f2d6d30d4e0360ab35fc93d5e1556fe",
+    "shared/public-feed-projection.mjs": "8f102b9a0661945410d7b7c8b06018f62a23042f8660e0fbffce24931265c89a",
+    "shared/public-feed-storage.mjs": "022cc21a3b38ea574465ec6b4d705daab31a9db0c3f39a63fbe50f5aab6f0b24",
+    "shared/public-feed-file-storage.mjs": "94608358546bd04ba3195148891ddc3282b1c7d6c6ae59feb4ad061c70645a99",
+    "shared/public-feed-connection.mjs": "1f1f39a564cf55f8990dbb59c2574ebd3f74a2aa274f60d72b702cc78d467715",
+    "shared/public-feed-cli.mjs": "985dee9c875bf116789a502b27dfe89eaf24f1e91c53c98ff2fab4e51dc817d4",
+    "shared/public-feed.mjs": "5d11a1e1935fc1af4174578521822442c219eb4ee0849543c789269c4a6bd85f",
+    "shared/public-feed-source.mjs": "a860aaab73c0b0eeb53286bd090230baee2daefb96023ce33f476513e9bde3ca",
+    "apps/dist/public-feed.js": "74d0113241c69c49a808c928b2d419aa2e57a6327a3f58dfddb1be3598850c64",
+    "apps/dist/feed.html": "a9b09d557dcbb1823de68b9f59f0909a94c0716ab7066ab399e6fcbe575e17a6",
+    "scripts/run-bounded-browser-check.mjs": "b2b1b8a588f9aceb582ecfb1c58f23939dfce74f93dc55aa59498046d0bc1978",
+    "scripts/testing/supervisor.mjs": "518d827972d68cce7bab14f56df6483a260f5f5dc4082b50e2e4bbd80b0723f2",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "a9eb441b4ebcab23b0fd0bd28d7a147ce1f8cea0fb64dfb814ee97d2c88529cc",
+    ".build/sdk/sdk-manifest.json": "6c6a247abf436ad3093f742d18af864a8e88229befe8dd31eebd06e083d60283"
+  },
+  "peakMemory": {
+    "elapsedMs": 3032,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 81616,
+        "ppid": 1375,
+        "rssKiB": 56432
+      },
+      {
+        "role": "ui",
+        "pid": 81626,
+        "ppid": 81616,
+        "rssKiB": 149296
+      },
+      {
+        "role": "ui",
+        "pid": 81627,
+        "ppid": 81626,
+        "rssKiB": 94800
+      },
+      {
+        "role": "ui",
+        "pid": 81628,
+        "ppid": 81627,
+        "rssKiB": 66368
+      },
+      {
+        "role": "ui",
+        "pid": 81629,
+        "ppid": 81627,
+        "rssKiB": 46416
+      },
+      {
+        "role": "ui",
+        "pid": 81630,
+        "ppid": 81627,
+        "rssKiB": 136912
+      },
+      {
+        "role": "ui",
+        "pid": 81633,
+        "ppid": 81627,
+        "rssKiB": 114272
+      }
+    ]
+  },
+  "elapsedMs": 3207,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true
+}

@@ -517,3 +517,20 @@ application proofs separately qualify integration. Ten-author same-anchor eviden
 uses genesis-funded fixture fees; two-author private-fee traffic is distinct.
 Current-source reconciliation and measured storage scaling remain required. This
 is reconciliation with an existing decision, not a waiver of a failed workload.
+
+
+## 2026-09-20 — local test-node fee receipts and incremental public cache
+
+Pin Anvil1.7.0 independently from Forge1.4.1. Minimal reproduction141 confirms
+Anvil1.4.1 overstates EIP-1559 receipt fees when the maximum fee cap binds.
+Upgrade the node; do not change the financial assertion.142regression and144
+actualMetaMask fee/collateral/refund checks pass. Official archive provenance and
+strict executable release/version/commit checks are recorded in toolchain.json.
+
+Public feed v2 stores bounded immutable ranges with an atomic head/range/deletion
+transaction, using IndexedDB in browsers and built-in Node24SQLite in the CLI.
+Snapshot reads protect concurrent reopen/rollback. Initial load remains linear;
+steady updates operate on changedevents. Pages return selectedpost policies plus
+the currentpolicy, and CLI accumulation retains neededversions. No deployedcache
+migration is required; no v1 fallback is introduced.39regressions and nativebrowser
+149pass. See feed-incremental-plan-136.md for measured scope and review disposition.

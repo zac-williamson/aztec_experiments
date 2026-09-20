@@ -6,8 +6,7 @@ Objective state: **running**. Completed packages: 24/35.
 
 ## In progress
 
-- **Run browser, recovery, concurrency and load matrix (T04)** — 134 PASS clean real MetaMask worker without diagnostic monkeypatches;133 PASS full installedChrome lifecycle373183ms/3028208KiB. Canonical read repair + wallet authorization fix independently reviewed, components/build/artifact checks pass. Commit/push coherent verified work, then implement existing-runner two-post cold/warm performance pilot.
-  Investigation: 0/1 attempts. Commit/push wallet integration; implement reviewed two-post timing pilot with existing supervisor/handshake and540s/4GiB limits.
+- **Run browser, recovery, concurrency and load matrix (T04)** — 155 feed performance PASS: cold-reader p95 1.629s, cached page p95 0.2ms, 10000-post hydration 2.631s. 156 harness/components/source checks and 48 graph tests PASS. Integrate verified incremental cache, bounded RPCs, real-wallet collateral/refund, Anvil receipt fix and proof timing. Next: review multi-tab reader recovery, then remaining application qualification; performance cohort136 remains incomplete.
 
 ## Ready internal work
 

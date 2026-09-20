@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import {test} from 'node:test';
 import {Fr} from '@aztec/foundation/curves/bn254';
-const context=vm.createContext({console,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});
+const context=vm.createContext({performance,console,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});
 vm.runInContext(await readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8'),context);
 const codec={...context.BillboardPostCodec,...transactionOutcomes};
 const id=new Fr(1n<<180n).toString();

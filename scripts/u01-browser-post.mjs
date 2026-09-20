@@ -15,7 +15,7 @@ import {ROOT,assertNodeVersion} from './toolchain.mjs';
 export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,ethereumUrl,rpcToken,publicConfig,backupPath,backupPassword,ethereumAccount,message,timeoutMs=480000,diagnostic=false,observeProofStages=false,onStage=()=>{},journeyDriver,depositAmount,fundingAmount,browserMode}) {
  assertNodeVersion();
  const browserRecovery=['recovery','withdraw-recovery'].includes(browserMode);
- if(!['post','lifecycle','recovery','withdraw-recovery','funding'].includes(browserMode))throw Error('Invalid browser mode');
+ if(!['post','lifecycle','recovery','withdraw-recovery','funding','performance'].includes(browserMode))throw Error('Invalid browser mode');
  const lifecycleAbort=new AbortController();
  const started=Date.now();let browser,context,child,timer,page,debuggerSession,stage='validation';
  const browserProfile=path.join(directory,'browser-profile');let ownsBrowserProfile=false;
@@ -33,10 +33,11 @@ export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,
  requireValue(site.protocol==='https:'&&node.protocol==='http:'&&ethereum.protocol==='http:');
  requireValue(path.isAbsolute(directory)&&path.isAbsolute(backupPath)&&/^[a-zA-Z0-9_-]{24,256}$/.test(rpcToken)&&/^0x[0-9a-fA-F]{40}$/.test(ethereumAccount));
  requireValue(typeof diagnostic==='boolean'&&typeof browserRecovery==='boolean');
- requireValue(['lifecycle','funding'].includes(browserMode)===(typeof journeyDriver==='function'));
+ requireValue(['lifecycle','funding','performance'].includes(browserMode)===(typeof journeyDriver==='function'));
  requireValue(!browserRecovery||(!journeyDriver&&!observeProofStages&&!diagnostic));
  requireValue(Number.isSafeInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=480000&&typeof message==='string'&&message.trim()===message&&Buffer.byteLength(message)>0&&Buffer.byteLength(message)<=992);
  const config=structuredClone(publicConfig);config.network.nodeUrl=site.origin+'/rpc/aztec';config.network.ethRpcUrl=site.origin+'/rpc/ethereum';
+ if(browserMode==='performance')observation.gasSettings=structuredClone(config.privateFee.gasSettings);
  const caddy=path.join(ROOT,'.build/caddy-2.11.4/caddy');
  const remaining=()=>Math.max(1,timeoutMs-(Date.now()-started));
  try {
@@ -103,6 +104,8 @@ export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,
     if(browserMode==='funding'){
      await page.waitForFunction(()=>document.getElementById('azaddr')?.value||document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
      requireValue(await page.locator('#setupStatus .error').count()===0);
+    }else if(browserMode==='performance'){
+     await page.waitForFunction(()=>document.getElementById('postBtn')?.getClientRects().length>0||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});requireValue(await page.locator('#postBtn').isVisible());
     }else{
      requireValue(browserMode==='lifecycle');
      await page.waitForFunction(()=>document.getElementById('page-1')?.classList.contains('active')||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
@@ -110,7 +113,7 @@ export async function runU01BrowserPost({directory,browserEngine,origin,nodeUrl,
     }
     observation.walletSetupMs=Date.now()-setupStarted;
     observation.journey=await journeyDriver({page,directory,message,depositAmount,fundingAmount,backupPath,backupPassword,remaining:()=>timeoutMs-(Date.now()-started),signal:lifecycleAbort.signal,mark,onSubstage:value=>{observation.driverSubstage=value;}});
-    requireValue(observation.journey.passed===true&&external.size===0&&csp.size===0);observation.passed=true;return;
+    requireValue(observation.journey.passed===true&&external.size===0&&csp.size===0);if(browserMode==='performance')observation.publicTransactionHashes=observation.journey.samples.map(sample=>sample.transactionHash);observation.passed=true;return;
    }
    await page.waitForFunction(()=>{const button=document.getElementById('postBtn');return (button&&button.getClientRects().length>0)||!!document.querySelector('#setupStatus .error');},{},{timeout:remaining()});requireValue(await page.locator('#postBtn').isVisible());observation.walletSetupMs=Date.now()-setupStarted;
    if(browserRecovery){

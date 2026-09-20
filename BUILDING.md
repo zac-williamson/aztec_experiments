@@ -228,3 +228,18 @@ recovery. The application SDK build fixes internal diagnostic logging to `silent
 application progress and validated public transaction identifiers remain visible.
 This does not encrypt the browser PXE database or protect an unlocked malicious
 page. Use a trusted device/profile and preserve backups.
+
+### Local Ethereum test node
+
+Tests require the project-local Anvil from Foundry release **v1.7.0**, separately
+from Forge1.4.1. Anvil1.4.1 overstates EIP-1559 receipt fees when the transaction
+fee cap binds. No system-Anvil fallback is used. Install the official archive's
+`anvil` executable at `.build/anvil-1.7.0/anvil`.
+
+For macOS ARM64, use
+https://github.com/foundry-rs/foundry/releases/download/v1.7.0/foundry_v1.7.0_darwin_arm64.tar.gz
+and verify SHA-256 `5883d247ea14d2fff8f70393aef68762bc79e608604c48a3940d8e33ef4daab6`
+before extracting. The release executable identifies itself as
+`1.6.0-v1.7.0`, commit `f83bad912a9dba7bf0371def1e70bb1896048356`;
+the resolver checks both. Other platforms must use the matching official asset
+and its published checksum. Test evidence records the actual executable hash.

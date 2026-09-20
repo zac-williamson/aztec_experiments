@@ -13,7 +13,7 @@ const pack=(s,n)=>{const b=Buffer.alloc(n*31);b.write(s);return Array.from({leng
 const event=(type,fields,index)=>({logData:[metadata.eventTags[type],...fields],blockNumber:1,blockHash,blockTimestamp:'100',txHash:hex(1000+index),txIndexWithinBlock:0,logIndexWithinTx:index});
 const policy=event('PolicyPublished',[hex(1),hex(30),hex(6),...pack('Policy',48)],0),posts=Array.from({length:55},(_,i)=>{const text=i===54?'Public <img src="https://invalid.test/leak"> café 🌍 '+ 'x'.repeat(850):'Message '+i;return event('PostPublished',[hex(1),hex(i+100),hex(i),hex(100),hex(200),hex(30),hex(Buffer.byteLength(text)),...pack(text,32)],i+1);});
 const reason='Review '+ 'r'.repeat(180),flag=event('PostFlagged',[hex(1),hex(154),hex(30),hex(101),hex(9),hex(Buffer.byteLength(reason)),...pack(reason,7)],56);
-let logs={PolicyPublished:[policy],PostPublished:posts,PostFlagged:[flag]},head=4;const requests=[],methods=[];let logRequests=0;
+let logs={PolicyPublished:[policy],PostPublished:posts,PostFlagged:[flag]},head=54;const requests=[],methods=[];let logRequests=0;
 const server=http.createServer(async(req,res)=>{try{
  requests.push(req.url);
  if(req.method==='POST'){
@@ -44,10 +44,22 @@ try{
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'Mobile reader must not overflow horizontally');
  await page.locator('#more').click();await page.waitForFunction(()=>document.querySelectorAll('#messages article').length===55);assert.equal(await page.locator('#more').isHidden(),true);
  const initialLogs=logRequests;await page.reload();await page.locator('#connect').click();await page.waitForFunction(()=>document.querySelectorAll('#messages article').length===50);assert.equal(logRequests,initialLogs);
- assert.equal(await page.evaluate(()=>typeof window.__aztec),'undefined');assert.deepEqual(await page.evaluate(async()=> (await indexedDB.databases()).map(d=>d.name)),['aztec-billboard-public-feed-v1']);assert.deepEqual(forbidden,[]);
+ assert.equal(await page.evaluate(()=>typeof window.__aztec),'undefined');assert.deepEqual(await page.evaluate(async()=> (await indexedDB.databases()).map(d=>d.name)),['aztec-billboard-public-feed-v2']);assert.deepEqual(forbidden,[]);
  const cliOutput=await new Promise((resolve,reject)=>{const child=spawn(process.execPath,[path.join(ROOT,'apps/src/billboard/user/cli.mjs'),'list','--json','--portal-address',portal,'--node-url',origin+'/node','--eth-rpc',origin+'/eth','--public-feed-cache',path.join(tmp,'cache')],{cwd:tmp,stdio:['ignore','pipe','pipe']});let out='',err='';const timer=setTimeout(()=>{child.kill('SIGKILL');reject(Error('CLI deadline'));},20000);child.stdout.on('data',b=>out+=b);child.stderr.on('data',b=>err+=b);child.on('error',reject);child.on('exit',code=>{clearTimeout(timer);code===0?resolve(out):reject(Error('CLI failed: '+err.slice(-300)+' '+out.slice(-300)));});});
  const data=JSON.parse(cliOutput.trim());assert.equal(data.posts.length,55);assert.equal(data.count,55);assert.equal(data.policy,'Policy');assert.equal(fs.existsSync(path.join(tmp,'.pxe-cache-v2')),false);
  assert(!requests.some(x=>/wasm|crs|aztec_bundle|wallet|worker/.test(x)));
+ async function coldReaderSample(){
+  const fresh=await browser.newContext(),reader=await fresh.newPage();
+  try{
+   await fresh.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){forbidden.push('external');return route.abort();}return route.continue();});
+   const cdp=await fresh.newCDPSession(reader);await cdp.send('Network.enable');await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:100,downloadThroughput:2500000,uploadThroughput:2500000});
+   const start=performance.now();await reader.goto(origin+'/feed.html');const navigated=performance.now();
+   await reader.getByLabel('Public configuration JSON').fill(JSON.stringify(publicConfig));await reader.getByRole('button',{name:'Import configuration',exact:true}).click();const configured=performance.now();await reader.locator('#connect').click();const clicked=performance.now();
+   await reader.waitForFunction(()=>document.querySelectorAll('#messages article').length===50&&document.getElementById('status').textContent==='Public messages through block 4.');const rendered=performance.now();
+   assert.equal(await reader.evaluate(()=>typeof window.__aztec),'undefined');
+   return {elapsedMs:rendered-start,navigationMs:navigated-start,configurationMs:configured-navigated,connectClickMs:clicked-configured,loadAndRenderMs:rendered-clicked};
+  }finally{await fresh.close();}
+ }
  if(performanceMode){
   // Seed through the actual browser RPC source and IndexedDB, not a ready-made
   // cache. Ten posts per block keeps each normal range below source limits.
@@ -70,22 +82,12 @@ try{
   },publicConfig);
   assert.equal(warm.eventCount,10001);assert.equal(warm.lastBlock,1000);await warmContext.close();
   logs={PolicyPublished:[policy],PostPublished:posts,PostFlagged:[flag]};head=4;
-  const cold=[];
-  for(let sample=0;sample<30;sample++){
-   const fresh=await browser.newContext(),reader=await fresh.newPage();
-   try{
-    await fresh.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){forbidden.push('external');return route.abort();}return route.continue();});
-    const cdp=await fresh.newCDPSession(reader);await cdp.send('Network.enable');
-    await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:100,downloadThroughput:2500000,uploadThroughput:2500000});
-    const start=performance.now();await reader.goto(origin+'/feed.html');
-    await reader.getByLabel('Public configuration JSON').fill(JSON.stringify(publicConfig));await reader.getByRole('button',{name:'Import configuration',exact:true}).click();await reader.locator('#connect').click();
-    await reader.waitForFunction(()=>document.querySelectorAll('#messages article').length===50&&document.getElementById('status').textContent==='Public messages through block 4.');
-    cold.push(performance.now()-start);assert.equal(await reader.evaluate(()=>typeof window.__aztec),'undefined');
-   }finally{await fresh.close();}
-  }
+  const phases=[];
+  for(let sample=0;sample<30;sample++)phases.push(await coldReaderSample());
+  const cold=phases.map(sample=>sample.elapsedMs);
   const stats=values=>{const sorted=[...values].sort((a,b)=>a-b);return {samples:values,p50Ms:sorted[Math.ceil(sorted.length*.5)-1],p95Ms:sorted[Math.ceil(sorted.length*.95)-1],maxMs:sorted.at(-1)};};
   assert.deepEqual(forbidden,[]);assert(!requests.some(x=>/wasm|crs|aztec_bundle|wallet|worker/.test(x)));
-  const report={warm100PostPages:{...stats(warm.samples),historyPosts:10000,hydrationMs: warm.hydrationMs},coldReader:{...stats(cold),historyPosts:55,renderedPosts:50,fullHistorySynchronized:true,networkMbps:20,latencyMs:100},browserVersion:browser.version(),cpu:os.cpus()[0].model,memoryBytes:os.totalmem(),scope:'Synthetic public chain data; actual built browser RPC/index/storage. Warm API page reads exclude hydration and DOM; cold loads include navigation/configuration/connect/render. Chromium only.'};
+  const report={warm100PostPages:{...stats(warm.samples),historyPosts:10000,hydrationMs: warm.hydrationMs},coldReader:{...stats(cold),phases,historyPosts:55,renderedPosts:50,fullHistorySynchronized:true,networkMbps:20,latencyMs:100},browserVersion:browser.version(),cpu:os.cpus()[0].model,memoryBytes:os.totalmem(),scope:'Synthetic public chain data; actual built browser RPC/index/storage. Warm API page reads exclude hydration and DOM; cold loads include navigation/configuration/connect/render. Chromium only.'};
   console.log(JSON.stringify({passed:report.warm100PostPages.p95Ms<=2000&&report.coldReader.p95Ms<=3000,feedPerformance:report}));
   assert(report.warm100PostPages.p95Ms<=2000,'100-post page p95 exceeds 2 seconds');assert(report.coldReader.p95Ms<=3000,'Fresh reader p95 exceeds 3 seconds');
  }

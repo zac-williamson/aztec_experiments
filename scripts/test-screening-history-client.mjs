@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-const context=vm.createContext({console,Buffer,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});
+const context=vm.createContext({performance,console,Buffer,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});
 vm.runInContext(fs.readFileSync(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8'),context);
 const read=context.BillboardScreeningHistory.readScreeningHints;
 const owner={},chain={};

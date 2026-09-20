@@ -22,7 +22,8 @@ import {recoverPrivateFeeClaim} from '../shared/private-fee-funding.mjs';
 import {BarretenbergSync} from '@aztec/bb.js';
 import {derivePrivateFeeAddress} from '../shared/private-fee-client.mjs';
 import {generateHosting} from '../deploy/hosting-config.mjs';
-import {ROOT,pins,assertNodeVersion} from './toolchain.mjs';
+import {verifyExtensionCollateral} from './t04-extension-collateral.mjs';
+import {ROOT,assertNodeVersion,anvilBinary} from './toolchain.mjs';
 assertNodeVersion();
 assert.equal(process.env.U01_BOUNDED_BROWSER,'true');
 assert(path.isAbsolute(process.env.BILLBOARD_TEST_TMPDIR));
@@ -53,9 +54,8 @@ try{
  const archive=path.join(ROOT,'.build/metamask-13.49.0/metamask-chrome-13.49.0.zip');
  assert.equal(createHash('sha256').update(await fs.readFile(archive)).digest('hex'),'7ba00bfe4fe8b0ffb27be1e8fc06506248f1b888cb4f2e5e5e8b1c37f461f262');
  const extension=path.join(directory,'extension');execFileSync('/usr/bin/unzip',['-q',archive,'-d',extension]);assert.equal(JSON.parse(await fs.readFile(path.join(extension,'manifest.json'))).version,'13.49.0.0');
- assert(execFileSync('anvil',['--version'],{encoding:'utf8'}).includes(pins.foundry));
  const rpcUrl='http://127.0.0.1:'+await port();
- children.push(spawn('anvil',['--host','127.0.0.1','--port',new URL(rpcUrl).port,'--chain-id','31337','--accounts','0','--silent'],{cwd:directory,stdio:'ignore'}));
+ children.push(spawn(anvilBinary(),['--host','127.0.0.1','--port',new URL(rpcUrl).port,'--chain-id','31337','--accounts','0','--silent'],{cwd:directory,stdio:'ignore'}));
  await ready(async()=>{const response=await fetch(rpcUrl,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_chainId',params:[]}),signal:AbortSignal.timeout(500)});return (await response.json()).result==='0x7a69';});
  provider=new JsonRpcProvider(rpcUrl,31337,{staticNetwork:true,cacheTimeout:-1,pollingInterval:50});
  const user=Wallet.createRandom(),operator=Wallet.createRandom().connect(provider);
@@ -123,9 +123,11 @@ try{
  const savedAgain=await page.evaluate(()=>JSON.parse(localStorage.getItem(localStorage.getItem('billboard-private-fee-recovery-latest'))));assert.deepEqual(savedAgain,record);
  const recovered=await recoverPrivateFeeClaim({...recoveryInput,record:savedAgain});assert.equal(recovered.leafIndex.toString(),claim.leafIndex.toString());assert.equal(await provider.getTransactionCount(user.address),2);
  assert.equal(unexpectedRequests,0);assert.equal(provingAssetRequests,0);report.depositAmount='1000';report.canonicalRecoveryVerified=true;report.explicitRetryVerified=true;
- report.passed=true;report.realExtension=true;report.browserVersion=context.browser().version();report.extensionVersion='13.49.0.0';report.connectedLocalAccount=true;report.userEthereumTransactions=await provider.getTransactionCount(user.address);assert.equal(report.userEthereumTransactions,2);report.scope='Real MetaMask connection, rejected approval, explicit approval retry, fee deposit and read-only canonical recovery; no Aztec claim/proof';
+ stage='board-collateral-refund';report.collateral=await verifyExtensionCollateral({page,walletPage,provider,publisher,operator,user,rpcUrl});
+ report.passed=true;report.realExtension=true;report.browserVersion=context.browser().version();report.extensionVersion='13.49.0.0';report.connectedLocalAccount=true;report.userEthereumTransactions=await provider.getTransactionCount(user.address);assert.equal(report.userEthereumTransactions,4);report.scope='Real MetaMask connection, rejected approval, explicit approval retry, fee deposit, board collateral/refund and read-only canonical recovery; controlled Outbox roots, no Aztec claim/proof';
 }catch(error){
- report.passed=false;report.failure={stage,errorClass:error.name};process.exitCode=1;
+ report.passed=false;report.failure={stage,errorClass:error.name};
+ const location=String(error.stack).match(/t04-extension-collateral\.mjs:\d+:\d+/);if(location)report.failure.location=location[0];process.exitCode=1;
  if(readFundingState)try{report.canonicalFundingState=await readFundingState();}catch{report.fundingDiagnosticFailed=true;}
  if(page&&!page.isClosed())try{report.applicationState=await page.evaluate(()=>({ethereumConnected:!!window.walletState?.ethAccount,aztecLoaded:!!window.walletState?.aztec?.address,setupError:!!document.querySelector('#setupStatus .error'),feeAddressReady:!!document.getElementById('azaddr')?.value,invalidated:window.walletState?.invalidated===true}));}catch(diagnostic){report.applicationDiagnosticFailure={errorClass:diagnostic.name};}
  if(context)try{

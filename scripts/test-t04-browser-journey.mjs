@@ -34,7 +34,7 @@ test('browser modes roundtrip strictly across the real handoff boundary',async()
  const directory='/private/tmp/t04-fixture',address='0x'+'12'.repeat(20),board='0x'+'01'.repeat(32);
  const publicConfig={schemaVersion:1,network:{nodeUrl:'https://127.0.0.1:1234/rpc/aztec',ethRpcUrl:'https://127.0.0.1:1234/rpc/ethereum',chainId:'31337',rollupVersion:'1',rollupAddress:address},board:{portalAddress:address,contractAddress:board}};
  const base={nodeUrl:'http://127.0.0.1:1235',ethereumUrl:'http://127.0.0.1:1236',publicConfig,backupPath:directory+'/browser-wallet.encrypted.json',ethereumAccount:address,message:'Fixture GUI message'};
- for(const browserEngine of ['chromium','chrome','firefox','webkit'])for(const browserMode of ['post','lifecycle','recovery','withdraw-recovery','funding']){
+ for(const browserEngine of ['chromium','chrome','firefox','webkit'])for(const browserMode of ['post','lifecycle','recovery','withdraw-recovery','funding','performance']){
   const control={browserEngine,browserMode,origin:'https://127.0.0.1:1234',rpcToken:'a'.repeat(32),backupPassword:'b'.repeat(32)};
   if(['recovery','withdraw-recovery'].includes(browserMode)&&browserEngine!=='chromium'){assert.throws(()=>validateBrowserControl(control));continue;}
   const actual=createBrowserHandoff(base,{directory,browserMode,depositAmount:'0.001',fundingAmount:'1.0'});

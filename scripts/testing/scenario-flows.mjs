@@ -200,7 +200,7 @@ export function screening(ctx){
 }
 export function browserPost(ctx){
   return withActivatedBoard(ctx,async s=>{
-    assert(s.browserControl?.browserMode==='post');
+    assert(['post','performance'].includes(s.browserControl?.browserMode));
     await fees(s,false);
     await claim(s,false,'private');
     s.observation.browserPost=await completeU01BrowserPost({

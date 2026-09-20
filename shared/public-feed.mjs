@@ -1,3 +1,4 @@
+import {createFeedProjection} from './public-feed-projection.mjs';
 import { scopeKey, validateFeedEvent, validateScope } from './protocol-schema.mjs';
 
 const hash = value => typeof value === 'string' && /^0x[0-9a-f]{64}$/.test(value);
@@ -15,28 +16,52 @@ export function createPublicFeed({ scope, source, storage, startBlock=1, rangeSi
   scope=validateScope(scope);
   if (![startBlock,rangeSize,pagesPerSync,maxEvents,maxCheckpoints,maxRollbackChecks,timeoutMs].every(integer) ||
       rangeSize<1||rangeSize>1000||pagesPerSync<1||pagesPerSync>20||maxEvents<1||maxCheckpoints<1||maxRollbackChecks<1||timeoutMs<1||timeoutMs>60000) throw fail('Invalid public feed limits.');
-  const key=`public-feed-v1:${scopeKey(scope)}:${startBlock}`;
-  let state=null, projection=null, busy=false;
-  const fresh=()=>({schemaVersion:1,scope,startBlock,epoch:globalThis.crypto.randomUUID(),revision:0,checkpoints:[],events:[]});
-  function validate(value) {
-    if(!value||Object.keys(value).sort().join()!=='checkpoints,epoch,events,revision,schemaVersion,scope,startBlock'||value.schemaVersion!==1||scopeKey(value.scope)!==scopeKey(scope)||value.startBlock!==startBlock||
-      typeof value.epoch!=='string'||!/^[0-9a-f-]{36}$/.test(value.epoch)||!integer(value.revision)||!Array.isArray(value.checkpoints)||!Array.isArray(value.events)||value.events.length>maxEvents||value.checkpoints.length>maxCheckpoints)throw fail('Invalid public feed cache.');
-    let previous=startBlock-1;
-    for(const c of value.checkpoints){if(!c||Object.keys(c).sort().join()!=='hash,number'||!integer(c.number)||c.number<=previous||!hash(c.hash))throw fail('Invalid public feed checkpoint.');previous=c.number;}
-    let last=null;const ids=new Set();
-    for(const e of value.events){validateFeedEvent(e,scope);const p=position(e);if(!p.every(integer)||p[0]<startBlock||p[0]>previous||last&&compare(last,e)>=0||ids.has(identity(e)))throw fail('Invalid public feed event order.');ids.add(identity(e));last=e;}
-    return {state:value,projection:project(value.events)};
+  const key=`public-feed-v2:${scopeKey(scope)}:${startBlock}`;
+  let state=null,headText=null,loading=null,busy=false;
+  let ranges=[],projection=createFeedProjection(fail);
+  const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value);
+  const fresh=()=>({schemaVersion:2,scope,startBlock,epoch:globalThis.crypto.randomUUID(),revision:0,latest:null,eventCount:0,rangeCount:0});
+  function validateHead(value){
+    if(!value||Object.keys(value).sort().join()!=='epoch,eventCount,latest,rangeCount,revision,schemaVersion,scope,startBlock'||value.schemaVersion!==2||scopeKey(value.scope)!==scopeKey(scope)||value.startBlock!==startBlock||
+      !uuid(value.epoch)||!integer(value.revision)||!integer(value.eventCount)||value.eventCount>maxEvents||!integer(value.rangeCount)||value.rangeCount>maxCheckpoints||
+      (value.latest!==null&&!uuid(value.latest))||(value.rangeCount===0)!==(value.latest===null))throw fail('Invalid public feed cache head.');
+    return value;
   }
-  async function load(){if(!state){const stored=await storage.get(key),checked=validate(stored==null?fresh():typeof stored==='string'?JSON.parse(stored):stored);state=checked.state;projection=checked.projection;}return state;}
-  async function save(next){const checked=validate(next);await storage.set(key,JSON.stringify(next));state=checked.state;projection=checked.projection;}
-  function project(events){
-    const posts=new Map(),orders=new Set(),policies=new Map();let expectedOrder=0n;
-    for(const e of events){const p=e.payload;
-      if(e.type==='PolicyPublished'){const old=policies.get(p.policyVersion);if(old&&JSON.stringify(old)!==JSON.stringify(p))throw fail('Conflicting public policy.');policies.delete(p.policyVersion);policies.set(p.policyVersion,p);}
-      else if(e.type==='PostPublished'){if(!policies.has(p.policyVersion))throw fail('Public post policy is missing from history.');if(BigInt(p.orderIndex)!==expectedOrder++)throw fail('Public post history has a gap.');if(posts.has(p.postId)||orders.has(p.orderIndex))throw fail('Duplicate public post identity.');posts.set(p.postId,{...p,publication:e.position,flagged:false,flag:null});orders.add(p.orderIndex);}
-      else {const post=posts.get(p.postId);if(!post||post.policyVersion!==p.policyVersion||post.flagged)throw fail('Invalid public flag history.');post.flagged=true;post.flag={...p,position:e.position};}
-    }
-    return {posts:[...posts.values()].reverse(),policies:[...policies.values()]};
+  function validateRange(value,previousEnd){
+    if(!value||Object.keys(value).sort().join()!=='checkpoint,events,previous,schemaVersion'||value.schemaVersion!==2||(value.previous!==null&&!uuid(value.previous))||
+      !Array.isArray(value.events)||value.events.length>maxEvents)throw fail('Invalid public feed range.');
+    const c=value.checkpoint;
+    if(!c||Object.keys(c).sort().join()!=='hash,number'||!integer(c.number)||c.number<=previousEnd||!hash(c.hash))throw fail('Invalid public feed checkpoint.');
+    let last=null;const ids=new Set();
+    for(const e of value.events){validateFeedEvent(e,scope);const p=position(e);if(!p.every(integer)||p[0]<=previousEnd||p[0]>c.number||last&&compare(last,e)>=0||ids.has(identity(e)))throw fail('Invalid public feed event order.');ids.add(identity(e));last=e;}
+  }
+  async function load(){
+    if(!loading)loading=(async()=>{
+      const snapshot=await storage.load(key,maxCheckpoints);headText=snapshot.head;
+      const next=validateHead(headText===null?fresh():JSON.parse(headText)),stored=snapshot.ranges.map(({id,value})=>({id,value:JSON.parse(value)}));
+      if(stored.length!==next.rangeCount)throw fail('Invalid public feed range count.');
+      let end=startBlock-1,count=0;const loadedProjection=createFeedProjection(fail),loadedRanges=[];
+      for(const {id,value} of stored.reverse()){
+        validateRange(value,end);count+=value.events.length;if(count>maxEvents)throw fail('Public cache capacity reached.');
+        const change=loadedProjection.stage(value.events);change.apply();loadedRanges.push({id,checkpoint:value.checkpoint,eventCount:value.events.length,undo:change.undo});end=value.checkpoint.number;
+      }
+      if(count!==next.eventCount)throw fail('Invalid public feed event count.');ranges=loadedRanges;projection=loadedProjection;state=next;
+    })();
+    await loading;
+  }
+  async function append(checkpoint,events){
+    if(state.eventCount+events.length>maxEvents||ranges.length+1>maxCheckpoints)throw fail('Public cache capacity reached. Preserve the cache and use a larger configured public index.');
+    const value={schemaVersion:2,previous:state.latest,checkpoint,events};validateRange(value,ranges.at(-1)?.checkpoint.number??startBlock-1);
+    const change=projection.stage(events),id=globalThis.crypto.randomUUID();
+    const next={...state,latest:id,eventCount:state.eventCount+events.length,rangeCount:ranges.length+1},text=JSON.stringify(next);
+    await storage.commit(key,headText,text,{id,value:JSON.stringify(value)},[]);
+    change.apply();ranges.push({id,checkpoint,eventCount:events.length,undo:change.undo});state=next;headText=text;
+  }
+  async function rollback(keep){
+    let removed=0;for(let i=keep;i<ranges.length;i++)removed+=ranges[i].eventCount;
+    const next={...state,latest:keep?ranges[keep-1].id:null,eventCount:state.eventCount-removed,rangeCount:keep,revision:state.revision+1},text=JSON.stringify(next);
+    await storage.commit(key,headText,text,null,ranges.slice(keep).map(range=>range.id));
+    while(ranges.length>keep)ranges.pop().undo();state=next;headText=text;
   }
   async function sync(){
     if(busy)throw fail('Public feed update already in progress.');busy=true;
@@ -44,11 +69,11 @@ export function createPublicFeed({ scope, source, storage, startBlock=1, rangeSi
       const deadline=Date.now()+timeoutMs;
       async function read(fn){const remaining=deadline-Date.now();if(remaining<=0)throw fail('Public feed update timed out.');let timer;try{return await Promise.race([Promise.resolve().then(fn),new Promise((_,reject)=>{timer=setTimeout(()=>reject(fail('Public feed update timed out.')),remaining);})]);}finally{clearTimeout(timer);}}
       await load();const head=await read(()=>source.getHead());if(!head||!integer(head.number)||!hash(head.hash))throw fail('Invalid public chain head.');
-      let keep=state.checkpoints.length,checks=0;
-      while(keep){const c=state.checkpoints[keep-1];if(++checks>maxRollbackChecks){keep=0;break;}const current=c.number<=head.number?await read(()=>source.getBlock(c.number)):null;if(c.number<=head.number&&!current)throw fail('Public checkpoint is temporarily unavailable.');if(current?.number===c.number&&current.hash===c.hash)break;keep--;}
-      if(keep!==state.checkpoints.length){const checkpoints=state.checkpoints.slice(0,keep),end=checkpoints.at(-1)?.number??startBlock-1;await save({...state,revision:state.revision+1,checkpoints,events:state.events.filter(e=>Number(e.position.blockNumber)<=end)});}
+      let keep=ranges.length,checks=0;
+      while(keep){const c=ranges[keep-1].checkpoint;if(++checks>maxRollbackChecks){keep=0;break;}const current=c.number<=head.number?await read(()=>source.getBlock(c.number)):null;if(c.number<=head.number&&!current)throw fail('Public checkpoint is temporarily unavailable.');if(current?.number===c.number&&current.hash===c.hash)break;keep--;}
+      if(keep!==ranges.length)await rollback(keep);
       let pages=0;
-      while(pages<pagesPerSync){const fromBlock=(state.checkpoints.at(-1)?.number??startBlock-1)+1;if(fromBlock>head.number)break;
+      while(pages<pagesPerSync){const fromBlock=(ranges.at(-1)?.checkpoint.number??startBlock-1)+1;if(fromBlock>head.number)break;
         const toBlock=Math.min(head.number,fromBlock+rangeSize-1),end=await read(()=>source.getBlock(toBlock));
         if(!end||end.number!==toBlock||!hash(end.hash))throw fail('Public feed range is unavailable.');
         const events=await read(()=>source.getEvents({fromBlock,toBlock,referenceBlock:head.hash}));
@@ -58,29 +83,23 @@ export function createPublicFeed({ scope, source, storage, startBlock=1, rangeSi
           const old=seen.get(identity(e));if(old&&JSON.stringify(old)!==JSON.stringify(e))throw fail('Conflicting duplicate public event.');seen.set(identity(e),e);
           if(blockHashes.has(n)&&blockHashes.get(n)!==e.position.blockHash)throw fail('Conflicting public event block.');blockHashes.set(n,e.position.blockHash);}
         // Verify each occupied block and both endpoints after the bounded query.
-        for(const [n,h] of blockHashes){const b=await read(()=>source.getBlock(n));if(!b||b.hash!==h||b.number!==n)throw fail('Public events changed during update.');}
-        const finalEnd=await read(()=>source.getBlock(toBlock)),finalHead=await read(()=>source.getBlock(head.number));
+        const occupied=[...blockHashes];
+        for(let i=0;i<occupied.length;i+=8)await Promise.all(occupied.slice(i,i+8).map(async([n,h])=>{const b=await read(()=>source.getBlock(n));if(!b||b.hash!==h||b.number!==n)throw fail('Public events changed during update.');}));
+        const [finalEnd,finalHead]=await Promise.all([read(()=>source.getBlock(toBlock)),read(()=>source.getBlock(head.number))]);
         if(finalEnd?.hash!==end.hash||finalHead?.hash!==head.hash)throw fail('Public chain changed during update. Retry reconciliation.');
-        const next={...state,checkpoints:[...state.checkpoints,end],events:[...state.events,...[...seen.values()].sort(compare)]};
-        if(next.events.length>maxEvents||next.checkpoints.length>maxCheckpoints)throw fail('Public cache capacity reached. Preserve the cache and use a larger configured public index.');
-        await save(next);pages++;
+        await append(end,[...seen.values()].sort(compare));pages++;
       }
-      return {...status(),head:head.number,complete:(state.checkpoints.at(-1)?.number??startBlock-1)>=head.number,pages};
+      return {...status(),head:head.number,complete:(ranges.at(-1)?.checkpoint.number??startBlock-1)>=head.number,pages};
     }finally{busy=false;}
   }
-  function status(){return {lastBlock:state?.checkpoints.at(-1)?.number??startBlock-1,eventCount:state?.events.length??0,revision:state?.revision??0,checkpoint:state?.checkpoints.at(-1)??null};}
+  function status(){return {lastBlock:ranges.at(-1)?.checkpoint.number??startBlock-1,eventCount:state?.eventCount??0,revision:state?.revision??0,checkpoint:ranges.at(-1)?.checkpoint??null};}
   async function page({limit=50,cursor=null}={}){
     await load();if(!integer(limit)||limit<1||limit>200)throw fail('Invalid public feed page size.');
-    const {posts,policies}=projection;let upper=posts[0]?.orderIndex??null,before=null;
+    let upper=projection.postCount?String(projection.postCount-1):null,before=null;
     if(cursor){if(typeof cursor!=='object'||Object.keys(cursor).sort().join()!=='before,epoch,key,revision,upper'||cursor.key!==key||cursor.epoch!==state.epoch||cursor.revision!==state.revision||![cursor.upper,cursor.before].every(v=>typeof v==='string'&&v.length<=20&&/^(0|[1-9][0-9]*)$/.test(v)))throw Object.assign(fail('Public feed changed; restart pagination.'),{code:'BB_PUBLIC_FEED_CURSOR_STALE'});upper=cursor.upper;before=cursor.before;}
-    // Validated publication order is contiguous from zero. Select the snapshot
-    // window directly; page queries never scan or sort the cached event history.
-    let highest=BigInt(posts.length)-1n;
-    if(upper!==null&&BigInt(upper)<highest)highest=BigInt(upper);
-    if(before!==null&&BigInt(before)-1n<highest)highest=BigInt(before)-1n;
-    const start=highest<0n?posts.length:posts.length-1-Number(highest);
-    const selected=posts.slice(start,start+limit),nextCursor=start+selected.length<posts.length?{key,epoch:state.epoch,revision:state.revision,upper,before:selected.at(-1).orderIndex}:null;
-    return copy({posts:selected,policies,nextCursor,...status()});
+    const {posts,policies,hasMore}=projection.page(limit,upper,before);
+    const nextCursor=hasMore?{key,epoch:state.epoch,revision:state.revision,upper,before:posts.at(-1).orderIndex}:null;
+    return copy({posts,policies,nextCursor,...status()});
   }
   return Object.freeze({sync,page,status,key});
 }

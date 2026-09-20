@@ -10,7 +10,7 @@ import {spawn,execFileSync} from 'node:child_process';
 import {randomBytes,createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 import {Wallet,ContractFactory,JsonRpcProvider,solidityPacked,getBytes} from 'ethers';
-import {ROOT,pins,assertNodeVersion} from './toolchain.mjs';
+import {ROOT,assertNodeVersion,anvilBinary} from './toolchain.mjs';
 import {encodeReadyCommitment,sha256Field} from '../shared/protocol-commitments.mjs';
 import {verifyPortalRuntime} from '../shared/portal-runtime.mjs';
 import {createMonitorTransport,readEscrowSnapshot} from '../deploy/operations-monitor.mjs';
@@ -55,9 +55,8 @@ export async function runMonitorFailoverDrill(packageRoot){
  const report={schemaVersion:1,kind:'actual-packaged-monitor-failover',passed:false,controlledBridgeRoots:true,canonicalBridgeContracts:true,aztecExecution:false,networkProofs:false,independentProviders:false,packageManifestSha256:sha(manifestBytes)};
  try{
   watchdog=setTimeout(()=>{cancellation.abort();for(const {child} of children)terminate(child);terminate(anvil);readProvider?.destroy();provider?.destroy();},60000);
-  assert(execFileSync('anvil',['--version'],{encoding:'utf8',timeout:2000}).includes(pins.foundry));
   reservation=net.createServer();await new Promise((resolve,reject)=>{reservation.once('error',reject);reservation.listen(0,'127.0.0.1',resolve);});const port=reservation.address().port;await new Promise(resolve=>reservation.close(resolve));
-  active();anvil=spawn('anvil',['--host','127.0.0.1','--port',String(port),'--chain-id','31337','--accounts','0','--silent'],{cwd:directory,detached:true,stdio:'ignore'});
+  active();anvil=spawn(anvilBinary(),['--host','127.0.0.1','--port',String(port),'--chain-id','31337','--accounts','0','--silent'],{cwd:directory,detached:true,stdio:'ignore'});
   anvilClosed=new Promise(resolve=>{anvil.once('error',()=>resolve());anvil.once('close',resolve);});
   const rpcUrl='http://127.0.0.1:'+port;let ready=false;
   for(let i=0;i<50;i++){active();try{const result=await fetch(rpcUrl,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_chainId',params:[]}),signal:AbortSignal.any([signal,AbortSignal.timeout(200)])});ready=(await result.json()).result==='0x7a69';}catch{}if(ready)break;await pause(50);}assert(ready);

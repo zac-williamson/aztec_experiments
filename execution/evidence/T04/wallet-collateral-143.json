@@ -1,0 +1,287 @@
+{
+  "script": "scripts/test-wallet-extension-browser.mjs",
+  "args": [],
+  "passed": true,
+  "observations": [
+    {
+      "passed": true,
+      "scope": "Real MetaMask connection, rejected approval, explicit approval retry, fee deposit, board collateral/refund and read-only canonical recovery; controlled Outbox roots, no Aztec claim/proof",
+      "chainBeforeAddition": "0x1",
+      "addNetworkState": "resolved",
+      "chainAfterAddition": "0x7a69",
+      "accountsBeforeConnect": {
+        "count": 0,
+        "matchesExpected": false
+      },
+      "rejectionMovedNoFunds": true,
+      "depositAmount": "1000",
+      "canonicalRecoveryVerified": true,
+      "explicitRetryVerified": true,
+      "collateral": {
+        "passed": true,
+        "canonicalDeposit": true,
+        "canonicalRefund": true,
+        "consumedExit": true,
+        "exactBalanceAccounting": true,
+        "readOnlyRecovery": true,
+        "additionalTransactions": 2,
+        "scope": "Real MetaMask and encrypted browser journal against actual local Portal; controlled Outbox roots, no L2 exit or board GUI claim."
+      },
+      "realExtension": true,
+      "browserVersion": "153.0.8010.12",
+      "extensionVersion": "13.49.0.0",
+      "connectedLocalAccount": true,
+      "userEthereumTransactions": 4,
+      "cleanupComplete": true
+    }
+  ],
+  "deadlineMs": 120000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 3143536,
+  "rssSamples": [
+    {
+      "elapsedMs": 1002,
+      "rssKiB": 398768
+    },
+    {
+      "elapsedMs": 2017,
+      "rssKiB": 489008
+    },
+    {
+      "elapsedMs": 3037,
+      "rssKiB": 926256
+    },
+    {
+      "elapsedMs": 4051,
+      "rssKiB": 1613888
+    },
+    {
+      "elapsedMs": 5067,
+      "rssKiB": 1940080
+    },
+    {
+      "elapsedMs": 6083,
+      "rssKiB": 2266048
+    },
+    {
+      "elapsedMs": 7100,
+      "rssKiB": 2348288
+    },
+    {
+      "elapsedMs": 8125,
+      "rssKiB": 2671488
+    },
+    {
+      "elapsedMs": 9141,
+      "rssKiB": 2781840
+    },
+    {
+      "elapsedMs": 10155,
+      "rssKiB": 2748432
+    },
+    {
+      "elapsedMs": 11172,
+      "rssKiB": 2696272
+    },
+    {
+      "elapsedMs": 12187,
+      "rssKiB": 2852096
+    },
+    {
+      "elapsedMs": 13201,
+      "rssKiB": 3099792
+    },
+    {
+      "elapsedMs": 14216,
+      "rssKiB": 3143536
+    },
+    {
+      "elapsedMs": 15229,
+      "rssKiB": 2956736
+    },
+    {
+      "elapsedMs": 16245,
+      "rssKiB": 2928176
+    },
+    {
+      "elapsedMs": 17263,
+      "rssKiB": 2765344
+    },
+    {
+      "elapsedMs": 18278,
+      "rssKiB": 2651536
+    },
+    {
+      "elapsedMs": 19291,
+      "rssKiB": 2680752
+    },
+    {
+      "elapsedMs": 20307,
+      "rssKiB": 2594864
+    },
+    {
+      "elapsedMs": 21323,
+      "rssKiB": 2587856
+    },
+    {
+      "elapsedMs": 22338,
+      "rssKiB": 2434176
+    },
+    {
+      "elapsedMs": 23353,
+      "rssKiB": 2383840
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "ui",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/test-wallet-extension-browser.mjs": "2103fe01bd7dc83a0c188d7258c8cb2abfa914363637f95c505525a592acd8d9",
+    ".build/anvil-1.7.0/anvil": "22d5eeb9e70e198d0feb76a15bb97d2061b653798080dad0cc328ab20495b0bd",
+    "toolchain.json": "a6f93be721f34d8133b5b3e829d65696e7608303aea82c51faca5f6528343b73",
+    "scripts/t04-extension-collateral.mjs": "1c2fc3cc9ec904f8ec402fb62e9be3fa359efcfc35f89de9d786d3163c6a21c9",
+    "shared/protocol-commitments.mjs": "2a6e2221f769bff7aa98e61600d40e03faeca8d191aaa361aa473789096f2c66",
+    "billboard/portal/out/BillboardPortal.sol/BillboardPortal.json": "9b3e7d2d68354f32f0ae9dd19ced53ddcff1eba6d7784f2952110c74fe106bfb",
+    "scripts/toolchain.mjs": "1e42b0c43d94c655cac6efb3e2d0860e7a1f020db05830ff500971a67d3a3fcc",
+    "shared/private-fee-client.mjs": "f285cc22ae9e5664c5ed36bbf294c31e8f4e82f73eeae232576d6a5f4f14ea5b",
+    "apps/src/billboard/private_fee_artifact.json": "fbb13295be38ed5672447b8b132357c36eb08c8f85dd5d4e2f9c01a0adec1c8f",
+    "apps/dist/fee-juice.html": "e3199d88e0836a49662704d74b6eb7af42cee66a9c99fc330764f785dc954f28",
+    "apps/dist/aztec_bundle.js": "7539ea1cd7de0ee09a29da62454834e4840b0f72dc7ded65ce9fcb2445617c47",
+    "shared/wallet-backup.js": "8df8f15fe92adb0d1628ac64cbd3bd61761594dbd7a83eeb04655640d3d64a8b",
+    "shared/wallet-buttons.js": "b77f54228c362f00c712b9ccef53fff4ab24b8160dddb557a96d1fb672c7236c",
+    "shared/private-fee-funding.mjs": "812e3c65ceb917a9b1680237c5ed55cdedfbc130154b3fb4b8a2b00b24271294",
+    "shared/ethereum-journal.mjs": "ff87d94f4ca85a8d1f15831644c5c56a2e62b70c37be078feb0ec950f7e46a4b",
+    "apps/src/fee-juice/engine.js": "adc3b21babdea60f82a57e96802ff7c16686cce1cdc8c50bec11a309188e754a",
+    ".build/metamask-13.49.0/metamask-chrome-13.49.0.zip": "7ba00bfe4fe8b0ffb27be1e8fc06506248f1b888cb4f2e5e5e8b1c37f461f262",
+    ".build/portal-tests/out/PortalV1.t.sol/RootPublisher.json": "244692de87cf46942f5baf1c4f4dccda7d71b6f001cf32dc8bbc12a35b2c5ee8",
+    "package-lock.json": "3ac2d895f6eddffba40c8889c1d88cb73c48571530595433da27c7bb4ad6b805",
+    "scripts/run-bounded-browser-check.mjs": "2c67cc2e1550752c49cd566d0af910b447583df8dcbcdbec2d35192182e15f74",
+    "scripts/testing/supervisor.mjs": "518d827972d68cce7bab14f56df6483a260f5f5dc4082b50e2e4bbd80b0723f2",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "299e9b87d5d03a01c409cbf79348a651cb8ef61a91a941c3f517c42232a7faa1",
+    ".build/sdk/sdk-manifest.json": "5ee9f88d4b112d08ed1207885c46daef6a0c3a0a52e0ea3e6f21e782c2dbfff6"
+  },
+  "peakMemory": {
+    "elapsedMs": 14216,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 78721,
+        "ppid": 1375,
+        "rssKiB": 48352
+      },
+      {
+        "role": "ui",
+        "pid": 78737,
+        "ppid": 78721,
+        "rssKiB": 132960
+      },
+      {
+        "role": "ui",
+        "pid": 78754,
+        "ppid": 78737,
+        "rssKiB": 17376
+      },
+      {
+        "role": "ui",
+        "pid": 78755,
+        "ppid": 78737,
+        "rssKiB": 3232
+      },
+      {
+        "role": "ui",
+        "pid": 78756,
+        "ppid": 78737,
+        "rssKiB": 3328
+      },
+      {
+        "role": "ui",
+        "pid": 78759,
+        "ppid": 78737,
+        "rssKiB": 46032
+      },
+      {
+        "role": "ui",
+        "pid": 78760,
+        "ppid": 78737,
+        "rssKiB": 254192
+      },
+      {
+        "role": "ui",
+        "pid": 78769,
+        "ppid": 78760,
+        "rssKiB": 132544
+      },
+      {
+        "role": "ui",
+        "pid": 78770,
+        "ppid": 78760,
+        "rssKiB": 92160
+      },
+      {
+        "role": "ui",
+        "pid": 78772,
+        "ppid": 78760,
+        "rssKiB": 60896
+      },
+      {
+        "role": "ui",
+        "pid": 78777,
+        "ppid": 78760,
+        "rssKiB": 128112
+      },
+      {
+        "role": "ui",
+        "pid": 78779,
+        "ppid": 78760,
+        "rssKiB": 101184
+      },
+      {
+        "role": "ui",
+        "pid": 78782,
+        "ppid": 78760,
+        "rssKiB": 1170000
+      },
+      {
+        "role": "ui",
+        "pid": 78788,
+        "ppid": 78760,
+        "rssKiB": 124176
+      },
+      {
+        "role": "ui",
+        "pid": 78789,
+        "ppid": 78760,
+        "rssKiB": 125968
+      },
+      {
+        "role": "ui",
+        "pid": 78795,
+        "ppid": 78760,
+        "rssKiB": 242304
+      },
+      {
+        "role": "ui",
+        "pid": 78804,
+        "ppid": 78760,
+        "rssKiB": 375088
+      },
+      {
+        "role": "ui",
+        "pid": 78805,
+        "ppid": 78760,
+        "rssKiB": 85632
+      }
+    ]
+  },
+  "elapsedMs": 23838,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true
+}

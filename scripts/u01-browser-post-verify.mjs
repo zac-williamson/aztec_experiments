@@ -66,6 +66,17 @@ export function captureU01BrowserSubmissions(node,evidence){
  node.sendTx=wrapper;
  return{submissions,close(){if(restored)return;assert.equal(node.sendTx,wrapper,'Submission capture replaced unexpectedly');if(own)Object.defineProperty(node,'sendTx',own);else delete node.sendTx;restored=true;}};
 }
+// Private baseline remains in the coordinator process; never serialize it.
+export async function captureU01BrowserPostBaseline({node,preparation,instance,claimResult,privateFee,evidence}){
+ const {wallet,account}=evidence;await wallet.pxe.sync();
+ const board=Contract.at(instance.address,preparation.artifact,wallet),fee=await feeContract(wallet,privateFee);
+ const query=async(name,...args)=>(await board.methods[name](...args).simulate({from:account.address})).result;
+ const oldFields=(await query('get_deposit_info',account.address,claimResult.claim.depositChainId)).map(number);
+ const deposits=(await wallet.pxe.debug.getNotes(filter(instance,account))).filter(n=>n.note.items.length===8&&number(n.note.items[1])===number(claimResult.claim.depositChainId));assert.equal(deposits.length,1);
+ return {...evidence,oldNote:deposits[0],oldFields,beforePostCount:number(await query('get_post_count')),
+  beforeFeeBalance:number((await fee.methods.balance_of(account.address).simulate({from:account.address})).result),
+  beforePayerBalance:await getFeeJuiceBalance(privateFee.browserFixture.instance.address,node)};
+}
 export async function verifyU01BrowserPost({node,preparation,instance,claimResult,privateFee,txHash,message,evidence}){
  const {wallet,account,oldNote,oldFields,beforePostCount,beforeFeeBalance,beforePayerBalance,maximumFee}=evidence;
  if(!txHash){assert.equal(evidence.captures.size,1,'Ambiguous browser submissions');txHash=evidence.captures.keys().next().value;}
@@ -83,8 +94,15 @@ export async function verifyU01BrowserPost({node,preparation,instance,claimResul
  assert.equal(number(await query('get_post_count')),BigInt(beforePostCount)+1n);
  const id=new Fr(number(await query('get_post_id',BigInt(beforePostCount))));assert(!id.isZero());
  const fields=(await query('get_deposit_info',account.address,claimResult.claim.depositChainId)).map(number);
- assert.deepEqual(fields.slice(0,5),oldFields.slice(0,5));assert(fields[5]!==0n);assert.deepEqual(fields.slice(6,10),[1n,0n,0n,1n]);
+ assert.deepEqual(fields.slice(0,5),oldFields.slice(0,5));assert(fields[5]!==0n);assert([0n,1n].includes(BigInt(beforePostCount)));assert.equal(oldFields[6],BigInt(beforePostCount));
  const anchor=tx.data.constants.anchorBlockHeader,now=number(anchor.globalVariables.timestamp);
+ let screenedLink=oldFields[7],screenedSequence=oldFields[8];
+ if(BigInt(beforePostCount)===1n){
+  const previousId=new Fr(number(await query('get_post_id',0n)));assert.equal(await query('is_post_flagged',previousId),false);
+  const deadline=number(await query('get_post_flag_deadline',previousId));assert.equal(deadline,number(await query('get_post_time',previousId))+number(await query('get_censor_window')));
+  if(now>=deadline){screenedLink=oldFields[5];screenedSequence=oldFields[6];}
+ }
+ assert.deepEqual(fields.slice(6,10),[oldFields[6]+1n,screenedLink,screenedSequence,oldFields[6]+1n]);
  const base=number(await query('get_base_cooldown')),minimum=number(await query('get_min_deposit')),save=number(await query('get_max_save_up'));
  const cooldown=(base*minimum+fields[3]-1n)/fields[3]||1n,saved=cooldown*(save-1n),floor=now>=saved?now-saved:0n,effective=oldFields[10]>floor?oldFields[10]:floor;
  assert(now>=effective);assert.equal(fields[10],effective+cooldown);
@@ -92,7 +110,7 @@ export async function verifyU01BrowserPost({node,preparation,instance,claimResul
  const deposits=notes.filter(n=>n.note.items.length===8&&number(n.note.items[1])===number(claimResult.claim.depositChainId));assert.equal(deposits.length,1);
  const replacement=deposits[0];assert(replacement.txHash.equals(hash));assert(!replacement.siloedNullifier.equals(oldNote.siloedNullifier));
  assert.deepEqual(replacement.note.items.map(number),[fields[0]+(fields[2]<<32n),fields[1],fields[3],fields[4],fields[5],fields[7],fields[6]+(fields[8]<<64n)+(fields[9]<<128n),fields[10]]);
- const posts=notes.filter(n=>n.txHash.equals(hash)&&n.note.items.length===7);assert.equal(posts.length,1);assert.deepEqual(posts[0].note.items.map(number),[1n,fields[1],1n,id.toBigInt(),now,0n,0n]);
+ const posts=notes.filter(n=>n.txHash.equals(hash)&&n.note.items.length===7);assert.equal(posts.length,1);assert.deepEqual(posts[0].note.items.map(number),[1n,fields[1],oldFields[6]+1n,id.toBigInt(),now,oldFields[5],0n]);
  const content=packed(message);assert.deepEqual((await query('get_post',id)).map(number),content.fields);assert.equal(number(await query('get_post_length',id)),BigInt(content.length));assert.equal(await query('is_post_flagged',id),false);
  const raw=await node.getBlockSource().getBlock({number:receipt.blockNumber});assert(raw);assert.equal((await raw.hash()).toString(),receipt.blockHash.toString());assert(raw.body.txEffects.some(e=>e.txHash.equals(hash)));
  assert.equal(number(await query('get_post_time',id)),number(raw.header.globalVariables.timestamp));
@@ -100,7 +118,7 @@ export async function verifyU01BrowserPost({node,preparation,instance,claimResul
  const feeInstance=await derivePrivateFeeInstance(JSON.parse(await fs.readFile(new URL('../apps/src/billboard/private_fee_artifact.json',import.meta.url),'utf8')));
  const afterPayerBalance=await getFeeJuiceBalance(feeInstance.address,node);assert.equal(afterPayerBalance,BigInt(beforePayerBalance)-BigInt(receipt.transactionFee.toString()));
  const publicFootprint=classifyT03PublicFootprint({tx,effect:effect.data,roles:{author:account.address,sharedPayer:privateFee.payer,board:instance.address}});
- return{publicFootprint,passed:true,scope:'one genuine browser-proved first post; native fixture preparation and read-only verification',applicationProofs:true,networkProofs:false,txHash:String(txHash),proofSha256:sha(tx.chonkProof.toBuffer()),nodePreSubmissionValidation:'valid',normalNodeVerification:true,status:receipt.status,executionResult:receipt.executionResult,blockNumber:String(receipt.blockNumber),blockHash:receipt.blockHash.toString(),postId:id.toString(),feePayer:tx.data.feePayer.toString(),transactionFee:String(receipt.transactionFee),exactDepositNullifier:true,exactReplacementNote:true,exactPostNote:true,exactCooldown:true,publicContentChecked:true,privateFeeDebitChecked:true,publicFeePayerDebitChecked:true,authorPublicFeeBalanceZero:true};
+ return{publicFootprint,passed:true,scope:'one genuine browser-proved next post; native fixture preparation and read-only verification',applicationProofs:true,networkProofs:false,txHash:String(txHash),proofSha256:sha(tx.chonkProof.toBuffer()),nodePreSubmissionValidation:'valid',normalNodeVerification:true,status:receipt.status,executionResult:receipt.executionResult,blockNumber:String(receipt.blockNumber),blockHash:receipt.blockHash.toString(),postId:id.toString(),feePayer:tx.data.feePayer.toString(),transactionFee:String(receipt.transactionFee),exactDepositNullifier:true,exactReplacementNote:true,exactPostNote:true,exactCooldown:true,publicContentChecked:true,privateFeeDebitChecked:true,publicFeePayerDebitChecked:true,authorPublicFeeBalanceZero:true};
 }
 
 // Independent withdrawal oracle: the old note is consumed and Ethereum escrow
