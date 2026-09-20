@@ -1,3 +1,4 @@
+export {createBoardDirectory} from './public-board-directory.mjs';
 import metadata from '../.build/public-feed/metadata.json';
 import {connectPublicBoard,connectPublicFeed,browserPublicFeedStorage} from './public-feed-connection.mjs';
 export {metadata,connectPublicBoard,connectPublicFeed,browserPublicFeedStorage};

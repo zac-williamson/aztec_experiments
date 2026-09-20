@@ -1,0 +1,16 @@
+{
+  "scope": "Published instances of current supported class at pinned checkpoint",
+  "observedAt": "2026-09-20T23:13:37.400Z",
+  "elapsedMs": 1980,
+  "boards": [
+    {
+      "address": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9",
+      "publishedAtBlock": 89863,
+      "ready": true,
+      "unavailable": false
+    }
+  ],
+  "complete": true,
+  "scanned": 1,
+  "block": 89924
+}

@@ -2,13 +2,12 @@
 
 Generated from graph.json; edit checkpoints and blockers there, then run graph.py render.
 
-Objective state: **running**. Completed packages: 25/37.
+Objective state: **running**. Completed packages: 26/37.
 
 ## In progress
 
 - **Evaluate moderation quality and define human review operations (M03)** — EC2 Qwen3.5-9B diagnostics: both fixed12-case batches matched all provisional labels,24/24,noerrors. Context batchp95 30.17s,p50 17.25s,includes980byte message. Cleanup/platform/weights verified;moderator restarted healthy22:21UTC. Results retained in deployed-qwen35-9b-context-20260920.json. Still not production error-rate or end-to-end throughput qualification;next measure live moderation stages on new board after activation.
-- **Run browser, recovery, concurrency and load matrix (T04)** — Real MetaMask hosted-board journey passed441602ms (7m22s),peak3574976KiB (3.41GiB),cleanup complete,evidence application-1809c9a2-79d7-4a59-871a-ee993deb69a1.json. Automatic board selection, deposit, real private claim/post/screen/withdraw proofs, Ethereum refund verified. Public new Ready block89867 now covered by proven tip89896;finalized remains89863,so activation awaits Ethereum finality. Existing AWS moderator healthy. Author public fee limits and final site/moderator switch remain.
-- **Browse and discover boards (U03)** — Begin directory implementation using pinned public instance-publication logs. Read-only investigation found new board on live V5. Pin checkpoint reference, bounded pagination, verify supported class and portal, state coverage honestly. No new registry/service. See evidence/U03/discovery-investigation.md.
+- **Run browser, recovery, concurrency and load matrix (T04)** — New public board and portal active; activation reconciled without resubmission. New author deposit confirmed 0xb94fbda4b5513fbca5e42fe5f2d00756118a14cff2f611f80f804dd9b8393a03. Claim simulation passed10.47s; next submit measured private Fee Juice claim, then post and switch moderator/site after verification.
 
 ## Ready internal work
 

@@ -1,0 +1,69 @@
+{
+  "task_id": "U03",
+  "outcome": "pass",
+  "recorded_at": "2026-09-20T23:24:40.958903+00:00",
+  "source_fingerprint": "66921d726f0ba9ea6dfa54e0f6209fd351c209dfdfc6b485cff6de728145b031",
+  "source_inventory": "evidence/U03/source-184.json",
+  "artifacts": [
+    {
+      "path": "evidence/U03/source-184.json",
+      "sha256": "aec31a1d39c3fcaa22ed3517d80f899c1277a707b358ace4c423d96bd953378a"
+    },
+    {
+      "path": "evidence/U03/acceptance-184.md",
+      "sha256": "4cea14b554731376ffb97a9233c25aacc5949089d67a0ef2844db28980d96364"
+    },
+    {
+      "path": "evidence/U03/components-183.log",
+      "sha256": "23ff70bc61bc54f69b163911e3dbe506938d8fcbb346fe2a2f77e2c760019137"
+    },
+    {
+      "path": "evidence/T04/board-directory-184.json",
+      "sha256": "020a86f4d1351dd3f7ed9396cd3186d8ea381302dd4c493f6cc9dee685a0fbd6"
+    },
+    {
+      "path": "evidence/U03/live-registration-boundary-182.json",
+      "sha256": "41c68ece1a5dead3ba35f180573369f72bbfea5419ee11e747f5ff87f8c7c728"
+    }
+  ],
+  "criteria": [
+    {
+      "id": "U03-A01",
+      "result": "pass",
+      "summary": "Visitors choose explicit board links without configuration; actual built two-board browser journey passed.",
+      "artifacts": [
+        "evidence/U03/acceptance-184.md",
+        "evidence/T04/board-directory-184.json",
+        "evidence/U03/live-registration-boundary-182.json"
+      ]
+    },
+    {
+      "id": "U03-A02",
+      "result": "pass",
+      "summary": "Registration-bound coverage documented and tested with two boards, pagination and incompatible portals; live network discovery also verified.",
+      "artifacts": [
+        "evidence/U03/acceptance-184.md",
+        "evidence/T04/board-directory-184.json",
+        "evidence/U03/live-registration-boundary-182.json"
+      ]
+    },
+    {
+      "id": "U03-A03",
+      "result": "pass",
+      "summary": "Directory-to-board-and-back passes at390x844 and1280x900; explicit selection resists stale settings.",
+      "artifacts": [
+        "evidence/U03/acceptance-184.md",
+        "evidence/T04/board-directory-184.json",
+        "evidence/U03/live-registration-boundary-182.json"
+      ]
+    }
+  ],
+  "review": {
+    "kind": "independent-internal",
+    "reviewer": "application_change_review",
+    "summary": "Read-only application and harness review approved; not an external audit.",
+    "artifacts": [
+      "evidence/U03/acceptance-184.md"
+    ]
+  }
+}

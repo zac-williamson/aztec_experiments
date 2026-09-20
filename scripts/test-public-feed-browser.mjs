@@ -8,30 +8,32 @@ import {chromium} from 'playwright';
 import {ROOT} from './toolchain.mjs';
 const args=process.argv.slice(2);assert(args.length===0||(args.length===1&&args[0]==='--performance'));const performanceMode=args[0]==='--performance';
 const zeroField='0x'+'0'.repeat(64);
-const metadata=JSON.parse(fs.readFileSync(path.join(ROOT,'.build/public-feed/metadata.json'))),hex=n=>BigInt(n)===0n?zeroField:'0x'+BigInt(n).toString(16).padStart(64,'0'),portal='0x'+'2'.repeat(40),rollup='0x'+'1'.repeat(40),blockHash=hex(100),classId=metadata.classId;
+const metadata=JSON.parse(fs.readFileSync(path.join(ROOT,'.build/public-feed/metadata.json'))),hex=n=>BigInt(n)===0n?zeroField:'0x'+BigInt(n).toString(16).padStart(64,'0'),portal='0x'+'2'.repeat(40),rollup='0x'+'1'.repeat(40),otherPortal='0x'+'3'.repeat(40),blockHash=hex(100),classId=metadata.classId;
 const pack=(s,n)=>{const b=Buffer.alloc(n*31);b.write(s);return Array.from({length:n},(_,i)=>hex(BigInt('0x'+b.subarray(i*31,(i+1)*31).toString('hex'))));};
 const event=(type,fields,index)=>({logData:[metadata.eventTags[type],...fields],blockNumber:1,blockHash,blockTimestamp:'100',txHash:hex(1000+index),txIndexWithinBlock:0,logIndexWithinTx:index});
 const policy=event('PolicyPublished',[hex(1),hex(30),hex(6),...pack('Policy',48)],0),posts=Array.from({length:55},(_,i)=>{const text=i===53?'Public <img src="https://invalid.test/leak"> café 🌍 '+ 'x'.repeat(850):i===54?'Removed body sentinel':'Message '+i;return event('PostPublished',[hex(1),hex(i+100),hex(i),hex(100),hex(200),hex(30),hex(Buffer.byteLength(text)),...pack(text,32)],i+1);});
 const reason='Review '+ 'r'.repeat(180),flag=event('PostFlagged',[hex(1),hex(154),hex(30),hex(101),hex(9),hex(Buffer.byteLength(reason)),...pack(reason,7)],56);
 let logs={PolicyPublished:[policy],PostPublished:posts,PostFlagged:[flag]},head=54;const requests=[],methods=[];let logRequests=0;
 const boardFragment='#network=31337:'+rollup+':5&board='+hex(3);
-let publicConfig;
+let publicConfig,badReadiness=false;
 const server=http.createServer(async(req,res)=>{try{
  requests.push(req.url);
  if(req.method==='POST'){
   let body='';for await(const c of req)body+=c;const q=JSON.parse(body);methods.push(q.method);let result;
   if(q.method==='eth_chainId')result='0x7a69';
-  else if(q.method==='eth_call'){const name=Object.keys(metadata.portalSelectors).find(n=>metadata.portalSelectors[n]===q.params[0].data);result={L2_CONTRACT:hex(3),ROLLUP:hex(BigInt(rollup)),VERSION:hex(5),L1_CHAIN_ID:hex(31337)}[name];}
+  else if(q.method==='eth_call'){const name=Object.keys(metadata.portalSelectors).find(n=>metadata.portalSelectors[n]===q.params[0].data);result={L2_CONTRACT:q.params[0].to===otherPortal?hex(4):hex(3),depositsEnabled:hex(badReadiness&&q.params[0].to===portal?2:1),ROLLUP:hex(BigInt(rollup)),VERSION:hex(5),L1_CHAIN_ID:hex(31337)}[name];}
   else if(q.method==='node_getContract')result={currentContractClassId:classId,originalContractClassId:classId};
   else if(q.method==='node_getNodeInfo')result={l1ChainId:31337,rollupVersion:5,l1ContractAddresses:{rollupAddress:rollup}};
   else if(q.method==='node_getBlockData')result={header:{globalVariables:{blockNumber:q.params[0]==='checkpointed'?head:q.params[0]}},blockHash:hex(99+(q.params[0]==='checkpointed'?head:q.params[0]))};
-  else if(q.method==='node_getPublicStorageAt'){const s=BigInt(q.params[2]);result=hex(({[metadata.storage.portal]:BigInt(portal),[metadata.storage.config]:31337n,[BigInt(metadata.storage.config)+1n]:BigInt(rollup),[BigInt(metadata.storage.config)+2n]:5n,[BigInt(metadata.storage.config)+7n]:100n})[s]);}
+  else if(q.method==='node_getPublicStorageAt'){const s=BigInt(q.params[2]);result=hex(({[metadata.storage.portal]:BigInt(q.params[1]===hex(4)?otherPortal:portal),[metadata.storage.config]:31337n,[BigInt(metadata.storage.config)+1n]:BigInt(rollup),[BigInt(metadata.storage.config)+2n]:5n,[BigInt(metadata.storage.config)+7n]:100n})[s]);}
+  else if(q.method==='node_findLeavesIndexes')result=[{l2BlockNumber:1,l2BlockHash:blockHash,data:'1'}];
+  else if(q.method==='node_getPrivateLogsByTags')result=[[3,4].map((address,index)=>({logData:[metadata.instancePublicationTag,hex(address),hex(2),hex(0),classId,hex(0),hex(0)],blockNumber:index+1,txIndexWithinBlock:0,logIndexWithinTx:0}))];
   else if(q.method==='node_getPublicLogsByTags'){logRequests++;const x=q.params[0];result=x.tags.map(t=>{const tag=typeof t==='string'?t:t.tag,type=Object.keys(metadata.eventTags).find(k=>metadata.eventTags[k]===tag);return logs[type].filter(l=>l.blockNumber>=x.fromBlock&&l.blockNumber<x.toBlock&&(!t.afterLog||l.blockNumber>t.afterLog.blockNumber||(l.blockNumber===t.afterLog.blockNumber&&l.logIndexWithinTx>t.afterLog.logIndexWithinTx))).slice(0,x.limitPerTag);});}
   else throw Error('Unexpected RPC');
   res.setHeader('Content-Type','application/json');res.end(JSON.stringify({jsonrpc:'2.0',id:q.id,result}));return;
  }
  if(req.url==='/board-reader-config.json'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify(publicConfig));return;}
- const file={'/feed.html':'feed.html','/public-feed.js':'public-feed.js','/user.html':'user.html','/fee-juice.html':'fee-juice.html','/aztec_bundle.js':'aztec_bundle.js'}[req.url];if(!file){res.writeHead(404);res.end();return;}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':'text/html');res.end(fs.readFileSync(path.join(ROOT,'apps/dist',file)));
+ const file={'/feed.html':'feed.html','/boards.html':'boards.html','/public-feed.js':'public-feed.js','/user.html':'user.html','/fee-juice.html':'fee-juice.html','/aztec_bundle.js':'aztec_bundle.js'}[req.url];if(!file){res.writeHead(404);res.end();return;}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':'text/html');res.end(fs.readFileSync(path.join(ROOT,'apps/dist',file)));
  }catch{res.writeHead(500);res.end('test server failure');}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port,tmp=fs.mkdtempSync(path.join(os.tmpdir(),'public-feed-browser-'));let browser;
 try{
@@ -103,6 +105,21 @@ try{
   assert(report.warm100PostPages.p95Ms<=2000,'100-post page p95 exceeds 2 seconds');assert(report.coldReader.p95Ms<=3000,'Fresh reader p95 exceeds 3 seconds');
  }
  if(!performanceMode){
+  await page.goto(origin+'/boards.html');await page.waitForFunction(()=>document.getElementById('status').textContent.includes('Search complete'));
+  assert.equal(await page.locator('#boards a').count(),2);
+  badReadiness=true;await page.reload();await page.waitForFunction(()=>document.getElementById('status').textContent.includes('Search complete'));
+  assert.equal(await page.locator('#boards a').count(),1,'Incompatible readiness must not hide the next valid board');
+  assert((await page.locator('#boards a').getAttribute('href')).includes(hex(4)));
+  badReadiness=false;await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#boards a').length===2);
+  await page.locator('#boards a').nth(1).click();await page.waitForFunction(()=>document.querySelectorAll('#messages article').length===50);
+  assert.equal(new URL(page.url()).hash,boardFragment.replace(hex(3),hex(4)));
+  await page.getByRole('link',{name:'Browse boards',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('#boards a').length===2);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  await page.setViewportSize({width:1280,height:900});await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#boards a').length===2);
+  await page.locator('#boards a').first().click();await page.waitForFunction(()=>document.querySelectorAll('#messages article').length===50);
+  assert.equal(new URL(page.url()).hash,boardFragment);
+  await page.getByRole('link',{name:'Browse boards',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('#boards a').length===2);
+  console.log(JSON.stringify({passed:true,twoBoardDirectory:true,directoryToSelectedBoardAndBack:true,mobileDirectory:true,desktopDirectory:true,incompatiblePortalDoesNotHideValidBoard:true}));
   publicConfig.privateFee={contractAddress:hex(9),gasSettings:{gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'0',l2Gas:'0'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}};
   publicConfig.board.contractAddress=hex(4);
   const authorContext=await browser.newContext(),author=await authorContext.newPage();

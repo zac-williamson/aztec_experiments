@@ -1,9 +1,12 @@
 // Public settings only. No network or wallet action occurs during bootstrap.
 (function(root){
-  root.loadHostedBoard=async function(){
+  root.loadHostedSettings=async function(){
     const response=await fetch('board-reader-config.json',{cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(20000)});
     if(!response.ok)throw Error('Board settings unavailable');
-    const hosted=root.BillboardConfig.parse(await response.text());
+    return root.BillboardConfig.parse(await response.text());
+  };
+  root.loadHostedBoard=async function(){
+    const hosted=await root.loadHostedSettings();
     const networkId=[hosted.network.chainId,hosted.network.rollupAddress,hosted.network.rollupVersion].join(':');
     const match=location.hash.match(/^#network=([0-9]+:0x[0-9a-f]{40}:[0-9]+)&board=(0x[0-9a-f]{64})$/);
     if(location.hash&&(!match||match[1]!==networkId))throw Error('Invalid board or network link');

@@ -25,31 +25,37 @@ maximum charge is the gas-limit/maximum-price calculation, not an estimate with
 an unused-gas refund. The interface derives the ownerless fee contract address
 from the bundled artifact. There is no coupon issuer or separate fee operator.
 
-After successful activation, **Download public connection settings** exports
-`board-public-config.json`; **Use this board** installs those settings and opens
-the author page. Omitting fee settings produces a public-reading-only file.
-Share this public file separately from wallet/recovery files. Host only the built
-release using [the HTTPS hosting guide](hosting.md). Its allowed RPC origins must
-include the reviewed endpoints: importing different endpoints does not override
-the host's connection restrictions.
+After successful activation, download the public connection settings and host
+them as `board-reader-config.json` beside the built website. Include qualified
+private-fee settings to enable posting. These are operator deployment settings;
+visitors do not import configuration. Host the release using
+[the HTTPS hosting guide](hosting.md), with the reviewed RPC origins allowed.
 
-## Reader: no wallet needed
+## Reader: open a board or browse boards
 
-Open `feed.html`. In **Board configuration**, choose the public configuration
-file, or paste its JSON and select **Import configuration**. Check the displayed
-network and board addresses. Importing a file is not live verification; **Open
-configured board** performs connection checks. Use **Refresh**, **Older messages**
-and the expandable flagged-message disclosure to read content and moderator
-reasons. Public content remains public even when flagged.
+Open a board's shared link to see its messages automatically, without a wallet.
+**Browse boards** opens the directory; choose a board to read it. **Refresh**
+loads new messages and **Older messages** pages through history. Removed messages
+show a removal notice and moderator reason; the underlying blockchain data
+remains public.
 
-Settings persist across pages on the same origin when browser storage works.
-A different origin needs a fresh import. **Clear configuration** or a change from
-another tab invalidates the current connection; reconnect before continuing.
-This does not delete saved encrypted transaction journals.
+Each shared link identifies its network and board. Saved settings from another
+board cannot replace that selection. Following **Post a message** keeps the same
+board selected. If posting is not enabled, the board remains readable.
+
+The directory discovers publicly published instances of the contract version
+supported by this website. It starts at that class's registration block and
+checks each board's current class and Ethereum portal. It does not include
+unpublished boards, other contract versions, or instances originally published
+under another class. The page states how far its search has completed and offers
+**Find more boards** if more history remains. There is no separate indexing
+service or manually curated list. The contract has no board-name field, so cards
+currently identify boards by shortened addresses. Incomplete or incompatible
+portals are shown as unavailable rather than offered as working links.
 
 ## Author: wallets, fees and collateral
 
-1. On `user.html`, import the public configuration including private-fee settings.
+1. Follow **Post a message** from the board you want to use.
    Use **Create wallet** for a new Aztec identity or **Restore wallet** with its
    recovery file and password. Connect the appropriate Ethereum browser wallet.
    Keep the encrypted recovery file and password separately and safely.
