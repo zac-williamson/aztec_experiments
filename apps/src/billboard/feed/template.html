@@ -1,6 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Billboard — Read messages</title><!--STYLES--></head><body>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Billboard — Read messages</title><!--STYLES--></head><body data-public-board-reader>
 <h1>Billboard</h1><p>Read public messages without connecting a wallet.</p>
-<button id="connect">Open configured board</button>
-<p id="status" role="status">Import the board configuration to read messages.</p><div id="messages"></div><button id="more" hidden>Older messages</button><button id="refresh" hidden>Refresh</button>
-<p class="small">Messages are public and immutable. This reader caches public content on this device. RPC providers can observe reads. Checkpointed posts may change after a chain reorganisation.</p>
+<p><a id="board-link" hidden>Link to this board</a> <a id="post-link" hidden>Post a message</a></p><button id="connect" hidden>Retry</button>
+<p id="status" role="status">Loading messages…</p><div id="messages"></div><button id="more" hidden>Older messages</button><button id="refresh" hidden>Refresh</button>
+<p class="small">Posts are public. Moderation hides messages here; it cannot erase blockchain history.</p>
 <script src="public-feed.js"></script><!--APP--></body></html>

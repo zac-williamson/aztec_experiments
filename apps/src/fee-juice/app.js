@@ -88,13 +88,14 @@ async function doClaimPage() {
     }catch(error){log(safeFundingError(error),'error','claimStatus');}
   });
 }
-try {const key=localStorage.getItem('billboard-private-fee-recovery-latest');const saved=key&&localStorage.getItem(key);if(saved)fundingRecord=JSON.parse(saved);}catch(_){}
+
 function initializePrivateFees() {
   if (!window.__aztec?.createPXE) {waitForBundle(initializePrivateFees);return;}
+  try {const key=localStorage.getItem('billboard-private-fee-recovery-latest');const saved=key&&localStorage.getItem(key);if(saved)fundingRecord=JSON.parse(saved);}catch(_){}
   initWalletButtons('walletButtonsContainer',{statusId:'setupStatus',onReady:async()=>{
     try{await loadWalletAndCheck();}catch(error){log(safeFundingError(error),'error','setupStatus');}
   }});
 }
-initializePrivateFees();
+initializeHostedBoard(initializePrivateFees);
 
 window.billboardConfigStore?.subscribe(()=>{fundingRecord=null;journalAcknowledgements.clear();ethereumAcknowledgements.clear();});

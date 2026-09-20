@@ -21,6 +21,7 @@ const tiers={
     'scripts/test-public-feed.mjs',
     'scripts/test-public-feed-review.mjs',
     'scripts/test-public-feed-storage.mjs',
+    'scripts/test-hosted-board.mjs',
     'scripts/test-cli-prover.mjs',
     'scripts/test-cli-crs.mjs',
     'scripts/test-crs-consumers.mjs',

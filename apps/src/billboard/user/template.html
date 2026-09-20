@@ -6,10 +6,10 @@
 <title>Billboard -- Post &amp; Withdraw</title>
 <!--STYLES-->
 </head>
-<body>
-<p><a href="feed.html">Read messages without a wallet</a></p>
+<body data-hosted-board>
+<p><a data-board-link hidden href="feed.html">Read messages without a wallet</a></p>
 <script src="public-feed.js"></script>
-<p><a href="fee-juice.html">Fund private transaction fees</a></p>
+<p><a data-board-link hidden href="fee-juice.html">Fund private transaction fees</a></p>
 
 <h1>Billboard</h1>
 <p class="small">Private fee payments deduct the configured maximum fee; unused gas is not refunded.</p>
@@ -20,13 +20,12 @@
 <!-- Page 0: Wallet & Node -->
 <section class="page" id="page-0">
   <div class="card">
-    <h2>1. Wallet &amp; Node</h2>
-    <p class="small">Import the public board configuration, then load your wallets below. The L2 contract address is derived from the portal on chain. Setup runs automatically once all wallets are loaded.</p>
+    <h2>1. Your wallets</h2>
+    <p class="small">Load your wallets below to post on this board.</p>
     <input id="secretKey" type="hidden">
     <input id="salt" type="hidden" value="0">
     <input id="nodeUrl" type="hidden" value="">
-    <label for="portalAddr">L1 Portal Address (0x...)</label>
-    <input id="portalAddr" readonly placeholder="Import the public board configuration">
+    <input id="portalAddr" type="hidden">
     <div id="walletButtonsContainer"></div>
     <button type="button" onclick="recoverSavedTransaction()">Recover saved Aztec transaction</button>
     <p class="small">After a restart, recover the previous transaction before sending another. Recovery reuses its saved proof.</p>

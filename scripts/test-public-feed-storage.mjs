@@ -37,7 +37,7 @@ const scope={l1ChainId:'1',rollupVersion:'1',rollupAddress:'0x'+'1'.repeat(40),p
 test('competing native cache writers recover by reopening without losing committed ranges',async t=>{
  const directory=await fs.mkdtemp(path.join(os.tmpdir(),'bb-feed-conflict-'));t.after(()=>fs.rm(directory,{recursive:true,force:true}));
  const storage=publicFeedFileStorage(directory);let height=1;
- const source={getHead:async()=>({number:height,hash:hex(height)}),getBlock:async n=>({number:n,hash:hex(n)}),getEvents:async()=>[]};
+ const source={getNextEventBlock:async({toBlock})=>toBlock,getHead:async()=>({number:height,hash:hex(height)}),getBlock:async n=>({number:n,hash:hex(n)}),getEvents:async()=>[]};
  const open=()=>createPublicFeed({scope,storage,source});
  const first=open();await first.sync();const second=open();await second.sync();height=2;
  await first.sync();await assert.rejects(second.sync(),{code:'PUBLIC_FEED_CONFLICT'});
@@ -59,10 +59,11 @@ test('browser reader discards only conflicted connections and does not retry the
 test('standalone reader preserves stale messages and requires explicit reopening after conflict',async()=>{
  const source=await fs.readFile(new URL('../apps/src/billboard/feed/app.js',import.meta.url),'utf8');
  const elements=Object.fromEntries(['messages','more','refresh','status','connect'].map(id=>[id,{hidden:false,textContent:'',replaceChildren(){throw Error('must preserve displayed messages');}}]));
- const snapshot={config:{}},context=vm.createContext({document:{getElementById:id=>elements[id]},billboardConfigStore:{snapshot:()=>snapshot,subscribe(){}}});
- vm.runInContext(source,context);context.failure=publicFeedConflict();
+ const context=vm.createContext({document:{getElementById:id=>elements[id]},window:{addEventListener(){}}});
+ // Isolate refresh; the actual browser check covers automatic page initialization.
+ vm.runInContext(source.replace(/\nopenBoard\(\);\s*$/, '\n'),context);context.failure=publicFeedConflict();
  vm.runInContext('connection={feed:{sync:async()=>{throw failure;}}};',context);
  await vm.runInContext('refresh()',context);
- assert.equal(elements.more.hidden,true);assert.equal(elements.refresh.hidden,true);assert.match(elements.status.textContent,/Open configured board/);
+ assert.equal(elements.more.hidden,true);assert.equal(elements.refresh.hidden,true);assert.match(elements.status.textContent,/Try again/);assert.equal(elements.connect.hidden,false);
  assert.equal(vm.runInContext('connection',context),null);
 });

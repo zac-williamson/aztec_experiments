@@ -8,7 +8,7 @@ import https from 'node:https';
 import vm from 'node:vm';
 import {spawn,execFileSync} from 'node:child_process';
 import {once} from 'node:events';
-import {createHash,randomBytes,webcrypto} from 'node:crypto';
+import {randomBytes,webcrypto} from 'node:crypto';
 import {chromium} from 'playwright';
 import {Wallet,Contract,ContractFactory,JsonRpcProvider} from 'ethers';
 import {InboxAbi} from '@aztec/l1-artifacts/InboxAbi';
@@ -22,6 +22,7 @@ import {recoverPrivateFeeClaim} from '../shared/private-fee-funding.mjs';
 import {BarretenbergSync} from '@aztec/bb.js';
 import {derivePrivateFeeAddress} from '../shared/private-fee-client.mjs';
 import {generateHosting} from '../deploy/hosting-config.mjs';
+import {onboardMetaMask,unpackMetaMask,addMetaMaskNetwork,guardBrowserRequest} from './t04-metamask.mjs';
 import {verifyExtensionCollateral} from './t04-extension-collateral.mjs';
 import {ROOT,assertNodeVersion,anvilBinary} from './toolchain.mjs';
 assertNodeVersion();
@@ -33,27 +34,9 @@ const report={passed:false,scope:'Real MetaMask onboarding, custom local network
 const port=async()=>{const server=net.createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));const value=server.address().port;await new Promise(r=>server.close(r));return value;};
 const ready=async read=>{for(let i=0;i<50;i++){try{if(await read())return;}catch{}await new Promise(r=>setTimeout(r,100));}throw Error('Local test server unavailable');};
 const httpsReady=origin=>new Promise((resolve,reject)=>{const request=https.get(origin+'/feed.html',{rejectUnauthorized:false,timeout:500},response=>{response.resume();response.on('end',()=>resolve(response.statusCode===200));});request.on('error',reject);request.on('timeout',()=>request.destroy(Error('Local HTTPS unavailable')));});
-async function onboard(mnemonic,password,extensionId){
- const onboarding=await context.newPage();onboarding.setDefaultTimeout(10000);
- await onboarding.goto('chrome-extension://'+extensionId+'/home.html');
- stage='wallet-import-method';await onboarding.getByTestId('onboarding-import-wallet').click();
- await onboarding.getByRole('button',{name:'Import using Secret Recovery Phrase',exact:true}).click();
- stage='wallet-import';const words=mnemonic.split(' '),first=onboarding.getByTestId('srp-input-import__srp-note');
- await first.fill(words[0]);await first.press('Space');
- for(let i=1;i<words.length;i++){const input=onboarding.getByTestId('import-srp__srp-word-'+i);await input.fill(words[i]);if(i<words.length-1)await input.press('Space');}
- await onboarding.getByTestId('import-srp-confirm').click();
- stage='wallet-password';await onboarding.getByTestId('create-password-new-input').fill(password);await onboarding.getByTestId('create-password-confirm-input').fill(password);await onboarding.getByTestId('create-password-terms').click();await onboarding.getByTestId('create-password-submit').click();
- stage='wallet-passkey';await onboarding.getByTestId('passkey-maybe-later-button').click();
- stage='wallet-privacy';const analytics=onboarding.getByTestId('metametrics-checkbox');await analytics.waitFor();assert.equal(await analytics.getAttribute('data-checked'),'true');await analytics.click();assert.equal(await analytics.getAttribute('data-checked'),'false');assert.equal(await onboarding.getByTestId('metametrics-data-collection-checkbox').getAttribute('data-checked'),'false');await onboarding.getByTestId('metametrics-i-agree').click();
- stage='wallet-completion';await onboarding.getByTestId('onboarding-complete-done').click();await onboarding.locator('[data-testid=onboarding-complete-done][disabled]').waitFor();
- // Completion opens a side panel. Leave this tab alive while its awaited writes
- // finish; inspect the standard full-page wallet in a separate owned tab.
- const walletPage=await context.newPage();walletPage.setDefaultTimeout(10000);await walletPage.goto('chrome-extension://'+extensionId+'/home.html');await walletPage.getByTestId('account-menu-icon').waitFor();return walletPage;
-}
+
 try{
- const archive=path.join(ROOT,'.build/metamask-13.49.0/metamask-chrome-13.49.0.zip');
- assert.equal(createHash('sha256').update(await fs.readFile(archive)).digest('hex'),'7ba00bfe4fe8b0ffb27be1e8fc06506248f1b888cb4f2e5e5e8b1c37f461f262');
- const extension=path.join(directory,'extension');execFileSync('/usr/bin/unzip',['-q',archive,'-d',extension]);assert.equal(JSON.parse(await fs.readFile(path.join(extension,'manifest.json'))).version,'13.49.0.0');
+ const extension=unpackMetaMask(directory);
  const rpcUrl='http://127.0.0.1:'+await port();
  children.push(spawn(anvilBinary(),['--host','127.0.0.1','--port',new URL(rpcUrl).port,'--chain-id','31337','--accounts','0','--silent'],{cwd:directory,stdio:'ignore'}));
  await ready(async()=>{const response=await fetch(rpcUrl,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_chainId',params:[]}),signal:AbortSignal.timeout(500)});return (await response.json()).result==='0x7a69';});
@@ -81,8 +64,10 @@ try{
  const caddy=path.join(ROOT,'.build/caddy-2.11.4/caddy'),hosting=path.join(directory,'Caddyfile');await fs.writeFile(hosting,generateHosting({dist:path.join(ROOT,'apps/dist'),site:origin,certificate:cert,key,local:true,origins:[rpcUrl]}).caddyfile);
  children.push(spawn(caddy,['run','--config',hosting,'--adapter','caddyfile'],{env:{PATH:'/usr/bin:/bin',HOME:directory,XDG_DATA_HOME:directory,XDG_CONFIG_HOME:directory},stdio:'ignore'}));await ready(()=>httpsReady(origin));
  stage='extension-launch';context=await chromium.launchPersistentContext(path.join(directory,'profile'),{channel:'chromium',headless:true,ignoreHTTPSErrors:true,acceptDownloads:false,args:['--disable-extensions-except='+extension,'--load-extension='+extension,'--js-flags=--max-old-space-size=768']});
+ const blockedContextRequests=[];
+ await context.route('**/*',route=>guardBrowserRequest(route,{origin,extensionWallet:true,onBlocked:record=>{if(blockedContextRequests.length<8)blockedContextRequests.push(record);}}));report.blockedContextRequests=blockedContextRequests;
  const worker=context.serviceWorkers()[0]??await context.waitForEvent('serviceworker',{timeout:15000}),extensionId=new URL(worker.url()).host;
- walletPage=await onboard(user.mnemonic.phrase,randomBytes(24).toString('base64url'),extensionId);
+ walletPage=await onboardMetaMask(context,user.mnemonic.phrase,randomBytes(24).toString('base64url'),extensionId,value=>{stage=value;});
  stage='application';page=await context.newPage();page.setDefaultTimeout(15000);let unexpectedRequests=0,provingAssetRequests=0;await page.route('**/*',route=>{const url=new URL(route.request().url());if(url.pathname.startsWith('/crs/'))provingAssetRequests++;if(['http:','https:'].includes(url.protocol)&&url.origin!==origin&&url.origin!==new URL(rpcUrl).origin){unexpectedRequests++;return route.abort();}return route.continue();});await page.goto(origin+'/fee-juice.html');await page.waitForFunction(()=>!!window.__aztec?.createAztecNodeClient&&!!window.ethereum);
  await page.evaluate(({addresses})=>{
   const metadata={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5,l1ContractAddresses:addresses}),getL1ContractAddresses:async()=>addresses};
@@ -90,14 +75,12 @@ try{
   globalThis.__aztec={...globalThis.__aztec,createAztecNodeClient:()=>metadata,createPXE:()=>{throw Error('Unexpected PXE in Ethereum-only test');}};
  },{addresses});
  const config={schemaVersion:1,network:{nodeUrl:origin+'/fixture-node',ethRpcUrl:rpcUrl,chainId:'31337',rollupVersion:'5',rollupAddress:addresses.rollupAddress},board:{portalAddress:addresses.feeJuicePortalAddress,contractAddress:Fr.random().toString()},privateFee:{contractAddress:payer.toString(),gasSettings:{gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'0',l2Gas:'0'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}}};
- await page.getByLabel('Public configuration JSON',{exact:true}).fill(JSON.stringify(config));await page.getByRole('button',{name:'Import configuration',exact:true}).click();await page.waitForFunction(()=>!!globalThis.billboardConfigStore?.snapshot().config);
+ // Ethereum-only fixture supplies settings directly; the real Aztec browser journey qualifies hosted loading.
+ await page.waitForFunction(()=>document.getElementById('setupStatus').textContent.includes('unavailable for posting'));
+ await page.evaluate(config=>{billboardConfigStore.install(config);initializePrivateFees();},config);
+ await page.waitForFunction(()=>!!globalThis.billboardConfigStore?.snapshot().config);
  report.chainBeforeAddition=await page.evaluate(()=>window.ethereum.request({method:'eth_chainId'}));report.addNetworkState='pending';
- await page.evaluate(()=>{let changed;globalThis.__localNetworkReady=new Promise((resolve,reject)=>{changed=chain=>chain==='0x7a69'?resolve():reject(Error('Unexpected setup chain'));window.ethereum.on('chainChanged',changed);}).finally(()=>window.ethereum.removeListener('chainChanged',changed));});
- stage='add-network';await Promise.all([
-  page.evaluate(()=>globalThis.__localNetworkReady),
-  page.evaluate(rpcUrl=>window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x7a69',chainName:'Disposable board test',rpcUrls:[rpcUrl],nativeCurrency:{name:'Ether',symbol:'ETH',decimals:18}}]}),rpcUrl).then(async()=>{report.addNetworkState='resolved';report.chainAfterAddition=await page.evaluate(()=>window.ethereum.request({method:'eth_chainId'}));},error=>{report.addNetworkState='rejected';throw error;}),
-  (async()=>{await walletPage.goto('chrome-extension://'+extensionId+'/sidepanel.html');stage='network-confirmation-page';await walletPage.getByTestId('parent-selector-confirmation-page').waitFor();stage='network-name';await walletPage.getByText('Disposable board test',{exact:true}).first().waitFor();stage='network-approve';await walletPage.getByTestId('confirm-footer-button').click();})(),
- ]);
+ await addMetaMaskNetwork({page,walletPage,extensionId,rpcUrl,mark:value=>{stage=value;}});report.addNetworkState='resolved';
  stage='restore-application-wallet';await page.locator('#wbPassword').fill(backupPassword);await page.locator('#wbAztecFile').setInputFiles(backupPath);await page.waitForFunction(()=>!!window.walletState?.aztec?.address);
  report.accountsBeforeConnect=await page.evaluate(async expected=>{const accounts=await window.ethereum.request({method:'eth_accounts'});return {count:accounts.length,matchesExpected:accounts.length===1&&accounts[0].toLowerCase()===expected};},user.address.toLowerCase());
  stage='connect-wallet';await page.locator('#wbEthBrowserBtn').click();
@@ -124,6 +107,7 @@ try{
  const recovered=await recoverPrivateFeeClaim({...recoveryInput,record:savedAgain});assert.equal(recovered.leafIndex.toString(),claim.leafIndex.toString());assert.equal(await provider.getTransactionCount(user.address),2);
  assert.equal(unexpectedRequests,0);assert.equal(provingAssetRequests,0);report.depositAmount='1000';report.canonicalRecoveryVerified=true;report.explicitRetryVerified=true;
  stage='board-collateral-refund';report.collateral=await verifyExtensionCollateral({page,walletPage,provider,publisher,operator,user,rpcUrl});
+ assert(blockedContextRequests.every(record=>record.owner==='extension'&&record.hostname==='metamask.github.io'));
  report.passed=true;report.realExtension=true;report.browserVersion=context.browser().version();report.extensionVersion='13.49.0.0';report.connectedLocalAccount=true;report.userEthereumTransactions=await provider.getTransactionCount(user.address);assert.equal(report.userEthereumTransactions,4);report.scope='Real MetaMask connection, rejected approval, explicit approval retry, fee deposit, board collateral/refund and read-only canonical recovery; controlled Outbox roots, no Aztec claim/proof';
 }catch(error){
  report.passed=false;report.failure={stage,errorClass:error.name};

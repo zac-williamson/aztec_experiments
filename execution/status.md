@@ -2,16 +2,17 @@
 
 Generated from graph.json; edit checkpoints and blockers there, then run graph.py render.
 
-Objective state: **running**. Completed packages: 24/37.
+Objective state: **running**. Completed packages: 25/37.
 
 ## In progress
 
-- **Evaluate moderation quality and define human review operations (M03)** — First EC2 Qwen3.5-9B diagnostic12/12correct,noerrors,p95 22.27s;cleanup verified,old moderator healthy after restart. Second fixed12-case context/quotation/fiction/injection/980byte diagnostic now running SSMa5a884f1-ee97-4e95-a97a-44730bb282c2,420s budget,EXIT trap restarts service. Collect results and verify restart. Small provisional labels do not close production quality/capacity gates.
-- **Run browser, recovery, concurrency and load matrix (T04)** — Current-artifact MetaMask full browser journey passed451077ms,peak3.57GiB,cleanup complete,evidence application-dac7e9b2-4d9f-4d1e-b902-593b8a783d69.json. New board/portal deployed and linked;binding0x1e79a74e7f21e8562ef5774a846d0f5a18fac12be774f5a9c83143a6db1acc0f checkpointed89867,awaits finality. Original deployment Ethereum request reconciled without rebroadcast. Continue activation after settlement and author-fee measurements;public frontend/moderator remain old board. User UI requirements queued U02 direct links/no configuration and U03 browse boards.
+- **Evaluate moderation quality and define human review operations (M03)** — EC2 Qwen3.5-9B diagnostics: both fixed12-case batches matched all provisional labels,24/24,noerrors. Context batchp95 30.17s,p50 17.25s,includes980byte message. Cleanup/platform/weights verified;moderator restarted healthy22:21UTC. Results retained in deployed-qwen35-9b-context-20260920.json. Still not production error-rate or end-to-end throughput qualification;next measure live moderation stages on new board after activation.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Real MetaMask hosted-board journey passed441602ms (7m22s),peak3574976KiB (3.41GiB),cleanup complete,evidence application-1809c9a2-79d7-4a59-871a-ee993deb69a1.json. Automatic board selection, deposit, real private claim/post/screen/withdraw proofs, Ethereum refund verified. Public new Ready block89867 now covered by proven tip89896;finalized remains89863,so activation awaits Ethereum finality. Existing AWS moderator healthy. Author public fee limits and final site/moderator switch remain.
+- **Browse and discover boards (U03)** — Begin directory implementation using pinned public instance-publication logs. Read-only investigation found new board on live V5. Pin checkpoint reference, bounded pagination, verify supported class and portal, state coverage honestly. No new registry/service. See evidence/U03/discovery-investigation.md.
 
 ## Ready internal work
 
-- **Open each board directly without user configuration (U02)** — User requested this work on 2026-09-20 after viewing the hosted configuration-first page. Queued after the current deployment and browser checks; not implemented.
+None.
 
 ## Blocked
 

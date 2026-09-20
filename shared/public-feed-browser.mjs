@@ -1,6 +1,6 @@
 import metadata from '../.build/public-feed/metadata.json';
-import {connectPublicFeed,browserPublicFeedStorage} from './public-feed-connection.mjs';
-export {metadata,connectPublicFeed,browserPublicFeedStorage};
+import {connectPublicBoard,connectPublicFeed,browserPublicFeedStorage} from './public-feed-connection.mjs';
+export {metadata,connectPublicBoard,connectPublicFeed,browserPublicFeedStorage};
 const connections=new Map();
 export async function readFeed(options){
  const key=JSON.stringify([options.nodeUrl,options.ethereumUrl,options.portalAddress,options.expectedConfig?.network,options.expectedConfig?.board]);

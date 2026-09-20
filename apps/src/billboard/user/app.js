@@ -35,6 +35,7 @@ function _commonConfig() {
     portalAddress: _portalAddr(),
     dataDirPrefix: 'pxe_bb_',
     depositChainId: _handles?.depositChainId,
+    withdrawTxHash: _stateResult?.withdrawTxHash || undefined,
     claimSecretStore: makeClaimSecretStore(window.walletState?.aztec?.secretKey, window.walletState?.aztec?.salt),
   };
   // If the loaded Aztec wallet IS the censor, pass its JSON for declare-immoral/transfer-censor
@@ -59,7 +60,6 @@ setupRpcAuth();
 const journalAcknowledgements = new Map();
 const ethereumAcknowledgements = new Map();
 const runUserEngine = makeCallEngine(runBillboardUser, {
-  createHistoryCursor: options => window.__aztec.createHistoryCursor({...options,storage:window.__aztec.createBrowserJournalStorage()}),
   createEthereumJournal: options => window.__aztec.createEthereumJournal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
   createTransactionJournal: options => window.__aztec.createL2Journal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
   artifact: typeof BILLBOARD_ARTIFACT !== 'undefined' ? BILLBOARD_ARTIFACT : null,
@@ -76,6 +76,10 @@ async function callEngine(action,statusDiv,extra={}) {
   // Reload deliberately loses acknowledgement, so recovery precedes another send.
   if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
   if(result?.lastEthereumTxHash)ethereumAcknowledgements.set(identity,result.lastEthereumTxHash);
+  if(result && Object.hasOwn(result,'withdrawTxHash')) {
+    _stateResult={...(_stateResult||{}),withdrawTxHash:result.withdrawTxHash};
+    if(_handles)_handles.withdrawTxHash=result.withdrawTxHash;
+  }
   return result;
 }
 async function recoverSavedTransaction() {
@@ -89,7 +93,7 @@ async function recoverSavedTransaction() {
     // Recovery refreshes state; it must not enter the deposit page's automatic
     // claim branch and thereby start a second transaction.
     if(refreshed.state==='postable')showPage(2);
-    else if(refreshed.state==='withdrawn_l2_claimable_l1')showPage(4);
+    else if(refreshed.state==='withdrawal_needs_verification')showPage(4);
     else if(refreshed.state==='zero_balance_need_deposit')showPage(1);
     else {
       showPage(0);
@@ -160,8 +164,8 @@ function onShowDeposit() {
     log('Deposit already claimed on L2. Proceeding to post page.', 'success', 'depositBalanceCheck');
     if (navBtn) navBtn.style.display = 'none';
     nextPage();
-  } else if (state === 'withdrawn_l2_claimable_l1') {
-    log('Deposit already withdrawn on L2. Jumping to L1 claim.', 'success', 'depositBalanceCheck');
+  } else if (state === 'withdrawal_needs_verification') {
+    log('A withdrawal transaction is saved. Check its settlement before claiming your ETH.', 'info', 'depositBalanceCheck');
     if (navBtn) navBtn.style.display = 'none';
     showPage(4);
   } else {
@@ -179,7 +183,7 @@ async function doDepositPage() {
   const state = _stateResult ? _stateResult.state : 'unknown';
 
   if (state === 'postable') { nextPage(); return; }
-  if (state === 'withdrawn_l2_claimable_l1') { showPage(4); return; }
+  if (state === 'withdrawal_needs_verification') { showPage(4); return; }
 
   if (state === 'zero_balance_need_deposit') {
     clearMissingHighlight();
@@ -336,15 +340,15 @@ async function refreshBillboard() {
       if(saved?.signature===textSignature){next.set(key,saved);nodes.push(saved.article);continue;}
       const article=document.createElement('article');article.className='billboard-post';
       const label=document.createElement('p');label.textContent='#'+post.orderIndex;article.append(label);
-      const content=document.createElement('p');content.textContent=post.text;let details=null,summary=null;
-      if(post.flagged){details=document.createElement('details');summary=document.createElement('summary');summary.textContent='Flagged message — show content';details.open=saved?.details?.open===true;details.append(summary,content);const reason=document.createElement('p');reason.textContent='Moderator reason: '+(post.flag?.reason||'No reason supplied');details.append(reason);article.append(details);}else article.append(content);
-      next.set(key,{article,details,summary,signature:textSignature});nodes.push(article);
+      const content=document.createElement('p');content.textContent=post.flagged?'Message removed by moderator.':post.text;article.append(content);
+      if(post.flagged){const reason=document.createElement('p');reason.textContent='Moderator reason: '+(post.flag?.reason||'No reason supplied');article.append(reason);}
+      next.set(key,{article,signature:textSignature});nodes.push(article);
     }
     if(!page.posts.length){const empty=document.createElement('p');empty.textContent='No messages available yet.';nodes.push(empty);}
     let olderLink=null;
-    if(page.nextCursor){olderLink=feed._renderRevision===selectedRevision?feed._olderLink:null;if(!olderLink){olderLink=document.createElement('a');olderLink.href='feed.html';olderLink.textContent='Read older messages';}nodes.push(olderLink);}
+    if(page.nextCursor){olderLink=feed._renderRevision===selectedRevision?feed._olderLink:null;if(!olderLink){olderLink=document.createElement('a');olderLink.href='feed.html'+location.hash;olderLink.textContent='Read older messages';}nodes.push(olderLink);}
     feed.replaceChildren();for(const node of nodes)feed.append(node);
-    if(focusedKey!==null){const saved=next.get(focusedKey);if(saved?.article.contains?.(active))active.focus?.({preventScroll:true});else if(saved?.summary)saved.summary.focus?.({preventScroll:true});else{feed.tabIndex=-1;feed.focus?.({preventScroll:true});}}
+    if(focusedKey!==null){const saved=next.get(focusedKey);if(saved?.article.contains?.(active))active.focus?.({preventScroll:true});else{feed.tabIndex=-1;feed.focus?.({preventScroll:true});}}
     else if(olderFocused){if(olderLink)olderLink.focus?.({preventScroll:true});else{feed.tabIndex=-1;feed.focus?.({preventScroll:true});}}
     feed._postNodes=next;feed._olderLink=olderLink;feed._renderRevision=selectedRevision;feed._renderSignature=signature;
 
@@ -410,13 +414,15 @@ async function doWithdrawPage() {
   await callEngine('withdraw', 'withdrawStatus', {
       ..._commonConfig(),
   });
-  if (_stateResult) _stateResult.state = 'withdrawn_l2_claimable_l1';
+  if (_stateResult) _stateResult.state = 'withdrawal_needs_verification';
 }
 
 // ============================================================
 // Page 4: Claim ETH on L1
 // ============================================================
-function onShowClaimL1() {}
+function onShowClaimL1() {
+  log(_stateResult?.withdrawTxHash ? 'The withdrawal transaction is saved. Claim ETH will check whether the network has settled it.' : 'Recover the saved withdrawal transaction on the setup page before claiming ETH.', 'info', 'claimL1Status');
+}
 
 async function doClaimL1Page() {
   await callEngine('claim-l1', 'claimL1Status', {
@@ -571,4 +577,4 @@ function waitForBundleThenInit() {
     waitForBundle(waitForBundleThenInit);
   }
 }
-waitForBundleThenInit();
+initializeHostedBoard(waitForBundleThenInit);

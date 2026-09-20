@@ -24,7 +24,7 @@ function installJourneyFixture(){
   globalThis.__journeyFixture=fixture;
   const view=value=>({simulate:async()=>typeof value==='function'?value():value});
   const handles={depositChainId:1n,address:{toString:()=> '0x'+'01'.repeat(32)},aztecNode:{getBlockNumber:async()=>1,getBlock:async()=>({header:{globalVariables:{timestamp:fixture.time}}})},contract:{methods:{
-   get_deposit_info:()=>view(()=>[1n,1n,1n,100n,1n,2n,1n,0n,fixture.screened,fixture.real,fixture.allowed]),
+   get_deposit_info:()=>view(()=>[1n,1n,100n,1n,2n,1n,0n,fixture.screened,fixture.real,fixture.allowed]),
    get_censor:()=>view(0n),get_k_multiplier:()=>view(2n),get_moderation_policy:()=>view({result:[[],0]})
   }}};
   // Clearly synthetic non-funded wallet object solely satisfies UI prerequisites.
@@ -35,14 +35,14 @@ function installJourneyFixture(){
    if(action==='recover'){fixture.state=fixture.recoveryState;return {state:'transaction_recovered'};}
    if(action==='claim'){fixture.claimHash=extra.reuseTxHash;fixture.state='postable';return {ok:true};}
    if(action==='post'){if(fixture.holdPost)await new Promise(resolve=>fixture.releasePost=resolve);return {ok:true};}
-   if(action==='withdraw'){fixture.state='withdrawn_l2_claimable_l1';return {ok:true};}
+   if(action==='withdraw'){fixture.state='withdrawal_needs_verification';return {ok:true};}
    if(action==='claim-l1'){
     if(fixture.pendingSettlement){log('Withdrawal is recorded. Network settlement is pending; retry this claim later.','info',status);throw publicOperationFailure(Object.assign(new Error(fixture.untrusted),{code:'BB_SETTLEMENT_PENDING'}));}
     return {ok:true};
    }
    throw Error('Unexpected fixture action');
   };
-  window.BillboardPublic={...window.BillboardPublic,readFeed:async()=>({eventCount:1,lastBlock:1,progress:{complete:true},nextCursor:null,posts:[{postId:'fixture',orderIndex:1,text:fixture.untrusted,flagged:true,flag:{reason:fixture.untrusted}}]})};
+  window.BillboardPublic={...window.BillboardPublic,readFeed:async()=>({eventCount:1,lastBlock:1,progress:{complete:true},nextCursor:'fixture-next',posts:[{postId:'fixture',orderIndex:1,text:fixture.untrusted,flagged:true,flag:{reason:fixture.untrusted}}]})};
 
 }
 async function main(){
@@ -57,12 +57,16 @@ async function main(){
  const page=await context.newPage();stage='fixture-page';await page.goto(origin+'/user.html');
  await page.waitForFunction(()=>typeof globalThis.callEngine==='function'&&typeof globalThis.loadWalletAndConnect==='function');
  const record={schemaVersion:1,network:{nodeUrl:origin+'/node',ethRpcUrl:origin+'/eth',chainId:'31337',rollupVersion:'5',rollupAddress:'0x'+'11'.repeat(20)},board:{portalAddress:'0x'+'22'.repeat(20),contractAddress:'0x'+'01'.repeat(32)},privateFee:null};
- await page.getByLabel('Public configuration JSON').fill(JSON.stringify(record));await page.getByRole('button',{name:'Import configuration',exact:true}).click();
+ // UI-state fixture only; hosted loading is covered by test-public-feed-browser.
+ await page.waitForFunction(()=>document.getElementById('setupStatus').textContent.includes('unavailable for posting'));
+ await page.evaluate(record=>billboardConfigStore.install(record),record);
  await page.evaluate(installJourneyFixture);
+ await page.evaluate(()=>history.replaceState(null,'','#network=31337:0x'+'11'.repeat(20)+':5&board=0x'+'01'.repeat(32)));
  stage='status-to-post';await page.evaluate(async()=>{await loadWalletAndConnect();nextPage();});await page.locator('#postBtn').waitFor({state:'visible'});
  assert.deepEqual(await page.evaluate(()=>__journeyFixture.calls),['status']);
+ await page.getByRole('link',{name:'Read older messages',exact:true}).waitFor();assert.equal(new URL(await page.getByRole('link',{name:'Read older messages',exact:true}).getAttribute('href'),page.url()).hash,new URL(page.url()).hash);
  await page.waitForFunction(()=>document.getElementById('screeningStatus').textContent.includes('still need screening'));
- await page.locator('#billboardFeed summary').click();assert.match(await page.locator('#billboardFeed').textContent(),/<img src=x/);assert.equal(await page.locator('#billboardFeed img').count(),0);assert.equal(await page.evaluate(()=>globalThis.__uiExecuted===true),false);
+ assert.equal(await page.locator('#billboardFeed summary').count(),0);assert.match(await page.locator('#billboardFeed').textContent(),/Message removed by moderator/);assert.match(await page.locator('#billboardFeed').textContent(),/<img src=x/);assert.equal(await page.locator('#billboardFeed img').count(),0);assert.equal(await page.evaluate(()=>globalThis.__uiExecuted===true),false);
  stage='posting-busy-state';await page.evaluate(()=>__journeyFixture.holdPost=true);await page.locator('#msgText').fill('UI-only fixture message');await page.locator('#postBtn').click();
  await page.waitForFunction(()=>!!__journeyFixture.releasePost);assert.equal(await page.locator('#postBtn').isDisabled(),true);
  await page.evaluate(()=>document.getElementById('postBtn').click());assert.equal(await page.evaluate(()=>__journeyFixture.calls.filter(x=>x==='post').length),1);
@@ -73,7 +77,7 @@ async function main(){
  await page.locator('#navNext').click();await page.locator('#page-4').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>__journeyFixture.calls.filter(x=>x==='withdraw').length),1);
  stage='settlement-pending';await page.locator('#navNext').click();await page.waitForFunction(()=>!document.getElementById('navNext').disabled);assert.equal(await page.locator('#page-4').isVisible(),true);assert.match(await page.locator('#claimL1Status').textContent(),/Network settlement is pending/);assert.equal(await page.locator('#claimL1Status img').count(),0);assert.doesNotMatch(await page.locator('#claimL1Status').textContent(),/<img/);
  stage='recovery-refresh';
- for(const [state,target]of [['postable',2],['withdrawn_l2_claimable_l1',4],['zero_balance_need_deposit',1],['deposited_l1_not_claimed_l2',0]]){
+ for(const [state,target]of [['postable',2],['withdrawal_needs_verification',4],['zero_balance_need_deposit',1],['deposited_l1_not_claimed_l2',0]]){
   const before=await page.evaluate(state=>{showPage(0);__journeyFixture.recoveryState=state;return __journeyFixture.calls.length;},state);
   await page.getByRole('button',{name:'Recover saved Aztec transaction',exact:true}).click();await page.waitForFunction(({target,before})=>document.getElementById('page-'+target).classList.contains('active')&&__journeyFixture.calls.length>=before+2&&__journeyFixture.calls.at(-1)==='status',{target,before});
   assert.deepEqual(await page.evaluate(before=>__journeyFixture.calls.slice(before),before),['recover','status']);
@@ -90,8 +94,11 @@ async function main(){
  assert.deepEqual(await page.evaluate(before=>__journeyFixture.calls.slice(before),beforeClaim),['claim']);
  stage='reload-recovery-navigation';
  await page.reload();await page.waitForFunction(()=>typeof globalThis.callEngine==='function');
- assert.deepEqual(await page.evaluate(()=>billboardConfigStore.snapshot().config),record);
+ await page.waitForFunction(()=>document.getElementById('setupStatus').textContent.includes('unavailable for posting'));
+ assert.equal(await page.evaluate(()=>billboardConfigStore.snapshot().config),null,'Page-local settings must not survive reload without hosted verification');
+ await page.evaluate(record=>billboardConfigStore.install(record),record);
  await page.evaluate(installJourneyFixture);
+ await page.evaluate(()=>history.replaceState(null,'','#network=31337:0x'+'11'.repeat(20)+':5&board=0x'+'01'.repeat(32)));
  const recoveryStarted=Date.now();await page.getByRole('button',{name:'Recover saved Aztec transaction',exact:true}).click();
  await page.locator('#page-2').waitFor({state:'visible'});
  assert.deepEqual(await page.evaluate(()=>__journeyFixture.calls),['recover','status']);

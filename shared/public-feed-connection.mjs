@@ -5,6 +5,18 @@ import {createPublicFeed} from './public-feed.mjs';
 const field=n=>'0x'+BigInt(n).toString(16).padStart(64,'0');
 const word=v=>{if(typeof v!=='string'||!/^0x[0-9a-fA-F]{64}$/.test(v))throw Error('Invalid public deployment data.');return BigInt(v);};
 const address=n=>{if(n<=0n||n>=1n<<160n)throw Error('Invalid public deployment address.');return '0x'+n.toString(16).padStart(40,'0');};
+// A board link identifies the contract; its portal comes from verified on-chain state.
+export async function connectPublicBoard({network,boardAddress,metadata,storage,fetchImpl}){
+  if(typeof boardAddress!=='string'||!/^0x[0-9a-f]{64}$/.test(boardAddress)||word(boardAddress)===0n)throw Error('Invalid board link.');
+  const node=publicNode(network.nodeUrl,{fetchImpl});
+  const [instance,head]=await Promise.all([node.getContract(boardAddress),node.getBlockData('checkpointed')]);
+  if(!metadata.classId||instance?.currentContractClassId!==metadata.classId||instance?.originalContractClassId!==metadata.classId)throw Error('Board contract does not match this application release.');
+  if(!head?.blockHash)throw Error('No checkpointed board state is available.');
+  const portalAddress=address(word(await node.getPublicStorageAt({hash:head.blockHash},boardAddress,field(metadata.storage.portal))));
+  const config={schemaVersion:1,network,board:{contractAddress:boardAddress,portalAddress},privateFee:null};
+  const connection=await connectPublicFeed({nodeUrl:network.nodeUrl,ethereumUrl:network.ethRpcUrl,portalAddress,metadata,storage,fetchImpl,expectedConfig:config});
+  return Object.freeze({...connection,config});
+}
 export async function connectPublicFeed({nodeUrl,ethereumUrl,portalAddress,metadata,storage,fetchImpl,expectedConfig}){
   if(!/^0x[0-9a-fA-F]{40}$/.test(portalAddress)||BigInt(portalAddress)===0n)throw Error('Enter a valid portal address.');
   portalAddress=portalAddress.toLowerCase();

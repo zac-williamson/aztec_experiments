@@ -1,0 +1,99 @@
+{
+  "script": "scripts/test-u01-config-browser.mjs",
+  "args": [],
+  "passed": true,
+  "observations": [
+    {
+      "passed": true,
+      "actualBuiltPages": true,
+      "visiblePasteAndFileImport": true,
+      "exportPublicOnly": true,
+      "operatorReload": true,
+      "malformedNestedRejected": true,
+      "noImplicitRpc": true,
+      "crossTabClear": true,
+      "noWalletOrProof": true
+    }
+  ],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 1589520,
+  "rssSamples": [
+    {
+      "elapsedMs": 1001,
+      "rssKiB": 943136
+    },
+    {
+      "elapsedMs": 2023,
+      "rssKiB": 1589520
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "ui",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/test-u01-config-browser.mjs": "e9f96a539740931d860cd36bbeec96e78042cfbcf9505084aa97886710ad0c89",
+    "scripts/run-bounded-browser-check.mjs": "945d3f6ca1dc8012469a8bfe6c9ce7c724974e953d963785cad152112f969670",
+    "scripts/testing/supervisor.mjs": "518d827972d68cce7bab14f56df6483a260f5f5dc4082b50e2e4bbd80b0723f2",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "e6835478eaa8bd9343925a433973164155c6be60c4558d5ff6bc1e2ad495d590",
+    ".build/sdk/sdk-manifest.json": "70c44262126238f1ceacf432cc1727a4ce975cc18c07b066ad46adf5bcbe4cf0"
+  },
+  "peakMemory": {
+    "elapsedMs": 2023,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 89952,
+        "ppid": 89895,
+        "rssKiB": 54976
+      },
+      {
+        "role": "ui",
+        "pid": 89953,
+        "ppid": 89952,
+        "rssKiB": 168288
+      },
+      {
+        "role": "ui",
+        "pid": 89954,
+        "ppid": 89953,
+        "rssKiB": 93824
+      },
+      {
+        "role": "ui",
+        "pid": 89955,
+        "ppid": 89954,
+        "rssKiB": 73584
+      },
+      {
+        "role": "ui",
+        "pid": 89956,
+        "ppid": 89954,
+        "rssKiB": 45504
+      },
+      {
+        "role": "ui",
+        "pid": 89958,
+        "ppid": 89954,
+        "rssKiB": 670272
+      },
+      {
+        "role": "ui",
+        "pid": 89963,
+        "ppid": 89954,
+        "rssKiB": 483072
+      }
+    ]
+  },
+  "elapsedMs": 2330,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true
+}

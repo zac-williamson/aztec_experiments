@@ -24,12 +24,13 @@ async function main(){
  let ready=false;for(let i=0;i<40;i++){try{if(await request(port)===200){ready=true;break;}}catch{}await new Promise(resolve=>setTimeout(resolve,100));}assert(ready);
  browser=await chromium.launch({headless:true,args:['--js-flags=--max-old-space-size=768']});const context=await browser.newContext({ignoreHTTPSErrors:true});context.setDefaultTimeout(8000);const external=[];let posts=0;
  await context.route('**/*',route=>{const req=route.request(),url=req.url();if(req.method()==='POST'){posts++;return route.abort();}if(/^https?:/.test(url)&&new URL(url).origin!==origin){external.push(new URL(url).origin);return route.abort();}return route.continue();});
- const page=await context.newPage();stage='keyboard-config';await page.goto(origin+'/user.html');
+ const page=await context.newPage();stage='keyboard-config';await page.goto(origin+'/censor.html');
  const input=page.getByLabel('Public configuration JSON'),importButton=page.getByRole('button',{name:'Import configuration',exact:true});await tabTo(page,input);await page.keyboard.insertText('{');await tabTo(page,importButton);await page.keyboard.press('Enter');await page.getByRole('region',{name:'Board configuration'}).getByText('Invalid configuration JSON',{exact:true}).waitFor();
  const record={schemaVersion:1,network:{nodeUrl:origin+'/node',ethRpcUrl:origin+'/eth',chainId:'31337',rollupVersion:'5',rollupAddress:'0x'+'11'.repeat(20)},board:{portalAddress:'0x'+'22'.repeat(20),contractAddress:'0x'+'01'.repeat(32)},privateFee:null};
  await tabTo(page,input);await page.keyboard.press('Meta+A');await page.keyboard.insertText(JSON.stringify(record));await tabTo(page,importButton);await page.keyboard.press('Enter');await page.getByRole('region',{name:'Board configuration'}).getByText(/Ethereum chain 31337/).waitFor();
  for(const role of ['user','censor']){
-  stage=role+'-message-keyboard';if(role==='censor')await page.goto(origin+'/censor.html');
+  stage=role+'-message-keyboard';await page.goto(origin+'/'+role+'.html');
+  if(role==='user'){await page.waitForFunction(()=>document.getElementById('setupStatus').textContent.includes('unavailable for posting'));await page.evaluate(record=>billboardConfigStore.install(record),record);}
   // Explicit UI-only public-feed fixture. No wallet state, engine, verifier or proof path is replaced.
   await page.evaluate(()=>{globalThis.__keyboardPostText='Keyboard fixture';window.BillboardPublic={...window.BillboardPublic,readFeed:async()=>({eventCount:1,lastBlock:1,progress:{complete:true},nextCursor:null,posts:[{postId:'keyboard-fixture',orderIndex:1,text:globalThis.__keyboardPostText,flagged:true,flag:{reason:'UI-only fixture'}}]})};});
   if(role==='user'){
@@ -37,9 +38,13 @@ async function main(){
    const post=page.locator('#postBtn');await tabTo(page,post);await page.keyboard.press('Enter');await page.waitForFunction(()=>document.activeElement?.id==='msgText'&&document.activeElement.getAttribute('aria-invalid')==='true');
    assert.match(await page.locator('#msgText').getAttribute('aria-describedby'),/msgText-validation-error/);await page.keyboard.insertText('Not submitted');assert.equal(await page.locator('#msgText').getAttribute('aria-invalid'),null);assert.equal(await page.locator('#msgText-validation-error').count(),0);
   }
-  await page.evaluate(()=>refreshBillboard());const summary=page.locator('#billboardFeed summary').first();await tabTo(page,summary);await page.keyboard.press('Space');assert(await page.locator('#billboardFeed details').evaluate(el=>el.open));
+  await page.evaluate(()=>refreshBillboard());
+  if(role==='user'){assert.equal(await page.locator('#billboardFeed summary').count(),0);assert.doesNotMatch(await page.locator('#billboardFeed').textContent(),/Keyboard fixture/);assert.match(await page.locator('#billboardFeed').textContent(),/Message removed by moderator/);}
+  else {
+  const summary=page.locator('#billboardFeed summary').first();await tabTo(page,summary);await page.keyboard.press('Space');assert(await page.locator('#billboardFeed details').evaluate(el=>el.open));
   await page.evaluate(()=>refreshBillboard());assert(await summary.evaluate(el=>el===document.activeElement));assert(await page.locator('#billboardFeed details').evaluate(el=>el.open));
   await page.evaluate(async()=>{globalThis.__keyboardPostText='Changed keyboard fixture';await refreshBillboard();});assert(await page.locator('#billboardFeed summary').evaluate(el=>el===document.activeElement));assert(await page.locator('#billboardFeed details').evaluate(el=>el.open));assert.match(await page.locator('#billboardFeed').textContent(),/Changed keyboard fixture/);
+  }
  }
  stage='field-labels';await page.goto(origin+'/fee-juice.html');await checkLabels(page,['azaddr','amount','recoveryFile','recoveryTxHash']);await page.goto(origin+'/deploy.html');await checkLabels(page,['manifestFile','readyTxHash','publicFeeGas']);assert.equal(await page.locator('#deploymentManifest').isVisible(),false,'Internal manifest storage must remain hidden');
  assert.deepEqual(external,[]);assert.equal(posts,0,'UI-only checks must not reach transaction/RPC paths');
