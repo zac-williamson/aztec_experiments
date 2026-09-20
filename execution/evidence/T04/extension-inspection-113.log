@@ -1,0 +1,1 @@
+{"passed":true,"observations":[{"passed":true,"stage":"analytics","urlHash":"#/onboarding/completion","testIds":["app-header-logo","parent-selector-onboarding-complete","onboarding-complete-done","manage-default-settings"]}],"failures":[]}

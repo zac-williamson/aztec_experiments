@@ -49,3 +49,48 @@ test('callback failure invalidates activated session without logging callback di
  await f.context._loadAztecWallet(file({secretKey:key,salt}));
  assert.equal(f.context.window.walletState.invalidated,true);assert(!f.logs.join('').includes('private-callback-fixture'));
 });
+
+test('initial account authorization event permits the matching browser signer',async()=>{
+ const f=fixture(),account='0x'+'12'.repeat(20);
+ f.context.ethers={BrowserProvider:class {
+  async send(method){if(method==='eth_requestAccounts')f.listeners.accountsChanged([account]);assert(['eth_requestAccounts','eth_accounts'].includes(method));return[account];}
+  async getSigner(){return{getAddress:async()=>account};}
+  async getNetwork(){return{chainId:31337n};}
+ }};
+ await f.context._loadEthBrowser();
+ assert.equal(f.context.window.walletState.ethAccount,account);
+ assert.equal(f.context.window.walletState.invalidated,false);
+});
+
+function browserConnection(f,{requested='0x'+'12'.repeat(20),current=requested,event,afterNetwork}={}) {
+ f.context.ethers={BrowserProvider:class {
+  async send(method){if(method==='eth_requestAccounts'){if(event)f.listeners.accountsChanged(event);return[requested];}assert.equal(method,'eth_accounts');return[current];}
+  async getSigner(){return{getAddress:async()=>requested};}
+  async getNetwork(){afterNetwork?.();return{chainId:31337n};}
+ }};
+ return requested;
+}
+for(const [name,event] of [['different account',['0x'+'34'.repeat(20)]],['empty authorization',[]],['malformed authorization',['not-an-address']]])test('initial connection rejects '+name,async()=>{
+ const f=fixture();browserConnection(f,{event});await assert.rejects(f.context._loadEthBrowser());assert.equal(f.context.window.walletState.ethSigner,null);assert.equal(f.context.window.walletState.invalidated,true);
+});
+test('final account read rejects a replacement even without an event',async()=>{
+ const f=fixture();browserConnection(f,{current:'0x'+'34'.repeat(20)});await assert.rejects(f.context._loadEthBrowser());assert.equal(f.context.window.walletState.ethSigner,null);assert.equal(f.context.window.walletState.invalidated,true);
+});
+test('same-account notification after connection is not a replacement',async()=>{
+ const f=fixture(),account=browserConnection(f);await f.context._loadEthBrowser();f.listeners.accountsChanged([account.toUpperCase().replace('0X','0x')]);assert.equal(f.context.window.walletState.invalidated,false);
+ f.listeners.accountsChanged(['0x'+'34'.repeat(20)]);assert.equal(f.context.window.walletState.invalidated,true);
+});
+for(const event of ['chainChanged','disconnect'])test(event+' during authorization still invalidates the session',async()=>{
+ const f=fixture();browserConnection(f,{afterNetwork:()=>f.listeners[event]('0x1')});await assert.rejects(f.context._loadEthBrowser());assert.equal(f.context.window.walletState.ethSigner,null);assert.equal(f.context.window.walletState.invalidated,true);
+});
+
+test('account replacement then restoration during authorization remains invalid',async()=>{
+ const f=fixture(),account='0x'+'12'.repeat(20);
+ browserConnection(f,{event:[account],afterNetwork:()=>{f.listeners.accountsChanged(['0x'+'34'.repeat(20)]);f.listeners.accountsChanged([account]);}});
+ await assert.rejects(f.context._loadEthBrowser());assert.equal(f.context.window.walletState.ethSigner,null);assert.equal(f.context.window.walletState.invalidated,true);
+});
+test('repeated matching authorization notifications permit connection',async()=>{
+ const f=fixture(),account='0x'+'12'.repeat(20);
+ browserConnection(f,{event:[account],afterNetwork:()=>f.listeners.accountsChanged([account])});
+ await f.context._loadEthBrowser();assert.equal(f.context.window.walletState.ethAccount,account);assert.equal(f.context.window.walletState.invalidated,false);
+});

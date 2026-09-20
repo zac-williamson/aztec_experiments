@@ -6,8 +6,8 @@ Objective state: **running**. Completed packages: 24/35.
 
 ## In progress
 
-- **Run browser, recovery, concurrency and load matrix (T04)** — Installed stable Chrome102 passed full genuine deposit/claim/post/screen/withdraw/refund journey: runtime153.0.8010.52,388354ms,2728640KiB, exact canonical accounting and complete cleanup. Report application-21f628e6-0743-4321-8b32-935d17624db9.json. Proceed with focused real MetaMask Ethereum signing qualification; official13.49.0 archive verified, independent minimal design reviewed.
-  Investigation: 0/1 attempts. Integrate Chrome102 evidence, then inspect real extension onboarding using existing Supervisor and isolated profile before implementing the focused Ethereum test.
+- **Run browser, recovery, concurrency and load matrix (T04)** — 134 PASS clean real MetaMask worker without diagnostic monkeypatches;133 PASS full installedChrome lifecycle373183ms/3028208KiB. Canonical read repair + wallet authorization fix independently reviewed, components/build/artifact checks pass. Commit/push coherent verified work, then implement existing-runner two-post cold/warm performance pilot.
+  Investigation: 0/1 attempts. Commit/push wallet integration; implement reviewed two-post timing pilot with existing supervisor/handshake and540s/4GiB limits.
 
 ## Ready internal work
 

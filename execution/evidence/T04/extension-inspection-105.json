@@ -1,0 +1,122 @@
+{
+  "scope": "Pinned extension initial screen inspection only",
+  "passed": true,
+  "observations": [
+    {
+      "passed": true,
+      "browserVersion": "153.0.8010.12",
+      "urlPath": "/home.html",
+      "screenText": "አማርኛ\nالعربية\nбългарски\nবাংলা\nCatalà\nČeština\nDansk\nDeutsch\nελληνικά\nEnglish\nEspañol (Latinoamérica)\nEstonian\nفارسی\nSuomi\nFrançais\nGaeilge\nગુજરાત\nעברית\nमानक हिन्दी\nहिन्दी\nHrvatski\nKreyòl ayisyen\nMagyar\nBahasa Indonesia\nItaliano\n日本語\nಕನ್ನಡ\n한국어\nLietuviškai\nLatvian\nമലയാളം\nमराठी\nMalay\nNederlands\nNorwegian\nPolskie\nPortuguês\nPortuguês (Brazillian)\nPortuguês (European)\nLimba română\nРусский\nSlovenčina\nSlovenščina\nсрпски\nSvenska\nSwahili\nதமிழ்\nతెలుగు\nไทย\nFilipino\nTürkçe\nУкраїнська мова\nTiếng Việt\n中文(简体)\n中文(繁體)\nCreate a new wallet\nI have an existing wallet"
+    }
+  ],
+  "deadlineMs": 60000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 2078624,
+  "rssSamples": [
+    {
+      "elapsedMs": 1001,
+      "rssKiB": 673376
+    },
+    {
+      "elapsedMs": 2016,
+      "rssKiB": 1474544
+    },
+    {
+      "elapsedMs": 3033,
+      "rssKiB": 1750112
+    },
+    {
+      "elapsedMs": 4047,
+      "rssKiB": 2078624
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "extension",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "peakMemory": {
+    "elapsedMs": 4047,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 62638,
+        "ppid": 1375,
+        "rssKiB": 49072
+      },
+      {
+        "role": "extension",
+        "pid": 62650,
+        "ppid": 62638,
+        "rssKiB": 125776
+      },
+      {
+        "role": "extension",
+        "pid": 62651,
+        "ppid": 62650,
+        "rssKiB": 235600
+      },
+      {
+        "role": "extension",
+        "pid": 62661,
+        "ppid": 62651,
+        "rssKiB": 124176
+      },
+      {
+        "role": "extension",
+        "pid": 62662,
+        "ppid": 62651,
+        "rssKiB": 87328
+      },
+      {
+        "role": "extension",
+        "pid": 62663,
+        "ppid": 62651,
+        "rssKiB": 62160
+      },
+      {
+        "role": "extension",
+        "pid": 62666,
+        "ppid": 62651,
+        "rssKiB": 143792
+      },
+      {
+        "role": "extension",
+        "pid": 62668,
+        "ppid": 62651,
+        "rssKiB": 104912
+      },
+      {
+        "role": "extension",
+        "pid": 62670,
+        "ppid": 62651,
+        "rssKiB": 796048
+      },
+      {
+        "role": "extension",
+        "pid": 62672,
+        "ppid": 62651,
+        "rssKiB": 141440
+      },
+      {
+        "role": "extension",
+        "pid": 62674,
+        "ppid": 62651,
+        "rssKiB": 108288
+      },
+      {
+        "role": "extension",
+        "pid": 62675,
+        "ppid": 62651,
+        "rssKiB": 100032
+      }
+    ]
+  },
+  "elapsedMs": 4495,
+  "ownedTreeAbsent": true,
+  "profileRemoved": true
+}

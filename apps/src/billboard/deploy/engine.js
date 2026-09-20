@@ -307,8 +307,7 @@
     let ethSigner = null;
     if (config.ethWallet && config.ethWallet.privateKey) {
       log('  Using ETH wallet from config (local signing)...', 'info');
-      const provider = new ethers.JsonRpcProvider(config.ethRpcUrl);
-      ownedProviders.add(provider);
+      const provider = preflightProvider;
       ethSigner = new ethers.Wallet(config.ethWallet.privateKey, provider);
       log('  ETH address: ' + ethSigner.address, 'info');
     } else if (env.getBrowserSigner) {
@@ -318,13 +317,13 @@
       log('  No ETH wallet in config and no browser wallet. Pausing for user to import...', 'info');
       const ethWalletData = await pause('import-eth-wallet');
       if (!ethWalletData || !ethWalletData.privateKey) throw new Error('ETH wallet is required.');
-      const provider = new ethers.JsonRpcProvider(config.ethRpcUrl);
-      ownedProviders.add(provider);
+      const provider = preflightProvider;
       ethSigner = new ethers.Wallet(ethWalletData.privateKey, provider);
       log('  ETH address: ' + ethSigner.address, 'info');
     }
 
-    const provider = ethSigner.provider;
+    const provider = preflightProvider;
+    if((await a.boundedTransactionRead(()=>ethSigner.provider.getNetwork(),20000)).chainId!==BigInt(nodeInfo.l1ChainId))throw new Error('L1 signer and Aztec node chain mismatch');
     if ((await a.boundedTransactionRead(()=>provider.getNetwork(),20000)).chainId !== BigInt(nodeInfo.l1ChainId)) throw new Error('L1 signer and Aztec node chain mismatch');
 
     if((await ethSigner.getAddress()).toLowerCase()!==manifest.actors.ethereumDeployer)throw new Error('Ethereum deployer differs from manifest');
@@ -574,7 +573,7 @@
 
     await a.preflightDeploymentNetwork(manifest,{node:rawNode,provider,ethers});
     a.verifyPortalRuntime(await a.boundedTransactionRead(()=>provider.getCode(predicted),20000),a.portalRuntimeMetadata,{MIN_DEPOSIT:BigInt(minDepositWei),MAX_DEPOSIT:maxDepositWei,L2_CONTRACT:l2AddrHex,ROLLUP:manifest.network.rollup,INBOX:manifest.network.inbox,OUTBOX:manifest.network.outbox,VERSION:BigInt(version),L1_CHAIN_ID:BigInt(nodeInfo.l1ChainId),CONFIG_HASH:configHash});
-    const portal = new ethers.Contract(predicted, PORTAL_ABI, ethSigner);
+    const portal = new ethers.Contract(predicted, PORTAL_ABI, provider);
     const values = await a.boundedTransactionRead(()=>Promise.all([portal.L2_CONTRACT(), portal.ROLLUP(), portal.VERSION(),
       portal.L1_CHAIN_ID(), portal.MIN_DEPOSIT(), portal.MAX_DEPOSIT(), portal.CONFIG_HASH(),portal.INBOX(),portal.OUTBOX()]),20000);
     const expected = [BigInt(l2AddrHex), BigInt(rollupAddr), BigInt(version), BigInt(nodeInfo.l1ChainId),

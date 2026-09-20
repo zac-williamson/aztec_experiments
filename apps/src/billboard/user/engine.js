@@ -819,21 +819,21 @@
     }
 
     // Check portal on L1
-    let ethSigner = null, l1Account = null, provider = null;
+    let ethSigner = null, l1Account = null;
+    const provider = new ethers.JsonRpcProvider(config.ethRpcUrl);
+    try {
     let portalL1Balance = 0n, portalDepositNonce = 0n;
     let portalDeployed = false;
     try {
       if (config.ethWallet && config.ethWallet.privateKey) {
-        provider = new ethers.JsonRpcProvider(config.ethRpcUrl);
         ethSigner = new ethers.Wallet(config.ethWallet.privateKey, provider);
         l1Account = await ethSigner.getAddress();
       } else if (env.getBrowserSigner && config.hasEthSigner !== false) {
         ethSigner = await env.getBrowserSigner();
         l1Account = await ethSigner.getAddress();
-        provider = ethSigner.provider;
+        if(BigInt((await ethSigner.provider.getNetwork()).chainId)!==BigInt(nodeInfo.l1ChainId))throw new Error('Ethereum signer chain disagrees with the board.');
       } else {
         if(['deposit','claim','auto','claim-l1','recover-eth'].includes(action)) throw new Error('This operation requires an Ethereum wallet.');
-        provider = new ethers.JsonRpcProvider(config.ethRpcUrl);
       }
       if (BigInt((await provider.getNetwork()).chainId) !== BigInt(nodeInfo.l1ChainId)) throw new Error('Ethereum signer chain disagrees with the board.');
       if (config.contextGuard) await config.contextGuard();
@@ -1168,7 +1168,7 @@
     async function doDeposit() {
       if (!ethSigner || !portalDeployed) throw new Error('A verified portal and L1 signer are required.');
       const store = secretStore();
-      const portal = new ethers.Contract(portalAddr, PORTAL_ABI, ethSigner);
+      const portal = new ethers.Contract(portalAddr, PORTAL_ABI, provider);
       if (!await portal.depositsEnabled()) throw new Error('Portal deposits are disabled until authenticated Ready activation.');
       const active = await portal.getDeposit(l1Account);
       if (BigInt(active.nonce) !== 0n) throw new Error('An active L1 receipt already exists.');
@@ -2080,6 +2080,7 @@
     // Expose handles for web app live UI (billboard feed, countdown, etc.)
     result.handles = { pxe, wallet, contract, aztecNode, rawNode, address, l2Addr, contractSalt, version, nodeInfo, depositChainId: selectedChain };
     return result;
+    } finally {provider.destroy();}
   };
 
 })();

@@ -1,0 +1,272 @@
+{
+  "script": "scripts/test-wallet-extension-browser.mjs",
+  "args": [],
+  "passed": true,
+  "observations": [
+    {
+      "passed": true,
+      "scope": "Real MetaMask connection, rejected approval, explicit approval retry, fee deposit and read-only canonical recovery; no Aztec claim/proof",
+      "chainBeforeAddition": "0x1",
+      "addNetworkState": "resolved",
+      "chainAfterAddition": "0x7a69",
+      "accountsBeforeConnect": {
+        "count": 0,
+        "matchesExpected": false
+      },
+      "rejectionMovedNoFunds": true,
+      "depositAmount": "1000",
+      "canonicalRecoveryVerified": true,
+      "explicitRetryVerified": true,
+      "realExtension": true,
+      "browserVersion": "153.0.8010.12",
+      "extensionVersion": "13.49.0.0",
+      "connectedLocalAccount": true,
+      "userEthereumTransactions": 2,
+      "cleanupComplete": true
+    }
+  ],
+  "deadlineMs": 120000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 3728688,
+  "rssSamples": [
+    {
+      "elapsedMs": 1001,
+      "rssKiB": 379040
+    },
+    {
+      "elapsedMs": 2019,
+      "rssKiB": 524944
+    },
+    {
+      "elapsedMs": 3036,
+      "rssKiB": 1012528
+    },
+    {
+      "elapsedMs": 4059,
+      "rssKiB": 1015808
+    },
+    {
+      "elapsedMs": 5081,
+      "rssKiB": 1749712
+    },
+    {
+      "elapsedMs": 6097,
+      "rssKiB": 1899376
+    },
+    {
+      "elapsedMs": 7113,
+      "rssKiB": 2257936
+    },
+    {
+      "elapsedMs": 8129,
+      "rssKiB": 2520560
+    },
+    {
+      "elapsedMs": 9145,
+      "rssKiB": 2317840
+    },
+    {
+      "elapsedMs": 10159,
+      "rssKiB": 2489952
+    },
+    {
+      "elapsedMs": 11178,
+      "rssKiB": 2352784
+    },
+    {
+      "elapsedMs": 12195,
+      "rssKiB": 2543792
+    },
+    {
+      "elapsedMs": 13212,
+      "rssKiB": 2469520
+    },
+    {
+      "elapsedMs": 14227,
+      "rssKiB": 2832080
+    },
+    {
+      "elapsedMs": 15245,
+      "rssKiB": 3566608
+    },
+    {
+      "elapsedMs": 16260,
+      "rssKiB": 3713408
+    },
+    {
+      "elapsedMs": 17280,
+      "rssKiB": 3653840
+    },
+    {
+      "elapsedMs": 18296,
+      "rssKiB": 3602656
+    },
+    {
+      "elapsedMs": 19313,
+      "rssKiB": 3634016
+    },
+    {
+      "elapsedMs": 20331,
+      "rssKiB": 3595696
+    },
+    {
+      "elapsedMs": 21344,
+      "rssKiB": 3728688
+    },
+    {
+      "elapsedMs": 22360,
+      "rssKiB": 3716112
+    },
+    {
+      "elapsedMs": 23375,
+      "rssKiB": 275984
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "ui",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/test-wallet-extension-browser.mjs": "d3b9ce9023f122c7631c8afa9267eb103192a07bda7385ee475fff7a8fd8133d",
+    "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+    "shared/private-fee-client.mjs": "f285cc22ae9e5664c5ed36bbf294c31e8f4e82f73eeae232576d6a5f4f14ea5b",
+    "apps/src/billboard/private_fee_artifact.json": "fbb13295be38ed5672447b8b132357c36eb08c8f85dd5d4e2f9c01a0adec1c8f",
+    "apps/dist/fee-juice.html": "eb71cef491a963651b59c991f84b1fd989ac950ae375e5ae259dd2d698050837",
+    "apps/dist/aztec_bundle.js": "7539ea1cd7de0ee09a29da62454834e4840b0f72dc7ded65ce9fcb2445617c47",
+    "shared/wallet-backup.js": "8df8f15fe92adb0d1628ac64cbd3bd61761594dbd7a83eeb04655640d3d64a8b",
+    "shared/wallet-buttons.js": "b77f54228c362f00c712b9ccef53fff4ab24b8160dddb557a96d1fb672c7236c",
+    "shared/private-fee-funding.mjs": "812e3c65ceb917a9b1680237c5ed55cdedfbc130154b3fb4b8a2b00b24271294",
+    "shared/ethereum-journal.mjs": "ff87d94f4ca85a8d1f15831644c5c56a2e62b70c37be078feb0ec950f7e46a4b",
+    "apps/src/fee-juice/engine.js": "adc3b21babdea60f82a57e96802ff7c16686cce1cdc8c50bec11a309188e754a",
+    ".build/metamask-13.49.0/metamask-chrome-13.49.0.zip": "7ba00bfe4fe8b0ffb27be1e8fc06506248f1b888cb4f2e5e5e8b1c37f461f262",
+    ".build/portal-tests/out/PortalV1.t.sol/RootPublisher.json": "244692de87cf46942f5baf1c4f4dccda7d71b6f001cf32dc8bbc12a35b2c5ee8",
+    "package-lock.json": "3ac2d895f6eddffba40c8889c1d88cb73c48571530595433da27c7bb4ad6b805",
+    "scripts/run-bounded-browser-check.mjs": "c1c5bccb5454ca691b521e552eaab0b745045ec174cbbe1f27e0d31101e6e5ae",
+    "scripts/testing/supervisor.mjs": "518d827972d68cce7bab14f56df6483a260f5f5dc4082b50e2e4bbd80b0723f2",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "223cbb10fe21c9c50bde43e767f430006f3e4ddbef263a19b3e325b51a119949",
+    ".build/sdk/sdk-manifest.json": "5ee9f88d4b112d08ed1207885c46daef6a0c3a0a52e0ea3e6f21e782c2dbfff6"
+  },
+  "peakMemory": {
+    "elapsedMs": 21344,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 69664,
+        "ppid": 1375,
+        "rssKiB": 104464
+      },
+      {
+        "role": "ui",
+        "pid": 69674,
+        "ppid": 69664,
+        "rssKiB": 167392
+      },
+      {
+        "role": "ui",
+        "pid": 69679,
+        "ppid": 69674,
+        "rssKiB": 23760
+      },
+      {
+        "role": "ui",
+        "pid": 69681,
+        "ppid": 69674,
+        "rssKiB": 3232
+      },
+      {
+        "role": "ui",
+        "pid": 69682,
+        "ppid": 69674,
+        "rssKiB": 3328
+      },
+      {
+        "role": "ui",
+        "pid": 69684,
+        "ppid": 69674,
+        "rssKiB": 45696
+      },
+      {
+        "role": "ui",
+        "pid": 69686,
+        "ppid": 69674,
+        "rssKiB": 289344
+      },
+      {
+        "role": "ui",
+        "pid": 69694,
+        "ppid": 69686,
+        "rssKiB": 143552
+      },
+      {
+        "role": "ui",
+        "pid": 69695,
+        "ppid": 69686,
+        "rssKiB": 95680
+      },
+      {
+        "role": "ui",
+        "pid": 69696,
+        "ppid": 69686,
+        "rssKiB": 62096
+      },
+      {
+        "role": "ui",
+        "pid": 69700,
+        "ppid": 69686,
+        "rssKiB": 138816
+      },
+      {
+        "role": "ui",
+        "pid": 69702,
+        "ppid": 69686,
+        "rssKiB": 102704
+      },
+      {
+        "role": "ui",
+        "pid": 69704,
+        "ppid": 69686,
+        "rssKiB": 1237280
+      },
+      {
+        "role": "ui",
+        "pid": 69732,
+        "ppid": 69686,
+        "rssKiB": 166544
+      },
+      {
+        "role": "ui",
+        "pid": 69733,
+        "ppid": 69686,
+        "rssKiB": 258752
+      },
+      {
+        "role": "ui",
+        "pid": 69749,
+        "ppid": 69686,
+        "rssKiB": 180496
+      },
+      {
+        "role": "ui",
+        "pid": 69752,
+        "ppid": 69686,
+        "rssKiB": 603216
+      },
+      {
+        "role": "ui",
+        "pid": 69753,
+        "ppid": 69686,
+        "rssKiB": 102336
+      }
+    ]
+  },
+  "elapsedMs": 23642,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true
+}

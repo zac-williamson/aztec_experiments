@@ -1,0 +1,1 @@
+{"passed":false,"observations":[{"passed":false,"stage":"onboarding","errorClass":"Error","message":"locator.evaluateAll: Error: LavaMoat - property \"setInterval\" of globalThis is inaccessible under scuttling mode. To learn more visit https://github.com/LavaMoat/LavaMoat/pull/360."}],"failures":[{"stage":"extension-exit"}]}

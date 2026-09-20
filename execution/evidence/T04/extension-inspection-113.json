@@ -1,0 +1,143 @@
+{
+  "scope": "Pinned extension disposable onboarding only",
+  "passed": true,
+  "observations": [
+    {
+      "passed": true,
+      "stage": "analytics",
+      "urlHash": "#/onboarding/completion",
+      "testIds": [
+        "app-header-logo",
+        "parent-selector-onboarding-complete",
+        "onboarding-complete-done",
+        "manage-default-settings"
+      ]
+    }
+  ],
+  "deadlineMs": 60000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 2139456,
+  "rssSamples": [
+    {
+      "elapsedMs": 1002,
+      "rssKiB": 680240
+    },
+    {
+      "elapsedMs": 2027,
+      "rssKiB": 684064
+    },
+    {
+      "elapsedMs": 3056,
+      "rssKiB": 1083680
+    },
+    {
+      "elapsedMs": 4078,
+      "rssKiB": 1414448
+    },
+    {
+      "elapsedMs": 5095,
+      "rssKiB": 1732688
+    },
+    {
+      "elapsedMs": 6111,
+      "rssKiB": 1837456
+    },
+    {
+      "elapsedMs": 7127,
+      "rssKiB": 2139456
+    },
+    {
+      "elapsedMs": 8145,
+      "rssKiB": 2135520
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "extension",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "peakMemory": {
+    "elapsedMs": 7127,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 63918,
+        "ppid": 1375,
+        "rssKiB": 50112
+      },
+      {
+        "role": "extension",
+        "pid": 63928,
+        "ppid": 63918,
+        "rssKiB": 117072
+      },
+      {
+        "role": "extension",
+        "pid": 63929,
+        "ppid": 63928,
+        "rssKiB": 242048
+      },
+      {
+        "role": "extension",
+        "pid": 63937,
+        "ppid": 63929,
+        "rssKiB": 132976
+      },
+      {
+        "role": "extension",
+        "pid": 63938,
+        "ppid": 63929,
+        "rssKiB": 87392
+      },
+      {
+        "role": "extension",
+        "pid": 63939,
+        "ppid": 63929,
+        "rssKiB": 62112
+      },
+      {
+        "role": "extension",
+        "pid": 63946,
+        "ppid": 63929,
+        "rssKiB": 141328
+      },
+      {
+        "role": "extension",
+        "pid": 63948,
+        "ppid": 63929,
+        "rssKiB": 106032
+      },
+      {
+        "role": "extension",
+        "pid": 63951,
+        "ppid": 63929,
+        "rssKiB": 822016
+      },
+      {
+        "role": "extension",
+        "pid": 63956,
+        "ppid": 63929,
+        "rssKiB": 139680
+      },
+      {
+        "role": "extension",
+        "pid": 63958,
+        "ppid": 63929,
+        "rssKiB": 138704
+      },
+      {
+        "role": "extension",
+        "pid": 63959,
+        "ppid": 63929,
+        "rssKiB": 99984
+      }
+    ]
+  },
+  "elapsedMs": 8850,
+  "ownedTreeAbsent": true,
+  "profileRemoved": true
+}

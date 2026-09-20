@@ -68,11 +68,12 @@ async function fundingJournal(input,scope,sender) {
   check(input.journalStorage?.read&&input.journalStorage?.compareAndSwap&&input.walletSalt!==undefined,'BB_JOURNAL_INVALID');
   return createEthereumJournal({storage:input.journalStorage,walletSecret:secretField(input.walletSecret).toString(),walletSalt:input.walletSalt,
     scope:{account:input.owner.toString().toLowerCase(),chainId:scope.chainId,version:scope.version,rollup:scope.rollupAddress.toLowerCase(),board:scope.privateFeeAddress.toLowerCase(),portal:scope.portalAddress.toLowerCase(),token:scope.tokenAddress.toLowerCase(),depositor:sender.toLowerCase()},
-    provider:input.ethProvider??input.ethSigner?.provider,signer:input.ethSigner,acknowledgeTx:input.acknowledgeEthereumTx,contextGuard:input.contextGuard});
+    provider:input.ethProvider,signer:input.ethSigner,acknowledgeTx:input.acknowledgeEthereumTx,contextGuard:input.contextGuard});
 }
 export async function recoverPrivateFeeFunding(input) {
-  const ethProvider=input.ethProvider??input.ethSigner?.provider;
+  const ethProvider=input.ethProvider;
   const scope=await verifyScope({...input,ethProvider});
+  if(input.ethSigner)check(uint((await input.ethSigner.provider.getNetwork()).chainId,64)===uint(scope.chainId,64),'PRIVATE_FEE_FUNDING_CHAIN_MISMATCH');
   const sender=address(input.sender??await input.ethSigner?.getAddress());
   const journal=await fundingJournal({...input,ethProvider},scope,sender);
   const result=await journal.recover({retry:input.retry===true});
@@ -88,14 +89,14 @@ export async function recoverPrivateFeeFunding(input) {
 export async function fundPrivateFees(input){
   let record,depositAttempted=false,phase='validate-input';
   try{
-    const {node,ethSigner,owner,walletSecret,privateFeeAddress,privateFeeArtifact,amount,saveRecovery,expectedChainId,expectedVersion}=input??{};
-    check(ethSigner?.provider&&ethSigner?.sendTransaction&&typeof saveRecovery==='function','PRIVATE_FEE_FUNDING_PROVIDER_REQUIRED');
+    const {node,ethSigner,ethProvider,owner,walletSecret,privateFeeAddress,privateFeeArtifact,amount,saveRecovery,expectedChainId,expectedVersion}=input??{};
+    check(ethProvider?.getNetwork&&ethSigner?.provider&&ethSigner?.sendTransaction&&typeof saveRecovery==='function','PRIVATE_FEE_FUNDING_PROVIDER_REQUIRED');
     // Validate private input before an approval transaction can be requested.
     secretField(walletSecret);secretField(owner?.toString());
     const quantity=uint(amount);check(quantity>0n,'PRIVATE_FEE_FUNDING_INVALID');
-    const ethProvider=ethSigner.provider;
     phase='verify-scope';
     const scope=await verifyScope({node,ethProvider,privateFeeArtifact,privateFeeAddress,expectedChainId,expectedVersion});
+    check(uint((await ethSigner.provider.getNetwork()).chainId,64)===uint(scope.chainId,64),'PRIVATE_FEE_FUNDING_CHAIN_MISMATCH');
     const sender=address(await ethSigner.getAddress());
     phase='journal-preflight';const journal=await fundingJournal(input,scope,sender);await journal.assertCanStart();
     phase='read-token-funding';

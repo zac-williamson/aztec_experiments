@@ -98,7 +98,7 @@ function depositHarness({store,enabled=true,activeNonce=0n,eventNonce=7n,reuse=f
     getTransactionReceipt:async hash=>({hash,blockNumber:1,blockHash:new Fr(1).toString(),status:1,logs:[{address:scope.portalAddress,
       ...iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,eventNonce,1_000_000_000_000_000n,recoveryHash,ethers.ZeroHash,32n])}]})};
   class Portal {
-    constructor(){this.interface=iface;}
+    constructor(_address,_abi,runner){assert.equal(runner,provider);this.interface=iface;}
     L2_CONTRACT=async()=>scope.boardAddress;L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>scope.rollupAddress;VERSION=async()=>1n;
     getDeposit=async()=>({nonce:activeNonce,amount:activeNonce?1_000_000_000_000_000n:0n});depositsEnabled=async()=>enabled;
     MIN_DEPOSIT=async()=>1n;MAX_DEPOSIT=async()=>10n**20n;lastDepositNonce=async()=>6n;
@@ -123,9 +123,9 @@ function depositHarness({store,enabled=true,activeNonce=0n,eventNonce=7n,reuse=f
   provider.getTransactionCount=async()=>0;
   provider.getTransaction=async()=>sentBody;
   provider.getTransactionReceipt=async h=>sentReceipt||receiptLookup(h);
-  const signer={getAddress:async()=>scope.depositor,provider,sendTransaction:async request=>{
+  const signer={getAddress:async()=>scope.depositor,provider:{getNetwork:async()=>({chainId:31337n}),getTransaction:async()=>{throw Error('Wallet reader forbidden');}},sendTransaction:async request=>{
     const parsed=new ethers.Interface(['function deposit(bytes32) payable']).parseTransaction({data:request.data});
-    const tx=await new Portal().deposit(parsed.args[0],{value:request.value});
+    const tx=await new Portal(scope.portalAddress,iface,provider).deposit(parsed.args[0],{value:request.value});
     sentBody={...request,hash:tx.hash};sentReceipt={...await tx.wait(),hash:tx.hash,from:scope.depositor,to:scope.portalAddress,blockNumber:2,blockHash:'0x'+'2'.padStart(64,'0')};return sentBody;
   }};
   const env={createEthereumJournal:options=>createEthereumJournal({...options,storage:{read:async key=>journalRecords.get(key)??null,compareAndSwap:async(key,old,next)=>{assert.equal(journalRecords.get(key)??null,old);journalRecords.set(key,next);}}}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},

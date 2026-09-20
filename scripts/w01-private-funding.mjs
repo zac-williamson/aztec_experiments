@@ -41,7 +41,7 @@ export async function bridgePrivateFeeCredit({node,l1Client,wallet,owner,walletS
       return signer.sendTransaction(request);
     }};
     mark('private-fee:bridge-user-funds');
-    const record=await fundPrivateFees({journalStorage:createFileJournalStorage(path.join(directory,'fee-journal')),walletSalt:walletSalt.toString(),node,ethSigner:checkedSigner,owner,walletSecret,privateFeeAddress:payer,privateFeeArtifact,amount,
+    const record=await fundPrivateFees({journalStorage:createFileJournalStorage(path.join(directory,'fee-journal')),walletSalt:walletSalt.toString(),node,ethProvider:provider,ethSigner:checkedSigner,owner,walletSecret,privateFeeAddress:payer,privateFeeArtifact,amount,
       saveRecovery,expectedChainId:31337,expectedVersion:info.rollupVersion});
     assert.equal(depositSends,1);assert.equal(saves,3);
     const recoveredRecord=JSON.parse(await fs.readFile(recoveryPath,'utf8'));assert.deepEqual(recoveredRecord,record);

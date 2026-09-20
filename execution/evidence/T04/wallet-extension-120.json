@@ -1,0 +1,317 @@
+{
+  "script": "scripts/test-wallet-extension-browser.mjs",
+  "args": [],
+  "passed": false,
+  "observations": [
+    {
+      "passed": false,
+      "scope": "Real MetaMask onboarding, custom local network and application connection only; fee signing not yet qualified",
+      "failure": {
+        "stage": "network-confirmation-page",
+        "errorClass": "TimeoutError"
+      },
+      "walletSurfaces": [
+        {
+          "path": "/home.html",
+          "route": "#/onboarding/completion",
+          "controls": {
+            "confirm-btn": false,
+            "parent-selector-confirmation-page": false,
+            "confirm-footer-button": false,
+            "parent-selector-template-confirmation-page": false,
+            "confirmation-submit-button": false,
+            "confirmation-cancel-button": false,
+            "account-menu-icon": false
+          }
+        },
+        {
+          "path": "/home.html",
+          "route": "#/",
+          "controls": {
+            "confirm-btn": false,
+            "parent-selector-confirmation-page": false,
+            "confirm-footer-button": false,
+            "parent-selector-template-confirmation-page": false,
+            "confirmation-submit-button": false,
+            "confirmation-cancel-button": false,
+            "account-menu-icon": true
+          }
+        },
+        {
+          "path": "/home.html",
+          "route": "",
+          "controls": {
+            "confirm-btn": false,
+            "parent-selector-confirmation-page": false,
+            "confirm-footer-button": false,
+            "parent-selector-template-confirmation-page": false,
+            "confirmation-submit-button": false,
+            "confirmation-cancel-button": false,
+            "account-menu-icon": true
+          }
+        }
+      ],
+      "cleanupComplete": true
+    }
+  ],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 3447600,
+  "rssSamples": [
+    {
+      "elapsedMs": 1001,
+      "rssKiB": 377888
+    },
+    {
+      "elapsedMs": 2017,
+      "rssKiB": 514704
+    },
+    {
+      "elapsedMs": 3031,
+      "rssKiB": 1014144
+    },
+    {
+      "elapsedMs": 4058,
+      "rssKiB": 1017984
+    },
+    {
+      "elapsedMs": 5084,
+      "rssKiB": 1772512
+    },
+    {
+      "elapsedMs": 6101,
+      "rssKiB": 1892176
+    },
+    {
+      "elapsedMs": 7118,
+      "rssKiB": 2130384
+    },
+    {
+      "elapsedMs": 8133,
+      "rssKiB": 2413888
+    },
+    {
+      "elapsedMs": 9153,
+      "rssKiB": 2027728
+    },
+    {
+      "elapsedMs": 10179,
+      "rssKiB": 2486064
+    },
+    {
+      "elapsedMs": 11198,
+      "rssKiB": 2489040
+    },
+    {
+      "elapsedMs": 12214,
+      "rssKiB": 2673344
+    },
+    {
+      "elapsedMs": 13229,
+      "rssKiB": 2681056
+    },
+    {
+      "elapsedMs": 14245,
+      "rssKiB": 2689264
+    },
+    {
+      "elapsedMs": 15267,
+      "rssKiB": 3447600
+    },
+    {
+      "elapsedMs": 16296,
+      "rssKiB": 3291120
+    },
+    {
+      "elapsedMs": 17314,
+      "rssKiB": 3359232
+    },
+    {
+      "elapsedMs": 18331,
+      "rssKiB": 3322400
+    },
+    {
+      "elapsedMs": 19346,
+      "rssKiB": 2919472
+    },
+    {
+      "elapsedMs": 20367,
+      "rssKiB": 2939392
+    },
+    {
+      "elapsedMs": 21399,
+      "rssKiB": 2939568
+    },
+    {
+      "elapsedMs": 22424,
+      "rssKiB": 2939632
+    },
+    {
+      "elapsedMs": 23449,
+      "rssKiB": 2939952
+    },
+    {
+      "elapsedMs": 24469,
+      "rssKiB": 2940064
+    },
+    {
+      "elapsedMs": 25492,
+      "rssKiB": 2951264
+    },
+    {
+      "elapsedMs": 26513,
+      "rssKiB": 192880
+    }
+  ],
+  "failures": [
+    {
+      "stage": "ui-exit"
+    }
+  ],
+  "children": [
+    {
+      "role": "ui",
+      "code": 1,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/test-wallet-extension-browser.mjs": "021b5e6ec16857a37b9cb59e87f8bb171e3ef1d7355d0c391ed57e06171816c1",
+    "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+    "shared/private-fee-client.mjs": "f285cc22ae9e5664c5ed36bbf294c31e8f4e82f73eeae232576d6a5f4f14ea5b",
+    "apps/src/billboard/private_fee_artifact.json": "fbb13295be38ed5672447b8b132357c36eb08c8f85dd5d4e2f9c01a0adec1c8f",
+    "apps/dist/fee-juice.html": "8b93a97d055dddcb78d98141363e434d28521027d1713b8b907ffdc98541f060",
+    "apps/dist/aztec_bundle.js": "8d4575d490e7647539da79ee2c9b4bba9bbabab16e160123ceb0bfdaceb58ed4",
+    "shared/wallet-backup.js": "8df8f15fe92adb0d1628ac64cbd3bd61761594dbd7a83eeb04655640d3d64a8b",
+    "shared/wallet-buttons.js": "42a75630a4251588c2eb96095972c797e4a13ac81be860f931172edcb3d005a6",
+    "shared/private-fee-funding.mjs": "3a640f2557d4f5183a42c3b81c9902ea36f0a2c6fb846eb4b90bd136416b53a8",
+    "shared/ethereum-journal.mjs": "b30902ed978aa226fe236bdea50857e92a108dc91b492aaa8236acbacfd545ed",
+    "apps/src/fee-juice/engine.js": "0a2bdc36237a26200380655218047bef4e280ce9caca2d3f6b99b36d9e2a867f",
+    ".build/metamask-13.49.0/metamask-chrome-13.49.0.zip": "7ba00bfe4fe8b0ffb27be1e8fc06506248f1b888cb4f2e5e5e8b1c37f461f262",
+    ".build/portal-tests/out/PortalV1.t.sol/RootPublisher.json": "244692de87cf46942f5baf1c4f4dccda7d71b6f001cf32dc8bbc12a35b2c5ee8",
+    "package-lock.json": "3ac2d895f6eddffba40c8889c1d88cb73c48571530595433da27c7bb4ad6b805",
+    "scripts/run-bounded-browser-check.mjs": "e51f6e3cda4688721a4701cde2f862cb43f87caa8dcfb6d958857380897611c6",
+    "scripts/testing/supervisor.mjs": "518d827972d68cce7bab14f56df6483a260f5f5dc4082b50e2e4bbd80b0723f2",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "3e4129c22e50f893c40fced2bba641a9e8f508b52a7e64e2ab15d5d0c74ef430",
+    ".build/sdk/sdk-manifest.json": "60a236a3b6266f48ee493da885b34815cf152163ed4ec57b103ced683035fc07"
+  },
+  "peakMemory": {
+    "elapsedMs": 15267,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 65468,
+        "ppid": 1375,
+        "rssKiB": 51808
+      },
+      {
+        "role": "ui",
+        "pid": 65480,
+        "ppid": 65468,
+        "rssKiB": 138624
+      },
+      {
+        "role": "ui",
+        "pid": 65485,
+        "ppid": 65480,
+        "rssKiB": 15472
+      },
+      {
+        "role": "ui",
+        "pid": 65487,
+        "ppid": 65480,
+        "rssKiB": 3232
+      },
+      {
+        "role": "ui",
+        "pid": 65488,
+        "ppid": 65480,
+        "rssKiB": 3328
+      },
+      {
+        "role": "ui",
+        "pid": 65491,
+        "ppid": 65480,
+        "rssKiB": 49136
+      },
+      {
+        "role": "ui",
+        "pid": 65492,
+        "ppid": 65480,
+        "rssKiB": 245808
+      },
+      {
+        "role": "ui",
+        "pid": 65500,
+        "ppid": 65492,
+        "rssKiB": 137904
+      },
+      {
+        "role": "ui",
+        "pid": 65501,
+        "ppid": 65492,
+        "rssKiB": 94560
+      },
+      {
+        "role": "ui",
+        "pid": 65502,
+        "ppid": 65492,
+        "rssKiB": 61872
+      },
+      {
+        "role": "ui",
+        "pid": 65508,
+        "ppid": 65492,
+        "rssKiB": 139488
+      },
+      {
+        "role": "ui",
+        "pid": 65510,
+        "ppid": 65492,
+        "rssKiB": 101760
+      },
+      {
+        "role": "ui",
+        "pid": 65512,
+        "ppid": 65492,
+        "rssKiB": 1221360
+      },
+      {
+        "role": "ui",
+        "pid": 65515,
+        "ppid": 65492,
+        "rssKiB": 133648
+      },
+      {
+        "role": "ui",
+        "pid": 65517,
+        "ppid": 65492,
+        "rssKiB": 143120
+      },
+      {
+        "role": "ui",
+        "pid": 65523,
+        "ppid": 65492,
+        "rssKiB": 251728
+      },
+      {
+        "role": "ui",
+        "pid": 65533,
+        "ppid": 65492,
+        "rssKiB": 554720
+      },
+      {
+        "role": "ui",
+        "pid": 65534,
+        "ppid": 65492,
+        "rssKiB": 100032
+      }
+    ]
+  },
+  "elapsedMs": 26601,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true
+}

@@ -1,0 +1,40 @@
+✔ full Field salt reaches derivation and DOM without retaining old salt (3.07ms)
+✔ failed derivation does not activate or overwrite secret fields (0.431084ms)
+✔ malformed import event emits bounded diagnostics and clears selection (0.353ms)
+✔ signature generation and silent wallet replacement are unavailable (0.266875ms)
+✔ provider change during initial connection prevents activating a stale signer (0.3955ms)
+✔ callback failure invalidates activated session without logging callback diagnostics (0.974ms)
+✔ initial account authorization event permits the matching browser signer (0.498958ms)
+✔ initial connection rejects different account (0.593042ms)
+✔ initial connection rejects empty authorization (0.40025ms)
+✔ initial connection rejects malformed authorization (0.729625ms)
+✔ final account read rejects a replacement even without an event (0.327042ms)
+✔ same-account notification after connection is not a replacement (0.270208ms)
+✔ chainChanged during authorization still invalidates the session (0.270791ms)
+✔ disconnect during authorization still invalidates the session (0.254459ms)
+✖ account replacement then restoration during authorization remains invalid (0.519875ms)
+✔ repeated matching authorization notifications permit connection (0.580459ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 15
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 59.978833
+
+✖ failing tests:
+
+test at scripts/test-w02-wallet-ui.mjs:87:1
+✖ account replacement then restoration during authorization remains invalid (0.519875ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-w02-wallet-ui.mjs:90:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }

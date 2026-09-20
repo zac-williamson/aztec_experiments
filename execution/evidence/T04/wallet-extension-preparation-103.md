@@ -27,3 +27,26 @@ account/network context invalidation and owned process/profile cleanup.
 Next: bounded onboarding experiment against the pinned artifact before writing
 the integrated test. No new automation framework, alternate wallet adapter,
 existing user profile, mainnet funds or silent retry path.
+
+## Observed onboarding investigation
+
+103 failed because the temporary inspection suppressed worker stderr;104 exposed
+a diagnostic-only incompatibility: evaluateAll invokes globals blocked by MetaMask
+LavaMoat. Removing page-JS introspection without changing extension security made
+105 pass in4.5s.106/108 failed before seed entry because source-derived old input
+assumptions were wrong.107 observed the explicit SRP-method selection;109 observed
+the initial textarea. Packaged5087 code confirms ordinary Space key events create
+and focus successive word inputs.110 tests that single explicit keyboard sequence.
+All completed inspection processes/profiles were cleaned up. These are setup
+experiments, not application qualification, and no real funds were used.
+
+Observed route discovery continued through117. Password creation leads first to
+optional passkey setup, then analytics. Open wallet launches the side panel and
+retains the onboarding tab.117 reached the real wallet home; review requires a
+separate home tab to avoid interrupting awaited onboarding completion writes.
+That correction is integrated in the application worker.
+
+118 is the first integrated real-extension/local-chain/application pilot. It failed
+at add-network after28688ms, peak3065968KiB, with complete process/profile cleanup.
+It does not qualify signing.119 adds fixed request-screen controls and precise
+substage diagnostics before any selector change. No repeated unchanged attempt.

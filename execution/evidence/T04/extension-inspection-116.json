@@ -1,0 +1,154 @@
+{
+  "scope": "Pinned extension disposable onboarding only",
+  "passed": true,
+  "observations": [
+    {
+      "passed": true,
+      "stage": "post-completion",
+      "urlHash": "#/onboarding/completion",
+      "testIds": [
+        "app-header-logo",
+        "parent-selector-onboarding-complete",
+        "onboarding-complete-done",
+        "manage-default-settings"
+      ],
+      "completionButton": "Open wallet"
+    }
+  ],
+  "deadlineMs": 60000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 2510688,
+  "rssSamples": [
+    {
+      "elapsedMs": 1001,
+      "rssKiB": 678784
+    },
+    {
+      "elapsedMs": 2024,
+      "rssKiB": 683152
+    },
+    {
+      "elapsedMs": 3049,
+      "rssKiB": 1292128
+    },
+    {
+      "elapsedMs": 4067,
+      "rssKiB": 1546448
+    },
+    {
+      "elapsedMs": 5084,
+      "rssKiB": 1905328
+    },
+    {
+      "elapsedMs": 6112,
+      "rssKiB": 2073808
+    },
+    {
+      "elapsedMs": 7127,
+      "rssKiB": 1955856
+    },
+    {
+      "elapsedMs": 8155,
+      "rssKiB": 2287344
+    },
+    {
+      "elapsedMs": 9173,
+      "rssKiB": 2510688
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "extension",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "peakMemory": {
+    "elapsedMs": 9173,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 64357,
+        "ppid": 1375,
+        "rssKiB": 48016
+      },
+      {
+        "role": "extension",
+        "pid": 64367,
+        "ppid": 64357,
+        "rssKiB": 135984
+      },
+      {
+        "role": "extension",
+        "pid": 64368,
+        "ppid": 64367,
+        "rssKiB": 254336
+      },
+      {
+        "role": "extension",
+        "pid": 64376,
+        "ppid": 64368,
+        "rssKiB": 130336
+      },
+      {
+        "role": "extension",
+        "pid": 64377,
+        "ppid": 64368,
+        "rssKiB": 89920
+      },
+      {
+        "role": "extension",
+        "pid": 64378,
+        "ppid": 64368,
+        "rssKiB": 61408
+      },
+      {
+        "role": "extension",
+        "pid": 64384,
+        "ppid": 64368,
+        "rssKiB": 134736
+      },
+      {
+        "role": "extension",
+        "pid": 64386,
+        "ppid": 64368,
+        "rssKiB": 101392
+      },
+      {
+        "role": "extension",
+        "pid": 64388,
+        "ppid": 64368,
+        "rssKiB": 1042240
+      },
+      {
+        "role": "extension",
+        "pid": 64392,
+        "ppid": 64368,
+        "rssKiB": 120624
+      },
+      {
+        "role": "extension",
+        "pid": 64394,
+        "ppid": 64368,
+        "rssKiB": 113600
+      },
+      {
+        "role": "extension",
+        "pid": 64400,
+        "ppid": 64368,
+        "rssKiB": 101584
+      },
+      {
+        "role": "extension",
+        "pid": 64401,
+        "ppid": 64368,
+        "rssKiB": 176512
+      }
+    ]
+  },
+  "elapsedMs": 9793,
+  "ownedTreeAbsent": true,
+  "profileRemoved": true
+}

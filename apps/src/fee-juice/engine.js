@@ -58,10 +58,12 @@
       }
       await transactionJournal.assertCanStart();
     }
+    const ethProvider=new env.ethers.JsonRpcProvider(config.ethRpcUrl);
+    try {
     if(config.action==='recover-eth') {
       const result=await a.recoverPrivateFeeFunding({node,owner,privateFeeAddress,privateFeeArtifact:env.privateFeeArtifact,
         walletSecret:config.aztecWallet.secretKey,walletSalt:salt.toString(),expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion),
-        ethSigner:await env.getBrowserSigner(),journalStorage:env.createJournalStorage(),sender:config.fundingRecord?.sender,retry:config.retryEthereum===true,saveRecovery:config.saveRecovery,contextGuard:config.contextGuard});
+        ethProvider,ethSigner:await env.getBrowserSigner(),journalStorage:env.createJournalStorage(),sender:config.fundingRecord?.sender,retry:config.retryEthereum===true,saveRecovery:config.saveRecovery,contextGuard:config.contextGuard});
       log(result.outcome==='funded'?'Private fee deposit recovered. Claim after the bridge message is available.':result.outcome==='approved'?'Token approval recovered. Continue with the deposit.':'The previous Ethereum request failed or was replaced.', ['funded','approved'].includes(result.outcome)?'success':'warn');
       return result;
     }
@@ -72,13 +74,12 @@
       if(feeLimit<=0n || amount<=feeLimit){const error=new Error('Deposit must exceed the configured maximum claim fee.');error.code='BB_PRIVATE_FEE_AMOUNT';throw error;}
       const record=await env.fundPrivateFees({node,owner,privateFeeAddress,privateFeeArtifact:env.privateFeeArtifact,
         walletSecret:config.aztecWallet.secretKey,walletSalt:salt.toString(),journalStorage:env.createJournalStorage(),acknowledgeEthereumTx:config.acknowledgeEthereumTx,contextGuard:config.contextGuard,expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion),
-        ethSigner:await env.getBrowserSigner(),amount,saveRecovery:config.saveRecovery});
+        ethProvider,ethSigner:await env.getBrowserSigner(),amount,saveRecovery:config.saveRecovery});
       return {ok:true,record,lastEthereumTxHash:record.txHash};
     }
     if(config.action!=='claim'||!config.fundingRecord)throw new Error('Import the recovery file for your private fee deposit.');
     const originalFunding=Object.freeze({...config.fundingRecord});
-    const ethSigner=await env.getBrowserSigner();
-    const claim=await a.boundedTransactionRead(()=>a.recoverPrivateFeeClaim({node,ethProvider:ethSigner.provider,owner,walletSecret:config.aztecWallet.secretKey,
+    const claim=await a.boundedTransactionRead(()=>a.recoverPrivateFeeClaim({node,ethProvider,owner,walletSecret:config.aztecWallet.secretKey,
       privateFeeArtifact:env.privateFeeArtifact,record:originalFunding,expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion)}),20000);
     const record=fundingRecord({...originalFunding,leafIndex:String(claim.leafIndex.toBigInt?.()??claim.leafIndex)});
     const operation=JSON.stringify({schemaVersion:1,kind:'private-fee-claim',owner:owner.toString().toLowerCase(),record});
@@ -109,5 +110,6 @@
       const code=['BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID'].includes(error?.code)?error.code:'BB_PRIVATE_FEE_CLAIM_FAILED';
       const safe=new Error(code==='BB_SUBMISSION_UNKNOWN'?'Submission outcome is unknown. Check the transaction before retrying.':'Private fee claim did not complete. Keep the recovery file and check the deposit before retrying.');safe.code=code;throw safe;
     }finally{if(pxe)await pxe.stop().catch(()=>{});}
+    } finally {ethProvider.destroy();}
   };
 })();

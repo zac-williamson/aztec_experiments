@@ -83,3 +83,26 @@ Root owns edits and serialized checks. application_change_review reviews the sha
 102 installed Chrome qualification: root selects the exact installed executable in the existing runner; webkit_failure_review reviews no fallback/new lifecycle and engine validation; source inputs freeze during genuine journey.
 
 103: application_change_review supplied the minimal real-extension Ethereum test design and is inspecting pinned MetaMask onboarding selectors read-only. Root verified the official archive digest; no user profile used. Chrome102 passed and its source freeze is released.
+
+103–108: webkit_failure_review independently reviewed bounded MetaMask inspection
+and onboarding changes. It caught a fallible diagnostic read hiding original errors;
+root removed it.104 exposed LavaMoat incompatibility with diagnostic evaluateAll;
+root retained extension hardening and uses normal locators.107 observed the missing
+login-method selection;108 explicitly includes it. application_change_review
+provided source-observed controls, minimal Ethereum fixture and existing encrypted
+backup helpers. No delegated edits, heavy runs or model overrides.
+
+118–120: structure/application reviews cover the single real-extension worker.
+Root integrated scope/fingerprint/readiness/nonce corrections and preserved every
+failed local setup report with cleanup. Source investigation now identifies
+MetaMask side-panel vs home request routing; no application selector fallback or
+extension-state patch is introduced. application_change_review also supplied
+proof-performance-plan-118.md for the subsequent latency campaign.
+
+124–126: application_change_review approved initial authorization race repair and16 regressions. webkit_failure_review reviewed mandatory actual Connect approval after124 disproved prior inference;125 passed. Both reviewers examined same-worker signing/recovery extension; root integrated fresh persisted-record reread and canonical approval receipt checks. No delegated edits or model overrides.
+
+127–130: reviewers approved event-driven setup completion and scoped timestamp-bearing success selectors.129 showed actual submitted approval but journal verification failure. application_change_review found no automatic amount rewrite in pinned MetaMask source and directed response-vs-canonical comparison. webkit_failure_review required bounded diagnostics and protection against diagnostic conversion errors altering successful signer results; root integrated both before130.
+
+131–133: application reviewer approved canonical-reader separation after catching two remaining Contract instances bound to the signer; root corrected both. Harness reviewer approved exact localRPC allowlist, then pinned address parser correction after131.132 passed actual extension funding/recovery. Root now runs133 integrated Chrome journey; all actual source inputs frozen while live.
+
+134 preparation: webkit_failure_review approved removing temporary diagnostic monkeypatches after132. Root removed them only from the separate extension worker, which is absent from133 input fingerprints. Required setup chainChanged synchronization and all canonical acceptance checks remain. No additional heavy run overlaps133.

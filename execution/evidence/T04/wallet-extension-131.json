@@ -1,0 +1,396 @@
+{
+  "script": "scripts/test-wallet-extension-browser.mjs",
+  "args": [],
+  "passed": false,
+  "observations": [
+    {
+      "passed": false,
+      "scope": "Real MetaMask onboarding, custom local network and application connection only; fee signing not yet qualified",
+      "chainBeforeAddition": "0x1",
+      "addNetworkState": "resolved",
+      "chainAfterAddition": "0x7a69",
+      "accountsBeforeConnect": {
+        "count": 0,
+        "matchesExpected": false
+      },
+      "rejectionMovedNoFunds": true,
+      "failure": {
+        "stage": "deposit-fees",
+        "errorClass": "TypeError"
+      },
+      "canonicalFundingState": {
+        "nonce": 2,
+        "balance": "1000",
+        "allowance": "0",
+        "approvals": [
+          {
+            "amount": "1000",
+            "nonce": 0,
+            "chainId": "31337",
+            "matchesSender": true,
+            "matchesTarget": true,
+            "matchesCalldata": true,
+            "value": "0",
+            "status": 1,
+            "canonical": true
+          }
+        ]
+      },
+      "applicationState": {
+        "ethereumConnected": true,
+        "aztecLoaded": true,
+        "setupError": false,
+        "feeAddressReady": true,
+        "invalidated": false,
+        "connectionObservation": {
+          "events": [
+            {
+              "name": "accountsChanged",
+              "count": 1,
+              "matchesExpected": true
+            }
+          ],
+          "failure": null,
+          "operationCodes": [
+            "BB_ETH_SUBMISSION_UNKNOWN",
+            "BB_ETH_SUBMISSION_UNKNOWN",
+            "BB_ETH_RECOVERY_REQUIRED",
+            "BB_ETH_RECOVERY_REQUIRED"
+          ],
+          "sendResults": [
+            {
+              "ok": false,
+              "code": 4001
+            },
+            {
+              "ok": true
+            },
+            {
+              "ok": true
+            }
+          ],
+          "signerResults": [
+            {
+              "matchesFrom": true,
+              "matchesTo": true,
+              "nonce": 0,
+              "requestedNonce": 0,
+              "chainId": "null",
+              "requestedChainId": "31337",
+              "matchesData": true,
+              "matchesValue": true
+            },
+            {
+              "matchesFrom": true,
+              "matchesTo": true,
+              "nonce": 1,
+              "requestedNonce": 1,
+              "chainId": "null",
+              "requestedChainId": "31337",
+              "matchesData": true,
+              "matchesValue": true
+            }
+          ]
+        }
+      },
+      "walletSurfaces": [
+        {
+          "path": "/home.html",
+          "route": "#/onboarding/completion",
+          "controls": {
+            "confirm-btn": false,
+            "parent-selector-confirmation-page": false,
+            "confirm-footer-button": false,
+            "parent-selector-template-confirmation-page": false,
+            "confirmation-submit-button": false,
+            "confirmation-cancel-button": false,
+            "account-menu-icon": false
+          }
+        },
+        {
+          "path": "/home.html",
+          "route": "#/",
+          "controls": {
+            "confirm-btn": false,
+            "parent-selector-confirmation-page": false,
+            "confirm-footer-button": false,
+            "parent-selector-template-confirmation-page": false,
+            "confirmation-submit-button": false,
+            "confirmation-cancel-button": false,
+            "account-menu-icon": true
+          }
+        },
+        {
+          "path": "/sidepanel.html",
+          "route": "#/",
+          "controls": {
+            "confirm-btn": false,
+            "parent-selector-confirmation-page": false,
+            "confirm-footer-button": false,
+            "parent-selector-template-confirmation-page": false,
+            "confirmation-submit-button": false,
+            "confirmation-cancel-button": false,
+            "account-menu-icon": true
+          }
+        }
+      ],
+      "cleanupComplete": true
+    }
+  ],
+  "deadlineMs": 120000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 3830544,
+  "rssSamples": [
+    {
+      "elapsedMs": 1000,
+      "rssKiB": 384272
+    },
+    {
+      "elapsedMs": 2019,
+      "rssKiB": 544624
+    },
+    {
+      "elapsedMs": 3035,
+      "rssKiB": 863664
+    },
+    {
+      "elapsedMs": 4052,
+      "rssKiB": 1051792
+    },
+    {
+      "elapsedMs": 5077,
+      "rssKiB": 1077472
+    },
+    {
+      "elapsedMs": 6100,
+      "rssKiB": 1409104
+    },
+    {
+      "elapsedMs": 7131,
+      "rssKiB": 1673360
+    },
+    {
+      "elapsedMs": 8152,
+      "rssKiB": 1907936
+    },
+    {
+      "elapsedMs": 9171,
+      "rssKiB": 2034704
+    },
+    {
+      "elapsedMs": 10186,
+      "rssKiB": 2452416
+    },
+    {
+      "elapsedMs": 11202,
+      "rssKiB": 2734112
+    },
+    {
+      "elapsedMs": 12219,
+      "rssKiB": 2982000
+    },
+    {
+      "elapsedMs": 13236,
+      "rssKiB": 3038816
+    },
+    {
+      "elapsedMs": 14253,
+      "rssKiB": 3034560
+    },
+    {
+      "elapsedMs": 15267,
+      "rssKiB": 3247056
+    },
+    {
+      "elapsedMs": 16284,
+      "rssKiB": 3693680
+    },
+    {
+      "elapsedMs": 17301,
+      "rssKiB": 3759952
+    },
+    {
+      "elapsedMs": 18331,
+      "rssKiB": 3750096
+    },
+    {
+      "elapsedMs": 19353,
+      "rssKiB": 3830544
+    },
+    {
+      "elapsedMs": 20369,
+      "rssKiB": 3350480
+    },
+    {
+      "elapsedMs": 21387,
+      "rssKiB": 3404384
+    },
+    {
+      "elapsedMs": 22401,
+      "rssKiB": 3452176
+    },
+    {
+      "elapsedMs": 23417,
+      "rssKiB": 3440944
+    },
+    {
+      "elapsedMs": 24434,
+      "rssKiB": 3445664
+    },
+    {
+      "elapsedMs": 25452,
+      "rssKiB": 311392
+    }
+  ],
+  "failures": [
+    {
+      "stage": "ui-exit"
+    }
+  ],
+  "children": [
+    {
+      "role": "ui",
+      "code": 1,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/test-wallet-extension-browser.mjs": "4026ec698ec02c18b8d5e1d2c70778d8420031cf13629a8a42831f67758e84bd",
+    "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+    "shared/private-fee-client.mjs": "f285cc22ae9e5664c5ed36bbf294c31e8f4e82f73eeae232576d6a5f4f14ea5b",
+    "apps/src/billboard/private_fee_artifact.json": "fbb13295be38ed5672447b8b132357c36eb08c8f85dd5d4e2f9c01a0adec1c8f",
+    "apps/dist/fee-juice.html": "eb71cef491a963651b59c991f84b1fd989ac950ae375e5ae259dd2d698050837",
+    "apps/dist/aztec_bundle.js": "7539ea1cd7de0ee09a29da62454834e4840b0f72dc7ded65ce9fcb2445617c47",
+    "shared/wallet-backup.js": "8df8f15fe92adb0d1628ac64cbd3bd61761594dbd7a83eeb04655640d3d64a8b",
+    "shared/wallet-buttons.js": "b77f54228c362f00c712b9ccef53fff4ab24b8160dddb557a96d1fb672c7236c",
+    "shared/private-fee-funding.mjs": "812e3c65ceb917a9b1680237c5ed55cdedfbc130154b3fb4b8a2b00b24271294",
+    "shared/ethereum-journal.mjs": "ff87d94f4ca85a8d1f15831644c5c56a2e62b70c37be078feb0ec950f7e46a4b",
+    "apps/src/fee-juice/engine.js": "adc3b21babdea60f82a57e96802ff7c16686cce1cdc8c50bec11a309188e754a",
+    ".build/metamask-13.49.0/metamask-chrome-13.49.0.zip": "7ba00bfe4fe8b0ffb27be1e8fc06506248f1b888cb4f2e5e5e8b1c37f461f262",
+    ".build/portal-tests/out/PortalV1.t.sol/RootPublisher.json": "244692de87cf46942f5baf1c4f4dccda7d71b6f001cf32dc8bbc12a35b2c5ee8",
+    "package-lock.json": "3ac2d895f6eddffba40c8889c1d88cb73c48571530595433da27c7bb4ad6b805",
+    "scripts/run-bounded-browser-check.mjs": "c1c5bccb5454ca691b521e552eaab0b745045ec174cbbe1f27e0d31101e6e5ae",
+    "scripts/testing/supervisor.mjs": "518d827972d68cce7bab14f56df6483a260f5f5dc4082b50e2e4bbd80b0723f2",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "223cbb10fe21c9c50bde43e767f430006f3e4ddbef263a19b3e325b51a119949",
+    ".build/sdk/sdk-manifest.json": "5ee9f88d4b112d08ed1207885c46daef6a0c3a0a52e0ea3e6f21e782c2dbfff6"
+  },
+  "peakMemory": {
+    "elapsedMs": 19353,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 69462,
+        "ppid": 1375,
+        "rssKiB": 94496
+      },
+      {
+        "role": "ui",
+        "pid": 69472,
+        "ppid": 69462,
+        "rssKiB": 203600
+      },
+      {
+        "role": "ui",
+        "pid": 69477,
+        "ppid": 69472,
+        "rssKiB": 17392
+      },
+      {
+        "role": "ui",
+        "pid": 69479,
+        "ppid": 69472,
+        "rssKiB": 3232
+      },
+      {
+        "role": "ui",
+        "pid": 69480,
+        "ppid": 69472,
+        "rssKiB": 3328
+      },
+      {
+        "role": "ui",
+        "pid": 69482,
+        "ppid": 69472,
+        "rssKiB": 50176
+      },
+      {
+        "role": "ui",
+        "pid": 69484,
+        "ppid": 69472,
+        "rssKiB": 284336
+      },
+      {
+        "role": "ui",
+        "pid": 69492,
+        "ppid": 69484,
+        "rssKiB": 139904
+      },
+      {
+        "role": "ui",
+        "pid": 69493,
+        "ppid": 69484,
+        "rssKiB": 95600
+      },
+      {
+        "role": "ui",
+        "pid": 69495,
+        "ppid": 69484,
+        "rssKiB": 62576
+      },
+      {
+        "role": "ui",
+        "pid": 69499,
+        "ppid": 69484,
+        "rssKiB": 149760
+      },
+      {
+        "role": "ui",
+        "pid": 69501,
+        "ppid": 69484,
+        "rssKiB": 106496
+      },
+      {
+        "role": "ui",
+        "pid": 69503,
+        "ppid": 69484,
+        "rssKiB": 1400080
+      },
+      {
+        "role": "ui",
+        "pid": 69520,
+        "ppid": 69484,
+        "rssKiB": 143984
+      },
+      {
+        "role": "ui",
+        "pid": 69523,
+        "ppid": 69484,
+        "rssKiB": 133184
+      },
+      {
+        "role": "ui",
+        "pid": 69532,
+        "ppid": 69484,
+        "rssKiB": 255904
+      },
+      {
+        "role": "ui",
+        "pid": 69538,
+        "ppid": 69484,
+        "rssKiB": 582560
+      },
+      {
+        "role": "ui",
+        "pid": 69539,
+        "ppid": 69484,
+        "rssKiB": 103936
+      }
+    ]
+  },
+  "elapsedMs": 25527,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true
+}

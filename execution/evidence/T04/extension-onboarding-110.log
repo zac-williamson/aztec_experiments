@@ -1,0 +1,1 @@
+{"passed":false,"observations":[{"passed":false,"stage":"analytics","errorClass":"TimeoutError"}],"failures":[{"stage":"extension-exit"}]}

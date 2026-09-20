@@ -1,0 +1,246 @@
+{
+  "script": "scripts/test-wallet-extension-browser.mjs",
+  "args": [],
+  "passed": true,
+  "observations": [
+    {
+      "passed": true,
+      "scope": "Real MetaMask onboarding, custom local network and application connection only; fee signing not yet qualified",
+      "chainBeforeAddition": "0x1",
+      "addNetworkState": "resolved",
+      "chainAfterAddition": "0x7a69",
+      "accountsBeforeConnect": {
+        "count": 0,
+        "matchesExpected": false
+      },
+      "realExtension": true,
+      "browserVersion": "153.0.8010.12",
+      "extensionVersion": "13.49.0.0",
+      "connectedLocalAccount": true,
+      "userEthereumTransactions": 0,
+      "cleanupComplete": true
+    }
+  ],
+  "deadlineMs": 120000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 3266016,
+  "rssSamples": [
+    {
+      "elapsedMs": 1001,
+      "rssKiB": 382080
+    },
+    {
+      "elapsedMs": 2018,
+      "rssKiB": 589376
+    },
+    {
+      "elapsedMs": 3034,
+      "rssKiB": 1010368
+    },
+    {
+      "elapsedMs": 4062,
+      "rssKiB": 1013504
+    },
+    {
+      "elapsedMs": 5088,
+      "rssKiB": 1800800
+    },
+    {
+      "elapsedMs": 6107,
+      "rssKiB": 1932912
+    },
+    {
+      "elapsedMs": 7122,
+      "rssKiB": 1748960
+    },
+    {
+      "elapsedMs": 8136,
+      "rssKiB": 2112832
+    },
+    {
+      "elapsedMs": 9151,
+      "rssKiB": 1925888
+    },
+    {
+      "elapsedMs": 10165,
+      "rssKiB": 2274688
+    },
+    {
+      "elapsedMs": 11181,
+      "rssKiB": 2442112
+    },
+    {
+      "elapsedMs": 12196,
+      "rssKiB": 2614448
+    },
+    {
+      "elapsedMs": 13235,
+      "rssKiB": 2259328
+    },
+    {
+      "elapsedMs": 14250,
+      "rssKiB": 2723856
+    },
+    {
+      "elapsedMs": 15291,
+      "rssKiB": 3266016
+    },
+    {
+      "elapsedMs": 16306,
+      "rssKiB": 3243904
+    },
+    {
+      "elapsedMs": 17323,
+      "rssKiB": 3109200
+    },
+    {
+      "elapsedMs": 18339,
+      "rssKiB": 3093520
+    },
+    {
+      "elapsedMs": 19357,
+      "rssKiB": 203248
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "ui",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/test-wallet-extension-browser.mjs": "184356fd09dfbe11ff64d7f371af5739f4bf0d9bbd32b101f97433256243fdcd",
+    "scripts/toolchain.mjs": "f41c1b80a7dd185a4e65c5efc4645552ed1d6b12c86ad4f2b5b2df5afe2ab407",
+    "shared/private-fee-client.mjs": "f285cc22ae9e5664c5ed36bbf294c31e8f4e82f73eeae232576d6a5f4f14ea5b",
+    "apps/src/billboard/private_fee_artifact.json": "fbb13295be38ed5672447b8b132357c36eb08c8f85dd5d4e2f9c01a0adec1c8f",
+    "apps/dist/fee-juice.html": "be62f4d24dd405c2a8f165c395c7ca38f487f1cab6ac0c161c00b96071d3e18b",
+    "apps/dist/aztec_bundle.js": "8d4575d490e7647539da79ee2c9b4bba9bbabab16e160123ceb0bfdaceb58ed4",
+    "shared/wallet-backup.js": "8df8f15fe92adb0d1628ac64cbd3bd61761594dbd7a83eeb04655640d3d64a8b",
+    "shared/wallet-buttons.js": "b77f54228c362f00c712b9ccef53fff4ab24b8160dddb557a96d1fb672c7236c",
+    "shared/private-fee-funding.mjs": "3a640f2557d4f5183a42c3b81c9902ea36f0a2c6fb846eb4b90bd136416b53a8",
+    "shared/ethereum-journal.mjs": "b30902ed978aa226fe236bdea50857e92a108dc91b492aaa8236acbacfd545ed",
+    "apps/src/fee-juice/engine.js": "0a2bdc36237a26200380655218047bef4e280ce9caca2d3f6b99b36d9e2a867f",
+    ".build/metamask-13.49.0/metamask-chrome-13.49.0.zip": "7ba00bfe4fe8b0ffb27be1e8fc06506248f1b888cb4f2e5e5e8b1c37f461f262",
+    ".build/portal-tests/out/PortalV1.t.sol/RootPublisher.json": "244692de87cf46942f5baf1c4f4dccda7d71b6f001cf32dc8bbc12a35b2c5ee8",
+    "package-lock.json": "3ac2d895f6eddffba40c8889c1d88cb73c48571530595433da27c7bb4ad6b805",
+    "scripts/run-bounded-browser-check.mjs": "c1c5bccb5454ca691b521e552eaab0b745045ec174cbbe1f27e0d31101e6e5ae",
+    "scripts/testing/supervisor.mjs": "518d827972d68cce7bab14f56df6483a260f5f5dc4082b50e2e4bbd80b0723f2",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "deploy/hosting-config.mjs": "7eca30dd7a01fa165a9998650a361bf98c5a94618663a62ba05860714441fb54",
+    ".build/apps-manifest.json": "72f0f3a9b047b757d21751eab54867e32d47620f8b2c1498ddf7235469497025",
+    ".build/sdk/sdk-manifest.json": "60a236a3b6266f48ee493da885b34815cf152163ed4ec57b103ced683035fc07"
+  },
+  "peakMemory": {
+    "elapsedMs": 15291,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 67291,
+        "ppid": 1375,
+        "rssKiB": 49856
+      },
+      {
+        "role": "ui",
+        "pid": 67301,
+        "ppid": 67291,
+        "rssKiB": 136128
+      },
+      {
+        "role": "ui",
+        "pid": 67306,
+        "ppid": 67301,
+        "rssKiB": 17680
+      },
+      {
+        "role": "ui",
+        "pid": 67310,
+        "ppid": 67301,
+        "rssKiB": 3232
+      },
+      {
+        "role": "ui",
+        "pid": 67311,
+        "ppid": 67301,
+        "rssKiB": 3488
+      },
+      {
+        "role": "ui",
+        "pid": 67313,
+        "ppid": 67301,
+        "rssKiB": 44656
+      },
+      {
+        "role": "ui",
+        "pid": 67314,
+        "ppid": 67301,
+        "rssKiB": 270752
+      },
+      {
+        "role": "ui",
+        "pid": 67323,
+        "ppid": 67314,
+        "rssKiB": 137712
+      },
+      {
+        "role": "ui",
+        "pid": 67324,
+        "ppid": 67314,
+        "rssKiB": 93808
+      },
+      {
+        "role": "ui",
+        "pid": 67325,
+        "ppid": 67314,
+        "rssKiB": 61440
+      },
+      {
+        "role": "ui",
+        "pid": 67329,
+        "ppid": 67314,
+        "rssKiB": 138800
+      },
+      {
+        "role": "ui",
+        "pid": 67331,
+        "ppid": 67314,
+        "rssKiB": 102320
+      },
+      {
+        "role": "ui",
+        "pid": 67333,
+        "ppid": 67314,
+        "rssKiB": 1342288
+      },
+      {
+        "role": "ui",
+        "pid": 67346,
+        "ppid": 67314,
+        "rssKiB": 117056
+      },
+      {
+        "role": "ui",
+        "pid": 67348,
+        "ppid": 67314,
+        "rssKiB": 259440
+      },
+      {
+        "role": "ui",
+        "pid": 67376,
+        "ppid": 67314,
+        "rssKiB": 404640
+      },
+      {
+        "role": "ui",
+        "pid": 67377,
+        "ppid": 67314,
+        "rssKiB": 82720
+      }
+    ]
+  },
+  "elapsedMs": 19548,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true
+}

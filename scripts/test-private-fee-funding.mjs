@@ -46,7 +46,7 @@ function fixture(){
     state.receipt={hash:txHash,from:sender,to:portalAddress,status:1,blockNumber:state.height,blockHash,logs:[{address:portalAddress,...event}]};
     if(state.lostDeposit)throw Error('lost deposit response');return state.transaction;}};
   const node={getNodeInfo:async()=>({l1ChainId:1,rollupVersion:2,l1ContractAddresses:{rollupAddress:rollup,feeJuicePortalAddress:portalAddress,feeJuiceAddress:tokenAddress}})};
-  const input={journalStorage:createBrowserJournalStorage(new IDBFactory()),walletSalt:Fr.ZERO.toString(),node,ethSigner:signer,owner:AztecAddress.fromFieldUnsafe(new Fr(42)),walletSecret:new Fr(123),privateFeeAddress,privateFeeArtifact:artifact,amount:'4000',expectedChainId:'1',expectedVersion:'2',saveRecovery:async record=>{if(state.saveError)throw Error('disk full');state.saved.push(record);}};
+  const input={journalStorage:createBrowserJournalStorage(new IDBFactory()),walletSalt:Fr.ZERO.toString(),node,ethProvider:provider,ethSigner:signer,owner:AztecAddress.fromFieldUnsafe(new Fr(42)),walletSecret:new Fr(123),privateFeeAddress,privateFeeArtifact:artifact,amount:'4000',expectedChainId:'1',expectedVersion:'2',saveRecovery:async record=>{if(state.saveError)throw Error('disk full');state.saved.push(record);}};
   const recover=(record)=>recoverPrivateFeeClaim({node,ethProvider:provider,owner:input.owner,walletSecret:input.walletSecret,privateFeeArtifact:artifact,record,expectedChainId:'1',expectedVersion:'2'});
   return {state,input,recover};
 }
@@ -103,4 +103,22 @@ test('portable journal alone restores private-fee funding provenance in a fresh 
  const records=await (await createJournalBackup({...credentials,storage:f.input.journalStorage})).exportRecords();
  const fresh=createBrowserJournalStorage(new IDBFactory());await (await createJournalBackup({...credentials,storage:fresh})).restoreRecords(records);
  const result=await recoverPrivateFeeFunding({...f.input,journalStorage:fresh});assert.equal(result.outcome,'funded');assert.deepEqual(result.record,funded);assert.equal(f.state.calls.length,2);
+});
+
+test('wallet acknowledgement without chain metadata is verified against configured RPC',async()=>{
+ const f=fixture(),send=f.input.ethSigner.sendTransaction;
+ f.input.ethProvider=f.input.ethSigner.provider;
+ f.input.ethSigner.sendTransaction=async request=>({...await send(request),chainId:null});
+ const record=await fundPrivateFees(f.input);assert.equal(record.nonce,'8');assert.equal((await f.recover(record)).amount,4000n);
+});
+
+test('configured RPC owns reads; signer provider only verifies signing network',async()=>{
+ const f=fixture();f.input.ethSigner.provider={getNetwork:async()=>({chainId:1n}),call:async()=>{throw Error('Wallet reads forbidden');},getTransaction:async()=>{throw Error('Wallet reads forbidden');}};
+ const record=await fundPrivateFees(f.input);assert.equal((await f.recover(record)).amount,4000n);
+});
+test('explicit read provider is required instead of wallet-provider fallback',async()=>{
+ const f=fixture();delete f.input.ethProvider;await assert.rejects(fundPrivateFees(f.input),{code:'PRIVATE_FEE_FUNDING_PROVIDER_REQUIRED'});assert.equal(f.state.calls.length,0);
+});
+test('wrong signer network cannot approve on an otherwise correct read network',async()=>{
+ const f=fixture();f.input.ethSigner.provider={getNetwork:async()=>({chainId:2n})};await assert.rejects(fundPrivateFees(f.input),{code:'PRIVATE_FEE_FUNDING_CHAIN_MISMATCH'});assert.equal(f.state.calls.length,0);
 });

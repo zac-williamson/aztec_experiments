@@ -72,7 +72,7 @@ try {
   const privateFeeAddress=await derivePrivateFeeAddress(privateFeeArtifact),owner=AztecAddress.fromFieldUnsafe(Fr.fromString(journalScope.account));
   const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5,l1ContractAddresses:{rollupAddress:await publisher.getAddress(),feeJuicePortalAddress:await feePortal.getAddress(),feeJuiceAddress:await token.getAddress()}})};
   const publicRecords=[];
-  const feeInput={node,ethSigner:{...lostResponseSigner,provider},owner,walletSecret,walletSalt,privateFeeAddress,privateFeeArtifact,amount:'1000',expectedChainId:'31337',expectedVersion:'5',journalStorage:storage,saveRecovery:async record=>publicRecords.push(record)};
+  const feeInput={node,ethProvider:provider,ethSigner:{...lostResponseSigner,provider},owner,walletSecret,walletSalt,privateFeeAddress,privateFeeArtifact,amount:'1000',expectedChainId:'31337',expectedVersion:'5',journalStorage:storage,saveRecovery:async record=>publicRecords.push(record)};
   const recoverFee=()=>recoverPrivateFeeFunding({...feeInput,ethSigner:undefined,ethProvider:provider,sender:user.address});
   stage='fee-approval-response-lost-after-mining';
   await assert.rejects(fundPrivateFees(feeInput),{code:'BB_ETH_SUBMISSION_UNKNOWN'});assert.equal(sends,3);assert.equal(await token.allowance(user.address,await feePortal.getAddress()),1000n);

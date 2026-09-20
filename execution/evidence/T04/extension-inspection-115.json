@@ -1,0 +1,183 @@
+{
+  "scope": "Pinned extension disposable onboarding only",
+  "passed": false,
+  "observations": [
+    {
+      "passed": false,
+      "stage": "post-completion",
+      "errorClass": "TimeoutError"
+    }
+  ],
+  "deadlineMs": 60000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 2636896,
+  "rssSamples": [
+    {
+      "elapsedMs": 1002,
+      "rssKiB": 279936
+    },
+    {
+      "elapsedMs": 2032,
+      "rssKiB": 673520
+    },
+    {
+      "elapsedMs": 3058,
+      "rssKiB": 676720
+    },
+    {
+      "elapsedMs": 4083,
+      "rssKiB": 1050848
+    },
+    {
+      "elapsedMs": 5099,
+      "rssKiB": 1476096
+    },
+    {
+      "elapsedMs": 6124,
+      "rssKiB": 1624416
+    },
+    {
+      "elapsedMs": 7152,
+      "rssKiB": 1751072
+    },
+    {
+      "elapsedMs": 8167,
+      "rssKiB": 2075104
+    },
+    {
+      "elapsedMs": 9184,
+      "rssKiB": 2133200
+    },
+    {
+      "elapsedMs": 10200,
+      "rssKiB": 2351728
+    },
+    {
+      "elapsedMs": 11227,
+      "rssKiB": 2477248
+    },
+    {
+      "elapsedMs": 12259,
+      "rssKiB": 2429008
+    },
+    {
+      "elapsedMs": 13275,
+      "rssKiB": 2382672
+    },
+    {
+      "elapsedMs": 14291,
+      "rssKiB": 2605648
+    },
+    {
+      "elapsedMs": 15307,
+      "rssKiB": 2634576
+    },
+    {
+      "elapsedMs": 16327,
+      "rssKiB": 2619296
+    },
+    {
+      "elapsedMs": 17345,
+      "rssKiB": 2636896
+    }
+  ],
+  "failures": [
+    {
+      "stage": "extension-exit"
+    }
+  ],
+  "children": [
+    {
+      "role": "extension",
+      "code": 1,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "peakMemory": {
+    "elapsedMs": 17345,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 64208,
+        "ppid": 1375,
+        "rssKiB": 50816
+      },
+      {
+        "role": "extension",
+        "pid": 64218,
+        "ppid": 64208,
+        "rssKiB": 139824
+      },
+      {
+        "role": "extension",
+        "pid": 64220,
+        "ppid": 64218,
+        "rssKiB": 269504
+      },
+      {
+        "role": "extension",
+        "pid": 64232,
+        "ppid": 64220,
+        "rssKiB": 140592
+      },
+      {
+        "role": "extension",
+        "pid": 64233,
+        "ppid": 64220,
+        "rssKiB": 92432
+      },
+      {
+        "role": "extension",
+        "pid": 64234,
+        "ppid": 64220,
+        "rssKiB": 61584
+      },
+      {
+        "role": "extension",
+        "pid": 64238,
+        "ppid": 64220,
+        "rssKiB": 138432
+      },
+      {
+        "role": "extension",
+        "pid": 64240,
+        "ppid": 64220,
+        "rssKiB": 104208
+      },
+      {
+        "role": "extension",
+        "pid": 64245,
+        "ppid": 64220,
+        "rssKiB": 1059856
+      },
+      {
+        "role": "extension",
+        "pid": 64248,
+        "ppid": 64220,
+        "rssKiB": 122000
+      },
+      {
+        "role": "extension",
+        "pid": 64250,
+        "ppid": 64220,
+        "rssKiB": 119152
+      },
+      {
+        "role": "extension",
+        "pid": 64257,
+        "ppid": 64220,
+        "rssKiB": 78784
+      },
+      {
+        "role": "extension",
+        "pid": 64258,
+        "ppid": 64220,
+        "rssKiB": 259712
+      }
+    ]
+  },
+  "elapsedMs": 18194,
+  "ownedTreeAbsent": true,
+  "profileRemoved": true
+}

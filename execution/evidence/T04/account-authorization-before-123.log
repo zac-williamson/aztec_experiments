@@ -1,0 +1,27 @@
+✔ full Field salt reaches derivation and DOM without retaining old salt (2.04025ms)
+✔ failed derivation does not activate or overwrite secret fields (0.41875ms)
+✔ malformed import event emits bounded diagnostics and clears selection (0.442542ms)
+✔ signature generation and silent wallet replacement are unavailable (0.500417ms)
+✔ provider change during initial connection prevents activating a stale signer (0.389958ms)
+✔ callback failure invalidates activated session without logging callback diagnostics (0.335875ms)
+✖ initial account authorization event permits the matching browser signer (0.85875ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 44.0535
+
+✖ failing tests:
+
+test at scripts/test-w02-wallet-ui.mjs:53:1
+✖ initial account authorization event permits the matching browser signer (0.85875ms)
+  Error: Wallet context changed. Reload this page before continuing.
+      at _assertWalletLive (evalmachine.<anonymous>:7:73)
+      at evalmachine.<anonymous>:137:5
+      at async _walletOperation (evalmachine.<anonymous>:20:16)
+      at async TestContext.<anonymous> (file:///Users/zac/Documents/ChatGPT/Anonymous%20Message%20Board/aztec_experiments/scripts/test-w02-wallet-ui.mjs:60:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

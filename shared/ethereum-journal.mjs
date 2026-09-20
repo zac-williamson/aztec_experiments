@@ -177,7 +177,8 @@ export async function createEthereumJournal({storage,walletSecret,walletSalt,sco
     if(contextGuard)await contextGuard();
     let response;
     try{response=await signer.sendTransaction({from:record.from,to:record.to,data:record.data,value:BigInt(record.value),nonce:record.nonce,chainId:BigInt(record.chainId)});}catch{throw transactionError('BB_ETH_SUBMISSION_UNKNOWN','Ethereum submission is uncertain. Keep its saved request and use recovery.');}
-    if(!hash(lower(response?.hash))||!matchesRequest(response,record))throw unknown();
+    // Wallet responses acknowledge submission; only canonical RPC data confirms intent.
+    if(!hash(lower(response?.hash)))throw unknown();
     return slot.write(saved,{...record,txHash:lower(response.hash)});
   }
   async function finish(saved) {

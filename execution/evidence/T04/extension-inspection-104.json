@@ -1,0 +1,130 @@
+{
+  "scope": "Pinned extension initial screen inspection only",
+  "passed": false,
+  "observations": [
+    {
+      "passed": false,
+      "stage": "onboarding",
+      "errorClass": "Error",
+      "message": "locator.evaluateAll: Error: LavaMoat - property \"setInterval\" of globalThis is inaccessible under scuttling mode. To learn more visit https://github.com/LavaMoat/LavaMoat/pull/360."
+    }
+  ],
+  "deadlineMs": 60000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 1840912,
+  "rssSamples": [
+    {
+      "elapsedMs": 1003,
+      "rssKiB": 462896
+    },
+    {
+      "elapsedMs": 2019,
+      "rssKiB": 675392
+    },
+    {
+      "elapsedMs": 3039,
+      "rssKiB": 691792
+    },
+    {
+      "elapsedMs": 4058,
+      "rssKiB": 1275376
+    },
+    {
+      "elapsedMs": 5074,
+      "rssKiB": 1477552
+    },
+    {
+      "elapsedMs": 6091,
+      "rssKiB": 1602544
+    },
+    {
+      "elapsedMs": 7121,
+      "rssKiB": 1840912
+    },
+    {
+      "elapsedMs": 8138,
+      "rssKiB": 703616
+    }
+  ],
+  "failures": [
+    {
+      "stage": "extension-exit"
+    }
+  ],
+  "children": [
+    {
+      "role": "extension",
+      "code": 1,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "peakMemory": {
+    "elapsedMs": 7121,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 62399,
+        "ppid": 1375,
+        "rssKiB": 49344
+      },
+      {
+        "role": "extension",
+        "pid": 62411,
+        "ppid": 62399,
+        "rssKiB": 128768
+      },
+      {
+        "role": "extension",
+        "pid": 62412,
+        "ppid": 62411,
+        "rssKiB": 244720
+      },
+      {
+        "role": "extension",
+        "pid": 62420,
+        "ppid": 62412,
+        "rssKiB": 115552
+      },
+      {
+        "role": "extension",
+        "pid": 62421,
+        "ppid": 62412,
+        "rssKiB": 86896
+      },
+      {
+        "role": "extension",
+        "pid": 62423,
+        "ppid": 62412,
+        "rssKiB": 61504
+      },
+      {
+        "role": "extension",
+        "pid": 62428,
+        "ppid": 62412,
+        "rssKiB": 138144
+      },
+      {
+        "role": "extension",
+        "pid": 62430,
+        "ppid": 62412,
+        "rssKiB": 101488
+      },
+      {
+        "role": "extension",
+        "pid": 62434,
+        "ppid": 62412,
+        "rssKiB": 814528
+      },
+      {
+        "role": "extension",
+        "pid": 62439,
+        "ppid": 62412,
+        "rssKiB": 99968
+      }
+    ]
+  },
+  "elapsedMs": 8230,
+  "ownedTreeAbsent": true,
+  "profileRemoved": true
+}
