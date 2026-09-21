@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-const source=fs.readFileSync(new URL('../shared/wallet-buttons.js',import.meta.url),'utf8');
+const source=['account.js','wallet-buttons.js'].map(p=>fs.readFileSync(new URL('../shared/'+p,import.meta.url),'utf8')).join('\n');
 const key='0x'+'1'.padStart(64,'0'),salt='0x'+((1n<<200n)+13n).toString(16).padStart(64,'0');
 function fixture({fail=false}={}) {
  const elements=new Map(),logs=[],derived=[],listeners={};
@@ -17,9 +17,9 @@ function fixture({fail=false}={}) {
  return{context,element,logs,derived,listeners};
 }
 const file=raw=>({size:100,text:async()=>JSON.stringify(raw)});
-test('full Field salt reaches derivation and DOM without retaining old salt',async()=>{
+test('full Field salt reaches derivation without placing keys in DOM',async()=>{
  const f=fixture();await f.context._loadAztecWallet(file({secretKey:key,salt}));
- assert.equal(f.derived[0],BigInt(salt));assert.equal(f.element('salt').value,salt);assert.equal(f.context.window.walletState.aztec.salt,salt);
+ assert.equal(f.derived[0],BigInt(salt));assert.equal(f.element('salt').value,'prior');assert.equal(f.context.window.walletState.aztec.salt,salt);
  await assert.rejects(f.context._loadAztecWallet(file({secretKey:key,salt:'0x00'})),/already loaded/);
  assert.equal(f.context.window.walletState.aztec.salt,salt);
 });

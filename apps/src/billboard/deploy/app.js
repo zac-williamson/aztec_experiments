@@ -72,11 +72,9 @@ function getThreadingMode() {
 // ============================================================
 // Main — start the deploy flow
 // ============================================================
-const callDeploy = makeCallEngine((env, config) => runDeploy(env, config), {
-  pause, portalBytecode: PORTAL_BYTECODE, artifact: BILLBOARD_ARTIFACT,
-  createJournalStorage: () => window.__aztec.createBrowserJournalStorage(),
-  createTransactionJournal: options => window.__aztec.createL2Journal({...options, storage: window.__aztec.createBrowserJournalStorage()}),
-});
+const application=createBillboardApplication({kind:'deploy',pause,
+  deploymentConfig:()=>window.__aztec.deploymentManifestConfig(JSON.parse(document.getElementById('deploymentManifest').value))});
+function callDeploy(action,statusDiv,input){return application.run(action,input,(message,level)=>log(message,level||'info',statusDiv));}
 let deploymentReportUrl;
 async function startDeploy() {
   if(deploymentReportUrl){URL.revokeObjectURL(deploymentReportUrl);deploymentReportUrl=null;}
@@ -97,7 +95,6 @@ async function startDeploy() {
   extraConfig.retryEthereum=document.getElementById('retryEthereum')?.checked===true;
   extraConfig.readyTxHash=document.getElementById('readyTxHash').value.trim()||undefined;
   extraConfig.dataDirPrefix='pxe_bb_';
-  _currentStatusDiv='status';
 
   try {
     const result = await callDeploy('deploy', 'status', extraConfig);
@@ -115,12 +112,10 @@ async function startDeploy() {
       const connect=document.createElement('button');connect.type='button';connect.textContent='Use this board';
       const download=document.createElement('button');download.type='button';download.textContent='Download public connection settings';
       const makePublic=async()=>{
-        const n=extraConfig.deploymentManifest.network,text=document.getElementById('publicFeeGas').value.trim();
-        let privateFee=null;
-        if(text)privateFee={contractAddress:(await window.__aztec.derivePrivateFeeAddress(BILLBOARD_PRIVATE_FEE_ARTIFACT)).toString(),gasSettings:JSON.parse(text)};
-        return BillboardConfig.validate({schemaVersion:1,network:{nodeUrl:n.nodeUrl,ethRpcUrl:n.ethRpcUrl,chainId:n.chainId,rollupVersion:n.rollupVersion,rollupAddress:n.rollup},board:{portalAddress:result.portalAddr.toLowerCase(),contractAddress:result.l2Addr.toLowerCase()},privateFee});
+        const text=document.getElementById('publicFeeGas').value.trim();
+        return application.publicConfiguration(result,text?JSON.parse(text):null,extraConfig.deploymentManifest);
       };
-      connect.addEventListener('click',async()=>{try{billboardConfigStore.install(await makePublic());location.href='user.html';}catch{log('Could not prepare public settings. Check the fee gas JSON. The deployment report is still available.','error','status');}});
+      connect.addEventListener('click',async()=>{try{const config=await makePublic();location.href='user.html#network='+[config.network.chainId,config.network.rollupAddress,config.network.rollupVersion].join(':')+'&board='+config.board.contractAddress;}catch{log('Could not prepare public settings. Check the fee gas JSON. The deployment report is still available.','error','status');}});
       download.addEventListener('click',async()=>{try{const config=await makePublic(),url=URL.createObjectURL(new Blob([JSON.stringify(config,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='board-public-config.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch{log('Could not prepare public settings. Check the fee gas JSON. The deployment report is still available.','error','status');}});
       holder.append(connect,download);status.append(holder);
     }

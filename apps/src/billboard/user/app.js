@@ -5,46 +5,20 @@
 // The engine (engine.js) does all the heavy lifting. This file
 // builds env/config from shared/app-env.js, calls the engine per
 // page, and routes log output to page-specific status divs.
-// Live UI (countdown, billboard feed) uses handles from the
-// engine's status result.
+// UI reads plain application data; engine handles remain private.
 
 const MSG_FIELDS = 32;
 const MSG_BYTES = MSG_FIELDS * 31;
 
 // ============================================================
-// Global state — handles from the status action + UI state
+// Application interface and rendered state
 // ============================================================
-let _handles = null;   // { pxe, wallet, contract, aztecNode, address, l2Addr, ... }
+const application=createBillboardApplication({kind:'author'});
 let _stateResult = null; // result from status action
 
-// Helper: read L1 portal address from UI input
+// Public identity of the selected board
 function _portalAddr() { return _getPublicConfig()?.board.portalAddress || ''; }
-async function readCurrentDeposit() {
-  if (!_handles?.contract) throw new Error('Billboard wallet is not connected.');
-  const handles=_handles,revision=_getConfigRevision();
-  const info=await readBillboardDepositInfo(handles.contract,handles.address,handles.depositChainId);
-  if(handles!==_handles||revision!==_getConfigRevision())throw Error('Configuration changed. Reconnect.');
-  if (info.amount>0n) handles.depositChainId=info.depositChainId;
-  return info;
-}
-
-// Helper: build common config for engine calls
-// Uses portalAddress only; L2 address is derived from the portal on chain.
-function _commonConfig() {
-  const c = {
-    portalAddress: _portalAddr(),
-    dataDirPrefix: 'pxe_bb_',
-    depositChainId: _handles?.depositChainId,
-    withdrawTxHash: _stateResult?.withdrawTxHash || undefined,
-    claimSecretStore: makeClaimSecretStore(window.walletState?.aztec?.secretKey, window.walletState?.aztec?.salt),
-  };
-  // If the loaded Aztec wallet IS the censor, pass its JSON for declare-immoral/transfer-censor
-  const ws = window.walletState;
-  if (ws && ws.aztec && ws.aztec.raw) {
-    c.censorWalletJson = ws.aztec.raw;
-  }
-  return c;
-}
+async function readCurrentDeposit() { return application.readDeposit(); }
 
 // ============================================================
 // Bundle readiness
@@ -57,39 +31,19 @@ setupRpcAuth();
 // ============================================================
 // Engine caller with log routing
 // ============================================================
-const journalAcknowledgements = new Map();
-const ethereumAcknowledgements = new Map();
-const runUserEngine = makeCallEngine(runBillboardUser, {
-  createEthereumJournal: options => window.__aztec.createEthereumJournal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
-  createTransactionJournal: options => window.__aztec.createL2Journal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
-  artifact: typeof BILLBOARD_ARTIFACT !== 'undefined' ? BILLBOARD_ARTIFACT : null,
-  privateFeeArtifact: typeof BILLBOARD_PRIVATE_FEE_ARTIFACT !== 'undefined' ? BILLBOARD_PRIVATE_FEE_ARTIFACT : null,
-  portalBytecode: typeof PORTAL_BYTECODE !== 'undefined' ? PORTAL_BYTECODE : null,
-});
-
 async function callEngine(action,statusDiv,extra={}) {
-  const revision=_getConfigRevision();
-  const identity=JSON.stringify([window.walletState?.aztec?.address?.toString(),_portalAddr(),_getNodeUrl(),_getEthRpcUrl(),revision]);
-  const result=await runUserEngine(action,statusDiv,{...extra,acknowledgeTx:journalAcknowledgements.get(identity),acknowledgeEthereumTx:ethereumAcknowledgements.get(identity)});
-  if(revision!==_getConfigRevision())throw Error('Configuration changed. Reconnect.');
-  // Only a result returned to this live page acknowledges a completed action.
-  // Reload deliberately loses acknowledgement, so recovery precedes another send.
-  if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
-  if(result?.lastEthereumTxHash)ethereumAcknowledgements.set(identity,result.lastEthereumTxHash);
-  if(result && Object.hasOwn(result,'withdrawTxHash')) {
-    _stateResult={...(_stateResult||{}),withdrawTxHash:result.withdrawTxHash};
-    if(_handles)_handles.withdrawTxHash=result.withdrawTxHash;
-  }
+  const result=await application.run(action,extra,(message,level)=>log(message,level||'info',statusDiv));
+  if(result && Object.hasOwn(result,'withdrawTxHash'))_stateResult={...(_stateResult||{}),withdrawTxHash:result.withdrawTxHash};
   return result;
 }
 async function recoverSavedTransaction() {
   const revision=_getConfigRevision();
   try {
-    await callEngine('recover','setupStatus',_commonConfig());
+    await callEngine('recover','setupStatus',{});
     if(revision!==_getConfigRevision())throw Error('Configuration changed. Reconnect.');
-    const refreshed=await callEngine('status','setupStatus',_commonConfig());
+    const refreshed=await callEngine('status','setupStatus',{});
     if(revision!==_getConfigRevision())throw Error('Configuration changed. Reconnect.');
-    _handles=refreshed.handles;_stateResult=refreshed;
+    _stateResult=refreshed;
     // Recovery refreshes state; it must not enter the deposit page's automatic
     // claim branch and thereby start a second transaction.
     if(refreshed.state==='postable')showPage(2);
@@ -104,8 +58,8 @@ async function recoverSavedTransaction() {
 
 async function recoverSavedEthereum(retry=false) {
   try {
-    await callEngine('recover-eth','setupStatus',{..._commonConfig(),retryEthereum:retry});
-    if(_handles) {const refreshed=await callEngine('status','setupStatus',_commonConfig());_handles=refreshed.handles;_stateResult=refreshed;}
+    await callEngine('recover-eth','setupStatus',{retryEthereum:retry});
+    if(application.connected) {const refreshed=await callEngine('status','setupStatus',{});_stateResult=refreshed;}
   }
   catch(error){log(publicOperationFailure(error),'error','setupStatus');}
 }
@@ -126,16 +80,15 @@ initPages([
 // ============================================================
 async function loadWalletAndConnect() {
   const revision=_getConfigRevision();
-  const ws = window.walletState;
-  if (!ws || !ws.aztec || !ws.aztec.secretKey) throw new Error('Aztec wallet not loaded.');
-  if (!ws || !ws.ethSigner) throw new Error('ETH wallet not loaded.');
+  const account=window.BillboardAccount.snapshot();
+  if(!account.address)throw Error('Aztec account not loaded.');
+  if(!account.ethereumConnected)throw Error('Ethereum wallet not connected.');
 
   // Call engine status action — does full setup (keys, node, CRS, PXE, sync, wallet)
   const result = await callEngine('status', 'setupStatus', {
-    ..._commonConfig(),
+
   });
   if(revision!==_getConfigRevision())throw Error('Configuration changed. Reconnect.');
-  _handles = result.handles;
   _stateResult = result;
 
   log('Setup complete. State: ' + result.state, 'success', 'setupStatus');
@@ -198,7 +151,7 @@ async function doDepositPage() {
     let depResult;
     try {
       depResult = await callEngine('deposit', 'depositStatus', {
-        ..._commonConfig(),
+
         depositAmount: amountStr,
       });
     } catch (e) {
@@ -222,7 +175,7 @@ async function doDepositPage() {
     log('', 'info', 'depositStatus');
     log('Waiting for L2 to ingest deposit, then claiming...', 'info', 'depositStatus');
     await claimExisting({
-      ..._commonConfig(),
+
       reuseTxHash: depInfo.txHash,
     });
 
@@ -234,7 +187,7 @@ async function doDepositPage() {
 
   // deposited_l1_not_claimed_l2: claim the existing deposit
   const txHash = _stateResult?.depositInfo?.txHash || document.getElementById('existingTxHash').value.trim();
-  const extra = { ..._commonConfig() };
+  const extra = {  };
   if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) { highlightMissing(['existingTxHash']); throw new Error('Enter the deposit transaction hash from your Ethereum wallet or recovery record.'); }
   extra.reuseTxHash = txHash;
   log('Claiming existing deposit on L2...', 'info', 'depositStatus');
@@ -269,12 +222,12 @@ function withdrawalReadiness(info, l2Time) {
 function startPostCountdown() {
   if(_countdownInterval)clearInterval(_countdownInterval);
   if(_countdownFetchInterval)clearInterval(_countdownFetchInterval);
-  const revision=_getConfigRevision(),handles=_handles;
-  if(!handles?.contract)return;
+  const revision=_getConfigRevision(),session=application.revision;
+  if(!application.connected)return;
   let busy=false;
   async function refresh(){if(busy)return;busy=true;try{
-    const info=await readCurrentDeposit(),now=await getL2Timestamp(handles.aztecNode);
-    if(revision!==_getConfigRevision()||handles!==_handles)return;
+    const info=await readCurrentDeposit(),now=info.chainTime;
+    if(revision!==_getConfigRevision()||session!==application.revision)return;
     const readiness=withdrawalReadiness(info,now),el=document.getElementById('postCountdown'),screen=document.getElementById('screeningStatus');
     el.textContent=info.amount>0n?(BigInt(now)>=info.nextAllowedTime?'Posting time lock has expired at the latest chain block.':'Posting time lock remains active at the latest chain block.'):'Deposit status is unavailable; refresh or recover.';
     el.className='countdown';screen.textContent=readiness.message;screen.className=readiness.ready?'small success':'small warn';
@@ -296,24 +249,16 @@ function stopBillboardFeed() {
 }
 
 async function refreshPolicy() {
-  const revision=_getConfigRevision(),handles=_handles;
+  const revision=_getConfigRevision(),session=application.revision;
   const box = document.getElementById('policyBox');
   const txt = document.getElementById('policyText');
-  if (!box || !txt || !_handles || !_handles.contract) return;
+  if (!box || !txt || !application.connected) return;
   try {
-    const result = await handles.contract.methods.get_moderation_policy().simulate({ from: window.__aztec.NO_FROM });
-    if(revision!==_getConfigRevision()||handles!==_handles)return;
-    let fields = result, len = 0;
-    if (result && result.result !== undefined) {
-      fields = result.result[0] || result.result;
-      len = Number(result.result[1] !== undefined ? result.result[1] : 0);
-    }
-    if (len > 0 && window.unpackFieldsToString) {
-      const text = window.unpackFieldsToString(fields, len);
-      if (text) { txt.textContent = text; box.style.display = ''; return; }
-    }
+    const text=await application.readPolicy();
+    if(revision!==_getConfigRevision()||session!==application.revision)return;
+    if(text){txt.textContent=text;box.style.display='';return;}
     box.style.display = 'none';
-  } catch (e) { if(revision!==_getConfigRevision()||handles!==_handles)return; box.style.display = 'none'; }
+  } catch (e) { if(revision!==_getConfigRevision()||session!==application.revision)return; box.style.display = 'none'; }
 }
 
 async function refreshBillboard() {
@@ -323,7 +268,7 @@ async function refreshBillboard() {
   const selectedRevision=_getConfigRevision();
   try {
     const selectedPortal=_portalAddr(),selectedNode=_getNodeUrl();
-    const page=await window.BillboardPublic.readFeed({portalAddress:selectedPortal,nodeUrl:selectedNode,ethereumUrl:_getEthRpcUrl(),expectedConfig:_getPublicConfig()});
+    const page=await application.readFeed();
     if(selectedRevision!==_getConfigRevision())return;
     _billboardLastCount=page.eventCount;_billboardLastBlock=page.lastBlock;
     if(meta)meta.textContent=page.progress.complete?'Latest messages through block '+page.lastBlock:'Loading public history through block '+page.lastBlock;
@@ -372,7 +317,7 @@ async function doPost() {
 
     await callEngine('post', 'postStatus', {
       message: msgText,
-      ..._commonConfig(),
+
     });
 
     document.getElementById('msgText').value = '';
@@ -387,7 +332,7 @@ async function doDummyPost() {
   withBtn('dummyPostBtn', 'Posting dummy...', 'postStatus', async () => {
     await callEngine('post', 'postStatus', {
       isDummy: true,
-      ..._commonConfig(),
+
     });
     log('  Dummy post complete — screening advanced.', 'success', 'postStatus');
     startPostCountdown();
@@ -396,10 +341,10 @@ async function doDummyPost() {
 
 // Nav button: eligibility gate — wait for note sync, then advance
 async function doProceedToWithdraw() {
-  const revision=_getConfigRevision(),handles=_handles;
-  if(!handles?.contract)throw Error('Reconnect to check withdrawal eligibility.');
-  const info=await readCurrentDeposit(),now=await getL2Timestamp(handles.aztecNode);
-  if(revision!==_getConfigRevision()||handles!==_handles)throw Error('Configuration changed. Reconnect.');
+  const revision=_getConfigRevision(),session=application.revision;
+  if(!application.connected)throw Error('Reconnect to check withdrawal eligibility.');
+  const info=await readCurrentDeposit(),now=info.chainTime;
+  if(revision!==_getConfigRevision()||session!==application.revision)throw Error('Configuration changed. Reconnect.');
   const readiness=withdrawalReadiness(info,now);
   log(readiness.message,readiness.ready?'success':'warn','proceedStatus');
   if(!readiness.ready)throw Error(readiness.message);
@@ -412,7 +357,7 @@ function onShowWithdraw() {}
 
 async function doWithdrawPage() {
   await callEngine('withdraw', 'withdrawStatus', {
-      ..._commonConfig(),
+
   });
   if (_stateResult) _stateResult.state = 'withdrawal_needs_verification';
 }
@@ -421,13 +366,13 @@ async function doWithdrawPage() {
 // Page 4: Claim ETH on L1
 // ============================================================
 function onShowClaimL1() {
-  document.getElementById('claimL1Wallet').hidden=!!window.walletState?.ethSigner;
+  document.getElementById('claimL1Wallet').hidden=window.BillboardAccount.snapshot().ethereumConnected;
   log(_stateResult?.withdrawTxHash ? 'The withdrawal transaction is saved. Claim ETH will check whether the network has settled it.' : 'Recover the saved withdrawal transaction on the setup page before claiming ETH.', 'info', 'claimL1Status');
 }
 
 async function doClaimL1Page() {
   await callEngine('claim-l1', 'claimL1Status', {
-      ..._commonConfig(),
+
   });
 }
 
@@ -435,31 +380,16 @@ async function doClaimL1Page() {
 // Censor panel
 // ============================================================
 async function initCensorPanel() {
-  const revision=_getConfigRevision(),handles=_handles;
+  const revision=_getConfigRevision(),session=application.revision;
   const card = document.getElementById('censorCard');
   const statusEl = document.getElementById('censorStatus');
   const controls = document.getElementById('censorControls');
-  if (!card || !_handles || !_handles.contract) return;
+  if (!card || !application.connected) return;
 
   card.style.display = '';
   try {
-    const censorResult = await handles.contract.methods.get_censor().simulate({ from: window.__aztec.NO_FROM });
-    let cv = censorResult;
-    if (cv && cv.result !== undefined) cv = cv.result;
-    if (cv && cv.value !== undefined) cv = cv.value;
-    const censorAddr = cv && cv.toString ? cv.toString() : (cv ? '0x' + BigInt(cv).toString(16).padStart(64, '0') : '0x0');
-    const censorValue=BigInt(censorAddr);
-    if(censorValue<0n||censorValue>=21888242871839275222246405745257275088548364400416034343698204186575808495617n)throw Error('Invalid moderator address');
-    const censorActive = censorValue!==0n;
-
-    let kMult = null;
-    try {
-      const kResult = await handles.contract.methods.get_k_multiplier().simulate({ from: window.__aztec.NO_FROM });
-      kMult = Number(extractInt(kResult));
-      if(!Number.isSafeInteger(kMult)||kMult<1||kMult>65535)throw Error('Invalid moderator settings');
-    } catch (e) { if(revision!==_getConfigRevision()||handles!==_handles)return;throw Error('Moderator settings unavailable');}
-
-    if(revision!==_getConfigRevision()||handles!==_handles)return;
+    const {address:censorAddr,active:censorActive,isCurrentAccount:isCensor,multiplier:kMult}=await application.readModerator();
+    if(revision!==_getConfigRevision()||session!==application.revision)return;
     if (!censorActive) {
       statusEl.textContent = 'No censor configured for this billboard.';
       statusEl.className = 'small';
@@ -468,8 +398,6 @@ async function initCensorPanel() {
     }
 
     // Check if the loaded wallet is the censor
-    const myAddr = _handles.address.toString();
-    const isCensor = BigInt(myAddr) === censorValue;
     if (isCensor) {
       statusEl.textContent = 'You are the censor (K=' + kMult + '). You can flag posts as immoral.';
       statusEl.className = 'small success';
@@ -479,7 +407,7 @@ async function initCensorPanel() {
       statusEl.className = 'small warn';
       controls.style.display = 'none';
     }
-  } catch (e) { if(revision!==_getConfigRevision()||handles!==_handles)return;
+  } catch (e) { if(revision!==_getConfigRevision()||session!==application.revision)return;
     controls.style.display='none';
     statusEl.textContent = 'Could not verify moderator status. Reconnect and retry.';
     statusEl.className = 'small';
@@ -495,7 +423,7 @@ async function doDeclareImmoral() {
     await callEngine('declare-immoral', 'censorActionStatus', {
       postIndex: postIndex,
       censorResponse: responseText,
-      ..._commonConfig(),
+
     });
 
     document.getElementById('censorPostIndex').value = '';
@@ -512,7 +440,7 @@ async function doTransferCensor() {
 
     await callEngine('transfer-censor', 'censorActionStatus', {
       newCensor: newCensorAddr,
-      ..._commonConfig(),
+
     });
 
     document.getElementById('newCensorAddr').value = '';
@@ -528,7 +456,7 @@ async function doSetModerationPolicy() {
 
     await callEngine('set-moderation-policy', 'censorActionStatus', {
       moderationPolicy: policyText,
-      ..._commonConfig(),
+
     });
 
     document.getElementById('moderationPolicyInput').value = '';
@@ -542,16 +470,14 @@ async function doSetModerationPolicy() {
 // ============================================================
 // Read L1 portal address from URL param (?portal=0x...) if present
 window.billboardConfigStore.subscribe(() => {
-  const previous=_handles;_handles=null;_stateResult=null;
+  _stateResult=null;
   stopBillboardFeed();_billboardLastCount=-1;_billboardLastBlock=-1;
-  journalAcknowledgements.clear();
   for(const id of ['censorCard','censorControlsCard','transferCard','policyCard']){const el=document.getElementById(id);if(el)el.style.display='none';}
   const portal=document.getElementById('portalAddr');if(portal)portal.value=_portalAddr();
   const feed=document.getElementById('billboardFeed');if(feed)feed.replaceChildren();
   const policy=document.getElementById('policyBox');if(policy)policy.style.display='none';
   const meta=document.getElementById('billboardMeta');if(meta)meta.textContent='Configuration changed. Reconnect to this board.';
-  if(previous?.pxe?.stop)Promise.resolve(previous.pxe.stop()).catch(()=>{});
-  if(_countdownInterval)clearInterval(_countdownInterval);if(_countdownFetchInterval)clearInterval(_countdownFetchInterval);ethereumAcknowledgements.clear();const countdown=document.getElementById('postCountdown');if(countdown)countdown.textContent='Reconnect to check deposit status.';
+  if(_countdownInterval)clearInterval(_countdownInterval);if(_countdownFetchInterval)clearInterval(_countdownFetchInterval);const countdown=document.getElementById('postCountdown');if(countdown)countdown.textContent='Reconnect to check deposit status.';
 });
 
 

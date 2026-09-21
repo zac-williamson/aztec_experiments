@@ -17,6 +17,7 @@ const tiers={
     'scripts/test-t04-browser-post-recovery.mjs',
   ],
   components:[
+    'scripts/test-application-interface.mjs',
     'scripts/test-passkey-wallet.mjs',
     'scripts/test-w02-wallet-ui.mjs',
     'scripts/test-artifacts.mjs',

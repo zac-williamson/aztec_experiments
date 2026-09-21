@@ -16,7 +16,7 @@ function fixture(run) {
     'node_modules/ethers/dist/ethers.umd.min.js', 'apps/src/user/template.html', 'apps/src/user/app.js',
     'apps/src/user/engine.js', 'apps/src/user/billboard_artifact.json', 'apps/src/user/private_fee_artifact.json',
     'apps/dist/user.html',
-    ...['styles.css', 'helpers.js', 'aztec-lib.js', 'crs-client.js', 'poseidon2.js', 'wallet-buttons.js',
+    ...['styles.css', 'helpers.js', 'aztec-lib.js', 'crs-client.js', 'poseidon2.js', 'account.js','application.js','wallet-buttons.js',
       'public-app-config.js', 'public-app-config-ui.js', 'public-app-bootstrap.js', 'browser-readiness.js', 'browser-connection-check.js', 'passkey-wallet.js', 'wallet-backup.js', 'claim-secret-store.js', 'app-env.js', 'moderation-policy.js', 'rpc-config.example.json'].map(name => `shared/${name}`),
   ]) write(name);
   const build = () => finishFrontendBuild(root, beginFrontendBuild(root));

@@ -9,8 +9,9 @@ function context() {
  const requests=[],scope={window:{walletState:state,billboardPrivateFee:{contractAddress:'payer'},ethereum:{request:async({method})=>method==='eth_accounts'?['0xabc']:'0x1'}},
  document:{getElementById:()=>portal},navigator:{locks:{request:async(name,opts,fn)=>{requests.push(name);assert.equal(opts.ifAvailable,true);return fn({name});}}},
  _walletGeneration:0,_assertWalletLive(){if(state.invalidated)throw new Error('Context invalid');},_invalidateWalletContext(){state.invalidated=true;},
+ _getConfigRevision:()=>0,_connectionConfig:()=>({portal:portal.value}),publicOperationFailure:()=>new Error('Operation failed'),
  _getNodeUrl:()=> 'http://node',ETH_RPC_URL:'http://eth',buildEnv:()=>({}),buildConfig:(action,extra)=>({action,...extra}),JSON,BigInt};
- const c=vm.createContext(scope),app=source('shared/app-env.js');vm.runInContext(app.slice(app.indexOf('function makeCallEngine(')),c);
+ scope.window.BillboardReadiness={check:async()=>{}};const c=vm.createContext(scope),app=source('shared/app-env.js');vm.runInContext(app.slice(app.indexOf('function makeCallEngine(')),c);
  return {c,state,portal,requests};
 }
 test('same-page overlapping calls and another-tab unavailable lock reject without invoking engine',async()=>{

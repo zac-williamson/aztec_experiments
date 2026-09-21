@@ -1,25 +1,15 @@
 // Private fee funding: public recovery records only; wallet secrets never enter recovery records.
 let fundingRecord = null;
-const journalAcknowledgements=new Map(),ethereumAcknowledgements=new Map();
-const runFeeEngine = makeCallEngine(runFeeJuiceFlow, {
-  createJournalStorage:()=>window.__aztec.createBrowserJournalStorage(),
-  createTransactionJournal: options => window.__aztec.createL2Journal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
-  privateFeeArtifact: BILLBOARD_PRIVATE_FEE_ARTIFACT,
-  fundPrivateFees: options => window.__aztec.fundPrivateFees(options),
-});
+const application=createBillboardApplication({kind:'fees'});
 async function callEngine(action,statusDiv,extra={}) {
-  const identity=JSON.stringify([window.walletState?.aztec?.address?.toString(),_getConfigRevision(),_getPublicConfig()]);
-  const result=await runFeeEngine(action,statusDiv,{...extra,acknowledgeTx:journalAcknowledgements.get(identity),acknowledgeEthereumTx:ethereumAcknowledgements.get(identity)});
-  if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
-  if(result?.lastEthereumTxHash)ethereumAcknowledgements.set(identity,result.lastEthereumTxHash);
-  return result;
+  return application.run(action,extra,(message,level)=>log(message,level||'info',statusDiv));
 }
 async function recoverSavedFeeTransaction() {
   try {await callEngine('recover-l2','claimStatus');}
   catch(error){log(safeFundingError(error),'error','claimStatus');}
 }
 async function recoverSavedFeeEthereum(retry=false) {
-  try {const result=await callEngine('recover-eth','depositStatus',{retryEthereum:retry,saveRecovery:saveFundingRecord,fundingRecord});if(result.record)saveFundingRecord(result.record);}
+  try {const result=await callEngine('recover-eth','depositStatus',{retryEthereum:retry,fundingRecord});if(result.record)saveFundingRecord(result.record);}
   catch(error){log(safeFundingError(error),'error','depositStatus');}
 }
 setupRpcAuth();
@@ -38,23 +28,7 @@ async function loadWalletAndCheck() {
   document.getElementById('azaddr').value = result.feePayer;
   log('Wallet ready. Deposits fund the shared private fee contract.', 'success', 'setupStatus');
 }
-function saveFundingRecord(record) {
-  // This record contains public recovery metadata, not the derived salt or claim secret.
-  const allowed=['schema','chainId','version','rollupAddress','portalAddress','tokenAddress','privateFeeAddress','sender','nonce','amount','txHash','leafIndex'];
-  if(!record || record.schema!=='private-fee-funding-v1' || Object.keys(record).some(key=>!allowed.includes(key))) throw new Error('Invalid recovery record.');
-  const text = JSON.stringify(record);
-  const key='billboard-private-fee-recovery:'+JSON.stringify([record.chainId,record.rollupAddress,record.privateFeeAddress,record.sender,record.nonce]);
-  const priorText=localStorage.getItem(key);
-  if(priorText){
-    const prior=JSON.parse(priorText);
-    const fields=['schema','chainId','version','rollupAddress','portalAddress','tokenAddress','privateFeeAddress','sender','nonce','amount'];
-    if(fields.some(field=>prior[field]!==record[field]) || (prior.txHash && prior.txHash!==record.txHash) ||
-       (prior.leafIndex!==undefined && prior.leafIndex!==record.leafIndex)) throw new Error('Recovery record conflicts with a previous deposit.');
-  }
-  localStorage.setItem(key, text);
-  localStorage.setItem('billboard-private-fee-recovery-latest',key);
-  fundingRecord = record;
-}
+function saveFundingRecord(record) {fundingRecord=application.importFundingRecovery(record);}
 function downloadRecovery() {
   if (!fundingRecord) throw new Error('No recovery record is available.');
   const url = URL.createObjectURL(new Blob([JSON.stringify(fundingRecord,null,2)], {type:'application/json'}));
@@ -71,7 +45,7 @@ async function importRecovery(event) {
 async function doDepositPage() {
   return withBtn('depositBtn','Depositing...','depositStatus',async()=>{
     try {
-      const result=await callEngine('deposit','depositStatus',{depositAmount:document.getElementById('amount').value.trim(),saveRecovery:saveFundingRecord});
+      const result=await callEngine('deposit','depositStatus',{depositAmount:document.getElementById('amount').value.trim()});
       if(result.record)saveFundingRecord(result.record);
       log('Deposit recorded. Download the recovery file, then claim after the bridge message is available.', 'success','depositStatus');
     }catch(error){log(safeFundingError(error),'error','depositStatus');}
@@ -96,11 +70,11 @@ function initializePrivateFees() {
   document.getElementById('azaddr').value = publicConfig.privateFee.contractAddress;
   document.getElementById('feeBudget').textContent = 'This site currently charges ' + fee + ' AZTEC per private transaction. Deposit more than this to pay for the claim and leave fee credit. Allow additional credit for posting and withdrawing.';
   if (!window.__aztec?.createPXE) {waitForBundle(initializePrivateFees);return;}
-  try {const key=localStorage.getItem('billboard-private-fee-recovery-latest');const saved=key&&localStorage.getItem(key);if(saved)fundingRecord=JSON.parse(saved);}catch(_){}
+  fundingRecord=application.readFundingRecovery();
   initWalletButtons('walletButtonsContainer',{autoPasskey:true,statusId:'setupStatus',onReady:async()=>{
     try{await loadWalletAndCheck();}catch(error){log(safeFundingError(error),'error','setupStatus');}
   }});
 }
 initializeHostedBoard(initializePrivateFees);
 
-window.billboardConfigStore?.subscribe(()=>{fundingRecord=null;journalAcknowledgements.clear();ethereumAcknowledgements.clear();});
+window.billboardConfigStore?.subscribe(()=>{fundingRecord=null;});

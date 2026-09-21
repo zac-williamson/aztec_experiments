@@ -39458,27 +39458,29 @@ globalThis.BillboardClaimBackup=Object.freeze({
   restoreRecords(wallet,claims){return makeClaimSecretStore(wallet.secretKey,wallet.salt).restoreRecords(claims);},
 });
 
-// Browser custody: random embedded Aztec wallet, encrypted recovery files, and
+// Browser custody: passkey or explicitly imported Aztec account, recovery files, and
 // an external Ethereum signer. A page has one immutable wallet context.
 window.walletState = { aztec:null, ethSigner:null, ethProvider:null, ethAccount:null, ethType:null, invalidated:false };
-let _onReady=null, _onAztecLoad=null, _statusId='setupStatus', _requireEth=true, _readyFired=false;
+let _onReady=null, _onAztecLoad=null, _requireEth=true, _readyFired=false;
 let _autoPasskey=false;
 let _walletBusy=false, _walletGeneration=0, _connectingEth=null;
-function _wlog(message,type='info') { if(typeof log==='function') log(message,type,_statusId); }
+/** @type {(state:ReturnType<typeof accountSnapshot>)=>void} */
+let _accountNotify=()=>{};
+/** @type {(message:string,type:string)=>void} */
+let _accountLog=()=>{};
+function _wlog(message,type='info') { _accountLog(message,type); }
+function _updateAccountState() { _accountNotify(accountSnapshot()); }
+/** Public account state contains no signing material. */
+function accountSnapshot() { return {address:window.walletState.aztec?.address.toString()||null,ethereumAddress:window.walletState.ethAccount,busy:_walletBusy,invalidated:window.walletState.invalidated,ethereumConnected:!!window.walletState.ethSigner}; }
 function _assertWalletLive() { if(window.walletState.invalidated) throw new Error('Wallet context changed. Reload this page before continuing.'); }
 function _invalidateWalletContext() {
   window.walletState.invalidated=true; _walletGeneration++;
   _wlog('Wallet account or network changed. Reload this page to reconnect; pending transactions must be checked before retrying.','error');
 }
-function _updateButtonColors() {
-  for(const id of ['wbAztecBtn','wbAztecGenBtn','wbEthBrowserBtn']) {
-    const el=document.getElementById(id); if(el) el.disabled=_walletBusy || window.walletState.invalidated || (id==='wbEthBrowserBtn'?!!window.walletState.ethSigner && !!window.walletState.aztec:!!window.walletState.aztec);
-  }
-}
 async function _walletOperation(run) {
   _assertWalletLive(); if(_walletBusy) throw new Error('Another wallet operation is in progress.');
-  _walletBusy=true; _updateButtonColors();
-  try { return await run(); } finally { _walletBusy=false; _updateButtonColors(); }
+  _walletBusy=true; _updateAccountState();
+  try { return await run(); } finally { _walletBusy=false; _updateAccountState(); }
 }
 function _checkReady() {
   if(_readyFired || window.walletState.invalidated) return;
@@ -39508,23 +39510,8 @@ async function _prepareWallet(raw,allowExisting=false) {
 function _activateWallet(prepared) {
   _assertWalletLive(); if(window.walletState.aztec) throw new Error('A wallet is already loaded.');
   window.walletState.aztec=prepared; _walletGeneration++;
-  const sk=document.getElementById('secretKey'), salt=document.getElementById('salt');
-  if(sk)sk.value=prepared.secretKey; if(salt)salt.value=prepared.salt;
   _wlog('Aztec wallet loaded: '+prepared.address.toString(),'success');
-  _updateButtonColors(); if(_onAztecLoad) {try {_onAztecLoad(prepared.address);}catch {_wlog('Wallet loaded, but address display did not update. Reload before continuing.','error');_invalidateWalletContext();}} _checkReady();
-}
-function _backupPassword(confirm=false) {
-  const input=document.getElementById('wbPassword'), repeat=document.getElementById('wbPasswordConfirm');
-  const password=input?.value || '';
-  if(password.length<12 || password.length>1024) throw new Error('Use a backup password of at least 12 characters.');
-  if(confirm && password!==repeat?.value) throw new Error('The backup passwords do not match.');
-  return password;
-}
-function _clearBackupPassword() { for(const id of ['wbPassword','wbPasswordConfirm']) { const el=document.getElementById(id); if(el)el.value=''; } }
-function _downloadJson(filename,obj) {
-  const url=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)+'\n'],{type:'application/json'}));
-  const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  _updateAccountState(); if(_onAztecLoad) {try {_onAztecLoad(prepared.address.toString());}catch {_wlog('Wallet loaded, but address display did not update. Reload before continuing.','error');_invalidateWalletContext();}} _checkReady();
 }
 async function _withRecoveryLock(wallet,run) {
   if(!globalThis.navigator?.locks?.request)throw new Error('This browser cannot safely coordinate wallet recovery.');
@@ -39540,17 +39527,17 @@ async function _writeWalletBackup(wallet,password) {
   const journalBackup=await window.__aztec.createJournalBackup({storage:window.__aztec.createBrowserJournalStorage(),walletSecret:wallet.secretKey,walletSalt:wallet.salt});
   const journals=await journalBackup.exportRecords();
   const envelope=await window.BillboardWalletBackup.encrypt({schemaVersion:2,wallet:{secretKey:wallet.secretKey,salt:wallet.salt},claims,journals},password);
-  _downloadJson('aztec-recovery-'+wallet.address.toString().slice(2,18)+'.json',envelope);
-  _wlog('Encrypted recovery file downloaded. Keep it and its password safely. Export again after each transaction or recovery update. Older files do not contain later requests.','success');
+  return envelope;
  });
 }
-async function _loadAztecWallet(file) {
+/** @param {Blob} file @param {string} password @returns {Promise<void>} */
+async function importAccountRecovery(file,password) {
   return _walletOperation(async()=>{
-    try {
+    {
       if(!file || file.size>32*1024*1024+4096) throw new Error();
       const parsed=JSON.parse(await file.text());
       // Raw CLI wallets may be imported, but every browser export is encrypted.
-      const payload=parsed.secretKey?{wallet:parsed,claims:[]}:await window.BillboardWalletBackup.decrypt(parsed,_backupPassword());
+      const payload=parsed.secretKey?{wallet:parsed,claims:[]}:await window.BillboardWalletBackup.decrypt(parsed,password);
       const prepared=await _prepareWallet(payload.wallet);
       if(payload.claims.length||payload.journals?.length)await _withRecoveryLock(prepared,async()=>{
       if(payload.claims.length) {
@@ -39564,30 +39551,31 @@ async function _loadAztecWallet(file) {
       });
       _activateWallet(prepared);
       if(parsed.secretKey) _wlog('This imported file contains an unencrypted key. Create an encrypted recovery file and protect the original.','warn');
-    } finally { _clearBackupPassword(); }
+    }
   });
 }
-async function _generateAztecWallet() {
+/** @param {string} password @returns {Promise<object>} Encrypted recovery envelope. */
+async function createAccount(password) {
   return _walletOperation(async()=>{
-    try {
-      const password=_backupPassword(true);
+    {
       const modulus=21888242871839275222246405745257275088548364400416034343698204186575808495617n;
       let value; do {const bytes=crypto.getRandomValues(new Uint8Array(32)); value=BigInt('0x'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join(''));} while(value===0n || value>=modulus);
       const prepared=await _prepareWallet({secretKey:'0x'+value.toString(16).padStart(64,'0'),salt:'0x'+'0'.repeat(64)});
-      await _writeWalletBackup(prepared,password); _activateWallet(prepared);
-    } finally {_clearBackupPassword();}
+      const envelope=await _writeWalletBackup(prepared,password); _activateWallet(prepared); return envelope;
+    }
   });
 }
-async function _exportAztecWallet() {
+/** @param {string} password @returns {Promise<object>} Encrypted recovery envelope. */
+async function exportAccountRecovery(password) {
   return _walletOperation(async()=>{
-    try {if(!window.walletState.aztec)throw new Error();await _writeWalletBackup(window.walletState.aztec,_backupPassword(true));}
-    finally {_clearBackupPassword();}
+    if(!window.walletState.aztec)throw new Error('No account is open.');
+    return _writeWalletBackup(window.walletState.aztec,password);
   });
 }
 function _firstEthereumAccount(accounts) {
   return Array.isArray(accounts) && accounts.length>0 && accounts.every(account=>typeof account==='string' && /^0x[0-9a-fA-F]{40}$/.test(account)) ? accounts[0].toLowerCase() : null;
 }
-async function _loadEthBrowser() {
+async function connectEthereumAccount() {
   return _walletOperation(async()=>{
     if(window.walletState.ethSigner) {
       if(_autoPasskey && !window.walletState.aztec) {await _openPasskeyAccount();return;}
@@ -39634,18 +39622,74 @@ async function _openPasskeyAccount(importExisting=false) {
     const prepared=await _prepareWallet(raw,importExisting);
     _assertWalletLive();if(generation!==_walletGeneration)throw Error('Wallet context changed.');
     localStorage.setItem(key,JSON.stringify({version:1,credentialId:result.credentialId,address:prepared.address.toString()}));
-    if(importExisting && window.walletState.aztec) {location.reload();return;}
+    if(importExisting && window.walletState.aztec) return {reloadRequired:true};
     _activateWallet(prepared);
   });
 }
-async function _importPasskeyAccount() {
-  return _walletOperation(async()=>{await _openPasskeyAccount(true);});
+async function importPasskeyAccount() {
+  return _walletOperation(async()=>{return _openPasskeyAccount(true);});
 }
+/** @param {{autoPasskey?:boolean,requireEth?:boolean,onReady?:()=>void|Promise<void>,onAztecLoad?:(address:string)=>void,onChange?:(state:ReturnType<typeof accountSnapshot>)=>void,onMessage?:(message:string,type:string)=>void}} options */
+function configureAccount(options={}) {
+  _autoPasskey=options.autoPasskey===true;_requireEth=options.requireEth!==false;
+  _onReady=options.onReady||null;_onAztecLoad=options.onAztecLoad||null;
+  _accountNotify=options.onChange||(()=>{});_accountLog=options.onMessage||(()=>{});
+  if(_accountProvider===window.ethereum)return;
+  _accountProvider=window.ethereum;
+  if(window.ethereum?.on) for(const name of ['accountsChanged','chainChanged','disconnect'])window.ethereum.on(name,accounts=>{
+    if(name==='accountsChanged') {
+      const selected=_firstEthereumAccount(accounts);
+      if(window.walletState.ethType==='browser' && selected===window.walletState.ethAccount?.toLowerCase()) return;
+      // Initial permission approval announces the account being connected. Verify
+      // it against both the requested signer and a final account read before use.
+      if(_connectingEth && window.walletState.ethType!=='browser' && selected!==null && (_connectingEth.account===null || _connectingEth.account===selected)) {_connectingEth.account=selected;return;}
+    }
+    if(window.walletState.ethType==='browser' || _connectingEth) {_invalidateWalletContext();_updateAccountState();}
+  });
+ }
+let _accountProvider;
+/** Account operations return data; rendering, downloads and reloads belong to the caller. */
+window.BillboardAccount=Object.freeze({configure:configureAccount,snapshot:accountSnapshot,
+  connect:connectEthereumAccount,importPasskey:importPasskeyAccount,importRecovery:importAccountRecovery,
+  create:createAccount,exportRecovery:exportAccountRecovery,invalidate:_invalidateWalletContext});
+
+// Account controls: rendering and browser file handling only.
+let _statusId="setupStatus";
+function walletMessage(message,type="info") { if(typeof log==="function")log(message,type,_statusId); }
+function _updateButtonColors() {
+  const state=window.BillboardAccount.snapshot();
+  for(const id of ['wbAztecBtn','wbAztecGenBtn','wbEthBrowserBtn']) {
+    const el=document.getElementById(id); if(el) el.disabled=state.busy || state.invalidated || (id==='wbEthBrowserBtn'?state.ethereumConnected && !!state.address:!!state.address);
+  }
+}
+function _backupPassword(confirm=false) {
+  const input=document.getElementById('wbPassword'), repeat=document.getElementById('wbPasswordConfirm');
+  const password=input?.value || '';
+  if(password.length<12 || password.length>1024) throw new Error('Use a backup password of at least 12 characters.');
+  if(confirm && password!==repeat?.value) throw new Error('The backup passwords do not match.');
+  return password;
+}
+function _clearBackupPassword() { for(const id of ['wbPassword','wbPasswordConfirm']) { const el=document.getElementById(id); if(el)el.value=''; } }
+function _downloadJson(filename,obj) {
+  const url=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)+'\n'],{type:'application/json'}));
+  const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function downloadAccountRecovery(envelope) {
+  _downloadJson('aztec-recovery-'+window.BillboardAccount.snapshot().address.slice(2,18)+'.json',envelope);
+  walletMessage('Encrypted recovery file downloaded. Keep it and its password safely. Export again after each transaction or recovery update. Older files do not contain later requests.','success');
+}
+async function _loadAztecWallet(file) {try{return await window.BillboardAccount.importRecovery(file,document.getElementById('wbPassword')?.value||'');}finally{_clearBackupPassword();}}
+async function _generateAztecWallet() {try{downloadAccountRecovery(await window.BillboardAccount.create(_backupPassword(true)));}finally{_clearBackupPassword();}}
+async function _exportAztecWallet() {try{downloadAccountRecovery(await window.BillboardAccount.exportRecovery(_backupPassword(true)));}finally{_clearBackupPassword();}}
+async function _loadEthBrowser() {return window.BillboardAccount.connect();}
+async function _importPasskeyAccount() {const result=await window.BillboardAccount.importPasskey();if(result?.reloadRequired)location.reload();}
 function initWalletButtons(containerId,options={}) {
-  _autoPasskey=options.autoPasskey===true;
-  _statusId=options.statusId||'setupStatus';_requireEth=options.requireEth!==false;_onReady=options.onReady||null;_onAztecLoad=options.onAztecLoad||null;
+  const autoPasskey=options.autoPasskey===true;
+  _statusId=options.statusId||'setupStatus';
+  window.BillboardAccount.configure({...options,onChange:_updateButtonColors,onMessage:walletMessage});
   const container=document.getElementById(containerId);if(!container)return;
-  container.innerHTML=_autoPasskey ? `<div class="wallet-btns"><button class="wallet-btn" id="wbEthBrowserBtn">Connect wallet</button>
+  container.innerHTML=autoPasskey ? `<div class="wallet-btns"><button class="wallet-btn" id="wbEthBrowserBtn">Connect wallet</button>
     <details class="account-menu" id="wbAccountMenu"><summary>Account</summary><div class="account-menu-panel">
     <button class="secondary" id="wbImportPasskeyBtn">Import existing passkey account</button>
     <button class="secondary" id="wbAztecBtn">Import recovery file</button>
@@ -39660,27 +39704,17 @@ function initWalletButtons(containerId,options={}) {
     <label>Recovery password <input type="password" id="wbPassword" autocomplete="new-password" minlength="12" maxlength="1024"></label>
     <label>Repeat password when creating a backup <input type="password" id="wbPasswordConfirm" autocomplete="new-password" maxlength="1024"></label>
     <p>Keep your encrypted recovery file and password. Export again after each transaction or recovery update. Older files do not contain later requests. Losing your wallet key or a deposit claim secret can make funds unrecoverable. This browser holds decrypted keys while open; use a trusted device. Reload before changing wallets.</p>`;
-  if(_autoPasskey)document.body.appendChild(document.getElementById('wbAccountMenu'));
-  const handle=run=>async()=>{try{await run();}catch{_wlog('Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.','error');}};
+  if(autoPasskey)document.body.appendChild(document.getElementById('wbAccountMenu'));
+  const handle=run=>async()=>{try{await run();}catch{walletMessage('Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.','error');}};
   document.getElementById('wbAztecBtn').addEventListener('click',()=>document.getElementById('wbAztecFile').click());
   document.getElementById('wbImportPasskeyBtn')?.addEventListener('click',handle(_importPasskeyAccount));
   document.getElementById('wbAztecGenBtn')?.addEventListener('click',handle(_generateAztecWallet));
   document.getElementById('wbBackupBtn').addEventListener('click',handle(_exportAztecWallet));
   document.getElementById('wbEthBrowserBtn').addEventListener('click',handle(_loadEthBrowser));
   document.getElementById('wbAztecFile').addEventListener('change',async event=>{try{const file=event.target.files[0];if(file)await handle(()=>_loadAztecWallet(file))();}finally{event.target.value='';}});
-  if(window.ethereum?.on) for(const name of ['accountsChanged','chainChanged','disconnect'])window.ethereum.on(name,accounts=>{
-    if(name==='accountsChanged') {
-      const selected=_firstEthereumAccount(accounts);
-      if(window.walletState.ethType==='browser' && selected===window.walletState.ethAccount?.toLowerCase()) return;
-      // Initial permission approval announces the account being connected. Verify
-      // it against both the requested signer and a final account read before use.
-      if(_connectingEth && window.walletState.ethType!=='browser' && selected!==null && (_connectingEth.account===null || _connectingEth.account===selected)) {_connectingEth.account=selected;return;}
-    }
-    if(window.walletState.ethType==='browser' || _connectingEth) {_invalidateWalletContext();_updateButtonColors();}
-  });
   _updateButtonColors();
 }
-function resetWalletState() { _invalidateWalletContext(); _updateButtonColors(); }
+function resetWalletState() { window.BillboardAccount.invalidate(); _updateButtonColors(); }
 
 </script>
 <script>
@@ -40433,23 +40467,11 @@ if (typeof module !== 'undefined' && module.exports) {
 // Each app includes this via build placeholder APP_ENV.
 // ============================================================
 
-// Mutable log target — apps set this before calling engine functions
-let _currentStatusDiv = 'status';
-
 // Connection settings are public, explicit and shared across pages. Deployment
 // uses its reviewed manifest; it never inherits an author's selected board.
 function _getPublicConfig() { return window.billboardConfigStore?.snapshot().config || null; }
 function _getConfigRevision() { return window.billboardConfigStore?.snapshot().revision ?? 0; }
-function _deploymentConfig() {
-  const field=document.getElementById('deploymentManifest');
-  if(!field) return null;
-  if(!window.__aztec?.deploymentManifestConfig) throw new Error('Application is still loading.');
-  try { return window.__aztec.deploymentManifestConfig(JSON.parse(field.value)); }
-  catch { throw new Error('Import a valid reviewed deployment manifest first.'); }
-}
 function _connectionConfig() {
-  const deployment=_deploymentConfig();
-  if(deployment) return deployment;
   const config=_getPublicConfig();
   if(!config) throw new Error('Import the board connection configuration first.');
   return {aztecNodeUrl:config.network.nodeUrl,ethRpcUrl:config.network.ethRpcUrl,
@@ -40460,7 +40482,7 @@ function _connectionConfig() {
 function _getEthRpcUrl() { return _connectionConfig().ethRpcUrl; }
 window.billboardConfigStore?.subscribe(()=>{
   if(window.walletState?.aztec || window.walletState?.ethSigner || (typeof _walletBusy!=='undefined' && _walletBusy)) {
-    _invalidateWalletContext(); _updateButtonColors();
+    _invalidateWalletContext(); _updateAccountState();
   }
 });
 
@@ -40543,7 +40565,7 @@ function buildEnv(extra) {
   const env = {
     aztec: window.__aztec,
     ethers: ethers,
-    log: (msg, level) => log(msg, level || 'info', _currentStatusDiv),
+    log: extra.log,
     initCRS: makeInitCRS(),
     createStore: makeCreateStore(),
     getBrowserSigner: getBrowserSigner,
@@ -40555,13 +40577,12 @@ function buildEnv(extra) {
 // ============================================================
 // Build config object — app provides action + extra fields
 // ============================================================
-function buildConfig(action, extra) {
+function buildConfig(action, extra, connection=_connectionConfig()) {
   const ws = window.walletState;
   let ethWallet = null;
   if (ws && ws.ethType === 'json') {
     ethWallet = { privateKey: ws.ethSigner.privateKey };
   }
-  const connection=_connectionConfig();
   const config = {
     ...(extra || {}), ...connection,
     aztecApiKey:'',
@@ -40614,14 +40635,14 @@ function publicOperationFailure(error) {
   return Object.assign(new Error(messages[code]||'Wallet operation did not complete. Check the connection and recovery records; reload if the account or network changed.'),{code});
 }
 
-function makeCallEngine(engineFn, envExtra) {
+function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connectionConfig}={}) {
   let running=false;
-  return async function callEngine(action, statusDiv, extra) {
+  return async function callEngine(action, onProgress, extra) {
     if(running) throw new Error('Another wallet operation is in progress.');
     _assertWalletLive();
     const ws=window.walletState, generation=_walletGeneration;
     if(!ws?.aztec?.address) throw new Error('Load an Aztec wallet first.');
-    const identity=()=>JSON.stringify([_getConfigRevision(),_connectionConfig(),ws.aztec?.secretKey,ws.aztec?.salt,ws.ethAccount,ws.ethChainId],(_,value)=>typeof value==='bigint'?value.toString():value);
+    const identity=()=>JSON.stringify([_getConfigRevision(),connection(),ws.aztec?.secretKey,ws.aztec?.salt,ws.ethAccount,ws.ethChainId],(_,value)=>typeof value==='bigint'?value.toString():value);
     const expected=identity();
     async function guard() {
       _assertWalletLive();
@@ -40636,7 +40657,7 @@ function makeCallEngine(engineFn, envExtra) {
       if(generation!==_walletGeneration || expected!==identity()) throw new Error('Wallet or deployment configuration changed. Reload before continuing.');
     }
     async function verifyBoard() {
-      if(!envExtra?.artifact || document.getElementById('deploymentManifest'))return;
+      if(!envExtra?.artifact || deployment)return;
       const config=_getPublicConfig(),api=window.BillboardPublic;
       if(!config || !api)throw new Error('Board verification is unavailable.');
       await api.connectPublicFeed({nodeUrl:config.network.nodeUrl,ethereumUrl:config.network.ethRpcUrl,
@@ -40657,13 +40678,12 @@ function makeCallEngine(engineFn, envExtra) {
       return await navigator.locks.request(lockName,{ifAvailable:true},async lock=>{
         if(!lock) throw new Error('This wallet is busy in another tab.');
         await guard();
-        if(envExtra?.artifact && !document.getElementById('deploymentManifest') && !_getPublicConfig()?.privateFee && ['deposit','claim','post','withdraw','auto','declare-immoral','set-moderation-policy','transfer-censor'].includes(action)) throw Object.assign(new Error('Private fee configuration required.'),{code:'BB_FEE_CONFIG_REQUIRED'});
+        if(envExtra?.artifact && !deployment && !_getPublicConfig()?.privateFee && ['deposit','claim','post','withdraw','auto','declare-immoral','set-moderation-policy','transfer-censor'].includes(action)) throw Object.assign(new Error('Private fee configuration required.'),{code:'BB_FEE_CONFIG_REQUIRED'});
         if(!window.BillboardReadiness) throw new Error('Browser capability checks are unavailable.');
         await window.BillboardReadiness.check();
         await guard();
         await verifyBoard();
-        _currentStatusDiv=statusDiv;
-        const env=buildEnv(envExtra),config=buildConfig(action,extra);
+        const env=buildEnv({...envExtra,log:onProgress}),config=buildConfig(action,extra,connection());
         const prior=config.preProveHook;
         config.contextGuard=guard;
         config.preProveHook=async value=>{await guard();await verifyBoard();if(prior)await prior(value);await guard();};
@@ -40688,6 +40708,146 @@ function makeCallEngine(engineFn, envExtra) {
       throw publicOperationFailure(error);
     } finally {running=false;}
   };
+}
+
+// Browser application boundary. SDK objects and transaction acknowledgements stay here.
+/**
+ * @typedef {'status'|'deposit'|'claim'|'post'|'withdraw'|'claim-l1'|'recover'|'recover-eth'|'recover-l2'|'declare-immoral'|'set-moderation-policy'|'transfer-censor'|'deploy'} BoardAction
+ * @callback BoardProgress
+ * @param {string} message
+ * @param {string} [level]
+ * @returns {void}
+ * @typedef {Object} BoardInput
+ * @property {string} [message] Public post text, at most 992 UTF-8 bytes.
+ * @property {boolean} [isDummy] Advance screening without publishing text.
+ * @property {string} [depositAmount] Decimal token amount.
+ * @property {string} [reuseTxHash] Existing Ethereum deposit hash.
+ * @property {boolean} [retryEthereum] Retry the saved request with its original nonce.
+ * @property {number} [postIndex] Public post index to flag.
+ * @property {string} [censorResponse] Public removal reason.
+ * @property {string} [newCensor] Replacement Aztec moderator address.
+ * @property {string} [moderationPolicy] New policy text.
+ * @property {object} [fundingRecord] Public fee-deposit recovery record.
+ * @property {string} [readyTxHash] Saved deployment activation transaction.
+ * @property {string} [dataDirPrefix] Deployment storage namespace.
+ * @typedef {Object} BoardResult
+ * @property {string} [state] Engine outcome, e.g. postable or transaction_recovered.
+ * @property {string} [status] Deployment activation status.
+ * @property {string} [lastL2TxHash]
+ * @property {string} [lastEthereumTxHash]
+ * @property {string|null} [withdrawTxHash]
+ * @property {string} [l2Addr]
+ * @property {string} [portalAddr]
+ * @property {string} [feePayer]
+ * @property {{txHash:string}} [depositInfo]
+ * @property {object} [record] Public fee recovery data.
+ */
+/**
+ * One instance per page. Application state survives UI rendering; reload clears it.
+ * @param {{kind?: 'author'|'moderator'|'fees'|'deploy', deploymentConfig?: ()=>{deploymentManifest:any}, pause?: Function}} options
+ */
+function createBillboardApplication({kind='author',deploymentConfig,pause}={}) {
+  let handles=null,withdrawTxHash,revision=0,fundingRecord=null;
+  const journalAcknowledgements=new Map(),ethereumAcknowledgements=new Map();
+  const isBoard=kind==='author'||kind==='moderator';
+  const execute=makeCallEngine((env,config)=>kind==='deploy'?runDeploy(env,config):kind==='fees'?runFeeJuiceFlow(env,config):runBillboardUser(env,config),{
+    ...(isBoard||kind==='deploy'?{artifact:BILLBOARD_ARTIFACT,portalBytecode:PORTAL_BYTECODE}:{}),
+    ...(kind!=='deploy'?{privateFeeArtifact:BILLBOARD_PRIVATE_FEE_ARTIFACT}:{}),
+    ...(pause?{pause}:{}),
+    createJournalStorage:()=>window.__aztec.createBrowserJournalStorage(),
+    createTransactionJournal:options=>window.__aztec.createL2Journal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
+    createEthereumJournal:options=>window.__aztec.createEthereumJournal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
+    fundPrivateFees:options=>window.__aztec.fundPrivateFees(options),
+  },{deployment:kind==='deploy',connection:deploymentConfig});
+function saveFundingRecord(record) {
+  // This record contains public recovery metadata, not the derived salt or claim secret.
+  const allowed=['schema','chainId','version','rollupAddress','portalAddress','tokenAddress','privateFeeAddress','sender','nonce','amount','txHash','leafIndex'];
+  if(!record || record.schema!=='private-fee-funding-v1' || Object.keys(record).some(key=>!allowed.includes(key))) throw new Error('Invalid recovery record.');
+  const text = JSON.stringify(record);
+  const key='billboard-private-fee-recovery:'+JSON.stringify([record.chainId,record.rollupAddress,record.privateFeeAddress,record.sender,record.nonce]);
+  const priorText=localStorage.getItem(key);
+  if(priorText){
+    const prior=JSON.parse(priorText);
+    const fields=['schema','chainId','version','rollupAddress','portalAddress','tokenAddress','privateFeeAddress','sender','nonce','amount'];
+    if(fields.some(field=>prior[field]!==record[field]) || (prior.txHash && prior.txHash!==record.txHash) ||
+       (prior.leafIndex!==undefined && prior.leafIndex!==record.leafIndex)) throw new Error('Recovery record conflicts with a previous deposit.');
+  }
+  localStorage.setItem(key, text);
+  localStorage.setItem('billboard-private-fee-recovery-latest',key);
+  fundingRecord = record;
+  return record;
+}
+  function readFundingRecovery() {
+    if(fundingRecord)return fundingRecord;
+    const key=localStorage.getItem('billboard-private-fee-recovery-latest');
+    const saved=key&&localStorage.getItem(key);
+    return saved?saveFundingRecord(JSON.parse(saved)):null;
+  }
+  async function publicConfiguration(result,gasSettings,manifest) {
+    if(kind!=='deploy')throw Error('Deployment configuration required.');
+    const n=manifest.network;
+    const privateFee=gasSettings?{contractAddress:(await window.__aztec.derivePrivateFeeAddress(BILLBOARD_PRIVATE_FEE_ARTIFACT)).toString(),gasSettings}:null;
+    return window.BillboardConfig.validate({schemaVersion:1,network:{nodeUrl:n.nodeUrl,ethRpcUrl:n.ethRpcUrl,chainId:n.chainId,rollupVersion:n.rollupVersion,rollupAddress:n.rollup},board:{portalAddress:result.portalAddr.toLowerCase(),contractAddress:result.l2Addr.toLowerCase()},privateFee});
+  }
+  function stamp(){return JSON.stringify([revision,_getConfigRevision(),_walletGeneration]);}
+  function check(expected){_assertWalletLive();if(stamp()!==expected)throw Error('Account or configuration changed. Reconnect.');}
+  function connectedHandles(){_assertWalletLive();if(!handles)throw Error('Board account is not connected.');return handles;}
+  /** @param {BoardAction} action @param {BoardInput} input @param {BoardProgress} onProgress @returns {Promise<BoardResult>} */
+  async function run(action,input={},onProgress=()=>{}) {
+    const expected=stamp(),ws=window.walletState;
+    const identity=JSON.stringify([ws.aztec?.address.toString(),_getConfigRevision(),_getPublicConfig()]);
+    const common=isBoard?{portalAddress:_getPublicConfig()?.board.portalAddress,dataDirPrefix:kind==='moderator'?'pxe_bb_censor_':'pxe_bb_',
+      depositChainId:handles?.depositChainId,withdrawTxHash,
+      claimSecretStore:makeClaimSecretStore(ws.aztec?.secretKey,ws.aztec?.salt),censorWalletJson:ws.aztec?.raw}:{};
+    const result=await execute(action,onProgress,{...common,...input,...(kind==='fees'?{saveRecovery:saveFundingRecord}:{}),acknowledgeTx:journalAcknowledgements.get(identity),acknowledgeEthereumTx:ethereumAcknowledgements.get(identity)});
+    check(expected);
+    if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
+    if(result?.lastEthereumTxHash)ethereumAcknowledgements.set(identity,result.lastEthereumTxHash);
+    if(result?.handles)handles=result.handles;
+    if(result&&Object.hasOwn(result,'withdrawTxHash'))withdrawTxHash=result.withdrawTxHash;
+    if(kind==='fees'&&result.record)saveFundingRecord(result.record);
+    const {handles:privateHandles,receipt:privateReceipt,...data}=result;
+    return data;
+  }
+  /** @returns {Promise<{amount:bigint,depositChainId:bigint,nextAllowedTime:bigint,lastScreenedIndex:bigint,lastRealPostIndex:bigint,chainTime:number}>} */
+  async function readDeposit() {
+    const h=connectedHandles(),expected=stamp();
+    const info=await readBillboardDepositInfo(h.contract,h.address,h.depositChainId);
+    const chainTime=await getL2Timestamp(h.aztecNode);check(expected);
+    if(info.amount>0n)h.depositChainId=info.depositChainId;
+    return {...info,chainTime};
+  }
+  /** @returns {Promise<string>} */
+  async function readPolicy() {
+    const h=connectedHandles(),expected=stamp();
+    const result=await h.contract.methods.get_moderation_policy().simulate({from:window.__aztec.NO_FROM});check(expected);
+    const fields=result?.result?.[0],length=Number(result?.result?.[1]??0);
+    return length>0?window.unpackFieldsToString(fields,length):'';
+  }
+  /** @returns {Promise<{address:string,active:boolean,isCurrentAccount:boolean,multiplier:number}>} */
+  async function readModerator() {
+    const h=connectedHandles(),expected=stamp();
+    let value=await h.contract.methods.get_censor().simulate({from:window.__aztec.NO_FROM});
+    if(value?.result!==undefined)value=value.result;if(value?.value!==undefined)value=value.value;
+    const address=value?.toString?value.toString():value?'0x'+BigInt(value).toString(16).padStart(64,'0'):'0x0';
+    const n=BigInt(address);if(n<0n||n>=21888242871839275222246405745257275088548364400416034343698204186575808495617n)throw Error('Invalid moderator address');
+    const multiplier=Number(extractInt(await h.contract.methods.get_k_multiplier().simulate({from:window.__aztec.NO_FROM})));
+    if(!Number.isSafeInteger(multiplier)||multiplier<1||multiplier>65535)throw Error('Invalid moderator settings');
+    check(expected);return {address,active:n!==0n,isCurrentAccount:BigInt(h.address.toString())===n,multiplier};
+  }
+  async function readFeed(options={}) {
+    const expected=stamp(),config=_getPublicConfig();
+    const page=await window.BillboardPublic.readFeed({...options,portalAddress:config.board.portalAddress,nodeUrl:config.network.nodeUrl,ethereumUrl:config.network.ethRpcUrl,expectedConfig:config});
+    if(stamp()!==expected)throw Error('Configuration changed. Refresh the board.');return page;
+  }
+  async function reset() {
+    const previous=handles;handles=null;withdrawTxHash=undefined;fundingRecord=null;revision++;
+    journalAcknowledgements.clear();ethereumAcknowledgements.clear();
+    if(previous?.pxe?.stop)await previous.pxe.stop();
+  }
+  window.billboardConfigStore?.subscribe(()=>{reset().catch(()=>{_invalidateWalletContext();});});
+  return Object.freeze({run,readDeposit,readPolicy,readModerator,readFeed,reset,publicConfiguration,readFundingRecovery,importFundingRecovery:saveFundingRecord,
+    get connected(){return handles!==null;},get revision(){return revision;}});
 }
 
 </script>
@@ -40766,11 +40926,9 @@ function getThreadingMode() {
 // ============================================================
 // Main — start the deploy flow
 // ============================================================
-const callDeploy = makeCallEngine((env, config) => runDeploy(env, config), {
-  pause, portalBytecode: PORTAL_BYTECODE, artifact: BILLBOARD_ARTIFACT,
-  createJournalStorage: () => window.__aztec.createBrowserJournalStorage(),
-  createTransactionJournal: options => window.__aztec.createL2Journal({...options, storage: window.__aztec.createBrowserJournalStorage()}),
-});
+const application=createBillboardApplication({kind:'deploy',pause,
+  deploymentConfig:()=>window.__aztec.deploymentManifestConfig(JSON.parse(document.getElementById('deploymentManifest').value))});
+function callDeploy(action,statusDiv,input){return application.run(action,input,(message,level)=>log(message,level||'info',statusDiv));}
 let deploymentReportUrl;
 async function startDeploy() {
   if(deploymentReportUrl){URL.revokeObjectURL(deploymentReportUrl);deploymentReportUrl=null;}
@@ -40791,7 +40949,6 @@ async function startDeploy() {
   extraConfig.retryEthereum=document.getElementById('retryEthereum')?.checked===true;
   extraConfig.readyTxHash=document.getElementById('readyTxHash').value.trim()||undefined;
   extraConfig.dataDirPrefix='pxe_bb_';
-  _currentStatusDiv='status';
 
   try {
     const result = await callDeploy('deploy', 'status', extraConfig);
@@ -40809,12 +40966,10 @@ async function startDeploy() {
       const connect=document.createElement('button');connect.type='button';connect.textContent='Use this board';
       const download=document.createElement('button');download.type='button';download.textContent='Download public connection settings';
       const makePublic=async()=>{
-        const n=extraConfig.deploymentManifest.network,text=document.getElementById('publicFeeGas').value.trim();
-        let privateFee=null;
-        if(text)privateFee={contractAddress:(await window.__aztec.derivePrivateFeeAddress(BILLBOARD_PRIVATE_FEE_ARTIFACT)).toString(),gasSettings:JSON.parse(text)};
-        return BillboardConfig.validate({schemaVersion:1,network:{nodeUrl:n.nodeUrl,ethRpcUrl:n.ethRpcUrl,chainId:n.chainId,rollupVersion:n.rollupVersion,rollupAddress:n.rollup},board:{portalAddress:result.portalAddr.toLowerCase(),contractAddress:result.l2Addr.toLowerCase()},privateFee});
+        const text=document.getElementById('publicFeeGas').value.trim();
+        return application.publicConfiguration(result,text?JSON.parse(text):null,extraConfig.deploymentManifest);
       };
-      connect.addEventListener('click',async()=>{try{billboardConfigStore.install(await makePublic());location.href='user.html';}catch{log('Could not prepare public settings. Check the fee gas JSON. The deployment report is still available.','error','status');}});
+      connect.addEventListener('click',async()=>{try{const config=await makePublic();location.href='user.html#network='+[config.network.chainId,config.network.rollupAddress,config.network.rollupVersion].join(':')+'&board='+config.board.contractAddress;}catch{log('Could not prepare public settings. Check the fee gas JSON. The deployment report is still available.','error','status');}});
       download.addEventListener('click',async()=>{try{const config=await makePublic(),url=URL.createObjectURL(new Blob([JSON.stringify(config,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='board-public-config.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch{log('Could not prepare public settings. Check the fee gas JSON. The deployment report is still available.','error','status');}});
       holder.append(connect,download);status.append(holder);
     }

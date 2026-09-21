@@ -14,23 +14,11 @@
 // Each app includes this via build placeholder APP_ENV.
 // ============================================================
 
-// Mutable log target — apps set this before calling engine functions
-let _currentStatusDiv = 'status';
-
 // Connection settings are public, explicit and shared across pages. Deployment
 // uses its reviewed manifest; it never inherits an author's selected board.
 function _getPublicConfig() { return window.billboardConfigStore?.snapshot().config || null; }
 function _getConfigRevision() { return window.billboardConfigStore?.snapshot().revision ?? 0; }
-function _deploymentConfig() {
-  const field=document.getElementById('deploymentManifest');
-  if(!field) return null;
-  if(!window.__aztec?.deploymentManifestConfig) throw new Error('Application is still loading.');
-  try { return window.__aztec.deploymentManifestConfig(JSON.parse(field.value)); }
-  catch { throw new Error('Import a valid reviewed deployment manifest first.'); }
-}
 function _connectionConfig() {
-  const deployment=_deploymentConfig();
-  if(deployment) return deployment;
   const config=_getPublicConfig();
   if(!config) throw new Error('Import the board connection configuration first.');
   return {aztecNodeUrl:config.network.nodeUrl,ethRpcUrl:config.network.ethRpcUrl,
@@ -41,7 +29,7 @@ function _connectionConfig() {
 function _getEthRpcUrl() { return _connectionConfig().ethRpcUrl; }
 window.billboardConfigStore?.subscribe(()=>{
   if(window.walletState?.aztec || window.walletState?.ethSigner || (typeof _walletBusy!=='undefined' && _walletBusy)) {
-    _invalidateWalletContext(); _updateButtonColors();
+    _invalidateWalletContext(); _updateAccountState();
   }
 });
 
@@ -124,7 +112,7 @@ function buildEnv(extra) {
   const env = {
     aztec: window.__aztec,
     ethers: ethers,
-    log: (msg, level) => log(msg, level || 'info', _currentStatusDiv),
+    log: extra.log,
     initCRS: makeInitCRS(),
     createStore: makeCreateStore(),
     getBrowserSigner: getBrowserSigner,
@@ -136,13 +124,12 @@ function buildEnv(extra) {
 // ============================================================
 // Build config object — app provides action + extra fields
 // ============================================================
-function buildConfig(action, extra) {
+function buildConfig(action, extra, connection=_connectionConfig()) {
   const ws = window.walletState;
   let ethWallet = null;
   if (ws && ws.ethType === 'json') {
     ethWallet = { privateKey: ws.ethSigner.privateKey };
   }
-  const connection=_connectionConfig();
   const config = {
     ...(extra || {}), ...connection,
     aztecApiKey:'',
@@ -195,14 +182,14 @@ function publicOperationFailure(error) {
   return Object.assign(new Error(messages[code]||'Wallet operation did not complete. Check the connection and recovery records; reload if the account or network changed.'),{code});
 }
 
-function makeCallEngine(engineFn, envExtra) {
+function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connectionConfig}={}) {
   let running=false;
-  return async function callEngine(action, statusDiv, extra) {
+  return async function callEngine(action, onProgress, extra) {
     if(running) throw new Error('Another wallet operation is in progress.');
     _assertWalletLive();
     const ws=window.walletState, generation=_walletGeneration;
     if(!ws?.aztec?.address) throw new Error('Load an Aztec wallet first.');
-    const identity=()=>JSON.stringify([_getConfigRevision(),_connectionConfig(),ws.aztec?.secretKey,ws.aztec?.salt,ws.ethAccount,ws.ethChainId],(_,value)=>typeof value==='bigint'?value.toString():value);
+    const identity=()=>JSON.stringify([_getConfigRevision(),connection(),ws.aztec?.secretKey,ws.aztec?.salt,ws.ethAccount,ws.ethChainId],(_,value)=>typeof value==='bigint'?value.toString():value);
     const expected=identity();
     async function guard() {
       _assertWalletLive();
@@ -217,7 +204,7 @@ function makeCallEngine(engineFn, envExtra) {
       if(generation!==_walletGeneration || expected!==identity()) throw new Error('Wallet or deployment configuration changed. Reload before continuing.');
     }
     async function verifyBoard() {
-      if(!envExtra?.artifact || document.getElementById('deploymentManifest'))return;
+      if(!envExtra?.artifact || deployment)return;
       const config=_getPublicConfig(),api=window.BillboardPublic;
       if(!config || !api)throw new Error('Board verification is unavailable.');
       await api.connectPublicFeed({nodeUrl:config.network.nodeUrl,ethereumUrl:config.network.ethRpcUrl,
@@ -238,13 +225,12 @@ function makeCallEngine(engineFn, envExtra) {
       return await navigator.locks.request(lockName,{ifAvailable:true},async lock=>{
         if(!lock) throw new Error('This wallet is busy in another tab.');
         await guard();
-        if(envExtra?.artifact && !document.getElementById('deploymentManifest') && !_getPublicConfig()?.privateFee && ['deposit','claim','post','withdraw','auto','declare-immoral','set-moderation-policy','transfer-censor'].includes(action)) throw Object.assign(new Error('Private fee configuration required.'),{code:'BB_FEE_CONFIG_REQUIRED'});
+        if(envExtra?.artifact && !deployment && !_getPublicConfig()?.privateFee && ['deposit','claim','post','withdraw','auto','declare-immoral','set-moderation-policy','transfer-censor'].includes(action)) throw Object.assign(new Error('Private fee configuration required.'),{code:'BB_FEE_CONFIG_REQUIRED'});
         if(!window.BillboardReadiness) throw new Error('Browser capability checks are unavailable.');
         await window.BillboardReadiness.check();
         await guard();
         await verifyBoard();
-        _currentStatusDiv=statusDiv;
-        const env=buildEnv(envExtra),config=buildConfig(action,extra);
+        const env=buildEnv({...envExtra,log:onProgress}),config=buildConfig(action,extra,connection());
         const prior=config.preProveHook;
         config.contextGuard=guard;
         config.preProveHook=async value=>{await guard();await verifyBoard();if(prior)await prior(value);await guard();};

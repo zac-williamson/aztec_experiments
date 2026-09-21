@@ -13,7 +13,7 @@ const required = [
   '.build/contracts-manifest.json', '.build/sdk/sdk-manifest.json', 'apps/dist/crs/crs-manifest.json',
   'node_modules/ethers/dist/ethers.umd.min.js',
   ...['styles.css', 'helpers.js', 'aztec-lib.js', 'crs-client.js', 'poseidon2.js',
-    'public-app-config.js', 'public-app-config-ui.js', 'public-app-bootstrap.js', 'browser-readiness.js', 'browser-connection-check.js', 'wallet-buttons.js', 'passkey-wallet.js', 'wallet-backup.js', 'claim-secret-store.js', 'app-env.js', 'moderation-policy.js', 'rpc-config.example.json'].map(x => `shared/${x}`),
+    'public-app-config.js', 'public-app-config-ui.js', 'public-app-bootstrap.js', 'browser-readiness.js', 'browser-connection-check.js', 'account.js','application.js','wallet-buttons.js', 'passkey-wallet.js', 'wallet-backup.js', 'claim-secret-store.js', 'app-env.js', 'moderation-policy.js', 'rpc-config.example.json'].map(x => `shared/${x}`),
 ];
 function safe(root, name) {
   const base = fs.realpathSync(root);

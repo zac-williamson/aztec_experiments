@@ -8,7 +8,7 @@
 const MSG_FIELDS = 32;
 const MSG_BYTES = MSG_FIELDS * 31;
 
-let _handles = null;
+const application=createBillboardApplication({kind:'moderator'});
 let _stateResult = null;
 let _billboardInterval = null;
 let _billboardLastCount = -1;
@@ -16,42 +16,19 @@ let _billboardLastBlock = -1;
 
 // Helpers
 function _portalAddr() { return _getPublicConfig()?.board.portalAddress || ''; }
-function _commonConfig() {
-  const c = {
-    portalAddress: _portalAddr(),
-    dataDirPrefix: 'pxe_bb_censor_',
-  };
-  const ws = window.walletState;
-  if (ws && ws.aztec && ws.aztec.raw) {
-    c.censorWalletJson = ws.aztec.raw;
-  }
-  return c;
-}
-
 // Bundle readiness
 if (!checkBundle('setupStatus')) {
   waitForBundle(() => checkBundle('setupStatus'));
 }
 setupRpcAuth();
 
-const journalAcknowledgements=new Map();
-const runCensorEngine = makeCallEngine(runBillboardUser, {
-  createTransactionJournal: options => window.__aztec.createL2Journal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
-  artifact: typeof BILLBOARD_ARTIFACT !== 'undefined' ? BILLBOARD_ARTIFACT : null,
-  privateFeeArtifact: typeof BILLBOARD_PRIVATE_FEE_ARTIFACT !== 'undefined' ? BILLBOARD_PRIVATE_FEE_ARTIFACT : null,
-  portalBytecode: typeof PORTAL_BYTECODE !== 'undefined' ? PORTAL_BYTECODE : null,
-});
-
 async function callEngine(action,statusDiv,extra={}) {
-  const revision=_getConfigRevision();
-  const identity=JSON.stringify([window.walletState?.aztec?.address?.toString(),_portalAddr(),_getNodeUrl(),_getEthRpcUrl(),revision]);
-  const result=await runCensorEngine(action,statusDiv,{...extra,acknowledgeTx:journalAcknowledgements.get(identity)});
-  if(revision!==_getConfigRevision())throw Error('Configuration changed. Reconnect.');
-  if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
+  const result=await application.run(action,extra,(message,level)=>log(message,level||'info',statusDiv));
+  if(result && Object.hasOwn(result,'withdrawTxHash'))_stateResult={...(_stateResult||{}),withdrawTxHash:result.withdrawTxHash};
   return result;
 }
 async function recoverSavedTransaction() {
-  try {await callEngine('recover','setupStatus',_commonConfig());}
+  try {await callEngine('recover','setupStatus',{});}
   catch(error){log(publicOperationFailure(error),'error','setupStatus');}
 }
 
@@ -60,16 +37,15 @@ async function recoverSavedTransaction() {
 // ============================================================
 async function loadCensorWalletAndConnect() {
   const revision=_getConfigRevision();
-  const ws = window.walletState;
-  if (!ws || !ws.aztec || !ws.aztec.secretKey) throw new Error('Aztec wallet not loaded.');
+  const account=window.BillboardAccount.snapshot();
+  if(!account.address)throw Error('Aztec account not loaded.');
 
   // Use 'status' action to set up PXE, wallet, contract
   // requireEth=false so we don't need an ETH wallet
   const result = await callEngine('status', 'setupStatus', {
-    ..._commonConfig(),
+
   });
   if(revision!==_getConfigRevision())throw Error('Configuration changed. Reconnect.');
-  _handles = result.handles;
   _stateResult = result;
 
   // Auto-fill addresses
@@ -88,31 +64,16 @@ async function loadCensorWalletAndConnect() {
 // Censor status — am I the censor?
 // ============================================================
 async function checkCensorStatus() {
-  const revision=_getConfigRevision(),handles=_handles;
+  const revision=_getConfigRevision(),session=application.revision;
   const statusDiv = document.getElementById('censorStatusDiv');
   const controlsCard = document.getElementById('censorControlsCard');
   const transferCard = document.getElementById('transferCard');
   const policyCard = document.getElementById('policyCard');
-  if (!_handles || !_handles.contract) return;
+  if (!application.connected) return;
 
   try {
-    const censorResult = await handles.contract.methods.get_censor().simulate({ from: window.__aztec.NO_FROM });
-    let cv = censorResult;
-    if (cv && cv.result !== undefined) cv = cv.result;
-    if (cv && cv.value !== undefined) cv = cv.value;
-    const censorAddr = cv && cv.toString ? cv.toString() : (cv ? '0x' + BigInt(cv).toString(16).padStart(64, '0') : '0x0');
-    const censorValue=BigInt(censorAddr);
-    if(censorValue<0n||censorValue>=21888242871839275222246405745257275088548364400416034343698204186575808495617n)throw Error('Invalid moderator address');
-    const censorActive = censorValue!==0n;
-
-    let kMult = null;
-    try {
-      const kResult = await handles.contract.methods.get_k_multiplier().simulate({ from: window.__aztec.NO_FROM });
-      kMult = Number(extractInt(kResult));
-      if(!Number.isSafeInteger(kMult)||kMult<1||kMult>65535)throw Error('Invalid moderator settings');
-    } catch (e) { if(revision!==_getConfigRevision()||handles!==_handles)return;throw Error('Moderator settings unavailable');}
-
-    if(revision!==_getConfigRevision()||handles!==_handles)return;
+    const {address:censorAddr,active:censorActive,isCurrentAccount:isCensor,multiplier:kMult}=await application.readModerator();
+    if(revision!==_getConfigRevision()||session!==application.revision)return;
     if (!censorActive) {
       statusDiv.textContent = 'No moderator configured for this board.';
       controlsCard.style.display = 'none';
@@ -121,8 +82,6 @@ async function checkCensorStatus() {
       return;
     }
 
-    const myAddr = _handles.address.toString();
-    const isCensor = BigInt(myAddr) === censorValue;
     if (isCensor) {
       statusDiv.textContent = 'You are the moderator (K=' + kMult + '). You can flag posts and transfer rights.';
       controlsCard.style.display = '';
@@ -135,7 +94,7 @@ async function checkCensorStatus() {
       transferCard.style.display = 'none';
       policyCard.style.display = 'none';
     }
-  } catch (e) { if(revision!==_getConfigRevision()||handles!==_handles)return;
+  } catch (e) { if(revision!==_getConfigRevision()||session!==application.revision)return;
     statusDiv.textContent = 'Could not verify moderator status. Reconnect and retry.';
     if (controlsCard) controlsCard.style.display = 'none';
     if (transferCard) transferCard.style.display = 'none';
@@ -147,24 +106,16 @@ async function checkCensorStatus() {
 // Moderation policy — fetch + display + update
 // ============================================================
 async function refreshPolicy() {
-  const revision=_getConfigRevision(),handles=_handles;
+  const revision=_getConfigRevision(),session=application.revision;
   const box = document.getElementById('policyBox');
   const txt = document.getElementById('policyText');
-  if (!box || !txt || !_handles || !_handles.contract) return;
+  if (!box || !txt || !application.connected) return;
   try {
-    const result = await handles.contract.methods.get_moderation_policy().simulate({ from: window.__aztec.NO_FROM });
-    if(revision!==_getConfigRevision()||handles!==_handles)return;
-    let fields = result, len = 0;
-    if (result && result.result !== undefined) {
-      fields = result.result[0] || result.result;
-      len = Number(result.result[1] !== undefined ? result.result[1] : 0);
-    }
-    if (len > 0 && window.unpackFieldsToString) {
-      const text = window.unpackFieldsToString(fields, len);
-      if (text) { txt.textContent = text; box.style.display = ''; return; }
-    }
+    const text=await application.readPolicy();
+    if(revision!==_getConfigRevision()||session!==application.revision)return;
+    if(text){txt.textContent=text;box.style.display='';return;}
     box.style.display = 'none';
-  } catch (e) { if(revision!==_getConfigRevision()||handles!==_handles)return; box.style.display = 'none'; }
+  } catch (e) { if(revision!==_getConfigRevision()||session!==application.revision)return; box.style.display = 'none'; }
 }
 
 async function doSetModerationPolicy() {
@@ -174,7 +125,7 @@ async function doSetModerationPolicy() {
 
     await callEngine('set-moderation-policy', 'policyStatus', {
       moderationPolicy: policyText,
-      ..._commonConfig(),
+
     });
 
     document.getElementById('moderationPolicyInput').value = '';
@@ -205,7 +156,7 @@ async function refreshBillboard() {
   const selectedRevision=_getConfigRevision();
   try {
     const selectedPortal=_portalAddr(),selectedNode=_getNodeUrl();
-    const page=await window.BillboardPublic.readFeed({portalAddress:selectedPortal,nodeUrl:selectedNode,ethereumUrl:_getEthRpcUrl(),expectedConfig:_getPublicConfig()});
+    const page=await application.readFeed();
     if(selectedRevision!==_getConfigRevision())return;
     _billboardLastCount=page.eventCount;_billboardLastBlock=page.lastBlock;
     if(meta)meta.textContent=page.progress.complete?'Latest messages through block '+page.lastBlock:'Loading public history through block '+page.lastBlock;
@@ -256,7 +207,7 @@ async function doDeclareImmoral() {
     await callEngine('declare-immoral', 'censorActionStatus', {
       postIndex: postIndex,
       censorResponse: responseText,
-      ..._commonConfig(),
+
     });
 
     document.getElementById('censorPostIndex').value = '';
@@ -276,7 +227,7 @@ async function doTransferCensor() {
 
     await callEngine('transfer-censor', 'transferStatus', {
       newCensor: newCensorAddr,
-      ..._commonConfig(),
+
     });
 
     document.getElementById('newCensorAddr').value = '';
@@ -290,15 +241,13 @@ async function doTransferCensor() {
 // ============================================================
 // Read L1 portal address from URL param (?portal=0x...) if present
 window.billboardConfigStore.subscribe(() => {
-  const previous=_handles;_handles=null;_stateResult=null;
+  _stateResult=null;
   stopBillboardFeed();_billboardLastCount=-1;_billboardLastBlock=-1;
-  journalAcknowledgements.clear();
   for(const id of ['censorCard','censorControlsCard','transferCard','policyCard']){const el=document.getElementById(id);if(el)el.style.display='none';}
   const portal=document.getElementById('portalAddr');if(portal)portal.value=_portalAddr();
   const feed=document.getElementById('billboardFeed');if(feed)feed.replaceChildren();
   const policy=document.getElementById('policyBox');if(policy)policy.style.display='none';
   const meta=document.getElementById('billboardMeta');if(meta)meta.textContent='Configuration changed. Reconnect to this board.';
-  if(previous?.pxe?.stop)Promise.resolve(previous.pxe.stop()).catch(()=>{});
 
 });
 
