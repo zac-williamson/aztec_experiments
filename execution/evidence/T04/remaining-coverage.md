@@ -14,9 +14,9 @@ retain their source snapshots; final-source reconciliation remains T05 work.
 | Repeated deposits | Redeposit222 passed two real deposit/claim/withdraw/refund cycles, replay rejection and exact fees | Final candidate binding; no unrelated full rerun required |
 | Mobile reading | Built mobile-sized reader083 and directory navigation passed | Representative physical-device qualification remains distinct |
 | Wallet routes | Actual MetaMask196 full journey and284 cold fee funding; earlier approval rejection/funding recovery retained | Reconcile remaining interruption cases against final source. Bundled Chromium extension support is distinct from installed browsers |
-| Performance | Source-matched Chrome294, Firefox290, WebKit291 each passed one cold+warm proof; browser-performance-pilots-20260921.json. Feed155 measured30cold loads, p951.629s |30cold+30warm statistical proof samples per supported engine remain incomplete; pilots do not establish p95 |
+| Performance | Source-matched Chrome294, Firefox290, WebKit291 each passed one cold+warm proof; browser-performance-pilots-20260921.json. Feed155 measured30cold loads, p951.629s |Chrome cohort322 is in progress with8of30 pairs verified;30cold+30warm samples per engine remain incomplete. Pilots are excluded; no p95 qualification yet |
 | Remote recovery | Verified backup/download/offline authentication296–300; automatic EC2 reboot recovery302 in134seconds | Replacement-host recovery remains untested |
-| Remote health | Native timer publishes aggregate health; CloudWatch missing/unhealthy alarm deployed and recovered toOK | No notification recipient; backup failure is not covered by moderator health alarm |
+| Remote health | Native timer publishes aggregate health; CloudWatch missing/unhealthy alarm deployed and recovered toOK | No notification recipient. Backup-failure monitoring325 is implemented and locally tested but not deployed because AWS authentication expired |
 
 No 1,001-proof repetitive campaign is required by the recorded C04 methodology.
 No performance, actual-browser, recovery or external-wallet promise is removed by
