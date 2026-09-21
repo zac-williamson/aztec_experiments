@@ -9,7 +9,7 @@ retain their source snapshots; final-source reconciliation remains T05 work.
 | Private fee funding UI | Cold-browser266 and actual MetaMask284 passed genuine fee funding, private claims and paid posting | Final candidate binding; these checks use disposable local chains |
 | Recovery | Actual withdrawal recovery251 and post recovery252 passed with full browser-process restart | Current-source stale-proof312 and same-note attribution313 passed; final candidate binding remains. Existing layered map is recovery-coverage-095.md |
 | History | C04 17/33 stateful TXE lifecycles, authenticated seeded1,002note continuation/exit, actual1,100record native/browser persistence; targeted checks084/085 passed | Final candidate binding; no claim of1,001genuinely proven publications |
-| Concurrency and traffic | Current withdrawal-traffic309 passed in359seconds: A's original proof survived B's post, B posted after A exited, private balances and pool reconciled. Evidence application-8d2b9c2a-274d-4a54-836e-e7ff3501d7db.json | Reconcile historical ten-author same-anchor evidence separately;309 is not ten-author throughput or single-block inclusion |
+| Concurrency and traffic | Current withdrawal-traffic309 passed in359seconds: A's original proof survived B's post, B posted after A exited, private balances and pool reconciled. Evidence application-8d2b9c2a-274d-4a54-836e-e7ff3501d7db.json | Historical ten-author contention mechanism reconciled below; final-binary SCALE-01 rerun remains T05 work.309 is not ten-author throughput or single-block inclusion |
 | Long absence | Current-source wallet-absence311 passed449seconds/2.08GiB with persisted account/contracts/note and real post after simulated30days | Secondpost stage was unusually slow; phase attribution remains unmeasured. Simulated chain time is not elapsed soak or browser crash qualification |
 | Repeated deposits | Redeposit222 passed two real deposit/claim/withdraw/refund cycles, replay rejection and exact fees | Final candidate binding; no unrelated full rerun required |
 | Mobile reading | Built mobile-sized reader083 and directory navigation passed | Representative physical-device qualification remains distinct |
@@ -129,3 +129,16 @@ and synchronization. It is not a measured221-second proof. Independent source
 review found no loop over the simulated30days: eligibility was already satisfied
 and cooldown catch-up is arithmetic. Add phase timing to existing helpers when
 next changing them; this successful run alone does not justify a corrective rerun.
+
+
+Ten-author source reconciliation (independent application_change_review): retained
+`../C03/application-db6d60e3-d8cf-43a4-9c5d-e6f3a796c23c.json` proved ten posts at
+one identical anchor before submission and verified all canonical inclusions.
+The board-scoped nonce identity in `lib.nr` is unchanged. Current `main.nr` still
+consumes the author's private deposit during preparation and assigns public order
+only during public execution. Added policy/deadline metadata introduces no private
+read of shared posting order. Note layout, cooldown and helper adaptations do not
+introduce another-author dependencies for these first posts. Current309 supplies
+complementary current-note/private-fee evidence, not ten simultaneous post proofs.
+This reconciles the contention fix; any final-binary SCALE-01 execution remains
+part of final release qualification rather than a newly identified defect.

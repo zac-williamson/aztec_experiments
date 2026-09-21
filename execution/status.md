@@ -7,7 +7,7 @@ Objective state: **running**. Completed packages: 26/37.
 ## In progress
 
 - **Evaluate moderation quality and define human review operations (M03)** — StrictJSON-only parser b5f45ac passed76parser/130signer/daemon/156worker-evaluation checks315 and deployed316/317 to existingEC2. Actual same-model greeting/threat checks319 returned validJSON; service320 healthy90196 with no pendingfinality/signing/attention. Prior automaticflag verifiedfinalized321.48case quality/capacity/humanlabelgates remain incomplete; prompt/model unchanged.
-- **Run browser, recovery, concurrency and load matrix (T04)** — Current-source traffic309,absence311,staleproof312 and note-attribution313 passed.313 completed271209ms/1935152KiB: same-note withdrawal accepted, unsubmitteddummy rejected afterward,refund/privatefeesverified,cleanupcomplete. Remaining tenauthor source reconciliation,installedSafari,physicalmobile/statisticalperformance and external releasegates. M03 strictJSON simplification undergoingmoderation315.
+- **Run browser, recovery, concurrency and load matrix (T04)** — FixedChromeperformancecohort322 slot01 passed307809ms,sourcehashesmatch.Coldinitialization+proof37.89s,warm35.67s;canonicalposts/fees/cleanupverified.1of30pairs complete,no percentileclaim.Continue slot02, samebrowser153.0.8010.52, fixedgas/source,540s/4GiB. Historicaltenauthor mechanism reconciled; finalrelease/devicegatesremain.
 
 ## Ready internal work
 
