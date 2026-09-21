@@ -9,20 +9,54 @@ bucket=$2
 [[ $bucket =~ ^[a-z0-9][a-z0-9.-]+[a-z0-9]$ ]]
 exec 9>/run/lock/board-moderator-backup.lock
 flock -n 9
-systemctl is-active --quiet board-moderator.service
-systemctl show --property=ExecStart --value board-moderator.service | grep -Fq "path=$release/scripts/operator-launch.sh ;"
 work=$(mktemp -d /srv/board/state/backup.XXXXXX)
 stopped=0
+verified=0
+backup_status() {
+  python3 - "$1" /srv/board/backup-status.json <<'STATUS'
+import json, os, pathlib, sys, tempfile, time
+status, filename = sys.argv[1:]
+path = pathlib.Path(filename)
+previous = json.loads(path.read_text()) if path.exists() else {}
+now = int(time.time())
+record = {'status': status,
+          'startedAt': now if status == 'running' else previous['startedAt'],
+          'lastSuccessAt': now if status == 'success' else previous.get('lastSuccessAt', 0)}
+fd, temporary = tempfile.mkstemp(prefix='.backup-status-', dir=path.parent)
+try:
+    with os.fdopen(fd, 'w') as output:
+        json.dump(record, output)
+        output.flush()
+        os.fsync(output.fileno())
+    os.replace(temporary, path)
+    directory = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
+finally:
+    if os.path.exists(temporary):
+        os.unlink(temporary)
+STATUS
+}
 cleanup() {
   result=$?
   trap - EXIT
   if [[ $stopped == 1 ]]; then systemctl start board-moderator.service || result=1; fi
+  if [[ $result == 0 && $verified == 1 ]]; then
+    backup_status success || result=1
+  else
+    backup_status failed || result=1
+  fi
   rm -rf -- "$work"
   exit "$result"
 }
 trap cleanup EXIT
 trap 'exit 143' TERM
 trap 'exit 130' INT
+backup_status running
+systemctl is-active --quiet board-moderator.service
+systemctl show --property=ExecStart --value board-moderator.service | grep -Fq "path=$release/scripts/operator-launch.sh ;"
 stopped=1
 systemctl stop board-moderator.service
 [[ $(systemctl show --property=Result --value board-moderator.service) == success ]]
@@ -54,6 +88,7 @@ for filename in databases:
         assert db.execute('PRAGMA integrity_check').fetchall() == [('ok',)]
 print('Downloaded backup: file hashes and moderation database integrity verified.')
 PY
+verified=1
 printf 'Backup: s3://%s/%s\n' "$bucket" "$key"
 printf 'Archive SHA256: '
 sha256sum "$work/download.tar.gz" | cut -d' ' -f1

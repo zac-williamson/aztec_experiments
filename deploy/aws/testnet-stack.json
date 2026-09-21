@@ -406,6 +406,29 @@
         "ComparisonOperator": "LessThanThreshold",
         "TreatMissingData": "breaching"
       }
+    },
+    "BackupHealthAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Moderator backup failed, interrupted, older than26hours or missing. No notification destination configured.",
+        "Namespace": "AnonymousMessageBoard",
+        "MetricName": "BackupHealthy",
+        "Dimensions": [
+          {
+            "Name": "Deployment",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          }
+        ],
+        "Statistic": "Minimum",
+        "Period": 60,
+        "EvaluationPeriods": 5,
+        "DatapointsToAlarm": 5,
+        "Threshold": 1,
+        "ComparisonOperator": "LessThanThreshold",
+        "TreatMissingData": "breaching"
+      }
     }
   },
   "Outputs": {

@@ -159,5 +159,18 @@ freshness allowance; cold startup and backups may briefly publish unhealthy.
 This is AWS console detection only: no email, phone or chat recipient is configured.
 The timer is independent of the moderator so a stopped service can still be detected.
 
-This health alarm does not independently detect missed or failed backups when the
-moderator remains healthy. Inspect backup timer/service results separately.
+The revised publisher also sends `BackupHealthy` in the same request. The backup
+script records the latest attempt in root-owned `/srv/board/backup-status.json`;
+success is recorded only after archive verification and moderator restart. A failed
+attempt, missing/invalid record, or last success older than 26 hours is unhealthy.
+An active backup has 540 seconds to finish, within the existing service lifecycle.
+The extra two hours allow for the daily schedule and temporary operational delays;
+a first backup remains unhealthy until it succeeds. The status record survives reboot.
+
+The separate backup alarm uses the same five-minute detection period and has no
+notification recipient. It adds one CloudWatch custom metric and one alarm to the
+existing deployment; verify their regional charges before applying the stack update.
+This revision is prepared and locally checked, but is not deployed: the AWS CLI
+session expired. The live alarm still monitors moderator health only. Deployment
+must install the updated script and publisher together, run one verified backup,
+and confirm the new metric and alarm before claiming backup monitoring works.
