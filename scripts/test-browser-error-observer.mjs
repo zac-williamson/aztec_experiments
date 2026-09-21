@@ -30,9 +30,23 @@ test('common formatter captures fee-page coordinates and preserves its result',(
   globalThis.location={origin:'https://localhost:1234'};
   globalThis.publicOperationFailure=()=> 'Keep your recovery record';
   installBrowserErrorObserver();
-  const error=new Error('SECRET');error.stack='private@https://localhost:1234/fee-juice.html:12:13';
+  const cause=Object.assign(new Error('SECRET_CAUSE'),{code:'BB_GAS_LIMIT_EXCEEDED'});const error=new Error('SECRET',{cause});error.stack='private@https://localhost:1234/fee-juice.html:12:13';
   assert.equal(globalThis.publicOperationFailure(error),'Keep your recovery record');
   assert.deepEqual(globalThis.__u01FormatterDiagnostics[0].chain[0].frames,[{file:'/fee-juice.html',line:12,column:13}]);
+  assert.equal(globalThis.__u01FormatterDiagnostics[0].chain[1].code,'BB_GAS_LIMIT_EXCEEDED');
   assert(!JSON.stringify(globalThis.__u01FormatterDiagnostics).includes('SECRET'));
  }finally{for(const[key,value]of Object.entries(saved)){if(value===undefined)delete globalThis[key];else globalThis[key]=value;}}
+});
+
+test('plain RPC cause exports only bounded redacted message and code',()=>{
+ const keys=['location','publicOperationFailure','__u01FormatterDiagnostics','__u01CaptureError'];
+ const saved=Object.fromEntries(keys.map(k=>[k,globalThis[k]]));
+ try{
+  globalThis.location={origin:'https://localhost:1234'};globalThis.publicOperationFailure=()=>{};installBrowserErrorObserver();
+  const cause={code:-32000,message:'Invalid transaction 0x'+'a'.repeat(640)+' details '+'x'.repeat(600),data:{secret:'DO_NOT_EXPORT'}};
+  const outer=new Error('GENERIC_SECRET',{cause});const result=globalThis.__u01CaptureError(outer);
+  assert.equal(result.chain[0].rpcError,undefined);assert.equal(result.chain[1].rpcError.code,-32000);
+  assert.equal(result.chain[1].rpcError.message.length,512);assert(result.chain[1].rpcError.message.startsWith('Invalid transaction [hex] details'));
+  const text=JSON.stringify(result);assert(!text.includes('GENERIC_SECRET'));assert(!text.includes('DO_NOT_EXPORT'));assert(!text.includes('0xaaaa'));
+ }finally{for(const [k,v]of Object.entries(saved)){if(v===undefined)delete globalThis[k];else globalThis[k]=v;}}
 });

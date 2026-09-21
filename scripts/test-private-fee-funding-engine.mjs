@@ -137,3 +137,10 @@ test('malformed gas is rejected before signer or funding',async()=>{
  const h=harness();h.config.privateFee.gasSettings.gasLimits.daGas='01';h.env.getBrowserSigner=()=>assert.fail('signer must not be requested');
  await assert.rejects(h.run('deposit'),{code:'PRIVATE_FEE_INVALID_VALUE'});assert(!h.calls.some(c=>c[0]==='fund'));
 });
+
+test('claim failure keeps its internal cause without exposing it in the public message',async()=>{
+ const h=harness(),cause=new Error('SECRET_INTERNAL_DETAIL');
+ h.a.BatchCall=class{async send(){throw cause;}};
+ await assert.rejects(h.run('claim'),error=>error.code==='BB_PRIVATE_FEE_CLAIM_FAILED'&&error.cause===cause&&!error.message.includes('SECRET'));
+ assert.equal(h.calls.filter(c=>c==='stop').length,1);
+});

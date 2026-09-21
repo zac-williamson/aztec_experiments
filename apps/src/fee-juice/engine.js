@@ -108,7 +108,7 @@
       return {ok:true,receipt:result.receipt,lastL2TxHash:transactionJournal.lastTxHash};
     }catch(error){
       const code=['BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID'].includes(error?.code)?error.code:'BB_PRIVATE_FEE_CLAIM_FAILED';
-      const safe=new Error(code==='BB_SUBMISSION_UNKNOWN'?'Submission outcome is unknown. Check the transaction before retrying.':'Private fee claim did not complete. Keep the recovery file and check the deposit before retrying.');safe.code=code;throw safe;
+      const safe=new Error(code==='BB_SUBMISSION_UNKNOWN'?'Submission outcome is unknown. Check the transaction before retrying.':'Private fee claim did not complete. Keep the recovery file and check the deposit before retrying.',{cause:error});safe.code=code;throw safe;
     }finally{if(pxe)await pxe.stop().catch(()=>{});}
     } finally {ethProvider.destroy();}
   };
