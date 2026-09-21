@@ -3,7 +3,7 @@
   "cohort": "firefox-performance-campaign-328.json",
   "status": "in-progress",
   "expectedPairs": 30,
-  "completedPairs": 24,
+  "completedPairs": 25,
   "qualified": false,
   "runs": [
     {
@@ -653,10 +653,36 @@
           "guiElapsedMs": 39692
         }
       ]
+    },
+    {
+      "slot": 25,
+      "evidence": "application-bd713b5b-6a78-4f12-a6da-30ed589270e4.json",
+      "elapsedMs": 267153,
+      "peakTreeRSSKiB": 2880016,
+      "samples": [
+        {
+          "state": "cold",
+          "transactionHash": "0x20647107399c09a2e347c46eab0d650072a617e465362a5cad3518f4dc1a372a",
+          "proveTxMs": 28833.68,
+          "toTxMs": 13.020000000004075,
+          "proofMs": 28846.700000000004,
+          "crsMs": 704.1400000000001,
+          "pxeMs": 656.06,
+          "coldMeasuredInitializationAndProofMs": 30206.900000000005,
+          "guiElapsedMs": 41058
+        },
+        {
+          "state": "warm",
+          "transactionHash": "0x2cf701f8326b6f56086169c86ff20f1fd382c62722d8b8bbd8f0d6aaf4088dce",
+          "proveTxMs": 27842.18,
+          "toTxMs": 14.900000000008731,
+          "proofMs": 27857.08000000001,
+          "guiElapsedMs": 39707
+        }
+      ]
     }
   ],
   "missingSlots": [
-    25,
     26,
     27,
     28,
