@@ -94,3 +94,31 @@ test('repeated matching authorization notifications permit connection',async()=>
  browserConnection(f,{event:[account],afterNetwork:()=>f.listeners.accountsChanged([account])});
  await f.context._loadEthBrowser();assert.equal(f.context.window.walletState.ethAccount,account);assert.equal(f.context.window.walletState.invalidated,false);
 });
+
+function passkeyFixture({saved,fail=false,change=false}={}) {
+ const f=fixture(),records=new Map(),calls=[];const account=browserConnection(f);
+ const storageKey='billboard-passkey-v1:'+account;
+ if(saved!==undefined)records.set(storageKey,saved);
+ f.context.localStorage={getItem:k=>records.get(k)??null,setItem:(k,v)=>records.set(k,v)};
+ f.context.navigator={locks:{request:async(_name,fn)=>fn()}};
+ f.context.BillboardPasskey={ceremony:async(_account,options)=>{calls.push(options);if(change)f.listeners.chainChanged();if(fail)throw Error('cancelled');return {wallet:{secretKey:key,salt},credentialId:'AQID'};}};
+ f.context.initWalletButtons('container',{autoPasskey:true});
+ return {...f,records,calls,storageKey};
+}
+test('Ethereum connection creates passkey account automatically, saves no secret',async()=>{
+ const f=passkeyFixture();await f.context._loadEthBrowser();
+ assert.equal(f.calls[0].create,true);assert(f.context.window.walletState.aztec);
+ const saved=JSON.parse(f.records.get(f.storageKey));assert.deepEqual(Object.keys(saved).sort(),['address','credentialId','version']);
+ assert(!f.element('container').innerHTML.includes('Create wallet'));
+});
+test('saved metadata unlocks the exact passkey instead of creating',async()=>{
+ const f=passkeyFixture({saved:JSON.stringify({version:1,address:key,credentialId:'AQID'})});await f.context._loadEthBrowser();
+ assert.equal(f.calls[0].create,false);assert.equal(f.calls[0].credentialId,'AQID');
+});
+test('cancelled passkey or changed Ethereum context never activates an account',async()=>{
+ for(const options of [{fail:true},{change:true}]){const f=passkeyFixture(options);await assert.rejects(f.context._loadEthBrowser());assert.equal(f.context.window.walletState.aztec,null);assert.equal(f.records.size,0);}
+});
+test('corrupt metadata fails closed, explicit import repairs it',async()=>{
+ const f=passkeyFixture({saved:'invalid json'});await assert.rejects(f.context._loadEthBrowser());assert.equal(f.calls.length,0);
+ await f.context._importPasskeyAccount();assert.equal(f.calls[0].create,false);assert.equal(JSON.parse(f.records.get(f.storageKey)).credentialId,'AQID');
+});

@@ -237,6 +237,11 @@
   }
   .billboard-loading .spinner { width: 0.9rem; height: 0.9rem; }
 
+.account-menu { position:fixed; top:1rem; right:1rem; z-index:30; background:#202020; border:1px solid #555; border-radius:.6rem; }
+.account-menu summary { cursor:pointer; padding:.7rem 1rem; }
+.account-menu-panel { position:absolute; right:0; top:100%; z-index:20; width:min(22rem,85vw); padding:1rem; background:#202020; border:1px solid #555; border-radius:.6rem; box-shadow:0 8px 24px #0006; }
+.account-menu-panel button { display:block; width:100%; margin:.4rem 0; }
+
 </style></head><body data-public-board-reader>
 <script>
 (function (root) {
@@ -355,7 +360,7 @@
         root.addEventListener('hashchange',()=>location.reload(),{once:true});
         if(!result.config.privateFee){status.textContent='Posting and fee funding are not enabled for this board. You can still read messages.';return;}
         root.billboardConfigStore.install(result.config);
-        status.textContent='Board ready. Load your wallets to continue.';initialize();
+        status.textContent='Board ready. Connect your wallet to continue.';initialize();
       }catch{status.textContent='This board is unavailable for posting. Reload to try again.';}
     };
     return;

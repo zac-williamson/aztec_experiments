@@ -127,15 +127,15 @@ try{
    await authorContext.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
    for(const name of ['user.html','fee-juice.html']){
     await author.goto(origin+'/'+name+boardFragment);
-    await author.locator('#wbAztecGenBtn').waitFor();
+    await author.locator('#wbEthBrowserBtn').waitFor();
     assert.equal(await author.getByLabel('Public configuration JSON').count(),0);
     assert.equal(await author.evaluate(()=>billboardConfigStore.snapshot().config.board.contractAddress),hex(3));
     for(const href of await author.locator('[data-board-link]').evaluateAll(links=>links.map(link=>link.href)))assert.equal(new URL(href).hash,boardFragment);
    }
    await author.goto(origin+'/feed.html'+boardFragment);await author.locator('#post-link').waitFor();assert.equal(new URL(await author.locator('#post-link').getAttribute('href')).hash,boardFragment);
-   await author.goto(origin+'/fee-juice.html'+boardFragment);await author.locator('#wbAztecGenBtn').waitFor();
+   await author.goto(origin+'/fee-juice.html'+boardFragment);await author.locator('#wbEthBrowserBtn').waitFor();
    publicConfig.privateFee=null;await author.reload();await author.waitForFunction(()=>document.getElementById('setupStatus').textContent.includes('not enabled for this board'));
-   assert.equal(await author.locator('#wbAztecGenBtn').count(),0,'Missing fee settings must prevent wallet initialization');
+   assert.equal(await author.locator('#wbEthBrowserBtn').count(),0,'Missing fee settings must prevent wallet initialization');
    console.log(JSON.stringify({passed:true,hostedAuthorAndFundingSetup:true,noVisitorConfiguration:true,missingFeesBlockWalletInitialization:true}));
   }finally{await authorContext.close();}
  }

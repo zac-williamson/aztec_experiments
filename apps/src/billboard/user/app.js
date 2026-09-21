@@ -561,7 +561,7 @@ function waitForBundleThenInit() {
   if (window.__aztec && window.__aztec.createPXE) {
     const navNext = document.getElementById('navNext');
     if (navNext) navNext.style.display = 'none';
-    initWalletButtons('walletButtonsContainer', {
+    initWalletButtons('walletButtonsContainer', {autoPasskey:true,
       statusId: 'setupStatus',
       ethRpcUrl: _getPublicConfig()?.network.ethRpcUrl,
       onReady: async () => {

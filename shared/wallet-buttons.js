@@ -2,6 +2,7 @@
 // an external Ethereum signer. A page has one immutable wallet context.
 window.walletState = { aztec:null, ethSigner:null, ethProvider:null, ethAccount:null, ethType:null, invalidated:false };
 let _onReady=null, _onAztecLoad=null, _statusId='setupStatus', _requireEth=true, _readyFired=false;
+let _autoPasskey=false;
 let _walletBusy=false, _walletGeneration=0, _connectingEth=null;
 function _wlog(message,type='info') { if(typeof log==='function') log(message,type,_statusId); }
 function _assertWalletLive() { if(window.walletState.invalidated) throw new Error('Wallet context changed. Reload this page before continuing.'); }
@@ -11,7 +12,7 @@ function _invalidateWalletContext() {
 }
 function _updateButtonColors() {
   for(const id of ['wbAztecBtn','wbAztecGenBtn','wbEthBrowserBtn']) {
-    const el=document.getElementById(id); if(el) el.disabled=_walletBusy || window.walletState.invalidated || (id==='wbEthBrowserBtn'?!!window.walletState.ethSigner:!!window.walletState.aztec);
+    const el=document.getElementById(id); if(el) el.disabled=_walletBusy || window.walletState.invalidated || (id==='wbEthBrowserBtn'?!!window.walletState.ethSigner && !!window.walletState.aztec:!!window.walletState.aztec);
   }
 }
 async function _walletOperation(run) {
@@ -36,8 +37,8 @@ async function _deriveAccountAddress(a,secretKeyHex,saltVal) {
   });
   return {address:instance.address,partialAddress:await a.computePartialAddress(instance)};
 }
-async function _prepareWallet(raw) {
-  if(window.walletState.aztec) throw new Error('A wallet is already loaded. Reload to use another wallet.');
+async function _prepareWallet(raw,allowExisting=false) {
+  if(window.walletState.aztec && !allowExisting) throw new Error('A wallet is already loaded. Reload to use another wallet.');
   const wallet=window.BillboardWalletBackup.validateWallet(raw);
   if(!window.__aztec?.Fr) throw new Error('Wait for the application to load before opening a wallet.');
   const derived=await _deriveAccountAddress(window.__aztec,wallet.secretKey,wallet.salt);
@@ -128,7 +129,10 @@ function _firstEthereumAccount(accounts) {
 }
 async function _loadEthBrowser() {
   return _walletOperation(async()=>{
-    if(window.walletState.ethSigner)throw new Error('An Ethereum wallet is already connected.');
+    if(window.walletState.ethSigner) {
+      if(_autoPasskey && !window.walletState.aztec) {await _openPasskeyAccount();return;}
+      throw new Error('An Ethereum wallet is already connected.');
+    }
     if(!window.ethereum)throw new Error('An Ethereum browser wallet is required.');
     const generation=_walletGeneration;
     const connection={account:null};_connectingEth=connection;
@@ -145,22 +149,62 @@ async function _loadEthBrowser() {
     window.walletState.ethSigner=signer;window.walletState.ethProvider=provider;window.walletState.ethAccount=account;
     window.walletState.ethType='browser';window.walletState.ethChainId=String(network.chainId);_walletGeneration++;
     // Do not force mainnet: engine verifies signer, node and portal chain agreement.
-    _wlog('Ethereum wallet connected. Its chain will be checked against the board.','success');_checkReady();
+    _wlog('Ethereum wallet connected.','success');
+    if(_autoPasskey && !window.walletState.aztec)await _openPasskeyAccount();
+    _checkReady();
     } finally {_connectingEth=null;}
   });
 }
+function _passkeyRecordKey() {return 'billboard-passkey-v1:'+window.walletState.ethAccount.toLowerCase();}
+async function _openPasskeyAccount(importExisting=false) {
+  const generation=_walletGeneration,account=window.walletState.ethAccount;
+  if(!account)throw Error('Connect your Ethereum wallet first.');
+  return navigator.locks.request('billboard-passkey:'+account.toLowerCase(),async()=>{
+    _assertWalletLive();if(generation!==_walletGeneration)throw Error('Wallet context changed.');
+    const key=_passkeyRecordKey(),text=localStorage.getItem(key);
+    const record=importExisting || text===null?null:JSON.parse(text);
+    if(record && (record.version!==1 || typeof record.credentialId!=='string' || !/^0x[0-9a-f]{64}$/i.test(record.address)))throw Error('Saved account information is invalid. Import your account from Account settings.');
+    _wlog(importExisting || record?'Approve your passkey to unlock your account.':'Set up a passkey to secure your account.');
+    const result=await BillboardPasskey.ceremony(account,{create:!importExisting && !record,credentialId:importExisting?undefined:record?.credentialId});
+    _assertWalletLive();if(generation!==_walletGeneration)throw Error('Wallet context changed.');
+    const raw={...result.wallet};
+    if(record && !importExisting)raw.address=record.address;
+    // Import changes the selected account for the next page load. Existing
+    // transactions and their journals remain bound to their original identities.
+    const prepared=await _prepareWallet(raw,importExisting);
+    _assertWalletLive();if(generation!==_walletGeneration)throw Error('Wallet context changed.');
+    localStorage.setItem(key,JSON.stringify({version:1,credentialId:result.credentialId,address:prepared.address.toString()}));
+    if(importExisting && window.walletState.aztec) {location.reload();return;}
+    _activateWallet(prepared);
+  });
+}
+async function _importPasskeyAccount() {
+  return _walletOperation(async()=>{await _openPasskeyAccount(true);});
+}
 function initWalletButtons(containerId,options={}) {
+  _autoPasskey=options.autoPasskey===true;
   _statusId=options.statusId||'setupStatus';_requireEth=options.requireEth!==false;_onReady=options.onReady||null;_onAztecLoad=options.onAztecLoad||null;
   const container=document.getElementById(containerId);if(!container)return;
-  container.innerHTML=`<input type="file" id="wbAztecFile" accept=".json" hidden>
+  container.innerHTML=_autoPasskey ? `<div class="wallet-btns"><button class="wallet-btn" id="wbEthBrowserBtn">Connect wallet</button>
+    <details class="account-menu" id="wbAccountMenu"><summary>Account</summary><div class="account-menu-panel">
+    <button class="secondary" id="wbImportPasskeyBtn">Import existing passkey account</button>
+    <button class="secondary" id="wbAztecBtn">Import recovery file</button>
+    <input type="file" id="wbAztecFile" accept=".json" hidden>
+    <label>Recovery file password<input type="password" id="wbPassword" autocomplete="new-password" minlength="12" maxlength="1024"></label>
+    <label>Confirm password for export<input type="password" id="wbPasswordConfirm" autocomplete="new-password" maxlength="1024"></label>
+    <button class="secondary" id="wbBackupBtn">Export recovery file</button>
+    <p>Recovery files also preserve deposit secrets and pending transactions. Export after making deposits. Import a file before connecting; reload first if an account is already open.</p>
+    </div></details></div><p>Your passkey secures your private account. Ethereum approves funding and L1 transactions.</p>` : `<input type="file" id="wbAztecFile" accept=".json" hidden>
     <div class="wallet-btns"><div class="wallet-group"><span class="wallet-label">Ethereum</span><button class="secondary wallet-btn" id="wbEthBrowserBtn">Connect browser wallet</button></div>
     <div class="wallet-group"><span class="wallet-label">Aztec</span><button class="secondary wallet-btn" id="wbAztecBtn">Restore wallet</button><button class="secondary wallet-btn" id="wbAztecGenBtn">Create wallet</button><button class="secondary wallet-btn" id="wbBackupBtn">Export recovery file</button></div></div>
     <label>Recovery password <input type="password" id="wbPassword" autocomplete="new-password" minlength="12" maxlength="1024"></label>
     <label>Repeat password when creating a backup <input type="password" id="wbPasswordConfirm" autocomplete="new-password" maxlength="1024"></label>
     <p>Keep your encrypted recovery file and password. Export again after each transaction or recovery update. Older files do not contain later requests. Losing your wallet key or a deposit claim secret can make funds unrecoverable. This browser holds decrypted keys while open; use a trusted device. Reload before changing wallets.</p>`;
+  if(_autoPasskey)document.body.appendChild(document.getElementById('wbAccountMenu'));
   const handle=run=>async()=>{try{await run();}catch{_wlog('Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.','error');}};
   document.getElementById('wbAztecBtn').addEventListener('click',()=>document.getElementById('wbAztecFile').click());
-  document.getElementById('wbAztecGenBtn').addEventListener('click',handle(_generateAztecWallet));
+  document.getElementById('wbImportPasskeyBtn')?.addEventListener('click',handle(_importPasskeyAccount));
+  document.getElementById('wbAztecGenBtn')?.addEventListener('click',handle(_generateAztecWallet));
   document.getElementById('wbBackupBtn').addEventListener('click',handle(_exportAztecWallet));
   document.getElementById('wbEthBrowserBtn').addEventListener('click',handle(_loadEthBrowser));
   document.getElementById('wbAztecFile').addEventListener('change',async event=>{try{const file=event.target.files[0];if(file)await handle(()=>_loadAztecWallet(file))();}finally{event.target.value='';}});

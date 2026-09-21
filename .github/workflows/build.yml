@@ -63,7 +63,7 @@ jobs:
           node scripts/test-w03-ethereum-anvil.mjs
           npm run test:sdk-browser
           npm run test:cli-sdk
-          node scripts/test-w02-browser.mjs
+          node scripts/run-bounded-browser-check.mjs scripts/test-w02-browser.mjs execution/evidence/T04/wallet-browser-ci.json
       - name: Model process isolation with disposable fixtures
         run: |
           docker pull docker.io/library/node@sha256:6dac556d980b7f0e5498d08f08cee0ca67798b4ad6c23964a9214920e67758d0

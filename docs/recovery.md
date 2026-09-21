@@ -1,18 +1,33 @@
-# Recovering the fresh message board deployment
+# Account access and recovery
 
-This runbook describes existing recovery routes, not a completed backup product. Use the verified deployment's portal, Aztec node, Ethereum RPC and private fee configuration. Never change network or create a replacement deposit merely because a request timed out.
+Connect your Ethereum wallet to create or unlock your passkey-backed Aztec account.
+When this browser has no saved account record, it creates a new passkey. To use an
+older account instead, choose **Account → Import existing passkey account** after
+connecting Ethereum. Import switches the saved selection and reloads the page.
+The same passkey and Ethereum address reproduce the same Aztec account on this
+site. Passkeys belong to the site's domain; keep that domain stable.
+
+Only the credential identifier and public account address are stored for sign-in.
+Private account keys are reconstructed in memory from WebAuthn PRF output.
+Unsupported PRF, cancellation or corrupt records do not select another account.
+
+A passkey restores account keys, not independently random deposit claim secrets
+or pending transaction records. Use **Account → Export recovery file** after
+transactions. To import a recovery file, reload, open **Account**, enter its
+password and import the file before connecting Ethereum. Keep the separate public
+Fee Juice recovery record too.
 
 ## Preserve the existing identity and state
 
 Keep the original Ethereum wallet and Aztec wallet, including its exact secret key and full account salt. The Ethereum depositor receives the refund; another address cannot redirect it.
 
-Browser users should export an encrypted recovery file from Wallet Setup after each new collateral deposit. It contains the Aztec key, full salt and this account's random collateral claim secrets with their original network/board scopes. Restore it with its password before connecting an Ethereum wallet. Restore validates commitments and adds records atomically without overwriting conflicts. Claims for other networks retain their original scopes; importing does not redirect them. Keep the separate public private-fee funding recovery file too. A wallet-only backup made before a collateral deposit does not contain that deposit's independently random secret.
+Browser users should export an encrypted recovery file from the Account menu after each new collateral deposit. It contains the Aztec key, full salt and this account's random collateral claim secrets with their original network/board scopes. Restore it with its password before connecting an Ethereum wallet. Restore validates commitments and adds records atomically without overwriting conflicts. Claims for other networks retain their original scopes; importing does not redirect them. Keep the separate public private-fee funding recovery file too. A wallet-only backup made before a collateral deposit does not contain that deposit's independently random secret.
 
 Browser custody uses IndexedDB `aztec-billboard-claim-secrets-v2`; its records are encrypted under the key and full account salt. The PXE's browser database is private execution state but is not encrypted by this application. Use a trusted browser profile/device and keep site data until recovery is checked. Keys are decrypted in memory while the page is open; browser encryption does not protect an unlocked malicious page. The old v1 test database is left untouched and is not automatically imported.
 
 CLI users must preserve the exact wallet file plus `claim-secrets-v2/` beside it and the repository's `.pxe-cache-v2/`. Wallet files must be private regular files (mode0600); directories must be private (mode0700). Checkpoints are authenticated/encrypted to the full account/network/rollup identity. A stale lock is not silently removed: inspect its PID, confirm its owning process has stopped, and only then remove that specific lock to resume. Keep the same `--pxe-dir` prefix. Old plaintext `.pxe-cache/` and v1 claim-store files are preserved but not automatically loaded. The shared password-encrypted recovery format supports browser/CLI export and restore; follow the portable recovery section below.
 
-Wallet creation uses a random Aztec key. Signature-derived keys and browser-generated Ethereum key files are no longer offered. Ethereum signing uses your browser wallet; CLI Ethereum keys remain explicit private local files. Changing the account or chain invalidates the page, and wallet operations for one account are locked across tabs. Reload to switch; reconcile any submitted transaction before retrying.
+Posting and fee-funding pages derive the Aztec key from the passkey PRF. Deployer and moderator pages retain explicit random-key creation. Ethereum-signature-derived keys and browser-generated Ethereum key files are not offered. Ethereum signing uses your browser wallet; CLI Ethereum keys remain explicit private local files. Changing the account or chain invalidates the page, and wallet operations for one account are locked across tabs. Reload to switch; reconcile any submitted transaction before retrying.
 
 Record the deployment/network identity, L1 deposit transaction hash and L2 withdrawal transaction hash. Keep transaction metadata private where it joins the two identities. Private fee funding has its own public recovery record and wallet-derived claim; it is separate from the escrow's random claim secret.
 

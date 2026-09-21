@@ -7,7 +7,7 @@
 <h1>Fund private fees</h1>
 <p>Bridge your AZTEC tokens into a private balance. Your transactions spend that balance through a shared, ownerless contract.</p>
 <p class="small">You need AZTEC tokens and ETH for Ethereum gas in your connected wallet. This page does not exchange tokens.</p>
-<div class="card"><h2>1. Load your wallets</h2><input id="secretKey" type="hidden"><input id="salt" type="hidden" value="0"><div id="walletButtonsContainer"></div><div id="setupStatus" class="status-container" role="status" aria-live="polite"></div></div>
+<div class="card"><h2>1. Connect wallet</h2><input id="secretKey" type="hidden"><input id="salt" type="hidden" value="0"><div id="walletButtonsContainer"></div><div id="setupStatus" class="status-container" role="status" aria-live="polite"></div></div>
 <div class="card"><h2>2. Deposit AZTEC</h2><label for="azaddr">Shared private fee contract</label><input id="azaddr" readonly><label for="amount">Amount of AZTEC</label><input id="amount" inputmode="decimal" placeholder="Enter an amount" aria-describedby="feeBudget"><p id="feeBudget"></p><button id="depositBtn" onclick="doDepositPage()">Deposit</button><button class="secondary" onclick="recoverSavedFeeEthereum()">Check saved Ethereum fee request</button>
   <button class="secondary" onclick="recoverSavedFeeEthereum(true)">Retry saved Ethereum fee request</button>
   <div id="depositStatus" class="status-container" role="status" aria-live="polite"></div><p>Recovery metadata is saved in this browser before submission. Download a copy and keep your wallet backup.</p><button class="secondary" onclick="downloadRecovery()">Download recovery record</button></div>

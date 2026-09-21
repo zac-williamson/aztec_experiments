@@ -18,22 +18,36 @@ const server=http.createServer(async(req,res)=>{
     res.end(await fs.readFile(file));
   }catch{res.writeHead(404).end();}
 });
-const watchdog=setTimeout(()=>{browser?.close();server.closeAllConnections();server.close();},60000);
+if(process.env.U01_BOUNDED_BROWSER!=='true')throw Error('Run through run-bounded-browser-check.mjs.');
+async function readyUser(page) {
+ await page.waitForFunction(()=>window.__aztec?.createEthereumJournal);
+ // Wallet component scope: hosted board discovery has separate coverage.
+ await page.evaluate(()=>initWalletButtons('walletButtonsContainer',{autoPasskey:true}));
+ await page.locator('#wbAccountMenu summary').click();
+}
 try {
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  const origin='http://127.0.0.1:'+server.address().port;
+  const origin='http://localhost:'+server.address().port;
   browser=await chromium.launch({headless:true});
   async function open(pageName='user.html') {
     const context=await browser.newContext({acceptDownloads:true});
     await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){externalRequests++;return route.abort();}return route.continue();});
     const page=await context.newPage();page.setDefaultTimeout(15000);
     await page.goto(origin+'/'+pageName);
-    await page.waitForFunction(()=>window.__aztec?.Fr && document.getElementById('wbAztecGenBtn'));
+    if(pageName==='user.html')await readyUser(page);
+    else await page.waitForFunction(()=>window.__aztec?.Fr && document.getElementById('wbEthBrowserBtn'));
     return {context,page};
   }
-  stage='create-wallet';const first=await open();
-  await first.page.locator('#wbPassword').fill(password);await first.page.locator('#wbPasswordConfirm').fill(password);
-  const initialDownload=first.page.waitForEvent('download');await first.page.locator('#wbAztecGenBtn').click();await initialDownload;
+  stage='create-passkey-account';const first=await open();
+  const cdp=await first.context.newCDPSession(first.page);
+  await cdp.send('WebAuthn.enable');
+  await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',ctap2Version:'ctap2_1',transport:'internal',hasResidentKey:true,hasUserVerification:true,hasPrf:true,automaticPresenceSimulation:true,isUserVerified:true}});
+  await first.page.evaluate(()=>{
+    // Wallet UI component test: no Ethereum transaction or Aztec node operation.
+    _onReady=null;
+    window.ethereum={request:async({method})=>{if(method==='eth_chainId')return '0x7a69';if(['eth_accounts','eth_requestAccounts'].includes(method))return ['0x'+'12'.repeat(20)];throw Error('Unexpected Ethereum request');}};
+  });
+  await first.page.locator('#wbEthBrowserBtn').click();
   await first.page.waitForFunction(()=>window.walletState.aztec?.address);
   const address=await first.page.evaluate(()=>window.walletState.aztec.address.toString());
   stage='save-disposable-claim';
@@ -66,7 +80,7 @@ try {
   await second.context.close();
   stage='same-profile-tab-exclusion';
   const other=await first.context.newPage();other.setDefaultTimeout(15000);
-  await other.goto(origin+'/user.html');await other.waitForFunction(()=>window.__aztec?.Fr && document.getElementById('wbAztecFile'));
+  await other.goto(origin+'/user.html');await readyUser(other);
   await other.locator('#wbPassword').fill(password);await other.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:encrypted});
   await other.waitForFunction(()=>window.walletState.aztec?.address);
   await first.page.evaluate(()=>{
@@ -88,7 +102,7 @@ try {
     await journal.prepare(tx,await journal.assertCanStart());return tx.getTxHash().toString();
   });
   stage='journal-reload-and-wallet-restore';
-  await first.page.reload();await first.page.waitForFunction(()=>window.__aztec?.createL2Journal && document.getElementById('wbAztecFile'));
+  await first.page.reload();await readyUser(first.page);
   await first.page.locator('#wbPassword').fill(password);await first.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:encrypted});
   await first.page.waitForFunction(()=>window.walletState.aztec?.address);
   const recovery=await first.page.evaluate(async txHash=>{
@@ -112,13 +126,13 @@ try {
     try{await journal.send({data:iface.encodeFunctionData('deposit',[secretHash]),value:'100',expected:{kind:'deposit',amount:'100',secretHash}});}catch(e){if(e.code!=='BB_ETH_SUBMISSION_UNKNOWN')throw e;}
     return secretHash;
   });
-  stage='ethereum-intent-reload';await first.page.reload();await first.page.waitForFunction(()=>window.__aztec?.createEthereumJournal && document.getElementById('wbAztecFile'));
+  stage='ethereum-intent-reload';await first.page.reload();await readyUser(first.page);
   await first.page.locator('#wbPassword').fill(password);await first.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:encrypted});await first.page.waitForFunction(()=>window.walletState.aztec?.address);
   const ethRecovered=await first.page.evaluate(async secretHash=>{
     const a=window.__aztec,w=window.walletState.aztec,scope={account:w.address.toString(),chainId:'31337',rollup:'0x'+'11'.repeat(20),version:'5',board:'0x'+'0'.repeat(63)+'2',portal:'0x'+'22'.repeat(20),depositor:'0x'+'33'.repeat(20)};
     const blockHash='0x'+'01'.repeat(32),txHash='0x'+'04'.repeat(32);let tx=null,receipt=null,nonce=null,submissions=0;
     const iface=new ethers.Interface(['function deposit(bytes32) payable','event Deposited(address indexed depositor,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
-    const provider={getNetwork:async()=>({chainId:31337n}),getBlockNumber:async()=>1,getBlock:async()=>({number:1,hash:blockHash}),getTransaction:async()=>tx,getTransactionReceipt:async()=>receipt};
+    const provider={getNetwork:async()=>({chainId:31337n}),getBlockNumber:async()=>1,getTransactionCount:async()=>tx?6:5,getBlock:async()=>({number:1,hash:blockHash}),getTransaction:async()=>tx,getTransactionReceipt:async()=>receipt};
     const signer={getAddress:async()=>scope.depositor,sendTransaction:async request=>{
       if(request.data!==iface.encodeFunctionData('deposit',[secretHash])||request.value!==100n)throw new Error('payment changed');
       submissions++;nonce=request.nonce;tx={...request,hash:txHash};receipt={hash:txHash,from:scope.depositor,to:scope.portal,status:1,blockNumber:1,blockHash,logs:[{address:scope.portal,...iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,100,secretHash,secretHash,0])}]};return tx;
@@ -173,4 +187,4 @@ try {
 
   console.log(JSON.stringify({passed:true,actualBuiltBrowser:true,freshProfiles:4,maximumConcurrentProfiles:2,deploymentPendingUiAndWalletLock:true,actualPortableJournalRestore:true,wrongPasswordRejected:true,sameRestoredAddress:true,restoredClaimCommitmentVerified:true,actualCrossTabExclusion:true,actualJournalReloadRecovery:true,actualEthereumIntentReloadRecovery:true,externalRequestsBlocked:externalRequests,secretsWrittenToEvidence:false}));
 }catch(error){console.log(JSON.stringify({passed:false,stage,errorClass:error.name,location:error.stack?.split('\n').filter(l=>l.trim().startsWith('at ')).slice(0,2)}));process.exitCode=1;}
-finally{clearTimeout(watchdog);if(browser)await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+finally{if(browser)await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

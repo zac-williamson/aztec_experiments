@@ -28,7 +28,7 @@
         root.addEventListener('hashchange',()=>location.reload(),{once:true});
         if(!result.config.privateFee){status.textContent='Posting and fee funding are not enabled for this board. You can still read messages.';return;}
         root.billboardConfigStore.install(result.config);
-        status.textContent='Board ready. Load your wallets to continue.';initialize();
+        status.textContent='Board ready. Connect your wallet to continue.';initialize();
       }catch{status.textContent='This board is unavailable for posting. Reload to try again.';}
     };
     return;
