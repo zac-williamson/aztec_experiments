@@ -1,5 +1,5 @@
 {
-  "status": "Aztec withdrawal confirmed; Ethereum settlement/refund pending",
+  "status": "Aztec withdrawal proven and Ethereum collateral refund confirmed",
   "network": "Aztec V5 public testnet / Ethereum Sepolia",
   "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9",
   "portal": "0x794df4e4af56748e9eb5cc3ea75a73961d9f9566",
@@ -20,7 +20,6 @@
     "nextAllowedTime": 1789951644
   },
   "limitations": [
-    "No Ethereum refund yet.",
     "Testnet evidence, not production qualification."
   ],
   "commands": {
@@ -44,32 +43,32 @@
     "ssmCommand": "60ae9231-bc6f-4231-be5b-1d32ca0e4f41"
   },
   "latestSettlementObservation": {
-    "observedAt": "2026-09-21T01:17:40.289Z",
-    "status": "checkpointed",
+    "observedAt": "2026-09-21T01:22:48.753Z",
+    "status": "proven",
     "block": "90013",
     "tips": {
       "proposed": {
-        "number": 90029,
-        "hash": "0x0c269acc9bd88378e76e9d2f7abe03ebbf61ae65f23193d1b23402cebdaf3742"
+        "number": 90034,
+        "hash": "0x02f992df6730e69171fb481a4bcaece0b0a71c701ca0e88153493d7b234cdd49"
       },
       "checkpointed": {
         "block": {
-          "number": 90029,
-          "hash": "0x0c269acc9bd88378e76e9d2f7abe03ebbf61ae65f23193d1b23402cebdaf3742"
+          "number": 90033,
+          "hash": "0x0e34c33144b0a0ae021a574c72d3a46c08527045f2f97839e7dbfd32f58e2b5b"
         },
         "checkpoint": {
-          "number": 82836,
-          "hash": "0x0032d37a70480ac803efd496a509918fc625a43b9ec10e4ae0f0886cc0453dd4"
+          "number": 82840,
+          "hash": "0x00f6fb12b432555444c03cc18c1f711cb7a3396aec854cf08ebdeaf3c1f1a351"
         }
       },
       "proven": {
         "block": {
-          "number": 89994,
-          "hash": "0x01343477b48bc92d9634c2fac3cba6d17c25fee42a180db9be401fafaa270376"
+          "number": 90026,
+          "hash": "0x0ddfea6a14e9f57550d83964ea00162ff2d335faffa67b2a3aee9008ea852c40"
         },
         "checkpoint": {
-          "number": 82801,
-          "hash": "0x001232d76a29d41cdbd109556ce8c463420dae569fb1cf68fde98972a406d3c5"
+          "number": 82833,
+          "hash": "0x0056c6a53c2ffeb34567576c0b9d96467160c91450d37bb55f80988a752d59e3"
         }
       },
       "finalized": {
@@ -83,6 +82,24 @@
         }
       }
     },
-    "witnessAvailable": false
+    "witnessAvailable": true
+  },
+  "refund": {
+    "commandId": "365a1bc5-ff74-46bf-aeff-3794dbf97a98",
+    "independentReceipt": {
+      "observedAt": "2026-09-21T01:24:14.338Z",
+      "hash": "0x69687e0bdd76fab80f4ea5726c780de2b94a2a139d09d926233ae3fdb90ae3d2",
+      "status": "success",
+      "blockNumber": "11747808",
+      "blockHash": "0xae677ece97f31edd1e381ba6ac3f5671154614cb93dfba641b10b71410fb5ee2",
+      "portalDepositBalance": "0",
+      "withdrawn": {
+        "depositor": "0x997339dEE91f61757a6b2DcA5cf8bC169e83688f",
+        "amount": "10000000000000"
+      },
+      "gasUsed": "77592",
+      "effectiveGasPrice": "1077361970"
+    },
+    "operatorState": "zero_balance_need_deposit"
   }
 }
