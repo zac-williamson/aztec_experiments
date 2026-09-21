@@ -6,8 +6,8 @@ Objective state: **running**. Completed packages: 26/37.
 
 ## In progress
 
-- **Evaluate moderation quality and define human review operations (M03)** — StrictJSON-only parser b5f45ac passed76parser/130signer/daemon/156worker-evaluation checks315 and deployed316/317 to existingEC2. Actual same-model greeting/threat checks319 returned validJSON; service320 healthy90196 with no pendingfinality/signing/attention. Prior automaticflag verifiedfinalized321.48case quality/capacity/humanlabelgates remain incomplete; prompt/model unchanged.
-- **Run browser, recovery, concurrency and load matrix (T04)** — FixedChromeperformancecohort322 slots01/02 passed with exactsource/browser/hardware/gas matches,canonicalposts/fees and cleanup.2of30pairs complete; no percentileclaim. Slot03 next under540s/4GiB. Prior recovery309/311/312/313 passed,tenauthor mechanism reconciled. InstalledSafari/physicalmobile/statistical and externalreleasegates remainopen.
+- **Evaluate moderation quality and define human review operations (M03)** — StrictJSON-only parser b5f45ac passed76parser/130signer/daemon/156worker-evaluation checks315 and deployed316/317 to existingEC2. Actual same-model greeting/threat checks319 returned validJSON; service320 healthy90196 with no pendingfinality/signing/attention. Prior automaticflag verifiedfinalized321.48case quality/capacity/humanlabelgates remain incomplete; prompt/model unchanged. HumanreviewCSV48 prepared with blankdecisions, neutralIDs and exact source/checksum provenance; independentlyverified. These previouslyevaluated syntheticexamples do not complete humanreview,heldoutvalidation or300casecoverage.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Chromeperformancecohort322 slots01–03 passed; exactsource/browser/hardware/gas matches, canonicalposts/fees and completecleanup.3of30pairs, no percentileclaim. Continue slot04 under540s/4GiB. Recovery309/311/312/313 passed;tenauthor mechanism reconciled. InstalledSafari/physicalmobile/statistical/externalgates remainopen.
 
 ## Ready internal work
 
