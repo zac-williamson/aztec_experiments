@@ -1,6 +1,5 @@
 import {BackendType} from '@aztec/bb.js';
 import {TxStatus} from '@aztec/stdlib/tx';
-import {RollupAbi} from '@aztec/l1-artifacts/RollupAbi';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {JsonRpcProvider,Wallet,ContractFactory,sha256,toUtf8Bytes} from 'ethers';
@@ -15,12 +14,14 @@ import {poseidon2HashWithSeparator} from '@aztec/foundation/crypto/poseidon';
 import {sha256ToField} from '@aztec/foundation/crypto/sha256';
 import {encodeEscrowCommitment} from '../../shared/protocol-commitments.mjs';
 import {settleC01ApplicationMessage} from '../../scripts/c01-settle-application-message.mjs';
-import {startDevnet} from './network.mjs';
+import {startDevnet,drainDevnetCheckpoints} from './network.mjs';
 import {API_VERSION,packText,handleField,scopeHash} from '../protocol.mjs';
+import {restoreApplicationAuthor} from '../../scripts/w02-wallet-restore.mjs';
 const read=async file=>JSON.parse(await fs.readFile(file,'utf8'));
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-export async function bootstrapPluginDevnet({directory,port=8787,host='127.0.0.1',proofs=false,allowanceWei=1000000000000000n,onProgress=console.log}){
-  const [author,operator]=await generateSchnorrAccounts(2,'schnorr_initializerless');
+export async function bootstrapPluginDevnet({directory,port=8787,host='127.0.0.1',proofs=false,browserAuthor=false,allowanceWei=1000000000000000n,onProgress=console.log}){
+  const [generated,operator]=await generateSchnorrAccounts(2,'schnorr_initializerless');
+  const author=browserAuthor?(await restoreApplicationAuthor(generated)).author:generated;
   const net=await startDevnet({directory,fundingAddresses:[author.address,operator.address],proofs,onProgress});
   let wallet,provider,closed=false;
   async function close(){
@@ -72,19 +73,11 @@ export async function bootstrapPluginDevnet({directory,port=8787,host='127.0.0.1
     while(Date.now()<deadline){await wallet.pxe.sync();const anchor=await wallet.pxe.getSyncedBlockHeader();witness=await net.node.getL1ToL2MessageMembershipWitness(anchor.getBlockNumber(),Fr.fromString(event.key));if(witness)break;await pause(1000);}
     if(!witness)throw Error('Deposit Inbox membership timed out');
     net.node.getSequencer().updateConfig({minTxsPerBlock:1,buildCheckpointIfEmpty:false});
-    await net.node.getSequencer().pause();
-    const drainDeadline=Date.now()+30000;let caughtUp=false;
-    while(Date.now()<drainDeadline){
-      net.checkHealth();const tips=await net.node.getChainTips();
-      const pending=await net.deployment.l1Client.readContract({address:rollup.toString(),abi:RollupAbi,functionName:'getPendingCheckpointNumber'});
-      caughtUp=BigInt(tips.checkpointed.checkpoint.number)===pending&&tips.proposed.number===tips.checkpointed.block.number&&tips.proposed.hash===tips.checkpointed.block.hash;
-      if(caughtUp)break;await pause(500);
-    }
-    if(!caughtUp)throw Error('Local Inbox checkpoint production did not settle');
-    await wallet.pxe.sync();await net.node.getSequencer().start();
+    await drainDevnetCheckpoints(net);
+    await wallet.pxe.sync();
     await board.methods.claim_deposit(EthAddress.fromString(signer.address),amount,secret,new Fr(event.index)).send(send);
     const serviceConfig={descriptor,nodeUrl:net.nodeUrl,ethereumUrl:net.rpcUrl,startBlock:0,development:true,host:'0.0.0.0',port,repository:'zac-williamson/aztec_experiments',stateDirectory:path.join(directory,'service'),operator:{secret:operator.secret.toString(),salt:operator.salt.toString(),signingKey:operator.signingKey.toString()}};
     await fs.writeFile(path.join(directory,'service.json'),JSON.stringify(serviceConfig,null,2),{mode:0o600});
-    return {net,wallet,board,adapter,signer,provider,descriptor,serviceConfig,author,chain,close};
+    return {net,wallet,board,adapter,signer,provider,descriptor,serviceConfig,author,chain,portalAddress,close};
   }catch(error){try{await close();}catch(cleanup){throw new AggregateError([error,cleanup],'Local board setup and cleanup failed');}throw error;}
 }

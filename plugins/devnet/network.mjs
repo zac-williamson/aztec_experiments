@@ -1,3 +1,4 @@
+import {RollupAbi} from '@aztec/l1-artifacts/RollupAbi';
 import {bbBinary} from '../../scripts/toolchain.mjs';
 // Disposable local development network. No production defaults are modified.
 import fs from 'node:fs/promises';
@@ -81,4 +82,20 @@ export async function startDevnet({directory,fundingAddresses,proofs=false,onPro
     nodeServer=http.createServer(rpc.getApp().callback());await new Promise(resolve=>nodeServer.listen(0,'127.0.0.1',resolve));
     return {node,config:nodeConfig,rpcUrl,nodeUrl:'http://127.0.0.1:'+nodeServer.address().port,identity,deployment,dateProvider,close,checkHealth(){if(miningError)throw miningError;}};
   }catch(error){try{await close();}catch(cleanup){throw new AggregateError([error,cleanup],'Devnet startup and cleanup failed');}throw error;}
+}
+
+/** End temporary empty-block production before another wallet simulation. */
+export async function drainDevnetCheckpoints(net){
+ const sequencer=net.node.getSequencer();
+ await sequencer.pause();
+ try{
+  const deadline=Date.now()+30000;
+  while(Date.now()<deadline){
+   net.checkHealth();const tips=await net.node.getChainTips();
+   const pending=await net.deployment.l1Client.readContract({address:net.deployment.l1ContractAddresses.rollupAddress.toString(),abi:RollupAbi,functionName:'getPendingCheckpointNumber'});
+   if(BigInt(tips.checkpointed.checkpoint.number)===pending&&tips.proposed.number===tips.checkpointed.block.number&&tips.proposed.hash===tips.checkpointed.block.hash)return;
+   await pause(500);
+  }
+  throw Error('Local Inbox checkpoint production did not settle');
+ }finally{await sequencer.start();}
 }

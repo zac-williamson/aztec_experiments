@@ -70,3 +70,31 @@ The test uses `GITHUB_TOKEN` if configured; otherwise it reads the existing `gh 
 After a successful creation run, `PLUGIN_E2E_MODEL=z-ai-glm-5-3-flash npm run test:plugins:live -- --read-pr=1` tests model selection with a different real model reading that smoke-test PR. Use the actual PR number. This scenario disables GitHub writes, checks the changed file named in the bot reply, and checks that the newly billed Venice calls all used the selected model. Use the dedicated Venice wallet exclusively during either test so the ledger difference measures that run.
 
 A result file under `.build/plugin-e2e-*/result.json` records the local payment, post/reply IDs, actual PR, provider ledger and censor result. Normal success/failure paths clean up before recording final success. The outer 540-second emergency timeout still terminates the executable abruptly; a timeout is never a pass. Set `CRS_PATH="$PWD/apps/dist/crs"` for the local CRS and use the pinned Node 24.21.x toolchain as above.
+
+## Browser qualification (in progress)
+
+`npm run dev:plugins:browser` starts a local posting-capable board at
+`http://localhost:8789/user.html`, with actual ETH escrow, bridged private fee
+credit, and the live Venice/GitHub service. Proving defaults off only for this
+local chain; `PLUGIN_PROOFS=true` enables the normal proof path. The service
+uses the configured repository. GitHub writes are disabled unless the command
+includes `-- --github-writes`; enabled writes create draft PRs.
+
+The ignored `.build/plugin-browser-*/browser-control.json` contains disposable
+test wallet material and the encrypted account import path; keep it private.
+Use a disposable Ethereum wallet on the printed local RPC, chain 31337. Import
+the prepared Aztec account via Account → Import recovery file before connecting.
+The frontend then discovers plugins through board APIs and requests the ETH
+payment using its connected browser signer. No post or plugin payment is made
+by this launcher. Close it with Ctrl-C after the interactive test.
+
+Acceptance requires the actual composer and wallet approval UI, not a native
+script calling `payForInvocation`: reject a payment and observe no paid model
+execution; approve the saved request and verify one canonical payment, actual
+Venice charges, real GitHub output and an unflagged reply in the page. This
+browser qualification has not yet passed. Prior `test:plugins:live` results are
+scripted integration evidence only.
+
+Production hosting must serve `plugins.js` and allow the board's explicitly
+configured descriptor service origin in the hosting generator's `origins` list.
+Keep model/provider credentials exclusively in the hosted service environment.

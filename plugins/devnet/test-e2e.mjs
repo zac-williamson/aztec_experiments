@@ -11,15 +11,18 @@ import {payForInvocation} from '../ethereum.mjs';
 import {packText,unpackText,handleField} from '../protocol.mjs';
 import {githubApi} from '../github-tools.mjs';
 import {veniceClient} from '../venice.mjs';
+import {startBoardWeb,retainPreviewCheckpoint} from './web.mjs';
 const live=process.argv.includes('--live');
+const preview=process.argv.includes('--preview');
 const readPrArgument=process.argv.find(x=>x.startsWith('--read-pr='));
 const readPr=readPrArgument?Number(readPrArgument.split('=')[1]):null;
 if(readPrArgument&&(!live||!Number.isSafeInteger(readPr)||readPr<1))throw Error('--read-pr requires --live and a positive PR number');
+if(preview&&(!live||!readPr))throw Error('--preview requires a live read-PR scenario');
 const selectedModel=process.env.PLUGIN_E2E_MODEL||'kimi-k2-5';
 if(!/^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,127}$/.test(selectedModel))throw Error('Invalid E2E model');
 if(live&&(!process.env.VENICE_WALLET_PRIVATE_KEY||!process.env.GITHUB_TOKEN||(!readPr&&process.env.PLUGIN_GITHUB_WRITES!=='true')))throw Error('Live E2E requires the Venice wallet, GitHub token and explicit GitHub writes for PR creation');
 const directory=await fs.mkdtemp(path.resolve('.build/plugin-e2e-'));
-let fixture,service,runs=0,workerError,runError;
+let fixture,service,web,runs=0,workerError,runError;
 const evidence={passed:false,liveModel:live,selectedModel,readPr,applicationProofs:process.env.PLUGIN_PROOFS==='true'};
 const timer=setTimeout(()=>{console.error('Plugin E2E exceeded 540 seconds');process.exit(1);},540000);
 try{
@@ -29,6 +32,7 @@ try{
  }
  fixture=await bootstrapPluginDevnet({directory,proofs:process.env.PLUGIN_PROOFS==='true',onProgress:step=>console.log('STEP',step)});
  const {board,wallet,author,chain,descriptor,signer}=fixture;
+ if(preview){web=await startBoardWeb({fixture});console.log('BOARD_URL',web.url);}
  service=await runHostedService({config:fixture.serviceConfig,env:{...process.env,...(live?{PLUGIN_GITHUB_DRAFT:'true'}:{}),...(readPr?{PLUGIN_GITHUB_WRITES:'false'}:{})},onError:error=>{workerError=error;console.error('WORKER_ERROR',error.message);},...(live?{}:{runner:{run:async request=>{runs++;assert.equal(request.text,'@bok explain this board');return {replyText:'This board uses Ethereum collateral and Aztec posts.'};}}})});
  const task=readPr?`Read PR ${readPr} using read_pr. Reply with its URL, exact changed file path and a short summary. Do not create or change anything.`:'Read README.md. Then create a draft PR adding only docs/bok-live-smoke.md containing a short description of this anonymous message board based on that README. Title the PR "Bok live integration smoke test". In the PR body say this is an automated integration test, not a production change. Do not modify any other file. Reply with the PR URL.';
  const text=live?`@bok --model=${selectedModel} ${task}`:'@bok explain this board';
@@ -68,18 +72,28 @@ try{
    assert(evidence.newVeniceCharges.every(x=>x.modelId===selectedModel),'Every provider charge must use the selected model');
    console.log('VERIFIED_PR',url);
  }
- console.log('STEP censor bot reply');
+ if(preview){
+   evidence.localTestSettlementCheckpoint=await retainPreviewCheckpoint(fixture.serviceConfig);
+   assert.equal((await board.methods.is_post_flagged(postId).simulate({from:author.address})).result,false);
+   assert.equal((await board.methods.is_post_flagged(reply).simulate({from:author.address})).result,false);
+   evidence.passed=true;evidence.censored=false;evidence.previewUrl=web.url;
+   await fs.writeFile(path.join(directory,'result.json'),JSON.stringify(evidence,null,2));
+   clearTimeout(timer);console.log('PREVIEW_READY',web.url);
+   await new Promise(resolve=>{process.once('SIGINT',resolve);process.once('SIGTERM',resolve);});
+ }else{
+ console.log('STEP force-flag reply to test moderator authority (not a policy verdict)');
  const version=(await board.methods.get_policy_version().simulate({from:author.address})).result;
  const reason=packText('Test moderation',7);
  await board.methods.declare_immoral(reply,version,reason.fields.map(x=>Fr.fromString(x)),reason.length).send({from:author.address,wait:{timeout:120,waitForStatus:TxStatus.CHECKPOINTED}});
  assert.equal((await board.methods.is_post_flagged(reply).simulate({from:author.address})).result,true);
  console.log('PASS Ethereum payment → hosted worker → authenticated board reply → censor');
  evidence.passed=true;evidence.censored=true;
+ }
  console.log('EVIDENCE',path.join(directory,'result.json'));
 }catch(error){runError=error;evidence.error=error.message;
 }finally{
  const errors=[];
- for(const stop of [()=>service?.close(),()=>fixture?.close(),()=>Barretenberg.destroySingleton(),()=>BarretenbergSync.destroySingleton()]){
+ for(const stop of [()=>web?.close(),()=>service?.close(),()=>fixture?.close(),()=>Barretenberg.destroySingleton(),()=>BarretenbergSync.destroySingleton()]){
    try{await stop();}catch(error){errors.push(error);}
  }
  clearTimeout(timer);
