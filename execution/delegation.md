@@ -228,3 +228,5 @@ Backup monitoring325: aws_stack_review approved durable status update, early sys
 Firefox328: application_change_review approved the predeclared30-slot cohort with exact source/gas/pilot bindings. Existing driver only, no new execution or retry path. Root will finalize Chrome322 statistics before serial Firefox execution.
 
 Chrome322: application_change_review independently recomputed all eight statistical distributions and verified 30 predefined reports/logs, 60 distinct transactions, exact source/browser/hardware/gas, canonical assertions and cleanup. Approved the narrowly scoped Chrome qualification.
+
+Firefox328 continuation: root executes the frozen cohort serially; application_change_review reviews the next distinct local application gap against T04/T05 evidence without edits or expensive tests.

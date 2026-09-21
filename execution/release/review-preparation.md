@@ -110,6 +110,12 @@ release or replace the independent review requirement.
 - `execution/evidence/T04/browser-performance-pilots-20260921.json`: one cold and
   one warm proof each in installed Chrome and the tested Firefox and WebKit builds. These are pilots,
   not statistical qualification; WebKit is not installed Safari.
+- `execution/evidence/T04/chrome-performance-results-322.md`: 30 cold and 30 warm
+  Chrome proofs, all verified and independently reviewed. Cold initialization plus
+  proof p95 37.90s; warm proof p95 35.78s. Local conditions and recorded hardware
+  limit the claim. Firefox328 and WebKit cohorts remain incomplete.
+- `execution/evidence/T04/safari-public-reader-327.json`: installed Safari26.5
+  directory, direct reading and refresh. Wallet/proving remains unverified.
 - `execution/evidence/M03/live-timing-20260921.json`: deployed model detected and
   removed one synthetic threat through an actual Aztec transaction.
 - `execution/evidence/M03/deployed-qualification-20260921.md`: model results and
