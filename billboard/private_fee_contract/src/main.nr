@@ -3,7 +3,7 @@ mod gas;
 
 /// Private Fee Payment Contract
 ///
-/// Fully private FPC (no public functions, no owner, no off-chain agent).
+/// Ownerless private-balance FPC with public teardown for private refunds.
 /// Users bridge FeeJuice from L1 via FeeJuicePortal to this contract address,
 /// then call `mint` to convert the bridge claim into private FJ balance.
 /// The FJ balance can then be used to sponsor transactions via `pay_fee`.
@@ -22,9 +22,10 @@ pub contract PrivateFPC {
             hash::{poseidon2_hash_with_separator, sha256_to_field},
             traits::ToField,
         },
-        state_vars::Owned,
+        state_vars::{Owned, StateVariable},
     };
     use balance_set::BalanceSet;
+    use uint_note::{UintNote, PartialUintNote};
     use crate::gas::get_max_gas_cost;
 
     // gas-optimized max notes for initial transfer call
@@ -43,13 +44,14 @@ pub contract PrivateFPC {
         balances: Owned<BalanceSet<Context>, Context>,
     }
 
-    /// @notice Sponsors the transaction by deducting max gas cost from sender's balance.
-    /// @dev Does not refund unused gas - the full max_gas_cost is consumed.
+    /// Reserves the maximum fee; teardown returns the unused credit privately.
     #[external("private")]
     #[allow_phase_change]
     fn pay_fee() {
         let sender = self.msg_sender();
-        let _max_gas_cost = self.internal._deduct_max_gas_cost(sender);
+        let max_gas_cost = self.internal._deduct_max_gas_cost(sender);
+        let refund_note = UintNote::partial(sender, self.context, sender, self.address);
+        self.set_as_teardown(PrivateFPC::at(self.address)._complete_refund(refund_note, max_gas_cost));
 
         // Set the FPC as the fee payer of the tx.
         self.context.set_as_fee_payer();
@@ -103,8 +105,25 @@ pub contract PrivateFPC {
             MessageDelivery::onchain_unconstrained(),
         );
 
+        let refund_note = UintNote::partial(claimer, self.context, claimer, self.address);
+        self.set_as_teardown(PrivateFPC::at(self.address)._complete_refund(refund_note, max_gas_cost));
         self.context.set_as_fee_payer();
         self.context.end_setup();
+    }
+
+    /// Only a private fee entrypoint may schedule this completion. No user address is public.
+    #[external("public")]
+    #[only_self]
+    fn _complete_refund(refund_note: PartialUintNote, max_fee: u128) {
+        let fee_field = self.context.transaction_fee();
+        let actual_fee = fee_field as u128;
+        assert(actual_fee as Field == fee_field, "Fee exceeds u128");
+        assert(actual_fee <= max_fee, "Fee exceeds reservation");
+        let refund = max_fee - actual_fee;
+        // V5 partial-note completion cannot encode a zero-valued note.
+        if refund > 0 {
+            refund_note.complete(self.context, self.address, self.storage.balances.get_storage_slot(), refund);
+        }
     }
 
     /// @notice Mints internal FJ balance by proving a prior L1->L2 FeeJuice bridge claim.

@@ -64,7 +64,7 @@ portals are shown as unavailable rather than offered as working links.
    gas; the page does not exchange assets. Deposit AZTEC, download its public
    recovery record, then **Claim private balance** when the bridge message is
    available. The claim fee comes from the deposit, so enough must remain after
-   its configured maximum charge. Unused gas is not refunded.
+   the initial reservation. Unused reserved credit returns to your private balance.
 3. Return to the author page and reconnect the wallets. Deposit ETH collateral
    within this board's configured limits. This collateral is separate from the
    AZTEC fee balance. The interface claims the collateral on L2 after its bridge

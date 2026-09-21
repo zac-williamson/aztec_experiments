@@ -33,7 +33,7 @@ test('private balance payment emits only pay_fee with shared payer',async()=>{
   assert.equal(state.registered,1);assert.equal(state.reads,1);assert.equal(payload.calls.length,1);
   const call=payload.calls[0];assert.equal(call.name,'pay_fee');assert(call.to.equals(instance.address));assert.equal(call.args.length,0);assert.equal(call.type,'private');assert(!call.hideMsgSender&&!call.isStatic);
   assert(payload.feePayer.equals(instance.address));assert.equal(payload.authWitnesses.length,0);assert.equal(payload.capsules.length,0);assert((await result.paymentMethod.getAsset()).equals(ProtocolContractAddress.FeeJuice));
-  assert.equal(result.metadata.maximumFee,'1300');assert.equal(result.metadata.refundUnusedGas,false);assert.notEqual(result.gasSettings,input.gasSettings);
+  assert.equal(result.metadata.maximumFee,'1300');assert.equal(result.metadata.refundUnusedGas,true);assert.notEqual(result.gasSettings,input.gasSettings);
 });
 test('cold-start emits actual FeeJuice claim then private mint-and-pay; never reads author balance',async()=>{
   const {input,state}=fixture();input.claim={amount:'5000',salt:new Fr(51),leafIndex:new Fr(9)};
@@ -58,10 +58,11 @@ test('rejects wrong bridge secret',()=>reject(i=>{i.claim={amount:'5000',salt:ne
 test('rejects zero bridge salt',()=>reject(i=>{i.claim={amount:'5000',salt:Fr.ZERO,leafIndex:new Fr(2)};},'PRIVATE_FEE_INVALID_CLAIM'));
 test('rejects unsupported chain',()=>reject((i,s)=>{s.chain=9;},'PRIVATE_FEE_CHAIN_MISMATCH'));
 test('rejects unsupported version',()=>reject((i,s)=>{s.version=9;},'PRIVATE_FEE_CHAIN_MISMATCH'));
-test('cold-start works without public instance publication',async()=>{
+test('cold-start requires published refund contract before accepting funding',async()=>{
   const {input,state}=fixture();state.instance=undefined;input.claim={amount:'5000',salt:new Fr(3),leafIndex:new Fr(9)};
-  const result=await preparePrivateFeePayment(input);assert.equal(state.registered,1);assert.equal(result.metadata.mode,'bridge-claim');
+  await assert.rejects(preparePrivateFeePayment(input),{code:'PRIVATE_FEE_NOT_PUBLISHED'});assert.equal(state.registered,0);
 });
+test('rejects old zero-teardown settings',()=>reject(i=>{i.gasSettings.teardownGasLimits=new Gas(0,0);},'PRIVATE_FEE_INVALID_GAS'));
 test('rejects upgraded deployed class',()=>reject((i,s)=>{s.instance.currentContractClassId=new Fr(9);},'PRIVATE_FEE_CLASS_MISMATCH'));
 test('rejects malformed instance preimage',()=>reject((i,s)=>{s.instance.salt=new Fr(9);},'PRIVATE_FEE_CLASS_MISMATCH'));
 test('rejects per-user alternative fee contract',()=>reject(i=>{i.privateFeeAddress=AztecAddress.fromFieldUnsafe(new Fr(99));},'PRIVATE_FEE_NONCANONICAL_ADDRESS'));

@@ -29,7 +29,7 @@
   <div id="walletButtonsContainer"></div>
   <label for="publicFeeGas">Private fee gas settings for the public connection file (JSON, optional)</label>
   <textarea id="publicFeeGas" rows="4" spellcheck="false"></textarea>
-  <p class="small">Use the reviewed gas settings for this release. The ownerless fee contract address is derived from the bundled artifact. Without fee settings the exported file supports public reading only. Each private transaction charges its configured maximum; unused gas is not refunded.</p>
+  <p class="small">Use the reviewed gas settings for this release. The ownerless fee contract address is derived from the bundled artifact. Without fee settings the exported file supports public reading only. Each private transaction reserves a fee budget and returns unused credit privately. The refund contract must be published before funding it.</p>
   <button id="deployButton" type="button" onclick="startDeploy()" style="margin-top: 12px; font-size: 1.1em; padding: 10px 24px; cursor: pointer;">Deploy</button>
   <p class="small" id="deployHint">Load both wallets above, then click Deploy.</p>
   <div id="status" class="status-container" role="status" aria-live="polite" style="max-height: 60vh; overflow-y: auto;"></div>

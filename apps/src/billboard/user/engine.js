@@ -186,29 +186,40 @@
           throw Object.assign(new Error('This transaction exceeds the configured fee limits. No proof or transaction was submitted.'), {code:'BB_GAS_LIMIT_EXCEEDED'});
         }
         const pad = 1 + this._estimatedGasPadding;
-        const gasLimits = fixedGas ? opts.fee.gasSettings.gasLimits : gu.totalGas.mul(pad);
-        const teardownGasLimits = fixedGas ? opts.fee.gasSettings.teardownGasLimits : gu.teardownGas.mul(pad);
-        const maxFee = gasLimits.computeFee(feeOptions.gasSettings.maxFeesPerGas).toBigInt();
-
+        const gasLimits = gu.totalGas.mul(pad);
+        const teardownGasLimits = gu.teardownGas.mul(pad);
+        if (fixedGas) for (const key of ['daGas', 'l2Gas']) {
+          gasLimits[key] = Math.min(gasLimits[key], checkedGas.gasLimits[key]);
+          teardownGasLimits[key] = Math.min(teardownGasLimits[key], checkedGas.teardownGasLimits[key]);
+        }
+        // Capture the final budget before the UI hook; UI objects cannot change what is proved.
+        const finalGasSettings = a.GasSettings.from({
+          gasLimits, teardownGasLimits,
+          maxFeesPerGas: checkedGas?.maxFeesPerGas ?? feeOptions.gasSettings.maxFeesPerGas,
+          maxPriorityFeesPerGas: checkedGas?.maxPriorityFeesPerGas ?? feeOptions.gasSettings.maxPriorityFeesPerGas,
+        });
+        const maxFee = finalGasSettings.getFeeLimit().toBigInt();
         log('  Estimated gas: L2=' + gasLimits.l2Gas.toLocaleString() + ' DA=' + gasLimits.daGas.toLocaleString(), 'info');
-        log('  Max fee: ' + maxFee.toLocaleString() + ' Fee Juice (' + toAztec(maxFee, 4) + ' AZTEC)', 'info');
-
+        log('  Fee reservation: ' + maxFee.toLocaleString() + ' Fee Juice (' + toAztec(maxFee, 4) + ' AZTEC)', 'info');
         if (this._preProveHook) {
           await this._preProveHook({ gasLimits, maxFee, feeOptions, teardownGasLimits });
         }
-
-        const finalGasSettings = checkedGas ?? a.GasSettings.from({
-          gasLimits: opts.fee?.gasSettings?.gasLimits ?? gasLimits,
-          teardownGasLimits: opts.fee?.gasSettings?.teardownGasLimits ?? teardownGasLimits,
-          maxFeesPerGas: feeOptions.gasSettings.maxFeesPerGas,
-          maxPriorityFeesPerGas: feeOptions.gasSettings.maxPriorityFeesPerGas,
-        });
-
-        log('  Proving tx (can take minutes)...', 'info');
-
         const feeOpts2 = await this.completeFeeOptions({
           from: opts.from, feePayer: executionPayload.feePayer, gasSettings: finalGasSettings,
         });
+        // A smaller reservation can select different notes. Validate the exact final transaction once.
+        const finalSimulation = await this.simulateViaEntrypoint(executionPayload, {
+          from: opts.from, feeOptions: feeOpts2, skipTxValidation: false, skipFeeEnforcement: false,
+          additionalScopes: opts.additionalScopes, sendMessagesAs: opts.sendMessagesAs,
+        });
+        if (!finalSimulation.publicInputs || (finalSimulation.publicInputs.forPublic && !finalSimulation.publicOutput) || finalSimulation.publicOutput?.revertReason) {
+          throw Object.assign(new Error('Transaction simulation did not complete successfully. No proof or transaction was submitted.'), {code:'BB_SIMULATION_FAILED'});
+        }
+        if (['daGas', 'l2Gas'].some(key => finalSimulation.gasUsed.totalGas[key] > finalGasSettings.gasLimits[key] || finalSimulation.gasUsed.teardownGas[key] > finalGasSettings.teardownGasLimits[key])) {
+          throw Object.assign(new Error('This transaction exceeds the estimated fee limits. No proof or transaction was submitted.'), {code:'BB_GAS_LIMIT_EXCEEDED'});
+        }
+        log('  Proving tx (can take minutes)...', 'info');
+
         const txRequest = await this.createTxExecutionRequestFromPayloadAndFee(executionPayload, opts.from, feeOpts2);
         const provenTx = await measured('proveTx',()=>this.pxe.proveTx(txRequest, {
           scopes: this.scopesFrom(opts.from, opts.additionalScopes ?? [], opts.sendMessagesAs),

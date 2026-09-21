@@ -2,8 +2,10 @@
 
 The board uses private Aztec state and a shared, ownerless fee contract. Users
 fund their own private fee credit; there is no coupon issuer or fee-service
-operator. Ordinary fees are charged from that credit at the configured maximum,
-without an unused-gas refund. Insufficient credit stops preparation; the supported
+operator. Fees reserve private credit before execution; public teardown returns
+the difference from the protocol transaction fee to the same private owner. The
+refund amount is public, but its recipient is committed in a private note.
+Insufficient credit stops preparation; the supported
 client does not fall back to a public author fee payer or automatically fund it.
 
 This does not make every part of a user's journey anonymous. The current review
@@ -25,6 +27,8 @@ if that conflicts with the privacy you need. Public onchain content cannot be
 guaranteed deletable.
 
 ## Evidence and remaining qualification
+
+The following evidence predates the refund change and does not qualify it.
 
 Genuine native journeys and the complete Chromium deposit-to-refund journey use
 the shared fee payer, reconcile private credit and leave the author's public

@@ -48,8 +48,8 @@ test('missing private fee configuration fails before account work for every priv
  }
 });
 const owner={toString:()=> 'owner'};
-test('actual wallet keeps configured gas and normal account scope/tag through simulation and proof',async()=>{
-  const c=context(),calls=[],settings=gas(),expectedSettings=gas(),txHash={toString:()=>new Fr(4).toString()},payload={authWitnesses:['exact-auth']};
+test('actual wallet tightens gas within configured ceilings and preserves account scope/tag',async()=>{
+  const c=context(),calls=[],settings=gas(),expectedSettings=new GasSettings(new Gas(100,200),new Gas(0,2),new GasFees(3n,4n),new GasFees(0n,0n)),txHash={toString:()=>new Fr(4).toString()},payload={authWitnesses:['exact-auth']};
   const receipt={txHash,status:'checkpointed',executionResult:'success',blockNumber:1,blockHash:'block'};
   const node={sendTx:async()=>calls.push('submit'),getTxReceipt:async()=>receipt,getBlock:async()=>({hash:'block'})};
   class BaseWallet {
@@ -66,6 +66,7 @@ test('actual wallet keeps configured gas and normal account scope/tag through si
   assert.equal(result.receipt,receipt);assert.equal(calls.filter(c=>c==='submit').length,1);
   const fees=calls.filter(c=>c[0]==='fees');assert.equal(fees[0][1].forEstimation,false);
   assert.deepEqual(fees[1][1].gasSettings.toBuffer(),expectedSettings.toBuffer());
+  assert.equal(calls.filter(c=>c[0]==='simulate').length,2);
   const request=calls.find(c=>c[0]==='request');assert.equal(request[1],payload);assert.equal(request[2],owner);
   const proof=calls.find(c=>c[0]==='prove');assert.equal(proof[2].senderForTags,owner);assert.equal(proof[2].scopes[0],owner);
   wallet._contextGuard=async()=>{throw new Error('context changed during proof');};
@@ -673,4 +674,24 @@ test('fee preparation preserves only the recognized low-cap diagnostic',async()=
  const c=context();let sends=0;
  const sender=c.BillboardPrivateFeeRouting.createPrivateFeeSender({a:{GasSettings,preparePrivateFeePayment:async()=>{throw Object.assign(Error('private detail'),{code:'PRIVATE_FEE_CAP_TOO_LOW'});}},config:{privateFee:{contractAddress:'fee',gasSettings:gas()}},privateFeeArtifact:{},contract:{methods:{claim_deposit:()=>({send:()=>{sends++;}})}},wallet:{},node:{},owner:{},scope:{l1ChainId:'31337',rollupVersion:'1'}});
  await assert.rejects(sender('claim',[]),e=>e.code==='PRIVATE_FEE_CAP_TOO_LOW'&&!e.message.includes('private detail'));assert.equal(sends,0);
+});
+
+for (const failure of ['revert','gas-change']) test(`adjusted fee reservation is revalidated: ${failure} stops before proof`,async()=>{
+ const c=context();let simulations=0,proofs=0;
+ class BaseWallet {
+  constructor(pxe){this.pxe=pxe;}
+  async completeFeeOptions(opts){return {gasSettings:opts.gasSettings};}
+  async simulateViaEntrypoint(_payload,opts){
+   simulations++;
+   if(simulations===2){
+    assert.equal(opts.skipTxValidation,false);assert.equal(opts.skipFeeEnforcement,false);
+    assert(opts.feeOptions.gasSettings.gasLimits.l2Gas<200);
+   }
+   return {publicInputs:{forPublic:{}},publicOutput:simulations===2&&failure==='revert'?{revertReason:'reservation changed'}:{},
+    gasUsed:{totalGas:new Gas(50,simulations===2&&failure==='gas-change'?150:100),teardownGas:new Gas(0,1)}};
+  }
+ }
+ const wallet=c.BillboardPrivateFeeRouting.createAztecWallet({BaseWallet,GasSettings},{proveTx:async()=>{proofs++;throw Error('must not prove');}},{},{},()=>{},Fr.ONE);
+ await assert.rejects(wallet.sendTx({}, {from:owner,fee:{gasSettings:gas()}}),{code:failure==='revert'?'BB_SIMULATION_FAILED':'BB_GAS_LIMIT_EXCEEDED'});
+ assert.equal(simulations,2);assert.equal(proofs,0);
 });

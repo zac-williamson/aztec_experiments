@@ -32,7 +32,10 @@ function address(value) {
 const equal=(a,b)=>a?.toString()===b?.toString();
 function artifactOf(value) {
   const artifact=loadContractArtifact(value);
-  check(artifact.name==='PrivateFPC'&&!getAllFunctionAbis(artifact).some(f=>f.isInitializer||(f.functionType==='public'&&f.name!=='public_dispatch'))&&(artifact.nonDispatchPublicFunctions??[]).length===0,'PRIVATE_FEE_ARTIFACT_INVALID');
+  const functions=getAllFunctionAbis(artifact);
+  const publicFunctions=functions.filter(f=>f.functionType==='public'&&f.name!=='public_dispatch');
+  check(artifact.name==='PrivateFPC'&&!functions.some(f=>f.isInitializer)&&publicFunctions.length===1&&
+    publicFunctions[0].name==='_complete_refund'&&publicFunctions[0].isOnlySelf&&publicFunctions[0].parameters.length===2,'PRIVATE_FEE_ARTIFACT_INVALID');
   for(const [name,count] of [['pay_fee',0],['mint_and_pay_fee',3]]) {
     check(artifact.functions.some(f=>f.name===name&&f.functionType==='private'&&f.parameters.length===count),'PRIVATE_FEE_ARTIFACT_INVALID');
   }
@@ -40,6 +43,12 @@ function artifactOf(value) {
 }
 export async function derivePrivateFeeInstance(privateFeeArtifact) {
   return getContractInstanceFromInstantiationParams(artifactOf(privateFeeArtifact),{salt:Fr.ZERO,deployer:AztecAddress.ZERO,constructorArgs:[]});
+}
+/** Prepare publication; caller sends with their own funded FeeJuice payment method.
+ * This has no initializer or owner. It must precede any deposits into this address.
+ */
+export function createPrivateFeeDeployment(wallet,privateFeeArtifact) {
+  return Contract.deploy(wallet,artifactOf(privateFeeArtifact),[],undefined,{salt:Fr.ZERO,universalDeploy:true});
 }
 export async function derivePrivateFeeAddress(privateFeeArtifact) { return (await derivePrivateFeeInstance(privateFeeArtifact)).address; }
 export async function derivePrivateFeeBridgeSecret({salt,owner}) {
@@ -54,11 +63,11 @@ export function normalizePrivateFeeGasSettings(value) {
   const fda=uint(value.maxFeesPerGas?.feePerDaGas,128),fl2=uint(value.maxFeesPerGas?.feePerL2Gas,128);
   const pda=uint(value.maxPriorityFeesPerGas?.feePerDaGas,128),pl2=uint(value.maxPriorityFeesPerGas?.feePerL2Gas,128);
   const maximumFee=da*fda+l2*fl2;
-  check(da>0n&&l2>0n&&maximumFee>0n&&maximumFee<(1n<<128n)&&tda<=da&&tl2<=l2&&pda<=fda&&pl2<=fl2,'PRIVATE_FEE_INVALID_GAS');
+  check(da>0n&&l2>0n&&maximumFee>0n&&maximumFee<(1n<<128n)&&tda<=da&&tl2>0n&&tl2<=l2&&pda<=fda&&pl2<=fl2,'PRIVATE_FEE_INVALID_GAS');
   return {gasSettings:new GasSettings(new Gas(Number(da),Number(l2)),new Gas(Number(tda),Number(tl2)),new GasFees(fda,fl2),new GasFees(pda,pl2)),maximumFee};
 }
 /** Prepare only; normal account calls use from: owner and fee: the returned payment method/gas.
- * Charges the selected maximum fee, without an unused-gas refund. Never falls back to public payment.
+ * Reserves the selected maximum fee; public teardown refunds the difference from the protocol fee privately.
  */
 export async function preparePrivateFeePayment(input) {
   try{return await prepare(input);}catch(error){if(error instanceof PrivateFeePreparationError)throw error;throw new PrivateFeePreparationError('PRIVATE_FEE_PREPARATION_FAILED');}
@@ -76,8 +85,9 @@ async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,e
   const artifact=artifactOf(privateFeeArtifact),canonical=await derivePrivateFeeInstance(artifact);
   check(equal(canonical.address,payer),'PRIVATE_FEE_NONCANONICAL_ADDRESS');
   const instance=await node.getContract(payer,'latest');
-  // Fully private contracts need no public deployment or class publication.
-  if(instance)check(equal(instance.address,payer)&&equal(instance.originalContractClassId,canonical.originalContractClassId)&&equal(instance.currentContractClassId,canonical.currentContractClassId)&&equal(await computeContractAddressFromInstance(instance),payer),'PRIVATE_FEE_CLASS_MISMATCH');
+  // Refund completion executes publicly, so the class and instance must be published.
+  check(instance,'PRIVATE_FEE_NOT_PUBLISHED');
+  check(equal(instance.address,payer)&&equal(instance.originalContractClassId,canonical.originalContractClassId)&&equal(instance.currentContractClassId,canonical.currentContractClassId)&&equal(await computeContractAddressFromInstance(instance),payer),'PRIVATE_FEE_CLASS_MISMATCH');
   let paymentMethod;
   if(claim!==undefined) {
     check(claim&&typeof claim==='object'&&!Array.isArray(claim),'PRIVATE_FEE_INVALID_CLAIM');
@@ -94,5 +104,5 @@ async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,e
     check(uint(result,128)>=fixed.maximumFee,'PRIVATE_FEE_BALANCE_INSUFFICIENT');
     paymentMethod=new PrivateFeePaymentMethod(payer);
   }
-  return {paymentMethod,gasSettings:fixed.gasSettings,metadata:{maximumFee:fixed.maximumFee.toString(),feePayer:payer.toString(),mode:claim===undefined?'private-balance':'bridge-claim',refundUnusedGas:false}};
+  return {paymentMethod,gasSettings:fixed.gasSettings,metadata:{maximumFee:fixed.maximumFee.toString(),feePayer:payer.toString(),mode:claim===undefined?'private-balance':'bridge-claim',refundUnusedGas:true}};
 }
