@@ -1,20 +1,20 @@
-# Application qualification coverage — 2026-09-19
+# Application qualification coverage — updated 2026-09-21
 
 This is a work inventory, not completed acceptance evidence. Historical results
 retain their source snapshots; final-source reconciliation remains T05 work.
 
 | Area | Existing evidence | Remaining distinct work |
 |---|---|---|
-| Browser lifecycle | Chromium048, Firefox084, WebKit086 and installed Chrome102 and current-reader-repair133 deposit through refund | Remaining actual release-browser qualification, including installed Safari |
-| Private fee funding UI | Cold-browser094 passes actual fee-juice.html deposit/private claim, collateral claim and paid post with exact accounting | Final-source reconciliation and external-wallet route |
+| Browser lifecycle | Historical Chromium/Firefox/WebKit/Chrome journeys; current MetaMask196 completed deposit, claim, post, screening, withdrawal and refund in 451 seconds within 4 GiB | Current source reconciliation for other supported browsers, including installed Safari |
+| Private fee funding UI | Current cold-browser211 passed genuine fee deposit/private claim, collateral claim and paid post in294seconds/2GiB with exact token and fee accounting | External-wallet funding route and final candidate binding remain distinct |
 | Recovery | Chromium050 accepted post and096 accepted withdrawal response loss with full persistent browser restart; W03 receipt/persistence and chain tests | Layered map in recovery-coverage-095.md: durable boundary095/097, fresh-engine claim/screen100, builtUI reload101, real-Anvil mined response loss. Final-source reconciliation remains; no per-stage genuine-browser duplication claimed |
 | History | C04 17/33 stateful TXE lifecycles, seeded1,002note authenticated continuation/exit, actual1,100record native/browser persistence | Current native-store084 passes11checks at1,100synthetic records in302ms and client checks3/3; five targeted history contract tests passed085; final-candidate binding remains |
 | Concurrency and traffic | Ten same-anchor authors with genesis fixture fees; two private-fee authors and original withdrawal proof076 | Reconcile source; do not claim ten-author private-fee throughput or single-block inclusion |
 | Long absence | Native persisted wallet075 reopens after simulated30days, authenticates retained state and posts | Not a real elapsed soak or browser crash qualification |
-| Repeated deposits | Genuine T02 redeposit/refund and replay rejection | Reconcile current source; retain multi-cycle contract evidence |
+| Repeated deposits | Current redeposit222 passed two genuine deposit/claim/withdraw/refund cycles with replay rejection and exact fees | Final candidate binding remains |
 | Reader on mobile | Wallet-free paginated actual built page, safe text rendering and persistence | Passed mobile-reader083 at390x844 after scoped wrapping fix; physical-device qualification remains distinct |
-| Wallet routes | Real pinned MetaMask132: connection, rejected approval, explicit retry, canonical fee deposit and persistent recovery; built-in Aztec wallet | Final-source reconciliation and journal-level realMetaMask collateral/refund144passed; full board GUI extension integration remains distinct; bundledChromium extension result is distinct from installedChrome lifecycle |
-| Performance | Per-run phase/wall-time/resource records | Feed099 passes30sample Chromium shaped cold-load and10000-history warm API-page targets. Application-proof30sample per-engine campaign remains; incremental sync now commits only changedranges;39checks and nativebrowser149pass. Bounded RPC update155 passes 30 cold samples at p95 1.629s and cached pages at p95 0.2ms; failed151 retained. Initial cache replay remains linear |
+| Wallet routes | Current real MetaMask196 full board GUI through refund passed; earlier132 covered rejected approval and fee-deposit recovery,144 covered journal-level collateral/refund | Reconcile remaining recovery cases against final source. Bundled Chromium extension qualification is distinct from installed Chrome/Safari support |
+| Performance | Per-run phase/wall-time/resource records | Feed099 passes30sample Chromium shaped cold-load and10000-history warm API-page targets. Application-proof30sample per-engine campaign remains; fixed-gas pilot planned164 after163 showed194.7s post-step variation. incremental sync now commits only changedranges;39checks and nativebrowser149pass. Bounded RPC update155 passes 30 cold samples at p95 1.629s and cached pages at p95 0.2ms; failed151 retained. Initial cache replay remains linear |
 
 No 1,001-proof repetitive campaign is required by the recorded C04 methodology.
 No performance, actual-browser, recovery or external-wallet promise is removed by
@@ -25,3 +25,55 @@ recorded HEAD a208406 predates then-uncommitted C04 changes. Compare the hashed
 files, not HEAD alone. Independent review found successor/hint queries and history
 tests unchanged. Later C05 maturity/cooldown/recovery changes justify rerunning
 only the five existing `test_history` contract tests on current source. All five passed in contract-history-085.log; final candidate binding remains T05.
+
+
+## 2026-09-21 deployment and current checks
+
+The public testnet board and directory are deployed at
+https://d30njln0kead8n.cloudfront.net/. Readers open board URLs directly;
+ordinary visitors no longer import connection settings. Discovery covers
+published instances of the supported contract class on the selected network.
+See hosted-directory-20260921.json for actual browser observations.
+
+The EC2 moderator evaluated a post under changed rules, submitted its removal,
+and the contract recorded removal without a collateral penalty. The original
+policy was restored and a normal greeting was allowed. This live check occurred
+before the old deadline; it does not replace local after-deadline coverage.
+See live-retroactive-removal-20260921.json.
+
+Native private-fee lifecycle measurement now includes maximum-size messages,
+two timely flags, two-note screening, withdrawal and refund. The complete run
+passed in440090ms with1642992KiB peak aggregate RSS and complete cleanup:
+T02/application-df03392d-85d4-4588-9661-d5734069b85b.json. The maximum-size
+post with two screening hints was simulated; actual screening and withdrawal
+were proved. This is not arbitrary fee-balance fragmentation qualification.
+
+A new browser preflight initially rejected legitimate entirely private claims
+because it incorrectly required public output. Failure192 is retained. The
+check now follows the pinned SDK transaction type;121 focused checks pass195.
+Actual MetaMask browser196 passed450880ms with3665904KiB peak RSS, canonical
+refund and cleanup. See application-57cfa893-b857-4394-a721-180f5ca0b79e.json.
+Hosted publication is proceeding after that result. Static fee limits remain an operational limitation: actual wallet
+state must fit before proving; no silent enlargement or payment fallback exists.
+
+### Cold fee claim diagnostic 205 (2026-09-21)
+
+The run failed before proving at 113,933 ms and cleaned up completely. Evidence:
+`application-974a3acf-accf-432c-b168-020e2eb09b66.json`. The preserved RPC error is
+`Rollup__UnavailableTempCheckpointLog(6,5,267)`: simulation requested checkpoint 6
+while the Ethereum contract pending tip was 5. Published npm 5.2.0 source and
+executed JavaScript were independently compared byte-for-byte by author_testnet_flow;
+this path is not a local SDK patch. The SDK derives the proposed parent's fees
+using its grandparent from Ethereum. A proposed frontier more than one checkpoint
+ahead of Ethereum exposes that assumption. Why that gap formed remains unresolved.
+
+The cold fixture kept forced empty checkpoints enabled through browser claiming.
+The scoped correction ends empty production once the required Inbox witness exists,
+drains in-flight publication using the official sequencer pause/start, checks the
+node frontier against Ethereum, and then releases the browser. It does not alter
+application validation or resolve the upstream pipelined-simulation limitation.
+One bounded qualification is planned after independent review; no blind retry.
+
+Qualification208 failed121338ms in new barrier because root called archiver getL2Tips on the node; public API is getChainTips. Cleanup complete. Evidence application-42be481e-799b-44f7-a228-e2906b529062.json. This is a harness defect, not a repeated fee claim result. Corrected and actual SDK binding checked209; independent reviewer rechecked all helper APIs.
+
+Cold browser211 passed293640ms,peak2140368KiB,cleanupcomplete. Evidence application-89b9c4d2-ff37-45ae-94df-3fe874688115.json. Publication barriers recorded proposed/checkpointed/L1 equality at checkpoints6 and23. Three genuine browser proofs took about30s,34s,36s. Author public Fee Juice balance stayed zero. No changes to application fee validation were needed.

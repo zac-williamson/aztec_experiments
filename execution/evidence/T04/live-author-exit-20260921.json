@@ -1,0 +1,88 @@
+{
+  "status": "Aztec withdrawal confirmed; Ethereum settlement/refund pending",
+  "network": "Aztec V5 public testnet / Ethereum Sepolia",
+  "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9",
+  "portal": "0x794df4e4af56748e9eb5cc3ea75a73961d9f9566",
+  "screening": {
+    "transactionHash": "0x1793ea12e4e9c71bd54e76a285a45c894d9277eb134e6d47ada2757643cc4d48",
+    "block": 90006,
+    "receiptStatus": "checkpointed",
+    "proofSecondsFromLog": 58,
+    "submissionToInclusionSecondsFromLog": 58,
+    "protocolFeeAztec": "1.064364",
+    "configuredMaximumFeeAztec": "12.592182792947076808",
+    "note": "Private fee contract charges configured maximum; protocol fee differs."
+  },
+  "freshStatus": {
+    "observedAt": "2026-09-21T00:50:37Z",
+    "allPostsScreened": true,
+    "collateralWei": "10000000000000",
+    "nextAllowedTime": 1789951644
+  },
+  "limitations": [
+    "No Ethereum refund yet.",
+    "Testnet evidence, not production qualification."
+  ],
+  "commands": {
+    "screeningSsm": "394b2fef-2724-465c-863f-57fe1d4550b7",
+    "freshStatusSsm": "d72c6747-eff1-4bbe-ad5e-fcbb755b11e5",
+    "withdrawalSsm": "59f07ad5-d598-4245-a145-bdbd2c11e02b"
+  },
+  "withdrawal": {
+    "transactionHash": "0x2456fc493e6e2ce560015d146cb838a098c8a97a54e1022b0c4bd06552d73bfa",
+    "block": 90013,
+    "proofSecondsFromLog": 46,
+    "submissionToInclusionSecondsFromLog": 120,
+    "protocolFeeAztec": "0.982143",
+    "confirmedAt": "2026-09-21T00:58:40Z"
+  },
+  "settlementCheck": {
+    "observedAt": "2026-09-21T00:59:41Z",
+    "code": "BB_SETTLEMENT_PENDING",
+    "messageLeaf": "0x003e7b7824e44c68559df0e879b0a7a9fd20317cb95d1e6a14e2b193ef2d5b06",
+    "ethereumRefundSubmitted": false,
+    "ssmCommand": "60ae9231-bc6f-4231-be5b-1d32ca0e4f41"
+  },
+  "latestSettlementObservation": {
+    "observedAt": "2026-09-21T01:17:40.289Z",
+    "status": "checkpointed",
+    "block": "90013",
+    "tips": {
+      "proposed": {
+        "number": 90029,
+        "hash": "0x0c269acc9bd88378e76e9d2f7abe03ebbf61ae65f23193d1b23402cebdaf3742"
+      },
+      "checkpointed": {
+        "block": {
+          "number": 90029,
+          "hash": "0x0c269acc9bd88378e76e9d2f7abe03ebbf61ae65f23193d1b23402cebdaf3742"
+        },
+        "checkpoint": {
+          "number": 82836,
+          "hash": "0x0032d37a70480ac803efd496a509918fc625a43b9ec10e4ae0f0886cc0453dd4"
+        }
+      },
+      "proven": {
+        "block": {
+          "number": 89994,
+          "hash": "0x01343477b48bc92d9634c2fac3cba6d17c25fee42a180db9be401fafaa270376"
+        },
+        "checkpoint": {
+          "number": 82801,
+          "hash": "0x001232d76a29d41cdbd109556ce8c463420dae569fb1cf68fde98972a406d3c5"
+        }
+      },
+      "finalized": {
+        "block": {
+          "number": 89994,
+          "hash": "0x01343477b48bc92d9634c2fac3cba6d17c25fee42a180db9be401fafaa270376"
+        },
+        "checkpoint": {
+          "number": 82801,
+          "hash": "0x001232d76a29d41cdbd109556ce8c463420dae569fb1cf68fde98972a406d3c5"
+        }
+      }
+    },
+    "witnessAvailable": false
+  }
+}

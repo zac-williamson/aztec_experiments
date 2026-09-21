@@ -122,3 +122,74 @@ proof-performance-plan-118.md for the subsequent latency campaign.
 154–155: both independent reviewers approved bounded parallel RPCs and retained global budgets/canonical checks. Harness reviewer caught sibling pagination continuing after failure; root added shared failure stop and barrier regression. Temporary diagnostic mode removed; ordinary 30-sample performance run155 passes unchanged targets. Root alone integrated and ran tests.
 
 157: application reviewer identified persistent stale cache connections after competing writes. Root implemented distinct conflict errors, stale-entry eviction without retry and explicit reader reopen. Both reviewers approved; five regressions and rebuilt browser check pass. Frontend inventory now includes extracted projection/storage modules. Next reviews: full GUI extension reuse (harness) and moderation quality blocker (application), read-only.
+
+158: harness reviewer approved one explicit wallet choice and helper extraction, caught context-wide extension routing/CSP mixing; root restricted bypass to extension-origin frames/workers and excludes extension pages from app CSP measurements. Two ordered confirmation hooks, no loop/retry. Extracted-helper smoke passes. Application review requested before full lifecycle159.
+
+159–160: both reviewers traced shared depositor/publisher identity as a concrete fixture flaw, without claiming it proves159cause. Root separated funded browseridentity; application reviewer checked every canonical deposit/refund/exit binding. Harness reviewer approved one bounded rerun with fixed error categories and blockedrequest classification.160 live; source inputs frozen. Application reviewer also classified all48 moderationerrors; root checked categorycounts and preserved analysis020 without changinglabels/scores.
+
+161–163: lightweight actualextension diagnosis identified MetaMask documentation iframe wrongly counted as application traffic. Root shared requestguard preserves blocking and labels extension-owned iframe; regression guards both application frames and application workers.162realextension check passes. Harness reviewer approves sourcefinal163 journey; root alone supervises proofs.
+
+2026-09-20 architecture review: deposit_number_review checks nonce necessity; fee_pool_review checks pooled fee security; recovery_feed_review traces recovery/feed changes against upstream. Read-only, no expensive tests; root sole writer. User-directed retroactive moderation analysis handled by root.
+
+2026-09-20 architecture review integration: deposit reviewer found no remaining counter/replay issue; recovery reviewer approved obsolete cursor deletion and exact-hash recovery. Focused Noir45, portal36, engine92, backup5, UI recovery9 and built DOM fixture pass. Full Noir run exceeded existing540s cap; not qualified. Logs retained under .build/architecture-review-2026-09-20. Retroactive moderation economics await user answer; no fee/feed redesign implemented.
+
+2026-09-20 AWS testnet deployment: testnet_deployment_readiness independently verifies liveSDK/protocol and prepares minimal fundingsequence; aws_stack_review reviews minimalstack/budget with proposedtemplate. Root alone integrates and changesAWS.
+
+2026-09-20 Linux deployment: aws_stack_review verified minimal packaging inputs and identified the required portal dependency lockfile installation; both dependency trees installed and the operator package passed provenance checks. testnet_deployment_readiness independently reviewed the corrected fee claim and explicit disposable deployment settings. Root owns all cloud writes.
+
+## AWS continuation: Fee Juice and remote moderator
+- `claim_send_review`: independently reviewed real claim SDK path and prepared fresh-wallet balance verifier; no repository writes. Claim and fresh balance verified remotely. Reviewing systemd unit.
+- `portal_submission_diagnosis`: prepared read-only saved-intent diagnosis; confirmed insufficient free Sepolia ETH, no portal transaction sent. Checked additional public faucets without bypassing limits.
+- Root performed AWS CLI/SSM operations, website publication, evidence updates and service installation. Service remains disabled pending portal completion and flag gas measurement.
+
+## Funded AWS deployment continuation
+- ethereum_recovery_review: independently reviewed canonical-block nonce shortcut and regression cases.
+- moderator_fee_measurement: prepared read-only actual flag gas simulation proposal.
+- author_testnet_flow: preparing fresh-author and measured application flow proposals.
+- Root integrated nonce lookup fix;51focusedtests and boundedSDK/appsbuild passed. No harness source changes.
+
+### Public testnet continuation — funding received
+
+- Root verified the hosted public feed through block 89771 and the remote CLI feed in 2.3 seconds.
+- `ethereum_recovery_review` approved the indexed empty-history skip and its test structure: no alternate path or additional lifecycle owner.
+- `author_testnet_flow` independently reviewed the exact deposit, claim and post sequence, including Inbox readiness and transaction reconciliation. Root remains the sole writer and cloud operator.
+
+### Actual CLI claim buffer mismatch
+
+- `author_testnet_flow` independently identified the native/bundled Buffer boundary and verified unchanged SHA-256 truncation.
+- `ethereum_recovery_review` approved the one-line codec fix and existing CLI smoke extension. Both requested test provenance/vector-presence checks were added. The old source reproduces the same production exception; the fix passes both real CLI-loader lanes and 21 focused tests.
+
+- EC2 lifecycle repair: ethereum_recovery_review independently reviewed execve, KillMode=mixed, nested model cleanup and real PID/SIGTERM regression. No blocking findings or added fallback paths. Old regression failed; 13 launcher tests and 24 daemon assertions passed. Real AWS stop removed exact containers/networks; restarted successfully.
+
+- retroactive_review: read-only minimal contract/feed/daemon design for user-requested retrospective removal; root integrating public presentation fix and checking live deployment.
+
+- Retrospective moderation reviews: retroactive_contract_review approved compact existing-slot states0/1/3 for a fresh board and both screening branches; no extra map. retroactive_review verified old-policy receipt retention and policy changes during inference, and identified unresolved-operation closure as unfinished. No closure framework added. Public presentation reviewer corrections retained unflagged hostile-text/layout coverage.
+
+2026-09-20: retroactive_review approved fixed rejection-stage harness label and minimal worker policy-change reconciliation. No cancellation API or new harness layer. author_testnet_flow delegated read-only fresh-board deployment sequencing; root retains all cloud writes.
+
+2026-09-20: author_testnet_flow reviewed U02/U03 discovery read-only: use pinned public instance-publication logs via getPrivateLogsByTags, supported class verification and explicit scan coverage; no new registry. ethereum_recovery_review approved precise confirmation-unverified CLI wording without transaction behavior changes.
+
+U02 final reader review: retroactive_review approved automatic loading and direct-link assertions, invalid-link clearing, remainingSyncMs measurement naming, and refresh-only VM fixture isolation. Actual browser separately verifies initialization. No hidden retries, fallback paths, or duplicate lifecycle owners found. Evidence: T04/direct-board-reader-168.json.
+
+U02 hosted setup reviews: application_change_review approved page-local configuration, delayed wallet setup, fee recovery initialization and script ordering; found dynamic older-message link losing selected board, fixed to preserve fragment. retroactive_review approved shared hosted-loader component tests, built reader/author/funding setup checks, and single Caddy configuration endpoint in the real MetaMask harness. UI-only and Ethereum-only fixtures explicitly install settings at their declared seams; they do not qualify hosted startup. Obsolete visitor import checks now cover operator/censor configuration only. Root waits for hosted startup failure before installing fixture state to avoid competing status updates.
+
+U03 final review: application_change_review approved registration-bound discovery, inclusive same-block publications, incompatible portal isolation, canonical checkpoint checks and mobile/desktop built-browser navigation. Invalid readiness cannot hide a subsequent valid board. Harness reuses the existing lifecycle owner without retries or fallback paths. Root alone changed files and ran checks.
+
+Gas measurement review: application_change_review approved public-only simulation of exact proven transactions in existing inclusion helpers, fee enforcement on, no additional proving or lifecycle owner. Values are pre-submission simulation measurements, not canonical inclusion gas. Existing flagged journey uses992-byte post; same540s/4GiB supervisor.
+
+2026-09-21: author_testnet_flow read-only review located retained standalone Fee Juice claim gas; root retrieved sanitized measurement. Reviewing whether author bootstrap can combine funding with a maximum-size post before hosted settings are published. application_change_review approved narrow claim-state reporting fix after positive note observation, with unresolved-claim guard and read errors preserved. Root retains all writes.
+
+2026-09-21: application_change_review approved fixed-fee preflight and claim-state correction;120 focused checks pass. Reviewed fixture repairs preserve real SDK scope methods and mutation regression. author_testnet_flow confirmed hosted funding and posting are separate, top-up mint does not consume prior notes, but fragmented pay_fee balances can recurse; measured static limits do not qualify arbitrary fragmentation. Exact simulation fit is required before proof. Reviewer raw-object normalization suggestion deferred during frozen real-browser192; canonical private-fee preparation supplies GasSettings.
+
+Final fee-preflight disposition: reviewer confirmed SDK private-only gas path and conditional public output requirement. Actual SDK TxSimulationResult regression passes;121focusedchecks195. Actual MetaMask full lifecycle196 passed450880ms/3665904KiB with refund and cleanup. Failure192 is retained as root-introduced guard defect, not a protocol/harness fault.
+
+Funding browser199 exposed stale readiness proxy after early public address display. application_change_review approved waiting for existing Wallet ready message or error and checking actual wallet identity/signer/account; same deadline, no retry or duplicate owner. Harness200passed. Root alone integrates.
+
+2026-09-21 diagnostic205: author_testnet_flow investigates cold-fee checkpoint inconsistency read-only; root retains writes. Node simulation reads checkpoint6 while L1 pending5. No new functional attempt until diagnosis/review.
+
+application_change_review approved cold-fee publication barrier: official pause/start on existing sequencer, full conjunction handles archiver lag, existing deadline, no retries or validation bypass. Collateral-claim phase still requires advancing empty checkpoints; upstream pipelining limitation retained. Author_testnet_flow independently verified implicated SDK src/dest match published npm5.2.0.
+
+Review correction209: root and reviewer missed node/archiver API distinction in208. Helper now uses public getChainTips; reviewer checked exact pinned return shape, L1ABI and sequencer methods. Root exercised actual SDK prototype forwarding and ABI using existing NODE_BACKEND=js profile; passed sdk-binding-209.log. Earlier standalone import without fixture environment failed missing bcrypto.node; no application execution or package change.
+
+### 2026-09-21 integration and fixture review
+Root integrated only; application_change_review independently approved the existing feed-storage module-stripping correction (218) and inert hosted-bootstrap custody fixture seam (220). Security/custody assertions retained; no alternate lifecycle or retries added. Final source integration review found no material omissions or imports of excluded untracked source files. Genuine redeposit222 remains separately pending and is not inferred from other checks.

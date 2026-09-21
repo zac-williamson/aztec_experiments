@@ -1072,7 +1072,7 @@
       "evidence": "evidence/M03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "EC2 Qwen3.5-9B diagnostics: both fixed12-case batches matched all provisional labels,24/24,noerrors. Context batchp95 30.17s,p50 17.25s,includes980byte message. Cleanup/platform/weights verified;moderator restarted healthy22:21UTC. Results retained in deployed-qwen35-9b-context-20260920.json. Still not production error-rate or end-to-end throughput qualification;next measure live moderation stages on new board after activation.",
+      "checkpoint": "AWS adversarial/multilingual batch completed cleanly236728ms,12/12 provisional labels matched,zeroerrors,p50 17.02s/p95 23.09s. Moderator restored active. Evidence deployed-qwen35-9b-adversarial-20260921.json. Evaluator exit2 means qualification thresholds unmet (12cases<300,latency>10s,missingflaglatency), not process failure. Across three batches36/36 provisional decisions; no production quality claim. Next integrate actual flag latency and assess CPU capacity. Independent timing review: historical432s post-to-flag interval includes deliberate policy/deployment changes and cannot qualify latency. Smallest next measurement is one correlated live job (ingest, inference, proof, submit, inclusion); one sample still cannot establish p95/capacity. Health01:14UTC active/healthy/feedlag0.",
       "priority": 17,
       "execution_lane": "deployed-model-evaluation"
     },
@@ -1498,7 +1498,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "New public board and portal active; activation reconciled without resubmission. New author deposit confirmed 0xb94fbda4b5513fbca5e42fe5f2d00756118a14cff2f611f80f804dd9b8393a03. Claim simulation passed10.47s; next submit measured private Fee Juice claim, then post and switch moderator/site after verification.",
+      "checkpoint": "Integration checks passed: artifacts213, boundary88, Noir45(214), harness216, components reconciled219/220/221, portal36 and SDKmanifest221. Independently reviewed fixture corrections retain assertions. Genuine redeposit222 passed both deposit/claim/withdraw/refund cycles, old claim/exit rejection and cumulative private fee accounting: T02/application-ac9f887d-0e40-470e-b264-ff4ec8a082e5.json. Next remaining browser/source reconciliation. Live withdrawal90013 checkpointed; refund witness unavailable01:17UTC; claim only when available, never resubmit withdrawal.",
       "priority": 24,
       "completion_requires": [
         "O01",
@@ -2109,7 +2109,7 @@
       "evidence": "evidence/U02.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Internal implementation accepted: network-bound direct reader/posting/funding links, no visitor configuration. Final components and built UI checks pass, plus real MetaMask full lifecycle 7m22s/3.41GiB. Evidence U02.json. Public deployment remains T04; directory remains U03.",
+      "checkpoint": "Direct board links and automatic hosted settings accepted locally and now deployed. Live reader->posting->funding navigation preserves board identity without configuration forms. See T04/hosted-directory-20260921.json and hosted-author-20260921.json; release qualification remains T04/T05.",
       "priority": 20,
       "execution_lane": "direct-board-links"
     },
@@ -2158,7 +2158,7 @@
       "evidence": "evidence/U03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Local directory implementation accepted:69 component tests and actual built mobile/desktop two-board navigation passed. Live discovery1.98s. Independent internal review approved. CloudFront publication remains T04; see U03 evidence.",
+      "checkpoint": "Directory accepted locally and now deployed at /boards.html.69componentchecks,actualmobile/desktopnavigation and live supported-class discovery verified. Coverage excludes unpublished and other-class boards. See T04/hosted-directory-20260921.json.",
       "priority": 21,
       "execution_lane": "board-directory"
     }
