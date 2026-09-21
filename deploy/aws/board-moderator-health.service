@@ -1,0 +1,11 @@
+[Unit]
+Description=Publish anonymous board moderator health to CloudWatch
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Environment=AWS_MAX_ATTEMPTS=1
+ExecStart=/usr/bin/python3 /srv/board/publish-health.py eu-west-2 anonymous-message-board-testnet
+TimeoutStartSec=55

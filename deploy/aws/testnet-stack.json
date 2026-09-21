@@ -121,6 +121,24 @@
                 }
               ]
             }
+          },
+          {
+            "PolicyName": "PublishModeratorHealth",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "cloudwatch:PutMetricData",
+                  "Resource": "*",
+                  "Condition": {
+                    "StringEquals": {
+                      "cloudwatch:namespace": "AnonymousMessageBoard"
+                    }
+                  }
+                }
+              ]
+            }
           }
         ]
       }
@@ -364,6 +382,29 @@
           "Runtime": "cloudfront-js-2.0"
         },
         "FunctionCode": "GENERATED_FROM_BUILT_HTML"
+      }
+    },
+    "ModeratorHealthAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Moderator stopped, unhealthy or missing health publications. No notification destination configured.",
+        "Namespace": "AnonymousMessageBoard",
+        "MetricName": "ModeratorHealthy",
+        "Dimensions": [
+          {
+            "Name": "Deployment",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          }
+        ],
+        "Statistic": "Minimum",
+        "Period": 60,
+        "EvaluationPeriods": 5,
+        "DatapointsToAlarm": 5,
+        "Threshold": 1,
+        "ComparisonOperator": "LessThanThreshold",
+        "TreatMissingData": "breaching"
       }
     }
   },
