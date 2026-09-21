@@ -1498,7 +1498,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Integration checks passed: artifacts213, boundary88, Noir45(214), harness216, components reconciled219/220/221, portal36 and SDKmanifest221. Independently reviewed fixture corrections retain assertions. Genuine redeposit222 passed both deposit/claim/withdraw/refund cycles, old claim/exit rejection and cumulative private fee accounting: T02/application-ac9f887d-0e40-470e-b264-ff4ec8a082e5.json. Next remaining browser/source reconciliation. Live withdrawal90013 checkpointed; refund witness unavailable01:17UTC; claim only when available, never resubmit withdrawal.",
+      "checkpoint": "Application e64c95c integrated. Redeposit222 passed332s; live full collateralrefund227 verified canonicalSepoliareceipt/zeroportalbalance. Firefox225 failed pre-proofRPC502; diagnostic230 passed actualFirefoxpost in258654ms withcleanup. Diagnostic-only transport observer reviewed/harnesschecked; no transport changed, so225rootcause remains unresolved, not fixed by passingrun. Cheapkeepaliveprobe24/24passed. Next isolate intermittentproxyfailure cheaply; remaining WebKit/Chrome journeys and recovery are separate qualification work.",
       "priority": 24,
       "completion_requires": [
         "O01",

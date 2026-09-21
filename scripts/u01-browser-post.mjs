@@ -67,7 +67,20 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
   const env={PATH:'/usr/bin:/bin',HOME:directory,XDG_DATA_HOME:directory,XDG_CONFIG_HOME:directory};
   requireValue(/^v2\.11\.4 /.test(execFileSync(caddy,['version'],{encoding:'utf8'})));
   execFileSync(caddy,['validate','--config',file,'--adapter','caddyfile'],{env,stdio:'pipe',timeout:10000});
-  child=spawn(caddy,['run','--config',file,'--adapter','caddyfile'],{env,stdio:'ignore'});child.on('error',()=>{});
+  child=spawn(caddy,['run','--config',file,'--adapter','caddyfile'],{env,stdio:['ignore','ignore','pipe']});child.on('error',()=>{});
+  // Retain fixed transport categories only; Caddy records include private headers.
+  observation.proxyErrors=[];observation.proxyErrorsTruncated=false;let proxyLine='';
+  child.stderr.on('data',chunk=>{
+   proxyLine+=chunk.toString();let end;
+   while((end=proxyLine.indexOf('\n'))>=0){const line=proxyLine.slice(0,end);proxyLine=proxyLine.slice(end+1);
+    if(line.length>8192||observation.proxyErrors.length>=8){observation.proxyErrorsTruncated=true;continue;}
+    try{const value=JSON.parse(line);if(value.level!=='error')continue;
+     const message=String(value.msg??'');const category=/\bEOF\b/.test(message)?'eof':/connection reset/i.test(message)?'reset':/connection refused/i.test(message)?'refused':/timeout|deadline exceeded/i.test(message)?'timeout':'other';
+     observation.proxyErrors.push({category,status:Number.isInteger(value.status)?value.status:null,elapsedMs:Date.now()-started});
+    }catch{/* Non-JSON diagnostics are not retained. */}
+   }
+   if(proxyLine.length>8192){proxyLine='';observation.proxyErrorsTruncated=true;}
+  });
   const ping=()=>new Promise((resolve,reject)=>{const request=https.get(site.origin+'/user.html',{rejectUnauthorized:false,timeout:1000},response=>{response.resume();response.on('end',()=>resolve(response.statusCode));});request.on('error',reject);request.on('timeout',()=>request.destroy(Error('timeout')));});
   let available=false;for(let i=0;i<50;i++){try{if(await ping()===200){available=true;break;}}catch{}await new Promise(r=>setTimeout(r,100));}requireValue(available);
   const workflow=async()=>{

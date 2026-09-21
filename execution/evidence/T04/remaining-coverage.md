@@ -77,3 +77,23 @@ One bounded qualification is planned after independent review; no blind retry.
 Qualification208 failed121338ms in new barrier because root called archiver getL2Tips on the node; public API is getChainTips. Cleanup complete. Evidence application-42be481e-799b-44f7-a228-e2906b529062.json. This is a harness defect, not a repeated fee claim result. Corrected and actual SDK binding checked209; independent reviewer rechecked all helper APIs.
 
 Cold browser211 passed293640ms,peak2140368KiB,cleanupcomplete. Evidence application-89b9c4d2-ff37-45ae-94df-3fe874688115.json. Publication barriers recorded proposed/checkpointed/L1 equality at checkpoints6 and23. Three genuine browser proofs took about30s,34s,36s. Author public Fee Juice balance stayed zero. No changes to application fee validation were needed.
+
+## Current integration checkpoint, 2026-09-21
+
+Application commit e64c95c passed artifacts, 88 boundary checks, 45 identity
+contract checks, harness checks, component checks (with two reviewed stale
+fixture corrections), 36 portal checks and SDK-manifest checks. See
+integration-20260921.json for source fingerprints and exact command logs.
+Genuine repeat-deposit run222 passed in332274ms with1782144KiB peak aggregate
+RSS, both refunds, replay rejection and cumulative private-fee accounting;
+owned processes and temporary files were cleaned up. Evidence:
+../T02/application-ac9f887d-0e40-470e-b264-ff4ec8a082e5.json.
+
+Independent review identifies remaining distinct browser correctness runs:
+`browser-webkit-journey`, `browser-chrome-journey`,
+`browser-withdraw-recovery`, and source-reconciled `browser-post-recovery`.
+Do not repeat plain post scenarios after those full journeys pass. Installed
+Safari and an integrated cold-funding run through the actual extension remain
+separate gaps; WebKit and bundled Chromium are not substitutes.
+
+Firefox230 passed an actual private-fee post in258654ms/3005472KiB with cleanup. Earlier225 pre-proof proxy502 remains unexplained; diagnostic capture changed no transport behavior. A passing rerun does not close that reliability issue.

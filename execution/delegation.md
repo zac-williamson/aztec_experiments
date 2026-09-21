@@ -193,3 +193,6 @@ Review correction209: root and reviewer missed node/archiver API distinction in2
 
 ### 2026-09-21 integration and fixture review
 Root integrated only; application_change_review independently approved the existing feed-storage module-stripping correction (218) and inert hosted-bootstrap custody fixture seam (220). Security/custody assertions retained; no alternate lifecycle or retries added. Final source integration review found no material omissions or imports of excluded untracked source files. Genuine redeposit222 remains separately pending and is not inferred from other checks.
+
+### Firefox225 proxy diagnosis
+Independent review identified an unconfirmed keep-alive mismatch hypothesis. A cheap24-request probe did not reproduce it (all200). Caddy stderr had been discarded. Root added only bounded fixed-category/status/timing observation; no transport change or retry. Independent review approved; cap is8192 JavaScript characters, eight retained records. Focused malformed/oversized/redaction tests, realEOF502 probe, and harness tier229 passed. One diagnostic Firefox230 run follows;225 failure retained.
