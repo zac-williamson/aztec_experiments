@@ -5,7 +5,7 @@ retain their source snapshots; final-source reconciliation remains T05 work.
 
 | Area | Latest useful evidence | Remaining distinct work |
 |---|---|---|
-| Browser lifecycle | Actual MetaMask196, WebKit231 and installed Chrome238 completed deposit through refund; Firefox full journey also retained | Final-source reconciliation and installed Safari qualification; WebKit does not establish Safari support |
+| Browser lifecycle | Actual MetaMask196, WebKit231 and installed Chrome238 completed deposit through refund; Firefox full journey also retained | Installed Safari26.5 directory/direct reader/refresh passed327; wallet/proving and final-source reconciliation remain. WebKit does not establish installed Safari wallet support |
 | Private fee funding UI | Cold-browser266 and actual MetaMask284 passed genuine fee funding, private claims and paid posting | Final candidate binding; these checks use disposable local chains |
 | Recovery | Actual withdrawal recovery251 and post recovery252 passed with full browser-process restart | Current-source stale-proof312 and same-note attribution313 passed; final candidate binding remains. Existing layered map is recovery-coverage-095.md |
 | History | C04 17/33 stateful TXE lifecycles, authenticated seeded1,002note continuation/exit, actual1,100record native/browser persistence; targeted checks084/085 passed | Final candidate binding; no claim of1,001genuinely proven publications |
@@ -14,7 +14,7 @@ retain their source snapshots; final-source reconciliation remains T05 work.
 | Repeated deposits | Redeposit222 passed two real deposit/claim/withdraw/refund cycles, replay rejection and exact fees | Final candidate binding; no unrelated full rerun required |
 | Mobile reading | Built mobile-sized reader083 and directory navigation passed | Representative physical-device qualification remains distinct |
 | Wallet routes | Actual MetaMask196 full journey and284 cold fee funding; earlier approval rejection/funding recovery retained | Reconcile remaining interruption cases against final source. Bundled Chromium extension support is distinct from installed browsers |
-| Performance | Source-matched Chrome294, Firefox290, WebKit291 each passed one cold+warm proof; browser-performance-pilots-20260921.json. Feed155 measured30cold loads, p951.629s |Chrome cohort322 is in progress with8of30 pairs verified;30cold+30warm samples per engine remain incomplete. Pilots are excluded; no p95 qualification yet |
+| Performance | Source-matched Chrome294, Firefox290, WebKit291 each passed one cold+warm proof; browser-performance-pilots-20260921.json. Feed155 measured30cold loads, p951.629s |Chrome cohort322 is in progress; see chrome-performance-summary-322.json for verified pairs;30cold+30warm samples per engine remain incomplete. Pilots are excluded; no p95 qualification yet |
 | Remote recovery | Verified backup/download/offline authentication296–300; automatic EC2 reboot recovery302 in134seconds | Replacement-host recovery remains untested |
 | Remote health | Native timer publishes aggregate health; CloudWatch missing/unhealthy alarm deployed and recovered toOK | No notification recipient. Backup-failure monitoring325 is implemented and locally tested but not deployed because AWS authentication expired |
 
