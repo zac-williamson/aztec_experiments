@@ -13,7 +13,7 @@ export async function runApplication(name) {
   assertNodeVersion();assertAztecPackages();
   assert.equal(process.platform,'darwin');assert.equal(process.arch,'arm64');
   const scenario=getScenario(name),browser=scenario.browser!=='none';
-  const report={schemaVersion:2,scenario:name,profile:scenario.description,startedAt:new Date().toISOString(),passed:false,stages:[]};
+  const report={applicationProofs:process.env.BOARD_TEST_PROOFS!=='disabled',remoteProver:process.env.BOARD_TEST_REMOTE==='1',schemaVersion:2,scenario:name,profile:scenario.description,startedAt:new Date().toISOString(),passed:false,stages:[]};
   const evidence=path.join(ROOT,'execution/evidence',scenario.evidenceTask,'application-'+randomUUID()+'.json');
   await fs.mkdir(path.dirname(evidence),{recursive:true});
   const directory=await fs.mkdtemp('/private/tmp/board-test-');
@@ -59,7 +59,7 @@ export async function runApplication(name) {
     }
     const {crs,profile}=await prepareRuntime(directory,scenario,report);
     const exit=await supervisor.start('fixture','/usr/bin/sandbox-exec',['-f',profile,process.execPath,ENTRY,'fixture-worker',name,directory],{
-      cwd:ROOT,env:{HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'silent',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',C01_APPLICATION_BB_THREADS:String(scenario.applicationThreads),NODE_BACKEND:'js',FORGE_BIN:'/Users/zac/.foundry/bin/forge',C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
+      cwd:ROOT,env:{BOARD_TEST_PROOFS:process.env.BOARD_TEST_PROOFS??'real',BOARD_TEST_REMOTE:process.env.BOARD_TEST_REMOTE??'0',HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'silent',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',C01_APPLICATION_BB_THREADS:String(scenario.applicationThreads),NODE_BACKEND:'js',FORGE_BIN:'/Users/zac/.foundry/bin/forge',C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
       input:{browserControl:control??null,operatorPackage:operatorPackage??null},onRecord:stage('fixture')});
     report.worker=await readResult('worker');
     assert.equal(exit.code,0);assert.equal(report.worker.passed,true);

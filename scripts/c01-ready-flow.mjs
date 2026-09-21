@@ -1,3 +1,4 @@
+import {applicationProofsEnabled,applicationProver} from './testing/proof-policy.mjs';
 import { applicationNativeProfile } from './c01-native-profile.mjs';
 // TEST ONLY: deploy disabled portal, prove board update_portal; no send/Ready settlement.
 import assert from 'node:assert/strict';
@@ -51,7 +52,7 @@ export async function prepareAndProveC01Ready({ node, preparation, instance, dep
     const receiptHash = typeof deploymentReceipt.txHash === 'string' ? TxHash.fromString(deploymentReceipt.txHash) : deploymentReceipt.txHash;
     assert(included(await node.getTxReceipt(receiptHash)), 'Deployment receipt is no longer checkpointed/successful');
     assert.equal(await l1Client.getChainId(), 31337); assert(l1Client.account, 'Disposable L1 signing client required');
-    assert.equal((await node.getConfig()).realProofs, true);
+    assert.equal((await node.getConfig()).realProofs, applicationProofsEnabled());
     const info = await node.getNodeInfo(); assert.equal(Number(info.l1ChainId), 31337);
     assert.equal(BigInt(info.rollupVersion), BigInt(rollupVersion));
     assert(instance.deployer.equals(preparation.account.address), 'Expected same deployment account');
@@ -60,7 +61,7 @@ export async function prepareAndProveC01Ready({ node, preparation, instance, dep
     const singleton = Barretenberg.getSingleton();
     for (const key of ['backend','bbPath','threads']) assert.equal(singleton.options[key], nativeOptions[key], 'Native singleton mismatch');
     mark('reopen-wallet');
-    wallet = await EmbeddedWallet.create(node, { ephemeral: true, pxe: { proverEnabled: true, proverOrOptions: nativeOptions } });
+    wallet = await EmbeddedWallet.create(node, { ephemeral: true, pxe: { proverEnabled: true, proverOrOptions:applicationProver(nativeOptions) } });
     const account = preparation.account;
     const manager = await wallet.createSchnorrInitializerlessAccount(account.secret, account.salt, account.signingKey, 'c01-disposable');
     assert(manager.address.equals(account.address));

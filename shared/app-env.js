@@ -24,7 +24,7 @@ function _connectionConfig() {
   return {aztecNodeUrl:config.network.nodeUrl,ethRpcUrl:config.network.ethRpcUrl,
     portalAddress:config.board.portalAddress,expectedBoardAddress:config.board.contractAddress,
     expectedNetworkScope:{chainId:config.network.chainId,version:config.network.rollupVersion,rollup:config.network.rollupAddress},
-    privateFee:config.privateFee};
+    privateFee:config.privateFee,remoteProver:config.remoteProver&&document.getElementById('remoteProving')?.checked!==false?{url:config.remoteProver.url,board:config.board.contractAddress}:undefined};
 }
 function _getEthRpcUrl() { return _connectionConfig().ethRpcUrl; }
 window.billboardConfigStore?.subscribe(()=>{
@@ -152,6 +152,7 @@ function publicOperationFailure(error) {
     WORKER_UNAVAILABLE:'Browser workers are unavailable or blocked. Check the browser and hosting settings.',
     CRYPTO_UNAVAILABLE:'Browser cryptography is unavailable.',
     LOCKS_UNAVAILABLE:'Browser storage locks are unavailable; wallet actions cannot safely continue.',
+    BB_REMOTE_PROVER_FAILED:'Remote proving did not complete. Try again or turn off Remote proving to prove locally.',
     BB_BROWSER_PROOF_FAILED:'Browser proving did not complete. Reload and restore your wallet, then check saved transactions before trying again.',
     BB_BROWSER_PROVER_CONFIGURATION:'Browser proving setup could not be verified. Reload this page and check the locally hosted setup files.',
     OPFS_UNAVAILABLE:'Private browser file storage is unavailable or blocked. Wallet storage cannot start.',

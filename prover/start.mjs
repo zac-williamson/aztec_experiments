@@ -1,0 +1,20 @@
+import {prepareNativeRuntime} from './runtime.mjs';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {createProofQueue} from './queue.mjs';
+import {createProcessWorker} from './process-worker.mjs';
+import {createProverServer} from './server.mjs';
+const file=process.argv[2];if(!file)throw Error('Usage: node prover/start.mjs config.json');
+const config=JSON.parse(await fs.readFile(file,'utf8'));
+if(!/^[1-9][0-9]*$/.test(String(config.chainId))||!/^[1-9][0-9]*$/.test(String(config.rollupVersion))||!Array.isArray(config.origins)||!config.origins.every(o=>{try{return new URL(o).origin===o;}catch{return false;}})||!Number.isSafeInteger(config.threads??1)||(config.threads??1)<1||(config.threads??1)>256)throw Error('Invalid network, origins or threads');
+if(!/^0x[0-9a-f]{64}$/.test(config.board)||!['real','disabled'].includes(config.proofs))throw Error('Invalid board/proofs configuration');
+const host=config.host??'127.0.0.1',proofsEnabled=config.proofs==='real';
+if(!proofsEnabled&&(!['127.0.0.1','::1','localhost'].includes(host)||String(config.chainId)!=='31337'))throw Error('Disabled proofs require loopback local devnet');
+const runtime=proofsEnabled?await prepareNativeRuntime(config):{};
+const directory=await fs.mkdtemp(path.join(config.queueDirectory??'/tmp','board-prover-'));
+const worker=createProcessWorker({proofsEnabled,threads:config.threads??1,...runtime});
+const queue=await createProofQueue({directory,worker,maxJobs:1000,maxBytes:config.maxQueueBytes??2*1024**3});
+const server=createProverServer({...config,queue,proofsEnabled});
+server.listen(config.port??8081,host,()=>console.log(JSON.stringify({listening:server.address(),board:config.board,proofs:config.proofs})));
+let closing=false;async function close(){if(closing)return;closing=true;server.close();server.closeAllConnections();await queue.close();await fs.rm(directory,{recursive:true,force:true});}
+for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>void close());

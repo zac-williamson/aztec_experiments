@@ -1,0 +1,11 @@
+{
+  "host": "127.0.0.1",
+  "port": 8081,
+  "board": "0x0000000000000000000000000000000000000000000000000000000000000001",
+  "chainId": "31337",
+  "rollupVersion": "1",
+  "proofs": "disabled",
+  "origins": ["http://localhost:8080"],
+  "threads": 1,
+  "queueDirectory": "/tmp"
+}

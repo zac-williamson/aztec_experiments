@@ -280,10 +280,11 @@
     check(da>0n&&l2>0n&&maximum>0n&&maximum<(1n<<128n)&&BigInt(out.teardownGasLimits.daGas)<=da&&BigInt(out.teardownGasLimits.l2Gas)<=l2&&BigInt(out.maxPriorityFeesPerGas.feePerDaGas)<=fda&&BigInt(out.maxPriorityFeesPerGas.feePerL2Gas)<=fl2,'Invalid private fee limits');
     return {contractAddress:address(value.contractAddress,32),gasSettings:out};
   }
+  function remote(value){exact(value,['url']);const url=endpoint(value.url),u=new URL(url);check(u.protocol==='https:'||['localhost','127.0.0.1','[::1]'].includes(u.hostname),'Prover requires HTTPS');return {url};}
   function validate(value){
-    exact(value,['schemaVersion','network','board'],['privateFee']);check(value.schemaVersion===1,'Unsupported configuration version');
+    exact(value,['schemaVersion','network','board'],['privateFee','remoteProver']);check(value.schemaVersion===1,'Unsupported configuration version');
     const n=value.network,b=value.board;exact(n,['nodeUrl','ethRpcUrl','chainId','rollupVersion','rollupAddress']);exact(b,['portalAddress','contractAddress']);
-    return freeze({schemaVersion:1,network:{nodeUrl:endpoint(n.nodeUrl),ethRpcUrl:endpoint(n.ethRpcUrl),chainId:uint(n.chainId,64,true),rollupVersion:uint(n.rollupVersion,32,true),rollupAddress:address(n.rollupAddress,20)},board:{portalAddress:address(b.portalAddress,20),contractAddress:address(b.contractAddress,32)},privateFee:fee(value.privateFee)});
+    return freeze({schemaVersion:1,network:{nodeUrl:endpoint(n.nodeUrl),ethRpcUrl:endpoint(n.ethRpcUrl),chainId:uint(n.chainId,64,true),rollupVersion:uint(n.rollupVersion,32,true),rollupAddress:address(n.rollupAddress,20)},board:{portalAddress:address(b.portalAddress,20),contractAddress:address(b.contractAddress,32)},privateFee:fee(value.privateFee),...(value.remoteProver===undefined?{}:{remoteProver:remote(value.remoteProver)})});
   }
   function parse(text){check(typeof text==='string'&&new TextEncoder().encode(text).length<=MAX_BYTES,'Configuration exceeds size limit');let value;try{value=JSON.parse(text);}catch{throw new Error('Invalid configuration JSON');}return validate(value);}
   function maximumFee(config){const f=validate(config).privateFee;if(!f)return null;const g=f.gasSettings;return (BigInt(g.gasLimits.daGas)*BigInt(g.maxFeesPerGas.feePerDaGas)+BigInt(g.gasLimits.l2Gas)*BigInt(g.maxFeesPerGas.feePerL2Gas)).toString();}
@@ -41160,7 +41161,7 @@ function _connectionConfig() {
   return {aztecNodeUrl:config.network.nodeUrl,ethRpcUrl:config.network.ethRpcUrl,
     portalAddress:config.board.portalAddress,expectedBoardAddress:config.board.contractAddress,
     expectedNetworkScope:{chainId:config.network.chainId,version:config.network.rollupVersion,rollup:config.network.rollupAddress},
-    privateFee:config.privateFee};
+    privateFee:config.privateFee,remoteProver:config.remoteProver&&document.getElementById('remoteProving')?.checked!==false?{url:config.remoteProver.url,board:config.board.contractAddress}:undefined};
 }
 function _getEthRpcUrl() { return _connectionConfig().ethRpcUrl; }
 window.billboardConfigStore?.subscribe(()=>{
@@ -41288,6 +41289,7 @@ function publicOperationFailure(error) {
     WORKER_UNAVAILABLE:'Browser workers are unavailable or blocked. Check the browser and hosting settings.',
     CRYPTO_UNAVAILABLE:'Browser cryptography is unavailable.',
     LOCKS_UNAVAILABLE:'Browser storage locks are unavailable; wallet actions cannot safely continue.',
+    BB_REMOTE_PROVER_FAILED:'Remote proving did not complete. Try again or turn off Remote proving to prove locally.',
     BB_BROWSER_PROOF_FAILED:'Browser proving did not complete. Reload and restore your wallet, then check saved transactions before trying again.',
     BB_BROWSER_PROVER_CONFIGURATION:'Browser proving setup could not be verified. Reload this page and check the locally hosted setup files.',
     OPFS_UNAVAILABLE:'Private browser file storage is unavailable or blocked. Wallet storage cannot start.',

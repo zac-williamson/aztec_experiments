@@ -1,3 +1,4 @@
+import {applicationProofsEnabled,applicationProver} from './proof-policy.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -74,7 +75,7 @@ export async function runFixture(directory, scenario, browserControl, operatorPa
     const {Fr}=await import('@aztec/foundation/curves/bn254');
     let bn254Key;do{bn254Key=Fr.random().toBigInt();}while(bn254Key===0n);
     const config={...getConfigEnvVars(),l1RpcUrls:[rpcUrl],l1ChainId:31337,
-      realProofs:true,useAutomineSequencer:false,automineEnableProveEpoch:false,
+      realProofs:applicationProofsEnabled(),useAutomineSequencer:false,automineEnableProveEpoch:false,
       p2pEnabled:false,...LOCAL_TIMING,aztecProofSubmissionEpochs:64,
       aztecTargetCommitteeSize:1,slasherEnabled:false,
       initialValidators:[{attester:validatorAddress,withdrawer:validatorAddress,bn254SecretKey:new SecretValue(bn254Key)}]};
@@ -106,7 +107,7 @@ export async function runFixture(directory, scenario, browserControl, operatorPa
       assert(output.node.passed);
     }
     output.passed=true;
-  }catch(error){if(error.censorCommandObservation)output.censorCommands=error.censorCommandObservation;if(error.registrationObservation)output.registration=error.registrationObservation;if(error.deploymentObservation)output.deployment=error.deploymentObservation;if(error.boardObservation)output.board=error.boardObservation;if(error.readyObservation)output.ready=error.readyObservation;if(error.settlementObservation)output.settlement=error.settlementObservation;if(error.bridgeObservation)output.bridge=error.bridgeObservation;output.failure={stage,...describeFailure(error)};}
+  }catch(error){if(error.contentionObservation)output.contention=error.contentionObservation;if(error.censorCommandObservation)output.censorCommands=error.censorCommandObservation;if(error.registrationObservation)output.registration=error.registrationObservation;if(error.deploymentObservation)output.deployment=error.deploymentObservation;if(error.boardObservation)output.board=error.boardObservation;if(error.readyObservation)output.ready=error.readyObservation;if(error.settlementObservation)output.settlement=error.settlementObservation;if(error.bridgeObservation)output.bridge=error.bridgeObservation;output.failure={stage,...describeFailure(error)};}
   finally{
     if(anvil){anvil.kill('SIGKILL');output.anvilExit=await anvilClosed;}
     try{const {Barretenberg,BarretenbergSync}=await import('@aztec/bb.js');await Barretenberg.destroySingleton();BarretenbergSync.destroySingleton();output.singletonsStopped=true;}catch(error){output.passed=false;output.cleanupFailure=describeFailure(error);}
