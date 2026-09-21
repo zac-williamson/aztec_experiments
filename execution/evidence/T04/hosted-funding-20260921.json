@@ -1,0 +1,32 @@
+{
+  "status": "Live bytes, CSP and actual browser verified",
+  "browserEvidence": "execution/evidence/T04/application-89b9c4d2-ff37-45ae-94df-3fe874688115.json",
+  "changeSet": "funding-display-210",
+  "files": {
+    "apps/dist/fee-juice.html": "d87f9076323cf9861988f795be4b423f38f32a622fb1cd96a5b09aad43822632",
+    ".build/aws-testnet/stack-funding-210.json": "f1aad6123fb80219f3a9eb2b00decd4f1f3345cfa10f545a3c690a4aa450cc05"
+  },
+  "changes": [
+    "Show configured private transaction fee before wallet setup.",
+    "Require visitor to choose deposit amount; remove insufficient preset.",
+    "Preserve internal error cause without changing public error message."
+  ],
+  "test": {
+    "elapsedMs": 293640,
+    "peakTreeRSSKiB": 2140368,
+    "cleanupComplete": true
+  },
+  "limitations": [
+    "Local application test uses official controlled settlement; it is not public-network finality evidence.",
+    "No upstream SDK pipelining fix is claimed."
+  ],
+  "invalidation": "I5VBRLLG5VD6L7R76VBAHGNYMM",
+  "stackStatus": "UPDATE_COMPLETE",
+  "liveSha256": "d87f9076323cf9861988f795be4b423f38f32a622fb1cd96a5b09aad43822632",
+  "browserObservations": [
+    "Selected board/network retained in posting and reader links.",
+    "Board ready without configuration form or wallet connection.",
+    "Fee contract populated before wallet setup.",
+    "Configured charge13.711198896716727168AZTEC displayed; deposit amount starts empty."
+  ]
+}
