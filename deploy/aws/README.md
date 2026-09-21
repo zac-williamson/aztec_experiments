@@ -105,3 +105,38 @@ the live service and exact model manifest were checked on 2026-09-21. A complete
 fresh-account installation rehearsal remains outstanding. The current model's
 small evaluation samples do not establish production moderation quality or
 sustained capacity. The application release gates remain in `execution/graph.json`.
+
+
+## Moderator state backups
+
+`backup-moderator.sh` briefly stops the moderator, copies its wallet, fee settings,
+transaction journals, moderation database and private PXE checkpoint to the existing
+private S3 bucket, downloads that archive, and checks file hashes and SQLite integrity.
+It restarts the same moderator on success or an ordinary command failure. It does not
+sign transactions. A killed process or failed host can prevent that cleanup; inspect
+service health after any interrupted backup. Do not run manual wallet commands during
+backup. State is also private to AWS principals permitted to read that bucket; S3
+server-side encryption is not protection from an authorized AWS reader.
+
+Install the script as root-owned `/srv/board/backup-moderator.sh` with mode 0700.
+The accompanying `board-moderator-backup.service` and `.timer` run it five minutes
+after boot and every 24 hours thereafter. A stopped moderator fails the backup
+preflight; the backup does not conceal or repair a failed application service.
+Update the release path in both moderator and backup units when deploying a new
+package. The script rejects a different active release. Validate the units, then enable
+and start the timer. Inspect `journalctl -u board-moderator-backup.service` for the
+object key and checksum or a failed backup. No unattended notification destination is
+configured by these units. The bucket's existing retention is 30 days.
+
+To restore, obtain the recorded archive and verify its SHA256 before extracting into
+a separate mode 0700 directory. Check `metadata/files.sha256` from that directory and
+verify the copied SQLite database. Restore the matching verified operator package,
+model and unit before placing private state at its recorded paths; make state owned
+by `board` with its original restrictive modes. Never overwrite newer transaction
+journals with an older backup or start two moderators with the same wallet. Inspect
+and reconcile the saved transaction outcome before new signing.
+
+The September 21 drill additionally authenticated the encrypted PXE checkpoint and
+moderator-owned journal records from a downloaded archive with networking disabled.
+That is an offline state-restoration check; replacement-EC2 recovery and unattended
+failure notifications remain separate work.

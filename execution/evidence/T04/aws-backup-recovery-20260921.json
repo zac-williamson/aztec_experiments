@@ -1,0 +1,63 @@
+{
+  "status": "Quiesced off-host backup, offline restore authentication and scheduled execution verified",
+  "sourceHashes": {
+    "deploy/aws/backup-moderator.sh": "3df37ebca5d6db65508f9e887a1cdc4ef46ad1b395ce66d5a087ea2d7ebf34fa",
+    "deploy/aws/board-moderator-backup.service": "ea33448ced92eea2bd8564312fb65294a9717fd87fd557803828635413ea8e0a",
+    "deploy/aws/board-moderator-backup.timer": "250bfd45940529c50e70b2ed459581dd1421dedef1b78845f9548b016fe2a5ac"
+  },
+  "bucket": "anonymous-message-board-testnet-backups-nvdhcyurtoga",
+  "bucketControls": {
+    "allPublicAccessBlocked": true,
+    "serverSideEncryption": "AES256",
+    "versioning": "Enabled",
+    "retentionDays": 30
+  },
+  "initialBackup": {
+    "object": "moderator-state/20260921T034613Z-47114.tar.gz",
+    "sha256": "ff36e21790fee80980bdf5afa8a0f721cf377139053d82c2fbb6819ceefa6abf",
+    "bytes": 29297756,
+    "encryption": "AES256",
+    "version": "pEJk4MjKxdAcTXCC0DOLNGHcXCVdQY.J"
+  },
+  "offlineRestore": {
+    "privateCheckpointAuthenticated": true,
+    "privateDatabaseRestoredInMemory": true,
+    "authenticatedJournalRecords": 2,
+    "networkAccess": "disabled by Linux network namespace",
+    "transactionSubmitted": false
+  },
+  "failedUploadDrill": {
+    "cause": "Deliberately nonexistent AWS profile with empty config files",
+    "exitCode": 255,
+    "serviceRestored": true,
+    "privateTemporaryFilesRemoved": true
+  },
+  "schedule": {
+    "trigger": "Five minutes after boot and24hours after prior activation",
+    "enabled": true,
+    "firstTimerRun": "success",
+    "firstTimerObject": "moderator-state/20260921T035302Z-49237.tar.gz",
+    "nextObservedUtc": "2026-09-22T03:53:00Z"
+  },
+  "serviceHealth": {
+    "checkpoint": 90159,
+    "feedLagBlocks": 0,
+    "unresolvedSigning": 0,
+    "awaitingFinality": 1
+  },
+  "review": "aws_stack_review independently reviewed script, units, offline authentication helper and failure cleanup",
+  "limitations": [
+    "Offline restore does not qualify replacement-EC2 recovery.",
+    "Daily script verifies downloaded bytes and SQLite; this drill separately authenticated private checkpoint and moderator-owned journals.",
+    "No unattended notification destination configured.",
+    "AWS principals allowed to read the bucket can read the wallet archive; SSE-S3 is not client-side encryption.",
+    "Forced kill or host failure can prevent shell cleanup."
+  ],
+  "commands": {
+    "296": "351fd7ce-6c89-406e-9751-cd54941f0050",
+    "297": "d48392c4-5fdc-40e1-b9b5-5b1c24787d28",
+    "298": "bbd728d8-9f95-4de7-bd1d-6f8256be6f7b",
+    "299": "c65c9997-07db-4094-9179-ffa825c6c6e0",
+    "300": "76a1a15b-9781-461c-89d5-af7b0ca763e1"
+  }
+}

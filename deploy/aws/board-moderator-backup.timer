@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily moderator state backup
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=24h
+Unit=board-moderator-backup.service
+
+[Install]
+WantedBy=timers.target

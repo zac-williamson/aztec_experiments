@@ -210,3 +210,5 @@ Independent review approved correcting fixture Caddy idle reuse to500ms, below N
 2026-09-21: application_change_review approved actual MetaMask cold-funding diff: existing coordinator/lifecycle, exact transaction guard, navigation observer reinstall and canonical accounting retained; no retry or fallback.16focused checks282 and full harness283 passed. Root runs one genuine scenario284 under existing limits.
 
 2026-09-21: author_testnet_flow verified direct-threat288 policy mapping and four-batch aggregate:48distinct provisional examples,18allowed/30threats,zeroerrors,p95 23.091s,11multilingual/11injection; no production pass. Model/runtime/prompt bindings match. application_change_review approved corrected retrospective removal operator guide.
+
+2026-09-21: aws_stack_review approved explicit state backup, downloaded archive/SQLite checks, offline PXE/journal authentication, signal cleanup and native daily timer. Root verified actual backup296, network-isolated authentication297, expected credentials failure/restoration298 and timer execution299/300. No wallet/signing commands ran during restoration.

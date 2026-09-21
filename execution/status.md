@@ -7,7 +7,7 @@ Objective state: **running**. Completed packages: 26/37.
 ## In progress
 
 - **Evaluate moderation quality and define human review operations (M03)** — Four pinned-model batches total48distinct provisional cases,0classification errors; combinedp95 23.09s misses10s target. Direct-threat288 complete239.70s, runtime/cleanup verified, restored service healthy90139. One live automatic flag verified; human labels,300/50/50coverage and20flagcapacity remain incomplete. Independent aggregate review approved.
-- **Run browser, recovery, concurrency and load matrix (T04)** — MetaMask cold-funding284 passed308989ms/3558352KiB, committeda3d7165. Next distinct existing case: Firefox cold/warm two-post performance pilot290, same fixed settings/540s/4GiB bounds. Do not infer percentiles from one pair.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Firefox290/WebKit291/installedChrome294 two-post pilots passed below6min/4GiB with exact accounting;30-sample qualification remains. Quiesced S3 backup296 verified downloaded bytes+SQLite and restoredservice; offline PXE/journal authentication297 running with networknamespace disabled. Prepare daily native systemd backup only after drill succeeds.
 
 ## Ready internal work
 

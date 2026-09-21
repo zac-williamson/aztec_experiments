@@ -1,0 +1,22 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {getPXEStoreIdentity} from '/srv/board/source/shared/sdk-store.mjs';
+import {createJournalBackup} from '/srv/board/source/shared/journal-backup.mjs';
+import {createFileJournalStorage} from '/srv/board/source/apps/src/billboard/user/transaction-journal-store.mjs';
+const require=createRequire('/srv/board/source/package.json');
+const {IDBFactory}=require('fake-indexeddb');
+const {createPxeCacheSession}=require('/srv/board/source/apps/src/billboard/user/pxe-cache.cjs');
+const root=fs.realpathSync(process.argv[2]);assert(root.startsWith('/srv/board/state/restore-drill-'));
+const wallet=JSON.parse(fs.readFileSync(path.join(root,'state/moderator.json')));
+assert.equal(wallet.address,'0x139ac64b3dd83f326fcdcf6d6de10bdf9b515ffe750f6e3f8564daeec21d2367');
+const {network}=JSON.parse(fs.readFileSync(path.join(root,'state/deployment-retroactive.json')));
+const identity=getPXEStoreIdentity({l1ChainId:Number(network.chainId),rollupAddress:network.rollup,accountAddress:wallet.address,dataDirectory:'pxe_bb_user_'+wallet.address.slice(0,16)+'_'+network.rollup});
+const cache=createPxeCacheSession({directory:path.join(root,'operator-fee-cap-20260921/.pxe-cache-v2'),walletSecret:wallet.secretKey,scope:{account:wallet.address,chainId:network.chainId,version:network.rollupVersion,rollup:network.rollup,databaseName:identity.name}});
+const indexedDB=new IDBFactory();
+try {assert.equal(await cache.restore(indexedDB),true);assert.equal((await indexedDB.databases()).length,1);} finally {cache.close();}
+const storage=createFileJournalStorage(path.join(root,'state/transaction-journal-v1'));
+const backup=await createJournalBackup({storage,walletSecret:wallet.secretKey,walletSalt:wallet.salt});
+const records=await backup.exportRecords();assert(records.length>0);
+console.log(JSON.stringify({privateCheckpointAuthenticated:true,privateDatabaseRestoredInMemory:true,authenticatedJournalRecords:records.length,networkAccess:'disabled by Linux network namespace',transactionSubmitted:false}));

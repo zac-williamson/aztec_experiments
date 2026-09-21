@@ -1498,7 +1498,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "MetaMask cold-funding284 passed308989ms/3558352KiB, committeda3d7165. Next distinct existing case: Firefox cold/warm two-post performance pilot290, same fixed settings/540s/4GiB bounds. Do not infer percentiles from one pair.",
+      "checkpoint": "Firefox290/WebKit291/installedChrome294 two-post pilots passed below6min/4GiB with exact accounting;30-sample qualification remains. Quiesced S3 backup296 verified downloaded bytes+SQLite and restoredservice; offline PXE/journal authentication297 running with networknamespace disabled. Prepare daily native systemd backup only after drill succeeds.",
       "priority": 24,
       "completion_requires": [
         "O01",

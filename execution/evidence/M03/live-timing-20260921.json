@@ -151,5 +151,13 @@
       "phase": "worker-cycle-start",
       "observedAtMs": 1789960373923
     }
-  ]
+  ],
+  "receiptRecheck": {
+    "txHash": "0x28fbbdeebea42dea0fc4c2047e724bbf95ca189c1af0564acdc1ed0c0f40f406",
+    "executionResult": "success",
+    "status": "checkpointed",
+    "blockNumber": 90127,
+    "blockHash": "0x2880cf15b15901fb7a1d027d53d3598fe3b8e3449148056b0d8f3cdb7db52516",
+    "transactionFee": "2350309961797195140"
+  }
 }
