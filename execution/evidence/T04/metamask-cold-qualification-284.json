@@ -1,0 +1,16 @@
+{
+  "scenario": "browser-metamask-cold-fees",
+  "passed": true,
+  "elapsedMs": 308989,
+  "peakTreeRSSKiB": 3558352,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "evidence": "application-3b34a168-d587-4b9c-b31d-3ee085d67f0a.json",
+  "review": "application_change_review; exact transaction guard, existing lifecycle, no retries or fallbacks",
+  "checks": [
+    "16 focused tests282 passed",
+    "full harness tier283 passed",
+    "genuine MetaMask cold fee funding, paid claim and post284 passed"
+  ],
+  "limitations": "Disposable local chain with real proofs; controlled bridge settlement. Not production clearance or performance percentiles."
+}

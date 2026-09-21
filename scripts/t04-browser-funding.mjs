@@ -6,7 +6,7 @@ import {installBrowserErrorObserver} from './browser-error-observer.mjs';
 import {transactionHashes,driveT04BrowserPublication,finishBrowserStatus,checkpointBrowserStage} from './t04-browser-journey.mjs';
 
 export async function driveT04BrowserFunding({page,directory,message,depositAmount,fundingAmount,
-  backupPath,backupPassword,remaining,signal,mark,onSubstage}) {
+  backupPath,backupPassword,remaining,signal,mark,onSubstage,confirmEthereum,onBoardOpened}) {
  const finish=(id,text)=>finishBrowserStatus(page,id,text,remaining);
  const checkpoint=(stage,hashes)=>checkpointBrowserStage(directory,stage,hashes,remaining,signal);
  await page.waitForFunction(()=>document.getElementById('setupStatus')?.textContent.includes('Wallet ready. Deposits fund the shared private fee contract.')||document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
@@ -16,6 +16,7 @@ export async function driveT04BrowserFunding({page,directory,message,depositAmou
  assert(publicConfig&&publicConfig!=='null');
  onSubstage('fee-deposit');mark('gui-fee-deposit');
  await page.locator('#amount').fill(fundingAmount);await page.locator('#depositBtn').click();
+ if(confirmEthereum){await confirmEthereum('fee-approval');await confirmEthereum('fee-deposit');}
  await finish('depositStatus','Deposit recorded. Download the recovery file');
  const record=await page.evaluate(()=>{
   const key=localStorage.getItem('billboard-private-fee-recovery-latest');
@@ -35,15 +36,16 @@ export async function driveT04BrowserFunding({page,directory,message,depositAmou
  await finish('claimStatus','Private balance funded. You can now return to the message board.');
  await checkpoint('fee-claim',transactionHashes(await page.locator('#claimStatus').textContent()));
  onSubstage('open-board');mark('gui-funded-board');
- await page.goto(new URL('/user.html',page.url()).toString());
+ const boardUrl=new URL(page.url());boardUrl.pathname='/user.html';await page.goto(boardUrl.toString());
  await page.waitForFunction(()=>globalThis.__aztec?.createPXE&&document.getElementById('wbAztecFile'),{},{timeout:remaining()});
  await page.evaluate(installBrowserErrorObserver);
+ if(onBoardOpened)await onBoardOpened();
  assert.equal(await page.evaluate(()=>JSON.stringify(globalThis.billboardConfigStore.snapshot().config)),publicConfig);
  await page.locator('#wbPassword').fill(backupPassword);await page.locator('#wbAztecFile').setInputFiles(backupPath);
  await page.waitForFunction(()=>!!globalThis.walletState?.aztec?.address||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
  assert(await page.evaluate(()=>!!globalThis.walletState?.aztec?.address));
  await page.locator('#wbEthBrowserBtn').click();
  await page.locator('#page-1').waitFor({state:'visible',timeout:remaining()});
- await driveT04BrowserPublication({page,directory,message,depositAmount,remaining,signal,mark,onSubstage});
- return {passed:true,coldBrowserFeeFunding:true,paidBoardClaimAndPost:true,externalWalletExtension:false};
+ await driveT04BrowserPublication({page,directory,message,depositAmount,remaining,signal,mark,onSubstage,confirmEthereum,onBoardOpened});
+ return {passed:true,coldBrowserFeeFunding:true,paidBoardClaimAndPost:true,externalWalletExtension:!!confirmEthereum};
 }

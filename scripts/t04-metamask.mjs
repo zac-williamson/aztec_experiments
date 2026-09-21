@@ -5,6 +5,25 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {ROOT} from './toolchain.mjs';
+import {Interface,parseEther} from 'ethers';
+export function assertMetaMaskTransaction({stage,request,account,chainId,tokenAddress,feePortalAddress,privateFeeAddress,boardPortalAddress,fundingAmount,collateralAmount}){
+ assert(Array.isArray(request)&&request.length===1);const tx=request[0];
+ assert.equal(BigInt(chainId),31337n);assert(tx.chainId===undefined||BigInt(tx.chainId)===31337n);
+ assert.equal(tx.from?.toLowerCase(),account.toLowerCase());
+ const methods={'fee-approval':'approve','fee-deposit':'depositToAztecPublic',deposit:'deposit',refund:'withdraw'};
+ assert(Object.hasOwn(methods,stage));
+ const iface=new Interface(['function approve(address,uint256)','function depositToAztecPublic(bytes32,uint256,bytes32)','function deposit(bytes32) payable','function withdraw(uint256,uint256,uint256,bytes32[])']);
+ const parsed=iface.parseTransaction({data:tx.data});assert.equal(parsed?.name,methods[stage]);
+ assert.equal(iface.encodeFunctionData(parsed.fragment,parsed.args).toLowerCase(),tx.data.toLowerCase());
+ const target=stage==='fee-approval'?tokenAddress:stage==='fee-deposit'?feePortalAddress:boardPortalAddress;
+ assert.equal(tx.to?.toLowerCase(),target.toLowerCase());
+ assert.equal(BigInt(tx.value??0),stage==='deposit'?parseEther(collateralAmount):0n);
+ if(stage==='fee-approval'||stage==='fee-deposit'){
+  assert.equal(parsed.args[0].toLowerCase(),(stage==='fee-approval'?feePortalAddress:privateFeeAddress).toLowerCase());
+  assert.equal(parsed.args[1],parseEther(fundingAmount));
+  if(stage==='fee-deposit')assert.notEqual(BigInt(parsed.args[2]),0n);
+ }
+}
 export const metamaskArchive='.build/metamask-13.49.0/metamask-chrome-13.49.0.zip';
 export function unpackMetaMask(directory){
  const archive=path.join(ROOT,metamaskArchive);

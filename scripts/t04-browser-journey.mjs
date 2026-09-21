@@ -12,7 +12,7 @@ export function validateBrowserControl(value){
  assert(['post','lifecycle','recovery','withdraw-recovery','funding','performance'].includes(value.browserMode));
  assert(['chromium','chrome','firefox','webkit'].includes(value.browserEngine));
  assert(['disposable','metamask'].includes(value.ethereumWallet));
- assert(value.ethereumWallet!=='metamask'||(value.browserEngine==='chromium'&&value.browserMode==='lifecycle'));
+ assert(value.ethereumWallet!=='metamask'||(value.browserEngine==='chromium'&&['lifecycle','funding'].includes(value.browserMode)));
  assert(!['recovery','withdraw-recovery'].includes(value.browserMode)||value.browserEngine==='chromium');
  const origin=new URL(value.origin);assert(origin.protocol==='https:'&&origin.hostname==='127.0.0.1'&&origin.pathname==='/'&&!origin.username&&!origin.password&&!origin.search&&!origin.hash);
  assert(typeof value.rpcToken==='string'&&/^[a-zA-Z0-9_-]{24,256}$/.test(value.rpcToken));

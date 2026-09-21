@@ -3,6 +3,7 @@ const run = name => async ctx => (await import('./scenario-flows.mjs'))[name](ct
 
 // Explicit named scenarios. Unknown names fail; there are no compatibility aliases.
 const records = [
+  Object.freeze({name:'browser-metamask-cold-fees',deadlineMs:540000,evidenceTask:'T04',description:'Real MetaMask cold private-fee funding followed by paid claim and post',fixture:'activated-board',authors:1,applicationThreads:1,browser:'funding',browserEngine:'chromium',ethereumWallet:'metamask',run:run('browserFunding')}),
   Object.freeze({name:'browser-metamask-journey',deadlineMs:540000,evidenceTask:'T04',description:'Real MetaMask and browser application deposit through refund',fixture:'activated-board',authors:1,applicationThreads:1,browser:'lifecycle',browserEngine:'chromium',ethereumWallet:'metamask',run:run('browserLifecycle')}),
   ...['chrome','firefox','webkit'].map(browserEngine=>Object.freeze({name:'browser-'+browserEngine+'-performance',deadlineMs:540000,evidenceTask:'T04',description:'Real cold and warm private-fee posts with isolated proving timings',fixture:'activated-board',authors:1,applicationThreads:1,browser:'performance',browserEngine,run:run('browserPost')})),
   Object.freeze({

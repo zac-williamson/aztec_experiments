@@ -109,10 +109,10 @@ test('handoff accepts actual SDK whole-token formatting and rejects invalid amou
  for(const fundingAmount of ['0','00','01','1.','+1','1e3','1.0000000000000000001'])assert.throws(()=>createBrowserHandoff(base,{...options,fundingAmount}));
 });
 
-test('MetaMask is accepted only for the explicit Chromium lifecycle',async()=>{
+test('MetaMask is accepted only for explicit Chromium lifecycle and funding',async()=>{
  const {validateBrowserControl}=await import('./t04-browser-journey.mjs');
  const control={ethereumWallet:'metamask',browserEngine:'chromium',browserMode:'lifecycle',origin:'https://127.0.0.1:1234',rpcToken:'a'.repeat(32),backupPassword:'b'.repeat(32)};
- assert.equal(validateBrowserControl(control),control);
+ assert.equal(validateBrowserControl(control),control);assert.equal(validateBrowserControl({...control,browserMode:'funding'}).browserMode,'funding');
  for(const mutation of [{ethereumWallet:undefined},{ethereumWallet:'unknown'},{browserEngine:'firefox'},{browserMode:'post'}])assert.throws(()=>validateBrowserControl({...control,...mutation}));
 });
 
@@ -135,5 +135,22 @@ test('request guard attributes blank extension iframes without exempting applica
   const request={url:()=> 'https://metamask.github.io/docs',serviceWorker:()=>workerUrl?{url:()=>workerUrl}:null,frame:()=>({url:()=> 'about:blank',page:()=>({url:()=>pageUrl})}),resourceType:()=> 'document',isNavigationRequest:()=>true};
   await guardBrowserRequest({request:()=>request,abort:()=>aborted++,continue:()=>{throw Error('External request must remain blocked');}},{origin:'https://127.0.0.1:1234',extensionWallet:true,onBlocked:r=>{record=r;}});
   assert.equal(aborted,1);assert.equal(record.owner,expected);assert.equal(record.hostname,'metamask.github.io');
+ }
+});
+
+test('MetaMask confirmation guard binds exact account, chain, target, amount and calldata',async()=>{
+ const {assertMetaMaskTransaction}=await import('./t04-metamask.mjs'),{Interface}=await import('ethers');
+ const address=n=>'0x'+n.repeat(40),field=n=>'0x'+n.repeat(64);
+ const options={account:address('1'),chainId:'0x7a69',tokenAddress:address('2'),feePortalAddress:address('3'),boardPortalAddress:address('4'),privateFeeAddress:field('5'),fundingAmount:'1',collateralAmount:'0.001'};
+ const abi=new Interface(['function approve(address,uint256)','function depositToAztecPublic(bytes32,uint256,bytes32)','function deposit(bytes32) payable','function withdraw(uint256,uint256,uint256,bytes32[])']);
+ const cases=[['fee-approval',options.tokenAddress,'approve',[options.feePortalAddress,10n**18n],0n],['fee-deposit',options.feePortalAddress,'depositToAztecPublic',[options.privateFeeAddress,10n**18n,field('6')],0n],['deposit',options.boardPortalAddress,'deposit',[field('6')],10n**15n],['refund',options.boardPortalAddress,'withdraw',[1n,1n,0n,[field('6')]],0n]];
+ for(const [stage,to,method,args,value] of cases){
+  const request=[{from:options.account,to,data:abi.encodeFunctionData(method,args),value:'0x'+value.toString(16)}],input={...options,stage,request};assertMetaMaskTransaction(input);
+  for(const mutation of [{from:address('9')},{to:address('9')},{chainId:'0x1'},{value:'0x'+(value+1n).toString(16)},{data:request[0].data+'00'},{data:'0x00000000'}])assert.throws(()=>assertMetaMaskTransaction({...input,request:[{...request[0],...mutation}]}));
+  assert.throws(()=>assertMetaMaskTransaction({...input,chainId:'0x1'}));assert.throws(()=>assertMetaMaskTransaction({...input,stage:'unknown'}));assert.throws(()=>assertMetaMaskTransaction({...input,request:[...request,...request]}));
+  if(stage.startsWith('fee-')){
+   for(const changed of [[stage==='fee-approval'?address('9'):field('9'),...args.slice(1)],[args[0],1n,...args.slice(2)]])assert.throws(()=>assertMetaMaskTransaction({...input,request:[{...request[0],data:abi.encodeFunctionData(method,changed)}]}));
+   if(stage==='fee-deposit')assert.throws(()=>assertMetaMaskTransaction({...input,request:[{...request[0],data:abi.encodeFunctionData(method,[args[0],args[1],field('0')])}]}));
+  }
  }
 });

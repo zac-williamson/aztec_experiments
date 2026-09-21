@@ -1,9 +1,9 @@
 // TEST ONLY: a real GUI post using a disposable Anvil wallet adapter. No engine,
 // PXE, prover, receipt or Aztec node behavior is replaced by this driver.
 import fs from 'node:fs';
-import {onboardMetaMask,unpackMetaMask,addMetaMaskNetwork,observeMetaMaskTransactions,guardBrowserRequest} from './t04-metamask.mjs';
+import {onboardMetaMask,unpackMetaMask,addMetaMaskNetwork,observeMetaMaskTransactions,guardBrowserRequest,assertMetaMaskTransaction} from './t04-metamask.mjs';
 import {observeProofPhases} from './t04-browser-performance.mjs';
-import {Wallet,Interface,parseEther} from 'ethers';
+import {Wallet} from 'ethers';
 import {installBrowserErrorObserver} from './browser-error-observer.mjs';
 import path from 'node:path';
 import https from 'node:https';
@@ -33,7 +33,7 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
  const observation={passed:false,browserEngine,browserMode,ethereumWallet,sourceStage:stage,elapsedMs:0,diagnosticInstrumentation:diagnostic,proofStageObservation:observeProofStages,performanceQualified:false,diagnosticScope:diagnostic&&journeyDriver?'Formatter-only observation with fixed driver/UI diagnostics; no breakpoint or engine/prover replacement.':diagnostic?'Error formatter and catch breakpoint observation; original application behavior preserved.':'Fixed error-category observer; no debugger. GUI wall time only, not isolated proof performance.'};
  const requireValue=(condition)=>{if(!condition)throw Error('Invalid disposable browser test parameters');};
  requireValue(['disposable','metamask'].includes(ethereumWallet));
- requireValue(!extensionWallet||(browserEngine==='chromium'&&browserMode==='lifecycle'));
+ requireValue(!extensionWallet||(browserEngine==='chromium'&&['lifecycle','funding'].includes(browserMode)));
  requireValue(['chromium','chrome','firefox','webkit'].includes(browserEngine));
  requireValue(browserEngine==='chromium'||(!browserRecovery&&!diagnostic));
  const selectedBrowser={chromium,chrome:chromium,firefox,webkit}[browserEngine];
@@ -141,7 +141,7 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
    if(journeyDriver){
     requireValue(typeof journeyDriver==='function'&&!observeProofStages);
     if(browserMode==='funding'){
-     await page.waitForFunction(()=>document.getElementById('azaddr')?.value||document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
+     await page.waitForFunction(()=>document.getElementById('setupStatus')?.textContent.includes('Wallet ready. Deposits fund the shared private fee contract.')||document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
      requireValue(await page.locator('#setupStatus .error').count()===0);
     }else if(browserMode==='performance'){
      await page.waitForFunction(()=>document.getElementById('postBtn')?.getClientRects().length>0||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});requireValue(await page.locator('#postBtn').isVisible());
@@ -151,17 +151,20 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
      requireValue(await page.locator('#page-1').isVisible());
     }
     observation.walletSetupMs=Date.now()-setupStarted;
-    observation.journey=await journeyDriver({page,directory,message,depositAmount,fundingAmount,backupPath,backupPassword,remaining:()=>timeoutMs-(Date.now()-started),signal:lifecycleAbort.signal,mark,confirmEthereum:extensionWallet?async stage=>{requireValue(stage===['deposit','refund'][confirmations.length]);
-     await walletPage.getByTestId('parent-selector-confirmation-page').waitFor();
-     const pending=await page.evaluate(()=>globalThis.__walletTestPending);requireValue(Array.isArray(pending)&&pending.length===1);
-     const tx=pending[0],iface=new Interface(['function deposit(bytes32) payable','function withdraw(uint256,uint256,uint256,bytes32[])']),parsed=iface.parseTransaction({data:tx.data});
-     requireValue(tx.from?.toLowerCase()===ethereumAccount.toLowerCase()&&tx.to?.toLowerCase()===config.board.portalAddress.toLowerCase());
-     requireValue(await page.evaluate(()=>window.ethereum.request({method:'eth_chainId'}))==='0x7a69');
-     requireValue(tx.chainId===undefined||BigInt(tx.chainId)===31337n);
-     requireValue(parsed?.name===(stage==='deposit'?'deposit':'withdraw')&&iface.encodeFunctionData(parsed.fragment,parsed.args).toLowerCase()===tx.data.toLowerCase());
-     requireValue(BigInt(tx.value??0)===(stage==='deposit'?parseEther(depositAmount):0n));
-     await walletPage.getByTestId('confirm-footer-button').click();confirmations.push(stage);}:undefined,onSubstage:value=>{observation.driverSubstage=value;}});
-    if(extensionWallet){requireValue(confirmations.join(',')==='deposit,refund');requireValue(!await walletPage.getByTestId('confirm-footer-button').isVisible());observation.walletConfirmations=confirmations;}
+    const expectedConfirmations=browserMode==='funding'?['fee-approval','fee-deposit','deposit']:['deposit','refund'];
+    const feeAddresses=extensionWallet&&browserMode==='funding'?await page.evaluate(async()=>{const info=await window.__aztec.createAztecNodeClient(billboardConfigStore.snapshot().config.network.nodeUrl).getNodeInfo();return {tokenAddress:info.l1ContractAddresses.feeJuiceAddress.toString(),feePortalAddress:info.l1ContractAddresses.feeJuicePortalAddress.toString()};}):{};
+    observation.journey=await journeyDriver({page,directory,message,depositAmount,fundingAmount,backupPath,backupPassword,remaining:()=>timeoutMs-(Date.now()-started),signal:lifecycleAbort.signal,mark,
+     onBoardOpened:extensionWallet?async()=>{await page.waitForFunction(()=>!!window.ethereum);await observeMetaMaskTransactions(page);}:undefined,
+     confirmEthereum:extensionWallet?async stage=>{
+      requireValue(stage===expectedConfirmations[confirmations.length]);
+      await page.waitForFunction(()=>Array.isArray(globalThis.__walletTestPending),{},{timeout:remaining()});
+      await walletPage.getByTestId('parent-selector-confirmation-page').waitFor();
+      const pending=await page.evaluate(()=>globalThis.__walletTestPending);
+      assertMetaMaskTransaction({stage,request:pending,account:ethereumAccount,chainId:await page.evaluate(()=>window.ethereum.request({method:'eth_chainId'})),...feeAddresses,privateFeeAddress:config.privateFee.contractAddress,boardPortalAddress:config.board.portalAddress,fundingAmount,collateralAmount:depositAmount});
+      await walletPage.getByTestId('confirm-footer-button').click();confirmations.push(stage);
+      await page.waitForFunction(data=>globalThis.__walletTestPending?.[0]?.data!==data,pending[0].data,{timeout:remaining()});
+     }:undefined,onSubstage:value=>{observation.driverSubstage=value;}});
+    if(extensionWallet){requireValue(confirmations.join(',')===expectedConfirmations.join(','));requireValue(!await walletPage.getByTestId('confirm-footer-button').isVisible());observation.walletConfirmations=confirmations;}
     requireValue(observation.journey.passed===true&&external.size===0&&csp.size===0);if(browserMode==='performance')observation.publicTransactionHashes=observation.journey.samples.map(sample=>sample.transactionHash);observation.passed=true;return;
    }
    await page.waitForFunction(()=>{const button=document.getElementById('postBtn');return (button&&button.getClientRects().length>0)||!!document.querySelector('#setupStatus .error');},{},{timeout:remaining()});requireValue(await page.locator('#postBtn').isVisible());observation.walletSetupMs=Date.now()-setupStarted;

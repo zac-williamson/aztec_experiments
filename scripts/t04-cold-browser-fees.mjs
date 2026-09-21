@@ -88,12 +88,14 @@ export async function observeColdBrowserFees({node,preparation,instance,l1Client
   gas.maxFeesPerGas=new GasFees(gas.maxFeesPerGas.feePerDaGas*16n||1n,gas.maxFeesPerGas.feePerL2Gas*16n||1n);
   const maximumFee=gas.getFeeLimit().toBigInt(),poolBefore=await getFeeJuiceBalance(payer.address,node);
   const manager=await L1FeeJuicePortalManager.new(node,l1Client,silent),token=manager.getTokenManager();
-  const fundingAmount=await token.getMintAmount(),sender=l1Client.account.address.toLowerCase();assert(fundingAmount>3n*maximumFee);
+  const fundingAmount=await token.getMintAmount(),sender=(browserControl.ethereumWallet==='metamask'?JSON.parse(await fs.readFile(path.join(directory,'metamask-credentials.json'),'utf8')).address:l1Client.account.address).toLowerCase();assert(fundingAmount>3n*maximumFee);
+  assert(/^0x[0-9a-f]{40}$/.test(sender));if(browserControl.ethereumWallet==='metamask')assert.notEqual(sender,l1Client.account.address.toLowerCase());
   await token.mint(sender);
   const feePortal=info.l1ContractAddresses.feeJuicePortalAddress.toString(),tokenAddress=info.l1ContractAddresses.feeJuiceAddress.toString();
   const tokenBalance=(account,blockNumber)=>l1Client.readContract({address:tokenAddress,abi:IERC20Abi,functionName:'balanceOf',args:[account],...(blockNumber===undefined?{}:{blockNumber})});
   const startL1Block=await l1Client.getBlockNumber({cacheTime:0}),tokenBefore={sender:await tokenBalance(sender,startL1Block),portal:await tokenBalance(feePortal,startL1Block)};
   assert(tokenBefore.sender>=fundingAmount,'Fresh post-mint balance must cover browser funding');
+  assert.equal(await l1Client.readContract({address:tokenAddress,abi:IERC20Abi,functionName:'allowance',args:[sender,feePortal]}),0n);
   observation.tokenBaseline={blockNumber:String(startL1Block),sender:String(tokenBefore.sender),portal:String(tokenBefore.portal)};
   const portalBalanceBefore=await l1Client.getBalance({address:ready.portalAddress});
   const portal=JSON.parse(await fs.readFile(path.join(ROOT,'billboard/portal/out/BillboardPortal.sol/BillboardPortal.json')));
@@ -118,13 +120,21 @@ export async function observeColdBrowserFees({node,preparation,instance,l1Client
   assert.equal(claim.amount,fundingAmount);
   const fundingReceipt=await l1Client.getTransactionReceipt({hash:record.txHash});assert.equal(fundingReceipt.status,'success');
   assert.equal((await l1Client.getBlock({blockNumber:fundingReceipt.blockNumber})).hash,fundingReceipt.blockHash);
+  const approvals=await l1Client.getLogs({address:tokenAddress,event:IERC20Abi.find(item=>item.type==='event'&&item.name==='Approval'),fromBlock:startL1Block+1n,toBlock:fundingReceipt.blockNumber});
+  const ownApprovals=approvals.filter(event=>event.args.owner.toLowerCase()===sender&&event.args.spender.toLowerCase()===feePortal.toLowerCase());assert.equal(ownApprovals.length,1);
+  const approval=ownApprovals[0],approvalReceipt=await l1Client.getTransactionReceipt({hash:approval.transactionHash});
+  assert.equal(approval.args.value,fundingAmount);assert.equal(approvalReceipt.status,'success');assert.equal(approvalReceipt.blockHash,approval.blockHash);
+  assert.equal((await l1Client.getBlock({blockNumber:approvalReceipt.blockNumber})).hash,approvalReceipt.blockHash);
+  assert.equal(await l1Client.readContract({address:tokenAddress,abi:IERC20Abi,functionName:'allowance',args:[sender,feePortal],blockNumber:fundingReceipt.blockNumber}),0n);
+  observation.approval={txHash:approval.transactionHash,amount:String(fundingAmount),canonicalReceipt:true,remainingAllowance:'0'};
+
   const events=parseEventLogs({abi:FeeJuicePortalAbi,eventName:'DepositToAztecPublic',strict:true,logs:fundingReceipt.logs.filter(log=>log.address.toLowerCase()===record.portalAddress.toLowerCase())});
   assert.equal(events.length,1);assert.equal(events[0].args.index,claim.leafIndex.toBigInt());
   let available=false;
   while(Date.now()<deadline){const block=await node.getBlock('checkpointed');if(block){const witness=await node.getL1ToL2MessageMembershipWitness(block.number,Fr.fromString(events[0].args.key));if(witness){assert.equal(witness[0],events[0].args.index);available=true;break;}}await pause(200);}
   assert(available);assert.equal(captures.size,0,'No private transaction before browser fee claim');
   await drainEmptyCheckpoints('fee-claim');
-  observation.funding={txHash:record.txHash,amount:String(fundingAmount),canonicalReceipt:true,authenticatedRecovery:true};await release('fee-deposit');
+  observation.funding={externalWalletExtension:browserControl.ethereumWallet==='metamask',txHash:record.txHash,amount:String(fundingAmount),canonicalReceipt:true,authenticatedRecovery:true};await release('fee-deposit');
   await verifyStage('fee-claim');checkpoints.enable();await release('fee-claim');
   const collateral=await verifyStage('claim'),amount=await read('getDeposit',[sender]);assert.equal(amount,depositAmount);assert.equal(await read('totalDeposited'),liabilityBefore+amount);
   const collateralEnd=await l1Client.getBlockNumber({cacheTime:0});
