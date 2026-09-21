@@ -6,7 +6,7 @@
     "deploy/aws/publish-health.py": "109e52b08d6b10513ccdcc7a641e5b315a3db9c947ebfb369e93e4c974da09c9",
     "deploy/aws/test_publish_health.py": "26fddba879ac9e6d1f43356a95f0a0a42c3e54fbeb43376e0ca2203b24b11294",
     "deploy/aws/testnet-stack.json": "d7212165761106744e13a9408c7ed94e08ea0d63c33098de427c0e7a91feca53",
-    "deploy/aws/README.md": "4756f7313223f9d630beaffa29e54bf2f2effd7298223cf246038d497d518e54"
+    "deploy/aws/README.md": "0d4e643987fcab87d81c6042e05b86d36b39dfbf72742076cbeab849f10f82c3"
   },
   "checks": {
     "shellSyntax": "passed",
@@ -20,10 +20,10 @@
   },
   "deploymentBlock": "AWS message-board session expired before any remote command323. No new metric, alarm or script deployed.",
   "remainingValidation": [
-    "Regional cost check before deployment",
     "Install reviewed backup script and publisher, then run verified backup and confirm CloudWatch metric/alarm",
     "Repeat actual failed upload drill to verify failed status with service restoration"
   ],
   "frozenBrowserInputsChanged": false,
-  "review": "aws_stack_review approved final code and tests; no new lifecycle owner, retry or fallback"
+  "review": "aws_stack_review approved final code and tests; no new lifecycle owner, retry or fallback",
+  "pricing": "cloudwatch-backup-pricing-325.json: incremental $0.40/month before tax/credits; no extra publication requests"
 }

@@ -169,7 +169,10 @@ a first backup remains unhealthy until it succeeds. The status record survives r
 
 The separate backup alarm uses the same five-minute detection period and has no
 notification recipient. It adds one CloudWatch custom metric and one alarm to the
-existing deployment; verify their regional charges before applying the stack update.
+existing deployment. The [AWS London price list](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCloudWatch/current/eu-west-2/index.json),
+checked September21, quotes $0.30 per custom metric-month and $0.10 per standard
+alarm-month: $0.40/month additional before tax or free-tier credits. Both metrics
+share the existing publication request.
 This revision is prepared and locally checked, but is not deployed: the AWS CLI
 session expired. The live alarm still monitors moderator health only. Deployment
 must install the updated script and publisher together, run one verified backup,
