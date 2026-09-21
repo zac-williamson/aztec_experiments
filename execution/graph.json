@@ -1471,7 +1471,7 @@
       ],
       "plan": "tasks/T04.md",
       "actions": [
-        "Test the agreed current browser/device matrix and supported wallet routes with reproducible hardware/network metadata.",
+        "Qualify Chrome desktop journeys and supported wallet routes with reproducible hardware/network metadata. Additional Firefox, WebKit and Safari qualification is deferred by user direction on2026-09-21.",
         "Qualify long history using the recorded C04 layered method: boundary lifecycles, authenticated seeded continuation/exit beyond 1,000 records, and actual persisted PXE/browser history measurements. Reconcile against current sources. Retain ten-author same-anchor concurrency evidence with its genesis-fee limitation; test long absence, repeated deposits and withdrawal during traffic. Do not claim 1,000 executed publications or single-block throughput.",
         "Inject reorgs, RPC delays/outages, crash/reload, duplicate submissions, signer failure and private fee credit exhaustion.",
         "Measure and address cold browser proving-data initialization: P04 observed 109.6 seconds for 1,179,648 BN254 points on one host during other verification work. Qualify representative startup/proving latency and capacity with actual workloads; separate smoke-test budgets do not establish production performance.",
@@ -1498,14 +1498,14 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Chrome322 completed30cold+30warm proofs, all verified with exact source/browser/hardware/gas and cleanup. Statistical thresholds passed and independent aggregate review approved. Firefox328 completed30/30 verified pairs; cold p95 30.21s and warm p95 27.96s passed; independent aggregate review approved. WebKit330 completed9/30 verified pairs; continue remaining predefined slots serially. Safari327 public reader passed; wallet/proving remains distinct. Backup monitoring325 locally tested, not deployed; AWS renewal requires fresh sign-in.",
+      "checkpoint": "User confirmed Chrome is sufficient for the current milestone. Chrome322 completed30cold+30warm proofs and passed independent review; cold p95 37.90s, warm p95 35.78s. Further Firefox/WebKit/Safari qualification and WebKit harness repair are deferred. WebKit330 retains10 successful correctness observations and interrupted slot11; its memory/full-cleanup claims remain invalid because XPC processes were omitted. Continue remaining application and operational work; AWS session requires fresh sign-in before remote moderation diagnostics and backup monitoring deployment.",
       "priority": 24,
       "completion_requires": [
         "O01",
         "U02",
         "U03"
       ],
-      "execution_lane": "aws-testnet-deployment"
+      "execution_lane": "application-and-operational-qualification"
     },
     {
       "id": "R01",

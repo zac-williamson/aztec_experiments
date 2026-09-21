@@ -48,3 +48,13 @@ a pure cache/proxy function. Use the smallest discriminating regression first,
 then one integrated proof run. Record attempts and reassess after two expensive
 failures per hypothesis. Final candidate qualification still verifies all required
 behavior. Do not alter historical evidence or fingerprint semantics retroactively.
+
+## Current browser scope — user direction, 2026-09-21
+
+Chrome working is sufficient for now. Chrome desktop is the current supported
+browser; further Firefox, WebKit and installed Safari qualification is deferred.
+The completed Chrome322 sample and application journeys remain evidence. Do not
+run additional browser campaigns to satisfy the superseded three-browser default.
+Retain historical results and the WebKit process-accounting defect honestly;
+repair that defect before any future WebKit resource qualification. Other
+application, moderation and deployment obligations remain unchanged.

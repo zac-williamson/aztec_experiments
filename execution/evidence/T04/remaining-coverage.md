@@ -1,5 +1,7 @@
 # Application qualification coverage — updated 2026-09-21
 
+Current scope: the user confirmed on 2026-09-21 that Chrome is sufficient for now. Further Firefox, WebKit and Safari qualification is deferred. The WebKit XPC accounting defect is retained and must be repaired before future WebKit resource claims.
+
 This is a work inventory, not completed acceptance evidence. Historical results
 retain their source snapshots; final-source reconciliation remains T05 work.
 
@@ -14,7 +16,7 @@ retain their source snapshots; final-source reconciliation remains T05 work.
 | Repeated deposits | Redeposit222 passed two real deposit/claim/withdraw/refund cycles, replay rejection and exact fees | Final candidate binding; no unrelated full rerun required |
 | Mobile reading | Built mobile-sized reader083 and directory navigation passed | Representative physical-device qualification remains distinct |
 | Wallet routes | Actual MetaMask196 full journey and284 cold fee funding; earlier approval rejection/funding recovery retained | Reconcile remaining interruption cases against final source. Bundled Chromium extension support is distinct from installed browsers |
-| Performance | Source-matched Chrome294, Firefox290, WebKit291 each passed one cold+warm proof; browser-performance-pilots-20260921.json. Feed155 measured30cold loads, p951.629s |Chrome322 completed 30 cold and 30 warm samples, independently reviewed: cold initialization plus proof p95 37.90s, warm proof p95 35.78s. Firefox328 completed 30 cold and 30 warm samples, independently reviewed: cold p95 30.21s, warm p95 27.96s. WebKit330 is in progress. Pilots are excluded; see chrome-performance-results-322.md for scope |
+| Performance | Source-matched Chrome294, Firefox290, WebKit291 each passed one cold+warm proof; browser-performance-pilots-20260921.json. Feed155 measured30cold loads, p951.629s |Chrome322 completed 30 cold and 30 warm samples, independently reviewed: cold initialization plus proof p95 37.90s, warm proof p95 35.78s. Firefox328 completed 30 cold and 30 warm samples, independently reviewed: cold p95 30.21s, warm p95 27.96s. WebKit330 is deferred by user direction; its memory and complete-cleanup claims are invalid because XPC processes were omitted. Pilots are excluded; see chrome-performance-results-322.md for scope |
 | Remote recovery | Verified backup/download/offline authentication296–300; automatic EC2 reboot recovery302 in134seconds | Replacement-host recovery remains untested |
 | Remote health | Native timer publishes aggregate health; CloudWatch missing/unhealthy alarm deployed and recovered toOK | No notification recipient. Backup-failure monitoring325 is implemented and locally tested but not deployed because AWS authentication expired |
 

@@ -113,7 +113,7 @@ release or replace the independent review requirement.
 - `execution/evidence/T04/chrome-performance-results-322.md`: 30 cold and 30 warm
   Chrome proofs, all verified and independently reviewed. Cold initialization plus
   proof p95 37.90s; warm proof p95 35.78s. Local conditions and recorded hardware
-  limit the claim. Firefox328 also completed 30 pairs, independently reviewed: cold p95 30.21s, warm p95 27.96s; see firefox-performance-results-328.md. WebKit330 remains incomplete.
+  limit the claim. Firefox328 also completed 30 pairs, independently reviewed: cold p95 30.21s, warm p95 27.96s; see firefox-performance-results-328.md. Further WebKit and Safari qualification is deferred: the user confirmed Chrome is sufficient for the current milestone. WebKit330 memory/full-cleanup claims are invalid due to omitted XPC processes.
 - `execution/evidence/T04/safari-public-reader-327.json`: installed Safari26.5
   directory, direct reading and refresh. Wallet/proving remains unverified.
 - `execution/evidence/M03/live-timing-20260921.json`: deployed model detected and

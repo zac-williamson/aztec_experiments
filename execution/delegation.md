@@ -238,3 +238,5 @@ WebKit330: application_change_review approved30 predeclared slots, source/gas/pi
 Firefox328 complete: root verified30 pairs and calculated all8distributions; application_change_review independently recomputes against raw reports, predefined logs and frozen manifest. Root begins separately reviewed WebKit330 serial sample. No application/harness changes.
 
 Firefox328 aggregate approved: application_change_review independently recomputed all8distributions and verified30rawreports/logs,60unique transactions, exact115input hashes, browser/hardware/gas and canonical accounting/cleanup.
+
+WebKit331: application_change_review confirmed uncounted XPC processes from actual live PID/parent/group/RSS/path evidence. Root stopped sequence and interrupted slot11 beforebrowserstartup. Root implements only after cheap unique-installation ownership probe; same reviewer independently reviews harness structure and regressions. No4GiB breach asserted.

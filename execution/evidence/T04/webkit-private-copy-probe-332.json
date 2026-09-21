@@ -1,0 +1,15 @@
+{
+  "scope": "Private-copy relocation probe, inert page and128MiB worker only; no application proof",
+  "source": "/Users/zac/Library/Caches/ms-playwright/webkit-2359",
+  "copy": "/private/tmp/board-webkit-probe-dWyHyj/webkit",
+  "startedAt": "2026-09-21T10:33:54.639Z",
+  "passed": false,
+  "error": {
+    "name": "Error",
+    "message": "ENOSYS: function not implemented, copyfile '/Users/zac/Library/Caches/ms-playwright/webkit-2359/libwebrtc.dylib' -> '/private/tmp/board-webkit-probe-dWyHyj/webkit/libwebrtc.dylib'"
+  },
+  "after": [],
+  "allPrivateProcessesGone": true,
+  "temporaryDirectoryRemoved": true,
+  "finishedAt": "2026-09-21T10:33:54.676Z"
+}

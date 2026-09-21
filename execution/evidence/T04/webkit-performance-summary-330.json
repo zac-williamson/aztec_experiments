@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "cohort": "webkit-performance-campaign-330.json",
-  "status": "in-progress",
+  "status": "deferred-by-user-chrome-only-scope",
   "expectedPairs": 30,
   "completedPairs": 10,
   "qualified": false,
@@ -278,7 +278,6 @@
     }
   ],
   "missingSlots": [
-    11,
     12,
     13,
     14,
@@ -298,5 +297,10 @@
     28,
     29,
     30
-  ]
+  ],
+  "interruptedSlot": 11,
+  "resourceAccountingValid": false,
+  "cleanupQualificationValid": false,
+  "limitation": "WebKit XPC processes are launched by macOS with PPID1 and independent groups. Existing process-tree sampling excludes them. Historical timings/canonical accounting are retained, but RSS and complete browser cleanup were not established. Slot11 intentionally interrupted before browser startup; no replacement slots.",
+  "scopeDecision": "2026-09-21: user confirmed Chrome is sufficient for now. No remaining WebKit slots or private-copy repair planned for this milestone. Existing resource-accounting limitation remains."
 }

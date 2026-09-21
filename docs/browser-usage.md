@@ -107,6 +107,13 @@ The board's current authorization and historical post policy remain authoritativ
 
 ## Browser support and privacy boundaries
 
+Chrome desktop is the supported browser for the current milestone. Firefox,
+WebKit and Safari results below are historical observations, not additional
+current support promises. Further qualification of those browsers is deferred.
+Historical WebKit memory and complete-process-cleanup claims are invalid: the
+test supervisor omitted macOS XPC processes. Posting correctness observations
+remain retained separately.
+
 Wallet actions check HTTPS/localhost secure context, cross-origin isolation,
 shared memory, WebAssembly, workers, cryptography, Web Locks and writable browser
 storage. Passing these checks does not establish that a proof fits available
