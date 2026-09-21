@@ -49,7 +49,7 @@ test('missing private fee configuration fails before account work for every priv
 });
 const owner={toString:()=> 'owner'};
 test('actual wallet tightens gas within configured ceilings and preserves account scope/tag',async()=>{
-  const c=context(),calls=[],settings=gas(),expectedSettings=new GasSettings(new Gas(100,200),new Gas(0,2),new GasFees(3n,4n),new GasFees(0n,0n)),txHash={toString:()=>new Fr(4).toString()},payload={authWitnesses:['exact-auth']};
+  const c=context(),calls=[],initialLogs=[],currentLogs=[],settings=gas(),expectedSettings=new GasSettings(new Gas(100,200),new Gas(0,2),new GasFees(3n,4n),new GasFees(0n,0n)),txHash={toString:()=>new Fr(4).toString()},payload={authWitnesses:['exact-auth']};
   const receipt={txHash,status:'checkpointed',executionResult:'success',blockNumber:1,blockHash:'block'};
   const node={sendTx:async()=>calls.push('submit'),getTxReceipt:async()=>receipt,getBlock:async()=>({hash:'block'})};
   class BaseWallet {
@@ -61,8 +61,10 @@ test('actual wallet tightens gas within configured ceilings and preserves accoun
     senderForTagsFrom(from,sender){assert.equal(from,owner);return sender;}
   }
   const pxe={proveTx:async(request,opts)=>{calls.push(['prove',request,opts]);return {toTx:async()=>({getTxHash:()=>txHash})};}};
-  const wallet=c.BillboardPrivateFeeRouting.createAztecWallet({...transactionOutcomes,BaseWallet,owner,GasSettings},pxe,node,node,()=>{},Fr.ONE,{preProveHook:async ({gasLimits,feeOptions})=>{gasLimits.l2Gas=999999;feeOptions.gasSettings.maxFeesPerGas.feePerL2Gas=999999n;}});
+  const wallet=c.BillboardPrivateFeeRouting.createAztecWallet({...transactionOutcomes,BaseWallet,owner,GasSettings},pxe,node,node,message=>initialLogs.push(message),Fr.ONE,{preProveHook:async ({gasLimits,feeOptions})=>{gasLimits.l2Gas=999999;feeOptions.gasSettings.maxFeesPerGas.feePerL2Gas=999999n;}});
+  wallet._log=message=>currentLogs.push(message);
   const result=await wallet.sendTx(payload,{from:owner,additionalScopes:[owner],sendMessagesAs:owner,fee:{gasSettings:settings}});
+  assert.equal(initialLogs.length,0);assert(currentLogs.some(message=>message.includes('Transaction hash:')));
   assert.equal(result.receipt,receipt);assert.equal(calls.filter(c=>c==='submit').length,1);
   const fees=calls.filter(c=>c[0]==='fees');assert.equal(fees[0][1].forEstimation,false);
   assert.deepEqual(fees[1][1].gasSettings.toBuffer(),expectedSettings.toBuffer());

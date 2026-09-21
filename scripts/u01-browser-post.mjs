@@ -134,8 +134,9 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
    if(extensionWallet){await page.waitForFunction(()=>!!window.ethereum);await addMetaMaskNetwork({page,walletPage,extensionId,rpcUrl:credentials.rpcUrl,mark});credentials=null;await observeMetaMaskTransactions(page);}
    mark('hosted-board-loaded');requireValue(await page.getByLabel('Public configuration JSON',{exact:true}).count()===0);requireValue(await page.evaluate(address=>billboardConfigStore.snapshot().config?.board.contractAddress===address,config.board.contractAddress));
    await page.waitForFunction(()=>globalThis.billboardConfigStore?.snapshot().config!==null);
-   mark('encrypted-wallet-restore');await page.locator('#wbPassword').fill(backupPassword);await page.locator('#wbAztecFile').setInputFiles(backupPath);
+   mark('encrypted-wallet-restore');await page.locator('#wbAccountMenu > summary').click();await page.locator('#wbPassword').fill(backupPassword);await page.locator('#wbAztecFile').setInputFiles(backupPath);
    await page.waitForFunction(()=>!!globalThis.walletState?.aztec?.address||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});requireValue(await page.evaluate(()=>!!globalThis.walletState?.aztec?.address));
+   await page.locator('#wbAccountMenu > summary').click();
    mark('wallet-connect-and-status');const setupStarted=Date.now();await page.locator('#wbEthBrowserBtn').click();
    if(extensionWallet){await walletPage.getByTestId('confirm-btn').waitFor();requireValue((await walletPage.getByTestId('confirm-btn').innerText()).trim()==='Connect');await walletPage.getByTestId('confirm-btn').click();await page.waitForFunction(()=>!!window.walletState?.ethAccount);requireValue((await page.evaluate(()=>window.walletState.ethAccount)).toLowerCase()===ethereumAccount.toLowerCase());}
    if(journeyDriver){

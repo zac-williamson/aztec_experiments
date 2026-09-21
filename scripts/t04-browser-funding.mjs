@@ -41,9 +41,11 @@ export async function driveT04BrowserFunding({page,directory,message,depositAmou
  await page.evaluate(installBrowserErrorObserver);
  if(onBoardOpened)await onBoardOpened();
  assert.equal(await page.evaluate(()=>JSON.stringify(globalThis.billboardConfigStore.snapshot().config)),publicConfig);
+ await page.locator('#wbAccountMenu > summary').click();
  await page.locator('#wbPassword').fill(backupPassword);await page.locator('#wbAztecFile').setInputFiles(backupPath);
  await page.waitForFunction(()=>!!globalThis.walletState?.aztec?.address||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
  assert(await page.evaluate(()=>!!globalThis.walletState?.aztec?.address));
+ await page.locator('#wbAccountMenu > summary').click();
  await page.locator('#wbEthBrowserBtn').click();
  await page.locator('#page-1').waitFor({state:'visible',timeout:remaining()});
  await driveT04BrowserPublication({page,directory,message,depositAmount,remaining,signal,mark,onSubstage,confirmEthereum,onBoardOpened});

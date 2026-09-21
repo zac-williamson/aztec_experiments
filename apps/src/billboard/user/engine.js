@@ -147,6 +147,7 @@
     class AztecWallet extends a.BaseWallet {
       constructor(pxe, aztecNode) {
         super(pxe, aztecNode);
+        this._log = log;
         this._accountManager = null;
         this._account = null;
         this._estimatedGasPadding = 0.1;
@@ -161,6 +162,7 @@
       }
 
       async sendTx(executionPayload, opts) {
+        const log = this._log;
         const previousJournal = this._transactionJournal ? await this._transactionJournal.assertCanStart() : null;
         const fixedGas = !!opts.fee?.gasSettings;
         const checkedGas = fixedGas ? a.GasSettings.from(opts.fee.gasSettings) : null;
@@ -903,6 +905,7 @@
         log('  Reusing cached PXE/wallet setup.', 'success');
         pxe = cached.pxe;
         wallet = cached.wallet;
+        wallet._log = log;
         wallet._preProveHook = config.preProveHook || null;
         wallet._contextGuard = config.contextGuard || null;
         wallet._transactionJournal = transactionJournal;

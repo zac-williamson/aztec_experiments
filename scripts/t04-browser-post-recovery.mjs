@@ -53,10 +53,12 @@ export async function runT04BrowserPostRecovery({page,directory,remaining,signal
   assert(page.isClosed()&&fresh?.page&&fresh.page!==page&&fresh.previousBrowserClosed===true&&fresh.samePersistentProfile===true);
   assert(Number.isSafeInteger(fresh.closedAtMs)&&fresh.closedAtMs>=accepted.acceptedAtMs&&fresh.closedAtMs-accepted.requestStartedAtMs<15000,'Browser closure must precede normal submission timeout');
   page=fresh.page;assert.equal(new URL(page.url()).origin,origin);
+  await bounded(()=>page.locator('#wbAccountMenu > summary').click());
   await bounded(()=>page.locator('#wbPassword').fill(backupPassword));
   await bounded(()=>page.locator('#wbAztecFile').setInputFiles(backupPath));
   await bounded(()=>page.waitForFunction(()=>!!globalThis.walletState?.aztec?.address||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()}));
   assert(await bounded(()=>page.evaluate(()=>!!globalThis.walletState?.aztec?.address)));
+  await bounded(()=>page.locator('#wbAccountMenu > summary').click());
   // No ETH connection: it would auto-navigate away from the recovery controls.
   const button=page.getByRole('button',{name:'Recover saved Aztec transaction',exact:true});
   assert(await bounded(()=>button.isVisible()));await bounded(()=>button.click());

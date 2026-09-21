@@ -8,7 +8,7 @@ export function describeFailure(error) {
   const frames=String(error?.stack ?? '').split('\n').filter(line=>line.trimStart().startsWith('at '))
     .map(line=>line.match(/([^/\s():]+\.m?js:\d+:\d+)\)?$/)?.[1]).filter(Boolean).slice(0,4);
   const code=['HARNESS_SAMPLING_GAP','HARNESS_CLEANUP_TIMEOUT','BB_PROCESS_SNAPSHOT_FORMAT','ENOENT','EACCES','EPIPE'].includes(error?.code)?error.code:null;
-  return {errorClass:['Error','AssertionError','TypeError','RangeError','SyntaxError'].includes(error?.name)?error.name:'Error',code,frames};
+  return {errorClass:['Error','AssertionError','TypeError','RangeError','SyntaxError'].includes(error?.name)?error.name:'Error',code,frames,...(code==='BB_PROCESS_SNAPSHOT_FORMAT'?{snapshotFieldCount:error.snapshotFieldCount,snapshotRow:error.snapshotRow}: {})};
 }
 
 export class Supervisor {

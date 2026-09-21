@@ -8,9 +8,9 @@ export function parseProcessSnapshot(stdout){
   const members=[];
   for(const line of stdout.trim().split('\n')){
     const fields=line.trim().split(/\s+/);
-    if(fields.length!==10)throw Object.assign(new Error('Process snapshot row has incomplete fields'),{code:'BB_PROCESS_SNAPSHOT_FORMAT'});
+    if(fields.length!==10)throw Object.assign(new Error('Process snapshot row has incomplete fields'),{code:'BB_PROCESS_SNAPSHOT_FORMAT',snapshotFieldCount:fields.length,snapshotRow:line.slice(0,160)});
     const [pid,ppid,group,rss]=fields.slice(0,4).map(Number);
-    if(![pid,ppid,group,rss].every(Number.isSafeInteger)||rss<0)throw Object.assign(new Error('Process snapshot row has invalid counters'),{code:'BB_PROCESS_SNAPSHOT_FORMAT'});
+    if(![pid,ppid,group,rss].every(Number.isSafeInteger)||rss<0)throw Object.assign(new Error('Process snapshot row has invalid counters'),{code:'BB_PROCESS_SNAPSHOT_FORMAT',snapshotFieldCount:fields.length,snapshotRow:line.slice(0,160)});
     members.push({pid,ppid,group,rssKiB:rss,started:fields.slice(4,9).join(' '),state:fields[9]});
   }
   return members;

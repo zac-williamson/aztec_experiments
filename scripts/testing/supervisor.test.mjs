@@ -74,3 +74,12 @@ test('peak memory retains only process identity and measured RSS',async()=>{
   assert(!JSON.stringify(report).includes('SECRET'));
  }finally{await owner.close();}
 });
+
+test('malformed process snapshot retains bounded field-only diagnostics',async()=>{
+ const {parseProcessSnapshot}=await import('../owned-test-process-tree.mjs');
+ const row='123 1 123 0 - Z';
+ assert.throws(()=>parseProcessSnapshot(row),error=>{
+  const diagnostic=describeFailure(error);
+  assert.equal(diagnostic.code,'BB_PROCESS_SNAPSHOT_FORMAT');assert.equal(diagnostic.snapshotRow,row);assert.equal(diagnostic.snapshotFieldCount,6);return true;
+ });
+});

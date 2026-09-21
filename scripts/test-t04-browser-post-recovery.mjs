@@ -18,7 +18,7 @@ async function fixture(schema=1,action='post'){
  const args={action,page,directory,remaining:()=>2000,backupPath,backupPassword,message:'public test',restart:async()=>{calls.push('restart');closed=true;return{page:fresh,closedAtMs:Date.now(),previousBrowserClosed:true,samePersistentProfile:true};}};
  return{args,calls,cleanup:()=>fs.rm(directory,{recursive:true,force:true})};
 }
-test('actual control flow posts once, restarts once, restores identity and invokes only recovery',async()=>{const f=await fixture();try{const result=await runT04BrowserPostRecovery(f.args);assert(result.passed);assert.equal(result.transactionHash,hash);assert.deepEqual(f.calls,['#msgText','post','restart','#wbPassword','restore','recover']);assert(!JSON.stringify(result).includes('fixture-only'));assert(!Object.keys(result).includes('page'));}finally{await f.cleanup();}});
+test('actual control flow posts once, restarts once, restores identity and invokes only recovery',async()=>{const f=await fixture();try{const result=await runT04BrowserPostRecovery(f.args);assert(result.passed);assert.equal(result.transactionHash,hash);assert.deepEqual(f.calls,['#msgText','post','restart','#wbAccountMenu > summary','#wbPassword','restore','#wbAccountMenu > summary','recover']);assert(!JSON.stringify(result).includes('fixture-only'));assert(!Object.keys(result).includes('page'));}finally{await f.cleanup();}});
 test('schema-v2 backup is rejected before post even when its stale journal list is empty',async()=>{const f=await fixture(2);try{await assert.rejects(verifyT04IdentityOnlyBackup(f.args.backupPath,f.args.backupPassword));await assert.rejects(runT04BrowserPostRecovery(f.args));assert.deepEqual(f.calls,[]);}finally{await f.cleanup();}});
 test('stale acceptance file and expired deadline cannot restart or post',async()=>{const f=await fixture();try{await fs.writeFile(path.join(f.args.directory,'browser-post-response-accepted.json'),JSON.stringify(acceptance));await assert.rejects(runT04BrowserPostRecovery(f.args));assert.deepEqual(f.calls,[]);await assert.rejects(runT04BrowserPostRecovery({...f.args,remaining:()=>0}));assert.deepEqual(f.calls,[]);}finally{await f.cleanup();}});
 test('acceptance requires exact schema, actual acceptance and exactly one send',()=>{assert.deepEqual(validateT04PostAcceptance(acceptance),acceptance);for(const bad of [{...acceptance,sendCalls:2},{...acceptance,accepted:false},{...acceptance,secret:'bad'},{...acceptance,transactionHash:'not-hash'}])assert.throws(()=>validateT04PostAcceptance(bad));});
@@ -30,7 +30,7 @@ test('recent acceptance cannot hide a submission request already older than the 
 test('withdrawal recovers once then reconnects Ethereum to display pending refund without submitting it',async()=>{
  const f=await fixture(1,'withdraw');try{
   const result=await runT04BrowserPostRecovery(f.args);assert(result.passed&&result.ethereumRefundPending);assert.equal(result.action,'withdraw');assert.equal(result.transactionHash,hash);
-  assert.deepEqual(f.calls,['open-withdraw','withdraw-page','withdraw','restart','#wbPassword','restore','recover','wallet-setup','#page-0','#wbEthBrowserBtn','#page-4']);
+  assert.deepEqual(f.calls,['open-withdraw','withdraw-page','withdraw','restart','#wbAccountMenu > summary','#wbPassword','restore','#wbAccountMenu > summary','recover','wallet-setup','#page-0','#wbEthBrowserBtn','#page-4']);
  }finally{await f.cleanup();}
 });
 test('unknown recovery action is rejected before interacting with the page',async()=>{
