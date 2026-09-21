@@ -62,3 +62,17 @@ identifier and review date. Do not guess the meaning of a language you cannot as
 source and records the export checksum. These are previously evaluated synthetic
 examples, not held-out production data. The export supplies no human labels and
 neither completes independent review nor satisfies the 300-case requirement.
+
+### Next timing diagnostic
+
+`model-phase-check-323.mjs` uses the existing production request and parser, with
+a bounded response observation to retain numeric prompt-processing, generation
+and cache timings. It does not change the prompt, model or application, and does
+not submit transactions. Independent review approved its response limits and
+cleanup. Empty timing fields mean unavailable metadata, not zero work.
+
+Execution is pending: the AWS CLI rejected the preliminary idle check because
+the `message-board` session expired. No remote command or inference was issued.
+After reauthentication, check that moderation is idle, then run the two existing
+synthetic examples once. Record wall time separately; a warm live model and two
+examples cannot establish a capacity percentile.

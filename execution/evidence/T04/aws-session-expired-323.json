@@ -1,0 +1,10 @@
+{
+  "action": "Read-only moderator idle observation before inference timing diagnostic",
+  "result": "AWS CLI rejected request before remote execution",
+  "error": "Your session has expired. Please reauthenticate using 'aws login'.",
+  "profile": "message-board",
+  "region": "eu-west-2",
+  "remoteCommandIssued": false,
+  "unblock": "Reauthenticate the existing AWS CLI profile through aws login; do not introduce alternate credentials.",
+  "unaffectedWork": "Local Chrome cohort322 continues; remote diagnostic and standalone package restore remain pending."
+}

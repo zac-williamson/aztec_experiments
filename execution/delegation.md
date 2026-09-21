@@ -218,3 +218,5 @@ Independent review approved correcting fixture Caddy idle reuse to500ms, below N
 2026-09-21: application_change_review identified current-source withdrawal traffic as the next meaningful gap; root run309 passed358628ms. author_testnet_flow reviewed current-rule moderation, penalty/deadline and CloudWatch/backup documentation corrections against actual code.
 
 2026-09-21: author_testnet_flow approved removal of legacy plain-text moderation verdicts. Root strengthened failed-signing fixture to require exactly one actual signer call;76parser,130signer,daemon and156worker/evaluation checks passed315. No model/prompt/runtime changes. Root deploys reviewed package only after verification.
+
+2026-09-21 continuation: root runs frozen Chrome cohort322 serially. aws_stack_review reviewed standalone restore completeness read-only; existing backup authenticates state but executable package recovery needs separate evidence. author_testnet_flow reviews a no-source-change HTTP timing observation using the production moderator parser; root retains all writes and cloud operations.
