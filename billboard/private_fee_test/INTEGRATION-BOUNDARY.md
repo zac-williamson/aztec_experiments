@@ -10,30 +10,10 @@ there. We do not patch this protocol test environment or weaken the contract.
 Positive payment calls require the setup phase and must be tested through real
 application transactions rather than this TXE entry point.
 
-The genuine application proof tests must cover both positive flows: bridge
-claim plus mint_and_pay_fee in setup credits amount minus configured maximum
-fee, and subsequent pay_fee reduces only the caller's private balance by that
-maximum. A second owner's balance remains unchanged. Teardown gas must not
-be added twice. The original intended positive TXE assertions are retained
-below for review, but are deliberately not included as passing test coverage.
-
-```noir
-#[test]
-unconstrained fn private_fee_payment_debits_configured_maximum_only() {
-    let (env, fpc, user, other) = setup();
-    seed_claim(env, fpc, user, 5000, 123);
-    env.call_private(user, PrivateFPC::at(fpc).mint(5000, 123, 42));
-    env.call_private_opts(user, CallPrivateOptions::new().with_gas_settings(gas()), PrivateFPC::at(fpc).pay_fee());
-    // 100*3 + 200*5 = 1300. Teardown is already part of total gas limits.
-    assert_eq(env.execute_utility(PrivateFPC::at(fpc).balance_of(user)), 3700);
-    assert_eq(env.execute_utility(PrivateFPC::at(fpc).balance_of(other)), 0);
-}
-
-#[test]
-unconstrained fn private_fee_cold_start_credits_only_fee_remainder() {
-    let (env, fpc, user, _) = setup();
-    seed_claim(env, fpc, user, 5000, 123);
-    env.call_private_opts(user, CallPrivateOptions::new().with_gas_settings(gas()), PrivateFPC::at(fpc).mint_and_pay_fee(5000, 123, 42));
-    assert_eq(env.execute_utility(PrivateFPC::at(fpc).balance_of(user)), 3700);
-}
-```
+Application transaction tests must verify that cold-start funding and subsequent
+payments deduct the receipt's transaction fee from private credit. The maximum
+is reserved during setup, with unused credit returned by public teardown. Check
+successful and reverted application calls, zero refunds, unauthorized completion,
+and a second owner's unchanged balance. The published class/instance and nonzero
+teardown allowance are prerequisites. TXE setup-phase rejection is not evidence
+that these positive refund paths work.

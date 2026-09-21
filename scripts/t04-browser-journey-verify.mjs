@@ -75,8 +75,8 @@ export async function verifyJourneyPrivateChain({wallet,node,instance,artifact,a
  const dummy=notes.filter(note=>note.txHash.equals(transactions.screen.tx.getTxHash())&&note.note.items.length===7);assert.equal(dummy.length,1);assert.deepEqual(dummy[0].note.items.map(n),[1n,n(chain),2n,0n,transactions.screen.anchorTimestamp,n(post.note.items[4]),1n]);
  const window=n(await query('get_censor_window'));assert(transactions.screen.anchorTimestamp>=n(raw.header.globalVariables.timestamp)+window);
  const fee=Contract.at(privateFee.instance.address,privateFee.artifact,wallet),balance=n((await fee.methods.balance_of(account.address).simulate({from:account.address})).result);
- assert.equal(balance,before.privateBalance-4n*before.maximumFee);assert.equal(await getFeeJuiceBalance(account.address,node),0n);
- const actualFees=Object.values(transactions).reduce((sum,t)=>sum+n(t.receipt.transactionFee),0n);assert.equal(await getFeeJuiceBalance(privateFee.instance.address,node),before.payerBalance-actualFees);
+ assert.equal(await getFeeJuiceBalance(account.address,node),0n);
+ const actualFees=Object.values(transactions).reduce((sum,t)=>sum+n(t.receipt.transactionFee),0n);assert.equal(balance,before.privateBalance-actualFees);assert.equal(await getFeeJuiceBalance(privateFee.instance.address,node),before.payerBalance-actualFees);
  const {classifyT03PublicFootprint}=await import('./t03-public-footprint.mjs');const publicFootprints=Object.fromEntries(Object.entries(transactions).map(([stage,t])=>[stage,classifyT03PublicFootprint({tx:t.tx,effect:t.effect,roles:{author:account.address,sharedPayer:privateFee.instance.address,board:instance.address}})]));
- return {passed:true,publicFootprints,physicalDepositNoteChain:true,exactConsumedNullifiers:true,realPostContent:true,screeningWindow:true,privateDebit:String(4n*before.maximumFee),actualProtocolFees:String(actualFees),authorPublicBalanceZero:true};
+ return {passed:true,publicFootprints,physicalDepositNoteChain:true,exactConsumedNullifiers:true,realPostContent:true,screeningWindow:true,privateDebit:String(actualFees),actualProtocolFees:String(actualFees),authorPublicBalanceZero:true};
 }

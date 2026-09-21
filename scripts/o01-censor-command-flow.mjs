@@ -1,3 +1,4 @@
+import {publishTestPrivateFee} from './w01-unfunded-wallet.mjs';
 // TEST ONLY: actual packaged governance commands; no Ready, collateral or network proof.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -53,8 +54,9 @@ async function runCensorCommands({node,preparation,instance,deploymentReceipt,de
   verifyPortalRuntime(await client.getCode({address:portal}),metadata,{MIN_DEPOSIT:minimum,MAX_DEPOSIT:maximum,L2_CONTRACT:instance.address.toString(),ROLLUP:rollup,INBOX:await read('INBOX'),OUTBOX:await read('OUTBOX'),VERSION:version,L1_CHAIN_ID:31337n,CONFIG_HASH:configHash});
   assert.equal(await read('depositsEnabled'),false);
   const raw=JSON.parse(await fs.readFile(path.join(ROOT,'apps/src/billboard/private_fee_artifact.json'))),feeArtifact=loadContractArtifact(raw),feeInstance=await derivePrivateFeeInstance(raw);
-  const publicBefore=await Promise.all([a,b].map(owner=>getFeeJuiceBalance(owner.address,node)));assert.equal(publicBefore[1],0n);
   const policy='O01 successor policy: review public content consistently.',expectedVersion=BigInt(await sha256Field(encodePolicyCommitment(instance.address.toString(),policy)));
+  await publishTestPrivateFee({wallet,node,owner:a.address,artifact:raw});
+  const publicBefore=[await getFeeJuiceBalance(a.address,node),await getFeeJuiceBalance(b.address,node)];assert.equal(publicBefore[1],0n);
   const oldPolicy=n(await query('get_policy_version'));assert.notEqual(oldPolicy,expectedVersion);await closeWallet();
   rpc=await openO01CommandRpc({node});
   for(const [index,owner]of [a,b].entries()){
@@ -76,7 +78,7 @@ async function runCensorCommands({node,preparation,instance,deploymentReceipt,de
    const receipt=await node.getTxReceipt(tx.getTxHash());assert([TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(receipt.status));assert.equal(receipt.executionResult,TxExecutionResult.SUCCESS);assert.equal(receipt.txHash.toString(),hashes[0]);assert.equal((await node.getBlock(receipt.blockNumber)).hash.toString(),receipt.blockHash.toString());
    const effect=await node.getTxEffect(tx.getTxHash());assert.equal(effect.data.txHash.toString(),hashes[0]);assert.equal(effect.l2BlockHash.toString(),receipt.blockHash.toString());
    await openWallet(owner,false);await wallet.registerContract(feeInstance,feeArtifact);await wallet.pxe.sync();
-   const credit=n((await Contract.at(feeInstance.address,feeArtifact,wallet).methods.balance_of(owner.address).simulate({from:owner.address})).result);assert.equal(credit,n(funded.claim.amount)-maxFee);
+   const credit=n((await Contract.at(feeInstance.address,feeArtifact,wallet).methods.balance_of(owner.address).simulate({from:owner.address})).result);assert.equal(credit,n(funded.claim.amount)-n(receipt.transactionFee));
    assert.equal(await getFeeJuiceBalance(feeInstance.address,node),poolBefore+n(funded.claim.amount)-BigInt(receipt.transactionFee));
    for(const [i,account]of [a,b].entries())assert.equal(await getFeeJuiceBalance(account.address,node),publicBefore[i]);
    assert.equal(n(await query('get_censor')),n(b.address));

@@ -50,6 +50,13 @@ export async function derivePrivateFeeInstance(privateFeeArtifact) {
 export function createPrivateFeeDeployment(wallet,privateFeeArtifact) {
   return Contract.deploy(wallet,artifactOf(privateFeeArtifact),[],undefined,{salt:Fr.ZERO,universalDeploy:true});
 }
+/** Verify publication and class identity before either bridging or spending credit. */
+export async function requirePublishedPrivateFee(node,canonical) {
+  check(node?.getContract,'PRIVATE_FEE_PROVIDER_REQUIRED');
+  const instance=await node.getContract(canonical.address,'latest');
+  check(instance,'PRIVATE_FEE_NOT_PUBLISHED');
+  check(equal(instance.address,canonical.address)&&equal(instance.originalContractClassId,canonical.originalContractClassId)&&equal(instance.currentContractClassId,canonical.currentContractClassId)&&equal(await computeContractAddressFromInstance(instance),canonical.address),'PRIVATE_FEE_CLASS_MISMATCH');
+}
 export async function derivePrivateFeeAddress(privateFeeArtifact) { return (await derivePrivateFeeInstance(privateFeeArtifact)).address; }
 export async function derivePrivateFeeBridgeSecret({salt,owner}) {
   const fixedSalt=field(salt);check(!fixedSalt.isZero(),'PRIVATE_FEE_INVALID_CLAIM');
@@ -84,10 +91,7 @@ async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,e
   check(['feePerDaGas','feePerL2Gas'].every(key=>fixed.gasSettings.maxFeesPerGas[key]>=uint(minimum[key],128)),'PRIVATE_FEE_CAP_TOO_LOW');
   const artifact=artifactOf(privateFeeArtifact),canonical=await derivePrivateFeeInstance(artifact);
   check(equal(canonical.address,payer),'PRIVATE_FEE_NONCANONICAL_ADDRESS');
-  const instance=await node.getContract(payer,'latest');
-  // Refund completion executes publicly, so the class and instance must be published.
-  check(instance,'PRIVATE_FEE_NOT_PUBLISHED');
-  check(equal(instance.address,payer)&&equal(instance.originalContractClassId,canonical.originalContractClassId)&&equal(instance.currentContractClassId,canonical.currentContractClassId)&&equal(await computeContractAddressFromInstance(instance),payer),'PRIVATE_FEE_CLASS_MISMATCH');
+  await requirePublishedPrivateFee(node,canonical);
   let paymentMethod;
   if(claim!==undefined) {
     check(claim&&typeof claim==='object'&&!Array.isArray(claim),'PRIVATE_FEE_INVALID_CLAIM');

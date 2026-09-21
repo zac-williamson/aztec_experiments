@@ -10,7 +10,7 @@ import { Fr } from '@aztec/foundation/curves/bn254';
 import { AztecAddress } from '@aztec/stdlib/aztec-address';
 import { BarretenbergSync } from '@aztec/bb.js';
 import { ProtocolContractAddress } from '@aztec/protocol-contracts';
-import { derivePrivateFeeAddress } from '../shared/private-fee-client.mjs';
+import { derivePrivateFeeAddress,derivePrivateFeeInstance } from '../shared/private-fee-client.mjs';
 import { fundPrivateFees,recoverPrivateFeeClaim,recoverPrivateFeeFunding } from '../shared/private-fee-funding.mjs';
 const portal=new Interface(['function ROLLUP() view returns(address)','function UNDERLYING() view returns(address)','function VERSION() view returns(uint256)','function L2_TOKEN_ADDRESS() view returns(bytes32)',
   'function depositToAztecPublic(bytes32 to,uint256 amount,bytes32 secretHash) returns(bytes32 key,uint256 index)','event DepositToAztecPublic(bytes32 indexed to,uint256 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
@@ -23,7 +23,7 @@ after(async()=>{await BarretenbergSync.destroySingleton();});
 function fixture(){
   const state={calls:[],saved:[],balance:5000n,allowance:0n,chain:1n,portalVersion:2n,nonce:7,receipt:null,transaction:null,sendError:false,saveError:false,blockHash,height:10,blocks:new Map(),approvalReceipt:null,approvalTransaction:null};
   const approvalHash='0x'+'44'.repeat(32);
-  const provider={getNetwork:async()=>({chainId:state.chain}),getTransactionCount:async(_sender,tag)=>{assert.equal(tag,'pending');return state.staleNonce&&state.approvalReceipt?state.nonce-1:state.nonce;},
+  const provider={getNetwork:async()=>({chainId:state.chain}),getTransactionCount:async(_sender,tag)=>{if(tag==='pending')return state.staleNonce&&state.approvalReceipt?state.nonce-1:state.nonce;assert(Number.isSafeInteger(tag)&&tag<=state.height);return 7+[...state.blocks].filter(([block])=>block<=tag).reduce((sum,[,txs])=>sum+txs.length,0);},
     call:async({to,data})=>{const abi=to.toLowerCase()===tokenAddress?token:portal,parsed=abi.parseTransaction({data});
       const result={ROLLUP:rollup,UNDERLYING:tokenAddress,VERSION:state.portalVersion,L2_TOKEN_ADDRESS:ProtocolContractAddress.FeeJuice.toString(),balanceOf:state.balance,allowance:state.allowance}[parsed.name];
       return abi.encodeFunctionResult(parsed.name,[result]);},
@@ -45,7 +45,7 @@ function fixture(){
     state.height++;state.nonce++;state.blocks.set(state.height,[state.transaction]);
     state.receipt={hash:txHash,from:sender,to:portalAddress,status:1,blockNumber:state.height,blockHash,logs:[{address:portalAddress,...event}]};
     if(state.lostDeposit)throw Error('lost deposit response');return state.transaction;}};
-  const node={getNodeInfo:async()=>({l1ChainId:1,rollupVersion:2,l1ContractAddresses:{rollupAddress:rollup,feeJuicePortalAddress:portalAddress,feeJuiceAddress:tokenAddress}})};
+  const node={getContract:async()=>derivePrivateFeeInstance(artifact),getNodeInfo:async()=>({l1ChainId:1,rollupVersion:2,l1ContractAddresses:{rollupAddress:rollup,feeJuicePortalAddress:portalAddress,feeJuiceAddress:tokenAddress}})};
   const input={journalStorage:createBrowserJournalStorage(new IDBFactory()),walletSalt:Fr.ZERO.toString(),node,ethProvider:provider,ethSigner:signer,owner:AztecAddress.fromFieldUnsafe(new Fr(42)),walletSecret:new Fr(123),privateFeeAddress,privateFeeArtifact:artifact,amount:'4000',expectedChainId:'1',expectedVersion:'2',saveRecovery:async record=>{if(state.saveError)throw Error('disk full');state.saved.push(record);}};
   const recover=(record)=>recoverPrivateFeeClaim({node,ethProvider:provider,owner:input.owner,walletSecret:input.walletSecret,privateFeeArtifact:artifact,record,expectedChainId:'1',expectedVersion:'2'});
   return {state,input,recover};
@@ -121,4 +121,9 @@ test('explicit read provider is required instead of wallet-provider fallback',as
 });
 test('wrong signer network cannot approve on an otherwise correct read network',async()=>{
  const f=fixture();f.input.ethSigner.provider={getNetwork:async()=>({chainId:2n})};await assert.rejects(fundPrivateFees(f.input),{code:'PRIVATE_FEE_FUNDING_CHAIN_MISMATCH'});assert.equal(f.state.calls.length,0);
+});
+
+test('unpublished fee contract prevents approvals and deposits',async()=>{
+ const f=fixture();f.input.node.getContract=async()=>undefined;
+ await assert.rejects(fundPrivateFees(f.input));assert.deepEqual(f.state.calls,[]);assert.deepEqual(f.state.saved,[]);
 });

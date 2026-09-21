@@ -59,7 +59,7 @@ function fixture(t) {
   };
   json(canonicalPath, artifact);
   json(privateFeePath, { name: 'PrivateFPC', transpiled: true,
-    functions: ['mint', 'pay_fee', 'mint_and_pay_fee', 'recurse_subtract_balance_internal'].map(name => ({ name, custom_attributes: ['abi_private'], verification_key: 'fixture-vk' })) });
+    functions: [...['mint', 'pay_fee', 'mint_and_pay_fee', 'recurse_subtract_balance_internal'].map(name => ({ name, custom_attributes: ['abi_private'], verification_key: 'fixture-vk' })), {name:'_complete_refund',custom_attributes:['abi_public','abi_only_self']}] });
   for (const consumer of consumers) json(`apps/src/billboard/${consumer}/billboard_artifact.json`, artifact);
   const bytecode = '0x60006000';
   json(portalPath, {
@@ -207,4 +207,9 @@ test('privateFee key, extra route and stale content fail closed', t => {
   assert.throws(() => checkArtifacts(f.root), /Canonical privateFee artifact/);
   f.write(privateFeePath, original + ' ');
   assert.throws(() => checkArtifacts(f.root), /Contract artifact differs from build manifest/);
+});
+
+test('refund completion must remain restricted to the fee contract',t=>{
+ const f=fixture(t);f.editJson(privateFeePath,a=>{a.functions.find(fn=>fn.name==='_complete_refund').custom_attributes=['abi_public'];});
+ assert.throws(()=>checkArtifacts(f.root),/Canonical privateFee artifact/);
 });

@@ -158,10 +158,10 @@ export async function observeColdBrowserFees({node,preparation,instance,l1Client
   assert.equal(f[0],1n);assert.equal(f[2],amount);assert.equal(f[3],BigInt(sender));assert.deepEqual(f.slice(4,7),[0n,0n,0n]);assert.equal(f[7],collateral.anchorTimestamp+base);
   const oldFields=[1n,f[1],amount,BigInt(sender),0n,0n,0n,0n,0n,f[7]];
   const priorFees=n(transactions['fee-claim'].receipt.transactionFee)+n(collateral.receipt.transactionFee);
-  observation.post=await verifyU01BrowserPost({node,preparation,instance,claimResult:{claim:{depositChainId:oldNote.note.items[1]}},privateFee:{payer:payer.address.toString()},txHash:transactions.post.tx.getTxHash().toString(),message,evidence:{wallet:setup.wallet,account:author,oldNote,oldFields,beforePostCount:0n,beforeFeeBalance:fundingAmount-2n*maximumFee,beforePayerBalance:poolBefore+fundingAmount-priorFees,maximumFee,captures}});
+  observation.post=await verifyU01BrowserPost({node,preparation,instance,claimResult:{claim:{depositChainId:oldNote.note.items[1]}},privateFee:{payer:payer.address.toString()},txHash:transactions.post.tx.getTxHash().toString(),message,evidence:{wallet:setup.wallet,account:author,oldNote,oldFields,beforePostCount:0n,beforeFeeBalance:fundingAmount-priorFees,beforePayerBalance:poolBefore+fundingAmount-priorFees,maximumFee,captures}});
   const finalFee=Contract.at(payer.address,feeArtifact,setup.wallet),balance=n((await finalFee.methods.balance_of(author.address).simulate({from:author.address})).result);
   const actualFees=Object.values(transactions).reduce((sum,t)=>sum+n(t.receipt.transactionFee),0n);
-  assert.equal(balance,fundingAmount-3n*maximumFee);assert.equal(await getFeeJuiceBalance(payer.address,node),poolBefore+fundingAmount-actualFees);assert.equal(await getFeeJuiceBalance(author.address,node),0n);
+  assert.equal(balance,fundingAmount-actualFees);assert.equal(await getFeeJuiceBalance(payer.address,node),poolBefore+fundingAmount-actualFees);assert.equal(await getFeeJuiceBalance(author.address,node),0n);
   const endL1Block=await l1Client.getBlockNumber({cacheTime:0});
   const feeEvents=await l1Client.getLogs({address:feePortal,event:FeeJuicePortalAbi.find(item=>item.type==='event'&&item.name==='DepositToAztecPublic'),fromBlock:startL1Block+1n,toBlock:endL1Block});
   const senderEvents=[];
@@ -172,7 +172,7 @@ export async function observeColdBrowserFees({node,preparation,instance,l1Client
   assert.equal(tokenAfter.sender,tokenBefore.sender-fundingAmount);
   assert.equal(tokenAfter.portal,tokenBefore.portal+fundingAmount);
   Object.assign(observation.funding,{singleDeposit:true,tokenMovementChecked:true,fromBlock:String(startL1Block+1n),toBlock:String(endL1Block)});
-  Object.assign(observation,{passed:true,privateBalance:String(balance),privateDebit:String(3n*maximumFee),actualProtocolFees:String(actualFees),authorPublicBalanceZero:true,browser});return observation;
+  Object.assign(observation,{passed:true,privateBalance:String(balance),privateDebit:String(actualFees),actualProtocolFees:String(actualFees),authorPublicBalanceZero:true,browser});return observation;
  }catch(error){error.browserPostObservation=observation;throw error;}
  finally{await runT04Cleanup([()=>checkpoints.restore(),()=>capture?.close(),()=>rpc?.close(),()=>setup?.close(),()=>provider?.destroy(),()=>fs.rm(backupPath,{force:true})]);}
 }

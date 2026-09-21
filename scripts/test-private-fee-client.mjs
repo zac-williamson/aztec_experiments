@@ -10,7 +10,7 @@ import { Gas,GasFees,GasSettings } from '@aztec/stdlib/gas';
 import { loadContractArtifact,FunctionSelector } from '@aztec/stdlib/abi';
 import { poseidon2HashWithSeparator } from '@aztec/foundation/crypto/poseidon';
 import { computeSecretHash } from '@aztec/stdlib/hash';
-import { preparePrivateFeePayment,derivePrivateFeeInstance,derivePrivateFeeAddress,derivePrivateFeeBridgeSecret,derivePrivateFeeBridgeSecretHash } from '../shared/private-fee-client.mjs';
+import { preparePrivateFeePayment,createPrivateFeeDeployment,derivePrivateFeeInstance,derivePrivateFeeAddress,derivePrivateFeeBridgeSecret,derivePrivateFeeBridgeSecretHash } from '../shared/private-fee-client.mjs';
 let artifact,instance;
 const owner=AztecAddress.fromFieldUnsafe(new Fr(42));
 before(async()=>{artifact=loadContractArtifact(JSON.parse(fs.readFileSync(new URL('../apps/src/billboard/private_fee_artifact.json',import.meta.url))));instance=await derivePrivateFeeInstance(artifact);});
@@ -109,4 +109,10 @@ test('fee-rate lookup failure is redacted and never starts payment work',async()
  const {input,state}=fixture();input.node.getCurrentMinFees=async()=>{throw Error('PRIVATE_INPUT_MARKER');};
  await assert.rejects(preparePrivateFeePayment(input),e=>e.code==='PRIVATE_FEE_PREPARATION_FAILED'&&!e.message.includes('PRIVATE_INPUT_MARKER'));
  assert.equal(state.reads,0);assert.equal(state.registered,0);
+});
+
+test('publication uses the same ownerless zero-salt canonical address',async()=>{
+ const deployment=createPrivateFeeDeployment({},artifact);
+ const published=await deployment.getInstance();
+ assert(published.address.equals(instance.address));assert(published.deployer.isZero());assert(published.salt.isZero());
 });

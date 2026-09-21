@@ -1,4 +1,4 @@
-// TEST ONLY. Account and canonical FPC registration; no funding or transaction.
+// TEST ONLY. Publish canonical FPC using funded deployer; author remains unfunded.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -7,9 +7,18 @@ import {getFeeJuiceBalance} from '@aztec/aztec.js/utils';
 import {EmbeddedWallet} from '@aztec/wallets/embedded';
 import {BackendType} from '@aztec/bb.js';
 import {loadContractArtifact} from '@aztec/stdlib/abi';
-import {derivePrivateFeeInstance} from '../shared/private-fee-client.mjs';
+import {derivePrivateFeeInstance,createPrivateFeeDeployment,requirePublishedPrivateFee} from '../shared/private-fee-client.mjs';
 import {restoreApplicationAuthor} from './w02-wallet-restore.mjs';
 import {ROOT} from './toolchain.mjs';
+
+export async function publishTestPrivateFee({wallet,node,owner,artifact}) {
+ const instance=await derivePrivateFeeInstance(artifact);
+ if(!await node.getContract(instance.address,'latest')) {
+  const {receipt}=await createPrivateFeeDeployment(wallet,artifact).send({from:owner,wait:{timeout:60}});
+  assert.equal(receipt.executionResult,'success');
+ }
+ await requirePublishedPrivateFee(node,instance);
+}
 
 export async function prepareW01UnfundedWallet({node,preparation,directory,persistentDirectory}) {
  assert(path.isAbsolute(directory));
@@ -26,7 +35,11 @@ export async function prepareW01UnfundedWallet({node,preparation,directory,persi
   autoSync:false,syncChainTip:'checkpointed'}});
  const close=async()=>{if(wallet){await wallet.stop();wallet=undefined;}};
  try{
-  wallet=await open();await wallet.createSchnorrInitializerlessAccount(author.secret,author.salt,author.signingKey,'private-fee-test-author');
+  wallet=await open();
+  const deployer=preparation.account;
+  await wallet.createSchnorrInitializerlessAccount(deployer.secret,deployer.salt,deployer.signingKey,'fee-contract-deployer');
+  await publishTestPrivateFee({wallet,node,owner:deployer.address,artifact:raw});
+  await wallet.createSchnorrInitializerlessAccount(author.secret,author.salt,author.signingKey,'private-fee-test-author');
   await wallet.registerContract(instance,artifact);
   // Private preparation material never enters JSON evidence.
   return Object.defineProperties({walletRestore:restored.observation},{

@@ -4,7 +4,7 @@ import { Interface, getAddress } from 'ethers';
 import { Fr } from '@aztec/foundation/curves/bn254';
 import { poseidon2HashWithSeparator } from '@aztec/foundation/crypto/poseidon';
 import { ProtocolContractAddress } from '@aztec/protocol-contracts';
-import { derivePrivateFeeAddress, derivePrivateFeeBridgeSecret, derivePrivateFeeBridgeSecretHash } from './private-fee-client.mjs';
+import { derivePrivateFeeInstance, requirePublishedPrivateFee, derivePrivateFeeBridgeSecret, derivePrivateFeeBridgeSecretHash } from './private-fee-client.mjs';
 
 const portalAbi=new Interface([
   'function ROLLUP() view returns (address)', 'function UNDERLYING() view returns (address)',
@@ -36,11 +36,12 @@ async function read(provider,to,abi,name,args=[]){return abi.decodeFunctionResul
 async function verifyScope({node,ethProvider,privateFeeArtifact,privateFeeAddress,expectedChainId,expectedVersion}){
   check(node?.getNodeInfo&&ethProvider?.getNetwork,'PRIVATE_FEE_FUNDING_PROVIDER_REQUIRED');
   const chainId=uint(expectedChainId,64),version=uint(expectedVersion,32);
-  const [info,network,canonical]=await Promise.all([node.getNodeInfo(),ethProvider.getNetwork(),derivePrivateFeeAddress(privateFeeArtifact)]);
+  const [info,network,canonical]=await Promise.all([node.getNodeInfo(),ethProvider.getNetwork(),derivePrivateFeeInstance(privateFeeArtifact)]);
   check(uint(network.chainId,64)===chainId&&uint(info.l1ChainId,64)===chainId&&uint(info.rollupVersion,32)===version,'PRIVATE_FEE_FUNDING_CHAIN_MISMATCH');
-  check(eq(canonical,privateFeeAddress),'PRIVATE_FEE_FUNDING_ADDRESS_MISMATCH');
+  check(eq(canonical.address,privateFeeAddress),'PRIVATE_FEE_FUNDING_ADDRESS_MISMATCH');
+  await requirePublishedPrivateFee(node,canonical);
   const scope={chainId:chainId.toString(),version:version.toString(),rollupAddress:address(info.l1ContractAddresses?.rollupAddress),
-    portalAddress:address(info.l1ContractAddresses?.feeJuicePortalAddress),tokenAddress:address(info.l1ContractAddresses?.feeJuiceAddress),privateFeeAddress:canonical.toString()};
+    portalAddress:address(info.l1ContractAddresses?.feeJuicePortalAddress),tokenAddress:address(info.l1ContractAddresses?.feeJuiceAddress),privateFeeAddress:canonical.address.toString()};
   const [rollup,token,portalVersion,l2Token]=await Promise.all([
     read(ethProvider,scope.portalAddress,portalAbi,'ROLLUP'),read(ethProvider,scope.portalAddress,portalAbi,'UNDERLYING'),
     read(ethProvider,scope.portalAddress,portalAbi,'VERSION'),read(ethProvider,scope.portalAddress,portalAbi,'L2_TOKEN_ADDRESS'),

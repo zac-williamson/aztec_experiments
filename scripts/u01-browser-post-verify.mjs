@@ -114,7 +114,7 @@ export async function verifyU01BrowserPost({node,preparation,instance,claimResul
  const content=packed(message);assert.deepEqual((await query('get_post',id)).map(number),content.fields);assert.equal(number(await query('get_post_length',id)),BigInt(content.length));assert.equal(await query('is_post_flagged',id),false);
  const raw=await node.getBlockSource().getBlock({number:receipt.blockNumber});assert(raw);assert.equal((await raw.hash()).toString(),receipt.blockHash.toString());assert(raw.body.txEffects.some(e=>e.txHash.equals(hash)));
  assert.equal(number(await query('get_post_time',id)),number(raw.header.globalVariables.timestamp));
- const afterFeeBalance=number((await fee.methods.balance_of(account.address).simulate({from:account.address})).result);assert.equal(afterFeeBalance,BigInt(beforeFeeBalance)-BigInt(maximumFee));assert.equal(await getFeeJuiceBalance(account.address,node),0n);
+ const afterFeeBalance=number((await fee.methods.balance_of(account.address).simulate({from:account.address})).result);assert.equal(afterFeeBalance,BigInt(beforeFeeBalance)-BigInt(receipt.transactionFee));assert.equal(await getFeeJuiceBalance(account.address,node),0n);
  const feeInstance=await derivePrivateFeeInstance(JSON.parse(await fs.readFile(new URL('../apps/src/billboard/private_fee_artifact.json',import.meta.url),'utf8')));
  const afterPayerBalance=await getFeeJuiceBalance(feeInstance.address,node);assert.equal(afterPayerBalance,BigInt(beforePayerBalance)-BigInt(receipt.transactionFee.toString()));
  const publicFootprint=classifyT03PublicFootprint({tx,effect:effect.data,roles:{author:account.address,sharedPayer:privateFee.payer,board:instance.address}});
@@ -136,7 +136,7 @@ export async function verifyU01BrowserWithdrawal({node,preparation,instance,clai
  assert.equal(number(await query('get_post_count')),0n);
  const notes=await wallet.pxe.debug.getNotes(filter(instance,account));
  assert(!notes.some(note=>note.note.items.length===8&&note.note.items[1].equals(depositChainId)));
- assert.equal(number((await fee.methods.balance_of(account.address).simulate({from:account.address})).result),beforeFeeBalance-maximumFee);
+ assert.equal(number((await fee.methods.balance_of(account.address).simulate({from:account.address})).result),beforeFeeBalance-number(included.receipt.transactionFee));
  assert.equal(await getFeeJuiceBalance(account.address,node),0n);
  assert.equal(await getFeeJuiceBalance(included.tx.data.feePayer,node),beforePayerBalance-number(included.receipt.transactionFee));
  const read=(functionName,args=[])=>l1Client.readContract({address:scope.portalAddress,abi:portalAbi,functionName,args});

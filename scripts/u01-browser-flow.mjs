@@ -171,7 +171,7 @@ export async function prepareT04BrowserJourney({node,preparation,instance,l1Clie
  await fixture.wallet.registerContract(instance,preparation.artifact);
  const board=Contract.at(instance.address,preparation.artifact,fixture.wallet),query=async name=>BigInt((await board.methods[name]().simulate({from:account.address})).result.toString());
  const window=await query('get_censor_window'),base=await query('get_base_cooldown');
- const before={liability:await read('totalDeposited'),portalBalance:await l1Client.getBalance({address:scope.portalAddress}),privateBalance:fixture.fundedAmount-fixture.allocated,maximumFee:fixture.gas.getFeeLimit().toBigInt(),payerBalance:await getFeeJuiceBalance(fixture.instance.address,node)};
+ const before={liability:await read('totalDeposited'),portalBalance:await l1Client.getBalance({address:scope.portalAddress}),privateBalance:BigInt((await Contract.at(fixture.instance.address,fixture.artifact,fixture.wallet).methods.balance_of(account.address).simulate({from:account.address})).result.toString()),maximumFee:fixture.gas.getFeeLimit().toBigInt(),payerBalance:await getFeeJuiceBalance(fixture.instance.address,node)};
  const transactions={},captures=new Map(),observation={passed:false,stage:'prepare',warmNativePrivateFees:true,networkProofs:false};
  const message='T04 genuine GUI deposit claim post screen withdraw refund';
  const backupPath=path.join(directory,'browser-wallet.encrypted.json');let rpc,capture,wallet,observer;

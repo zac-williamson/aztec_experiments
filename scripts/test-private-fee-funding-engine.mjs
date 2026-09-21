@@ -23,7 +23,7 @@ function harness(){
  const journal={assertCanStart:async()=>calls.push('journal-preflight'),setOperation:operation=>calls.push(['operation',operation]),lastTxHash:'saved-hash'};
  const env={createJournalStorage:()=>({}),createTransactionJournal:async input=>{calls.push(['journal',input]);return journal;},aztec:a,privateFeeArtifact:{},log:message=>calls.push(['log',message]),initCRS:async()=>{},createStore:async()=>({}),getBrowserSigner:async()=>({provider:{}}),ethers:{parseUnits:()=>100n,JsonRpcProvider:class {destroy(){calls.push('provider-destroy');}}},
  fundPrivateFees:async input=>{calls.push(['fund',input]);const record={nonce:'1'};await input.saveRecovery(record);return record;}};
- const config={aztecWallet:{secretKey:Fr.ONE.toString(),salt:0},privateFee:{contractAddress:'shared',gasSettings:{gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'0',l2Gas:'0'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}},fundingRecord:{schema:'private-fee-funding-v1',chainId:'31337',version:'5',rollupAddress:'rollup',portalAddress:'fee-portal',tokenAddress:'token',privateFeeAddress:'shared',sender:'sender',nonce:'1',amount:'100',txHash:Fr.ONE.toString()},saveRecovery:async record=>calls.push(['save',record]),depositAmount:'0.1'};
+ const config={aztecWallet:{secretKey:Fr.ONE.toString(),salt:0},privateFee:{contractAddress:'shared',gasSettings:{gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'1',l2Gas:'2'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}},fundingRecord:{schema:'private-fee-funding-v1',chainId:'31337',version:'5',rollupAddress:'rollup',portalAddress:'fee-portal',tokenAddress:'token',privateFeeAddress:'shared',sender:'sender',nonce:'1',amount:'100',txHash:Fr.ONE.toString()},saveRecovery:async record=>calls.push(['save',record]),depositAmount:'0.1'};
  return {calls,owner,claim,a,env,config,wallet,journal,run:action=>context.runFeeJuiceFlow(env,{...config,action})};
 }
 test('funding deposits to shared address and passes mandatory recovery callback',async()=>{
@@ -39,7 +39,9 @@ test('standalone claim uses standard author entrypoint with only private fee pay
 
 test('browser recovery storage preserves earlier deposits and refuses conflicting replacements or secrets',()=>{
  const app=fs.readFileSync(new URL('../apps/src/fee-juice/app.js',import.meta.url),'utf8');
- const map=new Map(),c=vm.createContext({localStorage:{getItem:key=>map.get(key),setItem:(key,value)=>map.set(key,value)}});
+ const map=new Map(),c=vm.createContext({window:{},BILLBOARD_PRIVATE_FEE_ARTIFACT:{},makeCallEngine:()=>()=>{},localStorage:{getItem:key=>map.get(key),setItem:(key,value)=>map.set(key,value)}});
+ vm.runInContext(fs.readFileSync(new URL('../shared/application.js',import.meta.url),'utf8'),c);
+ c.application=vm.runInContext("createBillboardApplication({kind:'fees'})",c);
  vm.runInContext('let fundingRecord=null;'+app.slice(app.indexOf('function saveFundingRecord('),app.indexOf('function downloadRecovery(')),c);
  const record={schema:'private-fee-funding-v1',chainId:'1',version:'1',rollupAddress:'rollup',portalAddress:'portal',tokenAddress:'token',privateFeeAddress:'shared',sender:'sender',nonce:'1',amount:'100'};
  c.saveFundingRecord(record);c.saveFundingRecord({...record,txHash:'hash'});
@@ -125,7 +127,7 @@ test('private fee funding reconciliation has a bounded deadline',async()=>{
 
 test('deposit accepts canonical decimal-string public gas configuration with the real SDK',async()=>{
  const h=harness();
- h.config.privateFee.gasSettings={gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'0',l2Gas:'0'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}};
+ h.config.privateFee.gasSettings={gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'1',l2Gas:'2'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}};
  await h.run('deposit');assert.equal(h.calls.filter(c=>c[0]==='fund').length,1);
 });
 
