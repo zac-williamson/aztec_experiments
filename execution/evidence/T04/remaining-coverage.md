@@ -3,18 +3,20 @@
 This is a work inventory, not completed acceptance evidence. Historical results
 retain their source snapshots; final-source reconciliation remains T05 work.
 
-| Area | Existing evidence | Remaining distinct work |
+| Area | Latest useful evidence | Remaining distinct work |
 |---|---|---|
-| Browser lifecycle | Historical Chromium/Firefox/WebKit/Chrome journeys; current MetaMask196 completed deposit, claim, post, screening, withdrawal and refund in 451 seconds within 4 GiB | Current source reconciliation for other supported browsers, including installed Safari |
-| Private fee funding UI | Current cold-browser211 passed genuine fee deposit/private claim, collateral claim and paid post in294seconds/2GiB with exact token and fee accounting | External-wallet funding route and final candidate binding remain distinct |
-| Recovery | Chromium050 accepted post and096 accepted withdrawal response loss with full persistent browser restart; W03 receipt/persistence and chain tests | Layered map in recovery-coverage-095.md: durable boundary095/097, fresh-engine claim/screen100, builtUI reload101, real-Anvil mined response loss. Final-source reconciliation remains; no per-stage genuine-browser duplication claimed |
-| History | C04 17/33 stateful TXE lifecycles, seeded1,002note authenticated continuation/exit, actual1,100record native/browser persistence | Current native-store084 passes11checks at1,100synthetic records in302ms and client checks3/3; five targeted history contract tests passed085; final-candidate binding remains |
-| Concurrency and traffic | Ten same-anchor authors with genesis fixture fees; two private-fee authors and original withdrawal proof076 | Reconcile source; do not claim ten-author private-fee throughput or single-block inclusion |
-| Long absence | Native persisted wallet075 reopens after simulated30days, authenticates retained state and posts | Not a real elapsed soak or browser crash qualification |
-| Repeated deposits | Current redeposit222 passed two genuine deposit/claim/withdraw/refund cycles with replay rejection and exact fees | Final candidate binding remains |
-| Reader on mobile | Wallet-free paginated actual built page, safe text rendering and persistence | Passed mobile-reader083 at390x844 after scoped wrapping fix; physical-device qualification remains distinct |
-| Wallet routes | Current real MetaMask196 full board GUI through refund passed; earlier132 covered rejected approval and fee-deposit recovery,144 covered journal-level collateral/refund | Reconcile remaining recovery cases against final source. Bundled Chromium extension qualification is distinct from installed Chrome/Safari support |
-| Performance | Per-run phase/wall-time/resource records | Feed099 passes30sample Chromium shaped cold-load and10000-history warm API-page targets. Application-proof30sample per-engine campaign remains; fixed-gas pilot planned164 after163 showed194.7s post-step variation. incremental sync now commits only changedranges;39checks and nativebrowser149pass. Bounded RPC update155 passes 30 cold samples at p95 1.629s and cached pages at p95 0.2ms; failed151 retained. Initial cache replay remains linear |
+| Browser lifecycle | Actual MetaMask196, WebKit231 and installed Chrome238 completed deposit through refund; Firefox full journey also retained | Final-source reconciliation and installed Safari qualification; WebKit does not establish Safari support |
+| Private fee funding UI | Cold-browser266 and actual MetaMask284 passed genuine fee funding, private claims and paid posting | Final candidate binding; these checks use disposable local chains |
+| Recovery | Actual withdrawal recovery251 and post recovery252 passed with full browser-process restart | Reconcile historical stale-proof replacement and same-note attribution against changed note/fee inputs; existing layered map is recovery-coverage-095.md |
+| History | C04 17/33 stateful TXE lifecycles, authenticated seeded1,002note continuation/exit, actual1,100record native/browser persistence; targeted checks084/085 passed | Final candidate binding; no claim of1,001genuinely proven publications |
+| Concurrency and traffic | Current withdrawal-traffic309 passed in359seconds: A's original proof survived B's post, B posted after A exited, private balances and pool reconciled. Evidence application-8d2b9c2a-274d-4a54-836e-e7ff3501d7db.json | Reconcile historical ten-author same-anchor evidence separately;309 is not ten-author throughput or single-block inclusion |
+| Long absence | Current-source wallet-absence311 passed449seconds/2.08GiB with persisted account/contracts/note and real post after simulated30days | Secondpost stage was unusually slow; phase attribution remains unmeasured. Simulated chain time is not elapsed soak or browser crash qualification |
+| Repeated deposits | Redeposit222 passed two real deposit/claim/withdraw/refund cycles, replay rejection and exact fees | Final candidate binding; no unrelated full rerun required |
+| Mobile reading | Built mobile-sized reader083 and directory navigation passed | Representative physical-device qualification remains distinct |
+| Wallet routes | Actual MetaMask196 full journey and284 cold fee funding; earlier approval rejection/funding recovery retained | Reconcile remaining interruption cases against final source. Bundled Chromium extension support is distinct from installed browsers |
+| Performance | Source-matched Chrome294, Firefox290, WebKit291 each passed one cold+warm proof; browser-performance-pilots-20260921.json. Feed155 measured30cold loads, p951.629s |30cold+30warm statistical proof samples per supported engine remain incomplete; pilots do not establish p95 |
+| Remote recovery | Verified backup/download/offline authentication296–300; automatic EC2 reboot recovery302 in134seconds | Replacement-host recovery remains untested |
+| Remote health | Native timer publishes aggregate health; CloudWatch missing/unhealthy alarm deployed and recovered toOK | No notification recipient; backup failure is not covered by moderator health alarm |
 
 No 1,001-proof repetitive campaign is required by the recorded C04 methodology.
 No performance, actual-browser, recovery or external-wallet promise is removed by
@@ -89,12 +91,12 @@ RSS, both refunds, replay rejection and cumulative private-fee accounting;
 owned processes and temporary files were cleaned up. Evidence:
 ../T02/application-ac9f887d-0e40-470e-b264-ff4ec8a082e5.json.
 
-Independent review identifies remaining distinct browser correctness runs:
+The earlier integration review identified these distinct runs, now completed below:
 `browser-webkit-journey`, `browser-chrome-journey`,
-`browser-withdraw-recovery`, and source-reconciled `browser-post-recovery`.
+`browser-withdraw-recovery`, and `browser-post-recovery`.
 Do not repeat plain post scenarios after those full journeys pass. Installed
-Safari and an integrated cold-funding run through the actual extension remain
-separate gaps; WebKit and bundled Chromium are not substitutes.
+Safari remains a separate gap. Actual-extension cold funding subsequently passed284;
+WebKit and bundled Chromium are not substitutes for installed Safari.
 
 Firefox230 passed an actual private-fee post in258654ms/3005472KiB with cleanup. Earlier225 pre-proof proxy502 remains unexplained; diagnostic capture changed no transport behavior. A passing rerun does not close that reliability issue.
 
