@@ -9,8 +9,9 @@ export async function driveT04BrowserFunding({page,directory,message,depositAmou
   backupPath,backupPassword,remaining,signal,mark,onSubstage}) {
  const finish=(id,text)=>finishBrowserStatus(page,id,text,remaining);
  const checkpoint=(stage,hashes)=>checkpointBrowserStage(directory,stage,hashes,remaining,signal);
- await page.waitForFunction(()=>document.getElementById('azaddr')?.value||document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
+ await page.waitForFunction(()=>document.getElementById('setupStatus')?.textContent.includes('Wallet ready. Deposits fund the shared private fee contract.')||document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
  assert.equal(await page.locator('#setupStatus .error').count(),0);
+ assert(await page.evaluate(()=>!!walletState.aztec?.address&&!!walletState.ethSigner&&!!walletState.ethAccount&&!walletState.invalidated));
  const publicConfig=await page.evaluate(()=>JSON.stringify(globalThis.billboardConfigStore.snapshot().config));
  assert(publicConfig&&publicConfig!=='null');
  onSubstage('fee-deposit');mark('gui-fee-deposit');

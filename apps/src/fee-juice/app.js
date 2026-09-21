@@ -90,6 +90,10 @@ async function doClaimPage() {
 }
 
 function initializePrivateFees() {
+  const publicConfig = _getPublicConfig();
+  const fee = ethers.formatUnits(BigInt(BillboardConfig.maximumFee(publicConfig)), 18);
+  document.getElementById('azaddr').value = publicConfig.privateFee.contractAddress;
+  document.getElementById('feeBudget').textContent = 'This site currently charges ' + fee + ' AZTEC per private transaction. Deposit more than this to pay for the claim and leave fee credit. Allow additional credit for posting and withdrawing.';
   if (!window.__aztec?.createPXE) {waitForBundle(initializePrivateFees);return;}
   try {const key=localStorage.getItem('billboard-private-fee-recovery-latest');const saved=key&&localStorage.getItem(key);if(saved)fundingRecord=JSON.parse(saved);}catch(_){}
   initWalletButtons('walletButtonsContainer',{statusId:'setupStatus',onReady:async()=>{
