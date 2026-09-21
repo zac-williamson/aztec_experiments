@@ -1,6 +1,7 @@
 import {safeModerationDiagnostic} from './health.mjs';
 import {scopeKey} from '../shared/protocol-schema.mjs';
 import {reconcileFlag} from './flag-outcome.mjs';
+import {performance} from 'node:perf_hooks';
 
 export function ingestModerationSnapshot(store,data,scope){
  if(scopeKey(data.scope)!==scopeKey(scope))throw Error('Moderation snapshot scope changed');
@@ -14,11 +15,17 @@ export async function processModerationCycle({store,signer,node,scope,evaluate,w
  for(let count=0;count<maxJobs&&!stopping();count++){
   let record=store.leaseNext({worker});if(!record)break;
   const key=record.key,token=record.lease.token;
+  const timing=(phase,fields={})=>{
+   // Observations never change durable transaction state or authorize a retry.
+   try{log(JSON.stringify({type:'billboard-moderation-timing-v1',jobKey:key,phase,observedAtMs:now(),...fields}));}catch{}
+  };
+  timing('worker-cycle-start');
   const update=change=>record=store.transition(key,token,change);
   const release=()=>{if(store.get(key)?.lease?.token===token)store.release(key,token);};
   try{
    if(record.job.state==='leased'){
-    const verdict=record.decision??await evaluate(record.post.text,record.policy.text);
+    let verdict=record.decision;
+    if(!verdict){const started=performance.now();timing('model-start');verdict=await evaluate(record.post.text,record.policy.text);timing('model-complete',{durationMs:performance.now()-started});}
     store.renew(key,token);
     if(!verdict.isViolation){update({state:'evaluated-ok',decision:verdict});log('Post '+record.post.orderIndex+' evaluated OK.');continue;}
     if(dryRun){update({state:'manual-review',errorCode:'DRY_RUN_VIOLATION'});log('[DRY RUN] Would flag post #'+record.post.orderIndex,'warn');continue;}
@@ -53,7 +60,7 @@ export async function processModerationCycle({store,signer,node,scope,evaluate,w
        outcome=replacementOutcome;
       }
      }
-     if(outcome.state==='confirmed'){update({state:'confirmed-flag',receipt:outcome.receipt,flagEvent:outcome.flagEvent});log('Post '+record.post.orderIndex+' flag finalized.');continue;}
+     if(outcome.state==='confirmed'){update({state:'confirmed-flag',receipt:outcome.receipt,flagEvent:outcome.flagEvent});timing('finality-observed',{transactionHash:record.job.transactionHash});log('Post '+record.post.orderIndex+' flag finalized.');continue;}
      if(outcome.state==='reverted'){update({state:'retryable-error',receipt:outcome.receipt,errorCode:'TRANSACTION_REVERTED'});continue;}
      if(['submitted','awaiting-event'].includes(outcome.state)){update({state:'submitted',transactionHash:record.job.transactionHash,receipt:outcome.receipt});release();continue;}
      if(outcome.state!=='dropped'){update({state:'reconciling',errorCode:'TRANSACTION_UNRESOLVED'});release();continue;}
@@ -65,13 +72,16 @@ export async function processModerationCycle({store,signer,node,scope,evaluate,w
     // invalid. An empty saved journal represents a crash before proof preparation.
    }
    store.renew(key,token);
+   const submitStarted=performance.now();timing('flag-submit-start');
    const result=signer.submitFlag(intentRequest(record)),oldHash=record.job.transactionHash,newHash=result.receipt.txHash;
    update({state:'submitted',transactionHash:newHash,receipt:result.receipt,...(oldHash&&oldHash!==newHash?{replacement:{source:'durable-transaction-journal',previousTransactionHash:oldHash,predecessorTxHashes:result.predecessorTxHashes}}:{})});
+   timing('flag-submit-returned',{durationMs:performance.now()-submitStarted,transactionHash:newHash,scope:'proving-send-receipt-wait'});
+   if(result.receipt.executionResult==='success'&&['checkpointed','proven','finalized'].includes(result.receipt.status))timing('inclusion-observed',{transactionHash:newHash,blockNumber:String(result.receipt.blockNumber),status:result.receipt.status});
    // A child receipt is durable progress, not final completion. Next poll checks
    // its current canonical block and independently indexed flag event.
    data=signer.list();ingestModerationSnapshot(store,data,scope);
    const confirmed=await reconcileFlag({node,scope,postId:record.job.postId,policyVersion:record.job.policyVersion,transactionHash:newHash,flagEvent:data.posts.find(p=>p.postId===record.job.postId)?.flagEvent});
-   if(confirmed.state==='confirmed'){update({state:'confirmed-flag',receipt:confirmed.receipt,flagEvent:confirmed.flagEvent});log('Post '+record.post.orderIndex+' flag finalized.');}
+   if(confirmed.state==='confirmed'){update({state:'confirmed-flag',receipt:confirmed.receipt,flagEvent:confirmed.flagEvent});timing('finality-observed',{transactionHash:newHash});log('Post '+record.post.orderIndex+' flag finalized.');}
    else if(confirmed.state==='reverted'){update({state:'retryable-error',receipt:confirmed.receipt,errorCode:'TRANSACTION_REVERTED'});}
    else {if(!['submitted','awaiting-event'].includes(confirmed.state))update({state:'reconciling',errorCode:'TRANSACTION_UNRESOLVED'});release();log('Post '+record.post.orderIndex+' flag submitted; awaiting canonical finality.');}
   }catch(error){

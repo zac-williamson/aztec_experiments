@@ -10,7 +10,7 @@ User=board
 WorkingDirectory=/srv/board
 Environment=HOME=/srv/board
 UMask=0077
-ExecStart=/srv/board/operator-current/scripts/operator-launch.sh moderator --portal-address 0x493d2EdEbC29096C8e748098d4abA29f9691E8Ed --node-url https://v5.testnet.rpc.aztec-labs.com --eth-rpc https://ethereum-sepolia-rpc.publicnode.com --censor-wallet /srv/board/state/moderator.json --private-fee-config /srv/board/state/private-fee.json --state-dir /srv/board/state/moderation --model /srv/board/models/Qwen3.5-9B-Q4_K_M.gguf --model-image ghcr.io/ggml-org/llama.cpp@sha256:15e2235a766c30b62371969bf885b5fe7eb789cdf221fb0b6e75283d9f6b8cb7 --model-manifest /srv/board/model-manifest.json --model-sha256 03b74727a860a56338e042c4420bb3f04b2fec5734175f4cb9fa853daf52b7e8 --model-memory-mib 8192 --threads 4 --ctx-size 4096 --poll-interval 30
+ExecStart=/srv/board/operator-timing-20260921/scripts/operator-launch.sh moderator --portal-address 0x794df4e4af56748e9eb5cc3ea75a73961d9f9566 --node-url https://v5.testnet.rpc.aztec-labs.com --eth-rpc https://ethereum-sepolia-rpc.publicnode.com --censor-wallet /srv/board/state/moderator.json --private-fee-config /srv/board/state/private-fee-retroactive.json --state-dir /srv/board/state/moderation-retroactive --model /srv/board/models/Qwen3.5-9B-Q4_K_M.gguf --model-image ghcr.io/ggml-org/llama.cpp@sha256:15e2235a766c30b62371969bf885b5fe7eb789cdf221fb0b6e75283d9f6b8cb7 --model-manifest /srv/board/model-manifest.json --model-sha256 03b74727a860a56338e042c4420bb3f04b2fec5734175f4cb9fa853daf52b7e8 --model-memory-mib 8192 --threads 4 --ctx-size 4096 --poll-interval 30
 MemoryMax=4G
 MemorySwapMax=0
 KillMode=mixed

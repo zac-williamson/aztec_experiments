@@ -112,3 +112,23 @@ for(const outcome of ['success','reverted'])test('superseded dropped flag contin
   assert.equal(f.store.list().find(r=>r.job.policyVersion===hex(11)).job.state,'evaluated-ok');assert.equal(f.calls.submit,1);
  }
 });
+
+test('timing separates actual model/submission from reconciliation and contains no content',async t=>{
+ const f=setup(t),events=[];f.violation();
+ const log=value=>{if(value.startsWith('{'))events.push(JSON.parse(value));};
+ await f.run({log});const first=events.splice(0);
+ assert.deepEqual(first.map(x=>x.phase),['worker-cycle-start','model-start','model-complete','flag-submit-start','flag-submit-returned','inclusion-observed']);
+ assert.equal(first.at(-1).status,'checkpointed');assert.equal(first.at(-1).transactionHash,hex(50));
+ assert(first.find(x=>x.phase==='model-complete').durationMs>=0);
+ assert.equal(first.find(x=>x.phase==='flag-submit-returned').scope,'proving-send-receipt-wait');
+ f.time(1002000);await f.run({log});assert.deepEqual(events.map(x=>x.phase),['worker-cycle-start']);
+ assert.equal(f.calls.submit,1);assert.equal(f.calls.evaluate,1);
+ const allowed=new Set(['type','jobKey','phase','observedAtMs','durationMs','scope','transactionHash','blockNumber','status']);
+ for(const event of [...first,...events])for(const key of Object.keys(event))assert(allowed.has(key));
+ assert(!JSON.stringify(first).includes('Public message'));assert(!JSON.stringify(first).includes('Spam'));
+});
+
+test('timing sink failure does not change a saved successful submission',async t=>{
+ const f=setup(t);f.violation();await f.run({log:value=>{if(value.startsWith('{'))throw Error('unavailable log sink');}});
+ assert.equal(f.calls.submit,1);assert.equal(f.record().job.state,'submitted');assert.equal(f.record().job.transactionHash,hex(50));
+});

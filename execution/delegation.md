@@ -196,3 +196,6 @@ Root integrated only; application_change_review independently approved the exist
 
 ### Firefox225 proxy diagnosis
 Independent review identified an unconfirmed keep-alive mismatch hypothesis. A cheap24-request probe did not reproduce it (all200). Caddy stderr had been discarded. Root added only bounded fixed-category/status/timing observation; no transport change or retry. Independent review approved; cap is8192 JavaScript characters, eight retained records. Focused malformed/oversized/redaction tests, realEOF502 probe, and harness tier229 passed. One diagnostic Firefox230 run follows;225 failure retained.
+
+### 2026-09-21 moderator timing and AWS reproducibility
+Author_testnet_flow reviewed worker timing and tests: no signer/recovery decision changes, no repeated model work, successful inclusion separate from finality;31 worker checks and full moderation suite passed. Lost signer responses remain incomplete timing samples. AWS_stack_review reviewed source template, generator, live-matched service, public OCI manifest and deployment guide. Root incorporated required proxy image and separate memory budgets, verified Docker29.1.3 remotely, and validated generated CloudFormation. No new resources added.
