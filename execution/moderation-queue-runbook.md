@@ -10,10 +10,12 @@ secrets and exact signed transactions remain in the separate encrypted wallet
 journal. Back up both consistently with the daemon stopped; preserve SQLite WAL
 files when making a filesystem backup. Never share a writable state directory
 between unrelated boards/operators or operate independent queues on one wallet.
+The [AWS procedure](../deploy/aws/README.md) covers the installed daily backup
+and verified downloaded/offline restoration. Replacement-host recovery is untested.
 
 The queue database is scoped to the complete chain, rollup, board and portal
-identity. Each job additionally binds the post, its historical policy version and
-model content identity. New models do not retire unresolved prior transactions. Unsigned queued/retryable
+identity. Each job additionally binds the post, the policy version being applied and
+model content identity. The publication policy remains recorded separately. New models do not retire unresolved prior transactions. Unsigned queued/retryable
 work from the previous model is explicitly superseded; its records remain for
 review and the new model evaluates its own job. Permanent incidents are retained.
 A SQLite transaction commits snapshots and jobs atomically. Competing local
@@ -23,9 +25,11 @@ by deadline; the default interval is thirty seconds. Restart with the same state
 directory to resume. A nonzero `--from` is rejected because skipping a cursor must
 not silently discard moderation obligations.
 
-Inference uses the exact policy captured by each post. Empty boards still require
-validated current policy metadata. Before signing, refresh the canonical public
-feed and check the unchanged post and strict censor deadline again. Persist the
+Inference uses the current board policy, including for older posts. Empty boards
+still require validated current policy metadata. Before signing, refresh the canonical
+feed and verify that the post and current policy remain unchanged. Passing the original
+deadline does not prevent removal; it prevents a new collateral penalty. A penalty
+also requires the flag policy to match the publication policy. Persist the
 verdict and submission intent before invoking the fixed trusted signer. Child
 success only records progress: completion requires a finalized successful receipt
 and the matching canonical flag event, including reason. Lost responses use the
@@ -41,7 +45,10 @@ new signing; confirmed inclusion can permit unrelated duties to proceed. Expired
 jobs, exhausted retries and unresolved signing become explicit attention states.
 The daemon warns about duties within five minutes of deadline and prints state
 counts. `--once` exits unsuccessfully while work remains unresolved. These are
-local diagnostics, not an external alert delivery service. A permanent error must
+local diagnostics. The [AWS deployment](../deploy/aws/README.md) publishes
+aggregate health to CloudWatch and detects unhealthy or missing observations in
+the console. No notification recipient is configured. Pending finality alone is
+not unhealthy. A permanent error must
 be investigated against the canonical feed, receipt and encrypted journal; there
 is deliberately no generic command to erase or acknowledge an unknown transaction.
 

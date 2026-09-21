@@ -90,7 +90,7 @@ Ingestion age is **not chain lag**: a healthy RPC can repeatedly return the same
 
 `SIGNING_FENCED` requires inspection of the saved intent/journal before further signing. Never delete SQLite state or transaction journals to clear it. `SIGNING_UNRESOLVED` means an outcome remains unknown; `AWAITING_FINALITY` means a successful included receipt exists but final canonical completion remains outstanding. Benign unsigned already-flagged and superseded-model records are excluded from missed-work alerts. Expired/manual-review obligations remain visible even though they are terminal queue states. Dry-run violations still require manual attention and cannot report production completion.
 
-Daemon cycle and fatal logs use fixed failure classifications; arbitrary caught error messages/codes are excluded. Investigate detailed durable state in a private operator session instead of exporting post text, decisions, transaction identities or credentials into alerts. Missing process/cycle output still requires external missing-run monitoring. Structured health does not itself deliver notifications or qualify a moderation model.
+Daemon cycle and fatal logs use fixed failure classifications; arbitrary caught error messages/codes are excluded. Investigate detailed durable state in a private operator session instead of exporting post text, decisions, transaction identities or credentials into alerts. The AWS deployment now detects unhealthy or missing health publications in CloudWatch; see [the AWS procedure](../deploy/aws/README.md). No notification recipient is configured. Pending finality alone is not unhealthy. Structured health does not qualify a moderation model.
 
 A `RETRYABLE_WORK_FAILED` warning reports failed evaluation/context work even when feed ingestion is fresh and its deadline is distant. Ordinary newly queued work alone does not trigger this warning. The monitor HTTP transport owns AbortControllers for every concurrent request and aborts actual network/body work when disposed after observation; it also caps each response at 1 MiB. Injected local-server tests verify hanging request sockets close, rather than merely testing a timeout against an inert promise.
 
@@ -120,7 +120,7 @@ An intentional policy change uses the current censor and takes literal public te
 
 To reconcile that same saved policy operation after a restart, repeat its exact command with `--reconcile-previous`, preserving the wallet, PXE directory and transaction journal. The local rehearsal returned the original canonical receipt without an additional submission or fee debit. This is not permission to replace an unknown operation with a different policy.
 
-Confirm the resulting published policy/version and retain historical policies for previously published posts. A new policy does not authorize evaluating older posts under the wrong policy. Configuration changes are public actions; do not place credentials or private instructions in policy text.
+Confirm the resulting published policy/version and retain historical policies for previously published posts. New rules apply to older unflagged posts. Retain publication rules and deadlines to distinguish removal from collateral penalties. Configuration changes are public actions; do not place credentials or private instructions in policy text.
 
 For an interrupted flag, use its exact saved post ID, policy version and reason. Inspection is read-only:
 

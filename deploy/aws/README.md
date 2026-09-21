@@ -158,3 +158,6 @@ can therefore take about fifteen minutes to detect, including the ten-minute
 freshness allowance; cold startup and backups may briefly publish unhealthy.
 This is AWS console detection only: no email, phone or chat recipient is configured.
 The timer is independent of the moderator so a stopped service can still be detected.
+
+This health alarm does not independently detect missed or failed backups when the
+moderator remains healthy. Inspect backup timer/service results separately.

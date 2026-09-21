@@ -45,5 +45,15 @@
     "No full-duration injected outage performed.",
     "Five missing/unhealthy minute periods trigger alarm; stale log allowance is ten minutes.",
     "Existing account-wide20USD budget unchanged."
+  ],
+  "alarmAfterFirstHealthyMetric": [
+    {
+      "Name": "anonymous-message-board-testnet-ModeratorHealthAlarm-MloEReMihV8W",
+      "State": "OK",
+      "Reason": "Threshold Crossed: 1 out of the last 5 datapoints [1.0 (21/09/26 04:07:00)] was not less than the threshold (1.0) and 4 missing datapoints were treated as [Breaching] (minimum 1 datapoint for ALARM -> OK transition).",
+      "Actions": [],
+      "Missing": "breaching",
+      "Periods": 5
+    }
   ]
 }

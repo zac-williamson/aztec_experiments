@@ -22,7 +22,7 @@ compatibility assessment. No reviewer has been contacted.
 Read BUILDING.md and TESTING.md first. Use pinned tools and disposable test users.
 Application transactions are genuinely proven; official accelerated local settlement
 controls are the protocol boundary. Do not provision a network epoch prover.
-Each expensive run is serialized, limited to 540 seconds and sampled 2 GiB.
+Each expensive run is serialized, limited to 540 seconds and sampled 4 GiB.
 
 - execution/evidence/T01/acceptance-012.md: contract suites, executable bounded
   invariant models with mutation controls, genuine screening and ten-author run.
@@ -62,11 +62,13 @@ exclude a component merely because its direct dependency is marked development.
 ## What prevents final packet completion
 
 1. Reconcile final test sources with the completed claim-boundary positive control.
-2. Complete public transaction/RPC/funding privacy traces and truthful user claims.
+2. Reconcile the completed T03 privacy traces and disclosed RPC/funding limits against the final candidate.
 3. Complete the supported browser, recovery and workload qualification, including
    remaining genuine lifecycle and interruption cases.
-4. Qualify an actual moderation model against suitable independently reviewed
-   held-out labels; the two current candidates failed.
+4. Qualify the deployed Qwen3.5-9B against independently reviewed held-out labels
+   and representative capacity. Its 48 provisional cases passed classification,
+   but measured response p95 exceeds the recorded target and one real flag is
+   not a capacity qualification.
 5. Reconcile completed internal operations evidence with final sources and collect
    external operator ownership/configuration acceptance.
 6. Freeze source, distributable/build-input manifest, protocol/VK inventory and
@@ -96,3 +98,30 @@ installed bytes; 53 of the inventoried artifact JSON files are embedded inputs.
 This is byte correspondence, not proof of soundness or a complete diagnostic
 caller map. Extra installed server/simulated artifacts are explicitly not assumed
 to execute in the browser. The candidate is still changing.
+
+
+## September 21 engineering checkpoint
+
+These newer records supplement the historical index above; they do not freeze a
+release or replace the independent review requirement.
+
+- `execution/evidence/T04/metamask-cold-qualification-284.json`: actual MetaMask
+  private-fee funding and paid claim/post, with exact Ethereum transaction guards.
+- `execution/evidence/T04/browser-performance-pilots-20260921.json`: one cold and
+  one warm proof each in installed Chrome and the tested Firefox and WebKit builds. These are pilots,
+  not statistical qualification; WebKit is not installed Safari.
+- `execution/evidence/M03/live-timing-20260921.json`: deployed model detected and
+  removed one synthetic threat through an actual Aztec transaction.
+- `execution/evidence/M03/deployed-qualification-20260921.md`: model results and
+  remaining label, latency and capacity limitations.
+- `execution/evidence/T04/aws-backup-recovery-20260921.json`: private S3 backup,
+  downloaded-file checks, offline encrypted-state authentication and failure cleanup.
+- `execution/evidence/T04/aws-reboot-recovery-20260921.json`: existing EC2 recovered
+  automatically in 134 seconds. Replacement-host recovery was not tested.
+- `execution/evidence/T04/aws-health-monitor-20260921.json`: native timer publishes
+  aggregate health to CloudWatch; no notification recipient is configured.
+
+Moderation review must distinguish retrospective removal under current rules from
+penalties, which retain their publication-policy and deadline restrictions. See
+`docs/moderation-review.md`. The public reader hides flagged text; chain history
+cannot be erased by this application.
