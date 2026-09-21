@@ -50,3 +50,15 @@ cache settings. Reducing the output-token ceiling alone is not evidence of a spe
 The live removal's 103-second proving/submission/receipt stage also needs separate
 measurement; faster inference alone cannot remove that delay. No runtime or model
 change was made from this review.
+
+### Human review handover
+
+[The review sheet](human-review-deployed-48.csv) contains the exact policy and post
+for each of the 48 cases, with neutral case IDs and blank review fields. Review the
+sheet before consulting original labels or model results. Choose `allowed`,
+`violation`, `ambiguous` or `cannot_assess_language`; add a short reason, reviewer
+identifier and review date. Do not guess the meaning of a language you cannot assess.
+[Provenance](human-review-deployed-48-provenance.json) binds every row to its original
+source and records the export checksum. These are previously evaluated synthetic
+examples, not held-out production data. The export supplies no human labels and
+neither completes independent review nor satisfies the 300-case requirement.
