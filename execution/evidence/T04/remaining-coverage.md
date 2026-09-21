@@ -5,7 +5,7 @@ retain their source snapshots; final-source reconciliation remains T05 work.
 
 | Area | Latest useful evidence | Remaining distinct work |
 |---|---|---|
-| Browser lifecycle | Actual MetaMask196, WebKit231 and installed Chrome238 completed deposit through refund; Firefox full journey also retained | Installed Safari26.5 directory/direct reader/refresh passed327; wallet/proving and final-source reconciliation remain. WebKit does not establish installed Safari wallet support |
+| Browser lifecycle | Actual MetaMask196, WebKit231 and installed Chrome238 completed deposit through refund; Firefox full journey also retained | Installed Safari26.5 directory/direct reader/refresh passed327. Automation probe329 was rejected because Safari remote automation is disabled; no session was created. Wallet/proving and final-source reconciliation remain. WebKit does not establish installed Safari wallet support |
 | Private fee funding UI | Cold-browser266 and actual MetaMask284 passed genuine fee funding, private claims and paid posting | Final candidate binding; these checks use disposable local chains |
 | Recovery | Actual withdrawal recovery251 and post recovery252 passed with full browser-process restart | Current-source stale-proof312 and same-note attribution313 passed; final candidate binding remains. Existing layered map is recovery-coverage-095.md |
 | History | C04 17/33 stateful TXE lifecycles, authenticated seeded1,002note continuation/exit, actual1,100record native/browser persistence; targeted checks084/085 passed | Final candidate binding; no claim of1,001genuinely proven publications |
