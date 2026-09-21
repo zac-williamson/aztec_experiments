@@ -1498,7 +1498,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Chrome performance cohort322 slots01\u201320 passed; exact source/browser/hardware/gas matches, canonical posts/fees and complete cleanup. 20 of30 pairs; no percentile claim. Continue slot21 under540s/4GiB. Recovery309/311/312/313 passed; ten-author mechanism reconciled. Installed Safari/physical mobile/statistical/external gates remain open.",
+      "checkpoint": "Chrome performance cohort322 slots01\u201321 passed; exact source/browser/hardware/gas matches, canonical posts/fees and complete cleanup. 21 of30 pairs; no percentile claim. Continue slot22 under540s/4GiB. Recovery309/311/312/313 passed; ten-author mechanism reconciled. Installed Safari/physical mobile/statistical/external gates remain open.",
       "priority": 24,
       "completion_requires": [
         "O01",
