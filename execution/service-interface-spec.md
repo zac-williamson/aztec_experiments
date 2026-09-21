@@ -95,8 +95,10 @@ events and their packed Field arrays are defined in `interface-spec.md`; the
 shared JSON fixture is the decoded projection, not an alternate onchain ABI.
 Decode exact UTF-8 byte lengths and reject malformed or noncanonical payloads.
 `PostFlagged.censorAddress` comes from the authenticated actor in the raw event.
-Recompute policy content commitments, resolve the post's historical policy,
-and verify publication/deadline relationships before serving the projection.
+Recompute policy content commitments, resolve the post's publication policy and
+each flag's applied policy, and verify publication/deadline relationships before
+serving the projection. The current policy may remove older posts; publication
+policy and deadline determine penalty eligibility.
 
 Order by the numeric tuple (blockNumber, txIndexWithinBlock, logIndexWithinTx),
 preserving the
@@ -117,10 +119,10 @@ the public envelope. Validation tests explicitly reject private linking fields.
 ## Moderation queue: M02
 
 Use the same post, policy, deadline and scope fixtures as the feed and wallet.
-`moderationJobKey` combines full scope, postId, historical policyVersion and an
-immutable modelVersion digest. A new model version creates a distinct evaluation
-record; it does not change the policy captured at actual post inclusion. Keep
-the exact policy and model configuration available for reproducibility.
+`moderationJobKey` combines full scope, postId, the policyVersion being applied and
+an immutable modelVersion digest. A new current policy or model creates a distinct
+evaluation record; the post’s publication policy remains unchanged. Retain both
+policies and the exact model configuration for reproducibility.
 
 Define modelVersion as the full SHA-256 digest of six consecutive 32-byte words:
 the ASCII domain `AZTEC_BB_MODEL_V1` right-padded with zeroes, schema version 1
@@ -149,12 +151,14 @@ observed runtime timestamp must remain below that bound. Do not truncate the sum
 Database transition rules and leases are M02 work; the P04 validator checks
 record shape, not valid state transitions.
 
-Before submitting, reconcile canonical post/policy/flag state and the strict
-onchain deadline. At or after the deadline mark expired; do not submit a flag
-that would silently change the screening rule. Backoff is bounded by that
-deadline. Reorged observations revoke their derived jobs or trigger explicit
-reconciliation if already submitted. Persist attempt history without prompt
-secrets, wallet material or unbounded child-process output.
+Before submitting, refresh canonical post, current-policy and flag state. A passed
+publication deadline does not expire removal work or prohibit a flag. The contract
+adds a collateral penalty only when the flag arrives strictly before the original
+deadline and applies the publication policy; other valid flags remove the post
+without that penalty. Retry backoff and attempt limits remain bounded independently
+of the publication deadline. Reorged observations trigger reconciliation for already
+submitted work. Preserve authenticated transaction history without wallet secrets
+or unbounded child-process output.
 
 ## Executable handoff and downstream acceptance
 

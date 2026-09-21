@@ -206,10 +206,10 @@ already successful operation returns the original receipt without another proof
 or payment. A canonical revert is eligible for another attempt; unknown, pending,
 and reorganized results remain blocked. A definitively invalid dropped proof can
 be replaced only under the exact-operation and current-authority checks above.
-Model output cannot choose recovery
-flags or supply acknowledgement hashes. The daemon's durable review queue and
-historical policy retrieval remain later work; this does not complete moderation
-operations.
+Model output cannot choose recovery flags or supply acknowledgement hashes.
+The daemon's durable queue and policy history are implemented; see
+[the queue runbook](moderation-queue-runbook.md) for reconciliation rules and
+remaining recovery limits.
 
 All browser wallet screens now use the same collateral-secret store for recovery
 files, including when a moderator wallet was previously used as an author.

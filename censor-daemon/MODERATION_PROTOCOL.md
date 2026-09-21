@@ -42,4 +42,4 @@ These checks constrain data and authority. They do not establish that a model's
 decision is correct or that the model process is isolated. The separate process
 isolation checks and later model evaluation provide that evidence.
 
-Every signer request also carries the validated post ID and its policy version, selected from fetched public data by the host. The daemon uses each post’s exact captured historical policy from the atomic public feed; model output cannot select or override either identity. Missing historical versions remain unresolved.
+Every signer request carries the validated post ID and current policy version selected by the host from the atomic public feed. The daemon evaluates the post under those current rules and rechecks them before signing. Model output cannot select either identity. Publication-policy history remains required to validate the post’s original deadline and penalty conditions.
