@@ -202,3 +202,5 @@ Author_testnet_flow reviewed worker timing and tests: no signer/recovery decisio
 
 ### Proxy connection lifetime repair, 2026-09-21
 Independent review approved correcting fixture Caddy idle reuse to500ms, below Node's1s advertised timeout. Concurrent boundary probe reproduced36HTTP502 among192POSTs (reset/EOF); corrected exact shared configuration passed192responses with exactly192upstream calls and noerrors. Final regression has explicit readiness/request deadlines, bounded diagnostics, pinned Caddy and owned-process cleanup. Harness243 passed. No application transport, fee validation, retries or fallback changed. Earlier225 cause remains retrospective uncertainty because its proxy logs were discarded.
+
+2026-09-21: application_change_review reviewed withdrawal recovery application and driver changes read-only. Approved exact saved-withdrawal witness/calldata binding, preserved state without Ethereum signer, and direct wallet connection from refund page. No blockers or harness complexity findings. Root owns integration and real rerun;123 focused checks passed (249).

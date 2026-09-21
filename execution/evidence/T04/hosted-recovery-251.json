@@ -1,0 +1,83 @@
+{
+  "user.html": {
+    "sha256": "1689f8804e85efbaadddd55460198b60cfc21c635c096085cfd3586bed4f6711",
+    "headers": {
+      "Content-Type": "text/html; charset=utf-8",
+      "Content-Length": "8626995",
+      "Connection": "close",
+      "Date": "Mon, 21 Sep 2026 02:42:43 GMT",
+      "Last-Modified": "Mon, 21 Sep 2026 02:41:11 GMT",
+      "Etag": "\"2496563c44b36c949114e7b0adfd53d7-2\"",
+      "X-Amz-Server-Side-Encryption": "AES256",
+      "Cache-Control": "no-cache",
+      "Accept-Ranges": "bytes",
+      "Server": "AmazonS3",
+      "Via": "1.1 16f38d6df135d34d67fe44df60d91ab4.cloudfront.net (CloudFront)",
+      "Referrer-Policy": "no-referrer",
+      "X-Content-Type-Options": "nosniff",
+      "Strict-Transport-Security": "max-age=31536000",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Resource-Policy": "same-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+      "Content-Security-Policy": "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-hashes' 'sha256-9WuRr8W72jS4YgqbUppPX9q4q9pnzKl9Slkz5Rtt6uE=' 'sha256-eng5uhsBnEm6Ht2ktXEamZzO2Qn+uvEiqZkctmRc470=' 'sha256-FWa5hltNj/42I1OspGdHAGARaEYdr6bCEJ5lWmkivvM=' 'sha256-wCinHNtv4oM+BDnIa4WQLxEVbjRckjwQ3JwWHLcn4Xg=' 'sha256-hoPic4LklyWpMGrCbToU/QluT5X2PaXt2kghXuCox88=' 'sha256-UMbe3m9ROIx/aT0w7HTi1ctvW13yuTENFZ33iA69qdU=' 'sha256-W5GG6Ctvqm8NDL6OdtKCR0xtGZ0UASgJ3U8oiDmdlio=' 'sha256-pFNENNc6b7lUEFU1P+md3uOhnwh2MRmao6DhFORwZTc=' 'sha256-NXdSgfUsvyj6Gl64zUiu995O52zKNf63AiETgmzRm68=' 'sha256-D1AGpeiJg3Ebqw++u9iiEPO66RR12fg6vK3J6VATimM=' 'sha256-Hw3m/4a5QQrw72RIUMxghK+pUHJu3b+YQC5ywh6sxY4=' 'sha256-JXS8y3AlyZ5GXDirEGKMI1lBVF2LKVB9N93qhQZTU2I=' 'sha256-A9Cp596+nwr8sbSwsQkNBfd9vfIyP69ZwlMO8GExf6I=' 'sha256-bYNM6rt5rsrR01Iw0hfG/ZEXPDv/i/v366l34Sgxuwg=' 'sha256-rpxG0+Oi/qSIC0t+ilPYp4a4fmahwhFnNEK4AglvU78=' 'sha256-A4rtSZ8Uvc5ei6jBMIvwfLClj1deKtfw/k66+IZmYFI=' 'sha256-aBLl8a9+kAKoMZOqxoI4hcv9vr+iidrSO7Pn6/6r+S8=' 'sha256-7E7Zliwy1ORHq6xgkt+j6FZB1S48U5WoUWfWx2QXYic=' 'sha256-MqiN92lfiXeXoEiVB54MVBTrab8FCWxo9zapnJXE02U=' 'sha256-6HiHZzy/BkGCBGlORCMWlS1rqNhOT9dl9jdKkTcZTSU=' 'sha256-yMemboZtATBDcp2GOLMCbCH7ouBsBGTHulI0+Lh3akI=' 'sha256-2CZN4j0cf/VQSeNU+GbVdaTaIDOP8t4/cce2y7ExAx4=' 'sha256-IP+/3uVpaiusrDUIp8nFOsGWNlHURihxG1+NsOFFwH4=' 'sha256-k1Qk/3JyclLBrbdH0E514OddNo4x9ZGSaO/sqoda2dc=' 'sha256-X6s7YOXFFTSjP6PHUUjGgWWfSeFD/2FCx9JtN4/uaxE=' 'sha256-Fz6UbmQp3urt+S0Zu4PtetK7HjhmVykNIDhZzgPHQZY=' 'sha256-WcCiQNCQN8sBv3//vdQQgyf6c38yBjdxYYkszcNLFog=' 'sha256-mMDNatCWb/rEPl6kCNPj8Zzis7BvbflcJJ3mV3wBf9E=' 'sha256-jOMnCLeo1PDOGtR11NZ9pMCkcJrfoucls4j2EL4DPWQ=' 'sha256-rRYZhVqlCbr36H/LFriT4UqXawAFJ4TtTd5rg2j8m0o=' 'sha256-pUlCyONl83hPOLjUN/nXCCkNtgc4sAzc+5NMMtG+l/M='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' data: https://v5.testnet.rpc.aztec-labs.com https://ethereum-sepolia-rpc.publicnode.com; worker-src 'self' blob:; frame-src 'none'",
+      "X-Cache": "Miss from cloudfront",
+      "X-Amz-Cf-Pop": "LHR61-P1",
+      "X-Amz-Cf-Id": "gV6a-lVBPDkLcLo-mr1eS8OGXjO85m6wJrCplE4IB13ZLnT4DebDgw=="
+    }
+  },
+  "censor.html": {
+    "sha256": "6de273b43ffd16fe8da2a4bc09a53d833e10623fd88b7969168aee8dfeffb2fd",
+    "headers": {
+      "Content-Type": "text/html; charset=utf-8",
+      "Content-Length": "8608431",
+      "Connection": "close",
+      "Date": "Mon, 21 Sep 2026 02:42:44 GMT",
+      "Last-Modified": "Mon, 21 Sep 2026 02:41:12 GMT",
+      "Etag": "\"6bc9b2260cd52f24d65ba838ae0bb444-2\"",
+      "X-Amz-Server-Side-Encryption": "AES256",
+      "Cache-Control": "no-cache",
+      "Accept-Ranges": "bytes",
+      "Server": "AmazonS3",
+      "Via": "1.1 d4ae29ce8264e419547c36ebbfbca8ea.cloudfront.net (CloudFront)",
+      "Referrer-Policy": "no-referrer",
+      "X-Content-Type-Options": "nosniff",
+      "Strict-Transport-Security": "max-age=31536000",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Resource-Policy": "same-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+      "Content-Security-Policy": "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-hashes' 'sha256-9WuRr8W72jS4YgqbUppPX9q4q9pnzKl9Slkz5Rtt6uE=' 'sha256-eng5uhsBnEm6Ht2ktXEamZzO2Qn+uvEiqZkctmRc470=' 'sha256-FWa5hltNj/42I1OspGdHAGARaEYdr6bCEJ5lWmkivvM=' 'sha256-wCinHNtv4oM+BDnIa4WQLxEVbjRckjwQ3JwWHLcn4Xg=' 'sha256-hoPic4LklyWpMGrCbToU/QluT5X2PaXt2kghXuCox88=' 'sha256-UMbe3m9ROIx/aT0w7HTi1ctvW13yuTENFZ33iA69qdU=' 'sha256-W5GG6Ctvqm8NDL6OdtKCR0xtGZ0UASgJ3U8oiDmdlio=' 'sha256-pFNENNc6b7lUEFU1P+md3uOhnwh2MRmao6DhFORwZTc=' 'sha256-NXdSgfUsvyj6Gl64zUiu995O52zKNf63AiETgmzRm68=' 'sha256-D1AGpeiJg3Ebqw++u9iiEPO66RR12fg6vK3J6VATimM=' 'sha256-Hw3m/4a5QQrw72RIUMxghK+pUHJu3b+YQC5ywh6sxY4=' 'sha256-JXS8y3AlyZ5GXDirEGKMI1lBVF2LKVB9N93qhQZTU2I=' 'sha256-A9Cp596+nwr8sbSwsQkNBfd9vfIyP69ZwlMO8GExf6I=' 'sha256-bYNM6rt5rsrR01Iw0hfG/ZEXPDv/i/v366l34Sgxuwg=' 'sha256-rpxG0+Oi/qSIC0t+ilPYp4a4fmahwhFnNEK4AglvU78=' 'sha256-A4rtSZ8Uvc5ei6jBMIvwfLClj1deKtfw/k66+IZmYFI=' 'sha256-aE7phzJhft/ACuPeuTlHWIoQ1XApOxwfPCOONCICKX8=' 'sha256-7E7Zliwy1ORHq6xgkt+j6FZB1S48U5WoUWfWx2QXYic=' 'sha256-k1Qk/3JyclLBrbdH0E514OddNo4x9ZGSaO/sqoda2dc=' 'sha256-X6s7YOXFFTSjP6PHUUjGgWWfSeFD/2FCx9JtN4/uaxE=' 'sha256-Fz6UbmQp3urt+S0Zu4PtetK7HjhmVykNIDhZzgPHQZY=' 'sha256-rRYZhVqlCbr36H/LFriT4UqXawAFJ4TtTd5rg2j8m0o=' 'sha256-pUlCyONl83hPOLjUN/nXCCkNtgc4sAzc+5NMMtG+l/M='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' data: https://v5.testnet.rpc.aztec-labs.com https://ethereum-sepolia-rpc.publicnode.com; worker-src 'self' blob:; frame-src 'none'",
+      "X-Cache": "Miss from cloudfront",
+      "X-Amz-Cf-Pop": "LHR61-P1",
+      "X-Amz-Cf-Id": "-RoOjcI2bW--wWXDYwd4aD1d31Z8fJrGcbcZc8xVJpC8hPXYz57Wvw=="
+    }
+  },
+  "fee-juice.html": {
+    "sha256": "1a1c60c586c4e8e60f8fe47b1f299ca9602ca70dd21e0159f280c0a20084378b",
+    "headers": {
+      "Content-Type": "text/html; charset=utf-8",
+      "Content-Length": "3200982",
+      "Connection": "close",
+      "Accept-Ranges": "bytes",
+      "Date": "Mon, 21 Sep 2026 02:42:44 GMT",
+      "Server": "AmazonS3",
+      "Last-Modified": "Mon, 21 Sep 2026 02:41:14 GMT",
+      "Etag": "\"bdc7239f250bf7f62a3c6ae3e121b205\"",
+      "Cache-Control": "no-cache",
+      "X-Amz-Server-Side-Encryption": "AES256",
+      "Via": "1.1 688a9b5db284546ed87785b84177fb70.cloudfront.net (CloudFront)",
+      "Referrer-Policy": "no-referrer",
+      "X-Content-Type-Options": "nosniff",
+      "Strict-Transport-Security": "max-age=31536000",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Resource-Policy": "same-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+      "Content-Security-Policy": "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-hashes' 'sha256-9WuRr8W72jS4YgqbUppPX9q4q9pnzKl9Slkz5Rtt6uE=' 'sha256-eng5uhsBnEm6Ht2ktXEamZzO2Qn+uvEiqZkctmRc470=' 'sha256-FWa5hltNj/42I1OspGdHAGARaEYdr6bCEJ5lWmkivvM=' 'sha256-wCinHNtv4oM+BDnIa4WQLxEVbjRckjwQ3JwWHLcn4Xg=' 'sha256-hoPic4LklyWpMGrCbToU/QluT5X2PaXt2kghXuCox88=' 'sha256-UMbe3m9ROIx/aT0w7HTi1ctvW13yuTENFZ33iA69qdU=' 'sha256-pFNENNc6b7lUEFU1P+md3uOhnwh2MRmao6DhFORwZTc=' 'sha256-NXdSgfUsvyj6Gl64zUiu995O52zKNf63AiETgmzRm68=' 'sha256-Hw3m/4a5QQrw72RIUMxghK+pUHJu3b+YQC5ywh6sxY4=' 'sha256-A9Cp596+nwr8sbSwsQkNBfd9vfIyP69ZwlMO8GExf6I=' 'sha256-dDqm8zzTeW6PPqeMPckv7R8mheV8kn8VO20lXfXQrOg=' 'sha256-bEQHj4vzGj5qfkiK6DB4VPKstqEmMKHV1TJki1iSFok=' 'sha256-7XLc3fF1i/pP+Qs5jtnxSLaKEGPcAx62m1enzV5CTRE=' 'sha256-rpxG0+Oi/qSIC0t+ilPYp4a4fmahwhFnNEK4AglvU78=' 'sha256-A4rtSZ8Uvc5ei6jBMIvwfLClj1deKtfw/k66+IZmYFI=' 'sha256-Ckl4mJ84h+czFFCmptRmvfVhYQJFhatQX2Qa4fzJqTA=' 'sha256-Cgo9U08MNWgRafFJi+FFtBD6zAUfLLjpbEGK9STKQ94=' 'sha256-CzVuKUE+mLbNWDS/jgi87bZ7Y8b33VLgqsUmqT0BdyY=' 'sha256-DdVfCjpUtbqSIJR5HVUg4GW1sa+oBseQhX/hAmAB95E=' 'sha256-amrCcyyavYAXLZZgKvsuv+ZQvrQyrc/kqyD0wsujOhA=' 'sha256-7vDSPCejJDvadb5BQhud2/vmYFv6sjtpJc0A68GGW78=' 'sha256-kif9jcJKzYWr7WVfD5+JfpzoRumUWUR2EWoHtYmJKoY=' 'sha256-vt/jnEqo8GXYWiQLRMa25gMyY24wrqgsDb0atjzbPfE=' 'sha256-rRYZhVqlCbr36H/LFriT4UqXawAFJ4TtTd5rg2j8m0o=' 'sha256-pUlCyONl83hPOLjUN/nXCCkNtgc4sAzc+5NMMtG+l/M='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' data: https://v5.testnet.rpc.aztec-labs.com https://ethereum-sepolia-rpc.publicnode.com; worker-src 'self' blob:; frame-src 'none'",
+      "X-Cache": "Miss from cloudfront",
+      "X-Amz-Cf-Pop": "LHR61-P1",
+      "X-Amz-Cf-Id": "WFD9thanSx_GfrSmqDm3Szk5tV1jBi-kJIzIqk73JYP7X29I52O56Q=="
+    }
+  }
+}

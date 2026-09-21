@@ -14,7 +14,7 @@ async function fixture(schema=1,action='post'){
  await fs.writeFile(backupPath,JSON.stringify(await cryptoContext.BillboardWalletBackup.encrypt(payload,backupPassword)));
  const calls=[];let closed=false,navClicks=0;
  const page={url:()=> 'https://127.0.0.1:444/user.html',isClosed:()=>closed,locator:selector=>({fill:async()=>calls.push(selector),waitFor:async()=>calls.push('withdraw-page'),click:async()=>{if(selector==='#navNext'&&++navClicks===1){calls.push('open-withdraw');return;}calls.push(action);await fs.writeFile(path.join(directory,'browser-post-response-accepted.json'),JSON.stringify({...acceptance,requestStartedAtMs:Date.now(),acceptedAtMs:Date.now()}));}})};
- const fresh={url:page.url,locator:selector=>({waitFor:async()=>calls.push(selector),click:async()=>calls.push(selector),fill:async()=>calls.push(selector),setInputFiles:async file=>{assert.equal(file,backupPath);calls.push('restore');},textContent:async()=> 'Saved transaction succeeded. Hash: '+hash,count:async()=>0}),waitForFunction:async()=>{},evaluate:async()=>true,getByRole:(_role,options)=>{assert.equal(options.name,'Recover saved Aztec transaction');return{isVisible:async()=>true,click:async()=>calls.push('recover')};}};
+ const fresh={url:page.url,locator:selector=>({waitFor:async()=>calls.push(selector),click:async()=>calls.push(selector),fill:async()=>calls.push(selector),setInputFiles:async file=>{assert.equal(file,backupPath);calls.push('restore');},textContent:async()=> 'Saved transaction succeeded. Hash: '+hash,count:async()=>0}),waitForFunction:async()=>{},evaluate:async()=>true,getByRole:(_role,options)=>{assert(['Recover saved Aztec transaction','Connect Ethereum wallet'].includes(options.name));return{isVisible:async()=>true,click:async()=>calls.push(options.name==='Recover saved Aztec transaction'?'recover':'wallet-setup')};}};
  const args={action,page,directory,remaining:()=>2000,backupPath,backupPassword,message:'public test',restart:async()=>{calls.push('restart');closed=true;return{page:fresh,closedAtMs:Date.now(),previousBrowserClosed:true,samePersistentProfile:true};}};
  return{args,calls,cleanup:()=>fs.rm(directory,{recursive:true,force:true})};
 }
@@ -30,7 +30,7 @@ test('recent acceptance cannot hide a submission request already older than the 
 test('withdrawal recovers once then reconnects Ethereum to display pending refund without submitting it',async()=>{
  const f=await fixture(1,'withdraw');try{
   const result=await runT04BrowserPostRecovery(f.args);assert(result.passed&&result.ethereumRefundPending);assert.equal(result.action,'withdraw');assert.equal(result.transactionHash,hash);
-  assert.deepEqual(f.calls,['open-withdraw','withdraw-page','withdraw','restart','#wbPassword','restore','recover','#navBack','#page-0','#wbEthBrowserBtn','#page-4']);
+  assert.deepEqual(f.calls,['open-withdraw','withdraw-page','withdraw','restart','#wbPassword','restore','recover','wallet-setup','#page-0','#wbEthBrowserBtn','#page-4']);
  }finally{await f.cleanup();}
 });
 test('unknown recovery action is rejected before interacting with the page',async()=>{

@@ -60,14 +60,14 @@ export async function runT04BrowserPostRecovery({page,directory,remaining,signal
   // No ETH connection: it would auto-navigate away from the recovery controls.
   const button=page.getByRole('button',{name:'Recover saved Aztec transaction',exact:true});
   assert(await bounded(()=>button.isVisible()));await bounded(()=>button.click());
-  await bounded(()=>page.waitForFunction(({hash,expectedPage})=>{const text=document.getElementById('setupStatus')?.textContent||'';return (text.includes('Saved transaction succeeded. Hash: '+hash)&&document.getElementById(expectedPage)?.classList.contains('active'))||!!document.querySelector('#setupStatus .error');},{hash:accepted.transactionHash,expectedPage:action==='post'?'page-2':'page-1'},{timeout:remaining()}));
+  await bounded(()=>page.waitForFunction(({hash,expectedPage})=>{const text=document.getElementById('setupStatus')?.textContent||'';return (text.includes('Saved transaction succeeded. Hash: '+hash)&&document.getElementById(expectedPage)?.classList.contains('active'))||!!document.querySelector('#setupStatus .error');},{hash:accepted.transactionHash,expectedPage:action==='post'?'page-2':'page-4'},{timeout:remaining()}));
   const status=await bounded(()=>page.locator('#setupStatus').textContent());
   assert(status.includes('Saved transaction succeeded. Hash: '+accepted.transactionHash));
   assert(!await bounded(()=>page.locator('#setupStatus .error').count()));
   if(action==='withdraw'){
    // Reconnect only after recovering the original L2 transaction. The app then
    // discovers outstanding escrow; never click the refund submission button.
-   await bounded(()=>page.locator('#navBack').click());
+   await bounded(()=>page.getByRole('button',{name:'Connect Ethereum wallet',exact:true}).click());
    await bounded(()=>page.locator('#page-0').waitFor({state:'visible',timeout:remaining()}));
    await bounded(()=>page.locator('#wbEthBrowserBtn').click());
    await bounded(()=>page.locator('#page-4').waitFor({state:'visible',timeout:remaining()}));

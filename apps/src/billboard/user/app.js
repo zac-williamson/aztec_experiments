@@ -421,6 +421,7 @@ async function doWithdrawPage() {
 // Page 4: Claim ETH on L1
 // ============================================================
 function onShowClaimL1() {
+  document.getElementById('claimL1Wallet').hidden=!!window.walletState?.ethSigner;
   log(_stateResult?.withdrawTxHash ? 'The withdrawal transaction is saved. Claim ETH will check whether the network has settled it.' : 'Recover the saved withdrawal transaction on the setup page before claiming ETH.', 'info', 'claimL1Status');
 }
 

@@ -97,3 +97,25 @@ Safari and an integrated cold-funding run through the actual extension remain
 separate gaps; WebKit and bundled Chromium are not substitutes.
 
 Firefox230 passed an actual private-fee post in258654ms/3005472KiB with cleanup. Earlier225 pre-proof proxy502 remains unexplained; diagnostic capture changed no transport behavior. A passing rerun does not close that reliability issue.
+
+
+### Recovery and browser reconciliation, 2026-09-21
+
+WebKit231 and installed Chrome238 completed full browser lifecycles with genuine
+private-fee proofs, canonical refunds and complete cleanup. Their source snapshots
+are retained in application-fd86abc8-2204-4e63-a28d-3a3d6746b0f8.json and
+application-248a2a3e-7f24-4288-867f-631f865b8c89.json. Later recovery changes require
+the affected recovery checks again; these successes do not qualify installed Safari.
+
+A concurrent connection-boundary probe reproduced36HTTP502 responses among192
+requests in the local proxy. Its idle connection lifetime now ends before the
+upstream closes it. The exact configuration passed192requests with192upstream
+calls, zero errors and no retries. See proxy-keepalive-20260921.json. The historical
+225failure cannot be attributed conclusively because its diagnostics were discarded.
+
+Withdrawal recovery244 exposed a real application defect: status lost the saved
+withdrawal hash after restart. The run was intentionally stopped, with complete
+cleanup. Regression246 reproduced it. The reviewed correction preserves the
+reference until the exact refund is verified and offers wallet connection from
+the refund page.123focusedchecks and the harness tier passed; actual withdrawal recovery251 passed in206056ms with complete cleanup. Post
+recovery252 also passed with complete cleanup. See withdrawal-recovery-fix-20260921.json.

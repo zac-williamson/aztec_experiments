@@ -18021,9 +18021,20 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       if(action==='recover-eth') {
         const recovered=await ethereumJournal.recover({retry:config.retryEthereum===true});
         const success=recovered.outcome==='success';
+        let refundedSavedWithdrawal=false;
+        if(success&&recovered.request?.expected?.kind==='withdraw'&&config.withdrawTxHash){
+          const leaf=computeWithdrawMessageLeaf(a,ethers,l2Addr,portalAddr,l1Account,BigInt(recovered.request.expected.amount),version,BigInt(nodeInfo.l1ChainId));
+          let witness;
+          try{witness=await aztecNode.getL2ToL1MembershipWitness(a.TxHash.fromString(config.withdrawTxHash),leaf);}
+          catch{throw Object.assign(new Error('Could not verify which withdrawal the refund completed.'),{code:'BB_RECOVERY_UNKNOWN'});}
+          if(witness){
+            const data=new ethers.Interface(PORTAL_ABI).encodeFunctionData('withdraw',[BigInt(witness.epochNumber),BigInt(witness.numCheckpointsInEpoch),BigInt(witness.leafIndex),witness.siblingPath.toBufferArray().map(buf=>'0x'+Buffer.from(buf).toString('hex'))]);
+            refundedSavedWithdrawal=data.toLowerCase()===recovered.request.data.toLowerCase();
+          }
+        }
         log(success?'Saved Ethereum request and portal event verified.':'Saved Ethereum request '+recovered.outcome+'; the original action did not succeed.',success?'success':'warn');
         log('Ethereum transaction: '+recovered.txHash,'info');
-        return {recovered:true,lastEthereumTxHash:recovered.txHash,state:success?'ethereum_recovered':'ethereum_'+recovered.outcome};
+        return {recovered:true,lastEthereumTxHash:recovered.txHash,state:success?'ethereum_recovered':'ethereum_'+recovered.outcome,...(refundedSavedWithdrawal?{withdrawTxHash:null}:{})};
       }
       await ethereumJournal.assertCanStart();
     }
@@ -18191,9 +18202,12 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     // ============================================================
     if (l2NoteInfo && l2NoteInfo.amount > 0n) {
       stateStatus = 'postable';
+    } else if (config.withdrawTxHash) {
+      // An unread or zero aggregate balance is not a receipt for this withdrawal.
+      stateStatus = 'withdrawal_needs_verification';
     } else if (portalL1Balance > 0n) {
       // The amount cannot identify a deposit cycle. Never search old exits to infer this state.
-      stateStatus = config.withdrawTxHash ? 'withdrawal_needs_verification' : 'deposited_l1_not_claimed_l2';
+      stateStatus = 'deposited_l1_not_claimed_l2';
     } else {
       stateStatus = 'zero_balance_need_deposit';
     }
@@ -18259,7 +18273,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     // Handle 'status' action (just print and return)
     // ============================================================
     if (action === 'status') {
-      return { ok: true, state: stateStatus, l2Addr: l2AddrHex, portalAddr, l1Account, portalL1Balance: portalL1Balance.toString(), l2Note: l2NoteInfo, handles: { pxe, wallet, contract, aztecNode, rawNode, address, l2Addr, contractSalt, version, nodeInfo, depositChainId: selectedChain } };
+      return { ok: true, state: stateStatus, withdrawTxHash:config.withdrawTxHash||null, l2Addr: l2AddrHex, portalAddr, l1Account, portalL1Balance: portalL1Balance.toString(), l2Note: l2NoteInfo, handles: { pxe, wallet, contract, aztecNode, rawNode, address, l2Addr, contractSalt, version, nodeInfo, depositChainId: selectedChain, withdrawTxHash:config.withdrawTxHash||null } };
     }
 
     // ============================================================
@@ -19197,7 +19211,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     if(lastModeratorReceipt)result.moderatorPredecessors=(await transactionJournal.inspect?.())?.predecessorTxHashes??[];
     if(lastModeratorReceipt)result.moderatorReceipt={txHash:lastModeratorReceipt.txHash.toString(),status:lastModeratorReceipt.status,
       executionResult:lastModeratorReceipt.executionResult,blockNumber:Number(lastModeratorReceipt.blockNumber),blockHash:lastModeratorReceipt.blockHash?.toString()??null};
-    result.withdrawTxHash = stateStatus==='zero_balance_need_deposit' ? null : (config.withdrawTxHash || null);
+    result.withdrawTxHash = config.withdrawTxHash || null;
     result.state = stateStatus;
     result.l2Addr = l2AddrHex;
     result.portalAddr = portalAddr;

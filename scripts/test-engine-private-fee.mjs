@@ -90,7 +90,7 @@ function mainHarness(action,isDummy=false) {
   const iface=new ethers.Interface(['event Deposited(address indexed depositor,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
   const event=iface.encodeEventLog(iface.getEvent('Deposited'),[depositor,amount,secretHash.toString(),new Fr(77).toString(),42n]);
   const provider={getLogs:async()=>[],getCode:async()=> '0x01',getNetwork:async()=>({chainId:31337n}),destroy(){},getBlock:async()=>({number:1,hash:'canonical-eth'}),getTransactionReceipt:async hash=>({hash,status:1,blockNumber:1,blockHash:'canonical-eth',logs:[{index:0,address:portal,...event}]})};
-  class Portal {L2_CONTRACT=async()=>board.toString();L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>rollup;VERSION=async()=>1n;getDeposit=async()=>amount;}
+  class Portal {L2_CONTRACT=async()=>board.toString();L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>rollup;VERSION=async()=>1n;async getDeposit(){return amount;}}
   const node={getL1ToL2MessageMembershipWitness:async()=>[42n,new SiblingPath(L1_TO_L2_MSG_TREE_HEIGHT,Array.from({length:L1_TO_L2_MSG_TREE_HEIGHT},()=>Fr.ONE.toBuffer()))],getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:1}),getL1ContractAddresses:async()=>({rollupAddress:rollup}),getBlockNumber:async()=>1,
     getBlock:async number=>({number,hash:'block',header:{globalVariables:{timestamp:100n}},body:{txEffects:[]}}),getBlocks:async(from,count)=>Array.from({length:count},(_,i)=>({number:Number(from)+i,hash:'block',body:{txEffects:[]}})),getContract:async()=>({address:board}),getPublicStorageAt:async()=>{authorBalanceReads++;throw new Error('Author fee lookup forbidden');}};
   const note=()=>({schemaVersion:1n,depositChainId:5n,amount:missingNote||(action==='claim'&&!sent)?0n:amount,nextAllowedTime:0n,lastRealPostIndex:0n,lastScreenedIndex:0n,headSequence:0n,...noteOverrides});
@@ -633,4 +633,38 @@ test('entirely private simulation needs no public output and still checks gas be
  const wallet=c.BillboardPrivateFeeRouting.createAztecWallet({BaseWallet,GasSettings},{proveTx:async()=>{proofs++;throw stop;}},{},{},()=>{},Fr.ONE);
  await assert.rejects(wallet.sendTx({}, {from:owner,fee:{gasSettings:gas()}}),error=>error===stop);
  assert.equal(proofs,1);
+});
+
+test('recovered withdrawal survives status without Ethereum signer and after reconnect',async()=>{
+ const h=mainHarness('recover'),withdrawTxHash=new Fr(99).toString(),signer=h.env.getBrowserSigner;
+ h.setMissingNote(true);
+ h.env.createTransactionJournal=async()=>({assertCanStart:async()=>{},prepare:async()=>{},confirmed:()=>{},inspect:async()=>({txHash:withdrawTxHash,operation:JSON.stringify({kind:'withdraw'})}),recover:async()=>({txHash:new Fr(99),executionResult:'success'})});
+ const recovered=await h.run();assert.equal(recovered.withdrawTxHash,withdrawTxHash);
+ h.config.action='status';h.config.withdrawTxHash=recovered.withdrawTxHash;h.config.hasEthSigner=false;h.env.getBrowserSigner=null;
+ const disconnected=await h.run();assert.equal(disconnected.state,'withdrawal_needs_verification');assert.equal(disconnected.withdrawTxHash,withdrawTxHash);assert.equal(disconnected.handles.withdrawTxHash,withdrawTxHash);
+ h.config.withdrawTxHash=disconnected.withdrawTxHash;h.config.hasEthSigner=true;h.env.getBrowserSigner=signer;
+ const connected=await h.run();assert.equal(connected.state,'withdrawal_needs_verification');assert.equal(connected.withdrawTxHash,withdrawTxHash);assert.equal(h.requests.length,0);
+});
+
+test('zero portal balance preserves the exact withdrawal until verified refund recovery',async()=>{
+ const h=mainHarness('status'),withdrawTxHash=new Fr(99).toString();h.setMissingNote(true);h.config.withdrawTxHash=withdrawTxHash;
+ h.Portal.prototype.getDeposit=async()=>0n;
+ const status=await h.run();assert.equal(status.portalL1Balance,'0');assert.equal(status.state,'withdrawal_needs_verification');assert.equal(status.withdrawTxHash,withdrawTxHash);
+ h.config.action='recover-eth';
+ for(const [outcome,kind,clears] of [['reverted','withdraw',false],['success','deposit',false]]){
+  h.env.createEthereumJournal=async()=>({assertCanStart:async()=>{},send:async()=>{},recover:async()=>({outcome,txHash:new Fr(100).toString(),request:{expected:{kind}}})});
+  const result=await h.run();assert.equal(Object.hasOwn(result,'withdrawTxHash'),clears);if(clears)assert.equal(result.withdrawTxHash,null);
+ }
+ assert.equal(h.requests.length,0);
+});
+
+for(const scenario of ['matching','older-refund','missing-witness','rpc-error'])test(`Ethereum refund recovery binds the saved L2 withdrawal: ${scenario}`,async()=>{
+ const h=mainHarness('recover-eth'),hash=new Fr(99).toString();h.config.withdrawTxHash=hash;h.env.aztec.TxHash=TxHash;
+ const witness={epochNumber:1,numCheckpointsInEpoch:1,leafIndex:2,siblingPath:{toBufferArray:()=>[Buffer.alloc(32)]}};
+ let reads=0;h.node.getL2ToL1MembershipWitness=async tx=>{reads++;assert.equal(tx.toString(),hash);if(scenario==='rpc-error')throw Error('private provider error');return scenario==='missing-witness'?null:witness;};
+ const data=new ethers.Interface(['function withdraw(uint256,uint256,uint256,bytes32[])']).encodeFunctionData('withdraw',[1,1,scenario==='older-refund'?3:2,['0x'+'00'.repeat(32)]]);
+ h.env.createEthereumJournal=async()=>({assertCanStart:async()=>{},send:async()=>{throw Error('Recovery must not send');},recover:async()=>({outcome:'success',txHash:new Fr(100).toString(),request:{data,expected:{kind:'withdraw',amount:'1000000000000000'}}})});
+ if(scenario==='rpc-error')await assert.rejects(h.run(),{code:'BB_RECOVERY_UNKNOWN'});
+ else{const result=await h.run();assert.equal(Object.hasOwn(result,'withdrawTxHash'),scenario==='matching');if(scenario==='matching')assert.equal(result.withdrawTxHash,null);}
+ assert.equal(reads,1);assert.equal(h.requests.length,0);assert(!h.logs.some(text=>text.includes('private provider error')));
 });
