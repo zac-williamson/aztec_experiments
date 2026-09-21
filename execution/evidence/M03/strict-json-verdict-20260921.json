@@ -16,5 +16,36 @@
   "review": "author_testnet_flow approved code, fixture branches and final signing assertion",
   "modelPromptChanged": false,
   "runtimeConfigurationChanged": false,
-  "limitations": "Local checks; remote package deployment and actual model response check pending. Historical parsed decisions do not prove historical raw response format."
+  "limitations": "Two actual model-format checks are integration evidence, not new quality/capacity qualification. Prompt, runtime and model identity unchanged. Historical parsed decisions do not prove historical raw formats.",
+  "deployment": {
+    "packageManifestSha256": "62534006fea6ff00d70a9c21d61993eeee57ec61426f070989c24396bf0bee54",
+    "path": "/srv/board/operator-json-20260921",
+    "sourceSha256": "8143eeb1845bd915c4fe0212726eb59ee8c2b2d4ba339f9b0e3050a2f7f52cda",
+    "packageBuild": {
+      "Status": "Success",
+      "Output": "/srv/board/operator-json-inputs-316.tar.gz: OK\n/srv/board/source/censor-daemon/moderation.mjs: OK\n62534006fea6ff00d70a9c21d61993eeee57ec61426f070989c24396bf0bee54  /srv/board/operator-json-20260921/operator-package.json\n",
+      "Error": ""
+    },
+    "serviceSwitch": {
+      "Status": "Success",
+      "Output": "active\n62534006fea6ff00d70a9c21d61993eeee57ec61426f070989c24396bf0bee54  /srv/board/operator-json-20260921/operator-package.json\n8143eeb1845bd915c4fe0212726eb59ee8c2b2d4ba339f9b0e3050a2f7f52cda  /srv/board/operator-json-20260921/censor-daemon/moderation.mjs\n",
+      "Error": ""
+    },
+    "earlyStartupObservation": {
+      "Status": "Failed",
+      "Output": "ExecMainStartTimestamp=Mon 2026-09-21 04:36:47 UTC\nActiveState=active\nSubState=running\nbillboard-model-817b821a-06be-45b1-a2be-04f86dc607d6 Up 34 seconds (healthy)\n",
+      "Error": "failed to run commands: exit status 1"
+    },
+    "earlyObservationExplanation": "Container healthy at34seconds but no completed daemon healthcycle yet; journal no-match exit1. No deployment rollback or repeated signing. Later current-invocation health verifiesstartup.",
+    "actualModelChecks": {
+      "Status": "Success",
+      "Output": "{\"label\":\"allowed\",\"jsonOnly\":true,\"expectedClassification\":true,\"elapsedMs\":14847}\n{\"label\":\"threat\",\"jsonOnly\":true,\"expectedClassification\":true,\"elapsedMs\":17326}\n",
+      "Error": ""
+    },
+    "healthyService": {
+      "Status": "Success",
+      "Output": "ExecMainStartTimestamp=Mon 2026-09-21 04:36:47 UTC\nActiveState=active\nSubState=running\nbillboard-model-817b821a-06be-45b1-a2be-04f86dc607d6 Up 2 minutes (healthy)\n[2026-09-21T04:38:37.257Z] [info] {\"type\":\"billboard-moderation-health-v1\",\"stateCounts\":{\"queued\":0,\"leased\":0,\"evaluated-ok\":2,\"submit-intent\":0,\"submitted\":0,\"reconciling\":0,\"retryable-error\":0,\"confirmed-flag\":2,\"expired\":0,\"manual-review\":3},\"severity\":\"ok\",\"checkpointHeight\":90196,\"lastSuccessfulIngestAgeMs\":14,\"counts\":{\"retryableErrors\":0,\"unresolvedSigning\":0,\"manualSigningFences\":0,\"awaitingFinality\":0,\"expiredObligations\":0,\"manualAttention\":0,\"unsignedPending\":0},\"alerts\":[]}\n",
+      "Error": ""
+    }
+  }
 }

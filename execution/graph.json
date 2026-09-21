@@ -1072,7 +1072,7 @@
       "evidence": "evidence/M03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Four pinned-model batches total48distinct provisional cases,0classification errors; combinedp95 23.09s misses10s target. Direct-threat288 complete239.70s, runtime/cleanup verified, restored service healthy90139. One live automatic flag verified; human labels,300/50/50coverage and20flagcapacity remain incomplete. Independent aggregate review approved. Remove obsolete non-JSON verdict compatibility per user no-fallback/no-backwards-compatibility direction; pinned prompt/runtime already requireJSON. Preserve strictJSON semantics, update successfulfixtures and keep invalid/recoverybranch checks. Independent review required; no model/prompt/actor changes.",
+      "checkpoint": "StrictJSON-only parser b5f45ac passed76parser/130signer/daemon/156worker-evaluation checks315 and deployed316/317 to existingEC2. Actual same-model greeting/threat checks319 returned validJSON; service320 healthy90196 with no pendingfinality/signing/attention. Prior automaticflag verifiedfinalized321.48case quality/capacity/humanlabelgates remain incomplete; prompt/model unchanged.",
       "priority": 17,
       "execution_lane": "deployed-model-evaluation"
     },

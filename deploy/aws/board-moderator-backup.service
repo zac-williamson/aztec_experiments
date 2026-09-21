@@ -7,5 +7,5 @@ After=network-online.target
 Type=oneshot
 User=root
 UMask=0077
-ExecStart=/bin/bash /srv/board/backup-moderator.sh /srv/board/operator-fee-cap-20260921 anonymous-message-board-testnet-backups-nvdhcyurtoga
+ExecStart=/bin/bash /srv/board/backup-moderator.sh /srv/board/operator-json-20260921 anonymous-message-board-testnet-backups-nvdhcyurtoga
 TimeoutStartSec=480

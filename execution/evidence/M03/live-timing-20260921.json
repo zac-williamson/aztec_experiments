@@ -159,5 +159,15 @@
     "blockNumber": 90127,
     "blockHash": "0x2880cf15b15901fb7a1d027d53d3598fe3b8e3449148056b0d8f3cdb7db52516",
     "transactionFee": "2350309961797195140"
+  },
+  "finalityRecheck": {
+    "observedAt": "2026-09-21T04:40:48.254942+00:00",
+    "node": "https://v5.testnet.rpc.aztec-labs.com",
+    "txHash": "0x28fbbdeebea42dea0fc4c2047e724bbf95ca189c1af0564acdc1ed0c0f40f406",
+    "status": "finalized",
+    "executionResult": "success",
+    "blockNumber": 90127,
+    "blockHash": "0x2880cf15b15901fb7a1d027d53d3598fe3b8e3449148056b0d8f3cdb7db52516",
+    "transactionFee": "2350309961797195140"
   }
 }

@@ -20,8 +20,8 @@ deployed threat policy before inference. Independent agent review confirmed that
 The real service also detected and removed one test post without manual signing.
 Its model response took 25.24 seconds. Proving, submission and receipt waiting together
 took 103.36 seconds. Chain timestamps put the flag 144 seconds after publication.
-This is one checkpointed transaction, not a measured capacity percentile or finality
-claim. Exact hashes, events and public-feed verification are in
+The transaction was later observed finalized successfully on September21
+(receipt recheck321). It remains one sample, not a measured capacity percentile. Exact hashes, events and public-feed verification are in
 [live-timing-20260921.json](live-timing-20260921.json).
 
 Production qualification remains incomplete: 48 examples versus 300 required, 11 multilingual
