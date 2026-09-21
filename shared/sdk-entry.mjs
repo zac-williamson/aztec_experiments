@@ -59,3 +59,5 @@ export { NoteStatus } from '@aztec/stdlib/note';
 export {validateDeploymentManifest,deploymentManifestConfig,verifyDeploymentInputs,preflightDeploymentNetwork,deploymentPolicyVersion} from './deployment-manifest.mjs';
 export {verifyPortalRuntime} from './portal-runtime.mjs';
 export {default as portalRuntimeMetadata} from './portal-runtime.json' with {type:'json'};
+
+export {provingEnabledForNode} from './proving-policy.mjs';

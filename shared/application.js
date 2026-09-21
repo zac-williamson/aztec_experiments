@@ -81,7 +81,7 @@ function saveFundingRecord(record) {
   function check(expected){_assertWalletLive();if(stamp()!==expected)throw Error('Account or configuration changed. Reconnect.');}
   function connectedHandles(){_assertWalletLive();if(!handles)throw Error('Board account is not connected.');return handles;}
   /** @param {BoardAction} action @param {BoardInput} input @param {BoardProgress} onProgress @returns {Promise<BoardResult>} */
-  async function run(action,input={},onProgress=()=>{}) {
+  async function runCore(action,input={},onProgress=()=>{}) {
     const expected=stamp(),ws=window.walletState;
     const identity=JSON.stringify([ws.aztec?.address.toString(),_getConfigRevision(),_getPublicConfig()]);
     const common=isBoard?{portalAddress:_getPublicConfig()?.board.portalAddress,dataDirPrefix:kind==='moderator'?'pxe_bb_censor_':'pxe_bb_',
@@ -96,6 +96,26 @@ function saveFundingRecord(record) {
     if(kind==='fees'&&result.record)saveFundingRecord(result.record);
     const {handles:privateHandles,receipt:privateReceipt,...data}=result;
     return data;
+  }
+  async function run(action,input={},onProgress=()=>{}) {
+    if(action!=='post'||input.isDummy||!input.message)return runCore(action,input,onProgress);
+    const api=window.BillboardPlugins;
+    if(!api)throw Error('Plugin client unavailable');
+    if(!api.mentions(input.message).length)return runCore(action,input,onProgress);
+    const h=connectedHandles(),config=_getPublicConfig(),expected=stamp();
+    const scope={chainId:config.network.chainId,rollupVersion:config.network.rollupVersion,rollupAddress:config.network.rollupAddress,boardAddress:config.board.contractAddress};
+    const key='billboard-plugin-payment-v1:'+JSON.stringify([scope,h.address.toString()]);
+    const prepare=text=>api.prepareInvocation({text,scope,lookup:async id=>{
+        const result=await h.contract.methods.get_plugin(window.__aztec.Fr.fromString(id)).simulate({from:window.__aztec.NO_FROM});check(expected);
+        const [receiver,enabled,descriptor,length]=result.result;
+        return {receiver:receiver.toString(),enabled,descriptor:descriptor.map(String),length:Number(length)};
+      }});
+    return api.postWithPlugins({text:input.message,progress:onProgress,
+      store:{read:async()=>JSON.parse(localStorage.getItem(key)||'null'),write:async value=>{check(expected);localStorage.setItem(key,JSON.stringify(value));},clear:async()=>localStorage.removeItem(key)},
+      prepare,
+      post:pluginHandle=>{check(expected);return runCore(action,{...input,message:input.message,...(pluginHandle?{pluginHandle}:{})},onProgress);},
+      pay:async pending=>{check(expected);const plan=await prepare(pending.text);if(!plan||plan.handleField!==pending.plan.handleField)throw Error('Plugin configuration changed');return api.payForInvocation({descriptor:plan.descriptor,postId:pending.postId,text:pending.text,signer:await getBrowserSigner(),transactionHash:pending.transactionHash,onSubmitted:pending.submitted});},
+    });
   }
   /** @returns {Promise<{amount:bigint,depositChainId:bigint,nextAllowedTime:bigint,lastScreenedIndex:bigint,lastRealPostIndex:bigint,chainTime:number}>} */
   async function readDeposit() {

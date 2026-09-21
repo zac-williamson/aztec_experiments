@@ -5,6 +5,7 @@ import {BlockHash} from '@aztec/stdlib/block';
 import {AppendOnlyTreeSnapshot} from '@aztec/stdlib/trees';
 import {Tx,TxHash,TxSimulationResult} from '@aztec/stdlib/tx';
 import {createL2Journal} from '../shared/l2-journal.mjs';
+import {provingEnabledForNode} from '../shared/proving-policy.mjs';
 import * as transactionOutcomes from '../shared/transaction-outcomes.mjs';
 // Actual application routing, with explicit node/proof/payment-preparer doubles.
 import assert from 'node:assert/strict';
@@ -20,11 +21,11 @@ const source=await readFile(new URL('../apps/src/billboard/user/engine.js',impor
 const policySource=await readFile(new URL('../shared/moderation-policy.js',import.meta.url),'utf8');
 function context(){const c=vm.createContext({performance,console,Buffer,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});vm.runInContext(policySource,c);vm.runInContext(source,c);return c;}
 const gas=()=>new GasSettings(new Gas(100,200),new Gas(1,2),new GasFees(3n,4n),new GasFees(0n,0n));
-function fixture(failure){
+function fixture(failure,pluginHandle){
  const c=context(),prepared=[],sends=[],owner={toString:()=> 'owner'};
  const paymentMethod={getExecutionPayload(){}};
- const a={GasSettings,preparePrivateFeePayment:async input=>{prepared.push(input);return {paymentMethod,gasSettings:gas()};}};
- const config={privateFee:{contractAddress:'fee',gasSettings:gas()},privateFeeClaim:{amount:'100',salt:'secret-salt',leafIndex:'2'}};
+ const a={Fr,GasSettings,preparePrivateFeePayment:async input=>{prepared.push(input);return {paymentMethod,gasSettings:gas()};}};
+ const config={pluginHandle,privateFee:{contractAddress:'fee',gasSettings:gas()},privateFeeClaim:{amount:'100',salt:'secret-salt',leafIndex:'2'}};
  const contract={methods:new Proxy({},{get:(_,method)=>(...args)=>({send:async opts=>{sends.push({method,args,opts});if(failure)throw failure;return {receipt:{status:'checkpointed'}};}})})};
  const sender=c.BillboardPrivateFeeRouting.createPrivateFeeSender({a,config,privateFeeArtifact:{},contract,wallet:{},node:{},owner,scope:{l1ChainId:'31337',rollupVersion:'1'}});
  return {sender,prepared,sends,owner,paymentMethod};
@@ -103,7 +104,7 @@ function mainHarness(action,isDummy=false) {
     return ()=>({simulate:async()=>{if(readHook)await readHook(name);return name==='get_censor'?(censorValue??addr.toField()):name==='get_post_exists'?postExists:name==='get_screen_hints'?[null,null]:1n;}});
   }});
   class BaseWallet {constructor(pxe){this.pxe=pxe;}}
-  const a={...transactionOutcomes,NoteStatus,Fr,AztecAddress,EthAddress,NO_FROM,GasSettings,BaseWallet,sha256ToField,Buffer,
+  const a={provingEnabledForNode,...transactionOutcomes,NoteStatus,Fr,AztecAddress,EthAddress,NO_FROM,GasSettings,BaseWallet,sha256ToField,Buffer,
     deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
     SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;getSigningPublicKey=async()=>({x:Fr.ONE,y:Fr.ONE});},
     getContractInstanceFromInstantiationParams:async()=>({address:addr}),computePartialAddress:async()=>Fr.ZERO,
@@ -322,7 +323,7 @@ test('actual wallet passes attributed application spend to the durable journal b
  const proven={toTx:async()=>tx},pxe={proveTx:async()=>proven};
  const node={sendTx:async()=>calls.push('submit'),getTxReceipt:async()=>receipt,getBlock:async()=>({hash:'block'})};
  const journal={assertCanStart:async()=>null,prepare:async(value,previous,binding)=>{assert.equal(value,tx);assert.equal(binding.applicationNullifier,appNullifier.toString());calls.push('saved');},confirmed:()=>{}};
- const a={...transactionOutcomes,BaseWallet,GasSettings,extractApplicationNullifier:async(result,value,board)=>{assert.equal(result,proven);assert.equal(value,tx);assert.equal(board,'board');calls.push('attributed');return appNullifier;}};
+ const a={provingEnabledForNode,...transactionOutcomes,BaseWallet,GasSettings,extractApplicationNullifier:async(result,value,board)=>{assert.equal(result,proven);assert.equal(value,tx);assert.equal(board,'board');calls.push('attributed');return appNullifier;}};
  const wallet=c.BillboardPrivateFeeRouting.createAztecWallet(a,pxe,node,node,()=>{},Fr.ONE,{transactionJournal:journal});wallet._applicationNullifierBoard='board';
  await wallet.sendTx({}, {from:owner,fee:{gasSettings:gas()}});
  assert.deepEqual(calls,['attributed','saved','submit']);
@@ -696,4 +697,12 @@ for (const failure of ['revert','gas-change']) test(`adjusted fee reservation is
  const wallet=c.BillboardPrivateFeeRouting.createAztecWallet({BaseWallet,GasSettings},{proveTx:async()=>{proofs++;throw Error('must not prove');}},{},{},()=>{},Fr.ONE);
  await assert.rejects(wallet.sendTx({}, {from:owner,fee:{gasSettings:gas()}}),{code:failure==='revert'?'BB_SIMULATION_FAILED':'BB_GAS_LIMIT_EXCEEDED'});
  assert.equal(simulations,2);assert.equal(proofs,0);
+});
+
+test('plugin posting preserves private fee routing and leaves dummy posts unchanged',async()=>{
+ const h=fixture(undefined,'123');const args=[1,2,['text'],4,false,6,7];
+ await h.sender('post',args);await h.sender('post',[...args.slice(0,4),true,6,7]);
+ assert.equal(h.sends[0].method,'post_with_plugin');assert.deepEqual(Array.from(h.sends[0].args.slice(0,6)),[1,2,['text'],4,6,7]);assert.equal(h.sends[0].args[6].toBigInt(),123n);
+ assert.equal(h.sends[1].method,'post');assert.equal(h.sends[1].args[4],true);
+ for(const send of h.sends){assert.equal(send.opts.from,h.owner);assert.equal(send.opts.fee.paymentMethod,h.paymentMethod);}
 });

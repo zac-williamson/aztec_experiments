@@ -359,7 +359,7 @@
     // Step 4: Initialize CRS
     // ============================================================
     log('Step 3: Initializing CRS...', 'info');
-    await initCRS();
+    if(a.provingEnabledForNode(nodeInfo))await initCRS();
     log('  CRS ready.', 'success');
 
     // ============================================================
@@ -370,7 +370,7 @@
     const storeConfig = { ...l1Contracts, l1ChainId: nodeInfo.l1ChainId, accountAddress: address.toString(), dataDirectory: dataDirPrefix + l1Contracts.rollupAddress };
     const store = await createStore(storeConfig);
     const pxe = await a.createPXE(aztecNode, {
-      proverEnabled: true, autoSync: true,
+      proverEnabled: a.provingEnabledForNode(nodeInfo), autoSync: true,
       dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
     }, { store });
     log('  PXE created.', 'success');

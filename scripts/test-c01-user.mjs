@@ -16,6 +16,7 @@ const backupSource = await fs.readFile(new URL('../shared/wallet-backup.js',impo
 const claimSource=await fs.readFile(new URL('../shared/claim-secret-store.js',import.meta.url),'utf8');
 const configSource=await fs.readFile(new URL('../shared/public-app-config.js',import.meta.url),'utf8');
 const appEnvSource=await fs.readFile(new URL('../shared/app-env.js',import.meta.url),'utf8');
+const applicationSource=await fs.readFile(new URL('../shared/application.js',import.meta.url),'utf8');
 const appSource = await fs.readFile(new URL('../apps/src/billboard/user/app.js',import.meta.url),'utf8');
 const engineSource = await fs.readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8');
 const scope={l1ChainId:'31337',rollupAddress:'0x1111111111111111111111111111111111111111',rollupVersion:'1',
@@ -29,6 +30,7 @@ const keyFor=(s,h)=>ownerId+':'+aadFor(s,h);
 function appContext() {
   const context={crypto:webcrypto,indexedDB:new IDBFactory(),TextEncoder,TextDecoder,Uint8Array,URL,URLSearchParams,console,log(){},
     location:{search:''},document:{getElementById:()=>null},__aztec:{createPXE(){}},ETH_RPC_URL:'',
+    BILLBOARD_ARTIFACT:{},BILLBOARD_PRIVATE_FEE_ARTIFACT:{},PORTAL_BYTECODE:'',
     checkBundle:()=>true,setupRpcAuth(){},makeCallEngine:()=>()=>{},runBillboardUser(){},initPages(){},initWalletButtons(){},initializeHostedBoard(){}};
   context.window=context;vm.createContext(context);
   // Hosted bootstrap remains inert here: this fixture tests encrypted custody.
@@ -38,7 +40,7 @@ function appContext() {
   vm.runInContext(configSource,context,{filename:'shared/public-app-config.js'});
   context.billboardConfigStore=context.BillboardConfig.createStore({storage:null});
   vm.runInContext(appEnvSource,context,{filename:'shared/app-env.js'});
-  vm.runInContext(backupSource,context,{filename:'shared/wallet-backup.js'});vm.runInContext(claimSource,context);vm.runInContext(appSource,context,{filename:'user/app.js'});return context;
+  vm.runInContext(backupSource,context,{filename:'shared/wallet-backup.js'});vm.runInContext(claimSource,context);vm.runInContext(applicationSource,context,{filename:'shared/application.js'});vm.runInContext(appSource,context,{filename:'user/app.js'});return context;
 }
 async function editEnvelope(context,key,transform) {
   const db=await new Promise((resolve,reject)=>{const req=context.indexedDB.open('aztec-billboard-claim-secrets-v2',1);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});

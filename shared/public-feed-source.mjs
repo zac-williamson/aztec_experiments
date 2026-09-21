@@ -2,7 +2,7 @@
 import {validateScope,validateFeedEvent} from './protocol-schema.mjs';
 import {boundedTransactionRead} from './transaction-outcomes.mjs';
 
-export const PUBLIC_FEED_TYPES=Object.freeze(['PolicyPublished','PostPublished','PostFlagged']);
+export const PUBLIC_FEED_TYPES=Object.freeze(['PolicyPublished','PostPublished','PostFlagged','PluginConfigured','PluginInvoked','PluginReplyLinked']);
 const fail=()=>Object.assign(new Error('Public feed data is incomplete, invalid or no longer canonical. Retry from its last verified checkpoint.'),{code:'BB_PUBLIC_FEED_UNAVAILABLE'});
 const natural=(v,max=Number.MAX_SAFE_INTEGER)=>Number.isSafeInteger(v)&&v>=0&&v<=max;
 const hex32=v=>typeof v==='string'&&/^0x[0-9a-f]{64}$/.test(v);
@@ -33,7 +33,7 @@ function runtimeMetadata(artifact,eventTags,provided){
     const matching=provided?[provided[type]?.abiType]:events.filter(event=>event.path?.split('::').at(-1)===type);
     if(matching.length!==1||!matching[0])throw fail();
     const abiType=matching[0],count=fieldCount(abiType),tag=provided?provided[type]?.tag:eventTags[type];
-    if(count!==({PolicyPublished:51,PostPublished:39,PostFlagged:13}[type])||fieldValue(tag)===0n||tags.has(tag))throw fail();
+    if(count!==({PolicyPublished:51,PostPublished:39,PostFlagged:13,PluginConfigured:13,PluginInvoked:3,PluginReplyLinked:4}[type])||fieldValue(tag)===0n||tags.has(tag))throw fail();
     if(provided&&provided[type].count!==count)throw fail();
     tags.add(tag);result[type]={abiType,count,tag};
   }
@@ -64,6 +64,9 @@ export function decodePublicFeedLog({type,log,metadata,scope,censorWindow}){
     if(type==='PostPublished')payload={postId:fieldHex(p.post_id),orderIndex:String(p.order_index),text:unpack(p.message_fields,p.message_length,992),
       publishedAt:String(p.published_at),flagDeadline:String(p.flag_deadline),policyVersion:fieldHex(p.policy_version)};
     else if(type==='PolicyPublished')payload={policyVersion:fieldHex(p.policy_version),text:unpack(p.policy_fields,p.policy_length,1488),censorWindow:String(censorWindow)};
+    else if(type==='PluginConfigured')payload={handle:fieldHex(p.handle),receiver:p.receiver,enabled:p.enabled===1n,descriptor:unpack(p.descriptor,p.descriptor_length,248)};
+    else if(type==='PluginInvoked')payload={postId:fieldHex(p.post_id),handle:fieldHex(p.handle)};
+    else if(type==='PluginReplyLinked')payload={postId:fieldHex(p.post_id),parentId:fieldHex(p.parent_id),handle:fieldHex(p.handle)};
     else payload={postId:fieldHex(p.post_id),reason:unpack(p.reason_fields,p.reason_length,200),flaggedAt:String(p.flagged_at),censorAddress:p.censor.toString(),policyVersion:fieldHex(p.policy_version)};
     const coords=coordinate(log);
     if(!coords.every(value=>natural(value))||coords[0]<1||!natural(coords[1],0xffffffff)||!natural(coords[2],0xffffffff))throw fail();

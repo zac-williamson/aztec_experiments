@@ -414,8 +414,9 @@
   function parsePostOperation(a, encoded) {
     try {
       const value = JSON.parse(encoded);
-      if (!value || Object.keys(value).sort().join() !== 'depositChain,kind,message,nonce,schemaVersion' ||
-        value.schemaVersion !== 1 || value.kind !== 'post' || typeof value.message !== 'string') throw new Error();
+      if (!value || Object.keys(value).sort().join() !== (value.schemaVersion===2?'depositChain,kind,message,nonce,pluginHandle,schemaVersion':'depositChain,kind,message,nonce,schemaVersion') ||
+        ![1,2].includes(value.schemaVersion) || value.kind !== 'post' || typeof value.message !== 'string') throw new Error();
+      if(value.schemaVersion===2)canonicalPostId(a,value.pluginHandle,true);
       canonicalPostId(a, value.nonce, true); canonicalPostId(a, value.depositChain, true); packPostMessage(value.message);
       return value;
     } catch { throw Object.assign(new Error('Saved post intent is invalid. Preserve its recovery record.'), {code:'BB_JOURNAL_INVALID'}); }
@@ -463,7 +464,8 @@
     let claim = config.privateFeeClaim;
     return async function sendPrivateFeeAction(kind, args) {
       const methods = {claim: 'claim_deposit', post: 'post', withdraw: 'withdraw', set_moderation_policy:'set_moderation_policy', declare_immoral:'declare_immoral', transfer_censor:'transfer_censor'};
-      const method = Object.hasOwn(methods,kind) ? methods[kind] : undefined;
+      let method = Object.hasOwn(methods,kind) ? methods[kind] : undefined;
+      if(kind==='post'&&args[4]===false&&config.pluginHandle){method='post_with_plugin';args=[...args.slice(0,4),...args.slice(5),new a.Fr(BigInt(config.pluginHandle))];}
       if (!method) throw privateFeeFailure('BB_PRIVATE_FEE_UNSUPPORTED_ACTION');
       let prepared;
       try {
@@ -689,6 +691,7 @@
       return {type:'billboard-moderation-journal-v1',postId,policyVersion,txHash:saved?.txHash??null,predecessorTxHashes:saved?.predecessorTxHashes??[]};
     }
     if(journalActions.includes(action) && (!transactionJournal || typeof transactionJournal.assertCanStart!=='function' || typeof transactionJournal.prepare!=='function' || typeof transactionJournal.confirmed!=='function'))throw Object.assign(new Error('Invalid transaction journal.'),{code:'BB_JOURNAL_INVALID'});
+    let lastPostedId = null;
     let resumedPost = null, resumedSpend = null, resumedClaim = null, claimOperation = null, resumedModeratorOperation = null, lastModeratorReceipt = null;
     if(action==='recover') {
       if(!transactionJournal)throw new Error('Transaction journal is required for recovery.');
@@ -709,7 +712,7 @@
         } else if(kind==='post') {
           resumedPost = parsePostOperation(a, saved.operation);
           action='post';
-          config={...config,action,isDummy:false,message:resumedPost.message,depositChainId:resumedPost.depositChain};
+          config={...config,action,isDummy:false,message:resumedPost.message,depositChainId:resumedPost.depositChain,pluginHandle:resumedPost.pluginHandle};
         } else if(kind==='claim') {
           const intent=JSON.parse(saved.operation);
           if(Object.keys(intent).sort().join()!=='amount,depositChain,depositor,kind,leafIndex,schemaVersion,secretHash,transactionHash'||intent.schemaVersion!==1||
@@ -917,7 +920,7 @@
         // Step 4: Initialize CRS
         // ============================================================
         log('Step 4: Initializing CRS...', 'info');
-        await measured('crs',()=>initCRS());
+        if(a.provingEnabledForNode(nodeInfo))await measured('crs',()=>initCRS());
         log('  CRS ready.', 'success');
 
         // ============================================================
@@ -928,7 +931,7 @@
         const storeConfig = { ...l1Contracts, l1ChainId: nodeInfo.l1ChainId, accountAddress: address.toString(), dataDirectory: dataDirPrefix + l1Contracts.rollupAddress };
         const store = await createStore(storeConfig);
         pxe = await measured('pxe',()=>a.createPXE(aztecNode, {
-          proverEnabled: true, autoSync: true,
+          proverEnabled: a.provingEnabledForNode(nodeInfo), autoSync: true,
           dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
         }, { store }));
         log('  PXE created.', 'success');
@@ -1378,7 +1381,7 @@
       log('  Screening hints fetched: child=' + (childHint ? 'yes' : 'no') + ', grandchild=' + (grandchildHint ? 'yes' : 'no'), 'info');
       log('  Pre-flight passed.', 'success');
 
-      const operation=JSON.stringify({schemaVersion:1,kind:'post',nonce:postNonce.toString(),message:msgText,depositChain:requireDepositChain().toString()});
+      const operation=JSON.stringify({schemaVersion:config.pluginHandle?2:1,kind:'post',nonce:postNonce.toString(),message:msgText,depositChain:requireDepositChain().toString(),...(config.pluginHandle?{pluginHandle:canonicalPostId(a,config.pluginHandle,true)}:{})});
       if(resumedPost&&operation!==JSON.stringify(resumedPost))throw Object.assign(new Error('Saved post intent changed.'),{code:'BB_RECOVERY_REQUIRED'});
       if(typeof transactionJournal?.setOperation!=='function')throw Object.assign(new Error('Post recovery storage is required.'),{code:'BB_JOURNAL_INVALID'});
       const postId=await a.poseidon2HashWithSeparator([new a.Fr(1),l2Addr.toField(),postNonce],0x42420102);
@@ -1399,6 +1402,7 @@
       if (receipt.transactionFee !== undefined) {
         log('  Fee paid: ' + toAztec(BigInt(receipt.transactionFee), 6) + ' AZTEC', 'info');
       }
+      lastPostedId=postId.toString();
       log('  Message posted.', 'success');
     }
 
@@ -2009,6 +2013,7 @@
       throw new Error('Unknown action: ' + action + '. Valid: status, deposit, claim, post, list, withdraw, claim-l1, auto');
     }
 
+    result.postId = lastPostedId;
     result.lastEthereumTxHash = ethereumJournal?.lastTxHash || null;
     result.lastL2TxHash = transactionJournal?.lastTxHash || null;
     if(lastModeratorReceipt)result.moderatorPredecessors=(await transactionJournal.inspect?.())?.predecessorTxHashes??[];

@@ -25,6 +25,7 @@
 // within a project like billboard/).
 
 import fs from 'fs';
+import {build as bundlePluginClient} from 'esbuild';
 import { buildPublicFeed } from '../scripts/build-public-feed.mjs';
 import { createHash } from 'node:crypto';
 import { checkSdk } from '../scripts/check-sdk.mjs';
@@ -45,6 +46,8 @@ const SHARED = path.join(__dirname, '..', 'shared');
 const SRC = path.join(__dirname, 'src');
 const DIST = path.join(__dirname, 'dist');
 const SDK = path.join(__dirname, '..', '.build', 'sdk');
+fs.mkdirSync(DIST,{recursive:true});
+await bundlePluginClient({entryPoints:[path.join(ROOT,'plugins/client.mjs')],outfile:path.join(DIST,'plugins.js'),bundle:true,format:'iife',globalName:'BillboardPlugins',minify:true,platform:'browser',target:'es2022'});
 const sdkManifestPath = path.join(SDK, 'sdk-manifest.json');
 if (!fs.existsSync(sdkManifestPath)) throw new Error('Build the pinned SDK first: npm run build:sdk');
 
@@ -108,6 +111,7 @@ function buildApp(appRelPath) {
     const source=loadShared(name);if(!source)throw new Error('Missing browser configuration/capability helper');
     return `<script>\n${source}\n</script>`;
   }).join('\n');
+  if(appRelPath==='billboard/user')html=html.replace('</head>','<script src="plugins.js"></script></head>');
   html=html.replace(/<body(?:\s[^>]*)?>/i,match=>match+'\n'+configScripts);
 
   html=html.replace('<script src="aztec_bundle.js"></script>','<script src="aztec_bundle.js" onerror="window.__billboardBundleFailed=true"></script>');

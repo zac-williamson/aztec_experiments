@@ -1,3 +1,4 @@
+import {provingEnabledForNode} from './proving-policy.mjs';
 import { Buffer } from 'node:buffer';
 import { createPXE as createSdkPXE } from '@aztec/pxe/client/lazy';
 import { Barretenberg, BackendType } from '@aztec/bb.js';
@@ -78,7 +79,8 @@ class BrowserPrivateKernelProver extends BBLazyPrivateKernelProver {
 }
 export async function createPXE(node,config,options={}) {
   let selected=options;
-  if(typeof window !== 'undefined') {
+  if(config?.proverEnabled===false && provingEnabledForNode(await node.getNodeInfo()))throw new Error('Proofs may only be disabled on the disposable local devnet');
+  if(typeof window !== 'undefined' && config?.proverEnabled!==false) {
     const proverOrOptions=await initializeBrowserProver(options.proverOrOptions);
     const simulator=options.simulator??new WASMSimulator();
     selected={...options,simulator,proverOrOptions:new BrowserPrivateKernelProver(simulator,{...proverOrOptions,logger:privateLogger})};

@@ -55,7 +55,7 @@ import fs from 'node:fs';
 import {connectPublicBoard,connectPublicFeed} from '../shared/public-feed-connection.mjs';
 function connectionFixture(){
  const artifact=JSON.parse(fs.readFileSync(new URL('../apps/src/billboard/billboard_artifact.json',import.meta.url)));
- const metadata={classId:hex(9),artifact:{outputs:{structs:{events:artifact.outputs.structs.events}}},eventTags:{PolicyPublished:hex(11),PostPublished:hex(12),PostFlagged:hex(13)},storage:{portal:'1',config:'3'},portalSelectors:{L2_CONTRACT:'0x11111111',ROLLUP:'0x22222222',VERSION:'0x33333333',L1_CHAIN_ID:'0x44444444'}};
+ const metadata={classId:hex(9),artifact:{outputs:{structs:{events:artifact.outputs.structs.events}}},eventTags:{PolicyPublished:hex(11),PostPublished:hex(12),PostFlagged:hex(13),PluginConfigured:hex(14),PluginInvoked:hex(15),PluginReplyLinked:hex(16)},storage:{portal:'1',config:'3'},portalSelectors:{L2_CONTRACT:'0x11111111',ROLLUP:'0x22222222',VERSION:'0x33333333',L1_CHAIN_ID:'0x44444444'}};
  const slots={1:BigInt(scope.portalAddress),3:1n,4:BigInt(scope.rollupAddress),5:1n,10:10n},instance={currentContractClassId:metadata.classId,originalContractClassId:metadata.classId},calls=[];
  const portalFields={L2_CONTRACT:3n,ROLLUP:BigInt(scope.rollupAddress),VERSION:1n,L1_CHAIN_ID:1n};
  const fetchImpl=async(_url,options)=>{

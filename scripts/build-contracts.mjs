@@ -8,7 +8,7 @@ import { checkNoirDependencyTrees, checkNoirEmbeddedSources } from './check-noir
 import { normalizeNoir } from './normalize-noir.mjs';
 import { contractInputs, sha } from './artifact-provenance.mjs';
 
-export function processArtifact(input, output) {
+export function processArtifact(input, output, {publicOnly=false}={}) {
   checkNoirDependencyTrees();
   const binary = bbBinary();
   if (!fs.existsSync(input)) throw new Error(`Missing raw artifact: ${input}; compile the Noir workspace first`);
@@ -18,7 +18,7 @@ export function processArtifact(input, output) {
     execFileSync(binary, ['aztec_process', '--force', '-i', input, '-o', temp], { stdio: 'inherit', timeout: 600000 });
     const artifact = JSON.parse(fs.readFileSync(temp, 'utf8'));
     const privateFns = artifact.functions.filter(f => (f.custom_attributes || []).includes('abi_private'));
-    if (artifact.transpiled !== true || privateFns.length === 0 || privateFns.some(f => !f.verification_key)) {
+    if (artifact.transpiled !== true || (!publicOnly && privateFns.length === 0) || privateFns.some(f => !f.verification_key)) {
       throw new Error('Processed artifact is not transpiled or lacks required verification keys');
     }
     normalizeNoir(artifact, ROOT);
@@ -47,6 +47,9 @@ export function buildContracts() {
   for (const name of ['deploy', 'censor']) {
     fs.copyFileSync(raw, path.join(ROOT, 'apps/src/billboard', name, 'billboard_artifact.json'));
   }
+  const adapterRaw = path.join(billboard, 'target/plugin_adapter-PluginAdapter.json');
+  processArtifact(adapterRaw, adapterRaw, {publicOnly:true});
+  fs.copyFileSync(adapterRaw, path.join(ROOT, 'plugins/adapter_artifact.json'));
   const forge = process.env.FORGE || 'forge';
   if (!execFileSync(forge, ['--version'], { encoding: 'utf8' }).includes(`Version: ${pins.foundry}`)) {
     throw new Error(`Expected Foundry ${pins.foundry}`);

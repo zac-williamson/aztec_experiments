@@ -48,7 +48,11 @@
     "test:portal": "cd billboard/portal && FOUNDRY_PROFILE=regression forge test --offline",
     "test:harness": "node scripts/test-harness.mjs harness",
     "test:components": "node scripts/test-harness.mjs components",
-    "test:e2e": "node scripts/test-c01-application.mjs"
+    "test:e2e": "node scripts/test-c01-application.mjs",
+    "test:plugins": "node --test plugins/test/*.test.mjs",
+    "test:plugins:e2e": "NODE_BACKEND=js LOG_LEVEL=error node plugins/devnet/test-e2e.mjs",
+    "dev:plugins": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/start.mjs",
+    "bot:serve": "NODE_BACKEND=js node --env-file=plugins/.env plugins/main.mjs"
   },
   "overrides": {
     "systeminformation": "5.31.7",

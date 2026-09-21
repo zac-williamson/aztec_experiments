@@ -18,7 +18,7 @@ const successful = receipt => [TxStatus.CHECKPOINTED, TxStatus.PROVEN, TxStatus.
   && receipt.executionResult === TxExecutionResult.SUCCESS && receipt.blockNumber != null && receipt.blockHash != null;
 
 export async function settleC01ApplicationMessage({node, config, dateProvider, l1Client, directory,
-  rollupAddress, txHash, expectedLeaf, kind}) {
+  rollupAddress, txHash, expectedLeaf, kind, applicationProofs=true}) {
   assert(['ready', 'exit'].includes(kind));
   const deadlineMs = 60000, started = Date.now();
   const observation = {passed: false, kind, deadlineMs, testControlled: true, syntheticSettlement: true,
@@ -55,7 +55,8 @@ export async function settleC01ApplicationMessage({node, config, dateProvider, l
     assert.equal(url.protocol, 'http:');
     assert(['127.0.0.1', 'localhost'].includes(url.hostname));
     assert(!url.username && !url.password);
-    assert.equal(node.config.realProofs, true, 'Application proof verification must remain enabled');
+    assert.equal(node.config.realProofs, applicationProofs, 'Application proof mode differs from explicitly selected scenario');
+    observation.applicationProofs = applicationProofs;
     assert.equal(node.getProverNode(), undefined, 'Server prover must be disabled in this application test');
     const info = await node.getNodeInfo();
     assert.equal(Number(info.l1ChainId), 31337);

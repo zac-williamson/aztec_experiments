@@ -1707,7 +1707,7 @@ async function ensureAztecSetup(state, statusId, opts = {}) {
   startBlockMonitor(aztecNode);
 
   // Step 3: Init CRS (if not done)
-  if (!state.crsInit) {
+  if (!state.crsInit && a.provingEnabledForNode(nodeInfo)) {
     log('Step 3: Initializing CRS (one-time ~42MB download)...', 'info', S);
     await initCRS(S);
     state.crsInit = true;
@@ -1728,7 +1728,7 @@ async function ensureAztecSetup(state, statusId, opts = {}) {
     dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
   });
   const pxe = await a.createPXE(aztecNode, {
-    proverEnabled: true,
+    proverEnabled: a.provingEnabledForNode(nodeInfo),
     autoSync: true,
     dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
   }, { store });
@@ -18465,8 +18465,9 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
   function parsePostOperation(a, encoded) {
     try {
       const value = JSON.parse(encoded);
-      if (!value || Object.keys(value).sort().join() !== 'depositChain,kind,message,nonce,schemaVersion' ||
-        value.schemaVersion !== 1 || value.kind !== 'post' || typeof value.message !== 'string') throw new Error();
+      if (!value || Object.keys(value).sort().join() !== (value.schemaVersion===2?'depositChain,kind,message,nonce,pluginHandle,schemaVersion':'depositChain,kind,message,nonce,schemaVersion') ||
+        ![1,2].includes(value.schemaVersion) || value.kind !== 'post' || typeof value.message !== 'string') throw new Error();
+      if(value.schemaVersion===2)canonicalPostId(a,value.pluginHandle,true);
       canonicalPostId(a, value.nonce, true); canonicalPostId(a, value.depositChain, true); packPostMessage(value.message);
       return value;
     } catch { throw Object.assign(new Error('Saved post intent is invalid. Preserve its recovery record.'), {code:'BB_JOURNAL_INVALID'}); }
@@ -18514,7 +18515,8 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     let claim = config.privateFeeClaim;
     return async function sendPrivateFeeAction(kind, args) {
       const methods = {claim: 'claim_deposit', post: 'post', withdraw: 'withdraw', set_moderation_policy:'set_moderation_policy', declare_immoral:'declare_immoral', transfer_censor:'transfer_censor'};
-      const method = Object.hasOwn(methods,kind) ? methods[kind] : undefined;
+      let method = Object.hasOwn(methods,kind) ? methods[kind] : undefined;
+      if(kind==='post'&&args[4]===false&&config.pluginHandle){method='post_with_plugin';args=[...args.slice(0,4),...args.slice(5),new a.Fr(BigInt(config.pluginHandle))];}
       if (!method) throw privateFeeFailure('BB_PRIVATE_FEE_UNSUPPORTED_ACTION');
       let prepared;
       try {
@@ -18740,6 +18742,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       return {type:'billboard-moderation-journal-v1',postId,policyVersion,txHash:saved?.txHash??null,predecessorTxHashes:saved?.predecessorTxHashes??[]};
     }
     if(journalActions.includes(action) && (!transactionJournal || typeof transactionJournal.assertCanStart!=='function' || typeof transactionJournal.prepare!=='function' || typeof transactionJournal.confirmed!=='function'))throw Object.assign(new Error('Invalid transaction journal.'),{code:'BB_JOURNAL_INVALID'});
+    let lastPostedId = null;
     let resumedPost = null, resumedSpend = null, resumedClaim = null, claimOperation = null, resumedModeratorOperation = null, lastModeratorReceipt = null;
     if(action==='recover') {
       if(!transactionJournal)throw new Error('Transaction journal is required for recovery.');
@@ -18760,7 +18763,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         } else if(kind==='post') {
           resumedPost = parsePostOperation(a, saved.operation);
           action='post';
-          config={...config,action,isDummy:false,message:resumedPost.message,depositChainId:resumedPost.depositChain};
+          config={...config,action,isDummy:false,message:resumedPost.message,depositChainId:resumedPost.depositChain,pluginHandle:resumedPost.pluginHandle};
         } else if(kind==='claim') {
           const intent=JSON.parse(saved.operation);
           if(Object.keys(intent).sort().join()!=='amount,depositChain,depositor,kind,leafIndex,schemaVersion,secretHash,transactionHash'||intent.schemaVersion!==1||
@@ -18968,7 +18971,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         // Step 4: Initialize CRS
         // ============================================================
         log('Step 4: Initializing CRS...', 'info');
-        await measured('crs',()=>initCRS());
+        if(a.provingEnabledForNode(nodeInfo))await measured('crs',()=>initCRS());
         log('  CRS ready.', 'success');
 
         // ============================================================
@@ -18979,7 +18982,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         const storeConfig = { ...l1Contracts, l1ChainId: nodeInfo.l1ChainId, accountAddress: address.toString(), dataDirectory: dataDirPrefix + l1Contracts.rollupAddress };
         const store = await createStore(storeConfig);
         pxe = await measured('pxe',()=>a.createPXE(aztecNode, {
-          proverEnabled: true, autoSync: true,
+          proverEnabled: a.provingEnabledForNode(nodeInfo), autoSync: true,
           dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
         }, { store }));
         log('  PXE created.', 'success');
@@ -19429,7 +19432,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       log('  Screening hints fetched: child=' + (childHint ? 'yes' : 'no') + ', grandchild=' + (grandchildHint ? 'yes' : 'no'), 'info');
       log('  Pre-flight passed.', 'success');
 
-      const operation=JSON.stringify({schemaVersion:1,kind:'post',nonce:postNonce.toString(),message:msgText,depositChain:requireDepositChain().toString()});
+      const operation=JSON.stringify({schemaVersion:config.pluginHandle?2:1,kind:'post',nonce:postNonce.toString(),message:msgText,depositChain:requireDepositChain().toString(),...(config.pluginHandle?{pluginHandle:canonicalPostId(a,config.pluginHandle,true)}:{})});
       if(resumedPost&&operation!==JSON.stringify(resumedPost))throw Object.assign(new Error('Saved post intent changed.'),{code:'BB_RECOVERY_REQUIRED'});
       if(typeof transactionJournal?.setOperation!=='function')throw Object.assign(new Error('Post recovery storage is required.'),{code:'BB_JOURNAL_INVALID'});
       const postId=await a.poseidon2HashWithSeparator([new a.Fr(1),l2Addr.toField(),postNonce],0x42420102);
@@ -19450,6 +19453,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       if (receipt.transactionFee !== undefined) {
         log('  Fee paid: ' + toAztec(BigInt(receipt.transactionFee), 6) + ' AZTEC', 'info');
       }
+      lastPostedId=postId.toString();
       log('  Message posted.', 'success');
     }
 
@@ -20060,6 +20064,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       throw new Error('Unknown action: ' + action + '. Valid: status, deposit, claim, post, list, withdraw, claim-l1, auto');
     }
 
+    result.postId = lastPostedId;
     result.lastEthereumTxHash = ethereumJournal?.lastTxHash || null;
     result.lastL2TxHash = transactionJournal?.lastTxHash || null;
     if(lastModeratorReceipt)result.moderatorPredecessors=(await transactionJournal.inspect?.())?.predecessorTxHashes??[];
@@ -20167,11 +20172,11 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     transactionJournal.setOperation(operation);
     let pxe;
     try{
-      await env.initCRS();
+      if(a.provingEnabledForNode(info))await env.initCRS();
       const contracts=await node.getL1ContractAddresses();
       const dataDirectory='pxe_private_fee_'+owner.toString()+'_'+contracts.rollupAddress;
       const store=await env.createStore({...contracts,l1ChainId:info.l1ChainId,accountAddress:owner.toString(),dataDirectory});
-      pxe=await a.createPXE(node,{proverEnabled:true,autoSync:true,dataDirectory},{store});
+      pxe=await a.createPXE(node,{proverEnabled:a.provingEnabledForNode(info),autoSync:true,dataDirectory},{store});
       await pxe.registerAccount(keys,await a.computePartialAddress(instance));
       await pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact);
       await pxe.registerContract(instance);
@@ -20858,7 +20863,7 @@ function saveFundingRecord(record) {
   function check(expected){_assertWalletLive();if(stamp()!==expected)throw Error('Account or configuration changed. Reconnect.');}
   function connectedHandles(){_assertWalletLive();if(!handles)throw Error('Board account is not connected.');return handles;}
   /** @param {BoardAction} action @param {BoardInput} input @param {BoardProgress} onProgress @returns {Promise<BoardResult>} */
-  async function run(action,input={},onProgress=()=>{}) {
+  async function runCore(action,input={},onProgress=()=>{}) {
     const expected=stamp(),ws=window.walletState;
     const identity=JSON.stringify([ws.aztec?.address.toString(),_getConfigRevision(),_getPublicConfig()]);
     const common=isBoard?{portalAddress:_getPublicConfig()?.board.portalAddress,dataDirPrefix:kind==='moderator'?'pxe_bb_censor_':'pxe_bb_',
@@ -20873,6 +20878,26 @@ function saveFundingRecord(record) {
     if(kind==='fees'&&result.record)saveFundingRecord(result.record);
     const {handles:privateHandles,receipt:privateReceipt,...data}=result;
     return data;
+  }
+  async function run(action,input={},onProgress=()=>{}) {
+    if(action!=='post'||input.isDummy||!input.message)return runCore(action,input,onProgress);
+    const api=window.BillboardPlugins;
+    if(!api)throw Error('Plugin client unavailable');
+    if(!api.mentions(input.message).length)return runCore(action,input,onProgress);
+    const h=connectedHandles(),config=_getPublicConfig(),expected=stamp();
+    const scope={chainId:config.network.chainId,rollupVersion:config.network.rollupVersion,rollupAddress:config.network.rollupAddress,boardAddress:config.board.contractAddress};
+    const key='billboard-plugin-payment-v1:'+JSON.stringify([scope,h.address.toString()]);
+    const prepare=text=>api.prepareInvocation({text,scope,lookup:async id=>{
+        const result=await h.contract.methods.get_plugin(window.__aztec.Fr.fromString(id)).simulate({from:window.__aztec.NO_FROM});check(expected);
+        const [receiver,enabled,descriptor,length]=result.result;
+        return {receiver:receiver.toString(),enabled,descriptor:descriptor.map(String),length:Number(length)};
+      }});
+    return api.postWithPlugins({text:input.message,progress:onProgress,
+      store:{read:async()=>JSON.parse(localStorage.getItem(key)||'null'),write:async value=>{check(expected);localStorage.setItem(key,JSON.stringify(value));},clear:async()=>localStorage.removeItem(key)},
+      prepare,
+      post:pluginHandle=>{check(expected);return runCore(action,{...input,message:input.message,...(pluginHandle?{pluginHandle}:{})},onProgress);},
+      pay:async pending=>{check(expected);const plan=await prepare(pending.text);if(!plan||plan.handleField!==pending.plan.handleField)throw Error('Plugin configuration changed');return api.payForInvocation({descriptor:plan.descriptor,postId:pending.postId,text:pending.text,signer:await getBrowserSigner(),transactionHash:pending.transactionHash,onSubmitted:pending.submitted});},
+    });
   }
   /** @returns {Promise<{amount:bigint,depositChainId:bigint,nextAllowedTime:bigint,lastScreenedIndex:bigint,lastRealPostIndex:bigint,chainTime:number}>} */
   async function readDeposit() {

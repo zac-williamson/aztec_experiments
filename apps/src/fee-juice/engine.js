@@ -88,11 +88,11 @@
     transactionJournal.setOperation(operation);
     let pxe;
     try{
-      await env.initCRS();
+      if(a.provingEnabledForNode(info))await env.initCRS();
       const contracts=await node.getL1ContractAddresses();
       const dataDirectory='pxe_private_fee_'+owner.toString()+'_'+contracts.rollupAddress;
       const store=await env.createStore({...contracts,l1ChainId:info.l1ChainId,accountAddress:owner.toString(),dataDirectory});
-      pxe=await a.createPXE(node,{proverEnabled:true,autoSync:true,dataDirectory},{store});
+      pxe=await a.createPXE(node,{proverEnabled:a.provingEnabledForNode(info),autoSync:true,dataDirectory},{store});
       await pxe.registerAccount(keys,await a.computePartialAddress(instance));
       await pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact);
       await pxe.registerContract(instance);

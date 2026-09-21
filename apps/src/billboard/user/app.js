@@ -284,7 +284,7 @@ async function refreshBillboard() {
       const saved=previous.get(key);
       if(saved?.signature===textSignature){next.set(key,saved);nodes.push(saved.article);continue;}
       const article=document.createElement('article');article.className='billboard-post';
-      const label=document.createElement('p');label.textContent='#'+post.orderIndex;article.append(label);
+      const label=document.createElement('p');label.textContent=(post.pluginReply?'Bot reply · ':'')+'#'+post.orderIndex;article.append(label);
       const content=document.createElement('p');content.textContent=post.flagged?'Message removed by moderator.':post.text;article.append(content);
       if(post.flagged){const reason=document.createElement('p');reason.textContent='Moderator reason: '+(post.flag?.reason||'No reason supplied');article.append(reason);}
       next.set(key,{article,signature:textSignature});nodes.push(article);
