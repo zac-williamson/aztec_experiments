@@ -41,3 +41,12 @@ were changed. SSM commands: 49c52e47-8c6c-4589-b74b-23b13f6df803 (evaluation),
 Source-bound results are the four `deployed-qwen35-9b-*` result files and matching
 `deployed-threat-*` corpora in this directory. The additional direct-threat result is
 [deployed-qwen35-9b-direct-20260921.json](deployed-qwen35-9b-direct-20260921.json).
+
+Runtime source review found no per-request model reload: the daemon keeps its model
+server running, sends one request per evaluation, disables thinking and reuses saved
+decisions. The current records do not separate prompt processing from token generation
+or establish prefix-cache reuse. Measure those components before changing prompt or
+cache settings. Reducing the output-token ceiling alone is not evidence of a speedup.
+The live removal's 103-second proving/submission/receipt stage also needs separate
+measurement; faster inference alone cannot remove that delay. No runtime or model
+change was made from this review.

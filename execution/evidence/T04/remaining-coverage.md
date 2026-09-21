@@ -121,3 +121,11 @@ cleanup. Regression246 reproduced it. The reviewed correction preserves the
 reference until the exact refund is verified and offers wallet connection from
 the refund page.123focusedchecks and the harness tier passed; actual withdrawal recovery251 passed in206056ms with complete cleanup. Post
 recovery252 also passed with complete cleanup. See withdrawal-recovery-fix-20260921.json.
+
+
+Wallet-absence311 timing limitation: its second-post stage took about221seconds,
+but combines wallet preparation, fee checks, proving, public simulation, inclusion
+and synchronization. It is not a measured221-second proof. Independent source
+review found no loop over the simulated30days: eligibility was already satisfied
+and cooldown catch-up is arithmetic. Add phase timing to existing helpers when
+next changing them; this successful run alone does not justify a corrective rerun.

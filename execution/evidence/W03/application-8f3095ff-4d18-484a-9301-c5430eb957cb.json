@@ -1,0 +1,3857 @@
+{
+  "schemaVersion": 2,
+  "scenario": "proof-recovery",
+  "profile": "Stale proof replacement with private fees",
+  "startedAt": "2026-09-21T04:24:19.323Z",
+  "passed": true,
+  "stages": [
+    {
+      "role": "fixture",
+      "stage": "start-disposable-l1",
+      "elapsedMs": 405
+    },
+    {
+      "role": "fixture",
+      "stage": "prepare-genesis",
+      "elapsedMs": 521
+    },
+    {
+      "role": "fixture",
+      "stage": "deploy-local-protocol-fixture",
+      "elapsedMs": 2471
+    },
+    {
+      "role": "fixture",
+      "stage": "wait-for-local-validator-activation",
+      "elapsedMs": 3871
+    },
+    {
+      "role": "fixture",
+      "stage": "start-application-node",
+      "elapsedMs": 3893
+    },
+    {
+      "role": "fixture",
+      "stage": "prove-board-deployment",
+      "elapsedMs": 7602
+    },
+    {
+      "role": "fixture",
+      "stage": "board-create-proving-wallet",
+      "elapsedMs": 7627
+    },
+    {
+      "role": "fixture",
+      "stage": "board-build-deployment-request",
+      "elapsedMs": 7812
+    },
+    {
+      "role": "fixture",
+      "stage": "board-genuine-client-proof",
+      "elapsedMs": 8145
+    },
+    {
+      "role": "fixture",
+      "stage": "board-serialize-proof",
+      "elapsedMs": 27037
+    },
+    {
+      "role": "fixture",
+      "stage": "board-real-node-validation",
+      "elapsedMs": 27047
+    },
+    {
+      "role": "fixture",
+      "stage": "board-close-wallet",
+      "elapsedMs": 27312
+    },
+    {
+      "role": "fixture",
+      "stage": "board-inclusion",
+      "elapsedMs": 27315
+    },
+    {
+      "role": "fixture",
+      "stage": "ready-reopen-wallet",
+      "elapsedMs": 41629
+    },
+    {
+      "role": "fixture",
+      "stage": "ready-deploy-disabled-portal",
+      "elapsedMs": 42029
+    },
+    {
+      "role": "fixture",
+      "stage": "ready-prove-update-portal",
+      "elapsedMs": 42039
+    },
+    {
+      "role": "fixture",
+      "stage": "ready-serialize-proof",
+      "elapsedMs": 56451
+    },
+    {
+      "role": "fixture",
+      "stage": "ready-validate-update-portal",
+      "elapsedMs": 56460
+    },
+    {
+      "role": "fixture",
+      "stage": "ready-close-wallet",
+      "elapsedMs": 56668
+    },
+    {
+      "role": "fixture",
+      "stage": "ready-inclusion",
+      "elapsedMs": 56670
+    },
+    {
+      "role": "fixture",
+      "stage": "ready-settlement",
+      "elapsedMs": 77967
+    },
+    {
+      "role": "fixture",
+      "stage": "private-fee:fund-disposable-user",
+      "elapsedMs": 90377
+    },
+    {
+      "role": "fixture",
+      "stage": "private-fee:bridge-user-funds",
+      "elapsedMs": 90391
+    },
+    {
+      "role": "fixture",
+      "stage": "private-fee:wait-inbox",
+      "elapsedMs": 90994
+    },
+    {
+      "role": "fixture",
+      "stage": "claim:reopen-claim-wallet",
+      "elapsedMs": 109141
+    },
+    {
+      "role": "fixture",
+      "stage": "claim:deposit-real-l1",
+      "elapsedMs": 109366
+    },
+    {
+      "role": "fixture",
+      "stage": "claim:wait-real-inbox-anchor",
+      "elapsedMs": 109373
+    },
+    {
+      "role": "fixture",
+      "stage": "claim:prove-real-claim",
+      "elapsedMs": 125255
+    },
+    {
+      "role": "fixture",
+      "stage": "claim:include-real-claim",
+      "elapsedMs": 147613
+    },
+    {
+      "role": "fixture",
+      "stage": "claim:check-delivered-deposit-note",
+      "elapsedMs": 157429
+    },
+    {
+      "role": "fixture",
+      "stage": "claim:reject-real-claim-replay",
+      "elapsedMs": 157611
+    },
+    {
+      "role": "fixture",
+      "stage": "contention:register-1-accounts",
+      "elapsedMs": 157954
+    },
+    {
+      "role": "fixture",
+      "stage": "contention:acquire-common-eligible-anchor",
+      "elapsedMs": 158223
+    },
+    {
+      "role": "fixture",
+      "stage": "contention:prove-author-0",
+      "elapsedMs": 179661
+    },
+    {
+      "role": "fixture",
+      "stage": "contention:prove-private-credit-conflict",
+      "elapsedMs": 200856
+    },
+    {
+      "role": "fixture",
+      "stage": "contention:include-private-credit-conflict",
+      "elapsedMs": 214360
+    },
+    {
+      "role": "fixture",
+      "stage": "contention:prove-journal-linked-replacement",
+      "elapsedMs": 227999
+    },
+    {
+      "role": "fixture",
+      "stage": "contention:submit-1-prepared-transactions",
+      "elapsedMs": 249457
+    },
+    {
+      "role": "fixture",
+      "stage": "contention:wait-1-canonical-inclusions",
+      "elapsedMs": 249617
+    },
+    {
+      "role": "fixture",
+      "stage": "contention:verify-1-included-transactions",
+      "elapsedMs": 257530
+    },
+    {
+      "role": "fixture",
+      "stage": "contention:verified",
+      "elapsedMs": 258186
+    }
+  ],
+  "deadlineMs": 540000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 2122672,
+  "rssSamples": [
+    {
+      "elapsedMs": 1002,
+      "rssKiB": 385728
+    },
+    {
+      "elapsedMs": 2023,
+      "rssKiB": 648912
+    },
+    {
+      "elapsedMs": 3043,
+      "rssKiB": 718112
+    },
+    {
+      "elapsedMs": 4065,
+      "rssKiB": 866496
+    },
+    {
+      "elapsedMs": 5085,
+      "rssKiB": 927296
+    },
+    {
+      "elapsedMs": 6107,
+      "rssKiB": 928064
+    },
+    {
+      "elapsedMs": 7126,
+      "rssKiB": 1030496
+    },
+    {
+      "elapsedMs": 8145,
+      "rssKiB": 1314720
+    },
+    {
+      "elapsedMs": 9164,
+      "rssKiB": 1368784
+    },
+    {
+      "elapsedMs": 10183,
+      "rssKiB": 1467440
+    },
+    {
+      "elapsedMs": 11207,
+      "rssKiB": 1721984
+    },
+    {
+      "elapsedMs": 12228,
+      "rssKiB": 1739616
+    },
+    {
+      "elapsedMs": 13249,
+      "rssKiB": 1819776
+    },
+    {
+      "elapsedMs": 14269,
+      "rssKiB": 1827200
+    },
+    {
+      "elapsedMs": 15288,
+      "rssKiB": 1896576
+    },
+    {
+      "elapsedMs": 16308,
+      "rssKiB": 1908096
+    },
+    {
+      "elapsedMs": 17328,
+      "rssKiB": 1915248
+    },
+    {
+      "elapsedMs": 18348,
+      "rssKiB": 1937936
+    },
+    {
+      "elapsedMs": 19370,
+      "rssKiB": 1912720
+    },
+    {
+      "elapsedMs": 20390,
+      "rssKiB": 1913504
+    },
+    {
+      "elapsedMs": 21411,
+      "rssKiB": 1914064
+    },
+    {
+      "elapsedMs": 22431,
+      "rssKiB": 1918272
+    },
+    {
+      "elapsedMs": 23452,
+      "rssKiB": 1918544
+    },
+    {
+      "elapsedMs": 24472,
+      "rssKiB": 1976304
+    },
+    {
+      "elapsedMs": 25491,
+      "rssKiB": 1976560
+    },
+    {
+      "elapsedMs": 26512,
+      "rssKiB": 1979376
+    },
+    {
+      "elapsedMs": 27534,
+      "rssKiB": 2006240
+    },
+    {
+      "elapsedMs": 28555,
+      "rssKiB": 2006880
+    },
+    {
+      "elapsedMs": 29584,
+      "rssKiB": 2006928
+    },
+    {
+      "elapsedMs": 30614,
+      "rssKiB": 2007184
+    },
+    {
+      "elapsedMs": 31641,
+      "rssKiB": 2007312
+    },
+    {
+      "elapsedMs": 32669,
+      "rssKiB": 2007440
+    },
+    {
+      "elapsedMs": 33705,
+      "rssKiB": 2014992
+    },
+    {
+      "elapsedMs": 34736,
+      "rssKiB": 2015584
+    },
+    {
+      "elapsedMs": 35763,
+      "rssKiB": 2016016
+    },
+    {
+      "elapsedMs": 36793,
+      "rssKiB": 2016208
+    },
+    {
+      "elapsedMs": 37822,
+      "rssKiB": 2016464
+    },
+    {
+      "elapsedMs": 38850,
+      "rssKiB": 2025616
+    },
+    {
+      "elapsedMs": 39869,
+      "rssKiB": 2028464
+    },
+    {
+      "elapsedMs": 40888,
+      "rssKiB": 2122672
+    },
+    {
+      "elapsedMs": 41909,
+      "rssKiB": 2100528
+    },
+    {
+      "elapsedMs": 42932,
+      "rssKiB": 2114352
+    },
+    {
+      "elapsedMs": 43952,
+      "rssKiB": 1568992
+    },
+    {
+      "elapsedMs": 44973,
+      "rssKiB": 1571856
+    },
+    {
+      "elapsedMs": 45994,
+      "rssKiB": 1571904
+    },
+    {
+      "elapsedMs": 47014,
+      "rssKiB": 1572000
+    },
+    {
+      "elapsedMs": 48035,
+      "rssKiB": 1572160
+    },
+    {
+      "elapsedMs": 49055,
+      "rssKiB": 1572784
+    },
+    {
+      "elapsedMs": 50075,
+      "rssKiB": 1573184
+    },
+    {
+      "elapsedMs": 51094,
+      "rssKiB": 1573216
+    },
+    {
+      "elapsedMs": 52114,
+      "rssKiB": 1573360
+    },
+    {
+      "elapsedMs": 53135,
+      "rssKiB": 1572448
+    },
+    {
+      "elapsedMs": 54152,
+      "rssKiB": 1532976
+    },
+    {
+      "elapsedMs": 55173,
+      "rssKiB": 1524816
+    },
+    {
+      "elapsedMs": 56193,
+      "rssKiB": 1545536
+    },
+    {
+      "elapsedMs": 57214,
+      "rssKiB": 1544208
+    },
+    {
+      "elapsedMs": 58243,
+      "rssKiB": 1544496
+    },
+    {
+      "elapsedMs": 59273,
+      "rssKiB": 1545024
+    },
+    {
+      "elapsedMs": 60302,
+      "rssKiB": 1545152
+    },
+    {
+      "elapsedMs": 61331,
+      "rssKiB": 1545296
+    },
+    {
+      "elapsedMs": 62363,
+      "rssKiB": 1545440
+    },
+    {
+      "elapsedMs": 63393,
+      "rssKiB": 1545536
+    },
+    {
+      "elapsedMs": 64423,
+      "rssKiB": 1545728
+    },
+    {
+      "elapsedMs": 65456,
+      "rssKiB": 1545456
+    },
+    {
+      "elapsedMs": 66487,
+      "rssKiB": 1487088
+    },
+    {
+      "elapsedMs": 67513,
+      "rssKiB": 1487952
+    },
+    {
+      "elapsedMs": 68541,
+      "rssKiB": 1488512
+    },
+    {
+      "elapsedMs": 69570,
+      "rssKiB": 1488832
+    },
+    {
+      "elapsedMs": 70597,
+      "rssKiB": 1489104
+    },
+    {
+      "elapsedMs": 71627,
+      "rssKiB": 1489296
+    },
+    {
+      "elapsedMs": 72655,
+      "rssKiB": 1490272
+    },
+    {
+      "elapsedMs": 73683,
+      "rssKiB": 1490432
+    },
+    {
+      "elapsedMs": 74711,
+      "rssKiB": 1490544
+    },
+    {
+      "elapsedMs": 75741,
+      "rssKiB": 1490864
+    },
+    {
+      "elapsedMs": 76768,
+      "rssKiB": 1439920
+    },
+    {
+      "elapsedMs": 77794,
+      "rssKiB": 1443440
+    },
+    {
+      "elapsedMs": 78824,
+      "rssKiB": 1443648
+    },
+    {
+      "elapsedMs": 79847,
+      "rssKiB": 1443776
+    },
+    {
+      "elapsedMs": 80873,
+      "rssKiB": 1443824
+    },
+    {
+      "elapsedMs": 81902,
+      "rssKiB": 1443936
+    },
+    {
+      "elapsedMs": 82933,
+      "rssKiB": 1444064
+    },
+    {
+      "elapsedMs": 83959,
+      "rssKiB": 1371552
+    },
+    {
+      "elapsedMs": 84986,
+      "rssKiB": 1371728
+    },
+    {
+      "elapsedMs": 86014,
+      "rssKiB": 1308432
+    },
+    {
+      "elapsedMs": 87044,
+      "rssKiB": 1291152
+    },
+    {
+      "elapsedMs": 88072,
+      "rssKiB": 1281824
+    },
+    {
+      "elapsedMs": 89101,
+      "rssKiB": 1281904
+    },
+    {
+      "elapsedMs": 90130,
+      "rssKiB": 1288736
+    },
+    {
+      "elapsedMs": 91150,
+      "rssKiB": 1292368
+    },
+    {
+      "elapsedMs": 92174,
+      "rssKiB": 1242976
+    },
+    {
+      "elapsedMs": 93202,
+      "rssKiB": 1243760
+    },
+    {
+      "elapsedMs": 94232,
+      "rssKiB": 1244336
+    },
+    {
+      "elapsedMs": 95264,
+      "rssKiB": 1244560
+    },
+    {
+      "elapsedMs": 96294,
+      "rssKiB": 1244672
+    },
+    {
+      "elapsedMs": 97316,
+      "rssKiB": 1244784
+    },
+    {
+      "elapsedMs": 98346,
+      "rssKiB": 1246976
+    },
+    {
+      "elapsedMs": 99366,
+      "rssKiB": 1252960
+    },
+    {
+      "elapsedMs": 100385,
+      "rssKiB": 1254544
+    },
+    {
+      "elapsedMs": 101410,
+      "rssKiB": 1254784
+    },
+    {
+      "elapsedMs": 102437,
+      "rssKiB": 1246160
+    },
+    {
+      "elapsedMs": 103461,
+      "rssKiB": 1250912
+    },
+    {
+      "elapsedMs": 104491,
+      "rssKiB": 1221872
+    },
+    {
+      "elapsedMs": 105521,
+      "rssKiB": 1203680
+    },
+    {
+      "elapsedMs": 106543,
+      "rssKiB": 1204480
+    },
+    {
+      "elapsedMs": 107572,
+      "rssKiB": 1205344
+    },
+    {
+      "elapsedMs": 108599,
+      "rssKiB": 1209408
+    },
+    {
+      "elapsedMs": 109618,
+      "rssKiB": 1309696
+    },
+    {
+      "elapsedMs": 110643,
+      "rssKiB": 1310048
+    },
+    {
+      "elapsedMs": 111672,
+      "rssKiB": 1310240
+    },
+    {
+      "elapsedMs": 112700,
+      "rssKiB": 1278688
+    },
+    {
+      "elapsedMs": 113730,
+      "rssKiB": 1279376
+    },
+    {
+      "elapsedMs": 114757,
+      "rssKiB": 1281840
+    },
+    {
+      "elapsedMs": 115787,
+      "rssKiB": 1281952
+    },
+    {
+      "elapsedMs": 116813,
+      "rssKiB": 1282208
+    },
+    {
+      "elapsedMs": 117842,
+      "rssKiB": 1282400
+    },
+    {
+      "elapsedMs": 118871,
+      "rssKiB": 1283920
+    },
+    {
+      "elapsedMs": 119891,
+      "rssKiB": 1285232
+    },
+    {
+      "elapsedMs": 120911,
+      "rssKiB": 1285328
+    },
+    {
+      "elapsedMs": 121940,
+      "rssKiB": 1285440
+    },
+    {
+      "elapsedMs": 122969,
+      "rssKiB": 1285920
+    },
+    {
+      "elapsedMs": 123997,
+      "rssKiB": 1286032
+    },
+    {
+      "elapsedMs": 125027,
+      "rssKiB": 1288944
+    },
+    {
+      "elapsedMs": 126046,
+      "rssKiB": 1309168
+    },
+    {
+      "elapsedMs": 127066,
+      "rssKiB": 1329232
+    },
+    {
+      "elapsedMs": 128085,
+      "rssKiB": 1286368
+    },
+    {
+      "elapsedMs": 129106,
+      "rssKiB": 1320256
+    },
+    {
+      "elapsedMs": 130125,
+      "rssKiB": 1335568
+    },
+    {
+      "elapsedMs": 131145,
+      "rssKiB": 1355984
+    },
+    {
+      "elapsedMs": 132165,
+      "rssKiB": 1359808
+    },
+    {
+      "elapsedMs": 133185,
+      "rssKiB": 1360992
+    },
+    {
+      "elapsedMs": 134204,
+      "rssKiB": 1361184
+    },
+    {
+      "elapsedMs": 135224,
+      "rssKiB": 1446368
+    },
+    {
+      "elapsedMs": 136244,
+      "rssKiB": 1476288
+    },
+    {
+      "elapsedMs": 137262,
+      "rssKiB": 1480992
+    },
+    {
+      "elapsedMs": 138282,
+      "rssKiB": 1473888
+    },
+    {
+      "elapsedMs": 139302,
+      "rssKiB": 1465216
+    },
+    {
+      "elapsedMs": 140322,
+      "rssKiB": 1465856
+    },
+    {
+      "elapsedMs": 141341,
+      "rssKiB": 1466304
+    },
+    {
+      "elapsedMs": 142362,
+      "rssKiB": 1486592
+    },
+    {
+      "elapsedMs": 143388,
+      "rssKiB": 1318496
+    },
+    {
+      "elapsedMs": 144410,
+      "rssKiB": 1327008
+    },
+    {
+      "elapsedMs": 145429,
+      "rssKiB": 1328464
+    },
+    {
+      "elapsedMs": 146452,
+      "rssKiB": 1326240
+    },
+    {
+      "elapsedMs": 147477,
+      "rssKiB": 1334016
+    },
+    {
+      "elapsedMs": 148496,
+      "rssKiB": 1342208
+    },
+    {
+      "elapsedMs": 149525,
+      "rssKiB": 1342320
+    },
+    {
+      "elapsedMs": 150554,
+      "rssKiB": 1342560
+    },
+    {
+      "elapsedMs": 151591,
+      "rssKiB": 1343120
+    },
+    {
+      "elapsedMs": 152616,
+      "rssKiB": 1343264
+    },
+    {
+      "elapsedMs": 153647,
+      "rssKiB": 1343456
+    },
+    {
+      "elapsedMs": 154677,
+      "rssKiB": 1343744
+    },
+    {
+      "elapsedMs": 155698,
+      "rssKiB": 1341504
+    },
+    {
+      "elapsedMs": 156727,
+      "rssKiB": 1353984
+    },
+    {
+      "elapsedMs": 157748,
+      "rssKiB": 1356080
+    },
+    {
+      "elapsedMs": 158770,
+      "rssKiB": 1420480
+    },
+    {
+      "elapsedMs": 159796,
+      "rssKiB": 1428016
+    },
+    {
+      "elapsedMs": 160820,
+      "rssKiB": 1399264
+    },
+    {
+      "elapsedMs": 161853,
+      "rssKiB": 1399936
+    },
+    {
+      "elapsedMs": 162874,
+      "rssKiB": 1400032
+    },
+    {
+      "elapsedMs": 163899,
+      "rssKiB": 1391152
+    },
+    {
+      "elapsedMs": 164922,
+      "rssKiB": 1394080
+    },
+    {
+      "elapsedMs": 165943,
+      "rssKiB": 1421888
+    },
+    {
+      "elapsedMs": 166962,
+      "rssKiB": 1438832
+    },
+    {
+      "elapsedMs": 167992,
+      "rssKiB": 1444800
+    },
+    {
+      "elapsedMs": 169021,
+      "rssKiB": 1446464
+    },
+    {
+      "elapsedMs": 170053,
+      "rssKiB": 1446512
+    },
+    {
+      "elapsedMs": 171078,
+      "rssKiB": 1450416
+    },
+    {
+      "elapsedMs": 172102,
+      "rssKiB": 1449840
+    },
+    {
+      "elapsedMs": 173131,
+      "rssKiB": 1449920
+    },
+    {
+      "elapsedMs": 174164,
+      "rssKiB": 1449712
+    },
+    {
+      "elapsedMs": 175193,
+      "rssKiB": 1453296
+    },
+    {
+      "elapsedMs": 176214,
+      "rssKiB": 1454416
+    },
+    {
+      "elapsedMs": 177245,
+      "rssKiB": 1453056
+    },
+    {
+      "elapsedMs": 178271,
+      "rssKiB": 1453264
+    },
+    {
+      "elapsedMs": 179300,
+      "rssKiB": 1454576
+    },
+    {
+      "elapsedMs": 180320,
+      "rssKiB": 1503312
+    },
+    {
+      "elapsedMs": 181340,
+      "rssKiB": 1553824
+    },
+    {
+      "elapsedMs": 182360,
+      "rssKiB": 1556320
+    },
+    {
+      "elapsedMs": 183380,
+      "rssKiB": 1774128
+    },
+    {
+      "elapsedMs": 184400,
+      "rssKiB": 1778896
+    },
+    {
+      "elapsedMs": 185420,
+      "rssKiB": 1896032
+    },
+    {
+      "elapsedMs": 186440,
+      "rssKiB": 1774096
+    },
+    {
+      "elapsedMs": 187460,
+      "rssKiB": 1774624
+    },
+    {
+      "elapsedMs": 188480,
+      "rssKiB": 1795328
+    },
+    {
+      "elapsedMs": 189500,
+      "rssKiB": 1807216
+    },
+    {
+      "elapsedMs": 190520,
+      "rssKiB": 1807440
+    },
+    {
+      "elapsedMs": 191539,
+      "rssKiB": 1807520
+    },
+    {
+      "elapsedMs": 192559,
+      "rssKiB": 1750496
+    },
+    {
+      "elapsedMs": 193580,
+      "rssKiB": 1750992
+    },
+    {
+      "elapsedMs": 194601,
+      "rssKiB": 1751056
+    },
+    {
+      "elapsedMs": 195621,
+      "rssKiB": 1751392
+    },
+    {
+      "elapsedMs": 196641,
+      "rssKiB": 1753152
+    },
+    {
+      "elapsedMs": 197662,
+      "rssKiB": 1764880
+    },
+    {
+      "elapsedMs": 198681,
+      "rssKiB": 1765024
+    },
+    {
+      "elapsedMs": 199704,
+      "rssKiB": 1765680
+    },
+    {
+      "elapsedMs": 200723,
+      "rssKiB": 1787968
+    },
+    {
+      "elapsedMs": 201744,
+      "rssKiB": 1787632
+    },
+    {
+      "elapsedMs": 202765,
+      "rssKiB": 1792144
+    },
+    {
+      "elapsedMs": 203785,
+      "rssKiB": 1725728
+    },
+    {
+      "elapsedMs": 204807,
+      "rssKiB": 1747408
+    },
+    {
+      "elapsedMs": 205826,
+      "rssKiB": 1747328
+    },
+    {
+      "elapsedMs": 206846,
+      "rssKiB": 1747392
+    },
+    {
+      "elapsedMs": 207866,
+      "rssKiB": 1747616
+    },
+    {
+      "elapsedMs": 208885,
+      "rssKiB": 1747696
+    },
+    {
+      "elapsedMs": 209905,
+      "rssKiB": 1747760
+    },
+    {
+      "elapsedMs": 210926,
+      "rssKiB": 1747664
+    },
+    {
+      "elapsedMs": 211946,
+      "rssKiB": 1744880
+    },
+    {
+      "elapsedMs": 212967,
+      "rssKiB": 1652304
+    },
+    {
+      "elapsedMs": 213988,
+      "rssKiB": 1653040
+    },
+    {
+      "elapsedMs": 215009,
+      "rssKiB": 1653152
+    },
+    {
+      "elapsedMs": 216039,
+      "rssKiB": 1653216
+    },
+    {
+      "elapsedMs": 217070,
+      "rssKiB": 1654544
+    },
+    {
+      "elapsedMs": 218097,
+      "rssKiB": 1569424
+    },
+    {
+      "elapsedMs": 219124,
+      "rssKiB": 1553264
+    },
+    {
+      "elapsedMs": 220151,
+      "rssKiB": 1519904
+    },
+    {
+      "elapsedMs": 221176,
+      "rssKiB": 1500576
+    },
+    {
+      "elapsedMs": 222196,
+      "rssKiB": 1498608
+    },
+    {
+      "elapsedMs": 223225,
+      "rssKiB": 1498704
+    },
+    {
+      "elapsedMs": 224256,
+      "rssKiB": 1497776
+    },
+    {
+      "elapsedMs": 225282,
+      "rssKiB": 1497856
+    },
+    {
+      "elapsedMs": 226311,
+      "rssKiB": 1499824
+    },
+    {
+      "elapsedMs": 227335,
+      "rssKiB": 1508288
+    },
+    {
+      "elapsedMs": 228356,
+      "rssKiB": 1571536
+    },
+    {
+      "elapsedMs": 229376,
+      "rssKiB": 1527456
+    },
+    {
+      "elapsedMs": 230395,
+      "rssKiB": 1564944
+    },
+    {
+      "elapsedMs": 231417,
+      "rssKiB": 1832144
+    },
+    {
+      "elapsedMs": 232438,
+      "rssKiB": 1836480
+    },
+    {
+      "elapsedMs": 233458,
+      "rssKiB": 1873136
+    },
+    {
+      "elapsedMs": 234476,
+      "rssKiB": 1751376
+    },
+    {
+      "elapsedMs": 235495,
+      "rssKiB": 1794400
+    },
+    {
+      "elapsedMs": 236515,
+      "rssKiB": 1811584
+    },
+    {
+      "elapsedMs": 237535,
+      "rssKiB": 1825792
+    },
+    {
+      "elapsedMs": 238554,
+      "rssKiB": 1826000
+    },
+    {
+      "elapsedMs": 239575,
+      "rssKiB": 1826224
+    },
+    {
+      "elapsedMs": 240595,
+      "rssKiB": 1765056
+    },
+    {
+      "elapsedMs": 241615,
+      "rssKiB": 1765200
+    },
+    {
+      "elapsedMs": 242635,
+      "rssKiB": 1766560
+    },
+    {
+      "elapsedMs": 243655,
+      "rssKiB": 1722896
+    },
+    {
+      "elapsedMs": 244676,
+      "rssKiB": 1722944
+    },
+    {
+      "elapsedMs": 245697,
+      "rssKiB": 1739840
+    },
+    {
+      "elapsedMs": 246716,
+      "rssKiB": 1740032
+    },
+    {
+      "elapsedMs": 247737,
+      "rssKiB": 1740288
+    },
+    {
+      "elapsedMs": 248756,
+      "rssKiB": 1740496
+    },
+    {
+      "elapsedMs": 249776,
+      "rssKiB": 1750400
+    },
+    {
+      "elapsedMs": 250799,
+      "rssKiB": 1750432
+    },
+    {
+      "elapsedMs": 251828,
+      "rssKiB": 1750512
+    },
+    {
+      "elapsedMs": 252858,
+      "rssKiB": 1750880
+    },
+    {
+      "elapsedMs": 253878,
+      "rssKiB": 1751008
+    },
+    {
+      "elapsedMs": 254906,
+      "rssKiB": 1751120
+    },
+    {
+      "elapsedMs": 255935,
+      "rssKiB": 1752816
+    },
+    {
+      "elapsedMs": 256956,
+      "rssKiB": 1755760
+    },
+    {
+      "elapsedMs": 257986,
+      "rssKiB": 1783360
+    },
+    {
+      "elapsedMs": 259006,
+      "rssKiB": 863824
+    },
+    {
+      "elapsedMs": 260025,
+      "rssKiB": 863824
+    },
+    {
+      "elapsedMs": 261044,
+      "rssKiB": 863824
+    },
+    {
+      "elapsedMs": 262071,
+      "rssKiB": 864080
+    },
+    {
+      "elapsedMs": 263100,
+      "rssKiB": 864096
+    },
+    {
+      "elapsedMs": 264121,
+      "rssKiB": 864128
+    },
+    {
+      "elapsedMs": 265148,
+      "rssKiB": 864176
+    },
+    {
+      "elapsedMs": 266177,
+      "rssKiB": 864192
+    },
+    {
+      "elapsedMs": 267204,
+      "rssKiB": 864192
+    },
+    {
+      "elapsedMs": 268237,
+      "rssKiB": 864224
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "fixture",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "localAnvilBinary": "22d5eeb9e70e198d0feb76a15bb97d2061b653798080dad0cc328ab20495b0bd",
+    "scripts/t04-metamask.mjs": "7110714d5f0c063c887d30410cc9fd7a9d9615758b03f4840f8a1ca88631710f",
+    "scripts/t04-browser-performance.mjs": "2bafd3f2b43c9be4753f3c321dcbafe2a20c235e3848a97c3ccef4810732996b",
+    "scripts/t04-browser-funding.mjs": "04b2ae7a44d09fddac48f31bfb9b0e54c403ef3155cd6a9eee32abfdcffd7b33",
+    "scripts/t04-cold-browser-fees.mjs": "757644df5ab2d9e454bda34ca12412a21a64a12b3ae9aa4749fe212d758178a2",
+    "scripts/w01-unfunded-wallet.mjs": "bce21177b1928af7ca7d169815dc08fd9e3138bd3e20f77c8e9a899913fc1c30",
+    "scripts/application-post.mjs": "3b806022798aa8b4d3cdf520037c8199a5fcfd79d66dbd02998ac7529ee0251c",
+    "scripts/t04-wallet-absence.mjs": "b98ab496d8badd1455add1f327c5fa906044b0e5af95fefbe6413cf415da89ba",
+    "scripts/t04-withdraw-traffic.mjs": "a501fb18adcaef69bd56304f47cf9ee03f0c079c3d17cd58f4138138179b15d0",
+    "scripts/t03-repeated-posts.mjs": "6ef74b804bab60f35fe7639975e2b0c7eea3de6cd6aaf5125032a58b3bd4aaae",
+    "scripts/o01-censor-command-flow.mjs": "6aedccd6b98d9d5c6e532d6fb264f7bb45a9ce63469611eca2375287392ff44c",
+    "scripts/o01-censor-command-io.mjs": "b781bc73a7c117267ccd0898a7b561d83f4265b87e6e80ae41a84c2902021a12",
+    "scripts/t04-browser-journey.mjs": "7553978991034529ebc3bb80148a99e5237fa44805f0cc0dbb29790855d5a758",
+    "scripts/t04-browser-journey-verify.mjs": "995d2a2f9a6b95d91682f20688932885d895572ca75e9243eee5890c601c9a65",
+    "scripts/t04-browser-post-recovery.mjs": "6b6feaaacca8e73689dac0c77e9bf1d5d6289964573602dd31d5eeaacf5a3d1a",
+    "scripts/t04-post-response-loss.mjs": "e2252661599cd245a749cb5d5a02be97be3eaee8446e67c8cda0d1c815fee46f",
+    "scripts/run-bounded-browser-check.mjs": "945d3f6ca1dc8012469a8bfe6c9ce7c724974e953d963785cad152112f969670",
+    "scripts/u01-browser-flow.mjs": "bc7b940d532ae30095b93ca305ffcebb1156c86944b941fc86fffae0b077e5a2",
+    "scripts/u01-browser-post-verify.mjs": "850fc7fa3d4db5cb8f984235f3d5a4a58e68d90ac1aef656732fa72d0e030b7b",
+    "scripts/u01-browser-post.mjs": "1ab8c65a0ffb2e793445628488e8e94947103ccf0faaa2efc0a71cc0aa117cb4",
+    "scripts/browser-error-observer.mjs": "a115d9a6e011d981bbddecf9ec80cac7a7e53d00d993b632e4c64383cea05d3b",
+    "scripts/u01-browser-rpc.mjs": "1bfe26453a4a89074b7083a065151aca16c4e6b54ba7a99c7068c3349943e734",
+    "scripts/t03-rpc-observer.mjs": "733b7cd2d1329794df5cfac9483b463c1ed2c7c0e7990b0feb983a9f106d876c",
+    "scripts/t03-public-footprint.mjs": "9614c0037b32cd12f9507f160c0bd91ee78acbd7462761f036de20a1839d8bd0",
+    "deploy/hosting-config.mjs": "52ade3bf75fd0ca6bd1fd82b2a67e9d5eff064af09a52751c76693b227b3987d",
+    "scripts/c01-native-profile.mjs": "a3e5b526210247329bf1c936d3590e826db8fcf5e0cc6700d266986ec15967d0",
+    "scripts/test-c01-application.mjs": "3268aebedef1afa5ae1ee23158a425de1918f73e26ba2366e5112ff6f45c19a8",
+    "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
+    "scripts/c01-settle-application-message.mjs": "7399875d97f5dfd82a3787d8c39390fd9fc6673c8ce06d5bc41464515c3fef4b",
+    "scripts/c01-application-deployment.mjs": "a81fe20b22967ce6e3d6c1f751ee93ed6c9fef5e8553cf4037534780dec11fa2",
+    "scripts/w03-note-attribution.mjs": "c5f3be63dc9752a2276931717ef53d387d7b46f064d92092f41f87f46947d168",
+    "shared/application-nullifier.mjs": "67b056f3e58f88d9a31549c94af6aa7f652690689e9fdf2a56d5b602c8199570",
+    "scripts/w03-proof-recovery.mjs": "283fd365422e535cc30ea0a3844bbfd5c2399f4240e36ef4f1581d3f0fc03210",
+    "shared/l2-journal.mjs": "a971ef9f8a94f6ab30756f425c8cb6228bbafe653791f6e4208e945bb110d380",
+    "shared/transaction-outcomes.mjs": "981eb3f048356a85dd9833b1b612bdcb4dcd71c41af3af38d36717198b576dc1",
+    "shared/journal-backup.mjs": "3743dfb810a79feb27cf428b4cef7d41487065c0ef5fb29d2122fb0d1ce786b6",
+    "scripts/prove-application-action.mjs": "797137f8091b45dd70430c0676803d3fa8a24c9363e5bacf93295912ecfb4c5e",
+    "scripts/w02-wallet-restore.mjs": "b3ad3ebb0a4f7cd369608cc2ae31cf4060a6400bc6bb2e739f693d96feec2331",
+    "shared/wallet-backup.js": "8df8f15fe92adb0d1628ac64cbd3bd61761594dbd7a83eeb04655640d3d64a8b",
+    "scripts/w01-private-fee-standalone.mjs": "d4e1e122e64864e3c371d70cbcb1b44152bc08899ac9ea60646c2eddcf7ea48d",
+    "scripts/w01-private-fee-flow.mjs": "6d05ff8ba17fe730ec2d32529c852e0045d32cb2fe49413bb57a6d482789b4d6",
+    "scripts/w01-private-funding.mjs": "4de0b2df7591d2ce6032a825aa0563ad10faae56ea6cb2c3ff3e5da152c5845f",
+    "shared/private-fee-client.mjs": "fca8be1fc881c5c7ee47c1011ce7fe6893c6d4d27302471f486277e605771f24",
+    "shared/private-fee-payment.mjs": "9863e2e4b2abd3c7e9839be307668c9794a758bde2cd3ca8c4351575710b5f09",
+    "shared/private-fee-funding.mjs": "812e3c65ceb917a9b1680237c5ed55cdedfbc130154b3fb4b8a2b00b24271294",
+    "shared/ethereum-journal.mjs": "3d997613e4f36ede3fd497e656b564977ac742912eaf519538bcc5286d07c442",
+    "shared/journal-record.mjs": "549c91da1ea11706769edc28fba6b1c1ad0fa58c845e784cc7462353726d5a08",
+    "apps/src/billboard/user/transaction-journal-store.mjs": "abb9af112709a4e4ed3197de86ef058a4b06e3c63b1588861f6411b1629c443a",
+    "scripts/c01-settle-ready.mjs": "cf0a0e4a531e938b601f4fdf13ce336a9d453435f3df70e2be38f6d2e2d93d1c",
+    "scripts/c01-settle-message.mjs": "4e9bc2eeb7dad873311045c49f89b0b53c5ccd4f34d0516924e47338773ed132",
+    "scripts/c01-bridge-flow.mjs": "689ab68736d338ef5edc34e9d49c5e33b726e55dcda7867ba019b2c1305ee723",
+    "scripts/c02-screening-flow.mjs": "4105cf965d3d09f25cf2e50d33709445b6e68f54d9b5cc1bdabf316cd327970a",
+    "scripts/t02-screening-journey.mjs": "4a2f79670ea2f5b1a1c3db23c15754a4acd7b15a49c718b1848393047209925f",
+    "scripts/t02-redeposit-flow.mjs": "6f54801b7836a6a6558056df41521fadeac3470b619b6fa0d05d5414ef979b99",
+    "scripts/t02-wrong-origin.mjs": "323c8760ce99fcba2a9f58c2de07e27789f14ae544b892116523fefa5ac93bb6",
+    "scripts/t02-claim-boundary.mjs": "b1e46a7dc084dc8a25700e9ee65e4a18d0dcdb57d919007c1ad50e5a12a3aa1d",
+    "scripts/test-t02-claim-boundary.mjs": "d1ba5ba5428f25337fbb5594d990fb4cae41fe7b836b6ea81118d83e74d01681",
+    "node_modules/@aztec/pxe/src/node/caching_aztec_node.ts": "f3b27595e524d8d1be93039d213f88bed03fb9ec63c49a6e493d33210a24f714",
+    "node_modules/@aztec/pxe/dest/node/caching_aztec_node.js": "2c8d8a2d8762b673bc300f9876d8d86775d4fab361c0816b9f07a1dfe5ee9e6b",
+    "node_modules/@aztec/pxe/src/pxe.ts": "6dbb267d5effc5f5f7cda123fb8a28581f306ec8a84e6737eeae5c5f9b8fefd6",
+    "node_modules/@aztec/pxe/dest/pxe.js": "e93807fc9202a13235669b823fe07fdccfef2cebe70834da7c19644d2f3ed669",
+    "node_modules/@aztec/pxe/src/block_synchronizer/block_synchronizer.ts": "3c8db66275b427ac31547953af91a4d6ecd2c83c770b997a8b6f09ca4b458765",
+    "node_modules/@aztec/pxe/dest/block_synchronizer/block_synchronizer.js": "0f302a5f0abe83e0e9e2927067e048e757365678919a2799190cac82e4f8848a",
+    "node_modules/@aztec/l1-artifacts/dest/InboxAbi.js": "ab433ac523c2594bafd018cb956b40579f538eef30f03a10f41365ba78638f2c",
+    "node_modules/@aztec/l1-artifacts/l1-contracts/src/core/messagebridge/Inbox.sol": "c3373e0ee7c76e137124d2f4856330f639fa94569d39f10907181a908827faa3",
+    "scripts/t02-redeposit-replay.mjs": "ca6bbb93128bcfbe750a417d8bf974c8bc22e08ddbbed6bfdf180e8237a08f74",
+    "node_modules/@aztec/l1-artifacts/dest/OutboxAbi.js": "65fee6c3076781794fd145fa79d382c3ce74af246b8da29523123aa4a06c9023",
+    "node_modules/@aztec/l1-artifacts/l1-contracts/src/core/messagebridge/Outbox.sol": "de268cae33268c6ce8538d687b3612b090d37052a270846e233717520f9df212",
+    "scripts/c03-author-claims.mjs": "c1c87ca26b12097821b19c399cfe248527949cb7dd5579b74d1499a5f38a66a0",
+    "scripts/c03-contention-flow.mjs": "b815c94bc5541a5d35213d6ad43f0b707f5fff2b7d796e8602c49074bcde9a9a",
+    "scripts/c01-client-mining.mjs": "a10abf9d1798fac6ddae89a0f62ce2b3e30b9ddd69a77512d5f83f8dc33ff332",
+    "scripts/c01-deposit-flow.mjs": "9bb0561637c192072958014b3398740889e6cbd51c2e2e9eb76b8aa70aca2717",
+    "scripts/c01-exit-flow.mjs": "ce9fdb893b4291b36695ad23cac0f410f8e68559e79463f5a6f540668bb35900",
+    "scripts/c01-withdraw-l1.mjs": "a114a1ff31d7df94617334a2ba3c527cbef44bf55782a63992b9f8bc2e009320",
+    "scripts/c01-ready-flow.mjs": "4a3d9b9ad54e3a6d4c51fbeef2224e5abd6de53823b5ea24bc82bde2cb149305",
+    "scripts/c01-board-inclusion.mjs": "3267f260849b573ab17286d3bc48a23577ec18c3b8c96fdb70ef992ccd76204d",
+    "scripts/c01-board-flow.mjs": "e66eb00e4ca01c39e779a3e10e6d7e277ac6a5edb219b0a82e59ab878884379c",
+    "scripts/c01-real-node.mjs": "c47e5d2293c0be88bbdeb60de2c4085dc22a56ac2ad50a008d933e5c87df5b72",
+    "scripts/toolchain.mjs": "1e42b0c43d94c655cac6efb3e2d0860e7a1f020db05830ff500971a67d3a3fcc",
+    "package-lock.json": "3ac2d895f6eddffba40c8889c1d88cb73c48571530595433da27c7bb4ad6b805",
+    "toolchain.json": "2757ecde29ee191efa6ee24924ccfdb4fe4646d057534491d5e18b8cbdde3dfe",
+    "node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js": "f84940700d4fe17c4bb94fb27199085fb057c567ff745e90c21352cd47a091c3",
+    "scripts/testing/assets.mjs": "50ec39eaf3cf9c9c6f5d0a65241659f93dbabde5083e110177c5d0a1c8de2a99",
+    "scripts/testing/browser-worker.mjs": "3a281dd3bef0e945a421ea6df1e9b1b06b90a91db7cabe1d9aa58ea5aa374845",
+    "scripts/testing/fixture-worker.mjs": "dd70ffdaf6166f44735e4987a9e85d1efa586eac19ebdf8cadfbdcddc790cf39",
+    "scripts/testing/process-tree.test.mjs": "8779a55199ed6a475faa6ceee7ad4c8eb866ce3b16b7a661ebbf042fdcd255a2",
+    "scripts/testing/run-application.mjs": "510c08d4ff7f502b4c20c9ac0950723ac229ebccb7f120ab7031c0977e3866a4",
+    "scripts/testing/scenario-flows.mjs": "18e95488b7ac49143918363fd5d00a2776adfdf789770044ab0f42bd3eeba08a",
+    "scripts/testing/scenarios.mjs": "ed415f64da2fdefe76e063acf6a725f228cf494abb435c47f7887e7b9910f312",
+    "scripts/testing/supervisor.mjs": "518d827972d68cce7bab14f56df6483a260f5f5dc4082b50e2e4bbd80b0723f2",
+    "scripts/testing/supervisor.test.mjs": "2cc8fe9e3ef9d58ef47a6124c29ff001a98821efe44555c976f0c295d2e9bce7"
+  },
+  "setup": [
+    {
+      "name": "bn254_g1.dat",
+      "sha256": "2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac",
+      "bytes": 75497472
+    },
+    {
+      "name": "bn254_g2.dat",
+      "sha256": "01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f",
+      "bytes": 128
+    },
+    {
+      "name": "grumpkin_g1_v2.flat.dat",
+      "sha256": "b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9",
+      "bytes": 4194368
+    }
+  ],
+  "networkProofs": false,
+  "controlledSettlement": true,
+  "binarySha256": "208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031",
+  "applicationBBThreads": 1,
+  "nodeBBThreads": 1,
+  "worldStateHardwareConcurrency": 1,
+  "peakMemory": {
+    "elapsedMs": 40888,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 39379,
+        "ppid": 23665,
+        "rssKiB": 178752
+      },
+      {
+        "role": "fixture",
+        "pid": 39400,
+        "ppid": 39379,
+        "rssKiB": 1043808
+      },
+      {
+        "role": "fixture",
+        "pid": 39403,
+        "ppid": 39400,
+        "rssKiB": 138784
+      },
+      {
+        "role": "fixture",
+        "pid": 39418,
+        "ppid": 39400,
+        "rssKiB": 581296
+      },
+      {
+        "role": "fixture",
+        "pid": 39420,
+        "ppid": 39400,
+        "rssKiB": 10208
+      },
+      {
+        "role": "fixture",
+        "pid": 39433,
+        "ppid": 39400,
+        "rssKiB": 152848
+      },
+      {
+        "role": "fixture",
+        "pid": 39479,
+        "ppid": 39400,
+        "rssKiB": 16976
+      }
+    ]
+  },
+  "worker": {
+    "passed": true,
+    "profile": "application transaction proofs with official local protocol fixture and controlled settlement",
+    "nonlocalNetworkDenied": true,
+    "deployment": {
+      "passed": true,
+      "profile": "official SDK local application fixture",
+      "realVerifier": false,
+      "networkProofs": false,
+      "rollupVersion": "3383411249",
+      "addresses": {
+        "rollupAddress": "0x795e7860cd3370a490c27ccf5b07c98ddfea9ede",
+        "registryAddress": "0xd5a101aee0a0a8ca83a9becb846e820ab5b8ef1b",
+        "inboxAddress": "0xfc811a856d977cb93398997f8fd49efbdbf8f934",
+        "outboxAddress": "0x3051810faed5cba53b9083a9950ec0e919fae3f2",
+        "feeJuiceAddress": "0x7ffc787c90abbebf7c3ba4ba7788c2fed992d134",
+        "feeJuicePortalAddress": "0xb5bec44837c9451beb35b0bd151f82811f25d909",
+        "coinIssuerAddress": "0x28d185f042cb26f6ff573b1fdac14beb525dee06",
+        "rewardDistributorAddress": "0xf457f07c2a587315f6803f7a558d8b5653c42e91",
+        "governanceProposerAddress": "0x8fce349489e604e7a65dff80d9ac1ced1fecf515",
+        "governanceAddress": "0x27a22579170f6e0c233db27811be4caf7fcfc94e",
+        "stakingAssetAddress": "0xeff4246e11bc8044858a0cfb692b57398b7203c9",
+        "feeAssetHandlerAddress": "0x230cf7591aeeb33d534418e7a6bc05351577ef1e",
+        "stakingAssetHandlerAddress": "0x3db6de3fde6ab3cca97b78fd8a51d9a167896223",
+        "zkPassportVerifierAddress": "0xa4260ce23f1b7066c625890eaa4da6bfc903c734",
+        "gseAddress": "0xc4f07f36f97adcb5cdb33ffa29bf2861f43b3eeb",
+        "dateGatedRelayerAddress": "0x6016bb4ff0f757b21d0d22e55977b1ad186d9355"
+      }
+    },
+    "validatorActivation": {
+      "committee": [
+        "0x7f660c19c7ba444afc396dab8e0113547cc494ca"
+      ],
+      "ordinaryTimeAdvancesSeconds": [
+        {
+          "seconds": 20,
+          "timestamp": "1789964716",
+          "epoch": "1",
+          "committee": null
+        },
+        {
+          "seconds": 20,
+          "timestamp": "1789964736",
+          "epoch": "2",
+          "committee": null
+        },
+        {
+          "seconds": 20,
+          "timestamp": "1789964756",
+          "epoch": "3",
+          "committee": null
+        }
+      ]
+    },
+    "node": {
+      "passed": true,
+      "scope": "Stale proof replacement with private fees",
+      "realProofs": true,
+      "proverSubsystemCreated": false,
+      "ordinarySequencerConstructed": true,
+      "sequencerStarted": true,
+      "rollupVersion": 3383411249,
+      "board": {
+        "passed": true,
+        "scope": "real client deployment transaction proof and node admission validation only",
+        "initializerVisibility": "public; client proof authenticates private account/transaction path",
+        "sent": false,
+        "included": false,
+        "epochProofAccepted": false,
+        "proofMs": 18902,
+        "artifactHashes": {
+          "apps/src/billboard/billboard_artifact.json": "19b02c0f3e8d2fe06dc9ea1c3657a722a5f13c849c56e495b6376667145e5e57",
+          ".build/contracts-manifest.json": "525965f1a446ec8467b82dad4f75a73af6f82c6b5ff475807959ab83d4c541f6"
+        },
+        "clientProverBackend": "NativeUnixSocket",
+        "threads": 1,
+        "nodeValidation": "valid",
+        "txHash": "0x0e23b26458851c7fdbc3633371cc10955e3ef006d39bf3e590998e11c5d14794",
+        "boardAddress": "0x175af8be620420d86fd0451a4f64876080481be3dfc0e920d7ee1e55966b11bd",
+        "proofBytes": 112292,
+        "proofSha256": "5be217ac2acc4c7f34661c2a97e3f7dce02d9aa4da5e023819c27cf4332ffa6a",
+        "feePayerBalance": "10000000000000000000000",
+        "nextRequired": "Submit this exact in-memory tx, observe inclusion, then use official test settlement before local Ready activation.",
+        "walletStopped": true
+      },
+      "inclusion": {
+        "passed": true,
+        "txHash": "0x0e23b26458851c7fdbc3633371cc10955e3ef006d39bf3e590998e11c5d14794",
+        "status": "checkpointed",
+        "executionResult": "success",
+        "blockNumber": "1",
+        "transactionFee": "422842322064000000",
+        "ordinarySequencer": true,
+        "syntheticSettlement": false,
+        "epochProofAccepted": false,
+        "clockProfile": "controlled disposable L1 mining and node clock synchronization; no throughput/finality claim",
+        "adjustments": [
+          {
+            "block": "41",
+            "timestamp": "1789964757"
+          },
+          {
+            "block": "42",
+            "timestamp": "1789964758"
+          },
+          {
+            "block": "43",
+            "timestamp": "1789964759"
+          },
+          {
+            "block": "44",
+            "timestamp": "1789964760"
+          },
+          {
+            "block": "45",
+            "timestamp": "1789964761"
+          },
+          {
+            "block": "46",
+            "timestamp": "1789964762"
+          },
+          {
+            "block": "47",
+            "timestamp": "1789964763"
+          },
+          {
+            "block": "48",
+            "timestamp": "1789964764"
+          },
+          {
+            "block": "49",
+            "timestamp": "1789964765"
+          },
+          {
+            "block": "50",
+            "timestamp": "1789964766"
+          },
+          {
+            "block": "51",
+            "timestamp": "1789964767"
+          },
+          {
+            "block": "52",
+            "timestamp": "1789964768"
+          },
+          {
+            "block": "53",
+            "timestamp": "1789964769"
+          },
+          {
+            "block": "54",
+            "timestamp": "1789964770"
+          }
+        ]
+      },
+      "ready": {
+        "passed": true,
+        "scope": "disabled portal deployment and genuine update_portal client proof",
+        "bindingSubmitted": true,
+        "readyEmitted": true,
+        "epochProofAccepted": false,
+        "portalActivated": true,
+        "portalAddress": "0x7dcd4bbec470f4e91360b8d44336ec79fd68aadd",
+        "portalDeploymentTxHash": "0x75d6ef30bc39063adfc7e7bf098ef12a39fa7f0b208a5791d99c96b467aff057",
+        "portalDeploymentBlock": "56",
+        "depositsEnabled": false,
+        "boardAddress": "0x175af8be620420d86fd0451a4f64876080481be3dfc0e920d7ee1e55966b11bd",
+        "configHash": "0x00167ece4d45081cc2aaf05770f4522ba194c9d60a9c381584d18230eba4d9e2",
+        "artifactHashes": {
+          "apps/src/billboard/billboard_artifact.json": "19b02c0f3e8d2fe06dc9ea1c3657a722a5f13c849c56e495b6376667145e5e57",
+          "billboard/portal/out/BillboardPortal.sol/BillboardPortal.json": "22921efe0316b02909f892f6e28b38da8ad8d641f44201a58cd0f5638f9f01a8",
+          ".build/contracts-manifest.json": "525965f1a446ec8467b82dad4f75a73af6f82c6b5ff475807959ab83d4c541f6"
+        },
+        "txHash": "0x0f241954df5d4d0cc6c3a099ca4ebe9410adaec8449a8c191dc85a832c9ba977",
+        "nodeValidation": "valid",
+        "proofSha256": "ccd0236cf5453410ca6635011725b55a4a16306b6b7569c09955428cf6330ff8",
+        "expectedReadyContent": "0x00574cb0ef08d18aaad32945d20738ca77373b2926c04ef45acbc1161e811cce",
+        "expectedReadyLeaf": "0x000efeb5230512c20a04eb208baa2999db428b2781a76deea47369c78a7451d3",
+        "nextRequired": "Include exact binding tx; require SUCCESS and actual Ready leaf, official test settlement of the emitted message before local portal activation.",
+        "walletStopped": true,
+        "controlledSettlement": true
+      },
+      "readyInclusion": {
+        "passed": true,
+        "txHash": "0x0f241954df5d4d0cc6c3a099ca4ebe9410adaec8449a8c191dc85a832c9ba977",
+        "status": "checkpointed",
+        "executionResult": "success",
+        "blockNumber": "2",
+        "transactionFee": "2318571304000000",
+        "ordinarySequencer": true,
+        "syntheticSettlement": false,
+        "epochProofAccepted": false,
+        "clockProfile": "controlled disposable L1 mining and node clock synchronization; no throughput/finality claim",
+        "adjustments": [
+          {
+            "block": "57",
+            "timestamp": "1789964773"
+          },
+          {
+            "block": "58",
+            "timestamp": "1789964774"
+          },
+          {
+            "block": "59",
+            "timestamp": "1789964775"
+          },
+          {
+            "block": "60",
+            "timestamp": "1789964776"
+          },
+          {
+            "block": "61",
+            "timestamp": "1789964777"
+          },
+          {
+            "block": "62",
+            "timestamp": "1789964778"
+          },
+          {
+            "block": "63",
+            "timestamp": "1789964779"
+          },
+          {
+            "block": "64",
+            "timestamp": "1789964780"
+          },
+          {
+            "block": "65",
+            "timestamp": "1789964781"
+          },
+          {
+            "block": "66",
+            "timestamp": "1789964782"
+          },
+          {
+            "block": "67",
+            "timestamp": "1789964783"
+          },
+          {
+            "block": "68",
+            "timestamp": "1789964784"
+          },
+          {
+            "block": "69",
+            "timestamp": "1789964785"
+          },
+          {
+            "block": "70",
+            "timestamp": "1789964786"
+          },
+          {
+            "block": "71",
+            "timestamp": "1789964787"
+          },
+          {
+            "block": "72",
+            "timestamp": "1789964788"
+          },
+          {
+            "block": "73",
+            "timestamp": "1789964789"
+          },
+          {
+            "block": "74",
+            "timestamp": "1789964790"
+          },
+          {
+            "block": "75",
+            "timestamp": "1789964791"
+          },
+          {
+            "block": "76",
+            "timestamp": "1789964792"
+          },
+          {
+            "block": "77",
+            "timestamp": "1789964793"
+          }
+        ]
+      },
+      "settlement": {
+        "passed": true,
+        "scope": "controlled test settlement, test-controlled Ready membership and enabled portal",
+        "kind": "ready",
+        "deadlineMs": 60000,
+        "testControlled": true,
+        "syntheticSettlement": true,
+        "proofReceipts": [],
+        "finalized": false,
+        "epochs": [
+          {
+            "epoch": 4,
+            "firstCheckpoint": 1,
+            "lastCheckpoint": 1,
+            "testControlledCheckpoint": 1
+          },
+          {
+            "epoch": 5,
+            "firstCheckpoint": 2,
+            "lastCheckpoint": 2,
+            "testControlledCheckpoint": 2
+          }
+        ],
+        "sequencerPaused": true,
+        "sequencerResumed": true,
+        "targetCheckpoint": 2,
+        "messageBlock": "2",
+        "messageBlockHash": "0x077dae02961c3bf066a60c42bb6f2da2fa6c69fa05a630ed1922fcd5f9f3376e",
+        "messageTxHash": "0x0f241954df5d4d0cc6c3a099ca4ebe9410adaec8449a8c191dc85a832c9ba977",
+        "expectedLeaf": "0x000efeb5230512c20a04eb208baa2999db428b2781a76deea47369c78a7451d3",
+        "initialProvenCheckpoint": 0,
+        "forcedProvenCheckpoint": 2,
+        "localEpoch": 6,
+        "membership": {
+          "epochNumber": 5,
+          "checkpointCount": 1,
+          "leafIndex": "0",
+          "pathLength": 5,
+          "root": "0x00080b802be254a74355f9fe2f54e03271b9a1ec5a5e4611e31e4a022cf297db"
+        },
+        "localSettlement": {
+          "l1Block": "79",
+          "l1Hash": "0x34bd2e6e866207bbf185000f7eb3cfcd7ef48e58fc5bf428284d11ff87e42615",
+          "scope": "local storage forced by official test helpers; neither epoch proof nor economic finality"
+        },
+        "elapsedMs": 11931,
+        "activation": {
+          "txHash": "0x8a15dc55686a6b4d20d6fea48ec13039a38d1c022ebbbe9088e7166e0c17173d",
+          "blockNumber": "80",
+          "blockHash": "0xd88b88a80cee426e3f2a44ebb20cc697667dcc0312a9653d6f8ba66704efab8c",
+          "depositsEnabled": true
+        }
+      },
+      "bridge": {
+        "passed": true,
+        "scope": "Stale proof replacement with private fees",
+        "applicationProofs": true,
+        "controlledSettlement": true,
+        "networkProofs": false,
+        "clientMining": {
+          "passed": true,
+          "ordinaryBlocksMined": 166,
+          "stopped": true,
+          "maxObservedClockLeadSeconds": 1,
+          "clockSynchronization": "every mined block, including correction of wall-clock lead",
+          "lastBlock": "266",
+          "lastTimestamp": "1789964990"
+        },
+        "privateFee": {
+          "passed": true,
+          "ownerless": true,
+          "offchainIssuer": false,
+          "operatorFunding": false,
+          "chargesMaximumFee": true,
+          "walletRestore": {
+            "encryptedRoundTrip": true,
+            "freshRestoreContext": true,
+            "fullSaltPreserved": true,
+            "derivedSigningKeyFromRestoredSecret": true,
+            "sameApplicationAddress": true,
+            "applicationSigningDerivation": true,
+            "noIndependentTestSigningKeyReused": true
+          },
+          "funding": {
+            "passed": true,
+            "realL1Deposit": true,
+            "amount": "1000000000000000000000",
+            "l1TxHash": "0xb46a2f92c6cd6e88c1c5e94e3b5ca300ad167916a1183468ac19ecde76758309",
+            "recipient": "0x19536930b58cb5a4664142f4d19aa7c5c1ba72d25f0cdb70c6e6ebe22af5c0af",
+            "independentL1Sender": true,
+            "testFaucetFunding": true,
+            "productionFundingHelper": true,
+            "productionRecoveryHelper": true,
+            "publicRecoveryPersistedBeforeDeposit": true,
+            "depositSends": 1,
+            "privateSecretsStored": false
+          },
+          "payer": "0x19536930b58cb5a4664142f4d19aa7c5c1ba72d25f0cdb70c6e6ebe22af5c0af",
+          "coldStart": true,
+          "poolBefore": "0",
+          "netOtherPoolChange": "0",
+          "privateDebit": "9322473451053600",
+          "privateBalance": "999990677526548946400",
+          "actualProtocolFees": "42714731600000",
+          "authorPublicBalanceZero": true
+        },
+        "claim": {
+          "passed": true,
+          "scope": "local real deposit and genuine private claim with ordinary checkpoint inclusion",
+          "syntheticMessages": false,
+          "syntheticProofs": false,
+          "claimEpochProofAccepted": false,
+          "depositTxHash": "0x668b88c198a264fecfb270950aaee49da008c8f673eaaf76108d78a3450c2e5d",
+          "depositBlock": "108",
+          "amount": "1000000000000000",
+          "inboxMessageKey": "0x0044b49ab20ac5ff2db7e5a09ce82557cebc1f6a1131645a0958bf5d6f24048b",
+          "messageContentChecked": true,
+          "artifactHashes": {
+            "apps/src/billboard/billboard_artifact.json": "19b02c0f3e8d2fe06dc9ea1c3657a722a5f13c849c56e495b6376667145e5e57",
+            "billboard/portal/out/BillboardPortal.sol/BillboardPortal.json": "22921efe0316b02909f892f6e28b38da8ad8d641f44201a58cd0f5638f9f01a8",
+            ".build/contracts-manifest.json": "525965f1a446ec8467b82dad4f75a73af6f82c6b5ff475807959ab83d4c541f6"
+          },
+          "feePayer": "0x19536930b58cb5a4664142f4d19aa7c5c1ba72d25f0cdb70c6e6ebe22af5c0af",
+          "privateFees": true,
+          "gasUsed": {
+            "totalGas": {
+              "daGas": 2624,
+              "l2Gas": 850148
+            },
+            "teardownGas": {
+              "daGas": 0,
+              "l2Gas": 0
+            }
+          },
+          "claimTxHash": "0x1609f8e40a085930d967834e5cd536ee337b8dc61616c5bd03f8f3da29e812ea",
+          "proofSha256": "bb4ee7e73c84dadf716e9fbfaf742d17188f06729bcf9483830be13ad67c349b",
+          "nodeValidation": "valid",
+          "inclusionSnapshots": [
+            {
+              "status": "pending",
+              "executionResult": null,
+              "blockNumber": null,
+              "l1Block": "150",
+              "l1Timestamp": "1789964874",
+              "nodeTime": 1789964874
+            },
+            {
+              "status": "pending",
+              "executionResult": null,
+              "blockNumber": null,
+              "l1Block": "151",
+              "l1Timestamp": "1789964875",
+              "nodeTime": 1789964875
+            },
+            {
+              "status": "pending",
+              "executionResult": null,
+              "blockNumber": null,
+              "l1Block": "152",
+              "l1Timestamp": "1789964876",
+              "nodeTime": 1789964876
+            },
+            {
+              "status": "pending",
+              "executionResult": null,
+              "blockNumber": null,
+              "l1Block": "153",
+              "l1Timestamp": "1789964877",
+              "nodeTime": 1789964877
+            },
+            {
+              "status": "proposed",
+              "executionResult": "success",
+              "blockNumber": 10,
+              "l1Block": "154",
+              "l1Timestamp": "1789964878",
+              "nodeTime": 1789964878
+            },
+            {
+              "status": "proposed",
+              "executionResult": "success",
+              "blockNumber": 10,
+              "l1Block": "155",
+              "l1Timestamp": "1789964879",
+              "nodeTime": 1789964879
+            },
+            {
+              "status": "proposed",
+              "executionResult": "success",
+              "blockNumber": 10,
+              "l1Block": "156",
+              "l1Timestamp": "1789964880",
+              "nodeTime": 1789964880
+            },
+            {
+              "status": "proposed",
+              "executionResult": "success",
+              "blockNumber": 10,
+              "l1Block": "157",
+              "l1Timestamp": "1789964881",
+              "nodeTime": 1789964881
+            },
+            {
+              "status": "proposed",
+              "executionResult": "success",
+              "blockNumber": 10,
+              "l1Block": "158",
+              "l1Timestamp": "1789964882",
+              "nodeTime": 1789964882
+            },
+            {
+              "status": "proposed",
+              "executionResult": "success",
+              "blockNumber": 10,
+              "l1Block": "159",
+              "l1Timestamp": "1789964883",
+              "nodeTime": 1789964883
+            },
+            {
+              "status": "checkpointed",
+              "executionResult": "success",
+              "blockNumber": 10,
+              "l1Block": "161",
+              "l1Timestamp": "1789964885",
+              "nodeTime": 1789964885
+            }
+          ],
+          "replay": {
+            "rejected": true,
+            "reason": "consumed-claim-message",
+            "freshAccountRequest": true,
+            "originalMessageNullifierChecked": true,
+            "originalInboxLeafPresent": true,
+            "originalNoteUnchanged": true,
+            "noSecondNote": true,
+            "stage": "PXE witness generation; no second proof accepted or transaction sent"
+          },
+          "claimBlock": "10",
+          "claimStatus": "checkpointed",
+          "executionResult": "success",
+          "fee": "8756524400000",
+          "anchorBlock": 8,
+          "membershipRootChecked": true,
+          "logicalFieldCount": 10,
+          "physicalFieldCount": 8,
+          "exactDeliveredNoteChecked": true,
+          "nextRequired": "Wait eligibility; prove/include no-post exit, then use official test Outbox settlement and withdraw L1.",
+          "walletStopped": true
+        },
+        "post": {
+          "passed": true,
+          "scope": "one author genuine private-fee posting; not concurrency qualification",
+          "applicationProofs": true,
+          "networkProofs": false,
+          "authorCount": 1,
+          "contentionQualified": false,
+          "posts": [
+            {
+              "feePayer": "0x19536930b58cb5a4664142f4d19aa7c5c1ba72d25f0cdb70c6e6ebe22af5c0af",
+              "authorIndex": 0,
+              "postId": "0x1fe88b815b8e91320b176297694f74a0cb2f4c53a6144cbcbd060bcd940927f1",
+              "txHash": "0x199eb56472886ce89ec0036af9dc6a756f86690613058071cea484fdadf94d7b",
+              "proofSha256": "2c8dcb0e4bb3b8bbaf9d458ea4ad8ea37725f87fab77e864e307979350c04515",
+              "proofMs": 69754,
+              "sameAnchor": true,
+              "nodeValidation": "valid",
+              "gasLimits": {
+                "l2Gas": 6540000,
+                "daGas": 271200
+              },
+              "teardownGasLimits": {
+                "l2Gas": 817500,
+                "daGas": 135600
+              },
+              "status": "checkpointed",
+              "executionResult": "success",
+              "blockNumber": "17",
+              "txIndexInBlock": 0,
+              "orderIndex": "0",
+              "transactionFee": "29024467200000",
+              "exactDepositNullifier": true,
+              "exactReplacementNote": true,
+              "exactPostNote": true,
+              "publicContentChecked": true
+            }
+          ],
+          "allPreparedBeforeSubmission": true,
+          "advertisedTxGas": {
+            "l2Gas": 6540000,
+            "daGas": 271200
+          },
+          "sequencerEvents": [
+            {
+              "event": "state-changed",
+              "elapsedMs": 9623,
+              "clockSeconds": 1789964896,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 9623,
+              "clockSeconds": 1789964896,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 10125,
+              "clockSeconds": 1789964896,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 10126,
+              "clockSeconds": 1789964896,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 10629,
+              "clockSeconds": 1789964897,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 10636,
+              "clockSeconds": 1789964897,
+              "targetSlot": 44,
+              "secondsIntoBuildFrame": 0.001,
+              "oldState": "SYNCHRONIZING",
+              "newState": "PROPOSER_CHECK"
+            },
+            {
+              "event": "preparing-checkpoint",
+              "elapsedMs": 10643,
+              "clockSeconds": 1789964897,
+              "targetSlot": 44,
+              "checkpointNumber": 13
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 10645,
+              "clockSeconds": 1789964897,
+              "targetSlot": 44,
+              "secondsIntoBuildFrame": 0.01,
+              "oldState": "PROPOSER_CHECK",
+              "newState": "INITIALIZING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 10666,
+              "clockSeconds": 1789964897,
+              "targetSlot": 44,
+              "secondsIntoBuildFrame": 0.031,
+              "oldState": "INITIALIZING_CHECKPOINT",
+              "newState": "CREATING_BLOCK"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 10674,
+              "clockSeconds": 1789964897,
+              "targetSlot": 44,
+              "secondsIntoBuildFrame": 0.039,
+              "oldState": "CREATING_BLOCK",
+              "newState": "ASSEMBLING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 10722,
+              "clockSeconds": 1789964897,
+              "targetSlot": 44,
+              "secondsIntoBuildFrame": 0.087,
+              "oldState": "ASSEMBLING_CHECKPOINT",
+              "newState": "COLLECTING_ATTESTATIONS"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 10722,
+              "clockSeconds": 1789964897,
+              "oldState": "COLLECTING_ATTESTATIONS",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 11222,
+              "clockSeconds": 1789964897,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 11222,
+              "clockSeconds": 1789964897,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 11723,
+              "clockSeconds": 1789964898,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 11723,
+              "clockSeconds": 1789964898,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 12224,
+              "clockSeconds": 1789964898,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 12224,
+              "clockSeconds": 1789964898,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 12725,
+              "clockSeconds": 1789964899,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 12725,
+              "clockSeconds": 1789964899,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 13226,
+              "clockSeconds": 1789964899,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 13226,
+              "clockSeconds": 1789964899,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 13371,
+              "clockSeconds": 1789964899,
+              "targetSlot": 44,
+              "secondsIntoBuildFrame": 2.725,
+              "oldState": "IDLE",
+              "newState": "PUBLISHING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 13728,
+              "clockSeconds": 1789964901,
+              "oldState": "PUBLISHING_CHECKPOINT",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 13728,
+              "clockSeconds": 1789964901,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 14228,
+              "clockSeconds": 1789964901,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 14228,
+              "clockSeconds": 1789964901,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 14730,
+              "clockSeconds": 1789964902,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 14737,
+              "clockSeconds": 1789964902,
+              "targetSlot": 45,
+              "secondsIntoBuildFrame": 0.081,
+              "oldState": "SYNCHRONIZING",
+              "newState": "PROPOSER_CHECK"
+            },
+            {
+              "event": "preparing-checkpoint",
+              "elapsedMs": 14745,
+              "clockSeconds": 1789964902,
+              "targetSlot": 45,
+              "checkpointNumber": 14
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 14747,
+              "clockSeconds": 1789964902,
+              "targetSlot": 45,
+              "secondsIntoBuildFrame": 0.091,
+              "oldState": "PROPOSER_CHECK",
+              "newState": "INITIALIZING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 14768,
+              "clockSeconds": 1789964902,
+              "targetSlot": 45,
+              "secondsIntoBuildFrame": 0.112,
+              "oldState": "INITIALIZING_CHECKPOINT",
+              "newState": "CREATING_BLOCK"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 14773,
+              "clockSeconds": 1789964902,
+              "targetSlot": 45,
+              "secondsIntoBuildFrame": 0.117,
+              "oldState": "CREATING_BLOCK",
+              "newState": "ASSEMBLING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 14821,
+              "clockSeconds": 1789964902,
+              "targetSlot": 45,
+              "secondsIntoBuildFrame": 0.165,
+              "oldState": "ASSEMBLING_CHECKPOINT",
+              "newState": "COLLECTING_ATTESTATIONS"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 14821,
+              "clockSeconds": 1789964902,
+              "oldState": "COLLECTING_ATTESTATIONS",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 15322,
+              "clockSeconds": 1789964902,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 15322,
+              "clockSeconds": 1789964902,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 15823,
+              "clockSeconds": 1789964903,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 15823,
+              "clockSeconds": 1789964903,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 16324,
+              "clockSeconds": 1789964903,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 16324,
+              "clockSeconds": 1789964903,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 16825,
+              "clockSeconds": 1789964904,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 16826,
+              "clockSeconds": 1789964904,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 17328,
+              "clockSeconds": 1789964904,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 17328,
+              "clockSeconds": 1789964904,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 17505,
+              "clockSeconds": 1789964904,
+              "targetSlot": 45,
+              "secondsIntoBuildFrame": 2.839,
+              "oldState": "IDLE",
+              "newState": "PUBLISHING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 17830,
+              "clockSeconds": 1789964906,
+              "oldState": "PUBLISHING_CHECKPOINT",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 17830,
+              "clockSeconds": 1789964906,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 18332,
+              "clockSeconds": 1789964906,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 18333,
+              "clockSeconds": 1789964906,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 18833,
+              "clockSeconds": 1789964907,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 18840,
+              "clockSeconds": 1789964907,
+              "targetSlot": 46,
+              "secondsIntoBuildFrame": 0.168,
+              "oldState": "SYNCHRONIZING",
+              "newState": "PROPOSER_CHECK"
+            },
+            {
+              "event": "preparing-checkpoint",
+              "elapsedMs": 18845,
+              "clockSeconds": 1789964907,
+              "targetSlot": 46,
+              "checkpointNumber": 15
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 18847,
+              "clockSeconds": 1789964907,
+              "targetSlot": 46,
+              "secondsIntoBuildFrame": 0.175,
+              "oldState": "PROPOSER_CHECK",
+              "newState": "INITIALIZING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 18871,
+              "clockSeconds": 1789964907,
+              "targetSlot": 46,
+              "secondsIntoBuildFrame": 0.199,
+              "oldState": "INITIALIZING_CHECKPOINT",
+              "newState": "CREATING_BLOCK"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 18877,
+              "clockSeconds": 1789964907,
+              "targetSlot": 46,
+              "secondsIntoBuildFrame": 0.205,
+              "oldState": "CREATING_BLOCK",
+              "newState": "ASSEMBLING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 18924,
+              "clockSeconds": 1789964907,
+              "targetSlot": 46,
+              "secondsIntoBuildFrame": 0.252,
+              "oldState": "ASSEMBLING_CHECKPOINT",
+              "newState": "COLLECTING_ATTESTATIONS"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 18924,
+              "clockSeconds": 1789964907,
+              "oldState": "COLLECTING_ATTESTATIONS",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 19426,
+              "clockSeconds": 1789964907,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 19426,
+              "clockSeconds": 1789964907,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 19926,
+              "clockSeconds": 1789964908,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 19927,
+              "clockSeconds": 1789964908,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 20429,
+              "clockSeconds": 1789964908,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 20429,
+              "clockSeconds": 1789964908,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 20931,
+              "clockSeconds": 1789964909,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 20931,
+              "clockSeconds": 1789964909,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 21432,
+              "clockSeconds": 1789964909,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 21432,
+              "clockSeconds": 1789964909,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 21638,
+              "clockSeconds": 1789964909,
+              "targetSlot": 46,
+              "secondsIntoBuildFrame": 2.955,
+              "oldState": "IDLE",
+              "newState": "PUBLISHING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 21936,
+              "clockSeconds": 1789964911,
+              "oldState": "PUBLISHING_CHECKPOINT",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 21936,
+              "clockSeconds": 1789964911,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 22471,
+              "clockSeconds": 1789964911,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 22471,
+              "clockSeconds": 1789964911,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 24175,
+              "clockSeconds": 1789964913,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 41876,
+              "clockSeconds": 1789964931,
+              "targetSlot": 47,
+              "secondsIntoBuildFrame": 19.659,
+              "oldState": "SYNCHRONIZING",
+              "newState": "PROPOSER_CHECK"
+            },
+            {
+              "event": "preparing-checkpoint",
+              "elapsedMs": 41880,
+              "clockSeconds": 1789964931,
+              "targetSlot": 47,
+              "checkpointNumber": 16
+            },
+            {
+              "event": "proposer-rollup-check-failed",
+              "elapsedMs": 41881,
+              "clockSeconds": 1789964931,
+              "slot": 46,
+              "reason": "Slot mismatch"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 41881,
+              "clockSeconds": 1789964931,
+              "oldState": "PROPOSER_CHECK",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 42383,
+              "clockSeconds": 1789964932,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 42385,
+              "clockSeconds": 1789964932,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 42885,
+              "clockSeconds": 1789964932,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 42896,
+              "clockSeconds": 1789964932,
+              "targetSlot": 51,
+              "secondsIntoBuildFrame": 0.678,
+              "oldState": "SYNCHRONIZING",
+              "newState": "PROPOSER_CHECK"
+            },
+            {
+              "event": "preparing-checkpoint",
+              "elapsedMs": 42898,
+              "clockSeconds": 1789964932,
+              "targetSlot": 51,
+              "checkpointNumber": 16
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 42901,
+              "clockSeconds": 1789964932,
+              "targetSlot": 51,
+              "secondsIntoBuildFrame": 0.683,
+              "oldState": "PROPOSER_CHECK",
+              "newState": "INITIALIZING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 42920,
+              "clockSeconds": 1789964932,
+              "targetSlot": 51,
+              "secondsIntoBuildFrame": 0.702,
+              "oldState": "INITIALIZING_CHECKPOINT",
+              "newState": "WAITING_FOR_TXS"
+            },
+            {
+              "event": "block-tx-count-check-failed",
+              "elapsedMs": 43453,
+              "clockSeconds": 1789964933,
+              "slot": 51,
+              "minTxs": 1
+            },
+            {
+              "event": "checkpoint-empty",
+              "elapsedMs": 43453,
+              "clockSeconds": 1789964933,
+              "slot": 51
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 43453,
+              "clockSeconds": 1789964933,
+              "oldState": "WAITING_FOR_TXS",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 43955,
+              "clockSeconds": 1789964933,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 43955,
+              "clockSeconds": 1789964933,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 44456,
+              "clockSeconds": 1789964934,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 44456,
+              "clockSeconds": 1789964934,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 44956,
+              "clockSeconds": 1789964934,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 44956,
+              "clockSeconds": 1789964934,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 45457,
+              "clockSeconds": 1789964935,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 45457,
+              "clockSeconds": 1789964935,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 45958,
+              "clockSeconds": 1789964935,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 45958,
+              "clockSeconds": 1789964935,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 46460,
+              "clockSeconds": 1789964936,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 46460,
+              "clockSeconds": 1789964936,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 46963,
+              "clockSeconds": 1789964936,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 46963,
+              "clockSeconds": 1789964936,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 47465,
+              "clockSeconds": 1789964937,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 47467,
+              "clockSeconds": 1789964937,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 47969,
+              "clockSeconds": 1789964937,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 55566,
+              "clockSeconds": 1789964945,
+              "targetSlot": 52,
+              "secondsIntoBuildFrame": 8.289,
+              "oldState": "SYNCHRONIZING",
+              "newState": "PROPOSER_CHECK"
+            },
+            {
+              "event": "preparing-checkpoint",
+              "elapsedMs": 55569,
+              "clockSeconds": 1789964945,
+              "targetSlot": 52,
+              "checkpointNumber": 16
+            },
+            {
+              "event": "proposer-rollup-check-failed",
+              "elapsedMs": 55570,
+              "clockSeconds": 1789964945,
+              "slot": 51,
+              "reason": "Slot mismatch"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 55570,
+              "clockSeconds": 1789964945,
+              "oldState": "PROPOSER_CHECK",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 56070,
+              "clockSeconds": 1789964945,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 56074,
+              "clockSeconds": 1789964945,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 56575,
+              "clockSeconds": 1789964946,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 56575,
+              "clockSeconds": 1789964946,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 57081,
+              "clockSeconds": 1789964946,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 57081,
+              "clockSeconds": 1789964946,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 57583,
+              "clockSeconds": 1789964947,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 57590,
+              "clockSeconds": 1789964947,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 58090,
+              "clockSeconds": 1789964947,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 58092,
+              "clockSeconds": 1789964947,
+              "targetSlot": 54,
+              "secondsIntoBuildFrame": 0.807,
+              "oldState": "SYNCHRONIZING",
+              "newState": "PROPOSER_CHECK"
+            },
+            {
+              "event": "preparing-checkpoint",
+              "elapsedMs": 58096,
+              "clockSeconds": 1789964947,
+              "targetSlot": 54,
+              "checkpointNumber": 16
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 58098,
+              "clockSeconds": 1789964947,
+              "targetSlot": 54,
+              "secondsIntoBuildFrame": 0.813,
+              "oldState": "PROPOSER_CHECK",
+              "newState": "INITIALIZING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 58122,
+              "clockSeconds": 1789964947,
+              "targetSlot": 54,
+              "secondsIntoBuildFrame": 0.837,
+              "oldState": "INITIALIZING_CHECKPOINT",
+              "newState": "WAITING_FOR_TXS"
+            },
+            {
+              "event": "block-tx-count-check-failed",
+              "elapsedMs": 58623,
+              "clockSeconds": 1789964948,
+              "slot": 54,
+              "minTxs": 1
+            },
+            {
+              "event": "checkpoint-empty",
+              "elapsedMs": 58623,
+              "clockSeconds": 1789964948,
+              "slot": 54
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 58624,
+              "clockSeconds": 1789964948,
+              "oldState": "WAITING_FOR_TXS",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 59124,
+              "clockSeconds": 1789964948,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 59124,
+              "clockSeconds": 1789964948,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 59624,
+              "clockSeconds": 1789964949,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 59624,
+              "clockSeconds": 1789964949,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 60125,
+              "clockSeconds": 1789964949,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 60125,
+              "clockSeconds": 1789964949,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 60626,
+              "clockSeconds": 1789964950,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 60627,
+              "clockSeconds": 1789964950,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 61128,
+              "clockSeconds": 1789964950,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 61128,
+              "clockSeconds": 1789964950,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 61631,
+              "clockSeconds": 1789964951,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 61631,
+              "clockSeconds": 1789964951,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 62134,
+              "clockSeconds": 1789964951,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 62134,
+              "clockSeconds": 1789964951,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 62636,
+              "clockSeconds": 1789964952,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 62640,
+              "clockSeconds": 1789964952,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 63140,
+              "clockSeconds": 1789964952,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 63143,
+              "clockSeconds": 1789964952,
+              "targetSlot": 55,
+              "secondsIntoBuildFrame": 0.838,
+              "oldState": "SYNCHRONIZING",
+              "newState": "PROPOSER_CHECK"
+            },
+            {
+              "event": "preparing-checkpoint",
+              "elapsedMs": 63149,
+              "clockSeconds": 1789964952,
+              "targetSlot": 55,
+              "checkpointNumber": 16
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 63151,
+              "clockSeconds": 1789964952,
+              "targetSlot": 55,
+              "secondsIntoBuildFrame": 0.846,
+              "oldState": "PROPOSER_CHECK",
+              "newState": "INITIALIZING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 63175,
+              "clockSeconds": 1789964952,
+              "targetSlot": 55,
+              "secondsIntoBuildFrame": 0.87,
+              "oldState": "INITIALIZING_CHECKPOINT",
+              "newState": "CREATING_BLOCK"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 63189,
+              "clockSeconds": 1789964952,
+              "targetSlot": 55,
+              "secondsIntoBuildFrame": 0.884,
+              "oldState": "CREATING_BLOCK",
+              "newState": "ASSEMBLING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 63239,
+              "clockSeconds": 1789964952,
+              "targetSlot": 55,
+              "secondsIntoBuildFrame": 0.934,
+              "oldState": "ASSEMBLING_CHECKPOINT",
+              "newState": "COLLECTING_ATTESTATIONS"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 63239,
+              "clockSeconds": 1789964952,
+              "oldState": "COLLECTING_ATTESTATIONS",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 63740,
+              "clockSeconds": 1789964953,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 63740,
+              "clockSeconds": 1789964953,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 64241,
+              "clockSeconds": 1789964953,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 64241,
+              "clockSeconds": 1789964953,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 64742,
+              "clockSeconds": 1789964954,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 64742,
+              "clockSeconds": 1789964954,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 65243,
+              "clockSeconds": 1789964954,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 65243,
+              "clockSeconds": 1789964954,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 65745,
+              "clockSeconds": 1789964955,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 65745,
+              "clockSeconds": 1789964955,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 66247,
+              "clockSeconds": 1789964955,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 66247,
+              "clockSeconds": 1789964955,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 66750,
+              "clockSeconds": 1789964956,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 66750,
+              "clockSeconds": 1789964956,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 67250,
+              "clockSeconds": 1789964956,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 67250,
+              "clockSeconds": 1789964956,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 67753,
+              "clockSeconds": 1789964957,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 67762,
+              "clockSeconds": 1789964957,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 67897,
+              "clockSeconds": 1789964957,
+              "targetSlot": 55,
+              "secondsIntoBuildFrame": 5.566,
+              "oldState": "IDLE",
+              "newState": "PUBLISHING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 68264,
+              "clockSeconds": 1789964957,
+              "oldState": "PUBLISHING_CHECKPOINT",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 68267,
+              "clockSeconds": 1789964957,
+              "targetSlot": 56,
+              "secondsIntoBuildFrame": 0.936,
+              "oldState": "SYNCHRONIZING",
+              "newState": "PROPOSER_CHECK"
+            },
+            {
+              "event": "preparing-checkpoint",
+              "elapsedMs": 68273,
+              "clockSeconds": 1789964957,
+              "targetSlot": 56,
+              "checkpointNumber": 17
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 68274,
+              "clockSeconds": 1789964957,
+              "targetSlot": 56,
+              "secondsIntoBuildFrame": 0.943,
+              "oldState": "PROPOSER_CHECK",
+              "newState": "INITIALIZING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 68297,
+              "clockSeconds": 1789964957,
+              "targetSlot": 56,
+              "secondsIntoBuildFrame": 0.966,
+              "oldState": "INITIALIZING_CHECKPOINT",
+              "newState": "WAITING_FOR_TXS"
+            },
+            {
+              "event": "block-tx-count-check-failed",
+              "elapsedMs": 68800,
+              "clockSeconds": 1789964958,
+              "slot": 56,
+              "minTxs": 1
+            },
+            {
+              "event": "checkpoint-empty",
+              "elapsedMs": 68800,
+              "clockSeconds": 1789964958,
+              "slot": 56
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 68800,
+              "clockSeconds": 1789964958,
+              "oldState": "WAITING_FOR_TXS",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 69301,
+              "clockSeconds": 1789964958,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 69301,
+              "clockSeconds": 1789964958,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 69804,
+              "clockSeconds": 1789964960,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 69804,
+              "clockSeconds": 1789964960,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 70303,
+              "clockSeconds": 1789964960,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 70303,
+              "clockSeconds": 1789964960,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 70814,
+              "clockSeconds": 1789964961,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 70814,
+              "clockSeconds": 1789964961,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 71327,
+              "clockSeconds": 1789964961,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 71327,
+              "clockSeconds": 1789964961,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 72573,
+              "clockSeconds": 1789964963,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 90063,
+              "clockSeconds": 1789964979,
+              "targetSlot": 57,
+              "secondsIntoBuildFrame": 17.444,
+              "oldState": "SYNCHRONIZING",
+              "newState": "PROPOSER_CHECK"
+            },
+            {
+              "event": "preparing-checkpoint",
+              "elapsedMs": 90065,
+              "clockSeconds": 1789964979,
+              "targetSlot": 57,
+              "checkpointNumber": 17
+            },
+            {
+              "event": "proposer-rollup-check-failed",
+              "elapsedMs": 90066,
+              "clockSeconds": 1789964979,
+              "slot": 56,
+              "reason": "Slot mismatch"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 90066,
+              "clockSeconds": 1789964979,
+              "oldState": "PROPOSER_CHECK",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 90568,
+              "clockSeconds": 1789964979,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 90573,
+              "clockSeconds": 1789964979,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 91075,
+              "clockSeconds": 1789964980,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 91075,
+              "clockSeconds": 1789964980,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 91578,
+              "clockSeconds": 1789964980,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 91578,
+              "clockSeconds": 1789964980,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 92079,
+              "clockSeconds": 1789964981,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 92079,
+              "clockSeconds": 1789964981,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 92580,
+              "clockSeconds": 1789964981,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 92580,
+              "clockSeconds": 1789964981,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 93081,
+              "clockSeconds": 1789964982,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 93087,
+              "clockSeconds": 1789964982,
+              "targetSlot": 61,
+              "secondsIntoBuildFrame": 0.456,
+              "oldState": "SYNCHRONIZING",
+              "newState": "PROPOSER_CHECK"
+            },
+            {
+              "event": "preparing-checkpoint",
+              "elapsedMs": 93090,
+              "clockSeconds": 1789964982,
+              "targetSlot": 61,
+              "checkpointNumber": 17
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 93092,
+              "clockSeconds": 1789964982,
+              "targetSlot": 61,
+              "secondsIntoBuildFrame": 0.461,
+              "oldState": "PROPOSER_CHECK",
+              "newState": "INITIALIZING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 93114,
+              "clockSeconds": 1789964982,
+              "targetSlot": 61,
+              "secondsIntoBuildFrame": 0.483,
+              "oldState": "INITIALIZING_CHECKPOINT",
+              "newState": "WAITING_FOR_TXS"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 93617,
+              "clockSeconds": 1789964982,
+              "targetSlot": 61,
+              "secondsIntoBuildFrame": 0.986,
+              "oldState": "WAITING_FOR_TXS",
+              "newState": "WAITING_FOR_TXS"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 94120,
+              "clockSeconds": 1789964983,
+              "targetSlot": 61,
+              "secondsIntoBuildFrame": 1.484,
+              "oldState": "WAITING_FOR_TXS",
+              "newState": "CREATING_BLOCK"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 94202,
+              "clockSeconds": 1789964983,
+              "targetSlot": 61,
+              "secondsIntoBuildFrame": 1.566,
+              "oldState": "CREATING_BLOCK",
+              "newState": "ASSEMBLING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 94252,
+              "clockSeconds": 1789964983,
+              "targetSlot": 61,
+              "secondsIntoBuildFrame": 1.616,
+              "oldState": "ASSEMBLING_CHECKPOINT",
+              "newState": "COLLECTING_ATTESTATIONS"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 94253,
+              "clockSeconds": 1789964983,
+              "oldState": "COLLECTING_ATTESTATIONS",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 94754,
+              "clockSeconds": 1789964984,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 94754,
+              "clockSeconds": 1789964984,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 95256,
+              "clockSeconds": 1789964984,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 95256,
+              "clockSeconds": 1789964984,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 95759,
+              "clockSeconds": 1789964985,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 95759,
+              "clockSeconds": 1789964985,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 96262,
+              "clockSeconds": 1789964985,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 96263,
+              "clockSeconds": 1789964985,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 96764,
+              "clockSeconds": 1789964986,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 96764,
+              "clockSeconds": 1789964986,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 97266,
+              "clockSeconds": 1789964986,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 97266,
+              "clockSeconds": 1789964986,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 97769,
+              "clockSeconds": 1789964987,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 97773,
+              "clockSeconds": 1789964987,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 97899,
+              "clockSeconds": 1789964987,
+              "targetSlot": 61,
+              "secondsIntoBuildFrame": 5.247,
+              "oldState": "IDLE",
+              "newState": "PUBLISHING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 98275,
+              "clockSeconds": 1789964987,
+              "oldState": "PUBLISHING_CHECKPOINT",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 98279,
+              "clockSeconds": 1789964987,
+              "targetSlot": 62,
+              "secondsIntoBuildFrame": 0.627,
+              "oldState": "SYNCHRONIZING",
+              "newState": "PROPOSER_CHECK"
+            },
+            {
+              "event": "preparing-checkpoint",
+              "elapsedMs": 98287,
+              "clockSeconds": 1789964987,
+              "targetSlot": 62,
+              "checkpointNumber": 18
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 98290,
+              "clockSeconds": 1789964987,
+              "targetSlot": 62,
+              "secondsIntoBuildFrame": 0.638,
+              "oldState": "PROPOSER_CHECK",
+              "newState": "INITIALIZING_CHECKPOINT"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 98312,
+              "clockSeconds": 1789964987,
+              "targetSlot": 62,
+              "secondsIntoBuildFrame": 0.66,
+              "oldState": "INITIALIZING_CHECKPOINT",
+              "newState": "WAITING_FOR_TXS"
+            },
+            {
+              "event": "block-tx-count-check-failed",
+              "elapsedMs": 98812,
+              "clockSeconds": 1789964989,
+              "slot": 62,
+              "minTxs": 1
+            },
+            {
+              "event": "checkpoint-empty",
+              "elapsedMs": 98813,
+              "clockSeconds": 1789964989,
+              "slot": 62
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 98813,
+              "clockSeconds": 1789964989,
+              "oldState": "WAITING_FOR_TXS",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 99313,
+              "clockSeconds": 1789964989,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 99313,
+              "clockSeconds": 1789964989,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 99814,
+              "clockSeconds": 1789964990,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 99814,
+              "clockSeconds": 1789964990,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 100316,
+              "clockSeconds": 1789964990,
+              "oldState": "IDLE",
+              "newState": "SYNCHRONIZING"
+            },
+            {
+              "event": "state-changed",
+              "elapsedMs": 100316,
+              "clockSeconds": 1789964990,
+              "oldState": "SYNCHRONIZING",
+              "newState": "IDLE"
+            }
+          ],
+          "effectiveMaxBlocks": 1,
+          "sequencerLimits": {
+            "minTxsPerBlock": 1,
+            "maxTxsPerBlock": null,
+            "maxTxsPerCheckpoint": null,
+            "maxL2BlockGas": null,
+            "maxDABlockGas": null,
+            "blockDurationMs": 1000,
+            "maxBlocksPerCheckpoint": 24
+          },
+          "anchorBlock": 16,
+          "anchorHash": "0x1617141e26d6de2d7cb3adaca2663521344708618c36c54e00d16bbb279d4825",
+          "anchorHeaderSha256": "30326ce695af48132aa03a814f526363037ffdb010a83c754779a6fdfc4537b9",
+          "recovery": {
+            "passed": true,
+            "genuineOriginalProof": true,
+            "genuineConflictProof": true,
+            "genuineReplacementProof": true,
+            "networkProofs": false,
+            "replacementProofMilliseconds": 20792,
+            "oldTransactionHash": "0x02ffeb9de75e99e684b068920faddf283c03c36855aa6a045ba1e5308925bacf",
+            "newTransactionHash": "0x199eb56472886ce89ec0036af9dc6a756f86690613058071cea484fdadf94d7b",
+            "originalValidation": {
+              "result": "invalid",
+              "reason": [
+                "Existing nullifier"
+              ]
+            },
+            "originalNeverSubmitted": true,
+            "transactionFee": "4933740000000",
+            "portableJournalRestored": true,
+            "logicalNonceRetained": true,
+            "canonicalReplacementRecovered": true
+          },
+          "preparedCount": 1,
+          "submittedCount": 1,
+          "pool": {
+            "pending": 0,
+            "oneEligible": false,
+            "tenEligible": false,
+            "clockSeconds": 1789964990,
+            "l1Timestamp": "1789964990"
+          },
+          "receipts": [
+            {
+              "authorIndex": 0,
+              "status": "checkpointed",
+              "executionResult": "success",
+              "blockNumber": "17",
+              "errorCategory": null
+            }
+          ],
+          "includedSuccessCount": 1,
+          "verifiedCount": 1,
+          "uniqueIdsAndOrder": true,
+          "limitations": "One-author diagnostic only; not ten-author qualification; real private-fee-note conflict and journal-linked post proof replacement; no protocol throughput/finality claim.",
+          "walletStopped": true
+        },
+        "networkProverCreated": false,
+        "cleanupComplete": true
+      },
+      "epochSchedulingStarted": false,
+      "idleProverAgentCreated": false,
+      "nodeStopped": true
+    },
+    "anvilExit": {
+      "code": null,
+      "signal": "SIGKILL"
+    },
+    "singletonsStopped": true
+  },
+  "elapsedMs": 269207,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true,
+  "finishedAt": "2026-09-21T04:28:48.553Z"
+}
