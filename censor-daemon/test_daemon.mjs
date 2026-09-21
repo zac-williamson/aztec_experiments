@@ -222,7 +222,7 @@ async function main() {
     ];
     const mockCli = new MockCli(MOCK_CLI, { posts });
     const mockServer = new MockLlamaServer(MOCK_PORT, (postText) => ({
-      content: 'VIOLATION - 1 - This is advertising spam',
+      content: JSON.stringify({"isViolation": true, "reason": "This is advertising spam"}),
     }));
     await mockServer.start();
 
@@ -258,7 +258,7 @@ async function main() {
     ];
     const mockCli = new MockCli(MOCK_CLI, { posts });
     const mockServer = new MockLlamaServer(MOCK_PORT, () => ({
-      content: 'OK',
+      content: JSON.stringify({"isViolation": false, "reason": "No violation"}),
     }));
     await mockServer.start();
 
@@ -291,7 +291,7 @@ async function main() {
     ];
     const mockCli = new MockCli(MOCK_CLI, { posts });
     const mockServer = new MockLlamaServer(MOCK_PORT, () => ({
-      content: 'VIOLATION - 1 - should not reach here',
+      content: JSON.stringify({"isViolation": true, "reason": "should not reach here"}),
     }));
     await mockServer.start();
 
@@ -390,8 +390,8 @@ async function main() {
     ];
     const mockCli = new MockCli(MOCK_CLI, { posts });
     const mockServer = new MockLlamaServer(MOCK_PORT, (postText) => {
-      if (postText.includes('BUY')) return { content: 'VIOLATION - 1 - advertising' };
-      return { content: 'OK' };
+      if (postText.includes('BUY')) return { content: JSON.stringify({"isViolation": true, "reason": "advertising"}) };
+      return { content: JSON.stringify({"isViolation": false, "reason": "No violation"}) };
     });
     await mockServer.start();
 
@@ -440,7 +440,7 @@ async function main() {
       { index: 2, text: 'Post two', flagged: false },
     ];
     const mockCli = new MockCli(MOCK_CLI, { posts });
-    const mockServer = new MockLlamaServer(MOCK_PORT, () => ({ content: 'OK' }));
+    const mockServer = new MockLlamaServer(MOCK_PORT, () => ({ content: JSON.stringify({"isViolation": false, "reason": "No violation"}) }));
     await mockServer.start();
 
     try {
@@ -472,7 +472,7 @@ async function main() {
     ];
     const mockCli = new MockCli(MOCK_CLI, { posts });
     const mockServer = new MockLlamaServer(MOCK_PORT, () => ({
-      content: 'VIOLATION - 1 - advertising spam',
+      content: JSON.stringify({"isViolation": true, "reason": "advertising spam"}),
     }));
     await mockServer.start();
 
@@ -512,7 +512,7 @@ async function main() {
     ];
     const onChainPolicy = '  1. No spam\n2. No violence\n3. No illegal content\n ';
     const mockCli = new MockCli(MOCK_CLI, { posts, policy: onChainPolicy });
-    const mockServer = new MockLlamaServer(MOCK_PORT, () => ({ content: 'OK' }));
+    const mockServer = new MockLlamaServer(MOCK_PORT, () => ({ content: JSON.stringify({"isViolation": false, "reason": "No violation"}) }));
     await mockServer.start();
 
     try {
@@ -544,7 +544,7 @@ async function main() {
     ];
     // No policy in contract output (empty string)
     const mockCli = new MockCli(MOCK_CLI, { posts, policy: '' });
-    const mockServer = new MockLlamaServer(MOCK_PORT, () => ({ content: 'OK' }));
+    const mockServer = new MockLlamaServer(MOCK_PORT, () => ({ content: JSON.stringify({"isViolation": false, "reason": "No violation"}) }));
     await mockServer.start();
 
     // Create a temporary policy file
@@ -581,7 +581,7 @@ async function main() {
       { index: 0, text: 'Old spam post', flagged: false, timestamp: nowSec - 7200 }, // 2h ago, past 1h window
     ];
     const mockCli = new MockCli(MOCK_CLI, { posts, censorWindow: 3600 });
-    const mockServer = new MockLlamaServer(MOCK_PORT, () => ({ content: 'OK' }));
+    const mockServer = new MockLlamaServer(MOCK_PORT, () => ({ content: JSON.stringify({"isViolation": false, "reason": "No violation"}) }));
     await mockServer.start();
 
     try {
@@ -611,7 +611,7 @@ async function main() {
       { index: 0, text: 'Recent spam', flagged: false, timestamp: nowSec - 3400 }, // ~3min left in 1h window
     ];
     const mockCli = new MockCli(MOCK_CLI, { posts, censorWindow: 3600 });
-    const mockServer = new MockLlamaServer(MOCK_PORT, () => ({ content: 'OK' }));
+    const mockServer = new MockLlamaServer(MOCK_PORT, () => ({ content: JSON.stringify({"isViolation": false, "reason": "No violation"}) }));
     await mockServer.start();
 
     try {
@@ -643,7 +643,7 @@ async function main() {
       { index: 1, text: 'Older post', flagged: false, timestamp: nowSec - 3500 }, // closer to expiring
     ];
     const mockCli = new MockCli(MOCK_CLI, { posts, censorWindow: 3600 });
-    const mockServer = new MockLlamaServer(MOCK_PORT, () => ({ content: 'OK' }));
+    const mockServer = new MockLlamaServer(MOCK_PORT, () => ({ content: JSON.stringify({"isViolation": false, "reason": "No violation"}) }));
     await mockServer.start();
 
     try {
@@ -689,7 +689,7 @@ async function main() {
 
   await test('failed signing is not reported as a completed successful job', async () => {
     const mockCli = new MockCli(MOCK_CLI, { posts: [{ index: 0, text: 'Spam', flagged: false }], flagExit: 7 });
-    const mockServer = new MockLlamaServer(0, () => ({ content: 'VIOLATION - 1 - Spam' }));
+    const mockServer = new MockLlamaServer(0, () => ({ content: JSON.stringify({"isViolation": true, "reason": "Spam"}) }));
     await mockServer.start();
     try {
       const result = await runDaemon(['--portal-address', '0x' + '12'.repeat(20),
@@ -698,6 +698,7 @@ async function main() {
       assertTrue(result.exitCode !== 0, 'signing failure must cause unsuccessful one-shot exit');
       assertFalse(result.stdout.includes('Post #0 flagged.'), 'failed signing cannot be logged as successful');
       assertTrue(result.stdout.includes('remains unresolved'), 'bounded failure status must be observable');
+      assertTrue(mockCli.calls().filter(args => args[0] === 'declare-immoral' && !args.includes('--inspect-only')).length === 1, 'exactly one signing attempt must reach the failing signer');
     } finally { await mockServer.stop(); mockCli.cleanup(); }
   });
 
@@ -714,7 +715,7 @@ async function main() {
   ]) {
     await test(label + ' fails closed without model or signer action', async () => {
       const mockCli = new MockCli(MOCK_CLI, behavior);
-      const mockServer = new MockLlamaServer(0, () => ({ content: 'VIOLATION - 1 - Spam' }));
+      const mockServer = new MockLlamaServer(0, () => ({ content: JSON.stringify({"isViolation": true, "reason": "Spam"}) }));
       await mockServer.start();
       try {
         const result = await runDaemon(['--portal-address', '0x' + '12'.repeat(20),
@@ -730,7 +731,7 @@ async function main() {
 
   await test('restart retains completed decisions without re-evaluating or resubmitting',async()=>{
     const mockCli=new MockCli(MOCK_CLI,{posts:[{index:0,text:'Spam',flagged:false}]});
-    const server=new MockLlamaServer(0,()=>({content:'VIOLATION - 1 - Spam'}));await server.start();
+    const server=new MockLlamaServer(0,()=>({content: JSON.stringify({"isViolation": true, "reason": "Spam"})}));await server.start();
     const stateDir=fs.mkdtempSync(path.join(TEST_ROOT,'restart-'));
     const args=['--portal-address',SCOPE.portalAddress,'--censor-wallet',MOCK_WALLET,'--cli',MOCK_CLI,'--llama-port',String(server.port),'--once'];
     try{
@@ -742,7 +743,7 @@ async function main() {
   });
   await test('submitted receipt without finality remains durable and restart does not resend',async()=>{
     const mockCli=new MockCli(MOCK_CLI,{posts:[{index:0,text:'Pending spam',flagged:false}]});
-    const server=new MockLlamaServer(0,()=>({content:'VIOLATION - 1 - Spam'}));await server.start();
+    const server=new MockLlamaServer(0,()=>({content: JSON.stringify({"isViolation": true, "reason": "Spam"})}));await server.start();
     const stateDir=fs.mkdtempSync(path.join(TEST_ROOT,'pending-'));
     const args=['--portal-address',SCOPE.portalAddress,'--censor-wallet',MOCK_WALLET,'--cli',MOCK_CLI,'--llama-port',String(server.port),'--once'];
     try{
@@ -753,7 +754,7 @@ async function main() {
   await test('current policy is used for an older post after policy update',async()=>{
     const historical=' Original policy \n';
     const mockCli=new MockCli(MOCK_CLI,{posts:[{index:0,text:'Old policy post',flagged:false,policyVersion:OTHER_POLICY_VERSION}],policies:[{policyVersion:OTHER_POLICY_VERSION,text:historical,censorWindow:'3600'},{policyVersion:POLICY_VERSION,text:'No spam',censorWindow:'3600'}]});
-    const server=new MockLlamaServer(0,()=>({content:'OK'}));await server.start();
+    const server=new MockLlamaServer(0,()=>({content: JSON.stringify({"isViolation": false, "reason": "No violation"})}));await server.start();
     try{const result=await runDaemon(['--portal-address',SCOPE.portalAddress,'--censor-wallet',MOCK_WALLET,'--cli',MOCK_CLI,'--llama-port',String(server.port),'--once']);assertEqual(result.exitCode,0,result.stdout+result.stderr);assertEqual(server.policies[0],'No spam','current policy exact bytes');}
     finally{await server.stop();mockCli.cleanup();}
   });

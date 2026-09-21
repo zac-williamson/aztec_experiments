@@ -216,3 +216,5 @@ Independent review approved correcting fixture Caddy idle reuse to500ms, below N
 2026-09-21: aws_stack_review approved minimal CloudWatch metric publisher, native independent timer and namespace-scoped permission. Corrected journalctl's documented no-match status to publish unhealthy; other command failures remain failures. No restart, signing, log upload or notification destination added. Root retains cloud writes.
 
 2026-09-21: application_change_review identified current-source withdrawal traffic as the next meaningful gap; root run309 passed358628ms. author_testnet_flow reviewed current-rule moderation, penalty/deadline and CloudWatch/backup documentation corrections against actual code.
+
+2026-09-21: author_testnet_flow approved removal of legacy plain-text moderation verdicts. Root strengthened failed-signing fixture to require exactly one actual signer call;76parser,130signer,daemon and156worker/evaluation checks passed315. No model/prompt/runtime changes. Root deploys reviewed package only after verification.

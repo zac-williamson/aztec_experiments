@@ -44,27 +44,17 @@ export function parseVerdict(fullText) {
   }
   const text = fullText.trim();
   if (!text) invalid('INVALID_VERDICT', 'Model returned no final verdict');
-  if (text.startsWith('{') || text.startsWith('[')) {
-    let value;
-    try { value = JSON.parse(text); } catch { invalid('INVALID_VERDICT', 'Model verdict is not valid JSON'); }
-    if (!value || Array.isArray(value) || typeof value !== 'object' || Object.keys(value).length !== 2
-        || !Object.hasOwn(value, 'isViolation') || !Object.hasOwn(value, 'reason') || typeof value.isViolation !== 'boolean') {
-      invalid('INVALID_VERDICT', 'Model verdict must contain only boolean isViolation and string reason');
-    }
-    // JSON.parse permits duplicate keys. Count colons outside valid JSON strings
-    // to reject duplicates as well; the accepted values are both primitives.
-    const colonCount = (text.replace(/"(?:\\[\s\S]|[^"\\])*"/g, '""').match(/:/g) || []).length;
-    if (colonCount !== 2) invalid('INVALID_VERDICT', 'Model verdict contains duplicate or nested fields');
-    return Object.freeze({ isViolation: value.isViolation, reason: validateReason(value.reason) });
+  let value;
+  try { value = JSON.parse(text); } catch { invalid('INVALID_VERDICT', 'Model verdict is not valid JSON'); }
+  if (!value || Array.isArray(value) || typeof value !== 'object' || Object.keys(value).length !== 2
+      || !Object.hasOwn(value, 'isViolation') || !Object.hasOwn(value, 'reason') || typeof value.isViolation !== 'boolean') {
+    invalid('INVALID_VERDICT', 'Model verdict must contain only boolean isViolation and string reason');
   }
-  // Compatibility for existing models: only the final non-empty, standalone
-  // line is a verdict. Earlier reasoning is never searched for a trigger word.
-  let finalLine = text.split(/\r?\n/).filter(line => line.trim()).at(-1).trim();
-  if (finalLine.startsWith('**') && finalLine.endsWith('**')) finalLine = finalLine.slice(2, -2).trim();
-  if (/^OK$/i.test(finalLine)) return Object.freeze({ isViolation: false, reason: 'No violation' });
-  const violation = /^VIOLATION\s*-\s*([1-9][0-9]{0,5})\s*-\s*(.+)$/i.exec(finalLine);
-  if (violation) return Object.freeze({ isViolation: true, reason: validateReason(violation[1] + ' - ' + violation[2]) });
-  invalid('INVALID_VERDICT', 'Model returned no valid structured verdict or standalone legacy verdict');
+  // JSON.parse permits duplicate keys. Count colons outside valid JSON strings
+  // to reject duplicates as well; the accepted values are both primitives.
+  const colonCount = (text.replace(/"(?:\\[\s\S]|[^"\\])*"/g, '""').match(/:/g) || []).length;
+  if (colonCount !== 2) invalid('INVALID_VERDICT', 'Model verdict contains duplicate or nested fields');
+  return Object.freeze({ isViolation: value.isViolation, reason: validateReason(value.reason) });
 }
 
 async function readResponse(response, signal) {

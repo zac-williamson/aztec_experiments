@@ -1,0 +1,20 @@
+{
+  "status": "Legacy verdict fallback removed; strictJSON parser checks unchanged",
+  "sourceHashes": {
+    "censor-daemon/moderation.mjs": "8143eeb1845bd915c4fe0212726eb59ee8c2b2d4ba339f9b0e3050a2f7f52cda",
+    "censor-daemon/test_moderation.mjs": "731534a31ddc44239943420bdf50cbfb3a661fae23f063f1725390ceafcdde41",
+    "censor-daemon/test_daemon.mjs": "ebc442d9def11a1b850a5a1ba29f09a686c173c4ab971c5058656aa7fe6fcfd7",
+    "censor-daemon/MODERATION_PROTOCOL.md": "13f7fde2395cd7b147289a5d7e572b0215c779a8207187187bec17cfa929da64"
+  },
+  "verification": {
+    "focusedModeration": 76,
+    "signer": 130,
+    "workerAndEvaluation": 156,
+    "daemonIntegration": "passed including exactly one failed signing attempt and durable recovery",
+    "suiteExitCode": 0
+  },
+  "review": "author_testnet_flow approved code, fixture branches and final signing assertion",
+  "modelPromptChanged": false,
+  "runtimeConfigurationChanged": false,
+  "limitations": "Local checks; remote package deployment and actual model response check pending. Historical parsed decisions do not prove historical raw response format."
+}

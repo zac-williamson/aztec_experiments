@@ -1,6 +1,6 @@
 # Moderation response protocol
 
-M01 accepts a small decision, not a command. The preferred final response is one
+M01 accepts a small decision, not a command. The required final response is one
 JSON object with exactly `isViolation` (boolean) and `reason` (string). Duplicate
 keys, nested values, extra fields, missing final content, incomplete output and
 multiple model choices are errors. A response cannot supply a post index, wallet,
@@ -14,13 +14,9 @@ backticks, dollar substitutions and semicolons remain ordinary text in a single
 argument. Oversized reasons are rejected rather than truncated, so truncation
 cannot silently change meaning or split a Unicode sequence.
 
-For existing models, a bounded legacy response may finish with a standalone
-`OK` or `VIOLATION - <positive rule number> - <reason>` line. Matching is case
-insensitive, and a complete bold Markdown wrapper is accepted. Earlier reasoning
-lines are ignored. Arbitrary prose containing those words, a bare `VIOLATION`,
-empty output and ambiguous negation sentences are no longer interpreted as
-decisions. Their original regression cases now explicitly require an unresolved
-error. Valid original standalone verdict and prompt cases remain covered.
+Plain-text verdicts, markdown wrappers and reasoning followed by a verdict are
+rejected. The complete final response must be the requested JSON object; there
+is no legacy-format parser or inferred default decision.
 
 The HTTP response must contain exactly one choice with `finish_reason: "stop"`
 and nonempty string `message.content`. `reasoning_content` is never used as a
