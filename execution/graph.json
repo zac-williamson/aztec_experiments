@@ -1072,7 +1072,7 @@
       "evidence": "evidence/M03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Four pinned-model batches total48distinct provisional cases,0classification errors; combinedp95 23.09s misses10s target. Direct-threat288 complete239.70s, runtime/cleanup verified, restored service healthy90139. One live automatic flag verified; human labels,300/50/50coverage and20flagcapacity remain incomplete. Independent aggregate review approved.",
+      "checkpoint": "Four pinned-model batches total48distinct provisional cases,0classification errors; combinedp95 23.09s misses10s target. Direct-threat288 complete239.70s, runtime/cleanup verified, restored service healthy90139. One live automatic flag verified; human labels,300/50/50coverage and20flagcapacity remain incomplete. Independent aggregate review approved. Remove obsolete non-JSON verdict compatibility per user no-fallback/no-backwards-compatibility direction; pinned prompt/runtime already requireJSON. Preserve strictJSON semantics, update successfulfixtures and keep invalid/recoverybranch checks. Independent review required; no model/prompt/actor changes.",
       "priority": 17,
       "execution_lane": "deployed-model-evaluation"
     },
@@ -1498,7 +1498,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Current-source traffic309 and absence311 passed. Staleproof312 passed269207ms/2122672KiB: real conflicting privatefee spend invalidated original, journal-linked sameoperation replacement included/recovered,cleanupcomplete. Next note-attribution313 verifies competing dummy/withdrawal against currentnote layout,540s/4GiB. No retry; production/statistical/external gates remain open.",
+      "checkpoint": "Current-source traffic309,absence311,staleproof312 and note-attribution313 passed.313 completed271209ms/1935152KiB: same-note withdrawal accepted, unsubmitteddummy rejected afterward,refund/privatefeesverified,cleanupcomplete. Remaining tenauthor source reconciliation,installedSafari,physicalmobile/statisticalperformance and external releasegates. M03 strictJSON simplification undergoingmoderation315.",
       "priority": 24,
       "completion_requires": [
         "O01",
