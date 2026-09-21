@@ -71,6 +71,8 @@ async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,e
   const fixed=normalizePrivateFeeGasSettings(gasSettings);
   const [walletChain,nodeInfo]=await Promise.all([wallet.getChainInfo(),node.getNodeInfo()]);
   check(uint(walletChain.chainId,64)===chainId&&uint(walletChain.version,32)===version&&uint(nodeInfo.l1ChainId,64)===chainId&&uint(nodeInfo.rollupVersion,32)===version,'PRIVATE_FEE_CHAIN_MISMATCH');
+  const minimum=await node.getCurrentMinFees();
+  check(['feePerDaGas','feePerL2Gas'].every(key=>fixed.gasSettings.maxFeesPerGas[key]>=uint(minimum[key],128)),'PRIVATE_FEE_CAP_TOO_LOW');
   const artifact=artifactOf(privateFeeArtifact),canonical=await derivePrivateFeeInstance(artifact);
   check(equal(canonical.address,payer),'PRIVATE_FEE_NONCANONICAL_ADDRESS');
   const instance=await node.getContract(payer,'latest');

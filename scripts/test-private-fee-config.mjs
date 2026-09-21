@@ -23,6 +23,7 @@ test('CLI reads public configuration and restricted local claim, rejecting links
  } finally {fs.rmSync(dir,{recursive:true,force:true});}
 });
 test('CLI keeps ambiguous outcomes actionable without exposing private errors',()=>{
+ assert.match(cli.formatCliPrivateFeeFailure({code:'PRIVATE_FEE_CAP_TOO_LOW',message:'private'}),/Update the fee settings/);
  assert.match(cli.formatCliPrivateFeeFailure({code:'BB_SUBMISSION_UNKNOWN',message:'private'}),/outcome is unknown/);
  assert(!cli.formatCliPrivateFeeFailure({message:'private-wallet-secret'}).includes('private-wallet-secret'));
  assert.match(cli.formatCliPrivateFeeFailure({code:'BB_CLI_PROVER_CONFIGURATION',message:'private'}),/^BB_CLI_PROVER_CONFIGURATION: /);

@@ -559,6 +559,7 @@ function readPrivateFeeJson(filename, secret) {
 
 function formatCliPrivateFeeFailure(error) {
   const messages = {
+    PRIVATE_FEE_CAP_TOO_LOW: 'The configured transaction fee cap is below the network current minimum. Update the fee settings before continuing.',
     BB_PRIVATE_FEE_CONFIGURATION: 'Private fee configuration or claim file could not be loaded.',
     BB_CLI_PROVER_CONFIGURATION: 'Local CLI proving setup could not be verified.',
     BB_PRIVATE_FEE_PREPARATION_FAILED: 'Private fee preparation failed before submission.',

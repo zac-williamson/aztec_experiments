@@ -144,3 +144,11 @@ test('claim failure keeps its internal cause without exposing it in the public m
  await assert.rejects(h.run('claim'),error=>error.code==='BB_PRIVATE_FEE_CLAIM_FAILED'&&error.cause===cause&&!error.message.includes('SECRET'));
  assert.equal(h.calls.filter(c=>c==='stop').length,1);
 });
+
+test('fee claim preserves low-cap diagnostic and displays a safe actionable message',async()=>{
+ const h=harness();h.env.aztec.preparePrivateFeePayment=async()=>{throw Object.assign(Error('private input'),{code:'PRIVATE_FEE_CAP_TOO_LOW'});};
+ await assert.rejects(h.run('claim'),{code:'PRIVATE_FEE_CAP_TOO_LOW'});assert(!h.calls.some(c=>c[0]==='send'));
+ const app=fs.readFileSync(new URL('../apps/src/fee-juice/app.js',import.meta.url),'utf8'),c=vm.createContext({});
+ vm.runInContext(app.slice(app.indexOf('function safeFundingError('),app.indexOf('async function loadWalletAndCheck(')),c);
+ const message=c.safeFundingError({code:'PRIVATE_FEE_CAP_TOO_LOW',message:'private input'});assert.match(message,/operator needs to update/);assert(!message.includes('private input'));
+});

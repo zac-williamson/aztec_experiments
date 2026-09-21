@@ -460,7 +460,7 @@
           gasSettings: route.gasSettings, claim,
         });
         if (!prepared?.paymentMethod || !prepared.gasSettings) throw privateFeeFailure();
-      } catch (_) { throw privateFeeFailure('BB_PRIVATE_FEE_PREPARATION_FAILED'); }
+      } catch (error) { throw privateFeeFailure(error?.code==='PRIVATE_FEE_CAP_TOO_LOW'?'PRIVATE_FEE_CAP_TOO_LOW':'BB_PRIVATE_FEE_PREPARATION_FAILED'); }
       try {
         const result = await contract.methods[method](...args).send({
           from: owner, fee: {paymentMethod: prepared.paymentMethod, gasSettings: prepared.gasSettings},

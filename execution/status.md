@@ -6,8 +6,8 @@ Objective state: **running**. Completed packages: 26/37.
 
 ## In progress
 
-- **Evaluate moderation quality and define human review operations (M03)** — Timing worker is deployed on EC2 and healthy. No pending job can provide a sample. Starting one new minimum-collateral author cycle253 under unchanged policy to measure actual inference and flag inclusion. Live portal minimum verified1e12wei. Previous author refund confirmed; new deposit acknowledges exact refund.36 provisional decisions remain insufficient for quality/capacity qualification.
-- **Run browser, recovery, concurrency and load matrix (T04)** — Real browser withdrawal recovery251 and post recovery252 passed after reviewed state-preservation fix; canonical effects, no duplicate submissions and exact fee debits verified, cleanup complete.123focused checks249 and harness250 passed. Three shared-engine website pages deployed; delivered hashes/CSP and browser initialization verified. Evidence withdrawal-recovery-fix-20260921.json. Continue remaining distinct wallet, browser and performance coverage; no duplicate plain posting runs.
+- **Evaluate moderation quality and define human review operations (M03)** — 100testAZTEC topup267 mined, private claim268 checkpointed successfully in63.4s after validated simulation. Fee rates explicitly refreshed for author/host/moderator, gas limits unchanged. Retrying original collateral claim273 with corrected cap (previous255 created no new signed transaction). Then synthetic violation under unchanged policy and actual timing observation. No latency sample yet.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Fee-cap preflight approved;164focused checks263, SDK/apps and components264, genuine cold-browser266 all passed. Website272 deployed and all seven changed assets/configs verified by hash; matching CSP confirmed. Recovery251/252 already passed. Next distinct browser work is cold funding via actual MetaMask; shared helper reuse scoped, no implementation yet.
 
 ## Ready internal work
 

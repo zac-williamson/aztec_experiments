@@ -24,6 +24,7 @@ async function recoverSavedFeeEthereum(retry=false) {
 }
 setupRpcAuth();
 function safeFundingError(error) {
+  if(error?.code==='PRIVATE_FEE_CAP_TOO_LOW')return 'The configured transaction fee cap is below the network’s current minimum. The board operator needs to update its fee settings before you can continue.';
   if(error?.code==='BB_ETH_RECOVERY_REQUIRED')return 'Check the saved Ethereum fee request before starting another deposit.';
   if(error?.code==='BB_RECOVERY_REQUIRED')return 'Recover the saved private fee transaction before attempting another claim.';
   if(error?.code==='BB_JOURNAL_INVALID')return 'Private fee recovery storage could not be authenticated or saved. Preserve your recovery files.';

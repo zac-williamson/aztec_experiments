@@ -1,0 +1,39 @@
+{
+  "status": "focused, component and actual cold-funding browser checks passed",
+  "failure": {
+    "claimCommand": "1ef211e5-8d5d-410c-bc50-d284b44fb65e",
+    "outcome": "Failed before reporting a new transaction; unchanged encrypted journal confirmed independently.",
+    "configuredL2Price": "3810968971938",
+    "laterObservedMinimumL2Price": "6683100377989",
+    "journalTransaction": "0x2456fc493e6e2ce560015d146cb838a098c8a97a54e1022b0c4bd06552d73bfa",
+    "note": "The later fee observation establishes stale configuration at inspection time; the generic original error did not retain exact failure cause."
+  },
+  "change": "Check both current fee-rate minima before preparing private payment; report an actionable low-cap error to CLI, author UI and fee funding UI. Do not raise caps or retry.",
+  "tests": {
+    "focused263": 164,
+    "sdkAndApps264": "passed",
+    "components264": "passed",
+    "browser266": "application-4330224c-4239-4d03-8e22-d5d14bf742b6.json"
+  },
+  "review": "application_change_review approved after fee-page formatter propagation was included.",
+  "limitations": [
+    "Network fees can change after preflight; normal transaction validation remains authoritative.",
+    "No production quality or sustained moderation capacity claim."
+  ],
+  "sourceHashes": {
+    "shared/private-fee-client.mjs": "fca8be1fc881c5c7ee47c1011ce7fe6893c6d4d27302471f486277e605771f24",
+    "shared/app-env.js": "ab0fd9745c2486851f9a9ab5c2a168dcc6a2f73d11f5d147168fe66332a8a588",
+    "apps/src/billboard/user/engine.js": "1c1f94baa0c2ca0f980563a4af05b73a62d964b692a8b86f162e13ad927d08fe",
+    "apps/src/billboard/user/cli.mjs": "4ebfc56fa79398f3b45f7e09c8e96f9a56d652306a0ae7fea08d3a5f9778ed3d",
+    "apps/src/fee-juice/engine.js": "3f20754907cc8d17176ee0a0dd30a63c786bb7d4bf96e3dfb1fbd5d5d8f45792",
+    "apps/src/fee-juice/app.js": "e07d44da998c0d270103a7f88ce3e24a516c6c1ee49cc8e39878d384b9f971c1"
+  },
+  "deployment": {
+    "stackStatus": "UPDATE_COMPLETE",
+    "deliveredFiles": "hosted-fee-cap-272.json",
+    "verification": "All seven hosted files match local hashes; all four changed HTML security policies match exactly.",
+    "hostedMaxL2FeePerGas": "10048248800620",
+    "hostedMaximumCharge": "34725933946789869780",
+    "scope": "Explicit testnet price update only; measured gas limits unchanged."
+  }
+}

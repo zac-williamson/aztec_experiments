@@ -19,7 +19,7 @@ after(async()=>{await BarretenbergSync.destroySingleton();});
 function walletFixture(engineSource=source){
  const calls=[],pxe={registerContractClass:async value=>calls.push(['class',value]),registerContract:async instance=>{calls.push(['contract',instance]);return instance.address;},
   registerAccount:async(keys,partial)=>{calls.push(['account',keys]);return CompleteAddress.fromPublicKeysAndPartialAddress(keys.publicKeys,partial);}};
- const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5}),getContract:async()=>undefined};
+ const node={getCurrentMinFees:async()=>new GasFees(3n,5n),getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5}),getContract:async()=>undefined};
  const c=vm.createContext({performance,});vm.runInContext(engineSource,c);
  const wallet=c.BillboardPrivateFeeRouting.createAztecWallet({BaseWallet},pxe,node,node,()=>{},Fr.ONE);
  return {wallet,node,calls};

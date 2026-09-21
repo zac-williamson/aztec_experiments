@@ -40704,7 +40704,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
           gasSettings: route.gasSettings, claim,
         });
         if (!prepared?.paymentMethod || !prepared.gasSettings) throw privateFeeFailure();
-      } catch (_) { throw privateFeeFailure('BB_PRIVATE_FEE_PREPARATION_FAILED'); }
+      } catch (error) { throw privateFeeFailure(error?.code==='PRIVATE_FEE_CAP_TOO_LOW'?'PRIVATE_FEE_CAP_TOO_LOW':'BB_PRIVATE_FEE_PREPARATION_FAILED'); }
       try {
         const result = await contract.methods[method](...args).send({
           from: owner, fee: {paymentMethod: prepared.paymentMethod, gasSettings: prepared.gasSettings},
@@ -42741,6 +42741,7 @@ function buildConfig(action, extra) {
 // ============================================================
 function publicOperationFailure(error) {
   const messages={
+    PRIVATE_FEE_CAP_TOO_LOW:'The configured transaction fee cap is below the network’s current minimum. The board operator needs to update its fee settings before you can continue.',
     INSECURE_CONTEXT:'Wallet actions require HTTPS or localhost.',
     SHARED_MEMORY_UNAVAILABLE:'Wallet actions require cross-origin isolation and shared memory. Check the hosting configuration or use a supported browser.',
     WASM_UNAVAILABLE:'This browser cannot run the required WebAssembly features.',

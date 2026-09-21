@@ -19,7 +19,7 @@ function fixture(){
   const state={registered:0,reads:0,balance:1300n,instance:{...instance},chain:1,version:2};
   const wallet={getChainInfo:async()=>({chainId:new Fr(1),version:new Fr(2)}),registerContract:async()=>{state.registered++;},
     executeUtility:async(call,options)=>{state.reads++;assert.equal(call.name,'balance_of');assert.deepEqual(call.args.map(String),[owner.toField().toString()]);assert.deepEqual(options.scopes,[owner]);return {result:[new Fr(state.balance)],offchainEffects:[],anchorBlockTimestamp:1n};}};
-  const node={getNodeInfo:async()=>({l1ChainId:state.chain,rollupVersion:state.version}),getContract:async()=>state.instance};
+  const node={getCurrentMinFees:async()=>new GasFees(3n,5n),getNodeInfo:async()=>({l1ChainId:state.chain,rollupVersion:state.version}),getContract:async()=>state.instance};
   const input={wallet,node,owner,privateFeeAddress:instance.address,privateFeeArtifact:artifact,expectedChainId:'1',expectedVersion:'2',
     gasSettings:new GasSettings(new Gas(100,200),new Gas(10,20),new GasFees(3n,5n),new GasFees(1n,2n))};
   return {state,input};
@@ -97,4 +97,15 @@ test('balance and identity provider failures never produce a fallback payment or
   await assert.rejects(preparePrivateFeePayment(input),e=>e.code==='PRIVATE_FEE_PREPARATION_FAILED'&&!e.message.includes('PRIVATE_INPUT_MARKER'));
   assert.equal(forbidden,0);
  }
+});
+
+for(const dimension of ['feePerDaGas','feePerL2Gas'])test('rejects stale '+dimension+' cap before balance or payment work',async()=>{
+ const {input,state}=fixture(),before=structuredClone(input.gasSettings);input.node.getCurrentMinFees=async()=>new GasFees(dimension==='feePerDaGas'?4n:3n,dimension==='feePerL2Gas'?6n:5n);
+ await assert.rejects(preparePrivateFeePayment(input),{code:'PRIVATE_FEE_CAP_TOO_LOW'});
+ assert.equal(state.reads,0);assert.equal(state.registered,0);assert.deepEqual(structuredClone(input.gasSettings),before);
+});
+test('fee-rate lookup failure is redacted and never starts payment work',async()=>{
+ const {input,state}=fixture();input.node.getCurrentMinFees=async()=>{throw Error('PRIVATE_INPUT_MARKER');};
+ await assert.rejects(preparePrivateFeePayment(input),e=>e.code==='PRIVATE_FEE_PREPARATION_FAILED'&&!e.message.includes('PRIVATE_INPUT_MARKER'));
+ assert.equal(state.reads,0);assert.equal(state.registered,0);
 });

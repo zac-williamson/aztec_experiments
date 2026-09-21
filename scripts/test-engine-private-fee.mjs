@@ -668,3 +668,9 @@ for(const scenario of ['matching','older-refund','missing-witness','rpc-error'])
  else{const result=await h.run();assert.equal(Object.hasOwn(result,'withdrawTxHash'),scenario==='matching');if(scenario==='matching')assert.equal(result.withdrawTxHash,null);}
  assert.equal(reads,1);assert.equal(h.requests.length,0);assert(!h.logs.some(text=>text.includes('private provider error')));
 });
+
+test('fee preparation preserves only the recognized low-cap diagnostic',async()=>{
+ const c=context();let sends=0;
+ const sender=c.BillboardPrivateFeeRouting.createPrivateFeeSender({a:{GasSettings,preparePrivateFeePayment:async()=>{throw Object.assign(Error('private detail'),{code:'PRIVATE_FEE_CAP_TOO_LOW'});}},config:{privateFee:{contractAddress:'fee',gasSettings:gas()}},privateFeeArtifact:{},contract:{methods:{claim_deposit:()=>({send:()=>{sends++;}})}},wallet:{},node:{},owner:{},scope:{l1ChainId:'31337',rollupVersion:'1'}});
+ await assert.rejects(sender('claim',[]),e=>e.code==='PRIVATE_FEE_CAP_TOO_LOW'&&!e.message.includes('private detail'));assert.equal(sends,0);
+});

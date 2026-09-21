@@ -40454,6 +40454,7 @@ function buildConfig(action, extra) {
 // ============================================================
 function publicOperationFailure(error) {
   const messages={
+    PRIVATE_FEE_CAP_TOO_LOW:'The configured transaction fee cap is below the network’s current minimum. The board operator needs to update its fee settings before you can continue.',
     INSECURE_CONTEXT:'Wallet actions require HTTPS or localhost.',
     SHARED_MEMORY_UNAVAILABLE:'Wallet actions require cross-origin isolation and shared memory. Check the hosting configuration or use a supported browser.',
     WASM_UNAVAILABLE:'This browser cannot run the required WebAssembly features.',
