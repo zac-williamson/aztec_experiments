@@ -3,7 +3,7 @@
   "cohort": "webkit-performance-campaign-330.json",
   "status": "in-progress",
   "expectedPairs": 30,
-  "completedPairs": 5,
+  "completedPairs": 6,
   "qualified": false,
   "runs": [
     {
@@ -140,10 +140,36 @@
           "guiElapsedMs": 49142
         }
       ]
+    },
+    {
+      "slot": 6,
+      "evidence": "application-6556b314-1e9a-424b-91b8-7666c356b598.json",
+      "elapsedMs": 274216,
+      "peakTreeRSSKiB": 1529488,
+      "samples": [
+        {
+          "state": "cold",
+          "transactionHash": "0x2a93c8d6c1f439bee24024648e0451256f422d574bd3812be4b01496cc2930cd",
+          "proveTxMs": 37251.54,
+          "toTxMs": 16.380000000004657,
+          "proofMs": 37267.920000000006,
+          "crsMs": 585.5800000000002,
+          "pxeMs": 576.0999999999999,
+          "coldMeasuredInitializationAndProofMs": 38429.600000000006,
+          "guiElapsedMs": 49984
+        },
+        {
+          "state": "warm",
+          "transactionHash": "0x02c3289ee27405a63334e9d0595426111886ee0910132a66e2f24949e7f80d8d",
+          "proveTxMs": 36564.619999999995,
+          "toTxMs": 16.339999999996508,
+          "proofMs": 36580.95999999999,
+          "guiElapsedMs": 48677
+        }
+      ]
     }
   ],
   "missingSlots": [
-    6,
     7,
     8,
     9,
