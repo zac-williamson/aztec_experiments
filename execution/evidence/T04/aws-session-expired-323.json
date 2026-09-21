@@ -6,5 +6,10 @@
   "region": "eu-west-2",
   "remoteCommandIssued": false,
   "unblock": "Reauthenticate the existing AWS CLI profile through aws login; do not introduce alternate credentials.",
-  "unaffectedWork": "Local Chrome cohort322 continues; remote diagnostic and standalone package restore remain pending."
+  "unaffectedWork": "Local Chrome cohort322 continues; remote diagnostic and standalone package restore remain pending.",
+  "renewalAttempt326": {
+    "result": "Existing account session selected in official AWS sign-in; AWS required fresh login. No credentials entered; CLI renewal cancelled.",
+    "profileScopeChanged": false,
+    "remoteCommandIssued": false
+  }
 }
