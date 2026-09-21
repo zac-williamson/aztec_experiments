@@ -25,15 +25,18 @@ remain separate: a correct model label does not establish safe signer behavior.
 
 ## What a human reviewer can change
 
-The application keeps the original public message and policy history. Hiding or
-collapsing flagged text in a reader is a presentation choice; it neither erases
-public chain history nor reverses contract state. In
-`billboard/billboard_contract/src/main.nr`, `declare_immoral` requires the current
-censor, an existing not-yet-flagged post, the post's original policy version and
-`now < post_flag_deadline`. It records the censor and reason and emits a flag
-event. There is no unflag or retroactive policy replacement function. Screening
-uses flags to add the configured cooldown penalty; a mistaken flag cannot be
-repaired by changing the UI, publishing an apology or rotating the censor.
+The current moderator can remove an existing, unflagged post at any age under
+**the current board rules**, including rules introduced after the post appeared.
+The worker rechecks those rules after model evaluation and before submitting a
+flag. Public readers hide flagged messages. The original message and flag remain
+in public chain history; removal cannot erase them.
+
+Removal and the author's penalty are separate. A flag adds the configured
+cooldown penalty only if it arrives before the post's original deadline and the
+current rules have the same version as the rules captured when it was posted.
+Later removal, or removal under different rules, adds no penalty. This allows old
+material to be removed without imposing new penalties on its author. There is no
+unflag function: a mistaken flag cannot be reversed by changing the UI or moderator.
 
 Before deploying, designate a monitored public review channel, the responsible
 human reviewer and response coverage. No appeal service or contact address is
@@ -44,12 +47,18 @@ without establishing that they authored it. Record the complaint and decision
 with minimal additional personal information.
 
 For a disputed pending decision, stop the worker before new signing, inspect the
-exact historical policy and public text, and establish whether an intent or
-transaction already exists. Stopping a process does not cancel a broadcast
+current rules, the rules at publication, and the public text. Establish whether
+an intent or transaction already exists. Stopping a process does not cancel a broadcast
 transaction. Reconcile the encrypted journal and canonical receipt; do not clear
 queue state or assume a lost response means failure. There is no generic approval
 or override command for unresolved queue entries. Investigate before resuming.
-If the censor deadline expires, record the missed duty; do not backdate a flag.
+If the original penalty deadline expires, record the missed penalty opportunity.
+The moderator can still remove the post under the current rules; do not backdate
+the flag or describe the deadline as preventing removal.
+
+For a disputed existing flag, inspect the policy recorded in its flag event and
+the flag time as well as the publication rules. Distinguish mistaken removal from
+an incorrectly applied cooldown penalty.
 
 For an already finalized mistaken flag, publish a review outcome through the
 operator's chosen channel, explain that reversal is unavailable, and investigate
@@ -59,7 +68,8 @@ Track false positives, false negatives, missed deadlines and unresolved signing
 separately. Repeated false positives, policy drift, queue overload or compromised
 credentials require pausing new automated decisions and escalation to the
 responsible operator. Resuming requires a qualified model/policy configuration,
-a reconciled queue and enough capacity for remaining deadlines.
+a reconciled queue and enough capacity for timely moderation and the backlog of
+older posts awaiting review.
 
 ## Censor succession
 
@@ -75,8 +85,10 @@ journal must not be relabeled or reused as the new wallet's journal; unresolved
 old-wallet proofs require explicit reconciliation.
 
 The new censor can update policy with `set_moderation_policy`; previously published
-posts retain their captured policy version and deadline. Transfer does not remove
-prior flags or attribute them to the new censor. If the current censor key is lost,
+posts retain their captured policy version and penalty deadline, while the worker
+evaluates unflagged old posts against the new rules. Transfer does not remove
+prior flags, reset deadlines, change the policy, or attribute old flags to the new
+censor. If the current censor key is lost,
 there is no separate administrator recovery function in this contract. A compromised
 current key can also transfer authority; a planned succession is not a guaranteed
 recovery mechanism. Document that limitation before deployment and consider a
