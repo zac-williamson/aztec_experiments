@@ -59,3 +59,14 @@ Provider references: [wallet auth and x402](https://docs.venice.ai/guides/integr
 `@bok --model=DESIREDMODEL explain PR 17` selects an exact Venice model ID for that request, including every tool-call continuation. Put the option immediately after `@bok`; model IDs are case-sensitive. The service checks the current Venice catalog for availability, prices and function-call support. Invalid syntax or an unavailable model produces a normal bot reply through the existing censor path, with no inference purchase. Board posting/plugin fees still apply.
 
 Only the hosted service interprets this option. The original post remains unchanged on the board; the service removes the option from the model prompt. Different posts never change one another's model or the operator's default. The frontend, descriptor, payment contract and board contract have no model-selection logic.
+
+
+## Real paid integration test
+
+`npm run test:plugins:live` launches the disposable local chains and the actual hosted service, posts a private `@bok` request, pays the local plugin contract, calls Venice with real credits, uses GitHub to read the repository and create a draft PR, checks the PR independently, checks the canonical board reply and censors it. This is a paid test and creates a public draft PR containing only `docs/bok-live-smoke.md` in the configured fork. No PR is merged.
+
+The test uses `GITHUB_TOKEN` if configured; otherwise it reads the existing `gh auth login` credential into memory, without writing it to `.env`. The normal hosted service still uses its configured `GITHUB_TOKEN`; this test credential helper is local-test-only. Set `PLUGIN_GITHUB_DRAFT=true` to make the normal hosted service create draft PRs too.
+
+After a successful creation run, `PLUGIN_E2E_MODEL=z-ai-glm-5-3-flash npm run test:plugins:live -- --read-pr=1` tests model selection with a different real model reading that smoke-test PR. Use the actual PR number. This scenario disables GitHub writes, checks the changed file named in the bot reply, and checks that the newly billed Venice calls all used the selected model. Use the dedicated Venice wallet exclusively during either test so the ledger difference measures that run.
+
+A result file under `.build/plugin-e2e-*/result.json` records the local payment, post/reply IDs, actual PR, provider ledger and censor result. Normal success/failure paths clean up before recording final success. The outer 540-second emergency timeout still terminates the executable abruptly; a timeout is never a pass. Set `CRS_PATH="$PWD/apps/dist/crs"` for the local CRS and use the pinned Node 24.21.x toolchain as above.

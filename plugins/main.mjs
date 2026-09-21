@@ -21,7 +21,7 @@ import {startPluginServer} from './server.mjs';
 import {provingEnabledForNode} from '../shared/proving-policy.mjs';
 
 /** Composition root: only this module knows which implementations are selected. */
-export async function runHostedService({config,runner,env=process.env}) {
+export async function runHostedService({config,runner,env=process.env,onError=error=>console.error('Plugin action failed:',error.message)}) {
   if(!runner&&!env.VENICE_WALLET_PRIVATE_KEY)throw Error('Configure VENICE_WALLET_PRIVATE_KEY locally before starting the service');
   const descriptor=validateDescriptor(config.descriptor,config.descriptor.scope);
   const node=createAztecNodeClient(config.nodeUrl),info=await node.getNodeInfo();
@@ -37,11 +37,11 @@ export async function runHostedService({config,runner,env=process.env}) {
     const adapterArtifact=loadContractArtifact(JSON.parse(await fs.readFile(new URL('./adapter_artifact.json',import.meta.url),'utf8')));
     const board=await aztecBoardPort({node,wallet,scope:descriptor.scope,boardArtifact,adapterArtifact,operator:account.address,finality:config.development?'checkpointed':'finalized'});
     const selectedRunner=runner??bokRunner({runner:createAgent({model:veniceModel({client:veniceClient({privateKey:env.VENICE_WALLET_PRIVATE_KEY}),model:env.VENICE_MODEL||undefined,autoTopUp:env.VENICE_AUTO_TOP_UP==='true',maxTopUpUsd:Number(env.VENICE_MAX_TOP_UP_USD||5)}),
-      toolbox:githubToolbox({repository:env.PLUGIN_REPOSITORY||config.repository,api:githubApi({token:env.GITHUB_TOKEN}),allowWrites:env.PLUGIN_GITHUB_WRITES==='true'}),
+      toolbox:githubToolbox({repository:env.PLUGIN_REPOSITORY||config.repository,api:githubApi({token:env.GITHUB_TOKEN}),allowWrites:env.PLUGIN_GITHUB_WRITES==='true',draftPr:env.PLUGIN_GITHUB_DRAFT==='true'}),
       instructions:'You are bok, the development assistant for this board. Work on the configured repository and answer the explicit request.',usdPerEth:Number(env.PLUGIN_USD_PER_ETH)})});
     await fs.mkdir(config.stateDirectory,{recursive:true,mode:0o700});store=openDispatchStore(path.join(config.stateDirectory,'dispatch.sqlite'));
     const worker=createPluginWorker({scope:descriptor.scope,payments,board,dispatch:store,runner:selectedRunner});
-    server=await startPluginServer({descriptor,worker,payments,provider,startBlock:config.startBlock,host:config.host??'127.0.0.1',port:config.port??8787,finality:config.development?'latest':'finalized',onError:error=>console.error('Plugin action failed:',error.name)});
+    server=await startPluginServer({descriptor,worker,payments,provider,startBlock:config.startBlock,host:config.host??'127.0.0.1',port:config.port??8787,finality:config.development?'latest':'finalized',onError});
     return {address:server.address,close};
   }catch(error){try{await close();}catch(cleanup){throw new AggregateError([error,cleanup],'Service startup and cleanup failed');}throw error;}
 }

@@ -14,7 +14,7 @@ const answer={choices:[{message:{role:'assistant',content:'Done'}}],usage:{promp
 
 test('wallet auth binds each signature to its resource with a fresh nonce; secrets never enter the body',async()=>{
   const auth=[];
-  const client=veniceClient({privateKey:wallet.privateKey,fetchImpl:async(url,options)=>{
+  const client=veniceClient({privateKey:wallet.privateKey.slice(2),fetchImpl:async(url,options)=>{
     const signed=JSON.parse(Buffer.from(options.headers['X-Sign-In-With-X'],'base64'));
     assert.equal(verifyMessage(signed.message,signed.signature),wallet.address);
     assert(signed.message.includes('URI: '+url));assert.equal(signed.chainId,8453);
@@ -31,6 +31,8 @@ test('real signer authorizes exactly the quoted Base USDC amount and recipient',
     assert.equal(url,'https://api.venice.ai/api/v1/x402/top-up');
     if(++calls===1)return quote();
     const paid=JSON.parse(Buffer.from(options.headers['X-402-Payment'],'base64'));
+    assert.equal(paid.x402Version,2);assert.deepEqual(paid.accepted,offer);
+    assert.equal(paid.resource.url,url);assert.equal(paid.network,undefined);
     const {authorization,signature}=paid.payload;
     assert.equal(authorization.value,offer.amount);assert.equal(authorization.to,payTo);
     assert.equal(authorization.from,wallet.address);

@@ -9,7 +9,11 @@ const money=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
 /** Venice transport only. The SDK signs; this module owns HTTP and never retries spending. */
 export function veniceClient({privateKey,fetchImpl=fetch,signer}={}) {
   if(!signer&&!privateKey)throw Error('Configure VENICE_WALLET_PRIVATE_KEY locally');
-  signer??=new VeniceSigner(privateKey);
+  if(!signer){
+    const key=privateKey.trim().replace(/^0x/,'');
+    if(!/^[a-fA-F0-9]{64}$/.test(key))throw Error('VENICE_WALLET_PRIVATE_KEY must contain a 32-byte hex key');
+    signer=new VeniceSigner('0x'+key);
+  }
   let paymentUncertain=false;
   async function request(resource,{method='GET',body,headers={},auth=true}={}) {
     const url=ORIGIN+resource;
@@ -19,7 +23,11 @@ export function veniceClient({privateKey,fetchImpl=fetch,signer}={}) {
   }
   async function json(resource,options){
     const response=await request(resource,options);
-    if(!response.ok)throw Error(`Venice request failed (${response.status})`);
+    if(!response.ok){
+      const failure=await response.json().catch(()=>null);
+      const detail=failure?.error?.message??failure?.message??failure?.error;
+      throw Error(`Venice request failed (${response.status})${typeof detail==='string'?': '+detail.slice(0,500):''}`);
+    }
     return response.json();
   }
   return {
@@ -42,10 +50,15 @@ export function veniceClient({privateKey,fetchImpl=fetch,signer}={}) {
       if(!offer||!/^\d+$/.test(offer.amount)||!isAddress(offer.payTo)||!Number.isInteger(offer.maxTimeoutSeconds)||offer.maxTimeoutSeconds<=0||offer.maxTimeoutSeconds>300)throw Error('Invalid Base USDC payment quote');
       if(BigInt(offer.amount)<=0n||BigInt(offer.amount)>BigInt(Math.floor(maxUsd*1e6)))throw Error('Venice quote exceeds the configured top-up limit');
       // Adapt Venice v2 requirements to the official signer's legacy SDK shape.
-      const payment=await signer.signPayment({scheme:'exact',network:'base',maxAmountRequired:offer.amount,
+      const signed=await signer.signPayment({scheme:'exact',network:'base',maxAmountRequired:offer.amount,
         resource:ORIGIN+TOP_UP,description:'Venice x402 top-up',mimeType:'application/json',
         payTo:offer.payTo,asset:offer.asset,maxTimeoutSeconds:offer.maxTimeoutSeconds,
         extra:{name:'USD Coin',version:'2'}},quote.x402Version);
+      // The signer emits a v1-shaped envelope even for version 2. Venice's
+      // facilitator requires the v2 accepted requirements and CAIP-2 network.
+      const {payload}=JSON.parse(Buffer.from(signed,'base64').toString('utf8'));
+      const payment=Buffer.from(JSON.stringify({x402Version:2,accepted:offer,payload,
+        resource:{url:ORIGIN+TOP_UP}})).toString('base64');
       paymentUncertain=true;
       const paid=await json(TOP_UP,{method:'POST',auth:false,headers:{'X-402-Payment':payment}});
       if(!money(paid.data?.newBalance))throw Error('Venice payment returned no confirmed balance');

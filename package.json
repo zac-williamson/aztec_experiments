@@ -54,7 +54,8 @@
     "test:plugins:e2e": "NODE_BACKEND=js LOG_LEVEL=error node plugins/devnet/test-e2e.mjs",
     "dev:plugins": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/start.mjs",
     "bot:serve": "NODE_BACKEND=js node --env-file=plugins/.env plugins/main.mjs",
-    "bot:venice": "node --env-file=plugins/.env plugins/venice-cli.mjs"
+    "bot:venice": "node --env-file=plugins/.env plugins/venice-cli.mjs",
+    "test:plugins:live": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/live.mjs"
   },
   "overrides": {
     "systeminformation": "5.31.7",

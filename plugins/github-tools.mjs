@@ -10,7 +10,7 @@ const string={type:'string'};
 /** GitHub implementation of the agent tool API. Writes stay in a fresh branch.
  * API transport is supplied by the host; no token enters the working directory.
  */
-export function githubToolbox({repository,api,allowWrites=false,runCommand=exec}) {
+export function githubToolbox({repository,api,allowWrites=false,draftPr=false,runCommand=exec}) {
   if(!/^[\w.-]+\/[\w.-]+$/.test(repository))throw Error('Invalid repository');
   return {async open({postId}) {
     const dir=await fs.mkdtemp(path.join(os.tmpdir(),'bok-')),work=path.join(dir,'repository');
@@ -41,7 +41,30 @@ export function githubToolbox({repository,api,allowWrites=false,runCommand=exec}
         if(name==='list_files'){if(typeof args.prefix!=='string')throw Error('Prefix required');const listed=await runCommand('git',['ls-files','-z'],{cwd:work,maxBuffer:4*1024*1024});const files=listed.stdout.split('\0').filter(x=>x&&x.startsWith(args.prefix));return {files:files.slice(0,500),truncated:files.length>500};}
         if(name==='read_file'){const file=await safe(args.path);if((await fs.stat(file)).size>100000)throw Error('File too large');return {text:await fs.readFile(file,'utf8')};}
         if(name==='write_file'){if(typeof args.content!=='string'||Buffer.byteLength(args.content)>100000)throw Error('File too large');const file=await safe(args.path);await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,args.content);return {written:args.path};}
-        if(name==='read_pr'){if(!Number.isSafeInteger(args.number)||args.number<1)throw Error('Invalid PR');return {pr:await api('GET',`/repos/${repository}/pulls/${args.number}`),files:await api('GET',`/repos/${repository}/pulls/${args.number}/files?per_page=100`)};}
+        if(name==='read_pr'){
+          if(!Number.isSafeInteger(args.number)||args.number<1)throw Error('Invalid PR');
+          const [pr,changes]=await Promise.all([api('GET',`/repos/${repository}/pulls/${args.number}`),api('GET',`/repos/${repository}/pulls/${args.number}/files?per_page=100`)]);
+          // GitHub embeds entire repository/user objects in a PR response. Returning
+          // those exhausted the agent's tool-result budget before any files arrived.
+          const files=[];let remaining=10000;
+          for(const file of changes){
+            const entry={filename:file.filename,status:file.status,additions:file.additions,deletions:file.deletions,
+              patch:file.patch?.slice(0,1000),patchTruncated:(file.patch?.length??0)>1000};
+            const size=JSON.stringify(entry).length;if(size>remaining)break;
+            files.push(entry);remaining-=size;
+          }
+          const result={files,filesTruncated:files.length<changes.length||changes.length===100,
+            pr:{number:pr.number,title:pr.title?.slice(0,200),url:pr.html_url,state:pr.state,draft:pr.draft,
+              body:pr.body?.slice(0,2000),bodyTruncated:(pr.body?.length??0)>2000,
+              base:pr.base?.ref,head:pr.head?.ref,headSha:pr.head?.sha}};
+          // Budget serialized JSON, since escaping can expand strings substantially.
+          while(JSON.stringify(result).length>15000){
+            if(result.pr.body?.length){result.pr.body=result.pr.body.slice(0,Math.floor(result.pr.body.length/2));result.pr.bodyTruncated=true;}
+            else if(result.files.length){result.files.pop();result.filesTruncated=true;}
+            else throw Error('PR metadata exceeds the tool response limit');
+          }
+          return result;
+        }
         if(name==='create_pr'){
           if(!allowWrites)throw Error('GitHub writes are disabled');
           if(prUrl)throw Error('One PR per invocation');
@@ -56,7 +79,7 @@ export function githubToolbox({repository,api,allowWrites=false,runCommand=exec}
           const commit=await api('POST',`/repos/${repository}/git/commits`,{message:args.title,tree:built.sha,parents:[baseSha]});
           const branch='bok/'+postId.slice(2);
           await api('POST',`/repos/${repository}/git/refs`,{ref:'refs/heads/'+branch,sha:commit.sha});
-          const pr=await api('POST',`/repos/${repository}/pulls`,{title:args.title,body:args.body,head:branch,base});prUrl=pr.html_url;
+          const pr=await api('POST',`/repos/${repository}/pulls`,{title:args.title,body:args.body,head:branch,base,draft:draftPr});prUrl=pr.html_url;
           return {url:prUrl};
         }
         throw Error('Unknown tool');

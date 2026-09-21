@@ -18,7 +18,7 @@ The E2E uses a deterministic injected model and genesis FeeJuice-funded accounts
 
 One repeat devnet run hit epoch-clock instability and timed out. Subsequent fresh-chain execution passed the full scenario. Shutdown qualification found the SDK's synchronous native crypto singleton and process-global polling timers needed explicit cleanup/termination. Owned entrypoints close both crypto singletons and all local services before exiting. The final proof-disabled end-to-end executable completes with exit code 0.
 
-## Deployment state
+## Deployment state before live qualification
 
 No remote instance, public PR, push or real-fund transaction was created. Venice is selected and `plugins/.env` is local and ignored. A live model run awaits a locally configured wallet funded with Base USDC. GitHub tools target `zac-williamson/aztec_experiments`; publication needs an appropriately scoped token and `PLUGIN_GITHUB_WRITES=true`. The PR API sequence is tested with an injected transport, without creating a public PR.
 
@@ -48,3 +48,20 @@ Task: replace the model transport with Venice wallet-authenticated inference and
 Added a Bok Runner decorator that parses `@bok --model=MODEL_ID` within the hosted service. The generic agent carries an optional opaque model ID through ModelPort for every tool turn; the Venice adapter validates and prices that exact model. Kimi K2.5 remains the default. Model selection does not mutate shared state. No UI, board, descriptor, payment or censor changes.
 
 Verification: 27 plugin regressions pass, including concurrent default/alternate requests through parser, agent loop, tool execution and Venice transport; alternate pricing; invalid/unsupported selections without provider spending; unrelated errors remaining visible. Composition entrypoint syntax check passes. These tests inject provider responses; no user funds were spent and no paid live inference is claimed for this change.
+
+
+## Live qualification completed (2026-09-21)
+
+User explicitly authorized real end-to-end execution using the funded bot wallet. Root remains sole writer. Independent read-only review by plugin_fit identified and resolved the legacy x402 envelope mismatch, draft-mode enforcement, cleanup-before-evidence ordering and ledger attribution gaps. The emergency timeout limitation remains documented.
+
+Actual first run succeeded: ETH on Base was swapped for exactly 5 USDC; Venice credited 5 USD and returned a paid Kimi answer. A separate complete board run created draft PR #1, posted its link in an authenticated board reply and flagged that reply through the censor, exiting 0. The final alternate-model full run also passed against PR #1. The evidence below supersedes earlier statements that live funding/inference and GitHub writes were untested.
+
+
+Live testing found and fixed a PR-tool defect: raw GitHub PR responses embedded enough repository/user metadata to exhaust the agent's 16,000-character tool-result limit before the changed-files list. `read_pr` now returns selected metadata, files first, explicit truncation flags and a serialized-response budget. A real read-PR invocation now identifies `docs/bok-live-smoke.md`; the regression covers oversized metadata and JSON escaping.
+
+One alternate-model full run received a Venice HTTP 400 after its first billed call. The same paid two-call invocation succeeded when isolated. Provider error details are now retained (bounded message only) for diagnosis; there is no automatic model-call retry. Failed-run evidence remains under `.build/plugin-e2e-7Ced6t` (tool truncation) and `.build/plugin-e2e-0Bvhpq` (provider rejection), both with successful cleanup.
+
+
+Final evidence: [live-2026-09-21.json](evidence/live-2026-09-21.json). Both successful complete runs exited 0 with application proving disabled on the local devnet. The final run used `z-ai-glm-5-3-flash`, verified the exact changed file, matched all new Venice charge records to that selected model, posted its authenticated reply and successfully censored it. The final executable records successful cleanup. 28 plugin regressions pass, including private-key normalization, v2 authorization shape, draft publication and bounded PR response serialization. Read-only review found no blocking remaining issue.
+
+Real Base settlement: 5 USDC paid to Venice in transaction `0xef8b9aaea5cea18822a2897e989bd6d0bc15ee752d102a5e2f4ffbb53800d54f`. Draft PR: https://github.com/zac-williamson/aztec_experiments/pull/1 (not merged). The operator's key remains only in the ignored local `.env`; the live test reads GitHub credentials from the existing keychain session into memory. No remote machine was rented or deployed. Test networks were shut down after the runs; these are execution results, not a claim of a persistent running deployment or browser-wallet qualification.
