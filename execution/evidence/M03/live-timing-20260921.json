@@ -1,0 +1,155 @@
+{
+  "status": "Automatic moderator removal verified against canonical public feed",
+  "collateralDeposit": "0xe4bc95485a4dd09350369dc56a5d4dae946fe1b2efba3a22f97f531b817ba2c0",
+  "failedClaim255": {
+    "reasonObservedLater": "configured fee-price cap below current minimum",
+    "journalUnchanged": true
+  },
+  "feeTopup": {
+    "amount": "100000000000000000000",
+    "ethereumTransaction": "0x883de4e36fdcca053dc78e8a719e1ca362a37326d19bef02fb0a93eec529d1d0",
+    "claimTransaction": "0x2969e11964cf9684970cad997f7319e83242633eac7195b87520cf5c11adece0",
+    "claimOutcome": "checkpointed success",
+    "claimRuntimeMs": 63421,
+    "separateSavedRecovery": true,
+    "validation": "Full fee and transaction simulation before proof; exact tx persisted and fsynced before broadcast."
+  },
+  "prices": {
+    "newMaxL2FeePerGas": "10048248800620",
+    "gasLimitsChanged": false,
+    "moderatorMaximumCharge": "13734911092572275520",
+    "hostedMaximumCharge": "34725933946789869780",
+    "automaticRepricing": false
+  },
+  "next": "Continue quality and capacity qualification; retain one-sample timing limitation.",
+  "collateralClaim": {
+    "hash": "0x1b4f70772f6be9445b6efebcb719a2bd77d2b6c26c00c10fd20dcfadc0599918",
+    "block": 90119,
+    "provingSecondsFromLog": 48,
+    "submissionToInclusionSecondsFromLog": 48
+  },
+  "operatorPackage": {
+    "commit": "86e113a92553e9d731aa1188b89ebe92c189a212",
+    "path": "/srv/board/operator-fee-cap-20260921",
+    "manifestSha256": "0f89f23d1f8d3bc6539d341bc9c4e7e63af34958b497f34b8a400ff8e787261d",
+    "buildCommandId": "d2dd3451-4506-4f7b-bb32-240f9f0a01ae",
+    "activationCommandId": "f09bda75-9dfa-4eed-9446-5210ce86ef0a",
+    "postActivationHealth": {
+      "active": true,
+      "checkpoint": 90122,
+      "unresolvedSigning": 0,
+      "lagBlocks": 0
+    }
+  },
+  "post": {
+    "hash": "0x21dd8448107e7a4244f9f082a93305e9170bcc94b0f97932ade88646d9ab2905",
+    "block": 90125,
+    "proofSeconds": 60,
+    "submissionToInclusionSeconds": 79
+  },
+  "moderation": {
+    "modelMs": 25241.54975,
+    "provingSubmissionReceiptWaitMs": 103357.142392,
+    "flagHash": "0x28fbbdeebea42dea0fc4c2047e724bbf95ca189c1af0564acdc1ed0c0f40f406",
+    "flagBlock": 90127,
+    "inclusionObservedAt": "2026-09-21T03:15:03.730Z",
+    "observationCommandId": "150f07ee-b52d-4602-aad8-c2c95b6c750f",
+    "samples": 1,
+    "limitation": "Checkpointed inclusion; no finality or percentile/capacity claim.",
+    "publicationToFlagOnchainSeconds": 144
+  },
+  "publicFeed": {
+    "checkpoint": {
+      "number": 90131,
+      "hash": "0x179d7f5afafb92bac36521e01550652a5b27b377b13123e886eb68613208d4d4"
+    },
+    "post": {
+      "index": 2,
+      "postId": "0x0125a0d9c3c446e3948da87f41db265773f617f7fd616fe4bc290a895b09b9a5",
+      "text": "I will not argue with you at tonight's meeting. I will wait outside afterward and punch you in the face.",
+      "flagged": true,
+      "timestamp": 1789960356,
+      "policyVersion": "0x007d4ea98fa3dc943f1f30752d943c32df21e6b8923f3771a01eafec8591eb2c",
+      "flagDeadline": "1789963956",
+      "censorResponse": "The post contains a credible threat of physical violence against a specific person.",
+      "flaggedBy": "0x139ac64b3dd83f326fcdcf6d6de10bdf9b515ffe750f6e3f8564daeec21d2367",
+      "publication": {
+        "blockNumber": "90125",
+        "blockHash": "0x1c9fd5cf8c90b9fbfd151b0b3d553db637827cd4a36d8037c85bcd7609288a43",
+        "txHash": "0x21dd8448107e7a4244f9f082a93305e9170bcc94b0f97932ade88646d9ab2905",
+        "txIndexWithinBlock": "0",
+        "logIndexWithinTx": "0"
+      },
+      "flagEvent": {
+        "schemaVersion": 1,
+        "scope": {
+          "l1ChainId": "11155111",
+          "rollupVersion": "1821665230",
+          "rollupAddress": "0xd73a91bdcf6891c7642f3e460036e1ef2cc23178",
+          "boardAddress": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9",
+          "portalAddress": "0x794df4e4af56748e9eb5cc3ea75a73961d9f9566"
+        },
+        "type": "PostFlagged",
+        "position": {
+          "blockNumber": "90127",
+          "blockHash": "0x2880cf15b15901fb7a1d027d53d3598fe3b8e3449148056b0d8f3cdb7db52516",
+          "txHash": "0x28fbbdeebea42dea0fc4c2047e724bbf95ca189c1af0564acdc1ed0c0f40f406",
+          "txIndexWithinBlock": "0",
+          "logIndexWithinTx": "0"
+        },
+        "payload": {
+          "postId": "0x0125a0d9c3c446e3948da87f41db265773f617f7fd616fe4bc290a895b09b9a5",
+          "reason": "The post contains a credible threat of physical violence against a specific person.",
+          "flaggedAt": "1789960500",
+          "censorAddress": "0x139ac64b3dd83f326fcdcf6d6de10bdf9b515ffe750f6e3f8564daeec21d2367",
+          "policyVersion": "0x007d4ea98fa3dc943f1f30752d943c32df21e6b8923f3771a01eafec8591eb2c"
+        }
+      }
+    }
+  },
+  "timingEvents": [
+    {
+      "type": "billboard-moderation-timing-v1",
+      "jobKey": "aztec-billboard:1:11155111:0xd73a91bdcf6891c7642f3e460036e1ef2cc23178:1821665230:0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9:0x794df4e4af56748e9eb5cc3ea75a73961d9f9566:0x0125a0d9c3c446e3948da87f41db265773f617f7fd616fe4bc290a895b09b9a5:0x007d4ea98fa3dc943f1f30752d943c32df21e6b8923f3771a01eafec8591eb2c:0xe086964831ee29463ed3351dd559c33817fd5d1c896f06af465ae8de2ccb0ac4",
+      "phase": "inclusion-observed",
+      "observedAtMs": 1789960503730,
+      "transactionHash": "0x28fbbdeebea42dea0fc4c2047e724bbf95ca189c1af0564acdc1ed0c0f40f406",
+      "blockNumber": "90127",
+      "status": "checkpointed"
+    },
+    {
+      "type": "billboard-moderation-timing-v1",
+      "jobKey": "aztec-billboard:1:11155111:0xd73a91bdcf6891c7642f3e460036e1ef2cc23178:1821665230:0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9:0x794df4e4af56748e9eb5cc3ea75a73961d9f9566:0x0125a0d9c3c446e3948da87f41db265773f617f7fd616fe4bc290a895b09b9a5:0x007d4ea98fa3dc943f1f30752d943c32df21e6b8923f3771a01eafec8591eb2c:0xe086964831ee29463ed3351dd559c33817fd5d1c896f06af465ae8de2ccb0ac4",
+      "phase": "flag-submit-returned",
+      "observedAtMs": 1789960503730,
+      "durationMs": 103357.14239200001,
+      "transactionHash": "0x28fbbdeebea42dea0fc4c2047e724bbf95ca189c1af0564acdc1ed0c0f40f406",
+      "scope": "proving-send-receipt-wait"
+    },
+    {
+      "type": "billboard-moderation-timing-v1",
+      "jobKey": "aztec-billboard:1:11155111:0xd73a91bdcf6891c7642f3e460036e1ef2cc23178:1821665230:0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9:0x794df4e4af56748e9eb5cc3ea75a73961d9f9566:0x0125a0d9c3c446e3948da87f41db265773f617f7fd616fe4bc290a895b09b9a5:0x007d4ea98fa3dc943f1f30752d943c32df21e6b8923f3771a01eafec8591eb2c:0xe086964831ee29463ed3351dd559c33817fd5d1c896f06af465ae8de2ccb0ac4",
+      "phase": "flag-submit-start",
+      "observedAtMs": 1789960400373
+    },
+    {
+      "type": "billboard-moderation-timing-v1",
+      "jobKey": "aztec-billboard:1:11155111:0xd73a91bdcf6891c7642f3e460036e1ef2cc23178:1821665230:0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9:0x794df4e4af56748e9eb5cc3ea75a73961d9f9566:0x0125a0d9c3c446e3948da87f41db265773f617f7fd616fe4bc290a895b09b9a5:0x007d4ea98fa3dc943f1f30752d943c32df21e6b8923f3771a01eafec8591eb2c:0xe086964831ee29463ed3351dd559c33817fd5d1c896f06af465ae8de2ccb0ac4",
+      "phase": "model-complete",
+      "observedAtMs": 1789960399165,
+      "durationMs": 25241.549750000035
+    },
+    {
+      "type": "billboard-moderation-timing-v1",
+      "jobKey": "aztec-billboard:1:11155111:0xd73a91bdcf6891c7642f3e460036e1ef2cc23178:1821665230:0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9:0x794df4e4af56748e9eb5cc3ea75a73961d9f9566:0x0125a0d9c3c446e3948da87f41db265773f617f7fd616fe4bc290a895b09b9a5:0x007d4ea98fa3dc943f1f30752d943c32df21e6b8923f3771a01eafec8591eb2c:0xe086964831ee29463ed3351dd559c33817fd5d1c896f06af465ae8de2ccb0ac4",
+      "phase": "model-start",
+      "observedAtMs": 1789960373924
+    },
+    {
+      "type": "billboard-moderation-timing-v1",
+      "jobKey": "aztec-billboard:1:11155111:0xd73a91bdcf6891c7642f3e460036e1ef2cc23178:1821665230:0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9:0x794df4e4af56748e9eb5cc3ea75a73961d9f9566:0x0125a0d9c3c446e3948da87f41db265773f617f7fd616fe4bc290a895b09b9a5:0x007d4ea98fa3dc943f1f30752d943c32df21e6b8923f3771a01eafec8591eb2c:0xe086964831ee29463ed3351dd559c33817fd5d1c896f06af465ae8de2ccb0ac4",
+      "phase": "worker-cycle-start",
+      "observedAtMs": 1789960373923
+    }
+  ]
+}
