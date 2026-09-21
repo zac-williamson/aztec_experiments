@@ -15,6 +15,8 @@ import {readJourneyUiDiagnostic,safeJourneyDriverFailure} from './t04-browser-jo
 import {runT04BrowserPostRecovery} from './t04-browser-post-recovery.mjs';
 import {ROOT,assertNodeVersion} from './toolchain.mjs';
 
+export const browserRpcProxy=(name,upstream,token)=>`  handle /rpc/${name} {\n   rewrite * /\n   reverse_proxy ${upstream.host} {\n    header_up x-u01-test-token ${token}\n    transport http {\n     keepalive 500ms\n    }\n   }\n  }\n`;
+
 export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,origin,nodeUrl,ethereumUrl,rpcToken,publicConfig,backupPath,backupPassword,ethereumAccount,message,timeoutMs=480000,diagnostic=false,observeProofStages=false,onStage=()=>{},journeyDriver,depositAmount,fundingAmount,browserMode}) {
  assertNodeVersion();
  const extensionWallet=ethereumWallet==='metamask';
@@ -60,10 +62,9 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
   const cert=path.join(directory,'u01-browser-cert.pem'),key=path.join(directory,'u01-browser-key.pem'),file=path.join(directory,'u01-browser-Caddyfile');
   execFileSync('/usr/bin/openssl',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',key,'-out',cert,'-days','1','-subj','/CN=localhost','-addext','subjectAltName=DNS:localhost,IP:127.0.0.1'],{stdio:'ignore',timeout:15000});
   const generated=generateHosting({dist:path.join(ROOT,'apps/dist'),site:site.origin,certificate:cert,key,local:true,origins:[]});
-  const proxy=(name,upstream)=>`  handle /rpc/${name} {\n   rewrite * /\n   reverse_proxy ${upstream.host} {\n    header_up x-u01-test-token ${rpcToken}\n   }\n  }\n`;
   // Only this disposable fixture adds RPC routes; the production generator stays static.
   requireValue(generated.caddyfile.includes('  @allowed path '));
-  fs.writeFileSync(file,generated.caddyfile.replace('  @allowed path ',proxy('aztec',node)+proxy('ethereum',ethereum)+`  handle /board-reader-config.json {\n    header Content-Type application/json\n    respond ${JSON.stringify(JSON.stringify(config))} 200\n  }\n`+'  @allowed path '),{mode:0o600});
+  fs.writeFileSync(file,generated.caddyfile.replace('  @allowed path ',browserRpcProxy('aztec',node,rpcToken)+browserRpcProxy('ethereum',ethereum,rpcToken)+`  handle /board-reader-config.json {\n    header Content-Type application/json\n    respond ${JSON.stringify(JSON.stringify(config))} 200\n  }\n`+'  @allowed path '),{mode:0o600});
   const env={PATH:'/usr/bin:/bin',HOME:directory,XDG_DATA_HOME:directory,XDG_CONFIG_HOME:directory};
   requireValue(/^v2\.11\.4 /.test(execFileSync(caddy,['version'],{encoding:'utf8'})));
   execFileSync(caddy,['validate','--config',file,'--adapter','caddyfile'],{env,stdio:'pipe',timeout:10000});

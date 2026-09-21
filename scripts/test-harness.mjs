@@ -13,6 +13,7 @@ const tiers={
     'scripts/test-t04-browser-journey.mjs',
     'scripts/test-t04-proof-timing.mjs',
     'scripts/test-browser-error-observer.mjs',
+    'scripts/test-u01-proxy.mjs',
     'scripts/test-t04-browser-post-recovery.mjs',
   ],
   components:[

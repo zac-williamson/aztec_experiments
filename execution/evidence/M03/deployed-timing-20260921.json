@@ -26,6 +26,7 @@
     "Lost signer response is an incomplete timing sample.",
     "Signer duration combines proving, sending and receipt wait.",
     "Local observed inclusion time is not a chain timestamp.",
-    "No new model quality or sustained capacity qualification is claimed."
+    "No new model quality or sustained capacity qualification is claimed.",
+    "AWS package was rebuilt from the existing deployed source plus the reviewed worker change; it is not a deployment of every current repository change."
   ]
 }

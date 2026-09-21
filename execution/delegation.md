@@ -199,3 +199,6 @@ Independent review identified an unconfirmed keep-alive mismatch hypothesis. A c
 
 ### 2026-09-21 moderator timing and AWS reproducibility
 Author_testnet_flow reviewed worker timing and tests: no signer/recovery decision changes, no repeated model work, successful inclusion separate from finality;31 worker checks and full moderation suite passed. Lost signer responses remain incomplete timing samples. AWS_stack_review reviewed source template, generator, live-matched service, public OCI manifest and deployment guide. Root incorporated required proxy image and separate memory budgets, verified Docker29.1.3 remotely, and validated generated CloudFormation. No new resources added.
+
+### Proxy connection lifetime repair, 2026-09-21
+Independent review approved correcting fixture Caddy idle reuse to500ms, below Node's1s advertised timeout. Concurrent boundary probe reproduced36HTTP502 among192POSTs (reset/EOF); corrected exact shared configuration passed192responses with exactly192upstream calls and noerrors. Final regression has explicit readiness/request deadlines, bounded diagnostics, pinned Caddy and owned-process cleanup. Harness243 passed. No application transport, fee validation, retries or fallback changed. Earlier225 cause remains retrospective uncertainty because its proxy logs were discarded.
