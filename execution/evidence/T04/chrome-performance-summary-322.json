@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "cohort": "chrome-performance-campaign-322.json",
-  "status": "incomplete",
+  "status": "complete",
   "expectedPairs": 30,
-  "completedPairs": 29,
-  "qualified": false,
+  "completedPairs": 30,
+  "qualified": true,
   "runs": [
     {
       "slot": 1,
@@ -788,9 +788,111 @@
           "guiElapsedMs": 40469
         }
       ]
+    },
+    {
+      "slot": 30,
+      "evidence": "application-241d0677-aa45-4340-8e46-2e3ca147bd87.json",
+      "elapsedMs": 260346,
+      "peakTreeRSSKiB": 2975024,
+      "samples": [
+        {
+          "state": "cold",
+          "transactionHash": "0x2d19cde1fe044d912029c94314c62c56f2b8cf8ad3facc0b823d3caf943aed4e",
+          "proveTxMs": 24292.065000027418,
+          "toTxMs": 12.245000004768372,
+          "proofMs": 24304.310000032187,
+          "crsMs": 446.78999999165535,
+          "pxeMs": 620.8050000071526,
+          "coldMeasuredInitializationAndProofMs": 25371.905000030994,
+          "guiElapsedMs": 36265
+        },
+        {
+          "state": "warm",
+          "transactionHash": "0x0cfa69186e30f96a43cc236473cf1e808e0a9ecd6e2ced2dfe7011ec9876ca45",
+          "proveTxMs": 23875.485000014305,
+          "toTxMs": 12.200000017881393,
+          "proofMs": 23887.685000032187,
+          "guiElapsedMs": 35542
+        }
+      ]
     }
   ],
-  "missingSlots": [
-    30
-  ]
+  "missingSlots": [],
+  "counts": {
+    "attempted": 30,
+    "successful": 30,
+    "failed": 0,
+    "missing": 0,
+    "uniqueEvidenceIds": 30,
+    "uniquePostTransactions": 60
+  },
+  "checks": {
+    "exactSource": true,
+    "exactBrowserVersion": true,
+    "exactHardware": true,
+    "exactGas": true,
+    "canonicalPostsAndFees": true,
+    "completeCleanup": true
+  },
+  "statistics": {
+    "method": "p50 is median; p95 is nearest rank (29th ordered observation of30)",
+    "coldInitializationAndProof": {
+      "count": 30,
+      "p50Ms": 37730.335000008345,
+      "p95Ms": 37902.119999974966,
+      "maxMs": 37926.30500000715,
+      "thresholdP95Ms": 180000,
+      "passed": true
+    },
+    "warmProof": {
+      "count": 30,
+      "p50Ms": 35595.36749999225,
+      "p95Ms": 35782.610000014305,
+      "maxMs": 35895.2650000155,
+      "thresholdP95Ms": 90000,
+      "passed": true
+    },
+    "coldProofOnly": {
+      "count": 30,
+      "p50Ms": 36202.19499999285,
+      "p95Ms": 36376.835000008345,
+      "maxMs": 36377.1249999702
+    },
+    "crsInitialization": {
+      "count": 30,
+      "p50Ms": 598.5925000011921,
+      "p95Ms": 651.2649999856949,
+      "maxMs": 695.044999986887
+    },
+    "pxeInitialization": {
+      "count": 30,
+      "p50Ms": 903.7775000035763,
+      "p95Ms": 948.3849999904633,
+      "maxMs": 961.1850000023842
+    },
+    "sdkReady": {
+      "count": 30,
+      "p50Ms": 745.5,
+      "p95Ms": 819,
+      "maxMs": 833
+    },
+    "coldGui": {
+      "count": 30,
+      "p50Ms": 51314.5,
+      "p95Ms": 54014,
+      "maxMs": 54038
+    },
+    "warmGui": {
+      "count": 30,
+      "p50Ms": 52789.0,
+      "p95Ms": 53015,
+      "maxMs": 53181
+    }
+  },
+  "maxRunMs": 308657,
+  "runLimitMs": 540000,
+  "maxTreeRSSKiB": 3284064,
+  "memoryLimitKiB": 4194304,
+  "scope": "Installed Chrome153.0.8010.52 on AppleM4Pro24GiB; fresh browser/profile per run, same wallet for warm post. Local asset server; OS/asset caches not flushed. No claim about other browsers/devices or production-network latency.",
+  "review": "Approved by application_change_review: independently recomputed all eight distributions and checked all 30 raw reports against the manifest and predefined logs, including 60 distinct transactions, canonical assertions and cleanup."
 }
