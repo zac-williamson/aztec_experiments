@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "cohort": "firefox-performance-campaign-328.json",
-  "status": "in-progress",
+  "status": "complete",
   "expectedPairs": 30,
   "completedPairs": 30,
-  "qualified": false,
+  "qualified": true,
   "runs": [
     {
       "slot": 1,
@@ -817,5 +817,82 @@
       ]
     }
   ],
-  "missingSlots": []
+  "missingSlots": [],
+  "counts": {
+    "attempted": 30,
+    "successful": 30,
+    "failed": 0,
+    "missing": 0,
+    "uniqueEvidenceIds": 30,
+    "uniquePostTransactions": 60
+  },
+  "checks": {
+    "exactSource": true,
+    "exactBrowserVersion": true,
+    "exactHardware": true,
+    "exactGas": true,
+    "canonicalPostsAndFees": true,
+    "completeCleanup": true
+  },
+  "statistics": {
+    "method": "p50 is median; p95 is nearest rank (29th ordered observation of30)",
+    "coldInitializationAndProof": {
+      "count": 30,
+      "p50Ms": 29901.41,
+      "p95Ms": 30206.900000000005,
+      "maxMs": 30635.019999999997,
+      "thresholdP95Ms": 180000,
+      "passed": true
+    },
+    "warmProof": {
+      "count": 30,
+      "p50Ms": 27785.169999999995,
+      "p95Ms": 27962.379999999997,
+      "maxMs": 27974.52000000001,
+      "thresholdP95Ms": 90000,
+      "passed": true
+    },
+    "coldProofOnly": {
+      "count": 30,
+      "p50Ms": 28692.739999999998,
+      "p95Ms": 28939.700000000004,
+      "maxMs": 29381.599999999995
+    },
+    "crsInitialization": {
+      "count": 30,
+      "p50Ms": 531.27,
+      "p95Ms": 669.4199999999998,
+      "maxMs": 704.1400000000001
+    },
+    "pxeInitialization": {
+      "count": 30,
+      "p50Ms": 660.15,
+      "p95Ms": 710.78,
+      "maxMs": 720.02
+    },
+    "sdkReady": {
+      "count": 30,
+      "p50Ms": 827.0,
+      "p95Ms": 921,
+      "maxMs": 939
+    },
+    "coldGui": {
+      "count": 30,
+      "p50Ms": 40966.0,
+      "p95Ms": 45929,
+      "maxMs": 46008
+    },
+    "warmGui": {
+      "count": 30,
+      "p50Ms": 39623.5,
+      "p95Ms": 39796,
+      "maxMs": 39874
+    }
+  },
+  "maxRunMs": 272257,
+  "runLimitMs": 540000,
+  "maxTreeRSSKiB": 3461344,
+  "memoryLimitKiB": 4194304,
+  "scope": "Firefox155.0 on Apple M4 Pro with24GiB; fresh browser/profile per run, same wallet for warm post. Local asset server; OS/asset caches not flushed. No claim about other browsers/devices or production-network latency.",
+  "review": "Approved by application_change_review: independently recomputed all eight distributions and verified 30 raw reports and predefined logs, 60 unique transactions, exact source/browser/hardware/gas, canonical post/fee checks and cleanup."
 }

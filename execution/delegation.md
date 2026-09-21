@@ -234,3 +234,7 @@ Firefox328 continuation: root executes the frozen cohort serially; application_c
 Safari329: application_change_review identified the existing prepared-post handoff and process-accounting boundary. Root cheap inert WebDriver probe failed before session creation because Safari remote automation is disabled; owned driver cleaned up. No harness or browser-permission change. Safari wallet/proving remains unqualified.
 
 WebKit330: application_change_review approved30 predeclared slots, source/gas/pilot/browser bindings and bundled-engine-only scope. Root will execute serially after Firefox328, using the existing runner.
+
+Firefox328 complete: root verified30 pairs and calculated all8distributions; application_change_review independently recomputes against raw reports, predefined logs and frozen manifest. Root begins separately reviewed WebKit330 serial sample. No application/harness changes.
+
+Firefox328 aggregate approved: application_change_review independently recomputed all8distributions and verified30rawreports/logs,60unique transactions, exact115input hashes, browser/hardware/gas and canonical accounting/cleanup.
