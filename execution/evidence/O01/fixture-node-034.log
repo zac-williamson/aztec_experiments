@@ -1,5 +1,0 @@
-{"role":"fixture","stage":"start-disposable-l1","elapsedMs":557}
-{"role":"fixture","stage":"prepare-genesis","elapsedMs":679}
-{"role":"fixture","stage":"deploy-local-protocol-fixture","elapsedMs":1626}
-{"role":"fixture","stage":"start-application-node","elapsedMs":3032}
-{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/C01/application-93dc3fdd-6b79-43c0-a23e-db3dde9830c1.json","passed":true,"scenario":"node"}

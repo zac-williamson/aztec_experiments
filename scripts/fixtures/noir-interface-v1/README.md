@@ -42,6 +42,6 @@ maximum-amount CLAIM, ASCII policy, and Unicode policy preimages from
 their scalar inputs. Noir pads the ASCII domains, serializes each Field with
 `to_be_bytes()`, appends the exact policy UTF-8 bytes where applicable, and uses
 the actual `sha256_to_field` implementation. Both constructed bytes and hashes
-must match `execution/interface-fixtures/commitments-v1.json`. The runner
+must match `scripts/fixtures/protocol/commitments-v1.json`. The runner
 rejects a changed vector file until these independent fixtures are reconciled.
 There are 22 tests in total: 15 packing/range/selector cases and seven commitments.

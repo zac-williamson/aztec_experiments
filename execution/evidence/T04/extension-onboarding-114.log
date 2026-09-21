@@ -1,1 +1,0 @@
-{"passed":false,"observations":[{"passed":false,"stage":"wallet-ready","errorClass":"TimeoutError"}],"failures":[{"stage":"extension-exit"}]}

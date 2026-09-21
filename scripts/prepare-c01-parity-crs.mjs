@@ -13,6 +13,7 @@ const chunkBytes = 4194304, count = 33, bytes = chunkBytes * count;
 const sha = data => createHash('sha256').update(data).digest('hex');
 const directory = path.join(ROOT,'.build/C01-parity-crs');
 const evidence = path.join(ROOT,'execution/evidence/C01',`parity-crs-${randomUUID()}.json`);
+await fs.mkdir(path.dirname(evidence),{recursive:true});
 const report = { schemaVersion:1, startedAt:new Date().toISOString(), sourceUrl, bytes, passed:false };
 let handle, created=false;
 try {

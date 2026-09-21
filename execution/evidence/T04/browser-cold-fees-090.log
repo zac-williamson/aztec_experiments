@@ -1,7 +1,0 @@
-{"role":"fixture","stage":"start-disposable-l1","elapsedMs":545}
-{"role":"fixture","stage":"prepare-genesis","elapsedMs":663}
-{"role":"fixture","stage":"deploy-local-protocol-fixture","elapsedMs":2166}
-{"role":"fixture","stage":"wait-for-local-validator-activation","elapsedMs":3321}
-{"role":"fixture","stage":"start-application-node","elapsedMs":3337}
-{"role":"fixture","stage":"prove-board-deployment","elapsedMs":6003}
-{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/T04/application-e21b17ff-04e7-407d-9887-3408fcee2063.json","passed":false,"scenario":"browser-cold-fees"}

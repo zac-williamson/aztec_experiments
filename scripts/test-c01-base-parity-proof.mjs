@@ -237,6 +237,7 @@ async function parent() {
   assert.equal(process.argv.length, 2, 'No harness arguments are supported');
   const id = randomUUID();
   const evidence = path.join(ROOT, 'execution/evidence/C01', `native-base-parity-${id}.json`);
+  await fs.mkdir(path.dirname(evidence),{recursive:true});
   await fs.mkdir(path.join(ROOT, '.build'), { recursive: true });
   // Short private path keeps native Unix socket names below macOS sockaddr_un limits.
   const directory = await fs.mkdtemp('/private/tmp/c01-base-parity-');

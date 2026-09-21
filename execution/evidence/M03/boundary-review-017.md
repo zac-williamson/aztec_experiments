@@ -1,9 +1,0 @@
-# Corpus input-boundary correction
-
-The first isolated Qwen 0.6B run remains unchanged at `qwen06-evaluation-013.json` and remains failed. Its exact corpus is archived at `corpus-before-boundary-correction-016.json` (SHA-256 b1345c2de0f629eebf3b816620cd12154e0351a1a5132e9fdd5c1e9c2a248f7f).
-
-Case bb-eval-0284 contains a U+202E directional override. The application intentionally rejects this input before model inference. Its former `allowed` label required every model to pass an impossible semantic classification. The exact input is retained with `boundary-rejection` / `INVALID_INPUT`; corpus provenance retains the previous label, reason, archive and digest. All other 331 case records and labels are unchanged. There remain 319 semantic labels, 59 semantic injection examples and 60 multilingual examples.
-
-The evaluator validates that each boundary case actually violates the input contract and supports only `INVALID_INPUT` as an expected boundary rejection. Semantic cases cannot acquire an expected-error exemption. Expected rejection is recorded as an error result for faithful diagnostics but counted separately under `boundary`, not as an unexpected error or semantic prediction. Unexpected acceptance, another error code, or a missing case prevents qualification. Boundary cases do not dilute semantic error rates, semantic latency, or coverage counts. The entire corpus remains bound by its exact digest; the previous run cannot resume under this changed corpus.
-
-Validation: `node --test censor-daemon/test_evaluation.mjs` — 26 passed, 0 failed (`boundary-tests-017.log`). Checks include exact original-input/other-label preservation, zero scoring dilution, incorrect or missing rejection, invalid exemptions and durable runner reporting. This correction does not qualify any model. The previous candidate's 67 false positives and 46 invalid reasons remain separate, unresolved defects in that candidate's measured behavior.

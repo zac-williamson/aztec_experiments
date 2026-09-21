@@ -1,6 +1,0 @@
-{
-  ".build/metamask-13.49.0/inspect.mjs": "d0af94cb706d16e505ebc85d31973f28e4291c6a0e307aa4510676dbbf17fd86",
-  "scripts/testing/supervisor.mjs": "518d827972d68cce7bab14f56df6483a260f5f5dc4082b50e2e4bbd80b0723f2",
-  "scripts/owned-test-process-tree.mjs": "ed8a490c451afa0ac2d4f0d6accbd51edfcf33088e59b058422921a070ac6a26",
-  ".build/metamask-13.49.0/metamask-chrome-13.49.0.zip": "7ba00bfe4fe8b0ffb27be1e8fc06506248f1b888cb4f2e5e5e8b1c37f461f262"
-}

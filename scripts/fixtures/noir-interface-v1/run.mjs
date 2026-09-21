@@ -11,7 +11,7 @@ assertAztecPackages();
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const manifest = fs.readFileSync(path.join(directory, 'Nargo.toml'), 'utf8');
 if (!manifest.includes(`tag = "v${pins.aztec}"`)) throw new Error('Fixture Aztec dependency differs from pinned release');
-const vectors = fs.readFileSync(path.join(ROOT, 'execution/interface-fixtures/commitments-v1.json'));
+const vectors = fs.readFileSync(path.join(ROOT, 'scripts/fixtures/protocol/commitments-v1.json'));
 const vectorsHash = createHash('sha256').update(vectors).digest('hex');
 if (vectorsHash !== fs.readFileSync(path.join(directory, 'commitment-vectors.sha256'), 'utf8').trim()) {
   throw new Error('Commitment interface vectors changed; reconcile the independent Noir known-answer fixtures');

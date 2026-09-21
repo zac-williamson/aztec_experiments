@@ -1,9 +1,0 @@
-{
-  "advisory": "GHSA-7c78-jf6q-g5cm",
-  "publisher": "https://github.com/raszi/node-tmp/security/advisories/GHSA-7c78-jf6q-g5cm",
-  "release": "https://github.com/raszi/node-tmp/releases/tag/v0.2.7",
-  "verifiedDate": "2026-09-14",
-  "initialVersion": "0.2.6",
-  "selectedPatchedVersion": "0.2.7",
-  "reason": "Fresh audit exposed version-specific non-string path-option type-confusion bypass in0.2.6. Publisher patch0.2.7 verified; preserve initial advisory reports and intermediate lock. Actual caller controls still required."
-}

@@ -1,8 +1,7 @@
 # Build and baseline verification
 
 Run these commands from the repository root. This builds a development candidate;
-passing the checks below does not establish production readiness. The release gates
-and current evidence are recorded in `execution/graph.json` and `execution/evidence/`.
+passing the checks below does not establish production readiness. See [SECURITY_PROPERTIES.md](SECURITY_PROPERTIES.md) for verification limits.
 
 ## Install the pinned tools
 
@@ -16,15 +15,12 @@ client. The [official Node release](https://nodejs.org/en/blog/release/v24.21.0)
 links platform archives and publisher checksums. For a workspace-only installation,
 download the matching archive and `SHASUMS256.txt` from that release, verify its
 SHA-256 before extraction or execution, and put the extracted `bin` directory first
-in `PATH`. No global Node installation needs to change. The recorded macOS arm64
-archive verification is `execution/evidence/A02/node-runtime-preflight.json`;
-that preflight alone is not integrated compatibility or production qualification.
+in `PATH`. No global Node installation needs to change.
 
 The moderation transport proxy and Docker isolation fixture use the same immutable
 official `node:24.21.0-bookworm` image in CI and `censor-daemon/model-runtime.mjs`.
-Its multi-platform digest and verified Linux arm64/amd64 configuration records are
-in `execution/evidence/A02/node-container-registry.json`. Image provenance and
-Node version checks do not constitute an audit of all Debian packages in the image.
+The image digest is pinned in the runtime configuration. Node version checks
+do not constitute an audit of all Debian packages in the image.
 
 Install Foundry **1.4.1** from the [official release](https://github.com/foundry-rs/foundry/releases/tag/v1.4.1).
 With an existing official `foundryup` installation, run `foundryup --install v1.4.1`.
@@ -68,11 +64,8 @@ dependency origins or a proposed lock change:
 python3 scripts/verify-noir-origins.py --output .build/noir-dependency-origins.json
 ```
 
-The recorded P02 run is `execution/evidence/P02/noir-dependency-origins.json`.
-That run matched all 413 locked files across six packages in five official archives.
-Check its outcome and lockfile digest against the candidate; a verifier's presence
-alone is not a pass. Origin consistency does not establish dependency code safety
-or substitute for independent review. The verifier never changes the lock.
+Origin consistency does not establish dependency code safety or substitute for
+independent review. The verifier never changes the lock.
 
 Optional `NARGO`, `BB`, and `FORGE` environment variables select alternative
 executable locations; the build still checks their versions. Leave these unset
@@ -97,14 +90,11 @@ node scripts/fixtures/solidity-interface-v1/run.mjs
 (cd billboard/portal && FOUNDRY_PROFILE=regression forge test --offline -vv)
 npm run test:sdk-browser
 npm run test:cli-sdk
-python3 -m unittest discover -s execution/tests -v
-python3 execution/graph.py validate
 ```
 
 The receipt, history and historical portal regressions preserve observed baseline
 defects beside normal controls. Passing an explicit known-bad observation does
-not mean the defect is repaired. Their source-bound evidence and repair gates
-are mapped in `execution/evidence/P03/finding-matrix.md`. The EVM tests mock bridge
+not mean the defect is repaired. The EVM tests mock bridge
 calls only for accounting and use separate `.build/portal-tests` outputs.
 
 On Linux, `npx --no-install playwright install --with-deps chromium` also installs
@@ -191,7 +181,7 @@ The default browser smoke test initializes the provisioned data in
 the actual WASM prover. This establishes format and initialization compatibility,
 not proof validity or sufficient capacity for every production workload. The CRS
 hashes are recorded content pins verified against official downloads, not a
-separate publisher checksum attestation. See `execution/evidence/P02/crs-verification.md`.
+separate publisher checksum attestation.
 
 Record actual command results and unresolved failures in task evidence; never
 infer a pass from these instructions or a green compile alone. Real-proof
@@ -203,8 +193,8 @@ journeys, network compatibility, browser coverage, independent review, and the
 After a complete canonical build, run:
 
 ```sh
-node scripts/release-artifact-manifest.mjs write execution/release/artifact-manifest.json
-node scripts/release-artifact-manifest.mjs check execution/release/artifact-manifest.json
+node scripts/release-artifact-manifest.mjs write .build/release-artifact-manifest.json
+node scripts/release-artifact-manifest.mjs check .build/release-artifact-manifest.json
 ```
 
 The inventory links validated contract, frontend, SDK and CRS manifests, names
@@ -223,7 +213,7 @@ Wallet recovery uses random embedded Aztec keys and password-encrypted browser
 recovery files. Keep the password separately and export an updated file after
 each new collateral deposit. Ethereum signing uses a browser wallet; no Ethereum
 key generation or signature-derived Aztec keys are offered in the UI. See
-`execution/recovery-runbook.md` for scoped custody, CLI file permissions and lock
+`docs/recovery.md` for scoped custody, CLI file permissions and lock
 recovery. The application SDK build fixes internal diagnostic logging to `silent`;
 application progress and validated public transaction identifiers remain visible.
 This does not encrypt the browser PXE database or protect an unlocked malicious

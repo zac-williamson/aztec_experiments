@@ -1,9 +1,0 @@
-{
-  "schema": 1,
-  "containerName": "billboard-p04-clean-7003ab9801",
-  "startedAt": "2026-09-12T07:46:58.596928+00:00",
-  "observationTimeoutSeconds": 300,
-  "priorWrapperResult": "clean-linux-run.json",
-  "outcome": "observation_timeout_container_not_stopped",
-  "completedAt": "2026-09-12T07:52:08.763347+00:00"
-}

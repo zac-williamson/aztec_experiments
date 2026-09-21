@@ -1,1 +1,0 @@
-{"passed":true,"observations":[{"passed":true,"stage":"post-password","urlHash":"#/onboarding/setup-passkey","testIds":["app-header-logo","select-locale","parent-selector-setup-passkey","passkey-set-up-button","passkey-maybe-later-button"]}],"failures":[]}

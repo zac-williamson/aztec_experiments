@@ -1,9 +1,0 @@
-{
-  "scope": "Read-only bounded first directory batch; not full-network coverage",
-  "observedAt": "2026-09-20T23:04:55.101Z",
-  "elapsedMs": 6526,
-  "boards": [],
-  "complete": false,
-  "scanned": 400,
-  "block": 89917
-}

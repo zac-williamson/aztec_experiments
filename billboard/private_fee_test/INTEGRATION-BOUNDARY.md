@@ -7,12 +7,8 @@ CallPrivateOptions exposes scopes, utility authorization and gas settings,
 not an override for this phase. PrivateFPC correctly rejects fee payer election
 there. We do not patch this protocol test environment or weaken the contract.
 
-Observed in execution/evidence/W01/private-fee-noir-tests-002.log: mint succeeds,
-balance ownership succeeds, and the two positive payment calls stop with
-`fee payer must be elected during the setup phase`. These are harness-boundary
-failures, not passing positive payment tests. The duplicate-mint transaction
-was rejected with `failed with duplicate nullifiers`; the initial expected
-message was corrected to this actual transaction-level diagnostic.
+Positive payment calls require the setup phase and must be tested through real
+application transactions rather than this TXE entry point.
 
 The genuine application proof tests must cover both positive flows: bridge
 claim plus mint_and_pay_fee in setup credits amount minus configured maximum

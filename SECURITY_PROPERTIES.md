@@ -1,29 +1,21 @@
-# Billboard — Security and Privacy Requirements
+# Security verification scope
 
-The previous document described an older experimental revision and contained
-claims contradicted by the production-readiness assessment. It is retained in git
-history; it must not be treated as assurance for the production candidate.
+The application is a development candidate, not an audited production release.
+Build success and passing tests do not establish complete security or anonymity.
 
-The intended production behavior is specified in
-[the production specification](execution/product-spec.md), including actors,
-state transitions, fee privacy, exact cooldown/exit semantics, test IDs and
-measurement budgets. [The requirement catalog](execution/requirements.md) and
-[execution graph](execution/GRAPH.md) define release acceptance.
+The Ethereum portal holds collateral. Its accounting, message authentication,
+withdrawal authorization and reentrancy behavior are covered by contract tests.
+Aztec contracts enforce private posting rights, screening, rate limits and private
+fee accounting. Application tests exercise transactions across these components.
+See [TESTING.md](TESTING.md) for the supported test hierarchy.
 
-No application invariant is newly certified by this documentation change.
-[The risk register](execution/risk-register.md) records open findings. Actual
-verification will be tied to source and artifact hashes in execution/evidence/
-and independently reviewed before production sign-off.
+[Finite transition models](fv/model-checks/README.md) explore bounded states and
+include deliberately broken controls. They are not proofs of equivalence to the
+implementation, compiler correctness or cryptographic soundness. The Lean and
+Verity models in `fv/` are unsupported and provide no assurance for this version.
 
-The historical Lean/Verity files under [fv](fv/README.md) are explicitly retired.
-Their vacuous propositions, inconsistent hash assumption, unpinned external build
-and obsolete state/message models provide no current assurance. In particular,
-the old master unlinkability claim is withdrawn: equal hand-selected observer
-projections of arbitrary states do not prove anonymity of reachable transactions.
-Private-fee funding, timing and host/RPC observations remain relevant.
-
-T01 adds bounded executable transition models alongside actual contract tests.
-These are finite checks with recorded assumptions and deliberately broken controls,
-not machine-checked proofs or a proof of compiler/implementation equivalence.
-Only source-bound executed results recorded in T01 evidence count as completed
-verification; independent review and remaining release gates are unchanged.
+Privacy depends on more than hiding an address in a post. Funding amounts, timing,
+RPC observations and browser state can expose information. Read
+[the privacy limits](docs/privacy.md) and [recovery guidance](docs/recovery.md).
+Independent review, representative moderation evaluation and target-network
+compatibility checks remain necessary before a production release.

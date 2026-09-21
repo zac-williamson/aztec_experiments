@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { encodePolicyCommitment, encodeEscrowCommitment, encodeReadyCommitment,
   encodeConfigCommitment, sha256Field } from '../shared/protocol-commitments.mjs';
 
-const directory = new URL('../execution/interface-fixtures/', import.meta.url);
+const directory = new URL('../scripts/fixtures/protocol/', import.meta.url);
 const serviceFile = new URL('service-v1.json', directory);
 const service = JSON.parse(fs.readFileSync(serviceFile));
 const scope = service.scope;

@@ -1,8 +1,0 @@
-{
-  "outcome": "pass",
-  "method": "All current package manifests/source hashes exactly equal the fresh official archive verification; only local manifests and per-contract reachable-source sets changed",
-  "currentLockSha256": "8b913d45060f21372b8fdb8521454b7263a43a5ee9367a7143e2c8f9a59ca9ca",
-  "officialOriginEvidence": "delegated-noir-origins.json",
-  "officialOriginEvidenceSha256": "c9881aa5709de4368067cb3e337ded2c3e8235a6ff23e5647a632f4cd265f743",
-  "packages": 6
-}

@@ -59,10 +59,11 @@ test('unattempted boundary case keeps the complete gate closed',()=>{const c=cor
 test('boundary exemptions require actual input rejection and cannot hide model errors',()=>{
  const c=corpus();addBoundary(c);c.cases.at(-1).expectedErrorCode='INVALID_REASON';assert.throws(()=>validateCorpus(c),/Unsupported/);c.cases.at(-1).expectedErrorCode='INVALID_INPUT';c.cases.at(-1).text='Ordinary valid text';assert.throws(()=>validateCorpus(c),/actually violate/);c.cases.at(-1).expected='allowed';assert.throws(()=>validateCorpus(c),/Semantic case/);
 });
-test('checked-in corpus correction preserves original inputs and all other labels',()=>{
- const original=JSON.parse(fs.readFileSync(new URL('../execution/evidence/M03/corpus-before-boundary-correction-016.json',import.meta.url))),current=JSON.parse(fs.readFileSync(new URL('./evaluation-corpus.json',import.meta.url)));
- validateCorpus(current);assert.equal(current.cases.length,original.cases.length);
- for(let i=0;i<original.cases.length;i++){const before=original.cases[i],after=current.cases[i];if(before.id==='bb-eval-0284'){assert.equal(after.text,before.text);assert.equal(before.expected,'allowed');assert.equal(after.expected,'boundary-rejection');assert.equal(after.expectedErrorCode,'INVALID_INPUT');}else assert.deepEqual(after,before);}
+test('checked-in corpus separates input rejection from semantic labels',()=>{
+ const current=JSON.parse(fs.readFileSync(new URL('./evaluation-corpus.json',import.meta.url)));
+ validateCorpus(current);
+ const boundaryCase=current.cases.find(item=>item.id==='bb-eval-0284');
+ assert.equal(boundaryCase.expected,'boundary-rejection');assert.equal(boundaryCase.expectedErrorCode,'INVALID_INPUT');
  const rr=results(current).map(r=>({...r,inputDigest:sha256Bytes(Buffer.from(JSON.stringify({case:current.cases.find(c=>c.id===r.caseId),policy:current.policies[0]})))}));const boundary=rr.find(r=>r.caseId==='bb-eval-0284');Object.assign(boundary,{status:'error',errorCode:'INVALID_INPUT'});const report=buildEvaluationReport(current,rr);assert.equal(report.coverage.labeled,319);assert.equal(report.coverage.injection,59);assert.equal(report.qualityPass,true);
 });
 test('runner durably records expected boundary rejection without counting model failure',async t=>{

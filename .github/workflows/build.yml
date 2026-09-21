@@ -64,8 +64,6 @@ jobs:
           npm run test:sdk-browser
           npm run test:cli-sdk
           node scripts/test-w02-browser.mjs
-          python3 -m unittest discover -s execution/tests -v
-          python3 execution/graph.py validate
       - name: Model process isolation with disposable fixtures
         run: |
           docker pull docker.io/library/node@sha256:6dac556d980b7f0e5498d08f08cee0ca67798b4ad6c23964a9214920e67758d0

@@ -15,6 +15,7 @@ export async function runApplication(name) {
   const scenario=getScenario(name),browser=scenario.browser!=='none';
   const report={schemaVersion:2,scenario:name,profile:scenario.description,startedAt:new Date().toISOString(),passed:false,stages:[]};
   const evidence=path.join(ROOT,'execution/evidence',scenario.evidenceTask,'application-'+randomUUID()+'.json');
+  await fs.mkdir(path.dirname(evidence),{recursive:true});
   const directory=await fs.mkdtemp('/private/tmp/board-test-');
   const supervisor=new Supervisor({report,deadlineMs:scenario.deadlineMs});
   let browserRun,control;

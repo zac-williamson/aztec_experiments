@@ -1,9 +1,0 @@
-# CLI asynchronous prover repair
-
-Production changes owned here: `shared/private-pxe.mjs` and SDK export in `shared/sdk-entry.mjs`. CLI callers/package closure are a separate agent's work. No native backend, third-party service or proof bypass is introduced.
-
-The CLI previously initialized only the synchronous hashing heap's CRS, while Node PXE still selected its default asynchronous prover. The new exported `initializeCliProver({manifest,loadLocal,sha256})` explicitly selects direct WASM, one thread and disabled automatic SRS initialization. It delegates to the existing full-file CRS verifier, uses the pinned524288 BN254 prefix only after complete content verification, and supplies a fetch callback that always rejects. No remote fallback is possible through this path. Readiness stores the exact async singleton identity privately and is published only after initialization succeeds.
-
-Node `createPXE` with proving enabled now requires that initialization and same singleton, rejects custom prover/backend/thread/path/SRS overrides and uses the existing streaming BBLazy subclass plus WASMSimulator. Browser behavior is unchanged. Read-only Node PXE retains SDK behavior. Synchronous hashing initialization no longer needs the full SRS; CLI caller changes handle that separately.
-
-Checks:4 focused source-executing branch tests pass in107ms, covering pre-init failure, fixed options, streaming/simulator selection, local verification failure, wrong/replaced singleton, overrides and read-only behavior. These use small BB/CRS doubles and do not claim actual WASM initialization. The existing62 CRS consumer tests pass in853ms, including complete-hash verification, corruption outside the retained prefix and exact prefix counts; synthetic data is not trusted-setup evidence. Actual offline asynchronous WASM initialization and genuine packaged proofs remain root-owned qualification steps.

@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { ROOT, pins, assertNodeVersion } from '../../toolchain.mjs';
 assertNodeVersion();
 const directory = path.dirname(fileURLToPath(import.meta.url));
-const vectorFile = path.join(ROOT, 'execution/interface-fixtures/commitments-v1.json');
+const vectorFile = path.join(ROOT, 'scripts/fixtures/protocol/commitments-v1.json');
 const hash = createHash('sha256').update(fs.readFileSync(vectorFile)).digest('hex');
 if (hash !== fs.readFileSync(path.join(directory, 'commitment-vectors.sha256'), 'utf8').trim()) {
   throw new Error('Commitment vectors changed; reconcile Solidity fixtures explicitly');

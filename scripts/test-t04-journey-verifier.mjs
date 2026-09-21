@@ -7,7 +7,7 @@ import {Interface} from 'ethers';
 import {parseAbi} from 'viem';
 import {journeyExitLeaf,assertJourneyExit,verifyJourneyRefund} from './t04-browser-journey-verify.mjs';
 
-const vectors=JSON.parse(await readFile(new URL('../execution/interface-fixtures/commitments-v1.json',import.meta.url),'utf8'));
+const vectors=JSON.parse(await readFile(new URL('../scripts/fixtures/protocol/commitments-v1.json',import.meta.url),'utf8'));
 const vector=vectors.cases.find(v=>v.name==='exit');
 const input={scope:vector.input.scope,...vector.input.receipt};
 const fieldHash=bytes=>'0x00'+createHash('sha256').update(bytes).digest('hex').slice(0,62);

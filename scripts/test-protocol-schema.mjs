@@ -7,7 +7,7 @@ import { MinedTxReceipt, PendingTxReceipt, DroppedTxReceipt, TxHash } from '@azt
 import { BlockHash } from '@aztec/stdlib/block';
 import { LogCursor } from '@aztec/stdlib/logs';
 
-const fixtures = JSON.parse(fs.readFileSync(new URL('../execution/interface-fixtures/service-v1.json', import.meta.url)));
+const fixtures = JSON.parse(fs.readFileSync(new URL('../scripts/fixtures/protocol/service-v1.json', import.meta.url)));
 const clone = value => structuredClone(value);
 
 test('feed positions retain actual SDK transaction and within-transaction log indexes', () => {

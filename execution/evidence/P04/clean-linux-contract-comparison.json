@@ -1,9 +1,0 @@
-{
-  "schema": 1,
-  "outcome": "pass",
-  "comparedFiles": 7,
-  "reference": "root-clean-output-hashes.json",
-  "referenceSha256": "3a7e401052453cf271f84defd528ad0a42e7f9cfa5365429fef61b52f35e3cd7",
-  "differences": [],
-  "qualification": "Only seven completed contract-stage outputs compared, including full Noir/VK and full Solidity JSON metadata. SDK/CRS/apps and subsequent checks remain incomplete."
-}

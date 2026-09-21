@@ -1,6 +1,0 @@
-[31mThe application panicked (crashed).[0m
-Message:  [36mFailed to lock git dependencies cache: Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }[0m
-Location: [35mtooling/nargo_toml/src/lib.rs[0m:[35m437[0m
-
-This is a bug. We may have already fixed this in newer versions of Nargo so try searching for similar issues at https://github.com/noir-lang/noir/issues/.
-If there isn't an open issue for this bug, consider opening one at https://github.com/noir-lang/noir/issues/new?labels=bug&template=bug_report.yml

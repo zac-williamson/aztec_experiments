@@ -1,6 +1,0 @@
-{
-  "removed": ".build/C01-avm-incremental-unqualified",
-  "reason": "Qualified final binary retained; temporary compiler cache no longer needed",
-  "scope": "Owned generated cache only; source and provenance retained",
-  "finalBuildEvidence": "avm-native-build-4fc836ce-583d-4715-8f78-cae1a2e0c4aa.json"
-}

@@ -1,8 +1,0 @@
-{
-  "reason": "Independent review found missing actual SDK transaction index; only non-bundled schema/test/service-fixture inputs changed. Final affected tests must rerun on these exact bytes.",
-  "files": {
-    "shared/protocol-schema.mjs": "996ad92705b563cea6a4972d475f4600a8acb5ab92801671f50fda6c4cdfe4b2",
-    "scripts/test-protocol-schema.mjs": "e270d3f326330daea5be267b822c1dcded6b02f14ab01e20962bddd5f50817d4",
-    "execution/interface-fixtures/service-v1.json": "227e07da682a7fac808d9d5e509eca5654b2870a77a453458d9a8a30407de77a"
-  }
-}

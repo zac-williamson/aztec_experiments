@@ -104,7 +104,7 @@ The generated template passed CloudFormation validation;
 the live service and exact model manifest were checked on 2026-09-21. A complete
 fresh-account installation rehearsal remains outstanding. The current model's
 small evaluation samples do not establish production moderation quality or
-sustained capacity. The application release gates remain in `execution/graph.json`.
+sustained capacity. See [verification scope](../../SECURITY_PROPERTIES.md).
 
 
 ## Moderator state backups

@@ -1,7 +1,0 @@
-{"stage":"start-disposable-l1","elapsedMs":230}
-{"stage":"prepare-genesis","elapsedMs":353}
-{"stage":"deploy-local-protocol-fixture","elapsedMs":2062}
-{"stage":"wait-for-local-validator-activation","elapsedMs":3239}
-{"stage":"start-application-node","elapsedMs":3255}
-{"stage":"prove-board-deployment","elapsedMs":5928}
-{"evidence":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/evidence/C03/application-6db97929-30f5-4365-b4da-d7dbd74d8340.json","passed":false,"profile":"ten genuine authors preparing posts from one anchor"}

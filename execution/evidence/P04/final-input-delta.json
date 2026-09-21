@@ -1,9 +1,0 @@
-{
-  "reason": "Final cursor schema correction and5.2 CRS version metadata; assetcontentpins and SDK downloader sourcehash unchanged. Fresh builds must apply exactdelta before finalchecks.",
-  "files": {
-    "shared/protocol-schema.mjs": "996ad92705b563cea6a4972d475f4600a8acb5ab92801671f50fda6c4cdfe4b2",
-    "scripts/test-protocol-schema.mjs": "e270d3f326330daea5be267b822c1dcded6b02f14ab01e20962bddd5f50817d4",
-    "execution/interface-fixtures/service-v1.json": "227e07da682a7fac808d9d5e509eca5654b2870a77a453458d9a8a30407de77a",
-    "crs-manifest.json": "485de34aa39dde1a5683921ce6c4f614774f64bc453568300020a36d776c3891"
-  }
-}

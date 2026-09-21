@@ -1,536 +1,0 @@
-
-> build
-> npm run build:contracts && npm run build:sdk && npm run build:crs && npm run build:apps
-
-
-> build:contracts
-> node scripts/build-contracts.mjs
-
-Cloning into '/root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0'...
-Cloning into '/root/nargo/github.com/noir-lang/poseidon/v0.3.0'...
-Cloning into '/root/nargo/github.com/AztecProtocol/aztec-packages/v5.2.0'...
-Updating files:  21% (3313/15714)Updating files:  22% (3458/15714)Updating files:  23% (3615/15714)Updating files:  24% (3772/15714)Updating files:  25% (3929/15714)Updating files:  26% (4086/15714)Updating files:  27% (4243/15714)Updating files:  28% (4400/15714)Updating files:  29% (4558/15714)Updating files:  30% (4715/15714)Updating files:  31% (4872/15714)Updating files:  32% (5029/15714)Updating files:  33% (5186/15714)Updating files:  34% (5343/15714)Updating files:  35% (5500/15714)Updating files:  36% (5658/15714)Updating files:  37% (5815/15714)Updating files:  38% (5972/15714)Updating files:  39% (6129/15714)Updating files:  40% (6286/15714)Updating files:  41% (6443/15714)Updating files:  42% (6600/15714)Updating files:  43% (6758/15714)Updating files:  44% (6915/15714)Updating files:  45% (7072/15714)Updating files:  46% (7229/15714)Updating files:  46% (7378/15714)Updating files:  47% (7386/15714)Updating files:  48% (7543/15714)Updating files:  49% (7700/15714)Updating files:  50% (7857/15714)Updating files:  51% (8015/15714)Updating files:  52% (8172/15714)Updating files:  53% (8329/15714)Updating files:  54% (8486/15714)Updating files:  55% (8643/15714)Updating files:  56% (8800/15714)Updating files:  57% (8957/15714)Updating files:  58% (9115/15714)Updating files:  59% (9272/15714)Updating files:  60% (9429/15714)Updating files:  61% (9586/15714)Updating files:  61% (9644/15714)Updating files:  62% (9743/15714)Updating files:  63% (9900/15714)Updating files:  64% (10057/15714)Updating files:  65% (10215/15714)Updating files:  66% (10372/15714)Updating files:  67% (10529/15714)Updating files:  68% (10686/15714)Updating files:  69% (10843/15714)Updating files:  70% (11000/15714)Updating files:  71% (11157/15714)Updating files:  72% (11315/15714)Updating files:  73% (11472/15714)Updating files:  74% (11629/15714)Updating files:  74% (11679/15714)Updating files:  75% (11786/15714)Updating files:  76% (11943/15714)Updating files:  77% (12100/15714)Updating files:  78% (12257/15714)Updating files:  79% (12415/15714)Updating files:  80% (12572/15714)Updating files:  81% (12729/15714)Updating files:  82% (12886/15714)Updating files:  82% (12952/15714)Updating files:  83% (13043/15714)Updating files:  84% (13200/15714)Updating files:  85% (13357/15714)Updating files:  86% (13515/15714)Updating files:  87% (13672/15714)Updating files:  87% (13714/15714)Updating files:  88% (13829/15714)Updating files:  89% (13986/15714)Updating files:  90% (14143/15714)Updating files:  91% (14300/15714)Updating files:  92% (14457/15714)Updating files:  93% (14615/15714)Updating files:  94% (14772/15714)Updating files:  95% (14929/15714)Updating files:  96% (15086/15714)Updating files:  97% (15243/15714)Updating files:  98% (15400/15714)Updating files:  99% (15557/15714)Updating files: 100% (15714/15714)Updating files: 100% (15714/15714), done.
-Cloning into '/root/nargo/github.com/noir-lang/sha256/v0.3.0'...
-Cloning into '/root/nargo/github.com/noir-lang/keccak256/v0.1.3'...
-bug: Brillig function call isn't properly covered by a manual constraint
-    ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:356:38
-    │
-356 │             ciphertext[i] = unsafe { random() };
-    │                                      -------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-    │
-    = Call stack:
-      1: Billboard::claim_deposit
-              at billboard_contract/src/main.nr:311:19
-      2: NoteMessage<Note>::deliver
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9
-      3: NoteMessage<Note>::deliver_to
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9
-      4: do_private_message_delivery
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9
-      5: do_onchain_private_message_delivery
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:117:22
-      6: remove_constraints_if
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:22:9
-      7: do_onchain_private_message_delivery
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:119:12
-      8: <impl MessageEncryption for AES128>::encrypt
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:356:38
-
-bug: Brillig function call isn't properly covered by a manual constraint
-    ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:260:25
-    │
-260 │                         random_address_point()
-    │                         ---------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-    │
-    = Call stack:
-       1: Billboard::claim_deposit
-              at billboard_contract/src/main.nr:311:19
-       2: NoteMessage<Note>::deliver
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9
-       3: NoteMessage<Note>::deliver_to
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9
-       4: do_private_message_delivery
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9
-       5: do_onchain_private_message_delivery
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:117:22
-       6: remove_constraints_if
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:22:9
-       7: do_onchain_private_message_delivery
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:119:12
-       8: <impl MessageEncryption for AES128>::encrypt
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:240:13
-       9: Option<T>::unwrap_or_else
-              at std/option.nr:61:13
-      10: <impl MessageEncryption for AES128>::encrypt
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:260:25
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29
-   │
-18 │     let instance = unsafe { get_contract_instance_internal(address) };
-   │                             --------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-     1: generate_private_external
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17
-     2: assert_is_initialized_private
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:114:20
-     3: get_contract_instance
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18
-   │
-88 │         unsafe { get_existing_app_siloed_handshake_secrets(STANDARD_HANDSHAKE_REGISTRY_ADDRESS, sender, recipient) };
-   │                  ------------------------------------------------------------------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-      1: Billboard::claim_deposit
-             at billboard_contract/src/main.nr:311:19
-      2: NoteMessage<Note>::deliver
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9
-      3: NoteMessage<Note>::deliver_to
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9
-      4: do_private_message_delivery
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9
-      5: do_onchain_private_message_delivery
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19
-      6: derive_log_tag
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18
-      7: Option<T>::map_or_else
-             at std/option.nr:94:13
-      8: derive_log_tag
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12
-      9: default_tag_secret_source
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5
-     10: existing_handshake_secrets_or_else
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messaging.nr:35:9
-   │  
-35 │ ╭         get_l1_to_l2_membership_witness(
-36 │ │             message_hash,
-37 │ │             Option::some(UnsiloedNullifier { contract_address, nullifier }),
-38 │ │         )
-   │ ╰─────────' This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │  
-   = Call stack:
-     1: Billboard::claim_deposit
-             at billboard_contract/src/main.nr:289:19
-     2: PrivateContext::consume_l1_to_l2_message
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:897:25
-     3: process_l1_to_l2_message
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messaging.nr:35:9
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52
-   │
-18 │     let should_use_pending_read_request = unsafe { is_nullifier_pending(unsiloed_nullifier, contract_address) };
-   │                                                    ---------------------------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-     1: generate_private_external
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17
-     2: assert_is_initialized_private
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:116:39
-     3: compute_nullifier_existence_request
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28
-   │
-26 │     let witness = unsafe { get_public_data_witness(block_header, public_data_tree_index) };
-   │                            ------------------------------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-     1: Billboard::claim_deposit
-             at billboard_contract/src/main.nr:295:45
-     2: public_storage_historical_read
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28
-
-bug: Brillig function call isn't properly covered by a manual constraint
-    ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39
-    │
-173 │     let maybe_hinted_notes = unsafe { get_notes_internal(storage_slot, options) };
-    │                                       ----------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-    │
-    = Call stack:
-      1: Billboard::post
-              at billboard_contract/src/main.nr:354:35
-      2: PrivateSet<Note, &mut PrivateContext>::pop_notes
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:235:31
-      3: get_notes
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28
-   │
-26 │     let witness = unsafe { get_public_data_witness(block_header, public_data_tree_index) };
-   │                            ------------------------------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-     1: Billboard::post
-             at billboard_contract/src/main.nr:361:53
-     2: public_storage_historical_read
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28
-
-bug: Brillig function call isn't properly covered by a manual constraint
-    ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:356:38
-    │
-356 │             ciphertext[i] = unsafe { random() };
-    │                                      -------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-    │
-    = Call stack:
-      1: Billboard::post
-              at billboard_contract/src/main.nr:516:25
-      2: NoteMessage<Note>::deliver
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9
-      3: NoteMessage<Note>::deliver_to
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9
-      4: do_private_message_delivery
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9
-      5: do_onchain_private_message_delivery
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:117:22
-      6: remove_constraints_if
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:22:9
-      7: do_onchain_private_message_delivery
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:119:12
-      8: <impl MessageEncryption for AES128>::encrypt
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:356:38
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51
-   │
-27 │     let (public_keys, partial_address) = unsafe { get_public_keys_and_partial_address(account) };
-   │                                                   -------------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-     1: Billboard::post
-             at billboard_contract/src/main.nr:354:35
-     2: PrivateSet<Note, &mut PrivateContext>::pop_notes
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:244:17
-     3: destroy_note
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:82:21
-     4: generate_note_hash_trait_impl
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/notes.nr:90:40
-     5: get_public_keys
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51
-
-bug: Brillig function call isn't properly covered by a manual constraint
-    ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38
-    │
-561 │         let is_revertible = unsafe { is_execution_in_revertible_phase(current_counter) };
-    │                                      ------------------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-    │
-    = Call stack:
-      1: generate_private_external
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:105:53
-      2: PrivateContext::in_revertible_phase
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38
-
-bug: Brillig function call isn't properly covered by a manual constraint
-    ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:260:25
-    │
-260 │                         random_address_point()
-    │                         ---------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-    │
-    = Call stack:
-       1: Billboard::post
-              at billboard_contract/src/main.nr:516:25
-       2: NoteMessage<Note>::deliver
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9
-       3: NoteMessage<Note>::deliver_to
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9
-       4: do_private_message_delivery
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9
-       5: do_onchain_private_message_delivery
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:117:22
-       6: remove_constraints_if
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/utils/remove_constraints.nr:22:9
-       7: do_onchain_private_message_delivery
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:119:12
-       8: <impl MessageEncryption for AES128>::encrypt
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:240:13
-       9: Option<T>::unwrap_or_else
-              at std/option.nr:61:13
-      10: <impl MessageEncryption for AES128>::encrypt
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/encryption/aes128.nr:260:25
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29
-   │
-18 │     let instance = unsafe { get_contract_instance_internal(address) };
-   │                             --------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-     1: generate_private_external
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17
-     2: assert_is_initialized_private
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:114:20
-     3: get_contract_instance
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18
-   │
-88 │         unsafe { get_existing_app_siloed_handshake_secrets(STANDARD_HANDSHAKE_REGISTRY_ADDRESS, sender, recipient) };
-   │                  ------------------------------------------------------------------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-      1: Billboard::post
-             at billboard_contract/src/main.nr:516:25
-      2: NoteMessage<Note>::deliver
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:55:9
-      3: NoteMessage<Note>::deliver_to
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_message.nr:82:9
-      4: do_private_message_delivery
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:81:9
-      5: do_onchain_private_message_delivery
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/mod.nr:122:19
-      6: derive_log_tag
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:30:18
-      7: Option<T>::map_or_else
-             at std/option.nr:94:13
-      8: derive_log_tag
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:31:12
-      9: default_tag_secret_source
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag.nr:45:5
-     10: existing_handshake_secrets_or_else
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/messages/delivery/tag_derivation.nr:88:18
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52
-   │
-18 │     let should_use_pending_read_request = unsafe { is_nullifier_pending(unsiloed_nullifier, contract_address) };
-   │                                                    ---------------------------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-     1: generate_private_external
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17
-     2: assert_is_initialized_private
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:116:39
-     3: compute_nullifier_existence_request
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/note.nr:46:28
-   │
-46 │     let witness = unsafe { get_note_hash_membership_witness(block_header, unique_note_hash) };
-   │                            ---------------------------------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-     1: Billboard::post
-             at billboard_contract/src/main.nr:395:49
-     2: assert_note_existed_by
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/note.nr:46:32
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52
-   │
-18 │     let should_use_pending_read_request = unsafe { is_nullifier_pending(unsiloed_nullifier, contract_address) };
-   │                                                    ---------------------------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-     1: generate_private_external
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17
-     2: assert_is_initialized_private
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:116:39
-     3: compute_nullifier_existence_request
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28
-   │
-26 │     let witness = unsafe { get_public_data_witness(block_header, public_data_tree_index) };
-   │                            ------------------------------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-     1: Billboard::update_portal
-             at billboard_contract/src/main.nr:203:38
-     2: public_storage_historical_read
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/history/storage.nr:26:28
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29
-   │
-18 │     let instance = unsafe { get_contract_instance_internal(address) };
-   │                             --------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-     1: generate_private_external
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17
-     2: assert_is_initialized_private
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:114:20
-     3: get_contract_instance
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29
-
-bug: Brillig function call isn't properly covered by a manual constraint
-    ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38
-    │
-561 │         let is_revertible = unsafe { is_execution_in_revertible_phase(current_counter) };
-    │                                      ------------------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-    │
-    = Call stack:
-      1: generate_private_external
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:105:53
-      2: PrivateContext::in_revertible_phase
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:561:38
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29
-   │
-18 │     let instance = unsafe { get_contract_instance_internal(address) };
-   │                             --------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-     1: generate_private_external
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17
-     2: assert_is_initialized_private
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:114:20
-     3: get_contract_instance
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/oracle/get_contract_instance.nr:18:29
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52
-   │
-18 │     let should_use_pending_read_request = unsafe { is_nullifier_pending(unsiloed_nullifier, contract_address) };
-   │                                                    ---------------------------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-     1: generate_private_external
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr:96:17
-     2: assert_is_initialized_private
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr:116:39
-     3: compute_nullifier_existence_request
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/nullifier/utils.nr:18:52
-
-bug: Brillig function call isn't properly covered by a manual constraint
-    ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39
-    │
-173 │     let maybe_hinted_notes = unsafe { get_notes_internal(storage_slot, options) };
-    │                                       ----------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-    │
-    = Call stack:
-      1: Billboard::withdraw
-              at billboard_contract/src/main.nr:571:39
-      2: PrivateSet<Note, &mut PrivateContext>::pop_notes
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:235:31
-      3: get_notes
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/note_getter.nr:173:39
-
-bug: Brillig function call isn't properly covered by a manual constraint
-    ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:829:36
-    │
-829 │             let request = unsafe { get_key_validation_request(pk_m_hash, key_index) };
-    │                                    ------------------------------------------------ This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-    │
-    = Call stack:
-      1: Billboard::withdraw
-              at billboard_contract/src/main.nr:571:39
-      2: PrivateSet<Note, &mut PrivateContext>::pop_notes
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:244:17
-      3: destroy_note
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:82:21
-      4: generate_note_hash_trait_impl
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/notes.nr:91:30
-      5: PrivateContext::request_nhk_app
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:758:9
-      6: PrivateContext::request_sk_app
-              at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/context/private_context.nr:829:36
-
-bug: Brillig function call isn't properly covered by a manual constraint
-   ┌─ /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51
-   │
-27 │     let (public_keys, partial_address) = unsafe { get_public_keys_and_partial_address(account) };
-   │                                                   -------------------------------------------- This Brillig call's inputs and its return values haven't been sufficiently constrained. This should be done to prevent potential soundness vulnerabilities
-   │
-   = Call stack:
-     1: Billboard::withdraw
-             at billboard_contract/src/main.nr:571:39
-     2: PrivateSet<Note, &mut PrivateContext>::pop_notes
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/state_vars/private_set.nr:244:17
-     3: destroy_note
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/note/lifecycle.nr:82:21
-     4: generate_note_hash_trait_impl
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/notes.nr:90:40
-     5: get_public_keys
-             at /root/nargo/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/keys/getters/mod.nr:27:51
-
-Scheme is: ultra_honk, num threads: 12 (mem: 9.42 MiB)
-Transpiling: /work/billboard/target/billboard_contract-Billboard.json -> /work/billboard/target/billboard_contract-Billboard.json.processing (mem: 9.42 MiB)
-Transpiled: /work/billboard/target/billboard_contract-Billboard.json -> /work/billboard/target/billboard_contract-Billboard.json.processing (mem: 45.85 MiB)
-Generating verification keys for functions in billboard_contract-Billboard.json.processing (mem: 45.85 MiB)
-Cache directory: /root/.bb/5.2.0/vk_cache (mem: 45.85 MiB)
-Generating verification key: f82e66cef403b07d3fd7bde286f9751e767737ad8aa995b1201ace882ba27ce8 (mem: 45.85 MiB)
-ChonkComputeVk - deriving Chonk verification key for circuit 'update_portal' (mem: 45.85 MiB)
-Generating verification key: 54afe28c572cf5d2fa8ac643f24a785a06d3f095bea3f3c87058724c7fde5284 (mem: 49.75 MiB)
-ChonkComputeVk - deriving Chonk verification key for circuit 'withdraw' (mem: 49.88 MiB)
-Generating verification key: f97a18830fb435a4b9ae53077190e602ee7cc5ac7097c46dd7e92dff09b3c71a (mem: 75.65 MiB)
-ChonkComputeVk - deriving Chonk verification key for circuit 'claim_deposit' (mem: 75.65 MiB)
-Generating verification key: ff5061a7b72d8991f7cb5a21fecd577437a55411700b48b39b9fe705c2feb31e (mem: 91.27 MiB)
-ChonkComputeVk - deriving Chonk verification key for circuit 'post' (mem: 91.65 MiB)
-ChonkComputeVk - VK derived, size: 5216 bytes (mem: 398.78 MiB)
-ChonkComputeVk - VK derived, size: 5216 bytes (mem: 419.62 MiB)
-ChonkComputeVk - VK derived, size: 5216 bytes (mem: 435.00 MiB)
-ChonkComputeVk - VK derived, size: 5216 bytes (mem: 435.00 MiB)
-Successfully processed: /work/billboard/target/billboard_contract-Billboard.json -> /work/billboard/target/billboard_contract-Billboard.json.processing (mem: 435.00 MiB)
-Compiling 89 files with Solc 0.8.27
-Solc 0.8.27 finished in 7.80s
-Compiler run successful!
-note[screaming-snake-case-immutable]: immutables should use SCREAMING_SNAKE_CASE
-  --> test/PortalArtifactRegression.t.sol:35:39
-   |
-35 |     AccountingInbox private immutable inbox = new AccountingInbox();
-   |                                       ^^^^^
-   |
-   = help: https://book.getfoundry.sh/reference/forge/forge-lint#screaming-snake-case-immutable
-
-note[screaming-snake-case-immutable]: immutables should use SCREAMING_SNAKE_CASE
-  --> test/PortalArtifactRegression.t.sol:36:40
-   |
-36 |     AccountingOutbox private immutable outbox = new AccountingOutbox();
-   |                                        ^^^^^^
-   |
-   = help: https://book.getfoundry.sh/reference/forge/forge-lint#screaming-snake-case-immutable
-
-note[screaming-snake-case-const]: constants should use SCREAMING_SNAKE_CASE
-  --> test/PortalArtifactRegression.t.sol:42:42
-   |
-42 |     VmPortalRegression internal constant vm = VmPortalRegression(address(uint160(uint256(keccak256("hevm cheat code")))));
-   |                                          ^^
-   |
-   = help: https://book.getfoundry.sh/reference/forge/forge-lint#screaming-snake-case-const
-
-note[unsafe-cheatcode]: usage of unsafe cheatcodes that can perform dangerous operations
-  --> test/PortalArtifactRegression.t.sol:54:38
-   |
-54 |         bytes memory text = bytes(vm.readFile(filename));
-   |                                      ^^^^^^^^
-   |
-   = help: https://book.getfoundry.sh/reference/forge/forge-lint#unsafe-cheatcode
-
-Built canonical Noir/VK and Solidity artifacts; synchronized all consumers.
-
-> build:sdk
-> node scripts/build-sdk.mjs
-
-(node:261) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-Built pinned SDK and upstream workers: /work/.build/sdk
-
-> build:crs
-> node scripts/build-crs.mjs
-
-Verified CRS g1.dat: 37748736 bytes, SHA-256 8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416
-Verified CRS g2.dat: 128 bytes, SHA-256 01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f
-Verified CRS grumpkin_g1.dat: 4194368 bytes, SHA-256 b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9
-Verified derived CRS g1_uncompressed.dat: 75497472 bytes, SHA-256 2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac
-
-> build:apps
-> node apps/build.mjs
-
-Built billboard/censor -> censor.html: 3681KB
-Built billboard/deploy -> deploy.html: 3537KB
-Built billboard/user -> user.html: 3706KB
-Built fee-juice -> fee-juice.html: 692KB

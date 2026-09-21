@@ -13,6 +13,7 @@ const chunkBytes = 4194304, count = 129, bytes = chunkBytes * count;
 const sha = data => createHash('sha256').update(data).digest('hex');
 const directory = path.join(ROOT,'.build/C01-epoch-crs');
 const evidence = path.join(ROOT,'execution/evidence/C01',`epoch-crs-${randomUUID()}.json`);
+await fs.mkdir(path.dirname(evidence),{recursive:true});
 const report = { schemaVersion:1, startedAt:new Date().toISOString(), sourceUrl, bytes, passed:false };
 let handle, created=false;
 try {

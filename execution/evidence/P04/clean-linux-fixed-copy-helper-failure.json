@@ -1,7 +1,0 @@
-{
-  "recordedAt": "2026-09-12T09:43:03.147375+00:00",
-  "operation": "Local normalized archive preparation; no Docker/install/build started",
-  "error": "Scratch helper copy.py shadowed Python standard-library copy, causing tarfile.addfile AttributeError after a partial archive.",
-  "remedy": "Renamed new helper stage_source.py; retained partial archive/log. Full source copy was created by import side effect and will be re-attested, not assumed fresh.",
-  "applicationFilesChanged": false
-}

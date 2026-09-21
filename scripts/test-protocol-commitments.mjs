@@ -5,7 +5,7 @@ import { sha256ToField } from '@aztec/foundation/crypto/sha256';
 import { solidityPacked, encodeBytes32String } from 'ethers';
 import { encodePolicyCommitment, encodeEscrowCommitment, encodeReadyCommitment,
   encodeConfigCommitment, sha256Field } from '../shared/protocol-commitments.mjs';
-const fixtures = JSON.parse(fs.readFileSync(new URL('../execution/interface-fixtures/commitments-v1.json', import.meta.url)));
+const fixtures = JSON.parse(fs.readFileSync(new URL('../scripts/fixtures/protocol/commitments-v1.json', import.meta.url)));
 
 function independentEncoding(item) {
   const { scope: s, receipt: r, economics: e } = item.input;
@@ -92,7 +92,7 @@ test('pre-portal scope still validates canonical network integers and nonzero ad
   ]) assert.throws(() => encodeConfigCommitment({ ...configScope, ...change }, economics));
 });
 test('service policy identity commits its exact content and deployed board', async () => {
-  const service = JSON.parse(fs.readFileSync(new URL('../execution/interface-fixtures/service-v1.json', import.meta.url)));
+  const service = JSON.parse(fs.readFileSync(new URL('../scripts/fixtures/protocol/service-v1.json', import.meta.url)));
   const policy = service.events.find(event => event.type === 'PolicyPublished').payload;
   const expected = await sha256Field(encodePolicyCommitment(service.scope.boardAddress, policy.text));
   for (const event of service.events) assert.equal(event.payload.policyVersion, expected);

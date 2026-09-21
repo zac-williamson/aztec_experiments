@@ -1,6 +1,0 @@
-{
-  "feeBudget": "This site currently charges 34.72593394678986978 AZTEC per private transaction. Deposit more than this to pay for the claim and leave fee credit. Allow additional credit for posting and withdrawing.",
-  "diagnostic": "The configured transaction fee cap is below the network’s current minimum. The board operator needs to update its fee settings before you can continue.",
-  "pageErrors": [],
-  "walletConnected": false
-}

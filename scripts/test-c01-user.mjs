@@ -85,7 +85,7 @@ test('browser save observes transaction abort and never reports durable success'
 });
 function engineContext(){const context={performance,console,Buffer,TextEncoder,setTimeout,clearTimeout};vm.createContext(context);vm.runInContext(engineSource,context,{filename:'user/engine.js'});return context;}
 test('actual engine codec matches frozen claim, boundary and exit commitments',async()=>{
-  const c=engineContext();const vectors=JSON.parse(await fs.readFile(new URL('../execution/interface-fixtures/commitments-v1.json',import.meta.url)));
+  const c=engineContext();const vectors=JSON.parse(await fs.readFile(new URL('../scripts/fixtures/protocol/commitments-v1.json',import.meta.url)));
   for(const vector of vectors.cases.filter(x=>['claim','claim-boundary','exit'].includes(x.name))){
     const s=vector.input.scope,r=vector.input.receipt;
     const actual=c.BillboardUserCodec.escrowContent({Fr},ethers,vector.name==='exit',AztecAddress.fromFieldUnsafe(Fr.fromHexString(s.boardAddress)),s.portalAddress,r.depositor,r.amount,s.rollupVersion,s.l1ChainId);

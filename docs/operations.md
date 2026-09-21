@@ -77,10 +77,6 @@ approved production endpoints. Local fixtures cannot satisfy those responsibilit
 5. Check canonical inclusion and resulting application state before clearing the incident.
    A recovered fee balance does not extend an expired moderation deadline.
 
-The full local private-fee funding, deposit claim, withdrawal and refund journey
-passed in 354421 ms with 744928 KiB peak owned memory (evidence
-`execution/evidence/W01/application-ecdd9aac-44b7-4c35-8a9f-5f2b4fb9a923.json`).
-This is normal-path qualification, not a claim that every outage step has been rehearsed.
 
 ## Moderation health output
 

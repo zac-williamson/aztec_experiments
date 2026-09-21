@@ -1,9 +1,0 @@
-# Fixture v2: public-only revert control
-
-2026-09-14. Added `assert(value > 0, "fixture requested public revert")` inside FeeTarget's public `_record`, plus one TXE test whose real owner authwit authorizes value0. The private delegated function remains unchanged and accepts that authorization; the enqueued public function rejects. No production board ABI or sponsor logic changed.
-
-Actual pinned Node24.21/Aztec5.2/Noir beta25 commands (each using `billboard/fee-fixture/run.mjs`): `compile`, `process`, `txe actual_delegated_authwit_valid_effect`, and `txe actual_delegated_public_revert`. All exited0. The two focused tests passed1/1 each. Logs are `fixture-v2-compile.log`, `fixture-v2-processing.log`, `fixture-v2-delegated-valid.log`, and `fixture-v2-public-revert.log`. Unchanged pure policy constraints were not rerun. Framework Brillig diagnostics remain in the compile log without skip flags.
-
-`fixture-context-v2.json` records the current source/artifact/log hashes, compiler identity and absent process checks. Original `fixture-context.json` and v1 logs are unchanged. The original application source is also preserved as `fixture-v1-application.nr.txt`. Sponsor and NestedCaller artifact hashes are unchanged. Target's new SHA256 is `8c1af942d191667714e515534ddc5c6e8213a4e3c115711d7372c4df5e34ca05`.
-
-These controls establish a valid delegated effect and a public-only failure trigger. They do not establish a paid, mined public revert or persistence of the nonrevertible coupon nullifier. Those require root's separate local network request/prove/send path, explicit reverted inclusion receipt, fee debit, unchanged counter and exact coupon-nullifier replay check. The mock proof / proposed inclusion qualification limits remain in force. All owned test/service processes exited; the heavy slot was returned to root.

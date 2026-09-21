@@ -31,7 +31,6 @@
   "scripts": {
     "build:sdk": "node scripts/build-sdk.mjs",
     "test:moderation": "bash censor-daemon/run_tests.sh",
-    "graph:validate": "python3 execution/graph.py validate",
     "bootstrap:noir": "node scripts/bootstrap-noir.mjs",
     "build:contracts": "node scripts/build-contracts.mjs",
     "build:apps": "node apps/build.mjs",

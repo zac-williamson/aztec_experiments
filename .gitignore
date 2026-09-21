@@ -48,3 +48,21 @@ transaction-journal-v1/
 
 # Durable local moderator state and model provenance.
 .moderation-state/
+
+# Local planning, reports and agent instructions
+/execution/
+/reports/
+AGENTS.md
+/CHANGES-FROM-UPSTREAM.md
+/LATEST_CHANGE.md
+/fv/PLAN.md
+/fv/notes/
+/scripts/c01-avm-runtime.mjs
+
+# Local credentials and transient files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+__pycache__/

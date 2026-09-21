@@ -1,1 +1,0 @@
-{"passed":true,"observations":[{"passed":true,"stage":"skip-passkey","urlHash":"#/onboarding/metametrics","testIds":["app-header-logo","select-locale","parent-selector-onboarding-metrics","metametrics-checkbox","metametrics-data-collection-checkbox","metametrics-i-agree"]}],"failures":[]}

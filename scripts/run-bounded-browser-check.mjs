@@ -12,6 +12,7 @@ const walletExtension=script==='scripts/test-wallet-extension-browser.mjs';
 assert(['scripts/test-wallet-extension-browser.mjs','scripts/test-public-feed-browser.mjs','scripts/test-u01-hosting-browser.mjs','scripts/test-u01-config-browser.mjs','scripts/test-u01-keyboard-browser.mjs','scripts/test-u01-journey-browser.mjs','scripts/test-u01-fee-deploy-ui.mjs'].includes(script),'Choose a UI component test; run application scenarios directly');
 const reportPath=path.resolve(ROOT,output);
 assert(reportPath.startsWith(path.join(ROOT,'execution/evidence',(publicFeed||walletExtension)?'T04':'U01')+path.sep));
+await fs.mkdir(path.dirname(reportPath),{recursive:true});
 const file=await fs.open(reportPath,'wx');
 const directory=await fs.mkdtemp('/private/tmp/board-ui-');
 const report={script,args,passed:false,observations:[]};

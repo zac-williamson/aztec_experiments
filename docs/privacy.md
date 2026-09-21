@@ -72,9 +72,4 @@ interpreted with that limitation.
 Caller-independent public getters now use the SDK's neutral sender, so those
 simulation inputs do not unnecessarily carry the author or moderator account.
 Focused tests verify the installed SDK constructs a zero sender and fee payer for
-these static reads. Private queries retain their owner scope. The complete browser lifecycle now qualifies this change for its recorded source:
-its trace retained 1,339 dispatched observations, including five author account-class
-lookups and 18 argument classifications truncated by the observation limit. No
-other retained row reported the author address. The truncation prevents a complete
-absence claim, and the account-class lookup remains. See
-`execution/evidence/T03/browser-observations-048.md`.
+these static reads. Private queries retain their owner scope. Account-class lookups can still expose the author address to the node.
