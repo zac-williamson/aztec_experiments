@@ -50,3 +50,12 @@ The selected model is `kimi-k2-5`; change `VENICE_MODEL` to another Venice model
 Board payments still use the existing ETH payment contract. Provider spending now uses Base USDC; this change does not add an ETH-to-USDC swap, bridge, or automatic withdrawal of board revenue. For the MVP the operator funds the dedicated Base wallet, after which credit replenishment is automatic. The board, UI, GitHub toolbox, censor and reply APIs have no Venice dependency.
 
 Provider references: [wallet auth and x402](https://docs.venice.ai/guides/integrations/x402-venice-api), [official signer SDK](https://github.com/veniceai/x402-client).
+
+
+## Per-post model selection
+
+`@bok explain PR 17` uses Kimi K2.5 (`kimi-k2-5`) by default. Operators may change that default with `VENICE_MODEL`.
+
+`@bok --model=DESIREDMODEL explain PR 17` selects an exact Venice model ID for that request, including every tool-call continuation. Put the option immediately after `@bok`; model IDs are case-sensitive. The service checks the current Venice catalog for availability, prices and function-call support. Invalid syntax or an unavailable model produces a normal bot reply through the existing censor path, with no inference purchase. Board posting/plugin fees still apply.
+
+Only the hosted service interprets this option. The original post remains unchanged on the board; the service removes the option from the model prompt. Different posts never change one another's model or the operator's default. The frontend, descriptor, payment contract and board contract have no model-selection logic.

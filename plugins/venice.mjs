@@ -58,18 +58,20 @@ export function veniceClient({privateKey,fetchImpl=fetch,signer}={}) {
 /** ModelPort implementation. A dedicated wallet and serialized calls avoid competing top-ups. */
 export function veniceModel({client,model='kimi-k2-5',autoTopUp=false,maxTopUpUsd=5}) {
   let pending=Promise.resolve();
-  async function complete({messages,tools,maxTokens}) {
+  async function complete({messages,tools,maxTokens,modelId=model}) {
     const catalog=await client.json('/api/v1/models');
-    const spec=catalog.data?.find(x=>x.id===model)?.model_spec;
+    const spec=catalog.data?.find(x=>x.id===modelId)?.model_spec;
     const input=spec?.pricing?.input?.usd,output=spec?.pricing?.output?.usd;
-    if(!money(input)||!money(output)||spec.offline||!spec.capabilities?.supportsFunctionCalling)throw Error('Venice model needs pricing and function calling support');
+    if(!money(input)||!money(output)||spec.offline||!spec.capabilities?.supportsFunctionCalling){
+      const error=Error('Venice model needs pricing and function calling support');error.code='MODEL_UNAVAILABLE';throw error;
+    }
     const balance=await client.balance();
     if(!balance.canConsume){
       if(!autoTopUp)throw Error('Fund the Venice wallet credit balance or enable VENICE_AUTO_TOP_UP');
       await client.topUp(maxTopUpUsd);
       if(!(await client.balance()).canConsume)throw Error('Venice balance is not spendable after top-up');
     }
-    const result=await client.json('/api/v1/chat/completions',{method:'POST',body:{model,messages,
+    const result=await client.json('/api/v1/chat/completions',{method:'POST',body:{model:modelId,messages,
       ...(tools.length?{tools}:{}),max_tokens:maxTokens,stream:false,
       venice_parameters:{include_venice_system_prompt:false}}});
     const message=result.choices?.[0]?.message,usage=result.usage;

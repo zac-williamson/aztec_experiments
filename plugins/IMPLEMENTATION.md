@@ -41,3 +41,10 @@ Task: replace the model transport with Venice wallet-authenticated inference and
 - The live catalog identifies `kimi-k2-5` as function-call capable, with input/output prices of $0.56/$3.50 per million tokens at verification time; the adapter fetches current prices for each call.
 - `bot:venice` provides address, balance status, explicit top-up and one-call live smoke commands. Paid live inference and settlement remain untested until the operator configures and funds a dedicated Base wallet. No account, real payment, PR or remote deployment was created.
 - Board revenue remains ETH. No automatic swap/bridge or withdrawal was added; automatic Venice credit purchases draw only from the dedicated Base USDC wallet. Existing chain E2E proof-on/off evidence above predates this provider-only replacement and does not imply a live funded Venice E2E.
+
+
+### Per-request model selection (2026-09-21)
+
+Added a Bok Runner decorator that parses `@bok --model=MODEL_ID` within the hosted service. The generic agent carries an optional opaque model ID through ModelPort for every tool turn; the Venice adapter validates and prices that exact model. Kimi K2.5 remains the default. Model selection does not mutate shared state. No UI, board, descriptor, payment or censor changes.
+
+Verification: 27 plugin regressions pass, including concurrent default/alternate requests through parser, agent loop, tool execution and Venice transport; alternate pricing; invalid/unsupported selections without provider spending; unrelated errors remaining visible. Composition entrypoint syntax check passes. These tests inject provider responses; no user funds were spent and no paid live inference is claimed for this change.

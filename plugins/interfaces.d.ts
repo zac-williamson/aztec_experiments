@@ -25,7 +25,7 @@ export interface BoardPort {
   reply(postId:string,text:string):Promise<unknown>;
 }
 export interface DispatchStore {claim(id:string):boolean|Promise<boolean>}
-export interface RunRequest {id:string;postId:string;text:string;amountWei:string}
+export interface RunRequest {id:string;postId:string;text:string;amountWei:string;modelId?:string}
 export interface Runner {run(request:RunRequest):Promise<{replyText:string}>}
 export interface WorkerDependencies {
   scope:Scope; payments:PaymentSource; board:BoardPort; dispatch:DispatchStore; runner:Runner;
@@ -42,7 +42,7 @@ export interface ModelMessage {
 }
 export interface ModelPort {
   /** Cost charged to the action allowance, in USD; may conservatively exceed provider billing. */
-  complete(input:{messages:ModelMessage[];tools:ToolDefinition[];maxTokens:number}):Promise<{message:ModelMessage;cost:number}>;
+  complete(input:{messages:ModelMessage[];tools:ToolDefinition[];maxTokens:number;modelId?:string}):Promise<{message:ModelMessage;cost:number}>;
 }
 export interface ToolSession {
   definitions:ToolDefinition[];
