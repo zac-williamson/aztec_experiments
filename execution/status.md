@@ -7,7 +7,7 @@ Objective state: **running**. Completed packages: 26/37.
 ## In progress
 
 - **Evaluate moderation quality and define human review operations (M03)** — Four pinned-model batches total48distinct provisional cases,0classification errors; combinedp95 23.09s misses10s target. Direct-threat288 complete239.70s, runtime/cleanup verified, restored service healthy90139. One live automatic flag verified; human labels,300/50/50coverage and20flagcapacity remain incomplete. Independent aggregate review approved.
-- **Run browser, recovery, concurrency and load matrix (T04)** — Reboot302 recovered automatically in134.11s. Native independent health timer307 installed; CloudWatch received real ModeratorHealthy=1 at04:07UTC. Namespace-scoped permission and5period missing/unhealthy alarm deployed without replacing resources. Independent review approved. Notification recipient and full outage drill remain unconfigured/unperformed; browser statistical qualification and broader matrix remain open.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Withdrawal-traffic309 passed358628ms with original proof preserved across another author post, exact sharedpool/privatecredit accounting and completecleanup. CloudWatch native health timer installed and alarm recoveredtoOK from real healthy metric. Next wallet-absence311 uses existing scenario for persisted wallet after simulated absence;540s/4GiB,no retries. Production statistical/browser/notification/external gates remain open.
 
 ## Ready internal work
 

@@ -214,3 +214,5 @@ Independent review approved correcting fixture Caddy idle reuse to500ms, below N
 2026-09-21: aws_stack_review approved explicit state backup, downloaded archive/SQLite checks, offline PXE/journal authentication, signal cleanup and native daily timer. Root verified actual backup296, network-isolated authentication297, expected credentials failure/restoration298 and timer execution299/300. No wallet/signing commands ran during restoration.
 
 2026-09-21: aws_stack_review approved minimal CloudWatch metric publisher, native independent timer and namespace-scoped permission. Corrected journalctl's documented no-match status to publish unhealthy; other command failures remain failures. No restart, signing, log upload or notification destination added. Root retains cloud writes.
+
+2026-09-21: application_change_review identified current-source withdrawal traffic as the next meaningful gap; root run309 passed358628ms. author_testnet_flow reviewed current-rule moderation, penalty/deadline and CloudWatch/backup documentation corrections against actual code.
