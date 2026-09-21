@@ -1498,7 +1498,7 @@
       "evidence": "evidence/T04.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Chrome322 completed30cold+30warm proofs, all verified with exact source/browser/hardware/gas and cleanup. Statistical thresholds passed and independent aggregate review approved. Firefox328 completed10/30 verified pairs; continue remaining predefined slots serially. Safari327 public reader passed; wallet/proving remains distinct. Backup monitoring325 locally tested, not deployed; AWS renewal requires fresh sign-in.",
+      "checkpoint": "Chrome322 completed30cold+30warm proofs, all verified with exact source/browser/hardware/gas and cleanup. Statistical thresholds passed and independent aggregate review approved. Firefox328 completed11/30 verified pairs; continue remaining predefined slots serially. Safari327 public reader passed; wallet/proving remains distinct. Backup monitoring325 locally tested, not deployed; AWS renewal requires fresh sign-in.",
       "priority": 24,
       "completion_requires": [
         "O01",
