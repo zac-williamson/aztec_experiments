@@ -16,7 +16,7 @@ import {EmbeddedWallet} from '@aztec/wallets/embedded';
 import {encodeEscrowCommitment} from '../shared/protocol-commitments.mjs';
 import {contractInputs} from './artifact-provenance.mjs';
 import {ROOT,assertNodeVersion,assertAztecPackages} from './toolchain.mjs';
-import {proveApplicationAction} from './prove-application-action.mjs';
+import {proveApplicationAction,measureApplicationGas} from './prove-application-action.mjs';
 import {qualifyDummyNoteAttribution} from './w03-note-attribution.mjs';
 const BOARD='apps/src/billboard/billboard_artifact.json';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -34,21 +34,21 @@ async function artifact(preparation){
 // Validate the optional latest state without changing the original escrow receipt.
 export function selectExitState(claim,exitState) {
   if(exitState===undefined){
-    assert.deepEqual(claim.logicalFields.slice(5,10),[0n,0n,0n,0n,0n],'This helper qualifies only a no-post exit by default');
-    assert.equal(claim.logicalFields[10],claim.nextAllowedTime);
+    assert.deepEqual(claim.logicalFields.slice(4,9),[0n,0n,0n,0n,0n],'This helper qualifies only a no-post exit by default');
+    assert.equal(claim.logicalFields[9],claim.nextAllowedTime);
     return {logicalFields:[...claim.logicalFields],txHash:claim.tx.getTxHash().toString(),nextAllowedTime:claim.nextAllowedTime};
   }
   assert(exitState&&typeof exitState==='object'&&!Array.isArray(exitState));
   assert.deepEqual(Object.keys(exitState).sort(),['logicalFields','txHash']);
-  assert(Array.isArray(exitState.logicalFields)&&exitState.logicalFields.length===11);
+  assert(Array.isArray(exitState.logicalFields)&&exitState.logicalFields.length===10);
   const fields=exitState.logicalFields.map(value=>{assert.equal(typeof value,'bigint');assert(value>=0n);return value;});
-  assert.deepEqual(fields.slice(0,5),claim.logicalFields.slice(0,5),'Latest note must retain original collateral receipt');
-  for(const index of [6,8,9,10])assert(fields[index]<(1n<<64n),'Deposit sequence/time outside u64');
-  assert(fields[9]>0n,'Explicit exit state must include a real post');
-  assert(fields[8]>=fields[9],'Real posts remain unscreened');
-  assert(fields[8]<=fields[6]&&fields[9]<=fields[6],'Deposit sequence order invalid');
+  assert.deepEqual(fields.slice(0,4),claim.logicalFields.slice(0,4),'Latest note must retain original collateral receipt');
+  for(const index of [5,7,8,9])assert(fields[index]<(1n<<64n),'Deposit sequence/time outside u64');
+  assert(fields[8]>0n,'Explicit exit state must include a real post');
+  assert(fields[7]>=fields[8],'Real posts remain unscreened');
+  assert(fields[7]<=fields[5]&&fields[8]<=fields[5],'Deposit sequence order invalid');
   const txHash=exitState.txHash?.toString();assert.match(txHash,/^0x[0-9a-f]{64}$/);assert(BigInt(txHash)>0n);
-  return {logicalFields:fields,txHash,nextAllowedTime:fields[10]};
+  return {logicalFields:fields,txHash,nextAllowedTime:fields[9]};
 }
 
 /** Same disposable in-memory identity as the preceding claim. Only enumerable fields may be logged.
@@ -94,16 +94,16 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
     const board=Contract.at(instance.address,boardArtifact,wallet);
     const logical=async()=>{
       const result=(await board.methods.get_deposit_info(account.address,claim.depositChainId).simulate({from:account.address})).result;
-      assert(Array.isArray(result)&&result.length===11);return result.map(integer);
+      assert(Array.isArray(result)&&result.length===10);return result.map(integer);
     };
     assert.deepEqual(await logical(),expectedFields);
     const filter={contractAddress:instance.address,owner:account.address,
       storageSlot:boardArtifact.storageLayout.deposits.slot,status:NoteStatus.ACTIVE,scopes:[account.address]};
     const notes=(await wallet.pxe.debug.getNotes(filter)).filter(note=>note.note.items[1]?.equals(claim.depositChainId));
     assert.equal(notes.length,1);const originalNote=notes[0];assert(originalNote.txHash.equals(selectedTxHash));assert.equal(originalNote.note.items.length,8);
-    assert.deepEqual(originalNote.note.items.map(integer),[expectedFields[0]+(expectedFields[2]<<32n),expectedFields[1],expectedFields[3],expectedFields[4],
-      expectedFields[5],expectedFields[7],expectedFields[6]+(expectedFields[8]<<64n)+(expectedFields[9]<<128n),expectedFields[10]]);
-    if(exitState===undefined)assert.deepEqual(originalNote.note.items.map(integer),[1n+(claim.depositNonce<<32n),claim.depositChainId.toBigInt(),claim.amount,BigInt(claim.depositor),0n,0n,0n,claim.nextAllowedTime]);
+    assert.deepEqual(originalNote.note.items.map(integer),[expectedFields[0],expectedFields[1],expectedFields[2],expectedFields[3],
+      expectedFields[4],expectedFields[6],expectedFields[5]+(expectedFields[7]<<64n)+(expectedFields[8]<<128n),expectedFields[9]]);
+    if(exitState===undefined)assert.deepEqual(originalNote.note.items.map(integer),[1n,claim.depositChainId.toBigInt(),claim.amount,BigInt(claim.depositor),0n,0n,0n,claim.nextAllowedTime]);
     assert(originalNote.owner.equals(account.address)&&originalNote.contractAddress.equals(instance.address));
     assert(!originalNote.siloedNullifier.isZero());
     sequencer=node.getSequencer();assert(sequencer);const config=sequencer.getSequencer().getConfig();
@@ -125,7 +125,7 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
     const anchorBlock=await node.getBlock(anchor.getBlockNumber());assert(anchorBlock);
     assert.equal(anchorBlock.hash.toString(),(await anchor.hash()).toString());
     const content=sha256ToField([Buffer.from(encodeEscrowCommitment('exit',claim.scope,
-      {depositor:claim.depositor,depositNonce:String(claim.depositNonce),amount:String(claim.amount)}))]);
+      {depositor:claim.depositor,amount:String(claim.amount)}))]);
     const leaf=computeL2ToL1MessageHash({l2Sender:instance.address,l1Recipient:EthAddress.fromString(claim.scope.portalAddress),
       content,rollupVersion:new Fr(BigInt(claim.scope.rollupVersion)),chainId:new Fr(31337n)});
     if(noteAttribution) {
@@ -150,6 +150,7 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
     const proofAnchorBlock=await node.getBlock(proofAnchor.getBlockNumber());assert(proofAnchorBlock);
     assert.equal(proofAnchorBlock.hash.toString(),(await proofAnchor.hash()).toString());
     assert.equal((await node.isValidTx(tx)).result,'valid');
+    observation.gasUsed=await measureApplicationGas(node,tx);
     Object.assign(observation,{txHash:tx.getTxHash().toString(),proofSha256:sha(proven.chonkProof.toBuffer()),nodeValidation:'valid',inclusionSnapshots:[]});
     mark('include-real-withdrawal');await node.sendTx(tx);
     let receipt;const inclusionDeadline=Date.now()+120000;
@@ -170,7 +171,7 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
       'Exact claimed note nullifier not emitted');
     if(observation.noteAttribution)await observation.noteAttribution.verifyConsumed();
     mark('verify-consumed-note');await wallet.pxe.sync();
-    assert.deepEqual(await logical(),Array(11).fill(0n));
+    assert.deepEqual(await logical(),Array(10).fill(0n));
     const remaining=await wallet.pxe.debug.getNotes(filter);
     assert(!remaining.some(note=>note.siloedNullifier.equals(originalNote.siloedNullifier)),'Consumed note remains active');
     assert(!remaining.some(note=>note.note.items[1]?.equals(claim.depositChainId)),'Replacement deposit note found');

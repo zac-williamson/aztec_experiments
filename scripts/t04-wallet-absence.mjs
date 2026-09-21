@@ -25,7 +25,7 @@ export async function observeWalletAbsence(s){
  s.mark('absence:close-wallet');await fee.close();
  assert.equal(fee.browserFixture.wallet,undefined);
  const target=BigInt(first.anchor.globalVariables.timestamp)+BigInt(observation.simulatedAbsenceSeconds);
- assert(target>first.state.fields[10]+first.cooldown*first.maxSave);
+ assert(target>first.state.fields[9]+first.cooldown*first.maxSave);
  assert(Number.isSafeInteger(Number(target)));
  const sequencer=s.node.getSequencer();assert(sequencer);
  await sequencer.pause();
@@ -58,7 +58,7 @@ export async function observeWalletAbsence(s){
  const second=await postUnflaggedApplicationMessage({...s.common,wallet,artifact,owner,chain,
   state:first.state,text:'After wallet absence',privateFeeAction:fee.privateFeeAction});
  assert(BigInt(second.anchor.globalVariables.timestamp)>=target);
- assert.equal(second.state.fields[8],first.state.fields[6]);
+ assert.equal(second.state.fields[7],first.state.fields[5]);
  observation.posts.push(second.summary);
  await fee.verify(BigInt(claim.fee)+BigInt(first.summary.fee)+BigInt(second.summary.fee));
  Object.assign(observation,{passed:true,sameAccount:true,persistedContracts:true,sameDepositNullifier:true,

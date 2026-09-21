@@ -73,7 +73,7 @@ export async function completeU01BrowserPost({node,preparation,instance,l1Client
     try{
       const deadline=Date.now()+120000;let eligible=false;
       do{await fixture.wallet.pxe.sync();const header=await fixture.wallet.pxe.getSyncedBlockHeader();
-        eligible=BigInt(header.globalVariables.timestamp.toString())>=claim.logicalFields[10];
+        eligible=BigInt(header.globalVariables.timestamp.toString())>=claim.logicalFields[9];
         if(eligible)break;await pause(1000);
       }while(Date.now()<deadline);
       assert(eligible,'Actual browser fixture cooldown anchor unavailable');
@@ -101,10 +101,10 @@ export async function completeU01BrowserPost({node,preparation,instance,l1Client
     rpcObserver=createT03RpcObserver({roles:{author:account.address.toString(),payer:fixture.instance.address.toString(),board:instance.address.toString(),funder:l1Client.account.address}});
     rpc=await startU01BrowserRpc({node,anvilUrl:rpcUrl,ethereumAccount:l1Client.account.address,origin,token:rpcToken,observer:rpcObserver});
     const message='U01 genuine browser private-fee post';
+    if(performanceMode)assert(evidence.beforeFeeBalance>=2n*evidence.maximumFee);
     await fs.writeFile(path.join(directory,'browser-ready.json'),JSON.stringify(createBrowserHandoff({nodeUrl:rpc.nodeUrl,ethereumUrl:rpc.ethereumUrl,publicConfig,backupPath,ethereumAccount:l1Client.account.address,message},{directory,browserMode:browserControl.browserMode})),{mode:0o600});
     mark('browser-ready');
     if(performanceMode){
-      assert(evidence.beforeFeeBalance>=2n*evidence.maximumFee);
       verificationWallet=await openVerificationWallet();
       let baseline={...evidence,wallet:verificationWallet};const checks=[];
       for(const [index,stage] of ['post','warm-post'].entries()){
@@ -121,7 +121,7 @@ export async function completeU01BrowserPost({node,preparation,instance,l1Client
           baseline=await captureU01BrowserPostBaseline({node,preparation,instance,claimResult,privateFee,evidence:baseline});assert.equal(baseline.beforePostCount,1n);
           const checkpoints=createT04CheckpointScope(node.getSequencer());checkpoints.enable();
           try{const deadline=Date.now()+120000;let eligible=false;
-            while(Date.now()<deadline){const block=await node.getBlock('checkpointed');if(block&&BigInt(block.header.globalVariables.timestamp.toString())>=baseline.oldFields[10]){eligible=true;break;}await pause(500);}assert(eligible,'Warm-post cooldown did not become eligible');
+            while(Date.now()<deadline){const block=await node.getBlock('checkpointed');if(block&&BigInt(block.header.globalVariables.timestamp.toString())>=baseline.oldFields[9]){eligible=true;break;}await pause(500);}assert(eligible,'Warm-post cooldown did not become eligible');
           }finally{checkpoints.restore();}
         }
         const target=path.join(directory,'browser-journey-'+stage+'-verified.json'),temporary=target+'.tmp';await fs.writeFile(temporary,JSON.stringify({stage,verified:true}),{mode:0o600,flag:'wx'});await fs.rename(temporary,target);
@@ -165,7 +165,9 @@ export async function prepareT04BrowserJourney({node,preparation,instance,l1Clie
  const scope={l1ChainId:String(scopeInfo.l1ChainId),rollupVersion:String(scopeInfo.rollupVersion),rollupAddress:scopeInfo.l1ContractAddresses.rollupAddress.toString().toLowerCase(),portalAddress:ready.portalAddress.toLowerCase(),boardAddress:instance.address.toString()};
  const portal=JSON.parse(await fs.readFile(path.join(ROOT,'billboard/portal/out/BillboardPortal.sol/BillboardPortal.json'),'utf8'));
  const read=(name,args=[])=>l1Client.readContract({address:scope.portalAddress,abi:portal.abi,functionName:name,args});
- const depositor=l1Client.account.address.toLowerCase(),amount=await read('MIN_DEPOSIT');assert.deepEqual(await read('getDeposit',[depositor]),[0n,0n]);
+ const depositor=(browserControl.ethereumWallet==='metamask'?JSON.parse(await fs.readFile(path.join(directory,'metamask-credentials.json'),'utf8')).address:l1Client.account.address).toLowerCase();
+ assert(/^0x[0-9a-f]{40}$/.test(depositor));if(browserControl.ethereumWallet==='metamask')assert.notEqual(depositor,l1Client.account.address.toLowerCase());
+ const amount=await read('MIN_DEPOSIT');assert.deepEqual(await read('getDeposit',[depositor]),0n);
  await fixture.wallet.registerContract(instance,preparation.artifact);
  const board=Contract.at(instance.address,preparation.artifact,fixture.wallet),query=async name=>BigInt((await board.methods[name]().simulate({from:account.address})).result.toString());
  const window=await query('get_censor_window'),base=await query('get_base_cooldown');
@@ -192,9 +194,9 @@ export async function prepareT04BrowserJourney({node,preparation,instance,l1Clie
   await fs.writeFile(path.join(directory,'browser-ready.json'),JSON.stringify(createBrowserHandoff({nodeUrl:rpc.nodeUrl,ethereumUrl:rpc.ethereumUrl,publicConfig,backupPath,ethereumAccount:depositor,message},{directory,browserMode:'lifecycle',depositAmount:formatEther(amount)})),{mode:0o600});mark('browser-ready');
   let receipt,refundBefore;
   return {observation,cleanup,async untilExit(){
-   const claim=await stageTx('claim');claimCheckpoints.restore();const [depositNonce,activeAmount]=await read('getDeposit',[depositor]);assert(depositNonce>0n);assert.equal(activeAmount,amount);assert.equal(await read('totalDeposited'),before.liability+amount);assert.equal(await l1Client.getBalance({address:scope.portalAddress}),before.portalBalance+amount);
-   const logs=await l1Client.getLogs({address:scope.portalAddress,event:portal.abi.find(e=>e.type==='event'&&e.name==='Deposited'),fromBlock:BigInt(ready.portalDeploymentBlock),toBlock:'latest'});const deposits=logs.filter(e=>e.args.depositor.toLowerCase()===depositor&&e.args.nonce===depositNonce);assert.equal(deposits.length,1);const depositEvent=deposits[0];assert.equal(depositEvent.args.amount,amount);const depositReceipt=await l1Client.getTransactionReceipt({hash:depositEvent.transactionHash}),depositTx=await l1Client.getTransaction({hash:depositEvent.transactionHash});assert.equal(depositReceipt.transactionHash,depositEvent.transactionHash);assert.equal(depositEvent.blockHash,depositReceipt.blockHash);assert.equal(depositReceipt.status,'success');const receiptDeposits=parseEventLogs({abi:portal.abi,eventName:'Deposited',strict:true,logs:depositReceipt.logs.filter(log=>log.address.toLowerCase()===scope.portalAddress)});assert.equal(receiptDeposits.length,1);assert.deepEqual(receiptDeposits[0].args,depositEvent.args);assert.equal((await l1Client.getBlock({blockNumber:depositReceipt.blockNumber})).hash,depositReceipt.blockHash);assert.equal(depositTx.from.toLowerCase(),depositor);assert.equal(depositTx.to.toLowerCase(),scope.portalAddress);assert.equal(depositTx.value,amount);observation.deposit={txHash:depositEvent.transactionHash,canonicalReceipt:true,exactEvent:true,amount:String(amount),nonce:String(depositNonce)};
-   receipt={scope,depositor,depositNonce,amount,...journeyExitLeaf({scope,depositor,depositNonce,amount})};
+   const claim=await stageTx('claim');claimCheckpoints.restore();const activeAmount=await read('getDeposit',[depositor]);assert.equal(activeAmount,amount);assert.equal(await read('totalDeposited'),before.liability+amount);assert.equal(await l1Client.getBalance({address:scope.portalAddress}),before.portalBalance+amount);
+   const logs=await l1Client.getLogs({address:scope.portalAddress,event:portal.abi.find(e=>e.type==='event'&&e.name==='Deposited'),fromBlock:BigInt(ready.portalDeploymentBlock),toBlock:'latest'});const deposits=logs.filter(e=>e.args.depositor.toLowerCase()===depositor);assert.equal(deposits.length,1);const depositEvent=deposits[0];assert.equal(depositEvent.args.amount,amount);const depositReceipt=await l1Client.getTransactionReceipt({hash:depositEvent.transactionHash}),depositTx=await l1Client.getTransaction({hash:depositEvent.transactionHash});assert.equal(depositReceipt.transactionHash,depositEvent.transactionHash);assert.equal(depositEvent.blockHash,depositReceipt.blockHash);assert.equal(depositReceipt.status,'success');const receiptDeposits=parseEventLogs({abi:portal.abi,eventName:'Deposited',strict:true,logs:depositReceipt.logs.filter(log=>log.address.toLowerCase()===scope.portalAddress)});assert.equal(receiptDeposits.length,1);assert.deepEqual(receiptDeposits[0].args,depositEvent.args);assert.equal((await l1Client.getBlock({blockNumber:depositReceipt.blockNumber})).hash,depositReceipt.blockHash);assert.equal(depositTx.from.toLowerCase(),depositor);assert.equal(depositTx.to.toLowerCase(),scope.portalAddress);assert.equal(depositTx.value,amount);observation.deposit={txHash:depositEvent.transactionHash,canonicalReceipt:true,exactEvent:true,amount:String(amount)};
+   receipt={scope,depositor,amount,...journeyExitLeaf({scope,depositor,amount})};
    await eligible(claim.anchorTimestamp+base);await release('claim');
    const post=await stageTx('post');const publicBlock=await node.getBlock(post.receipt.blockNumber);await eligible(BigInt(publicBlock.header.globalVariables.timestamp.toString())+window);await release('post');
    const screen=await stageTx('screen');await eligible(screen.anchorTimestamp+base);await release('screen');

@@ -10,7 +10,7 @@ const configScope = { l1ChainId: scope.l1ChainId, rollupAddress: scope.rollupAdd
   rollupVersion: scope.rollupVersion, boardAddress: scope.boardAddress };
 const economics = { minDeposit: '1000000000000000', maxDeposit: '100000000000000000000',
   baseCooldown: '3600', kMultiplier: '4', censorWindow: '3600', maxSaveUp: '16' };
-const receipt = { depositor: '0x' + '0'.repeat(39) + '4', depositNonce: '1', amount: economics.minDeposit };
+const receipt = { depositor: '0x' + '0'.repeat(39) + '4', amount: economics.minDeposit };
 const configHash = await sha256Field(encodeConfigCommitment(configScope, economics));
 const policyText = service.events.find(event => event.type === 'PolicyPublished').payload.text;
 const policyVersion = await sha256Field(encodePolicyCommitment(scope.boardAddress, policyText));
@@ -27,8 +27,8 @@ await add('config', { scope, economics }, encodeConfigCommitment(configScope, ec
 await add('ready', { scope, configHash }, encodeReadyCommitment(scope, configHash));
 await add('claim', { scope, receipt }, encodeEscrowCommitment('claim', scope, receipt));
 await add('exit', { scope, receipt }, encodeEscrowCommitment('exit', scope, receipt));
-await add('claim-boundary', { scope, receipt: { ...receipt, depositNonce: '18446744073709551615', amount: '79228162514264337593543950335' } },
-  encodeEscrowCommitment('claim', scope, { ...receipt, depositNonce: '18446744073709551615', amount: '79228162514264337593543950335' }));
+await add('claim-boundary', { scope, receipt: { ...receipt, amount: '79228162514264337593543950335' } },
+  encodeEscrowCommitment('claim', scope, { ...receipt, amount: '79228162514264337593543950335' }));
 await add('policy', { boardAddress: scope.boardAddress, policyText }, encodePolicyCommitment(scope.boardAddress, policyText));
 await add('policy-unicode', { boardAddress: scope.boardAddress, policyText: 'No spam. Café 😀' }, encodePolicyCommitment(scope.boardAddress, 'No spam. Café 😀'));
 fs.writeFileSync(new URL('commitments-v1.json', directory), JSON.stringify({ schemaVersion: 1,

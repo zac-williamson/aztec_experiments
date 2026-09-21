@@ -11,6 +11,31 @@ import {AppendOnlyTreeSnapshot} from '@aztec/stdlib/trees';
 import {jsonStringify} from '@aztec/foundation/json-rpc';
 
 const source=await readFile(new URL('../apps/src/billboard/deploy/engine.js',import.meta.url),'utf8');
+for(const initial of [false,true])test(`class publication uses its own transaction; already published=${initial}`,async()=>{
+  const context=vm.createContext({});vm.runInContext(source,context);
+  let published=initial;const calls=[],payload={calls:['class-only']};
+  await context.BillboardDeployPublication.publishBoardClass({
+    deployMethod:{getInstance:async()=>({currentContractClassId:'class-id'}),getPublicationExecutionPayload:async options=>{assert.equal(options.skipInstancePublication,true);calls.push('payload');return payload;}},
+    wallet:{getContractClassMetadata:async id=>{assert.equal(id,'class-id');return {isContractClassPubliclyRegistered:published};},sendTx:async(p,o)=>{assert.equal(p,payload);assert.equal(o.from,'account');calls.push('send');published=true;}},
+    address:'account',journal:{setOperation:op=>calls.push(op)},read:fn=>fn(),operation:'publish-board-class:class-id',stale:false,
+  });
+  assert.deepEqual(calls,initial?[]:['publish-board-class:class-id','payload','send']);
+});
+test('unreconciled publication cannot advance merely because its class exists',async()=>{
+  const context=vm.createContext({});vm.runInContext(source,context);
+  await assert.rejects(context.BillboardDeployPublication.publishBoardClass({
+    deployMethod:{getInstance:async()=>({currentContractClassId:'class-id'})},
+    wallet:{getContractClassMetadata:async()=>({isContractClassPubliclyRegistered:true})},read:fn=>fn(),stale:true,
+  }),{code:'BB_RECOVERY_REQUIRED'});
+});
+test('a returned publication submission is insufficient without observed class registration',async()=>{
+  const context=vm.createContext({});vm.runInContext(source,context);
+  await assert.rejects(context.BillboardDeployPublication.publishBoardClass({
+    deployMethod:{getInstance:async()=>({currentContractClassId:'class-id'}),getPublicationExecutionPayload:async()=>({calls:['class-only']})},
+    wallet:{getContractClassMetadata:async()=>({isContractClassPubliclyRegistered:false}),sendTx:async()=>({})},
+    journal:{setOperation(){}},read:fn=>fn(),stale:false,
+  }),/publication was not observed/);
+});
 const hash='0x'+'1'.repeat(64),leaf='0x'+'2'.repeat(64),blockA='0x'+'a'.padStart(64,'0'),blockB='0x'+'b'.padStart(64,'0');
 const included=(extra={})=>({txHash:hash,status:TxStatus.CHECKPOINTED,executionResult:TxExecutionResult.SUCCESS,blockNumber:5,blockHash:blockA,...extra});
 const wireBlock=(number,hash)=>JSON.parse(jsonStringify({header:BlockHeader.empty(),archive:AppendOnlyTreeSnapshot.empty(),

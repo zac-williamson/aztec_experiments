@@ -1,5 +1,6 @@
 // TEST ONLY: ordinary sequencer inclusion. Does not mark/prove/finalize any checkpoint.
 import assert from 'node:assert/strict';
+import {synchronizeC01MinedClock} from './c01-client-mining.mjs';
 import {createPublicClient,http} from 'viem';
 import {foundry} from 'viem/chains';
 import {TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
@@ -9,7 +10,7 @@ export async function includeC01Board({node,tx,rpcUrl,dateProvider,startSequence
   const client=createPublicClient({chain:foundry,transport:http(rpcUrl,{retryCount:0,timeout:5000})});
   assert.equal(await client.getChainId(),31337);
   const start=await client.getBlock();
-  dateProvider.setTime(Number(start.timestamp)*1000);
+  synchronizeC01MinedClock(dateProvider,Number(start.timestamp));
   assert(node.validatorClient,'Actual validator client absent');
   await node.validatorClient.registerHandlers();
   node.getSequencer().updateConfig({minTxsPerBlock:1});
@@ -25,7 +26,7 @@ export async function includeC01Board({node,tx,rpcUrl,dateProvider,startSequence
     // Mine only ordinary disposable L1 blocks; never touch proof state or Outbox roots.
     await client.request({method:'evm_mine',params:[]});
     const block=await client.getBlock();
-    if(Number(block.timestamp)>dateProvider.nowInSeconds())dateProvider.setTime(Number(block.timestamp)*1000);
+    synchronizeC01MinedClock(dateProvider,Number(block.timestamp));
     adjustments.push({block:String(block.number),timestamp:String(block.timestamp)});
     await pause(1000);
   }

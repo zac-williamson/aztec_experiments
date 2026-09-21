@@ -12,7 +12,7 @@ function independentEncoding(item) {
   let domain, words, suffix = '';
   if (item.name.startsWith('claim') || item.name === 'exit') {
     domain = item.name === 'exit' ? 'AZTEC_BB_EXIT_V1' : 'AZTEC_BB_CLAIM_V1';
-    words = [1, s.l1ChainId, s.portalAddress, s.boardAddress, s.rollupVersion, r.depositor, r.depositNonce, r.amount];
+    words = [1, s.l1ChainId, s.portalAddress, s.boardAddress, s.rollupVersion, r.depositor, r.amount];
   } else if (item.name === 'ready') {
     domain = 'AZTEC_BB_READY_V1';
     words = [1, s.l1ChainId, s.portalAddress, s.boardAddress, s.rollupVersion, item.input.configHash];
@@ -104,7 +104,6 @@ test('encoding rejects ambiguous or out-of-range collateral/policy inputs', () =
   for (const amount of [0, '0', '01', '79228162514264337593543950336']) {
     assert.throws(() => encodeEscrowCommitment('claim', scope, { ...receipt, amount }));
   }
-  assert.throws(() => encodeEscrowCommitment('claim', scope, { ...receipt, depositNonce: '18446744073709551616' }));
   for (const policy of ['', '\ud800', 'a\0b', '😀'.repeat(373)]) {
     assert.throws(() => encodePolicyCommitment(scope.boardAddress, policy));
   }

@@ -14,7 +14,6 @@ use aztec::{
 pub struct DepositNoteV1 {
     pub schema_version: u32,
     pub deposit_chain_id: Field,
-    pub deposit_nonce: u64,
     pub amount: u128,
     pub l1_depositor: EthAddress,
     pub head_link: Field,
@@ -39,7 +38,7 @@ pub struct PostNoteV1 {
 
 fn deposit() -> DepositNoteV1 {
     DepositNoteV1 {
-        schema_version: 1, deposit_chain_id: 2, deposit_nonce: 3, amount: 4,
+        schema_version: 1, deposit_chain_id: 2, amount: 4,
         l1_depositor: EthAddress::from_field(5), head_link: 6, head_sequence: 7,
         screened_link: 8, screened_sequence: 9, last_real_sequence: 10, next_allowed_time: 11,
     }
@@ -58,11 +57,11 @@ fn assert_selector<T>(selector: PropertySelector<T>, index: u8) {
 }
 
 #[test]
-fn deposit_eleven_fields_exact_order_and_roundtrip() {
-    std::static_assert(<DepositNoteV1 as Packable>::N == 11, "DepositNoteV1 must pack to eleven Fields");
+fn deposit_ten_fields_exact_order_and_roundtrip() {
+    std::static_assert(<DepositNoteV1 as Packable>::N == 10, "DepositNoteV1 must pack to ten Fields");
     let value = deposit();
     let packed = value.pack();
-    assert_eq(packed, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    assert_eq(packed, [1, 2, 4, 5, 6, 7, 8, 9, 10, 11]);
     assert_eq(DepositNoteV1::unpack(packed), value);
 }
 
@@ -84,22 +83,20 @@ fn deposit_generated_selectors_match_every_packed_field() {
     let p = DepositNoteV1::properties();
     assert_selector(p.schema_version, 0);
     assert_selector(p.deposit_chain_id, 1);
-    assert_selector(p.deposit_nonce, 2);
-    assert_selector(p.amount, 3);
-    assert_selector(p.l1_depositor, 4);
-    assert_selector(p.head_link, 5);
-    assert_selector(p.head_sequence, 6);
-    assert_selector(p.screened_link, 7);
-    assert_selector(p.screened_sequence, 8);
-    assert_selector(p.last_real_sequence, 9);
-    assert_selector(p.next_allowed_time, 10);
-    let options = NoteViewerOptions::<DepositNoteV1, 11>::new()
+    assert_selector(p.amount, 2);
+    assert_selector(p.l1_depositor, 3);
+    assert_selector(p.head_link, 4);
+    assert_selector(p.head_sequence, 5);
+    assert_selector(p.screened_link, 6);
+    assert_selector(p.screened_sequence, 7);
+    assert_selector(p.last_real_sequence, 8);
+    assert_selector(p.next_allowed_time, 9);
+    let options = NoteViewerOptions::<DepositNoteV1, 10>::new()
         .select(p.deposit_chain_id, Comparator.EQ, 2 as Field)
-        .select(p.deposit_nonce, Comparator.EQ, 3 as u64)
         .select(p.amount, Comparator.EQ, 4 as u128)
         .select(p.l1_depositor, Comparator.EQ, EthAddress::from_field(5))
         .set_limit(1);
-    assert_eq(options.selects.len(), 4);
+    assert_eq(options.selects.len(), 3);
     assert_eq(options.limit, 1);
 }
 
@@ -127,7 +124,6 @@ fn full_scalar_widths_roundtrip_without_sharing_fields() {
     let mut deposit_value = deposit();
     deposit_value.schema_version = 0xffffffff;
     deposit_value.deposit_chain_id = -1;
-    deposit_value.deposit_nonce = 0xffffffffffffffff;
     deposit_value.amount = 0xffffffffffffffffffffffffffffffff;
     deposit_value.l1_depositor = EthAddress::from_field(0xffffffffffffffffffffffffffffffffffffffff);
     deposit_value.head_sequence = 0xffffffffffffffff;
@@ -137,9 +133,8 @@ fn full_scalar_widths_roundtrip_without_sharing_fields() {
     let packed = deposit_value.pack();
     assert_eq(packed[0], 0xffffffff);
     assert_eq(packed[1], -1);
-    assert_eq(packed[2], 0xffffffffffffffff);
-    assert_eq(packed[3], 0xffffffffffffffffffffffffffffffff);
-    assert_eq(packed[4], 0xffffffffffffffffffffffffffffffffffffffff);
+    assert_eq(packed[2], 0xffffffffffffffffffffffffffffffff);
+    assert_eq(packed[3], 0xffffffffffffffffffffffffffffffffffffffff);
     assert_eq(DepositNoteV1::unpack(packed), deposit_value);
     let mut entry = post();
     entry.sequence = 0xffffffffffffffff;
@@ -167,7 +162,7 @@ fn raw_unpack_truncates_u64_overflow() {
 #[test]
 fn raw_unpack_truncates_u128_overflow() {
     let mut packed = deposit().pack();
-    packed[3] = 0x100000000000000000000000000000000;
+    packed[2] = 0x100000000000000000000000000000000;
     let value = DepositNoteV1::unpack(packed);
     assert_eq(value.amount, 0);
 }
@@ -183,24 +178,24 @@ fn unpack_rejects_noncanonical_boolean() {
 #[test]
 fn raw_eth_address_unpack_does_not_validate_address_range() {
     let mut packed = deposit().pack();
-    packed[4] = 0x10000000000000000000000000000000000000000;
+    packed[3] = 0x10000000000000000000000000000000000000000;
     let value = DepositNoteV1::unpack(packed);
     // Actual upstream EthAddress derives Packable over a Field. Consumers must
     // explicitly call validate() after unpacking arbitrary-origin note Fields.
-    assert_eq(value.pack()[4], packed[4]);
+    assert_eq(value.pack()[3], packed[3]);
 }
 
 #[test(should_fail)]
 fn explicit_eth_address_validation_rejects_overwidth_unpack() {
     let mut packed = deposit().pack();
-    packed[4] = 0x10000000000000000000000000000000000000000;
+    packed[3] = 0x10000000000000000000000000000000000000000;
     let value = DepositNoteV1::unpack(packed);
     value.l1_depositor.validate();
 }
 
 // Proposed boundary check: raw Fields must survive a canonical typed roundtrip.
 // This uses actual derived pack/unpack, not a hand-written bit serializer.
-fn checked_deposit(packed: [Field; 11]) -> DepositNoteV1 {
+fn checked_deposit(packed: [Field; 10]) -> DepositNoteV1 {
     let value = DepositNoteV1::unpack(packed);
     assert(value.pack() == packed, "Noncanonical packed integer");
     value.l1_depositor.validate();
@@ -238,7 +233,7 @@ fn canonical_roundtrip_rejects_u64_overflow() {
 #[test(should_fail_with = "Noncanonical packed integer")]
 fn canonical_roundtrip_rejects_u128_overflow() {
     let mut packed = deposit().pack();
-    packed[3] = 0x100000000000000000000000000000000;
+    packed[2] = 0x100000000000000000000000000000000;
     let value = checked_deposit(packed);
     assert_eq(value.amount, 0);
 }

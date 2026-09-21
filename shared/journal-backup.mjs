@@ -4,7 +4,6 @@ const fail=()=>transactionError('BB_JOURNAL_INVALID','Recovery records could not
 const domains=new Map([
  ['AZTEC_BB_L2_JOURNAL_KEY_V1','AZTEC_BB_L2_JOURNAL_V1'],
  ['AZTEC_BB_ETH_JOURNAL_KEY_V1','AZTEC_BB_ETH_JOURNAL_V1'],
- ['AZTEC_BB_HISTORY_KEY_V1','AZTEC_BB_HISTORY_V1'],
 ]);
 const LIMIT=16*1024*1024;
 export async function createJournalBackup({storage,walletSecret,walletSalt}) {

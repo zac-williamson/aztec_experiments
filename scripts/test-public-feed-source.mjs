@@ -28,9 +28,9 @@ function fixture(options={}){
  const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5,l1ContractAddresses:{rollupAddress:scope.rollupAddress}}),getBlockData:async number=>({header:{getBlockNumber:()=>number==='checkpointed'?1:number},blockHash:hash}),
  getPublicLogsByTags:async query=>{
   query=PublicLogsQuerySchema.parse(query);calls.push(query);assert.equal(query.contractAddress.toString(),scope.boardAddress);assert.equal(query.referenceBlock.toString(),hash.toString());assert.equal(query.includeEffects,false);
-  const entry=query.tags[0],tag=entry.tag??entry,type=PUBLIC_FEED_TYPES.find(type=>metadata[type].tag===tag.toString());assert(type);
+  return query.tags.map(entry=>{const tag=entry.tag??entry,type=PUBLIC_FEED_TYPES.find(type=>metadata[type].tag===tag.toString());assert(type);
   assert(entry.afterLog===undefined||entry.afterLog instanceof LogCursor);
-  return [logs[type].filter(l=>l.blockNumber>=query.fromBlock&&l.blockNumber<query.toBlock&&(!entry.afterLog||l.logIndexWithinTx>entry.afterLog.logIndexWithinTx)).slice(0,query.limitPerTag)];
+  return logs[type].filter(l=>l.blockNumber>=query.fromBlock&&l.blockNumber<query.toBlock&&(!entry.afterLog||l.logIndexWithinTx>entry.afterLog.logIndexWithinTx)).slice(0,query.limitPerTag);});
  }};
  return {node,logs,calls,create:()=>createPublicFeedSource({node,scope,artifact,eventTags:Object.fromEntries(PUBLIC_FEED_TYPES.map(type=>[type,metadata[type].tag])),censorWindow:10,...options})};
 }
@@ -62,7 +62,7 @@ test('nonadvancing server cursor rejects rather than skipping records',async()=>
 });
 test('reorg anchor rejection leaves range incomplete',async()=>{const h=fixture();h.node.getPublicLogsByTags=async()=>{throw new Error('anchor no longer exists');};await assert.rejects((await h.create()).getEvents({fromBlock:1,toBlock:1,referenceBlock:hash.toString()}),{code:'BB_PUBLIC_FEED_UNAVAILABLE'});});
 test('stalled RPC is bounded',async()=>{const h=fixture({timeoutMs:5}),source=await h.create();h.node.getPublicLogsByTags=()=>new Promise(()=>{});await assert.rejects(source.getEvents({fromBlock:1,toBlock:1,referenceBlock:hash.toString()}),{code:'BB_PUBLIC_FEED_UNAVAILABLE'});});
-test('range bounds fail before RPC',async()=>{const h=fixture(),source=await h.create();await assert.rejects(source.getEvents({fromBlock:1,toBlock:1001,referenceBlock:hash.toString()}),{code:'BB_PUBLIC_FEED_UNAVAILABLE'});assert.equal(h.calls.length,0);});
+test('reversed range bounds fail before RPC',async()=>{const h=fixture(),source=await h.create();await assert.rejects(source.getEvents({fromBlock:2,toBlock:1,referenceBlock:hash.toString()}),{code:'BB_PUBLIC_FEED_UNAVAILABLE'});assert.equal(h.calls.length,0);});
 test('precomputed metadata loads raw JSON block data without hashing',async()=>{
  const h=fixture({metadata});h.node.getBlockData=async()=>({header:{globalVariables:{blockNumber:1}},blockHash:hash.toString()});
  const source=await h.create();assert.deepEqual(await source.getHead(),{number:1,hash:hash.toString()});
@@ -95,4 +95,18 @@ test('failed tag stream stops sibling pagination after already-issued reads',asy
  f.node.getPublicLogsByTags=async q=>{calls++;if(calls===1)throw Error('unavailable tag');await new Promise(r=>releases.push(r));return read(q);};
  const source=await f.create();await assert.rejects(source.getEvents({fromBlock:1,toBlock:1,referenceBlock:hash.toString()}));
  assert.equal(calls,3);for(const release of releases)release();await new Promise(r=>setImmediate(r));assert.equal(calls,3);
+});
+
+test('indexed discovery skips empty history in one multi-tag RPC',async()=>{
+ const f=fixture();for(const [i,type] of PUBLIC_FEED_TYPES.entries())f.logs[type]=[log(type,i,90000+i)];
+ const source=await f.create();assert.equal(await source.getNextEventBlock({fromBlock:1,toBlock:100000,referenceBlock:hash.toString()}),90000);
+ assert.equal(f.calls.length,1);assert.equal(f.calls[0].tags.length,3);assert.equal(f.calls[0].limitPerTag,1);
+ assert.equal((await source.getEvents({fromBlock:1,toBlock:90049,referenceBlock:hash.toString()})).length,3);
+});
+test('indexed discovery rejects malformed, oversized and out-of-range results',async()=>{
+ const f=fixture(),source=await f.create();
+ for(const rows of [[],[[],[],[log('PostFlagged',0,100001)]],[[log('PolicyPublished'),log('PolicyPublished')],[],[]]]){
+  f.node.getPublicLogsByTags=async()=>rows;
+  await assert.rejects(source.getNextEventBlock({fromBlock:1,toBlock:100000,referenceBlock:hash.toString()}),{code:'BB_PUBLIC_FEED_UNAVAILABLE'});
+ }
 });

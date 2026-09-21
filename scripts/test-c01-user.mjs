@@ -29,8 +29,10 @@ const keyFor=(s,h)=>ownerId+':'+aadFor(s,h);
 function appContext() {
   const context={crypto:webcrypto,indexedDB:new IDBFactory(),TextEncoder,TextDecoder,Uint8Array,URL,URLSearchParams,console,log(){},
     location:{search:''},document:{getElementById:()=>null},__aztec:{createPXE(){}},ETH_RPC_URL:'',
-    checkBundle:()=>true,setupRpcAuth(){},makeCallEngine:()=>()=>{},runBillboardUser(){},initPages(){},initWalletButtons(){}};
+    checkBundle:()=>true,setupRpcAuth(){},makeCallEngine:()=>()=>{},runBillboardUser(){},initPages(){},initWalletButtons(){},initializeHostedBoard(){}};
   context.window=context;vm.createContext(context);
+  // Hosted bootstrap remains inert here: this fixture tests encrypted custody.
+  // Actual hosted initialization is covered by the browser journey.
   // Match current browser initialization: the real public configuration store
   // and shared environment exist before the app subscribes or initializes UI.
   vm.runInContext(configSource,context,{filename:'shared/public-app-config.js'});
@@ -86,26 +88,26 @@ test('actual engine codec matches frozen claim, boundary and exit commitments',a
   const c=engineContext();const vectors=JSON.parse(await fs.readFile(new URL('../execution/interface-fixtures/commitments-v1.json',import.meta.url)));
   for(const vector of vectors.cases.filter(x=>['claim','claim-boundary','exit'].includes(x.name))){
     const s=vector.input.scope,r=vector.input.receipt;
-    const actual=c.BillboardUserCodec.escrowContent({sha256ToField},ethers,vector.name==='exit',AztecAddress.fromFieldUnsafe(Fr.fromHexString(s.boardAddress)),s.portalAddress,r.depositor,r.amount,r.depositNonce,s.rollupVersion,s.l1ChainId);
+    const actual=c.BillboardUserCodec.escrowContent({Fr},ethers,vector.name==='exit',AztecAddress.fromFieldUnsafe(Fr.fromHexString(s.boardAddress)),s.portalAddress,r.depositor,r.amount,s.rollupVersion,s.l1ChainId);
     assert.equal(actual.toString(),vector.commitment);
   }
 });
-function depositHarness({store,enabled=true,activeNonce=0n,eventNonce=7n,reuse=false,recoveryHash=new Fr(2).toString()}={}) {
+function depositHarness({store,enabled=true,activeAmount=0n,refunded=false,reuse=false,recoveryHash=new Fr(2).toString()}={}) {
   const c=engineContext(),logs=[],sequence=[];let saved, sent=0;
   const address=AztecAddress.fromFieldUnsafe(Fr.fromHexString(scope.boardAddress));
-  const iface=new ethers.Interface(['event Deposited(address indexed depositor,uint64 nonce,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
-  const provider={getCode:async()=> '0x01',getNetwork:async()=>({chainId:31337n}),destroy(){},
-    getTransactionReceipt:async hash=>({hash,blockNumber:1,blockHash:new Fr(1).toString(),status:1,logs:[{address:scope.portalAddress,
-      ...iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,eventNonce,1_000_000_000_000_000n,recoveryHash,ethers.ZeroHash,32n])}]})};
+  const iface=new ethers.Interface(['event Deposited(address indexed depositor,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
+  const provider={getLogs:async()=>refunded?[{blockNumber:1,index:1}]:[],getCode:async()=> '0x01',getNetwork:async()=>({chainId:31337n}),destroy(){},
+    getTransactionReceipt:async hash=>({hash,blockNumber:1,blockHash:new Fr(1).toString(),status:1,logs:[{index:0,address:scope.portalAddress,
+      ...iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,1_000_000_000_000_000n,recoveryHash,ethers.ZeroHash,32n])}]})};
   class Portal {
     constructor(_address,_abi,runner){assert.equal(runner,provider);this.interface=iface;}
     L2_CONTRACT=async()=>scope.boardAddress;L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>scope.rollupAddress;VERSION=async()=>1n;
-    getDeposit=async()=>({nonce:activeNonce,amount:activeNonce?1_000_000_000_000_000n:0n});depositsEnabled=async()=>enabled;
-    MIN_DEPOSIT=async()=>1n;MAX_DEPOSIT=async()=>10n**20n;lastDepositNonce=async()=>6n;
+    getDeposit=async()=>activeAmount;depositsEnabled=async()=>enabled;
+    MIN_DEPOSIT=async()=>1n;MAX_DEPOSIT=async()=>10n**20n;
     async deposit(hash,{value}) {
       sent++;sequence.push('send');assert(saved,'L1 submission preceded durable storage');
-      const event=iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,eventNonce,value,hash,ethers.ZeroHash,32n]);
-      return {hash:'0x'+'a'.repeat(64),wait:async()=>({status:1,logs:[{address:scope.portalAddress,...event}]})};
+      const event=iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,value,hash,ethers.ZeroHash,32n]);
+      return {hash:'0x'+'a'.repeat(64),wait:async()=>({status:1,logs:[{index:0,address:scope.portalAddress,...event}]})};
     }
   }
   const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:1}),getL1ContractAddresses:async()=>({rollupAddress:scope.rollupAddress}),
@@ -134,9 +136,9 @@ function depositHarness({store,enabled=true,activeNonce=0n,eventNonce=7n,reuse=f
     aztecWallet:{secretKey:walletSecret,salt:'0x00'},depositAmount:'0.001',reuseTxHash:reuse?'0x'+'b'.repeat(64):undefined,claimSecretStore:store===undefined?defaultStore:store};
   return {run:()=>c.runBillboardUser(env,config),sent:()=>sent,logs,sequence,secret:()=>saved?.secret};
 }
-test('actual public deposit flow saves and reads back before send; returns event receipt nonce without secret',async()=>{
+test('actual public deposit flow saves and reads back before send; returns bridge message index without secret',async()=>{
   const h=depositHarness();const result=await h.run();assert.equal(h.sent(),1);
-  assert.deepEqual(h.sequence,['save','readback','send']);assert.equal(result.depositInfo.depositNonce,7n);
+  assert.deepEqual(h.sequence,['save','readback','send']);assert.equal(result.depositInfo.leafIndex,32n);
   assert(!('secret' in result.depositInfo));assert(!h.logs.join('\n').includes(h.secret()));
 });
 test('actual deposit flow fails closed for missing store, failed durability and disabled portal',async()=>{
@@ -147,15 +149,15 @@ test('actual deposit flow fails closed for missing store, failed durability and 
 test('actual deposit flow fails closed for mismatched read-back and existing receipt',async()=>{
   const h=depositHarness({store:{save:async()=>{},load:async(_scope,hash)=>({schemaVersion:1,secretHash:hash,secret:hash})}});
   await assert.rejects(h.run(),/missing or invalid|does not match/);assert.equal(h.sent(),0);
-  const active=depositHarness({activeNonce:1n});await assert.rejects(active.run(),/active L1 receipt/);assert.equal(active.sent(),0);
+  const active=depositHarness({activeAmount:1_000_000_000_000_000n});await assert.rejects(active.run(),/active L1 receipt/);assert.equal(active.sent(),0);
 });
 
-test('actual recovery requires the current event nonce and exact saved secret hash without signing fallback',async()=>{
+test('actual recovery rejects an already refunded deposit event at the same amount and requires its saved secret',async()=>{
   const recovery={schemaVersion:1,secretHash:new Fr(2).toString(),secret:new Fr(1).toString()};
   const store={save:async()=>{throw new Error('Recovery must not create a new secret');},load:async()=>recovery};
-  const valid=depositHarness({store,reuse:true,activeNonce:7n});const result=await valid.run();
-  assert.equal(result.depositInfo.depositNonce,7n);assert(!('secret' in result.depositInfo));assert.equal(valid.sent(),0);
-  const stale=depositHarness({store,reuse:true,activeNonce:8n});await assert.rejects(stale.run(),/does not match the active receipt/);assert.equal(stale.sent(),0);
-  const mismatch=depositHarness({store,reuse:true,activeNonce:7n,recoveryHash:new Fr(3).toString()});
+  const valid=depositHarness({store,reuse:true,activeAmount:1_000_000_000_000_000n});const result=await valid.run();
+  assert.equal(result.depositInfo.leafIndex,32n);assert(!('secret' in result.depositInfo));assert.equal(valid.sent(),0);
+  const stale=depositHarness({store,reuse:true,activeAmount:1_000_000_000_000_000n,refunded:true});await assert.rejects(stale.run(),/already refunded/);assert.equal(stale.sent(),0);
+  const mismatch=depositHarness({store,reuse:true,activeAmount:1_000_000_000_000_000n,recoveryHash:new Fr(3).toString()});
   await assert.rejects(mismatch.run(),/missing or invalid/);assert.equal(mismatch.sent(),0);
 });

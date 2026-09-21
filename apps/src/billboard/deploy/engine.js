@@ -137,24 +137,13 @@
   // ============================================================
   // Aztec Wallet (custom BaseWallet with gas estimation and receipt reconciliation)
   // ============================================================
-  function createAztecWallet(a, pxe, aztecNode, rawNode, log, secretKey, opts = {}) {
+  function createAztecWallet(a, pxe, aztecNode, rawNode, log, opts = {}) {
     class AztecWallet extends a.BaseWallet {
       constructor(pxe, aztecNode) {
         super(pxe, aztecNode);
         this._accountManager = null;
         this._account = null;
         this._estimatedGasPadding = 0.1;
-        this._secretKey = null;
-      }
-      async registerContract(instance, artifact, secretKeyOrKeys) {
-        // Only pass secretKeyOrKeys when the contract instance is the account
-        // contract itself (address matches). For non-account contracts (like
-        // the billboard), registering with keys would fail because the public
-        // keys in the instance don't match the account's keys.
-        if (secretKeyOrKeys || (this._account && instance.address.equals(this._account.address))) {
-          return super.registerContract(instance, artifact, secretKeyOrKeys ?? this._secretKey);
-        }
-        return super.registerContract(instance, artifact);
       }
       async getAccountFromAddress() {
         if (!this._account) this._account = await this._accountManager.getAccount();
@@ -232,13 +221,30 @@
     wallet._preProveHook = opts.preProveHook || null;
     wallet._contextGuard = opts.contextGuard || null;
     wallet._transactionJournal = opts.transactionJournal || null;
-    wallet._secretKey = secretKey;
     return wallet;
   }
 
   // ============================================================
   // Main entry point
   // ============================================================
+  async function publishBoardClass({deployMethod,wallet,address,journal,read,operation,stale}) {
+    const classId=(await deployMethod.getInstance()).currentContractClassId;
+    const published=async()=>{
+      const value=(await read(()=>wallet.getContractClassMetadata(classId))).isContractClassPubliclyRegistered;
+      if(typeof value!=='boolean')throw new Error('Invalid contract class publication state');
+      return value;
+    };
+    if(await published()) {
+      if(stale)throw Object.assign(new Error('Reconcile the saved class publication before deploying.'),{code:'BB_RECOVERY_REQUIRED'});
+      return;
+    }
+    journal.setOperation(operation);
+    const payload=await deployMethod.getPublicationExecutionPayload({skipInstancePublication:true});
+    await wallet.sendTx(payload,{from:address});
+    if(!await published())throw new Error('Contract class publication was not observed');
+  }
+  g.BillboardDeployPublication={publishBoardClass};
+
   g.runDeploy = async function(env, config) {
     const { aztec: a, ethers, log, pause, initCRS, createStore, portalBytecode, artifact } = env;
     const verified=a.verifyDeploymentInputs(config.deploymentManifest,{artifact,portalBytecode,runtimeMetadata:a.portalRuntimeMetadata,config,ethers});
@@ -391,7 +397,7 @@
     // Step 7: Create wallet
     // ============================================================
     log('Step 6: Creating wallet...', 'info');
-    const wallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, secretKey, { preProveHook: config.preProveHook, contextGuard: config.contextGuard });
+    const wallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, { preProveHook: config.preProveHook, contextGuard: config.contextGuard });
     const accountManager = await a.AccountManager.create(wallet, secretKey, accountContract, { salt: new a.Fr(saltVal) });
     wallet._accountManager = accountManager;
     log('  Wallet ready.', 'success');
@@ -464,13 +470,14 @@
       scope: { account: address.toString().toLowerCase(), chainId: String(nodeInfo.l1ChainId), rollup: rollupAddr.toLowerCase(),
         version: String(version), board: l2Addr.toString().toLowerCase(), portal: '0x' + '0'.repeat(40) },
       Tx: a.Tx, node: rawNode, contextGuard: config.contextGuard });
+    const publicationOperation='publish-board-class:'+manifest.artifacts.boardClassId;
     let recoveredDeployment=null, staleDeployment=null;
     const unresolved=()=>Object.assign(new Error('The original deployment transaction requires reconciliation. Preserve its recovery records.'),{code:'BB_RECOVERY_REQUIRED'});
     try { recoveredDeployment = await deploymentJournal.reconcilePrevious(); }
     catch(error) {
       if(error?.code!=='BB_RECOVERY_REQUIRED'||typeof deploymentJournal.inspect!=='function'||typeof deploymentJournal.allowReplacement!=='function')throw error;
       const saved=await deploymentJournal.inspect();
-      if(saved?.operation!=='deploy-board'&&!/^bind-portal:0x[0-9a-f]{40}$/.test(saved?.operation??''))throw error;
+      if(saved?.operation!==publicationOperation&&saved?.operation!=='deploy-board'&&!/^bind-portal:0x[0-9a-f]{40}$/.test(saved?.operation??''))throw error;
       await deploymentJournal.allowReplacement(saved.operation);
       staleDeployment=saved.operation;
     }
@@ -479,6 +486,7 @@
     let existingInstance = await a.boundedTransactionRead(()=>rawNode.getContract(l2Addr),20000);
     if(staleDeployment==='deploy-board'&&existingInstance)throw unresolved();
     if(staleDeployment?.startsWith('bind-portal:')&&!existingInstance)throw unresolved();
+    if(staleDeployment===publicationOperation&&existingInstance)throw unresolved();
 
     if (existingInstance) {
       log('  Contract already deployed on L2!', 'success');
@@ -496,9 +504,12 @@
       await pxe.registerContractClass(contractArtifact);
       await pxe.registerContract(existingInstance);
     } else {
+      log('  Publishing contract class before deploying the board...', 'info');
+      await publishBoardClass({deployMethod,wallet,address,journal:deploymentJournal,
+        read:fn=>a.boundedTransactionRead(fn,20000),operation:publicationOperation,stale:staleDeployment===publicationOperation});
       log('  Not yet deployed. Sending deploy tx...', 'info');
       deploymentJournal.setOperation('deploy-board');
-      const result = await deployMethod.send({ from: address });
+      const result = await deployMethod.send({ from: address, skipClassPublication:true });
       log('  TX confirmed! Block: ' + result.receipt.blockNumber, 'success');
       log('  L2 contract address: ' + l2Addr.toString(), 'success');
       const finalInstance = existingInstance || await deployMethod.getInstance();

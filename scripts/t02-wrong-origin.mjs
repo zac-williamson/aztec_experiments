@@ -16,7 +16,7 @@ import {encodeEscrowCommitment} from '../shared/protocol-commitments.mjs';
 // Run before the parent selects its final legitimate-claim anchor. The parent
 // owns the deadline/resources and subsequently proves/includes the valid claim.
 export async function qualifyT02WrongOrigin({wallet,board,node,l1Client,instance,scope,
- secret,secretHash,content,amount,depositNonce,depositor,owner,mineL1,reportStage}) {
+ secret,secretHash,content,amount,depositor,owner,mineL1,reportStage}) {
  let sequencer,previousConfig,stage='preflight';
  const mark=name=>{stage=name;reportStage?.('wrong-origin:'+name);};
  try {
@@ -27,17 +27,13 @@ export async function qualifyT02WrongOrigin({wallet,board,node,l1Client,instance
   assert.equal(instance.address.toString(),scope.boardAddress);assert(board.address.equals(instance.address));
   const sender=l1Client.account.address.toLowerCase(),portalAddress=scope.portalAddress.toLowerCase(),inboxAddress=info.l1ContractAddresses.inboxAddress.toString().toLowerCase();
   assert.notEqual(sender,portalAddress);assert(!secret.isZero());assert((await computeSecretHash(secret)).equals(secretHash));
-  const expectedContent=sha256ToField([Buffer.from(encodeEscrowCommitment('claim',scope,{depositor,depositNonce:String(depositNonce),amount:String(amount)}))]);
+  const expectedContent=sha256ToField([Buffer.from(encodeEscrowCommitment('claim',scope,{depositor,amount:String(amount)}))]);
   assert(expectedContent.equals(content));
   const portal=JSON.parse(await fs.readFile(new URL('../billboard/portal/out/BillboardPortal.sol/BillboardPortal.json',import.meta.url),'utf8'));
   const read=(functionName,args=[])=>l1Client.readContract({address:portalAddress,abi:portal.abi,functionName,args});
   assert.equal((await read('INBOX')).toLowerCase(),inboxAddress);assert.equal((await read('L2_CONTRACT')).toLowerCase(),scope.boardAddress.toLowerCase());
   const snapshot=async()=>({receipt:await read('getDeposit',[depositor]),liability:await read('totalDeposited'),balance:await l1Client.getBalance({address:portalAddress})});
-  const before=await snapshot();assert.deepEqual(before.receipt,[depositNonce,amount]);
-  const chain=await poseidon2HashWithSeparator([Fr.ONE,instance.address,owner,content,secret],0x42420101);
-  const logical=async()=>(await board.methods.get_deposit_info(owner,chain).simulate({from:owner})).result.map(v=>BigInt(v.toString()));
-  const notes=async()=>(await wallet.pxe.debug.getNotes({contractAddress:instance.address,owner,scopes:[owner],status:NoteStatus.ACTIVE})).filter(n=>n.note.items.length===8&&n.note.items[1]?.equals(chain));
-  assert.deepEqual(await logical(),Array(11).fill(0n));assert.equal((await notes()).length,0);
+  const before=await snapshot();assert.deepEqual(before.receipt,[amount]);
   mark('send-real-wrong-sender-message');
   const hash=await l1Client.writeContract({address:inboxAddress,abi:InboxAbi,functionName:'sendL2Message',args:[{actor:instance.address.toString(),version:BigInt(scope.rollupVersion)},content.toString(),secretHash.toString()],account:l1Client.account});
   const receipt=await l1Client.waitForTransactionReceipt({hash,timeout:60000});assert.equal(receipt.status,'success');
@@ -45,6 +41,10 @@ export async function qualifyT02WrongOrigin({wallet,board,node,l1Client,instance
   const tx=await l1Client.getTransaction({hash});assert.equal(tx.from.toLowerCase(),sender);assert.equal(tx.to.toLowerCase(),inboxAddress);assert.equal(tx.value,0n);
   const events=parseEventLogs({abi:InboxAbi,eventName:'MessageSent',strict:true,logs:receipt.logs.filter(log=>log.address.toLowerCase()===inboxAddress)});assert.equal(events.length,1);
   const index=BigInt(events[0].args.index),recipient=new L2Actor(instance.address,Number(scope.rollupVersion));
+  const chain=await poseidon2HashWithSeparator([Fr.ONE,instance.address,owner,content,secret,new Fr(index)],0x42420101);
+  const logical=async()=>(await board.methods.get_deposit_info(owner,chain).simulate({from:owner})).result.map(v=>BigInt(v.toString()));
+  const notes=async()=>(await wallet.pxe.debug.getNotes({contractAddress:instance.address,owner,scopes:[owner],status:NoteStatus.ACTIVE})).filter(n=>n.note.items.length===8&&n.note.items[1]?.equals(chain));
+  assert.deepEqual(await logical(),Array(10).fill(0n));assert.equal((await notes()).length,0);
   const message=new L1ToL2Message(new L1Actor(EthAddress.fromString(sender),31337),recipient,content,secretHash,new Fr(index));
   const expectedBound=new L1ToL2Message(new L1Actor(EthAddress.fromString(portalAddress),31337),recipient,content,secretHash,new Fr(index));
   assert.equal(message.hash().toString(),events[0].args.hash.toLowerCase());assert(!expectedBound.hash().equals(message.hash()));
@@ -61,7 +61,7 @@ export async function qualifyT02WrongOrigin({wallet,board,node,l1Client,instance
   assert.equal(await node.getNullifierMembershipWitness(anchor.getBlockNumber(),nullifier),undefined);
   assert.equal(await node.getL1ToL2MessageMembershipWitness(anchor.getBlockNumber(),expectedBound.hash()),undefined);
   mark('reject-wrong-origin-claim');
-  const payload=await board.methods.claim_deposit(EthAddress.fromString(depositor),amount,depositNonce,secret,new Fr(index)).request();
+  const payload=await board.methods.claim_deposit(EthAddress.fromString(depositor),amount,secret,new Fr(index)).request();
   const fee=await wallet.completeFeeOptions({from:owner,feePayer:payload.feePayer});
   const request=await wallet.createTxExecutionRequestFromPayloadAndFee(payload,owner,fee);
   // Installed stdlib getL1ToL2MessageWitness distinguishes missing messages from
@@ -71,7 +71,7 @@ export async function qualifyT02WrongOrigin({wallet,board,node,l1Client,instance
   catch(error){const seen=new Set();for(let cause=error,depth=0;cause&&depth<8&&!seen.has(cause);cause=cause.cause,depth++){seen.add(cause);if(typeof cause.message==='string'&&cause.message.includes(expected)){rejected=true;break;}}}
   assert(rejected,'Wrong-origin claim must reject specifically for missing bound-portal message');
   assert.deepEqual((await wallet.pxe.getSyncedBlockHeader()).toBuffer(),anchor.toBuffer());
-  assert.deepEqual(await logical(),Array(11).fill(0n));assert.equal((await notes()).length,0);assert.deepEqual(await snapshot(),before);
+  assert.deepEqual(await logical(),Array(10).fill(0n));assert.equal((await notes()).length,0);assert.deepEqual(await snapshot(),before);
   const stillPresent=await node.getL1ToL2MessageMembershipWitness(anchor.getBlockNumber(),message.hash());assert(stillPresent);assert.equal(stillPresent[0],index);
   assert.equal(await node.getNullifierMembershipWitness(anchor.getBlockNumber(),nullifier),undefined);
   assert.equal((await l1Client.getTransactionReceipt({hash})).blockHash,receipt.blockHash);

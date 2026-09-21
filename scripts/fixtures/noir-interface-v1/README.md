@@ -22,7 +22,7 @@ on its dependency cache, so the environment must permit that cache lock.
 The fixtures assert exact packed arrays, both boolean representations,
 maximum-width scalar roundtrips, every generated selector, typed query-option
 construction, and unpack/range behavior. Selector offset/length are measured
-in **bytes**, not bits. The proposed 11/7 scalar layouts occupy 11/7 Fields;
+in **bytes**, not bits. The proposed 10/7 scalar layouts occupy 10/7 Fields;
 each selector has byte offset 0 and length 32 at its declared ordinal index.
 
 Raw u32/u64/u128 unpacking truncates overflow. The fixture records this behavior
@@ -38,7 +38,7 @@ proofs of circuit ancestry, ownership, application authorization, or correct
 oracle filtering.
 
 Seven commitment tests independently construct the CONFIG, READY, CLAIM, EXIT,
-maximum nonce/amount CLAIM, ASCII policy, and Unicode policy preimages from
+maximum-amount CLAIM, ASCII policy, and Unicode policy preimages from
 their scalar inputs. Noir pads the ASCII domains, serializes each Field with
 `to_be_bytes()`, appends the exact policy UTF-8 bytes where applicable, and uses
 the actual `sha256_to_field` implementation. Both constructed bytes and hashes

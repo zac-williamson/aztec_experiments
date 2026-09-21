@@ -1,3 +1,4 @@
+import {performanceGasSettings} from '../t04-browser-performance.mjs';
 import {observeColdBrowserFees} from '../t04-cold-browser-fees.mjs';
 import {observeWithdrawalTraffic} from '../t04-withdraw-traffic.mjs';
 import path from 'node:path';
@@ -20,9 +21,9 @@ import {runO01CensorCommands} from '../o01-censor-command-flow.mjs';
 
 const complete=async()=>{
 };
-async function fees(s,standalone,persistentDirectory){
+async function fees(s,standalone,persistentDirectory,gasSettings){
   s.privateFee=await prepareW01PrivateFees({
-    ...s.common,fundingDirectory:s.directory,standalone,persistentDirectory
+    ...s.common,fundingDirectory:s.directory,standalone,persistentDirectory,gasSettings
   });
   assert(s.privateFee.funding.passed);
   s.observation.privateFee=s.privateFee;
@@ -201,7 +202,9 @@ export function screening(ctx){
 export function browserPost(ctx){
   return withActivatedBoard(ctx,async s=>{
     assert(['post','performance'].includes(s.browserControl?.browserMode));
-    await fees(s,false);
+    const fixedGas=s.browserControl.browserMode==='performance'?performanceGasSettings():undefined;
+    await fees(s,false,undefined,fixedGas);
+    if(fixedGas)assert(s.privateFee.browserFixture.fundedAmount>=3n*fixedGas.getFeeLimit().toBigInt());
     await claim(s,false,'private');
     s.observation.browserPost=await completeU01BrowserPost({
       ...s.common,browserControl:s.browserControl,claimResult:s.observation.claim,privateFee:s.privateFee

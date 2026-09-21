@@ -29,7 +29,7 @@ export async function prepareU01BrowserPostVerification({node,wallet,account,pre
  const board=Contract.at(instance.address,preparation.artifact,wallet);
  const query=async(name,...args)=>(await board.methods[name](...args).simulate({from:account.address})).result;
  const fields=(await query('get_deposit_info',account.address,claimResult.claim.depositChainId)).map(number);
- assert.deepEqual(fields,claimResult.claim.logicalFields);assert.deepEqual(fields.slice(5,10),[0n,0n,0n,0n,0n]);
+ assert.deepEqual(fields,claimResult.claim.logicalFields);assert.deepEqual(fields.slice(4,9),[0n,0n,0n,0n,0n]);
  const deposits=(await wallet.pxe.debug.getNotes(filter(instance,account))).filter(n=>n.note.items.length===8&&number(n.note.items[1])===number(claimResult.claim.depositChainId));
  assert.equal(deposits.length,1);const oldNote=deposits[0];assert(oldNote.txHash.equals(claimResult.claim.tx.getTxHash()));assert(!oldNote.siloedNullifier.isZero());
  const beforePostCount=number(await query('get_post_count'));assert.equal(beforePostCount,0n,'Single first-post fixture required');
@@ -94,23 +94,23 @@ export async function verifyU01BrowserPost({node,preparation,instance,claimResul
  assert.equal(number(await query('get_post_count')),BigInt(beforePostCount)+1n);
  const id=new Fr(number(await query('get_post_id',BigInt(beforePostCount))));assert(!id.isZero());
  const fields=(await query('get_deposit_info',account.address,claimResult.claim.depositChainId)).map(number);
- assert.deepEqual(fields.slice(0,5),oldFields.slice(0,5));assert(fields[5]!==0n);assert([0n,1n].includes(BigInt(beforePostCount)));assert.equal(oldFields[6],BigInt(beforePostCount));
+ assert.deepEqual(fields.slice(0,4),oldFields.slice(0,4));assert(fields[4]!==0n);assert([0n,1n].includes(BigInt(beforePostCount)));assert.equal(oldFields[5],BigInt(beforePostCount));
  const anchor=tx.data.constants.anchorBlockHeader,now=number(anchor.globalVariables.timestamp);
- let screenedLink=oldFields[7],screenedSequence=oldFields[8];
+ let screenedLink=oldFields[6],screenedSequence=oldFields[7];
  if(BigInt(beforePostCount)===1n){
   const previousId=new Fr(number(await query('get_post_id',0n)));assert.equal(await query('is_post_flagged',previousId),false);
   const deadline=number(await query('get_post_flag_deadline',previousId));assert.equal(deadline,number(await query('get_post_time',previousId))+number(await query('get_censor_window')));
-  if(now>=deadline){screenedLink=oldFields[5];screenedSequence=oldFields[6];}
+  if(now>=deadline){screenedLink=oldFields[4];screenedSequence=oldFields[5];}
  }
- assert.deepEqual(fields.slice(6,10),[oldFields[6]+1n,screenedLink,screenedSequence,oldFields[6]+1n]);
+ assert.deepEqual(fields.slice(5,9),[oldFields[5]+1n,screenedLink,screenedSequence,oldFields[5]+1n]);
  const base=number(await query('get_base_cooldown')),minimum=number(await query('get_min_deposit')),save=number(await query('get_max_save_up'));
- const cooldown=(base*minimum+fields[3]-1n)/fields[3]||1n,saved=cooldown*(save-1n),floor=now>=saved?now-saved:0n,effective=oldFields[10]>floor?oldFields[10]:floor;
- assert(now>=effective);assert.equal(fields[10],effective+cooldown);
+ const cooldown=(base*minimum+fields[2]-1n)/fields[2]||1n,saved=cooldown*(save-1n),floor=now>=saved?now-saved:0n,effective=oldFields[9]>floor?oldFields[9]:floor;
+ assert(now>=effective);assert.equal(fields[9],effective+cooldown);
  const notes=await wallet.pxe.debug.getNotes(filter(instance,account));
  const deposits=notes.filter(n=>n.note.items.length===8&&number(n.note.items[1])===number(claimResult.claim.depositChainId));assert.equal(deposits.length,1);
  const replacement=deposits[0];assert(replacement.txHash.equals(hash));assert(!replacement.siloedNullifier.equals(oldNote.siloedNullifier));
- assert.deepEqual(replacement.note.items.map(number),[fields[0]+(fields[2]<<32n),fields[1],fields[3],fields[4],fields[5],fields[7],fields[6]+(fields[8]<<64n)+(fields[9]<<128n),fields[10]]);
- const posts=notes.filter(n=>n.txHash.equals(hash)&&n.note.items.length===7);assert.equal(posts.length,1);assert.deepEqual(posts[0].note.items.map(number),[1n,fields[1],oldFields[6]+1n,id.toBigInt(),now,oldFields[5],0n]);
+ assert.deepEqual(replacement.note.items.map(number),[fields[0],fields[1],fields[2],fields[3],fields[4],fields[6],fields[5]+(fields[7]<<64n)+(fields[8]<<128n),fields[9]]);
+ const posts=notes.filter(n=>n.txHash.equals(hash)&&n.note.items.length===7);assert.equal(posts.length,1);assert.deepEqual(posts[0].note.items.map(number),[1n,fields[1],oldFields[5]+1n,id.toBigInt(),now,oldFields[4],0n]);
  const content=packed(message);assert.deepEqual((await query('get_post',id)).map(number),content.fields);assert.equal(number(await query('get_post_length',id)),BigInt(content.length));assert.equal(await query('is_post_flagged',id),false);
  const raw=await node.getBlockSource().getBlock({number:receipt.blockNumber});assert(raw);assert.equal((await raw.hash()).toString(),receipt.blockHash.toString());assert(raw.body.txEffects.some(e=>e.txHash.equals(hash)));
  assert.equal(number(await query('get_post_time',id)),number(raw.header.globalVariables.timestamp));
@@ -128,11 +128,11 @@ export async function verifyU01BrowserWithdrawal({node,preparation,instance,clai
  const {wallet,account,oldNote,oldFields,beforeFeeBalance,beforePayerBalance,maximumFee}=evidence;
  const included=await verifyJourneyIncludedTransaction({node,captures:evidence.captures,txHash,expectedPayer:String(privateFee.payer)});
  const {scope,depositor,depositChainId}=claimResult.claim;
- const {leaf}=journeyExitLeaf({scope,depositor,depositNonce:oldFields[2],amount:oldFields[3]});
- assertJourneyExit({...included,leaf,consumedNullifier:oldNote.siloedNullifier,nextAllowedTime:oldFields[10]});
+ const {leaf}=journeyExitLeaf({scope,depositor,amount:oldFields[2]});
+ assertJourneyExit({...included,leaf,consumedNullifier:oldNote.siloedNullifier,nextAllowedTime:oldFields[9]});
  await wallet.registerContract(instance,preparation.artifact);const fee=await feeContract(wallet,privateFee);await wallet.pxe.sync();
  const board=Contract.at(instance.address,preparation.artifact,wallet),query=async(name,...args)=>(await board.methods[name](...args).simulate({from:account.address})).result;
- assert.deepEqual((await query('get_deposit_info',account.address,depositChainId)).map(number),Array(11).fill(0n));
+ assert.deepEqual((await query('get_deposit_info',account.address,depositChainId)).map(number),Array(10).fill(0n));
  assert.equal(number(await query('get_post_count')),0n);
  const notes=await wallet.pxe.debug.getNotes(filter(instance,account));
  assert(!notes.some(note=>note.note.items.length===8&&note.note.items[1].equals(depositChainId)));
@@ -140,7 +140,7 @@ export async function verifyU01BrowserWithdrawal({node,preparation,instance,clai
  assert.equal(await getFeeJuiceBalance(account.address,node),0n);
  assert.equal(await getFeeJuiceBalance(included.tx.data.feePayer,node),beforePayerBalance-number(included.receipt.transactionFee));
  const read=(functionName,args=[])=>l1Client.readContract({address:scope.portalAddress,abi:portalAbi,functionName,args});
- assert.deepEqual(await read('getDeposit',[depositor]),[oldFields[2],oldFields[3]]);
+ assert.deepEqual(await read('getDeposit',[depositor]),oldFields[2]);
  assert.equal(await read('totalDeposited'),escrowBefore.liability);
  assert.equal(await l1Client.getBalance({address:scope.portalAddress}),escrowBefore.balance);
  return {passed:true,txHash,proofSha256:sha(included.tx.chonkProof.toBuffer()),exactExitLeaf:leaf.toString(),exactConsumedNullifier:true,noActiveDeposit:true,postCountUnchanged:true,privateFeeDebitChecked:true,publicFeePayerDebitChecked:true,authorPublicFeeBalanceZero:true,ethereumRefundPending:true};

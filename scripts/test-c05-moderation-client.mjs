@@ -16,9 +16,9 @@ test('seven-field reasons enforce byte length, UTF-8 and exact padding',()=>{
  assert.throws(()=>codec.decodeModerationReason([0n,0n,0n,0n,0n,0n,1n],0),/padding/);
  const p=codec.packModerationReason('x');p.fields[6]=1n;assert.throws(()=>codec.decodeModerationReason(p.fields,1),/padding/);
 });
-test('flag carries immutable post policy and rejects a mismatched reviewed version',async()=>{
+test('flag carries current policy and rejects a mismatched reviewed version',async()=>{
  const version=new Fr(123n).toString(),postId=new Fr(456n);let queries=0;
- const contract={methods:{get_post_policy_version:id=>({simulate:async({from})=>{assert.equal(id,postId);assert.equal(from,NO_FROM);queries++;return {result:new Fr(123n)};}})}};
+ const contract={methods:{get_policy_version:()=>({simulate:async({from})=>{assert.equal(from,NO_FROM);queries++;return {result:new Fr(123n)};}})}};
  const args=await codec.moderationArguments({Fr,NO_FROM},contract,'censor',postId,'Spam',version);
  assert.equal(args.length,4);assert.equal(args[1].toString(),version);assert.equal(args[2].length,7);assert.equal(args[3],4);
  await assert.rejects(codec.moderationArguments({Fr,NO_FROM},contract,'censor',postId,'Spam',new Fr(124n).toString()),/reviewed policy/);

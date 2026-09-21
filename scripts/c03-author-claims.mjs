@@ -65,23 +65,23 @@ export async function prepareC03AuthorClaims({node,preparation,instance,ready,se
     for(const account of accounts){
       const l1Account=privateKeyToAccount(generatePrivateKey());
       await l1Client.request({method:'anvil_setBalance',params:[l1Account.address,'0x8ac7230489e80000']});
-      const depositor=l1Account.address.toLowerCase();assert.deepEqual(await read('getDeposit',[depositor]),[0n,0n]);
+      const depositor=l1Account.address.toLowerCase();assert.deepEqual(await read('getDeposit',[depositor]),0n);
       const payer=createWalletClient({account:l1Account,chain:l1Client.chain,transport:http(rpcUrl)}).extend(publicActions);
       let secret;do{secret=Fr.random();}while(secret.isZero());const secretHash=await computeSecretHash(secret);
       const depositHash=await payer.writeContract({address:portalAddress,abi:portal.abi,functionName:'deposit',args:[secretHash.toString()],value:amount});
       const depositReceipt=await l1Client.waitForTransactionReceipt({hash:depositHash,timeout:60000});assert.equal(depositReceipt.status,'success');
       const events=parseEventLogs({abi:portal.abi,eventName:'Deposited',strict:true,logs:depositReceipt.logs.filter(l=>l.address.toLowerCase()===portalAddress)});
       assert.equal(events.length,1);const receipt=events[0].args;
-      assert.equal(receipt.depositor.toLowerCase(),depositor);assert.equal(receipt.amount,amount);assert.equal(receipt.nonce,1n);assert.equal(receipt.secretHash.toLowerCase(),secretHash.toString());
-      const content=sha256ToField([Buffer.from(encodeEscrowCommitment('claim',scope,{depositor,depositNonce:'1',amount:String(amount)}))]);
+      assert.equal(receipt.depositor.toLowerCase(),depositor);assert.equal(receipt.amount,amount);assert.equal(receipt.secretHash.toLowerCase(),secretHash.toString());
+      const content=sha256ToField([Buffer.from(encodeEscrowCommitment('claim',scope,{depositor,amount:String(amount)}))]);
       const message=new L1ToL2Message(new L1Actor(EthAddress.fromString(portalAddress),31337),new L2Actor(instance.address,Number(info.rollupVersion)),content,secretHash,new Fr(receipt.index));
       assert.equal(message.hash().toString(),receipt.key.toLowerCase());
-      const chain=await poseidon2HashWithSeparator([Fr.ONE,instance.address,account.address,content,secret],0x42420101);
+      const chain=await poseidon2HashWithSeparator([Fr.ONE,instance.address,account.address,content,secret,new Fr(receipt.index)],0x42420101);
       records.push({account,depositor,secret,secretHash,receipt,depositHash,depositReceipt,content,message,chain});
     }
     const canonicalDeposits=async()=>{
       assert.equal(integer(await read('totalDeposited')),totalBefore+BigInt(count)*amount);
-      for(const r of records){assert.deepEqual(await read('getDeposit',[r.depositor]),[1n,amount]);const receipt=await l1Client.getTransactionReceipt({hash:r.depositHash});assert.equal(receipt.status,'success');assert.equal(receipt.blockHash,r.depositReceipt.blockHash);assert.equal((await l1Client.getBlock({blockNumber:receipt.blockNumber})).hash,receipt.blockHash);}
+      for(const r of records){assert.deepEqual(await read('getDeposit',[r.depositor]),amount);const receipt=await l1Client.getTransactionReceipt({hash:r.depositHash});assert.equal(receipt.status,'success');assert.equal(receipt.blockHash,r.depositReceipt.blockHash);assert.equal((await l1Client.getBlock({blockNumber:receipt.blockNumber})).hash,receipt.blockHash);}
     };
     await canonicalDeposits();sequencer=node.getSequencer();const cfg=sequencer.getSequencer().getConfig();
     previousConfig={minTxsPerBlock:cfg.minTxsPerBlock,buildCheckpointIfEmpty:cfg.buildCheckpointIfEmpty};
@@ -93,7 +93,7 @@ export async function prepareC03AuthorClaims({node,preparation,instance,ready,se
     for(let i=0;i<records.length;i++){
       const r=records[i],witness=witnesses[i];assert.equal(witness[0],r.receipt.index);assert.equal(witness[1].pathSize,L1_TO_L2_MSG_TREE_HEIGHT);
       let root=r.message.hash(),cursor=witness[0];for(const sibling of witness[1].toFields()){root=await poseidon2HashWithSeparator(cursor&1n?[sibling,root]:[root,sibling],DomainSeparator.MERKLE_HASH);cursor>>=1n;}assert.equal(cursor,0n);assert(root.equals(anchor.state.l1ToL2MessageTree.root));
-      mark('prove-claim-'+(i+1));const payload=await board.methods.claim_deposit(EthAddress.fromString(r.depositor),amount,1n,r.secret,new Fr(r.receipt.index)).request();
+      mark('prove-claim-'+(i+1));const payload=await board.methods.claim_deposit(EthAddress.fromString(r.depositor),amount,r.secret,new Fr(r.receipt.index)).request();
       const fee=await wallet.completeFeeOptions({from:r.account.address,feePayer:payload.feePayer});const request=await wallet.createTxExecutionRequestFromPayloadAndFee(payload,r.account.address,fee);
       const proven=await wallet.pxe.proveTx(request,{scopes:wallet.scopesFrom(r.account.address,[],undefined),senderForTags:wallet.senderForTagsFrom(r.account.address,undefined)});
       assert(!proven.chonkProof.isEmpty());r.tx=await proven.toTx();assert.deepEqual(r.tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer());assert.equal((await node.isValidTx(r.tx)).result,'valid');r.proofHash=sha(proven.chonkProof.toBuffer());
@@ -106,12 +106,12 @@ export async function prepareC03AuthorClaims({node,preparation,instance,ready,se
     for(let i=0;i<records.length;i++){
       const r=records[i],claimReceipt=receipts[i];assert.equal((await node.getBlock(claimReceipt.blockNumber)).hash.toString(),claimReceipt.blockHash.toString());
       const fields=(await board.methods.get_deposit_info(r.account.address,r.chain).simulate({from:r.account.address})).result.map(integer);
-      const nextAllowed=integer(anchor.globalVariables.timestamp)+base;assert.deepEqual(fields,[1n,r.chain.toBigInt(),1n,amount,BigInt(r.depositor),0n,0n,0n,0n,0n,nextAllowed]);
+      const nextAllowed=integer(anchor.globalVariables.timestamp)+base;assert.deepEqual(fields,[1n,r.chain.toBigInt(),amount,BigInt(r.depositor),0n,0n,0n,0n,0n,nextAllowed]);
       const notes=(await wallet.pxe.debug.getNotes({contractAddress:instance.address,owner:r.account.address,status:NoteStatus.ACTIVE,storageSlot:artifact.storageLayout.deposits.slot,scopes:[r.account.address]})).filter(n=>n.note.items[1]?.equals(r.chain));
-      assert.equal(notes.length,1);assert(notes[0].txHash.equals(r.tx.getTxHash()));assert.deepEqual(notes[0].note.items.map(integer),[1n+(1n<<32n),r.chain.toBigInt(),amount,BigInt(r.depositor),0n,0n,0n,nextAllowed]);
+      assert.equal(notes.length,1);assert(notes[0].txHash.equals(r.tx.getTxHash()));assert.deepEqual(notes[0].note.items.map(integer),[1n,r.chain.toBigInt(),amount,BigInt(r.depositor),0n,0n,0n,nextAllowed]);
       const effect=await node.getTxEffect(r.tx.getTxHash());assert(effect?.data);const inner=await poseidon2HashWithSeparator([r.message.hash(),r.secret],DomainSeparator.MESSAGE_NULLIFIER);const nullifier=await siloNullifier(instance.address,inner);assert.equal(effect.data.nullifiers.filter(n=>n.equals(nullifier)).length,1);
       const claimResult={passed:true,exactDeliveredNoteChecked:true,claimTxHash:r.tx.getTxHash().toString()};
-      Object.defineProperty(claimResult,'claim',{enumerable:false,value:{scope,instance,depositChainId:r.chain,depositor:r.depositor,depositNonce:1n,amount,logicalFields:fields,nextAllowedTime:nextAllowed,tx:r.tx,claimReceipt}});
+      Object.defineProperty(claimResult,'claim',{enumerable:false,value:{scope,instance,depositChainId:r.chain,depositor:r.depositor,amount,logicalFields:fields,nextAllowedTime:nextAllowed,tx:r.tx,claimReceipt}});
       authorClaims.push({account:r.account,claimResult});observation.authors.push({claimTxHash:claimResult.claimTxHash,proofSha256:r.proofHash,exactDeliveredNoteChecked:true,messageNullifierChecked:true});
     }
     assert.deepEqual(contractInputs(ROOT),manifest.inputs);observation.passed=true;Object.defineProperty(observation,'authorClaims',{enumerable:false,value:authorClaims});return observation;

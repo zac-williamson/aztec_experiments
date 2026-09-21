@@ -24,19 +24,19 @@ pub fn get_ready_msg_hash(chain: u64, portal: EthAddress, board: AztecAddress, v
 }
 
 pub fn get_deposit_msg_hash(chain: u64, portal: EthAddress, board: AztecAddress, version: u32,
-    depositor: EthAddress, nonce: u64, amount: u128) -> Field {
+    depositor: EthAddress, amount: u128) -> Field {
     sha256_to_field(encode_words("AZTEC_BB_CLAIM_V1", [1, chain as Field, portal.to_field(), board.to_field(),
-        version as Field, depositor.to_field(), nonce as Field, amount as Field]))
+        version as Field, depositor.to_field(), amount as Field]))
 }
 
 pub fn get_withdraw_msg_hash(chain: u64, portal: EthAddress, board: AztecAddress, version: u32,
-    depositor: EthAddress, nonce: u64, amount: u128) -> Field {
+    depositor: EthAddress, amount: u128) -> Field {
     sha256_to_field(encode_words("AZTEC_BB_EXIT_V1", [1, chain as Field, portal.to_field(), board.to_field(),
-        version as Field, depositor.to_field(), nonce as Field, amount as Field]))
+        version as Field, depositor.to_field(), amount as Field]))
 }
 
-pub fn deposit_chain_id(board: AztecAddress, owner: AztecAddress, content: Field, secret: Field) -> Field {
-    poseidon2_hash_with_separator([1, board.to_field(), owner.to_field(), content, secret], 0x42420101)
+pub fn deposit_chain_id(board: AztecAddress, owner: AztecAddress, content: Field, secret: Field, message_leaf_index: Field) -> Field {
+    poseidon2_hash_with_separator([1, board.to_field(), owner.to_field(), content, secret, message_leaf_index], 0x42420101)
 }
 
 /// Independent public identity; the wallet keeps the fresh nonce private.
@@ -166,24 +166,6 @@ fn validate_text<let N: u32>(fields: [Field; N], length: u32, is_policy: bool) {
 }
 
 use aztec::protocol::traits::{Deserialize, Packable, Serialize};
-
-#[derive(Deserialize, Eq, Serialize)]
-pub struct ReceiptMetadata {
-    pub schema_version: u32,
-    pub deposit_nonce: u64,
-}
-impl Packable for ReceiptMetadata {
-    let N: u32 = 1;
-    fn pack(self) -> [Field; 1] {
-        [self.schema_version as Field + (self.deposit_nonce as Field) * 0x100000000]
-    }
-    fn unpack(fields: [Field; 1]) -> Self {
-        let value = fields[0] as u128;
-        let result = Self { schema_version: value as u32, deposit_nonce: (value >> 32) as u64 };
-        assert_eq(result.pack(), fields, "Noncanonical receipt metadata");
-        result
-    }
-}
 
 #[derive(Deserialize, Eq, Serialize)]
 pub struct SequenceState {

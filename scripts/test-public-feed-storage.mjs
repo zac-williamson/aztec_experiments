@@ -48,7 +48,7 @@ test('browser reader discards only conflicted connections and does not retry the
  const source=await fs.readFile(new URL('../shared/public-feed-browser.mjs',import.meta.url),'utf8');
  let opens=0,syncs=0,failure=null;
  const context=vm.createContext({metadata:{},browserPublicFeedStorage:()=>({}),connectPublicFeed:async()=>{opens++;return {feed:{sync:async()=>{syncs++;if(failure)throw failure;return {};},page:async()=>({posts:[]})}};}});
- vm.runInContext(source.replace(/^import .*\n/gm,'').replace(/^export \{.*\};\n/gm,'').replace('export async function','async function'),context);
+ vm.runInContext(source.replace(/^import .*\n/gm,'').replace(/^export \{.*\}(?: from '[^']+')?;\n/gm,'').replace('export async function','async function'),context);
  const options={nodeUrl:'node',ethereumUrl:'eth',portalAddress:'portal'};
  await context.readFeed(options);failure=publicFeedConflict();await assert.rejects(context.readFeed(options),{code:'PUBLIC_FEED_CONFLICT'});
  assert.equal(opens,1);assert.equal(syncs,2);

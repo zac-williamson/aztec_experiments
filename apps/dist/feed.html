@@ -237,7 +237,7 @@
   }
   .billboard-loading .spinner { width: 0.9rem; height: 0.9rem; }
 
-</style></head><body>
+</style></head><body data-public-board-reader>
 <script>
 (function (root) {
   'use strict';
@@ -327,6 +327,39 @@
 <script>
 // Public settings only. No network or wallet action occurs during bootstrap.
 (function(root){
+  root.loadHostedSettings=async function(){
+    const response=await fetch('board-reader-config.json',{cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(20000)});
+    if(!response.ok)throw Error('Board settings unavailable');
+    return root.BillboardConfig.parse(await response.text());
+  };
+  root.loadHostedBoard=async function(){
+    const hosted=await root.loadHostedSettings();
+    const networkId=[hosted.network.chainId,hosted.network.rollupAddress,hosted.network.rollupVersion].join(':');
+    const match=location.hash.match(/^#network=([0-9]+:0x[0-9a-f]{40}:[0-9]+)&board=(0x[0-9a-f]{64})$/);
+    if(location.hash&&(!match||match[1]!==networkId))throw Error('Invalid board or network link');
+    const boardAddress=match?match[2]:hosted.board.contractAddress;
+    const result=await root.BillboardPublic.connectPublicBoard({network:hosted.network,boardAddress,metadata:root.BillboardPublic.metadata,storage:root.BillboardPublic.browserPublicFeedStorage()});
+    return {...result,config:root.BillboardConfig.validate({...result.config,privateFee:hosted.privateFee}),fragment:'network='+networkId+'&board='+boardAddress};
+  };
+  if(document.body?.hasAttribute('data-public-board-reader'))return;
+  if(document.body?.hasAttribute('data-hosted-board')){
+    // Page-local settings cannot inherit or overwrite another board's saved settings.
+    root.billboardConfigStore=root.BillboardConfig.createStore({storage:{getItem:()=>null,setItem(){},removeItem(){}},eventTarget:{}});
+    root.initializeHostedBoard=async function(initialize){
+      const status=document.getElementById('setupStatus');status.textContent='Loading board…';
+      try{
+        const requestedHash=location.hash,result=await root.loadHostedBoard();
+        if(location.hash!==requestedHash){location.reload();return;}
+        const link=new URL(location.href);link.hash=result.fragment;history.replaceState(null,'',link);
+        for(const anchor of document.querySelectorAll('[data-board-link]')){const target=new URL(anchor.href);target.hash=result.fragment;anchor.href=target.href;anchor.hidden=!result.config.privateFee&&target.pathname.split('/').pop()!=='feed.html';}
+        root.addEventListener('hashchange',()=>location.reload(),{once:true});
+        if(!result.config.privateFee){status.textContent='Posting and fee funding are not enabled for this board. You can still read messages.';return;}
+        root.billboardConfigStore.install(result.config);
+        status.textContent='Board ready. Load your wallets to continue.';initialize();
+      }catch{status.textContent='This board is unavailable for posting. Reload to try again.';}
+    };
+    return;
+  }
   let storage;try{storage=root.localStorage;}catch{}
   root.billboardConfigStore=root.BillboardConfig.createStore({storage:storage||null,eventTarget:root});
   const mount=()=>{
@@ -453,33 +486,52 @@
 })(globalThis);
 
 </script>
-<h1>Billboard</h1><p>Read public messages without connecting a wallet.</p>
-<button id="connect">Open configured board</button>
-<p id="status" role="status">Import the board configuration to read messages.</p><div id="messages"></div><button id="more" hidden>Older messages</button><button id="refresh" hidden>Refresh</button>
-<p class="small">Messages are public and immutable. This reader caches public content on this device. RPC providers can observe reads. Checkpointed posts may change after a chain reorganisation.</p>
+<p><a href="boards.html">Browse boards</a></p><h1>Billboard</h1><p>Read public messages without connecting a wallet.</p>
+<p><a id="board-link" hidden>Link to this board</a> <a id="post-link" hidden>Post a message</a></p><button id="connect" hidden>Retry</button>
+<p id="status" role="status">Loading messages…</p><div id="messages"></div><button id="more" hidden>Older messages</button><button id="refresh" hidden>Refresh</button>
+<p class="small">Posts are public. Moderation hides messages here; it cannot erase blockchain history.</p>
 <script src="public-feed.js"></script><script>
-let connection=null,cursor=null,busy=false;
+let connection=null,cursor=null,busy=false,generation=0;
 const element=id=>document.getElementById(id);
 function render(posts,append){
  if(!append)element('messages').replaceChildren();
  for(const p of posts){const article=document.createElement('article');article.className='card';const label=document.createElement('p');label.textContent='#'+p.orderIndex;article.append(label);
- const text=document.createElement('p');text.textContent=p.text;
- if(p.flagged){const detail=document.createElement('details'),summary=document.createElement('summary');summary.textContent='Flagged message — show content';detail.append(summary,text);const reason=document.createElement('p');reason.textContent='Reason: '+p.flag.reason;detail.append(reason);article.append(detail);}else article.append(text);
+ const text=document.createElement('p');text.textContent=p.flagged?'Message removed by moderator.':p.text;article.append(text);
+ if(p.flagged){const reason=document.createElement('p');reason.textContent='Reason: '+p.flag.reason;article.append(reason);}
  element('messages').append(article);}
 }
-function resetConnection(){connection=null;cursor=null;busy=false;element('messages').replaceChildren();element('more').hidden=true;element('refresh').hidden=true;element('status').textContent='Configuration changed. Open the configured board to verify its live state.';}
-async function refresh(append=false){if(busy||!connection)return;busy=true;const snapshot=billboardConfigStore.snapshot(),selected=connection;try{
- const progress=append?null:await selected.feed.sync(),page=await selected.feed.page({limit:50,cursor:append?cursor:null});
- billboardConfigStore.assertCurrent(snapshot);if(connection!==selected)return;
- cursor=page.nextCursor;render(page.posts,append);
- element('more').hidden=!cursor;element('refresh').hidden=false;element('status').textContent=progress&&!progress.complete?'Loading history through block '+progress.lastBlock+'. Refresh to continue.':'Public messages through block '+page.lastBlock+'.';
-}catch(error){if(billboardConfigStore.snapshot()===snapshot){if(error.code==='PUBLIC_FEED_CONFLICT'){connection=null;cursor=null;element('more').hidden=true;element('refresh').hidden=true;element('status').textContent='Another tab updated this board. Displayed messages may be stale. Open configured board to refresh.';}else element('status').textContent='Could not update messages. Previously displayed data may be stale; retry.';}}finally{if(billboardConfigStore.snapshot()===snapshot)busy=false;}}
-element('connect').onclick=async()=>{if(busy)return;busy=true;const snapshot=billboardConfigStore.snapshot();try{
- const c=snapshot.config;if(!c)throw Error('Missing configuration');
- const result=await BillboardPublic.connectPublicFeed({portalAddress:c.board.portalAddress,nodeUrl:c.network.nodeUrl,ethereumUrl:c.network.ethRpcUrl,expectedConfig:c,metadata:BillboardPublic.metadata,storage:BillboardPublic.browserPublicFeedStorage()});
- billboardConfigStore.assertCurrent(snapshot);connection=result;cursor=null;
-}catch{if(billboardConfigStore.snapshot()===snapshot){resetConnection();element('status').textContent='Could not verify this board. Check the imported configuration and endpoints.';}}finally{if(billboardConfigStore.snapshot()===snapshot)busy=false;}if(billboardConfigStore.snapshot()===snapshot)await refresh();};
-element('more').onclick=()=>refresh(true);element('refresh').onclick=()=>refresh();
-billboardConfigStore.subscribe(resetConnection);
+function resetConnection(){element('post-link').removeAttribute('href');element('post-link').hidden=true;element('board-link').removeAttribute('href');element('board-link').hidden=true;connection=null;cursor=null;busy=false;element('messages').replaceChildren();element('more').hidden=true;element('refresh').hidden=true;element('connect').hidden=true;}
+async function refresh(append=false){
+ if(busy||!connection)return;busy=true;const selected=connection;
+ try{
+  const progress=append?null:await selected.feed.sync(),page=await selected.feed.page({limit:50,cursor:append?cursor:null});
+  if(connection!==selected)return;
+  cursor=page.nextCursor;render(page.posts,append);
+  element('more').hidden=!cursor;element('refresh').hidden=false;
+  element('status').textContent=progress&&!progress.complete?'Loading older history. Refresh to continue.':element('messages').children.length?'Messages loaded.':'No messages yet.';
+ }catch(error){
+  if(connection===selected){
+   if(error.code==='PUBLIC_FEED_CONFLICT'){connection=null;element('more').hidden=true;element('refresh').hidden=true;}
+   element('connect').hidden=false;element('status').textContent='Could not update messages. Try again.';
+  }
+ }finally{if(connection===selected)busy=false;}
+}
+async function openBoard(){
+ const selected=++generation;resetConnection();busy=true;element('status').textContent='Loading messages…';
+ try{
+  const result=await loadHostedBoard();
+  if(selected!==generation)return;
+  connection=result;
+  const link=new URL(location.href);link.hash=result.fragment;
+  history.replaceState(null,'',link);element('board-link').href=link.href;element('board-link').hidden=false;
+  if(result.config.privateFee){const postLink=new URL('user.html',location.href);postLink.hash=result.fragment;element('post-link').href=postLink.href;element('post-link').hidden=false;}
+ }catch{
+  if(selected===generation){element('status').textContent='Could not load this board. Try again.';element('connect').hidden=false;}
+ }finally{if(selected===generation)busy=false;}
+ if(selected===generation&&connection)await refresh();
+}
+element('connect').onclick=openBoard;element('more').onclick=()=>refresh(true);element('refresh').onclick=()=>refresh();
+window.addEventListener('hashchange',openBoard);
+openBoard();
 
 </script></body></html>

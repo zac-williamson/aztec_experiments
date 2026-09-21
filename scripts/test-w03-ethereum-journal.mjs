@@ -11,11 +11,11 @@ import {createFileJournalStorage} from '../apps/src/billboard/user/transaction-j
 import {createBrowserJournalStorage} from '../shared/journal-indexeddb.mjs';
 const field=()=> '0x'+randomBytes(31).toString('hex').padStart(64,'0'),addr=()=> '0x'+randomBytes(20).toString('hex');
 const blockHash=n=>'0x'+BigInt(n+1).toString(16).padStart(64,'0');
-const iface=new Interface(['function deposit(bytes32 secretHash) payable','function withdraw(uint256,uint256,uint256,bytes32[])','event Deposited(address indexed depositor,uint64 nonce,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)','event Withdrawn(address indexed depositor,uint64 nonce,uint128 amount)']);
+const iface=new Interface(['function deposit(bytes32 secretHash) payable','function withdraw(uint256,uint256,uint256,bytes32[])','event Deposited(address indexed depositor,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)','event Withdrawn(address indexed depositor,uint128 amount)']);
 function fixture(storage,kind='deposit') {
  const scope={account:field(),chainId:'31337',rollup:addr(),version:'5',board:field(),portal:addr(),depositor:addr()};
  const requests=[],transactions=new Map(),receipts=new Map(),blocks=new Map();let head=10,nonce=4,mode='normal',fork=false;
- const expected={kind,nonce:'1',amount:'100',...(kind==='deposit'?{secretHash:field()}:{})};
+ const expected={kind,amount:'100',...(kind==='deposit'?{secretHash:field()}:{})};
  const data=kind==='deposit'?iface.encodeFunctionData('deposit',[expected.secretHash]):iface.encodeFunctionData('withdraw',[1,1,0,[]]);
  const intent={data,value:kind==='deposit'?'100':'0',expected};
  const provider={getNetwork:async()=>({chainId:31337n}),getBlockNumber:async()=>head,getTransactionCount:async()=>nonce,
@@ -25,7 +25,7 @@ function fixture(storage,kind='deposit') {
   requests.push(request);if(mode==='reject')throw new Error('private wallet response');
   if(request.nonce!==nonce)throw new Error('nonce already used');
   const hash=field(),body={...request,hash};transactions.set(hash,body);head++;nonce++;blocks.set(head,[body]);
-  const event=kind==='deposit'?iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,1,100,expected.secretHash,field(),2]):iface.encodeEventLog(iface.getEvent('Withdrawn'),[scope.depositor,1,100]);
+  const event=kind==='deposit'?iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,100,expected.secretHash,field(),2]):iface.encodeEventLog(iface.getEvent('Withdrawn'),[scope.depositor,100]);
   receipts.set(hash,{hash,from:scope.depositor,to:scope.portal,blockNumber:head,blockHash:blockHash(head),status:1,logs:[{address:scope.portal,...event}]});
   if(mode==='lost')throw new Error('lost response PRIVATE_SENTINEL');return body;
  }};
@@ -40,7 +40,7 @@ for(const backend of ['file','indexeddb']) {
  }
  test(`${backend}: empty Ethereum journal reports its own recovery route`,()=>use(async f=>{await assert.rejects((await f.newSession()).recover(),{code:'BB_NO_SAVED_ETHEREUM_TRANSACTION'});assert.equal(f.requests.length,0);}));
  for(const kind of ['deposit','withdraw'])test(`${backend}: ${kind} requires matching canonical receipt and event`,()=>use(async f=>{
-  const j=await f.newSession(),result=await j.send(f.intent);assert.equal(result.outcome,'success');assert.equal(String(result.event.nonce),'1');assert.equal(f.requests.length,1);
+  const j=await f.newSession(),result=await j.send(f.intent);assert.equal(result.outcome,'success');assert.equal(f.requests.length,1);
   await assert.rejects((await f.newSession()).assertCanStart(),{code:'BB_ETH_RECOVERY_REQUIRED'});
   const restored=await f.newSession({signer:null});assert.equal((await restored.recover()).txHash,result.txHash);assert.equal(f.requests.length,1);
   await (await f.newSession({acknowledgeTx:result.txHash})).assertCanStart();
@@ -72,7 +72,7 @@ for(const backend of ['file','indexeddb']) {
   const originalHash=f.transactions.keys().next().value;
   const recovered=await (await f.newSession({signer:null})).recover();
   assert.equal(recovered.outcome,'success');assert.equal(recovered.txHash,originalHash);
-  assert.equal(String(recovered.event.nonce),f.intent.expected.nonce);assert.equal(String(recovered.event.amount),f.intent.expected.amount);
+  assert.equal(String(recovered.event.amount),f.intent.expected.amount);
   assert.equal(recovered.event.depositor.toLowerCase(),f.scope.depositor);
   assert.equal(f.requests.length,1);assert.equal(f.requests[0].data,f.intent.data);assert.equal(String(f.requests[0].value),f.intent.value);
   assert.equal((await (await f.newSession({signer:null})).recover()).txHash,originalHash);assert.equal(f.requests.length,1);
@@ -88,20 +88,43 @@ for(const backend of ['file','indexeddb']) {
   assert.equal((await (await f.newSession()).recover()).outcome,'reverted');
   f.receipts.get(result.txHash).status=1;f.transactions.get(result.txHash).data='0x';assert.equal((await (await f.newSession()).recover()).outcome,'replaced');
  }));
- for(const change of ['missing','nonce','amount','address','duplicate'])test(`${backend}: ${change} refund event cannot prove payment`,()=>use(async f=>{
+ for(const change of ['missing','amount','address','duplicate'])test(`${backend}: ${change} refund event cannot prove payment`,()=>use(async f=>{
   const result=await (await f.newSession()).send(f.intent),receipt=f.receipts.get(result.txHash);
   if(change==='missing')receipt.logs=[];
   if(change==='address')receipt.logs[0].address=addr();
   if(change==='duplicate')receipt.logs.push(receipt.logs[0]);
-  if(['nonce','amount'].includes(change))receipt.logs=[{address:f.scope.portal,...iface.encodeEventLog(iface.getEvent('Withdrawn'),[f.scope.depositor,change==='nonce'?2:1,change==='amount'?101:100])}];
+  if(change==='amount')receipt.logs=[{address:f.scope.portal,...iface.encodeEventLog(iface.getEvent('Withdrawn'),[f.scope.depositor,101])}];
   await assert.rejects((await f.newSession()).recover(),{code:'BB_ETH_RECOVERY_REQUIRED'});
  },'withdraw'));
  test(`${backend}: full salt/authentication mismatch and chain change fail before signing`,()=>use(async f=>{
   await (await f.newSession()).send(f.intent);await assert.rejects((await f.newSession({walletSalt:field()})).recover(),{code:'BB_JOURNAL_INVALID'});
   f.provider.getNetwork=async()=>({chainId:1n});await assert.rejects((await f.newSession()).recover({retry:true}),{code:'BB_ETH_RECOVERY_REQUIRED'});assert.equal(f.requests.length,1);
  }));
+ test(`${backend}: an unconsumed nonce skips old blocks and retries the original request`,()=>use(async f=>{
+  f.mode('reject');await assert.rejects((await f.newSession()).send(f.intent));f.setHead(100000);
+  const original=f.provider.getBlock;let fullReads=0;
+  f.provider.getBlock=async(n,full)=>{if(full)fullReads++;return original(n,full);};
+  f.mode('normal');const result=await (await f.newSession()).recover({retry:true});
+  assert.equal(result.outcome,'success');assert.equal(fullReads,0);assert.deepEqual(f.requests[0],f.requests[1]);
+ }));
+ test(`${backend}: failed or malformed confirmed nonce never permits broadcast`,()=>use(async f=>{
+  f.mode('reject');await assert.rejects((await f.newSession()).send(f.intent));
+  for(const value of [undefined,-1,1.5]){
+   f.provider.getTransactionCount=async()=>value;
+   await assert.rejects((await f.newSession()).recover({retry:true}),{code:'BB_ETH_RECOVERY_REQUIRED'});
+  }
+  f.provider.getTransactionCount=async()=>{throw Error('RPC unavailable');};
+  await assert.rejects((await f.newSession()).recover({retry:true}),{code:'BB_ETH_RECOVERY_REQUIRED'});
+  assert.equal(f.requests.length,1);
+ }));
+ test(`${backend}: nonce lookup crossing a reorg cannot authorize retry`,()=>use(async f=>{
+  f.mode('reject');await assert.rejects((await f.newSession()).send(f.intent));f.setHead(100);
+  f.provider.getTransactionCount=async()=>{f.fork();return 4;};
+  await assert.rejects((await f.newSession()).recover({retry:true}),{code:'BB_ETH_RECOVERY_REQUIRED'});
+  assert.equal(f.requests.length,1);
+ }));
  test(`${backend}: long history checkpoints survive failed lookup and resume without skipping gaps`,()=>use(async f=>{
-  f.mode('reject');await assert.rejects((await f.newSession()).send(f.intent));f.setHead(1110);
+  f.mode('reject');await assert.rejects((await f.newSession()).send(f.intent));f.setHead(1110);f.provider.getTransactionCount=async()=>5;
   const original=f.provider.getBlock,calls=[];let breakAt=31;
   f.provider.getBlock=async(n,full)=>{if(full){calls.push(n);if(n===breakAt)throw new Error('gap');}return original(n,full);};
   await assert.rejects((await f.newSession()).recover(),{code:'BB_ETH_RECOVERY_REQUIRED'});assert(calls.includes(30));calls.length=0;breakAt=-1;

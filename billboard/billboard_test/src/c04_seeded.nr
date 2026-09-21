@@ -17,7 +17,7 @@ use crate::{setup_regular_history, test_chain, fresh_post_nonce, msg_with};
 unconstrained fn test_history_seeded_1002_tail_authentication_and_exit() {
     let amount: u128 = 1_000_000_000_000_000;
     let (mut env, board, owner, _time) = setup_regular_history(1);
-    let chain = test_chain(board, owner, amount);
+    let chain = test_chain(env, board, owner, amount);
     let (first, _) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
     let first = first.unwrap_unchecked();
     let post_slot = first.storage_slot;
@@ -27,7 +27,7 @@ unconstrained fn test_history_seeded_1002_tail_authentication_and_exit() {
     let deposit_slot: Field = 14;
     let initial = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
     let link_secret = env.utility_context_at(board, |_| get_nhk_app(get_public_keys(owner).npk_m_hash));
-    let mut previous_link = initial[5];
+    let mut previous_link = initial[4];
     let mut screened_link: Field = 0;
     let timestamp = first.note.anchor_timestamp;
     std::static_assert(MAX_NOTE_HASHES_PER_CALL >= 16, "Fixture batch exceeds protocol limit");
@@ -65,7 +65,7 @@ unconstrained fn test_history_seeded_1002_tail_authentication_and_exit() {
         assert_eq(notes.len(), 1);
         let mut deposit = notes.get_unchecked(0);
         assert_eq(deposit.deposit_chain_id, chain);
-        assert_eq(deposit.head_link, initial[5]);
+        assert_eq(deposit.head_link, initial[4]);
         deposit.head_link = previous_link;
         deposit.screened_link = screened_link;
         deposit.sequences = SequenceState { head_sequence: 1002, screened_sequence: 1000, last_real_sequence: 1 };
@@ -80,7 +80,7 @@ unconstrained fn test_history_seeded_1002_tail_authentication_and_exit() {
     env.mine_block_at(env.last_block_timestamp() + 7201);
     env.call_private(owner, Billboard::at(board).post(chain, fresh_post_nonce(), msg_with(1003), 4, false, child, grandchild));
     let after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(after[6], 1003); assert_eq(after[8], 1002); assert_eq(after[9], 1003);
+    assert_eq(after[5], 1003); assert_eq(after[7], 1002); assert_eq(after[8], 1003);
     assert_eq(env.view_public(Billboard::at(board).get_post_count()), 2);
     env.mine_block_at(env.last_block_timestamp() + 7201);
     let (last, none) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
@@ -88,5 +88,5 @@ unconstrained fn test_history_seeded_1002_tail_authentication_and_exit() {
     env.call_private(owner, Billboard::at(board).post(chain, 0, [0; 32], 0, true, last, none));
     env.mine_block_at(env.last_block_timestamp() + 7201);
     env.call_private(owner, Billboard::at(board).withdraw(chain));
-    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain)), [0; 11]);
+    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain)), [0; 10]);
 }

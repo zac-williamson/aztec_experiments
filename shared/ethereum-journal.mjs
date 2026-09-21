@@ -11,8 +11,8 @@ const iface=new Interface([
   'event DepositToAztecPublic(bytes32 indexed to,uint256 amount,bytes32 secretHash,bytes32 key,uint256 index)',
   'function deposit(bytes32 secretHash) payable',
   'function withdraw(uint256 epoch,uint256 numCheckpointsInEpoch,uint256 leafIndex,bytes32[] path)',
-  'event Deposited(address indexed depositor,uint64 nonce,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)',
-  'event Withdrawn(address indexed depositor,uint64 nonce,uint128 amount)',
+  'event Deposited(address indexed depositor,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)',
+  'event Withdrawn(address indexed depositor,uint128 amount)',
 ]);
 const unknown=()=>transactionError('BB_ETH_RECOVERY_REQUIRED','Recover the saved Ethereum request before starting another payment.');
 const invalid=()=>transactionError('BB_JOURNAL_INVALID','Ethereum recovery storage is invalid. Preserve it before continuing.');
@@ -58,7 +58,6 @@ function validateIntent(record,scope) {
   }
   const fee=scope.token!==undefined;
   if(!expected||!(fee?['approve','fee-deposit']:['deposit','withdraw']).includes(expected.kind)||!positive(expected.amount)||BigInt(expected.amount)>=(1n<<(fee?128n:96n)))throw invalid();
-  if(!fee&&(!positive(expected.nonce)||BigInt(expected.nonce)>=1n<<64n))throw invalid();
   let parsed;try{parsed=iface.parseTransaction({data:record.data,value:record.value});}catch{throw invalid();}
   const method=expected.kind==='fee-deposit'?'depositToAztecPublic':expected.kind;
   if(!parsed||parsed.name!==method||iface.encodeFunctionData(parsed.fragment,parsed.args).toLowerCase()!==record.data)throw invalid();
@@ -105,7 +104,7 @@ export async function verifyEthereumIntentReceipt(provider,record,txHash,read=fn
       if(lower(parsed.args.owner)!==record.from||lower(parsed.args.spender)!==expected.spender||String(parsed.args.value)!==expected.amount)throw unknown();
     }else if(expected.kind==='fee-deposit') {
       if(lower(parsed.args.to)!==expected.recipient||String(parsed.args.amount)!==expected.amount||lower(parsed.args.secretHash)!==expected.secretHash)throw unknown();
-    }else if(lower(parsed.args.depositor)!==record.from||String(parsed.args.nonce)!==expected.nonce||String(parsed.args.amount)!==expected.amount||
+    }else if(lower(parsed.args.depositor)!==record.from||String(parsed.args.amount)!==expected.amount||
       (expected.kind==='deposit'&&lower(parsed.args.secretHash)!==expected.secretHash))throw unknown();
     events.push(parsed.args);
   }
@@ -139,6 +138,18 @@ export async function createEthereumJournal({storage,walletSecret,walletSalt,sco
       if(lower(anchor?.hash)!==expected||head<record.nextBlock-1) {
         saved=await slot.write(saved,{...record,nextBlock:1,cursorHash:null});record=saved.value;
       }
+    }
+    // A nonce not consumed at this canonical block cannot have a mined transaction
+    // in its history. Avoid downloading every block while an unsent request waits.
+    const tip=await read(()=>provider.getBlock(head));
+    if(tip?.number!==head||!hash(lower(tip.hash)))throw unknown();
+    const minedNonce=await read(()=>provider.getTransactionCount(record.from,head));
+    if(!integer(minedNonce))throw unknown();
+    if(minedNonce<=record.nonce) {
+      const current=await read(()=>provider.getBlock(head));
+      if(lower(current?.hash)!==lower(tip.hash))throw unknown();
+      saved=await slot.write(saved,{...record,nextBlock:head+1,cursorHash:lower(tip.hash)});
+      return {saved,result:null};
     }
     let cursorHash=record.cursorHash,nextBlock=record.nextBlock,previousHash=record.nextBlock===1?null:(record.cursorHash??record.startHash);
     for(let number=nextBlock;number<=head;number++) {

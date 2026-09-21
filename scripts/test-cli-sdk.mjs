@@ -2,6 +2,8 @@
 // top-level code or main(). Child processes isolate the legacy global patches.
 // Wallet generator writes are captured in memory and never reach the filesystem.
 import assert from 'node:assert/strict';
+import * as ethers from 'ethers';
+import {initializeCliSimulator} from '../shared/cli-simulator.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -58,13 +60,29 @@ async function child(lane) {
     },
   };
   const bindings = {
-    fs: guardedFs, path, PROJECT_ROOT: ROOT, __realProcess: realProcess,
+    fs: guardedFs, path, PROJECT_ROOT: ROOT, __realProcess: realProcess, initializeCliSimulator,
     log: (message, level) => { if (level === 'warn') warnings.push(message); },
   };
   const loader = extract(source, 'loadAztecSDK');
   const a = await loader.instantiate(bindings)();
   for (const name of ['preparePrivateFeePayment','derivePrivateFeeAddress','fundPrivateFees','recoverPrivateFeeClaim']) assert.equal(typeof a[name], 'function', 'Bundled private fee export missing: '+name);
   assert.equal(globalThis.process, realProcess);
+  if (lane === 'user') {
+    // Exercise the real CLI loader and engine together: native and bundled
+    // Buffer implementations must not change the protocol commitment.
+    new Function(fs.readFileSync(path.join(ROOT, 'apps/src/billboard/user/engine.js'), 'utf8'))();
+    const vectors = JSON.parse(fs.readFileSync(path.join(ROOT, 'execution/interface-fixtures/commitments-v1.json'), 'utf8'));
+    const commitments = vectors.cases.filter(item => ['claim', 'claim-boundary', 'exit'].includes(item.name));
+    assert.deepEqual(commitments.map(item => item.name).sort(), ['claim', 'claim-boundary', 'exit']);
+    for (const vector of commitments) {
+      const {scope, receipt} = vector.input;
+      const board = new a.AztecAddress(a.Fr.fromHexString(scope.boardAddress));
+      const actual = globalThis.BillboardUserCodec.escrowContent(a, ethers, vector.name === 'exit', board,
+        scope.portalAddress, receipt.depositor, receipt.amount, scope.rollupVersion, scope.l1ChainId);
+      assert.equal(actual.toString(), vector.commitment, vector.name);
+    }
+  }
+
   assert.ok(globalThis.indexedDB, 'actual loader must supply IndexedDB');
   const deriveSource = fs.readFileSync(path.join(ROOT, 'shared/aztec-lib.js'), 'utf8');
   const derive = extract(deriveSource, 'deriveAccountAddress').instantiate({ A: () => a });
@@ -124,7 +142,7 @@ if (process.argv[2] === '--child') {
     outcome: passed ? 'pass' : 'fail', node: process.versions.node,
     sdkSha256: manifest.outputs['aztec_bundle.js'],
     scope: 'Named functions extracted from real CLI sources; no main(), remote RPC, pre-existing wallets, persisted wallet files, or transactions. Account derivation and hashing use the actual built SDK.',
-    sourceHashes: Object.fromEntries([...new Set(Object.values(sources)), 'shared/aztec-lib.js'].map(name => [name, sha(fs.readFileSync(path.join(ROOT, name)))])),
+    sourceHashes: Object.fromEntries([...new Set(Object.values(sources)), 'shared/aztec-lib.js', 'shared/cli-simulator.mjs', 'apps/src/billboard/user/engine.js', 'execution/interface-fixtures/commitments-v1.json'].map(name => [name, sha(fs.readFileSync(path.join(ROOT, name)))])),
     results,
   }, null, 2));
   if (!passed) process.exitCode = 1;

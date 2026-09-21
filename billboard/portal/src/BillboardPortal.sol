@@ -23,15 +23,13 @@ contract BillboardPortal is ReentrancyGuard {
     uint256 public immutable L1_CHAIN_ID;
     bytes32 public immutable CONFIG_HASH;
 
-    struct Receipt { uint64 nonce; uint128 amount; }
-    mapping(address => Receipt) public activeDeposit;
-    mapping(address => uint64) public lastDepositNonce;
+    mapping(address => uint128) public activeDeposit;
     uint256 public totalDeposited;
     bool public depositsEnabled;
 
     event Activated(bytes32 indexed configHash);
-    event Deposited(address indexed depositor, uint64 nonce, uint128 amount, bytes32 secretHash, bytes32 key, uint256 index);
-    event Withdrawn(address indexed depositor, uint64 nonce, uint128 amount);
+    event Deposited(address indexed depositor, uint128 amount, bytes32 secretHash, bytes32 key, uint256 index);
+    event Withdrawn(address indexed depositor, uint128 amount);
 
     constructor(address rollup, bytes32 board, uint256 version, uint256 minDeposit, uint256 maxDeposit, bytes32 configHash) {
         require(rollup.code.length > 0, "Invalid rollup");
@@ -69,28 +67,26 @@ contract BillboardPortal is ReentrancyGuard {
         require(msg.value >= MIN_DEPOSIT, "Below min deposit");
         require(msg.value <= MAX_DEPOSIT, "Above max deposit");
         require(uint256(secretHash) > 0 && uint256(secretHash) < Constants.P, "Invalid secret hash");
-        require(activeDeposit[msg.sender].nonce == 0, "Already have an active deposit");
-        uint64 nonce = lastDepositNonce[msg.sender] + 1; // Checked overflow: never reuse nonce zero.
+        require(activeDeposit[msg.sender] == 0, "Already have an active deposit");
         uint128 amount = uint128(msg.value); // Constructor caps MAX_DEPOSIT at u96.
-        lastDepositNonce[msg.sender] = nonce;
-        activeDeposit[msg.sender] = Receipt(nonce, amount);
+        activeDeposit[msg.sender] = amount;
         totalDeposited += amount;
         (key, index) = INBOX.sendL2Message(DataStructures.L2Actor(L2_CONTRACT, VERSION),
-            PortalMessages.receipt(false, L1_CHAIN_ID, address(this), L2_CONTRACT, VERSION, msg.sender, nonce, amount), secretHash);
-        emit Deposited(msg.sender, nonce, amount, secretHash, key, index);
+            PortalMessages.receipt(false, L1_CHAIN_ID, address(this), L2_CONTRACT, VERSION, msg.sender, amount), secretHash);
+        emit Deposited(msg.sender, amount, secretHash, key, index);
     }
 
     /// @dev All effects and Outbox consumption revert if bridge verification or payment fails.
     function withdraw(uint256 epoch, uint256 checkpointCount, uint256 leafIndex, bytes32[] calldata path) external nonReentrant {
-        Receipt memory receipt = activeDeposit[msg.sender];
-        require(receipt.nonce != 0, "No active deposit");
+        uint128 amount = activeDeposit[msg.sender];
+        require(amount != 0, "No active deposit");
         delete activeDeposit[msg.sender];
-        totalDeposited -= receipt.amount;
+        totalDeposited -= amount;
         _consume(PortalMessages.receipt(true, L1_CHAIN_ID, address(this), L2_CONTRACT, VERSION,
-            msg.sender, receipt.nonce, receipt.amount), epoch, checkpointCount, leafIndex, path);
-        (bool ok,) = msg.sender.call{value: receipt.amount}("");
+            msg.sender, amount), epoch, checkpointCount, leafIndex, path);
+        (bool ok,) = msg.sender.call{value: amount}("");
         require(ok, "ETH transfer failed");
-        emit Withdrawn(msg.sender, receipt.nonce, receipt.amount);
+        emit Withdrawn(msg.sender, amount);
     }
 
     function _consume(bytes32 content, uint256 epoch, uint256 checkpointCount, uint256 leafIndex, bytes32[] calldata path) private {
@@ -102,9 +98,8 @@ contract BillboardPortal is ReentrancyGuard {
         OUTBOX.consume(message, Epoch.wrap(epoch), checkpointCount, leafIndex, path);
     }
 
-    function getDeposit(address depositor) external view returns (uint64 nonce, uint128 amount) {
-        Receipt memory receipt = activeDeposit[depositor];
-        return (receipt.nonce, receipt.amount);
+    function getDeposit(address depositor) external view returns (uint128 amount) {
+        return activeDeposit[depositor];
     }
 
     receive() external payable { revert("Unsolicited ETH"); }

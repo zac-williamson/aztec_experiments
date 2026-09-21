@@ -54,10 +54,10 @@ export async function qualifyT02ClaimBoundary({wallet,board,node,probe,owner,cla
  const mark=name=>{stage=name;reportStage?.('claim-boundary:'+name);};
  try{
   assert.equal((await node.getConfig()).realProofs,true);assert(!node.getProverNode());assert.equal(await l1Client.getChainId(),31337);assert.equal(scope.l1ChainId,'31337');
-  assert.equal(board.address.toString(),scope.boardAddress);assert.equal(claimArgs.length,5);assert.equal(probe.substitutions,0);
-  const [depositor,amount,nonce,claimSecret,index]=claimArgs;assert(claimSecret.equals(secret));assert((await computeSecretHash(secret)).equals(secretHash));
-  const encode=(newAmount,newNonce)=>sha256ToField([Buffer.from(encodeEscrowCommitment('claim',scope,{depositor:depositor.toString(),depositNonce:String(newNonce),amount:String(newAmount)}))]);
-  assert(encode(amount,nonce).equals(content));
+  assert.equal(board.address.toString(),scope.boardAddress);assert.equal(claimArgs.length,4);assert.equal(probe.substitutions,0);
+  const [depositor,amount,claimSecret,index]=claimArgs;assert(claimSecret.equals(secret));assert((await computeSecretHash(secret)).equals(secretHash));
+  const encode=newAmount=>sha256ToField([Buffer.from(encodeEscrowCommitment('claim',scope,{depositor:depositor.toString(),amount:String(newAmount)}))]);
+  assert(encode(amount).equals(content));
   const makeMessage=(newContent,newSecretHash,newIndex)=>new L1ToL2Message(new L1Actor(EthAddress.fromString(scope.portalAddress),31337),new L2Actor(board.address,Number(scope.rollupVersion)),newContent,newSecretHash,newIndex);
   assert(makeMessage(content,secretHash,index).hash().equals(message.hash()));assert.equal(witness[0],index.toBigInt());assert.equal(witness[1].pathSize,L1_TO_L2_MSG_TREE_HEIGHT);
   const anchorHash=await anchor.hash();assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),anchorHash.toString());
@@ -67,10 +67,10 @@ export async function qualifyT02ClaimBoundary({wallet,board,node,probe,owner,cla
   const portal=JSON.parse(await fs.readFile(new URL('../billboard/portal/out/BillboardPortal.sol/BillboardPortal.json',import.meta.url),'utf8'));
   const read=(functionName,args=[])=>l1Client.readContract({address:scope.portalAddress,abi:portal.abi,functionName,args});
   const snapshot=async()=>({receipt:await read('getDeposit',[depositor.toString()]),liability:await read('totalDeposited'),balance:await l1Client.getBalance({address:scope.portalAddress})});
-  const before=await snapshot();assert.deepEqual(before.receipt,[nonce,amount]);
+  const before=await snapshot();assert.deepEqual(before.receipt,amount);
   const unchanged=async()=>{
    assert.deepEqual((await wallet.pxe.getSyncedBlockHeader()).toBuffer(),anchor.toBuffer());assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),anchorHash.toString());
-   const logical=(await board.methods.get_deposit_info(owner,depositChainId).simulate({from:owner})).result;assert.deepEqual(logical.map(v=>BigInt(v.toString())),Array(11).fill(0n));
+   const logical=(await board.methods.get_deposit_info(owner,depositChainId).simulate({from:owner})).result;assert.deepEqual(logical.map(v=>BigInt(v.toString())),Array(10).fill(0n));
    const notes=await wallet.pxe.debug.getNotes({contractAddress:board.address,owner,scopes:[owner],status:NoteStatus.ACTIVE});assert.equal(notes.filter(n=>n.note.items.length===8).length,0);
    assert.deepEqual(await snapshot(),before);assert.equal(await node.getNullifierMembershipWitness(anchorHash,nullifier),undefined);
   };
@@ -83,11 +83,11 @@ export async function qualifyT02ClaimBoundary({wallet,board,node,probe,owner,cla
    assert(rejected,'Expected exact claim-boundary rejection');
   }
   const otherSecret=secret.equals(Fr.ONE)?new Fr(2):Fr.ONE;
-  assert(nonce>0n&&nonce<0xffffffffffffffffn);const otherNonce=nonce+1n,otherIndex=new Fr(index.toBigInt()^1n);
-  const cases=[['receipt-nonce',[depositor,amount,otherNonce,secret,index],makeMessage(encode(amount,otherNonce),secretHash,index)],['message-index',[depositor,amount,nonce,secret,otherIndex],makeMessage(content,secretHash,otherIndex)],['secret',[depositor,amount,nonce,otherSecret,index],makeMessage(content,await computeSecretHash(otherSecret),index)]];
+  const otherIndex=new Fr(index.toBigInt()^1n);
+  const cases=[['message-index',[depositor,amount,secret,otherIndex],makeMessage(content,secretHash,otherIndex)],['secret',[depositor,amount,otherSecret,index],makeMessage(content,await computeSecretHash(otherSecret),index)]];
   const minimum=BigInt((await board.methods.get_min_deposit().simulate({from:owner})).result.toString()),maximum=BigInt((await board.methods.get_max_deposit().simulate({from:owner})).result.toString());
   const otherAmount=amount<maximum?amount+1n:amount-1n;assert(otherAmount>=minimum&&otherAmount<=maximum&&otherAmount!==amount,'Fixture needs another valid amount');
-  cases.push(['receipt-amount',[depositor,otherAmount,nonce,secret,index],makeMessage(encode(otherAmount,nonce),secretHash,index)]);
+  cases.push(['receipt-amount',[depositor,otherAmount,secret,index],makeMessage(encode(otherAmount),secretHash,index)]);
   for(const [name,args,altered] of cases){mark('reject-'+name);assert(!altered.hash().equals(message.hash()));assert.equal(await node.getL1ToL2MessageMembershipWitness(anchorHash,altered.hash()),undefined);
    await reject(args,`No L1 to L2 message found for message hash ${altered.hash().toString()}`);await unchanged();observations.push({case:name,rejected:true,stage:'PXE missing-message witness rejection; no completed proof or submission'});
   }

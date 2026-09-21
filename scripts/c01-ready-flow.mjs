@@ -40,11 +40,11 @@ async function checkedArtifacts(preparation) {
  * Reopens/stops a wallet. Exact tx is returned nonenumerably for later caller submission.
  */
 export async function prepareAndProveC01Ready({ node, preparation, instance, deploymentReceipt,
-  l1Client, directory, rollupAddress, rollupVersion }) {
+  l1Client, directory, rollupAddress, rollupVersion, mark:reportStage=()=>{} }) {
   let stage = 'preflight', wallet, result;
   const observation = { passed: false, scope: 'disabled portal deployment and genuine update_portal client proof',
     bindingSubmitted: false, readyEmitted: false, epochProofAccepted: false, portalActivated: false };
-  const mark = name => { stage = name; process.stdout.write(`C01_READY_STAGE ${name}\n`); };
+  const mark = name => { stage = name; reportStage('ready-'+name); };
   try {
     assertNodeVersion(); assertAztecPackages();
     assert(path.isAbsolute(directory)); assert(included(deploymentReceipt), 'Successful checkpointed board deployment required');
@@ -96,7 +96,7 @@ export async function prepareAndProveC01Ready({ node, preparation, instance, dep
     const request = await wallet.createTxExecutionRequestFromPayloadAndFee(payload, account.address, fee);
     const proven = await wallet.pxe.proveTx(request, { scopes: wallet.scopesFrom(account.address, [], undefined),
       senderForTags: wallet.senderForTagsFrom(account.address, undefined) });
-    assert(!proven.chonkProof.isEmpty()); const tx = await proven.toTx();
+    assert(!proven.chonkProof.isEmpty());mark('serialize-proof'); const tx = await proven.toTx();
     mark('validate-update-portal');
     const validation = await node.isValidTx(tx); assert.equal(validation.result, 'valid');
     assert.equal(await read('depositsEnabled'), false); assert.equal(await view('is_portal_set'), false);
@@ -115,7 +115,7 @@ export async function prepareAndProveC01Ready({ node, preparation, instance, dep
     const failure = new Error(`C01 Ready preparation failed at ${stage}`);
     failure.readyObservation = { ...observation, passed: false, stage, errorClass: error?.name ?? 'UnknownError' }; throw failure;
   } finally {
-    if (wallet) { try { await wallet.stop(); observation.walletStopped = true; }
+    if (wallet) { mark('close-wallet');try { await wallet.stop(); observation.walletStopped = true; }
       catch { const failure = new Error('C01 Ready wallet cleanup failed');
         failure.readyObservation = { ...observation, passed: false, walletStopped: false }; throw failure; } }
   }

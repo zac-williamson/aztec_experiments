@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import net from 'node:net';
 import path from 'node:path';
-import {randomUUID,randomBytes} from 'node:crypto';
+import {createHash,randomUUID,randomBytes} from 'node:crypto';
 import {ROOT,assertNodeVersion,assertAztecPackages} from '../toolchain.mjs';
 import {Supervisor,describeFailure} from './supervisor.mjs';
 import {getScenario} from './scenarios.mjs';
@@ -50,10 +50,11 @@ export async function runApplication(name) {
       assert(['chromium','chrome','firefox','webkit'].includes(scenario.browserEngine));
       const engines=await import('playwright');await fs.access(scenario.browserEngine==='chrome'?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':engines[scenario.browserEngine].executablePath());
       Object.assign(report.sourceHashes,await browserFingerprints());
+      if(scenario.ethereumWallet==='metamask'){const name='.build/metamask-13.49.0/metamask-chrome-13.49.0.zip';report.sourceHashes[name]=createHash('sha256').update(await fs.readFile(path.join(ROOT,name))).digest('hex');}
       const reservation=net.createServer();
       await new Promise((resolve,reject)=>{reservation.once('error',reject);reservation.listen(0,'127.0.0.1',resolve);});
       const port=reservation.address().port;await new Promise(resolve=>reservation.close(resolve));
-      control={browserEngine:scenario.browserEngine,browserMode:scenario.browser,origin:'https://127.0.0.1:'+port,rpcToken:randomBytes(32).toString('hex'),backupPassword:randomBytes(32).toString('base64url')};
+      control={ethereumWallet:scenario.ethereumWallet??'disposable',browserEngine:scenario.browserEngine,browserMode:scenario.browser,origin:'https://127.0.0.1:'+port,rpcToken:randomBytes(32).toString('hex'),backupPassword:randomBytes(32).toString('base64url')};
     }
     const {crs,profile}=await prepareRuntime(directory,scenario,report);
     const exit=await supervisor.start('fixture','/usr/bin/sandbox-exec',['-f',profile,process.execPath,ENTRY,'fixture-worker',name,directory],{
@@ -63,6 +64,7 @@ export async function runApplication(name) {
     assert.equal(exit.code,0);assert.equal(report.worker.passed,true);
     if(browser){assert(browserRun,'Browser was never launched');await browserRun;}
     const finalHashes=await fingerprints();if(browser)Object.assign(finalHashes,await browserFingerprints());
+    if(scenario.ethereumWallet==='metamask'){const name='.build/metamask-13.49.0/metamask-chrome-13.49.0.zip';finalHashes[name]=createHash('sha256').update(await fs.readFile(path.join(ROOT,name))).digest('hex');}
     assert.deepEqual(finalHashes,report.sourceHashes,'Sources changed during test');
     report.passed=true;
   }catch(error){supervisor.fail('scenario',error);}

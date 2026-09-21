@@ -7,7 +7,7 @@ import {Fr} from '@aztec/foundation/curves/bn254';
 import {poseidon2HashWithSeparator} from '@aztec/foundation/crypto/poseidon';
 import {NoteStatus} from '@aztec/stdlib/note';
 import {TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
-import {proveApplicationAction} from './prove-application-action.mjs';
+import {proveApplicationAction,measureApplicationGas} from './prove-application-action.mjs';
 const n=value=>BigInt(value.toString());
 const accepted=[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED];
 
@@ -18,8 +18,8 @@ export async function exactApplicationDeposit({wallet,artifact,instance,owner,ch
  assert.equal(notes.length,1);const note=notes[0];
  assert.equal(note.txHash.toString(),txHash.toString());
  assert(note.owner.equals(owner)&&note.contractAddress.equals(instance.address));
- assert.deepEqual(note.note.items.map(n),[fields[0]+(fields[2]<<32n),fields[1],fields[3],fields[4],
-  fields[5],fields[7],fields[6]+(fields[8]<<64n)+(fields[9]<<128n),fields[10]]);
+ assert.deepEqual(note.note.items.map(n),[fields[0],fields[1],fields[2],fields[3],
+  fields[4],fields[6],fields[5]+(fields[7]<<64n)+(fields[8]<<128n),fields[9]]);
  assert(!note.siloedNullifier.isZero());return note;
 }
 
@@ -43,7 +43,8 @@ export async function eligibleApplicationAnchor({node,wallet,mineL1,timestamp}){
 
 export async function includeApplicationAction({node,wallet,mineL1,proven,tx,spentNullifier}){
  assert(!proven.chonkProof.isEmpty());assert(spentNullifier===null||spentNullifier instanceof Fr);
- assert.equal((await node.isValidTx(tx)).result,'valid');await node.sendTx(tx);
+ assert.equal((await node.isValidTx(tx)).result,'valid');
+ const gasUsed=await measureApplicationGas(node,tx);await node.sendTx(tx);
  let receipt;const deadline=Date.now()+120000;
  do{
   receipt=await node.getTxReceipt(tx.getTxHash());
@@ -59,7 +60,7 @@ export async function includeApplicationAction({node,wallet,mineL1,proven,tx,spe
  assert.equal(effect.l2BlockHash.toString(),receipt.blockHash.toString());
  if(spentNullifier!==null)assert.equal(effect.data.nullifiers.filter(value=>value.equals(spentNullifier)).length,1);
  await wallet.pxe.sync();
- return {tx,receipt,effect:effect.data,summary:{txHash:tx.getTxHash().toString(),
+ return {tx,receipt,effect:effect.data,summary:{gasUsed,txHash:tx.getTxHash().toString(),
   proofSha256:createHash('sha256').update(proven.chonkProof.toBuffer()).digest('hex'),
   blockNumber:String(receipt.blockNumber),fee:String(receipt.transactionFee),feePayer:tx.data.feePayer.toString(),
   nodeValidation:'valid',status:receipt.status,executionResult:receipt.executionResult}};
@@ -71,20 +72,20 @@ export async function postUnflaggedApplicationMessage({node,wallet,mineL1,artifa
  const board=Contract.at(instance.address,artifact,wallet);
  const query=async(name,...args)=>(await board.methods[name](...args).simulate({from:owner})).result;
  await wallet.pxe.sync();const before=(await query('get_deposit_info',owner,chain)).map(n);
- assert.deepEqual(before,state.fields);assert.equal(before.length,11);
- const pending=before[6]-before[8];assert(pending===0n||pending===1n);
+ assert.deepEqual(before,state.fields);assert.equal(before.length,10);
+ const pending=before[5]-before[7];assert(pending===0n||pending===1n);
  const oldNote=await exactApplicationDeposit({wallet,artifact,instance,owner,chain,fields:before,txHash:state.txHash});
  const base=n(await query('get_base_cooldown')),minimum=n(await query('get_min_deposit'));
- const cooldown=(base*minimum+before[3]-1n)/before[3],maxSave=n(await query('get_max_save_up'));
+ const cooldown=(base*minimum+before[2]-1n)/before[2],maxSave=n(await query('get_max_save_up'));
  assert(cooldown>0n&&maxSave>0n);
- const anchor=await eligibleApplicationAnchor({node,wallet,mineL1,timestamp:before[10]});
+ const anchor=await eligibleApplicationAnchor({node,wallet,mineL1,timestamp:before[9]});
  const now=n(anchor.globalVariables.timestamp),count=n(await query('get_post_count'));
  const [child,grandchild]=await query('get_screen_hints',owner,chain);
  assert.equal(grandchild,undefined);assert.equal(Boolean(child),pending===1n);
  let screened=false;
  if(child){
   assert(child.owner.equals(owner)&&child.contract_address.equals(instance.address));
-  assert.equal(n(child.note.sequence),before[6]);assert.equal(n(child.note.previous_link),before[7]);
+  assert.equal(n(child.note.sequence),before[5]);assert.equal(n(child.note.previous_link),before[6]);
   assert.equal(child.note.is_dummy,false);assert.equal(await query('is_post_flagged',child.note.post_id),false);
   const published=n(await query('get_post_time',child.note.post_id));
   const deadline=n(await query('get_post_flag_deadline',child.note.post_id));
@@ -99,17 +100,17 @@ export async function postUnflaggedApplicationMessage({node,wallet,mineL1,artifa
   interaction:board.methods.post(chain,nonce,message,bytes.length,false,child,grandchild)});
  assert.deepEqual(proof.tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer());
  const included=await includeApplicationAction({node,wallet,mineL1,...proof,spentNullifier:oldNote.siloedNullifier});
- const fields=(await query('get_deposit_info',owner,chain)).map(n),sequence=before[6]+1n;
+ const fields=(await query('get_deposit_info',owner,chain)).map(n),sequence=before[5]+1n;
  const floor=now>cooldown*(maxSave-1n)?now-cooldown*(maxSave-1n):0n;
- assert.deepEqual(fields.slice(0,5),before.slice(0,5));assert.notEqual(fields[5],0n);assert.notEqual(fields[5],before[5]);
- assert.deepEqual(fields.slice(6,10),[sequence,screened?before[5]:before[7],screened?before[6]:before[8],sequence]);
- assert.equal(fields[10],(before[10]>floor?before[10]:floor)+cooldown);
+ assert.deepEqual(fields.slice(0,4),before.slice(0,4));assert.notEqual(fields[4],0n);assert.notEqual(fields[4],before[4]);
+ assert.deepEqual(fields.slice(5,9),[sequence,screened?before[4]:before[6],screened?before[5]:before[7],sequence]);
+ assert.equal(fields[9],(before[9]>floor?before[9]:floor)+cooldown);
  const txHash=proof.tx.getTxHash();
  const depositNote=await exactApplicationDeposit({wallet,artifact,instance,owner,chain,fields,txHash});
  const notes=(await wallet.pxe.debug.getNotes({contractAddress:instance.address,owner,status:NoteStatus.ACTIVE,scopes:[owner]}))
   .filter(note=>note.txHash.equals(txHash)&&note.note.items.length===7);
  assert.equal(notes.length,1);const postNote=notes[0];
- assert.deepEqual(postNote.note.items.map(n),[1n,n(chain),sequence,n(postId),now,before[5],0n]);
+ assert.deepEqual(postNote.note.items.map(n),[1n,n(chain),sequence,n(postId),now,before[4],0n]);
  assert.equal(n(await query('get_post_count')),count+1n);assert.equal(n(await query('get_post_id',count)),n(postId));
  assert.deepEqual((await query('get_post',postId)).map(n),message.map(n));assert.equal(n(await query('get_post_length',postId)),BigInt(bytes.length));
  assert.equal(await query('is_post_flagged',postId),false);

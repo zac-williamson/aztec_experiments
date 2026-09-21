@@ -41,15 +41,14 @@ export function encodePolicyCommitment(boardAddress, policyText) {
 export function encodeEscrowCommitment(kind, scope, receipt) {
   const s = validateScope(scope);
   if (!['claim', 'exit'].includes(kind)) throw new Error('Invalid escrow domain');
-  if (!receipt || Object.keys(receipt).length !== 3 || !Object.hasOwn(receipt, 'depositor') ||
-      !Object.hasOwn(receipt, 'depositNonce') || !Object.hasOwn(receipt, 'amount')) throw new Error('Invalid escrow receipt');
+  if (!receipt || Object.keys(receipt).length !== 2 || !Object.hasOwn(receipt, 'depositor') ||
+      !Object.hasOwn(receipt, 'amount')) throw new Error('Invalid escrow receipt');
   if (!/^0x[0-9a-f]{40}$/.test(receipt.depositor)) throw new Error('Invalid depositor');
-  const nonce = integer(receipt.depositNonce, 64);
   const amount = integer(receipt.amount, 96);
-  if (!nonce || !amount || BigInt(receipt.depositor) === 0n) throw new Error('Empty escrow receipt');
+  if (!amount || BigInt(receipt.depositor) === 0n) throw new Error('Empty escrow receipt');
   return concat([domain(kind === 'claim' ? 'AZTEC_BB_CLAIM_V1' : 'AZTEC_BB_EXIT_V1'), word(1n),
     word(BigInt(s.l1ChainId)), word(BigInt(s.portalAddress)), word(BigInt(s.boardAddress)),
-    word(BigInt(s.rollupVersion)), word(BigInt(receipt.depositor)), word(nonce), word(amount)]);
+    word(BigInt(s.rollupVersion)), word(BigInt(receipt.depositor)), word(amount)]);
 }
 export function encodeReadyCommitment(scope, configHash) {
   const s = validateScope(scope);

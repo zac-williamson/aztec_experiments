@@ -40,7 +40,7 @@ if(process.env.BILLBOARD_OPERATOR_PROFILE==='1')assertOperatorEnvironment();
 //   --msg <text>             Message to post (for post/auto, alias: --message)
 //   --dummy                   Make a dummy post (advances screening, no content)
 //   --reuse-tx <hash>        Reuse a specific deposit by L1 tx hash
-//   --withdraw-tx <hash>     L2 withdrawal tx hash (for claim-l1, skip scan)
+//   --withdraw-tx <hash>     Current L2 withdrawal tx hash (required for claim-l1)
 //   --expected-policy-version <field>  Bind flag to the reviewed policy
 //   --post-id <field>        Stable post identity to flag
 //   --post-index <num>       Post index to flag (for declare-immoral)
@@ -440,7 +440,6 @@ async function main() {
     getBrowserSigner: null,
     portalBytecode: portalBytecode.startsWith('0x') ? portalBytecode : '0x' + portalBytecode,
     artifact, privateFeeArtifact,
-    createHistoryCursor: options => a.createHistoryCursor({...options,storage:createFileJournalStorage(path.join(path.dirname(path.resolve(AZTEC_WALLET_PATH || CENSOR_WALLET_PATH)),'transaction-journal-v1'))}),
     createEthereumJournal: options => a.createEthereumJournal({...options,storage:createFileJournalStorage(path.join(path.dirname(path.resolve(AZTEC_WALLET_PATH || CENSOR_WALLET_PATH)),'transaction-journal-v1'))}),
     createTransactionJournal: options => a.createL2Journal({...options,storage:createFileJournalStorage(path.join(path.dirname(path.resolve(AZTEC_WALLET_PATH || CENSOR_WALLET_PATH)),'transaction-journal-v1'))}),
   };

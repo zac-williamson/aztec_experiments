@@ -77,7 +77,7 @@ abstract contract PortalFixtures {
     }
 
     function amountOf(BillboardPortal portal, address depositor) internal view returns (uint128) {
-        (, uint128 amount) = portal.getDeposit(depositor);
+        uint128 amount = portal.getDeposit(depositor);
         return amount;
     }
 

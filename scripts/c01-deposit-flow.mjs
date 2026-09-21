@@ -20,7 +20,7 @@ import {EmbeddedWallet} from '@aztec/wallets/embedded';
 import {encodeEscrowCommitment} from '../shared/protocol-commitments.mjs';
 import {contractInputs} from './artifact-provenance.mjs';
 import {ROOT,assertNodeVersion,assertAztecPackages} from './toolchain.mjs';
-import {proveApplicationAction} from './prove-application-action.mjs';
+import {proveApplicationAction,measureApplicationGas} from './prove-application-action.mjs';
 const BOARD='apps/src/billboard/billboard_artifact.json';
 const PORTAL='billboard/portal/out/BillboardPortal.sol/BillboardPortal.json';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -86,8 +86,8 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     const board=Contract.at(instance.address,checked.board,wallet);
     const amount=integer(await read('MIN_DEPOSIT'));assert(amount>0n&&amount<=integer(await read('MAX_DEPOSIT')));
     const depositor=l1Client.account.address.toLowerCase();
-    const before=await read('getDeposit',[depositor]);assert.equal(integer(before[0]),0n);assert.equal(integer(before[1]),0n);
-    const previousNonce=integer(await read('lastDepositNonce',[depositor])),totalBefore=integer(await read('totalDeposited'));
+    const before=await read('getDeposit',[depositor]);assert.equal(integer(before),0n);
+    const totalBefore=integer(await read('totalDeposited'));
     let secret;do{secret=Fr.random();}while(secret.isZero());
     const secretHash=await computeSecretHash(secret);assert(!secretHash.isZero());
     mark('deposit-real-l1');
@@ -99,29 +99,29 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
       logs:depositReceipt.logs.filter(log=>log.address.toLowerCase()===portalAddress)});
     assert.equal(events.length,1);const receipt=events[0].args;
     assert.equal(receipt.depositor.toLowerCase(),depositor);assert.equal(receipt.amount,amount);
-    assert.equal(receipt.nonce,previousNonce+1n);assert.equal(receipt.secretHash.toLowerCase(),secretHash.toString());
+    assert.equal(receipt.secretHash.toLowerCase(),secretHash.toString());
     const scope={l1ChainId:'31337',rollupAddress,rollupVersion:String(info.rollupVersion),boardAddress:instance.address.toString(),portalAddress};
     const content=sha256ToField([Buffer.from(encodeEscrowCommitment('claim',scope,
-      {depositor,depositNonce:String(receipt.nonce),amount:String(amount)}))]);
+      {depositor,amount:String(amount)}))]);
     const message=new L1ToL2Message(new L1Actor(EthAddress.fromString(portalAddress),31337),
       new L2Actor(instance.address,Number(info.rollupVersion)),content,secretHash,new Fr(receipt.index));
     assert.equal(message.hash().toString(),receipt.key.toLowerCase());
-    const chain=await poseidon2HashWithSeparator([Fr.ONE,instance.address,account.address,content,secret],0x42420101);
+    const chain=await poseidon2HashWithSeparator([Fr.ONE,instance.address,account.address,content,secret,new Fr(receipt.index)],0x42420101);
     assert(!chain.isZero());
     const canonicalDeposit=async()=>{
       const current=await l1Client.getTransactionReceipt({hash:depositHash});assert.equal(current.status,'success');
       assert.equal(current.blockHash,depositReceipt.blockHash);assert.equal(current.blockNumber,depositReceipt.blockNumber);
       assert.equal((await l1Client.getBlock({blockNumber:current.blockNumber})).hash,current.blockHash);
-      const active=await read('getDeposit',[depositor]);assert.deepEqual(active,[receipt.nonce,amount]);
+      const active=await read('getDeposit',[depositor]);assert.deepEqual(active,amount);
       assert.equal(integer(await read('totalDeposited')),totalBefore+amount);
     };
     await canonicalDeposit();
-    Object.assign(observation,{depositTxHash:depositHash,depositBlock:String(depositReceipt.blockNumber),depositNonce:String(receipt.nonce),
+    Object.assign(observation,{depositTxHash:depositHash,depositBlock:String(depositReceipt.blockNumber),
       amount:String(amount),inboxMessageKey:receipt.key,messageContentChecked:true,artifactHashes:checked.hashes});
     if(qualifyWrongOrigin){
       const {qualifyT02WrongOrigin}=await import('./t02-wrong-origin.mjs');
       observation.origin=await qualifyT02WrongOrigin({wallet,board,node,l1Client,instance,scope,secret,secretHash,content,amount,
-        depositNonce:receipt.nonce,depositor,owner:account.address,mineL1:mine,reportStage:mark});
+        depositor,owner:account.address,mineL1:mine,reportStage:mark});
       assert(observation.origin.passed);
     }
     sequencer=node.getSequencer();assert(sequencer,'Ordinary sequencer required');
@@ -150,7 +150,7 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     const canonicalAnchor=await node.getBlock(anchor.getBlockNumber());assert(canonicalAnchor);
     assert.equal(canonicalAnchor.hash.toString(),(await anchor.hash()).toString());
     mark('prove-real-claim');
-    const claimArgs=[EthAddress.fromString(depositor),amount,receipt.nonce,secret,new Fr(receipt.index)];
+    const claimArgs=[EthAddress.fromString(depositor),amount,secret,new Fr(receipt.index)];
     if(boundaryModule){
       observation.boundary=await boundaryModule.qualifyT02ClaimBoundary({wallet,board,node,probe,owner:account.address,claimArgs,scope,content,secret,secretHash,message,anchor,witness,depositChainId:chain,l1Client,reportStage:mark});
       assert(observation.boundary.passed);
@@ -163,6 +163,7 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer(),'Claim changed selected anchor');
     await canonicalDeposit();assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),canonicalAnchor.hash.toString());
     assert.equal((await node.isValidTx(tx)).result,'valid');
+    observation.gasUsed=await measureApplicationGas(node,tx);
     Object.assign(observation,{claimTxHash:tx.getTxHash().toString(),proofSha256:sha(proven.chonkProof.toBuffer()),nodeValidation:'valid',inclusionSnapshots:[]});
     mark('include-real-claim');await node.sendTx(tx);
     let claimReceipt;const inclusionDeadline=Date.now()+120000;
@@ -177,16 +178,16 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     assert.equal((await node.getBlock(claimReceipt.blockNumber)).hash.toString(),claimReceipt.blockHash.toString());
     await canonicalDeposit();await wallet.pxe.sync();mark('check-delivered-deposit-note');
     const logical=(await board.methods.get_deposit_info(account.address,chain).simulate({from:account.address})).result;
-    assert(Array.isArray(logical)&&logical.length===11);const fields=logical.map(integer);
+    assert(Array.isArray(logical)&&logical.length===10);const fields=logical.map(integer);
     const base=integer((await board.methods.get_base_cooldown().simulate({from:account.address})).result);
     const nextAllowed=integer(anchor.globalVariables.timestamp)+base; // Deposited exactly MIN_DEPOSIT.
-    assert.deepEqual(fields,[1n,chain.toBigInt(),receipt.nonce,amount,BigInt(depositor),0n,0n,0n,0n,0n,nextAllowed]);
+    assert.deepEqual(fields,[1n,chain.toBigInt(),amount,BigInt(depositor),0n,0n,0n,0n,0n,nextAllowed]);
     // This is a test-only diagnostic read. The application continues to use its typed logical utility.
     const packed=await wallet.pxe.debug.getNotes({contractAddress:instance.address,owner:account.address,
       storageSlot:checked.board.storageLayout.deposits.slot,scopes:[account.address]});
     const notes=packed.filter(note=>note.txHash.equals(tx.getTxHash()));assert.equal(notes.length,1);
     assert.equal(notes[0].note.items.length,8);
-    assert.deepEqual(notes[0].note.items.map(integer),[1n+(receipt.nonce<<32n),chain.toBigInt(),amount,BigInt(depositor),0n,0n,0n,nextAllowed]);
+    assert.deepEqual(notes[0].note.items.map(integer),[1n,chain.toBigInt(),amount,BigInt(depositor),0n,0n,0n,nextAllowed]);
     assert(notes[0].owner.equals(account.address)&&notes[0].contractAddress.equals(instance.address));
     mark('reject-real-claim-replay');
     const replayAnchor=await wallet.pxe.getSyncedBlockHeader();
@@ -208,7 +209,7 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
       storageSlot:checked.board.storageLayout.deposits.slot,scopes:[account.address]};
     const activeBefore=(await wallet.pxe.debug.getNotes(activeFilter)).filter(note=>note.note.items[1]?.equals(chain));
     assert.equal(activeBefore.length,1);assert(activeBefore[0].txHash.equals(tx.getTxHash()));
-    const replayPayload=await board.methods.claim_deposit(EthAddress.fromString(depositor),amount,receipt.nonce,secret,new Fr(receipt.index)).request();
+    const replayPayload=await board.methods.claim_deposit(EthAddress.fromString(depositor),amount,secret,new Fr(receipt.index)).request();
     const replayFee=await wallet.completeFeeOptions({from:account.address,feePayer:replayPayload.feePayer});
     // BaseWallet injects a fresh random account txNonce; this is not resending the original tx.
     const replayRequest=await wallet.createTxExecutionRequestFromPayloadAndFee(replayPayload,account.address,replayFee);
@@ -266,10 +267,10 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     Object.assign(observation,{passed:true,claimTxHash:tx.getTxHash().toString(),claimBlock:String(claimReceipt.blockNumber),
       claimStatus:claimReceipt.status,executionResult:claimReceipt.executionResult,fee:String(claimReceipt.transactionFee),
       proofSha256:sha(proven.chonkProof.toBuffer()),anchorBlock:Number(anchor.getBlockNumber()),
-      membershipRootChecked:true,logicalFieldCount:11,physicalFieldCount:8,exactDeliveredNoteChecked:true,
+      membershipRootChecked:true,logicalFieldCount:10,physicalFieldCount:8,exactDeliveredNoteChecked:true,
       nextRequired:'Wait eligibility; prove/include no-post exit, then use official test Outbox settlement and withdraw L1.'});
     Object.defineProperty(observation,'claim',{enumerable:false,value:{scope,secret,secretHash,depositChainId:chain,
-      depositor,depositNonce:receipt.nonce,amount,content,message,logicalFields:fields,nextAllowedTime:nextAllowed,
+      depositor,amount,content,message,logicalFields:fields,nextAllowedTime:nextAllowed,
       claimReceipt,tx,instance}});
     return observation;
   }catch(error){

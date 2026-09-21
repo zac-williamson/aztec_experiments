@@ -64,7 +64,7 @@ unconstrained fn insert_fixture(
 
 unconstrained fn one_post() -> (TestEnvironment, AztecAddress, AztecAddress, Field, u64, HintedNote<PostNote>) {
     let (mut env, board, owner, _censor, deposit_time) = setup_with_deposit(AMOUNT);
-    let chain = test_chain(board, owner, AMOUNT);
+    let chain = test_chain(env, board, owner, AMOUNT);
     env.mine_block_at(deposit_time + 3601);
     env.call_private(owner, Billboard::at(board).post(chain, crate::fresh_post_nonce(), content(), 4, false, Option::none(), Option::none()));
     let (child, grandchild) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
@@ -102,15 +102,15 @@ unconstrained fn c02_matching_included_child_advances_exactly_one() {
     let (mut env, board, owner, chain, deposit_time, original) = one_post();
     included(env, board, original);
     let before = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(before[6], 1);
-    assert_eq(before[8], 0);
+    assert_eq(before[5], 1);
+    assert_eq(before[7], 0);
     env.mine_block_at(deposit_time + 7202);
     env.call_private(owner, Billboard::at(board).post(chain, crate::fresh_post_nonce(), content(), 4, false, Option::some(original), Option::none()));
     let after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
     assert_eq(after[1], chain);
-    assert_eq(after[6], 2);
-    assert_eq(after[8], 1);
-    assert_eq(after[7], before[5]);
+    assert_eq(after[5], 2);
+    assert_eq(after[7], 1);
+    assert_eq(after[6], before[4]);
 }
 
 #[test(should_fail_with = "C02 wrong contract")]
@@ -139,7 +139,7 @@ unconstrained fn c02_head_cannot_have_duplicate_grandchild() {
 #[test(should_fail_with = "C02 unexpected hints")]
 unconstrained fn c02_no_history_rejects_included_unused_hint() {
     let (mut env, board, owner, _censor, deposit_time) = setup_with_deposit(AMOUNT);
-    let chain = test_chain(board, owner, AMOUNT);
+    let chain = test_chain(env, board, owner, AMOUNT);
     let hint = insert_fixture(env, board, owner, 1000, PostNote {
         schema_version: 1, deposit_chain_id: chain, sequence: 1, post_id: 0,
         anchor_timestamp: deposit_time, previous_link: 0, is_dummy: true,
@@ -155,7 +155,7 @@ unconstrained fn c02_no_history_rejects_included_unused_hint() {
 unconstrained fn young_pair(wrong_owner: bool, dummy_grandchild: bool) {
     let amount = AMOUNT * 2;
     let (mut env, board, owner, _censor, deposit_time) = setup_with_deposit(amount);
-    let chain = test_chain(board, owner, amount);
+    let chain = test_chain(env, board, owner, amount);
     env.mine_block_at(deposit_time + 1801);
     env.call_private(owner, Billboard::at(board).post(chain, crate::fresh_post_nonce(), content(), 4, false, Option::none(), Option::none()));
     let (first, none) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
@@ -169,7 +169,7 @@ unconstrained fn young_pair(wrong_owner: bool, dummy_grandchild: bool) {
     let original_second = second_opt.unwrap_unchecked();
     assert_eq(child.note.sequence, 1); assert_eq(original_second.note.sequence, 2);
     let before = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(before[6], 2); assert_eq(before[8], 0);
+    assert_eq(before[5], 2); assert_eq(before[7], 0);
     let second = if wrong_owner {
         let other_owner = env.create_light_account();
         insert_fixture(env, board, other_owner, original_second.storage_slot, original_second.note)
@@ -185,13 +185,13 @@ unconstrained fn young_pair(wrong_owner: bool, dummy_grandchild: bool) {
     assert(second.note.anchor_timestamp + 3600 > now, "Real grandchild maturity must not explain this control");
     if dummy_grandchild {
         assert(second.note.is_dummy, "Dummy grandchild is mature despite its recent timestamp");
-        assert_eq(before[9], 1, "Only the first post is real before this transition");
+        assert_eq(before[8], 1, "Only the first post is real before this transition");
     }
     env.call_private(owner, Billboard::at(board).post(chain, crate::fresh_post_nonce(), content(), 4, false, Option::some(child), Option::some(second)));
     let after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(after[6], 3);
-    assert_eq(after[8], 0, "A young child must not advance either candidate");
-    assert_eq(after[7], before[7]);
+    assert_eq(after[5], 3);
+    assert_eq(after[7], 0, "A young child must not advance either candidate");
+    assert_eq(after[6], before[6]);
 }
 
 #[test]
@@ -208,7 +208,7 @@ unconstrained fn c02_young_real_child_blocks_mature_dummy_grandchild() { young_p
 unconstrained fn c02_included_young_dummy_advances_without_publication_or_penalty() {
     let amount = AMOUNT * 2;
     let (mut env, board, owner, censor, deposit_time) = setup_with_deposit(amount);
-    let chain = test_chain(board, owner, amount);
+    let chain = test_chain(env, board, owner, amount);
     env.mine_block_at(deposit_time + 1801);
     env.call_private(owner, Billboard::at(board).post(chain, 0, [0; 32], 0, true, Option::none(), Option::none()));
     let (child_opt, second) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
@@ -220,34 +220,34 @@ unconstrained fn c02_included_young_dummy_advances_without_publication_or_penalt
     assert(!env.view_public(Billboard::at(board).get_post_exists(0)));
     assert_eq(env.view_public(Billboard::at(board).get_post_count()), 0);
     let before = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(before[6], 1); assert_eq(before[8], 0); assert_eq(before[9], 0);
-    assert_eq(before[10], (deposit_time + 3600) as Field);
+    assert_eq(before[5], 1); assert_eq(before[7], 0); assert_eq(before[8], 0);
+    assert_eq(before[9], (deposit_time + 3600) as Field);
     env.mine_block_at(deposit_time + 3600);
     assert(child.note.anchor_timestamp + 3600 > env.last_block_timestamp());
     env.call_private(owner, Billboard::at(board).post(chain, crate::fresh_post_nonce(), content(), 4, false, Option::some(child), Option::none()));
     let after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(after[6], 2);
-    assert_eq(after[8], 1, "Included dummy must advance without a censor wait");
-    assert_eq(after[7], before[5]);
-    assert_eq(after[9], 2);
-    assert_eq(after[10], (deposit_time + 5400) as Field, "Dummy flag must not add a penalty");
+    assert_eq(after[5], 2);
+    assert_eq(after[7], 1, "Included dummy must advance without a censor wait");
+    assert_eq(after[6], before[4]);
+    assert_eq(after[8], 2);
+    assert_eq(after[9], (deposit_time + 5400) as Field, "Dummy flag must not add a penalty");
 }
 
 // Second tranche: TXE-authenticated receipts/consumption, never direct deposit
 // state insertion. No L1 refund is simulated by this helper.
 unconstrained fn claim_receipt(
     env: TestEnvironment, board: AztecAddress, owner: AztecAddress,
-    depositor: EthAddress, nonce: u64, secret: Field,
+    depositor: EthAddress, secret: Field,
 ) -> Field {
     let portal = EthAddress::from_field(0xaabbccdd);
-    let claim_content = get_deposit_msg_hash(1, portal, board, 1, depositor, nonce, AMOUNT);
-    let chain = deposit_chain_id(board, owner, claim_content, secret);
+    let claim_content = get_deposit_msg_hash(1, portal, board, 1, depositor, AMOUNT);
     let leaf = env.send_l1_to_l2_message(claim_content, secret, portal, board);
-    env.call_private(owner, Billboard::at(board).claim_deposit(depositor, AMOUNT, nonce, secret, leaf));
+    let chain = deposit_chain_id(board, owner, claim_content, secret, leaf);
+    env.call_private(owner, Billboard::at(board).claim_deposit(depositor, AMOUNT, secret, leaf));
     let actual = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(actual[1], chain); assert_eq(actual[2], nonce as Field);
-    assert_eq(actual[3], AMOUNT as Field); assert_eq(actual[4], depositor.to_field());
-    assert_eq(actual[6], 0); assert_eq(actual[8], 0);
+    assert_eq(actual[1], chain);
+    assert_eq(actual[2], AMOUNT as Field); assert_eq(actual[3], depositor.to_field());
+    assert_eq(actual[5], 0); assert_eq(actual[7], 0);
     chain
 }
 
@@ -256,11 +256,11 @@ unconstrained fn two_receipts(substitution: u8) {
     let first_before = env.execute_utility(Billboard::at(board).get_deposit_info(owner, first_chain));
     // Different L1 depositor: both receipts may legitimately be active, while
     // the same private author owns their independently claimed rights.
-    let second_chain = claim_receipt(env, board, owner, EthAddress::from_field(0x87654321), 1, 0xc021);
+    let second_chain = claim_receipt(env, board, owner, EthAddress::from_field(0x87654321), 0xc021);
     assert(first_chain != second_chain);
     assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, first_chain)), first_before);
     let second_initial = env.execute_utility(Billboard::at(board).get_deposit_info(owner, second_chain));
-    env.mine_block_at((second_initial[10] as u64) + 1);
+    env.mine_block_at((second_initial[9] as u64) + 1);
     env.call_private(owner, Billboard::at(board).post(second_chain, crate::fresh_post_nonce(), content(), 4, false, Option::none(), Option::none()));
     let (second_opt, absent) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, second_chain));
     assert(second_opt.is_some()); assert(absent.is_none());
@@ -272,20 +272,20 @@ unconstrained fn two_receipts(substitution: u8) {
         env.call_private(owner, Billboard::at(board).post(first_chain, crate::fresh_post_nonce(), content(), 4, false, Option::some(second_hint), Option::none()));
     } else if substitution == 2 {
         let ready = env.execute_utility(Billboard::at(board).get_deposit_info(owner, second_chain));
-        env.mine_block_at((ready[10] as u64) + 2);
+        env.mine_block_at((ready[9] as u64) + 2);
         env.call_private(owner, Billboard::at(board).post(second_chain, crate::fresh_post_nonce(), content(), 4, false, Option::some(first_hint), Option::none()));
     } else {
         let second_before = env.execute_utility(Billboard::at(board).get_deposit_info(owner, second_chain));
         env.call_private(owner, Billboard::at(board).post(first_chain, crate::fresh_post_nonce(), content(), 4, false, Option::some(first_hint), Option::none()));
         let first_after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, first_chain));
-        assert_eq(first_after[6], 2); assert_eq(first_after[8], 1);
-        assert_eq(first_after[7], first_before[5]);
+        assert_eq(first_after[5], 2); assert_eq(first_after[7], 1);
+        assert_eq(first_after[6], first_before[4]);
         assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, second_chain)), second_before);
-        env.mine_block_at((second_before[10] as u64) + 2);
+        env.mine_block_at((second_before[9] as u64) + 2);
         env.call_private(owner, Billboard::at(board).post(second_chain, crate::fresh_post_nonce(), content(), 4, false, Option::some(second_hint), Option::none()));
         let second_after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, second_chain));
-        assert_eq(second_after[6], 2); assert_eq(second_after[8], 1);
-        assert_eq(second_after[7], second_before[5]);
+        assert_eq(second_after[5], 2); assert_eq(second_after[7], 1);
+        assert_eq(second_after[6], second_before[4]);
         assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, first_chain)), first_after);
     }
 }
@@ -302,32 +302,32 @@ unconstrained fn old_cycle(use_old_hint: bool) {
     env.mine_block_at(deposit_time + 7202);
     env.call_private(owner, Billboard::at(board).post(old_chain, 0, [0; 32], 0, true, Option::some(old_hint), Option::none()));
     let screened = env.execute_utility(Billboard::at(board).get_deposit_info(owner, old_chain));
-    assert_eq(screened[6], 2); assert_eq(screened[8], 1); assert_eq(screened[9], 1);
-    env.mine_block_at((screened[10] as u64) + 1);
+    assert_eq(screened[5], 2); assert_eq(screened[7], 1); assert_eq(screened[8], 1);
+    env.mine_block_at((screened[9] as u64) + 1);
     env.call_private(owner, Billboard::at(board).withdraw(old_chain));
-    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, old_chain)), [0;11]);
+    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, old_chain)), [0; 10]);
     assert_eq(env.execute_utility(Billboard::at(board).get_deposit_ids(owner, 0)), [0;10]);
     // Historical PostNotes remain included after the actual right is burned.
     included(env, board, old_hint);
-    // TXE's authentic new message represents nonce2; the real L1 refund/redeposit
+    // TXE's authentic new message represents a new deposit; the real L1 refund/redeposit
     // that authorizes that receipt is outside this bounded Noir fixture.
-    let new_chain = claim_receipt(env, board, owner, EthAddress::from_field(0x12345678), 2, 0xc022);
+    let new_chain = claim_receipt(env, board, owner, EthAddress::from_field(0x12345678), 0xc022);
     assert(new_chain != old_chain);
     let initial = env.execute_utility(Billboard::at(board).get_deposit_info(owner, new_chain));
-    env.mine_block_at((initial[10] as u64) + 1);
+    env.mine_block_at((initial[9] as u64) + 1);
     env.call_private(owner, Billboard::at(board).post(new_chain, crate::fresh_post_nonce(), content(), 4, false, Option::none(), Option::none()));
     let (new_opt, absent) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, new_chain));
     assert(new_opt.is_some()); assert(absent.is_none());
     let new_hint = new_opt.unwrap_unchecked();
     included(env, board, new_hint); included(env, board, old_hint);
     let before = env.execute_utility(Billboard::at(board).get_deposit_info(owner, new_chain));
-    env.mine_block_at((before[10] as u64) + 2);
+    env.mine_block_at((before[9] as u64) + 2);
     let candidate = if use_old_hint { old_hint } else { new_hint };
     env.call_private(owner, Billboard::at(board).post(new_chain, crate::fresh_post_nonce(), content(), 4, false, Option::some(candidate), Option::none()));
     let after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, new_chain));
-    assert_eq(after[2], 2); assert_eq(after[6], 2); assert_eq(after[8], 1);
-    assert_eq(after[7], before[5]);
-    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, old_chain)), [0;11]);
+    assert_eq(after[5], 2); assert_eq(after[7], 1);
+    assert_eq(after[6], before[4]);
+    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, old_chain)), [0; 10]);
 }
 
 #[test]
@@ -349,7 +349,7 @@ unconstrained fn c02_included_future_child_timestamp_rejected() {
 unconstrained fn malformed_grandchild(reverse_time: bool) {
     let amount = AMOUNT * 2;
     let (mut env, board, owner, _censor, deposit_time) = setup_with_deposit(amount);
-    let chain = test_chain(board, owner, amount);
+    let chain = test_chain(env, board, owner, amount);
     env.mine_block_at(deposit_time + 1801);
     env.call_private(owner, Billboard::at(board).post(chain, crate::fresh_post_nonce(), content(), 4, false, Option::none(), Option::none()));
     let (first, absent) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));

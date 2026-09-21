@@ -46,7 +46,7 @@ for(const backend of ['file','indexeddb']) {
  // Actual engine intent shapes; transaction proofs and node responses are fixtures.
  for(const kind of ['claim','post','dummy','withdraw'])for(const boundary of ['prepared','response-lost','before-confirmed','after-confirmed'])test(`${backend}: ${kind} preserves exact intent at ${boundary}`,()=>withStorage(async f=>{
   const depositChain=field(),operation=JSON.stringify(kind==='claim'
-   ?{schemaVersion:1,kind,depositor:address(),amount:'1000000000000000',depositNonce:'7',leafIndex:'42',secretHash:field(),transactionHash:field(),depositChain}
+   ?{schemaVersion:1,kind,depositor:address(),amount:'1000000000000000',leafIndex:'42',secretHash:field(),transactionHash:field(),depositChain}
    :kind==='post'?{schemaVersion:1,kind,nonce:field(),message:'original saved text',depositChain}
    :{schemaVersion:1,kind,depositChain,headSequence:'0'});
   const applicationNullifier=['dummy','withdraw'].includes(kind)?f.tx.data.getNonEmptyNullifiers()[0].toString():undefined;

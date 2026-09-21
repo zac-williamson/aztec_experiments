@@ -17,14 +17,14 @@ function fixture(consumer,mutate=false){
  const gas={l2Gas:100,daGas:10,mul(){return this;},computeFee(){return {toBigInt:()=>1n};}};
  class ControlledWallet extends BaseWallet {
   async completeFeeOptions(){return {gasSettings:{maxFeesPerGas:{},maxPriorityFeesPerGas:{}}};}
-  async simulateViaEntrypoint(){return {gasUsed:{totalGas:gas,teardownGas:gas}};}
+  async simulateViaEntrypoint(){return {publicInputs:{forPublic:{}},publicOutput:{},gasUsed:{totalGas:gas,teardownGas:gas}};}
   async createTxExecutionRequestFromPayloadAndFee(){return {};}
  }
  // Scope and sender methods are inherited unchanged from the actual pinned SDK.
  assert.equal(ControlledWallet.prototype.scopesFrom,BaseWallet.prototype.scopesFrom);
  const pxe={proveTx:async(_request,options)=>{observed=options;throw stopped;}};
  const sdk={BaseWallet:ControlledWallet,GasSettings:{from:value=>value}};
- const context=vm.createContext({window:{__aztec:sdk},log(){},toAztec:String,setTimeout,clearTimeout});
+ const context=vm.createContext({performance,window:{__aztec:sdk},log(){},toAztec:String,setTimeout,clearTimeout});
  const path=consumer==='shared'?'../shared/aztec-lib.js':`../apps/src/billboard/${consumer}/engine.js`;
  let source=fs.readFileSync(new URL(path,import.meta.url),'utf8');
  if(mutate){
@@ -38,7 +38,7 @@ function fixture(consumer,mutate=false){
  }else{
   assert.match(source,/\}\)\(\);\s*$/);
   vm.runInContext(source.replace(/\}\)\(\);\s*$/,'g.testWalletFactory=createAztecWallet;})();'),context);
-  wallet=context.testWalletFactory(sdk,pxe,{}, {},()=>{},null);
+  wallet=consumer==='deploy' ? context.testWalletFactory(sdk,pxe,{}, {},()=>{},{}) : context.testWalletFactory(sdk,pxe,{}, {},()=>{},null);
  }
  return {send:options=>wallet.sendTx({},options),observed:()=>observed};
 }

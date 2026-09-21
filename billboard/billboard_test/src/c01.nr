@@ -117,86 +117,86 @@ unconstrained fn c01_binding_rejects_second_binding() {
 #[test]
 unconstrained fn c01_claim_delivers_exact_v1_receipt_and_initial_eligibility() {
     let (mut env,board,owner,_censor,anchor_time)=setup_with_deposit(MINIMUM);
-    let chain=test_chain(board,owner,MINIMUM);
+    let chain=test_chain(env, board,owner,MINIMUM);
     let actual=env.execute_utility(Billboard::at(board).get_deposit_info(owner,chain));
-    assert_eq(actual,[1,chain,1,MINIMUM as Field,DEPOSITOR,0,0,0,0,0,(anchor_time+3600) as Field]);
+    assert_eq(actual,[1,chain,MINIMUM as Field,DEPOSITOR,0,0,0,0,0,(anchor_time+3600) as Field]);
     let absent=env.execute_utility(Billboard::at(board).get_deposit_info(owner,chain+1));
-    assert_eq(absent,[0;11]);
+    assert_eq(absent,[0; 10]);
 }
 
 #[test(should_fail_with="Trying to read from uninitialized PublicImmutable")]
 unconstrained fn c01_claim_rejects_unbound_portal() {
     let (mut env,board,owner,_censor)=setup();
-    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),1,MINIMUM);
+    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),MINIMUM);
     let leaf=env.send_l1_to_l2_message(content,SECRET,EthAddress::from_field(PORTAL),board);
-    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,1,SECRET,leaf));
+    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,SECRET,leaf));
 }
 
 #[test(should_fail_with="No L1 to L2 message found")]
 unconstrained fn c01_claim_rejects_wrong_portal_origin() {
     let (mut env,board,owner)=bound_setup();
     // Content is correct for the configured portal, but the actual envelope origin is different.
-    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),1,MINIMUM);
+    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),MINIMUM);
     let leaf=env.send_l1_to_l2_message(content,SECRET,EthAddress::from_field(PORTAL+1),board);
-    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,1,SECRET,leaf));
+    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,SECRET,leaf));
 }
 #[test(should_fail_with="No L1 to L2 message found")]
 unconstrained fn c01_claim_rejects_wrong_recipient_envelope() {
     let (mut env,board,owner)=bound_setup();
-    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),1,MINIMUM);
+    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),MINIMUM);
     let leaf=env.send_l1_to_l2_message(content,SECRET,EthAddress::from_field(PORTAL),owner);
-    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,1,SECRET,leaf));
+    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,SECRET,leaf));
 }
 #[test(should_fail_with="No L1 to L2 message found")]
 unconstrained fn c01_claim_rejects_wrong_nonzero_secret() {
     let (mut env,board,owner)=bound_setup();
-    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),1,MINIMUM);
+    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),MINIMUM);
     let leaf=env.send_l1_to_l2_message(content,SECRET,EthAddress::from_field(PORTAL),board);
-    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,1,SECRET+1,leaf));
+    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,SECRET+1,leaf));
 }
 #[test(should_fail_with="No L1 to L2 message found")]
-unconstrained fn c01_claim_rejects_changed_receipt_nonce() {
+unconstrained fn c01_claim_rejects_changed_message_leaf_index() {
     let (mut env,board,owner)=bound_setup();
-    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),1,MINIMUM);
+    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),MINIMUM);
     let leaf=env.send_l1_to_l2_message(content,SECRET,EthAddress::from_field(PORTAL),board);
-    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,2,SECRET,leaf));
+    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,SECRET,leaf+1));
 }
 #[test(should_fail_with="No L1 to L2 message found")]
 unconstrained fn c01_claim_rejects_changed_nonzero_depositor() {
     let (mut env,board,owner)=bound_setup();
-    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),1,MINIMUM);
+    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),MINIMUM);
     let leaf=env.send_l1_to_l2_message(content,SECRET,EthAddress::from_field(PORTAL),board);
-    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR+1),MINIMUM,1,SECRET,leaf));
+    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR+1),MINIMUM,SECRET,leaf));
 }
 #[test(should_fail_with="No L1 to L2 message found")]
 unconstrained fn c01_claim_rejects_changed_in_range_amount() {
     let (mut env,board,owner)=bound_setup();
-    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),1,MINIMUM);
+    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),MINIMUM);
     let leaf=env.send_l1_to_l2_message(content,SECRET,EthAddress::from_field(PORTAL),board);
     assert(MINIMUM+1 <= MAXIMUM);
-    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM+1,1,SECRET,leaf));
+    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM+1,SECRET,leaf));
 }
 #[test(should_fail_with="Deposit above maximum")]
 unconstrained fn c01_claim_rejects_amount_above_configuration() {
     let (mut env,board,owner)=bound_setup();
-    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MAXIMUM+1,1,SECRET,0));
+    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MAXIMUM+1,SECRET,0));
 }
 #[test(should_fail_with="Zero claim secret")]
 unconstrained fn c01_claim_rejects_zero_secret() {
     let (mut env,board,owner)=bound_setup();
-    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,1,0,0));
+    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,0,0));
 }
 #[test(should_fail_with="No non-nullified L1 to L2 message found")]
 unconstrained fn c01_claim_replay_cannot_mint_right_for_second_owner() {
     let (mut env,board,owner)=bound_setup();
     let second_owner=env.create_light_account();
-    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),1,MINIMUM);
+    let content=get_deposit_msg_hash(1,EthAddress::from_field(PORTAL),board,1,EthAddress::from_field(DEPOSITOR),MINIMUM);
     let leaf=env.send_l1_to_l2_message(content,SECRET,EthAddress::from_field(PORTAL),board);
-    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,1,SECRET,leaf));
-    let chain=deposit_chain_id(board,owner,content,SECRET);
+    env.call_private(owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,SECRET,leaf));
+    let chain=deposit_chain_id(board,owner,content,SECRET,leaf);
     let first=env.execute_utility(Billboard::at(board).get_deposit_info(owner,chain));
-    assert_eq(first[0],1); assert_eq(first[2],1); assert_eq(first[3],MINIMUM as Field);
-    env.call_private(second_owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,1,SECRET,leaf));
+    assert_eq(first[0],1); assert_eq(first[2],MINIMUM as Field);
+    env.call_private(second_owner,Billboard::at(board).claim_deposit(EthAddress::from_field(DEPOSITOR),MINIMUM,SECRET,leaf));
 }
 
 #[test]
@@ -211,17 +211,17 @@ fn c01_frozen_ready_vector() {
 
 #[test]
 fn c01_frozen_claim_vector() {
-    assert_eq(get_deposit_msg_hash(31337, EthAddress::from_field(0x3333333333333333333333333333333333333333), AztecAddress::from_field(0x0000000000000000000000000000000000000000000000000000000000000002), 1, EthAddress::from_field(0x0000000000000000000000000000000000000004), 1, 1000000000000000), 0x00ac37db55ed41d39ec52c9bb0fe284a571f1a265b3b2d711e90d77f0fac0216);
+    assert_eq(get_deposit_msg_hash(31337, EthAddress::from_field(0x3333333333333333333333333333333333333333), AztecAddress::from_field(0x0000000000000000000000000000000000000000000000000000000000000002), 1, EthAddress::from_field(0x0000000000000000000000000000000000000004), 1000000000000000), 0x00d1c6426288403b409f4302825ee65a3b0fbe07b85d5cf071130a7af43cda77);
 }
 
 #[test]
 fn c01_frozen_exit_vector() {
-    assert_eq(get_withdraw_msg_hash(31337, EthAddress::from_field(0x3333333333333333333333333333333333333333), AztecAddress::from_field(0x0000000000000000000000000000000000000000000000000000000000000002), 1, EthAddress::from_field(0x0000000000000000000000000000000000000004), 1, 1000000000000000), 0x00b0d405fbace9e4a27eefada3a695414599bbd52db63038c787f438184a755b);
+    assert_eq(get_withdraw_msg_hash(31337, EthAddress::from_field(0x3333333333333333333333333333333333333333), AztecAddress::from_field(0x0000000000000000000000000000000000000000000000000000000000000002), 1, EthAddress::from_field(0x0000000000000000000000000000000000000004), 1000000000000000), 0x00f84b763239111dcf12409670917b94fa90059539fd2f5ad97457e996818795);
 }
 
 #[test]
 fn c01_frozen_claim_boundary_vector() {
-    assert_eq(get_deposit_msg_hash(31337, EthAddress::from_field(0x3333333333333333333333333333333333333333), AztecAddress::from_field(0x0000000000000000000000000000000000000000000000000000000000000002), 1, EthAddress::from_field(0x0000000000000000000000000000000000000004), 18446744073709551615, 79228162514264337593543950335), 0x0051330adffea13f8863144b4802b56b659fcc82d3fb3936d02e6be96bfa950f);
+    assert_eq(get_deposit_msg_hash(31337, EthAddress::from_field(0x3333333333333333333333333333333333333333), AztecAddress::from_field(0x0000000000000000000000000000000000000000000000000000000000000002), 1, EthAddress::from_field(0x0000000000000000000000000000000000000004), 79228162514264337593543950335), 0x008d8c87e096f86f752ce59c98ae01035b116c18f809f96c786a3b3b9ee2fb21);
 }
 
 // The corrected TXE service uses actual chain/version 1/1 on both sides.
@@ -239,4 +239,41 @@ unconstrained fn c01_init_rejects_wrong_configured_chain() {
     let deployer=env.create_light_account(); let censor=env.create_light_account();
     let init=Billboard::interface().init(2,EthAddress::from_field(0x1111),1,MINIMUM,MAXIMUM,3600,censor,4,3600,16,policy_bytes([65]),1);
     let _board=env.deploy("@billboard_contract/Billboard").with_public_initializer(deployer,init);
+}
+
+
+// Uses real TXE message consumption and private note burning. Ethereum refund
+// settlement is covered separately by the portal tests.
+unconstrained fn same_secret_redeposit() -> (TestEnvironment, AztecAddress, AztecAddress, Field) {
+    let (mut env, board, owner) = bound_setup();
+    let portal = EthAddress::from_field(PORTAL);
+    let depositor = EthAddress::from_field(DEPOSITOR);
+    let content = get_deposit_msg_hash(1, portal, board, 1, depositor, MINIMUM);
+    let first_leaf = env.send_l1_to_l2_message(content, SECRET, portal, board);
+    env.call_private(owner, Billboard::at(board).claim_deposit(depositor, MINIMUM, SECRET, first_leaf));
+    let first_chain = deposit_chain_id(board, owner, content, SECRET, first_leaf);
+    let first = env.execute_utility(Billboard::at(board).get_deposit_info(owner, first_chain));
+    env.mine_block_at(first[9] as u64);
+    env.call_private(owner, Billboard::at(board).withdraw(first_chain));
+    let second_leaf = env.send_l1_to_l2_message(content, SECRET, portal, board);
+    assert(first_leaf != second_leaf);
+    env.call_private(owner, Billboard::at(board).claim_deposit(depositor, MINIMUM, SECRET, second_leaf));
+    let second_chain = deposit_chain_id(board, owner, content, SECRET, second_leaf);
+    assert(first_chain != second_chain);
+    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, first_chain)), [0; 10]);
+    let second = env.execute_utility(Billboard::at(board).get_deposit_info(owner, second_chain));
+    assert_eq(second[1], second_chain); assert_eq(second[2], MINIMUM as Field);
+    (env, board, owner, first_leaf)
+}
+
+#[test]
+unconstrained fn c01_same_secret_same_amount_redeposit_has_distinct_history() {
+    let _ = same_secret_redeposit();
+}
+
+#[test(should_fail_with="No non-nullified L1 to L2 message found")]
+unconstrained fn c01_consumed_claim_cannot_replay_after_same_secret_redeposit() {
+    let (env, board, owner, first_leaf) = same_secret_redeposit();
+    env.call_private(owner, Billboard::at(board).claim_deposit(
+        EthAddress::from_field(DEPOSITOR), MINIMUM, SECRET, first_leaf));
 }

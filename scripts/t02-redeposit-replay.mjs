@@ -24,17 +24,17 @@ const integer=value=>BigInt(value.toString());
 
 export async function qualifyT02RedepositReplay({node,preparation,instance,l1Client,directory,ready,authorAccount,priorClaimResult,claimResult,priorRefund}) {
  let wallet,stage='preflight';
- const observation={passed:false,transactionSubmitted:false,completedReplayProof:false,scope:'consumed original claim and exit rejected after genuine redeposit; not independent nonce-binding proof'};
+ const observation={passed:false,transactionSubmitted:false,completedReplayProof:false,scope:'consumed original claim and exit rejected after genuine redeposit'};
  try {
   assertNodeVersion();assertAztecPackages();assert(path.isAbsolute(directory));
   assert(priorClaimResult.passed&&claimResult.passed&&claimResult.exactDeliveredNoteChecked&&priorRefund.passed);
   const old=priorClaimResult.claim,fresh=claimResult.claim,replay=priorRefund.replay,account=authorAccount;
   assert(old&&fresh&&replay&&account);assert.deepEqual(old.scope,fresh.scope);
-  assert.equal(fresh.depositNonce,old.depositNonce+1n);assert.equal(fresh.amount,old.amount);
+  assert.notEqual(fresh.message.index.toBigInt(),old.message.index.toBigInt());assert.equal(fresh.amount,old.amount);
   assert.equal(fresh.depositor,old.depositor);assert(!fresh.depositChainId.equals(old.depositChainId));
   assert(!fresh.tx.getTxHash().equals(old.tx.getTxHash()));
   assert.equal(replay.portalAddress.toLowerCase(),fresh.scope.portalAddress.toLowerCase());
-  assert.equal(replay.depositor.toLowerCase(),fresh.depositor);assert.equal(BigInt(replay.originalNonce),old.depositNonce);assert.equal(BigInt(replay.originalAmount),old.amount);
+  assert.equal(replay.depositor.toLowerCase(),fresh.depositor);assert.equal(BigInt(replay.originalAmount),old.amount);
   assert.equal(l1Client.account.address.toLowerCase(),fresh.depositor);assert.equal(await l1Client.getChainId(),31337);
   assert.equal((await node.getConfig()).realProofs,true);assert(!node.getProverNode());
   const info=await node.getNodeInfo();assert.equal(Number(info.l1ChainId),31337);assert.equal(fresh.scope.l1ChainId,'31337');
@@ -56,7 +56,7 @@ export async function qualifyT02RedepositReplay({node,preparation,instance,l1Cli
    const notes=await wallet.pxe.debug.getNotes(filter);assert.equal(notes.filter(n=>n.note.items[1]?.equals(old.depositChainId)).length,0);
    const current=notes.filter(n=>n.note.items[1]?.equals(fresh.depositChainId));assert.equal(current.length,1);const note=current[0];
    assert(note.owner.equals(account.address)&&note.contractAddress.equals(instance.address));assert(note.txHash.equals(fresh.tx.getTxHash()));assert(!note.siloedNullifier.isZero());
-   assert.deepEqual(note.note.items.map(integer),[fields[0]+(fields[2]<<32n),fields[1],fields[3],fields[4],fields[5],fields[7],fields[6]+(fields[8]<<64n)+(fields[9]<<128n),fields[10]]);
+   assert.deepEqual(note.note.items.map(integer),[fields[0],fields[1],fields[2],fields[3],fields[4],fields[6],fields[5]+(fields[7]<<64n)+(fields[8]<<128n),fields[9]]);
    return {fields,items:note.note.items.map(integer),nullifier:note.siloedNullifier.toString(),txHash:note.txHash.toString()};
   }
   const initial=await noteState(),anchor=await wallet.pxe.getSyncedBlockHeader();
@@ -66,7 +66,7 @@ export async function qualifyT02RedepositReplay({node,preparation,instance,l1Cli
   const nullifier=await siloNullifier(instance.address,await poseidon2HashWithSeparator([old.message.hash(),old.secret],DomainSeparator.MESSAGE_NULLIFIER));
   const spent=await node.getNullifierMembershipWitness(anchor.getBlockNumber(),nullifier);assert(spent);assert.equal(spent.leafPreimage.getKey(),nullifier.toBigInt());
   stage='old-claim-rejection';
-  const payload=await board.methods.claim_deposit(EthAddress.fromString(old.depositor),old.amount,old.depositNonce,old.secret,new Fr(membership[0])).request();
+  const payload=await board.methods.claim_deposit(EthAddress.fromString(old.depositor),old.amount,old.secret,new Fr(membership[0])).request();
   const fee=await wallet.completeFeeOptions({from:account.address,feePayer:payload.feePayer});
   const request=await wallet.createTxExecutionRequestFromPayloadAndFee(payload,account.address,fee);
   let rejected=false;
@@ -78,7 +78,7 @@ export async function qualifyT02RedepositReplay({node,preparation,instance,l1Cli
   const address=fresh.scope.portalAddress,abi=[...portal.abi,...OutboxAbi.filter(item=>item.type==='error')];
   const read=(functionName,args=[])=>l1Client.readContract({address,abi:portal.abi,functionName,args});
   const state=async()=>({receipt:await read('getDeposit',[fresh.depositor]),liability:await read('totalDeposited'),balance:await l1Client.getBalance({address})});
-  const before=await state();assert.deepEqual(before.receipt,[fresh.depositNonce,fresh.amount]);
+  const before=await state();assert.deepEqual(before.receipt,fresh.amount);
   const args=replay.args;assert(Array.isArray(args)&&args.length===4&&Array.isArray(args[3]));assert(args[3].length<256);assert(BigInt(args[1])>0n&&BigInt(args[2])>=0n&&BigInt(args[2])<(1n<<BigInt(args[3].length)));
   let exitRejected=false;
   try {await l1Client.simulateContract({address,abi,functionName:'withdraw',args,account:l1Client.account});}
@@ -87,7 +87,7 @@ export async function qualifyT02RedepositReplay({node,preparation,instance,l1Cli
   await wallet.pxe.sync();assert.deepEqual(await noteState(),initial);
   assert.equal((await node.getBlock(fresh.claimReceipt.blockNumber)).hash.toString(),fresh.claimReceipt.blockHash.toString());
   assert.equal(sha(await fs.readFile(path.join(ROOT,BOARD))),sha(boardBytes));assert.equal(sha(await fs.readFile(path.join(ROOT,PORTAL))),sha(portalBytes));
-  Object.assign(observation,{passed:true,nonceIncremented:true,distinctDepositChain:true,originalInboxLeafPresent:true,originalMessageNullifierPresent:true,oldClaimRejected:true,claimRejectionStage:'PXE witness generation; no completed proof or submission',oldExitRejected:true,exitRejection:'Outbox__AlreadyNullified',freshNoteUnchanged:true,oldChainAbsent:true,freshReceiptUnchanged:true,liabilityUnchanged:true,portalBalanceUnchanged:true});
+  Object.assign(observation,{passed:true,distinctInboxIndex:true,distinctDepositChain:true,originalInboxLeafPresent:true,originalMessageNullifierPresent:true,oldClaimRejected:true,claimRejectionStage:'PXE witness generation; no completed proof or submission',oldExitRejected:true,exitRejection:'Outbox__AlreadyNullified',freshNoteUnchanged:true,oldChainAbsent:true,freshReceiptUnchanged:true,liabilityUnchanged:true,portalBalanceUnchanged:true});
   return observation;
  }catch(error){const failure=new Error('T02_REDEPOSIT_REPLAY_FAILED:'+stage+':'+(error?.name??'Error'));failure.redepositReplayObservation={...observation,passed:false,stage,errorClass:error?.name??'Error'};throw failure;}
  finally {if(wallet){await wallet.stop();observation.walletStopped=true;}}

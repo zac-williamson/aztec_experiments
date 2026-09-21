@@ -41,19 +41,19 @@ export async function verifyExtensionCollateral({page,walletPage,provider,publis
   assert.equal(tx.data,portal.interface.encodeFunctionData(method,args));assert.equal(tx.value,value);assert.equal(tx.nonce,nonce);assert.equal(tx.chainId,31337n);
   assert.equal(receipt.status,1);assert.equal((await provider.getBlock(receipt.blockNumber)).hash,receipt.blockHash);
   const events=receipt.logs.filter(log=>log.address.toLowerCase()===scope.portalAddress).map(log=>portal.interface.parseLog(log)).filter(event=>event?.name===eventName);
-  assert.equal(events.length,1);assert.equal(events[0].args.depositor.toLowerCase(),user.address.toLowerCase());assert.equal(events[0].args.nonce,1n);assert.equal(events[0].args.amount,1000n);
+  assert.equal(events.length,1);assert.equal(events[0].args.depositor.toLowerCase(),user.address.toLowerCase());assert.equal(events[0].args.amount,1000n);
   if(eventName==='Deposited')assert.equal(events[0].args.secretHash,secretHash);
   return receipt;
  }
  try {
-  const deposit=await send({data:portal.interface.encodeFunctionData('deposit',[secretHash]),value:amount,expected:{kind:'deposit',nonce:'1',amount,secretHash}});
-  assert.equal((await portal.getDeposit(user.address)).nonce,1n);assert.equal((await portal.getDeposit(user.address)).amount,1000n);assert.equal(await provider.getBalance(scope.portalAddress),1000n);
+  const deposit=await send({data:portal.interface.encodeFunctionData('deposit',[secretHash]),value:amount,expected:{kind:'deposit',amount,secretHash}});
+  assert.equal(await portal.getDeposit(user.address),1000n);assert.equal(await provider.getBalance(scope.portalAddress),1000n);
   const depositReceipt=await verifyCanonical(deposit.txHash,'deposit',[secretHash],1000n,nonceBefore,'Deposited');
-  const exitRoot=await leaf(await sha256Field(encodeEscrowCommitment('exit',scope,{depositor:user.address.toLowerCase(),depositNonce:'1',amount})));
+  const exitRoot=await leaf(await sha256Field(encodeEscrowCommitment('exit',scope,{depositor:user.address.toLowerCase(),amount})));
   await (await publisher.publish(2,1,exitRoot)).wait();
-  const refund=await send({data:portal.interface.encodeFunctionData('withdraw',[2,1,0,[]]),value:'0',expected:{kind:'withdraw',nonce:'1',amount}},deposit.txHash);
+  const refund=await send({data:portal.interface.encodeFunctionData('withdraw',[2,1,0,[]]),value:'0',expected:{kind:'withdraw',amount}},deposit.txHash);
   const refundReceipt=await verifyCanonical(refund.txHash,'withdraw',[2,1,0,[]],0n,nonceBefore+1,'Withdrawn');
-  assert.equal((await portal.getDeposit(user.address)).nonce,0n);assert.equal((await portal.getDeposit(user.address)).amount,0n);assert.equal(await provider.getBalance(scope.portalAddress),0n);
+  assert.equal(await portal.getDeposit(user.address),0n);assert.equal(await provider.getBalance(scope.portalAddress),0n);
   const outbox=new Contract(await publisher.getOutbox(),OutboxAbi,provider);assert.equal(await outbox.hasMessageBeenConsumedAtEpoch(2,1),true);
   const balanceAfter=await provider.getBalance(user.address);
   assert.equal(balanceAfter,balanceBefore-depositReceipt.fee-refundReceipt.fee);

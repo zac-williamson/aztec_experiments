@@ -4,7 +4,7 @@ use aztec::macros::aztec;
 
 #[aztec]
 pub contract Billboard {
-    use crate::lib::{ReceiptMetadata, SequenceState, compute_cooldown, checked_time_add, deposit_chain_id, post_id, post_link, get_ready_msg_hash, get_deposit_msg_hash, get_withdraw_msg_hash};
+    use crate::lib::{SequenceState, compute_cooldown, checked_time_add, deposit_chain_id, post_id, post_link, get_ready_msg_hash, get_deposit_msg_hash, get_withdraw_msg_hash};
 
     use aztec::{
         history::{note::assert_note_existed_by, storage::public_storage_historical_read},
@@ -142,7 +142,7 @@ pub contract Billboard {
     #[derive(Deserialize, Eq, Serialize, Packable)]
     #[note]
     pub struct DepositNote {
-        pub receipt: ReceiptMetadata,
+        pub schema_version: Field,
         pub deposit_chain_id: Field,
         pub amount: u128,
         pub l1_depositor: EthAddress,
@@ -153,8 +153,8 @@ pub contract Billboard {
     }
 
     impl DepositNote {
-        fn logical_fields(self) -> [Field; 11] {
-            [self.receipt.schema_version as Field, self.deposit_chain_id, self.receipt.deposit_nonce as Field,
+        fn logical_fields(self) -> [Field; 10] {
+            [self.schema_version, self.deposit_chain_id,
                 self.amount as Field, self.l1_depositor.to_field(), self.head_link,
                 self.sequences.head_sequence as Field, self.screened_link, self.sequences.screened_sequence as Field,
                 self.sequences.last_real_sequence as Field, self.next_allowed_time as Field]
@@ -259,7 +259,8 @@ pub contract Billboard {
         censor: PublicMutable<AztecAddress, Context>,
         // Post metadata (public)
         post_time: Map<Field, PublicMutable<u64, Context>, Context>,
-        post_flagged: Map<Field, PublicMutable<bool, Context>, Context>,
+        /// 0 = visible, 1 = removed, 3 = removed with timely collateral penalty.
+        post_flagged: Map<Field, PublicMutable<u8, Context>, Context>,
         /// The address of the censor who flagged each post (zero = never flagged).
         /// Public record of accountability.
         post_flagged_by: Map<Field, PublicMutable<AztecAddress, Context>, Context>,
@@ -291,12 +292,11 @@ pub contract Billboard {
             deployer: self.msg_sender() };
         config.validate(self.context.chain_id(), self.context.version());
         assert(censor.to_field() != 0, "Zero censor");
-        crate::lib::validate_policy(policy, policy_len);
+        let version = crate::lib::policy_version(self.address, policy, policy_len);
         self.storage.config.initialize(config);
         self.storage.censor.write(censor);
         self.storage.policy_len.write(policy_len);
         for i in 0..POLICY_FIELDS { self.storage.policy_data.at(i).write(policy[i]); }
-        let version = crate::lib::policy_version(self.address, policy, policy_len);
         self.storage.policy_version.write(version);
         self.emit(PolicyPublished { schema_version: 1, policy_version: version,
             policy_length: policy_len as u16, policy_fields: policy });
@@ -350,12 +350,11 @@ pub contract Billboard {
         let sender = self.msg_sender();
         assert(sender.to_field() != AztecAddress::zero().to_field(), "No censor configured");
         assert(sender.to_field() == censor.to_field(), "Only censor can set policy");
-        crate::lib::validate_policy(policy, policy_len);
+        let version = crate::lib::policy_version(self.address, policy, policy_len);
         self.storage.policy_len.write(policy_len);
         for i in 0..POLICY_FIELDS {
             self.storage.policy_data.at(i).write(policy[i]);
         }
-        let version = crate::lib::policy_version(self.address, policy, policy_len);
         self.storage.policy_version.write(version);
         self.emit(PolicyPublished { schema_version: 1, policy_version: version,
             policy_length: policy_len as u16, policy_fields: policy });
@@ -374,14 +373,15 @@ pub contract Billboard {
         assert(sender.to_field() != AztecAddress::zero().to_field(), "No censor configured");
         assert(sender.to_field() == censor.to_field(), "Only censor can declare immoral");
         assert(self.storage.post_exists.at(post_id).read(), "Invalid post id");
-        assert(!self.storage.post_flagged.at(post_id).read(), "Already flagged");
+        assert(self.storage.post_flagged.at(post_id).read() == 0, "Already flagged");
 
-        let version = self.storage.post_policy_version.at(post_id).read();
+        let version = self.storage.policy_version.read();
         assert(version == expected_policy_version, "Policy version mismatch");
         let now = self.context.timestamp();
-        assert(now < self.storage.post_flag_deadline.at(post_id).read(), "Flag deadline expired");
+        let penalized = (now < self.storage.post_flag_deadline.at(post_id).read())
+            & (version == self.storage.post_policy_version.at(post_id).read());
         crate::lib::validate_reason(reason_fields, reason_length);
-        self.storage.post_flagged.at(post_id).write(true);
+        self.storage.post_flagged.at(post_id).write(if penalized { 3 } else { 1 });
         self.storage.post_flagged_by.at(post_id).write(sender);
 
         self.storage.censor_response_length.at(post_id).write(reason_length);
@@ -397,7 +397,7 @@ pub contract Billboard {
     // ============================================================
 
     #[external("private")]
-    fn claim_deposit(depositor: EthAddress, amount: u128, deposit_nonce: u64, secret: Field, message_leaf_index: Field) {
+    fn claim_deposit(depositor: EthAddress, amount: u128, secret: Field, message_leaf_index: Field) {
         let sender = self.msg_sender();
         let now = self.context.get_anchor_block_header().timestamp();
         let config = self.storage.config.read();
@@ -408,17 +408,16 @@ pub contract Billboard {
         assert(portal.to_field() != 0, "Zero portal");
         assert(sender.to_field() != 0, "Zero owner");
         assert(depositor.to_field() != 0, "Zero depositor");
-        assert(deposit_nonce > 0, "Zero deposit nonce");
         assert(secret != 0, "Zero claim secret");
         assert(amount >= config.min_deposit, "Deposit below minimum");
         assert(amount <= config.max_deposit, "Deposit above maximum");
         let content = get_deposit_msg_hash(config.l1_chain_id, portal, self.address,
-            config.rollup_version, depositor, deposit_nonce, amount);
+            config.rollup_version, depositor, amount);
         self.context.consume_l1_to_l2_message(content, [secret], portal, message_leaf_index);
-        let chain = deposit_chain_id(self.address, sender, content, secret);
+        let chain = deposit_chain_id(self.address, sender, content, secret, message_leaf_index);
         assert(chain != 0, "Zero deposit identity");
         let cooldown = compute_cooldown(amount, config.base_cooldown as u64, config.min_deposit);
-        let note = DepositNote { receipt: ReceiptMetadata { schema_version: 1, deposit_nonce }, deposit_chain_id: chain,
+        let note = DepositNote { schema_version: 1, deposit_chain_id: chain,
             amount, l1_depositor: depositor, head_link: 0, screened_link: 0,
             sequences: SequenceState { head_sequence: 0, screened_sequence: 0, last_real_sequence: 0 },
             next_allowed_time: checked_time_add(now, cooldown) };
@@ -484,7 +483,7 @@ pub contract Billboard {
         let notes = self.storage.deposits.at(sender).pop_notes(options);
         assert(notes.len() > 0, "No deposit note found -- claim a deposit first");
         let dep_note = notes.get_unchecked(0);
-        assert((dep_note.receipt.schema_version == 1) & (dep_note.deposit_chain_id == deposit_chain_id) & (deposit_chain_id != 0), "Invalid deposit identity");
+        assert((dep_note.schema_version == 1) & (dep_note.deposit_chain_id == deposit_chain_id) & (deposit_chain_id != 0), "Invalid deposit identity");
 
         let config = self.storage.config.read();
         config.validate(self.context.chain_id(), self.context.version());
@@ -547,7 +546,7 @@ pub contract Billboard {
             if child_mature {
                 if !cn.is_dummy {
                     let flag_slot = self.storage.post_flagged.at(cn.post_id).get_storage_slot();
-                    if public_storage_historical_read(header, flag_slot, addr) == 1 { flag_count += 1; }
+                    if public_storage_historical_read(header, flag_slot, addr) == 3 { flag_count += 1; }
                 }
                 new_screened_link = child_link;
                 new_screened_sequence = cn.sequence;
@@ -580,7 +579,7 @@ pub contract Billboard {
                 if child_mature & gc_mature {
                     if !gn.is_dummy {
                         let flag_slot = self.storage.post_flagged.at(gn.post_id).get_storage_slot();
-                        if public_storage_historical_read(header, flag_slot, addr) == 1 { flag_count += 1; }
+                        if public_storage_historical_read(header, flag_slot, addr) == 3 { flag_count += 1; }
                     }
                     new_screened_link = gc_link;
                     new_screened_sequence = gn.sequence;
@@ -630,7 +629,7 @@ pub contract Billboard {
 
         // --- Re-insert deposit note with updated state ---
         let new_deposit = DepositNote {
-            receipt: dep_note.receipt, deposit_chain_id,
+            schema_version: dep_note.schema_version, deposit_chain_id,
             sequences: SequenceState { head_sequence: sequence, screened_sequence: new_screened_sequence,
                 last_real_sequence: new_last_real },
             amount: dep_note.amount,
@@ -690,14 +689,14 @@ pub contract Billboard {
         let notes = self.storage.deposits.at(sender).pop_notes(options);
         assert(notes.len() > 0, "No deposit note found");
         let deposit = notes.get_unchecked(0);
-        assert((deposit.receipt.schema_version == 1) & (deposit.deposit_chain_id == deposit_chain_id) & (deposit_chain_id != 0), "Invalid deposit identity");
-        assert((deposit.receipt.deposit_nonce > 0) & (deposit.amount >= config.min_deposit) & (deposit.amount <= config.max_deposit), "Invalid deposit receipt");
+        assert((deposit.schema_version == 1) & (deposit.deposit_chain_id == deposit_chain_id) & (deposit_chain_id != 0), "Invalid deposit identity");
+        assert((deposit.amount >= config.min_deposit) & (deposit.amount <= config.max_deposit), "Invalid deposit receipt");
         deposit.l1_depositor.validate();
         assert(deposit.l1_depositor.to_field() != 0, "Zero depositor");
         assert(deposit.sequences.screened_sequence >= deposit.sequences.last_real_sequence, "Too early to withdraw -- not all posts screened");
         assert(now >= deposit.next_allowed_time, "Too early to withdraw -- time lock not expired");
         let content = get_withdraw_msg_hash(config.l1_chain_id, portal, self.address,
-            config.rollup_version, deposit.l1_depositor, deposit.receipt.deposit_nonce, deposit.amount);
+            config.rollup_version, deposit.l1_depositor, deposit.amount);
         self.context.message_portal(portal, content);
     }
 
@@ -751,7 +750,7 @@ pub contract Billboard {
     #[view]
     fn is_post_flagged(id: Field) -> pub bool {
         assert(self.storage.post_exists.at(id).read(), "Invalid post id");
-        self.storage.post_flagged.at(id).read()
+        self.storage.post_flagged.at(id).read() != 0
     }
 
     #[external("public")]
@@ -895,11 +894,11 @@ pub contract Billboard {
 
     /// Exact V1 serialization, selected by private deposit identity.
     #[external("utility")]
-    unconstrained fn get_deposit_info(owner: AztecAddress, deposit_chain_id: Field) -> pub [Field; 11] {
+    unconstrained fn get_deposit_info(owner: AztecAddress, deposit_chain_id: Field) -> pub [Field; 10] {
         let options = NoteViewerOptions::<DepositNote, 8>::new()
             .select(DepositNote::properties().deposit_chain_id, Comparator.EQ, deposit_chain_id).set_limit(1);
         let notes = self.storage.deposits.at(owner).view_notes(options);
-        if notes.len() == 0 { [0; 11] } else { notes.get_unchecked(0).logical_fields() }
+        if notes.len() == 0 { [0; 10] } else { notes.get_unchecked(0).logical_fields() }
     }
 
     /// Returns exact child/grandchild hints for the selected live deposit.

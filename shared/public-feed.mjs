@@ -74,7 +74,9 @@ export function createPublicFeed({ scope, source, storage, startBlock=1, rangeSi
       if(keep!==ranges.length)await rollback(keep);
       let pages=0;
       while(pages<pagesPerSync){const fromBlock=(ranges.at(-1)?.checkpoint.number??startBlock-1)+1;if(fromBlock>head.number)break;
-        const toBlock=Math.min(head.number,fromBlock+rangeSize-1),end=await read(()=>source.getBlock(toBlock));
+        const first=await read(()=>source.getNextEventBlock({fromBlock,toBlock:head.number,referenceBlock:head.hash}));
+        if(!integer(first)||first<fromBlock||first>head.number)throw fail('Invalid first public event block.');
+        const toBlock=Math.min(head.number,first+rangeSize-1),end=await read(()=>source.getBlock(toBlock));
         if(!end||end.number!==toBlock||!hash(end.hash))throw fail('Public feed range is unavailable.');
         const events=await read(()=>source.getEvents({fromBlock,toBlock,referenceBlock:head.hash}));
         if(!Array.isArray(events))throw fail('Invalid public event response.');

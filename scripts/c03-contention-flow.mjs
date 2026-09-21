@@ -91,7 +91,7 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
     const query=async(owner,name,...args)=>(await board.methods[name](...args).simulate({from:owner})).result;
     const logical=async({account,claimResult})=>{
       const values=await query(account.address,'get_deposit_info',account.address,claimResult.claim.depositChainId);
-      assert(Array.isArray(values)&&values.length===11);return values.map(integer);
+      assert(Array.isArray(values)&&values.length===10);return values.map(integer);
     };
     const filter=owner=>({contractAddress:instance.address,owner,status:NoteStatus.ACTIVE,scopes:[owner]});
     const depositNotes=async item=>(await wallet.pxe.debug.getNotes({...filter(item.account.address),storageSlot:boardArtifact.storageLayout.deposits.slot}))
@@ -99,8 +99,8 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
     let eligibleAt=0n;
     for(const item of authorClaims){
       const fields=await logical(item);assert.deepEqual(fields,item.claimResult.claim.logicalFields);
-      assert.deepEqual(fields.slice(5,10),[0n,0n,0n,0n,0n]);
-      if(fields[10]>eligibleAt)eligibleAt=fields[10];
+      assert.deepEqual(fields.slice(4,9),[0n,0n,0n,0n,0n]);
+      if(fields[9]>eligibleAt)eligibleAt=fields[9];
     }
     const firstOwner=authorClaims[0].account.address;
     assert.equal(integer(await query(firstOwner,'get_post_count')),0n,'Fresh unposted board required');
@@ -138,8 +138,8 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
       const oldFields=await logical(item);assert.deepEqual(oldFields,claim.logicalFields);
       const notes=await depositNotes(item);assert.equal(notes.length,1);const oldNote=notes[0];
       assert(oldNote.txHash.equals(claim.tx.getTxHash()));assert.equal(oldNote.note.items.length,8);
-      assert.deepEqual(oldNote.note.items.map(integer),[1n+(claim.depositNonce<<32n),claim.depositChainId.toBigInt(),
-        claim.amount,BigInt(claim.depositor),0n,0n,0n,oldFields[10]]);
+      assert.deepEqual(oldNote.note.items.map(integer),[1n,claim.depositChainId.toBigInt(),
+        claim.amount,BigInt(claim.depositor),0n,0n,0n,oldFields[9]]);
       assert(!oldNote.siloedNullifier.isZero());
       assert.deepEqual(await query(account.address,'get_screen_hints',account.address,claim.depositChainId),[undefined,undefined]);
       let nonce;do{nonce=Fr.random();}while(nonce.isZero());
@@ -209,12 +209,12 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
       assert.equal(Number(effect.l2BlockNumber),Number(receipt.blockNumber));
       assert.equal(effect.l2BlockHash.toString(),receipt.blockHash.toString());
       assert.equal(effect.data.nullifiers.filter(value=>value.equals(oldNote.siloedNullifier)).length,1);
-      const fields=await logical(item);assert.deepEqual(fields.slice(0,5),oldFields.slice(0,5));
-      assert(fields[5]!==0n);assert.deepEqual(fields.slice(6,10),[1n,0n,0n,1n]);
+      const fields=await logical(item);assert.deepEqual(fields.slice(0,4),oldFields.slice(0,4));
+      assert(fields[4]!==0n);assert.deepEqual(fields.slice(5,9),[1n,0n,0n,1n]);
       const replacements=await depositNotes(item);assert.equal(replacements.length,1);const replacement=replacements[0];
       assert(replacement.txHash.equals(tx.getTxHash()));assert(!replacement.siloedNullifier.equals(oldNote.siloedNullifier));
-      assert.deepEqual(replacement.note.items.map(integer),[fields[0]+(fields[2]<<32n),fields[1],fields[3],fields[4],
-        fields[5],fields[7],fields[6]+(fields[8]<<64n)+(fields[9]<<128n),fields[10]]);
+      assert.deepEqual(replacement.note.items.map(integer),[fields[0],fields[1],fields[2],fields[3],
+        fields[4],fields[6],fields[5]+(fields[7]<<64n)+(fields[8]<<128n),fields[9]]);
       const posts=(await wallet.pxe.debug.getNotes(filter(item.account.address))).filter(note=>note.txHash.equals(tx.getTxHash())&&note.note.items.length===7);
       assert.equal(posts.length,1);
       assert.deepEqual(posts[0].note.items.map(integer),[1n,fields[1],1n,id.toBigInt(),integer(anchor.globalVariables.timestamp),0n,0n]);

@@ -12,9 +12,9 @@ library PortalMessages {
     }
 
     function receipt(bool isExit, uint256 chainId, address portal, bytes32 board, uint256 version,
-        address depositor, uint64 nonce, uint128 amount) internal pure returns (bytes32)
+        address depositor, uint128 amount) internal pure returns (bytes32)
     {
         return Hash.sha256ToField(abi.encode(isExit ? bytes32("AZTEC_BB_EXIT_V1") : bytes32("AZTEC_BB_CLAIM_V1"),
-            uint256(1), chainId, portal, board, version, depositor, nonce, amount));
+            uint256(1), chainId, portal, board, version, depositor, amount));
     }
 }

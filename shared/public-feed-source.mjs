@@ -72,9 +72,9 @@ export function decodePublicFeedLog({type,log,metadata,scope,censorWindow}){
   }catch{throw fail();}
 }
 
-export async function createPublicFeedSource({node,scope,artifact,eventTags,metadata:providedMetadata,censorWindow,timeoutMs=20000,pageSize=20,maxRange=1000,maxPages=100,maxEvents=2000}){
+export async function createPublicFeedSource({node,scope,artifact,eventTags,metadata:providedMetadata,censorWindow,timeoutMs=20000,pageSize=20,maxPages=100,maxEvents=2000}){
   scope=validateScope(scope);
-  if(!natural(pageSize,20)||pageSize<1||!natural(maxRange,1000)||maxRange<1||!natural(maxPages,100)||maxPages<1||
+  if(!natural(pageSize,20)||pageSize<1||!natural(maxPages,100)||maxPages<1||
     !natural(maxEvents,10000)||maxEvents<1||!natural(timeoutMs,20000)||timeoutMs<1||!/^[1-9][0-9]*$/.test(String(censorWindow))||BigInt(censorWindow)>=1n<<32n)throw fail();
   const read=fn=>boundedTransactionRead(fn,timeoutMs).catch(()=>{throw fail();});
   const info=await read(()=>node.getNodeInfo());
@@ -94,8 +94,27 @@ export async function createPublicFeedSource({node,scope,artifact,eventTags,meta
     if(!natural(number)||number<1||!hex32(hash))throw fail();
     return {number,hash};
   }
+  // The node indexes by board and event tag. Jump empty history in one query,
+  // while retaining small event-bearing batches and all existing resource limits.
+  async function getNextEventBlock({fromBlock,toBlock,referenceBlock}) {
+    if(!natural(fromBlock)||fromBlock<1||!natural(toBlock)||toBlock<fromBlock||!hex32(referenceBlock))throw fail();
+    const rows=await read(()=>node.getPublicLogsByTags({contractAddress,tags:PUBLIC_FEED_TYPES.map(type=>metadata[type].tag),
+      fromBlock,toBlock:toBlock+1,referenceBlock,includeEffects:false,limitPerTag:1}));
+    if(!Array.isArray(rows)||rows.length!==PUBLIC_FEED_TYPES.length)throw fail();
+    let first=toBlock;
+    for(let i=0;i<rows.length;i++) {
+      if(!Array.isArray(rows[i])||rows[i].length>1)throw fail();
+      for(const log of rows[i]) {
+        const event=decodePublicFeedLog({type:PUBLIC_FEED_TYPES[i],log,metadata,scope,censorWindow});
+        const number=Number(event.position.blockNumber);
+        if(number<fromBlock||number>toBlock)throw fail();
+        first=Math.min(first,number);
+      }
+    }
+    return first;
+  }
   async function readPage({type,fromBlock,toBlock,referenceBlock,afterLog}){
-    if(!PUBLIC_FEED_TYPES.includes(type)||!natural(fromBlock)||fromBlock<1||!natural(toBlock)||toBlock<=fromBlock||toBlock-fromBlock>maxRange||!hex32(referenceBlock))throw fail();
+    if(!PUBLIC_FEED_TYPES.includes(type)||!natural(fromBlock)||fromBlock<1||!natural(toBlock)||toBlock<=fromBlock||!hex32(referenceBlock))throw fail();
     let cursor;
     if(afterLog!==undefined&&afterLog!==null){
       if(!afterLog||Object.keys(afterLog).sort().join()!=='blockNumber,logIndexWithinTx,txIndexWithinBlock')throw fail();
@@ -116,7 +135,7 @@ export async function createPublicFeedSource({node,scope,artifact,eventTags,meta
     return {events,done,nextCursor:done?null:{blockNumber:Number(last.blockNumber),txIndexWithinBlock:Number(last.txIndexWithinBlock),logIndexWithinTx:Number(last.logIndexWithinTx)}};
   }
   async function getEvents({fromBlock,toBlock,referenceBlock}){
-    if(!natural(toBlock)||!natural(fromBlock)||fromBlock<1||toBlock<fromBlock||toBlock-fromBlock+1>maxRange)throw fail();
+    if(!natural(toBlock)||!natural(fromBlock)||fromBlock<1||toBlock<fromBlock)throw fail();
     const deadline=Date.now()+timeoutMs;
     return read(async()=>{
       const events=[];let pages=0,failed=false;
@@ -141,5 +160,5 @@ export async function createPublicFeedSource({node,scope,artifact,eventTags,meta
       return events;
     });
   }
-  return Object.freeze({scope,getHead,getBlock,readPage,getEvents});
+  return Object.freeze({scope,getHead,getBlock,getNextEventBlock,readPage,getEvents});
 }

@@ -109,7 +109,7 @@ try {
     const signer={getAddress:async()=>scope.depositor,sendTransaction:async()=>{throw new Error('synthetic lost signing response');}};
     const journal=await a.createEthereumJournal({storage:a.createBrowserJournalStorage(),walletSecret:w.secretKey,walletSalt:w.salt,scope,provider,signer});
     const iface=new ethers.Interface(['function deposit(bytes32) payable']);
-    try{await journal.send({data:iface.encodeFunctionData('deposit',[secretHash]),value:'100',expected:{kind:'deposit',nonce:'1',amount:'100',secretHash}});}catch(e){if(e.code!=='BB_ETH_SUBMISSION_UNKNOWN')throw e;}
+    try{await journal.send({data:iface.encodeFunctionData('deposit',[secretHash]),value:'100',expected:{kind:'deposit',amount:'100',secretHash}});}catch(e){if(e.code!=='BB_ETH_SUBMISSION_UNKNOWN')throw e;}
     return secretHash;
   });
   stage='ethereum-intent-reload';await first.page.reload();await first.page.waitForFunction(()=>window.__aztec?.createEthereumJournal && document.getElementById('wbAztecFile'));
@@ -117,11 +117,11 @@ try {
   const ethRecovered=await first.page.evaluate(async secretHash=>{
     const a=window.__aztec,w=window.walletState.aztec,scope={account:w.address.toString(),chainId:'31337',rollup:'0x'+'11'.repeat(20),version:'5',board:'0x'+'0'.repeat(63)+'2',portal:'0x'+'22'.repeat(20),depositor:'0x'+'33'.repeat(20)};
     const blockHash='0x'+'01'.repeat(32),txHash='0x'+'04'.repeat(32);let tx=null,receipt=null,nonce=null,submissions=0;
-    const iface=new ethers.Interface(['function deposit(bytes32) payable','event Deposited(address indexed depositor,uint64 nonce,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
+    const iface=new ethers.Interface(['function deposit(bytes32) payable','event Deposited(address indexed depositor,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
     const provider={getNetwork:async()=>({chainId:31337n}),getBlockNumber:async()=>1,getBlock:async()=>({number:1,hash:blockHash}),getTransaction:async()=>tx,getTransactionReceipt:async()=>receipt};
     const signer={getAddress:async()=>scope.depositor,sendTransaction:async request=>{
       if(request.data!==iface.encodeFunctionData('deposit',[secretHash])||request.value!==100n)throw new Error('payment changed');
-      submissions++;nonce=request.nonce;tx={...request,hash:txHash};receipt={hash:txHash,from:scope.depositor,to:scope.portal,status:1,blockNumber:1,blockHash,logs:[{address:scope.portal,...iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,1,100,secretHash,secretHash,0])}]};return tx;
+      submissions++;nonce=request.nonce;tx={...request,hash:txHash};receipt={hash:txHash,from:scope.depositor,to:scope.portal,status:1,blockNumber:1,blockHash,logs:[{address:scope.portal,...iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,100,secretHash,secretHash,0])}]};return tx;
     }};
     const journal=await a.createEthereumJournal({storage:a.createBrowserJournalStorage(),walletSecret:w.secretKey,walletSalt:w.salt,scope,provider,signer});
     let blocked=false;try{await journal.assertCanStart();}catch(e){blocked=e.code==='BB_ETH_RECOVERY_REQUIRED';}

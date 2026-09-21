@@ -28,3 +28,13 @@ export async function proveApplicationAction({ wallet, interaction, owner, priva
   assert(tx.data.feePayer.equals(prepared.expectedFeePayer), 'Actual proven fee payer mismatch');
   return { payload, request, proven, tx, maximumFee: prepared.maximumFee };
 }
+
+// Measure the public execution of this exact already-proven transaction.
+// This does not repeat private execution/proving or change submission ownership.
+export async function measureApplicationGas(node,tx) {
+  const simulation=await node.simulatePublicCalls(tx,false);
+  assert.equal(simulation.revertReason,undefined,'Gas measurement must execute successfully');
+  return Object.fromEntries(['totalGas','teardownGas'].map(key=>[key,{
+    daGas:simulation.gasUsed[key].daGas,l2Gas:simulation.gasUsed[key].l2Gas,
+  }]));
+}

@@ -18,7 +18,7 @@ Application Poseidon2 uses the supported `poseidon2_hash_with_separator` with th
 
 | Purpose | Separator | Ordered Field inputs |
 | --- | --- | --- |
-| Private deposit ancestry | `0x42420101` | `[1, boardAddress, owner, claimContent, claimSecret]` |
+| Private deposit ancestry | `0x42420101` | `[1, boardAddress, owner, claimContent, claimSecret, messageLeafIndex]` |
 | Independent public post ID | `0x42420102` | `[1, boardAddress, postNonce]` |
 | Private post link | `0x42420103` | `[1, boardAddress, owner, depositChainId, sequence, innerNoteHash, linkSecret]` |
 
@@ -67,31 +67,31 @@ This is 7 words / 224 bytes. Any relayer may call the portal's `activate(epoch, 
 
 ## 3. Escrow receipts and claim/exit messages
 
-The portal maintains `lastDepositNonce[depositor]:u64` and `activeDeposit[depositor]:{nonce:u64, amount:u128}` plus `totalDeposited:u256`. Nonce zero means no active receipt. The first successful deposit receives nonce 1; increment once for each successful new deposit and retain the counter after refund. Reject nonce overflow. One active receipt per depositor remains enforced. Reject ordinary unsolicited ETH; forced ETH is surplus, never credited to liabilities.
+The portal maintains `activeDeposit[depositor]:u128` and `totalDeposited:u256`. Zero amount means no active deposit. Only one active deposit per address is allowed. The bridge supplies message identity and replay protection; there is no application deposit counter. Reject ordinary unsolicited ETH; forced ETH is surplus, never credited to liabilities.
 
-For either claim or exit use this exact 9-word / 288-byte layout:
+For either claim or exit use this exact 8-word / 256-byte layout:
 
 ```text
 content = SHA_FIELD(
   domain(messageDomain) || word(1) || word(l1ChainId) || word(portalAddress) ||
   word(boardAddress) || word(rollupVersion) || word(depositor) ||
-  word(depositNonce) || word(amount)
+  word(amount)
 )
 messageDomain = "AZTEC_BB_CLAIM_V1" or "AZTEC_BB_EXIT_V1"
 ```
 
-The L1 claim event may expose depositor, nonce, amount, message key/leaf index and claim secret hash because these are already L1 escrow data. It must never expose the claim secret, author, private note, private link or `depositChainId`. The wallet generates a fresh nonzero private claimSecret with cryptographic randomness; the private claim rejects zero. The claim secret hash remains the **protocol** `compute_secret_hash([claimSecret])`, passed through the Inbox's secret-hash field; it is not an application replacement for message authentication.
+The L1 claim event may expose depositor, amount, message key/leaf index and claim secret hash because these are already L1 escrow data. It must never expose the claim secret, author, private note, private link or `depositChainId`. The wallet generates a fresh nonzero private claimSecret with cryptographic randomness; the private claim rejects zero. The claim secret hash remains the **protocol** `compute_secret_hash([claimSecret])`, passed through the Inbox's secret-hash field; it is not an application replacement for message authentication.
 
 The private board entrypoint is logically:
 
 ```text
-claim_deposit(depositor:EthAddress, amount:u128, depositNonce:u64,
+claim_deposit(depositor:EthAddress, amount:u128,
               claimSecret:Field, messageLeafIndex:Field)
 ```
 
-There is no caller-chosen portal/board/version override. Read the one-time stored portal and immutable configuration through authenticated historical storage at the anchor; assert binding is complete, all actors nonzero, amount/nonce valid and execution context chain/version match configuration. Construct claimContent and invoke the actual private `consume_l1_to_l2_message(claimContent, [claimSecret], storedPortal, messageLeafIndex)`. Protocol consumption must authenticate its envelope and produce the single-use nullifier. Compute the private `depositChainId` using the table above, require nonzero, and create one owned DepositNote. Knowledge of the claim secret authorizes choosing the recipient author; the refund recipient remains the original L1 depositor.
+There is no caller-chosen portal/board/version override. Read the one-time stored portal and immutable configuration through authenticated historical storage at the anchor; assert binding is complete, all actors nonzero, amount valid and execution context chain/version match configuration. Construct claimContent and invoke the actual private `consume_l1_to_l2_message(claimContent, [claimSecret], storedPortal, messageLeafIndex)`. Protocol consumption must authenticate its envelope and produce the single-use nullifier. Compute the private `depositChainId` using the table above, require nonzero, and create one owned DepositNote. Knowledge of the claim secret authorizes choosing the recipient author; the refund recipient remains the original L1 depositor.
 
-An exit message carries the same public receipt tuple under the distinct exit domain. The portal reads amount and nonce from the caller's active receipt; it does not trust caller-supplied amount/nonce. Under a reentrancy guard, clear the active liability and decrement the total before external bridge/ETH calls, consume the expected authenticated Outbox message, then transfer exactly that amount to the original depositor. Any bridge or transfer failure rolls back all effects. Old exit proofs cannot release a later nonce. No timeout refund, discretionary withdrawal or administrator fund transfer exists.
+An exit message carries the same public receipt tuple under the distinct exit domain. The portal reads the amount from the caller's active deposit; it does not trust a caller-supplied amount. Under a reentrancy guard, clear the active liability and decrement the total before external bridge/ETH calls, consume the expected authenticated Outbox message, then transfer exactly that amount to the original depositor. Any bridge or transfer failure rolls back all effects. An already consumed Outbox proof cannot release a later deposit. A later deposit is possible only after the previous refund consumed its exit message. No timeout refund, discretionary withdrawal or administrator fund transfer exists.
 
 ## 4. Private note schema and transitions
 
@@ -100,7 +100,7 @@ Only V1 notes are accepted. `owner` is the authenticated caller of the private e
 DepositNote V1 logical serialization order is:
 
 ```text
-[schemaVersion:u32, depositChainId:Field, depositNonce:u64, amount:u128,
+[schemaVersion:Field, depositChainId:Field, amount:u128,
  l1Depositor:EthAddress, headLink:Field, headSequence:u64,
  screenedLink:Field, screenedSequence:u64, lastRealSequence:u64,
  nextAllowedTime:u64]
@@ -163,7 +163,7 @@ policyVersion = SHA_FIELD(
 )
 ```
 
-There is no normalization, terminal zero or padding after policy bytes in this hash. Empty policy is rejected for an enabled board. Publish policy content and the contract-computed version together in PolicyPublished V1; retain historical content by version through authenticated events/indexing. Re-publication of identical bytes has the same version. Existing posts retain their inclusion-time policyVersion. A later policy change applies to subsequently included posts; an eligible old post uses its historical matching policy, even if the authorized censor has since changed.
+There is no normalization, terminal zero or padding after policy bytes in this hash. Empty policy is rejected for an enabled board. Publish policy content and the contract-computed version together in PolicyPublished V1; retain historical content by version through authenticated events/indexing. Re-publication of identical bytes has the same version. Existing posts retain their inclusion-time policyVersion. A later policy change applies to moderation of all posts. Publication policy remains historical metadata for determining whether a timely flag can add a collateral penalty.
 
 Public logical event payloads, enveloped by root's verified network/transaction/log scope, are:
 
@@ -175,9 +175,9 @@ Public logical event payloads, enveloped by root's verified network/transaction/
 
 The decoded service envelope carries `schemaVersion` at its top level, authenticates that it equals the raw event version, and projects packed content/length into the corresponding UTF-8 `text` or `reason`. Its `PostFlagged.censorAddress` is the raw `censor`. Its `PolicyPublished.censorWindow` comes from the authenticated immutable configuration for that exact board/scope; it is not an additional raw policy event field or a daemon-selected default. `PostPublished.publishedAt` and `flagDeadline` are the raw public inclusion values, not indexer receipt time. Preserve raw event position and verify event origin before accepting this projection; shape validation alone does not authenticate it.
 
-A feed/job record must not contain depositor, depositNonce, private owner, depositChainId, private sequence/link or claim secret. Network `l1ChainId` is allowed and required in the public scope. A modelVersion is an offchain composite hash of reviewed runtime image, weights, prompt and inference settings, not a claimed onchain model attestation. Root owns that schema and the receipt/finality/journal rules.
+A feed/job record must not contain depositor, private owner, depositChainId, private sequence/link or claim secret. Network `l1ChainId` is allowed and required in the public scope. A modelVersion is an offchain composite hash of reviewed runtime image, weights, prompt and inference settings, not a claimed onchain model attestation. Root owns that schema and the receipt/finality/journal rules.
 
-`declare_immoral(postId, expectedPolicyVersion, reasonFields, reasonLength)` requires current nonzero authorized censor, an existing real post, no prior flag, and equality with the post's captured policyVersion. It permits flagging only while current public timestamp is **strictly less than** flagDeadline. It writes one immutable flag and emits the event. Policy/version/deadline mismatch reverts; no late transaction prepared earlier receives an exemption. Onchain flag reversal remains unsupported.
+`declare_immoral(postId, expectedPolicyVersion, reasonFields, reasonLength)` requires current nonzero authorized censor, an existing real post, no prior flag, and equality with the current policyVersion. Removal is permitted at any post age. The existing flag slot stores 0 for visible, 1 for removal without penalty, or 3 for removal with penalty. Only a flag under the publication policy while current public timestamp is **strictly less than** flagDeadline stores 3. PostFlagged carries the policy applied at moderation. A stale reviewed policy reverts. Onchain flag reversal remains unsupported.
 
 ## 7. Authenticated screening and unbounded-lifetime hint access
 
@@ -187,7 +187,7 @@ The immediate child must have `sequence=screenedSequence+1` and `previousLink=sc
 
 Process at most two consecutive candidates per transition. If no unscreened chain entries exist, hints must be empty. If a child is too young, do not advance it or a grandchild. If a mature child is not the head, require and authenticate the second candidate; advance it only if mature. This bounds per-call work while maintaining monotone history; it does not bound lifetime history.
 
-For a real note, authenticated historical public reads at the anchor must establish `postExists[postId]`, publishedAt and flagDeadline. Require `anchorTime >= flagDeadline` before advancing; use the public inclusion timestamp, not the private note's earlier anchorTimestamp, to grant the censor a full window. At that boundary, late flags are already forbidden by public execution, so historical flag state cannot be changed by a subsequently included late censor transaction. Count each newly advanced flagged real post once. Dummies have no public flag and may advance after authenticated inclusion without an additional censor wait. Their anchorTimestamp cannot be in the future relative to the current anchor.
+For a real note, authenticated historical public reads at the anchor must establish `postExists[postId]`, publishedAt and flagDeadline. Require `anchorTime >= flagDeadline` before advancing; use the public inclusion timestamp, not the private note's earlier anchorTimestamp, to grant the censor a full window. At that boundary, later removal can write only value 1, never penalty value 3. Count each newly advanced real post whose authenticated flag slot equals 3 once. Removal after screening or withdrawal therefore cannot add collateral debt. Dummies have no public flag and may advance after authenticated inclusion without an additional censor wait. Their anchorTimestamp cannot be in the future relative to the current anchor.
 
 The implemented local hint API is `get_screen_hints(owner, depositChainId)`, returning the exact next one/two HintedNotes from the wallet's synced state. It reports missing, ambiguous or stale history through stable `BB_HISTORY_*` assertion markers, which the client converts to safe sync/restore errors. Query the owned PostNote slot by typed equality selectors for `(depositChainId, previousLink)` before a two-result limit; the second result detects ambiguity. Returned sequence, ownership, slot and recomputed head relationships are checked. The private post proof still independently authenticates the hints against its anchor; the utility is not authority and does not accept an invented anchor RPC argument.
 
@@ -213,11 +213,11 @@ The quotient/remainder ceiling avoids an overflowing `numerator + A - 1`. A>=m i
 
 `withdraw(depositChainId)` consumes the exact owned live note, requires complete configuration, `screenedSequence >= lastRealSequence` and **anchorTime >= nextAllowedTime in every case**, including no-real-post and recently screened cases. It emits the exit message without creating any replacement DepositNote. The authenticated message and burned right are atomic application effects. Its recipient is the immutable stored portal; caller-provided destination overrides are absent.
 
-The user can finish old real history through finite dummy transitions, wait out the resulting finite debt, then exit. Unscreened trailing dummies do not block exit once every real post is screened. Newly created deposits start a new nonce/claim/chain and cannot reuse former history. Lost secrets or a permanently unavailable protocol do not justify a refund that leaves an active right; recovery restores legitimate private state and resumes the same transition.
+The user can finish old real history through finite dummy transitions, wait out the resulting finite debt, then exit. Unscreened trailing dummies do not block exit once every real post is screened. Newly created deposits start a new authenticated Inbox message and private history and cannot reuse former history. Lost secrets or a permanently unavailable protocol do not justify a refund that leaves an active right; recovery restores legitimate private state and resumes the same transition.
 
 ## 9. Required verification before this design is accepted as implementation
 
-- C01/C06: known-answer cross-chain bytes/hashes; real authenticated ready/claim/exit; wrong actor, scope, config, secret, nonce, amount, replay and reentrancy; refund failure rollback and forced-ETH liability separation.
+- C01/C06: known-answer cross-chain bytes/hashes; real authenticated ready/claim/exit; wrong actor, scope, config, secret, message index, amount, replay and reentrancy; refund failure rollback and forced-ETH liability separation.
 - C02: actual foreign-contract/wrong-owner/wrong-slot/same-owner-other-deposit/old-cycle note proofs fail; immediate successors and both dummy/real controls pass; one live right cannot fork; explicit packed selectors agree with note serialization.
 - C03: no private live-counter reservation, ten same-anchor independent authors, post-ID collision refusal, actual inclusion time, and private/public revertibility behavior.
 - C04: exact filtered retrieval past 16/32/1000 entries with meaningful absence/duplicate/reorg recovery controls; no first-page completeness assumption.

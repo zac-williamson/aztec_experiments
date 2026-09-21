@@ -8,9 +8,11 @@ const stages=new Set(['fee-deposit','fee-claim','claim','post','screen','exit','
 const hash=/^0x[0-9a-f]{64}$/;
 export function validateBrowserControl(value){
  assert(value&&typeof value==='object'&&!Array.isArray(value));
- assert.deepEqual(Object.keys(value).sort(),['backupPassword','browserEngine','browserMode','origin','rpcToken']);
+ assert.deepEqual(Object.keys(value).sort(),['backupPassword','browserEngine','browserMode','ethereumWallet','origin','rpcToken']);
  assert(['post','lifecycle','recovery','withdraw-recovery','funding','performance'].includes(value.browserMode));
  assert(['chromium','chrome','firefox','webkit'].includes(value.browserEngine));
+ assert(['disposable','metamask'].includes(value.ethereumWallet));
+ assert(value.ethereumWallet!=='metamask'||(value.browserEngine==='chromium'&&value.browserMode==='lifecycle'));
  assert(!['recovery','withdraw-recovery'].includes(value.browserMode)||value.browserEngine==='chromium');
  const origin=new URL(value.origin);assert(origin.protocol==='https:'&&origin.hostname==='127.0.0.1'&&origin.pathname==='/'&&!origin.username&&!origin.password&&!origin.search&&!origin.hash);
  assert(typeof value.rpcToken==='string'&&/^[a-zA-Z0-9_-]{24,256}$/.test(value.rpcToken));
@@ -19,7 +21,7 @@ export function validateBrowserControl(value){
 }
 // Shared parent-worker validator: exercise the actual producer/consumer boundary.
 export function validateBrowserWorkerControl(value,{directory}){
- const controlKeys=['backupPassword','browserEngine','browserMode','origin','rpcToken'];
+ const controlKeys=['backupPassword','browserEngine','browserMode','ethereumWallet','origin','rpcToken'];
  assert(value&&typeof value==='object'&&!Array.isArray(value));
  validateBrowserControl(Object.fromEntries(controlKeys.map(key=>[key,value[key]])));
  const handoffKeys=['nodeUrl','ethereumUrl','publicConfig','backupPath','ethereumAccount','message',...(['lifecycle','funding'].includes(value.browserMode)?['depositAmount']:[]),...(value.browserMode==='funding'?['fundingAmount']:[])];
@@ -101,30 +103,30 @@ export function readJourneyUiDiagnostic(){
  return {depositHasError:hasError('depositStatus'),withdrawHasError:hasError('withdrawStatus'),refundHasError:hasError('claimL1Status'),milestones};
 }
 // shared/helpers.js log() adds one localized timestamp, not part of the message.
-export async function driveT04BrowserJourney({page,directory,message,depositAmount,remaining,signal,mark,onSubstage=()=>{}}){
+export async function driveT04BrowserJourney({page,directory,message,depositAmount,remaining,signal,mark,confirmEthereum,onSubstage=()=>{}}){
  assert(typeof depositAmount==='string'&&/^(?:0|[1-9]\d*)(?:\.\d{1,18})?$/.test(depositAmount));
  const stagesObserved=[];
  const checkpoint=async(stage,statusId)=>stagesObserved.push(await checkpointBrowserStage(directory,stage,transactionHashes(await page.locator('#'+statusId).textContent()),remaining,signal));
  const finish=(statusId,predicate)=>finishBrowserStatus(page,statusId,predicate,remaining);
- stagesObserved.push(...await driveT04BrowserPublication({page,directory,message,depositAmount,remaining,signal,mark,onSubstage}));
+ stagesObserved.push(...await driveT04BrowserPublication({page,directory,message,depositAmount,remaining,signal,mark,confirmEthereum,onSubstage}));
  onSubstage('screen');mark('gui-screen');await page.locator('#dummyPostBtn').click();await finish('postStatus','Dummy post complete');
  await checkpoint('screen','postStatus'); // parent verifies latest note and eligible exit anchor
  onSubstage('withdraw');mark('gui-withdraw');await page.locator('#navNext').click();await page.locator('#page-3').waitFor({state:'visible',timeout:remaining()});
  await page.locator('#navNext').click();await page.locator('#page-4').waitFor({state:'visible',timeout:remaining()});
  await checkpoint('exit','withdrawStatus'); // mining must unwind; official actual-message settlement then release
- onSubstage('refund');mark('gui-refund');await page.locator('#navNext').click();
+ onSubstage('refund');mark('gui-refund');await page.locator('#navNext').click();if(confirmEthereum)await confirmEthereum('refund');
  await finish('claimL1Status','ETH claimed successfully!');
  await checkpoint('refund','claimL1Status');
- return {passed:true,stagesObserved,warmNativePrivateFees:true,externalWalletExtension:false};
+ return {passed:true,stagesObserved,warmNativePrivateFees:true,externalWalletExtension:!!confirmEthereum};
 }
 
-export async function driveT04BrowserPublication({page,directory,message,depositAmount,remaining,signal,mark,onSubstage=()=>{}}){
+export async function driveT04BrowserPublication({page,directory,message,depositAmount,remaining,signal,mark,confirmEthereum,onSubstage=()=>{}}){
  assert(typeof depositAmount==='string'&&/^(?:0|[1-9]\d*)(?:\.\d{1,18})?$/.test(depositAmount));
  const stagesObserved=[];
  const checkpoint=async(stage,statusId)=>stagesObserved.push(await checkpointBrowserStage(directory,stage,transactionHashes(await page.locator('#'+statusId).textContent()),remaining,signal));
  const finish=(statusId,predicate)=>finishBrowserStatus(page,statusId,predicate,remaining);
  onSubstage('wait-deposit-page');mark('gui-deposit-claim');await page.locator('#page-1').waitFor({state:'visible',timeout:remaining()});
- onSubstage('fill-amount');await page.locator('#depositAmount').fill(depositAmount);onSubstage('click-deposit');await page.locator('#navNext').click();
+ onSubstage('fill-amount');await page.locator('#depositAmount').fill(depositAmount);onSubstage('click-deposit');await page.locator('#navNext').click();if(confirmEthereum)await confirmEthereum('deposit');
  onSubstage('await-deposit-claim');
  await finish('depositStatus','Deposit claimed on L2!');
  await page.locator('#postBtn').waitFor({state:'visible',timeout:remaining()});

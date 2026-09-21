@@ -42,10 +42,9 @@
     "constructor(address rollup, bytes32 l2Contract, uint256 version, uint256 minDeposit, uint256 maxDeposit, bytes32 configHash)",
     "function deposit(bytes32 secretHash) payable returns (bytes32, uint256)",
     "function withdraw(uint256 epoch, uint256 numCheckpointsInEpoch, uint256 leafIndex, bytes32[] path)",
-    "function activeDeposit(address) view returns (uint64 nonce, uint128 amount)",
-    "function lastDepositNonce(address) view returns (uint64)",
+    "function activeDeposit(address) view returns (uint128 amount)",
     "function depositsEnabled() view returns (bool)",
-    "function getDeposit(address) view returns (uint64 nonce, uint128 amount)",
+    "function getDeposit(address) view returns (uint128 amount)",
     "function MAX_DEPOSIT() view returns (uint256)",
     "function CONFIG_HASH() view returns (bytes32)",
     "function L1_CHAIN_ID() view returns (uint256)",
@@ -54,15 +53,15 @@
     "function ROLLUP() view returns (address)",
     "function VERSION() view returns (uint256)",
     "function totalDeposited() view returns (uint256)",
-    "event Deposited(address indexed depositor, uint64 nonce, uint128 amount, bytes32 secretHash, bytes32 key, uint256 index)",
-    "event Withdrawn(address indexed depositor, uint64 nonce, uint128 amount)",
+    "event Deposited(address indexed depositor, uint128 amount, bytes32 secretHash, bytes32 key, uint256 index)",
+    "event Withdrawn(address indexed depositor, uint128 amount)",
   ];
 
   const OUTBOX_ABI = [
     "function hasMessageBeenConsumedAtEpoch(uint256 epoch, uint256 leafId) view returns (bool)",
   ];
 
-  const DEPOSIT_SIGNATURE = 'Deposited(address,uint64,uint128,bytes32,bytes32,uint256)';
+  const DEPOSIT_SIGNATURE = 'Deposited(address,uint128,bytes32,bytes32,uint256)';
 
   // ============================================================
   // Helpers
@@ -109,23 +108,22 @@
     return secret;
   }
 
-  function escrowContent(a, ethers, isExit, l2Addr, portalAddr, depositor, amount, depositNonce, version, chainId) {
-    if (BigInt(depositNonce) <= 0n || BigInt(depositNonce) >= (1n << 64n)) throw new Error('Invalid deposit receipt nonce');
+  function escrowContent(a, ethers, isExit, l2Addr, portalAddr, depositor, amount, version, chainId) {
     if (BigInt(amount) <= 0n || BigInt(amount) >= (1n << 96n)) throw new Error('Invalid deposit receipt amount');
     const domain = ethers.encodeBytes32String(isExit ? 'AZTEC_BB_EXIT_V1' : 'AZTEC_BB_CLAIM_V1');
     const encoded = ethers.AbiCoder.defaultAbiCoder().encode(
-      ['bytes32','uint256','uint256','address','bytes32','uint256','address','uint64','uint128'],
-      [domain,1,BigInt(chainId),portalAddr,l2Addr.toString(),BigInt(version),depositor,BigInt(depositNonce),BigInt(amount)]);
-    return a.sha256ToField([g.Buffer.from(ethers.getBytes(encoded))]);
+      ['bytes32','uint256','uint256','address','bytes32','uint256','address','uint128'],
+      [domain,1,BigInt(chainId),portalAddr,l2Addr.toString(),BigInt(version),depositor,BigInt(amount)]);
+    return new a.Fr(BigInt(ethers.sha256(encoded)) >> 8n);
   }
 
 
 
   // Scoped V1 exit content inside the canonical L2-to-L1 envelope.
-  function computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, amount, depositNonce, version, chainId) {
+  function computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, amount, version, chainId) {
     const sender = l2Addr;
     const recipient = a.EthAddress.fromString(portalAddr);
-    const content = escrowContent(a, ethers, true, l2Addr, portalAddr, l1Account, amount, depositNonce, version, chainId);
+    const content = escrowContent(a, ethers, true, l2Addr, portalAddr, l1Account, amount, version, chainId);
     const versionFr = new a.Fr(BigInt(version));
     const chainIdFr = new a.Fr(BigInt(chainId));
     return a.sha256ToField([
@@ -140,75 +138,7 @@
   // Shared pure codec seam for cross-consumer known-answer qualification.
   g.BillboardUserCodec = Object.freeze({ escrowContent, computeWithdrawMessageLeaf });
 
-  // A negative result is valid only after complete, canonical history coverage.
-  // Cursor persistence is supplied by the transaction journal; never skip RPC gaps.
-  async function findWithdrawTxHash(aztecNode, messageLeaf, fromBlock, toBlock, log, options={}) {
-    const first=Math.max(1,Number(toBlock)),last=Number(fromBlock);
-    if(!Number.isSafeInteger(first)||!Number.isSafeInteger(last)||first<1||last<0)throw new Error('Invalid withdrawal history range');
-    if(last<first)return null;
-    const fail=()=>Object.assign(new Error('Withdrawal history is incomplete. Preserve the receipt and retry recovery.'),{code:'BB_RECOVERY_UNKNOWN'});
-    const timeout=options.timeoutMs??20000;
-    if(!Number.isFinite(timeout)||timeout<=0||timeout>20000)throw fail();
-    const deadline=Date.now()+timeout,target=messageLeaf.toBigInt();
-    async function read(fn) {let timer;try {return await Promise.race([Promise.resolve().then(fn),new Promise((_,reject)=>{timer=setTimeout(()=>reject(fail()),Math.max(0,deadline-Date.now()));})]);}catch {throw fail();}finally {clearTimeout(timer);}}
-    const anchor=await read(()=>aztecNode.getBlock(last));
-    if(!anchor?.hash)throw fail();
-    let ranges=[[first,last]];
-    const saved=options.cursorStore?await options.cursorStore.read():null;
-    if(saved) {
-      if(!Number.isSafeInteger(saved.anchorBlock)||saved.anchorBlock<first||typeof saved.anchorHash!=='string'||!Array.isArray(saved.ranges))throw fail();
-      let prior=first-1;
-      for(const range of saved.ranges) {
-        if(!Array.isArray(range)||range.length!==2||!range.every(Number.isSafeInteger)||range[0]<=prior||range[1]<range[0]||range[1]>saved.anchorBlock)throw fail();
-        prior=range[1];
-      }
-      const previousAnchor=saved.anchorBlock<=last?await read(()=>aztecNode.getBlock(saved.anchorBlock)):null;
-      if(previousAnchor?.hash?.toString()===saved.anchorHash) {
-        ranges=saved.ranges.map(range=>[...range]);
-        if(last>saved.anchorBlock)ranges.push([saved.anchorBlock+1,last]);
-      }
-    }
-    while(ranges.length) {
-      const range=ranges[ranges.length-1],end=range[1];
-      if(Date.now()>=deadline)throw fail();
-      const from=Math.max(range[0],end-49),count=end-from+1;
-      const blocks=await read(()=>aztecNode.getBlocks(from,count,{includeTransactions:true}));
-      if(!Array.isArray(blocks)||blocks.length!==count)throw fail();
-      const numbered=new Map(blocks.map(block=>[Number(block?.number),block]));
-      if(numbered.size!==count)throw fail();
-      for(let number=from;number<=end;number++) {
-        const block=numbered.get(number);
-        if(!block?.hash||!Array.isArray(block.body?.txEffects))throw fail();
-        for(const effect of block.body.txEffects) {
-          if(!Array.isArray(effect.l2ToL1Msgs))throw fail();
-          for(let index=0;index<effect.l2ToL1Msgs.length;index++) {
-            const value=effect.l2ToL1Msgs[index];
-            if(!value||typeof value.toBigInt!=='function')throw fail();
-            if(value.toBigInt()!==target)continue;
-            if(!effect.txHash)throw fail();
-            const canonical=await read(()=>aztecNode.getBlock(number));
-            const receipt=await read(()=>aztecNode.getTxReceipt(effect.txHash));
-            if(canonical?.hash?.toString()!==block.hash.toString() || receipt?.blockHash?.toString()!==block.hash.toString() ||
-              receipt?.txHash?.toString()!==effect.txHash.toString() || Number(receipt.blockNumber)!==number || receipt.executionResult!=='success' ||
-              !['checkpointed','proven','finalized'].includes(receipt.status))throw fail();
-            return {txHash:effect.txHash.toString(),messageIndexInTx:index,blockNumber:number,blockHash:block.hash.toString()};
-          }
-        }
-      }
-      // Never persist skipped pages under an anchor that changed during the read.
-      const checkedAnchor=await read(()=>aztecNode.getBlock(last));
-      if(checkedAnchor?.hash?.toString()!==anchor.hash.toString())throw fail();
-      if(from===range[0])ranges.pop();else range[1]=from-1;
-      const progress={nextBlock:ranges.at(-1)?.[1]??0,anchorBlock:last,anchorHash:anchor.hash.toString(),ranges:ranges.map(range=>[...range])};
-      if(options.cursorStore)await options.cursorStore.write(progress);
-      if(options.onProgress)await options.onProgress(progress);
-      log('  Checked withdrawal history through block '+from,'info');
-    }
-    const current=await read(()=>aztecNode.getBlock(last));
-    if(current?.hash?.toString()!==anchor.hash.toString())throw fail();
-    return null;
-  }
-  g.BillboardWithdrawalHistory=Object.freeze({findWithdrawTxHash});
+
 
   // ============================================================
   // Aztec Wallet (gas estimation + prove/submit split, with retry)
@@ -243,11 +173,18 @@
         });
 
         const simResult = await this.simulateViaEntrypoint(executionPayload, {
-          from: opts.from, feeOptions, skipTxValidation: true, skipFeeEnforcement: true,
+          from: opts.from, feeOptions, skipTxValidation: !fixedGas, skipFeeEnforcement: !fixedGas,
           additionalScopes: opts.additionalScopes, sendMessagesAs: opts.sendMessagesAs,
         });
 
+        if (!simResult.publicInputs || (simResult.publicInputs.forPublic && !simResult.publicOutput) || simResult.publicOutput?.revertReason) {
+          throw Object.assign(new Error('Transaction simulation did not complete successfully. No proof or transaction was submitted.'), {code:'BB_SIMULATION_FAILED'});
+        }
         const gu = simResult.gasUsed;
+        if (fixedGas && ['daGas', 'l2Gas'].some(key =>
+          gu.totalGas[key] > checkedGas.gasLimits[key] || gu.teardownGas[key] > checkedGas.teardownGasLimits[key])) {
+          throw Object.assign(new Error('This transaction exceeds the configured fee limits. No proof or transaction was submitted.'), {code:'BB_GAS_LIMIT_EXCEEDED'});
+        }
         const pad = 1 + this._estimatedGasPadding;
         const gasLimits = fixedGas ? opts.fee.gasSettings.gasLimits : gu.totalGas.mul(pad);
         const teardownGasLimits = fixedGas ? opts.fee.gasSettings.teardownGasLimits : gu.teardownGas.mul(pad);
@@ -435,8 +372,8 @@
 
   async function moderationArguments(a, contract, address, postIdField, text, expectedPolicyVersion) {
     const packed = packModerationReason(text);
-    const version = canonicalPostId(a, await contract.methods.get_post_policy_version(postIdField).simulate({ from: a.NO_FROM }));
-    if (expectedPolicyVersion !== undefined && canonicalPostId(a, expectedPolicyVersion, true) !== version) throw new Error('Post policy changed or does not match the reviewed policy');
+    const version = canonicalPostId(a, await contract.methods.get_policy_version().simulate({ from: a.NO_FROM }));
+    if (expectedPolicyVersion !== undefined && canonicalPostId(a, expectedPolicyVersion, true) !== version) throw new Error('Current policy changed or does not match the reviewed policy');
     return [postIdField, new a.Fr(BigInt(version)), packed.fields.map(value => new a.Fr(value)), packed.byteLength];
   }
   g.BillboardModerationCodec = Object.freeze({ packModerationReason, decodeModerationReason, moderationArguments, readPolicySnapshot });
@@ -722,14 +659,6 @@
     log('  L2 billboard: ' + l2AddrHex, 'success');
     log('  L1 portal: ' + portalAddr, 'info');
 
-    async function searchWithdrawal(messageLeaf,latestBlock) {
-      if(typeof env.createHistoryCursor!=='function')throw Object.assign(new Error('Durable withdrawal recovery storage is required.'),{code:'BB_JOURNAL_INVALID'});
-      const cursorStore=await env.createHistoryCursor({walletSecret:secretKeyHex,walletSalt:saltVal,
-        scope:{account:address.toString().toLowerCase(),chainId:String(nodeInfo.l1ChainId),rollup:rollupAddr.toLowerCase(),version:String(version),board:l2AddrHex.toLowerCase(),portal:portalAddr.toLowerCase()},
-        messageLeaf:'0x'+messageLeaf.toBigInt().toString(16).padStart(64,'0')});
-      return findWithdrawTxHash(aztecNode,messageLeaf,latestBlock,1,log,{cursorStore});
-    }
-
     const journalActions = ['claim','post','withdraw','auto','recover','declare-immoral','set-moderation-policy','transfer-censor'];
     if(journalActions.includes(action) && typeof env.createTransactionJournal!=='function')throw Object.assign(new Error('Durable transaction journal is required.'),{code:'BB_JOURNAL_INVALID'});
     const transactionJournal = journalActions.includes(action)
@@ -770,11 +699,11 @@
           config={...config,action,isDummy:false,message:resumedPost.message,depositChainId:resumedPost.depositChain};
         } else if(kind==='claim') {
           const intent=JSON.parse(saved.operation);
-          if(Object.keys(intent).sort().join()!=='amount,depositChain,depositNonce,depositor,kind,leafIndex,schemaVersion,secretHash,transactionHash'||intent.schemaVersion!==1||
+          if(Object.keys(intent).sort().join()!=='amount,depositChain,depositor,kind,leafIndex,schemaVersion,secretHash,transactionHash'||intent.schemaVersion!==1||
             !/^0x[0-9a-f]{40}$/.test(intent.depositor)||!/^0x[0-9a-f]{64}$/.test(intent.transactionHash)||
-            !/^[1-9][0-9]*$/.test(intent.amount)||!/^[1-9][0-9]*$/.test(intent.depositNonce)||!/^(0|[1-9][0-9]*)$/.test(intent.leafIndex))throw error;
+            !/^[1-9][0-9]*$/.test(intent.amount)||!/^(0|[1-9][0-9]*)$/.test(intent.leafIndex))throw error;
           canonicalPostId(a,intent.depositChain,true);canonicalPostId(a,intent.secretHash,true);
-          if(BigInt(intent.amount)>=1n<<128n||BigInt(intent.depositNonce)>=1n<<64n)throw error;
+          if(BigInt(intent.amount)>=1n<<128n)throw error;
           new a.Fr(BigInt(intent.leafIndex));
           resumedClaim={intent,operation:saved.operation};action='claim';
           config={...config,action,reuseTxHash:intent.transactionHash,depositChainId:intent.depositChain};
@@ -795,7 +724,13 @@
       if(receipt) {
         const succeeded=receipt.executionResult==='success';
         log((succeeded?'Saved transaction succeeded. Hash: ':'Saved transaction reverted; the action failed. Hash: ')+receipt.txHash.toString(),succeeded?'success':'warn');
-        return {recovered:true,lastL2TxHash:receipt.txHash.toString(),state:succeeded?'transaction_recovered':'transaction_reverted'};
+        const saved=await transactionJournal.inspect();
+        let recoveredWithdrawal=false;
+        if(succeeded&&saved?.operation&&saved.txHash===receipt.txHash.toString()) {
+          const intent=JSON.parse(saved.operation);
+          recoveredWithdrawal=intent?.kind==='withdraw';
+        }
+        return {recovered:true,lastL2TxHash:receipt.txHash.toString(),...(recoveredWithdrawal?{withdrawTxHash:receipt.txHash.toString()}:{}),state:succeeded?'transaction_recovered':'transaction_reverted'};
       }
     }
     // Check before any action-specific state changes, including auto-mode L1 sends.
@@ -830,7 +765,7 @@
     let ethSigner = null, l1Account = null;
     const provider = new ethers.JsonRpcProvider(config.ethRpcUrl);
     try {
-    let portalL1Balance = 0n, portalDepositNonce = 0n;
+    let portalL1Balance = 0n;
     let portalDeployed = false;
     try {
       if (config.ethWallet && config.ethWallet.privateKey) {
@@ -856,7 +791,7 @@
         if (onchainHex !== expectedHex) throw new Error('Portal L2 contract binding mismatch.');
         log('  Portal verified on L1.', 'success');
         if(l1Account) {const active = await portal.getDeposit(l1Account);
-        portalL1Balance = BigInt(active.amount); portalDepositNonce = BigInt(active.nonce);}
+        portalL1Balance = BigInt(active);}
       } else {
         log('  WARNING: Portal not deployed at ' + portalAddr, 'warn');
       }
@@ -887,7 +822,7 @@
     // ============================================================
     // Three possible states:
     //   "postable"                         -- have a deposit note on L2, can post/withdraw
-    //   "withdrawn_l2_claimable_l1"        -- no note on L2, but portal has balance + withdrawal msg exists
+    //   "withdrawal_needs_verification"   -- saved withdrawal hash; claim-l1 must check its settlement
     //   "zero_balance_need_deposit"        -- no note, no portal balance (or portal balance but not claimed yet)
     //
     // For "zero_balance_need_deposit" with portalL1Balance > 0, the deposit was made on L1
@@ -1046,25 +981,8 @@
     if (l2NoteInfo && l2NoteInfo.amount > 0n) {
       stateStatus = 'postable';
     } else if (portalL1Balance > 0n) {
-      // Could be: deposit made but not claimed, OR withdrawn on L2 but not claimed on L1.
-      // Check for a withdrawal L2->L1 message to distinguish.
-      if (needsPXE && l2Deployed) {
-        try {
-          const messageLeaf = computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, portalL1Balance, portalDepositNonce, version, nodeInfo.l1ChainId);
-          const latestBlock = await aztecNode.getBlockNumber();
-          const found = await searchWithdrawal(messageLeaf,latestBlock);
-          if (found) {
-            stateStatus = 'withdrawn_l2_claimable_l1';
-            log('  Withdrawal tx found: ' + found.txHash, 'success');
-          } else {
-            stateStatus = 'deposited_l1_not_claimed_l2';
-          }
-        } catch {
-          throw Object.assign(new Error('Cannot distinguish an unclaimed deposit from an unresolved withdrawal. Retry recovery; do not create another deposit.'),{code:'BB_RECOVERY_UNKNOWN'});
-        }
-      } else {
-        stateStatus = 'deposited_l1_not_claimed_l2';
-      }
+      // The amount cannot identify a deposit cycle. Never search old exits to infer this state.
+      stateStatus = config.withdrawTxHash ? 'withdrawal_needs_verification' : 'deposited_l1_not_claimed_l2';
     } else {
       stateStatus = 'zero_balance_need_deposit';
     }
@@ -1170,7 +1088,7 @@
       const matching = events.filter(ev => ev && ev.name === 'Deposited' && ev.args.depositor.toLowerCase() === l1Account.toLowerCase());
       if (matching.length !== 1) throw new Error('Expected exactly one V1 receipt event for this depositor.');
       const event = matching[0].args;
-      if (event.nonce <= 0n || event.nonce >= (1n << 64n) || event.amount <= 0n || event.amount >= (1n << 96n)) throw new Error('Invalid V1 receipt event.');
+      if (event.amount <= 0n || event.amount >= (1n << 96n)) throw new Error('Invalid V1 receipt event.');
       return event;
     }
     async function doDeposit() {
@@ -1179,7 +1097,7 @@
       const portal = new ethers.Contract(portalAddr, PORTAL_ABI, provider);
       if (!await portal.depositsEnabled()) throw new Error('Portal deposits are disabled until authenticated Ready activation.');
       const active = await portal.getDeposit(l1Account);
-      if (BigInt(active.nonce) !== 0n) throw new Error('An active L1 receipt already exists.');
+      if (BigInt(active) !== 0n) throw new Error('An active L1 receipt already exists.');
       if (l2NoteInfo && l2NoteInfo.amount > 0n) throw new Error('Select and withdraw the existing posting right before making a new deposit.');
       if (!config.depositAmount) throw new Error('Deposit amount is required.');
       const amount = ethers.parseEther(config.depositAmount);
@@ -1193,20 +1111,22 @@
       if (await restoreSecret(secretHash) !== record.secret) throw new Error('Claim-secret storage read-back failed.');
       log('Claim secret saved locally. Sending deposit...', 'info');
       if (config.contextGuard) await config.contextGuard();
-      const expectedNonce=BigInt(await portal.lastDepositNonce(l1Account))+1n;
       const paid=await ethereumJournal.send({data:new ethers.Interface(PORTAL_ABI).encodeFunctionData('deposit',[secretHash]),value:amount.toString(),
-        expected:{kind:'deposit',nonce:expectedNonce.toString(),amount:amount.toString(),secretHash}});
+        expected:{kind:'deposit',amount:amount.toString(),secretHash}});
       const event=paid.event;
-      depositInfo = { amount, key:event.key, leafIndex: event.index, depositNonce: event.nonce, secret: record.secret, secretHash, txHash: paid.txHash };
-      portalL1Balance = amount; portalDepositNonce = event.nonce;
-      log('Deposit confirmed. Receipt nonce: ' + event.nonce.toString(), 'success');
+      depositInfo = { amount, key:event.key, leafIndex: event.index, secret: record.secret, secretHash, txHash: paid.txHash };
+      portalL1Balance = amount;
+      config.withdrawTxHash = null;
+      log('Deposit confirmed.', 'success');
     }
 
     async function doReuseDeposit() {
       if (!provider || !l1Account || !portalDeployed) throw new Error('A verified portal and depositor are required.');
       secretStore();
-      const active = await new ethers.Contract(portalAddr,PORTAL_ABI,provider).getDeposit(l1Account);
-      if (BigInt(active.nonce) === 0n || BigInt(active.amount) === 0n) throw new Error('No active L1 receipt to recover.');
+      const head = await provider.getBlock('latest');
+      if (!head?.hash || !Number.isSafeInteger(head.number)) throw new Error('Current Ethereum block unavailable.');
+      const active = await new ethers.Contract(portalAddr,PORTAL_ABI,provider).getDeposit(l1Account,{blockTag:head.number});
+      if (BigInt(active) === 0n) throw new Error('No active L1 receipt to recover.');
       const txHash=config.reuseTxHash;
       if(typeof txHash!=='string'||!/^0x[0-9a-fA-F]{64}$/.test(txHash))throw new Error('Provide the deposit transaction hash from your Ethereum wallet or recovery record.');
       // Authenticate the exact canonical receipt before using its Inbox key.
@@ -1218,11 +1138,16 @@
       const block=await provider.getBlock(receipt.blockNumber);
       if(block?.hash!==receipt.blockHash)throw Object.assign(new Error('Saved deposit receipt is not canonical.'),{code:'BB_RECOVERY_UNKNOWN'});
       const event=parsedDeposit(receipt);
-      if (event.nonce !== BigInt(active.nonce) || event.amount !== BigInt(active.amount)) throw new Error('Deposit event does not match the active receipt.');
+      if (event.amount !== BigInt(active)) throw new Error('Deposit event does not match the active receipt.');
+      const depositLog=receipt.logs.find(log=>log.address.toLowerCase()===portalAddr.toLowerCase()&&log.topics[0]?.toLowerCase()===ethers.id(DEPOSIT_SIGNATURE).toLowerCase()&&new ethers.Interface(PORTAL_ABI).parseLog(log)?.args.depositor.toLowerCase()===l1Account.toLowerCase());
+      if (!depositLog || !Number.isSafeInteger(depositLog.index) || receipt.blockNumber>head.number) throw new Error('Deposit event position unavailable.');
+      const withdrawals=await provider.getLogs({address:portalAddr,fromBlock:receipt.blockNumber,toBlock:head.number,topics:[ethers.id('Withdrawn(address,uint128)'),ethers.zeroPadValue(l1Account,32)]});
+      if(withdrawals.some(log=>log.blockNumber>receipt.blockNumber||(log.blockNumber===receipt.blockNumber&&log.index>depositLog.index))) throw new Error('This deposit was already refunded. Supply the current deposit transaction.');
+      if((await provider.getBlock(head.number))?.hash!==head.hash) throw new Error('Ethereum history changed while checking the deposit.');
       const secret = await restoreSecret(event.secretHash);
-      depositInfo = { amount:event.amount, key:event.key, leafIndex:event.index, depositNonce:event.nonce, secret,
+      depositInfo = { amount:event.amount, key:event.key, leafIndex:event.index, secret,
         secretHash:event.secretHash.toLowerCase(), txHash };
-      portalL1Balance=event.amount; portalDepositNonce=event.nonce;
+      portalL1Balance=event.amount;
       log('Recovered the active receipt using its saved claim secret.', 'success');
     }
 
@@ -1243,7 +1168,7 @@
           if(matching.length!==1||!matching[0].owner.equals(address)||!matching[0].contractAddress.equals(l2Addr)||
             !matching[0].storageSlot.equals(contractArtifact.storageLayout.deposits.slot)||matching[0].siloedNullifier.isZero())throw Object.assign(new Error('Private deposit note attribution is ambiguous.'),{code:'BB_RECOVERY_REQUIRED'});
           const packed=matching[0].note.items.map(value=>value.toBigInt());
-          if(packed[0]!==1n+(note.depositNonce<<32n)||packed[2]!==note.amount||
+          if(packed[0]!==1n||packed[2]!==note.amount||
             packed[6]!==note.headSequence+(note.lastScreenedIndex<<64n)+(note.lastRealPostIndex<<128n)||packed[7]!==note.nextAllowedTime||
             (resumedSpend&&matching[0].siloedNullifier.toString()!==resumedSpend.applicationNullifier))throw Object.assign(new Error('The selected private deposit changed before proving.'),{code:'BB_RECOVERY_REQUIRED'});
           transactionJournal.setOperation(operation);
@@ -1302,10 +1227,10 @@
       const amount = depositInfo.amount;
       const secret = new a.Fr(BigInt(depositInfo.secret));
       const leafIndex = depositInfo.leafIndex;
-      const claimContent = escrowContent(a,ethers,false,l2Addr,portalAddr,l1Account,amount,depositInfo.depositNonce,version,nodeInfo.l1ChainId);
-      selectedChain = (await a.poseidon2HashWithSeparator([new a.Fr(1),l2Addr.toField(),address.toField(),claimContent,secret],0x42420101)).toBigInt();
+      const claimContent = escrowContent(a,ethers,false,l2Addr,portalAddr,l1Account,amount,version,nodeInfo.l1ChainId);
+      selectedChain = (await a.poseidon2HashWithSeparator([new a.Fr(1),l2Addr.toField(),address.toField(),claimContent,secret,new a.Fr(BigInt(leafIndex))],0x42420101)).toBigInt();
       if (selectedChain === 0n) throw new Error('Invalid derived deposit identity');
-      claimOperation=JSON.stringify({schemaVersion:1,kind:'claim',depositor:l1Account.toLowerCase(),amount:String(amount),depositNonce:String(depositInfo.depositNonce),leafIndex:String(leafIndex),secretHash:depositInfo.secretHash.toLowerCase(),transactionHash:depositInfo.txHash.toLowerCase(),depositChain:new a.Fr(selectedChain).toString()});
+      claimOperation=JSON.stringify({schemaVersion:1,kind:'claim',depositor:l1Account.toLowerCase(),amount:String(amount),leafIndex:String(leafIndex),secretHash:depositInfo.secretHash.toLowerCase(),transactionHash:depositInfo.txHash.toLowerCase(),depositChain:new a.Fr(selectedChain).toString()});
       if(resumedClaim&&claimOperation!==resumedClaim.operation)throw Object.assign(new Error('The original claim receipt or beneficiary does not match the saved request.'),{code:'BB_RECOVERY_REQUIRED'});
 
       log('Claiming deposit on L2...', 'info');
@@ -1330,6 +1255,8 @@
         log('  Amount: ' + noteInfo.amount.toString() + ' wei', 'info');
         log('  Next allowed time: ' + noteInfo.nextAllowedTime.toString(), 'info');
         log('  No claim needed. You can post or withdraw.', 'success');
+        l2NoteInfo = noteInfo;
+        stateStatus = 'postable';
         return;
       }
 
@@ -1337,11 +1264,15 @@
 
       // One attempt per action. Message availability and uncertain submission
       // remain retryable outcomes; never run a ten-minute blind retry loop.
-      const result = await sendPrivate('claim', [depositorField, amount, depositInfo.depositNonce, secret, leafIndex]);
+      const result = await sendPrivate('claim', [depositorField, amount, secret, leafIndex]);
       const receipt = result.receipt;
       log('  Claim confirmed. Tx hash: ' + receipt.txHash + ', block: ' + receipt.blockNumber, 'success');
       try { await a.boundedTransactionRead(()=>wallet.pxe.sync(),20000); }
       catch { throw Object.assign(new Error('Claim confirmed; wallet synchronization is pending. Refresh before the next action.'),{code:'BB_WALLET_SYNC_PENDING'}); }
+      const claimedNote = await readDepositInfo();
+      if (claimedNote.amount === 0n) throw Object.assign(new Error('Claim confirmed; the deposit note is not available in this wallet yet. Refresh before the next action.'),{code:'BB_WALLET_SYNC_PENDING'});
+      l2NoteInfo = claimedNote;
+      stateStatus = 'postable';
 
     }
 
@@ -1602,27 +1533,7 @@
         throw new Error('Cannot determine the live deposit.');
       }
       if (noteInfo.amount === 0n) {
-        const unknown = () => Object.assign(new Error('No live deposit note was found, but a successful withdrawal has not been established. Recover the saved transaction or check the original deposit; do not make another deposit.'), {code:'BB_RECOVERY_UNKNOWN'});
-        try {
-          const priorExit = await a.boundedTransactionRead(async () => {
-          const active = await new ethers.Contract(portalAddr, PORTAL_ABI, provider).getDeposit(l1Account);
-          if (BigInt(active.amount) <= 0n || BigInt(active.nonce) <= 0n || selectedChain == null) throw unknown();
-          // Authenticate the selected private chain against this receipt and owner;
-          // an exit for another deposit must not complete this withdrawal request.
-          await doReuseDeposit();
-          if (BigInt(depositInfo.amount) !== BigInt(active.amount) || BigInt(depositInfo.depositNonce) !== BigInt(active.nonce)) throw unknown();
-          const content = escrowContent(a, ethers, false, l2Addr, portalAddr, l1Account, BigInt(active.amount), BigInt(active.nonce), version, nodeInfo.l1ChainId);
-          const chain = await a.poseidon2HashWithSeparator([new a.Fr(1), l2Addr.toField(), address.toField(), content, new a.Fr(BigInt(depositInfo.secret))], 0x42420101);
-          if (chain.toBigInt() !== selectedChain) throw unknown();
-          const leaf = computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, BigInt(active.amount), BigInt(active.nonce), version, nodeInfo.l1ChainId);
-          const found = await searchWithdrawal(leaf, await aztecNode.getBlockNumber());
-          if (!found) throw unknown();
-          return found;
-          }, 20000);
-          log('Confirmed prior withdrawal. Tx hash: ' + priorExit.txHash, 'success');
-          log('  Run claim-l1 to check settlement and claim your ETH on L1.', 'info');
-          return;
-        } catch { throw unknown(); }
+        throw Object.assign(new Error('No live deposit note was found. Recover the saved withdrawal transaction, then provide its hash to claim-l1.'),{code:'BB_RECOVERY_UNKNOWN'});
       }
       log('  Deposit note found: ' + noteInfo.amount.toString() + ' wei', 'info');
 
@@ -1711,6 +1622,8 @@
       if (receipt.transactionFee !== undefined) {
         log('  Fee paid: ' + toAztec(BigInt(receipt.transactionFee), 6) + ' AZTEC', 'info');
       }
+      config.withdrawTxHash = receipt.txHash.toString();
+      stateStatus = 'withdrawal_needs_verification';
       log('  L2->L1 message sent. Tx hash: ' + receipt.txHash, 'success');
       log('', 'info');
       log('  ═══════════════════════════════════════════', 'success');
@@ -1744,26 +1657,15 @@
       let messageIndexInTx = undefined;
 
       const active = await new ethers.Contract(portalAddr, PORTAL_ABI, provider).getDeposit(l1Account);
-      const withdrawAmount = BigInt(active.amount);
-      portalDepositNonce = BigInt(active.nonce);
-      if (!withdrawAmount || !portalDepositNonce) throw new Error('No active L1 receipt remains to refund.');
+      const withdrawAmount = BigInt(active);
 
-      if (!withdrawTxHash) {
-        log('  No withdrawal tx hash provided. Scanning L2 blocks...', 'info');
-        const messageLeaf = computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, withdrawAmount, portalDepositNonce, version, chainId);
-        log('  Message leaf: 0x' + messageLeaf.toBigInt().toString(16), 'info');
-        const latestBlock = await aztecNode.getBlockNumber();
-        const found = await searchWithdrawal(messageLeaf,latestBlock);
-        if (!found) {
-          throw Object.assign(new Error('No matching withdrawal found in complete canonical history. Check the selected receipt and wallet.'),{code:'BB_RECOVERY_UNKNOWN'});
-        }
-        withdrawTxHash = found.txHash;
-        messageIndexInTx = found.messageIndexInTx;
-      }
+      if (!withdrawAmount) throw new Error('No active L1 receipt remains to refund.');
+
+      if (!withdrawTxHash) throw new Error('Provide the current withdrawal transaction hash. The amount alone cannot identify a deposit cycle.');
 
       log('  Withdrawal tx: ' + withdrawTxHash, 'info');
 
-      const messageLeaf = computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, withdrawAmount, portalDepositNonce, version, chainId);
+      const messageLeaf = computeWithdrawMessageLeaf(a, ethers, l2Addr, portalAddr, l1Account, withdrawAmount, version, chainId);
       log('  Message leaf: ' + messageLeaf.toString(), 'info');
 
       // Settlement belongs to the network. Return a resumable pending outcome;
@@ -1808,9 +1710,11 @@
       const pathHex = siblingPath.toBufferArray().map(buf => '0x' + Buffer.from(buf).toString('hex'));
       const refunded=await ethereumJournal.send({
         data:new ethers.Interface(PORTAL_ABI).encodeFunctionData('withdraw',[BigInt(epochNumber),BigInt(numCheckpointsInEpoch),BigInt(leafIndex),pathHex]),value:'0',
-        expected:{kind:'withdraw',nonce:portalDepositNonce.toString(),amount:withdrawAmount.toString()},
+        expected:{kind:'withdraw',amount:withdrawAmount.toString()},
       });
       log('  L1 refund transaction: '+refunded.txHash,'info');
+      config.withdrawTxHash = null;
+      stateStatus = 'zero_balance_need_deposit';
       log('  Matching Withdrawn event and canonical receipt verified. ETH claimed successfully!','success');
     }
 
@@ -2006,7 +1910,7 @@
         await doDeposit();
       }
       result.depositInfo = depositInfo ? { amount:depositInfo.amount,key:depositInfo.key,leafIndex:depositInfo.leafIndex,
-        depositNonce:depositInfo.depositNonce,secretHash:depositInfo.secretHash,txHash:depositInfo.txHash } : null;
+        secretHash:depositInfo.secretHash,txHash:depositInfo.txHash } : null;
     } else if (action === 'claim') {
       await doClaim();
     } else if (action === 'post') {
@@ -2041,8 +1945,8 @@
         await doReuseDeposit();
       } else if (stateStatus === 'postable') {
         log('\n--- Phase 1: Already have L2 deposit note, skipping deposit ---', 'info');
-      } else if (stateStatus === 'withdrawn_l2_claimable_l1') {
-        log('\n--- Already withdrawn on L2. Skipping to L1 claim. ---', 'info');
+      } else if (stateStatus === 'withdrawal_needs_verification') {
+        log('\n--- Checking the supplied withdrawal transaction before claiming on L1. ---', 'info');
         await doClaimL1();
         result.done = true;
       }
@@ -2082,11 +1986,12 @@
     if(lastModeratorReceipt)result.moderatorPredecessors=(await transactionJournal.inspect?.())?.predecessorTxHashes??[];
     if(lastModeratorReceipt)result.moderatorReceipt={txHash:lastModeratorReceipt.txHash.toString(),status:lastModeratorReceipt.status,
       executionResult:lastModeratorReceipt.executionResult,blockNumber:Number(lastModeratorReceipt.blockNumber),blockHash:lastModeratorReceipt.blockHash?.toString()??null};
+    result.withdrawTxHash = stateStatus==='zero_balance_need_deposit' ? null : (config.withdrawTxHash || null);
     result.state = stateStatus;
     result.l2Addr = l2AddrHex;
     result.portalAddr = portalAddr;
     // Expose handles for web app live UI (billboard feed, countdown, etc.)
-    result.handles = { pxe, wallet, contract, aztecNode, rawNode, address, l2Addr, contractSalt, version, nodeInfo, depositChainId: selectedChain };
+    result.handles = { pxe, wallet, contract, aztecNode, rawNode, address, l2Addr, contractSalt, version, nodeInfo, depositChainId: selectedChain, withdrawTxHash: result.withdrawTxHash };
     return result;
     } finally {provider.destroy();}
   };

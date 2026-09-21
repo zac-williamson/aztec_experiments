@@ -365,8 +365,13 @@ async function main() {
     log('  L1 portal:   ' + result.portalAddr, 'success');
     log('========================================', 'success');
   } catch (e) {
+    const diagnosticPath=path.join(path.dirname(path.resolve(AZTEC_WALLET_PATH)),`deployment-error-${__realProcess.pid}.json`);
+    fs.writeFileSync(diagnosticPath,JSON.stringify({name:e?.name,code:e?.code,message:e?.message,stack:e?.stack},null,2)+'\n',{flag:'wx',mode:0o600});
     log('', 'error');
-    log('Deployment did not complete. Preserve its transaction records and check receipts before retrying.', 'error');
+    log(e?.code === 'BB_ETH_RECOVERY_REQUIRED'
+      ? 'Ethereum transaction confirmation could not be verified. Its request is saved. Resume the same deployment command to check the original transaction.'
+      : 'Deployment did not complete. Preserve its transaction records and check receipts before retrying.', 'error');
+    log('Private diagnostic saved: '+diagnosticPath,'error');
     __realProcess.exitCode=1;
   } finally { fs.closeSync(reportFd); if(fs.existsSync(temporary))fs.unlinkSync(temporary); }
 }

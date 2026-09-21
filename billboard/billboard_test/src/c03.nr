@@ -22,13 +22,13 @@ unconstrained fn c03_ten_distinct_claimed_authors_get_unique_ids_and_live_order_
         let owner = env.create_light_account();
         let depositor = EthAddress::from_field(0xc03000 + i as Field);
         let secret = fresh_post_nonce();
-        let content = get_deposit_msg_hash(1, portal, board, 1, depositor, 1, MINIMUM);
-        let chain = deposit_chain_id(board, owner, content, secret);
+        let content = get_deposit_msg_hash(1, portal, board, 1, depositor, MINIMUM);
         let leaf = env.send_l1_to_l2_message(content, secret, portal, board);
-        env.call_private(owner, Billboard::at(board).claim_deposit(depositor, MINIMUM, 1, secret, leaf));
+        let chain = deposit_chain_id(board, owner, content, secret, leaf);
+        env.call_private(owner, Billboard::at(board).claim_deposit(depositor, MINIMUM, secret, leaf));
         let note = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-        assert_eq(note[1], chain); assert_eq(note[3], MINIMUM as Field);
-        if (note[10] as u64) > eligible { eligible = note[10] as u64; }
+        assert_eq(note[1], chain); assert_eq(note[2], MINIMUM as Field);
+        if (note[9] as u64) > eligible { eligible = note[9] as u64; }
         authors[i] = owner; chains[i] = chain;
     }
     env.mine_block_at(eligible + 1);
@@ -47,7 +47,7 @@ unconstrained fn c03_ten_distinct_claimed_authors_get_unique_ids_and_live_order_
         assert_eq(env.view_public(Billboard::at(board).get_post_length(id)), 4);
         assert_eq(env.view_public(Billboard::at(board).get_post_time(id)), env.last_block_timestamp());
         let info = env.execute_utility(Billboard::at(board).get_deposit_info(authors[i], chains[i]));
-        assert_eq(info[6], 1); assert_eq(info[8], 0);
+        assert_eq(info[5], 1); assert_eq(info[7], 0);
     }
     env.call_public(censor, Billboard::at(board).declare_immoral(ids[6], env.view_public(Billboard::at(board).get_post_policy_version(ids[6])), crate::reason_with(0xc03), 4));
     for i in 0..10 {
@@ -61,7 +61,7 @@ unconstrained fn c03_ten_distinct_claimed_authors_get_unique_ids_and_live_order_
 #[test]
 unconstrained fn c03_dummy_is_private_and_first_real_post_still_gets_order_zero() {
     let (mut env, board, owner, _censor, time) = setup_with_deposit(MINIMUM);
-    let chain = test_chain(board, owner, MINIMUM);
+    let chain = test_chain(env, board, owner, MINIMUM);
     env.mine_block_at(time + 3601);
     env.call_private(owner, Billboard::at(board).post(chain, 0, [0; 32], 0, true, Option::none(), Option::none()));
     assert_eq(env.view_public(Billboard::at(board).get_post_count()), 0);
@@ -71,27 +71,27 @@ unconstrained fn c03_dummy_is_private_and_first_real_post_still_gets_order_zero(
     assert(child.unwrap_unchecked().note.is_dummy);
     assert_eq(child.unwrap_unchecked().note.post_id, 0);
     let state = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(state[6], 1); assert_eq(state[9], 0);
-    env.mine_block_at((state[10] as u64) + 1);
+    assert_eq(state[5], 1); assert_eq(state[8], 0);
+    env.mine_block_at((state[9] as u64) + 1);
     let nonce = fresh_post_nonce();
     env.call_private(owner, Billboard::at(board).post(chain, nonce, msg_with(2), 4, false, child, grandchild));
     assert_eq(env.view_public(Billboard::at(board).get_post_count()), 1);
     assert_eq(env.view_public(Billboard::at(board).get_post_id(0)), post_id(board, nonce));
     let after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(after[6], 2); assert_eq(after[8], 1); assert_eq(after[9], 2);
+    assert_eq(after[5], 2); assert_eq(after[7], 1); assert_eq(after[8], 2);
 }
 
 #[test(should_fail_with = "Post nonce must not be zero")]
 unconstrained fn c03_real_post_rejects_zero_nonce() {
     let (mut env, board, owner, _censor, time) = setup_with_deposit(MINIMUM);
-    let chain = test_chain(board, owner, MINIMUM); env.mine_block_at(time + 3601);
+    let chain = test_chain(env, board, owner, MINIMUM); env.mine_block_at(time + 3601);
     env.call_private(owner, Billboard::at(board).post(chain, 0, msg_with(1), 4, false, Option::none(), Option::none()));
 }
 
 #[test(should_fail_with = "Post id already exists")]
 unconstrained fn c03_reused_nonce_rejects_duplicate_public_id() {
     let (mut env, board, owner, _censor, time) = setup_with_deposit(MINIMUM);
-    let chain = test_chain(board, owner, MINIMUM); env.mine_block_at(time + 3601);
+    let chain = test_chain(env, board, owner, MINIMUM); env.mine_block_at(time + 3601);
     let nonce = fresh_post_nonce();
     env.call_private(owner, Billboard::at(board).post(chain, nonce, msg_with(1), 4, false, Option::none(), Option::none()));
     assert_eq(env.view_public(Billboard::at(board).get_post_id(0)), post_id(board, nonce));
@@ -118,13 +118,13 @@ unconstrained fn c03_public_publication_rejects_zero_id() {
 #[test(should_fail_with = "Nonzero message padding")]
 unconstrained fn c03_real_post_rejects_hidden_message_suffix() {
     let (mut env, board, owner, _censor, time) = setup_with_deposit(MINIMUM);
-    let chain = test_chain(board, owner, MINIMUM); env.mine_block_at(time + 3601);
+    let chain = test_chain(env, board, owner, MINIMUM); env.mine_block_at(time + 3601);
     env.call_private(owner, Billboard::at(board).post(chain, fresh_post_nonce(), msg_with(1), 3, false, Option::none(), Option::none()));
 }
 
 #[test(should_fail_with = "Dummy message must be empty")]
 unconstrained fn c03_dummy_rejects_hidden_content() {
     let (mut env, board, owner, _censor, time) = setup_with_deposit(MINIMUM);
-    let chain = test_chain(board, owner, MINIMUM); env.mine_block_at(time + 3601);
+    let chain = test_chain(env, board, owner, MINIMUM); env.mine_block_at(time + 3601);
     env.call_private(owner, Billboard::at(board).post(chain, 0, msg_with(1), 0, true, Option::none(), Option::none()));
 }

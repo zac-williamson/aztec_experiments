@@ -20,7 +20,6 @@ contract PortalConservationTest is PortalFixtures {
     RootPublisher private rollup;
     address[3] private owners;
     uint128[3] private credited;
-    uint64[3] private nonces;
     uint256 private surplus;
     uint256 private nextEpoch;
 
@@ -42,18 +41,16 @@ contract PortalConservationTest is PortalFixtures {
             DataStructures.L1Actor(address(portal), block.chainid), content).sha256ToField();
     }
 
-    function rootFor(uint256 who, uint64 nonce, uint128 amount) private view returns (bytes32) {
+    function rootFor(uint256 who, uint128 amount) private view returns (bytes32) {
         return envelope(PortalMessages.receipt(true, block.chainid, address(portal), L2, VERSION,
-            owners[who], nonce, amount));
+            owners[who], amount));
     }
 
     function conserved() private view {
         uint256 liabilities;
         for (uint256 i; i < 3; ++i) {
-            (uint64 activeNonce, uint128 amount) = portal.getDeposit(owners[i]);
+            uint128 amount = portal.getDeposit(owners[i]);
             require(amount == credited[i], "Receipt amount differs from independent model");
-            require(activeNonce == (amount == 0 ? 0 : nonces[i]), "Active receipt nonce differs");
-            require(portal.lastDepositNonce(owners[i]) == nonces[i], "Nonce counter reset or advanced on failure");
             liabilities += credited[i];
         }
         require(portal.totalDeposited() == liabilities, "Stale aggregate liabilities");
@@ -64,7 +61,6 @@ contract PortalConservationTest is PortalFixtures {
     function credit(uint256 who, uint128 amount) private {
         vm.prank(owners[who]); portal.deposit{value: amount}(bytes32(uint256(123)));
         credited[who] = amount;
-        ++nonces[who];
         conserved();
     }
 
@@ -72,7 +68,7 @@ contract PortalConservationTest is PortalFixtures {
         uint256 epoch = nextEpoch++;
         uint128 amount = credited[who];
         uint256 balanceBefore = owners[who].balance;
-        rollup.publish(epoch, 1, rootFor(who, nonces[who], amount));
+        rollup.publish(epoch, 1, rootFor(who, amount));
         vm.prank(owners[who]); portal.withdraw(epoch, 1, 0, new bytes32[](0));
         credited[who] = 0;
         require(owners[who].balance == balanceBefore + amount, "Refund amount differs");
@@ -85,11 +81,8 @@ contract PortalConservationTest is PortalFixtures {
 
     function invalidReceipt(uint256 who) private {
         uint256 epoch = nextEpoch++;
-        // An active redeposit gets its authentic OLD nonce in a fresh root;
-        // first deposits get the wrong amount. Both must roll all effects back.
-        bytes32 badRoot = nonces[who] > 1
-            ? rootFor(who, nonces[who] - 1, credited[who])
-            : rootFor(who, nonces[who], credited[who] + 1);
+        // A forged amount must not consume the message or change liabilities.
+        bytes32 badRoot = rootFor(who, credited[who] + 1);
         rollup.publish(epoch, 1, badRoot);
         control.expectRevert(); vm.prank(owners[who]); portal.withdraw(epoch, 1, 0, new bytes32[](0));
         require(!rollup.outbox().hasMessageBeenConsumedAtEpoch(Epoch.wrap(epoch), 1), "Failed proof consumed root");
@@ -143,7 +136,7 @@ contract PortalConservationTest is PortalFixtures {
         refund(0);
         require(portal.totalDeposited() == 2 ether, "Withdrawal did not subtract aggregate");
         credit(0, 3 ether);
-        require(nonces[0] == 2 && portal.totalDeposited() == 5 ether, "Redeposit accounting reset");
+        require(portal.totalDeposited() == 5 ether, "Redeposit accounting reset");
         invalidReceipt(0);
         refund(1); refund(0);
         require(portal.totalDeposited() == 0 && address(portal).balance == 7, "Old aggregate bug survived complete cycle");

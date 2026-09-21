@@ -113,7 +113,7 @@ export function validateFeedEvent(event, expected) {
     nonzeroField(p.censorAddress, 'censor address');
     text(p.reason, 200, 'flag reason');
     timestamp(p.flaggedAt, 'flag timestamp');
-    field(p.policyVersion, 'policy version at publication');
+    field(p.policyVersion, 'policy version at moderation');
   } else throw new Error('Unsupported event type');
   return freeze(structuredClone(event));
 }

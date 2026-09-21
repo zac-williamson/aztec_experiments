@@ -49,25 +49,27 @@ async function nativeClientOptions(bbBinaryPath, directory) {
 /** All account material stays in memory. Serialize only artifactHashes/funding addresses if needed.
  * Call before genesis construction. Parent owns the global native singleton and its final teardown.
  */
-export async function prepareC01BoardFlow({ bbBinaryPath, directory, authorCount = 1 } = {}) {
+export async function prepareC01BoardFlow({ bbBinaryPath, directory, authorCount = 1, boardTiming = {baseCooldown:60,censorWindow:60} } = {}) {
   assertNodeVersion(); assertAztecPackages();
   await nativeClientOptions(bbBinaryPath, directory);
   const prepared = await boardArtifact();
   assert([1,10].includes(authorCount));
+  assert.deepEqual(Object.keys(boardTiming).sort(),['baseCooldown','censorWindow']);
+  assert(Object.values(boardTiming).every(value=>Number.isSafeInteger(value)&&value>0&&value<=600));
   const authorAccounts = await generateSchnorrAccounts(authorCount, 'schnorr_initializerless');
   const account = authorAccounts[0];
-  return { ...prepared, account, authorAccounts, salt: Fr.random(), fundingAddresses: authorAccounts.map(a=>a.address) };
+  return { ...prepared, boardTiming, account, authorAccounts, salt: Fr.random(), fundingAddresses: authorAccounts.map(a=>a.address) };
 }
 
 /** Owns/stops its ephemeral wallet. Returns tx/instance in memory for the parent's next step.
  * No contract interaction .prove exists in pinned5.2: follow BaseWallet's genuine send path up to proveTx only.
  */
-export async function proveC01BoardDeployment(node, preparation, { rollupAddress, rollupVersion, bbBinaryPath, directory }) {
+export async function proveC01BoardDeployment(node, preparation, { rollupAddress, rollupVersion, bbBinaryPath, directory, reportStage=()=>{} }) {
   let wallet, stage = 'preflight', result;
   const observation = { passed: false, scope: 'real client deployment transaction proof and node admission validation only',
     initializerVisibility: 'public; client proof authenticates private account/transaction path', sent: false,
     included: false, epochProofAccepted: false };
-  const mark = name => { stage = name; process.stdout.write(`C01_BOARD_STAGE ${name}\n`); };
+  const mark = name => { stage = name; reportStage('board-'+name); };
   try {
     assertNodeVersion(); assertAztecPackages();
     assert(path.isAbsolute(directory), 'Parent-owned directory required');
@@ -89,7 +91,7 @@ export async function proveC01BoardDeployment(node, preparation, { rollupAddress
     const chunk = Buffer.alloc(31); policyBytes.copy(chunk);
     const policy = [new Fr(BigInt('0x' + chunk.toString('hex'))), ...Array.from({length:47}, () => Fr.ZERO)];
     const initArgs = [31337n, rollup, BigInt(rollupVersion), 1000000000000000n, 10000000000000000n,
-      60, account.address, 2, 60, 2, policy, policyBytes.length];
+      preparation.boardTiming.baseCooldown, account.address, 2, preparation.boardTiming.censorWindow, 2, policy, policyBytes.length];
     assert.equal(initArgs.length, 12);
     mark('build-deployment-request');
     const deploy = Contract.deploy(wallet, preparation.artifact, initArgs, 'init',
@@ -105,6 +107,7 @@ export async function proveC01BoardDeployment(node, preparation, { rollupAddress
       scopes: wallet.scopesFrom(account.address, [], undefined),
       senderForTags: wallet.senderForTagsFrom(account.address, undefined),
     });
+    mark('serialize-proof');
     const tx = await proven.toTx();
     assert(!proven.chonkProof.isEmpty(), 'Empty client proof returned');
     const proofBytes = proven.chonkProof.toBuffer(); assert(proofBytes.length > 4, 'Missing serialized proof');
@@ -127,6 +130,7 @@ export async function proveC01BoardDeployment(node, preparation, { rollupAddress
     throw failure;
   } finally {
     if (wallet) {
+      mark('close-wallet');
       try { await wallet.stop(); observation.walletStopped = true; }
       catch { observation.passed = false; const failure = new Error('C01 board wallet cleanup failed');
         failure.boardObservation = { ...observation, walletStopped: false }; throw failure; }

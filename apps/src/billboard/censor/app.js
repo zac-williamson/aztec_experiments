@@ -36,7 +36,6 @@ setupRpcAuth();
 
 const journalAcknowledgements=new Map();
 const runCensorEngine = makeCallEngine(runBillboardUser, {
-  createHistoryCursor: options => window.__aztec.createHistoryCursor({...options,storage:window.__aztec.createBrowserJournalStorage()}),
   createTransactionJournal: options => window.__aztec.createL2Journal({...options,storage:window.__aztec.createBrowserJournalStorage()}),
   artifact: typeof BILLBOARD_ARTIFACT !== 'undefined' ? BILLBOARD_ARTIFACT : null,
   privateFeeArtifact: typeof BILLBOARD_PRIVATE_FEE_ARTIFACT !== 'undefined' ? BILLBOARD_PRIVATE_FEE_ARTIFACT : null,

@@ -51,7 +51,7 @@ export async function observeWithdrawalTraffic(s){
    await author.wallet.registerContract(s.instance,artifact);
   }
   s.mark('traffic:prepare-A-withdrawal');
-  const anchor=await eligibleApplicationAnchor({...s.common,wallet:a.wallet,timestamp:a.state.fields[10]});
+  const anchor=await eligibleApplicationAnchor({...s.common,wallet:a.wallet,timestamp:a.state.fields[9]});
   const note=await exactApplicationDeposit({wallet:a.wallet,artifact,instance:s.instance,owner:a.owner,chain:a.chain,...a.state});
   const board=Contract.at(s.instance.address,artifact,a.wallet);
   const proof=await proveApplicationAction({wallet:a.wallet,owner:a.owner,privateFeeAction:a.fee.privateFeeAction,payerMode:'private',interaction:board.methods.withdraw(a.chain)});
@@ -72,10 +72,10 @@ export async function observeWithdrawalTraffic(s){
   assert(Number(exit.receipt.blockNumber)>Number(first.receipt.blockNumber));
   a.fees+=BigInt(exit.summary.fee);
   const claim=a.claim.claim;
-  const content=sha256ToField([Buffer.from(encodeEscrowCommitment('exit',claim.scope,{depositor:claim.depositor,depositNonce:String(claim.depositNonce),amount:String(claim.amount)}))]);
+  const content=sha256ToField([Buffer.from(encodeEscrowCommitment('exit',claim.scope,{depositor:claim.depositor,amount:String(claim.amount)}))]);
   const leaf=computeL2ToL1MessageHash({l2Sender:s.instance.address,l1Recipient:EthAddress.fromString(claim.scope.portalAddress),content,rollupVersion:new Fr(BigInt(claim.scope.rollupVersion)),chainId:new Fr(31337n)});
   assert.equal(exit.effect.l2ToL1Msgs.filter(value=>value.equals(leaf)).length,1);
-  assert.deepEqual((await board.methods.get_deposit_info(a.owner,a.chain).simulate({from:a.owner})).result.map(value=>BigInt(value.toString())),Array(11).fill(0n));
+  assert.deepEqual((await board.methods.get_deposit_info(a.owner,a.chain).simulate({from:a.owner})).result.map(value=>BigInt(value.toString())),Array(10).fill(0n));
   const notes=await a.wallet.pxe.debug.getNotes({contractAddress:s.instance.address,owner:a.owner,status:NoteStatus.ACTIVE,scopes:[a.owner],storageSlot:artifact.storageLayout.deposits.slot});
   assert(!notes.some(value=>value.note.items[1]?.equals(a.chain)));
   s.mark('traffic:B-post-after-exit');const second=await publish('Posting continues after another author exits');

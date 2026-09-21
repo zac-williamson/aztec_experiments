@@ -3,8 +3,7 @@ import {BlockResponseSchema} from '@aztec/stdlib/interfaces/client';
 import {BlockHeader} from '@aztec/stdlib/tx';
 import {BlockHash} from '@aztec/stdlib/block';
 import {AppendOnlyTreeSnapshot} from '@aztec/stdlib/trees';
-import {createHistoryCursor} from '../shared/history-cursor.mjs';
-import {Tx,TxHash} from '@aztec/stdlib/tx';
+import {Tx,TxHash,TxSimulationResult} from '@aztec/stdlib/tx';
 import {createL2Journal} from '../shared/l2-journal.mjs';
 import * as transactionOutcomes from '../shared/transaction-outcomes.mjs';
 // Actual application routing, with explicit node/proof/payment-preparer doubles.
@@ -56,7 +55,7 @@ test('actual wallet keeps configured gas and normal account scope/tag through si
   class BaseWallet {
     constructor(pxe){this.pxe=pxe;}
     async completeFeeOptions(opts){calls.push(['fees',opts]);return {gasSettings:opts.gasSettings};}
-    async simulateViaEntrypoint(value,opts){calls.push(['simulate',value,opts]);return {gasUsed:{totalGas:new Gas(90,190),teardownGas:new Gas(0,1)}};}
+    async simulateViaEntrypoint(value,opts){calls.push(['simulate',value,opts]);return {publicInputs:{forPublic:{}},publicOutput:{},gasUsed:{totalGas:new Gas(90,190),teardownGas:new Gas(0,1)}};}
     async createTxExecutionRequestFromPayloadAndFee(value,from,fees){calls.push(['request',value,from,fees]);return 'request';}
     scopesFrom(from,additional){assert.equal(from,owner);return additional;}
     senderForTagsFrom(from,sender){assert.equal(from,owner);return sender;}
@@ -88,13 +87,13 @@ function mainHarness(action,isDummy=false) {
   const portal='0x3333333333333333333333333333333333333333',rollup='0x1111111111111111111111111111111111111111';
   const depositor='0x0000000000000000000000000000000000000004';
   const secret=new Fr(8),secretHash=new Fr(9),amount=1000000000000000n;
-  const iface=new ethers.Interface(['event Deposited(address indexed depositor,uint64 nonce,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
-  const event=iface.encodeEventLog(iface.getEvent('Deposited'),[depositor,7n,amount,secretHash.toString(),new Fr(77).toString(),42n]);
-  const provider={getCode:async()=> '0x01',getNetwork:async()=>({chainId:31337n}),destroy(){},getBlock:async()=>({hash:'canonical-eth'}),getTransactionReceipt:async hash=>({hash,status:1,blockNumber:1,blockHash:'canonical-eth',logs:[{address:portal,...event}]})};
-  class Portal {L2_CONTRACT=async()=>board.toString();L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>rollup;VERSION=async()=>1n;getDeposit=async()=>({nonce:7n,amount});}
+  const iface=new ethers.Interface(['event Deposited(address indexed depositor,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
+  const event=iface.encodeEventLog(iface.getEvent('Deposited'),[depositor,amount,secretHash.toString(),new Fr(77).toString(),42n]);
+  const provider={getLogs:async()=>[],getCode:async()=> '0x01',getNetwork:async()=>({chainId:31337n}),destroy(){},getBlock:async()=>({number:1,hash:'canonical-eth'}),getTransactionReceipt:async hash=>({hash,status:1,blockNumber:1,blockHash:'canonical-eth',logs:[{index:0,address:portal,...event}]})};
+  class Portal {L2_CONTRACT=async()=>board.toString();L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>rollup;VERSION=async()=>1n;getDeposit=async()=>amount;}
   const node={getL1ToL2MessageMembershipWitness:async()=>[42n,new SiblingPath(L1_TO_L2_MSG_TREE_HEIGHT,Array.from({length:L1_TO_L2_MSG_TREE_HEIGHT},()=>Fr.ONE.toBuffer()))],getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:1}),getL1ContractAddresses:async()=>({rollupAddress:rollup}),getBlockNumber:async()=>1,
     getBlock:async number=>({number,hash:'block',header:{globalVariables:{timestamp:100n}},body:{txEffects:[]}}),getBlocks:async(from,count)=>Array.from({length:count},(_,i)=>({number:Number(from)+i,hash:'block',body:{txEffects:[]}})),getContract:async()=>({address:board}),getPublicStorageAt:async()=>{authorBalanceReads++;throw new Error('Author fee lookup forbidden');}};
-  const note=()=>({schemaVersion:1n,depositChainId:5n,depositNonce:7n,amount:missingNote||(action==='claim'&&!sent)?0n:amount,nextAllowedTime:0n,lastRealPostIndex:0n,lastScreenedIndex:0n,headSequence:0n,...noteOverrides});
+  const note=()=>({schemaVersion:1n,depositChainId:5n,amount:missingNote||(action==='claim'&&!sent)?0n:amount,nextAllowedTime:0n,lastRealPostIndex:0n,lastScreenedIndex:0n,headSequence:0n,...noteOverrides});
   c.readBillboardDepositInfo=async()=>note();
   const methods=new Proxy({}, {get:(_target,name)=>{
     if(['post','withdraw','claim_deposit','transfer_censor','declare_immoral','set_moderation_policy'].includes(name)) return (...args)=>({send:async opts=>{assert.equal(opts.from,addr);assert.equal(opts.fee.paymentMethod,'private-method');if(actionHook)await actionHook(name,args);sent=true;requests.at(-1).action={kind:action,args};return {receipt:actionReceipt};}});
@@ -106,19 +105,18 @@ function mainHarness(action,isDummy=false) {
     SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;getSigningPublicKey=async()=>({x:Fr.ONE,y:Fr.ONE});},
     getContractInstanceFromInstantiationParams:async()=>({address:addr}),computePartialAddress:async()=>Fr.ZERO,
     createAztecNodeClient:()=>node,loadContractArtifact:x=>x,
-    createPXE:async()=>({debug:{getNotes:async filter=>{assert.equal(filter.status,NoteStatus.ACTIVE);const n=note();return [{owner:addr,contractAddress:board,storageSlot:Fr.ONE,siloedNullifier:new Fr(7),note:{items:[1n+(n.depositNonce<<32n),5n,amount,BigInt(depositor),0n,0n,n.headSequence+(n.lastScreenedIndex<<64n)+(n.lastRealPostIndex<<128n),n.nextAllowedTime].map(v=>new Fr(v))}}];}},registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{},getSyncedBlockHeader:async()=>({hash:async()=>new Fr(78)})}),AccountManager:{create:async()=>({address:addr})},Contract:{at:async()=>({methods})},
+    createPXE:async()=>({debug:{getNotes:async filter=>{assert.equal(filter.status,NoteStatus.ACTIVE);const n=note();return [{owner:addr,contractAddress:board,storageSlot:Fr.ONE,siloedNullifier:new Fr(7),note:{items:[1n,5n,amount,BigInt(depositor),0n,0n,n.headSequence+(n.lastScreenedIndex<<64n)+(n.lastRealPostIndex<<128n),n.nextAllowedTime].map(v=>new Fr(v))}}];}},registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{},getSyncedBlockHeader:async()=>({hash:async()=>new Fr(78)})}),AccountManager:{create:async()=>({address:addr})},Contract:{at:async()=>({methods})},
     computeSecretHash:async()=>secretHash,poseidon2HashWithSeparator:async()=>new Fr(5),
     preparePrivateFeePayment:async input=>{requests.push(input);return {paymentMethod:'private-method',gasSettings:gas()};},
   };
-  const cursorRecords=new Map();
-  const env={createHistoryCursor:options=>createHistoryCursor({...options,storage:{read:async key=>cursorRecords.get(key)??null,compareAndSwap:async(key,previous,next)=>{assert.equal(cursorRecords.get(key)??null,previous);cursorRecords.set(key,next);}}}),createEthereumJournal:async()=>({assertCanStart:async()=>{},send:async()=>{throw Object.assign(new Error('Unknown Ethereum submission'),{code:'BB_ETH_SUBMISSION_UNKNOWN'});}}),createTransactionJournal:async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},setOperation:value=>operations.push(value)}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{storageLayout:{deposits:{slot:Fr.ONE}}},privateFeeArtifact:{},
+  const env={createEthereumJournal:async()=>({assertCanStart:async()=>{},send:async()=>{throw Object.assign(new Error('Unknown Ethereum submission'),{code:'BB_ETH_SUBMISSION_UNKNOWN'});}}),createTransactionJournal:async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},setOperation:value=>operations.push(value)}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{storageLayout:{deposits:{slot:Fr.ONE}}},privateFeeArtifact:{},
     initCRS:async()=>{},createStore:async()=>({}),log:text=>logs.push(text),getBrowserSigner:async()=>({getAddress:async()=>depositor,provider})};
   const config={action,isDummy,message:'text',depositChainId:'5',portalAddress:portal,ethRpcUrl:'http://fixture.invalid',aztecNodeUrl:'http://fixture.invalid',aztecWallet:{secretKey:new Fr(1).toString(),salt:0},
     reuseTxHash:new Fr(3).toString(),claimSecretStore:{save:async()=>{},load:async()=>({schemaVersion:1,secret:secret.toString(),secretHash:secretHash.toString()})},
     privateFee:{contractAddress:'private-fee',gasSettings:gas()}};
   config.censorWalletJson={...config.aztecWallet};config.newCensor=new Fr(44).toString();config.postId=new Fr(55).toString();config.moderationPolicy='No threats';
   function setWithdrawalHistory(executionResult='success') {
-    const leaf=c.BillboardUserCodec.computeWithdrawMessageLeaf(a,ethers,board,portal,depositor,amount,7n,1,31337);
+    const leaf=c.BillboardUserCodec.computeWithdrawMessageLeaf(a,ethers,board,portal,depositor,amount,1,31337);
     const txHash=new Fr(88);
     node.getBlocks=async()=>[{number:1,hash:'block',body:{txEffects:[{txHash,l2ToL1Msgs:[leaf]}]}}];
     node.getTxReceipt=async()=>({txHash,status:'checkpointed',executionResult,blockNumber:1,blockHash:'block'});
@@ -127,9 +125,9 @@ function mainHarness(action,isDummy=false) {
 }
 for(const [action,dummy] of [['claim',false],['post',false],['post',true],['withdraw',false]]) {
   test(`actual main ${action}${dummy?' dummy':''} uses standard author call with private fee payment`,async()=>{
-    const h=mainHarness(action,dummy);await h.run();assert.equal(h.requests.length,1);assert.equal(h.authorBalanceReads(),0);
+    const h=mainHarness(action,dummy);const result=await h.run();assert.equal(h.requests.length,1);assert.equal(h.authorBalanceReads(),0);
     const r=h.requests[0];assert.equal(r.action.kind,action);assert.equal(r.expectedChainId,'31337');assert.equal(r.expectedVersion,'1');
-    if(action==='claim'){assert.equal(r.action.args[2],7n);assert.equal(r.action.args[3].toString(),h.secret.toString());}
+    if(action==='claim'){assert.equal(result.state,'postable');assert.equal(r.action.args.length,4);assert.equal(r.action.args[2].toString(),h.secret.toString());assert.equal(r.action.args[3],42n);}
     if(action==='post'){assert.equal(r.action.args[3],dummy?0:4);assert.equal(r.action.args[4],dummy);assert.equal(r.action.args[1].isZero(),dummy);}
     assert(!h.logs.some(text=>text.includes('fund your account')||text.includes('You need some to pay')));
   });
@@ -191,15 +189,16 @@ test('actual main recovery avoids proving and Ethereum signing and reports rever
  for(const executionResult of ['success','reverted']) {
   const h=mainHarness('recover');let scope;
   h.env.initCRS=async()=>{throw new Error('Recovery must not prove');};h.env.getBrowserSigner=async()=>{throw new Error('Recovery must not acquire Ethereum signer');};
-  h.env.createTransactionJournal=async options=>{scope=options.scope;return {assertCanStart:async()=>{},prepare:async()=>{},confirmed:()=>{},recover:async()=>({txHash:new Fr(99),executionResult})};};
+  h.env.createTransactionJournal=async options=>{scope=options.scope;return {assertCanStart:async()=>{},prepare:async()=>{},confirmed:()=>{},inspect:async()=>({txHash:new Fr(99).toString(),operation:JSON.stringify({kind:'withdraw'})}),recover:async()=>({txHash:new Fr(99),executionResult})};};
   const result=await h.run();assert.equal(result.state,executionResult==='success'?'transaction_recovered':'transaction_reverted');assert.equal(scope.chainId,'31337');assert.equal(scope.version,'1');assert.equal(scope.portal,h.config.portalAddress);assert.equal(h.requests.length,0);
   assert.equal(h.logs.some(s=>s.includes('Saved transaction succeeded')),executionResult==='success');
+  assert.equal(result.withdrawTxHash,executionResult==='success'?new Fr(99).toString():undefined);
  }
 });
 
 test('Ethereum recovery handles already refunded receipts before checking active deposit',async()=>{
  for(const outcome of ['success','reverted','replaced']) {
-  const h=mainHarness('recover-eth');h.Portal.prototype.getDeposit=async()=>({nonce:0n,amount:0n});
+  const h=mainHarness('recover-eth');h.Portal.prototype.getDeposit=async()=>0n;
   h.env.initCRS=async()=>{throw new Error('Recovery must not prove');};
   h.env.createEthereumJournal=async options=>{assert.equal(options.scope.depositor,'0x0000000000000000000000000000000000000004');return {assertCanStart:async()=>{},send:async()=>{},recover:async()=>({outcome,txHash:new Fr(99).toString()})};};
   const result=await h.run();assert.equal(result.state,outcome==='success'?'ethereum_recovered':'ethereum_'+outcome);assert.equal(h.requests.length,0);assert.equal(h.logs.some(s=>s.includes('portal event verified')),outcome==='success');
@@ -269,10 +268,10 @@ for (const unavailable of [false,true]) test(`missing withdrawal note never prov
  assert(!h.logs.some(x=>x.includes('Confirmed prior withdrawal')||x.includes('already withdrawn')));
 });
 
-test('missing withdrawal note can recover an exact successful canonical exit without paying again',async()=>{
+test('missing withdrawal note requires saved transaction recovery even if matching exit content exists',async()=>{
  const h=mainHarness('withdraw');h.setMissingNote(true);h.setWithdrawalHistory();
- await h.run();assert.equal(h.requests.length,0);
- assert(h.logs.some(x=>x.includes('Confirmed prior withdrawal. Tx hash:')));
+ await assert.rejects(h.run(),{code:'BB_RECOVERY_UNKNOWN'});assert.equal(h.requests.length,0);
+ assert(!h.logs.some(x=>x.includes('Confirmed prior withdrawal. Tx hash:')));
 });
 test('missing withdrawal note cannot recover a reverted exit',async()=>{
  const h=mainHarness('withdraw');h.setMissingNote(true);h.setWithdrawalHistory('reverted');
@@ -289,13 +288,12 @@ test('withdrawal recovery without original claim custody cannot guess deposit ow
  await assert.rejects(h.run(),e=>e.code==='BB_RECOVERY_UNKNOWN');assert.equal(h.requests.length,0);
 });
 
-test('withdrawal absence reconciliation has a deadline even if its receipt read stalls',async()=>{
- const h=mainHarness('withdraw');h.setMissingNote(true);h.setWithdrawalHistory();
- let checked=false;
- h.env.aztec.boundedTransactionRead=(fn,timeout)=>{assert.equal(timeout,20000);checked=true;return transactionOutcomes.boundedTransactionRead(fn,20);};
- // Receipt lookup for the selected claim happens within the bounded callback.
- h.config.claimSecretStore.load=()=>new Promise(()=>{});
- await assert.rejects(h.run(),e=>e.code==='BB_RECOVERY_UNKNOWN');assert(checked);assert.equal(h.requests.length,0);
+test('missing withdrawal note rejects without scanning history or looking up a claim secret',async()=>{
+ const h=mainHarness('withdraw');h.setMissingNote(true);let historyReads=0,secretReads=0;
+ h.node.getBlocks=async()=>{historyReads++;throw Error('History scan forbidden');};
+ h.config.claimSecretStore.load=async()=>{secretReads++;throw Error('Claim secret lookup forbidden');};
+ await assert.rejects(h.run(),{code:'BB_RECOVERY_UNKNOWN'});
+ assert.equal(historyReads,0);assert.equal(secretReads,0);assert.equal(h.requests.length,0);
 });
 
 for(const kind of ['dummy','withdraw'])for(const changed of [false,true])test(`saved ${kind} requires the same source screening sequence (${changed?'changed':'unchanged'})`,async()=>{
@@ -314,7 +312,7 @@ test('actual wallet passes attributed application spend to the durable journal b
  class BaseWallet {
   constructor(pxe){this.pxe=pxe;}
   async completeFeeOptions(opts){return {gasSettings:opts.gasSettings};}
-  async simulateViaEntrypoint(){return {gasUsed:{totalGas:new Gas(1,1),teardownGas:new Gas(0,0)}};}
+  async simulateViaEntrypoint(){return {publicInputs:{forPublic:{}},publicOutput:{},gasUsed:{totalGas:new Gas(1,1),teardownGas:new Gas(0,0)}};}
   async createTxExecutionRequestFromPayloadAndFee(){return 'request';}
   scopesFrom(){return [];} senderForTagsFrom(){return owner;}
  }
@@ -369,7 +367,7 @@ test('successful retried screening releases its step guard before the following 
 
 function savedClaimHarness(overrides={}) {
  const h=mainHarness('recover');h.setMissingNote(true);
- const intent={schemaVersion:1,kind:'claim',depositor:'0x0000000000000000000000000000000000000004',amount:'1000000000000000',depositNonce:'7',leafIndex:'42',secretHash:new Fr(9).toString(),transactionHash:new Fr(3).toString(),depositChain:new Fr(5).toString(),...overrides};
+ const intent={schemaVersion:1,kind:'claim',depositor:'0x0000000000000000000000000000000000000004',amount:'1000000000000000',leafIndex:'42',secretHash:new Fr(9).toString(),transactionHash:new Fr(3).toString(),depositChain:new Fr(5).toString(),...overrides};
  const operation=JSON.stringify(intent),operations=[];
  h.env.createTransactionJournal=async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},
   recover:async()=>{throw Object.assign(new Error('stale'),{code:'BB_RECOVERY_REQUIRED'});},inspect:async()=>({operation}),
@@ -378,11 +376,12 @@ function savedClaimHarness(overrides={}) {
 }
 test('stale claim restores exact original receipt and claim identity without depositing again',async()=>{
  const h=savedClaimHarness();h.config.reuseTxHash=new Fr(999).toString();
- await h.run();assert.equal(h.requests.length,1);assert.deepEqual(h.operations,[h.operation]);
+ h.onAction(()=>h.setMissingNote(false));
+ const result=await h.run();assert.equal(result.state,'postable');assert.equal(h.requests.length,1);assert.deepEqual(h.operations,[h.operation]);
  const args=h.requests[0].action.args;
- assert.equal(args[1],1000000000000000n);assert.equal(args[2],7n);assert.equal(args[3].toString(),h.secret.toString());assert.equal(args[4],42n);
+ assert.equal(args[1],1000000000000000n);assert.equal(args[2].toString(),h.secret.toString());assert.equal(args[3],42n);
 });
-for(const [key,value] of [['amount','1'],['depositNonce','8'],['leafIndex','43'],['depositChain',new Fr(6).toString()],['secretHash',new Fr(10).toString()],['depositor','0x0000000000000000000000000000000000000005']])test(`stale claim rejects changed ${key} before another fee payment`,async()=>{
+for(const [key,value] of [['amount','1'],['leafIndex','43'],['depositChain',new Fr(6).toString()],['secretHash',new Fr(10).toString()],['depositor','0x0000000000000000000000000000000000000005']])test(`stale claim rejects changed ${key} before another fee payment`,async()=>{
  const h=savedClaimHarness({[key]:value});await assert.rejects(h.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(h.requests.length,0);
 });
 test('an existing note is not confirmation of an unresolved saved claim transaction',async()=>{
@@ -399,7 +398,7 @@ test('saved claim rejects a receipt returned for another transaction',async()=>{
  await assert.rejects(h.run(),{code:'BB_RECOVERY_UNKNOWN'});assert.equal(h.requests.length,0);
 });
 test('saved claim rejects a reorged Ethereum receipt',async()=>{
- const h=savedClaimHarness();h.provider.getBlock=async()=>({hash:'different block'});
+ const h=savedClaimHarness();h.provider.getBlock=async()=>({number:1,hash:'different block'});
  await assert.rejects(h.run(),{code:'BB_RECOVERY_UNKNOWN'});assert.equal(h.requests.length,0);
 });
 test('saved claim receipt reads time out before any proof or fee preparation',async()=>{
@@ -597,4 +596,41 @@ for(const kind of ['claim','dummy'])test(`accepted ${kind} survives engine resta
  assert.equal((await journal.inspect()).operation,original.operation);assert.equal(acceptedActions,1);assert.equal(h.requests.length,1);
  failSync=false;h.config.action='status';const refreshed=await h.run();assert.equal(refreshed.state,'postable');
  assert.equal(acceptedActions,1);assert.equal(h.requests.length,1);assert(performance.now()-started<60000);
+});
+
+test('confirmed claim with missing delivered note reports synchronization pending without resubmission',async()=>{
+ const h=mainHarness('claim');h.setMissingNote(true);
+ await assert.rejects(h.run(),{code:'BB_WALLET_SYNC_PENDING'});
+ assert.equal(h.requests.length,1);
+});
+
+for (const failure of ['total-da','total-l2','teardown-da','teardown-l2','missing-public','revert']) test(`actual wallet rejects ${failure} before proving or submitting`,async()=>{
+ const c=context();let proofs=0;
+ const used={totalGas:new Gas(90,190),teardownGas:new Gas(0,1)};
+ if(failure==='total-da')used.totalGas.daGas=101;
+ if(failure==='total-l2')used.totalGas.l2Gas=201;
+ if(failure==='teardown-da')used.teardownGas.daGas=2;
+ if(failure==='teardown-l2')used.teardownGas.l2Gas=3;
+ class BaseWallet {
+  constructor(pxe){this.pxe=pxe;}
+  async completeFeeOptions(opts){return {gasSettings:opts.gasSettings};}
+  async simulateViaEntrypoint(payload,opts){assert.equal(opts.skipTxValidation,false);assert.equal(opts.skipFeeEnforcement,false);return {publicInputs:{forPublic:{}},publicOutput:failure==='missing-public'?undefined:failure==='revert'?{revertReason:'reverted'}:{},gasUsed:used};}
+ }
+ const wallet=c.BillboardPrivateFeeRouting.createAztecWallet({BaseWallet,GasSettings},{proveTx:async()=>{proofs++;throw Error('must not prove');}},{},{},()=>{},Fr.ONE);
+ await assert.rejects(wallet.sendTx({}, {from:owner,fee:{gasSettings:gas()}}),{code:failure==='missing-public'||failure==='revert'?'BB_SIMULATION_FAILED':'BB_GAS_LIMIT_EXCEEDED'});
+ assert.equal(proofs,0);
+});
+
+test('entirely private simulation needs no public output and still checks gas before proof',async()=>{
+ const c=context(),stop=Error('reached proof');let proofs=0;
+ class BaseWallet {
+  constructor(pxe){this.pxe=pxe;}
+  async completeFeeOptions(opts){return {gasSettings:opts.gasSettings};}
+  async simulateViaEntrypoint(payload,opts){assert.equal(opts.skipTxValidation,false);assert.equal(opts.skipFeeEnforcement,false);return new TxSimulationResult(undefined,{forPublic:undefined,gasUsed:new Gas(90,190)});}
+  async createTxExecutionRequestFromPayloadAndFee(){return {};}
+  scopesFrom(){return [owner];}senderForTagsFrom(){return owner;}
+ }
+ const wallet=c.BillboardPrivateFeeRouting.createAztecWallet({BaseWallet,GasSettings},{proveTx:async()=>{proofs++;throw stop;}},{},{},()=>{},Fr.ONE);
+ await assert.rejects(wallet.sendTx({}, {from:owner,fee:{gasSettings:gas()}}),error=>error===stop);
+ assert.equal(proofs,1);
 });

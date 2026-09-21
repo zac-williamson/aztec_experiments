@@ -79,7 +79,7 @@ export async function proveAndIncludeC02Screening({node,preparation,instance,cla
     const board=Contract.at(instance.address,boardArtifact,wallet);
     const query=async(name,...args)=>(await board.methods[name](...args).simulate({from:account.address})).result;
     const logical=async()=>{const fields=await query('get_deposit_info',account.address,claim.depositChainId);
-      assert(Array.isArray(fields)&&fields.length===11);return fields.map(integer);};
+      assert(Array.isArray(fields)&&fields.length===10);return fields.map(integer);};
     const filter={contractAddress:instance.address,owner:account.address,status:NoteStatus.ACTIVE,scopes:[account.address]};
     const deposits=async()=>(await wallet.pxe.debug.getNotes({...filter,storageSlot:boardArtifact.storageLayout.deposits.slot}))
       .filter(note=>note.note.items[1]?.equals(claim.depositChainId));
@@ -87,12 +87,12 @@ export async function proveAndIncludeC02Screening({node,preparation,instance,cla
       const notes=await deposits();assert.equal(notes.length,1);const note=notes[0];
       assert(note.txHash.equals(creationTx.getTxHash()));assert.equal(note.note.items.length,8);
       assert(note.owner.equals(account.address)&&note.contractAddress.equals(instance.address));
-      assert.deepEqual(note.note.items.map(integer),[fields[0]+(fields[2]<<32n),fields[1],fields[3],fields[4],
-        fields[5],fields[7],fields[6]+(fields[8]<<64n)+(fields[9]<<128n),fields[10]]);
+      assert.deepEqual(note.note.items.map(integer),[fields[0],fields[1],fields[2],fields[3],
+        fields[4],fields[6],fields[5]+(fields[7]<<64n)+(fields[8]<<128n),fields[9]]);
       assert(!note.siloedNullifier.isZero());return note;
     }
     const initial=await logical();assert.deepEqual(initial,claim.logicalFields);
-    assert.deepEqual(initial.slice(5,10),[0n,0n,0n,0n,0n]);
+    assert.deepEqual(initial.slice(4,9),[0n,0n,0n,0n,0n]);
     let currentNote=await exactDeposit(initial,claim.tx);
     const originalReceipt=await node.getTxReceipt(claim.tx.getTxHash());assert(included(originalReceipt));
     assert.equal((await node.getBlock(originalReceipt.blockNumber)).hash.toString(),originalReceipt.blockHash.toString());
@@ -151,17 +151,17 @@ export async function proveAndIncludeC02Screening({node,preparation,instance,cla
       assert.equal(effect.l2BlockHash.toString(),receipt.blockHash.toString());
       assert.equal(effect.data.nullifiers.filter(n=>n.equals(oldNote.siloedNullifier)).length,1);
       await wallet.pxe.sync();const fields=await logical();
-      assert.deepEqual(fields.slice(0,5),oldFields.slice(0,5));
-      assert.notEqual(fields[5],0n);assert.notEqual(fields[5],oldFields[5]);
-      assert.equal(fields[6],oldFields[6]+1n);assert.equal(fields[7],screenedLink);
-      assert.equal(fields[8],screenedSequence);assert.equal(fields[9],fields[6]);
+      assert.deepEqual(fields.slice(0,4),oldFields.slice(0,4));
+      assert.notEqual(fields[4],0n);assert.notEqual(fields[4],oldFields[4]);
+      assert.equal(fields[5],oldFields[5]+1n);assert.equal(fields[6],screenedLink);
+      assert.equal(fields[7],screenedSequence);assert.equal(fields[8],fields[5]);
       const now=integer(anchor.globalVariables.timestamp),floor=now>cooldown*(maxSave-1n)?now-cooldown*(maxSave-1n):0n;
-      assert.equal(fields[10],(oldFields[10]>floor?oldFields[10]:floor)+cooldown);
+      assert.equal(fields[9],(oldFields[9]>floor?oldFields[9]:floor)+cooldown);
       currentNote=await exactDeposit(fields,tx);
       assert(!currentNote.siloedNullifier.equals(oldNote.siloedNullifier));
       const posts=(await wallet.pxe.debug.getNotes(filter)).filter(n=>n.txHash.equals(tx.getTxHash())&&n.note.items.length===7);
       assert.equal(posts.length,1);const note=posts[0];
-      assert.deepEqual(note.note.items.map(integer),[1n,claim.depositChainId.toBigInt(),fields[6],postId.toBigInt(),now,oldFields[5],0n]);
+      assert.deepEqual(note.note.items.map(integer),[1n,claim.depositChainId.toBigInt(),fields[5],postId.toBigInt(),now,oldFields[4],0n]);
       assert.equal(integer(await query('get_post_count')),count+1n);
       assert.equal(integer(await query('get_post_id',count)),postId.toBigInt());
       assert.deepEqual((await query('get_post',postId)).map(integer),msg.map(integer));
@@ -171,16 +171,16 @@ export async function proveAndIncludeC02Screening({node,preparation,instance,cla
       observation.posts.push({txHash:tx.getTxHash().toString(),blockNumber:String(receipt.blockNumber),
         status:receipt.status,executionResult:receipt.executionResult,proofSha256:sha(proven.chonkProof.toBuffer()),
         nodeValidation:'valid',postId:postId.toString(),orderIndex:String(count),exactDepositNullifier:true,exactReplacementNote:true,exactPostNote:true,
-        sequence:String(fields[6]),screenedSequence:String(fields[8]),publicMessageChecked:true});
+        sequence:String(fields[5]),screenedSequence:String(fields[7]),publicMessageChecked:true});
       return {fields,note,tx};
     }
-    let anchor=await eligible(initial[10]);
+    let anchor=await eligible(initial[9]);
     assert.deepEqual(await query('get_screen_hints',account.address,claim.depositChainId),[undefined,undefined]);
     const first=await post(message('C02 first post'),undefined,undefined,anchor,initial,0n,0n);
     const firstId=new Fr(first.note.note.items[3].toBigInt());
     const mature=integer(await query('get_post_flag_deadline',firstId));
     assert.equal(mature,integer(await query('get_post_time',firstId))+censorWindow);
-    anchor=await eligible(first.fields[10]>mature?first.fields[10]:mature);
+    anchor=await eligible(first.fields[9]>mature?first.fields[9]:mature);
     const hints=await query('get_screen_hints',account.address,claim.depositChainId);
     assert(Array.isArray(hints)&&hints.length===2);const [child,grandchild]=hints;
     assert(child&&grandchild===undefined);assert(child.owner.equals(account.address));
@@ -255,7 +255,7 @@ export async function proveAndIncludeC02Screening({node,preparation,instance,cla
           originalNoteUnchanged:true,stage:'PXE constrained witness generation; no completed hostile proof and no tx sent'});
       }finally{membershipProbe=null;}
     }
-    await post(message('C02 screening post'),child,undefined,anchor,first.fields,1n,first.fields[5]);
+    await post(message('C02 screening post'),child,undefined,anchor,first.fields,1n,first.fields[4]);
     await artifact(preparation);observation.passed=true;
     observation.scope='genuine first-post and mature child screening proofs; exact state, mutated-chain and constrained membership rejection';
     observation.limitations='One receipt, two real posts. Included foreign-history/owner/slot and grandchild/dummy cases are covered separately by maintained TXE tests. Actual public-inclusion deadline is checked and used for maturity; flagged and delayed-inclusion boundary cases are covered by TXE.';

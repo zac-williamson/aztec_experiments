@@ -7,7 +7,7 @@ const scope={l1ChainId:'1',rollupVersion:'1',rollupAddress:hex(1,20),portalAddre
 function fixture(options={}){
  const blocks=new Map(Array.from({length:8},(_,i)=>[i+1,{number:i+1,hash:hex(i+101)}])),events=[{schemaVersion:1,scope,type:'PolicyPublished',position:{blockNumber:'1',blockHash:hex(101),txHash:hex(999),txIndexWithinBlock:'0',logIndexWithinTx:'0'},payload:{policyVersion:hex(30),text:'Public policy',censorWindow:'10'}}],data=new Map(),calls=[];let head=4,writeError=false;
  const storage=memoryFeedStorage(data,()=>{if(writeError)throw Error('disk');});
- const source={getHead:async()=>blocks.get(head),getBlock:async n=>blocks.get(n),getEvents:async q=>{calls.push(q);return events.filter(e=>+e.position.blockNumber>=q.fromBlock&&+e.position.blockNumber<=q.toBlock);}};
+ const source={getNextEventBlock:async({fromBlock,toBlock})=>Math.min(toBlock,...events.map(e=>+e.position.blockNumber).filter(n=>n>=fromBlock&&n<=toBlock)),getHead:async()=>blocks.get(head),getBlock:async n=>blocks.get(n),getEvents:async q=>{calls.push(q);return events.filter(e=>+e.position.blockNumber>=q.fromBlock&&+e.position.blockNumber<=q.toBlock);}};
  const feed=()=>createPublicFeed({scope,source,storage,rangeSize:2,...options});
  function event(n,order=String(n-1),type='PostPublished',extra={}){return {schemaVersion:1,scope,type,position:{blockNumber:String(n),blockHash:blocks.get(n).hash,txHash:hex(n+200),txIndexWithinBlock:'0',logIndexWithinTx:n===1?'1':'0'},payload:type==='PostPublished'?{postId:hex(n),orderIndex:order,text:'hello'+n,publishedAt:String(n),flagDeadline:String(n+100),policyVersion:hex(30),...extra}:{postId:hex(1),reason:'reason',flaggedAt:String(n),censorAddress:hex(40),policyVersion:hex(30),...extra}};}
  return {feed,blocks,events,data,calls,source,storage,event,setHead:n=>head=n,failWrites:()=>writeError=true};
@@ -63,7 +63,7 @@ test('three-block rollback restores moved policies, posts and flags exactly',asy
  f.events.push(policy(2,hex(31),'Second'),policy(3,hex(30),'Public policy'),f.event(4,'0','PostFlagged'));f.setHead(4);await feed.sync();
  assert.deepEqual((await feed.page()).policies.map(p=>p.policyVersion),[hex(30)]);assert.equal((await feed.page()).posts[0].flagged,true);
  f.events.splice(2);for(let n=2;n<=4;n++)f.blocks.set(n,{number:n,hash:hex(800+n)});await feed.sync();
- const page=await feed.page();assert.deepEqual(page.policies.map(p=>p.policyVersion),[hex(30)]);assert.equal(page.posts[0].flagged,false);assert.equal(page.revision,1);assert.equal(f.data.size,5,'Only head and four reachable ranges remain');
+ const page=await feed.page();assert.deepEqual(page.policies.map(p=>p.policyVersion),[hex(30)]);assert.equal(page.posts[0].flagged,false);assert.equal(page.revision,1);assert.equal(f.data.size,3,'Only head, original event range and new empty span remain');
 });
 test('page policy output is bounded by selected posts plus current policy',async()=>{
  const f=fixture({rangeSize:1000,pagesPerSync:2});f.events.push(f.event(1));
@@ -81,4 +81,18 @@ test('occupied block checks overlap in batches of at most eight',async()=>{
  f.source.getBlock=async n=>{if(gate&&n<10){active++;peak=Math.max(peak,active);await new Promise(r=>releases.push(r));active--;}return f.blocks.get(n);};
  const pending=f.feed().sync();await new Promise(r=>setImmediate(r));const observed=peak;gate=false;for(const release of releases)release();
  assert.equal((await pending).complete,true);assert.equal(observed,8);assert.equal(peak,8);
+});
+
+test('late board initialization reaches current history without scanning empty blocks',async()=>{
+ const f=fixture({rangeSize:50});f.events.length=0;
+ for(const n of [90000,90049,100000])f.blocks.set(n,{number:n,hash:hex(n+100)});
+ f.events.push({schemaVersion:1,scope,type:'PolicyPublished',position:{blockNumber:'90000',blockHash:hex(90100),txHash:hex(999),txIndexWithinBlock:'0',logIndexWithinTx:'0'},payload:{policyVersion:hex(30),text:'Public policy',censorWindow:'10'}});
+ f.setHead(100000);const feed=f.feed(),result=await feed.sync();
+ assert.equal(result.complete,true);assert.equal(result.lastBlock,100000);assert.equal(f.calls.length,2);
+ assert.equal(f.calls[0].fromBlock,1);assert.equal(f.calls[0].toBlock,90049);assert.equal((await feed.page()).policies.length,1);
+});
+
+test('old post can be flagged under new policy and page retains both policies',async()=>{
+ const f=fixture();f.events.push(f.event(1));f.events.push({schemaVersion:1,scope,type:'PolicyPublished',position:{blockNumber:'2',blockHash:f.blocks.get(2).hash,txHash:hex(902),txIndexWithinBlock:'0',logIndexWithinTx:'0'},payload:{policyVersion:hex(31),text:'New policy',censorWindow:'10'}});
+ f.events.push(f.event(3,'0','PostFlagged',{policyVersion:hex(31)}));const feed=f.feed();await feed.sync();const page=await feed.page();assert.equal(page.posts[0].flagged,true);assert.equal(page.posts[0].policyVersion,hex(30));assert.equal(page.posts[0].flag.policyVersion,hex(31));assert.deepEqual(page.policies.map(p=>p.policyVersion),[hex(30),hex(31)]);
 });

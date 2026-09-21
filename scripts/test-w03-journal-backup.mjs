@@ -7,7 +7,6 @@ import {randomBytes} from 'node:crypto';
 import {IDBFactory} from 'fake-indexeddb';
 import {Tx} from '@aztec/stdlib/tx';
 import {createL2Journal} from '../shared/l2-journal.mjs';
-import {createHistoryCursor} from '../shared/history-cursor.mjs';
 import {createJournalBackup} from '../shared/journal-backup.mjs';
 import {createBrowserJournalStorage} from '../shared/journal-indexeddb.mjs';
 import {createFileJournalStorage} from '../apps/src/billboard/user/transaction-journal-store.mjs';
@@ -35,11 +34,6 @@ test('password recovery file transfers actual SDK transaction browser to CLI and
  assert.deepEqual(await (await f.backup(f.file)).exportRecords(),exported);
  await (await f.backup(f.browser)).restoreRecords(exported); // exact duplicate is idempotent
 }));
-test('fresh profile restores pending history search progress',()=>fixture(async f=>{
- const cursor=await createHistoryCursor({...f.options,storage:f.browser,messageLeaf:field()});await cursor.read();await cursor.write({anchorBlock:1000,anchorHash:'anchor',ranges:[[1,400]]});
- const records=await (await f.backup(f.browser)).exportRecords();assert.equal(records.length,2);
- await (await f.backup(f.file)).restoreRecords(records);assert.deepEqual(await (await f.backup(f.file)).exportRecords(),records.sort((a,b)=>a.key.localeCompare(b.key)));
-}));
 test('older authenticated backup never replaces newer local transaction',()=>fixture(async f=>{
  const records=await (await f.backup(f.browser)).exportRecords();await (await f.backup(f.file)).restoreRecords(records);
  const newer=await createL2Journal({...f.options,storage:f.file,Tx,node:f.node,acknowledgeTx:f.tx.getTxHash().toString()});
@@ -57,7 +51,7 @@ test('foreign wallet, moved key, descriptor damage and duplicated records fail b
  }
 }));
 test('export filters other wallets but refuses legacy records lacking ownership metadata',()=>fixture(async f=>{
- const other=await createHistoryCursor({...f.options,walletSecret:field(),storage:f.browser,messageLeaf:field()});await other.read();await other.write({anchorBlock:1});
+ const other=await createL2Journal({...f.options,scope:{...f.options.scope,account:field()},walletSecret:field(),storage:f.browser,Tx,node:f.node});await other.prepare(f.tx,await other.assertCanStart());
  assert.equal((await (await f.backup(f.browser)).exportRecords()).length,1);
  await f.browser.compareAndSwap('ff'.repeat(32),null,JSON.stringify({version:1,iv:'00'.repeat(12),data:'01'}));
  await assert.rejects((await f.backup(f.browser)).exportRecords(),{code:'BB_JOURNAL_INVALID'});

@@ -53,9 +53,9 @@ export async function withdrawC01L1({node,preparation,ready,exitResult,settlemen
     assert.equal(BigInt(await read('L1_CHAIN_ID')),31337n);assert.equal(BigInt(await read('VERSION')),BigInt(claim.scope.rollupVersion));
     assert.equal((await read('OUTBOX')).toLowerCase(),info.l1ContractAddresses.outboxAddress.toString().toLowerCase());
     assert.equal((await read('CONFIG_HASH')).toLowerCase(),ready.configHash.toLowerCase());
-    assert.deepEqual(await read('getDeposit',[claim.depositor]),[claim.depositNonce,claim.amount]);
+    assert.deepEqual(await read('getDeposit',[claim.depositor]),claim.amount);
     const content=sha256ToField([Buffer.from(encodeEscrowCommitment('exit',claim.scope,
-      {depositor:claim.depositor,depositNonce:String(claim.depositNonce),amount:String(claim.amount)}))]);
+      {depositor:claim.depositor,amount:String(claim.amount)}))]);
     const leaf=computeL2ToL1MessageHash({l2Sender:exit.instance.address,l1Recipient:EthAddress.fromString(portalAddress),content,
       rollupVersion:new Fr(BigInt(claim.scope.rollupVersion)),chainId:new Fr(31337n)});
     assert.equal(content.toString(),exitResult.expectedExitContent);assert.equal(leaf.toString(),exitResult.expectedExitLeaf);
@@ -80,7 +80,7 @@ export async function withdrawC01L1({node,preparation,ready,exitResult,settlemen
     const args=[BigInt(witness.epochNumber),BigInt(witness.numCheckpointsInEpoch),witness.leafIndex,
       witness.siblingPath.toBufferArray().map(buffer=>'0x'+buffer.toString('hex'))];
     assert(args[0]>=0n&&args[1]>0n&&args[2]>=0n&&args[3].length<=256);
-    await finality();assert.deepEqual(await read('getDeposit',[claim.depositor]),[claim.depositNonce,claim.amount]);
+    await finality();assert.deepEqual(await read('getDeposit',[claim.depositor]),claim.amount);
     if(qualifyBadMembership){
       mark('reject-corrupted-unconsumed-membership');
       assert(args[3].length>0,'Bad-membership qualification needs an actual sibling');
@@ -110,8 +110,8 @@ export async function withdrawC01L1({node,preparation,ready,exitResult,settlemen
     // Fail visibly if another same-account transaction makes the simple gas reconciliation ambiguous.
     assert.equal(block.transactions.filter(tx=>tx.from.toLowerCase()===claim.depositor).length,1,'Concurrent depositor transaction in withdrawal block');
     const previousBlock=receipt.blockNumber-1n;
-    assert.deepEqual(await read('getDeposit',[claim.depositor],previousBlock),[claim.depositNonce,claim.amount]);
-    assert.deepEqual(await read('getDeposit',[claim.depositor],receipt.blockNumber),[0n,0n]);
+    assert.deepEqual(await read('getDeposit',[claim.depositor],previousBlock),claim.amount);
+    assert.deepEqual(await read('getDeposit',[claim.depositor],receipt.blockNumber),0n);
     const totalBefore=await read('totalDeposited',[],previousBlock),totalAfter=await read('totalDeposited',[],receipt.blockNumber);
     assert.equal(totalBefore-totalAfter,claim.amount);
     const portalBefore=await l1Client.getBalance({address:portalAddress,blockNumber:previousBlock});
@@ -124,7 +124,7 @@ export async function withdrawC01L1({node,preparation,ready,exitResult,settlemen
     const withdrawn=parseEventLogs({abi:portal.abi,eventName:'Withdrawn',strict:true,
       logs:receipt.logs.filter(log=>log.address.toLowerCase()===portalAddress)});
     assert.equal(withdrawn.length,1);assert.equal(withdrawn[0].args.depositor.toLowerCase(),claim.depositor);
-    assert.equal(withdrawn[0].args.nonce,claim.depositNonce);assert.equal(withdrawn[0].args.amount,claim.amount);
+    assert.equal(withdrawn[0].args.amount,claim.amount);
     mark('reject-repeat-withdrawal');let repeatRejected=false;
     try{await l1Client.simulateContract({address:portalAddress,abi:portal.abi,functionName:'withdraw',args,account:l1Client.account});}
     catch(error){const reverted=error?.walk?.(cause=>cause instanceof ContractFunctionRevertedError);
@@ -132,15 +132,15 @@ export async function withdrawC01L1({node,preparation,ready,exitResult,settlemen
     assert(repeatRejected,'Repeat withdrawal did not reject for the expected inactive receipt');
     const current=await l1Client.getTransactionReceipt({hash});assert.equal(current.status,'success');assert.equal(current.blockHash,receipt.blockHash);
     assert.equal((await l1Client.getBlock({blockNumber:receipt.blockNumber})).hash,receipt.blockHash);
-    assert.deepEqual(await read('getDeposit',[claim.depositor]),[0n,0n]);
+    assert.deepEqual(await read('getDeposit',[claim.depositor]),0n);
     assert.equal(sha(await fs.readFile(path.join(ROOT,PORTAL))),ready.artifactHashes[PORTAL]);
     Object.assign(observation,{passed:true,withdrawalTxHash:hash,withdrawalBlock:String(receipt.blockNumber),
-      amount:String(claim.amount),nonce:String(claim.depositNonce),gasCost:String(gasCost),l1Withdrawn:true,
+      amount:String(claim.amount),gasCost:String(gasCost),l1Withdrawn:true,
       activeReceiptCleared:true,totalDepositedDelta:String(totalBefore-totalAfter),portalBalanceDelta:String(portalBefore-portalAfter),
       depositorBalanceReconciled:true,repeatWithdrawalRejected:true,
       membership:{epochNumber:String(witness.epochNumber),checkpointCount:witness.numCheckpointsInEpoch,
         leafIndex:String(witness.leafIndex),pathLength:witness.siblingPath.pathSize}});
-    Object.defineProperty(observation,'replay',{enumerable:false,value:{args:[args[0],args[1],args[2],[...args[3]]],portalAddress,depositor:claim.depositor,originalNonce:claim.depositNonce,originalAmount:claim.amount}});
+    Object.defineProperty(observation,'replay',{enumerable:false,value:{args:[args[0],args[1],args[2],[...args[3]]],portalAddress,depositor:claim.depositor,originalAmount:claim.amount}});
     return observation;
   }catch(error){const failure=new Error(`C01_L1_WITHDRAW_FAILED:${stage}:${error?.name??'Error'}`);
     failure.withdrawalObservation={...observation,passed:false,stage,errorClass:error?.name??'Error',location:error?.stack?.split('\n').filter(line=>line.trimStart().startsWith('at ')).slice(0,3).join('\n')};throw failure;}

@@ -55,11 +55,17 @@ export async function runFixture(directory, scenario, browserControl, operatorPa
       if(ready)break;await pause(100);
     }
     assert(ready,'Disposable L1 identity check failed');
+    if(browserControl?.ethereumWallet==='metamask'){
+      const browserIdentity=Wallet.createRandom();assert.notEqual(browserIdentity.address,identity.address);
+      const response=await fetch(rpcUrl,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:2,method:'anvil_setBalance',params:[browserIdentity.address,'0x3635c9adc5dea00000']})});
+      const funded=await response.json();assert(response.ok&&!funded.error&&funded.result===null);
+      await fs.writeFile(path.join(directory,'metamask-credentials.json'),JSON.stringify({mnemonic:browserIdentity.mnemonic.phrase,address:browserIdentity.address,rpcUrl}),{mode:0o600,flag:'wx'});
+    }
     mark('prepare-genesis');
     const [{getGenesisValues},{getConfigEnvVars},{deployC01ApplicationProtocol}]=await Promise.all([
       import('@aztec/world-state/testing'),import('@aztec/aztec-node/config'),import('../c01-application-deployment.mjs')]);
     let preparation;
-    if(scenario.fixture !== 'node'){const {prepareC01BoardFlow}=await import('../c01-board-flow.mjs');preparation=await prepareC01BoardFlow({bbBinaryPath:applicationNativeProfile(directory).bbPath,directory,authorCount:scenario.authors});}
+    if(scenario.fixture !== 'node'){const {prepareC01BoardFlow}=await import('../c01-board-flow.mjs');preparation=await prepareC01BoardFlow({bbBinaryPath:applicationNativeProfile(directory).bbPath,directory,authorCount:scenario.authors,boardTiming:scenario.boardTiming});}
     if(scenario.name === 'censor-commands'){const {restoreApplicationAuthor}=await import('../w02-wallet-restore.mjs');const restored=await restoreApplicationAuthor(preparation.account);preparation.account=restored.author;preparation.authorAccounts[0]=restored.author;preparation.fundingAddresses=preparation.authorAccounts.map(account=>account.address);output.censorIdentity=restored.observation;}
     const {genesisArchiveRoot,fundingNeeded,genesis}=await getGenesisValues(preparation?.fundingAddresses??[]);
     const {SecretValue}=await import('@aztec/foundation/config');

@@ -23,7 +23,7 @@ export function createFeedProjection(fail) {
     newIds.set(p.postId,length);putPost(length++,{...p,publication:e.position,flagged:false,flag:null});
    }else{
     const i=newIds.has(p.postId)?newIds.get(p.postId):ids.get(p.postId),post=getPost(i);
-    if(!post||post.policyVersion!==p.policyVersion||post.flagged)throw fail('Invalid public flag history.');
+    if(!post||nextCurrent!==p.policyVersion||post.flagged)throw fail('Invalid public flag history.');
     putPost(i,{...post,flagged:true,flag:{...p,position:e.position}});
    }
   }
@@ -37,7 +37,7 @@ export function createFeedProjection(fail) {
   if(upper!==null&&BigInt(upper)<highest)highest=BigInt(upper);
   if(before!==null&&BigInt(before)-1n<highest)highest=BigInt(before)-1n;
   const end=Number(highest)+1,start=Math.max(0,end-limit),selected=posts.slice(start,end).reverse();
-  const needed=new Set(selected.map(post=>post.policyVersion));if(currentPolicy!==null){needed.delete(currentPolicy);needed.add(currentPolicy);}
+  const needed=new Set(selected.flatMap(post=>post.flag?[post.policyVersion,post.flag.policyVersion]:[post.policyVersion]));if(currentPolicy!==null){needed.delete(currentPolicy);needed.add(currentPolicy);}
   const orderedPolicies=[...needed].map(id=>policies.get(id));
   return {posts:selected,policies:orderedPolicies,hasMore:start>0};
  }

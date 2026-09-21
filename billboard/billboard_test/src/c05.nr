@@ -13,7 +13,7 @@ global AMOUNT: u128 = 1_000_000_000_000_000;
 
 unconstrained fn published() -> (TestEnvironment, AztecAddress, AztecAddress, AztecAddress, Field, Field) {
     let (mut env, board, owner, censor, time) = setup_with_deposit(AMOUNT);
-    let chain = test_chain(board, owner, AMOUNT);
+    let chain = test_chain(env, board, owner, AMOUNT);
     env.mine_block_at(time + 3601);
     env.call_private(owner, Billboard::at(board).post(chain, fresh_post_nonce(), msg_with(1), 4, false, Option::none(), Option::none()));
     let id = env.view_public(Billboard::at(board).get_post_id(0));
@@ -38,28 +38,35 @@ unconstrained fn c05_policy_snapshot_survives_policy_change() {
     assert_eq(updated_version, policy_version(board, updated_policy, updated_length));
     assert(updated_version != initial_version);
     assert_eq(env.view_public(Billboard::at(board).get_post_policy_version(id)), original);
-    env.call_public(censor, Billboard::at(board).declare_immoral(id, original, reason_with(2), 4));
+    env.call_public(censor, Billboard::at(board).declare_immoral(id, updated_version, reason_with(2), 4));
     assert(env.view_public(Billboard::at(board).is_post_flagged(id)));
     assert_eq(env.view_public(Billboard::at(board).get_censor_response(id)), reason_with(2));
     assert_eq(env.view_public(Billboard::at(board).get_censor_response_length(id)), 4);
 }
 
 #[test(should_fail_with = "Policy version mismatch")]
-unconstrained fn c05_flag_cannot_apply_new_policy_to_old_post() {
+unconstrained fn c05_flag_rejects_stale_reviewed_policy() {
     let (env, board, _owner, censor, _chain, id) = published();
+    let original = env.view_public(Billboard::at(board).get_policy_version());
     let (policy, length) = crate::policy_with_byte(66);
     env.call_public(censor, Billboard::at(board).set_moderation_policy(policy, length));
-    let current = env.view_public(Billboard::at(board).get_policy_version());
-    env.call_public(censor, Billboard::at(board).declare_immoral(id, current, reason_with(2), 4));
+    env.call_public(censor, Billboard::at(board).declare_immoral(id, original, reason_with(2), 4));
 }
 
-#[test(should_fail_with = "Flag deadline expired")]
-unconstrained fn c05_flag_exact_deadline_rejected() {
-    let (mut env, board, _owner, censor, _chain, id) = published();
+#[test]
+unconstrained fn c05_flag_exact_deadline_hides_without_penalty() {
+    let (mut env, board, owner, censor, chain, id) = published();
     let version = env.view_public(Billboard::at(board).get_post_policy_version(id));
     let deadline = env.view_public(Billboard::at(board).get_post_flag_deadline(id));
     env.mine_block_at(deadline);
     env.call_public(censor, Billboard::at(board).declare_immoral(id, version, reason_with(2), 4));
+    assert(env.view_public(Billboard::at(board).is_post_flagged(id)));
+    let before = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
+    let (child, gc) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
+    env.call_private(owner, Billboard::at(board).post(chain, 0, [0; 32], 0, true, child, gc));
+    let after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
+    assert_eq(after[7], 1); assert_eq(after[8], 1);
+    assert_eq(after[9], before[9] + 3600, "Late removal must not add a collateral penalty");
 }
 
 #[test]
@@ -74,13 +81,13 @@ unconstrained fn c05_flag_before_deadline_screens_at_deadline_once() {
     let (child, gc) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
     env.call_private(owner, Billboard::at(board).post(chain, 0, [0; 32], 0, true, child, gc));
     let after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(after[8], 1); assert_eq(after[9], 1);
-    assert_eq(after[10], before[10] + 4 * 3600);
-    env.mine_block_at(after[10] as u64);
+    assert_eq(after[7], 1); assert_eq(after[8], 1);
+    assert_eq(after[9], before[9] + 4 * 3600);
+    env.mine_block_at(after[9] as u64);
     let (dummy, none) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
     env.call_private(owner, Billboard::at(board).post(chain, 0, [0; 32], 0, true, dummy, none));
     let final_note = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(final_note[10], after[10] + 3600, "Already-screened flag must not be charged twice");
+    assert_eq(final_note[9], after[9] + 3600, "Already-screened flag must not be charged twice");
 }
 
 unconstrained fn screened_flag() -> (TestEnvironment, AztecAddress, AztecAddress, Field, u64) {
@@ -92,9 +99,9 @@ unconstrained fn screened_flag() -> (TestEnvironment, AztecAddress, AztecAddress
     let (child, gc) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
     env.call_private(owner, Billboard::at(board).post(chain, 0, [0; 32], 0, true, child, gc));
     let note = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(note[8], 1); assert_eq(note[9], 1);
-    assert((note[10] as u64) > env.last_block_timestamp());
-    (env, board, owner, chain, note[10] as u64)
+    assert_eq(note[7], 1); assert_eq(note[8], 1);
+    assert((note[9] as u64) > env.last_block_timestamp());
+    (env, board, owner, chain, note[9] as u64)
 }
 
 #[test(should_fail_with = "Too early to withdraw -- time lock not expired")]
@@ -108,25 +115,26 @@ unconstrained fn c05_penalty_expiry_allows_exit_and_distinct_redeposit() {
     let (mut env, board, owner, old_chain, eligible) = screened_flag();
     env.mine_block_at(eligible);
     env.call_private(owner, Billboard::at(board).withdraw(old_chain));
-    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, old_chain)), [0; 11]);
+    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, old_chain)), [0; 10]);
     let portal = EthAddress::from_field(0xaabbccdd);
     let depositor = EthAddress::from_field(0x12345678);
     let secret: Field = 0xc05002;
-    let content = get_deposit_msg_hash(1, portal, board, 1, depositor, 2, AMOUNT);
-    let new_chain = deposit_chain_id(board, owner, content, secret);
-    assert(new_chain != old_chain);
+    let content = get_deposit_msg_hash(1, portal, board, 1, depositor, AMOUNT);
     let leaf = env.send_l1_to_l2_message(content, secret, portal, board);
+    let new_chain = deposit_chain_id(board, owner, content, secret, leaf);
+    assert(new_chain != old_chain);
+
     let claim_time = env.last_block_timestamp();
-    env.call_private(owner, Billboard::at(board).claim_deposit(depositor, AMOUNT, 2, secret, leaf));
+    env.call_private(owner, Billboard::at(board).claim_deposit(depositor, AMOUNT, secret, leaf));
     let note = env.execute_utility(Billboard::at(board).get_deposit_info(owner, new_chain));
-    assert_eq(note[6], 0); assert_eq(note[8], 0); assert_eq(note[9], 0);
-    assert_eq(note[10], (claim_time + 3600) as Field);
+    assert_eq(note[5], 0); assert_eq(note[7], 0); assert_eq(note[8], 0);
+    assert_eq(note[9], (claim_time + 3600) as Field);
 }
 
 #[test(should_fail_with = "Too early to withdraw -- time lock not expired")]
 unconstrained fn c05_no_real_posts_still_owe_initial_cooldown() {
     let (env, board, owner, _censor, _time) = setup_with_deposit(AMOUNT);
-    env.call_private(owner, Billboard::at(board).withdraw(test_chain(board, owner, AMOUNT)));
+    env.call_private(owner, Billboard::at(board).withdraw(test_chain(env, board, owner, AMOUNT)));
 }
 
 #[test]
@@ -184,7 +192,7 @@ fn c05_policy_hash_matches_independent_python_vector() {
 #[test]
 unconstrained fn c05_delayed_public_inclusion_gets_full_moderation_window() {
     let (mut env, board, owner, _censor, time) = setup_with_deposit(AMOUNT);
-    let chain = test_chain(board, owner, AMOUNT);
+    let chain = test_chain(env, board, owner, AMOUNT);
     let anchor = time + 3601;
     env.mine_block_at(anchor);
     // Official TXE control leaves the existing private anchor unchanged while
@@ -202,18 +210,18 @@ unconstrained fn c05_delayed_public_inclusion_gets_full_moderation_window() {
     env.mine_block_at(included + 1);
     env.call_private(owner, Billboard::at(board).post(chain, fresh_post_nonce(), msg_with(2), 4, false, child, gc));
     let young = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(young[8], 0, "Private anchor age must not shorten the public flag window");
+    assert_eq(young[7], 0, "Private anchor age must not shorten the public flag window");
     env.mine_block_at(deadline);
     let (child, gc) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
     env.call_private(owner, Billboard::at(board).post(chain, 0, [0; 32], 0, true, child, gc));
     let screened = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(screened[8], 1, "Only first public inclusion deadline has elapsed");
+    assert_eq(screened[7], 1, "Only first public inclusion deadline has elapsed");
 }
 
 #[test(should_fail_with = "Recovery horizon exceeded")]
 unconstrained fn c05_real_post_near_horizon_rejects_new_recovery_obligation() {
     let (mut env, board, owner, _censor, _time) = setup_with_deposit(AMOUNT);
-    let chain = test_chain(board, owner, AMOUNT);
+    let chain = test_chain(env, board, owner, AMOUNT);
     // Enough time remains for the ordinary cooldown and public deadline, but
     // not the pinned protocol transaction-lifetime + worst-case recovery debt.
     env.mine_block_at(0x7fffffffffffffff - 100_000);
@@ -223,15 +231,15 @@ unconstrained fn c05_real_post_near_horizon_rejects_new_recovery_obligation() {
 #[test]
 unconstrained fn c05_near_horizon_does_not_block_existing_eligible_exit() {
     let (mut env, board, owner, _censor, _time) = setup_with_deposit(AMOUNT);
-    let chain = test_chain(board, owner, AMOUNT);
+    let chain = test_chain(env, board, owner, AMOUNT);
     env.mine_block_at(0x7fffffffffffffff - 100_000);
     // No new real publication obligation: dummy progression remains available.
     env.call_private(owner, Billboard::at(board).post(chain, 0, [0; 32], 0, true, Option::none(), Option::none()));
     let note = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
-    assert_eq(note[9], 0);
-    assert((note[10] as u64) <= env.last_block_timestamp());
+    assert_eq(note[8], 0);
+    assert((note[9] as u64) <= env.last_block_timestamp());
     env.call_private(owner, Billboard::at(board).withdraw(chain));
-    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain)), [0; 11]);
+    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain)), [0; 10]);
 }
 
 #[test]
@@ -274,4 +282,39 @@ fn c05_reason_rejects_201_canonical_bytes() {
 #[test(should_fail_with = "Nonzero message padding")]
 fn c05_reason_cannot_hide_201st_byte_by_declaring_200() {
     billboard_contract::lib::validate_reason(reason_ascii(201), 200);
+}
+
+#[test]
+unconstrained fn c05_new_policy_removal_before_deadline_has_no_penalty() {
+    let (mut env, board, owner, censor, chain, id) = published();
+    let (policy, length) = crate::policy_with_byte(66);
+    env.call_public(censor, Billboard::at(board).set_moderation_policy(policy, length));
+    let current = env.view_public(Billboard::at(board).get_policy_version());
+    env.call_public(censor, Billboard::at(board).declare_immoral(id, current, reason_with(2), 4));
+    let deadline = env.view_public(Billboard::at(board).get_post_flag_deadline(id));
+    env.mine_block_at(deadline);
+    let before = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
+    let (child, gc) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
+    env.call_private(owner, Billboard::at(board).post(chain, 0, [0; 32], 0, true, child, gc));
+    let after = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
+    assert_eq(after[9], before[9] + 3600);
+    assert(env.view_public(Billboard::at(board).is_post_flagged(id)));
+}
+
+#[test]
+unconstrained fn c05_removal_after_withdrawal_does_not_recreate_deposit() {
+    let (mut env, board, owner, censor, chain, id) = published();
+    let deadline = env.view_public(Billboard::at(board).get_post_flag_deadline(id));
+    env.mine_block_at(deadline);
+    let (child, gc) = env.execute_utility(Billboard::at(board).get_screen_hints(owner, chain));
+    env.call_private(owner, Billboard::at(board).post(chain, 0, [0; 32], 0, true, child, gc));
+    let note = env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain));
+    env.mine_block_at(note[9] as u64);
+    env.call_private(owner, Billboard::at(board).withdraw(chain));
+    let (policy, length) = crate::policy_with_byte(66);
+    env.call_public(censor, Billboard::at(board).set_moderation_policy(policy, length));
+    let current = env.view_public(Billboard::at(board).get_policy_version());
+    env.call_public(censor, Billboard::at(board).declare_immoral(id, current, reason_with(2), 4));
+    assert(env.view_public(Billboard::at(board).is_post_flagged(id)));
+    assert_eq(env.execute_utility(Billboard::at(board).get_deposit_info(owner, chain)), [0; 10]);
 }

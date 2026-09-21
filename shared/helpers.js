@@ -273,18 +273,18 @@ function extractFieldArray(simResult) {
 // Decode the single V1 note layout. Malformed results are errors, not an empty wallet.
 function extractDepositInfo(simResult) {
   const val = simResult?.result ?? simResult?.value ?? simResult;
-  if (!Array.isArray(val) || val.length !== 11) throw new Error('Invalid V1 deposit note');
+  if (!Array.isArray(val) || val.length !== 10) throw new Error('Invalid V1 deposit note');
   const words = val.map(value => BigInt(value?.inner?.toString?.() ?? value?.toString?.() ?? value));
   const modulus = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
   if (words.some(value => value < 0n || value >= modulus)) throw new Error('Noncanonical deposit Field');
-  const [schemaVersion, depositChainId, depositNonce, amount, depositor, postChainHead,
+  const [schemaVersion, depositChainId, amount, depositor, postChainHead,
     headSequence, lastScreenedLink, lastScreenedIndex, lastRealPostIndex, nextAllowedTime] = words;
   const empty = words.every(value => value === 0n);
-  if (!empty && (schemaVersion !== 1n || depositChainId === 0n || depositNonce === 0n || depositNonce >= 1n << 64n ||
+  if (!empty && (schemaVersion !== 1n || depositChainId === 0n ||
       amount === 0n || amount >= 1n << 96n || depositor === 0n || depositor >= 1n << 160n ||
       headSequence >= 1n << 64n || lastScreenedIndex > headSequence || lastRealPostIndex > headSequence ||
       nextAllowedTime > (1n << 63n) - 1n)) throw new Error('Invalid V1 deposit fields');
-  return { schemaVersion, depositChainId, depositNonce, amount, nextAllowedTime,
+  return { schemaVersion, depositChainId, amount, nextAllowedTime,
     l1Depositor: '0x' + depositor.toString(16).padStart(40, '0'), postChainHead,
     headSequence, lastScreenedLink, lastScreenedIndex, lastRealPostIndex };
 }
@@ -298,7 +298,7 @@ async function readBillboardDepositInfo(contract, owner, selectedChain) {
     if (!Array.isArray(values) || values.length !== 10) throw new Error('Invalid deposit discovery response');
     const ids = values.map(value => BigInt(value.toString())).filter(value => value !== 0n);
     if (ids.length > 1) throw new Error('Multiple deposit rights: select a depositChainId');
-    if (ids.length === 0) return extractDepositInfo(Array(11).fill(0n));
+    if (ids.length === 0) return extractDepositInfo(Array(10).fill(0n));
     chain = ids[0];
   }
   if (chain === 0n) throw new Error('Deposit identity must be nonzero');

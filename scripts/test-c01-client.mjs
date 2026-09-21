@@ -9,15 +9,15 @@ const field = value => '0x' + BigInt(value).toString(16).padStart(64, '0');
 const address = value => '0x' + BigInt(value).toString(16).padStart(40, '0');
 const scope = { l1ChainId: '31337', rollupAddress: address(1), rollupVersion: '2', boardAddress: field(3), portalAddress: address(4), depositor: address(5) };
 const record = { schemaVersion: 1, secretHash: field(6), secret: field(7) };
-const words = [1n,2n,3n,4n,5n,6n,7n,8n,6n,7n,10n];
+const words = [1n,2n,4n,5n,6n,7n,8n,6n,7n,10n];
 
-test('V1 decoder maps all eleven values and rejects legacy/truncated/noncanonical values', () => {
+test('V1 decoder maps all ten values and rejects legacy/truncated/noncanonical values', () => {
   const result = globalThis.extractDepositInfo(words);
-  assert.equal(result.depositChainId,2n); assert.equal(result.depositNonce,3n);
+  assert.equal(result.depositChainId,2n);
   assert.equal(result.amount,4n); assert.equal(result.headSequence,7n);
   assert.equal(result.lastScreenedIndex,6n); assert.equal(result.nextAllowedTime,10n);
-  assert.equal(globalThis.extractDepositInfo(Array(11).fill(0n)).amount,0n);
-  for (const invalid of [words.slice(0,7),null,[2n,...words.slice(1)],words.map((v,i)=>i===2?1n<<64n:v),words.map((v,i)=>i===4?1n<<160n:v)]) {
+  assert.equal(globalThis.extractDepositInfo(Array(10).fill(0n)).amount,0n);
+  for (const invalid of [words.slice(0,7),null,[2n,...words.slice(1)],words.map((v,i)=>i===5?1n<<64n:v),words.map((v,i)=>i===3?1n<<160n:v)]) {
     assert.throws(()=>globalThis.extractDepositInfo(invalid));
   }
 });

@@ -7,7 +7,7 @@ import {Contract} from '@aztec/aztec.js/contracts';
 import {GasFees} from '@aztec/stdlib/gas';
 import {preparePrivateFeePayment} from '../shared/private-fee-client.mjs';
 import {bridgePrivateFeeCredit} from './w01-private-funding.mjs';
-export async function prepareW01PrivateFees({node,preparation,l1Client,directory,fundingDirectory,rpcUrl,mineL1,standalone=false,persistentDirectory,reportStage:mark}){
+export async function prepareW01PrivateFees({node,preparation,l1Client,directory,fundingDirectory,rpcUrl,mineL1,standalone=false,persistentDirectory,gasSettings,reportStage:mark}){
   const observation={passed:false,ownerless:true,offchainIssuer:false,operatorFunding:false,chargesMaximumFee:true};let setup;
   try{
     setup=await prepareW01UnfundedWallet({node,preparation,directory,persistentDirectory});
@@ -16,8 +16,8 @@ export async function prepareW01PrivateFees({node,preparation,l1Client,directory
     const poolBefore=await getFeeJuiceBalance(instance.address,node);
     const funded=await bridgePrivateFeeCredit({node,l1Client,wallet:setup.wallet,directory:fundingDirectory,rpcUrl,walletSecret:author.secret,walletSalt:author.salt,privateFeeArtifact:raw,owner:author.address,payer:instance.address,mineL1,mark});observation.funding=funded.observation;
     // Explicit test gas cap; normal client/UI shows this maximum charge before signing.
-    const gas=(await setup.wallet.completeFeeOptions({from:author.address,feePayer:instance.address})).gasSettings.clone();
-    gas.maxFeesPerGas=new GasFees(gas.maxFeesPerGas.feePerDaGas*16n||1n,gas.maxFeesPerGas.feePerL2Gas*16n||1n);
+    const gas=gasSettings?gasSettings.clone():(await setup.wallet.completeFeeOptions({from:author.address,feePayer:instance.address})).gasSettings.clone();
+    if(!gasSettings)gas.maxFeesPerGas=new GasFees(gas.maxFeesPerGas.feePerDaGas*16n||1n,gas.maxFeesPerGas.feePerL2Gas*16n||1n);
     observation.payer=instance.address.toString();
     let first=true;let allocated=0n;
     const privateFeeAction=async({wallet:actionWallet,owner,interaction})=>{

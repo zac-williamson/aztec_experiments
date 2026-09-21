@@ -51,18 +51,18 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
     if(include){
       assert(preparation);mark('prove-board-deployment');
       const {proveC01BoardDeployment}=await import('./c01-board-flow.mjs');
-      observation.board=await proveC01BoardDeployment(node,preparation,{rollupAddress:ctx.rollupAddress,rollupVersion:deployment.rollupVersion,directory});assert(observation.board.passed);
+      observation.board=await proveC01BoardDeployment(node,preparation,{rollupAddress:ctx.rollupAddress,rollupVersion:deployment.rollupVersion,directory,reportStage:mark});assert(observation.board.passed);
       const {includeC01Board}=await import('./c01-board-inclusion.mjs');
-      observation.inclusion=await includeC01Board({node,tx:observation.board.tx,rpcUrl:config.l1RpcUrls[0],dateProvider});assert(observation.inclusion.passed);
+      mark('board-inclusion');observation.inclusion=await includeC01Board({node,tx:observation.board.tx,rpcUrl:config.l1RpcUrls[0],dateProvider});assert(observation.inclusion.passed);
       Object.assign(ctx,{instance:observation.board.instance,inclusion:observation.inclusion});observation.sequencerStarted=true;
       if(scenario.fixture==='activated-board'){
         const {prepareAndProveC01Ready}=await import('./c01-ready-flow.mjs');
         observation.ready=await prepareAndProveC01Ready({...ctx,deploymentReceipt:ctx.inclusion,rollupVersion:deployment.rollupVersion});assert(observation.ready.passed);
-        observation.readyInclusion=await includeC01Board({node,tx:observation.ready.tx,rpcUrl:config.l1RpcUrls[0],dateProvider,startSequencer:false});assert(observation.readyInclusion.passed);
+        mark('ready-inclusion');observation.readyInclusion=await includeC01Board({node,tx:observation.ready.tx,rpcUrl:config.l1RpcUrls[0],dateProvider,startSequencer:false});assert(observation.readyInclusion.passed);
         const effect=await node.getTxEffect(observation.ready.tx.getTxHash());assert(effect?.data);assert(effect.data.l2ToL1Msgs.some(message=>message.toString()===observation.ready.expectedReadyLeaf));
         Object.assign(observation.ready,{readyEmitted:true,bindingSubmitted:true});
         const {settleC01Ready}=await import('./c01-settle-ready.mjs');
-        observation.settlement=await settleC01Ready({...ctx,ready:observation.ready,readyInclusion:observation.readyInclusion});assert(observation.settlement.passed);
+        mark('ready-settlement');observation.settlement=await settleC01Ready({...ctx,ready:observation.ready,readyInclusion:observation.readyInclusion});assert(observation.settlement.passed);
         Object.assign(observation.ready,{portalActivated:true,epochProofAccepted:false,controlledSettlement:true});Object.assign(ctx,{ready:observation.ready,settlement:observation.settlement});
       }
     }

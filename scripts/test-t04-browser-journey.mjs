@@ -35,7 +35,7 @@ test('browser modes roundtrip strictly across the real handoff boundary',async()
  const publicConfig={schemaVersion:1,network:{nodeUrl:'https://127.0.0.1:1234/rpc/aztec',ethRpcUrl:'https://127.0.0.1:1234/rpc/ethereum',chainId:'31337',rollupVersion:'1',rollupAddress:address},board:{portalAddress:address,contractAddress:board}};
  const base={nodeUrl:'http://127.0.0.1:1235',ethereumUrl:'http://127.0.0.1:1236',publicConfig,backupPath:directory+'/browser-wallet.encrypted.json',ethereumAccount:address,message:'Fixture GUI message'};
  for(const browserEngine of ['chromium','chrome','firefox','webkit'])for(const browserMode of ['post','lifecycle','recovery','withdraw-recovery','funding','performance']){
-  const control={browserEngine,browserMode,origin:'https://127.0.0.1:1234',rpcToken:'a'.repeat(32),backupPassword:'b'.repeat(32)};
+  const control={ethereumWallet:'disposable',browserEngine,browserMode,origin:'https://127.0.0.1:1234',rpcToken:'a'.repeat(32),backupPassword:'b'.repeat(32)};
   if(['recovery','withdraw-recovery'].includes(browserMode)&&browserEngine!=='chromium'){assert.throws(()=>validateBrowserControl(control));continue;}
   const actual=createBrowserHandoff(base,{directory,browserMode,depositAmount:'0.001',fundingAmount:'1.0'});
   assert.deepEqual(validateBrowserHandoff(JSON.parse(JSON.stringify(actual)),{directory,browserMode}),actual);
@@ -47,7 +47,7 @@ test('browser modes roundtrip strictly across the real handoff boundary',async()
  }
  for(const depositAmount of ['0.0','-1.0','1e-3','1.0000000000000000001'])assert.throws(()=>createBrowserHandoff(base,{directory,browserMode:'lifecycle',depositAmount}));
  for(const fundingAmount of ['0.0','-1.0','1e-3'])assert.throws(()=>createBrowserHandoff(base,{directory,browserMode:'funding',depositAmount:'0.001',fundingAmount}));
- const control={browserEngine:'chromium',browserMode:'lifecycle',origin:'https://127.0.0.1:1234',rpcToken:'a'.repeat(32),backupPassword:'b'.repeat(32)};
+ const control={ethereumWallet:'disposable',browserEngine:'chromium',browserMode:'lifecycle',origin:'https://127.0.0.1:1234',rpcToken:'a'.repeat(32),backupPassword:'b'.repeat(32)};
  for(const browserEngine of [undefined,'unknown'])assert.throws(()=>validateBrowserControl({...control,browserEngine}));
  assert.throws(()=>validateBrowserControl({...control,arbitrary:'SECRET'}));
 });
@@ -107,4 +107,33 @@ test('handoff accepts actual SDK whole-token formatting and rejects invalid amou
  const options={directory,browserMode:'funding',depositAmount:formatEther(10n**15n),fundingAmount:formatEther(10n**18n)};
  assert.equal(createBrowserHandoff(base,options).fundingAmount,'1');
  for(const fundingAmount of ['0','00','01','1.','+1','1e3','1.0000000000000000001'])assert.throws(()=>createBrowserHandoff(base,{...options,fundingAmount}));
+});
+
+test('MetaMask is accepted only for the explicit Chromium lifecycle',async()=>{
+ const {validateBrowserControl}=await import('./t04-browser-journey.mjs');
+ const control={ethereumWallet:'metamask',browserEngine:'chromium',browserMode:'lifecycle',origin:'https://127.0.0.1:1234',rpcToken:'a'.repeat(32),backupPassword:'b'.repeat(32)};
+ assert.equal(validateBrowserControl(control),control);
+ for(const mutation of [{ethereumWallet:undefined},{ethereumWallet:'unknown'},{browserEngine:'firefox'},{browserMode:'post'}])assert.throws(()=>validateBrowserControl({...control,...mutation}));
+});
+
+test('MetaMask request observation preserves provider result and refuses overlapping transactions',async()=>{
+ const {observeMetaMaskTransactions}=await import('./t04-metamask.mjs');
+ const prior=globalThis.window;let release,calls=0;
+ const tx={method:'eth_sendTransaction',params:[{to:'fixture'}]},provider={request:async request=>{calls++;assert.equal(request,tx);return new Promise(resolve=>{release=resolve;});}};
+ try{
+  globalThis.window={ethereum:provider};await observeMetaMaskTransactions({evaluate:fn=>fn()});
+  const sending=provider.request(tx);assert.deepEqual(globalThis.__walletTestPending,tx.params);
+  await assert.rejects(provider.request(tx),/Overlapping/);assert.equal(calls,1);
+  release('canonical-hash');assert.equal(await sending,'canonical-hash');assert.equal(globalThis.__walletTestPending,null);
+ }finally{globalThis.window=prior;delete globalThis.__walletTestPending;}
+});
+
+test('request guard attributes blank extension iframes without exempting application requests',async()=>{
+ const {guardBrowserRequest}=await import('./t04-metamask.mjs');
+ for(const [pageUrl,workerUrl,expected] of [['chrome-extension://wallet/home.html',null,'extension'],['https://127.0.0.1:1234/user.html',null,'application'],[null,'https://127.0.0.1:1234/worker.js','application']]){
+  let aborted=0,record;
+  const request={url:()=> 'https://metamask.github.io/docs',serviceWorker:()=>workerUrl?{url:()=>workerUrl}:null,frame:()=>({url:()=> 'about:blank',page:()=>({url:()=>pageUrl})}),resourceType:()=> 'document',isNavigationRequest:()=>true};
+  await guardBrowserRequest({request:()=>request,abort:()=>aborted++,continue:()=>{throw Error('External request must remain blocked');}},{origin:'https://127.0.0.1:1234',extensionWallet:true,onBlocked:r=>{record=r;}});
+  assert.equal(aborted,1);assert.equal(record.owner,expected);assert.equal(record.hostname,'metamask.github.io');
+ }
 });

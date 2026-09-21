@@ -489,7 +489,6 @@
       "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/aztec/compute_note_hash_and_nullifier.nr": "4d8ce860ff66c79652857df1596b4ef29301ce3f925f39c744aa77a8ed5c9e82",
       "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/calls_generation/external_functions_stubs.nr": "35b114346fd4cd69c44c26e8670967f0c46a1561e9af41dd8460489a65cfc92f",
       "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/dispatch.nr": "94e98de6b4cbdaa9bbb4b6d78ba862cc1e1c48f59cd5fbaa2a54f22a6e3120c7",
-      "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/events.nr": "e57ac6c97332a1995bb50f12e2a4653ce49f06494a9634e954b9be45358a7392",
       "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/functions/initialization_utils.nr": "6922a6f1042e5d24aa71ffdab27b2a2d5805ac6227296d39b7a9a86023ce6fe6",
       "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/private.nr": "efbcd1378a052c3173e1711e69367e217c53e182847bcf76cc7b3b0828110c62",
       "dependencies/github.com/AztecProtocol/aztec-nr/v5.2.0/aztec/src/macros/internals_functions_generation/external/public.nr": "85658440d1c86e9491f273070b1f8c200a6285126e7c3de3bfe26f9c1d881b4d",

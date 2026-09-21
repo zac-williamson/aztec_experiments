@@ -61,7 +61,7 @@ for (const key of Object.keys(fixtures.scope)) {
   });
 }
 
-for (const privateKey of ['depositChainId', 'depositNonce', 'depositor', 'owner', 'accountAddress']) {
+for (const privateKey of ['depositChainId', 'depositor', 'owner', 'accountAddress']) {
   test(`public post cannot acquire private linking field ${privateKey}`, () => {
     const event = clone(fixtures.events[0]);
     event.payload[privateKey] = 'private-fixture';
