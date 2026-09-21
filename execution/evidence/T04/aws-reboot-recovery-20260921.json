@@ -1,0 +1,57 @@
+{
+  "status": "Automatic EC2 reboot recovery verified",
+  "startedAt": "2026-09-21T03:56:22.511743+00:00",
+  "previousBootId": "4ae04fe6-05d7-4afa-a203-74f5f6646c59",
+  "currentBootId": "b98dcd2b-c988-45ec-87af-b680dc2a4206",
+  "firstHealthyLogAt": "2026-09-21T03:58:36.618+00:00",
+  "rebootRequestToHealthyLogSeconds": 134.106257,
+  "modelContainerHealthy": true,
+  "moderatorAndBackupTimerEnabled": true,
+  "backupTimerNextObservedUtc": "2026-09-21T04:01:37Z",
+  "health": {
+    "type": "billboard-moderation-health-v1",
+    "stateCounts": {
+      "queued": 0,
+      "leased": 0,
+      "evaluated-ok": 1,
+      "submit-intent": 0,
+      "submitted": 1,
+      "reconciling": 0,
+      "retryable-error": 0,
+      "confirmed-flag": 1,
+      "expired": 0,
+      "manual-review": 1
+    },
+    "severity": "warning",
+    "checkpointHeight": 90163,
+    "lastSuccessfulIngestAgeMs": 318,
+    "counts": {
+      "retryableErrors": 0,
+      "unresolvedSigning": 0,
+      "manualSigningFences": 0,
+      "awaitingFinality": 1,
+      "expiredObligations": 0,
+      "manualAttention": 0,
+      "unsignedPending": 0
+    },
+    "alerts": [
+      {
+        "code": "AWAITING_FINALITY",
+        "action": "Continue canonical receipt/event reconciliation; inclusion is not final completion."
+      }
+    ]
+  },
+  "feedLag": {
+    "type": "billboard-feed-lag-v1",
+    "severity": "ok",
+    "code": "FEED_AT_CHECKPOINTED_TIP",
+    "feedBlockHeight": 90163,
+    "nodeCheckpointedBlockHeight": 90163,
+    "lagL2Blocks": 0,
+    "scope": "L2 blocks behind the configured node checkpointed tip; not elapsed time or independently verified global freshness",
+    "action": "No measured checkpointed feed lag at this observation."
+  },
+  "savedQueueCountsPreserved": true,
+  "newFlagSubmissionObservedInRetainedStartupLogs": false,
+  "limitations": "One graceful EC2 reboot; not abrupt disk loss or replacement-host restoration. Queue still tracks the prior flag awaiting finality."
+}

@@ -7,7 +7,7 @@ Objective state: **running**. Completed packages: 26/37.
 ## In progress
 
 - **Evaluate moderation quality and define human review operations (M03)** — Four pinned-model batches total48distinct provisional cases,0classification errors; combinedp95 23.09s misses10s target. Direct-threat288 complete239.70s, runtime/cleanup verified, restored service healthy90139. One live automatic flag verified; human labels,300/50/50coverage and20flagcapacity remain incomplete. Independent aggregate review approved.
-- **Run browser, recovery, concurrency and load matrix (T04)** — Firefox290/WebKit291/installedChrome294 two-post pilots passed below6min/4GiB with exact accounting;30-sample qualification remains. Quiesced S3 backup296 verified downloaded bytes+SQLite and restoredservice; offline PXE/journal authentication297 running with networknamespace disabled. Prepare daily native systemd backup only after drill succeeds.
+- **Run browser, recovery, concurrency and load matrix (T04)** — Browser pilots290/291/294 and S3backup/offlineauthentication/failurecleanup/timer296-300 passed. EC2reboot302 recovered automatically with healthy model, preservedqueue and nofeedlag at90163 in134.11s; no new flag submission in retainedstartup logs. Remaining matrix/statistical qualification and unattended operational alerts still open. Next: implement one native CloudWatch health publisher/timer and alarm in deploy/aws; independent structural review, explicit missing-data detection, no notification recipient or automatic restart.
 
 ## Ready internal work
 
