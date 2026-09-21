@@ -1,6 +1,6 @@
 # Board plugins
 
-The board knows only a handle, an authorized reply receiver, an immutable descriptor URL and an enabled flag. It does not import the reference adapter or understand Ethereum payments, OpenRouter, GitHub or a particular hosting platform. There are no secret keys in either contract.
+The board knows only a handle, an authorized reply receiver, an immutable descriptor URL and an enabled flag. It does not import the reference adapter or understand Ethereum payments, Venice, GitHub or a particular hosting platform. There are no secret keys in either contract.
 
 ## Interfaces
 
@@ -24,14 +24,29 @@ GitHub tools read/write an isolated checkout and can create a new branch and PR 
 
 ## Local configuration
 
-Use Node 24.21.x and the repository's pinned Aztec/Noir/Foundry toolchain. Copy `.env.example` to `.env` in this directory and set `OPENROUTER_API_KEY` locally. `PLUGIN_REPOSITORY` defaults to the user's fork, `zac-williamson/aztec_experiments`. Set `GITHUB_TOKEN` and `PLUGIN_GITHUB_WRITES=true` to enable PR creation. Never put any key in a descriptor, app config or contract.
+Use Node 24.21.x and the repository's pinned Aztec/Noir/Foundry toolchain. Copy `.env.example` to `.env` in this directory and set `VENICE_WALLET_PRIVATE_KEY` locally. `PLUGIN_REPOSITORY` defaults to the user's fork, `zac-williamson/aztec_experiments`. Set `GITHUB_TOKEN` and `PLUGIN_GITHUB_WRITES=true` to enable PR creation. Never put any key in a descriptor, app config or contract.
 
 The separate development network uses ordinary Ethereum/Inbox/Aztec transactions and the ordinary sequencer, with node `realProofs:false` and PXE `proverEnabled:false`. The proof policy permits this only when the node reports Ethereum chain 31337 and proofs disabled. All public-network defaults remain proving enabled. Local epoch/Outbox settlement uses official SDK test controls and provides no production finality assurance.
 
 The disposable example uses a 0.001 test-ETH allowance; `bootstrapPluginDevnet({allowanceWei})` can choose another allowance. Budget conversion and call limits are operator policy, not additional board protocol fields.
 
-Run `npm run dev:plugins` to create a fresh disposable local network and start the live OpenRouter service, after configuring its key. The service binds the LAN interface; `PLUGIN_PUBLIC_HOST` selects the address pinned in its descriptor. `PLUGIN_PROOFS=true` selects real application proofs without changing contract calls or payment/reply APIs. The same end-to-end scenario passes with this toggle enabled and disabled. Set `CRS_PATH="$PWD/apps/dist/crs"` when using the repository’s downloaded CRS for native proving.
+Run `npm run dev:plugins` to create a fresh disposable local network and start the live Venice service, after configuring its dedicated wallet. The service binds the LAN interface; `PLUGIN_PUBLIC_HOST` selects the address pinned in its descriptor. `PLUGIN_PROOFS=true` selects real application proofs without changing contract calls or payment/reply APIs. The same end-to-end scenario passes with this toggle enabled and disabled. Set `CRS_PATH="$PWD/apps/dist/crs"` when using the repository’s downloaded CRS for native proving.
 
-`npm run test:plugins` exercises the portable boundaries. `npm run test:plugins:e2e` uses a deterministic injected model on real local chains, and does not call OpenRouter or create a public PR. The service can run independently with `npm run bot:serve -- /absolute/path/service.json`.
+`npm run test:plugins` exercises the portable boundaries. `npm run test:plugins:e2e` uses a deterministic injected model on real local chains, and does not call Venice or create a public PR. The service can run independently with `npm run bot:serve -- /absolute/path/service.json`.
 
 Validation status and remaining work are recorded in `IMPLEMENTATION.md`. Live provider calls require your local key; no public PR has been created during verification.
+
+
+## Venice crypto-funded inference
+
+No provider API key is used. Set `VENICE_WALLET_PRIVATE_KEY` in `plugins/.env` to a dedicated operator wallet, and fund that address with **USDC on Base** (and ETH on Base for gas if needed). This wallet is separate from the Aztec reply identity. Never use a user wallet. `npm run bot:venice -- address` prints only the public funding address; `status` checks the live credit balance without spending.
+
+`VENICE_AUTO_TOP_UP=true` lets the service purchase the quoted USDC amount when Venice reports no spendable credits. `VENICE_MAX_TOP_UP_USD=5` caps each purchase; it is not a daily cap. The service uses the live x402 quote, accepts only Base USDC, and never retries an uncertain payment or a model request. After an uncertain payment, inspect the Venice wallet balance and transaction history before restarting. One service should exclusively use this wallet.
+
+`npm run bot:venice -- top-up` explicitly purchases credits. `npm run bot:venice -- smoke` makes one real inference request and can automatically top up. These commands and `dev:plugins` use **real provider funds**, even when the board runs on a proof-disabled devnet. Local test ETH cannot buy Venice credits. `test:plugins` and the deterministic `test:plugins:e2e` do not spend real funds.
+
+The selected model is `kimi-k2-5`; change `VENICE_MODEL` to another Venice model supporting function calls. Each call checks the model catalog and calculates an allowance cost from reported input/output tokens at published USD-per-million prices. Cached-input discounts are deliberately not credited to the allowance. This is conservative accounting, not the provider's final billed debit. Missing usage stops the action.
+
+Board payments still use the existing ETH payment contract. Provider spending now uses Base USDC; this change does not add an ETH-to-USDC swap, bridge, or automatic withdrawal of board revenue. For the MVP the operator funds the dedicated Base wallet, after which credit replenishment is automatic. The board, UI, GitHub toolbox, censor and reply APIs have no Venice dependency.
+
+Provider references: [wallet auth and x402](https://docs.venice.ai/guides/integrations/x402-venice-api), [official signer SDK](https://github.com/veniceai/x402-client).

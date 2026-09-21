@@ -41,6 +41,7 @@ export interface ModelMessage {
   tool_calls?:ToolCall[];tool_call_id?:string;
 }
 export interface ModelPort {
+  /** Cost charged to the action allowance, in USD; may conservatively exceed provider billing. */
   complete(input:{messages:ModelMessage[];tools:ToolDefinition[];maxTokens:number}):Promise<{message:ModelMessage;cost:number}>;
 }
 export interface ToolSession {

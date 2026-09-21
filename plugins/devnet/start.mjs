@@ -4,7 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {bootstrapPluginDevnet} from './bootstrap.mjs';
 import {runHostedService} from '../main.mjs';
-if(!process.env.OPENROUTER_API_KEY)throw Error('Set OPENROUTER_API_KEY in plugins/.env before starting the live bot');
+if(!process.env.VENICE_WALLET_PRIVATE_KEY)throw Error('Set VENICE_WALLET_PRIVATE_KEY in plugins/.env before starting the live bot');
 const host=process.env.PLUGIN_PUBLIC_HOST||Object.values(os.networkInterfaces()).flat().find(x=>x&&!x.internal&&x.family==='IPv4')?.address||'127.0.0.1';
 const directory=await fs.mkdtemp(path.resolve('.build/plugin-devnet-'));
 let fixture,service,closed=false;

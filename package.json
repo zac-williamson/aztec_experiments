@@ -12,7 +12,8 @@
     "@aztec/stdlib": "5.2.0",
     "@aztec/wallet-sdk": "5.2.0",
     "ethers": "6.17.0",
-    "fake-indexeddb": "6.2.5"
+    "fake-indexeddb": "6.2.5",
+    "venice-x402-client": "0.2.0"
   },
   "devDependencies": {
     "@aztec/aztec": "5.2.0",
@@ -52,7 +53,8 @@
     "test:plugins": "node --test plugins/test/*.test.mjs",
     "test:plugins:e2e": "NODE_BACKEND=js LOG_LEVEL=error node plugins/devnet/test-e2e.mjs",
     "dev:plugins": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/start.mjs",
-    "bot:serve": "NODE_BACKEND=js node --env-file=plugins/.env plugins/main.mjs"
+    "bot:serve": "NODE_BACKEND=js node --env-file=plugins/.env plugins/main.mjs",
+    "bot:venice": "node --env-file=plugins/.env plugins/venice-cli.mjs"
   },
   "overrides": {
     "systeminformation": "5.31.7",

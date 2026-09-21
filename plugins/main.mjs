@@ -14,14 +14,14 @@ import {aztecBoardPort} from './aztec.mjs';
 import {openDispatchStore} from './dispatch-store.mjs';
 import {createPluginWorker} from './worker.mjs';
 import {createAgent} from './agent.mjs';
-import {openRouterModel} from './openrouter.mjs';
+import {veniceClient,veniceModel} from './venice.mjs';
 import {githubApi,githubToolbox} from './github-tools.mjs';
 import {startPluginServer} from './server.mjs';
 import {provingEnabledForNode} from '../shared/proving-policy.mjs';
 
 /** Composition root: only this module knows which implementations are selected. */
 export async function runHostedService({config,runner,env=process.env}) {
-  if(!runner&&!env.OPENROUTER_API_KEY)throw Error('Configure OPENROUTER_API_KEY locally before starting the service');
+  if(!runner&&!env.VENICE_WALLET_PRIVATE_KEY)throw Error('Configure VENICE_WALLET_PRIVATE_KEY locally before starting the service');
   const descriptor=validateDescriptor(config.descriptor,config.descriptor.scope);
   const node=createAztecNodeClient(config.nodeUrl),info=await node.getNodeInfo();
   const wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:provingEnabledForNode(info),proverOrOptions:{backend:BackendType.NativeUnixSocket,threads:1}}});
@@ -35,7 +35,7 @@ export async function runHostedService({config,runner,env=process.env}) {
     const boardArtifact=loadContractArtifact(JSON.parse(await fs.readFile(new URL('../apps/src/billboard/billboard_artifact.json',import.meta.url),'utf8')));
     const adapterArtifact=loadContractArtifact(JSON.parse(await fs.readFile(new URL('./adapter_artifact.json',import.meta.url),'utf8')));
     const board=await aztecBoardPort({node,wallet,scope:descriptor.scope,boardArtifact,adapterArtifact,operator:account.address,finality:config.development?'checkpointed':'finalized'});
-    const selectedRunner=runner??createAgent({model:openRouterModel({apiKey:env.OPENROUTER_API_KEY,model:env.OPENROUTER_MODEL||undefined}),
+    const selectedRunner=runner??createAgent({model:veniceModel({client:veniceClient({privateKey:env.VENICE_WALLET_PRIVATE_KEY}),model:env.VENICE_MODEL||undefined,autoTopUp:env.VENICE_AUTO_TOP_UP==='true',maxTopUpUsd:Number(env.VENICE_MAX_TOP_UP_USD||5)}),
       toolbox:githubToolbox({repository:env.PLUGIN_REPOSITORY||config.repository,api:githubApi({token:env.GITHUB_TOKEN}),allowWrites:env.PLUGIN_GITHUB_WRITES==='true'}),
       instructions:'You are bok, the development assistant for this board. Work on the configured repository and answer the explicit request.',usdPerEth:Number(env.PLUGIN_USD_PER_ETH)});
     await fs.mkdir(config.stateDirectory,{recursive:true,mode:0o700});store=openDispatchStore(path.join(config.stateDirectory,'dispatch.sqlite'));
