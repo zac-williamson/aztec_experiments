@@ -51,11 +51,11 @@
     "test:components": "node scripts/test-harness.mjs components",
     "test:e2e": "node scripts/test-c01-application.mjs",
     "test:plugins": "node --test plugins/test/*.test.mjs",
-    "test:plugins:e2e": "NODE_BACKEND=js LOG_LEVEL=error node plugins/devnet/test-e2e.mjs",
+    "test:plugins:e2e": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/browser.mjs --test-wallet",
     "dev:plugins": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/start.mjs",
     "bot:serve": "NODE_BACKEND=js node --env-file=plugins/.env plugins/main.mjs",
     "bot:venice": "node --env-file=plugins/.env plugins/venice-cli.mjs",
-    "test:plugins:live": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/live.mjs",
+    "test:plugins:live": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/browser.mjs --test-wallet",
     "dev:plugins:browser": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/browser.mjs",
     "test:plugins:wallet": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/browser.mjs --test-wallet"
   },

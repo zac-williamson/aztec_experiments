@@ -15,11 +15,11 @@ import {sha256ToField} from '@aztec/foundation/crypto/sha256';
 import {encodeEscrowCommitment} from '../../shared/protocol-commitments.mjs';
 import {settleC01ApplicationMessage} from '../../scripts/c01-settle-application-message.mjs';
 import {startDevnet,drainDevnetCheckpoints} from './network.mjs';
-import {API_VERSION,packText,handleField,scopeHash} from '../protocol.mjs';
+import {API_VERSION,packText,handleField} from '../protocol.mjs';
 import {restoreApplicationAuthor} from '../../scripts/w02-wallet-restore.mjs';
 const read=async file=>JSON.parse(await fs.readFile(file,'utf8'));
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-export async function bootstrapPluginDevnet({directory,port=8787,host='127.0.0.1',proofs=false,browserAuthor=false,allowanceWei=1000000000000000n,onProgress=console.log}){
+export async function bootstrapPluginDevnet({directory,port=8787,host='127.0.0.1',proofs=false,browserAuthor=false,onProgress=console.log}){
   const [generated,operator]=await generateSchnorrAccounts(2,'schnorr_initializerless');
   const author=browserAuthor?(await restoreApplicationAuthor(generated)).author:generated;
   const net=await startDevnet({directory,fundingAddresses:[author.address,operator.address],proofs,onProgress});
@@ -41,14 +41,19 @@ export async function bootstrapPluginDevnet({directory,port=8787,host='127.0.0.1
     const deployed=await Contract.deploy(wallet,artifact,[31337n,rollup,BigInt(info.rollupVersion),1000000000000000n,10000000000000000n,1,from,2,60,2,policy.fields.map(x=>Fr.fromString(x)),policy.length],'init',{deployer:from,salt:Fr.random()}).send(send);
     onProgress('Board deployment included: '+deployed.receipt.status+' at '+deployed.receipt.blockNumber);
     const board=deployed.contract;
-    const adapter=(await Contract.deploy(wallet,adapterArtifact,[board.address,operator.address],'init',{deployer:from,salt:Fr.random()}).send(send)).contract;
+    const adapter=(await Contract.deploy(wallet,adapterArtifact,[board.address,operator.address,31337n,BigInt(info.rollupVersion)],'init',{deployer:from,salt:Fr.random()}).send(send)).contract;
     provider=new JsonRpcProvider(net.rpcUrl,undefined,{cacheTimeout:-1});const signer=Wallet.createRandom().connect(provider);
     await provider.send('anvil_setBalance',[signer.address,'0x56bc75e2d63100000']);
     const scope={chainId:'31337',rollupVersion:String(info.rollupVersion),rollupAddress:rollup.toString().toLowerCase(),boardAddress:board.address.toString(),receiver:adapter.address.toString()};
-    const minAmount=BigInt(allowanceWei);
-    const paymentArtifact=await read('billboard/portal/out/PluginPayments.sol/PluginPayments.json');
-    const payments=await new ContractFactory(paymentArtifact.abi,paymentArtifact.bytecode.object,signer).deploy(signer.address,scopeHash(scope),minAmount);await payments.waitForDeployment();
-    const descriptor={protocol:API_VERSION,scope,description:'bok development assistant',payment:{protocol:'ethereum-eth/v1',chainId:'31337',contractAddress:(await payments.getAddress()).toLowerCase(),amountWei:String(minAmount)}};
+    const tokenArtifact=await read('billboard/portal/out/DevUSDC.sol/DevUSDC.json');
+    const token=await new ContractFactory(tokenArtifact.abi,tokenArtifact.bytecode.object,signer).deploy(signer.address);await token.waitForDeployment();
+    const escrowPortalArtifact=await read('billboard/portal/out/PluginPortal.sol/PluginPortal.json');
+    const escrowPortal=await new ContractFactory(escrowPortalArtifact.abi,escrowPortalArtifact.bytecode.object,signer).deploy(rollup.toString(),adapter.address.toString(),BigInt(info.rollupVersion),await token.getAddress());await escrowPortal.waitForDeployment();
+    const escrowReady=await adapter.methods.set_portal(EthAddress.fromString(await escrowPortal.getAddress())).send(send);
+    const escrowEffect=await net.node.getTxEffect(escrowReady.receipt.txHash),escrowLeaf=escrowEffect.data.l2ToL1Msgs.find(x=>!x.isZero());
+    const escrowSettled=await settleC01ApplicationMessage({node:net.node,config:net.config,dateProvider:net.dateProvider,l1Client:net.deployment.l1Client,directory,rollupAddress:rollup,txHash:escrowReady.receipt.txHash,expectedLeaf:escrowLeaf,kind:'ready',applicationProofs:proofs});
+    const ew=escrowSettled.witness;await (await escrowPortal.activate(BigInt(ew.epochNumber),BigInt(ew.numCheckpointsInEpoch),ew.leafIndex,ew.siblingPath.toBufferArray().map(b=>'0x'+b.toString('hex')))).wait();
+    const descriptor={protocol:API_VERSION,scope,description:'bok development assistant',funding:{protocol:'aztec-escrow-usdc/v1',portalAddress:(await escrowPortal.getAddress()).toLowerCase(),tokenAddress:(await token.getAddress()).toLowerCase()}};
     const descriptorUrl=`http://${host}:${port}/v1/descriptor#sha256=${sha256(toUtf8Bytes(JSON.stringify(descriptor)))}`;
     const packed=packText(descriptorUrl,8);
     await board.methods.configure_plugin(Fr.fromString(handleField('bok')),adapter.address,packed.fields.map(x=>Fr.fromString(x)),packed.length,true).send(send);
@@ -76,8 +81,8 @@ export async function bootstrapPluginDevnet({directory,port=8787,host='127.0.0.1
     await drainDevnetCheckpoints(net);
     await wallet.pxe.sync();
     await board.methods.claim_deposit(EthAddress.fromString(signer.address),amount,secret,new Fr(event.index)).send(send);
-    const serviceConfig={descriptor,nodeUrl:net.nodeUrl,ethereumUrl:net.rpcUrl,startBlock:0,development:true,host:'0.0.0.0',port,repository:'zac-williamson/aztec_experiments',stateDirectory:path.join(directory,'service'),operator:{secret:operator.secret.toString(),salt:operator.salt.toString(),signingKey:operator.signingKey.toString()}};
+    const serviceConfig={descriptor,nodeUrl:net.nodeUrl,ethereumUrl:net.rpcUrl,development:true,host:'0.0.0.0',port,repository:'zac-williamson/aztec_experiments',operator:{secret:operator.secret.toString(),salt:operator.salt.toString(),signingKey:operator.signingKey.toString()}};
     await fs.writeFile(path.join(directory,'service.json'),JSON.stringify(serviceConfig,null,2),{mode:0o600});
-    return {net,wallet,board,adapter,signer,provider,descriptor,serviceConfig,author,chain,portalAddress,close};
+    return {net,wallet,board,adapter,signer,provider,descriptor,serviceConfig,author,operator,token,escrowPortal,chain,portalAddress,close};
   }catch(error){try{await close();}catch(cleanup){throw new AggregateError([error,cleanup],'Local board setup and cleanup failed');}throw error;}
 }

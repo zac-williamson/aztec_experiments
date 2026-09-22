@@ -1,6 +1,6 @@
 {
   "aztecVersion": "5.2.0",
-  "lockfile": "3ac2d895f6eddffba40c8889c1d88cb73c48571530595433da27c7bb4ad6b805",
+  "lockfile": "dd8a8240b983f6114fbc8e9c525ab90dd82a89713799bd3936919f32b1dc4ea9",
   "buildScript": "dff5cee63f0207bb3a68a4bbbc9c268e5f9c9865d02972b4c4b3281840144d4e",
   "inputs": {
     "billboard/portal/node_modules/@aztec/l1-artifacts/l1-contracts/lib/openzeppelin-contracts/contracts/access/Ownable.sol": "38578bd71c0a909840e67202db527cc6b4e6b437e0f39f0c909da32c1e30cb81",

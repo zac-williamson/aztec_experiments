@@ -73,6 +73,17 @@
     <button class="secondary small" id="dummyPostBtn" onclick="doDummyPost()" title="Create a private dummy post to screen up to two earlier notes">Advance screening</button>
     <div id="postStatus" class="status-container" role="status" aria-live="polite"></div>
   </div>
+  <details class="card" id="pluginAccountPanel">
+    <summary>Plugin balance</summary>
+    <label for="pluginHandle">Plugin</label><input id="pluginHandle" value="bok">
+    <label for="pluginAmount">Amount (USDC)</label><input id="pluginAmount" inputmode="decimal" value="1">
+    <button id="pluginBalance" onclick="pluginAccountAction('balance')">Check balance</button>
+    <button id="pluginDeposit" onclick="pluginAccountAction('deposit')">Deposit</button>
+    <button id="pluginClaim" onclick="pluginAccountAction('claim')">Claim deposit</button>
+    <button id="pluginWithdraw" onclick="pluginAccountAction('withdraw')">Withdraw</button>
+    <button id="pluginRedeem" onclick="pluginAccountAction('redeem')">Claim withdrawal</button>
+    <div id="pluginStatus" role="status"></div>
+  </details>
   <div class="card billboard-card">
     <h2>Billboard</h2>
     <div id="policyBox" class="policy-box" style="display:none;">

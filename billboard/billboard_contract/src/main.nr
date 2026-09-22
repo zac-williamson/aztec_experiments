@@ -656,7 +656,7 @@ pub contract Billboard {
         // Dummies advance only private history and never compete for public order.
         if !is_dummy {
             if handle == 0 { enqueue._publish_post(public_post_id, msg, message_length); }
-            else { enqueue._publish_invocation(public_post_id, msg, message_length, handle); }
+            else { enqueue._publish_invocation(public_post_id, msg, message_length, handle, sender); }
         }
 
         // --- Update last_real_sequence (only for non-dummy posts) ---
@@ -777,10 +777,13 @@ pub contract Billboard {
 
     #[external("public")]
     #[only_self]
-    fn _publish_invocation(post_id: Field, msg: [Field; MSG_FIELDS], message_length: u16, handle: Field) {
+    fn _publish_invocation(post_id: Field, msg: [Field; MSG_FIELDS], message_length: u16, handle: Field, account: AztecAddress) {
         assert(PluginState::plugin(self.context, self.storage, handle).enabled, "Plugin disabled");
         Publication::append_post(self.context, self.storage, post_id, msg, message_length);
         PluginState::write_request(self.context, self.storage, post_id, PluginRequest {handle, receiver: PluginState::plugin(self.context, self.storage, handle).receiver, reply: 0, published_block: self.context.block_number()});
+        let receiver = PluginState::plugin(self.context, self.storage, handle).receiver;
+        let selector = comptime { aztec::protocol::abis::function_selector::FunctionSelector::from_signature("on_invocation((Field),Field)") };
+        let _ = self.context.call_public_function(receiver, selector, [account.to_field(), post_id], aztec::context::gas::GasOpts::default());
         self.emit(PluginInvoked {schema_version: 1, post_id, handle});
     }
 

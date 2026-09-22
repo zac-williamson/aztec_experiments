@@ -2,15 +2,7 @@
 import {AbiCoder, keccak256, sha256, toUtf8Bytes} from 'ethers';
 import {Buffer} from 'buffer';
 
-export const PAYMENT_ABI = [
-  'function protocolVersion() view returns (uint256)',
-  'function scope() view returns (bytes32)',
-  'function minimumAmount() view returns (uint256)',
-  'function payments(bytes32,bytes32) view returns (address payer,uint256 amount,bytes32 messageHash)',
-  'function pay(bytes32 postId,bytes32 messageHash) payable',
-  'event PluginPaid(bytes32 indexed postId,address indexed payer,uint256 amount,bytes32 messageHash)',
-];
-export const API_VERSION = 'billboard-plugin/v1';
+export const API_VERSION = 'billboard-plugin/v2';
 export const MESSAGE_BYTES = 992;
 const fieldMax=21888242871839275222246405745257275088548364400416034343698204186575808495617n;
 export function field(value) {
@@ -36,13 +28,11 @@ export function scopeHash(scope) {
 }
 export function validateDescriptor(value, expected) {
   if(value?.protocol!==API_VERSION)throw Error('Unsupported plugin protocol');
-  const {scope,payment}=value;
+  const {scope,funding}=value;
   if(scopeHash(scope)!==scopeHash(expected))throw Error('Plugin scope mismatch');
-  if(!/^0x[0-9a-fA-F]{40}$/.test(payment?.contractAddress)||!/^\d+$/.test(payment?.amountWei)||BigInt(payment.amountWei)<=0n)throw Error('Invalid plugin payment');
-  if(payment.chainId!==scope.chainId||payment.protocol!=='ethereum-eth/v1')throw Error('Unsupported plugin payment protocol');
+  if(funding?.protocol!=='aztec-escrow-usdc/v1'||!/^0x[0-9a-fA-F]{40}$/.test(funding.portalAddress)||!/^0x[0-9a-fA-F]{40}$/.test(funding.tokenAddress))throw Error('Invalid plugin funding');
   if(typeof value.description!=='string'||value.description.length>1000)throw Error('Invalid plugin description');
-  return Object.freeze({protocol:API_VERSION,scope:Object.freeze({...scope}),description:value.description,
-    payment:Object.freeze({...payment,contractAddress:payment.contractAddress.toLowerCase()})});
+  return Object.freeze({protocol:API_VERSION,scope:Object.freeze({...scope}),description:value.description,funding:Object.freeze({...funding})});
 }
 export async function fetchDescriptor(url, expected, {fetchImpl=fetch}={}) {
   const u=new URL(url);

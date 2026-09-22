@@ -505,3 +505,13 @@ function waitForBundleThenInit() {
   }
 }
 initializeHostedBoard(waitForBundleThenInit);
+
+async function pluginAccountAction(action) {
+  const buttons=document.querySelectorAll('#pluginAccountPanel button');buttons.forEach(b=>b.disabled=true);
+  const status=document.getElementById('pluginStatus');status.textContent='';
+  try {
+    const result=await application.pluginAccount(action,{handle:document.getElementById('pluginHandle').value,amount:document.getElementById('pluginAmount').value},message=>status.textContent=message);
+    status.textContent=result.balance!==undefined?'Available: '+result.balance+' USDC':'Completed';status.dataset.outcome='success';
+  }catch(error){status.textContent=error.message;status.dataset.outcome='error';}
+  finally{buttons.forEach(b=>b.disabled=false);}
+}

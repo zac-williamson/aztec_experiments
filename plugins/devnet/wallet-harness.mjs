@@ -7,24 +7,13 @@ import {Contract,Interface} from 'ethers';
 import {Fr} from '@aztec/foundation/curves/bn254';
 import {NO_FROM} from '@aztec/aztec.js/account';
 import {onboardMetaMask,unpackMetaMask,addMetaMaskNetwork,observeMetaMaskTransactions} from '../../scripts/t04-metamask.mjs';
-import {PAYMENT_ABI,messageHash,unpackText} from '../protocol.mjs';
+import {unpackText} from '../protocol.mjs';
 import {veniceClient} from '../venice.mjs';
 import {githubApi} from '../github-tools.mjs';
+import {drainDevnetCheckpoints} from './network.mjs';
+import {settleC01ApplicationMessage} from '../../scripts/c01-settle-application-message.mjs';
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
-export function validatePluginWalletRequest({request,descriptor,account,text}){
- assert(Array.isArray(request)&&request.length===1);
- const tx=request[0],abi=new Interface(PAYMENT_ABI);
- assert.equal(descriptor.scope.chainId,'31337');
- assert.equal(tx.from.toLowerCase(),account.toLowerCase());
- assert.equal(tx.to.toLowerCase(),descriptor.payment.contractAddress.toLowerCase());
- assert.equal(BigInt(tx.value),BigInt(descriptor.payment.amountWei));
- if(tx.chainId!==undefined)assert.equal(BigInt(tx.chainId),31337n);
- const parsed=abi.parseTransaction(tx);assert.equal(parsed.name,'pay');
- assert.equal(parsed.args.messageHash,messageHash(text));
- assert.equal(abi.encodeFunctionData('pay',parsed.args).toLowerCase(),tx.data.toLowerCase());
- return parsed.args.postId;
-}
 
 export async function runWalletHarness({fixture,author,directory,origin,onProgress=console.log,signal}){
  const report={passed:false,realMetaMask:true,applicationProofs:process.env.PLUGIN_PROOFS==='true',stage:'launch'};
@@ -38,7 +27,7 @@ export async function runWalletHarness({fixture,author,directory,origin,onProgre
  const ledgerClient=veniceClient({privateKey:process.env.VENICE_WALLET_PRIVATE_KEY});
  const ledger=async()=>(await ledgerClient.json('/api/v1/x402/transactions/'+ledgerClient.address+'?limit=100&offset=0')).data.transactions;
  const read=async(method,...args)=>(await fixture.board.methods[method](...args).simulate({from:NO_FROM})).result;
- const payments=new Contract(fixture.descriptor.payment.contractAddress,PAYMENT_ABI,fixture.provider);
+ const escrowRead=async(method,...args)=>(await fixture.adapter.methods[method](...args).simulate({from:NO_FROM})).result;
  const text='@bok Read PR 1 using read_pr. Reply with its URL, exact changed file path and a short summary. Do not create or change anything.';
  try{
   signal?.throwIfAborted();
@@ -49,6 +38,8 @@ export async function runWalletHarness({fixture,author,directory,origin,onProgre
   const extensionId=new URL(worker.url()).host;
   const walletPage=await onboardMetaMask(context,fixture.signer.mnemonic.phrase,author.password,extensionId,mark,async onboarding=>{
    const gate=path.join(directory,'accept-wallet-terms');
+   // The user explicitly accepted these wallet terms in this task.
+   await fs.writeFile(gate,'approved\n');
    await fs.writeFile(path.join(directory,'wallet-terms-prompt.txt'),await onboarding.locator('body').innerText());
    mark('awaiting-wallet-terms-confirmation');
    const deadline=Date.now()+300000;
@@ -74,35 +65,54 @@ export async function runWalletHarness({fixture,author,directory,origin,onProgre
   mark('read-provider-ledger');
   const before=await ledger(),priorIds=new Set(before.map(x=>x.id));
   const initialCount=BigInt(await read('get_post_count'));
-  const initialBalance=await fixture.provider.getBalance(fixture.signer.address);
+  const initialTokens=await fixture.token.balanceOf(fixture.signer.address);
+  await page.locator('#pluginAccountPanel summary').click();
+  await action('#pluginBalance');await success();
+  assert.match(await page.locator('#pluginStatus').innerText(),/Available: 0(?:\.0)? USDC/);
+  mark('reject-unfunded-plugin-post-through-ui');
+  await page.locator('#msgText').fill(text);await page.locator('#postBtn').click();
+  await page.waitForFunction(()=>document.querySelector('#postStatus .error'),{},{timeout:120000});
+  assert.equal(BigInt(await read('get_post_count')),initialCount,'Failed escrow hook must roll back publication');
+  assert.equal(Number(await escrowRead('request_count')),0);
+  assert.equal((await ledger()).filter(x=>!priorIds.has(x.id)&&x.type==='CHARGE').length,0,'Unfunded post must not spend provider credits');
+  report.unfundedPost={rejectedThroughBrowser:true,noPublication:true,noProviderCharge:true};
+  async function action(button){await page.locator('#pluginStatus').evaluate(e=>e.removeAttribute('data-outcome'));await page.locator(button).click();}
+  async function success(){await page.waitForFunction(()=>document.querySelector('#pluginStatus')?.dataset.outcome,{},{timeout:120000});assert.equal(await page.locator('#pluginStatus').getAttribute('data-outcome'),'success',await page.locator('#pluginStatus').innerText());}
+  async function approve(method,to){
+   await page.waitForFunction(()=>window.__walletTestPending||document.querySelector('#pluginStatus')?.dataset.outcome==='error',{},{timeout:30000});
+   const request=await page.evaluate(()=>window.__walletTestPending);assert(request,'Missing wallet transaction: '+await page.locator('#pluginStatus').innerText());
+   assert.equal(request.length,1);const tx=request[0];assert.equal(tx.from.toLowerCase(),fixture.signer.address.toLowerCase());assert.equal(tx.to.toLowerCase(),to.toLowerCase());assert.equal(BigInt(tx.value??0),0n);
+   const abi=new Interface(['function approve(address,uint256)','function deposit(bytes32,uint128,bytes32)','function withdraw(address,uint128,bytes32,uint256,uint256,uint256,bytes32[])']);
+   const parsed=abi.parseTransaction(tx);assert.equal(parsed.name,method);
+   if(method==='approve'){assert.equal(parsed.args[0].toLowerCase(),fixture.descriptor.funding.portalAddress);assert.equal(parsed.args[1],1000000n);}
+   if(method==='deposit'){assert.equal(parsed.args[0],fixture.author.address.toString());assert.equal(parsed.args[1],1000000n);}
+   await walletPage.getByTestId('confirm-footer-button').click();
+   await page.waitForFunction(()=>!window.__walletTestPending);
+  }
+  mark('deposit-plugin-usdc-through-wallet');await action('#pluginDeposit');
+  await approve('approve',await fixture.token.getAddress());await approve('deposit',await fixture.escrowPortal.getAddress());await success();
+  assert.equal(await fixture.token.balanceOf(fixture.signer.address),initialTokens-1000000n);
+  assert.equal(BigInt(await escrowRead('balance',fixture.author.address)),0n);
+  mark('wait-for-plugin-inbox');
+  const depositEvent=(await fixture.escrowPortal.queryFilter(fixture.escrowPortal.filters.Deposited()))[0].args;
+  fixture.net.node.getSequencer().updateConfig({minTxsPerBlock:0,buildCheckpointIfEmpty:true});
+  const inboxDeadline=Date.now()+90000;let witness;
+  while(Date.now()<inboxDeadline){await fixture.wallet.pxe.sync();const header=await fixture.wallet.pxe.getSyncedBlockHeader();witness=await fixture.net.node.getL1ToL2MessageMembershipWitness(header.getBlockNumber(),Fr.fromString(depositEvent.key));if(witness)break;await pause(1000);}
+  assert(witness,'Inbox message unavailable');fixture.net.node.getSequencer().updateConfig({minTxsPerBlock:1,buildCheckpointIfEmpty:false});await drainDevnetCheckpoints(fixture.net);
+  mark('claim-plugin-deposit-through-ui');await action('#pluginClaim');await success();
+  assert.equal(BigInt(await escrowRead('balance',fixture.author.address)),1000000n);
+  report.deposit={amount:'1000000',asset:'USDC',claimedThroughBrowser:true};
+  const initialEth=await fixture.provider.getBalance(fixture.signer.address);
   mark('post-through-composer');await page.locator('#msgText').fill(text);await page.locator('#postBtn').click();
-  await page.waitForFunction(()=>window.__walletTestPending||document.querySelector('#postStatus .error'),{},{timeout:120000});
-  const request=await page.evaluate(()=>window.__walletTestPending);
-  const postId=validatePluginWalletRequest({request,descriptor:fixture.descriptor,account:fixture.signer.address,text});
-  report.postId=postId;
+  await page.waitForFunction(()=>document.getElementById('postStatus')?.textContent.includes('Message included.')||document.querySelector('#postStatus .error'),{},{timeout:120000});
+  assert.equal(await page.locator('#postStatus .error').count(),0,await page.locator('#postStatus').innerText());
   assert.equal(BigInt(await read('get_post_count')),initialCount+1n);
+  const postId=String(await escrowRead('request_at',0));report.postId=postId;
   const id=Fr.fromString(postId);
   assert.equal(unpackText((await read('get_post',id)).map(String),Number(await read('get_post_length',id))),text);
-  mark('reject-plugin-payment');await walletPage.getByTestId('confirm-footer-cancel-button').click();
-  await page.locator('#postStatus .error').waitFor();
-  // Three service polling periods after rejection; independently inspect chain and provider.
-  await pause(6500);
-  assert.equal((await payments.payments(postId,messageHash(text))).amount,0n);
-  assert.equal(BigInt((await read('get_plugin_request',id))[2]),0n);
-  assert.equal(await fixture.provider.getBalance(fixture.signer.address),initialBalance);
-  assert.equal((await ledger()).filter(x=>!priorIds.has(x.id)&&x.type==='CHARGE').length,0);
-  report.rejection={noPayment:true,noReply:true,noVeniceCharge:true,observationMs:6500};
-  mark('retry-same-post-payment');await page.locator('#postBtn').click();
-  await page.waitForFunction(()=>window.__walletTestPending,{},{timeout:30000});
-  const retry=await page.evaluate(()=>window.__walletTestPending);
-  assert.equal(validatePluginWalletRequest({request:retry,descriptor:fixture.descriptor,account:fixture.signer.address,text}),postId);
-  assert.equal(BigInt(await read('get_post_count')),initialCount+1n);
-  mark('approve-plugin-payment');await walletPage.getByTestId('confirm-footer-button').click();
-  await page.locator('#postStatus .success').filter({hasText:'Message included.'}).waitFor({timeout:60000});
-  const paid=await payments.queryFilter(payments.filters.PluginPaid(postId,fixture.signer.address));assert.equal(paid.length,1);
-  const receipt=await fixture.provider.getTransactionReceipt(paid[0].transactionHash);assert.equal(receipt.status,1);
-  const tx=await fixture.provider.getTransaction(receipt.hash);assert.equal(tx.from.toLowerCase(),fixture.signer.address.toLowerCase());assert.equal(tx.value,BigInt(fixture.descriptor.payment.amountWei));
-  report.payment={transactionHash:receipt.hash,amountWei:String(tx.value),payer:tx.from,blockNumber:receipt.blockNumber};
+  assert.equal(await page.evaluate(()=>window.__walletTestPending),null);
+  assert.equal(await fixture.provider.getBalance(fixture.signer.address),initialEth);
+  report.post={noEthereumPayment:true,authorizedInAztec:true};
   mark('wait-for-live-bok-reply');
   await page.locator('#billboardFeed').getByText(/Bot reply/).waitFor({timeout:240000});
   const replyId=(await read('get_plugin_request',id))[2];assert.notEqual(BigInt(replyId),0n);
@@ -122,8 +132,29 @@ export async function runWalletHarness({fixture,author,directory,origin,onProgre
   const normalize=value=>value.replace(/\s+/g,' ').trim();
   assert.equal(normalize(await content.innerText()),normalize(reply));
   report.reply.visible=true;
-  await page.screenshot({path:path.join(directory,'browser-reply.png'),fullPage:true});report.passed=true;mark('passed');
- }catch(error){report.error='Wallet harness failed at '+report.stage+' ('+error.name+')';report.callSite=String(error.stack).split('\n').find(line=>line.includes('wallet-harness.mjs:'));if(page)report.uiStatus=await page.locator('#setupStatus, #postStatus').allTextContents().catch(()=>[]);throw new Error(report.error);
+  const inv=await escrowRead('invocation',id);assert.equal(Number(inv[1]),3);assert.equal(BigInt(inv[3]),0n);
+  const charged=BigInt(inv[4]),balance=BigInt(await escrowRead('balance',fixture.author.address));
+  report.settlement={chargedMicroUSDC:String(charged),remainingMicroUSDC:String(balance),reserved:'0'};
+  const invoiced=charges.reduce((sum,c)=>{assert(typeof c.amount==='number'&&Number.isFinite(c.amount)&&c.amount<0,'Invalid Venice debit');return sum+BigInt(Math.ceil(-c.amount*1e6-1e-9));},0n);
+  assert.equal(charged,invoiced,'Escrow charge must equal live Venice invoices rounded per call to micro-USDC');
+  assert(charged>0n);assert.equal(balance+charged,1000000n);assert.equal(BigInt(await escrowRead('earned',fixture.operator.address)),charged);
+  report.settlement.providerMicroUSDC=String(invoiced);
+  await action('#pluginBalance');await success();
+  await page.screenshot({path:path.join(directory,'browser-reply.png'),fullPage:true});
+  mark('withdraw-plugin-balance-through-ui');await page.locator('#pluginAmount').fill((Number(balance)/1e6).toFixed(6));await action('#pluginWithdraw');await success();
+  assert.equal(BigInt(await escrowRead('balance',fixture.author.address)),0n);
+  const withdrawal=await page.evaluate(receiver=>Object.keys(localStorage).filter(k=>k.startsWith('plugin-account:'+receiver+':')).map(k=>JSON.parse(localStorage[k]).withdrawal)[0],fixture.descriptor.scope.receiver);
+  const hash=(await import('@aztec/stdlib/tx')).TxHash.fromString(withdrawal.txHash);
+  const effect=await fixture.net.node.getTxEffect(hash),leaf=effect.data.l2ToL1Msgs.find(x=>!x.isZero());
+  const settledExit=await settleC01ApplicationMessage({node:fixture.net.node,config:fixture.net.config,dateProvider:fixture.net.dateProvider,l1Client:fixture.net.deployment.l1Client,directory,rollupAddress:(await fixture.net.node.getNodeInfo()).l1ContractAddresses.rollupAddress,txHash:hash,expectedLeaf:leaf,kind:'exit',applicationProofs:report.applicationProofs});
+  const exitWitness=settledExit.witness,exitArgs=[withdrawal.recipient,BigInt(withdrawal.amount),withdrawal.nonce,BigInt(exitWitness.epochNumber),BigInt(exitWitness.numCheckpointsInEpoch),exitWitness.leafIndex,exitWitness.siblingPath.toBufferArray().map(b=>'0x'+b.toString('hex'))];
+  await assert.rejects(fixture.escrowPortal.withdraw.staticCall('0x'+'55'.repeat(20),...exitArgs.slice(1)),'Outbox proof must bind recipient');
+  mark('redeem-plugin-usdc-through-wallet');await action('#pluginRedeem');await approve('withdraw',await fixture.escrowPortal.getAddress());await success();
+  assert.equal(await fixture.token.balanceOf(fixture.signer.address),initialTokens-charged);
+  assert.equal(await fixture.token.balanceOf(await fixture.escrowPortal.getAddress()),charged);
+  await assert.rejects(fixture.escrowPortal.withdraw.staticCall(...exitArgs),'Outbox proof must be single-use');
+  report.withdrawal={returnedMicroUSDC:String(balance),throughBrowser:true,wrongRecipientRejected:true,replayRejected:true};report.passed=true;mark('passed');
+ }catch(error){report.error='Wallet harness failed at '+report.stage+' ('+error.name+')';report.failureMessage=String(error.message).slice(0,2000);report.callSite=String(error.stack).split('\n').find(line=>line.includes('wallet-harness.mjs:'));if(page)report.uiStatus=await page.locator('#setupStatus, #postStatus, #pluginStatus').allTextContents().catch(()=>[]);throw new Error(report.error);
  }finally{
   clearTimeout(deadline);signal?.removeEventListener('abort',cancel);
   try{await context?.close();}catch(error){report.passed=false;report.cleanupError=error.message;throw error;}

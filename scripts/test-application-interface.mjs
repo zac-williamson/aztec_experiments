@@ -1,5 +1,5 @@
 import {mentions,handleField,packText} from '../plugins/protocol.mjs';
-import {postWithPlugins,prepareInvocation} from '../plugins/client.mjs';
+import {prepareInvocation} from '../plugins/client.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -64,18 +64,15 @@ test('deployment settings export uses the captured manifest, never a later edite
 test('posting adapter connects portable plugin APIs without exposing private handles',async()=>{
  const f=fixture(),values=new Map(),id='0x'+'1'.padStart(64,'0'),receiver='0x'+'2'.padStart(64,'0');
  const scope={chainId:'31337',rollupVersion:'1',rollupAddress:'0x'+'12'.repeat(20),boardAddress:id};
- const descriptor={protocol:'billboard-plugin/v1',scope:{...scope,receiver},description:'bok',payment:{protocol:'ethereum-eth/v1',chainId:'31337',contractAddress:'0x'+'34'.repeat(20),amountWei:'100'}};
+ const descriptor={protocol:'billboard-plugin/v2',scope:{...scope,receiver},description:'bok',funding:{protocol:'aztec-escrow-usdc/v1',portalAddress:'0x'+'34'.repeat(20),tokenAddress:'0x'+'56'.repeat(20)}};
  f.ctx._getPublicConfig=()=>({network:scope,board:{contractAddress:id}});
  f.ctx.localStorage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)};
  f.ctx.getBrowserSigner=async()=>({provider:'wallet'});f.ctx.window.__aztec.Fr={fromString:x=>x};
  const url=packText('https://example.test/descriptor',8);
  f.setResult({handles:{address:id,contract:{methods:{get_plugin:handle=>{assert.equal(handle,handleField('bok'));return {simulate:async()=>({result:[receiver,true,url.fields,url.length]})};}}}}});
  await f.api.run('status');f.setResult({postId:id,lastL2TxHash:'post-tx'});
- let paid=0;
- f.ctx.window.BillboardPlugins={mentions,postWithPlugins,prepareInvocation:args=>prepareInvocation({...args,loadDescriptor:async()=>descriptor}),payForInvocation:async args=>{
-   paid++;assert.equal(args.postId,id);assert.equal(args.descriptor,descriptor);assert.equal(args.text,'@bok help');
-   await args.onSubmitted('payment-tx');assert([...values.values()].some(x=>x.includes('payment-tx')));return {transactionHash:'payment-tx'};
- }};
+ f.ctx.getBrowserSigner=async()=>{throw Error('Posting must not request an Ethereum signature');};
+ f.ctx.window.BillboardPlugins={mentions,prepareInvocation:args=>prepareInvocation({...args,loadDescriptor:async()=>descriptor})};
  const result=await f.api.run('post',{message:'@bok help'});
- assert.equal(f.calls.at(-1).input.pluginHandle,handleField('bok'));assert.equal(paid,1);assert.equal(values.size,0);assert.equal(result.postId,id);assert(!('handles' in result));
+ assert.equal(f.calls.at(-1).input.pluginHandle,handleField('bok'));assert.equal(values.size,0);assert.equal(result.postId,id);assert(!('handles' in result));
 });
