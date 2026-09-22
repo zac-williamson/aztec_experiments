@@ -98,3 +98,34 @@ scripted integration evidence only.
 Production hosting must serve `plugins.js` and allow the board's explicitly
 configured descriptor service origin in the hosting generator's `origins` list.
 Keep model/provider credentials exclusively in the hosted service environment.
+
+### Automated real-wallet acceptance
+
+`npm run test:plugins:wallet` owns a fresh local chain, an isolated Chromium
+profile, and the pinned MetaMask 13.49.0 extension. The extension archive must
+exist at `.build/metamask-13.49.0/metamask-chrome-13.49.0.zip`; its checksum is
+verified before loading. No wallet provider, application engine, payment,
+Venice response, or GitHub result is mocked.
+
+The scenario imports the fixture's encrypted author backup through the real
+page, connects MetaMask on chain 31337, clicks the ordinary composer, rejects
+the first payment, and checks no chain payment/reply/provider charge. It then
+retries the same saved post, validates the exact requested recipient/amount/
+message commitment, approves through MetaMask, and checks the canonical payment,
+real Kimi/GitHub reply, and rendered feed. The fixture pre-funds board collateral
+and private transaction fees; this scenario qualifies posting/plugin payment,
+not the separate initial-deposit UI journey.
+
+Onboarding pauses for explicit acceptance of MetaMask's terms. The operator
+records that approval by writing `approved` to `accept-wallet-terms` inside the
+printed `BROWSER_DIRECTORY`. This is a one-use marker for this fresh profile;
+never generate it without the operator's consent. Once approved, transaction
+rejection/confirmation and result verification are automated. Nothing accesses
+the user's everyday browser profile. Local ETH is valueless; Venice calls use
+the configured real credits. The selected provider wallet should not be used
+concurrently elsewhere because this test attributes charges by ledger changes.
+
+`browser-result.json` contains observations and `browser-reply.png` captures
+the final page when successful. A passing result requires normal cleanup and
+exit code zero. Browser-wallet acceptance remains pending until a complete run
+produces that evidence.

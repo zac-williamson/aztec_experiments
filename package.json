@@ -56,7 +56,8 @@
     "bot:serve": "NODE_BACKEND=js node --env-file=plugins/.env plugins/main.mjs",
     "bot:venice": "node --env-file=plugins/.env plugins/venice-cli.mjs",
     "test:plugins:live": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/live.mjs",
-    "dev:plugins:browser": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/browser.mjs"
+    "dev:plugins:browser": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/browser.mjs",
+    "test:plugins:wallet": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/browser.mjs --test-wallet"
   },
   "overrides": {
     "systeminformation": "5.31.7",

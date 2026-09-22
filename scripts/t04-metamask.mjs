@@ -31,9 +31,10 @@ export function unpackMetaMask(directory){
  const extension=path.join(directory,'extension');execFileSync('/usr/bin/unzip',['-q',archive,'-d',extension]);
  assert.equal(JSON.parse(fs.readFileSync(path.join(extension,'manifest.json'))).version,'13.49.0.0');return extension;
 }
-export async function onboardMetaMask(context,mnemonic,password,extensionId,mark){
+export async function onboardMetaMask(context,mnemonic,password,extensionId,mark,beforeAcceptTerms=async()=>{}){
  const onboarding=await context.newPage();onboarding.setDefaultTimeout(10000);
  await onboarding.goto('chrome-extension://'+extensionId+'/home.html');
+ await beforeAcceptTerms(onboarding);
  mark('wallet-import-method');await onboarding.getByTestId('onboarding-import-wallet').click();
  await onboarding.getByRole('button',{name:'Import using Secret Recovery Phrase',exact:true}).click();
  mark('wallet-import');const words=mnemonic.split(' '),first=onboarding.getByTestId('srp-input-import__srp-note');
