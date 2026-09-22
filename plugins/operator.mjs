@@ -56,7 +56,7 @@ export async function operatorCommand({command,config,statePath,actor,ethereumKe
   const from=account.address;
   if(command==='fees')return {publicFeeJuice:String(await getFeeJuiceBalance(from,node)),account:String(from)};
   if(['deploy-escrow','bind','register','withdraw-earnings'].includes(command)&&await getFeeJuiceBalance(from,node)===0n)throw Error('Fund the actor public Fee Juice account before submitting Aztec operations');
-  const wait={timeout:config.development?180:7200,waitForStatus:config.development?TxStatus.CHECKPOINTED:TxStatus.FINALIZED};
+  const wait={timeout:180,waitForStatus:TxStatus.CHECKPOINTED};
   const send=async(name,interaction,fee)=>{currentOperation=name;try{const old=store.read().operations[name];if(old){if(old.actor!==actor.address)throw Error('Operation belongs to another actor');const receipt=await node.getTxReceipt(TxHash.fromString(old.hash));if(receipt.status==='dropped'){await node.sendTx(Tx.fromBuffer(Buffer.from(old.raw,'hex')));}return await waitForTx(node,TxHash.fromString(old.hash),wait);}return (await interaction.send({from,wait,...(fee?{fee}: {})})).receipt;}finally{currentOperation=null;}};
   if(command==='claim-fees'){
    if(!claim)throw Error('Provide --claim with the private fee bridge receipt JSON path');
@@ -94,7 +94,7 @@ export async function operatorCommand({command,config,statePath,actor,ethereumKe
   if(String(await portal.escrow())!==escrowAddress||(await portal.token()).toLowerCase()!==config.tokenAddress.toLowerCase())throw Error('Portal identity mismatch');
   if(command==='bind'){await send(command,escrow.methods.set_portal(EthAddress.fromString(portalAddress)));return {bound:true};}
   if(command==='activate'){
-   if(!await portal.active())await ethSend(command,await portal.activate.populateTransaction(...await outboxArguments(node,TxHash.fromString(store.read().operations.bind.hash))));return {active:true};
+   if(!await portal.active())await ethSend(command,await portal.activate.populateTransaction(...await outboxArguments(node,TxHash.fromString(store.read().operations.bind.hash),{requireFinalized:!config.development})));return {active:true};
   }
   const descriptor=validateDescriptor({protocol:API_VERSION,scope:{chainId:chain,rollupVersion:config.rollupVersion,rollupAddress:config.rollupAddress,boardAddress:config.boardAddress,receiver:escrowAddress},funding:{protocol:'aztec-escrow-usdc/v1',portalAddress,tokenAddress:config.tokenAddress},description:config.description||config.handle},{chainId:chain,rollupVersion:config.rollupVersion,rollupAddress:config.rollupAddress,boardAddress:config.boardAddress,receiver:escrowAddress});
   if(command==='register'){
@@ -116,7 +116,7 @@ export async function operatorCommand({command,config,statePath,actor,ethereumKe
   if(command==='redeem-earnings'){
    const w=store.read().withdrawal;if(!w)throw Error('No earnings withdrawal pending');
    const txHash=TxHash.fromString(store.read().operations['withdraw-'+w.nonce].hash);
-   await ethSend('redeem-'+w.nonce,await portal.withdraw.populateTransaction(w.recipient,parseUnits(w.amount,6),w.nonce,...await outboxArguments(node,txHash)));
+   await ethSend('redeem-'+w.nonce,await portal.withdraw.populateTransaction(w.recipient,parseUnits(w.amount,6),w.nonce,...await outboxArguments(node,txHash,{requireFinalized:!config.development})));
    await store.write({...store.read(),withdrawal:null});return {redeemedUSDC:w.amount};
   }
   if(command==='config')return {descriptor,nodeUrl:config.nodeUrl,ethereumUrl:config.ethereumUrl,development:!!config.development,host:'127.0.0.1',port:8787,repository:config.repository,operatorFile:config.operatorFile};

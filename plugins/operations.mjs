@@ -15,7 +15,12 @@ export async function recordedTransaction({store,name,identity,prepare,broadcast
  await broadcast(record);
  const receipt=await wait(record);return {record,receipt};
 }
-export async function outboxArguments(node,txHash){
+export async function outboxArguments(node,txHash,{requireFinalized=true}={}){
+ if(requireFinalized){
+  const receipt=await node.getTxReceipt(txHash);
+  if(receipt.executionResult==='reverted'||receipt.status==='dropped')throw Error('Portal source transaction failed');
+  if(receipt.status!=='finalized'||receipt.executionResult!=='success')throw Error('Portal message awaits network finality; run this command again later');
+ }
  const effect=await node.getTxEffect(txHash),messages=effect?.data.l2ToL1Msgs.filter(x=>!x.isZero());
  if(messages?.length!==1)throw Error('Expected one portal message');
  const witness=await node.getL2ToL1MembershipWitness(txHash,messages[0]);
