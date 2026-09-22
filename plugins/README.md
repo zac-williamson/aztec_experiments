@@ -35,7 +35,8 @@ beyond the quoted bound cannot increase the user's reserved liability.
 Set `VENICE_WALLET_PRIVATE_KEY` only in ignored `plugins/.env`, and fund that wallet
 with Base USDC. `VENICE_AUTO_TOP_UP=true` replenishes operator Venice credits;
 `VENICE_MAX_TOP_UP_USD` caps each purchase. User escrow and provider treasury remain
-separate: this does not automate a bridge/swap of earnings to Base. Default model:
+separate. The standalone treasury command moves redeemed earnings to Base using
+Circle CCTP forwarding; see DEPLOYMENT.md. Default model:
 `kimi-k2-5`. A post may use `@bok --model=MODEL_ID`; only the service parses this.
 GitHub uses `GITHUB_TOKEN` and `PLUGIN_REPOSITORY`; writes require
 `PLUGIN_GITHUB_WRITES=true`. Draft PRs are default; merge/deploy/shell execution are

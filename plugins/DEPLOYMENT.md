@@ -37,16 +37,18 @@ npm run plugin:operator -- activate CONFIG.json STATE.json
 npm run plugin:operator -- config CONFIG.json STATE.json > SERVICE.json
 ```
 
-Activation requires actual Outbox settlement; if it is not yet available, rerun
+Setup sends return after checkpoint inclusion. Public activation/redemption require
+a successful finalized Aztec receipt and actual Outbox settlement. If it is not yet available, rerun
 `activate` later. No development root injection exists in this command. A dropped
 or reverted transaction is not treated as success. Reverted operations require
 inspection and a new operation state; never delete pending financial records.
 
 The generated service config points to the operator's private file. Keep it local.
-Start `npm run bot:serve -- /absolute/path/SERVICE.json`. Publish its descriptor
-behind an existing HTTPS reverse proxy, and add that exact HTTPS origin to the
-application hosting CSP using the ordinary hosting configuration generator.
-The service binds loopback by default; only descriptor and health routes are public.
+Start `npm run bot:serve -- /absolute/path/SERVICE.json`. Publish the `descriptor`
+object from SERVICE.json as a static JSON file on an existing HTTPS site. This
+needs no reverse proxy or public inbound access to the operator. Add that HTTPS
+origin to the application CSP when it differs from the frontend origin. The local
+service binds loopback; `/health` reports active jobs and the latest outcome.
 Then register its pinned descriptor with the board:
 
 ```
@@ -75,7 +77,7 @@ remain private. It is operational recovery data, not a service billing database.
 
 Venice is paid separately from the operator's Base USDC wallet configured in
 `plugins/.env`. `VENICE_AUTO_TOP_UP=true` buys credits within the configured per-top-up
-limit. Replenish that wallet from earned revenue through your usual bridge; no
+limit. Replenish that wallet from redeemed earnings with the CCTP command below; no
 bridge or swap is silently performed by the bot. Operator fees are not charged as
 LLM token usage. Monitor Fee Juice, provider credits, and stopped requests.
 
@@ -86,3 +88,49 @@ scanned requests per page. It distinguishes replies, cancellation, expiry, known
 failure and uncertain provider calls. Cancellation is available only with no
 outstanding reservation. Expired reservations can be released by anyone.
 No retry of an uncertain paid request occurs. A crashed execution is not resumed.
+
+## Operator earnings to Base
+
+`node plugins/treasury.mjs CONFIG TRANSFER_JOURNAL` moves an explicit batch of
+operator-owned native USDC from Ethereum to Base through Circle CCTP v2 forwarding.
+This command does not access the escrow, user balances, or request execution.
+Redeem operator earnings first; the Ethereum wallet pays source gas. Circle pays
+destination gas from the bounded USDC forwarding fee. No additional service runs.
+
+Configuration contains `network` (`testnet` for Sepolia/Base Sepolia, or `mainnet`
+for Ethereum/Base), `ethereumUrl`, `baseUrl`, `ethereumWalletFile` (private JSON
+containing `privateKey`), `recipient`, `amountUSDC`, and `maxFeeUSDC`. For live Venice,
+recipient is the public address of `VENICE_WALLET_PRIVATE_KEY`. Testnet USDC cannot
+fund mainnet Venice credits. The two RPC chain IDs are checked before signing.
+
+Use one new journal path per intended transfer. Resume the same path while the
+command reports `awaiting-*`; it reuses the exact signed source transactions.
+Never delete the journal to retry a transfer. Run one transaction command at a
+time per Ethereum wallet. A fresh forwarding quote is bounded by `maxFeeUSDC`
+before signing the burn; a signed burn is never changed automatically.
+
+Completion requires the source burn to match the configured route and amount,
+the destination nonce/body to match Circle's attested message, exact native-USDC
+mint and fee events, and destination finality. Unknown future standard-transfer
+fee schedules and ambiguous batched receipts are rejected. The current reference
+uses standard transfers; it does not trade assets or choose an alternative bridge.
+
+Protocol references: [Circle forwarding](https://developers.circle.com/cctp/concepts/forwarding-service),
+[contract registry](https://developers.circle.com/cctp/references/contract-addresses),
+[message encoding](https://github.com/circlefin/evm-cctp-contracts/blob/a92a2b4e7e6ef99bf0b05dca71780f5ec190e729/src/messages/v2/MessageV2.sol).
+
+## Local persistent operator installed for this deployment
+
+The macOS LaunchAgent `local.aztec.bok` runs pinned Node with the private `.env`
+file, this checkout's `plugins/main.mjs`, and `.build/public-plugin/service.json`.
+Its plist is at `~/Library/LaunchAgents/local.aztec.bok.plist`; it contains paths,
+not credentials. It starts at login and restarts after an unexpected exit. Logs
+are in the private `.build/public-plugin/service*.log` files. No remote instance
+was provisioned. The machine must remain online for the operator to process work.
+
+Check `http://127.0.0.1:8787/health` and `launchctl print gui/$(id -u)/local.aztec.bok`.
+Before a planned stop, wait for `active: 0`, then run
+`launchctl bootout gui/$(id -u)/local.aztec.bok`. Start again with
+`launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.aztec.bok.plist`.
+Interrupted invocations follow the documented on-chain expiry rules; the service
+never repeats an uncertain provider call on restart.
