@@ -69,7 +69,9 @@ matching website/config/CSP and distribution routing before removing the VPC ori
 
 The current SSO role's extra deployment rights are described by
 `deployment-permissions.json`. These are additional to EC2FullAccess and
-ReadOnlyAccess. No root credentials or full administrator policy is required.
+ReadOnlyAccess. The publishing role itself needs ReadOnlyAccess: permissions from
+separate SSO roles do not combine. CloudFront CreateVpcOrigin also authorizes
+TagResource. No root credentials or full administrator policy is required.
 
 ## Qualification and health
 
