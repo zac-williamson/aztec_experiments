@@ -17,10 +17,10 @@ export async function retainPreviewCheckpoint({ethereumUrl,descriptor}){
 }
 
 /** Serve the existing reader against the live local chains; no synthetic posts. */
-export async function startBoardWeb({fixture,port=8788,privateFee=null,browserRpc,connectOrigins=[]}){
+export async function startBoardWeb({fixture,port=8788,privateFee=null,browserRpc,connectOrigins=[],publicConfig}){
  const origin=`http://localhost:${port}`,root=path.resolve('apps/dist');
  const scope=fixture.descriptor.scope;
- const config={schemaVersion:1,network:{nodeUrl:origin+'/node',ethRpcUrl:origin+'/eth',chainId:scope.chainId,
+ const config=publicConfig??{schemaVersion:1,network:{nodeUrl:origin+'/node',ethRpcUrl:origin+'/eth',chainId:scope.chainId,
    rollupVersion:scope.rollupVersion,rollupAddress:scope.rollupAddress},board:{contractAddress:scope.boardAddress,portalAddress:fixture.portalAddress},privateFee};
  const server=http.createServer(async(req,res)=>{
   try{

@@ -22,6 +22,10 @@ import {provingEnabledForNode} from '../shared/proving-policy.mjs';
 /** Composition root: only this module knows which implementations are selected. */
 export async function runHostedService({config,env=process.env,onError=error=>console.error('Plugin action failed:',error.message)}) {
   if(!env.VENICE_WALLET_PRIVATE_KEY)throw Error('Configure VENICE_WALLET_PRIVATE_KEY locally before starting the service');
+  const repository=env.PLUGIN_REPOSITORY||config.repository,api=githubApi({token:env.GITHUB_TOKEN}),allowWrites=env.PLUGIN_GITHUB_WRITES==='true';
+  if(allowWrites&&!env.GITHUB_TOKEN)throw Error('Configure GITHUB_TOKEN before enabling repository writes');
+  const toolbox=githubToolbox({repository,api,allowWrites,draftPr:env.PLUGIN_GITHUB_DRAFT!=='false'});
+  await api('GET','/repos/'+repository);
   if(config.operatorFile)config={...config,operator:JSON.parse(await fs.readFile(config.operatorFile,'utf8'))};
   const descriptor=validateDescriptor(config.descriptor,config.descriptor.scope);
   const node=createAztecNodeClient(config.nodeUrl),info=await node.getNodeInfo();
@@ -40,7 +44,7 @@ export async function runHostedService({config,env=process.env,onError=error=>co
     const providerAdapter=veniceMeteredProvider({client:veniceClient({privateKey:env.VENICE_WALLET_PRIVATE_KEY}),model:env.VENICE_MODEL||undefined,autoTopUp:env.VENICE_AUTO_TOP_UP==='true',maxTopUpUsd:Number(env.VENICE_MAX_TOP_UP_USD||5)});
     server=await startEscrowService({descriptor,escrow,board,host:config.host??'127.0.0.1',port:config.port??8787,onError,run:async(postId,text)=>{
       const model=meteredModel({provider:providerAdapter,escrow,postId});
-      const agent=bokRunner({runner:createAgent({model,toolbox:githubToolbox({repository:env.PLUGIN_REPOSITORY||config.repository,api:githubApi({token:env.GITHUB_TOKEN}),allowWrites:env.PLUGIN_GITHUB_WRITES==='true',draftPr:env.PLUGIN_GITHUB_DRAFT!=='false'}),instructions:'You are bok, the development assistant for this board. Work on the configured repository and answer the explicit request.'})});
+      const agent=bokRunner({runner:createAgent({model,toolbox,instructions:'You are bok, the development assistant for this board. Work on the configured repository and answer the explicit request.'})});
       try {
       const result=await agent.run({id:postId,postId,text});
       const current=await board.readRequest(postId);
