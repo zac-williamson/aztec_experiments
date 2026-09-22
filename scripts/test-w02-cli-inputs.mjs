@@ -23,3 +23,12 @@ test('escrow claim-secret encryption separates accounts sharing a key with diffe
   await assert.rejects(createClaimSecretStore(directory,field(7),field(2)).load(scope,record.secretHash),/authentication/);
   assert.deepEqual(await first.load(scope,record.secretHash),record);
 });
+test('explicit independent signing key retains its scalar field and derived default stays absent',t=>{
+ const scalar=field(21888242871839275222246405745257275088548364400416034343698204186575808495618n);
+ const file=fixture(t,{secretKey:field(7),signingKey:scalar});
+ assert.equal(loadCliWalletInputs({action:'deploy',aztecWalletPath:file}).aztecWallet.signingKey,scalar);
+ const legacy=fixture(t,{secretKey:field(7)});assert.equal(loadCliWalletInputs({action:'deploy',aztecWalletPath:legacy}).aztecWallet.signingKey,undefined);
+});
+for(const signingKey of [null,'bad',field(0),field(21888242871839275222246405745257275088696311157297823662689037894645226208583n)])test('invalid explicit signing key rejected '+String(signingKey),t=>{
+ const file=fixture(t,{secretKey:field(7),signingKey});assert.throws(()=>loadCliWalletInputs({action:'deploy',aztecWalletPath:file}),/signing/);
+});

@@ -620,7 +620,7 @@
     // ============================================================
     log('Step 1: Deriving account keys...', 'info');
     const secretKey = a.Fr.fromHexString(secretKeyHex);
-    const signingKey = a.deriveSigningKey(secretKey);
+    const signingKey = aztecWallet.signingKey === undefined ? a.deriveSigningKey(secretKey) : a.GrumpkinScalar.fromString(aztecWallet.signingKey);
     const accountContract = new a.SchnorrInitializerlessAccountContract(signingKey);
     const { publicKeys } = await a.deriveKeys(secretKey);
     const accountArtifact = await accountContract.getContractArtifact();
@@ -1788,7 +1788,7 @@
       if(censorWalletJson.secretKey.toLowerCase()!==secretKeyHex.toLowerCase()||walletSalt(censorWalletJson.salt)!==saltVal)throw new Error('Load the moderator wallet as the active wallet before a moderator action.');
       if(!transactionJournal)throw Object.assign(new Error('Durable moderator transaction journal is required.'),{code:'BB_JOURNAL_INVALID'});
       const censorSk = a.Fr.fromHexString(censorWalletJson.secretKey);
-      const censorSigningKey = a.deriveSigningKey(censorSk);
+      const censorSigningKey = censorWalletJson.signingKey === undefined ? a.deriveSigningKey(censorSk) : a.GrumpkinScalar.fromString(censorWalletJson.signingKey);
       const censorAccountContract = new a.SchnorrInitializerlessAccountContract(censorSigningKey);
       const { publicKeys: censorPublicKeys } = await a.deriveKeys(censorSk);
       const censorAccountArtifact = await censorAccountContract.getContractArtifact();
@@ -1800,6 +1800,7 @@
       });
       const censorPartialAddress = await a.computePartialAddress(censorInstance);
       const censorAddress = censorInstance.address;
+      if(censorAddress.toString()!==instance.address.toString())throw new Error('Load the moderator wallet as the active wallet before a moderator action.');
       log('  Censor address: ' + censorAddress.toString(), 'info');
 
       log('  Registering censor account with PXE...', 'info');

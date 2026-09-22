@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 const FR = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+const GRUMPKIN = 21888242871839275222246405745257275088696311157297823662689037894645226208583n;
 const SECP = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141n;
 function key(value, maximum, label) {
   if (typeof value !== 'string' || !/^0x[0-9a-fA-F]{64}$/.test(value) || BigInt(value) <= 0n || BigInt(value) >= maximum) throw new Error(`Invalid ${label} key`);
@@ -31,12 +32,13 @@ export function loadCliWalletInputs({ action, explicitCensorWallet, censorWallet
     if (!wallet || typeof wallet !== 'object' || Array.isArray(wallet)) throw new Error(`Invalid ${label} wallet`);
     if (ethereum) return Object.freeze({ ...wallet, privateKey: key(wallet.privateKey, SECP, 'Ethereum') });
     const secretKey = key(wallet.secretKey, FR, label);
+    const signingKey = wallet.signingKey === undefined ? undefined : key(wallet.signingKey, GRUMPKIN, 'signing');
     const salt = wallet.salt ?? 0;
     if (!((typeof salt === 'number' && Number.isSafeInteger(salt) && salt >= 0) ||
         (typeof salt === 'string' && /^(?:0x[0-9a-fA-F]{1,64}|0|[1-9][0-9]{0,76})$/.test(salt)))) throw new Error('Invalid wallet salt');
     const exactSalt = BigInt(salt);
     if (exactSalt >= FR) throw new Error('Invalid wallet salt');
-    return Object.freeze({ ...wallet, secretKey, salt: '0x' + exactSalt.toString(16).padStart(64, '0') });
+    return Object.freeze({ ...wallet, secretKey, ...(signingKey === undefined ? {} : {signingKey}), salt: '0x' + exactSalt.toString(16).padStart(64, '0') });
   }
   if (censorOnly) {
     const censorWallet = readWallet(censorWalletPath, 'Censor');
