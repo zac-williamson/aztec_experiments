@@ -688,7 +688,7 @@ function showPage(n) {
   if (progress) progress.textContent = (n + 1) + ' / ' + _pages.length;
   if (next) {
     const p = _pages[n];
-    next.style.display = ''; // restore (page 0 may hide it)
+    next.style.display = p?.manual ? 'none' : ''; // Manual steps advance only through their own completion callback.
     if (p && p.label) {
       next.textContent = p.label + (n < _pages.length - 1 ? ' \u2192' : '');
       next.disabled = false;
@@ -718,6 +718,7 @@ function prevPage() {
 
 function doNavAction() {
   const p = _pages[_currentPage];
+  if (p?.manual) return;
   if (!p || !p.action) { nextPage(); return; }
   const btn = document.getElementById('navNext');
   const origText = btn.textContent;
@@ -754,7 +755,7 @@ function doNavAction() {
     })
     .catch(e => {
       if (workingDiv && workingDiv.parentNode) workingDiv.remove();
-      if (p.statusId) log('ERROR: ' + 'operation did not complete; check configuration and recovery records', 'error', p.statusId);
+      if (p.statusId) log('ERROR: ' + (typeof publicOperationFailure==='function'?publicOperationFailure(e).message:'operation did not complete; check configuration and recovery records'), 'error', p.statusId);
       console.error('Application operation did not complete.');
       btn.disabled = false;
       btn.classList.remove('working');
@@ -791,7 +792,7 @@ function withBtn(btnId, busyText, statusId, action, autoAdvance) {
         }
       },
       (e) => {
-        if (statusId) log('ERROR: ' + 'operation did not complete; check configuration and recovery records', 'error', statusId);
+        if (statusId) log('ERROR: ' + (typeof publicOperationFailure==='function'?publicOperationFailure(e).message:'operation did not complete; check configuration and recovery records'), 'error', statusId);
         console.error('Application operation did not complete.');
       }
     )
@@ -40265,7 +40266,7 @@ async function connectEthereumAccount() {
       if(_autoPasskey && !window.walletState.aztec) {await _openPasskeyAccount();return;}
       throw new Error('An Ethereum wallet is already connected.');
     }
-    if(!window.ethereum)throw new Error('An Ethereum browser wallet is required.');
+    if(!window.ethereum)throw Object.assign(new Error('An Ethereum browser wallet is required.'),{code:'BB_BROWSER_WALLET_MISSING'});
     const generation=_walletGeneration;
     const connection={account:null};_connectingEth=connection;
     try {
@@ -40389,7 +40390,7 @@ function initWalletButtons(containerId,options={}) {
     <label>Repeat password when creating a backup <input type="password" id="wbPasswordConfirm" autocomplete="new-password" maxlength="1024"></label>
     <p>Keep your encrypted recovery file and password. Export again after each transaction or recovery update. Older files do not contain later requests. Losing your wallet key or a deposit claim secret can make funds unrecoverable. This browser holds decrypted keys while open; use a trusted device. Reload before changing wallets.</p>`;
   if(autoPasskey)document.body.appendChild(document.getElementById('wbAccountMenu'));
-  const handle=run=>async()=>{try{await run();}catch{walletMessage('Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.','error');}};
+  const handle=run=>async()=>{try{await run();}catch(error){walletMessage(error?.code==='BB_BROWSER_WALLET_MISSING'?publicOperationFailure(error).message:'Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.','error');}};
   document.getElementById('wbAztecBtn').addEventListener('click',()=>document.getElementById('wbAztecFile').click());
   document.getElementById('wbImportPasskeyBtn')?.addEventListener('click',handle(_importPasskeyAccount));
   document.getElementById('wbAztecGenBtn')?.addEventListener('click',handle(_generateAztecWallet));
@@ -41294,6 +41295,8 @@ function publicOperationFailure(error) {
     BB_BROWSER_PROVER_CONFIGURATION:'Browser proving setup could not be verified. Reload this page and check the locally hosted setup files.',
     OPFS_UNAVAILABLE:'Private browser file storage is unavailable or blocked. Wallet storage cannot start.',
     STORAGE_UNAVAILABLE:'Browser storage is unavailable or blocked. Preserve your recovery file before changing browser settings.',
+    BB_BROWSER_WALLET_MISSING:'No Ethereum wallet was found in this browser. Open this board in a browser with MetaMask or another Ethereum wallet installed, then connect again.',
+    BB_WALLET_NOT_READY:'Connect your Ethereum wallet and finish account setup before depositing.',
     READINESS_TIMEOUT:'Browser capability checks timed out. Retry before starting a wallet operation.',
     BB_CONNECTION_VERIFICATION_FAILED:'The portal, network or private fee contract could not be verified. Check the imported configuration before making a payment.',
     BB_FEE_CONFIG_REQUIRED:'Import private fee settings before depositing collateral or creating a new Aztec transaction. Recovery remains available.',

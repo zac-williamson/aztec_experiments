@@ -121,7 +121,7 @@ async function connectEthereumAccount() {
       if(_autoPasskey && !window.walletState.aztec) {await _openPasskeyAccount();return;}
       throw new Error('An Ethereum wallet is already connected.');
     }
-    if(!window.ethereum)throw new Error('An Ethereum browser wallet is required.');
+    if(!window.ethereum)throw Object.assign(new Error('An Ethereum browser wallet is required.'),{code:'BB_BROWSER_WALLET_MISSING'});
     const generation=_walletGeneration;
     const connection={account:null};_connectingEth=connection;
     try {

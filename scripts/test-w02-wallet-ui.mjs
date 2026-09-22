@@ -122,3 +122,9 @@ test('corrupt metadata fails closed, explicit import repairs it',async()=>{
  const f=passkeyFixture({saved:'invalid json'});await assert.rejects(f.context._loadEthBrowser());assert.equal(f.calls.length,0);
  await f.context._importPasskeyAccount();assert.equal(f.calls[0].create,false);assert.equal(JSON.parse(f.records.get(f.storageKey)).credentialId,'AQID');
 });
+
+test('absent browser wallet returns an actionable code without opening an account',async()=>{
+ const f=fixture();delete f.context.window.ethereum;
+ await assert.rejects(f.context._loadEthBrowser(),error=>error.code==='BB_BROWSER_WALLET_MISSING');
+ assert.equal(f.context.window.walletState.ethSigner,null);assert.equal(f.context.window.walletState.aztec,null);
+});

@@ -157,6 +157,8 @@ function publicOperationFailure(error) {
     BB_BROWSER_PROVER_CONFIGURATION:'Browser proving setup could not be verified. Reload this page and check the locally hosted setup files.',
     OPFS_UNAVAILABLE:'Private browser file storage is unavailable or blocked. Wallet storage cannot start.',
     STORAGE_UNAVAILABLE:'Browser storage is unavailable or blocked. Preserve your recovery file before changing browser settings.',
+    BB_BROWSER_WALLET_MISSING:'No Ethereum wallet was found in this browser. Open this board in a browser with MetaMask or another Ethereum wallet installed, then connect again.',
+    BB_WALLET_NOT_READY:'Connect your Ethereum wallet and finish account setup before depositing.',
     READINESS_TIMEOUT:'Browser capability checks timed out. Retry before starting a wallet operation.',
     BB_CONNECTION_VERIFICATION_FAILED:'The portal, network or private fee contract could not be verified. Check the imported configuration before making a payment.',
     BB_FEE_CONFIG_REQUIRED:'Import private fee settings before depositing collateral or creating a new Aztec transaction. Recovery remains available.',

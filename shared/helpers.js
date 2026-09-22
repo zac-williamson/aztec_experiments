@@ -32,7 +32,7 @@ function showPage(n) {
   if (progress) progress.textContent = (n + 1) + ' / ' + _pages.length;
   if (next) {
     const p = _pages[n];
-    next.style.display = ''; // restore (page 0 may hide it)
+    next.style.display = p?.manual ? 'none' : ''; // Manual steps advance only through their own completion callback.
     if (p && p.label) {
       next.textContent = p.label + (n < _pages.length - 1 ? ' \u2192' : '');
       next.disabled = false;
@@ -62,6 +62,7 @@ function prevPage() {
 
 function doNavAction() {
   const p = _pages[_currentPage];
+  if (p?.manual) return;
   if (!p || !p.action) { nextPage(); return; }
   const btn = document.getElementById('navNext');
   const origText = btn.textContent;
@@ -98,7 +99,7 @@ function doNavAction() {
     })
     .catch(e => {
       if (workingDiv && workingDiv.parentNode) workingDiv.remove();
-      if (p.statusId) log('ERROR: ' + 'operation did not complete; check configuration and recovery records', 'error', p.statusId);
+      if (p.statusId) log('ERROR: ' + (typeof publicOperationFailure==='function'?publicOperationFailure(e).message:'operation did not complete; check configuration and recovery records'), 'error', p.statusId);
       console.error('Application operation did not complete.');
       btn.disabled = false;
       btn.classList.remove('working');
@@ -135,7 +136,7 @@ function withBtn(btnId, busyText, statusId, action, autoAdvance) {
         }
       },
       (e) => {
-        if (statusId) log('ERROR: ' + 'operation did not complete; check configuration and recovery records', 'error', statusId);
+        if (statusId) log('ERROR: ' + (typeof publicOperationFailure==='function'?publicOperationFailure(e).message:'operation did not complete; check configuration and recovery records'), 'error', statusId);
         console.error('Application operation did not complete.');
       }
     )

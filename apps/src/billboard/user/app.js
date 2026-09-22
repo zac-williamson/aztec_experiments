@@ -68,7 +68,7 @@ async function recoverSavedEthereum(retry=false) {
 // Pagination
 // ============================================================
 initPages([
-  { label: 'Wallet Setup', busyText: 'Setting up...', statusId: 'setupStatus' },
+  { label: 'Wallet Setup', busyText: 'Setting up...', statusId: 'setupStatus', manual: true },
   { label: 'Deposit ETH', busyText: 'Processing...', statusId: 'depositStatus', action: doDepositPage, onShow: onShowDeposit },
   { label: 'Proceed to Withdraw', busyText: 'Checking eligibility...', statusId: 'proceedStatus', action: doProceedToWithdraw, onShow: onShowPost },
   { label: 'Withdraw on L2', busyText: 'Withdrawing...', statusId: 'withdrawStatus', action: doWithdrawPage, onShow: onShowWithdraw },
@@ -129,6 +129,7 @@ function onShowDeposit() {
 }
 
 async function doDepositPage() {
+  if(!application.connected || !_stateResult)throw Object.assign(new Error('Connect your wallet before depositing.'),{code:'BB_WALLET_NOT_READY'});
   async function claimExisting(extra) {
     try{return await callEngine('claim','depositStatus',extra);}
     catch(error){const safe=publicOperationFailure(error);log(safe.message,'error','depositStatus');throw safe;}
