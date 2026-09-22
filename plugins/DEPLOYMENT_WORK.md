@@ -66,3 +66,41 @@ is accepted. This worktree remains separate from the main application release gr
 
 Independent read-only review: escrow_review; no reviewer source edits.
 No deployment/push to the existing public board, or new rented infrastructure.
+
+September 23 checkpoint:
+- Committed invocation-budget/concurrency work 4a995a3 and optional explicit
+  operator signing-key CLI support 05cfec0. 43 focused CLI/deployment tests passed;
+  one overbroad test glob also selected a guarded browser executable and was
+  rejected before starting it. SDK/apps rebuilt from source normally.
+- New public board 0x2374be31ee9d56c4734a532da5f3aa03e70587e67c46abfbfc3e77df12b0b8da;
+  normal portal 0xb6815f47a27a31b3cad3fccd5ad1e44c65117592. Binding checkpointed;
+  activation awaits real finality. Initial gas shortage resolved using Google's
+  free faucet (0.05 Sepolia ETH), preserving the saved deployment transaction.
+- Plugin escrow 0x268b076e85d9f80a647f0b5de6e8ca18cf62e57f8ea7245a7d2e9e06e8421371;
+  portal 0xac6a96b63cd1299d2a167aaf565a6cef7b370790. Binding in progress.
+- Operator setup now returns at checkpoint; public activate/redeem explicitly
+  require finalized successful source receipts. Service reserves still finalize
+  before provider spend. Independent review: public_latency. 64 plugin tests pass.
+- Separate CCTP treasury command implemented/reviewed (provider_budget), with
+  finalized destination mint/fee/nonce verification. Real Sepolia source burn
+  0xdbb61c96376345d03693137548e673aad6c8dd5993ca38d58660ea10ae5229a2
+  passed source verification; forwarding completion remains pending.
+- Preparing a fresh browser author funded solely from the new faucet wallet.
+  Public browser qualification, local service installation, HTTPS publishing and
+  release integration remain open. No mainnet treasury transfer was made.
+
+- Final current-source native-proof browser read regression passed (vpAbpx):
+  paid Kimi/GitHub read, visible reply, 1458 micro-USDC billed and 998542 redeemed;
+  389 seconds, peak 3.10 GiB, owned process tree absent. Public evidence saved.
+- Persistent local LaunchAgent local.aztec.bok installed; authenticated repository
+  readiness and service health passed. No additional remote instance.
+- Public normal board portal activated. Fresh author received 2 test USDC,
+  0.02 test ETH and claimed private fee credit with a native proof. Normal board
+  collateral deposited via the existing user CLI; claim still pending.
+- Public browser review (plugin_fit) found missing admission fixture and resumed
+  journal acknowledgement; preparation now includes normal board admission,
+  and reply/redeem reconcile the saved L2 transaction through the application API.
+  Invoice assertions restored; qualification requires successful supervisor cleanup.
+- HTTPS publication needs refreshed existing message-board AWS login. Active SSO
+  compute role explicitly denies S3 upload; no policy bypass attempted. User was
+  asked to run aws login --profile message-board. No site publication claimed.
