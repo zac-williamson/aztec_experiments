@@ -13,3 +13,27 @@ test('health reports a failed job without exposing its private error detail',asy
  let state=1;const server=await startEscrowService({descriptor:{scope:{receiver:'r'}},escrow:{count:async()=>1,at:async()=>'p',invocation:async()=>({state}),start:async()=>{state=2;}},board:{readRequest:async()=>({receiver:'r',finalized:true,enabled:true,text:'hello'})},run:async()=>{throw Error('private provider response');},port:0,pollMs:5,onError:()=>{}});
  try{await new Promise(r=>setTimeout(r,30));const health=await(await fetch('http://127.0.0.1:'+server.address.port+'/health')).json();assert.equal(health.status,'degraded');assert(!JSON.stringify(health).includes('private provider'));}finally{await server.close();}
 });
+
+const until=async predicate=>{const end=Date.now()+1500;while(!predicate()){if(Date.now()>end)throw Error('Condition timed out');await new Promise(r=>setTimeout(r,5));}};
+test('independent users run concurrently, while a new deposit can fund overlapping work for the same account',async()=>{
+ const states=[1,1,1],reserves=[0n,0n,0n],accounts=['a','a','b'],started=[],release=new Map();let available=0n;
+ const server=await startEscrowService({descriptor:{scope:{receiver:'r'}},port:0,pollMs:5,concurrency:3,onError:()=>{},escrow:{count:async()=>3,at:async i=>String(i),invocation:async p=>({state:states[+p],account:accounts[+p],reserved:reserves[+p]}),available:async()=>available,start:async p=>{states[+p]=2;reserves[+p]=100n;}},board:{readRequest:async()=>({receiver:'r',enabled:true,finalized:true,text:'hello'})},run:async p=>{started.push(p);await new Promise(r=>release.set(p,r));states[+p]=3;}});
+ try{await until(()=>started.length===2);assert.deepEqual(started,['0','2']);available=100n;await until(()=>started.length===3);assert.deepEqual(started,['0','2','1']);}finally{for(const r of release.values())r();await server.close();}
+});
+test('transient start failure is reconsidered, but started executions never replay',async()=>{
+ let state=1,attempts=0,runs=0;
+ const server=await startEscrowService({descriptor:{scope:{receiver:'r'}},port:0,pollMs:5,onError:()=>{},escrow:{count:async()=>1,at:async()=> 'p',invocation:async()=>({state,account:'a'}),start:async()=>{if(++attempts===1)throw Error('RPC down');state=2;}},board:{readRequest:async()=>({receiver:'r',enabled:true,finalized:true,text:'hello'})},run:async()=>{runs++;throw Error('uncertain provider');}});
+ try{await until(()=>runs===1);await new Promise(r=>setTimeout(r,30));assert.equal(attempts,2);assert.equal(runs,1);}finally{await server.close();}
+});
+test('transient reads cannot lose a previously deferred invocation',async()=>{
+ let state=1,reads=0,runs=0;
+ const server=await startEscrowService({descriptor:{scope:{receiver:'r'}},port:0,pollMs:5,onError:()=>{},escrow:{count:async()=>1,at:async()=> 'p',invocation:async()=>({state,account:'a'}),start:async()=>{state=2;}},board:{readRequest:async()=>{if(++reads===2)throw Error('RPC down');return {receiver:'r',enabled:true,finalized:reads>2,text:'hello'};}},run:async()=>runs++});
+ try{await until(()=>runs===1);assert.equal(reads,3);}finally{await server.close();}
+});
+test('concurrency stays bounded and shutdown drains active work without starting queued work',async()=>{
+ const states=[1,1,1],started=[],release=[];
+ const server=await startEscrowService({descriptor:{scope:{receiver:'r'}},port:0,pollMs:5,concurrency:2,onError:()=>{},escrow:{count:async()=>3,at:async i=>String(i),invocation:async p=>({state:states[+p],account:p}),start:async p=>{states[+p]=2;}},board:{readRequest:async()=>({receiver:'r',enabled:true,finalized:true,text:'hello'})},run:async p=>{started.push(p);await new Promise(r=>release.push(r));states[+p]=3;}});
+ await until(()=>started.length===2);let closed=false;const closing=server.close().then(()=>{closed=true;});
+ try{await new Promise(r=>setTimeout(r,20));assert.equal(closed,false);assert.equal(started.length,2);release[0]();await new Promise(r=>setTimeout(r,20));assert.equal(closed,false);assert.equal(started.length,2);}finally{for(const r of release)r();await closing;}
+ assert.equal(closed,true);assert.equal(states[2],1);
+});

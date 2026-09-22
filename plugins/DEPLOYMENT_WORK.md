@@ -1,5 +1,23 @@
 # AI plugin deployment work
 
+## Active deployment execution
+
+User authorized execution of all remaining deployment items after commit 4a7164a.
+Root remains sole writer. Current lanes: public deployment/access/fresh accounts
+(root), read-only latency architecture review (public_latency), and read-only
+Venice cost-bound / treasury API investigation (provider_budget). Heavy tests remain
+serialized. Do not reuse personal wallets or rent infrastructure. Public testnet
+transactions and release integration are now in scope; local bot hosting retained.
+Checkpoint: one reservation per invocation and concurrent independent users implemented.
+Native-proof live browser qualification passed (.build/plugin-browser-8Bdsjj): PR #5,
+three paid Venice calls, 1667 micro-USDC charged, 998333 redeemed. 57 unit tests pass.
+Independent review public_latency found no remaining escrow-budget blocker; its
+concurrent Venice top-up finding was fixed with serialized readiness and a regression.
+Fresh public operator fee claim checkpointed; waiting for network finality. Fresh
+Ethereum account received faucet Sepolia ETH and 20 test USDC. Existing AWS SSO
+access and static HTTPS hosting confirmed. Next: compatible public board deployment,
+CCTP treasury transfer, local service installation, and public qualification.
+
 User scope: fix the September 22 deployment gaps; trusted operator cost reporting
 is accepted. This worktree remains separate from the main application release graph.
 

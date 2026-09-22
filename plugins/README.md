@@ -13,13 +13,16 @@ The user page's Plugin balance panel performs those operations. Withdraw availab
 funds on Aztec, then claim USDC on Ethereum after network settlement. Separate
 plugins have separate deposits. The portal has no administrator sweep function.
 
-The operator claims an invocation once, reserves each call's maximum cost on
-Aztec, waits for confirmation, calls Venice, and settles measured token usage.
-Unused reservations return to the account. The final call settles atomically with
-the reply. Other invocations and withdrawals cannot spend reserved funds. A
+The operator claims an invocation once and reserves its available account balance
+on Aztec. After that reservation finalizes, all model calls share this budget; each
+call is capped by the remaining amount. Measured usage settles atomically with the
+reply, and unused funds return to the account. Independent accounts run concurrently;
+new deposits can fund overlapping work for an account with an existing reservation. Other invocations and withdrawals cannot spend reserved funds. A
 24-hour invocation deadline allows anyone to release abandoned funds; no automatic execution
 recovery or paid retries. Operator failure to settle before expiry is operator risk.
-A timed-out paid call is marked stopped and retains its reservation until expiry.
+A timed-out paid call is marked stopped and retains the entire invocation reservation
+until expiry, including any earlier unsettled calls. There is no paid retry. Provider
+credit replenishment is serialized; model inference remains concurrent.
 
 Model prices use integer arithmetic and charges round up to one micro-USDC. The
 reference adapter uses the model's published context limit as a conservative

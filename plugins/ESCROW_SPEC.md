@@ -11,20 +11,21 @@ from the authenticated private posting caller, never from an HTTP request. A
 failed hook reverts the post. The receiver knows the board; the board knows no
 escrow internals. This version publicly links the spending account and request.
 
-The reference adapter owns available balances, per-post authorizations, per-call
+The reference adapter owns available balances, per-post authorizations, numbered
 reservations, measured charges, and operator earnings. Only its operator can
 reserve or settle; only the board can create an invocation. Other plugins have
 separate storage and keys. A user may have simultaneous invocations, bounded by
 the same available balance in this plugin. Withdrawals cannot consume reserves.
 
-Each call is identified by (post_id, monotonically increasing call number).
+Each reservation is identified by (post_id, monotonically increasing reservation
+number). The reference service uses one reservation for the whole invocation.
 Reservation debits available funds before inference; settlement credits measured
 cost to operator earnings and returns the unused amount. Settlement cannot exceed
 the reserved amount or repeat. Expiry releases abandoned commitments and closes
 the invocation; late settlement fails. Operator misses/failed provider invoices
 are operator risk. Disabling the board plugin stops execution; settling incurred
 costs remains possible without publishing a reply. Normal completion atomically
-settles the last call and publishes its reply through the ordinary censor path.
+settles the accumulated invocation cost and publishes its reply through the ordinary censor path.
 
 The service reads on-chain invocations, verifies the matching finalized board
 request, and claims execution on-chain. No execution resumes after a crash. A
@@ -90,11 +91,14 @@ its internals as this escrow protocol.
    transaction publishes and calls the receiver. It either does both or neither.
 3. Service observes a canonical invocation, checks the board's finality and
    moderation state, and starts it once on-chain.
-4. Before each provider call, the service reads available balance, quotes a bound,
-   and confirms an on-chain reservation. Concurrent reservations and withdrawals
-   cannot reuse reserved funds. Failed reservation means no provider request.
-5. Venice receives a completion/reasoning-token limit. Each tool loop settles the
-   previous invoice and obtains a fresh reservation before another paid call.
+4. The service reads available balance, checks provider readiness, and reserves
+   that balance once. It waits for finality and refreshes the quote. Concurrent
+   reservations and withdrawals cannot reuse those funds. Failed reservation
+   means no provider request. Independent accounts run concurrently.
+5. Before every paid call it verifies the reservation is still active and has
+   sufficient time left, then caps Venice completion/reasoning tokens by the
+   remaining reserved budget. Actual charges accumulate in invocation memory.
+   Later deposits do not enlarge an existing reservation; they may fund other work.
 6. The final measured cost and reply publish atomically on Aztec. Unused funds
    return to available balance; the operator receives earned revenue. All replies
    use the board's ordinary censorship mechanism.

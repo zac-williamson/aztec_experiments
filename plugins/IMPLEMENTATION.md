@@ -6,6 +6,25 @@ The board only invokes the registered receiver in its existing posting transacti
 Model pricing, model selection, GitHub and provider credentials remain in the service.
 There is no shared billing database or service-owned authoritative user balance.
 
+## Invocation budget and concurrency — 2026-09-23
+
+The service now reserves the account's available balance once per invocation,
+waits for finality, and meters every model call against the remainder. Independent
+accounts run concurrently; proof submission and Venice treasury replenishment are
+serialized separately. No new database or contract change.
+
+Native-proof browser run `.build/plugin-browser-8Bdsjj` passed the complete funding,
+posting, live inference, exact-content draft PR #5, visible reply and redemption
+flow. Three paid calls charged 0.001667 USDC; 0.998333 USDC was redeemed. This
+qualifies local chains with actual proofs, Venice and GitHub, not public finality.
+[Evidence](evidence/escrow-invocation-budget-2026-09-23.json). Independent review
+found no remaining escrow-budget blocker. All 57 plugin unit checks pass, including
+concurrency caps, shutdown draining, deferred failures and single top-up under
+concurrent demand. The top-up serialization is recorded as a post-browser change.
+
+Public deployment is in progress using fresh faucet-funded accounts and the
+existing HTTPS site; see [deployment checkpoint](DEPLOYMENT_WORK.md).
+
 ## Proof-enabled live write qualification — 2026-09-22
 
 Fresh supervised run `.build/plugin-browser-ULOndD` passed with native application

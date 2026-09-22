@@ -2,16 +2,24 @@ import {sha256,toUtf8Bytes} from 'ethers';
 import {quoteCall,usageCharge,ceilDiv} from './metering.mjs';
 const fieldMod=21888242871839275222246405745257275088548364400416034343698204186575808495617n;
 export function veniceMeteredProvider({client,model='kimi-k2-5',autoTopUp=false,maxTopUpUsd=5}){
+ let readiness=Promise.resolve();
+ const ensureCredits=maximum=>{
+  const check=readiness.then(async()=>{
+   let balance=await client.balance();
+   const ready=()=>balance.canConsume&&Number.isFinite(balance.balanceUsd)&&BigInt(Math.floor(balance.balanceUsd*1e6))>=maximum;
+   if(!ready()){if(!autoTopUp)throw Error('Operator Venice wallet needs funding');await client.topUp(maxTopUpUsd);balance=await client.balance();}
+   if(!ready())throw Error('Operator Venice credits unavailable');
+  });
+  readiness=check.catch(()=>{});
+  return check;
+ };
  return {
   async quote(input,available){
    const modelId=input.modelId??model;
    const catalog=await client.json('/api/v1/models');
    const spec=catalog.data?.find(x=>x.id===modelId)?.model_spec;
    const quote={...quoteCall(spec,available,input.maxTokens),modelId};
-   let balance=await client.balance();
-   const ready=()=>balance.canConsume&&Number.isFinite(balance.balanceUsd)&&BigInt(Math.floor(balance.balanceUsd*1e6))>=quote.maximum;
-   if(!ready()){if(!autoTopUp)throw Error('Operator Venice wallet needs funding');await client.topUp(maxTopUpUsd);balance=await client.balance();}
-   if(!ready())throw Error('Operator Venice credits unavailable');
+   await ensureCredits(quote.maximum);
    return quote;
   },
   async execute(input,quote){

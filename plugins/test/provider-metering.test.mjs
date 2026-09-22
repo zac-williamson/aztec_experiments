@@ -12,3 +12,11 @@ test('reasoning cap, disabled billable extras and measured usage are preserved',
  }};const provider=veniceMeteredProvider({client}),q=await provider.quote(input,1000000n),result=await provider.execute(input,q);
  assert.equal(body.max_completion_tokens,20);assert.equal(body.venice_parameters.enable_web_search,'off');assert.equal(body.venice_parameters.include_venice_system_prompt,false);assert.equal(result.charge,47n);
 });
+test('concurrent low-credit quotes share one replenishment and recheck credits',async()=>{
+ let credits=0,topUps=0,release;const entered=new Promise(r=>release=r);
+ const client={json:async()=>({data:[{id:'kimi-k2-5',model_spec:spec}]}),balance:async()=>({canConsume:credits>0,balanceUsd:credits}),topUp:async()=>{topUps++;await entered;credits=5;}};
+ const provider=veniceMeteredProvider({client,autoTopUp:true});
+ const quotes=[provider.quote(input,1000000n),provider.quote(input,1000000n)];
+ await new Promise(r=>setImmediate(r));assert.equal(topUps,1);release();
+ await Promise.all(quotes);assert.equal(topUps,1);
+});

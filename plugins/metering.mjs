@@ -1,3 +1,4 @@
+import {sha256,toUtf8Bytes} from 'ethers';
 // Provider-independent integer accounting. One unit = one micro-USDC.
 export const ceilDiv=(a,b)=>(a+b-1n)/b;
 export function price(value){
@@ -26,24 +27,28 @@ export function quoteCall(spec,available,requestedTokens){
  return {inputBound,inputPrice,outputPrice,cachePrice,maxTokens,maximum:usageCharge(inputBound,maxTokens,boundPrice,outputPrice)};
 }
 
-/** Per-invocation ModelPort decorator. EscrowPort owns chain confirmation. */
+/** One finalized on-chain budget for the whole invocation; no shared billing state. */
 export function meteredModel({provider,escrow,postId,onProgress=()=>{}}){
- let pending=null,uncertain=false;
+ let reservation=null,spent=0n,uncertain=false;
+ const receipts=[];
+ const measured=()=>reservation&&({...reservation,actual:spent,receipt:'0x'+(BigInt(sha256(toUtf8Bytes(JSON.stringify(receipts))))%21888242871839275222246405745257275088548364400416034343698204186575808495617n).toString(16).padStart(64,'0')});
  return {
   async complete(input){
    if(uncertain)throw Error('Uncertain provider call; invocation stopped');
-   if(pending){await escrow.settle(postId,pending);pending=null;}
-   const available=await escrow.available(postId);
-   const quote=await provider.quote(input,available);
-   const reservation=await escrow.reserve(postId,quote.maximum);
-   onProgress('reserved');uncertain=true;
-   // No retry: a transport failure may already have incurred a bill.
+   const available=reservation?reservation.maximum-spent:await escrow.available(postId);
+   let quote=await provider.quote(input,available);
+   if(quote.maximum<=0n||quote.maximum>available)throw Error('Provider quote exceeds available budget');
+   if(!reservation){reservation=await escrow.reserve(postId,available);onProgress('reserved');quote=await provider.quote(input,available);}
+   if(quote.maximum<=0n||quote.maximum>available)throw Error('Provider quote exceeds available budget');
+   // Tools and provider metadata requests can take time: recheck before EVERY call.
+   await escrow.assertUsable(postId,reservation);
+   uncertain=true;
    const result=await provider.execute(input,quote);
-   if(result.charge>quote.maximum)throw Error('Provider exceeded its authorized price/token bound');
-   pending={...reservation,actual:result.charge,receipt:result.receipt};uncertain=false;
+   if(result.charge<0n||result.charge>quote.maximum||spent+result.charge>reservation.maximum)throw Error('Provider exceeded its authorized price/token bound');
+   spent+=result.charge;receipts.push(result.receipt);uncertain=false;
    onProgress('measured');return {message:result.message,cost:Number(result.charge)/1e6};
   },
-  async finish(reply){if(uncertain)throw Error('Uncertain provider call; settlement requires reconciliation');await escrow.complete(postId,pending,reply);pending=null;},
-  async closeWithoutReply(){if(uncertain){await escrow.close(postId);return;}if(pending){await escrow.settle(postId,pending);pending=null;}await escrow.close(postId);},
+  async finish(reply){if(uncertain)throw Error('Uncertain provider call; invocation stopped');await escrow.complete(postId,measured(),reply);reservation=null;},
+  async closeWithoutReply(){if(uncertain){await escrow.close(postId);return;}if(reservation){await escrow.settle(postId,measured());reservation=null;}await escrow.close(postId);},
  };
 }

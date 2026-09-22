@@ -6,6 +6,7 @@ export interface MeasuredCall extends Reservation {actual:bigint;receipt:string}
 export interface EscrowPort {
  available(postId:string):Promise<bigint>;
  reserve(postId:string,maximum:bigint):Promise<Reservation>;
+ assertUsable(postId:string,reservation:Reservation):Promise<void>;
  settle(postId:string,call:MeasuredCall):Promise<unknown>;
  complete(postId:string,call:MeasuredCall|null,reply:string):Promise<unknown>;
  close(postId:string):Promise<unknown>;
