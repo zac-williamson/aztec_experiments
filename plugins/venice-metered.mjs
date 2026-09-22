@@ -7,10 +7,14 @@ export function veniceMeteredProvider({client,model='kimi-k2-5',autoTopUp=false,
    const modelId=input.modelId??model;
    const catalog=await client.json('/api/v1/models');
    const spec=catalog.data?.find(x=>x.id===modelId)?.model_spec;
-   return {...quoteCall(spec,available,input.maxTokens),modelId};
+   const quote={...quoteCall(spec,available,input.maxTokens),modelId};
+   let balance=await client.balance();
+   const ready=()=>balance.canConsume&&Number.isFinite(balance.balanceUsd)&&BigInt(Math.floor(balance.balanceUsd*1e6))>=quote.maximum;
+   if(!ready()){if(!autoTopUp)throw Error('Operator Venice wallet needs funding');await client.topUp(maxTopUpUsd);balance=await client.balance();}
+   if(!ready())throw Error('Operator Venice credits unavailable');
+   return quote;
   },
   async execute(input,quote){
-   if(!(await client.balance()).canConsume){if(!autoTopUp)throw Error('Operator Venice wallet needs funding');await client.topUp(maxTopUpUsd);}
    const result=await client.json('/api/v1/chat/completions',{method:'POST',body:{model:quote.modelId,messages:input.messages,tools:input.tools,max_completion_tokens:quote.maxTokens,n:1,stream:false,
     venice_parameters:{include_venice_system_prompt:false,enable_web_search:'off',enable_web_scraping:false,enable_x_search:false}}});
    const message=result.choices?.[0]?.message,u=result.usage;

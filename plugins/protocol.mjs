@@ -34,20 +34,26 @@ export function validateDescriptor(value, expected) {
   if(typeof value.description!=='string'||value.description.length>1000)throw Error('Invalid plugin description');
   return Object.freeze({protocol:API_VERSION,scope:Object.freeze({...scope}),description:value.description,funding:Object.freeze({...funding})});
 }
-export async function fetchDescriptor(url, expected, {fetchImpl=fetch}={}) {
+export async function fetchDescriptor(url, expected, {fetchImpl=fetch,cache}={}) {
+  if(cache===undefined){try{cache=typeof window==='undefined'?null:window.localStorage;}catch{cache=null;}}
   const u=new URL(url);
   if(!['https:','http:'].includes(u.protocol)||u.username||u.password)throw Error('Invalid plugin descriptor URL');
   if(u.protocol==='http:'&&expected.chainId!=='31337')throw Error('Plugin descriptor requires HTTPS');
   const pin=u.hash.slice(1);
   if(!/^sha256=0x[0-9a-f]{64}$/.test(pin))throw Error('Plugin descriptor must be pinned by the board deployer');
+  const cacheKey='plugin-descriptor:'+u.href;
+  const verify=text=>{if(toUtf8Bytes(text).length>16384||sha256(toUtf8Bytes(text))!==pin.slice(7))throw Error('Plugin descriptor integrity mismatch');return validateDescriptor(JSON.parse(text),expected);};
+  // A pinned descriptor is immutable. Verify every cached read, including scope.
+  // Financial actions remain usable when the hosted execution service is offline.
+  let saved;try{saved=cache?.getItem(cacheKey);}catch{}
+  if(saved!==null&&saved!==undefined)return verify(saved);
   u.hash='';
   const response=await fetchImpl(u,{signal:AbortSignal.timeout(10000),credentials:'omit',redirect:'error'});
   if(!response.ok)throw Error('Plugin unavailable');
   const reader=response.body.getReader();let size=0,text='';const decoder=new TextDecoder();
   try{for(;;){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>16384)throw Error('Plugin descriptor too large');text+=decoder.decode(value,{stream:true});}text+=decoder.decode();}
   finally{await reader.cancel();}
-  if(sha256(toUtf8Bytes(text))!==pin.slice(7))throw Error('Plugin descriptor integrity mismatch');
-  return validateDescriptor(JSON.parse(text),expected);
+  const descriptor=verify(text);try{cache?.setItem(cacheKey,text);}catch{}return descriptor;
 }
 export function packText(text,count=32) {
   const bytes=toUtf8Bytes(text);if(bytes.length>count*31)throw Error('Text too long');

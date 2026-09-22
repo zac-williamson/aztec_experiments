@@ -115,20 +115,21 @@ pub contract PluginAdapter {
     fn cancel(post: Field) {
         assert(self.msg_sender() == self.storage.accounts.at(post).read(), "Only account");
         assert(self.storage.reserves.at(post).read() == 0, "Call still reserved");
-        assert((self.storage.states.at(post).read() == 1) | (self.storage.states.at(post).read() == 2), "Invocation closed"); self.storage.states.at(post).write(3);
+        assert((self.storage.states.at(post).read() == 1) | (self.storage.states.at(post).read() == 2), "Invocation closed"); self.storage.states.at(post).write(4);
     }
     #[external("public")]
     fn release_expired(post: Field) {
-        assert(self.storage.states.at(post).read() == 2, "Invocation not active");
+        assert((self.storage.states.at(post).read() == 2) | (self.storage.states.at(post).read() == 7), "Invocation not active");
         assert(self.context.timestamp() >= self.storage.deadlines.at(post).read(), "Not expired");
         let account = self.storage.accounts.at(post).read(); let maximum = self.storage.reserves.at(post).read();
         self.storage.balances.at(account).write(self.storage.balances.at(account).read()+maximum);
-        self.storage.reserves.at(post).write(0); self.storage.states.at(post).write(3);
+        self.storage.reserves.at(post).write(0); self.storage.states.at(post).write(5);
     }
     #[external("public")]
     fn close(post: Field) {
         assert(self.msg_sender() == self.storage.operator.read(), "Only operator");
-        assert((self.storage.states.at(post).read() == 2) & (self.storage.reserves.at(post).read() == 0), "Cannot close"); self.storage.states.at(post).write(3);
+        assert(self.storage.states.at(post).read() == 2, "Cannot close");
+        self.storage.states.at(post).write(if self.storage.reserves.at(post).read() == 0 { 6 } else { 7 });
     }
     #[external("public")]
     fn withdraw(amount: u128, recipient: EthAddress, earnings: bool, nonce: Field) {

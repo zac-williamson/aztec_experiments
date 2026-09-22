@@ -62,3 +62,25 @@ unconstrained fn escrow_unfunded_account_cannot_authorize() {
  let (mut env,a,_,_,board)=setup();let unfunded=env.create_light_account();
  env.call_public(board,PluginAdapter::at(a).on_invocation(unfunded,11));
 }
+#[test]
+unconstrained fn escrow_uncertain_failure_retains_reserve_until_expiry() {
+ let (env,a,user,op,_)=setup();env.call_public(op,PluginAdapter::at(a).reserve(10,0,100));
+ env.call_public(op,PluginAdapter::at(a).close(10));
+ let (_,state,_,reserved,_,_)=env.view_public(PluginAdapter::at(a).invocation(10));assert_eq(state,7);assert_eq(reserved,100);
+ env.mine_block_at(env.last_block_timestamp()+86401);env.call_public(user,PluginAdapter::at(a).release_expired(10));
+ assert_eq(env.view_public(PluginAdapter::at(a).balance(user)),1000000);
+}
+#[test]
+unconstrained fn escrow_known_failure_closes_without_locking_balance() {
+ let (env,a,user,op,_)=setup();env.call_public(op,PluginAdapter::at(a).close(10));
+ let (_,state,_,reserved,_,_)=env.view_public(PluginAdapter::at(a).invocation(10));assert_eq(state,6);assert_eq(reserved,0);
+ assert_eq(env.view_public(PluginAdapter::at(a).balance(user)),1000000);
+}
+#[test(should_fail_with="Invocation not active")]
+unconstrained fn escrow_cancel_prevents_reservation() {
+ let (env,a,user,op,_)=setup();env.call_public(user,PluginAdapter::at(a).cancel(10));env.call_public(op,PluginAdapter::at(a).reserve(10,0,100));
+}
+#[test(should_fail_with="Call still reserved")]
+unconstrained fn escrow_reserve_prevents_cancel() {
+ let (env,a,user,op,_)=setup();env.call_public(op,PluginAdapter::at(a).reserve(10,0,100));env.call_public(user,PluginAdapter::at(a).cancel(10));
+}

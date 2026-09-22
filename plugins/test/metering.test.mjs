@@ -23,3 +23,14 @@ test('reservation also bounds a cached-input rate above the normal rate',()=>{
  const q=quoteCall({...spec,pricing:{...spec.pricing,cache_input:{usd:2}}},2500n,100);
  assert.equal(q.maximum,2500n);assert.equal(q.maxTokens,50);
 });
+
+test('known charged failure settles before close, uncertain outcome closes without refunding',async()=>{
+ const calls=[];let timeout=false;
+ const args={postId:'p',provider:{quote:async()=>({maximum:100n}),execute:async()=>{if(timeout)throw Error('timeout');return {charge:3n,receipt:'r',message:{}};}},escrow:{available:async()=>100n,reserve:async()=>({call:0}),settle:async()=>calls.push('settle'),close:async()=>calls.push('close')}};
+ const known=meteredModel(args);await known.complete({});await known.closeWithoutReply();assert.deepEqual(calls,['settle','close']);
+ calls.length=0;timeout=true;const unknown=meteredModel(args);await assert.rejects(unknown.complete({}),/timeout/);await unknown.closeWithoutReply();assert.deepEqual(calls,['close']);
+});
+
+test('insufficient balance reports the exact minimum without claiming it is the actual charge',()=>{
+ assert.throws(()=>quoteCall(spec,1n,100),error=>error.code==='INSUFFICIENT_BALANCE'&&error.userMessage.includes('0.001010 USDC'));
+});

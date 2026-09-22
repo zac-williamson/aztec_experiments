@@ -15,7 +15,7 @@ import {settleC01ApplicationMessage} from '../../scripts/c01-settle-application-
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 
-export async function runWalletHarness({fixture,author,directory,origin,onProgress=console.log,signal}){
+export async function runWalletHarness({fixture,author,directory,origin,onProgress=console.log,signal,scenario='read'}){
  const report={passed:false,realMetaMask:true,applicationProofs:process.env.PLUGIN_PROOFS==='true',stage:'launch'};
  const mark=stage=>{report.stage=stage;onProgress(stage);};
  let context,page;
@@ -23,12 +23,15 @@ export async function runWalletHarness({fixture,author,directory,origin,onProgre
  assert.equal(process.env.PLUGIN_REPOSITORY||fixture.serviceConfig.repository,'zac-williamson/aztec_experiments','This acceptance scenario reads the existing smoke PR in the configured fork');
  const cancel=()=>{void context?.close().catch(()=>{});};
  signal?.addEventListener('abort',cancel,{once:true});
- const deadline=setTimeout(cancel,480000);
+ const deadline=process.env.PLUGIN_SUPERVISED==='true'?null:setTimeout(cancel,480000);
  const ledgerClient=veniceClient({privateKey:process.env.VENICE_WALLET_PRIVATE_KEY});
  const ledger=async()=>(await ledgerClient.json('/api/v1/x402/transactions/'+ledgerClient.address+'?limit=100&offset=0')).data.transactions;
  const read=async(method,...args)=>(await fixture.board.methods[method](...args).simulate({from:NO_FROM})).result;
  const escrowRead=async(method,...args)=>(await fixture.adapter.methods[method](...args).simulate({from:NO_FROM})).result;
- const text='@bok Read PR 1 using read_pr. Reply with its URL, exact changed file path and a short summary. Do not create or change anything.';
+ if(!['read','write'].includes(scenario))throw Error('Unknown plugin scenario');
+ const codePath='plugins/smoke/escrow-'+path.basename(directory)+'.mjs';
+ const code='export const escrowBillingSmoke = true;\n';
+ const text=scenario==='write'?`@bok Use write_file to create ${codePath} with content obtained by decoding this JSON string exactly (including its final newline): ${JSON.stringify(code)}. Then create_pr titled Escrow billing integration smoke. Body: Automated funded Bok integration test; do not merge. Reply with the PR URL and file path.`:'@bok Read PR 1 using read_pr. Reply with its URL, exact changed file path and a short summary. Do not create or change anything.';
  try{
   signal?.throwIfAborted();
   const extension=unpackMetaMask(directory);
@@ -118,9 +121,19 @@ export async function runWalletHarness({fixture,author,directory,origin,onProgre
   const replyId=(await read('get_plugin_request',id))[2];assert.notEqual(BigInt(replyId),0n);
   const replyField=Fr.fromString(replyId.toString());
   const reply=unpackText((await read('get_post',replyField)).map(String),Number(await read('get_post_length',replyField)));
-  assert(reply.includes('https://github.com/zac-williamson/aztec_experiments/pull/1'));assert(reply.includes('docs/bok-live-smoke.md'));
+  const api=githubApi({token:process.env.GITHUB_TOKEN});
+  if(scenario==='write'){
+   const url=reply.match(/https:\/\/github\.com\/zac-williamson\/aztec_experiments\/pull\/(\d+)/);assert(url,'Reply must include created PR URL');
+   const pr=await api('GET','/repos/zac-williamson/aztec_experiments/pulls/'+url[1]);
+   const repo=await api('GET','/repos/zac-williamson/aztec_experiments');
+   assert.equal(pr.draft,true);assert.equal(pr.state,'open');assert.equal(pr.base.ref,repo.default_branch);assert.equal(pr.head.ref,'bok/'+BigInt(postId).toString(16).padStart(64,'0'));
+   const files=await api('GET','/repos/zac-williamson/aztec_experiments/pulls/'+url[1]+'/files');assert.equal(files.length,1);assert.equal(files[0].filename,codePath);assert.equal(files[0].status,'added');
+   report.github={url:pr.html_url,draft:pr.draft,head:pr.head.sha,file:codePath,exactContent:false};
+   const content=await api('GET','/repos/zac-williamson/aztec_experiments/contents/'+codePath+'?ref='+pr.head.sha);assert.equal(Buffer.from(content.content,'base64').toString('utf8'),code);
+   report.github={url:pr.html_url,draft:pr.draft,head:pr.head.sha,file:codePath,exactContent:true};
+  }else{assert(reply.includes('https://github.com/zac-williamson/aztec_experiments/pull/1'));assert(reply.includes('docs/bok-live-smoke.md'));}
   assert.equal(await read('is_post_flagged',id),false);assert.equal(await read('is_post_flagged',replyField),false);
-  const api=githubApi({token:process.env.GITHUB_TOKEN});const files=await api('GET','/repos/zac-williamson/aztec_experiments/pulls/1/files');assert(files.some(x=>x.filename==='docs/bok-live-smoke.md'));
+
   const charges=(await ledger()).filter(x=>!priorIds.has(x.id)&&x.type==='CHARGE');assert(charges.length>0);assert(charges.every(x=>x.modelId===expectedModel));
   report.reply={postId:replyField.toString(),text:reply,visible:false,flagged:false};report.veniceCharges=charges;
   mark('verify-visible-reply');
@@ -139,6 +152,8 @@ export async function runWalletHarness({fixture,author,directory,origin,onProgre
   assert.equal(charged,invoiced,'Escrow charge must equal live Venice invoices rounded per call to micro-USDC');
   assert(charged>0n);assert.equal(balance+charged,1000000n);assert.equal(BigInt(await escrowRead('earned',fixture.operator.address)),charged);
   report.settlement.providerMicroUSDC=String(invoiced);
+  await action('#pluginRequests');await success();assert.match(await page.locator('#pluginRequestsList').innerText(),/Reply published/);
+  report.requestStatus={shownThroughBrowser:true};
   await action('#pluginBalance');await success();
   await page.screenshot({path:path.join(directory,'browser-reply.png'),fullPage:true});
   mark('withdraw-plugin-balance-through-ui');await page.locator('#pluginAmount').fill((Number(balance)/1e6).toFixed(6));await action('#pluginWithdraw');await success();

@@ -77,7 +77,7 @@ export function githubToolbox({repository,api,allowWrites=false,draftPr=false,ru
           const baseCommit=await api('GET',`/repos/${repository}/git/commits/${baseSha}`);
           const built=await api('POST',`/repos/${repository}/git/trees`,{base_tree:baseCommit.tree.sha,tree});
           const commit=await api('POST',`/repos/${repository}/git/commits`,{message:args.title,tree:built.sha,parents:[baseSha]});
-          const branch='bok/'+postId.slice(2);
+          const branch='bok/'+BigInt(postId).toString(16).padStart(64,'0');
           await api('POST',`/repos/${repository}/git/refs`,{ref:'refs/heads/'+branch,sha:commit.sha});
           const pr=await api('POST',`/repos/${repository}/pulls`,{title:args.title,body:args.body,head:branch,base,draft:draftPr});prUrl=pr.html_url;
           return {url:prUrl};

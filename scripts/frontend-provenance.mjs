@@ -6,7 +6,7 @@ import { ROOT } from './toolchain.mjs';
 const manifestName = '.build/apps-manifest.json';
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const required = [
-  'plugins/client.mjs', 'plugins/protocol.mjs', 'plugins/account-client.mjs', 'plugins/adapter_artifact.json',
+  'plugins/client.mjs', 'plugins/protocol.mjs', 'plugins/account-client.mjs', 'plugins/request-status.mjs', 'plugins/adapter_artifact.json',
   'apps/build.mjs', 'scripts/build-public-feed.mjs',
   ...['public-board-directory.mjs','public-feed.mjs','public-feed-projection.mjs','public-feed-storage.mjs','public-feed-source.mjs','public-feed-metadata.mjs','public-feed-rpc.mjs','public-feed-connection.mjs','public-feed-browser.mjs','protocol-schema.mjs','transaction-outcomes.mjs'].map(x=>`shared/${x}`), 'scripts/frontend-provenance.mjs', 'scripts/check-artifacts.mjs',
   'scripts/check-sdk.mjs', 'scripts/build-crs.mjs', 'scripts/toolchain.mjs',

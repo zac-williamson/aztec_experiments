@@ -28,8 +28,9 @@ settles the last call and publishes its reply through the ordinary censor path.
 
 The service reads on-chain invocations, verifies the matching finalized board
 request, and claims execution on-chain. No execution resumes after a crash. A
-reservation stays locked after an uncertain provider result until reconciliation
-or expiry, preventing reuse. Public-network execution waits for finality; explicit
+reservation stays locked after an uncertain provider result until expiry,
+preventing reuse. The service marks the invocation stopped and does not resume it.
+Public-network execution waits for finality; explicit
 local devnet tests use checkpointed state and official bridge settlement controls.
 
 Provider calls go through an injected metered ModelPort. Quote calculation occurs
@@ -135,10 +136,13 @@ an explicit service setting; tests may read an existing PR without creating one.
 ## Validation boundary
 
 Local acceptance uses real browser and MetaMask transactions, actual contracts,
-real Venice billing and a real GitHub read. Only the local test USDC mint and
-network settlement controls are fixtures. Application proving is disabled by the
-explicit development setting; production proofs and public-network finality must
-be qualified separately. Prior fixed-fee test evidence does not qualify this flow.
+real Venice billing and GitHub. The write scenario creates a draft PR and checks
+its exact file contents. Only the local test USDC mint and network settlement
+controls are fixtures. Each qualification command requires an explicit application
+proof setting, recorded in its result. Public-network finality must be qualified
+separately; local Outbox settlement controls do not establish that qualification.
+Prior fixed-fee test evidence does not qualify this flow. IMPLEMENTATION.md records
+which complete scenarios have actually passed.
 
 Provider contract reference: Venice documents `max_completion_tokens` as covering
 both visible output and reasoning tokens in its [Chat Completions API](https://docs.venice.ai/api-reference/endpoint/chat/completions).

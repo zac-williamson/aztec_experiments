@@ -9,6 +9,8 @@ import {prepareBrowserAuthor} from './browser-fixture.mjs';
 import {startBoardWeb,retainPreviewCheckpoint} from './web.mjs';
 import {startU01BrowserRpc} from '../../scripts/u01-browser-rpc.mjs';
 import {runHostedService} from '../main.mjs';
+import {veniceClient} from '../venice.mjs';
+import {githubApi} from '../github-tools.mjs';
 if(!process.env.VENICE_WALLET_PRIVATE_KEY)throw Error('Configure the local Venice wallet');
 if(!process.env.GITHUB_TOKEN)process.env.GITHUB_TOKEN=execFileSync('gh',['auth','token'],{encoding:'utf8',timeout:10000}).trim();
 const directory=await fs.mkdtemp(path.resolve('.build/plugin-browser-'));
@@ -22,6 +24,9 @@ const stopped=new Promise(resolve=>{stop=()=>{abort.abort();resolve();};});
 process.once('SIGINT',stop);process.once('SIGTERM',stop);
 const mark=step=>console.log('STEP',step);
 try{
+ mark('check-live-dependencies');
+ await veniceClient({privateKey:process.env.VENICE_WALLET_PRIVATE_KEY}).balance();
+ await githubApi({token:process.env.GITHUB_TOKEN})('GET','/repos/'+(process.env.PLUGIN_REPOSITORY||'zac-williamson/aztec_experiments'));
  fixture=await bootstrapPluginDevnet({directory,port:servicePort,browserAuthor:true,proofs:process.env.PLUGIN_PROOFS==='true',onProgress:mark});
  const author=await prepareBrowserAuthor({fixture,directory,onProgress:mark});
  rpc=await startU01BrowserRpc({node:fixture.net.node,anvilUrl:fixture.net.rpcUrl,ethereumAccount:fixture.signer.address,origin,token});
@@ -32,7 +37,7 @@ try{
  console.log('BROWSER_READY',origin+'/user.html',directory);
  if(automated){
   const {runWalletHarness}=await import('./wallet-harness.mjs');
-  await runWalletHarness({fixture,author,directory,origin,onProgress:mark,signal:abort.signal});
+  await runWalletHarness({fixture,author,directory,origin,onProgress:mark,signal:abort.signal,scenario:process.argv.includes('--github-writes')?'write':'read'});
   await retainPreviewCheckpoint(fixture.serviceConfig);
  }else await stopped;
 }catch(error){runError=error;}finally{

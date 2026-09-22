@@ -22,6 +22,6 @@ export function createAgent({model,toolbox,instructions,maxCalls=12,maxTokens=15
         }
       }
       return {replyText:session.summary('Execution step limit reached.')};
-    }catch(error){if(error.code==='INSUFFICIENT_BALANCE')return {replyText:session.summary('Insufficient plugin balance to continue.')};throw error;}finally{await session.close();}
+    }catch(error){if(error.code==='INSUFFICIENT_BALANCE')return {replyText:session.summary(error.userMessage||'Insufficient plugin balance to continue.')};throw error;}finally{await session.close();}
   }};
 }

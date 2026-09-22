@@ -51,13 +51,16 @@
     "test:components": "node scripts/test-harness.mjs components",
     "test:e2e": "node scripts/test-c01-application.mjs",
     "test:plugins": "node --test plugins/test/*.test.mjs",
-    "test:plugins:e2e": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/browser.mjs --test-wallet",
+    "test:plugins:e2e": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/qualify.mjs read",
     "dev:plugins": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/start.mjs",
     "bot:serve": "NODE_BACKEND=js node --env-file=plugins/.env plugins/main.mjs",
     "bot:venice": "node --env-file=plugins/.env plugins/venice-cli.mjs",
-    "test:plugins:live": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/browser.mjs --test-wallet",
+    "test:plugins:live": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/qualify.mjs read",
     "dev:plugins:browser": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/browser.mjs",
-    "test:plugins:wallet": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/browser.mjs --test-wallet"
+    "test:plugins:wallet": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/qualify.mjs read",
+    "test:plugins:write": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/qualify.mjs write",
+    "test:plugins:operations": "NODE_BACKEND=js node --env-file=plugins/.env plugins/devnet/qualify.mjs operations",
+    "plugin:operator": "NODE_BACKEND=js node --env-file=plugins/.env plugins/operator.mjs"
   },
   "overrides": {
     "systeminformation": "5.31.7",

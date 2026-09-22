@@ -1,4 +1,5 @@
 import {Contract as EthContract,parseUnits,formatUnits} from 'ethers';
+import {requestStatus} from './request-status.mjs';
 import artifact from './adapter_artifact.json' with {type:'json'};
 const tokenAbi=['function approve(address,uint256) returns(bool)','function balanceOf(address) view returns(uint256)','function decimals() view returns(uint8)'];
 export const portalAbi=['function token() view returns(address)','function escrow() view returns(bytes32)','function active() view returns(bool)','function deposit(bytes32,uint128,bytes32) returns(bytes32,uint256)','event Deposited(bytes32 indexed account,uint128 amount,bytes32 key,uint256 index)','function withdraw(address,uint128,bytes32,uint256,uint256,uint256,bytes32[])'];
@@ -14,6 +15,26 @@ export async function pluginAccountAction({action,input,descriptor,sdk:a,handles
  const escrow=await a.Contract.at(address,loaded,h.wallet);
  const read=async(name,...args)=>(await escrow.methods[name](...args).simulate({from:a.NO_FROM})).result;
  const state=()=>store.read()??{};
+ if(action==='requests'){
+  const count=Number(await read('request_count'));
+  const cursor=input.cursor===undefined?count:Number(input.cursor);
+  if(!Number.isSafeInteger(cursor)||cursor<0||cursor>count)throw Error('Invalid request page');
+  const block=await h.aztecNode.getBlock(await h.aztecNode.getBlockNumber());
+  const chainTime=Number(block.header.globalVariables.timestamp),requests=[];
+  const next=Math.max(0,cursor-50);
+  for(let i=cursor-1;i>=next;i--){
+   const post=await read('request_at',i);
+   const [account,state,call,reserved,charged,deadline]=await read('invocation',post);
+   if(String(account)!==String(h.address))continue;
+   requests.push(requestStatus({postId:'0x'+BigInt(post).toString(16).padStart(64,'0'),state:Number(state),call:Number(call),reserved,charged,deadline:Number(deadline)},chainTime));
+  }
+  return {requests,nextCursor:next||null};
+ }
+ if(action==='cancel'||action==='release'){
+  if(typeof input.postId!=='string'||!/^0x[0-9a-f]{64}$/i.test(input.postId))throw Error('Invalid request identifier');
+  await send(escrow.methods[action==='cancel'?'cancel':'release_expired'](a.Fr.fromString(input.postId)));
+  return {balance:formatUnits(await read('balance',h.address),6)};
+ }
  if(action==='balance')return {balance:formatUnits(await read('balance',h.address),6)};
  if(action==='deposit'){
   if(state().deposit)throw Error('Claim or inspect the saved deposit before funding again');

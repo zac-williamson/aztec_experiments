@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {githubToolbox} from '../github-tools.mjs';
 
-test('PR publication uses checked-out commit and preserves executable files',async()=>{
+for(const postId of ['0x123','291','1291'])test('PR publication preserves commit, files and complete invocation identity: '+postId,async()=>{
  let work;const calls=[];
  const runCommand=async(command,args)=>{
   assert.equal(command,'git');
@@ -20,7 +20,7 @@ test('PR publication uses checked-out commit and preserves executable files',asy
   if(route.endsWith('/pulls'))return {html_url:'https://github.com/owner/project/pull/1'};
   return {sha:'created-sha'};
  };
- const session=await githubToolbox({repository:'owner/project',api,runCommand,allowWrites:true,draftPr:true}).open({postId:'0x123'});
+ const session=await githubToolbox({repository:'owner/project',api,runCommand,allowWrites:true,draftPr:true}).open({postId});
  try{
   await session.call('write_file',{path:'script.sh',content:'new'});
   await session.call('write_file',{path:'new.txt',content:'new file'});
@@ -31,6 +31,9 @@ test('PR publication uses checked-out commit and preserves executable files',asy
   assert.deepEqual(calls.find(x=>x.route.endsWith('/git/commits')).body.parents,['checkout-sha']);
   assert.equal(calls.find(x=>x.route.endsWith('/pulls')).body.base,'main');
   assert.equal(calls.find(x=>x.route.endsWith('/pulls')).body.draft,true);
+  const expected='bok/'+(postId==='1291'?'50b':'123').padStart(64,'0');
+  assert.equal(calls.find(x=>x.route.endsWith('/git/refs')).body.ref,'refs/heads/'+expected);
+  assert.equal(calls.find(x=>x.route.endsWith('/pulls')).body.head,expected);
   await assert.rejects(session.call('create_pr',{title:'Again',body:''}),/One PR/);
  }finally{await session.close();}
  await assert.rejects(fs.stat(work),{code:'ENOENT'});

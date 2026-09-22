@@ -19,7 +19,7 @@ Unused reservations return to the account. The final call settles atomically wit
 the reply. Other invocations and withdrawals cannot spend reserved funds. A
 24-hour invocation deadline allows anyone to release abandoned funds; no automatic execution
 recovery or paid retries. Operator failure to settle before expiry is operator risk.
-A timed-out paid call retains its reservation until reconciliation or expiry.
+A timed-out paid call is marked stopped and retains its reservation until expiry.
 
 Model prices use integer arithmetic and charges round up to one micro-USDC. The
 reference adapter uses the model's published context limit as a conservative
@@ -43,13 +43,20 @@ pins the escrow, board, rollup, portal and token. Public deployments require HTT
 and finalized chain state. The frontend must allow the descriptor origin in CSP.
 
 `npm run dev:plugins:browser` creates a local funded board test identity and serves
-the real application. `npm run test:plugins:wallet` tests real MetaMask funding,
+the real application. `PLUGIN_PROOFS=true npm run test:plugins:wallet` tests real MetaMask funding,
 Aztec claim/post, live Venice/GitHub reply, measured accounting and withdrawal.
 The fixture mints local USDC and prepares board collateral/private transaction fees;
 it does not pre-fund the plugin account. Venice uses real credits. Test wallet
 material stays in ignored `.build`. Explicit MetaMask Terms consent is required;
 the per-run `accept-wallet-terms` marker records consent already given by the user.
-Local proving can be disabled; public networks keep proving enabled.
+`PLUGIN_PROOFS=true npm run test:plugins:write` also creates and verifies a real
+draft PR. `PLUGIN_PROOFS=true npm run test:plugins:operations` verifies deployment,
+fresh operator fee-credit onboarding, and earnings redemption. These commands run
+under the maintained test supervisor and require successful cleanup. Set
+`PLUGIN_PROOFS=false` explicitly for faster local iteration; public networks keep
+proving enabled. Run expensive qualification scenarios one at a time.
+
+See [deployment and operator commands](DEPLOYMENT.md) for independent plugin setup.
 
 Use pinned Node 24.21.x and toolchains. Historical fixed-fee evidence under
 `evidence/` does not qualify the replacement; current status is in IMPLEMENTATION.md.

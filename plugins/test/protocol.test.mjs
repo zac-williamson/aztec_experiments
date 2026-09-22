@@ -32,3 +32,19 @@ test('disabling invocation does not block access to an existing plugin account',
  await assert.rejects(prepareInvocation(args),/disabled/);
  assert.equal((await prepareInvocation({...args,allowDisabled:true})).descriptor,descriptor);
 });
+
+test('verified pinned descriptors remain usable offline and reject corrupted cached destinations',async()=>{
+ const text=JSON.stringify(descriptor),url='http://127.0.0.1:8787/v1/descriptor#sha256='+sha256(toUtf8Bytes(text));
+ const values=new Map(),cache={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v)};
+ await fetchDescriptor(url,scope,{cache,fetchImpl:async()=>new Response(text)});
+ const offline=()=>{throw Error('Service offline');};
+ assert.equal((await fetchDescriptor(url,scope,{cache,fetchImpl:offline})).funding.portalAddress,descriptor.funding.portalAddress);
+ await assert.rejects(fetchDescriptor(url,{...scope,receiver:id},{cache,fetchImpl:offline}),/scope/);
+ for(const key of values.keys())values.set(key,text.replace('3434','5656'));
+ await assert.rejects(fetchDescriptor(url,scope,{cache,fetchImpl:offline}),/integrity/);
+});
+test('unavailable browser storage cannot prevent a verified descriptor fetch',async()=>{
+ const text=JSON.stringify(descriptor),url='http://127.0.0.1:8787/v1/descriptor#sha256='+sha256(toUtf8Bytes(text));
+ const cache={getItem(){throw Error('SecurityError');},setItem(){throw Error('QuotaExceededError');}};
+ assert.equal((await fetchDescriptor(url,scope,{cache,fetchImpl:async()=>new Response(text)})).funding.portalAddress,descriptor.funding.portalAddress);
+});

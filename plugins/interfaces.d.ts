@@ -18,6 +18,7 @@ export interface ModelPort {complete(input:ModelInput):Promise<{message:ModelMes
 export interface ToolSession {definitions:ToolDefinition[];call(name:string,args:Record<string,unknown>):Promise<unknown>;summary(reason:string):string;close():Promise<void>}
 export interface Toolbox {open(request:{id:string;postId:string}):Promise<ToolSession>}
 export interface Runner {run(request:{id:string;postId:string;text:string;modelId?:string}):Promise<{replyText:string}>}
+/** States: 1 queued, 2 active, 3 replied, 4 cancelled, 5 released, 6 stopped, 7 uncertain. */
 export interface Invocation {account:unknown;state:number;call:number;reserved:bigint;charged:bigint;deadline:number}
 export interface EscrowPort {
  count():Promise<number>;

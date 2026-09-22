@@ -1,0 +1,121 @@
+{
+  "passed": true,
+  "realMetaMask": true,
+  "applicationProofs": true,
+  "stage": "passed",
+  "unfundedPost": {
+    "rejectedThroughBrowser": true,
+    "noPublication": true,
+    "noProviderCharge": true
+  },
+  "deposit": {
+    "amount": "1000000",
+    "asset": "USDC",
+    "claimedThroughBrowser": true
+  },
+  "postId": "15953824861585762927914615493269279592816715053205959228123640852437899001131",
+  "post": {
+    "noEthereumPayment": true,
+    "authorizedInAztec": true
+  },
+  "github": {
+    "url": "https://github.com/zac-williamson/aztec_experiments/pull/4",
+    "draft": true,
+    "head": "9650140a23a67b5ea6215fccaa56ea9a5e65f74c",
+    "file": "plugins/smoke/escrow-plugin-browser-ULOndD.mjs",
+    "exactContent": true
+  },
+  "reply": {
+    "postId": "0x07f49bdac4805a9c7e761648543934f577d1fe64fd3d43f583027f6e75e96de5",
+    "text": "PR URL: https://github.com/zac-williamson/aztec_experiments/pull/4  \nFile path: `plugins/smoke/escrow-plugin-browser-ULOndD.mjs`",
+    "visible": true,
+    "flagged": false
+  },
+  "veniceCharges": [
+    {
+      "id": "1d98d751-5a3a-4caf-b9d7-a5581fa292eb",
+      "amount": -0.00058646,
+      "type": "CHARGE",
+      "createdAt": "2026-09-22T22:11:23.388Z",
+      "requestId": "d9319ffd86174783bffdf627a331c6cc",
+      "modelId": "kimi-k2-5"
+    },
+    {
+      "id": "5d430be7-d963-4b36-bdff-b05ab06e4f1f",
+      "amount": -0.00085694,
+      "type": "CHARGE",
+      "createdAt": "2026-09-22T22:10:52.844Z",
+      "requestId": "70dc242ef8d64f4e9b1b6fa53e0819f6",
+      "modelId": "kimi-k2-5"
+    }
+  ],
+  "settlement": {
+    "chargedMicroUSDC": "1444",
+    "remainingMicroUSDC": "998556",
+    "reserved": "0",
+    "providerMicroUSDC": "1444"
+  },
+  "requestStatus": {
+    "shownThroughBrowser": true
+  },
+  "withdrawal": {
+    "returnedMicroUSDC": "998556",
+    "throughBrowser": true,
+    "wrongRecipientRejected": true,
+    "replayRejected": true
+  },
+  "cleanupSucceeded": true,
+  "runDirectory": ".build/plugin-browser-ULOndD",
+  "supervisor": {
+    "passed": true,
+    "elapsedMs": 427418,
+    "peakTreeRSSKiB": 3608656,
+    "ownedTreeAbsent": true,
+    "failures": []
+  },
+  "qualificationScope": "Local Ethereum/Aztec; application proofs enabled; real MetaMask, Venice charges and GitHub draft PR; local token mint and epoch settlement controls are fixtures. Public network not qualified.",
+  "sourceSha256": {
+    "apps/dist/plugins.js": "eeae8cf60a7dcf20ab60e71b466c88195e0afe4ea79adfb318b53f73dd094350",
+    "apps/dist/user.html": "6eb477936ac747e8afc01df1b2acb1adae4f8b5af7a53aa4fea43a7d0ee7178f",
+    "apps/src/billboard/user/app.js": "4a2b3144fb700127192efb3d8a692b485e055ac0960e75cf4842816a2e86242a",
+    "apps/src/billboard/user/template.html": "6008a88254003152ceaf32e57083e3a5863ac3a3f14e5c4ce2db6a8e9177a873",
+    "billboard/plugin_adapter/src/main.nr": "6cf6d4113a10d836eb1e9088385ea80d6ed8db5fd3a0887fee0978c6332b5841",
+    "plugins/account-client.mjs": "971ccb6d8afee7cf4910dd917d2b1a024c4c76f3723fe4901558efabf54720c4",
+    "plugins/adapter_artifact.json": "a1bbdbbfe799d02ee9f9afcb0a3edb33d8b08d9f025b8908f541c1713c82fdbf",
+    "plugins/agent.mjs": "b407517c6d0ffadccaa909dfa797c19944721c1e7cc7d960a4ea55040f0345fc",
+    "plugins/aztec.mjs": "a2d81110725fecb3872d9ef6c6aaba088ba86ade2fa50b4ab17a34e1810db250",
+    "plugins/bok.mjs": "f278892c1656ae60098eb62753730fb1a60f8902d9447e752f83ebc44cc2382e",
+    "plugins/client.mjs": "64f3a5f91c5d79cd08da4c79dfa344c18dd8ee6b92b9ab1d263f10e1347beac8",
+    "plugins/create-actor.mjs": "b0b117d93adc616f4b3d811ef869c0278fe1871bb07c1b9bbe98eabb26a5ada5",
+    "plugins/devnet/bootstrap.mjs": "b7164bb6dc28bb5d1fb817cba2536b9e69b2da4bdf7acafc7f6f7944d98764fe",
+    "plugins/devnet/browser-fixture.mjs": "e34b5081280a665f39a70de12d773b96ec8f74e1160cf6b00af073f3c362fcef",
+    "plugins/devnet/browser.mjs": "bf1f83a5abf64cf4a25043667500c595fb614d5db47857284fc12137ec9e1c0e",
+    "plugins/devnet/network.mjs": "c8c0d53c755d882c2f8a6a06e617c64713921cb2b3b5e333bd13911ec854e609",
+    "plugins/devnet/operator-test.mjs": "b1b846382169678ec79fc7cf9dd3439de115b72c4f3c294a183c09d509697f95",
+    "plugins/devnet/qualify.mjs": "bd03c54d366ccfe613b49de935499255bc824a9f8da30117d30bcce40199de7f",
+    "plugins/devnet/start.mjs": "d00ae668403e1b937de2c29485de214d6297d2b65e609895277c565da9ff4842",
+    "plugins/devnet/supervised-worker.mjs": "2eef9fec08e22def241a5129b0d93d2861b7e6e197d01a3edfe13fd44faf07ff",
+    "plugins/devnet/wallet-harness.mjs": "1a4acda66aa30ca79361dd570baf29b652ae6539ccfe636c26220d3950455947",
+    "plugins/devnet/web.mjs": "3f9cbc1b2a66f087c959f7f8f70165cbd6126d1d8945392166f8fca23d55ec34",
+    "plugins/escrow-service.mjs": "4704bd9a51770afce8130c6cfef6d5b2edb79cf72f03ce59f2448c96921d022b",
+    "plugins/escrow.mjs": "7d20ada40972d0bcbd5db6bd430b124312a22f3d391995c118656e377e78c164",
+    "plugins/github-tools.mjs": "1e1170ab7406bb56ef74d37bbb8aac27de61de21a7aa668e8bc3277a49c475aa",
+    "plugins/main.mjs": "816e5339117216252e27c940a0cf709ed980deb96124f6a31780844c2ff598d7",
+    "plugins/metering.mjs": "e6ac98cdcab941a21e7c888ac1c6fc6e3d867c5552c093fb1de58567925f1d27",
+    "plugins/operations.mjs": "4df07f0560ea50faa1f0c4e3b15cbc8f38bad285931ef5c48cc0aef4434e7b23",
+    "plugins/operator.mjs": "1755285b15cf213e57e30ab443aff6ee019dff51920619b56a2e6ab23e25095e",
+    "plugins/protocol.mjs": "3db05f013e6c40e4f41a9cc5808c743f1ac127707a867f0f679b95da5b66d458",
+    "plugins/request-status.mjs": "c7e7fa44f97647483614ba3ec6755bd2eb3f9d845392e2404986e2f08def311a",
+    "plugins/venice-cli.mjs": "cfbace906f0e8dac362270719588607346d4e4454d6be1d766ca6402fa66ec6b",
+    "plugins/venice-metered.mjs": "8be151672a4ba5bdf4eb38d4ee8cd484d71b62fe613c7dc84c3b7874a5cd7d05",
+    "plugins/venice.mjs": "b5071a0e13275eaab6530db44aab780c971b595af28d103333da21fe0709bb97"
+  },
+  "postRunChange": {
+    "description": "GitHub branch naming now canonicalizes the full numeric invocation ID instead of removing the first two decimal digits. Verified against decimal and hexadecimal IDs by toolbox API tests. No accounting, contracts, provider calls or UI changed after this run.",
+    "files": {
+      "plugins/github-tools.mjs": "ccd1a55e1e80ffe35f07d75aff341acd13ec01924bde9315f1277cfc10666768",
+      "plugins/devnet/wallet-harness.mjs": "6cf82fa6d0d75afeb7d59cd98e2b3259a0194fb533aa135093256a18aec89e1e",
+      "plugins/test/github.test.mjs": "c093997048b2f67fc95b8bf03282ee5ac941325b6ed56bc19495ffbb18a51991"
+    }
+  }
+}

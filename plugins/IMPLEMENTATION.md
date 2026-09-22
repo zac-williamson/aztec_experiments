@@ -6,7 +6,57 @@ The board only invokes the registered receiver in its existing posting transacti
 Model pricing, model selection, GitHub and provider credentials remain in the service.
 There is no shared billing database or service-owned authoritative user balance.
 
-## Qualified local user flow — 2026-09-22
+## Proof-enabled live write qualification — 2026-09-22
+
+Fresh supervised run `.build/plugin-browser-ULOndD` passed with native application
+proofs, real MetaMask and live Venice/GitHub. It rejected an unfunded post without
+publication or provider charge, deposited and claimed 1 USDC through the actual
+user page, posted through the composer, created [draft PR #4](https://github.com/zac-williamson/aztec_experiments/pull/4),
+and verified its exact file bytes and the visible, unflagged canonical reply.
+Two actual Venice invoices totalled $0.00144340; rounding each call to micro-USDC
+produced an exact 0.001444 USDC escrow charge. Operator earnings matched, no funds
+remained reserved, and the user redeemed the remaining 0.998556 USDC through
+MetaMask. Wrong-recipient and replayed withdrawals were rejected. Cleanup and
+the supervisor's process-tree checks passed.
+
+[Browser evidence](evidence/escrow-proof-wallet-2026-09-22.json) records invoice
+IDs, source fingerprints and the verification boundary.
+[Screenshot](evidence/escrow-proof-wallet-2026-09-22.png) shows the reply and balance.
+After this run, GitHub branch naming was corrected to preserve the full invocation
+ID for decimal SDK values; toolbox API tests cover both decimal and hexadecimal
+IDs. This small post-run change is explicitly recorded in the evidence.
+
+The separate native-proof operations run `.build/plugin-operations-XviQRC` also
+passed: a fresh zero-fee-balance actor claimed actual bridged Fee Juice, deployed
+and registered an independent escrow/portal, and redeemed operator earnings while
+preserving user funds. Its synthetic 123-micro-USDC charge is an operator contract
+test, not evidence of provider billing. [Operator evidence](evidence/escrow-proof-operations-2026-09-22.json).
+The subsequent `.build/plugin-operations-EwLhcd` real-contract regression also
+passed: wrong-actor replay is rejected without changing saved deployment state.
+That regression explicitly disabled proving and made no provider calls.
+
+Affected JavaScript checks passed (260 before the final cache and GitHub identity
+regressions; all 49 plugin tests pass after those changes), as did 18 escrow Noir
+tests. Builds and artifact checks passed. The L1 source is unchanged from the
+40 passing Solidity regressions below. Independent review checked the deployment
+journal, proof policy, fresh fee-credit claim and immutable descriptor caching.
+
+Current operational fixes include on-chain request status and cancellation/expiry
+controls, explicit stopped states, provider credit checks before reservation,
+service health, deployment commands with exact-transaction journals, and operator
+earnings redemption. See [deployment instructions](DEPLOYMENT.md).
+
+Venice connectivity was repaired at the host DNS configuration; ordinary TLS
+verification and authenticated calls succeed. No TLS bypass was introduced.
+
+These runs use local Ethereum/Aztec and controlled local epoch settlement; they do
+not qualify public-network finality. The existing project's V5/Sepolia endpoints
+were located and their identity checked, but a new compatible public board and
+plugin deployment have not been transaction-qualified. The conservative full-
+context input reservation remains; reducing the minimum balance requires a
+provider-supported tighter cost bound. No production deployment or push occurred.
+
+## Earlier proof-disabled local user flow — 2026-09-22
 
 Fresh run `.build/plugin-browser-FV2hno` passed with exit code 0 and successful
 cleanup. It used the actual built author page, real MetaMask, actual local Aztec

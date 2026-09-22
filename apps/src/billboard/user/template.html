@@ -75,8 +75,11 @@
   </div>
   <details class="card" id="pluginAccountPanel">
     <summary>Plugin balance</summary>
+    <p>Calls reserve a maximum budget and charge actual usage. Unused funds return to your balance. If a model requires more balance, its reply states the minimum.</p>
     <label for="pluginHandle">Plugin</label><input id="pluginHandle" value="bok">
     <label for="pluginAmount">Amount (USDC)</label><input id="pluginAmount" inputmode="decimal" value="1">
+    <button id="pluginRequests" onclick="pluginAccountAction('requests')">My requests</button>
+    <div id="pluginRequestsList"></div>
     <button id="pluginBalance" onclick="pluginAccountAction('balance')">Check balance</button>
     <button id="pluginDeposit" onclick="pluginAccountAction('deposit')">Deposit</button>
     <button id="pluginClaim" onclick="pluginAccountAction('claim')">Claim deposit</button>
