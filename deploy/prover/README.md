@@ -67,11 +67,15 @@ origin plus /prover. Other discovered boards cannot inherit that endpoint.
 Invalidate changed paths and verify from a fresh browser. On rollback, restore
 matching website/config/CSP and distribution routing before removing the VPC origin.
 
-The current SSO role's extra deployment rights are described by
-`deployment-permissions.json`. These are additional to EC2FullAccess and
-ReadOnlyAccess. The publishing role itself needs ReadOnlyAccess: permissions from
-separate SSO roles do not combine. CloudFront CreateVpcOrigin also authorizes
-TagResource. No root credentials or full administrator policy is required.
+`deployment-permissions.json` is a self-contained replacement inline policy for
+one SSO permission set (currently MessageBoardCompute2). No additional managed
+policies are required for this deployment. It grants account-wide EC2 and
+CloudFront management, website object access restricted to the board bucket,
+creation of the Spot and CloudFront VPC-origin service-linked roles, and deployment
+inspection. It does not grant general IAM administration. Assign and provision
+this same permission set to the operator and account; separate SSO roles do not
+combine. The API-action checklist includes upload, verification, rollback and
+cleanup, including CloudFront tagging and multipart upload cleanup.
 
 ## Qualification and health
 

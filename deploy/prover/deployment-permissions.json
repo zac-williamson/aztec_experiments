@@ -2,30 +2,68 @@
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "ComputeAndCloudFront",
       "Effect": "Allow",
-      "Action": ["cloudfront:CreateVpcOrigin", "cloudfront:UpdateVpcOrigin", "cloudfront:DeleteVpcOrigin", "cloudfront:TagResource"],
+      "Action": [
+        "ec2:*",
+        "cloudfront:*"
+      ],
       "Resource": "*"
     },
     {
+      "Sid": "WebsiteBucket",
       "Effect": "Allow",
-      "Action": ["cloudfront:UpdateDistribution", "cloudfront:CreateInvalidation"],
-      "Resource": "arn:aws:cloudfront::052665140763:distribution/E3BMCK3MOVYK1K"
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketLocation",
+        "s3:ListBucketMultipartUploads"
+      ],
+      "Resource": "arn:aws:s3:::anonymous-message-board-testnet-website-liikoyduw64z"
     },
     {
+      "Sid": "WebsiteFiles",
       "Effect": "Allow",
-      "Action": ["cloudfront:UpdateFunction", "cloudfront:PublishFunction"],
-      "Resource": "arn:aws:cloudfront::052665140763:function/*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": "s3:PutObject",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectVersion",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:AbortMultipartUpload",
+        "s3:ListMultipartUploadParts"
+      ],
       "Resource": "arn:aws:s3:::anonymous-message-board-testnet-website-liikoyduw64z/*"
     },
     {
+      "Sid": "RequiredAWSServiceRoles",
       "Effect": "Allow",
       "Action": "iam:CreateServiceLinkedRole",
-      "Resource": "arn:aws:iam::052665140763:role/aws-service-role/vpcorigin.cloudfront.amazonaws.com/*",
-      "Condition": {"StringEquals": {"iam:AWSServiceName": "vpcorigin.cloudfront.amazonaws.com"}}
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "iam:AWSServiceName": [
+            "spot.amazonaws.com",
+            "vpcorigin.cloudfront.amazonaws.com"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "DeploymentInspection",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetRole",
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion",
+        "iam:ListRolePolicies",
+        "iam:GetRolePolicy",
+        "iam:ListAttachedRolePolicies",
+        "iam:SimulatePrincipalPolicy",
+        "iam:SimulateCustomPolicy",
+        "elasticloadbalancing:DescribeLoadBalancers",
+        "cloudtrail:LookupEvents",
+        "ce:GetCostAndUsage"
+      ],
+      "Resource": "*"
     }
   ]
 }
