@@ -71,6 +71,7 @@ export async function runWalletHarness({fixture,author,directory,origin,onProgre
   await page.waitForFunction(()=>document.getElementById('postBtn')?.getClientRects().length||document.querySelector('#setupStatus .error'),{},{timeout:120000});
   assert(await page.locator('#postBtn').isVisible(),'Author setup failed: '+await page.locator('#setupStatus').innerText());
   await observeMetaMaskTransactions(page);
+  mark('read-provider-ledger');
   const before=await ledger(),priorIds=new Set(before.map(x=>x.id));
   const initialCount=BigInt(await read('get_post_count'));
   const initialBalance=await fixture.provider.getBalance(fixture.signer.address);
@@ -111,10 +112,18 @@ export async function runWalletHarness({fixture,author,directory,origin,onProgre
   assert.equal(await read('is_post_flagged',id),false);assert.equal(await read('is_post_flagged',replyField),false);
   const api=githubApi({token:process.env.GITHUB_TOKEN});const files=await api('GET','/repos/zac-williamson/aztec_experiments/pulls/1/files');assert(files.some(x=>x.filename==='docs/bok-live-smoke.md'));
   const charges=(await ledger()).filter(x=>!priorIds.has(x.id)&&x.type==='CHARGE');assert(charges.length>0);assert(charges.every(x=>x.modelId===expectedModel));
-  const visible=await page.locator('#billboardFeed').innerText();assert(visible.includes(reply));
-  report.reply={postId:replyField.toString(),text:reply,visible:true,flagged:false};report.veniceCharges=charges;
+  report.reply={postId:replyField.toString(),text:reply,visible:false,flagged:false};report.veniceCharges=charges;
+  mark('verify-visible-reply');
+  const article=page.locator('#billboardFeed article').filter({has:page.getByText(/Bot reply/)});
+  assert.equal(await article.count(),1);assert(await article.isVisible());
+  const content=article.locator('p').nth(1);assert(await content.isVisible());
+  assert.equal(await content.textContent(),reply);
+  // Normal paragraph layout collapses whitespace; still require all rendered words.
+  const normalize=value=>value.replace(/\s+/g,' ').trim();
+  assert.equal(normalize(await content.innerText()),normalize(reply));
+  report.reply.visible=true;
   await page.screenshot({path:path.join(directory,'browser-reply.png'),fullPage:true});report.passed=true;mark('passed');
- }catch(error){report.error='Wallet harness failed at '+report.stage+' ('+error.name+')';if(page)report.uiStatus=await page.locator('#setupStatus, #postStatus').allTextContents().catch(()=>[]);throw new Error(report.error);
+ }catch(error){report.error='Wallet harness failed at '+report.stage+' ('+error.name+')';report.callSite=String(error.stack).split('\n').find(line=>line.includes('wallet-harness.mjs:'));if(page)report.uiStatus=await page.locator('#setupStatus, #postStatus').allTextContents().catch(()=>[]);throw new Error(report.error);
  }finally{
   clearTimeout(deadline);signal?.removeEventListener('abort',cancel);
   try{await context?.close();}catch(error){report.passed=false;report.cleanupError=error.message;throw error;}

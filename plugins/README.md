@@ -127,5 +127,7 @@ concurrently elsewhere because this test attributes charges by ledger changes.
 
 `browser-result.json` contains observations and `browser-reply.png` captures
 the final page when successful. A passing result requires normal cleanup and
-exit code zero. Browser-wallet acceptance remains pending until a complete run
-produces that evidence.
+exit code zero. The proof-disabled browser-wallet scenario passed on 2026-09-22;
+see [recorded evidence](evidence/wallet-2026-09-22.json) and the
+[actual page screenshot](evidence/wallet-2026-09-22.png). This run reads an existing
+GitHub PR; prior native integration separately tested creating a draft PR.
