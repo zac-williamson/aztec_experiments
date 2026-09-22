@@ -1,0 +1,31 @@
+[Unit]
+Description=Board-scoped native remote prover
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=board-prover
+Group=board-prover
+WorkingDirectory=/opt/board-prover/current
+ExecStart=/opt/board-prover/current/node/bin/node prover/start.mjs /etc/board-prover/config.json
+Restart=no
+TimeoutStopSec=30
+RuntimeDirectory=board-prover
+RuntimeDirectoryMode=0700
+Environment=TMPDIR=/run/board-prover
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/run/board-prover
+MemoryMax=24G
+TasksMax=256
+LimitNOFILE=1024
+LimitCORE=0
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

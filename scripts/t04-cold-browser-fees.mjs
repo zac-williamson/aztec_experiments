@@ -1,3 +1,4 @@
+import {startRemoteProverFixture,assertRemoteJobs} from './testing/remote-prover-fixture.mjs';
 // TEST ONLY. Native setup stops before approval/bridge; the browser funds itself.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -29,7 +30,7 @@ const silent=Object.fromEntries(['trace','debug','verbose','info','warn','error'
 
 export async function observeColdBrowserFees({node,preparation,instance,l1Client,directory,rpcUrl,browserControl,ready,reportStage:mark}) {
  const observation={passed:false,nativeFunding:false,browserProofs:3};
- let setup,rpc,capture,provider;
+ let remoteFixture,setup,rpc,capture,provider;
  const checkpoints=createT04CheckpointScope(node.getSequencer()),captures=new Map(),transactions={};
  const backupPath=path.join(directory,'browser-wallet.encrypted.json'),deadline=Date.now()+480000;
  const waitFile=async filename=>{
@@ -104,6 +105,7 @@ export async function observeColdBrowserFees({node,preparation,instance,l1Client
   const scope={l1ChainId:String(info.l1ChainId),rollupVersion:String(info.rollupVersion),rollupAddress:info.l1ContractAddresses.rollupAddress.toString().toLowerCase(),portalAddress:ready.portalAddress.toLowerCase(),boardAddress:instance.address.toString()};
   const gasSettings=Object.fromEntries(['gasLimits','teardownGasLimits','maxFeesPerGas','maxPriorityFeesPerGas'].map(name=>[name,Object.fromEntries((name.endsWith('Gas')?['feePerDaGas','feePerL2Gas']:['daGas','l2Gas']).map(key=>[key,String(gas[name][key])]))]));
   const publicConfig={schemaVersion:1,network:{nodeUrl:browserControl.origin+'/rpc/aztec',ethRpcUrl:browserControl.origin+'/rpc/ethereum',chainId:scope.l1ChainId,rollupVersion:scope.rollupVersion,rollupAddress:scope.rollupAddress},board:{portalAddress:scope.portalAddress,contractAddress:scope.boardAddress},privateFee:{contractAddress:payer.address.toString(),gasSettings}};
+    if(process.env.BOARD_TEST_REMOTE==='1'){remoteFixture=await startRemoteProverFixture({directory,board:instance.address.toString(),info:await node.getNodeInfo(),bbPath:path.join(directory,'bb-one-thread'),privateFeeAddress:publicConfig.privateFee.contractAddress,origins:[browserControl.origin]});publicConfig.remoteProver={url:remoteFixture.config.url};}
   const context=vm.createContext({crypto:webcrypto,TextEncoder,TextDecoder,Uint8Array});vm.runInContext(await fs.readFile(path.join(ROOT,'shared/wallet-backup.js'),'utf8'),context);
   const backup=await context.BillboardWalletBackup.encrypt({schemaVersion:1,wallet:{secretKey:author.secret.toString(),salt:author.salt.toString()},claims:[]},browserControl.backupPassword);
   await fs.writeFile(backupPath,JSON.stringify(backup),{mode:0o600,flag:'wx'});
@@ -172,7 +174,7 @@ export async function observeColdBrowserFees({node,preparation,instance,l1Client
   assert.equal(tokenAfter.sender,tokenBefore.sender-fundingAmount);
   assert.equal(tokenAfter.portal,tokenBefore.portal+fundingAmount);
   Object.assign(observation.funding,{singleDeposit:true,tokenMovementChecked:true,fromBlock:String(startL1Block+1n),toBlock:String(endL1Block)});
-  Object.assign(observation,{passed:true,privateBalance:String(balance),privateDebit:String(actualFees),actualProtocolFees:String(actualFees),authorPublicBalanceZero:true,browser});return observation;
+  Object.assign(observation,{remoteJobs:assertRemoteJobs(remoteFixture,3),passed:true,privateBalance:String(balance),privateDebit:String(actualFees),actualProtocolFees:String(actualFees),authorPublicBalanceZero:true,browser});return observation;
  }catch(error){error.browserPostObservation=observation;throw error;}
- finally{await runT04Cleanup([()=>checkpoints.restore(),()=>capture?.close(),()=>rpc?.close(),()=>setup?.close(),()=>provider?.destroy(),()=>fs.rm(backupPath,{force:true})]);}
+ finally{await runT04Cleanup([()=>remoteFixture?.close(),()=>checkpoints.restore(),()=>capture?.close(),()=>rpc?.close(),()=>setup?.close(),()=>provider?.destroy(),()=>fs.rm(backupPath,{force:true})]);}
 }

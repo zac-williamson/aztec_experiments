@@ -13,6 +13,7 @@ export async function fingerprints() {
     'node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js']) {
     result[name] = sha(await fs.readFile(path.join(ROOT, name)));
   }
+  for(const name of await fs.readdir(path.join(ROOT,'prover')))if(name.endsWith('.mjs'))result['prover/'+name]=sha(await fs.readFile(path.join(ROOT,'prover',name)));
   for(const name of await fs.readdir(path.join(ROOT,'scripts/testing'))){
     if(name.endsWith('.mjs'))result['scripts/testing/'+name]=sha(await fs.readFile(path.join(ROOT,'scripts/testing',name)));
   }

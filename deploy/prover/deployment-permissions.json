@@ -1,0 +1,31 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["cloudfront:CreateVpcOrigin", "cloudfront:UpdateVpcOrigin", "cloudfront:DeleteVpcOrigin"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["cloudfront:UpdateDistribution", "cloudfront:CreateInvalidation"],
+      "Resource": "arn:aws:cloudfront::052665140763:distribution/E3BMCK3MOVYK1K"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["cloudfront:UpdateFunction", "cloudfront:PublishFunction"],
+      "Resource": "arn:aws:cloudfront::052665140763:function/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::anonymous-message-board-testnet-website-liikoyduw64z/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iam:CreateServiceLinkedRole",
+      "Resource": "arn:aws:iam::052665140763:role/aws-service-role/vpcorigin.cloudfront.amazonaws.com/*",
+      "Condition": {"StringEquals": {"iam:AWSServiceName": "vpcorigin.cloudfront.amazonaws.com"}}
+    }
+  ]
+}

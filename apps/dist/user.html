@@ -353,7 +353,7 @@
     if(location.hash&&(!match||match[1]!==networkId))throw Error('Invalid board or network link');
     const boardAddress=match?match[2]:hosted.board.contractAddress;
     const result=await root.BillboardPublic.connectPublicBoard({network:hosted.network,boardAddress,metadata:root.BillboardPublic.metadata,storage:root.BillboardPublic.browserPublicFeedStorage()});
-    return {...result,config:root.BillboardConfig.validate({...result.config,privateFee:hosted.privateFee}),fragment:'network='+networkId+'&board='+boardAddress};
+    return {...result,config:root.BillboardConfig.validate({...result.config,privateFee:hosted.privateFee,...(boardAddress===hosted.board.contractAddress&&hosted.remoteProver?{remoteProver:hosted.remoteProver}:{})}),fragment:'network='+networkId+'&board='+boardAddress};
   };
   if(document.body?.hasAttribute('data-public-board-reader'))return;
   if(document.body?.hasAttribute('data-hosted-board')){
@@ -41631,7 +41631,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         claim = undefined;
         return result;
       } catch (error) {
-        if (['BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID', 'BB_BROWSER_PROOF_FAILED', 'BB_REMOTE_PROVER_FAILED'].includes(error?.code)) throw privateFeeFailure(error.code);
+        if (['BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID', 'BB_BROWSER_PROOF_FAILED', 'BB_REMOTE_PROVER_FAILED'].includes(error?.code)) {const failure=privateFeeFailure(error.code);if(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(error.stage))failure.stage=error.stage;throw failure;}
         if (error?.code === 'BB_STATE_CONFLICT') {
           const allowed = ['Existing nullifier', 'Block header not found'];
           if (Array.isArray(error.stateReasons) && error.stateReasons.length > 0 && error.stateReasons.every(reason => allowed.includes(reason))) {
@@ -43762,6 +43762,14 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
   };
 }
 
+// Both posting and funding snapshot this single control through _connectionConfig.
+(function bindRemoteProving(){
+ const toggle=document.getElementById('remoteProving');if(!toggle)return;
+ let previousUrl;
+ const refresh=()=>{const url=window.billboardConfigStore?.snapshot().config?.remoteProver?.url;if(url!==previousUrl){toggle.checked=!!url;previousUrl=url;}toggle.disabled=!url;toggle.title=url?'Use this board’s prover. Private witness data is shared with its operator.':'This board has not configured a remote prover.';toggle.setAttribute('aria-description',toggle.title);};
+ window.billboardConfigStore?.subscribe(refresh);refresh();
+})();
+
 // Browser application boundary. SDK objects and transaction acknowledgements stay here.
 /**
  * @typedef {'status'|'deposit'|'claim'|'post'|'withdraw'|'claim-l1'|'recover'|'recover-eth'|'recover-l2'|'declare-immoral'|'set-moderation-policy'|'transfer-censor'|'deploy'} BoardAction
@@ -44411,12 +44419,6 @@ function waitForBundleThenInit() {
   }
 }
 initializeHostedBoard(waitForBundleThenInit);
-
-// Snapshot the toggle into each operation's config; cache keys isolate routes.
-const remoteProvingToggle=document.getElementById('remoteProving');
-let lastRemoteProverUrl;
-function refreshRemoteProving(){const url=window.billboardConfigStore?.snapshot().config?.remoteProver?.url,available=!!url;if(url!==lastRemoteProverUrl){remoteProvingToggle.checked=available;lastRemoteProverUrl=url;}remoteProvingToggle.disabled=!available;remoteProvingToggle.title=available?'Use this board’s prover. Private witness data is shared with its operator.':'This board has not configured a remote prover.';}
-window.billboardConfigStore?.subscribe(refreshRemoteProving);refreshRemoteProving();
 
 </script>
 </body>

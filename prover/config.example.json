@@ -5,7 +5,10 @@
   "chainId": "31337",
   "rollupVersion": "1",
   "proofs": "disabled",
-  "origins": ["http://localhost:8080"],
+  "origins": [
+    "http://localhost:8080"
+  ],
   "threads": 1,
-  "queueDirectory": "/tmp"
+  "queueDirectory": "/tmp",
+  "privateFeeAddress": "0x0000000000000000000000000000000000000000000000000000000000000002"
 }

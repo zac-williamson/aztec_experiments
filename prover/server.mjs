@@ -12,6 +12,7 @@ export function createProverServer({queue,board,chainId,rollupVersion,proofsEnab
   if(origin){res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Vary','Origin');res.setHeader('Access-Control-Allow-Credentials','true');}
   if(req.method==='OPTIONS'){res.setHeader('Access-Control-Allow-Methods','GET, POST');res.setHeader('Access-Control-Allow-Headers','Content-Type');reply(204,{});return;}
   try{
+   if(req.method==='GET'&&req.url==='/healthz'){reply(200,{ready:true,proofs:proofsEnabled?'real':'disabled',queue:queue.stats()});return;}
    if(req.method==='POST'&&req.url==='/v1/jobs'){
     let client=req.socket.remoteAddress;
     if(trustedProxy&&client===trustedProxy){const forwarded=req.headers['x-real-ip'];if(typeof forwarded!=='string'||!isIP(forwarded)){reply(400,{error:'Proxy address required'});return;}client=forwarded;}

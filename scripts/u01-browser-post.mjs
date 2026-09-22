@@ -46,7 +46,8 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
  requireValue(['lifecycle','funding','performance'].includes(browserMode)===(typeof journeyDriver==='function'));
  requireValue(!browserRecovery||(!journeyDriver&&!observeProofStages&&!diagnostic));
  requireValue(Number.isSafeInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=480000&&typeof message==='string'&&message.trim()===message&&Buffer.byteLength(message)>0&&Buffer.byteLength(message)<=992);
- const config=structuredClone(publicConfig);config.network.nodeUrl=site.origin+'/rpc/aztec';config.network.ethRpcUrl=site.origin+'/rpc/ethereum';
+ const remoteTarget=publicConfig.remoteProver?local(publicConfig.remoteProver.url):null;
+ const config=structuredClone(publicConfig);if(remoteTarget)config.remoteProver={url:site.origin+'/prover'};config.network.nodeUrl=site.origin+'/rpc/aztec';config.network.ethRpcUrl=site.origin+'/rpc/ethereum';
  if(browserMode==='performance')observation.gasSettings=structuredClone(config.privateFee.gasSettings);
  const caddy=path.join(ROOT,'.build/caddy-2.11.4/caddy');
  const remaining=()=>Math.max(1,timeoutMs-(Date.now()-started));
@@ -64,7 +65,7 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
   const generated=generateHosting({dist:path.join(ROOT,'apps/dist'),site:site.origin,certificate:cert,key,local:true,origins:[]});
   // Only this disposable fixture adds RPC routes; the production generator stays static.
   requireValue(generated.caddyfile.includes('  @allowed path '));
-  fs.writeFileSync(file,generated.caddyfile.replace('  @allowed path ',browserRpcProxy('aztec',node,rpcToken)+browserRpcProxy('ethereum',ethereum,rpcToken)+`  handle /board-reader-config.json {\n    header Content-Type application/json\n    respond ${JSON.stringify(JSON.stringify(config))} 200\n  }\n`+'  @allowed path '),{mode:0o600});
+  fs.writeFileSync(file,generated.caddyfile.replace('  @allowed path ',(remoteTarget?`  handle_path /prover/* {\n    reverse_proxy ${remoteTarget.host}\n  }\n`:'')+browserRpcProxy('aztec',node,rpcToken)+browserRpcProxy('ethereum',ethereum,rpcToken)+`  handle /board-reader-config.json {\n    header Content-Type application/json\n    respond ${JSON.stringify(JSON.stringify(config))} 200\n  }\n`+'  @allowed path '),{mode:0o600});
   const env={PATH:'/usr/bin:/bin',HOME:directory,XDG_DATA_HOME:directory,XDG_CONFIG_HOME:directory};
   requireValue(/^v2\.11\.4 /.test(execFileSync(caddy,['version'],{encoding:'utf8'})));
   execFileSync(caddy,['validate','--config',file,'--adapter','caddyfile'],{env,stdio:'pipe',timeout:10000});
@@ -132,7 +133,7 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
    await page.waitForFunction(()=>globalThis.__aztec?.createPXE&&document.getElementById('wbAztecFile'),{},{timeout:remaining()});observation.sdkReadyMs=Date.now()-navigationStarted;
    await page.evaluate(installBrowserErrorObserver);
    if(extensionWallet){await page.waitForFunction(()=>!!window.ethereum);await addMetaMaskNetwork({page,walletPage,extensionId,rpcUrl:credentials.rpcUrl,mark});credentials=null;await observeMetaMaskTransactions(page);}
-   mark('hosted-board-loaded');requireValue(await page.getByLabel('Public configuration JSON',{exact:true}).count()===0);requireValue(await page.evaluate(address=>billboardConfigStore.snapshot().config?.board.contractAddress===address,config.board.contractAddress));
+   mark('hosted-board-loaded');if(remoteTarget){requireValue(await page.getByRole('checkbox',{name:'Remote proving',exact:true}).isChecked());requireValue(await page.getByRole('checkbox',{name:'Remote proving',exact:true}).isEnabled());observation.remoteProver=true;}requireValue(await page.getByLabel('Public configuration JSON',{exact:true}).count()===0);requireValue(await page.evaluate(address=>billboardConfigStore.snapshot().config?.board.contractAddress===address,config.board.contractAddress));
    await page.waitForFunction(()=>globalThis.billboardConfigStore?.snapshot().config!==null);
    mark('encrypted-wallet-restore');await page.locator('#wbAccountMenu > summary').click();await page.locator('#wbPassword').fill(backupPassword);await page.locator('#wbAztecFile').setInputFiles(backupPath);
    await page.waitForFunction(()=>!!globalThis.walletState?.aztec?.address||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});requireValue(await page.evaluate(()=>!!globalThis.walletState?.aztec?.address));

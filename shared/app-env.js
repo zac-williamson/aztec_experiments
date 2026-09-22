@@ -257,3 +257,11 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
     } finally {running=false;}
   };
 }
+
+// Both posting and funding snapshot this single control through _connectionConfig.
+(function bindRemoteProving(){
+ const toggle=document.getElementById('remoteProving');if(!toggle)return;
+ let previousUrl;
+ const refresh=()=>{const url=window.billboardConfigStore?.snapshot().config?.remoteProver?.url;if(url!==previousUrl){toggle.checked=!!url;previousUrl=url;}toggle.disabled=!url;toggle.title=url?'Use this board’s prover. Private witness data is shared with its operator.':'This board has not configured a remote prover.';toggle.setAttribute('aria-description',toggle.title);};
+ window.billboardConfigStore?.subscribe(refresh);refresh();
+})();

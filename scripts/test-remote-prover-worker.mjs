@@ -29,3 +29,15 @@ test('native route switched to local delegates to its SDK implementation',async(
  const Prover=routedKernelProverClass(Local),p=new Prover({}, {},{proofsEnabled:true,transport:null}),steps=[];
  assert.equal(await p.createChonkProof(steps),steps);assert.equal(calls,1);
 });
+test('standalone fee funding is limited to the configured fee contract and network',async()=>{
+ const catalog=await loadCircuitCatalog(),directory=await fs.mkdtemp(path.join(os.tmpdir(),'prover-fee-test-')),file=path.join(directory,'job');
+ const address='0x'+'2'.padStart(64,'0');
+ try{for(const [name,configured,chain,valid] of [['mint_and_pay_fee',address,'31337',true],['mint_and_pay_fee',undefined,'31337',false],['mint_and_pay_fee','0x'+'3'.padStart(64,'0'),'31337',false],['mint_and_pay_fee',address,'1',false],['mint',address,'31337',false]]){
+  const [id,c]=[...catalog].find(([,c])=>c.functionName==='PrivateFPC:'+name),inputs=Object.fromEntries(c.abi.parameters.map(p=>[p.name,zero(p.type)]));
+  inputs.inputs.call_context.contract_address.inner='2';inputs.inputs.tx_context.chain_id=chain;inputs.inputs.tx_context.version='1';
+  const witness=serializeWitness(abiEncode(c.abi,inputs,zero(c.abi.return_type.abi_type)));
+  await fs.writeFile(file,encodeJob({board:'0x'+'1'.padStart(64,'0'),chainId:'31337',rollupVersion:'1',mode:'disabled',circuits:[id]},[witness]));
+  const worker=createProcessWorker({proofsEnabled:false,privateFeeAddress:configured});
+  try{if(valid)assert.deepEqual(await worker.prove(file),{mode:'disabled'});else await assert.rejects(worker.prove(file),e=>e.code==='board-binding');}finally{await worker.close();}
+ }}finally{await fs.rm(directory,{recursive:true,force:true});}
+});

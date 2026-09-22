@@ -11,11 +11,18 @@ An unavailable remote service fails explicitly; there is no automatic local retr
 - `remote-prover-wire.mjs`: versioned binary envelope, length checks, circuit IDs.
 - `remote-prover-client.mjs`: `prove(steps, publicInputs)` HTTP transport.
 - `routed-kernel-prover.mjs`: SDK witness generation and proof-result verification.
+- `service.mjs`: production composition root, startup validation and owned cleanup.
 - `server.mjs`: HTTP admission; depends on the queue interface.
-- `queue.mjs`: `submit/get/close`, FIFO and disk-backed payload lifecycle.
+- `queue.mjs`: `submit/get/stats/close`, FIFO and disk-backed payload lifecycle.
 - `process-worker.mjs`: `prove(file)/close`, disposable subprocess and deadline.
 - `worker.mjs`: trusted catalog, board witness validation, native BB backend.
 
+The same toggle is available on the posting and private-fee funding pages.
+Standalone fee funding is allowed only for the operator-configured
+`privateFeeAddress`; other jobs must contain a call to the configured board.
+The catalog includes the pinned SDK’s protocol and standard preloaded contracts.
+
+GET `/healthz` reports mode and aggregate queue counters without job IDs.
 POST `/v1/jobs` accepts the binary envelope and returns an opaque job ID.
 GET `/v1/jobs/:id` returns queued/running/complete/failed. IDs are bearer secrets.
 Clients poll the same job; no implicit submission retry. API version is 1 and
@@ -25,7 +32,7 @@ come from the requester. A circuit ID hashes length-prefixed bytecode plus VK.
 ## Local development
 
 Use pinned Node 24.21.0. Copy `config.example.json`, set the devnet board address,
-rollup version and page origin, then run:
+rollup version, `privateFeeAddress` and page origin, then run:
 
 ```
 node prover/start.mjs /absolute/path/to/config.json
@@ -45,7 +52,7 @@ Local proving also follows devnet mode. No SDK dependency patches are needed.
 The isolated application integration test starts/stops its own HTTP service:
 
 ```
-BOARD_TEST_PROOFS=disabled BOARD_TEST_REMOTE=1 node scripts/test-c01-application.mjs private-fee-post
+BOARD_TEST_PROOFS=disabled BOARD_TEST_REMOTE=1 node scripts/test-c01-application.mjs browser-cold-fees
 ```
 
 This is functional testing, not cryptographic proof qualification.
@@ -58,8 +65,8 @@ Optional `bbPath` and `crsPath` override those locations. Point the board config
 at the hosted HTTPS endpoint. The remote and local adapters use the same API
 and SDK witness path. Real results are decompressed and cryptographically
 verified in the browser, then the SDK checks expected public inputs.
-The real proving implementation must be qualified with genuine proofs before
-production use; development tests do not establish this.
+See [qualification results](QUALIFICATION.md) for genuine browser proofs and
+the packaged C8a service check. Development tests alone do not establish this.
 
 Use a TLS reverse proxy, preferably `/prover` on the board's own origin (strip
 that prefix upstream). Allow its endpoint in CSP connect-src. For client rate
@@ -86,3 +93,6 @@ waiting in a long queue; failures are explicit and require a fresh transaction.
 Witnesses contain private information, including protocol privacy-key material.
 The service operator must be trusted with that data. Transaction signing keys
 and the wallet seed are never included by this adapter.
+
+See [deployment instructions](../deploy/prover/README.md) for the C8a service,
+private CloudFront origin, publication permissions and rollback requirements.

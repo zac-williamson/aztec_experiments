@@ -1,3 +1,4 @@
+import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 // TEST ONLY. Canonical public effect/accounting primitives; no proving bypass.
 import assert from 'node:assert/strict';
 import {TxHash,TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
@@ -10,7 +11,7 @@ import {encodeEscrowCommitment} from '../shared/protocol-commitments.mjs';
 import {parseEventLogs} from 'viem';
 
 export async function verifyJourneyIncludedTransaction({node,captures,txHash,expectedPayer}){
- assert.equal((await node.getConfig()).realProofs,true);assert(!node.getProverNode());assert.equal(Number((await node.getNodeInfo()).l1ChainId),31337);
+ assert.equal((await node.getConfig()).realProofs,applicationProofsEnabled());assert(!node.getProverNode());assert.equal(Number((await node.getNodeInfo()).l1ChainId),31337);
  const hash=TxHash.fromString(txHash),captured=captures.get(txHash);
  assert(captured?.tx&&captured.preSubmissionValidation?.result==='valid','Missing independently validated actual browser submission');
  const tx=captured.tx;assert(!tx.chonkProof.isEmpty());assert.equal(tx.getTxHash().toString(),txHash);assert.equal(tx.data.feePayer.toString(),expectedPayer);

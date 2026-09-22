@@ -353,7 +353,7 @@
     if(location.hash&&(!match||match[1]!==networkId))throw Error('Invalid board or network link');
     const boardAddress=match?match[2]:hosted.board.contractAddress;
     const result=await root.BillboardPublic.connectPublicBoard({network:hosted.network,boardAddress,metadata:root.BillboardPublic.metadata,storage:root.BillboardPublic.browserPublicFeedStorage()});
-    return {...result,config:root.BillboardConfig.validate({...result.config,privateFee:hosted.privateFee}),fragment:'network='+networkId+'&board='+boardAddress};
+    return {...result,config:root.BillboardConfig.validate({...result.config,privateFee:hosted.privateFee,...(boardAddress===hosted.board.contractAddress&&hosted.remoteProver?{remoteProver:hosted.remoteProver}:{})}),fragment:'network='+networkId+'&board='+boardAddress};
   };
   if(document.body?.hasAttribute('data-public-board-reader'))return;
   if(document.body?.hasAttribute('data-hosted-board')){
@@ -41394,6 +41394,14 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
     } finally {running=false;}
   };
 }
+
+// Both posting and funding snapshot this single control through _connectionConfig.
+(function bindRemoteProving(){
+ const toggle=document.getElementById('remoteProving');if(!toggle)return;
+ let previousUrl;
+ const refresh=()=>{const url=window.billboardConfigStore?.snapshot().config?.remoteProver?.url;if(url!==previousUrl){toggle.checked=!!url;previousUrl=url;}toggle.disabled=!url;toggle.title=url?'Use this board’s prover. Private witness data is shared with its operator.':'This board has not configured a remote prover.';toggle.setAttribute('aria-description',toggle.title);};
+ window.billboardConfigStore?.subscribe(refresh);refresh();
+})();
 
 // Browser application boundary. SDK objects and transaction acknowledgements stay here.
 /**

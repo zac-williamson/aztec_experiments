@@ -505,9 +505,3 @@ function waitForBundleThenInit() {
   }
 }
 initializeHostedBoard(waitForBundleThenInit);
-
-// Snapshot the toggle into each operation's config; cache keys isolate routes.
-const remoteProvingToggle=document.getElementById('remoteProving');
-let lastRemoteProverUrl;
-function refreshRemoteProving(){const url=window.billboardConfigStore?.snapshot().config?.remoteProver?.url,available=!!url;if(url!==lastRemoteProverUrl){remoteProvingToggle.checked=available;lastRemoteProverUrl=url;}remoteProvingToggle.disabled=!available;remoteProvingToggle.title=available?'Use this board’s prover. Private witness data is shared with its operator.':'This board has not configured a remote prover.';}
-window.billboardConfigStore?.subscribe(refreshRemoteProving);refreshRemoteProving();

@@ -347,7 +347,7 @@
     if(location.hash&&(!match||match[1]!==networkId))throw Error('Invalid board or network link');
     const boardAddress=match?match[2]:hosted.board.contractAddress;
     const result=await root.BillboardPublic.connectPublicBoard({network:hosted.network,boardAddress,metadata:root.BillboardPublic.metadata,storage:root.BillboardPublic.browserPublicFeedStorage()});
-    return {...result,config:root.BillboardConfig.validate({...result.config,privateFee:hosted.privateFee}),fragment:'network='+networkId+'&board='+boardAddress};
+    return {...result,config:root.BillboardConfig.validate({...result.config,privateFee:hosted.privateFee,...(boardAddress===hosted.board.contractAddress&&hosted.remoteProver?{remoteProver:hosted.remoteProver}:{})}),fragment:'network='+networkId+'&board='+boardAddress};
   };
   if(document.body?.hasAttribute('data-public-board-reader'))return;
   if(document.body?.hasAttribute('data-hosted-board')){
@@ -498,6 +498,7 @@
 <p><a data-board-link hidden href="user.html">Back to posting</a></p>
 <p><a data-board-link hidden href="feed.html">Read messages</a></p>
 <h1>Fund private fees</h1>
+<label><input type="checkbox" id="remoteProving" checked> Remote proving</label>
 <p>Bridge your AZTEC tokens into a private balance. Your transactions spend that balance through a shared, ownerless contract.</p>
 <p class="small">You need AZTEC tokens and ETH for Ethereum gas in your connected wallet. This page does not exchange tokens.</p>
 <div class="card"><h2>1. Connect wallet</h2><input id="secretKey" type="hidden"><input id="salt" type="hidden" value="0"><div id="walletButtonsContainer"></div><div id="setupStatus" class="status-container" role="status" aria-live="polite"></div></div>
@@ -18533,7 +18534,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         claim = undefined;
         return result;
       } catch (error) {
-        if (['BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID', 'BB_BROWSER_PROOF_FAILED', 'BB_REMOTE_PROVER_FAILED'].includes(error?.code)) throw privateFeeFailure(error.code);
+        if (['BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID', 'BB_BROWSER_PROOF_FAILED', 'BB_REMOTE_PROVER_FAILED'].includes(error?.code)) {const failure=privateFeeFailure(error.code);if(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(error.stage))failure.stage=error.stage;throw failure;}
         if (error?.code === 'BB_STATE_CONFLICT') {
           const allowed = ['Existing nullifier', 'Block header not found'];
           if (Array.isArray(error.stateReasons) && error.stateReasons.length > 0 && error.stateReasons.every(reason => allowed.includes(reason))) {
@@ -20173,7 +20174,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       const contracts=await node.getL1ContractAddresses();
       const dataDirectory='pxe_private_fee_'+owner.toString()+'_'+contracts.rollupAddress;
       const store=await env.createStore({...contracts,l1ChainId:info.l1ChainId,accountAddress:owner.toString(),dataDirectory});
-      pxe=await a.createPXE(node,{proverEnabled:true,autoSync:true,dataDirectory},{store});
+      pxe=await a.createPXE(node,{proverEnabled:true,autoSync:true,dataDirectory},{store,remoteProver:config.remoteProver});
       await pxe.registerAccount(keys,await a.computePartialAddress(instance));
       await pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact);
       await pxe.registerContract(instance);
@@ -20188,8 +20189,8 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       log('Your private fee balance is ready for board transactions.','success');
       return {ok:true,receipt:result.receipt,lastL2TxHash:transactionJournal.lastTxHash};
     }catch(error){
-      const code=['PRIVATE_FEE_CAP_TOO_LOW','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID'].includes(error?.code)?error.code:'BB_PRIVATE_FEE_CLAIM_FAILED';
-      const safe=new Error(code==='BB_SUBMISSION_UNKNOWN'?'Submission outcome is unknown. Check the transaction before retrying.':'Private fee claim did not complete. Keep the recovery file and check the deposit before retrying.',{cause:error});safe.code=code;throw safe;
+      const code=['BB_REMOTE_PROVER_FAILED','PRIVATE_FEE_CAP_TOO_LOW','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID'].includes(error?.code)?error.code:'BB_PRIVATE_FEE_CLAIM_FAILED';
+      const safe=new Error(code==='BB_SUBMISSION_UNKNOWN'?'Submission outcome is unknown. Check the transaction before retrying.':'Private fee claim did not complete. Keep the recovery file and check the deposit before retrying.',{cause:error});safe.code=code;if(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(error?.stage))safe.stage=error.stage;throw safe;
     }finally{if(pxe)await pxe.stop().catch(()=>{});}
     } finally {ethProvider.destroy();}
   };
@@ -20778,6 +20779,14 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
   };
 }
 
+// Both posting and funding snapshot this single control through _connectionConfig.
+(function bindRemoteProving(){
+ const toggle=document.getElementById('remoteProving');if(!toggle)return;
+ let previousUrl;
+ const refresh=()=>{const url=window.billboardConfigStore?.snapshot().config?.remoteProver?.url;if(url!==previousUrl){toggle.checked=!!url;previousUrl=url;}toggle.disabled=!url;toggle.title=url?'Use this board’s prover. Private witness data is shared with its operator.':'This board has not configured a remote prover.';toggle.setAttribute('aria-description',toggle.title);};
+ window.billboardConfigStore?.subscribe(refresh);refresh();
+})();
+
 // Browser application boundary. SDK objects and transaction acknowledgements stay here.
 /**
  * @typedef {'status'|'deposit'|'claim'|'post'|'withdraw'|'claim-l1'|'recover'|'recover-eth'|'recover-l2'|'declare-immoral'|'set-moderation-policy'|'transfer-censor'|'deploy'} BoardAction
@@ -20935,6 +20944,7 @@ async function recoverSavedFeeEthereum(retry=false) {
 }
 setupRpcAuth();
 function safeFundingError(error) {
+  if(error?.code==='BB_REMOTE_PROVER_FAILED')return 'Remote proving failed. Retry or turn off Remote proving to prove on this device.';
   if(error?.code==='PRIVATE_FEE_CAP_TOO_LOW')return 'The configured transaction fee cap is below the network’s current minimum. The board operator needs to update its fee settings before you can continue.';
   if(error?.code==='BB_ETH_RECOVERY_REQUIRED')return 'Check the saved Ethereum fee request before starting another deposit.';
   if(error?.code==='BB_RECOVERY_REQUIRED')return 'Recover the saved private fee transaction before attempting another claim.';
