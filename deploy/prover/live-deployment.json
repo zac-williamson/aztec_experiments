@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-09-22T22:49:06.884763+00:00",
+  "website": "https://d30njln0kead8n.cloudfront.net",
+  "endpoint": "https://d30njln0kead8n.cloudfront.net/prover",
+  "instance": "i-0abeb28cb8033a1ee",
+  "region": "us-east-2",
+  "type": "c8a.4xlarge",
+  "physicalCores": 16,
+  "market": "spot",
+  "maxHourlyUSD": 0.4,
+  "terminateAt": "2026-09-24 16:33:57 UTC",
+  "totalTestingBudgetUSD": 50,
+  "runtimeCommit": "0fcede64d922fac453e73eafa86ebc9c3843b6f1",
+  "distribution": "E3BMCK3MOVYK1K",
+  "vpcOrigin": "vo_Bu6ihqLvc6DDHoL4lMRE9m",
+  "subnet": "subnet-01823546337ad0883",
+  "securityGroup": "sg-0ad63fdc913e7df46",
+  "routeTable": "rtb-04e5b7b3c6468d144",
+  "checks": {
+    "api": {
+      "health": {
+        "status": 200,
+        "body": {
+          "ready": true,
+          "proofs": "real",
+          "queue": {
+            "jobs": 0,
+            "bytes": 0,
+            "running": false,
+            "submitted": 0,
+            "completed": 0,
+            "failed": 0
+          }
+        }
+      },
+      "invalidJob": {
+        "status": 400,
+        "body": {
+          "error": "Request rejected"
+        }
+      },
+      "foreignOrigin": {
+        "status": 403,
+        "body": {
+          "error": "Origin rejected"
+        }
+      },
+      "after": {
+        "status": 200,
+        "body": {
+          "ready": true,
+          "proofs": "real",
+          "queue": {
+            "jobs": 0,
+            "bytes": 0,
+            "running": false,
+            "submitted": 0,
+            "completed": 0,
+            "failed": 0
+          }
+        }
+      }
+    },
+    "browser": [
+      {
+        "name": "user.html",
+        "status": "Board ready. Connect your wallet to continue.",
+        "errors": [],
+        "count": 1,
+        "checked": true,
+        "enabled": true,
+        "remote": {
+          "url": "https://d30njln0kead8n.cloudfront.net/prover",
+          "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
+        },
+        "local": null,
+        "restored": {
+          "url": "https://d30njln0kead8n.cloudfront.net/prover",
+          "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
+        }
+      },
+      {
+        "name": "fee-juice.html",
+        "status": "Board ready. Connect your wallet to continue.",
+        "errors": [],
+        "count": 1,
+        "checked": true,
+        "enabled": true,
+        "remote": {
+          "url": "https://d30njln0kead8n.cloudfront.net/prover",
+          "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
+        },
+        "local": null,
+        "restored": {
+          "url": "https://d30njln0kead8n.cloudfront.net/prover",
+          "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
+        }
+      }
+    ]
+  },
+  "publicTestnetTransactionSubmittedDuringDeployment": false,
+  "priorRealProofQualification": "prover/QUALIFICATION.md"
+}
