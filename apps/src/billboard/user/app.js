@@ -98,8 +98,48 @@ async function loadWalletAndConnect() {
 // ============================================================
 // Page 1: Deposit ETH — auto-detects state from page 0
 // ============================================================
+let _depositTerms = null;
+let _depositTermsRequest = 0;
+function selectedDepositWei() {
+  if(!_depositTerms)throw Error('Board deposit settings are not loaded.');
+  const position=Number(document.getElementById('depositAmount').value);
+  if(!Number.isInteger(position)||position<0||position>1000)throw Error('Invalid deposit selection.');
+  return _depositTerms.minWei+(_depositTerms.maxWei-_depositTerms.minWei)*BigInt(position)/1000n;
+}
+function renderDepositSelection() {
+  const amount=selectedDepositWei();
+  const seconds=(_depositTerms.baseCooldown*_depositTerms.minWei+amount-1n)/amount;
+  const eth=ethers.formatEther(amount);
+  document.getElementById('depositSelection').textContent=eth+' ETH';
+  document.getElementById('depositAmount').setAttribute('aria-valuetext',eth+' ETH; '+seconds+' seconds posting cooldown');
+  document.getElementById('depositCooldown').textContent='Posting cooldown: '+seconds+' second'+(seconds===1n?'':'s')+'.';
+}
+async function loadDepositTerms() {
+  const request=++_depositTermsRequest;
+  _depositTerms=null;
+  const slider=document.getElementById('depositAmount');slider.disabled=true;
+  document.getElementById('navNext').disabled=true;
+  document.getElementById('depositSelection').textContent='Loading board deposit settings…';
+  document.getElementById('depositLimits').textContent='';
+  document.getElementById('depositCooldown').textContent='';
+  try {
+    const terms=await application.readDepositTerms();
+    if(request!==_depositTermsRequest)return;
+    _depositTerms=terms;
+    if(_currentPage===1)document.getElementById('navNext').disabled=!_pageActionsEnabled;
+    slider.value='0';slider.disabled=terms.minWei===terms.maxWei;
+    document.getElementById('depositLimits').textContent='Minimum '+ethers.formatEther(terms.minWei)+' ETH · Maximum '+ethers.formatEther(terms.maxWei)+' ETH';
+    slider.oninput=renderDepositSelection;
+    renderDepositSelection();
+  } catch(error) {
+    if(request!==_depositTermsRequest)return;
+    document.getElementById('depositSelection').textContent='Unable to load board deposit settings. Go back and reconnect to retry.';
+    log(publicOperationFailure(error).message,'error','depositStatus');
+  }
+}
 function onShowDeposit() {
   const state = _stateResult ? _stateResult.state : 'unknown';
+  if(state==='zero_balance_need_deposit')void loadDepositTerms();
   const newSection = document.getElementById('newDepositSection');
   const recoverSection = document.getElementById('recoverDepositSection');
   const navBtn = document.getElementById('navNext');
@@ -141,10 +181,7 @@ async function doDepositPage() {
 
   if (state === 'zero_balance_need_deposit') {
     clearMissingHighlight();
-    const amountStr = document.getElementById('depositAmount').value.trim();
-    if (!amountStr) { highlightMissing(['depositAmount']); throw new Error('Enter an amount.'); }
-    const amountEth = parseFloat(amountStr);
-    if (isNaN(amountEth) || amountEth <= 0) { highlightMissing(['depositAmount']); throw new Error('Invalid amount.'); }
+    const amountStr = ethers.formatEther(selectedDepositWei());
 
     const operationRevision=_getConfigRevision();
     // Phase 1: Deposit on L1

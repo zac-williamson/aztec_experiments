@@ -138,7 +138,7 @@ async function connectEthereumAccount(transport, walletName='Browser wallet', {s
       const chainId='0x'+BigInt(expected).toString(16);
       if(BigInt(await transport.request({method:'eth_chainId'}))!==BigInt(expected)){
         try{await transport.request({method:'wallet_switchEthereumChain',params:[{chainId}]});}
-        catch(error){throw Object.assign(new Error('Switch your wallet to the board network.'),{code:error?.code===4001?'BB_WALLET_REJECTED':'BB_WALLET_NETWORK'});}
+        catch(error){throw Object.assign(new Error('Switch your wallet to the board network.'),{code:/** @type {{code?:number}} */ (error)?.code===4001?'BB_WALLET_REJECTED':'BB_WALLET_NETWORK'});}
         if(BigInt(await transport.request({method:'eth_chainId'}))!==BigInt(expected))throw Object.assign(new Error('Wallet network mismatch.'),{code:'BB_WALLET_NETWORK'});
       }
     }

@@ -44,11 +44,13 @@
     <div id="depositBalanceCheck" class="status-container" role="status" aria-live="polite"></div>
     <!-- Section A: New deposit (shown when L1 balance == 0) -->
     <div id="newDepositSection" style="display:none;">
-      <p class="small">No active deposit found on L1. Enter an amount and click the button below to deposit ETH into the L1 portal. Claim on L2 after the deposit message becomes available. Deposit limits and cooldown depend on this board; the transaction validates its current settings.</p>
-      <label for="depositPortalAddr">Portal Address (auto-filled from step 1)</label>
-      <input id="depositPortalAddr" placeholder="Auto-filled..." readonly>
-      <label for="depositAmount">Amount (ETH; must satisfy this board’s deposit limits)</label>
-      <input id="depositAmount" inputmode="decimal" placeholder="Amount in ETH">
+      <p class="small">Choose your refundable deposit. A larger deposit lets you post more frequently.</p>
+      <label for="depositAmount">Deposit amount</label>
+      <input id="depositAmount" type="range" min="0" max="1000" step="1" value="0" disabled aria-describedby="depositLimits depositCooldown depositTimingNote">
+      <output id="depositSelection" for="depositAmount" aria-live="polite">Loading board deposit settings…</output>
+      <p id="depositLimits" class="small"></p>
+      <p id="depositCooldown" role="status"></p>
+      <p id="depositTimingNote" class="small">Posting capacity replenishes at this interval. Saved-up capacity can allow consecutive posts; flagged messages can increase the wait. Ethereum gas fees are separate.</p>
     </div>
     <!-- Section B: Recover existing deposit (shown when L1 balance > 0) -->
     <div id="recoverDepositSection" style="display:none;">

@@ -294,5 +294,16 @@
     },
     "invalidationStatus": "Completed",
     "liveChrome": "Pending fresh approval verification"
+  },
+  "depositSlider": {
+    "verifiedAt": "2026-09-23T14:36:47.554996+00:00",
+    "evidence": "execution/evidence/T04/deposit-slider-20260923.json",
+    "pages": {
+      "user.html": "9e0a94207658d2ef0ab50e44ee605db544557071ded56f5dd25661a4f4108ac4",
+      "fee-juice.html": "3e9363c20cdc015a2477cb168d4c29e3f14cf96f7b1af93197a5abe669b825a1",
+      "censor.html": "996468aa27fc75920a18bc2431d7fc6c9db8afc9589fa652380ddfda0584031a",
+      "deploy.html": "1d6799ee65d5c35dc2f94ab82bb77f29ba51f4462202113bb47aecb82bc98edd"
+    },
+    "invalidationStatus": "Completed"
   }
 }
