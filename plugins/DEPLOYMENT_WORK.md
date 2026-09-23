@@ -104,3 +104,13 @@ September 23 checkpoint:
 - HTTPS publication needs refreshed existing message-board AWS login. Active SSO
   compute role explicitly denies S3 upload; no policy bypass attempted. User was
   asked to run aws login --profile message-board. No site publication claimed.
+
+- Real CCTP transfer finalized: 1 test USDC burned, 945250 micro-USDC received on
+  Base Sepolia, 54750 forwarding fee. Public evidence committed in 3b882ec.
+- Fresh author normal collateral claim passed with real proof; state postable.
+- Public Inbox readiness distinction reproduced: inclusion checkpoint exists while
+  membership witness is absent. Browser/fee preflight now checks the witness;
+  reviewed by plugin_fit. Earlier premature moderator claims sent no transaction.
+- Local moderator preparation: Docker started; ARM b11058 image and pinned 9B
+  weights downloading. Same upstream release as the existing remote moderator.
+  Operator private fee bridge sent; native claim pending, isolated from bot funds.

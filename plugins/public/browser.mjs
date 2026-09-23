@@ -30,7 +30,7 @@ try{
  const query=async(c,name,...args)=>(await c.methods[name](...args).simulate({from:NO_FROM})).result;
  const token=new EthContract(service.descriptor.funding.tokenAddress,['function balanceOf(address) view returns(uint256)'],provider),portalArtifact=await read('billboard/portal/out/PluginPortal.sol/PluginPortal.json'),portal=new EthContract(service.descriptor.funding.portalAddress,portalArtifact.abi,provider);
  // Readiness checks are read-only and do not consume a test phase or open a wallet.
- if(phase==='post'&&!await node.getL1ToL2MessageCheckpoint(Fr.fromString(report.deposit.key))){console.log('AWAITING Inbox');process.exitCode=0;}
+ if(phase==='post'&&!await node.getL1ToL2MessageMembershipWitness('latest',Fr.fromString(report.deposit.key))){console.log('AWAITING Inbox');process.exitCode=0;}
  else if(phase==='reply'&&BigInt((await query(board,'get_plugin_request',Fr.fromString(report.postId)))[2])===0n){console.log('AWAITING reply');process.exitCode=0;}
  else if(phase==='redeem'&&(await node.getTxReceipt(TxHash.fromString(report.withdrawal.txHash))).status!=='finalized'){console.log('AWAITING withdrawal finality');process.exitCode=0;}
  else{

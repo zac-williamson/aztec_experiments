@@ -8,7 +8,7 @@ import {EmbeddedWallet} from '@aztec/wallets/embedded';
 import {AztecAddress} from '@aztec/stdlib/aztec-address';
 import {Fr} from '@aztec/foundation/curves/bn254';import {GrumpkinScalar} from '@aztec/foundation/curves/grumpkin';
 import {Tx,TxHash,TxStatus} from '@aztec/stdlib/tx';
-import {JsonRpcProvider,Wallet,Contract,keccak256} from 'ethers';
+import {JsonRpcProvider,Wallet,Contract,Interface,keccak256} from 'ethers';
 import {derivePrivateFeeInstance,createPrivateFeeDeployment,preparePrivateFeePayment,requirePublishedPrivateFee} from '../../shared/private-fee-client.mjs';
 import {fundPrivateFees,recoverPrivateFeeFunding,recoverPrivateFeeClaim} from '../../shared/private-fee-funding.mjs';
 import {createFileJournalStorage} from '../../apps/src/billboard/user/transaction-journal-store.mjs';
@@ -18,7 +18,7 @@ if(!['publish','mint','bridge','recover-bridge','claim'].includes(phase)||!direc
 const read=async p=>JSON.parse(await fs.readFile(p,'utf8'));
 const config=await read(configPath),actor=await read(path.join(directory,'author.json')),node=createAztecNodeClient(config.nodeUrl),provider=new JsonRpcProvider(config.ethereumUrl),info=await node.getNodeInfo();
 let wallet;
-try{
+async function run(){try{
  if(Number(info.l1ChainId)!==11155111||Number((await provider.getNetwork()).chainId)!==11155111)throw Error('Public fixture requires Sepolia');
  const artifact=await read('apps/src/billboard/private_fee_artifact.json'),canonical=await derivePrivateFeeInstance(artifact),store=await fileState(path.join(directory,'fee-operations.json'));
  const signer=new Wallet(actor.ethereumKey,provider),handler=new Contract(String(info.l1ContractAddresses.feeAssetHandlerAddress),['function mintAmount() view returns(uint256)','function mint(address)'],provider),amount=await handler.mintAmount();
@@ -32,6 +32,14 @@ try{
   await store.write({...store.read(),bridgeOutcome:phase==='bridge'?'funded':result.outcome,bridgeAcknowledgement:result.lastEthereumTxHash??result.txHash});
   console.log(JSON.stringify(result));
  }else{
+  if(phase==='claim'){
+   const record=await read(path.join(directory,'fee-funding.json')),receipt=await provider.getTransactionReceipt(record.txHash);
+   if(!receipt||receipt.status!==1)throw Error('Fee bridge transaction is not confirmed');
+   const abi=new Interface(['event DepositToAztecPublic(bytes32 indexed to,uint256 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
+   const events=receipt.logs.filter(x=>x.address.toLowerCase()===record.portalAddress.toLowerCase()).map(x=>abi.parseLog(x)).filter(x=>x?.name==='DepositToAztecPublic');
+   if(events.length!==1)throw Error('Expected one fee bridge message');
+   if(!await node.getL1ToL2MessageMembershipWitness('latest',Fr.fromString(events[0].args.key))){console.log(JSON.stringify({phase,status:'awaiting-consumable-message'}));return;}
+  }
   const operator=phase==='publish'?await read(config.operatorFile):actor;
   const recordedNode=new Proxy(node,{get(target,key){if(key!=='sendTx')return Reflect.get(target,key);return async tx=>{const hash=String(await tx.getTxHash());await store.write({...store.read(),operations:{...store.read().operations,[phase]:{hash,raw:tx.toBuffer().toString('hex')}}});return node.sendTx(tx);};}});
   wallet=await EmbeddedWallet.create(recordedNode,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:{backend:BackendType.NativeUnixSocket,threads:1}}});
@@ -53,4 +61,5 @@ try{
   }
   console.log(JSON.stringify({phase,contractAddress:String(canonical.address),transaction:store.read().operations[phase]?.hash}));
  }
-}finally{await wallet?.stop();provider.destroy();await Barretenberg.destroySingleton();BarretenbergSync.destroySingleton();}
+}finally{await wallet?.stop();provider.destroy();await Barretenberg.destroySingleton();BarretenbergSync.destroySingleton();}}
+await run();
