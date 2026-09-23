@@ -105,6 +105,16 @@ function saveFundingRecord(record) {
     if(info.amount>0n)h.depositChainId=info.depositChainId;
     return {...info,chainTime};
   }
+  /** @returns {Promise<{minWei:bigint,maxWei:bigint,baseCooldown:bigint}>} */
+  async function readDepositTerms() {
+    const h=connectedHandles(),expected=stamp();
+    const values=await Promise.all(['get_min_deposit','get_max_deposit','get_base_cooldown'].map(
+      name=>h.contract.methods[name]().simulate({from:window.__aztec.NO_FROM})));
+    const [minWei,maxWei,baseCooldown]=values.map(value=>extractBigInt(value));
+    check(expected);
+    if(minWei<=0n || maxWei<minWei || maxWei>0xffffffffffffffffffffffffn || baseCooldown<=0n || baseCooldown>0xffffffffn)throw Error('Invalid board deposit settings.');
+    return {minWei,maxWei,baseCooldown};
+  }
   /** @returns {Promise<string>} */
   async function readPolicy() {
     const h=connectedHandles(),expected=stamp();
@@ -134,6 +144,6 @@ function saveFundingRecord(record) {
     if(previous?.pxe?.stop)await previous.pxe.stop();
   }
   window.billboardConfigStore?.subscribe(()=>{reset().catch(()=>{_invalidateWalletContext();});});
-  return Object.freeze({run,readDeposit,readPolicy,readModerator,readFeed,reset,publicConfiguration,readFundingRecovery,importFundingRecovery:saveFundingRecord,
+  return Object.freeze({run,readDeposit,readDepositTerms,readPolicy,readModerator,readFeed,reset,publicConfiguration,readFundingRecovery,importFundingRecovery:saveFundingRecord,
     get connected(){return handles!==null;},get revision(){return revision;}});
 }

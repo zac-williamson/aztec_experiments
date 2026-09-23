@@ -11,6 +11,12 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 let _pages = [];
 let _currentPage = 0;
+let _pageActionsEnabled = true;
+function setPageActionsEnabled(enabled) {
+  if(_pageActionsEnabled===enabled)return;
+  _pageActionsEnabled=enabled;
+  const next=document.getElementById('navNext');if(next)next.disabled=!enabled;
+}
 
 function initPages(pages) {
   _pages = pages;
@@ -32,13 +38,13 @@ function showPage(n) {
   if (progress) progress.textContent = (n + 1) + ' / ' + _pages.length;
   if (next) {
     const p = _pages[n];
-    next.style.display = ''; // restore (page 0 may hide it)
+    next.style.display = p?.manual ? 'none' : ''; // Manual steps advance only through their own completion callback.
     if (p && p.label) {
       next.textContent = p.label + (n < _pages.length - 1 ? ' \u2192' : '');
-      next.disabled = false;
+      next.disabled = !_pageActionsEnabled;
     } else {
       next.textContent = '\u2192';
-      next.disabled = false;
+      next.disabled = !_pageActionsEnabled;
     }
   }
   if(changed)queueMicrotask(()=>{
@@ -62,6 +68,7 @@ function prevPage() {
 
 function doNavAction() {
   const p = _pages[_currentPage];
+  if (!_pageActionsEnabled || p?.manual) return;
   if (!p || !p.action) { nextPage(); return; }
   const btn = document.getElementById('navNext');
   const origText = btn.textContent;
@@ -80,9 +87,10 @@ function doNavAction() {
       // Brief pause to show success, then advance
       if (p.statusId) log('\u2713 Step complete.', 'success', p.statusId);
       setTimeout(() => {
+        if(!_pageActionsEnabled){btn.disabled=true;btn.classList.remove('working');return;}
         // If the action already changed the page (e.g. skipped ahead), don't advance/restore.
         if (_currentPage !== origPage) {
-          btn.disabled = false;
+          btn.disabled = !_pageActionsEnabled;
           btn.classList.remove('working');
           return;
         }
@@ -90,7 +98,7 @@ function doNavAction() {
           nextPage();
         } else {
           // Last page - restore button
-          btn.disabled = false;
+          btn.disabled = !_pageActionsEnabled;
           btn.classList.remove('working');
           btn.textContent = origText;
         }
@@ -98,9 +106,9 @@ function doNavAction() {
     })
     .catch(e => {
       if (workingDiv && workingDiv.parentNode) workingDiv.remove();
-      if (p.statusId) log('ERROR: ' + 'operation did not complete; check configuration and recovery records', 'error', p.statusId);
+      if (p.statusId) log('ERROR: ' + (typeof publicOperationFailure==='function'?publicOperationFailure(e).message:'operation did not complete; check configuration and recovery records'), 'error', p.statusId);
       console.error('Application operation did not complete.');
-      btn.disabled = false;
+      btn.disabled = !_pageActionsEnabled;
       btn.classList.remove('working');
       // An action may complete one phase before failing the next (deposit → claim).
       // Preserve its updated retry label rather than restoring the completed action.
@@ -135,7 +143,7 @@ function withBtn(btnId, busyText, statusId, action, autoAdvance) {
         }
       },
       (e) => {
-        if (statusId) log('ERROR: ' + 'operation did not complete; check configuration and recovery records', 'error', statusId);
+        if (statusId) log('ERROR: ' + (typeof publicOperationFailure==='function'?publicOperationFailure(e).message:'operation did not complete; check configuration and recovery records'), 'error', statusId);
         console.error('Application operation did not complete.');
       }
     )

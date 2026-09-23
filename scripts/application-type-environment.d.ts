@@ -10,6 +10,7 @@ declare function runBillboardUser(environment:any,config:any):Promise<any>;
 declare function makeClaimSecretStore(secret:string,salt:string):any;
 declare function readBillboardDepositInfo(contract:any,address:any,chain:any):Promise<any>;
 declare function getL2Timestamp(node:any):Promise<number>;
-declare function extractInt(result:any):bigint;
+declare function extractInt(result:any):number;
+declare function extractBigInt(result:any):bigint;
 
 declare const ethers:any, BillboardPasskey:any;

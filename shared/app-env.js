@@ -24,7 +24,7 @@ function _connectionConfig() {
   return {aztecNodeUrl:config.network.nodeUrl,ethRpcUrl:config.network.ethRpcUrl,
     portalAddress:config.board.portalAddress,expectedBoardAddress:config.board.contractAddress,
     expectedNetworkScope:{chainId:config.network.chainId,version:config.network.rollupVersion,rollup:config.network.rollupAddress},
-    privateFee:config.privateFee};
+    privateFee:config.privateFee,remoteProver:config.remoteProver&&document.getElementById('remoteProving')?.checked!==false?{url:config.remoteProver.url,board:config.board.contractAddress}:undefined};
 }
 function _getEthRpcUrl() { return _connectionConfig().ethRpcUrl; }
 window.billboardConfigStore?.subscribe(()=>{
@@ -99,10 +99,7 @@ function makeCreateStore() {
 async function getBrowserSigner() {
   const ws = window.walletState;
   if (ws && ws.ethSigner) return ws.ethSigner;
-  if (!window.ethereum) throw new Error('No browser wallet found.');
-  const provider = new ethers.BrowserProvider(window.ethereum);
-  await provider.send('eth_requestAccounts', []);
-  return provider.getSigner();
+  throw Object.assign(new Error('Connect your wallet first.'),{code:'BB_WALLET_NOT_READY'});
 }
 
 // ============================================================
@@ -152,10 +149,16 @@ function publicOperationFailure(error) {
     WORKER_UNAVAILABLE:'Browser workers are unavailable or blocked. Check the browser and hosting settings.',
     CRYPTO_UNAVAILABLE:'Browser cryptography is unavailable.',
     LOCKS_UNAVAILABLE:'Browser storage locks are unavailable; wallet actions cannot safely continue.',
+    BB_REMOTE_PROVER_FAILED:'Remote proving did not complete. Try again or turn off Remote proving to prove locally.',
     BB_BROWSER_PROOF_FAILED:'Browser proving did not complete. Reload and restore your wallet, then check saved transactions before trying again.',
     BB_BROWSER_PROVER_CONFIGURATION:'Browser proving setup could not be verified. Reload this page and check the locally hosted setup files.',
     OPFS_UNAVAILABLE:'Private browser file storage is unavailable or blocked. Wallet storage cannot start.',
     STORAGE_UNAVAILABLE:'Browser storage is unavailable or blocked. Preserve your recovery file before changing browser settings.',
+    BB_WALLET_REJECTED:'Wallet request cancelled. Connect again when you are ready.',
+    BB_WALLET_NETWORK:'Switch your selected wallet to the network configured for this board, then connect again.',
+    BB_WALLET_DISCONNECTED:'The wallet disconnected during setup. Reconnect your wallet, then reload this page to try again.',
+    BB_BROWSER_WALLET_MISSING:'No Ethereum wallet was found in this browser. Open this board in a browser with MetaMask or another Ethereum wallet installed, then connect again.',
+    BB_WALLET_NOT_READY:'Connect your Ethereum wallet and finish account setup before depositing.',
     READINESS_TIMEOUT:'Browser capability checks timed out. Retry before starting a wallet operation.',
     BB_CONNECTION_VERIFICATION_FAILED:'The portal, network or private fee contract could not be verified. Check the imported configuration before making a payment.',
     BB_FEE_CONFIG_REQUIRED:'Import private fee settings before depositing collateral or creating a new Aztec transaction. Recovery remains available.',
@@ -195,7 +198,7 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
       _assertWalletLive();
       if(generation!==_walletGeneration || expected!==identity()) throw new Error('Wallet or deployment configuration changed. Reload before continuing.');
       if(ws.ethType==='browser') {
-        const [accounts,chain]=await Promise.all([window.ethereum.request({method:'eth_accounts'}),window.ethereum.request({method:'eth_chainId'})]);
+        const [accounts,chain]=await Promise.all([ws.ethTransport.request({method:'eth_accounts'}),ws.ethTransport.request({method:'eth_chainId'})]);
         if(!Array.isArray(accounts) || accounts[0]?.toLowerCase()!==ws.ethAccount.toLowerCase() || BigInt(chain)!==BigInt(ws.ethChainId)) {
           _invalidateWalletContext(); throw new Error('Wallet account or chain changed.');
         }
@@ -256,3 +259,11 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
     } finally {running=false;}
   };
 }
+
+// Both posting and funding snapshot this single control through _connectionConfig.
+(function bindRemoteProving(){
+ const toggle=document.getElementById('remoteProving');if(!toggle)return;
+ let previousUrl;
+ const refresh=()=>{const url=window.billboardConfigStore?.snapshot().config?.remoteProver?.url;if(url!==previousUrl){toggle.checked=!!url;previousUrl=url;}toggle.disabled=!url;toggle.title=url?'Use this board’s prover. Private witness data is shared with its operator.':'This board has not configured a remote prover.';toggle.setAttribute('aria-description',toggle.title);};
+ window.billboardConfigStore?.subscribe(refresh);refresh();
+})();

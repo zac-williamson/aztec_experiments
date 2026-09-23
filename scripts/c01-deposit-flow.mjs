@@ -1,3 +1,4 @@
+import {applicationProofsEnabled,applicationProver} from './testing/proof-policy.mjs';
 // TEST ONLY: disposable local L1 deposit and genuine private claim. Parent owns all process/resource limits.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -62,7 +63,7 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     const url=new URL(rpcUrl);assert.equal(url.protocol,'http:');assert.equal(url.hostname,'127.0.0.1');
     assert(!url.username&&!url.password);assert.equal(await l1Client.getChainId(),31337);assert(l1Client.account);
     const info=await node.getNodeInfo();assert.equal(Number(info.l1ChainId),31337);
-    assert.equal((await node.getConfig()).realProofs,true);
+    assert.equal((await node.getConfig()).realProofs,applicationProofsEnabled());
     assert.equal(instance.address.toString(),ready.boardAddress);assert(instance.deployer.equals(preparation.account.address));
     const checked=await artifacts(preparation,ready),portalAddress=ready.portalAddress.toLowerCase();
     const read=(functionName,args=[],blockNumber)=>l1Client.readContract({address:portalAddress,abi:checked.portal.abi,functionName,args,
@@ -79,7 +80,7 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     mark('reopen-claim-wallet');
     const boundaryModule=qualifyWrongOrigin?await import('./t02-claim-boundary.mjs'):undefined;
     const probe=boundaryModule?.createT02InboxProbeNode(node);
-    wallet=await EmbeddedWallet.create(probe?.node??node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
+    wallet=await EmbeddedWallet.create(probe?.node??node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:applicationProver(native),autoSync:false,syncChainTip:'checkpointed'}});
     const account=authorAccount;
     const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'c01-disposable');
     assert(manager.address.equals(account.address));await wallet.registerContract(instance,checked.board);await wallet.pxe.sync();

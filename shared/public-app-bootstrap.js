@@ -12,7 +12,7 @@
     if(location.hash&&(!match||match[1]!==networkId))throw Error('Invalid board or network link');
     const boardAddress=match?match[2]:hosted.board.contractAddress;
     const result=await root.BillboardPublic.connectPublicBoard({network:hosted.network,boardAddress,metadata:root.BillboardPublic.metadata,storage:root.BillboardPublic.browserPublicFeedStorage()});
-    return {...result,config:root.BillboardConfig.validate({...result.config,privateFee:hosted.privateFee}),fragment:'network='+networkId+'&board='+boardAddress};
+    return {...result,config:root.BillboardConfig.validate({...result.config,privateFee:hosted.privateFee,...(boardAddress===hosted.board.contractAddress&&hosted.remoteProver?{remoteProver:hosted.remoteProver}:{})}),fragment:'network='+networkId+'&board='+boardAddress};
   };
   if(document.body?.hasAttribute('data-public-board-reader'))return;
   if(document.body?.hasAttribute('data-hosted-board')){

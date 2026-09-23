@@ -28,7 +28,7 @@ async function readyUser(page) {
 try {
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const origin='http://localhost:'+server.address().port;
-  browser=await chromium.launch({headless:true});
+  browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
   async function open(pageName='user.html') {
     const context=await browser.newContext({acceptDownloads:true});
     await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){externalRequests++;return route.abort();}return route.continue();});
@@ -47,7 +47,7 @@ try {
     _onReady=null;
     window.ethereum={request:async({method})=>{if(method==='eth_chainId')return '0x7a69';if(['eth_accounts','eth_requestAccounts'].includes(method))return ['0x'+'12'.repeat(20)];throw Error('Unexpected Ethereum request');}};
   });
-  await first.page.locator('#wbEthBrowserBtn').click();
+  await first.page.locator('#wbEthBrowserBtn').click();await first.page.getByRole('dialog').getByRole('button',{name:'Browser wallet (legacy)',exact:true}).click();
   await first.page.waitForFunction(()=>window.walletState.aztec?.address);
   const address=await first.page.evaluate(()=>window.walletState.aztec.address.toString());
   stage='save-disposable-claim';

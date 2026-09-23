@@ -92,7 +92,7 @@
       const contracts=await node.getL1ContractAddresses();
       const dataDirectory='pxe_private_fee_'+owner.toString()+'_'+contracts.rollupAddress;
       const store=await env.createStore({...contracts,l1ChainId:info.l1ChainId,accountAddress:owner.toString(),dataDirectory});
-      pxe=await a.createPXE(node,{proverEnabled:true,autoSync:true,dataDirectory},{store});
+      pxe=await a.createPXE(node,{proverEnabled:true,autoSync:true,dataDirectory},{store,remoteProver:config.remoteProver});
       await pxe.registerAccount(keys,await a.computePartialAddress(instance));
       await pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact);
       await pxe.registerContract(instance);
@@ -107,8 +107,8 @@
       log('Your private fee balance is ready for board transactions.','success');
       return {ok:true,receipt:result.receipt,lastL2TxHash:transactionJournal.lastTxHash};
     }catch(error){
-      const code=['PRIVATE_FEE_CAP_TOO_LOW','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID'].includes(error?.code)?error.code:'BB_PRIVATE_FEE_CLAIM_FAILED';
-      const safe=new Error(code==='BB_SUBMISSION_UNKNOWN'?'Submission outcome is unknown. Check the transaction before retrying.':'Private fee claim did not complete. Keep the recovery file and check the deposit before retrying.',{cause:error});safe.code=code;throw safe;
+      const code=['BB_REMOTE_PROVER_FAILED','PRIVATE_FEE_CAP_TOO_LOW','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID'].includes(error?.code)?error.code:'BB_PRIVATE_FEE_CLAIM_FAILED';
+      const safe=new Error(code==='BB_SUBMISSION_UNKNOWN'?'Submission outcome is unknown. Check the transaction before retrying.':'Private fee claim did not complete. Keep the recovery file and check the deposit before retrying.',{cause:error});safe.code=code;if(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(error?.stage))safe.stage=error.stage;throw safe;
     }finally{if(pxe)await pxe.stop().catch(()=>{});}
     } finally {ethProvider.destroy();}
   };

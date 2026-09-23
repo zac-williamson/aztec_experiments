@@ -72,6 +72,7 @@ export async function runT04BrowserPostRecovery({page,directory,remaining,signal
    await bounded(()=>page.getByRole('button',{name:'Connect Ethereum wallet',exact:true}).click());
    await bounded(()=>page.locator('#page-0').waitFor({state:'visible',timeout:remaining()}));
    await bounded(()=>page.locator('#wbEthBrowserBtn').click());
+   await bounded(()=>page.getByRole('dialog').getByRole('button',{name:'Browser wallet (legacy)',exact:true}).click());
    await bounded(()=>page.locator('#page-4').waitFor({state:'visible',timeout:remaining()}));
   }
   const result={passed:true,action,ethereumRefundPending:action==='withdraw',transactionHash:accepted.transactionHash,fullBrowserRestart:true,samePersistentProfile:true,journalsImported:false,recoveryControl:'Recover saved Aztec transaction',closureAfterAcceptanceMs:fresh.closedAtMs-accepted.acceptedAtMs,closureAfterRequestMs:fresh.closedAtMs-accepted.requestStartedAtMs,scope:'Actual UI accepted-transaction recovery; parent must verify original canonical effects, one accepted transaction, no restart submission and one fee debit. Submission capture does not count discarded or unsubmitted proofs'};

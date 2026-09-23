@@ -1,0 +1,8 @@
+{
+  "linux-x64": {
+    "version": "5.2.0-nightly.20260807",
+    "sha256": "5a1c1ccd835e257217880936f837847fd74c8d5993497527f070fb2308f9145b",
+    "source": "https://registry.npmjs.org/@aztec/bb.js/-/bb.js-5.2.0.tgz",
+    "packageVersion": "5.2.0"
+  }
+}

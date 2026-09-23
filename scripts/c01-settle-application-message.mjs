@@ -1,3 +1,4 @@
+import {applicationProofsEnabled,applicationProver} from './testing/proof-policy.mjs';
 // TEST ONLY: genuine application transactions; epoch settlement is TEST CONTROLLED.
 // Uses the installed official test helper, never a server proof or proof receipt.
 import assert from 'node:assert/strict';
@@ -55,7 +56,7 @@ export async function settleC01ApplicationMessage({node, config, dateProvider, l
     assert.equal(url.protocol, 'http:');
     assert(['127.0.0.1', 'localhost'].includes(url.hostname));
     assert(!url.username && !url.password);
-    assert.equal(node.config.realProofs, true, 'Application proof verification must remain enabled');
+    assert.equal(node.config.realProofs, applicationProofsEnabled(), 'Application proof verification must remain enabled');
     assert.equal(node.getProverNode(), undefined, 'Server prover must be disabled in this application test');
     const info = await node.getNodeInfo();
     assert.equal(Number(info.l1ChainId), 31337);

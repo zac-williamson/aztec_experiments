@@ -46,7 +46,7 @@ export async function driveT04BrowserFunding({page,directory,message,depositAmou
  await page.waitForFunction(()=>!!globalThis.walletState?.aztec?.address||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
  assert(await page.evaluate(()=>!!globalThis.walletState?.aztec?.address));
  await page.locator('#wbAccountMenu > summary').click();
- await page.locator('#wbEthBrowserBtn').click();
+ await page.locator('#wbEthBrowserBtn').click();await page.getByRole('dialog').getByRole('button',{name:confirmEthereum?'MetaMask':'Browser wallet (legacy)',exact:true}).click();
  await page.locator('#page-1').waitFor({state:'visible',timeout:remaining()});
  await driveT04BrowserPublication({page,directory,message,depositAmount,remaining,signal,mark,onSubstage,confirmEthereum,onBoardOpened});
  return {passed:true,coldBrowserFeeFunding:true,paidBoardClaimAndPost:true,externalWalletExtension:!!confirmEthereum};

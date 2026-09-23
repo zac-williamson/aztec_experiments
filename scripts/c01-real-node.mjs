@@ -1,3 +1,4 @@
+import {applicationProofsEnabled,applicationProver} from './testing/proof-policy.mjs';
 // TEST ONLY: disposable genuine-verifier node and explicitly selected bridge qualification.
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -16,7 +17,7 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
     dataDirectory:path.join(directory,'node'),bootstrapNodes:[],p2pEnabled:false,
     txPublicSetupAllowListExtend:[],sequencerPublisherPrivateKeys:[new SecretValue(privateKey)],
     validatorPrivateKeys:new SecretValue([privateKey]),coinbase:EthAddress.fromString(address),
-    allowEphemeralSigningProtection:true,realProofs:true,useAutomineSequencer:false,automineEnableProveEpoch:false,
+    allowEphemeralSigningProtection:true,realProofs:applicationProofsEnabled(),useAutomineSequencer:false,automineEnableProveEpoch:false,
     enableProverNode:false,proverAgentCount:0,
     // Application contention concerns one private anchor, not network batch throughput.
     ...(scenario.name==='contention'?{maxTxsPerBlock:1}:{}),
@@ -37,14 +38,14 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
   const observation={passed:false,scope:'application node with transaction verification; no network prover'};
   try{
     node=await createAztecNodeService(nodeConfig,{telemetry:await initTelemetryClient({}),blobClient:createBlobClient(),dateProvider},{genesis,dontStartSequencer:true,dontStartProverNode:true});
-    assert.equal((await node.getConfig()).realProofs,true);
+    assert.equal((await node.getConfig()).realProofs,applicationProofsEnabled());
     const actual=node.config; // installed admin API omits static startup settings; inspect constructed service config.
-    assert.equal(actual.realProofs,true);assert.equal(actual.enableProverNode,false);
+    assert.equal(actual.realProofs,applicationProofsEnabled());assert.equal(actual.enableProverNode,false);
     for(const key of ['useAutomineSequencer','automineEnableProveEpoch'])assert.equal(actual[key],false);
     assert(!node.getProverNode(),'Application tests must not create a network prover');
     assert(node.getSequencer(),'Ordinary sequencer absent');assert(!node.getAutomineSequencer());
     const info=await node.getNodeInfo();assert.equal(Number(info.l1ChainId),31337);
-    observation.realProofs=true;observation.proverSubsystemCreated=false;
+    observation.realProofs=applicationProofsEnabled();observation.proverSubsystemCreated=false;
     observation.ordinarySequencerConstructed=true;observation.sequencerStarted=false;
     observation.rollupVersion=Number(info.rollupVersion);
     const ctx={node,config:nodeConfig,deployment,preparation,directory,dateProvider,browserControl,scenario,mark,l1Client:deployment.l1Client,rollupAddress:deployment.l1ContractAddresses.rollupAddress,packageRoot:operatorPackage?.root};
