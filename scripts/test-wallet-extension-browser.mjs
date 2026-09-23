@@ -10,7 +10,7 @@ import {spawn,execFileSync} from 'node:child_process';
 import {once} from 'node:events';
 import {randomBytes,webcrypto} from 'node:crypto';
 import {chromium} from 'playwright';
-import {Wallet,Contract,ContractFactory,JsonRpcProvider} from 'ethers';
+import {Wallet,HDNodeWallet,Contract,ContractFactory,JsonRpcProvider} from 'ethers';
 import {InboxAbi} from '@aztec/l1-artifacts/InboxAbi';
 import {InboxBytecode} from '@aztec/l1-artifacts/InboxBytecode';
 import {TestERC20Abi} from '@aztec/l1-artifacts/TestERC20Abi';
@@ -112,6 +112,16 @@ try{
  const recovered=await recoverPrivateFeeClaim({...recoveryInput,record:savedAgain});assert.equal(recovered.leafIndex.toString(),claim.leafIndex.toString());assert.equal(await provider.getTransactionCount(user.address),2);
  assert.equal(unexpectedRequests,0);assert.equal(provingAssetRequests,0);report.depositAmount='1000';report.canonicalRecoveryVerified=true;report.explicitRetryVerified=true;
  stage='board-collateral-refund';report.collateral=await verifyExtensionCollateral({page,walletPage,provider,publisher,operator,user,rpcUrl});
+ // MetaMask may show this optional marketing modal after a transaction.
+ // Handle the real overlay during actionability checks, including late arrival.
+ await walletPage.addLocatorHandler(walletPage.getByTestId('shield-entry-modal-close-button'),async()=>{await walletPage.getByTestId('shield-entry-modal-close-button').click();report.dismissedWalletOffer=true;});
+ stage='wait-wallet-home-after-refund';await walletPage.waitForURL(/#\/$/);
+ stage='create-second-disposable-account';
+ const secondAccount=HDNodeWallet.fromPhrase(user.mnemonic.phrase,undefined,"m/44'/60'/0'/0/1").address;
+ await walletPage.getByTestId('account-menu-icon').click();
+ await walletPage.getByTestId('parent-selector-account-list-page').waitFor();
+ stage='click-add-second-account';await walletPage.getByTestId('add-multichain-account-button').click();
+ stage='wait-second-account-created';await walletPage.getByText('Account 2',{exact:true}).waitFor();
  stage='reselect-already-authorized-account';
  await page.reload();await page.waitForFunction(()=>window.BillboardWalletProviders?.list().some(wallet=>wallet.rdns==='io.metamask')&&window.BillboardAccount);
  // Isolate the account controls from Aztec setup for this Ethereum-only check.
@@ -119,15 +129,19 @@ try{
  await page.locator('#wbEthBrowserBtn').click();await page.getByRole('dialog').getByRole('button',{name:'MetaMask',exact:true}).click();
  await walletPage.getByTestId('confirm-btn').waitFor();
  assert.equal(await page.evaluate(()=>window.BillboardAccount.snapshot().ethereumConnected),false);
+ await walletPage.getByTestId('account-selection-section').click();
+ const accountChoices=walletPage.locator('input[id^="multichain-account-checkbox-"]');await accountChoices.nth(1).waitFor();
+ assert.equal(await accountChoices.count(),2);await accountChoices.nth(0).uncheck();await accountChoices.nth(1).check();
+ await walletPage.getByTestId('connect-more-accounts-button').click();
  await walletPage.getByTestId('confirm-btn').click();
  await page.waitForFunction(()=>window.BillboardAccount.snapshot().ethereumConnected);
- assert.equal(await page.locator('#wbConnectionStatus').innerText(),'MetaMask · '+user.address);
- report.existingPermissionRequiresApproval=true;
+ assert.equal(await page.locator('#wbConnectionStatus').innerText(),'MetaMask · '+secondAccount);
+ report.existingPermissionRequiresApproval=true;report.reselectedDifferentAccount=true;
  assert(blockedContextRequests.every(record=>record.owner==='extension'&&record.hostname==='metamask.github.io'));
  report.passed=true;report.realExtension=true;report.browserVersion=context.browser().version();report.extensionVersion='13.49.0.0';report.connectedLocalAccount=true;report.userEthereumTransactions=await provider.getTransactionCount(user.address);assert.equal(report.userEthereumTransactions,4);report.scope='Real MetaMask connection, rejected approval, explicit approval retry, fee deposit, board collateral/refund and read-only canonical recovery; controlled Outbox roots, no Aztec claim/proof';
 }catch(error){
  report.passed=false;report.failure={stage,errorClass:error.name};
- const location=String(error.stack).match(/t04-extension-collateral\.mjs:\d+:\d+/);if(location)report.failure.location=location[0];process.exitCode=1;
+ const location=String(error.stack).match(/(?:t04-extension-collateral|test-wallet-extension-browser)\.mjs:\d+:\d+/);if(location)report.failure.location=location[0];process.exitCode=1;
  if(readFundingState)try{report.canonicalFundingState=await readFundingState();}catch{report.fundingDiagnosticFailed=true;}
  if(page&&!page.isClosed())try{report.applicationState=await page.evaluate(()=>({ethereumConnected:!!window.walletState?.ethAccount,aztecLoaded:!!window.walletState?.aztec?.address,setupError:!!document.querySelector('#setupStatus .error'),feeAddressReady:!!document.getElementById('azaddr')?.value,invalidated:window.walletState?.invalidated===true}));}catch(diagnostic){report.applicationDiagnosticFailure={errorClass:diagnostic.name};}
  if(context)try{
@@ -135,6 +149,7 @@ try{
   for(const inspected of context.pages().slice(0,8)){
    const url=new URL(inspected.url());if(url.protocol!=='chrome-extension:')continue;
    const surface={path:url.pathname,route:url.hash,controls:{}};
+   if(['#/account-list','#/'].includes(url.hash)||stage==='reselect-already-authorized-account')surface.visibleText=(await inspected.locator('body').innerText()).slice(0,4000);
    report.walletSurfaces.push(surface);
    for(const id of ['confirm-btn','parent-selector-confirmation-page','confirm-footer-button','parent-selector-template-confirmation-page','confirmation-submit-button','confirmation-cancel-button','account-menu-icon'])surface.controls[id]=await inspected.getByTestId(id).isVisible();
   }

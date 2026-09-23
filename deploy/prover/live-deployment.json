@@ -266,5 +266,19 @@
       "censor.html": "2c29f16826e6e9355fca9855e5e3c5d6ca82a7b83710920e31b9b2642775c6d4",
       "deploy.html": "6d65d9a35c4f66f40f5042bfd5efff99a98cefcf02f0006b836bf34e152bf219"
     }
+  },
+  "walletSelectionEventsCorrection": {
+    "verifiedAt": "2026-09-23T13:42:34.443287+00:00",
+    "change": "Account and chain announcements during explicit MetaMask permission selection no longer invalidate a not-yet-activated signer. Final account checks and post-selection event invalidation retained; disconnect still fails closed.",
+    "regressions": 52,
+    "baselineSelectionEventsRegression": "failed as expected on prior commit",
+    "realMetaMaskEvidence": "execution/evidence/T04/wallet-second-account-20260923g.json",
+    "reselectedDifferentAccount": true,
+    "pages": {
+      "user.html": "a19a2a264fc0005ef0048441089d68cc5523d5a77198bada27c8f392123f3758",
+      "fee-juice.html": "f82a40ed4a7f11e3e29c518411c298be7a5fd3154b8e052ef524bf73507cfd80",
+      "censor.html": "3b056168aba6b7553801360aab887710a551b3f86f5397afbfd50d32b859f652",
+      "deploy.html": "f37017b1bc9386fdc97de2cc8bd43647706f7a07a326bdd3ff867a1c3eb0a662"
+    }
   }
 }

@@ -129,10 +129,14 @@ async function connectEthereumAccount(transport, walletName='Browser wallet', {s
     if(typeof transport?.request!=='function')throw Object.assign(new Error('Choose an Ethereum wallet.'),{code:'BB_BROWSER_WALLET_MISSING'});
     _bindEthereumProvider(transport);
     const generation=_walletGeneration;
-    const connection={account:null,switchingTo:null};_connectingEth=connection;
+    const connection={account:null,switchingTo:null,selectingAccount:false};_connectingEth=connection;
     try {
     // MetaMask account selection must not silently reuse an older site grant.
-    if(selectAccount)await transport.request({method:'wallet_requestPermissions',params:[{eth_accounts:{}}]});
+    if(selectAccount){
+      connection.selectingAccount=true;
+      try{await transport.request({method:'wallet_requestPermissions',params:[{eth_accounts:{}}]});}
+      finally{connection.selectingAccount=false;}
+    }
     const expected=typeof _getPublicConfig==='function'?_getPublicConfig()?.network?.chainId:null;
     if(expected!==null&&expected!==undefined){
       const chainId='0x'+BigInt(expected).toString(16);
@@ -202,6 +206,10 @@ function _bindEthereumProvider(transport) {
   if(transport.on) for(const name of ['accountsChanged','chainChanged','disconnect']) {
     const handler=accounts=>{
     if(_accountProvider!==transport)return;
+    // Account/chain announcements during the wallet's selection dialog describe
+    // the selection in progress, not a mutation of an activated signer. The
+    // completed selection is checked below before any signer is activated.
+    if(_connectingEth?.selectingAccount && (name==='accountsChanged'||name==='chainChanged'))return;
     if(name==='chainChanged' && _connectingEth?.switchingTo && accounts===_connectingEth.switchingTo)return;
     if(name==='accountsChanged') {
       const selected=_firstEthereumAccount(accounts);

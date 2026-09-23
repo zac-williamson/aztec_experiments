@@ -221,3 +221,17 @@ test('permission selection can replace an older origin grant before signer activ
  assert.equal(f.context.window.BillboardAccount.snapshot().ethereumAddress,selected);
  assert.notEqual(f.context.window.BillboardAccount.snapshot().ethereumAddress,old);
 });
+
+
+test('permission dialog may clear and replace accounts and announce its network before activation',async()=>{
+ const f=fixture(),selected=browserConnection(f,{requested:'0x'+'34'.repeat(20)});
+ f.context.window.ethereum.request=async()=>{f.listeners.accountsChanged([]);f.listeners.accountsChanged(['0x'+'12'.repeat(20)]);f.listeners.chainChanged('0x1');f.listeners.accountsChanged([selected]);return[];};
+ await f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask',{selectAccount:true});
+ assert.equal(f.context.window.BillboardAccount.snapshot().ethereumAddress,selected);assert.equal(f.context.window.walletState.invalidated,false);
+ f.listeners.accountsChanged([]);assert.equal(f.context.window.BillboardAccount.snapshot().ethereumConnected,false);
+});
+test('disconnect while choosing an account still prevents activating a signer',async()=>{
+ const f=fixture();browserConnection(f);f.context.window.ethereum.request=async()=>{f.listeners.disconnect();return[];};
+ await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask',{selectAccount:true}));
+ assert.equal(f.context.window.walletState.ethSigner,null);
+});
