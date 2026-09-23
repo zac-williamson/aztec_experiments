@@ -26,6 +26,7 @@ jobs:
           npm ci --ignore-scripts --no-audit --no-fund
           npm ci --prefix billboard/portal --ignore-scripts --no-audit --no-fund
           npm run bootstrap:noir
+          node scripts/bootstrap-anvil.mjs
           npx --no-install playwright install --with-deps chromium
       - name: Build from clean generated directories
         run: |

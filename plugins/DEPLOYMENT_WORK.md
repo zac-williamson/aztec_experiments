@@ -46,6 +46,15 @@ All original real-receipt/recovery assertions pass. Both interface fixtures, bro
 SDK/IndexedDB checks, CLI SDK checks and all 40 Solidity regressions pass locally.
 The release inventory was refreshed solely for the latest CI workflow hash.
 
+Linux CI ad97b2d passed all 191 Noir tests, both interface fixtures and all 40
+Solidity regressions, then failed at Ethereum startup: its pinned Anvil binary had
+no installation step. The checksum/version-pinned Anvil bootstrap is now in CI,
+independently reviewed by plugin_fit. A clean local download/install exactly matched
+the qualified binary. Forge and production artifacts are unchanged. An additional
+local whole-workspace diagnostic hit its nine-minute aggregate deadline (540166 ms,
+peak 2668800 KiB, owned tree absent); its failed report is preserved, not counted as
+a pass. The complete Linux run above passed all tests in separately bounded batches.
+
 User scope: fix the September 22 deployment gaps; trusted operator cost reporting
 is accepted. This worktree remains separate from the main application release graph.
 
