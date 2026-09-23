@@ -2,12 +2,12 @@ import http from 'node:http';
 /** On-chain state owns work. The bounded in-memory queue never resumes paid calls. */
 export async function startEscrowService({descriptor,escrow,board,run,host='127.0.0.1',port=8787,onError=console.error,pollMs=2000,concurrency=2}){
  if(!Number.isSafeInteger(concurrency)||concurrency<1||concurrency>16)throw Error('Invalid service concurrency');
- let stopped=false,polling=false,cursor=0,inFlight=Promise.resolve(),lastFailure=null,lastSuccess=null;
+ let stopped=false,polling=false,cursor=0,inFlight=Promise.resolve(),pollFailure=null,jobFailure=null,lastSuccess=null;
  const jobs=new Map(),deferred=new Set();
- const failed=error=>{lastFailure={at:new Date().toISOString(),kind:error.name||'Error'};onError(error);};
+ const failed=(error,source='job')=>{const failure={at:new Date().toISOString(),kind:error.name||'Error'};if(source==='poll')pollFailure=failure;else jobFailure=failure;onError(error);};
  const server=http.createServer((req,res)=>{res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Content-Type','application/json');
  if(req.method==='GET'&&req.url==='/v1/descriptor')return res.end(JSON.stringify(descriptor));
- if(req.method==='GET'&&req.url==='/health')return res.end(JSON.stringify({status:lastFailure?'degraded':jobs.size?'working':'ready',active:jobs.size,lastFailure,lastSuccess}));res.writeHead(404);res.end();});
+ if(req.method==='GET'&&req.url==='/health'){const lastFailure=pollFailure??jobFailure;return res.end(JSON.stringify({status:lastFailure?'degraded':jobs.size?'working':'ready',active:jobs.size,lastFailure,lastSuccess}));}res.writeHead(404);res.end();});
  await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,host,resolve);});
  async function visit(index){
   const post=await escrow.at(index),inv=await escrow.invocation(post);
@@ -24,7 +24,7 @@ export async function startEscrowService({descriptor,escrow,board,run,host='127.
   if(request.flagged||!request.enabled||request.receiver!==descriptor.scope.receiver){deferred.delete(index);return;}
   deferred.delete(index);
   const job={post,account,promise:null};jobs.set(post,job);
-  job.promise=(async()=>{try{await escrow.start(post);await run(post,request.text);lastFailure=null;lastSuccess=new Date().toISOString();}catch(error){deferred.add(index);failed(error);}finally{jobs.delete(post);}})();
+  job.promise=(async()=>{try{await escrow.start(post);await run(post,request.text);jobFailure=null;lastSuccess=new Date().toISOString();}catch(error){deferred.add(index);failed(error);}finally{jobs.delete(post);}})();
  }
  async function poll(){if(stopped||polling)return;polling=true;try{
   // Rotate deferred entries, then scan new entries so one empty account cannot
@@ -35,7 +35,8 @@ export async function startEscrowService({descriptor,escrow,board,run,host='127.
   }
   const count=await escrow.count();let scanned=0;
   while(cursor<count&&!stopped&&jobs.size<concurrency&&scanned++<64){const index=cursor;deferred.add(index);await visit(index);cursor++;}
- }catch(error){failed(error);}finally{polling=false;}}
+  pollFailure=null;
+ }catch(error){failed(error,'poll');}finally{polling=false;}}
  const timer=setInterval(()=>{if(!polling)inFlight=poll();},pollMs);inFlight=poll();
  return {address:server.address(),async close(){stopped=true;clearInterval(timer);await inFlight;await Promise.all([...jobs.values()].map(job=>job.promise));await new Promise(resolve=>{server.close(resolve);server.closeAllConnections();});}};
 }

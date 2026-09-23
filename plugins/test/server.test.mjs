@@ -10,8 +10,8 @@ test('on-chain invocation must be finalized before starting; restart skips claim
 });
 
 test('health reports a failed job without exposing its private error detail',async()=>{
- let state=1;const server=await startEscrowService({descriptor:{scope:{receiver:'r'}},escrow:{count:async()=>1,at:async()=>'p',invocation:async()=>({state}),start:async()=>{state=2;}},board:{readRequest:async()=>({receiver:'r',finalized:true,enabled:true,text:'hello'})},run:async()=>{throw Error('private provider response');},port:0,pollMs:5,onError:()=>{}});
- try{await new Promise(r=>setTimeout(r,30));const health=await(await fetch('http://127.0.0.1:'+server.address.port+'/health')).json();assert.equal(health.status,'degraded');assert(!JSON.stringify(health).includes('private provider'));}finally{await server.close();}
+ let state=1,polls=0;const server=await startEscrowService({descriptor:{scope:{receiver:'r'}},escrow:{count:async()=>{polls++;return 1;},at:async()=>'p',invocation:async()=>({state}),start:async()=>{state=2;}},board:{readRequest:async()=>({receiver:'r',finalized:true,enabled:true,text:'hello'})},run:async()=>{throw Error('private provider response');},port:0,pollMs:5,onError:()=>{}});
+ try{await new Promise(r=>setTimeout(r,30));const health=await(await fetch('http://127.0.0.1:'+server.address.port+'/health')).json();assert.equal(health.status,'degraded');assert(polls>=2);assert(!JSON.stringify(health).includes('private provider'));}finally{await server.close();}
 });
 
 const until=async predicate=>{const end=Date.now()+1500;while(!predicate()){if(Date.now()>end)throw Error('Condition timed out');await new Promise(r=>setTimeout(r,5));}};
@@ -36,4 +36,12 @@ test('concurrency stays bounded and shutdown drains active work without starting
  await until(()=>started.length===2);let closed=false;const closing=server.close().then(()=>{closed=true;});
  try{await new Promise(r=>setTimeout(r,20));assert.equal(closed,false);assert.equal(started.length,2);release[0]();await new Promise(r=>setTimeout(r,20));assert.equal(closed,false);assert.equal(started.length,2);}finally{for(const r of release)r();await closing;}
  assert.equal(closed,true);assert.equal(states[2],1);
+});
+
+
+test('health clears a recovered polling failure without waiting for a new job',async()=>{
+ let offline=true,failures=0,successfulPolls=0;
+ const server=await startEscrowService({descriptor:{scope:{receiver:'r'}},port:0,pollMs:5,onError:()=>failures++,escrow:{count:async()=>{if(offline)throw Error('temporary RPC failure');successfulPolls++;return 0;}},board:{},run:async()=>{throw Error('No job should run');}});
+ const health=async()=>(await fetch('http://127.0.0.1:'+server.address.port+'/health')).json();
+ try{await until(()=>failures>0);assert.equal((await health()).status,'degraded');offline=false;await until(()=>successfulPolls>0);const recovered=await health();assert.equal(recovered.status,'ready');assert.equal(recovered.lastFailure,null);assert.equal(recovered.lastSuccess,null);}finally{await server.close();}
 });
