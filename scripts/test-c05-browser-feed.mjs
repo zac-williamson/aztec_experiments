@@ -25,7 +25,7 @@ for (const app of ['user', 'censor']) {
     const end = appSource.indexOf('\nfunction escapeHtml(', start);
     const elements = {billboardFeed:new Element('div'),billboardMeta:new Element('div')};
     let reads=0;
-    const context=vm.createContext({performance,console,document:{getElementById:id=>elements[id],createElement:tag=>new Element(tag)},window:{BillboardPublic:{async readFeed(){reads++;return {posts:[{orderIndex:'0',postId:ids[0].toString(),text,flagged:false},{orderIndex:'1',postId:ids[1].toString(),text:flaggedText,flagged:true,flag:{reason:codec.decodeModerationReason(packedReason.fields,packedReason.byteLength),censorAddress:'0x1234'}}],eventCount:3,lastBlock:7,nextCursor:null,progress:{complete:true}};}}},
+    const context=vm.createContext({performance,console,document:{getElementById:id=>elements[id],createElement:tag=>new Element(tag)},application:{async readFeed(){reads++;return {posts:[{orderIndex:'0',postId:ids[0].toString(),text,flagged:false},{orderIndex:'1',postId:ids[1].toString(),text:flaggedText,flagged:true,flag:{reason:codec.decodeModerationReason(packedReason.fields,packedReason.byteLength),censorAddress:'0x1234'}}],eventCount:3,lastBlock:7,nextCursor:null,progress:{complete:true}};}},
       _portalAddr:()=> 'portal',_getNodeUrl:()=> 'node',_getEthRpcUrl:()=> 'ethereum',_getPublicConfig:()=>({}),_getConfigRevision:()=>1,_billboardLastCount:-1,_billboardLastBlock:-1,_showCensored:true,
       escapeHtml:value=>value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')});
     vm.runInContext(appSource.slice(start,end),context);await context.refreshBillboard();
@@ -33,8 +33,14 @@ for (const app of ['user', 'censor']) {
     const [visible,flagged]=elements.billboardFeed.children;
     assert.equal(visible.children[0].textContent,'#0');assert.equal(visible.children[1].textContent,text);
     assert.equal(flagged.children[0].textContent,'#1');
-    const details=flagged.children[1];assert.equal(details.tag,'details');assert.equal(details.children[0].tag,'summary');
-    assert.equal(details.children[1].textContent,flaggedText);assert.equal(details.children[2].textContent,'Moderator reason: '+reason);
+    if(app==='censor'){
+      const details=flagged.children[1];assert.equal(details.tag,'details');assert.equal(details.children[0].tag,'summary');
+      assert.equal(details.children[1].textContent,flaggedText);assert.equal(details.children[2].textContent,'Moderator reason: '+reason);
+    }else{
+      assert.equal(flagged.children[1].textContent,'Message removed by moderator.');
+      assert.equal(flagged.children[2].textContent,'Moderator reason: '+reason);
+      assert(!JSON.stringify(flagged).includes(flaggedText));
+    }
     assert.equal(elements.billboardMeta.textContent,'Latest messages through block 7');
   });
 }
