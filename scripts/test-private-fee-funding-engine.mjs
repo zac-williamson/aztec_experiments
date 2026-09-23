@@ -1,3 +1,4 @@
+import {provingEnabledForNode} from '../shared/proving-policy.mjs';
 // Actual browser funding engine; wallet/prover/chain are explicit doubles.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
@@ -12,7 +13,7 @@ function harness(){
  const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5}),getL1ContractAddresses:async()=>({rollupAddress:'rollup',feeJuicePortalAddress:'fee-portal'})};
  const pxe={registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{},stop:async()=>calls.push('stop')};
  const context=vm.createContext({BillboardPrivateFeeRouting:{createAztecWallet:(...args)=>{wallet.journal=args.at(-1).transactionJournal;return wallet;}}});vm.runInContext(source,context);
- const a={Fr,boundedTransactionRead,normalizePrivateFeeGasSettings,deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
+ const a={provingEnabledForNode,Fr,boundedTransactionRead,normalizePrivateFeeGasSettings,deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
   SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;},
   getContractInstanceFromInstantiationParams:async()=>({address:owner}),derivePrivateFeeAddress:async()=>payer,createAztecNodeClient:()=>node,
   computePartialAddress:async()=>Fr.ONE,createPXE:async()=>pxe,AccountManager:{create:async()=>({address:owner})},

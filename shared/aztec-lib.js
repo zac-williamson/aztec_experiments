@@ -316,7 +316,7 @@ async function ensureAztecSetup(state, statusId, opts = {}) {
   startBlockMonitor(aztecNode);
 
   // Step 3: Init CRS (if not done)
-  if (!state.crsInit) {
+  if (!state.crsInit && a.provingEnabledForNode(nodeInfo)) {
     log('Step 3: Initializing CRS (one-time ~42MB download)...', 'info', S);
     await initCRS(S);
     state.crsInit = true;
@@ -337,7 +337,7 @@ async function ensureAztecSetup(state, statusId, opts = {}) {
     dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
   });
   const pxe = await a.createPXE(aztecNode, {
-    proverEnabled: true,
+    proverEnabled: a.provingEnabledForNode(nodeInfo),
     autoSync: true,
     dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
   }, { store });

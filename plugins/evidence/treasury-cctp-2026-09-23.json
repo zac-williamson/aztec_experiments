@@ -1,0 +1,15 @@
+{
+  "status": "complete",
+  "sourceTransaction": "0xdbb61c96376345d03693137548e673aad6c8dd5993ca38d58660ea10ae5229a2",
+  "receivedMicroUSDC": "945250",
+  "feeMicroUSDC": "54750",
+  "destinationTransaction": "0xa7241ab81354a2974bf0f2517ee693d0737f758732b8bd79942590a46bb7bc08",
+  "network": "Ethereum Sepolia to Base Sepolia",
+  "sourceAmountMicroUSDC": "1000000",
+  "mainnet": false,
+  "sourceSha256": {
+    "plugins/treasury.mjs": "c534039593db0857ffdc773eff45528be2ff97e0d6b7cf1760f9356e355cd731",
+    "plugins/treasury-cctp.mjs": "f8cf3369636cc452ec2ddc0cfb873537bf7897f133d8c6e0269c093fb15436eb",
+    "plugins/operations.mjs": "2393d7a438789067435ca7300fae6783e5eec1937c3d4e80a5b48ddcbf60a0bb"
+  }
+}

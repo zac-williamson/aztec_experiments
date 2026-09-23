@@ -66,3 +66,15 @@ AGENTS.md
 *.pem
 *.key
 __pycache__/
+
+# Linked dependencies in isolated checkouts
+node_modules
+
+# Generated Foundry outputs; existing tracked canonical artifacts stay tracked.
+billboard/portal/out/
+
+# Native prover CRS cache; browser CRS assets remain tracked.
+/apps/dist/crs/bn254_*.dat
+/apps/dist/crs/crs.lock
+/apps/dist/crs/grumpkin_g1_v2.flat.dat
+/apps/dist/crs/grumpkin_size

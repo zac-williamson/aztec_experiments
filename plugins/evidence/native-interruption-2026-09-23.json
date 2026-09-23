@@ -1,0 +1,50 @@
+{
+  "passed": true,
+  "realMetaMask": true,
+  "applicationProofs": true,
+  "unfundedPost": {
+    "rejectedThroughBrowser": true,
+    "noPublication": true,
+    "provider": "simulated interruption runner"
+  },
+  "deposit": {
+    "amount": "1000000",
+    "asset": "USDC",
+    "claimedThroughBrowser": true
+  },
+  "postId": "14278766601576890729809496816562232570194988676234997034521741205278609215961",
+  "post": {
+    "noEthereumPayment": true,
+    "authorizedInAztec": true
+  },
+  "interruption": {
+    "replayed": false,
+    "reservedMicroUSDC": "1000000",
+    "providerCalls": 0,
+    "simulatedInterruption": true,
+    "releasedThroughBrowser": true,
+    "restoredMicroUSDC": "1000000",
+    "replayRejected": true
+  },
+  "cleanupSucceeded": true,
+  "scope": "Real application proofs and escrow; explicit interrupted runner, no provider inference; official local settlement and accelerated expiry.",
+  "supervisor": {
+    "passed": true,
+    "elapsedMs": 372228,
+    "peakTreeRSSKiB": 3778064,
+    "ownedTreeAbsent": true,
+    "deadlineMs": 540000,
+    "rssLimitKiB": 4194304
+  },
+  "sourceSha256": {
+    "plugins/devnet/interruption.mjs": "1b1eb7021e587824e99efdb1e8c9664615789ebbf9eb15f7abbc2e1f8bc4c1cf",
+    "plugins/devnet/wallet-harness.mjs": "12de4e86c3ddc2e100ad14e0857b2ec091b4d65d9ce06299b458faed2fc995b9",
+    "plugins/devnet/browser.mjs": "fa4a61c9be35bfb4ff4d1b9613d2743d393304ad04a3a73f0d1b2ad634f0bfa4",
+    "plugins/devnet/network.mjs": "c8c0d53c755d882c2f8a6a06e617c64713921cb2b3b5e333bd13911ec854e609",
+    "plugins/devnet/qualify.mjs": "bec447c23e46320e41c1fe27422f3cae10330d23fe7d27fcac4f61d558b0026e",
+    "plugins/escrow.mjs": "e18e399c237295a6262a2c2b39172cb4d560229be5dc28af2c4a71fe94486e1f",
+    "plugins/escrow-service.mjs": "9dfc6c5c393a1e121a0eecbd5ad9f8c5520a7abb99aa700be5c76e146235c50b",
+    "plugins/adapter_artifact.json": "a1bbdbbfe799d02ee9f9afcb0a3edb33d8b08d9f025b8908f541c1713c82fdbf",
+    "apps/dist/plugins.js": "c405dacac5d5e26375106b79b2453ba156ec67bbc941f3f893782e71c854e289"
+  }
+}

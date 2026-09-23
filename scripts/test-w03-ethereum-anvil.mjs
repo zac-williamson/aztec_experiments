@@ -20,7 +20,7 @@ import {FeeJuicePortalAbi} from '@aztec/l1-artifacts/FeeJuicePortalAbi';
 import {AztecAddress} from '@aztec/stdlib/aztec-address';
 import {Fr} from '@aztec/foundation/curves/bn254';
 import {BarretenbergSync} from '@aztec/bb.js';
-import {derivePrivateFeeAddress} from '../shared/private-fee-client.mjs';
+import {derivePrivateFeeAddress,derivePrivateFeeInstance} from '../shared/private-fee-client.mjs';
 import {fundPrivateFees,recoverPrivateFeeFunding,recoverPrivateFeeClaim} from '../shared/private-fee-funding.mjs';
 assertNodeVersion();
 const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'bb-eth-live-'));
@@ -69,7 +69,8 @@ try {
   await (await token.mint(user.address,1000n)).wait();
   const privateFeeArtifact=JSON.parse(fs.readFileSync(path.join(ROOT,'apps/src/billboard/private_fee_artifact.json')));
   const privateFeeAddress=await derivePrivateFeeAddress(privateFeeArtifact),owner=AztecAddress.fromFieldUnsafe(Fr.fromString(journalScope.account));
-  const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5,l1ContractAddresses:{rollupAddress:await publisher.getAddress(),feeJuicePortalAddress:await feePortal.getAddress(),feeJuiceAddress:await token.getAddress()}})};
+  // Ethereum-only fixture: Aztec class publication has separate application coverage.
+  const node={getContract:async()=>derivePrivateFeeInstance(privateFeeArtifact),getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5,l1ContractAddresses:{rollupAddress:await publisher.getAddress(),feeJuicePortalAddress:await feePortal.getAddress(),feeJuiceAddress:await token.getAddress()}})};
   const publicRecords=[];
   const feeInput={node,ethProvider:provider,ethSigner:{...lostResponseSigner,provider},owner,walletSecret,walletSalt,privateFeeAddress,privateFeeArtifact,amount:'1000',expectedChainId:'31337',expectedVersion:'5',journalStorage:storage,saveRecovery:async record=>publicRecords.push(record)};
   const recoverFee=()=>recoverPrivateFeeFunding({...feeInput,ethSigner:undefined,ethProvider:provider,sender:user.address});

@@ -284,7 +284,7 @@ async function refreshBillboard() {
       const saved=previous.get(key);
       if(saved?.signature===textSignature){next.set(key,saved);nodes.push(saved.article);continue;}
       const article=document.createElement('article');article.className='billboard-post';
-      const label=document.createElement('p');label.textContent='#'+post.orderIndex;article.append(label);
+      const label=document.createElement('p');label.textContent=(post.pluginReply?'Bot reply · ':'')+'#'+post.orderIndex;article.append(label);
       const content=document.createElement('p');content.textContent=post.flagged?'Message removed by moderator.':post.text;article.append(content);
       if(post.flagged){const reason=document.createElement('p');reason.textContent='Moderator reason: '+(post.flag?.reason||'No reason supplied');article.append(reason);}
       next.set(key,{article,signature:textSignature});nodes.push(article);
@@ -505,3 +505,27 @@ function waitForBundleThenInit() {
   }
 }
 initializeHostedBoard(waitForBundleThenInit);
+
+async function pluginAccountAction(action,extra={}) {
+  const buttons=document.querySelectorAll('#pluginAccountPanel button');buttons.forEach(b=>b.disabled=true);
+  const status=document.getElementById('pluginStatus');status.textContent='';delete status.dataset.outcome;
+  try {
+    const result=await application.pluginAccount(action,{handle:document.getElementById('pluginHandle').value,amount:document.getElementById('pluginAmount').value,...extra},message=>status.textContent=message);
+    if(result.requests){
+      const list=document.getElementById('pluginRequestsList');list.replaceChildren();
+      for(const request of result.requests){
+        const row=document.createElement('p');
+        row.textContent=request.postId.slice(0,12)+'… — '+request.status+'; charged '+(Number(request.charged)/1e6).toFixed(6)+' USDC; reserved '+(Number(request.reserved)/1e6).toFixed(6)+' USDC. ';
+        if(request.deadline&&request.reserved!=='0')row.append('Release after '+new Date(request.deadline*1000).toLocaleString()+'. ');
+        for(const [allowed,action,label]of [[request.canCancel,'cancel','Cancel'],[request.canRelease,'release','Release funds']]){
+          if(!allowed)continue;const button=document.createElement('button');button.textContent=label;
+          button.onclick=()=>pluginAccountAction(action,{postId:request.postId});row.append(button);
+        }list.append(row);
+      }
+      if(result.nextCursor!==null){const more=document.createElement('button');more.textContent='Older requests';more.onclick=()=>pluginAccountAction('requests',{cursor:result.nextCursor});list.append(more);}
+    }
+    status.textContent=result.requests?'Request status read from Aztec':result.balance!==undefined?'Available: '+result.balance+' USDC':'Completed';status.dataset.outcome='success';
+  }catch(error){status.textContent=error.message;status.dataset.outcome='error';}
+  finally{buttons.forEach(b=>b.disabled=false);}
+  if((action==='cancel'||action==='release')&&status.dataset.outcome==='success')await pluginAccountAction('requests');
+}

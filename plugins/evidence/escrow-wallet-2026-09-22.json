@@ -1,0 +1,112 @@
+{
+  "passed": true,
+  "realMetaMask": true,
+  "applicationProofs": false,
+  "stage": "passed",
+  "unfundedPost": {
+    "rejectedThroughBrowser": true,
+    "noPublication": true,
+    "noProviderCharge": true
+  },
+  "deposit": {
+    "amount": "1000000",
+    "asset": "USDC",
+    "claimedThroughBrowser": true
+  },
+  "postId": "9053942361772115173094036768609467613096294902162938556254576633022103113295",
+  "post": {
+    "noEthereumPayment": true,
+    "authorizedInAztec": true
+  },
+  "reply": {
+    "postId": "0x0cf95cf61aa7cfc1dbe4bd612b462264e6b8e4330b969a6349c75d68e17bb20e",
+    "text": "**PR #1: Bok live integration smoke test**  \nURL: https://github.com/zac-williamson/aztec_experiments/pull/1\n\n**Changed file:** `docs/bok-live-smoke.md` (added, 9 lines)\n\n**Summary:** Automated integration test (not a production change) that adds documentation describing \"Billboard,\" an anonymous message board on Aztec with ETH deposits for posting rights, moderation capabilities, and passkey-backed accounts.",
+    "visible": true,
+    "flagged": false
+  },
+  "veniceCharges": [
+    {
+      "id": "1ae80d6f-89da-44e0-90fa-f8d005ef4712",
+      "amount": -0.0010381,
+      "type": "CHARGE",
+      "createdAt": "2026-09-22T17:53:58.276Z",
+      "requestId": "0ef8c77268a14a3bb9ef2007177a3077",
+      "modelId": "kimi-k2-5"
+    },
+    {
+      "id": "5fe7da99-0f5d-4800-a45e-1b6eba0dc6f9",
+      "amount": -0.00028746,
+      "type": "CHARGE",
+      "createdAt": "2026-09-22T17:53:33.883Z",
+      "requestId": "adefbb3de70d42c78202bb49d515ab5f",
+      "modelId": "kimi-k2-5"
+    }
+  ],
+  "settlement": {
+    "chargedMicroUSDC": "1327",
+    "remainingMicroUSDC": "998673",
+    "reserved": "0",
+    "providerMicroUSDC": "1327"
+  },
+  "withdrawal": {
+    "returnedMicroUSDC": "998673",
+    "throughBrowser": true,
+    "wrongRecipientRejected": true,
+    "replayRejected": true
+  },
+  "cleanupSucceeded": true,
+  "runDirectory": ".build/plugin-browser-FV2hno",
+  "validation": {
+    "javascript": 241,
+    "noirEscrow": 14,
+    "solidityRegression": 40,
+    "browserExitCode": 0,
+    "scope": "Local devnet, real MetaMask, live Venice and GitHub read; application proofs disabled",
+    "postBrowserVerification": "Added and passed the exact Fund plugin account first rejection test; all browser-tested runtime source and artifact fingerprints remained unchanged.",
+    "unfundedRejectionCause": "Direct Noir test escrow_unfunded_account_cannot_authorize; browser separately verifies rejection and no financial/publication effects."
+  },
+  "sourceSha256": {
+    "apps/dist/censor.html": "4d81cdb870555fa4f1b4bfa4e6947c62fa84d676e31ef5d6da134585b717839d",
+    "apps/dist/deploy.html": "ff3d97ef5ab0c915d920136c767950507f3253f3f05a2ed33fe88dd493adfddb",
+    "apps/dist/fee-juice.html": "ba10b3810e9ded23dc3cb1c4c8c2f1cafba971ac413b4758a690f0ff2b55487d",
+    "apps/dist/plugins.js": "89692f4bc085e01c23365b01f1f56e1aabb23ab2268133f8d64ccfcd580d079e",
+    "apps/dist/public-feed-metadata.json": "978cd5470312ad6698a24de68f526e0670f713be880fb0330c1e840029e61ff5",
+    "apps/dist/public-feed.js": "4e4c39f10ecc0d1bec9211ce71397d86d39d716cb0417e04a9b2d2fae851f9f6",
+    "apps/dist/sdk-manifest.json": "6c61d881958a4fa72d5241bf480147529356f922d2ccf2c6e3cd6f88695c4742",
+    "apps/dist/user.html": "a96bdeafea6c1ba03d489b8edf4b8d89cbc20f4fd39a7bc63bfc751b3a16de7a",
+    "apps/src/billboard/billboard_artifact.json": "c628b08af019875001cc4b131bd49aa4987784e89eda08b6282f71c598b7924b",
+    "apps/src/billboard/censor/billboard_artifact.json": "c628b08af019875001cc4b131bd49aa4987784e89eda08b6282f71c598b7924b",
+    "apps/src/billboard/deploy/billboard_artifact.json": "c628b08af019875001cc4b131bd49aa4987784e89eda08b6282f71c598b7924b",
+    "apps/src/billboard/user/app.js": "47f252f5e41b20504320deed55ea1dcfecc4c93461d89a24202ab036886cd0a0",
+    "apps/src/billboard/user/engine.js": "7be2b518e228be4fd627d5cd609dd65e4e03759d9238fdba63af2231d68d2fba",
+    "apps/src/billboard/user/template.html": "88e1d4434c73dff0c3a4beb27a3497ccb714d278e042064033aaf80e7602c39c",
+    "billboard/billboard_contract/src/main.nr": "7bcfdd2770c181dd02736903884ab166d5d5603a68e16462ffe830cb1ac788ab",
+    "billboard/plugin_adapter/src/main.nr": "980de36463613f82b100313845470a323d49e4f61ab6291a7a5c68e1ad27f516",
+    "billboard/plugin_adapter/src/tests.nr": "087f6cfffa91a8974066c7db8682c427566c7012169dca42de83d1c501f699f7",
+    "billboard/portal/src/DevUSDC.sol": "863c83008d15fb83d56d1b2668d507ce06990358f900b4746cc8c2116768f821",
+    "billboard/portal/src/PluginPortal.sol": "5c4793bd0eb30cad8b1f49f1e37c2cf7fc0d983087df7a04258c7dd205c7f882",
+    "noir-dependencies.json": "66a01ad8b2d540c34f7dfc6fdb52cadb8d57c9221ec45299bba3864c8cc2928a",
+    "package.json": "62718d14d30cd4a00119fcecf0fddf67d46ff5111ebabbd1ceb9d2245779c69d",
+    "plugins/account-client.mjs": "68135274833c170568fa649c9964aeb66032490a3516f4acc2c2a2f9cade3193",
+    "plugins/adapter_artifact.json": "01bb433a52c486cd298e026671813279de671d795e9e101426735d30c4626715",
+    "plugins/agent.mjs": "8f2cd7fc5a389c950ca8e9321e0417e321ab433cb8e8d0b739e83359bcc83a5c",
+    "plugins/aztec.mjs": "a2d81110725fecb3872d9ef6c6aaba088ba86ade2fa50b4ab17a34e1810db250",
+    "plugins/client.mjs": "64f3a5f91c5d79cd08da4c79dfa344c18dd8ee6b92b9ab1d263f10e1347beac8",
+    "plugins/devnet/bootstrap.mjs": "b7164bb6dc28bb5d1fb817cba2536b9e69b2da4bdf7acafc7f6f7944d98764fe",
+    "plugins/devnet/wallet-harness.mjs": "b946381e6a7dcfeeea31ddc4c4816d3815b5436e986ada2b8eaa7526905d4186",
+    "plugins/escrow-service.mjs": "57e46afaa5eabbcc6a08bedcb1800f67ba76c0d60c1e35491502abedcf9c350d",
+    "plugins/escrow.mjs": "7d20ada40972d0bcbd5db6bd430b124312a22f3d391995c118656e377e78c164",
+    "plugins/main.mjs": "648160264aaa028f74e5cf60a00c0a9ea333dbe71dddaebabff7943610046575",
+    "plugins/metering.mjs": "b21194fe87a53768971968a0e7665a267c6f328840d5654bd232e20b8b8984e7",
+    "plugins/protocol.mjs": "3aba5deec94743e341af7f454c1222d937a897220b213fd19fa2391a8d1cabf1",
+    "plugins/test/account-client.test.mjs": "f9b94e66b4608f981cc5683d4f2226ef9c19efbe265391a36f11ac8b7495481e",
+    "plugins/test/metering.test.mjs": "da78575c397f850b33b0b6a0d3be8c8792aa8c86c4f7fdda2555945ceb00fad9",
+    "plugins/test/model.test.mjs": "cb6a7300736823f0c44c07d45a7dba24251a440aeb517e5d9f1f13673a7696d0",
+    "plugins/test/protocol.test.mjs": "2674efb0ab0e2efaca527c890305524f797d4753ac559453f467deb409f0fbb2",
+    "plugins/test/server.test.mjs": "9357ba4463adbacf606a2469a56ac21eba5107b01ecd9cb338a14600d5907297",
+    "plugins/venice-metered.mjs": "3e088df442c681c8b4404b740ce4eb4eee32ddbdf5834574042e40d0947dba3f",
+    "scripts/frontend-provenance.mjs": "8b1a4bf2253f6d6a92b54708acf253365ca0824e706c1e4c631f94077905e132",
+    "scripts/test-application-interface.mjs": "116b47016991dd1d1ac717fda88a1fe107924e2c05be10ebf99157482a6571a0",
+    "shared/application.js": "927394b314eec2aa1feadcb5959925e9bc9cde59cc049daee854663308e5c2be"
+  }
+}

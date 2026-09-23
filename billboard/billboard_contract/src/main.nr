@@ -11,7 +11,7 @@ pub contract Billboard {
         keys::getters::{get_nhk_app, get_public_keys, try_get_public_keys},
         macros::{
             events::event,
-            functions::{external, initializer, only_self, view},
+            functions::{external, initializer, internal, only_self, view},
             notes::note,
             storage::storage,
         },
@@ -221,6 +221,22 @@ pub contract Billboard {
         }
     }
 
+    #[derive(Packable)]
+    pub struct PluginRecord { pub receiver: AztecAddress, pub enabled: bool, pub descriptor: [Field; 8], pub length: u16 }
+    #[derive(Packable)]
+    pub struct PluginRequest { pub handle: Field, pub receiver: AztecAddress, pub reply: Field, pub published_block: u32 }
+
+    // Plugin protocol: opaque receiver and descriptor; no service/payment implementation.
+    #[event]
+    struct PluginConfigured {
+        schema_version: u32, handle: Field, receiver: AztecAddress,
+        enabled: u8, descriptor_length: u16, descriptor: [Field; 8],
+    }
+    #[event]
+    struct PluginInvoked { schema_version: u32, post_id: Field, handle: Field }
+    #[event]
+    struct PluginReplyLinked { schema_version: u32, post_id: Field, parent_id: Field, handle: Field }
+
     #[event]
     struct PolicyPublished {
         schema_version: u32, policy_version: Field, policy_length: u16,
@@ -273,6 +289,7 @@ pub contract Billboard {
         post_policy_version: Map<Field, PublicMutable<Field, Context>, Context>,
         post_flag_deadline: Map<Field, PublicMutable<u64, Context>, Context>,
         censor_response_length: Map<Field, PublicMutable<u16, Context>, Context>,
+        plugin_state: PluginStorageRoot,
     }
 
     // ============================================================
@@ -378,7 +395,8 @@ pub contract Billboard {
         let version = self.storage.policy_version.read();
         assert(version == expected_policy_version, "Policy version mismatch");
         let now = self.context.timestamp();
-        let penalized = (now < self.storage.post_flag_deadline.at(post_id).read())
+        let penalized = (PluginState::read(self.context, self.storage, 3, post_id, 0) == 0)
+            & (now < self.storage.post_flag_deadline.at(post_id).read())
             & (version == self.storage.post_policy_version.at(post_id).read());
         crate::lib::validate_reason(reason_fields, reason_length);
         self.storage.post_flagged.at(post_id).write(if penalized { 3 } else { 1 });
@@ -460,10 +478,28 @@ pub contract Billboard {
         child: Option<HintedNote<PostNote>>,
         grandchild: Option<HintedNote<PostNote>>,
     ) {
-        let sender = self.msg_sender();
-        let now = self.context.get_anchor_block_header().timestamp();
-        let header = self.context.get_anchor_block_header();
-        let addr = self.context.this_address();
+        Admission::post(self.context, self.storage, self.enqueue_self, deposit_chain_id, post_nonce, msg, message_length, is_dummy, child, grandchild, 0);
+    }
+
+    #[external("private")]
+    fn post_with_plugin(
+        deposit_chain_id: Field, post_nonce: Field, msg: [Field; MSG_FIELDS], message_length: u16,
+        child: Option<HintedNote<PostNote>>, grandchild: Option<HintedNote<PostNote>>, handle: Field,
+    ) {
+        assert(handle != 0, "Plugin required");
+        Admission::post(self.context, self.storage, self.enqueue_self, deposit_chain_id, post_nonce, msg, message_length, false, child, grandchild, handle);
+    }
+
+    struct Admission {}
+    impl Admission {
+    fn post(context: &mut aztec::context::PrivateContext, storage: Storage<&mut aztec::context::PrivateContext>, enqueue: EnqueueSelf<&mut aztec::context::PrivateContext>,
+        deposit_chain_id: Field, post_nonce: Field, msg: [Field; MSG_FIELDS], message_length: u16,
+        is_dummy: bool, child: Option<HintedNote<PostNote>>, grandchild: Option<HintedNote<PostNote>>, handle: Field,
+    ) {
+        let sender = context.maybe_msg_sender().unwrap();
+        let now = context.get_anchor_block_header().timestamp();
+        let header = context.get_anchor_block_header();
+        let addr = context.this_address();
         let public_post_id = if is_dummy {
             assert(post_nonce == 0, "Dummy nonce must be zero");
             assert(message_length == 0, "Dummy message length must be zero");
@@ -480,13 +516,13 @@ pub contract Billboard {
         // --- Pop the deposit note ---
         let options = NoteGetterOptions::<DepositNote, 8, Field, Field>::new()
             .select(DepositNote::properties().deposit_chain_id, Comparator.EQ, deposit_chain_id).set_limit(1);
-        let notes = self.storage.deposits.at(sender).pop_notes(options);
+        let notes = storage.deposits.at(sender).pop_notes(options);
         assert(notes.len() > 0, "No deposit note found -- claim a deposit first");
         let dep_note = notes.get_unchecked(0);
         assert((dep_note.schema_version == 1) & (dep_note.deposit_chain_id == deposit_chain_id) & (deposit_chain_id != 0), "Invalid deposit identity");
 
-        let config = self.storage.config.read();
-        config.validate(self.context.chain_id(), self.context.version());
+        let config = storage.config.read();
+        config.validate(context.chain_id(), context.version());
         let cooldown = compute_cooldown(dep_note.amount, config.base_cooldown as u64, config.min_deposit);
         let k = config.k_multiplier as u64;
         let censor_window = config.censor_window as u64;
@@ -494,7 +530,7 @@ pub contract Billboard {
 
         // --- Get link_secret (app-siloed nullifier hiding key) ---
         let owner_npk_m_hash = get_public_keys(sender).npk_m_hash;
-        let link_secret = self.context.request_nhk_app(owner_npk_m_hash);
+        let link_secret = context.request_nhk_app(owner_npk_m_hash);
 
         // --- Screen posts (child and grandchild) ---
         let mut flag_count: u64 = 0;
@@ -510,7 +546,7 @@ pub contract Billboard {
         assert((screened_sequence == head_sequence) == (dep_note.screened_link == dep_note.head_link), "C02 deposit progress");
         let need_screening = screened_sequence < head_sequence;
         let scope = ScreeningScope { board: addr, owner: sender,
-            slot: self.storage.posts.at(sender).storage_slot, chain: deposit_chain_id };
+            slot: storage.posts.at(sender).storage_slot, chain: deposit_chain_id };
 
         if need_screening {
             assert(child.is_some(), "Child note required for screening");
@@ -524,10 +560,10 @@ pub contract Billboard {
             let child_is_head = cn.sequence == head_sequence;
             assert((child_link == dep_note.head_link) == child_is_head, "C02 child head");
             let child_mature = if cn.is_dummy { true } else {
-                let exists_slot = self.storage.post_exists.at(cn.post_id).get_storage_slot();
+                let exists_slot = storage.post_exists.at(cn.post_id).get_storage_slot();
                 assert(public_storage_historical_read(header, exists_slot, addr) == 1, "Post not publicly included");
-                let time_slot = self.storage.post_time.at(cn.post_id).get_storage_slot();
-                let deadline_slot = self.storage.post_flag_deadline.at(cn.post_id).get_storage_slot();
+                let time_slot = storage.post_time.at(cn.post_id).get_storage_slot();
+                let deadline_slot = storage.post_flag_deadline.at(cn.post_id).get_storage_slot();
                 let published_field = public_storage_historical_read(header, time_slot, addr);
                 let deadline_field = public_storage_historical_read(header, deadline_slot, addr);
                 let published = published_field as u64;
@@ -545,7 +581,7 @@ pub contract Billboard {
             }
             if child_mature {
                 if !cn.is_dummy {
-                    let flag_slot = self.storage.post_flagged.at(cn.post_id).get_storage_slot();
+                    let flag_slot = storage.post_flagged.at(cn.post_id).get_storage_slot();
                     if public_storage_historical_read(header, flag_slot, addr) == 3 { flag_count += 1; }
                 }
                 new_screened_link = child_link;
@@ -563,10 +599,10 @@ pub contract Billboard {
                 let gc_link = post_link(addr, sender, deposit_chain_id, gn.sequence, gc_inner_hash, link_secret);
                 assert((gc_link == dep_note.head_link) == (gn.sequence == head_sequence), "C02 grandchild head");
                 let gc_mature = if gn.is_dummy { true } else {
-                    let exists_slot = self.storage.post_exists.at(gn.post_id).get_storage_slot();
+                    let exists_slot = storage.post_exists.at(gn.post_id).get_storage_slot();
                     assert(public_storage_historical_read(header, exists_slot, addr) == 1, "Post not publicly included");
-                    let time_slot = self.storage.post_time.at(gn.post_id).get_storage_slot();
-                    let deadline_slot = self.storage.post_flag_deadline.at(gn.post_id).get_storage_slot();
+                    let time_slot = storage.post_time.at(gn.post_id).get_storage_slot();
+                    let deadline_slot = storage.post_flag_deadline.at(gn.post_id).get_storage_slot();
                     let published_field = public_storage_historical_read(header, time_slot, addr);
                     let deadline_field = public_storage_historical_read(header, deadline_slot, addr);
                     let published = published_field as u64;
@@ -578,7 +614,7 @@ pub contract Billboard {
                 };
                 if child_mature & gc_mature {
                     if !gn.is_dummy {
-                        let flag_slot = self.storage.post_flagged.at(gn.post_id).get_storage_slot();
+                        let flag_slot = storage.post_flagged.at(gn.post_id).get_storage_slot();
                         if public_storage_historical_read(header, flag_slot, addr) == 3 { flag_count += 1; }
                     }
                     new_screened_link = gc_link;
@@ -605,20 +641,23 @@ pub contract Billboard {
             post_id: public_post_id, anchor_timestamp: now,
             previous_link: dep_note.head_link, is_dummy };
 
-        let post_msg = self.storage.posts.at(sender).insert(post_note);
+        let post_msg = storage.posts.at(sender).insert(post_note);
         let new_note = post_msg.get_new_note();
         let inner_hash = post_note.compute_note_hash(
             new_note.owner,
             new_note.storage_slot,
             new_note.randomness,
         );
-        let new_link = post_link(self.address, sender, deposit_chain_id, sequence, inner_hash, link_secret);
+        let new_link = post_link(context.this_address(), sender, deposit_chain_id, sequence, inner_hash, link_secret);
         assert(new_link != SENTINEL, "C02 invalid new head");
 
-        NoteMessage::new(new_note, self.context).deliver(MessageDelivery::onchain_constrained());
+        NoteMessage::new(new_note, context).deliver(MessageDelivery::onchain_constrained());
 
         // Dummies advance only private history and never compete for public order.
-        if !is_dummy { self.enqueue_self._publish_post(public_post_id, msg, message_length); }
+        if !is_dummy {
+            if handle == 0 { enqueue._publish_post(public_post_id, msg, message_length); }
+            else { enqueue._publish_invocation(public_post_id, msg, message_length, handle, sender); }
+        }
 
         // --- Update last_real_sequence (only for non-dummy posts) ---
         let new_last_real = if is_dummy {
@@ -638,32 +677,144 @@ pub contract Billboard {
             screened_link: new_screened_link,
             next_allowed_time: new_next_allowed,
         };
-        self.storage.deposits.at(sender).insert(new_deposit).deliver(MessageDelivery::onchain_constrained());
+        storage.deposits.at(sender).insert(new_deposit).deliver(MessageDelivery::onchain_constrained());
+    }
+
     }
 
     #[external("public")]
     #[only_self]
     fn _publish_post(post_id: Field, msg: [Field; MSG_FIELDS], message_length: u16) {
+        Publication::append_post(self.context, self.storage, post_id, msg, message_length);
+    }
+
+    struct Publication {}
+    impl Publication {
+    unconstrained fn append_post(context: aztec::context::PublicContext, storage: Storage<aztec::context::PublicContext>, post_id: Field, msg: [Field; MSG_FIELDS], message_length: u16) {
         assert(post_id != 0, "Post id must not be zero");
-        assert(!self.storage.post_exists.at(post_id).read(), "Post id already exists");
+        assert(!storage.post_exists.at(post_id).read(), "Post id already exists");
         crate::lib::validate_message(msg, message_length);
-        let order = self.storage.post_count.read();
+        let order = storage.post_count.read();
         assert(order < 0xffffffffffffffff, "Post count overflow");
-        let published_at = self.context.timestamp();
-        let config = self.storage.config.read();
+        let published_at = context.timestamp();
+        let config = storage.config.read();
         let deadline = checked_time_add(published_at, config.censor_window as u64);
-        let version = self.storage.policy_version.read();
-        self.storage.post_exists.at(post_id).write(true);
-        self.storage.post_id_by_order.at(order).write(post_id);
-        self.storage.post_time.at(post_id).write(published_at);
-        self.storage.post_flag_deadline.at(post_id).write(deadline);
-        self.storage.post_policy_version.at(post_id).write(version);
-        self.storage.post_length.at(post_id).write(message_length);
-        for i in 0..MSG_FIELDS { self.storage.post_data.at(post_id).at(i).write(msg[i]); }
-        self.storage.post_count.write(order + 1);
-        self.emit(PostPublished { schema_version: 1, post_id, order_index: order,
+        let version = storage.policy_version.read();
+        storage.post_exists.at(post_id).write(true);
+        storage.post_id_by_order.at(order).write(post_id);
+        storage.post_time.at(post_id).write(published_at);
+        storage.post_flag_deadline.at(post_id).write(deadline);
+        storage.post_policy_version.at(post_id).write(version);
+        storage.post_length.at(post_id).write(message_length);
+        for i in 0..MSG_FIELDS { storage.post_data.at(post_id).at(i).write(msg[i]); }
+        storage.post_count.write(order + 1);
+        aztec::event::event_emission::emit_event_in_public(context, PostPublished { schema_version: 1, post_id, order_index: order,
             published_at, flag_deadline: deadline, policy_version: version,
             message_length, message_fields: msg });
+    }
+
+    }
+
+    // One namespaced storage map avoids expanding PrivateContext for each public-only field.
+    // Namespace is included in every derived key, separating handles, requests and replies.
+    // Public-only storage reserves a normal macro-allocated map root.
+    struct PluginStorageRoot { slot: Field }
+    impl<Context> StateVariable<1, Context> for PluginStorageRoot {
+        fn new(_context: Context, storage_slot: Field) -> Self { Self { slot: storage_slot } }
+        fn get_storage_slot(self) -> Field { self.slot }
+    }
+    struct PluginState {}
+    impl PluginState {
+        unconstrained fn key(namespace: Field, id: Field, index: Field) -> Field {
+            aztec::protocol::hash::poseidon2_hash_with_separator([namespace, id, index], 0x42425002)
+        }
+        unconstrained fn read(context: aztec::context::PublicContext, storage: Storage<aztec::context::PublicContext>, namespace: Field, id: Field, index: Field) -> Field {
+            Map::<Field, PublicMutable<Field, aztec::context::PublicContext>, aztec::context::PublicContext>::new(context, storage.plugin_state.slot).at(Self::key(namespace, id, index)).read()
+        }
+        unconstrained fn write(context: aztec::context::PublicContext, storage: Storage<aztec::context::PublicContext>, namespace: Field, id: Field, index: Field, value: Field) {
+            Map::<Field, PublicMutable<Field, aztec::context::PublicContext>, aztec::context::PublicContext>::new(context, storage.plugin_state.slot).at(Self::key(namespace, id, index)).write(value);
+        }
+        unconstrained fn plugin(context: aztec::context::PublicContext, storage: Storage<aztec::context::PublicContext>, handle: Field) -> PluginRecord {
+            let mut descriptor = [0; 8];
+            for i in 0..8 { descriptor[i] = Self::read(context, storage, 1, handle, 3 + i as Field); }
+            PluginRecord {receiver: AztecAddress::from_field(Self::read(context, storage, 1, handle, 0)),
+                enabled: Self::read(context, storage, 1, handle, 1) == 1,
+                length: Self::read(context, storage, 1, handle, 2) as u16, descriptor}
+        }
+        unconstrained fn write_plugin(context: aztec::context::PublicContext, storage: Storage<aztec::context::PublicContext>, handle: Field, plugin: PluginRecord) {
+            Self::write(context, storage, 1, handle, 0, plugin.receiver.to_field());
+            Self::write(context, storage, 1, handle, 1, if plugin.enabled { 1 } else { 0 });
+            Self::write(context, storage, 1, handle, 2, plugin.length as Field);
+            for i in 0..8 { Self::write(context, storage, 1, handle, 3 + i as Field, plugin.descriptor[i]); }
+        }
+        unconstrained fn request(context: aztec::context::PublicContext, storage: Storage<aztec::context::PublicContext>, post: Field) -> PluginRequest {
+            PluginRequest {handle: Self::read(context, storage, 2, post, 0), receiver: AztecAddress::from_field(Self::read(context, storage, 2, post, 1)), reply: Self::read(context, storage, 2, post, 2), published_block: Self::read(context, storage, 2, post, 3) as u32}
+        }
+        unconstrained fn write_request(context: aztec::context::PublicContext, storage: Storage<aztec::context::PublicContext>, post: Field, request: PluginRequest) {
+            Self::write(context, storage, 2, post, 0, request.handle);
+            Self::write(context, storage, 2, post, 1, request.receiver.to_field());
+            Self::write(context, storage, 2, post, 2, request.reply);
+            Self::write(context, storage, 2, post, 3, request.published_block as Field);
+        }
+    }
+
+    // Generic plugin API. Only deployer chooses the receiver; adapter internals are opaque.
+    #[external("public")]
+    fn configure_plugin(handle: Field, receiver: AztecAddress, descriptor: [Field; 8], descriptor_length: u16, enabled: bool) {
+        assert(self.msg_sender() == self.storage.config.read().deployer, "Only deployer");
+        assert(handle != 0, "Plugin handle required");
+        assert(receiver != AztecAddress::zero(), "Plugin receiver required");
+        assert(descriptor_length > 0 & descriptor_length <= 248, "Invalid descriptor length");
+        let previous = PluginState::plugin(self.context, self.storage, handle);
+        assert((previous.receiver == AztecAddress::zero()) | (previous.receiver == receiver), "Plugin receiver immutable");
+        if previous.receiver != AztecAddress::zero() {
+            assert(descriptor_length == previous.length, "Descriptor immutable");
+            for i in 0..8 { assert(descriptor[i] == previous.descriptor[i], "Descriptor immutable"); }
+        }
+        PluginState::write_plugin(self.context, self.storage, handle, PluginRecord {receiver, enabled, descriptor, length: descriptor_length});
+        self.emit(PluginConfigured {schema_version: 1, handle, receiver, enabled: if enabled { 1 } else { 0 }, descriptor_length, descriptor});
+    }
+
+    #[external("public")]
+    #[only_self]
+    fn _publish_invocation(post_id: Field, msg: [Field; MSG_FIELDS], message_length: u16, handle: Field, account: AztecAddress) {
+        assert(PluginState::plugin(self.context, self.storage, handle).enabled, "Plugin disabled");
+        Publication::append_post(self.context, self.storage, post_id, msg, message_length);
+        PluginState::write_request(self.context, self.storage, post_id, PluginRequest {handle, receiver: PluginState::plugin(self.context, self.storage, handle).receiver, reply: 0, published_block: self.context.block_number()});
+        let receiver = PluginState::plugin(self.context, self.storage, handle).receiver;
+        let selector = comptime { aztec::protocol::abis::function_selector::FunctionSelector::from_signature("on_invocation((Field),Field)") };
+        let _ = self.context.call_public_function(receiver, selector, [account.to_field(), post_id], aztec::context::gas::GasOpts::default());
+        self.emit(PluginInvoked {schema_version: 1, post_id, handle});
+    }
+
+    #[external("public")]
+    fn publish_plugin_reply(parent_id: Field, msg: [Field; MSG_FIELDS], message_length: u16) {
+        let reply_id = aztec::protocol::hash::poseidon2_hash_with_separator([self.address.to_field(), parent_id], 0x42425001);
+        let request = PluginState::request(self.context, self.storage, parent_id);
+        let handle = request.handle;
+        assert(handle != 0, "Not a plugin invocation");
+        assert(PluginState::plugin(self.context, self.storage, handle).enabled, "Plugin disabled");
+        assert(self.msg_sender() == request.receiver, "Only requested plugin");
+        assert(self.storage.post_flagged.at(parent_id).read() == 0, "Request removed");
+        assert(request.reply == 0, "Already replied");
+        PluginState::write_request(self.context, self.storage, parent_id, PluginRequest {handle, receiver: request.receiver, reply: reply_id, published_block: request.published_block});
+        PluginState::write(self.context, self.storage, 3, reply_id, 0, parent_id);
+        Publication::append_post(self.context, self.storage, reply_id, msg, message_length);
+        self.emit(PluginReplyLinked {schema_version: 1, post_id: reply_id, parent_id, handle});
+    }
+
+    #[external("public")]
+    #[view]
+    fn get_plugin(handle: Field) -> pub (AztecAddress, bool, [Field; 8], u16) {
+        let plugin = PluginState::plugin(self.context, self.storage, handle);
+        (plugin.receiver, plugin.enabled, plugin.descriptor, plugin.length)
+    }
+
+    #[external("public")]
+    #[view]
+    fn get_plugin_request(post_id: Field) -> pub (Field, AztecAddress, Field, u32) {
+        let request = PluginState::request(self.context, self.storage, post_id);
+        (request.handle, request.receiver, request.reply, request.published_block)
     }
 
     // ============================================================

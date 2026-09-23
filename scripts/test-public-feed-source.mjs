@@ -19,12 +19,15 @@ function log(type,index=0,block=1){
  const text='Public café 🌍';
  const values=type==='PostPublished'?{schema_version:1,post_id:new Fr(100+index),order_index:index,published_at:100,flag_deadline:110,policy_version:Fr.ONE,message_length:Buffer.byteLength(text),message_fields:packed(text,32)}:
  type==='PolicyPublished'?{schema_version:1,policy_version:Fr.ONE,policy_length:6,policy_fields:packed('Policy',48)}:
+ type==='PluginConfigured'?{schema_version:1,handle:new Fr(10),receiver:AztecAddress.fromFieldUnsafe(new Fr(11)),enabled:1,descriptor_length:4,descriptor:packed('test',8)}:
+ type==='PluginInvoked'?{schema_version:1,post_id:new Fr(100),handle:new Fr(10)}:
+ type==='PluginReplyLinked'?{schema_version:1,post_id:new Fr(101),parent_id:new Fr(100),handle:new Fr(10)}:
  {schema_version:1,post_id:new Fr(100),policy_version:Fr.ONE,flagged_at:105,censor:AztecAddress.fromFieldUnsafe(new Fr(5)),reason_length:6,reason_fields:packed('Reason',7)};
  const fields=encodeArguments({parameters:[{name:'event',type:metadata[type].abiType}]},[values]);
  return LogResultSchema.parse({logData:[Fr.fromString(metadata[type].tag),...fields].map(x=>x.toString()),blockNumber:block,blockHash:hash.toString(),blockTimestamp:'100',txHash:new TxHash(new Fr(6+index)).toString(),txIndexWithinBlock:0,logIndexWithinTx:index});
 }
 function fixture(options={}){
- const calls=[],logs=Object.fromEntries(PUBLIC_FEED_TYPES.map((type,i)=>[type,[log(type,i)]]));
+ const calls=[],logs=Object.fromEntries(PUBLIC_FEED_TYPES.map((type,i)=>[type,type.startsWith('Plugin')?[]:[log(type,i)]]));
  const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5,l1ContractAddresses:{rollupAddress:scope.rollupAddress}}),getBlockData:async number=>({header:{getBlockNumber:()=>number==='checkpointed'?1:number},blockHash:hash}),
  getPublicLogsByTags:async query=>{
   query=PublicLogsQuerySchema.parse(query);calls.push(query);assert.equal(query.contractAddress.toString(),scope.boardAddress);assert.equal(query.referenceBlock.toString(),hash.toString());assert.equal(query.includeEffects,false);
@@ -41,7 +44,7 @@ for(const type of PUBLIC_FEED_TYPES)test(`SDK serialization decodes ${type} to s
 });
 test('wallet-free source verifies network, reads checkpointed head and atomically drains cursor pages',async()=>{
  const h=fixture({pageSize:1}),source=await h.create();assert.deepEqual(await source.getHead(),{number:1,hash:hash.toString()});
- const events=await source.getEvents({fromBlock:1,toBlock:1,referenceBlock:hash.toString()});assert.equal(events.length,3);assert.equal(h.calls.length,6);
+ const events=await source.getEvents({fromBlock:1,toBlock:1,referenceBlock:hash.toString()});assert.equal(events.length,3);assert.equal(h.calls.length,9);
  assert(events.every(e=>e.position.blockNumber==='1'));assert(h.calls.every(q=>q.toBlock===2));
 });
 test('same-tag pagination retains every event without duplicates',async()=>{
@@ -88,20 +91,20 @@ test('independent tag queries overlap while retaining the aggregate page budget'
  f.node.getPublicLogsByTags=async q=>{active++;peak=Math.max(peak,active);await new Promise(r=>releases.push(r));try{return await read(q);}finally{active--;}};
  const source=await f.create(),pending=source.getEvents({fromBlock:1,toBlock:1,referenceBlock:hash.toString()});
  await new Promise(r=>setImmediate(r));const observed=peak;for(const release of releases)release();
- assert.equal((await pending).length,3);assert.equal(observed,3);assert.equal(peak,3);
+ assert.equal((await pending).length,3);assert.equal(observed,6);assert.equal(peak,6);
 });
 test('failed tag stream stops sibling pagination after already-issued reads',async()=>{
  const f=fixture({pageSize:1}),read=f.node.getPublicLogsByTags;let calls=0;const releases=[];
  f.node.getPublicLogsByTags=async q=>{calls++;if(calls===1)throw Error('unavailable tag');await new Promise(r=>releases.push(r));return read(q);};
  const source=await f.create();await assert.rejects(source.getEvents({fromBlock:1,toBlock:1,referenceBlock:hash.toString()}));
- assert.equal(calls,3);for(const release of releases)release();await new Promise(r=>setImmediate(r));assert.equal(calls,3);
+ assert.equal(calls,6);for(const release of releases)release();await new Promise(r=>setImmediate(r));assert.equal(calls,6);
 });
 
 test('indexed discovery skips empty history in one multi-tag RPC',async()=>{
  const f=fixture();for(const [i,type] of PUBLIC_FEED_TYPES.entries())f.logs[type]=[log(type,i,90000+i)];
  const source=await f.create();assert.equal(await source.getNextEventBlock({fromBlock:1,toBlock:100000,referenceBlock:hash.toString()}),90000);
- assert.equal(f.calls.length,1);assert.equal(f.calls[0].tags.length,3);assert.equal(f.calls[0].limitPerTag,1);
- assert.equal((await source.getEvents({fromBlock:1,toBlock:90049,referenceBlock:hash.toString()})).length,3);
+ assert.equal(f.calls.length,1);assert.equal(f.calls[0].tags.length,6);assert.equal(f.calls[0].limitPerTag,1);
+ assert.equal((await source.getEvents({fromBlock:1,toBlock:90049,referenceBlock:hash.toString()})).length,6);
 });
 test('indexed discovery rejects malformed, oversized and out-of-range results',async()=>{
  const f=fixture(),source=await f.create();

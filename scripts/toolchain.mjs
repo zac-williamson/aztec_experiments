@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
@@ -13,11 +14,15 @@ export function assertNodeVersion() {
 export function bbBinary() {
   const platforms = { 'darwin-arm64': 'arm64-macos', 'darwin-x64': 'amd64-macos',
     'linux-arm64': 'arm64-linux', 'linux-x64': 'amd64-linux' };
-  const platform = platforms[`${process.platform}-${process.arch}`];
-  if (!platform && !process.env.BB) throw new Error('Unsupported native prover platform');
+  const key = `${process.platform}-${process.arch}`, platform = platforms[key], pin = pins.nativeProver[key];
+  if (!platform || !pin) throw new Error('Unsupported native prover platform');
   const binary = process.env.BB || path.join(ROOT, 'node_modules/@aztec/bb.js/build', platform, 'bb');
-  const version = execFileSync(binary, ['--version'], { encoding: 'utf8' }).trim();
-  if (version !== pins.aztec) throw new Error(`Expected prover ${pins.aztec}, received ${version}`);
+  // The integrity-locked 5.2.0 npm package embeds a nightly version string on
+  // Linux x64. Pin the exact platform binary, including explicit BB overrides.
+  const digest = createHash('sha256').update(fs.readFileSync(binary)).digest('hex');
+  if (digest !== pin.sha256) throw new Error(`Native prover checksum mismatch for ${key}`);
+  const version = execFileSync(binary, ['--version'], { encoding: 'utf8', timeout: 10000 }).trim();
+  if (version !== pin.version) throw new Error(`Expected prover ${pin.version}, received ${version}`);
   return binary;
 }
 

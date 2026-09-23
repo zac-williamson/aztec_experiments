@@ -1707,7 +1707,7 @@ async function ensureAztecSetup(state, statusId, opts = {}) {
   startBlockMonitor(aztecNode);
 
   // Step 3: Init CRS (if not done)
-  if (!state.crsInit) {
+  if (!state.crsInit && a.provingEnabledForNode(nodeInfo)) {
     log('Step 3: Initializing CRS (one-time ~42MB download)...', 'info', S);
     await initCRS(S);
     state.crsInit = true;
@@ -1728,7 +1728,7 @@ async function ensureAztecSetup(state, statusId, opts = {}) {
     dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
   });
   const pxe = await a.createPXE(aztecNode, {
-    proverEnabled: true,
+    proverEnabled: a.provingEnabledForNode(nodeInfo),
     autoSync: true,
     dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
   }, { store });
@@ -18214,7 +18214,10 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
 
       async sendTx(executionPayload, opts) {
         const log = this._log;
-        const previousJournal = this._transactionJournal ? await this._transactionJournal.assertCanStart() : null;
+        const journal = opts.transactionJournal ?? this._transactionJournal;
+        if (opts.journalOperation && !journal) throw Object.assign(new Error('Durable transaction journal is required.'), {code:'BB_JOURNAL_INVALID'});
+        if (opts.journalOperation && journal) journal.setOperation(opts.journalOperation);
+        const previousJournal = journal ? await journal.assertCanStart() : null;
         const fixedGas = !!opts.fee?.gasSettings;
         const checkedGas = fixedGas ? a.GasSettings.from(opts.fee.gasSettings) : null;
         log(fixedGas ? '  Simulating with configured gas limits...' : '  Estimating gas (simulating tx)...', 'info');
@@ -18284,17 +18287,18 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
 
         log('  Transaction hash: ' + txHash.toString(), 'info');
         if (this._contextGuard) await this._contextGuard();
-        const applicationNullifier = this._applicationNullifierBoard
+        const applicationNullifier = !opts.journalOperation && this._applicationNullifierBoard
           ? (await a.extractApplicationNullifier(provenTx, tx, this._applicationNullifierBoard, this._applicationNoteNullifier)).toString() : undefined;
-        if (this._transactionJournal) await this._transactionJournal.prepare(tx, previousJournal, {applicationNullifier});
+        if (journal) await journal.prepare(tx, previousJournal, {applicationNullifier});
         if (this._contextGuard) await this._contextGuard();
+        if (opts.beforeSubmit) await opts.beforeSubmit(txHash.toString());
         await a.submitOnceWithReconciliation(rawNode,tx);
         const waitOpts=typeof opts.wait==='object'?opts.wait:{};
         const receipt=await a.waitForSuccessfulReceipt(rawNode,tx,{
           timeoutMs:(waitOpts.timeout ?? 540)*1000,intervalMs:(waitOpts.interval ?? 5)*1000,
           now:()=>Date.now(),sleep:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
         });
-        if (this._transactionJournal) this._transactionJournal.confirmed(receipt);
+        if (journal) journal.confirmed(receipt);
         log('  Tx confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
         return { receipt };
       }
@@ -18465,8 +18469,9 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
   function parsePostOperation(a, encoded) {
     try {
       const value = JSON.parse(encoded);
-      if (!value || Object.keys(value).sort().join() !== 'depositChain,kind,message,nonce,schemaVersion' ||
-        value.schemaVersion !== 1 || value.kind !== 'post' || typeof value.message !== 'string') throw new Error();
+      if (!value || Object.keys(value).sort().join() !== (value.schemaVersion===2?'depositChain,kind,message,nonce,pluginHandle,schemaVersion':'depositChain,kind,message,nonce,schemaVersion') ||
+        ![1,2].includes(value.schemaVersion) || value.kind !== 'post' || typeof value.message !== 'string') throw new Error();
+      if(value.schemaVersion===2)canonicalPostId(a,value.pluginHandle,true);
       canonicalPostId(a, value.nonce, true); canonicalPostId(a, value.depositChain, true); packPostMessage(value.message);
       return value;
     } catch { throw Object.assign(new Error('Saved post intent is invalid. Preserve its recovery record.'), {code:'BB_JOURNAL_INVALID'}); }
@@ -18514,7 +18519,8 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     let claim = config.privateFeeClaim;
     return async function sendPrivateFeeAction(kind, args) {
       const methods = {claim: 'claim_deposit', post: 'post', withdraw: 'withdraw', set_moderation_policy:'set_moderation_policy', declare_immoral:'declare_immoral', transfer_censor:'transfer_censor'};
-      const method = Object.hasOwn(methods,kind) ? methods[kind] : undefined;
+      let method = Object.hasOwn(methods,kind) ? methods[kind] : undefined;
+      if(kind==='post'&&args[4]===false&&config.pluginHandle){method='post_with_plugin';args=[...args.slice(0,4),...args.slice(5),new a.Fr(BigInt(config.pluginHandle))];}
       if (!method) throw privateFeeFailure('BB_PRIVATE_FEE_UNSUPPORTED_ACTION');
       let prepared;
       try {
@@ -18665,7 +18671,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     // ============================================================
     log('Step 1: Deriving account keys...', 'info');
     const secretKey = a.Fr.fromHexString(secretKeyHex);
-    const signingKey = a.deriveSigningKey(secretKey);
+    const signingKey = aztecWallet.signingKey === undefined ? a.deriveSigningKey(secretKey) : a.GrumpkinScalar.fromString(aztecWallet.signingKey);
     const accountContract = new a.SchnorrInitializerlessAccountContract(signingKey);
     const { publicKeys } = await a.deriveKeys(secretKey);
     const accountArtifact = await accountContract.getContractArtifact();
@@ -18740,6 +18746,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       return {type:'billboard-moderation-journal-v1',postId,policyVersion,txHash:saved?.txHash??null,predecessorTxHashes:saved?.predecessorTxHashes??[]};
     }
     if(journalActions.includes(action) && (!transactionJournal || typeof transactionJournal.assertCanStart!=='function' || typeof transactionJournal.prepare!=='function' || typeof transactionJournal.confirmed!=='function'))throw Object.assign(new Error('Invalid transaction journal.'),{code:'BB_JOURNAL_INVALID'});
+    let lastPostedId = null;
     let resumedPost = null, resumedSpend = null, resumedClaim = null, claimOperation = null, resumedModeratorOperation = null, lastModeratorReceipt = null;
     if(action==='recover') {
       if(!transactionJournal)throw new Error('Transaction journal is required for recovery.');
@@ -18760,7 +18767,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         } else if(kind==='post') {
           resumedPost = parsePostOperation(a, saved.operation);
           action='post';
-          config={...config,action,isDummy:false,message:resumedPost.message,depositChainId:resumedPost.depositChain};
+          config={...config,action,isDummy:false,message:resumedPost.message,depositChainId:resumedPost.depositChain,pluginHandle:resumedPost.pluginHandle};
         } else if(kind==='claim') {
           const intent=JSON.parse(saved.operation);
           if(Object.keys(intent).sort().join()!=='amount,depositChain,depositor,kind,leafIndex,schemaVersion,secretHash,transactionHash'||intent.schemaVersion!==1||
@@ -18968,7 +18975,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         // Step 4: Initialize CRS
         // ============================================================
         log('Step 4: Initializing CRS...', 'info');
-        await measured('crs',()=>initCRS());
+        if(a.provingEnabledForNode(nodeInfo))await measured('crs',()=>initCRS());
         log('  CRS ready.', 'success');
 
         // ============================================================
@@ -18979,7 +18986,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         const storeConfig = { ...l1Contracts, l1ChainId: nodeInfo.l1ChainId, accountAddress: address.toString(), dataDirectory: dataDirPrefix + l1Contracts.rollupAddress };
         const store = await createStore(storeConfig);
         pxe = await measured('pxe',()=>a.createPXE(aztecNode, {
-          proverEnabled: true, autoSync: true,
+          proverEnabled: a.provingEnabledForNode(nodeInfo), autoSync: true,
           dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
         }, { store }));
         log('  PXE created.', 'success');
@@ -19429,7 +19436,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       log('  Screening hints fetched: child=' + (childHint ? 'yes' : 'no') + ', grandchild=' + (grandchildHint ? 'yes' : 'no'), 'info');
       log('  Pre-flight passed.', 'success');
 
-      const operation=JSON.stringify({schemaVersion:1,kind:'post',nonce:postNonce.toString(),message:msgText,depositChain:requireDepositChain().toString()});
+      const operation=JSON.stringify({schemaVersion:config.pluginHandle?2:1,kind:'post',nonce:postNonce.toString(),message:msgText,depositChain:requireDepositChain().toString(),...(config.pluginHandle?{pluginHandle:canonicalPostId(a,config.pluginHandle,true)}:{})});
       if(resumedPost&&operation!==JSON.stringify(resumedPost))throw Object.assign(new Error('Saved post intent changed.'),{code:'BB_RECOVERY_REQUIRED'});
       if(typeof transactionJournal?.setOperation!=='function')throw Object.assign(new Error('Post recovery storage is required.'),{code:'BB_JOURNAL_INVALID'});
       const postId=await a.poseidon2HashWithSeparator([new a.Fr(1),l2Addr.toField(),postNonce],0x42420102);
@@ -19450,6 +19457,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       if (receipt.transactionFee !== undefined) {
         log('  Fee paid: ' + toAztec(BigInt(receipt.transactionFee), 6) + ' AZTEC', 'info');
       }
+      lastPostedId=postId.toString();
       log('  Message posted.', 'success');
     }
 
@@ -19831,7 +19839,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       if(censorWalletJson.secretKey.toLowerCase()!==secretKeyHex.toLowerCase()||walletSalt(censorWalletJson.salt)!==saltVal)throw new Error('Load the moderator wallet as the active wallet before a moderator action.');
       if(!transactionJournal)throw Object.assign(new Error('Durable moderator transaction journal is required.'),{code:'BB_JOURNAL_INVALID'});
       const censorSk = a.Fr.fromHexString(censorWalletJson.secretKey);
-      const censorSigningKey = a.deriveSigningKey(censorSk);
+      const censorSigningKey = censorWalletJson.signingKey === undefined ? a.deriveSigningKey(censorSk) : a.GrumpkinScalar.fromString(censorWalletJson.signingKey);
       const censorAccountContract = new a.SchnorrInitializerlessAccountContract(censorSigningKey);
       const { publicKeys: censorPublicKeys } = await a.deriveKeys(censorSk);
       const censorAccountArtifact = await censorAccountContract.getContractArtifact();
@@ -19843,6 +19851,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       });
       const censorPartialAddress = await a.computePartialAddress(censorInstance);
       const censorAddress = censorInstance.address;
+      if(censorAddress.toString()!==instance.address.toString())throw new Error('Load the moderator wallet as the active wallet before a moderator action.');
       log('  Censor address: ' + censorAddress.toString(), 'info');
 
       log('  Registering censor account with PXE...', 'info');
@@ -20060,6 +20069,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       throw new Error('Unknown action: ' + action + '. Valid: status, deposit, claim, post, list, withdraw, claim-l1, auto');
     }
 
+    result.postId = lastPostedId;
     result.lastEthereumTxHash = ethereumJournal?.lastTxHash || null;
     result.lastL2TxHash = transactionJournal?.lastTxHash || null;
     if(lastModeratorReceipt)result.moderatorPredecessors=(await transactionJournal.inspect?.())?.predecessorTxHashes??[];
@@ -20167,11 +20177,11 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     transactionJournal.setOperation(operation);
     let pxe;
     try{
-      await env.initCRS();
+      if(a.provingEnabledForNode(info))await env.initCRS();
       const contracts=await node.getL1ContractAddresses();
       const dataDirectory='pxe_private_fee_'+owner.toString()+'_'+contracts.rollupAddress;
       const store=await env.createStore({...contracts,l1ChainId:info.l1ChainId,accountAddress:owner.toString(),dataDirectory});
-      pxe=await a.createPXE(node,{proverEnabled:true,autoSync:true,dataDirectory},{store});
+      pxe=await a.createPXE(node,{proverEnabled:a.provingEnabledForNode(info),autoSync:true,dataDirectory},{store});
       await pxe.registerAccount(keys,await a.computePartialAddress(instance));
       await pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact);
       await pxe.registerContract(instance);
@@ -20784,6 +20794,7 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
  * @returns {void}
  * @typedef {Object} BoardInput
  * @property {string} [message] Public post text, at most 992 UTF-8 bytes.
+ * @property {string} [pluginHandle] Registered receiver handle resolved by the application.
  * @property {boolean} [isDummy] Advance screening without publishing text.
  * @property {string} [depositAmount] Decimal token amount.
  * @property {string} [reuseTxHash] Existing Ethereum deposit hash.
@@ -20858,7 +20869,7 @@ function saveFundingRecord(record) {
   function check(expected){_assertWalletLive();if(stamp()!==expected)throw Error('Account or configuration changed. Reconnect.');}
   function connectedHandles(){_assertWalletLive();if(!handles)throw Error('Board account is not connected.');return handles;}
   /** @param {BoardAction} action @param {BoardInput} input @param {BoardProgress} onProgress @returns {Promise<BoardResult>} */
-  async function run(action,input={},onProgress=()=>{}) {
+  async function runCore(action,input={},onProgress=()=>{}) {
     const expected=stamp(),ws=window.walletState;
     const identity=JSON.stringify([ws.aztec?.address.toString(),_getConfigRevision(),_getPublicConfig()]);
     const common=isBoard?{portalAddress:_getPublicConfig()?.board.portalAddress,dataDirPrefix:kind==='moderator'?'pxe_bb_censor_':'pxe_bb_',
@@ -20874,6 +20885,43 @@ function saveFundingRecord(record) {
     const {handles:privateHandles,receipt:privateReceipt,...data}=result;
     return data;
   }
+  async function run(action,input={},onProgress=()=>{}) {
+    if(action!=='post'||input.isDummy||!input.message)return runCore(action,input,onProgress);
+    const api=window.BillboardPlugins;
+    if(!api)throw Error('Plugin client unavailable');
+    if(!api.mentions(input.message).length)return runCore(action,input,onProgress);
+    const h=connectedHandles(),config=_getPublicConfig(),expected=stamp();
+    const scope={chainId:config.network.chainId,rollupVersion:config.network.rollupVersion,rollupAddress:config.network.rollupAddress,boardAddress:config.board.contractAddress};
+    const prepare=text=>api.prepareInvocation({text,scope,lookup:async id=>{
+        const result=await h.contract.methods.get_plugin(window.__aztec.Fr.fromString(id)).simulate({from:window.__aztec.NO_FROM});check(expected);
+        const [receiver,enabled,descriptor,length]=result.result;
+        return {receiver:receiver.toString(),enabled,descriptor:descriptor.map(String),length:Number(length)};
+      }});
+    const plan=await prepare(input.message);check(expected);
+    return runCore(action,{...input,...(plan?{pluginHandle:plan.handleField}:{})},onProgress);
+  }
+  async function pluginAccount(action,input,onProgress=()=>{}) {
+    const h=connectedHandles(),expected=stamp(),a=window.__aztec,config=_getPublicConfig();
+    const scope={chainId:config.network.chainId,rollupVersion:config.network.rollupVersion,rollupAddress:config.network.rollupAddress,boardAddress:config.board.contractAddress};
+    const plan=await window.BillboardPlugins.prepareInvocation({text:'@'+input.handle,scope,allowDisabled:action!=='deposit',lookup:async id=>{
+      const {result}=await h.contract.methods.get_plugin(a.Fr.fromString(id)).simulate({from:a.NO_FROM});
+      const [receiver,enabled,descriptor,length]=result;return {receiver:String(receiver),enabled,descriptor:descriptor.map(String),length:Number(length)};
+    }});
+    if(!plan)throw Error('Unknown plugin');check(expected);
+    return window.BillboardPlugins.pluginAccountAction({action,input,descriptor:plan.descriptor,sdk:a,handles:h,signer:await getBrowserSigner(),onProgress,
+      store:{read:()=>JSON.parse(localStorage.getItem('plugin-account:'+plan.descriptor.scope.receiver+':'+scope.chainId+':'+scope.rollupAddress+':'+scope.rollupVersion+':'+h.address)||'null'),write:value=>{check(expected);localStorage.setItem('plugin-account:'+plan.descriptor.scope.receiver+':'+scope.chainId+':'+scope.rollupAddress+':'+scope.rollupVersion+':'+h.address,JSON.stringify(value));}},
+      send:async (interaction,beforeSubmit)=>{check(expected);await h.pxe.sync();const route=config.privateFee;
+        const fee=await a.preparePrivateFeePayment({wallet:h.wallet,node:h.aztecNode,owner:h.address,privateFeeAddress:route.contractAddress,privateFeeArtifact:BILLBOARD_PRIVATE_FEE_ARTIFACT,expectedChainId:scope.chainId,expectedVersion:scope.rollupVersion,gasSettings:a.GasSettings.from(route.gasSettings)});
+        check(expected);
+        const ws=window.walletState,identity=JSON.stringify([ws.aztec.address.toString(),_getConfigRevision(),config]);
+        const transactionJournal=await a.createL2Journal({storage:a.createBrowserJournalStorage(),walletSecret:ws.aztec.secretKey.toString(),walletSalt:ws.aztec.salt,
+          scope:{account:h.address.toString().toLowerCase(),chainId:String(scope.chainId),rollup:scope.rollupAddress.toLowerCase(),version:String(scope.rollupVersion),board:scope.boardAddress.toLowerCase(),portal:config.board.portalAddress.toLowerCase()},
+          Tx:a.Tx,node:h.rawNode,acknowledgeTx:journalAcknowledgements.get(identity),contextGuard:()=>check(expected)});
+        const sent=await interaction.send({from:h.address,beforeSubmit,transactionJournal,journalOperation:JSON.stringify({kind:'extension',receiver:plan.descriptor.scope.receiver,action}),fee:{paymentMethod:fee.paymentMethod,gasSettings:fee.gasSettings}});
+        check(expected);journalAcknowledgements.set(identity,sent.receipt.txHash.toString());return sent;
+      }});
+  }
+
   /** @returns {Promise<{amount:bigint,depositChainId:bigint,nextAllowedTime:bigint,lastScreenedIndex:bigint,lastRealPostIndex:bigint,chainTime:number}>} */
   async function readDeposit() {
     const h=connectedHandles(),expected=stamp();
@@ -20911,7 +20959,7 @@ function saveFundingRecord(record) {
     if(previous?.pxe?.stop)await previous.pxe.stop();
   }
   window.billboardConfigStore?.subscribe(()=>{reset().catch(()=>{_invalidateWalletContext();});});
-  return Object.freeze({run,readDeposit,readPolicy,readModerator,readFeed,reset,publicConfiguration,readFundingRecovery,importFundingRecovery:saveFundingRecord,
+  return Object.freeze({run,pluginAccount,readDeposit,readPolicy,readModerator,readFeed,reset,publicConfiguration,readFundingRecovery,importFundingRecovery:saveFundingRecord,
     get connected(){return handles!==null;},get revision(){return revision;}});
 }
 

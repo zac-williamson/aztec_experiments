@@ -39,7 +39,10 @@ Both npm lockfiles are required. Do not substitute `npm install` in release or C
 builds. The compiler bootstrap verifies the archive's SHA-256 and the executable's
 version and commit before use. `toolchain.json` records the pins and official
 download sources. The native Aztec **5.2.0** prover and test service come from the
-locked npm dependencies; a globally installed Aztec CLI is unnecessary. An initial
+locked npm dependencies; a globally installed Aztec CLI is unnecessary. Native
+provers are checked against platform-specific SHA-256 and exact version pins
+before use. The locked Linux x64 binary reports `5.2.0-nightly.20260807`; the other
+platforms report `5.2.0`. These are exact package identities, not a nightly range. An initial
 build needs network access for npm, official compiler downloads, Noir Git
 dependencies, the Solidity compiler, and content-pinned CRS assets. A preexisting developer cache is not a
 prerequisite, although compilers may populate and reuse their own caches.
@@ -68,7 +71,8 @@ Origin consistency does not establish dependency code safety or substitute for
 independent review. The verifier never changes the lock.
 
 Optional `NARGO`, `BB`, and `FORGE` environment variables select alternative
-executable locations; the build still checks their versions. Leave these unset
+executable locations; the build still checks their versions and the native prover
+checksum before executing it. Leave these unset
 for the documented default build. A different path is not permission to change
 the pinned toolchain.
 

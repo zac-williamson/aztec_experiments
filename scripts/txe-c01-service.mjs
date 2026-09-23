@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { registerHooks } from 'node:module';
 import { pathToFileURL } from 'node:url';
+import {drainMessageWitnessReads} from './txe-message-witness.mjs';
 import { Fr } from '@aztec/foundation/curves/bn254';
 import { createLogger } from '@aztec/foundation/log';
 import { startHttpRpcServer } from '@aztec/foundation/json-rpc/server';
@@ -14,7 +15,9 @@ process.env.HARDWARE_CONCURRENCY ??= '2';
 // Published unbundled TXE loads account JSON without an import attribute.
 // Supply only the Node-required JSON attribute for this pinned local artifact directory.
 const artifactRoots = ['accounts', 'protocol-contracts', 'standard-contracts'].map(name => pathToFileURL(path.join(ROOT, 'node_modules/@aztec', name, 'artifacts/')).href);
+const messageWitnessUrl=pathToFileURL(path.join(ROOT,'node_modules/@aztec/stdlib/dest/messaging/l1_to_l2_message.js')).href;
 registerHooks({ load(url, context, nextLoad) {
+  if(url===messageWitnessUrl){const loaded=nextLoad(url,context);return {...loaded,source:drainMessageWitnessReads(loaded.source)};}
   if (artifactRoots.some(root => url.startsWith(root)) && url.endsWith('.json')) {
     return nextLoad(url, { ...context, importAttributes: { ...context.importAttributes, type: 'json' } });
   }

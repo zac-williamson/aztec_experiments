@@ -1,3 +1,4 @@
+import {provingEnabledForNode} from '../shared/proving-policy.mjs';
 // Complete deploy engine and real encrypted L2 journal; inert SDK/chain fixtures.
 // Tests orchestration and interruption boundaries, not cryptographic proofs.
 import test from 'node:test';
@@ -50,7 +51,9 @@ function fixture({lostBinding=false,lostDeploy=false,existing=true,staleDeploy=f
   if(lose)throw new Error('synthetic lost response');
   const receipt=await node.getTxReceipt(tx.getTxHash());journal.confirmed(receipt);return{receipt};
  }
- const a={verifyDeploymentInputs,preflightDeploymentNetwork,deploymentPolicyVersion,verifyPortalRuntime,portalRuntimeMetadata:runtimeMetadata,boundedTransactionRead,Fr,AztecAddress,EthAddress,Tx:FixtureTx,TxHash:{fromString:x=>x},BaseWallet:class{},
+ // These journal cases start with a published class; publication itself is covered
+ // by test-c01-deploy-activation.mjs.
+ const a={provingEnabledForNode,verifyDeploymentInputs,preflightDeploymentNetwork,deploymentPolicyVersion,verifyPortalRuntime,portalRuntimeMetadata:runtimeMetadata,boundedTransactionRead,Fr,AztecAddress,EthAddress,Tx:FixtureTx,TxHash:{fromString:x=>x},BaseWallet:class{async getContractClassMetadata(){return {isContractClassPubliclyRegistered:true};}},
   deriveSigningKey:()=>({}),deriveKeys:async()=>({publicKeys:{}}),computePartialAddress:async()=>new Fr(1),
   getContractClassFromArtifact:async()=>({id:field(12)}),getContractInstanceFromInstantiationParams:async()=>instance,deriveStorageSlotInMap:async()=>new Fr(1),
   SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>field(0);getSigningPublicKey=async()=>({});},

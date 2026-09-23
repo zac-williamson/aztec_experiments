@@ -14,6 +14,7 @@ export { BaseWallet } from '@aztec/wallet-sdk/base-wallet';
 export { AccountManager, DeployAccountMethod } from '@aztec/aztec.js/wallet';
 export { AztecAddress, CompleteAddress, EthAddress } from '@aztec/aztec.js/addresses';
 export { Fr } from '@aztec/aztec.js/fields';
+export { GrumpkinScalar } from '@aztec/foundation/curves/grumpkin';
 export { Contract, ContractFunctionInteraction, BatchCall, DeployMethod, NO_WAIT,
   getContractClassFromArtifact, getContractInstanceFromInstantiationParams } from '@aztec/aztec.js/contracts';
 export { NO_FROM } from '@aztec/aztec.js/account';
@@ -59,3 +60,5 @@ export { NoteStatus } from '@aztec/stdlib/note';
 export {validateDeploymentManifest,deploymentManifestConfig,verifyDeploymentInputs,preflightDeploymentNetwork,deploymentPolicyVersion} from './deployment-manifest.mjs';
 export {verifyPortalRuntime} from './portal-runtime.mjs';
 export {default as portalRuntimeMetadata} from './portal-runtime.json' with {type:'json'};
+
+export {provingEnabledForNode} from './proving-policy.mjs';

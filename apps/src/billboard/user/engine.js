@@ -163,7 +163,10 @@
 
       async sendTx(executionPayload, opts) {
         const log = this._log;
-        const previousJournal = this._transactionJournal ? await this._transactionJournal.assertCanStart() : null;
+        const journal = opts.transactionJournal ?? this._transactionJournal;
+        if (opts.journalOperation && !journal) throw Object.assign(new Error('Durable transaction journal is required.'), {code:'BB_JOURNAL_INVALID'});
+        if (opts.journalOperation && journal) journal.setOperation(opts.journalOperation);
+        const previousJournal = journal ? await journal.assertCanStart() : null;
         const fixedGas = !!opts.fee?.gasSettings;
         const checkedGas = fixedGas ? a.GasSettings.from(opts.fee.gasSettings) : null;
         log(fixedGas ? '  Simulating with configured gas limits...' : '  Estimating gas (simulating tx)...', 'info');
@@ -233,17 +236,18 @@
 
         log('  Transaction hash: ' + txHash.toString(), 'info');
         if (this._contextGuard) await this._contextGuard();
-        const applicationNullifier = this._applicationNullifierBoard
+        const applicationNullifier = !opts.journalOperation && this._applicationNullifierBoard
           ? (await a.extractApplicationNullifier(provenTx, tx, this._applicationNullifierBoard, this._applicationNoteNullifier)).toString() : undefined;
-        if (this._transactionJournal) await this._transactionJournal.prepare(tx, previousJournal, {applicationNullifier});
+        if (journal) await journal.prepare(tx, previousJournal, {applicationNullifier});
         if (this._contextGuard) await this._contextGuard();
+        if (opts.beforeSubmit) await opts.beforeSubmit(txHash.toString());
         await a.submitOnceWithReconciliation(rawNode,tx);
         const waitOpts=typeof opts.wait==='object'?opts.wait:{};
         const receipt=await a.waitForSuccessfulReceipt(rawNode,tx,{
           timeoutMs:(waitOpts.timeout ?? 540)*1000,intervalMs:(waitOpts.interval ?? 5)*1000,
           now:()=>Date.now(),sleep:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
         });
-        if (this._transactionJournal) this._transactionJournal.confirmed(receipt);
+        if (journal) journal.confirmed(receipt);
         log('  Tx confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
         return { receipt };
       }
@@ -414,8 +418,9 @@
   function parsePostOperation(a, encoded) {
     try {
       const value = JSON.parse(encoded);
-      if (!value || Object.keys(value).sort().join() !== 'depositChain,kind,message,nonce,schemaVersion' ||
-        value.schemaVersion !== 1 || value.kind !== 'post' || typeof value.message !== 'string') throw new Error();
+      if (!value || Object.keys(value).sort().join() !== (value.schemaVersion===2?'depositChain,kind,message,nonce,pluginHandle,schemaVersion':'depositChain,kind,message,nonce,schemaVersion') ||
+        ![1,2].includes(value.schemaVersion) || value.kind !== 'post' || typeof value.message !== 'string') throw new Error();
+      if(value.schemaVersion===2)canonicalPostId(a,value.pluginHandle,true);
       canonicalPostId(a, value.nonce, true); canonicalPostId(a, value.depositChain, true); packPostMessage(value.message);
       return value;
     } catch { throw Object.assign(new Error('Saved post intent is invalid. Preserve its recovery record.'), {code:'BB_JOURNAL_INVALID'}); }
@@ -463,7 +468,8 @@
     let claim = config.privateFeeClaim;
     return async function sendPrivateFeeAction(kind, args) {
       const methods = {claim: 'claim_deposit', post: 'post', withdraw: 'withdraw', set_moderation_policy:'set_moderation_policy', declare_immoral:'declare_immoral', transfer_censor:'transfer_censor'};
-      const method = Object.hasOwn(methods,kind) ? methods[kind] : undefined;
+      let method = Object.hasOwn(methods,kind) ? methods[kind] : undefined;
+      if(kind==='post'&&args[4]===false&&config.pluginHandle){method='post_with_plugin';args=[...args.slice(0,4),...args.slice(5),new a.Fr(BigInt(config.pluginHandle))];}
       if (!method) throw privateFeeFailure('BB_PRIVATE_FEE_UNSUPPORTED_ACTION');
       let prepared;
       try {
@@ -614,7 +620,7 @@
     // ============================================================
     log('Step 1: Deriving account keys...', 'info');
     const secretKey = a.Fr.fromHexString(secretKeyHex);
-    const signingKey = a.deriveSigningKey(secretKey);
+    const signingKey = aztecWallet.signingKey === undefined ? a.deriveSigningKey(secretKey) : a.GrumpkinScalar.fromString(aztecWallet.signingKey);
     const accountContract = new a.SchnorrInitializerlessAccountContract(signingKey);
     const { publicKeys } = await a.deriveKeys(secretKey);
     const accountArtifact = await accountContract.getContractArtifact();
@@ -689,6 +695,7 @@
       return {type:'billboard-moderation-journal-v1',postId,policyVersion,txHash:saved?.txHash??null,predecessorTxHashes:saved?.predecessorTxHashes??[]};
     }
     if(journalActions.includes(action) && (!transactionJournal || typeof transactionJournal.assertCanStart!=='function' || typeof transactionJournal.prepare!=='function' || typeof transactionJournal.confirmed!=='function'))throw Object.assign(new Error('Invalid transaction journal.'),{code:'BB_JOURNAL_INVALID'});
+    let lastPostedId = null;
     let resumedPost = null, resumedSpend = null, resumedClaim = null, claimOperation = null, resumedModeratorOperation = null, lastModeratorReceipt = null;
     if(action==='recover') {
       if(!transactionJournal)throw new Error('Transaction journal is required for recovery.');
@@ -709,7 +716,7 @@
         } else if(kind==='post') {
           resumedPost = parsePostOperation(a, saved.operation);
           action='post';
-          config={...config,action,isDummy:false,message:resumedPost.message,depositChainId:resumedPost.depositChain};
+          config={...config,action,isDummy:false,message:resumedPost.message,depositChainId:resumedPost.depositChain,pluginHandle:resumedPost.pluginHandle};
         } else if(kind==='claim') {
           const intent=JSON.parse(saved.operation);
           if(Object.keys(intent).sort().join()!=='amount,depositChain,depositor,kind,leafIndex,schemaVersion,secretHash,transactionHash'||intent.schemaVersion!==1||
@@ -917,7 +924,7 @@
         // Step 4: Initialize CRS
         // ============================================================
         log('Step 4: Initializing CRS...', 'info');
-        await measured('crs',()=>initCRS());
+        if(a.provingEnabledForNode(nodeInfo))await measured('crs',()=>initCRS());
         log('  CRS ready.', 'success');
 
         // ============================================================
@@ -928,7 +935,7 @@
         const storeConfig = { ...l1Contracts, l1ChainId: nodeInfo.l1ChainId, accountAddress: address.toString(), dataDirectory: dataDirPrefix + l1Contracts.rollupAddress };
         const store = await createStore(storeConfig);
         pxe = await measured('pxe',()=>a.createPXE(aztecNode, {
-          proverEnabled: true, autoSync: true,
+          proverEnabled: a.provingEnabledForNode(nodeInfo), autoSync: true,
           dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
         }, { store }));
         log('  PXE created.', 'success');
@@ -1378,7 +1385,7 @@
       log('  Screening hints fetched: child=' + (childHint ? 'yes' : 'no') + ', grandchild=' + (grandchildHint ? 'yes' : 'no'), 'info');
       log('  Pre-flight passed.', 'success');
 
-      const operation=JSON.stringify({schemaVersion:1,kind:'post',nonce:postNonce.toString(),message:msgText,depositChain:requireDepositChain().toString()});
+      const operation=JSON.stringify({schemaVersion:config.pluginHandle?2:1,kind:'post',nonce:postNonce.toString(),message:msgText,depositChain:requireDepositChain().toString(),...(config.pluginHandle?{pluginHandle:canonicalPostId(a,config.pluginHandle,true)}:{})});
       if(resumedPost&&operation!==JSON.stringify(resumedPost))throw Object.assign(new Error('Saved post intent changed.'),{code:'BB_RECOVERY_REQUIRED'});
       if(typeof transactionJournal?.setOperation!=='function')throw Object.assign(new Error('Post recovery storage is required.'),{code:'BB_JOURNAL_INVALID'});
       const postId=await a.poseidon2HashWithSeparator([new a.Fr(1),l2Addr.toField(),postNonce],0x42420102);
@@ -1399,6 +1406,7 @@
       if (receipt.transactionFee !== undefined) {
         log('  Fee paid: ' + toAztec(BigInt(receipt.transactionFee), 6) + ' AZTEC', 'info');
       }
+      lastPostedId=postId.toString();
       log('  Message posted.', 'success');
     }
 
@@ -1780,7 +1788,7 @@
       if(censorWalletJson.secretKey.toLowerCase()!==secretKeyHex.toLowerCase()||walletSalt(censorWalletJson.salt)!==saltVal)throw new Error('Load the moderator wallet as the active wallet before a moderator action.');
       if(!transactionJournal)throw Object.assign(new Error('Durable moderator transaction journal is required.'),{code:'BB_JOURNAL_INVALID'});
       const censorSk = a.Fr.fromHexString(censorWalletJson.secretKey);
-      const censorSigningKey = a.deriveSigningKey(censorSk);
+      const censorSigningKey = censorWalletJson.signingKey === undefined ? a.deriveSigningKey(censorSk) : a.GrumpkinScalar.fromString(censorWalletJson.signingKey);
       const censorAccountContract = new a.SchnorrInitializerlessAccountContract(censorSigningKey);
       const { publicKeys: censorPublicKeys } = await a.deriveKeys(censorSk);
       const censorAccountArtifact = await censorAccountContract.getContractArtifact();
@@ -1792,6 +1800,7 @@
       });
       const censorPartialAddress = await a.computePartialAddress(censorInstance);
       const censorAddress = censorInstance.address;
+      if(censorAddress.toString()!==instance.address.toString())throw new Error('Load the moderator wallet as the active wallet before a moderator action.');
       log('  Censor address: ' + censorAddress.toString(), 'info');
 
       log('  Registering censor account with PXE...', 'info');
@@ -2009,6 +2018,7 @@
       throw new Error('Unknown action: ' + action + '. Valid: status, deposit, claim, post, list, withdraw, claim-l1, auto');
     }
 
+    result.postId = lastPostedId;
     result.lastEthereumTxHash = ethereumJournal?.lastTxHash || null;
     result.lastL2TxHash = transactionJournal?.lastTxHash || null;
     if(lastModeratorReceipt)result.moderatorPredecessors=(await transactionJournal.inspect?.())?.predecessorTxHashes??[];

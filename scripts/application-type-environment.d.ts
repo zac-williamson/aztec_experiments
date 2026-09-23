@@ -1,5 +1,5 @@
 // SDK/host dependencies are private to the application adapter, not its UI contract.
-interface Window {walletState:any;__aztec:any;BillboardPublic:any;BillboardConfig:any;billboardConfigStore:any;unpackFieldsToString:any;BillboardAccount:any;BillboardWalletBackup:any;BillboardClaimBackup:any;ethereum:any;}
+interface Window {BillboardPlugins:any;walletState:any;__aztec:any;BillboardPublic:any;BillboardConfig:any;billboardConfigStore:any;unpackFieldsToString:any;BillboardAccount:any;BillboardWalletBackup:any;BillboardClaimBackup:any;ethereum:any;}
 declare const BILLBOARD_ARTIFACT:object, BILLBOARD_PRIVATE_FEE_ARTIFACT:object, PORTAL_BYTECODE:string;
 declare function _getConfigRevision():number;
 declare function _getPublicConfig():any;
@@ -13,3 +13,5 @@ declare function getL2Timestamp(node:any):Promise<number>;
 declare function extractInt(result:any):bigint;
 
 declare const ethers:any, BillboardPasskey:any;
+
+declare function getBrowserSigner():Promise<any>;

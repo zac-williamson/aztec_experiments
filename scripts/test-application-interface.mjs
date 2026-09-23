@@ -1,3 +1,5 @@
+import {mentions,handleField,packText} from '../plugins/protocol.mjs';
+import {prepareInvocation} from '../plugins/client.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -9,7 +11,7 @@ const source=fs.readFileSync(new URL('../shared/application.js',import.meta.url)
 function fixture(kind='author') {
  let configuration=0,fail=false,result={state:'postable'},subscriber;
  const calls=[],state={aztec:{address:{toString:()=> '1'},secretKey:'private',salt:'salt',raw:{secretKey:'private'}}};
- const ctx={window:{walletState:state,billboardConfigStore:{subscribe:f=>subscriber=f},__aztec:{NO_FROM:0},BillboardPublic:{readFeed:async()=>({posts:[]})}},
+ const ctx={window:{BillboardPlugins:{mentions:()=>[]},walletState:state,billboardConfigStore:{subscribe:f=>subscriber=f},__aztec:{NO_FROM:0},BillboardPublic:{readFeed:async()=>({posts:[]})}},
   BILLBOARD_ARTIFACT:{},PORTAL_BYTECODE:'',BILLBOARD_PRIVATE_FEE_ARTIFACT:{},_getConfigRevision:()=>configuration,_getPublicConfig:()=>({board:{portalAddress:'portal'},network:{}}),_walletGeneration:0,
   _assertWalletLive:()=>{if(state.invalidated)throw Error('invalidated');},_invalidateWalletContext:()=>state.invalidated=true,
   makeClaimSecretStore:()=>({}),extractInt:v=>v,readBillboardDepositInfo:async()=>({amount:1n,depositChainId:2n}),getL2Timestamp:async()=>100,
@@ -57,4 +59,20 @@ test('deployment settings export uses the captured manifest, never a later edite
  const network={nodeUrl:'old-node',ethRpcUrl:'old-eth',chainId:'1',rollupVersion:'5',rollup:'old-rollup'};
  const config=await api.publicConfiguration({portalAddr:'0xABC',l2Addr:'0xDEF'},null,{network});
  assert.equal(config.network.nodeUrl,'old-node');assert.equal(config.network.rollupAddress,'old-rollup');assert.equal(config.board.contractAddress,'0xdef');
+});
+
+test('posting adapter connects portable plugin APIs without exposing private handles',async()=>{
+ const f=fixture(),values=new Map(),id='0x'+'1'.padStart(64,'0'),receiver='0x'+'2'.padStart(64,'0');
+ const scope={chainId:'31337',rollupVersion:'1',rollupAddress:'0x'+'12'.repeat(20),boardAddress:id};
+ const descriptor={protocol:'billboard-plugin/v2',scope:{...scope,receiver},description:'bok',funding:{protocol:'aztec-escrow-usdc/v1',portalAddress:'0x'+'34'.repeat(20),tokenAddress:'0x'+'56'.repeat(20)}};
+ f.ctx._getPublicConfig=()=>({network:scope,board:{contractAddress:id}});
+ f.ctx.localStorage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)};
+ f.ctx.getBrowserSigner=async()=>({provider:'wallet'});f.ctx.window.__aztec.Fr={fromString:x=>x};
+ const url=packText('https://example.test/descriptor',8);
+ f.setResult({handles:{address:id,contract:{methods:{get_plugin:handle=>{assert.equal(handle,handleField('bok'));return {simulate:async()=>({result:[receiver,true,url.fields,url.length]})};}}}}});
+ await f.api.run('status');f.setResult({postId:id,lastL2TxHash:'post-tx'});
+ f.ctx.getBrowserSigner=async()=>{throw Error('Posting must not request an Ethereum signature');};
+ f.ctx.window.BillboardPlugins={mentions,prepareInvocation:args=>prepareInvocation({...args,loadDescriptor:async()=>descriptor})};
+ const result=await f.api.run('post',{message:'@bok help'});
+ assert.equal(f.calls.at(-1).input.pluginHandle,handleField('bok'));assert.equal(values.size,0);assert.equal(result.postId,id);assert(!('handles' in result));
 });
