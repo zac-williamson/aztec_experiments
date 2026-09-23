@@ -63,6 +63,7 @@ export async function createReleaseManifest(){
   for(const entry of fs.readdirSync(path.join(ROOT,'censor-daemon'))){
     if(/\.(mjs|cjs)$/.test(entry)||entry==='prompt-template.json')input('censor-daemon/'+entry);
   }
+  for(const entry of fs.readdirSync(path.join(ROOT,'plugins')))if(entry.endsWith('.mjs'))input('plugins/'+entry);
   const pages={};
   for(const [output,digest] of Object.entries(frontend.outputs)){
     add(output);
@@ -71,7 +72,7 @@ export async function createReleaseManifest(){
   }
   for(const name of ['.build/apps-manifest.json','.build/contracts-manifest.json','.build/sdk/sdk-manifest.json','apps/dist/sdk-manifest.json','apps/dist/crs/crs-manifest.json',
     'apps/src/billboard/billboard_artifact.json','apps/src/billboard/private_fee_artifact.json','apps/src/billboard/deploy/billboard_artifact.json','apps/src/billboard/censor/billboard_artifact.json',
-    'apps/src/billboard/portal_bytecode.txt','apps/src/billboard/deploy/portal_bytecode.txt','billboard/portal/out/BillboardPortal.sol/BillboardPortal.json'])add(name);
+    'apps/src/billboard/portal_bytecode.txt','apps/src/billboard/deploy/portal_bytecode.txt','billboard/portal/out/BillboardPortal.sol/BillboardPortal.json','plugins/adapter_artifact.json','billboard/portal/out/PluginPortal.sol/PluginPortal.json'])add(name);
   if(files['.build/sdk/sdk-manifest.json']!==files['apps/dist/sdk-manifest.json'])throw new Error('Distributed SDK manifest drift');
   if(hashFile(path.join(ROOT,'crs-manifest.json'))!==files['apps/dist/crs/crs-manifest.json'])throw new Error('Distributed CRS manifest drift');
   for(const [name,expected] of Object.entries(sdk.outputs)){
@@ -90,9 +91,11 @@ export async function createReleaseManifest(){
   return {schemaVersion:1,algorithm:'sha256',meaning:'Locally validated content provenance; not publisher authentication, deployed-address verification or release approval.',
     environment:{platform:process.platform,architecture:process.arch,node:{version:process.versions.node,executableSha256:hashFile(process.execPath)},
       noir:{version:pins.noir.version,commit:pins.noir.commit,executableSha256:hashFile(compiler)},
-      prover:{version:pins.aztec,executableSha256:hashFile(prover)},foundry:{version:forgeVersion,executableSha256:hashFile(forge)}},
+      prover:{packageVersion:pins.aztec,version:pins.nativeProver[`${process.platform}-${process.arch}`].version,executableSha256:hashFile(prover)},foundry:{version:forgeVersion,executableSha256:hashFile(forge)}},
     inputs:sorted(inputs),frontendInputs:frontendInputs.sort(),files:sorted(files),pages:sorted(pages),
     contracts:{billboard:noirInventory(json(path.join(ROOT,'apps/src/billboard/billboard_artifact.json'))),
+      pluginAdapter:noirInventory(json(path.join(ROOT,'plugins/adapter_artifact.json'))),
+      pluginPortal:solidityInventory(json(path.join(ROOT,'billboard/portal/out/PluginPortal.sol/PluginPortal.json'))),
       privateFee:noirInventory(json(path.join(ROOT,'apps/src/billboard/private_fee_artifact.json'))),
       portal:solidityInventory(json(path.join(ROOT,'billboard/portal/out/BillboardPortal.sol/BillboardPortal.json')))},
     sdk:{version:sdk.aztecVersion,outputs:sdk.outputs,manifest:'.build/sdk/sdk-manifest.json'},crs};

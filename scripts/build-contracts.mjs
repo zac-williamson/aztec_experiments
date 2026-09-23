@@ -69,6 +69,8 @@ export function buildContracts() {
   fs.writeFileSync(path.join(ROOT, '.build/contracts-manifest.json'), JSON.stringify({
     inputs: contractInputs(ROOT), noir: sha(fs.readFileSync(canonical)),
     privateFee: sha(fs.readFileSync(privateFeeCanonical)),
+    pluginAdapter: sha(fs.readFileSync(path.join(ROOT, 'plugins/adapter_artifact.json'))),
+    pluginPortal: sha(fs.readFileSync(path.join(portalDir, 'out/PluginPortal.sol/PluginPortal.json'))),
     portal: sha(portal.bytecode.object),
   }, null, 2) + '\n');
   console.log('Built canonical Noir/VK and Solidity artifacts; synchronized all consumers.');

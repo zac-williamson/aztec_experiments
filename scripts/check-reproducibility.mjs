@@ -10,6 +10,7 @@ const [mode, first, second] = process.argv.slice(2);
 
 function snapshot() {
   const files = new Set([
+    'plugins/adapter_artifact.json', 'billboard/portal/out/PluginPortal.sol/PluginPortal.json', 'apps/dist/plugins.js',
     '.build/contracts-manifest.json', '.build/sdk/sdk-manifest.json', '.build/apps-manifest.json',
     'apps/dist/sdk-manifest.json', 'apps/dist/crs/crs-manifest.json',
     'apps/src/billboard/billboard_artifact.json',

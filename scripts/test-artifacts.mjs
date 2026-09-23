@@ -16,6 +16,8 @@ assertNodeVersion();
 const canonicalPath = 'apps/src/billboard/billboard_artifact.json';
 const privateFeePath = 'apps/src/billboard/private_fee_artifact.json';
 const portalPath = 'billboard/portal/out/BillboardPortal.sol/BillboardPortal.json';
+const pluginAdapterPath = 'plugins/adapter_artifact.json';
+const pluginPortalPath = 'billboard/portal/out/PluginPortal.sol/PluginPortal.json';
 const manifestPath = '.build/contracts-manifest.json';
 const consumers = ['deploy', 'censor'];
 const bytecodePaths = ['apps/src/billboard/portal_bytecode.txt', 'apps/src/billboard/deploy/portal_bytecode.txt'];
@@ -50,6 +52,7 @@ function fixture(t) {
     'billboard/Nargo.toml': '[workspace]\nmembers = ["contract"]\n',
     'billboard/contract/Nargo.toml': '[package]\nname = "fixture"\n',
     'billboard/contract/src/main.nr': '// synthetic Noir source\n',
+    'billboard/portal/src/PluginPortal.sol': '// synthetic plugin Solidity source\n',
     'billboard/portal/src/BillboardPortal.sol': '// synthetic Solidity source\n',
   };
   for (const [name, value] of Object.entries(inputs)) write(name, value);
@@ -58,6 +61,8 @@ function fixture(t) {
     functions: [{ name: 'fixture_private', custom_attributes: ['abi_private'], verification_key: 'fixture-vk' }],
   };
   json(canonicalPath, artifact);
+  json(pluginAdapterPath, {name:'PluginAdapter',transpiled:true,functions:[{name:'claim',custom_attributes:['abi_private'],verification_key:'fixture-vk'}]});
+  json(pluginPortalPath, {bytecode:{object:'0x60006000'},deployedBytecode:{object:'0x6000'},metadata:{sources:{'src/PluginPortal.sol':{keccak256:keccak256(Buffer.from(inputs['billboard/portal/src/PluginPortal.sol']))}}}});
   json(privateFeePath, { name: 'PrivateFPC', transpiled: true,
     functions: [...['mint', 'pay_fee', 'mint_and_pay_fee', 'recurse_subtract_balance_internal'].map(name => ({ name, custom_attributes: ['abi_private'], verification_key: 'fixture-vk' })), {name:'_complete_refund',custom_attributes:['abi_public','abi_only_self']}] });
   for (const consumer of consumers) json(`apps/src/billboard/${consumer}/billboard_artifact.json`, artifact);
@@ -75,6 +80,8 @@ function fixture(t) {
     inputs: Object.fromEntries(Object.keys(inputs).sort().map(name => [name, hash(inputs[name])])),
     noir: hash(read(canonicalPath)),
     privateFee: hash(read(privateFeePath)),
+    pluginAdapter: hash(read(pluginAdapterPath)),
+    pluginPortal: hash(read(pluginPortalPath)),
     portal: hash(bytecode),
   });
   assert.doesNotThrow(() => checkArtifacts(root), 'the unchanged fixture must pass before each mutation');
@@ -173,7 +180,7 @@ test('contract manifest input hash tampering is rejected', t => {
   assert.throws(() => checkArtifacts(f.root), /Contract build inputs changed/);
 });
 
-for (const key of ['noir', 'portal']) {
+for (const key of ['noir', 'portal', 'pluginAdapter', 'pluginPortal']) {
   test(`contract manifest ${key} hash tampering is rejected`, t => {
     const f = fixture(t);
     f.editJson(manifestPath, m => { m[key] = '0'.repeat(64); });
@@ -212,4 +219,21 @@ test('privateFee key, extra route and stale content fail closed', t => {
 test('refund completion must remain restricted to the fee contract',t=>{
  const f=fixture(t);f.editJson(privateFeePath,a=>{a.functions.find(fn=>fn.name==='_complete_refund').custom_attributes=['abi_public'];});
  assert.throws(()=>checkArtifacts(f.root),/Canonical privateFee artifact/);
+});
+
+for(const [name,mutate] of [
+ [pluginAdapterPath,a=>{a.functions[0].verification_key='changed-vk';}],
+ [pluginPortalPath,a=>{a.deployedBytecode.object='0x6001';}],
+])test(`plugin artifact drift is rejected: ${name}`,t=>{
+ const f=fixture(t);f.editJson(name,mutate);
+ assert.throws(()=>checkArtifacts(f.root),/Contract artifact differs from build manifest/);
+});
+test('plugin claim cannot lose its verification key even with a refreshed manifest',t=>{
+ const f=fixture(t);f.editJson(pluginAdapterPath,a=>{delete a.functions[0].verification_key;});
+ f.editJson(manifestPath,m=>{m.pluginAdapter=hash(f.read(pluginAdapterPath));});
+ assert.throws(()=>checkArtifacts(f.root),/Plugin adapter lacks/);
+});
+test('plugin portal source must match compiler provenance',t=>{
+ const f=fixture(t);f.write('billboard/portal/src/PluginPortal.sol','changed');
+ assert.throws(()=>checkArtifacts(f.root),/Plugin portal artifact does not match/);
 });

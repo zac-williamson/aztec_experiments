@@ -1574,7 +1574,7 @@
     "node_modules/zod/v4/locales/zh-CN.js": "1e2126360ec80d47cf03df58c00eff062d6dfb555983717911a49457d4d84431",
     "node_modules/zod/v4/locales/zh-TW.js": "65c0f93ee9a7f8d74744e17d19406d2a3ba467afb623be963e6a5b8ef00dbec1",
     "scripts/build-portal-runtime.mjs": "c884aa0b13c18b0457a73c7d1393ef03821f6b217df5ec53c177af2d003e3dce",
-    "scripts/toolchain.mjs": "1e42b0c43d94c655cac6efb3e2d0860e7a1f020db05830ff500971a67d3a3fcc",
+    "scripts/toolchain.mjs": "9682df94287a3f45225a7808f2f2c97e17604796c6629ad5f18a222571cf012c",
     "shared/application-nullifier.mjs": "67b056f3e58f88d9a31549c94af6aa7f652690689e9fdf2a56d5b602c8199570",
     "shared/browser-chonk-stream.mjs": "e3995c69787ea0a2fc15cb1a75f583e21ae01cfb055264351f63663a77a86c50",
     "shared/browser-runtime-policy.mjs": "c848b0b81256cfbba734d2038f352bbf3505422962f7821c86b098e582462bf7",
@@ -1596,7 +1596,7 @@
     "shared/sdk-entry.mjs": "e2ef7961f88d20652994e5b3be1f2f2011774dc08b17cffe3d266c5b0874f030",
     "shared/sdk-store.mjs": "083710db7c2911bf3f6a5008d0618f49317a1cd93d686d483fe089e2c433e01f",
     "shared/transaction-outcomes.mjs": "981eb3f048356a85dd9833b1b612bdcb4dcd71c41af3af38d36717198b576dc1",
-    "toolchain.json": "2757ecde29ee191efa6ee24924ccfdb4fe4646d057534491d5e18b8cbdde3dfe"
+    "toolchain.json": "6580c7de5d733318230b11902e7f99641f5cffd15f67e46e66c0c6923a371d05"
   },
   "outputs": {
     "acvm_js_bg.wasm": "bcd66e862a95a57f7f2ae3cb97e24d007d2ad710ac7490262c3c92a5b823775d",
