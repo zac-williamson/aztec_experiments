@@ -89,6 +89,8 @@ try{
  await walletPage.getByTestId('confirm-btn').waitFor();assert.equal((await walletPage.getByTestId('confirm-btn').innerText()).trim(),'Connect');await walletPage.getByTestId('confirm-btn').click();
  await page.waitForFunction(()=>window.walletState?.ethAccount);assert.equal((await page.evaluate(()=>window.walletState.ethAccount)).toLowerCase(),user.address.toLowerCase());assert.equal(await page.evaluate(()=>window.walletState.ethChainId),'31337');
  await page.waitForFunction(expected=>document.getElementById('azaddr')?.value===expected&&!document.getElementById('depositBtn').disabled&&document.getElementById('setupStatus').textContent.includes('Wallet ready.'),payer.toString());assert.equal(await page.locator('#setupStatus .error').count(),0);assert.equal(unexpectedRequests,0);assert.equal(provingAssetRequests,0);
+ assert.equal(await page.locator('#wbConnectionStatus').innerText(),'MetaMask · '+user.address);
+ report.selectedWalletIdentityVisible=true;
  stage='reject-token-approval';await page.locator('#amount').fill('0.000000000000001');await page.locator('#depositBtn').click();
  await walletPage.getByTestId('parent-selector-confirmation-page').waitFor();await walletPage.getByTestId('confirm-footer-cancel-button').click();await page.locator('#depositStatus .error').waitFor();
  assert.equal(await provider.getTransactionCount(user.address),0);assert.equal(await token.allowance(user.address,addresses.feeJuicePortalAddress),0n);assert.equal(await token.balanceOf(user.address),2000n);report.rejectionMovedNoFunds=true;

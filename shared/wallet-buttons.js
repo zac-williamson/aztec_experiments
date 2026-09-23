@@ -3,6 +3,10 @@ let _statusId="setupStatus";
 function walletMessage(message,type="info") { if(typeof log==="function")log(message,type,_statusId); }
 function _updateButtonColors() {
   const state=window.BillboardAccount.snapshot();
+  const connection=document.getElementById('wbConnectionStatus');
+  if(connection)connection.textContent=state.invalidated
+    ? 'Wallet connection changed. Reload to reconnect before continuing.'
+    : state.ethereumConnected ? state.ethereumWalletName+' · '+state.ethereumAddress : 'No Ethereum wallet connected.';
   for(const id of ['wbAztecBtn','wbAztecGenBtn','wbEthBrowserBtn']) {
     const el=document.getElementById(id); if(el) el.disabled=state.busy || state.invalidated || (id==='wbEthBrowserBtn'?state.ethereumConnected && !!state.address:!!state.address);
   }
@@ -28,8 +32,8 @@ async function _loadAztecWallet(file) {try{return await window.BillboardAccount.
 async function _generateAztecWallet() {try{downloadAccountRecovery(await window.BillboardAccount.create(_backupPassword(true)));}finally{_clearBackupPassword();}}
 async function _exportAztecWallet() {try{downloadAccountRecovery(await window.BillboardAccount.exportRecovery(_backupPassword(true)));}finally{_clearBackupPassword();}}
 async function _loadEthBrowser() {
-  const transport=await chooseEthereumWallet();
-  if(transport)return window.BillboardAccount.connect(transport);
+  const wallet=await chooseEthereumWallet();
+  if(wallet)return window.BillboardAccount.connect(wallet.provider,wallet.name);
 }
 let _walletPickerOpen=false;
 function chooseEthereumWallet() {
@@ -45,7 +49,7 @@ function chooseEthereumWallet() {
       choices.replaceChildren();
       const wallets=window.BillboardWalletProviders.list();
       if(!wallets.length){const message=document.createElement('p');message.textContent='No Ethereum wallet was found. Open this board in a browser with MetaMask or another Ethereum wallet installed.';choices.appendChild(message);}
-      for(const wallet of wallets){const button=document.createElement('button');button.type='button';button.textContent=wallet.name;button.addEventListener('click',()=>finish(wallet.provider));choices.appendChild(button);}
+      for(const wallet of wallets){const button=document.createElement('button');button.type='button';button.textContent=wallet.name;button.addEventListener('click',()=>finish(wallet));choices.appendChild(button);}
     }
     dialog.addEventListener('cancel',event=>{event.preventDefault();finish(null);});cancel.addEventListener('click',()=>finish(null));
     dialog.append(title,choices,cancel);document.body.appendChild(dialog);
@@ -73,6 +77,8 @@ function initWalletButtons(containerId,options={}) {
     <label>Recovery password <input type="password" id="wbPassword" autocomplete="new-password" minlength="12" maxlength="1024"></label>
     <label>Repeat password when creating a backup <input type="password" id="wbPasswordConfirm" autocomplete="new-password" maxlength="1024"></label>
     <p>Keep your encrypted recovery file and password. Export again after each transaction or recovery update. Older files do not contain later requests. Losing your wallet key or a deposit claim secret can make funds unrecoverable. This browser holds decrypted keys while open; use a trusted device. Reload before changing wallets.</p>`;
+  const connection=document.createElement('p');connection.id='wbConnectionStatus';connection.setAttribute('role','status');
+  document.body.appendChild(connection);
   if(autoPasskey)document.body.appendChild(document.getElementById('wbAccountMenu'));
   const handle=run=>async()=>{try{await run();}catch(error){walletMessage(['BB_BROWSER_WALLET_MISSING','BB_WALLET_NETWORK','BB_WALLET_REJECTED'].includes(error?.code)?publicOperationFailure(error).message:((error?.code===4001||error?.code==='ACTION_REJECTED')?'Wallet request cancelled. Connect again when you are ready.':'Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.'),'error');}};
   document.getElementById('wbAztecBtn').addEventListener('click',()=>document.getElementById('wbAztecFile').click());

@@ -218,5 +218,34 @@
     "remoteProver": {
       "url": "https://d30njln0kead8n.cloudfront.net/prover"
     }
+  },
+  "walletIdentityCorrection": {
+    "verifiedAt": "2026-09-23T13:08:39.501236+00:00",
+    "pages": {
+      "user.html": {
+        "sha256": "aa859b3600a3a5e024d582f1005c8b1ac02845e14857f690ea0c4fdb6d0ac0c6",
+        "matchesBuild": true
+      },
+      "fee-juice.html": {
+        "sha256": "5fde4a50208600835644db6fb3f9faa74339fe23d26046194d29b9f740e116f4",
+        "matchesBuild": true
+      },
+      "censor.html": {
+        "sha256": "387e6235dcebbd732881ad46d4c35443c580355e4cf305acefb065a57540f60f",
+        "matchesBuild": true
+      },
+      "deploy.html": {
+        "sha256": "2d5cb832dd0980ca05d7e36b51a6b527242994e444fc1ddd68f0ffcdb1be3e58",
+        "matchesBuild": true
+      }
+    },
+    "checks": {
+      "regressionTests": 46,
+      "realMetaMaskComponent": "execution/evidence/T04/wallet-identity-extension-final-20260923.json",
+      "liveChrome": "Explicit MetaMask selection returns an Ethereum account; selected wallet and exact address now visible. No new wallet approval appeared in existing profile. User screenshot connection mismatch remains under investigation.",
+      "noStorageCleared": true,
+      "noUserTransactionsSubmitted": true,
+      "independentReview": "wallet_identity_review approved selected-wallet identity, invalidation notifications and persistent navigation gate"
+    }
   }
 }

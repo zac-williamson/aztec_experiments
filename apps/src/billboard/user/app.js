@@ -490,6 +490,7 @@ function waitForBundleThenInit() {
     if (navNext) navNext.style.display = 'none';
     initWalletButtons('walletButtonsContainer', {autoPasskey:true,
       statusId: 'setupStatus',
+      onChange: state => { setPageActionsEnabled(!state.invalidated); },
       ethRpcUrl: _getPublicConfig()?.network.ethRpcUrl,
       onReady: async () => {
         try {

@@ -1,6 +1,6 @@
 // Browser custody: passkey or explicitly imported Aztec account, recovery files, and
 // an external Ethereum signer. A page has one immutable wallet context.
-window.walletState = { aztec:null, ethSigner:null, ethProvider:null, ethTransport:null, ethAccount:null, ethType:null, invalidated:false };
+window.walletState = { aztec:null, ethSigner:null, ethProvider:null, ethTransport:null, ethAccount:null, ethType:null, ethWalletName:null, invalidated:false };
 let _onReady=null, _onAztecLoad=null, _requireEth=true, _readyFired=false;
 let _autoPasskey=false;
 let _walletBusy=false, _walletGeneration=0, _connectingEth=null;
@@ -11,11 +11,13 @@ let _accountLog=()=>{};
 function _wlog(message,type='info') { _accountLog(message,type); }
 function _updateAccountState() { _accountNotify(accountSnapshot()); }
 /** Public account state contains no signing material. */
-function accountSnapshot() { return {address:window.walletState.aztec?.address.toString()||null,ethereumAddress:window.walletState.ethAccount,busy:_walletBusy,invalidated:window.walletState.invalidated,ethereumConnected:!!window.walletState.ethSigner}; }
+function accountSnapshot() { return {address:window.walletState.aztec?.address.toString()||null,ethereumAddress:window.walletState.ethAccount,busy:_walletBusy,invalidated:window.walletState.invalidated,ethereumWalletName:window.walletState.ethWalletName,ethereumConnected:!!window.walletState.ethSigner && !window.walletState.invalidated}; }
 function _assertWalletLive() { if(window.walletState.invalidated) throw new Error('Wallet context changed. Reload this page before continuing.'); }
 function _invalidateWalletContext() {
+  if(window.walletState.invalidated)return;
   window.walletState.invalidated=true; _walletGeneration++;
   _wlog('Wallet account or network changed. Reload this page to reconnect; pending transactions must be checked before retrying.','error');
+  _updateAccountState();
 }
 async function _walletOperation(run) {
   _assertWalletLive(); if(_walletBusy) throw new Error('Another wallet operation is in progress.');
@@ -115,7 +117,7 @@ async function exportAccountRecovery(password) {
 function _firstEthereumAccount(accounts) {
   return Array.isArray(accounts) && accounts.length>0 && accounts.every(account=>typeof account==='string' && /^0x[0-9a-fA-F]{40}$/.test(account)) ? accounts[0].toLowerCase() : null;
 }
-async function connectEthereumAccount(transport) {
+async function connectEthereumAccount(transport, walletName='Browser wallet') {
   return _walletOperation(async()=>{
     if(window.walletState.ethSigner) {
       if(_autoPasskey && !window.walletState.aztec) {await _openPasskeyAccount();return;}
@@ -146,9 +148,11 @@ async function connectEthereumAccount(transport) {
       _invalidateWalletContext();throw new Error('Wallet context changed.');
     }
     window.walletState.ethTransport=transport;window.walletState.ethSigner=signer;window.walletState.ethProvider=provider;window.walletState.ethAccount=account;
+    window.walletState.ethWalletName=typeof walletName==='string' && walletName.trim() && walletName.length<=128?walletName:'Browser wallet';
     window.walletState.ethType='browser';window.walletState.ethChainId=String(network.chainId);_walletGeneration++;
     // The engine independently verifies signer, node and portal chain agreement.
-    _wlog('Ethereum wallet connected.','success');
+    _wlog(window.walletState.ethWalletName+' connected: '+account,'success');
+    _updateAccountState();
     if(_autoPasskey && !window.walletState.aztec)await _openPasskeyAccount();
     _checkReady();
     } finally {_connectingEth=null;}
@@ -201,7 +205,7 @@ function _bindEthereumProvider(transport) {
       // it against both the requested signer and a final account read before use.
       if(_connectingEth && window.walletState.ethType!=='browser' && selected!==null && (_connectingEth.account===null || _connectingEth.account===selected)) {_connectingEth.account=selected;return;}
     }
-    if(window.walletState.ethType==='browser' || _connectingEth) {_invalidateWalletContext();_updateAccountState();}
+    if(window.walletState.ethType==='browser' || _connectingEth) {_invalidateWalletContext();}
     };
     _accountListeners.push([name,handler]);transport.on(name,handler);
   }

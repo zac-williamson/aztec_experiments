@@ -7,7 +7,7 @@ const source=['account.js','wallet-buttons.js'].map(p=>fs.readFileSync(new URL('
 const key='0x'+'1'.padStart(64,'0'),salt='0x'+((1n<<200n)+13n).toString(16).padStart(64,'0');
 function fixture({fail=false}={}) {
  const elements=new Map(),logs=[],derived=[],listeners={};
- function element(id){if(!elements.has(id))elements.set(id,{value:'prior',disabled:false,addEventListener(name,fn){this[name]=fn;},click(){},remove(){}});return elements.get(id);}
+ function element(id){if(!elements.has(id))elements.set(id,{value:'prior',disabled:false,setAttribute(){},addEventListener(name,fn){this[name]=fn;},click(){},remove(){}});return elements.get(id);}
  class Fr {constructor(value){this.value=BigInt(value);} static fromHexString(value){return new Fr(value);}}
  const context=vm.createContext({console,BigInt,Uint8Array,setTimeout:()=>{},log:message=>logs.push(message),
   document:{getElementById:element,createElement:()=>element('download'),body:{appendChild(){}}},
@@ -158,4 +158,31 @@ test('events from a previously rejected wallet cannot invalidate the newly selec
  browserConnection(f);await f.context.window.BillboardAccount.connect(f.context.window.ethereum);
  oldListeners.chainChanged('0x2');oldListeners.accountsChanged([]);oldListeners.disconnect();
  assert.equal(f.context.window.walletState.invalidated,false);
+});
+
+
+test('selected wallet identity is shown with its exact authorized account',async()=>{
+ const f=fixture(),account=browserConnection(f);
+ await f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask');
+ const state=f.context.window.BillboardAccount.snapshot();
+ assert.equal(state.ethereumWalletName,'MetaMask');assert.equal(state.ethereumAddress,account);
+ assert.equal(f.element('wbConnectionStatus').textContent,'MetaMask · '+account);
+ assert(f.logs.some(message=>message==='MetaMask connected: '+account));
+});
+for(const event of ['disconnect','accountsChanged','chainChanged'])test(event+' immediately clears connected status and shows reconnect guidance',async()=>{
+ const f=fixture();browserConnection(f);let latest;
+ f.context.initWalletButtons('container',{onChange:state=>{latest=state;}});
+ await f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask');
+ f.listeners[event](event==='accountsChanged'?[]:'0x2');
+ assert.equal(latest.ethereumConnected,false);assert.equal(latest.invalidated,true);
+ assert.match(f.element('wbConnectionStatus').textContent,/Reload to reconnect/);
+ assert.equal(f.element('wbEthBrowserBtn').disabled,true);
+});
+test('explicit invalidation notifies consumers, including outside wallet events',async()=>{
+ const f=fixture();browserConnection(f);let notifications=0;
+ f.context.initWalletButtons('container',{onChange:()=>{notifications++;}});
+ await f.context.window.BillboardAccount.connect(f.context.window.ethereum,'Other wallet');
+ const before=notifications;f.context.window.BillboardAccount.invalidate();
+ assert.equal(notifications,before+1);assert.equal(f.context.window.BillboardAccount.snapshot().ethereumConnected,false);
+ f.context.window.BillboardAccount.invalidate();assert.equal(notifications,before+1);
 });

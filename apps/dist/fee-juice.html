@@ -997,7 +997,7 @@ globalThis.BillboardClaimBackup=Object.freeze({
 
 // Browser custody: passkey or explicitly imported Aztec account, recovery files, and
 // an external Ethereum signer. A page has one immutable wallet context.
-window.walletState = { aztec:null, ethSigner:null, ethProvider:null, ethTransport:null, ethAccount:null, ethType:null, invalidated:false };
+window.walletState = { aztec:null, ethSigner:null, ethProvider:null, ethTransport:null, ethAccount:null, ethType:null, ethWalletName:null, invalidated:false };
 let _onReady=null, _onAztecLoad=null, _requireEth=true, _readyFired=false;
 let _autoPasskey=false;
 let _walletBusy=false, _walletGeneration=0, _connectingEth=null;
@@ -1008,11 +1008,13 @@ let _accountLog=()=>{};
 function _wlog(message,type='info') { _accountLog(message,type); }
 function _updateAccountState() { _accountNotify(accountSnapshot()); }
 /** Public account state contains no signing material. */
-function accountSnapshot() { return {address:window.walletState.aztec?.address.toString()||null,ethereumAddress:window.walletState.ethAccount,busy:_walletBusy,invalidated:window.walletState.invalidated,ethereumConnected:!!window.walletState.ethSigner}; }
+function accountSnapshot() { return {address:window.walletState.aztec?.address.toString()||null,ethereumAddress:window.walletState.ethAccount,busy:_walletBusy,invalidated:window.walletState.invalidated,ethereumWalletName:window.walletState.ethWalletName,ethereumConnected:!!window.walletState.ethSigner && !window.walletState.invalidated}; }
 function _assertWalletLive() { if(window.walletState.invalidated) throw new Error('Wallet context changed. Reload this page before continuing.'); }
 function _invalidateWalletContext() {
+  if(window.walletState.invalidated)return;
   window.walletState.invalidated=true; _walletGeneration++;
   _wlog('Wallet account or network changed. Reload this page to reconnect; pending transactions must be checked before retrying.','error');
+  _updateAccountState();
 }
 async function _walletOperation(run) {
   _assertWalletLive(); if(_walletBusy) throw new Error('Another wallet operation is in progress.');
@@ -1112,7 +1114,7 @@ async function exportAccountRecovery(password) {
 function _firstEthereumAccount(accounts) {
   return Array.isArray(accounts) && accounts.length>0 && accounts.every(account=>typeof account==='string' && /^0x[0-9a-fA-F]{40}$/.test(account)) ? accounts[0].toLowerCase() : null;
 }
-async function connectEthereumAccount(transport) {
+async function connectEthereumAccount(transport, walletName='Browser wallet') {
   return _walletOperation(async()=>{
     if(window.walletState.ethSigner) {
       if(_autoPasskey && !window.walletState.aztec) {await _openPasskeyAccount();return;}
@@ -1143,9 +1145,11 @@ async function connectEthereumAccount(transport) {
       _invalidateWalletContext();throw new Error('Wallet context changed.');
     }
     window.walletState.ethTransport=transport;window.walletState.ethSigner=signer;window.walletState.ethProvider=provider;window.walletState.ethAccount=account;
+    window.walletState.ethWalletName=typeof walletName==='string' && walletName.trim() && walletName.length<=128?walletName:'Browser wallet';
     window.walletState.ethType='browser';window.walletState.ethChainId=String(network.chainId);_walletGeneration++;
     // The engine independently verifies signer, node and portal chain agreement.
-    _wlog('Ethereum wallet connected.','success');
+    _wlog(window.walletState.ethWalletName+' connected: '+account,'success');
+    _updateAccountState();
     if(_autoPasskey && !window.walletState.aztec)await _openPasskeyAccount();
     _checkReady();
     } finally {_connectingEth=null;}
@@ -1198,7 +1202,7 @@ function _bindEthereumProvider(transport) {
       // it against both the requested signer and a final account read before use.
       if(_connectingEth && window.walletState.ethType!=='browser' && selected!==null && (_connectingEth.account===null || _connectingEth.account===selected)) {_connectingEth.account=selected;return;}
     }
-    if(window.walletState.ethType==='browser' || _connectingEth) {_invalidateWalletContext();_updateAccountState();}
+    if(window.walletState.ethType==='browser' || _connectingEth) {_invalidateWalletContext();}
     };
     _accountListeners.push([name,handler]);transport.on(name,handler);
   }
@@ -1214,6 +1218,10 @@ let _statusId="setupStatus";
 function walletMessage(message,type="info") { if(typeof log==="function")log(message,type,_statusId); }
 function _updateButtonColors() {
   const state=window.BillboardAccount.snapshot();
+  const connection=document.getElementById('wbConnectionStatus');
+  if(connection)connection.textContent=state.invalidated
+    ? 'Wallet connection changed. Reload to reconnect before continuing.'
+    : state.ethereumConnected ? state.ethereumWalletName+' · '+state.ethereumAddress : 'No Ethereum wallet connected.';
   for(const id of ['wbAztecBtn','wbAztecGenBtn','wbEthBrowserBtn']) {
     const el=document.getElementById(id); if(el) el.disabled=state.busy || state.invalidated || (id==='wbEthBrowserBtn'?state.ethereumConnected && !!state.address:!!state.address);
   }
@@ -1239,8 +1247,8 @@ async function _loadAztecWallet(file) {try{return await window.BillboardAccount.
 async function _generateAztecWallet() {try{downloadAccountRecovery(await window.BillboardAccount.create(_backupPassword(true)));}finally{_clearBackupPassword();}}
 async function _exportAztecWallet() {try{downloadAccountRecovery(await window.BillboardAccount.exportRecovery(_backupPassword(true)));}finally{_clearBackupPassword();}}
 async function _loadEthBrowser() {
-  const transport=await chooseEthereumWallet();
-  if(transport)return window.BillboardAccount.connect(transport);
+  const wallet=await chooseEthereumWallet();
+  if(wallet)return window.BillboardAccount.connect(wallet.provider,wallet.name);
 }
 let _walletPickerOpen=false;
 function chooseEthereumWallet() {
@@ -1256,7 +1264,7 @@ function chooseEthereumWallet() {
       choices.replaceChildren();
       const wallets=window.BillboardWalletProviders.list();
       if(!wallets.length){const message=document.createElement('p');message.textContent='No Ethereum wallet was found. Open this board in a browser with MetaMask or another Ethereum wallet installed.';choices.appendChild(message);}
-      for(const wallet of wallets){const button=document.createElement('button');button.type='button';button.textContent=wallet.name;button.addEventListener('click',()=>finish(wallet.provider));choices.appendChild(button);}
+      for(const wallet of wallets){const button=document.createElement('button');button.type='button';button.textContent=wallet.name;button.addEventListener('click',()=>finish(wallet));choices.appendChild(button);}
     }
     dialog.addEventListener('cancel',event=>{event.preventDefault();finish(null);});cancel.addEventListener('click',()=>finish(null));
     dialog.append(title,choices,cancel);document.body.appendChild(dialog);
@@ -1284,6 +1292,8 @@ function initWalletButtons(containerId,options={}) {
     <label>Recovery password <input type="password" id="wbPassword" autocomplete="new-password" minlength="12" maxlength="1024"></label>
     <label>Repeat password when creating a backup <input type="password" id="wbPasswordConfirm" autocomplete="new-password" maxlength="1024"></label>
     <p>Keep your encrypted recovery file and password. Export again after each transaction or recovery update. Older files do not contain later requests. Losing your wallet key or a deposit claim secret can make funds unrecoverable. This browser holds decrypted keys while open; use a trusted device. Reload before changing wallets.</p>`;
+  const connection=document.createElement('p');connection.id='wbConnectionStatus';connection.setAttribute('role','status');
+  document.body.appendChild(connection);
   if(autoPasskey)document.body.appendChild(document.getElementById('wbAccountMenu'));
   const handle=run=>async()=>{try{await run();}catch(error){walletMessage(['BB_BROWSER_WALLET_MISSING','BB_WALLET_NETWORK','BB_WALLET_REJECTED'].includes(error?.code)?publicOperationFailure(error).message:((error?.code===4001||error?.code==='ACTION_REJECTED')?'Wallet request cancelled. Connect again when you are ready.':'Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.'),'error');}};
   document.getElementById('wbAztecBtn').addEventListener('click',()=>document.getElementById('wbAztecFile').click());
@@ -20276,6 +20286,12 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 let _pages = [];
 let _currentPage = 0;
+let _pageActionsEnabled = true;
+function setPageActionsEnabled(enabled) {
+  if(_pageActionsEnabled===enabled)return;
+  _pageActionsEnabled=enabled;
+  const next=document.getElementById('navNext');if(next)next.disabled=!enabled;
+}
 
 function initPages(pages) {
   _pages = pages;
@@ -20300,10 +20316,10 @@ function showPage(n) {
     next.style.display = p?.manual ? 'none' : ''; // Manual steps advance only through their own completion callback.
     if (p && p.label) {
       next.textContent = p.label + (n < _pages.length - 1 ? ' \u2192' : '');
-      next.disabled = false;
+      next.disabled = !_pageActionsEnabled;
     } else {
       next.textContent = '\u2192';
-      next.disabled = false;
+      next.disabled = !_pageActionsEnabled;
     }
   }
   if(changed)queueMicrotask(()=>{
@@ -20327,7 +20343,7 @@ function prevPage() {
 
 function doNavAction() {
   const p = _pages[_currentPage];
-  if (p?.manual) return;
+  if (!_pageActionsEnabled || p?.manual) return;
   if (!p || !p.action) { nextPage(); return; }
   const btn = document.getElementById('navNext');
   const origText = btn.textContent;
@@ -20346,9 +20362,10 @@ function doNavAction() {
       // Brief pause to show success, then advance
       if (p.statusId) log('\u2713 Step complete.', 'success', p.statusId);
       setTimeout(() => {
+        if(!_pageActionsEnabled){btn.disabled=true;btn.classList.remove('working');return;}
         // If the action already changed the page (e.g. skipped ahead), don't advance/restore.
         if (_currentPage !== origPage) {
-          btn.disabled = false;
+          btn.disabled = !_pageActionsEnabled;
           btn.classList.remove('working');
           return;
         }
@@ -20356,7 +20373,7 @@ function doNavAction() {
           nextPage();
         } else {
           // Last page - restore button
-          btn.disabled = false;
+          btn.disabled = !_pageActionsEnabled;
           btn.classList.remove('working');
           btn.textContent = origText;
         }
@@ -20366,7 +20383,7 @@ function doNavAction() {
       if (workingDiv && workingDiv.parentNode) workingDiv.remove();
       if (p.statusId) log('ERROR: ' + (typeof publicOperationFailure==='function'?publicOperationFailure(e).message:'operation did not complete; check configuration and recovery records'), 'error', p.statusId);
       console.error('Application operation did not complete.');
-      btn.disabled = false;
+      btn.disabled = !_pageActionsEnabled;
       btn.classList.remove('working');
       // An action may complete one phase before failing the next (deposit → claim).
       // Preserve its updated retry label rather than restoring the completed action.

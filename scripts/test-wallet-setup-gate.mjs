@@ -12,3 +12,15 @@ test('fee deposit and claim cannot start before wallet setup succeeds',async()=>
  const start=source.indexOf('async function doDepositPage()'),end=source.indexOf('function initializePrivateFees()',start);
  vm.runInContext(source.slice(start,end),c);await c.doDepositPage();await c.doClaimPage();assert.equal(calls,0);
 });
+
+
+test('invalidated wallet keeps navigation actions disabled across page changes',()=>{
+ const f=fixture();let calls=0;f.c.initPages([{label:'Deposit',action:()=>{calls++;}},{label:'Post',action:()=>{calls++;}}]);
+ f.c.setPageActionsEnabled(false);f.c.showPage(1);f.c.prevPage();f.c.doNavAction();
+ assert.equal(f.elements.get('navNext').disabled,true);assert.equal(calls,0);
+});
+test('action failure cannot re-enable navigation after wallet invalidation',async()=>{
+ const f=fixture();let fail;f.c.initPages([{label:'Deposit',action:()=>new Promise((_r,reject)=>{fail=reject;})}]);
+ f.c.doNavAction();await Promise.resolve();f.c.setPageActionsEnabled(false);fail(Error('Disconnected'));
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(f.elements.get('navNext').disabled,true);
+});
