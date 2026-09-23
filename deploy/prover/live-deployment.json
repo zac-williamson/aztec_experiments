@@ -280,5 +280,19 @@
       "censor.html": "3b056168aba6b7553801360aab887710a551b3f86f5397afbfd50d32b859f652",
       "deploy.html": "f37017b1bc9386fdc97de2cc8bd43647706f7a07a326bdd3ff867a1c3eb0a662"
     }
+  },
+  "walletActivationBoundaryCorrection": {
+    "verifiedAt": "2026-09-23T13:55:18.713548+00:00",
+    "change": "Activate signer only after direct final account and chain validation. Track preactivation disconnect/reconnect; invalidate actual changes after activation.",
+    "regressions": 54,
+    "realMetaMaskEvidence": "execution/evidence/T04/wallet-activation-boundary-20260923.json",
+    "pages": {
+      "user.html": "32981aa2d83b76f990c8521a962d5ba983af1b75aae87bade1d4ded5ab074617",
+      "fee-juice.html": "0005dc50af9fdc2ebb5a143803a9aec5f92b99513d04dab82d4e1cd7d2e5e5d7",
+      "censor.html": "f9e33e9f4322075cf9ba48fa80c29ff868eed51732612c626f9ac5903d91768a",
+      "deploy.html": "59d05d5efd76a9fe395c230c7db969ca7cfb2f20a9814ee36aa8e87e34977951"
+    },
+    "invalidationStatus": "Completed",
+    "liveChrome": "Pending fresh approval verification"
   }
 }

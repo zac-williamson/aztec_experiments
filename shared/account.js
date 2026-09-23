@@ -129,19 +129,14 @@ async function connectEthereumAccount(transport, walletName='Browser wallet', {s
     if(typeof transport?.request!=='function')throw Object.assign(new Error('Choose an Ethereum wallet.'),{code:'BB_BROWSER_WALLET_MISSING'});
     _bindEthereumProvider(transport);
     const generation=_walletGeneration;
-    const connection={account:null,switchingTo:null,selectingAccount:false};_connectingEth=connection;
+    const connection={disconnected:false};_connectingEth=connection;
     try {
     // MetaMask account selection must not silently reuse an older site grant.
-    if(selectAccount){
-      connection.selectingAccount=true;
-      try{await transport.request({method:'wallet_requestPermissions',params:[{eth_accounts:{}}]});}
-      finally{connection.selectingAccount=false;}
-    }
+    if(selectAccount)await transport.request({method:'wallet_requestPermissions',params:[{eth_accounts:{}}]});
     const expected=typeof _getPublicConfig==='function'?_getPublicConfig()?.network?.chainId:null;
     if(expected!==null&&expected!==undefined){
       const chainId='0x'+BigInt(expected).toString(16);
       if(BigInt(await transport.request({method:'eth_chainId'}))!==BigInt(expected)){
-        connection.switchingTo=chainId;
         try{await transport.request({method:'wallet_switchEthereumChain',params:[{chainId}]});}
         catch(error){throw Object.assign(new Error('Switch your wallet to the board network.'),{code:error?.code===4001?'BB_WALLET_REJECTED':'BB_WALLET_NETWORK'});}
         if(BigInt(await transport.request({method:'eth_chainId'}))!==BigInt(expected))throw Object.assign(new Error('Wallet network mismatch.'),{code:'BB_WALLET_NETWORK'});
@@ -150,10 +145,14 @@ async function connectEthereumAccount(transport, walletName='Browser wallet', {s
     const provider=new ethers.BrowserProvider(transport);
     const requested=await provider.send('eth_requestAccounts',[]);
     const signer=await provider.getSigner(), account=await signer.getAddress();
-    const network=await provider.getNetwork(),current=await provider.send('eth_accounts',[]);
+    const network=await provider.getNetwork();
+    const chain=BigInt(await transport.request({method:'eth_chainId'}));
+    const current=await transport.request({method:'eth_accounts'});
     _assertWalletLive(); if(generation!==_walletGeneration)throw new Error('Wallet context changed.');
+    if(connection.disconnected)throw Object.assign(new Error('Wallet disconnected during setup. Reconnect your wallet and try again.'),{code:'BB_WALLET_DISCONNECTED'});
+    if(chain!==network.chainId || (expected!==null&&expected!==undefined&&chain!==BigInt(expected)))throw Object.assign(new Error('Wallet network mismatch.'),{code:'BB_WALLET_NETWORK'});
     const selected=account.toLowerCase();
-    if(_firstEthereumAccount(requested)!==selected || _firstEthereumAccount(current)!==selected || (connection.account!==null && connection.account!==selected)) {
+    if(_firstEthereumAccount(requested)!==selected || _firstEthereumAccount(current)!==selected) {
       _invalidateWalletContext();throw new Error('Wallet context changed.');
     }
     window.walletState.ethTransport=transport;window.walletState.ethSigner=signer;window.walletState.ethProvider=provider;window.walletState.ethAccount=account;
@@ -203,22 +202,22 @@ function _bindEthereumProvider(transport) {
   if(_accountProvider===transport)return;
   for(const [name,handler] of _accountListeners)_accountProvider?.removeListener?.(name,handler);
   _accountListeners=[];_accountProvider=transport;
-  if(transport.on) for(const name of ['accountsChanged','chainChanged','disconnect']) {
-    const handler=accounts=>{
+  if(transport.on) for(const name of ['accountsChanged','chainChanged','disconnect','connect']) {
+    const handler=value=>{
     if(_accountProvider!==transport)return;
-    // Account/chain announcements during the wallet's selection dialog describe
-    // the selection in progress, not a mutation of an activated signer. The
-    // completed selection is checked below before any signer is activated.
-    if(_connectingEth?.selectingAccount && (name==='accountsChanged'||name==='chainChanged'))return;
-    if(name==='chainChanged' && _connectingEth?.switchingTo && accounts===_connectingEth.switchingTo)return;
-    if(name==='accountsChanged') {
-      const selected=_firstEthereumAccount(accounts);
-      if(window.walletState.ethType==='browser' && selected===window.walletState.ethAccount?.toLowerCase()) return;
-      // Initial permission approval announces the account being connected. Verify
-      // it against both the requested signer and a final account read before use.
-      if(_connectingEth && window.walletState.ethType!=='browser' && selected!==null && (_connectingEth.account===null || _connectingEth.account===selected)) {_connectingEth.account=selected;return;}
+    if(window.walletState.ethType!=='browser') {
+      // No session exists yet. Selection and network changes are reconciled by
+      // the final direct provider reads before activation, not by notifications.
+      if(_connectingEth && name==='disconnect')_connectingEth.disconnected=true;
+      if(_connectingEth && name==='connect')_connectingEth.disconnected=false;
+      return;
     }
-    if(window.walletState.ethType==='browser' || _connectingEth) {_invalidateWalletContext();}
+    if(name==='connect')return;
+    if(name==='accountsChanged' && _firstEthereumAccount(value)===window.walletState.ethAccount?.toLowerCase())return;
+    if(name==='chainChanged') {
+      try{if(BigInt(value)===BigInt(window.walletState.ethChainId))return;}catch{}
+    }
+    _invalidateWalletContext();
     };
     _accountListeners.push([name,handler]);transport.on(name,handler);
   }

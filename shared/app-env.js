@@ -156,6 +156,7 @@ function publicOperationFailure(error) {
     STORAGE_UNAVAILABLE:'Browser storage is unavailable or blocked. Preserve your recovery file before changing browser settings.',
     BB_WALLET_REJECTED:'Wallet request cancelled. Connect again when you are ready.',
     BB_WALLET_NETWORK:'Switch your selected wallet to the network configured for this board, then connect again.',
+    BB_WALLET_DISCONNECTED:'The wallet disconnected during setup. Reconnect your wallet, then reload this page to try again.',
     BB_BROWSER_WALLET_MISSING:'No Ethereum wallet was found in this browser. Open this board in a browser with MetaMask or another Ethereum wallet installed, then connect again.',
     BB_WALLET_NOT_READY:'Connect your Ethereum wallet and finish account setup before depositing.',
     READINESS_TIMEOUT:'Browser capability checks timed out. Retry before starting a wallet operation.',
