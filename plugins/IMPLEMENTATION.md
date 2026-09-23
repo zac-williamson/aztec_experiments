@@ -6,6 +6,38 @@ The board only invokes the registered receiver in its existing posting transacti
 Model pricing, model selection, GitHub and provider credentials remain in the service.
 There is no shared billing database or service-owned authoritative user balance.
 
+## Release qualification — 2026-09-23
+
+The new V5/Sepolia board, plugin escrow and Ethereum USDC portal are active.
+The isolated HTTPS preview is published on the existing site, with a pinned public
+descriptor. The local bot and censor use fresh deployment accounts; no additional
+remote instance was provisioned. [Public deployment evidence](evidence/public-deployment-2026-09-23.json)
+records addresses, transactions and the remaining gates.
+
+Public browser funding has been reconciled against the original successful
+MetaMask transaction after its confirmation window interrupted the test. The
+failed run is retained; reconciliation made no second deposit. Proof-enabled
+claim and composer posting passed through the built application, with no additional
+Ethereum payment during posting. Public paid reply and withdrawal qualification passed: exact draft PR #7,
+0.001468 USDC billed against Venice invoices, and 0.998532 USDC withdrawn
+and redeemed through the UI after actual public finality. The final token balance,
+wrong-recipient rejection and replay rejection passed. All four public phases
+passed with successful cleanup. The current clean-build and full-suite CI results
+are attached to [PR #6](https://github.com/zac-williamson/aztec_experiments/pull/6).
+
+The client preflights portal transactions before saving submission intents, so a
+failed gas estimate cannot strand a never-submitted payment or redemption. Public
+redemption checks actual finalized source receipts. All 69 plugin unit checks pass.
+The native interruption/release scenario passed with real proofs, restart
+suppression and UI release of the full reserved amount. Its explicitly interrupted
+runner makes no paid calls; public reply qualification supplies live billing evidence.
+
+The conservative full-context input bound remains deliberate: Venice publishes
+prices but does not bind its input serialization to an exact local tokenizer.
+The balance requirement can exceed the eventual charge; unsupported pricing is
+rejected rather than exposing the operator to unbounded spend. This is a provider
+limitation, not a claim of exact pre-call token measurement.
+
 ## Invocation budget and concurrency — 2026-09-23
 
 The service now reserves the account's available balance once per invocation,
@@ -22,8 +54,8 @@ found no remaining escrow-budget blocker. All 57 plugin unit checks pass, includ
 concurrency caps, shutdown draining, deferred failures and single top-up under
 concurrent demand. The top-up serialization is recorded as a post-browser change.
 
-Public deployment is in progress using fresh faucet-funded accounts and the
-existing HTTPS site; see [deployment checkpoint](DEPLOYMENT_WORK.md).
+The public deployment uses fresh faucet-funded accounts and the existing HTTPS
+site; see [deployment checkpoint](DEPLOYMENT_WORK.md).
 
 ## Proof-enabled live write qualification — 2026-09-22
 
@@ -70,10 +102,9 @@ verification and authenticated calls succeed. No TLS bypass was introduced.
 
 These runs use local Ethereum/Aztec and controlled local epoch settlement; they do
 not qualify public-network finality. The existing project's V5/Sepolia endpoints
-were located and their identity checked, but a new compatible public board and
-plugin deployment have not been transaction-qualified. The conservative full-
+were located and their identity checked, and the later deployment checkpoint above supersedes that initial discovery. The conservative full-
 context input reservation remains; reducing the minimum balance requires a
-provider-supported tighter cost bound. No production deployment or push occurred.
+provider-supported tighter cost bound. At that checkpoint no production deployment or push had occurred.
 
 ## Earlier proof-disabled local user flow — 2026-09-22
 

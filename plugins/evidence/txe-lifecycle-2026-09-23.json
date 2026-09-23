@@ -1,0 +1,20 @@
+{
+  "scope": "Test-only pinned SDK missing-message query lifecycle and exact-name Noir batching; no application SDK modification",
+  "unitChecksPassed": 7,
+  "realTxeTestsPassed": 38,
+  "applicationProofs": false,
+  "supervisor": {
+    "passed": true,
+    "elapsedMs": 85721,
+    "peakTreeRSSKiB": 1895104,
+    "ownedTreeAbsent": true
+  },
+  "sourceSha256": {
+    "scripts/txe-message-witness.mjs": "5d0be49a6ba0bfaf40288844564728d08640f8ece22d361b914e872da1ec0515",
+    "scripts/txe-c01-service.mjs": "d90900e8fba1e4c748cd94fa4504c1c3b4fdaf7c37b7f9578984df47265c32a0",
+    "scripts/test-txe-message-witness.mjs": "42a51829430beb30e614cea3cb492001c1e3d1b67bdf4298824faff33576be40",
+    "scripts/noir-test-batches.mjs": "c6cf8d2112eda53e269423dbe64f8e69c6f1528a53334b90d54672e13c7f4edf",
+    "scripts/test-noir-test-batches.mjs": "73ad0fb7c409b73a4d8036aa540491197e94577c750f7330b08e4a1da63b1146",
+    "scripts/test-noir.mjs": "e6467c03756002383176412222d5a828907400b3864d1b1155b2fce3fa0a918b"
+  }
+}

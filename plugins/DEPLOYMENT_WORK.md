@@ -8,16 +8,35 @@ Root remains sole writer. Current lanes: public deployment/access/fresh accounts
 Venice cost-bound / treasury API investigation (provider_budget). Heavy tests remain
 serialized. Do not reuse personal wallets or rent infrastructure. Public testnet
 transactions and release integration are now in scope; local bot hosting retained.
-Checkpoint (September 23, 00:07 UTC): implementation and current-source native-proof
-local wallet flow pass. Public board activated; fresh author admitted. CCTP test
-transfer finalized. Both local bot and censor are running; a real public test post
-was evaluated OK in 11.8 seconds. Plugin binding is proven, awaiting finality.
-The public preview and descriptor are prepared; existing AWS deployment login is
-expired and the active compute role denies upload. User was asked to refresh
-`aws login --profile message-board`. No AWS permission workaround attempted.
-Next: activate/register plugin, publish reviewed preview, run four public browser
-phases, then release. Draft implementation PR #6 contains committed work; it is not
-a completed public deployment. Evidence: public-deployment-2026-09-23.json.
+Checkpoint (September 23): complete public user flow qualified on V5/Sepolia.
+The new board, per-plugin Aztec escrow and Ethereum USDC portal are active.
+HTTPS /plugins-preview/ and descriptor use the existing message-board-deploy profile;
+the original website and remote prover are preserved. Bot and censor run locally.
+
+Fresh real MetaMask funding, proof-enabled claim and composer post, paid Venice
+inference, exact-content draft PR #7, visible unflagged reply, withdrawal and actual
+Ethereum redemption all passed. Two Venice invoices match the 1468 micro-USDC
+escrow debit. The user redeemed 998532 micro-USDC, ending with 1998532 token units.
+Wrong-recipient and replay rejection passed. Each phase met its time/memory bounds
+and completed owned-process cleanup. Funding's interrupted wallet window was
+explicitly reconciled against its original transaction; no duplicate payment.
+
+Native interruption qualification 979Irf passed: real proofs, actual wallet funding/
+posting, no replay after service restart, and release of expired funds through the
+UI. The local fixture waits for actual finalized checkpoints before advancing time.
+
+Release artifacts now include both plugin contracts, the browser bundle and service
+sources. All 24 published assets match local SHA-256 hashes. Complete Solidity
+builds reproduce clean Linux artifacts. The pinned TXE missing-message lifecycle
+repair passed seven focused checks and all 38 grouped bridge tests; it affects only
+the test runtime. Compiler-discovered batches preserve every Noir test and each
+batch's deadline. No production SDK or financial gate was weakened.
+
+Independent reviews found no additional plugin blocker. The current full CI result
+is recorded on [PR #6](https://github.com/zac-williamson/aztec_experiments/pull/6);
+release requires those checks to pass. Detailed evidence is under `plugins/evidence`.
+The operator is trusted to report usage, and Venice's conservative input bound
+remains documented. This is a pinned V5/Sepolia candidate, not a mainnet deployment.
 
 User scope: fix the September 22 deployment gaps; trusted operator cost reporting
 is accepted. This worktree remains separate from the main application release graph.
@@ -35,7 +54,7 @@ is accepted. This worktree remains separate from the main application release gr
 - Public target found: main worktree `.build/aws-testnet/site-public-config-272.json`,
   V5 testnet / Sepolia. Endpoint identity verified. Observed checkpoint-to-finalized
   timestamp lag was 3384 seconds; this is one observation, not a latency SLA.
-  No real public-network plugin transaction has been qualified yet.
+  This initial discovery predates the successful public fund/post phases above.
 - First proof-enabled browser run: actual native proofs/setup completed, then live
   Venice lookup failed TLS validation before any inference. Preserved as a failed run.
 - Connectivity repaired: Mac Wi-Fi used router DNS returning an unrelated address
@@ -66,7 +85,7 @@ is accepted. This worktree remains separate from the main application release gr
   disables proving and does not buy provider inference; cleanup/supervisor passed.
 
 Independent read-only review: escrow_review; no reviewer source edits.
-No deployment/push to the existing public board, or new rented infrastructure.
+These initial local runs did not deploy to the existing public board or rent infrastructure.
 
 September 23 checkpoint:
 - Committed invocation-budget/concurrency work 4a995a3 and optional explicit
@@ -138,3 +157,143 @@ HTTPS feed returns 200 with matching artifact bytes, COOP/COEP/CSP headers;
 HTTPS descriptor bytes match the expected pinned document. Existing root-site
 policies preserved. Plugin binding still awaits finality; public wallet phases
 and release remain outstanding. AWS authentication is not a blocker.
+
+Execution resumed for full AI-plugin release. Root owns public activation/register/
+wallet qualification and release; plugin_fit independently reviews the real-contract
+interruption scenario. That scenario reuses the existing browser supervisor and
+real USDC/escrow, explicitly simulates a runner interruption, then verifies restart
+suppression and expired-fund release through the ordinary UI. It does not claim
+actual provider billing during the injected interruption. Heavy runs remain serial.
+
+Public qualification diagnosed descriptor CORS failure; exact /plugins/bok.json
+now serves Access-Control-Allow-Origin: *, preserving all root/preview policies.
+Browser rejection assertion now requires the actual escrow insufficient-balance
+reason. The previous generic error is not accepted as that qualification.
+Repeated persistent-profile sessions restored duplicate application tabs/PXEs and
+one run exceeded the 4 GiB supervisor limit. Evidence preserved; no payment moved.
+Harness closes restored pages while preserving storage, then creates one app page.
+
+Independent review identified real early-redemption and deposit-preflight traps:
+failed gas estimates could persist intents for transactions never submitted.
+Account client now preflights before recording intent, passes the measured gas
+limit to submission, and waits for finalized successful public withdrawal receipts.
+Three regressions added; all 67 plugin checks pass. Apps rebuilt; public wallet
+qualification restarted with this candidate. No paid inference claimed yet.
+
+Unfunded-error qualification is being strengthened at the actual SDK simulation
+boundary; the application's existing fee wrapper and UI both intentionally redact
+raw errors. Shared test observation records only a boolean and preserves results.
+A second public run exceeded total RSS during setup despite restored-tab cleanup;
+archived as failed with unchanged author/portal balances. Bounded next hypothesis:
+V8 transient heaps trigger the 4 GiB total before GC. Public verifier heap now
+384 MiB, browser heap 512 MiB; total supervisor limit remains unchanged. One run
+under this hypothesis is active. No fund-phase payment has been made yet.
+
+Memory investigation: heap limits and explicit native verifier crypto did not
+resolve the total-RSS failure; neither is claimed as a fix. Browser target inspection
+showed one application page. Refactored the public harness to sequential native
+precheck, browser actions, native postcheck, matching existing application tests.
+Verifier wallets/contracts/crypto are disposed before browser launch; browser closes
+before independent checks reopen. Source reviewed by plugin_fit with no blocker.
+The supervisor retains 4 GiB/nine-minute bounds. Fund run in progress.
+
+Same-process verifier disposal still retained ~768 MiB. Replaced only that test
+boundary with a bounded, short-lived read-only inspector process (no transaction
+methods); it exits before Chromium and runs again after browser closure. Existing
+Supervisor owns descendants and cleanup. Standalone inspector passed; independent
+review approved. Parent during browser setup now ~244 MiB. Current fund run reached
+actual insufficient-balance rejection (specific underlying escrow reason verified)
+and real MetaMask deposit, with no inference charge before funding.
+
+Short-lived native inspection fixed the overlapping-memory limit: fund run peaked
+at 3536832 KiB. The specific unfunded escrow rejection passed. Actual MetaMask USDC
+approval and 1-USDC deposit both landed (author1USDC, portal1USDC, allowance0).
+MetaMask notification confirmation closed the application window before test
+bookkeeping finished; this run remains failed, archived as failed-wallet-close.
+No duplicate payment. Explicit recover-fund verifies the original saved intent
+against sender/nonce/account/amount and successful receipt, then independent state.
+Transaction confirmations now use the sidepanel path already qualified locally.
+Both changes independently reviewed; reconciliation run active.
+
+Fund reconciliation PASSED with clean process/supervisor cleanup. Original interrupted
+run retained; no second deposit. First post-phase attempt exceeded memory during
+setup before a claim; independent chain check confirmed zero credit/requests and
+unchanged post count. Static test server now streams CRS and honors byte ranges
+(exact range regression passed), and unlocked MetaMask UI closes when not needed.
+Both changes reviewed. Current post phase reached real Aztec plugin-credit claim.
+
+Release CI investigation: fork PR #6 build failed because the locked @aztec/bb.js
+5.2.0 package's Linux x64 executable reports 5.2.0-nightly.20260807. Downloaded the
+exact lockfile tarball, verified its SHA-512 integrity, and matched all four native
+binaries against that package. Toolchain now pins each binary's exact SHA-256 and
+reported version, checking hashes before execution including BB overrides. Two
+regressions passed; independent review plugin_fit found no blocker. Rebuild/CI
+qualification remains pending, serialized after the active native browser test.
+
+Release artifact coverage repaired: the contract build manifest now hashes the
+complete plugin adapter and portal artifacts; checks require the private claim
+verification key and current Solidity provenance. Reproducibility includes both
+contracts and the plugin browser bundle. Release inventory includes hosted service
+sources and actual native-prover version. Rebuild and inventory write/check passed;
+39 focused artifact/toolchain checks and 77 plugin/release/CI checks passed. The
+canonical PluginPortal artifact will be tracked and plugin unit checks run in CI.
+
+Native interruption e48GjW passed the memory cap (4041440 KiB), all user funding/
+posting, reservation and restart suppression, but expiry release failed with
+PRIVATE_FEE_PREPARATION_FAILED. Failure retained, complete cleanup confirmed.
+Next bounded hypothesis follows the maintained wallet-absence fixture: keep the
+sequencer paused across checkpoint retention and the simulated 24-hour jump.
+Failed RPC method names are now captured without request/response payloads.
+Public post finalized and bot became active; paid spending still waits for the
+actual reservation's public finality.
+
+Expiry diagnosis: utility observation reproduced the SDK invariant failure
+"Highest aged index (5) must not exceed highest finalized index (1)". Pausing
+the sequencer alone is insufficient: official markAsProven changes storage,
+while the archiver reads that storage at finalized L1. Next bounded run mines
+L1 and waits for the actual node finalized checkpoint to cover retention before
+the 24-hour time jump. No production gate changes. Removed raw error observer.
+
+Native interruption qualification 979Irf PASSED: 372228 ms, peak 3778064 KiB,
+owned process tree absent. Real proof-enabled browser deposit/claim/post, reserve,
+restart without paid replay, finalized-before-warp expiry and UI release passed.
+Public Bok invocation completed and created draft PR #7; public reply/withdrawal
+phase running. Bot restarted only after active=0 and is healthy with current code.
+CI clean build exposed stale incremental Solidity AST/source IDs (bytecode unchanged).
+Both release Forge builds now force a complete source compilation; rebuild and CI
+verification pending. Artifact drift checks remain strict.
+
+Public reply phase PASSED: 109062 ms, peak 4182544 KiB, complete cleanup. Exact
+draft PR #7 and visible unflagged reply verified. Actual Venice invoices match
+1468 micro-USDC debit; 998532 micro-USDC withdrawal checkpointed at 92533.
+Redemption awaits real withdrawal finality. Finality gates unchanged.
+Forced Solidity build passed, both portal artifacts exactly match clean Linux
+outputs. 31 focused checks passed. Commit ac724d3 pushed; fresh CI active. Independent
+final plugin review found no additional blocker, conditional on redemption/CI.
+
+Release CI fixture updates: frontend provenance fixtures now include plugin
+sources and bundle (16 focused checks;185 build checks passed). Remaining
+application fixtures were stale relative to actual application.readFeed, wallet
+factory signatures, proving policy and published-class queries. Updated only
+test boundaries;131 application checks,85 affected deployment/fee checks and
+131 protocol/receipt checks pass with all original assertions retained. Independent
+review approved.41 dependency checks passed. Commit26e129c pushed; fresh CI
+running. Public withdrawal advanced to proven; Ethereum redemption still waits
+for finalized status.
+
+FULL PUBLIC FLOW PASSED: Ethereum redemption transaction
+0x315f0ab6a244f67efdec49dd1ccb8add73df9b2f255b7d4e0973aad05b2453e0
+returned 998532 micro-USDC. Final author token balance1998532, exact invoice debit
+1468, wrong-recipient/replay rejection passed. Redemption36979ms,peak3492784KiB,
+owned tree absent. CI-only remaining defect: pinned SDK witness helper starts
+a nullifier query then throws for missing message without awaiting it, allowing
+TXE session disposal to close world state mid-read. Independent reviewer traced
+the exact path. Narrow TXE import-hook repair joins both reads using the SDK's
+allToCompletion before unchanged validation. Exact source hash guards patch drift;
+no installed dependency or application bundle edits. Five focused tests pass,
+including reproduction against original source. Bounded real TXE regression running.
+
+Final local CI repair qualification: compiler-discovered c01 batches ran all 38
+tests in 85721 ms, peak 1895104 KiB, owned tree absent. Seven lifecycle/batch unit checks
+passed; independent review approved. Public redemption is complete. Superseded
+monolithic CI runs were cancelled before the complete batched candidate was pushed.

@@ -1,0 +1,98 @@
+[
+  {
+    "path": "acvm_js_bg.wasm",
+    "sha256": "bcd66e862a95a57f7f2ae3cb97e24d007d2ad710ac7490262c3c92a5b823775d"
+  },
+  {
+    "path": "aztec_bundle.js",
+    "sha256": "15d8807ff78a1fbc2db0d9e46196715101f62f681844fa4b7daa9526d4540dbb"
+  },
+  {
+    "path": "bb-main.worker.js",
+    "sha256": "568e68dd87fc2bd1cb945422f7a52aa442c661f2c9bb7156307f01d25edce564"
+  },
+  {
+    "path": "bb-thread.worker.js",
+    "sha256": "f06a7e630a5d1e3d13353c2c89d3646c19b5a731f0055e49af17c499deae0086"
+  },
+  {
+    "path": "boards.html",
+    "sha256": "e6938bdd5255faf8662345537a649fb1bf942a3a4212123883f0cdc3540efc42"
+  },
+  {
+    "path": "censor.html",
+    "sha256": "f15b956c4e6704b96abfd729630ba62fd00bbbda67fb5eea0194bcb953ff3f34"
+  },
+  {
+    "path": "crs/crs-manifest.json",
+    "sha256": "4927de3e03d69f4e640a841f9421dd0b93819b5e3d42c142d12ee079d5a402be"
+  },
+  {
+    "path": "crs/g1.dat",
+    "sha256": "8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416"
+  },
+  {
+    "path": "crs/g1_uncompressed.dat",
+    "sha256": "2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac"
+  },
+  {
+    "path": "crs/g2.dat",
+    "sha256": "01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f"
+  },
+  {
+    "path": "crs/grumpkin_g1.dat",
+    "sha256": "b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9"
+  },
+  {
+    "path": "deploy.html",
+    "sha256": "02d4e42915768dd24d3535c2ef5514db1a5f0b78aa909ed8f11ac1372df41094"
+  },
+  {
+    "path": "fee-juice.html",
+    "sha256": "cdfe405dc4713dcfd807e2cc4d1695c706d07e8dbcc0f5a6c77b9ad00a8ee4bb"
+  },
+  {
+    "path": "feed.html",
+    "sha256": "978eff2577ac144fcf04013fff00d7178ca6fcf23448bed3e16b2a0f82778a26"
+  },
+  {
+    "path": "noirc_abi_wasm_bg.wasm",
+    "sha256": "2cbd4bb57d2cd47e8e14fb78ddf597b6b6d5f0cf7717c54692242967786bf334"
+  },
+  {
+    "path": "plugins.js",
+    "sha256": "c405dacac5d5e26375106b79b2453ba156ec67bbc941f3f893782e71c854e289"
+  },
+  {
+    "path": "public-feed-metadata.json",
+    "sha256": "978cd5470312ad6698a24de68f526e0670f713be880fb0330c1e840029e61ff5"
+  },
+  {
+    "path": "public-feed.js",
+    "sha256": "4e4c39f10ecc0d1bec9211ce71397d86d39d716cb0417e04a9b2d2fae851f9f6"
+  },
+  {
+    "path": "sdk-manifest.json",
+    "sha256": "59f18a54bfe7d530cb869465eb141ff9739471de018506e779ecd916afbd5b89"
+  },
+  {
+    "path": "sqlite.worker.js",
+    "sha256": "e7e1a1a13817cabdcfbb6b190ff6541dc20e0227e2e0f95238fa52af6e10d95c"
+  },
+  {
+    "path": "sqlite3-opfs-async-proxy.js",
+    "sha256": "4ea2bcbd715b0d56089fc871ea241f8c5985d8669d1ddecaab4d56a8da806ce9"
+  },
+  {
+    "path": "sqlite3.wasm",
+    "sha256": "e7600bc6d59b1459362c8c2d4686f733e26d58041b3cdc599929661ecfeb21ae"
+  },
+  {
+    "path": "user.html",
+    "sha256": "e96f6d7300a2007da9971aacfcb49c4f8f144c99f44c9bb321d212de7b6133f7"
+  },
+  {
+    "path": "board-reader-config.json",
+    "sha256": "5d9492eb962d7659d3ab35e5c27ce5f6dc4669bf228eabf2458f3a54743a224b"
+  }
+]

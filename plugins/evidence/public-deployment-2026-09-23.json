@@ -1,5 +1,5 @@
 {
-  "complete": false,
+  "complete": true,
   "network": {
     "chainId": "11155111",
     "rollupVersion": "1821665230",
@@ -17,7 +17,10 @@
     "escrow": "0x268b076e85d9f80a647f0b5de6e8ca18cf62e57f8ea7245a7d2e9e06e8421371",
     "portal": "0xac6a96b63cd1299d2a167aaf565a6cef7b370790",
     "bindingTransaction": "0x24eeda8eb0f6249a98a1eb7efdc5b50aa1e9dba218214b338aab3e109c269556",
-    "observedBindingStatus": "proven"
+    "observedBindingStatus": "finalized",
+    "active": true,
+    "activationTransaction": "0x297d1093fe16f2c05b985ced37c7f6a81b01a8edaf25f20bdbd489f4f7636e26",
+    "registrationTransaction": "0x1b872c5b2a66068c67e9926074293cef3d59c2f3c93cd2fd995685bc29bc363d"
   },
   "freshAuthor": {
     "collateralDeposit": "0xd009e6b890a5bd25ef77267772f25116fda56dfbc32fccf0f02cab8b827f57ed",
@@ -33,7 +36,7 @@
       "stateCounts": {
         "queued": 0,
         "leased": 0,
-        "evaluated-ok": 1,
+        "evaluated-ok": 3,
         "submit-intent": 0,
         "submitted": 0,
         "reconciling": 0,
@@ -43,8 +46,8 @@
         "manual-review": 0
       },
       "severity": "ok",
-      "checkpointHeight": 92417,
-      "lastSuccessfulIngestAgeMs": 2,
+      "checkpointHeight": 92536,
+      "lastSuccessfulIngestAgeMs": 3,
       "counts": {
         "retryableErrors": 0,
         "unresolvedSigning": 0,
@@ -58,16 +61,19 @@
     },
     "verdict": "evaluated-ok"
   },
-  "pending": [
-    "Plugin portal finality and activation",
-    "Full four-phase public MetaMask qualification",
-    "Release merge after public qualification"
-  ],
+  "pending": [],
   "sourceSha256": {
     "censor-daemon/daemon.mjs": "847a0bbca2fe14822892b16b9d43fb17ecf6cde7e0cd7a4d096bcf450a2388e5",
     "plugins/main.mjs": "a35e27a1ef974d46b5f2ddfe5ddf049a248fbd9181ad983caf28fa2f8c467db5",
-    "plugins/public/browser.mjs": "a2a373d5b24c389f4e15903cee5977be1988317b4e0578f1c084816ab490b159",
-    "plugins/public/fees.mjs": "8c1b352a916c47a5fa4e564f41603148ec7cfbdba664f2faab079a84b8faadc2"
+    "plugins/public/browser.mjs": "c6fb43e55f596ffab087aa91d324f3113856154d107c8984cac6ef345cebc8a0",
+    "plugins/public/fees.mjs": "8c1b352a916c47a5fa4e564f41603148ec7cfbdba664f2faab079a84b8faadc2",
+    "plugins/public/inspect.mjs": "6e876824ebc51a7c9646ebea5ed064025de31a74d2b54eedd68ec07ef9d700d7",
+    "plugins/devnet/web.mjs": "1d6ce02552dcb33c0a3a53bfc62a6edf2be2215760a035b3825fdec7cbfbfad4",
+    "plugins/account-client.mjs": "ae7fc0d1b73f3f24090248f8def9b7ef3eb79efbe56b587fddee6e22b9475bde",
+    "apps/dist/plugins.js": "c405dacac5d5e26375106b79b2453ba156ec67bbc941f3f893782e71c854e289",
+    "apps/dist/aztec_bundle.js": "15d8807ff78a1fbc2db0d9e46196715101f62f681844fa4b7daa9526d4540dbb",
+    "apps/dist/sdk-manifest.json": "59f18a54bfe7d530cb869465eb141ff9739471de018506e779ecd916afbd5b89",
+    "plugins/escrow-service.mjs": "9dfc6c5c393a1e121a0eecbd5ad9f8c5520a7abb99aa700be5c76e146235c50b"
   },
   "publication": {
     "url": "https://d30njln0kead8n.cloudfront.net/plugins-preview/feed.html",
@@ -76,6 +82,109 @@
     "artifactBytesMatched": true,
     "securityHeadersPresent": true,
     "profile": "message-board-deploy",
-    "browserQualificationComplete": false
-  }
+    "browserQualificationComplete": true,
+    "verifiedFileCount": 24,
+    "inventorySha256": "ac8b8fc770de668c0c1628fdc33a5e499d34904a56940b000fdbea1cb92be769",
+    "verification": "All 24 HTTPS asset responses streamed and SHA-256 matched to current local output, including deployed site configuration."
+  },
+  "website": {
+    "url": "https://d30njln0kead8n.cloudfront.net/plugins-preview/feed.html",
+    "descriptor": "https://d30njln0kead8n.cloudfront.net/plugins/bok.json",
+    "descriptorCORS": "*",
+    "rootSitePreserved": true
+  },
+  "funding": {
+    "deposit": {
+      "amount": "1000000",
+      "key": "0x00dc3a923e63b16198ae34196ff62fbe699cd5ca6ab847f8f9c87c02db7d831f",
+      "transaction": "0x6e9e270fb8ad09672a8ab7fc86db97bee0753d0017e493ecd25ab67944f44a65",
+      "reconciledAfterWalletClosure": true
+    },
+    "unfundedPost": {
+      "rejected": true,
+      "noPublication": true,
+      "noProviderCharge": true
+    },
+    "phasePassed": true,
+    "requestedPhase": "recover-fund",
+    "ownedTreeAbsent": true,
+    "elapsedMs": 30104,
+    "peakTreeRSSKiB": 2888048,
+    "interruptedRunPreserved": true
+  },
+  "posting": {
+    "postId": "273476940254576213121028294780793700062442551488298649640042820471434581105",
+    "assertions": {
+      "authorizedInAztec": true,
+      "noEthereumPayment": true
+    },
+    "phasePassed": true,
+    "elapsedMs": 310128,
+    "peakTreeRSSKiB": 3914896,
+    "ownedTreeAbsent": true
+  },
+  "reply": {
+    "reply": {
+      "postId": "0x17143e9c0a4d3b3653f50fdbe58325b9d2f24a536e359c4cb6f31400e4fea28c",
+      "text": "**File created:** `plugins/smoke/public-escrow-author.mjs`\n\n**Pull Request:** https://github.com/zac-williamson/aztec_experiments/pull/7",
+      "flagged": false,
+      "visible": true
+    },
+    "github": {
+      "url": "https://github.com/zac-williamson/aztec_experiments/pull/7",
+      "head": "60aa617f12b08296acace5db52a84c57314bdf0f",
+      "exactContent": true
+    },
+    "settlement": {
+      "chargedMicroUSDC": "1468",
+      "remainingMicroUSDC": "998532"
+    },
+    "qualification": {
+      "phasePassed": true,
+      "elapsedMs": 109062,
+      "peakTreeRSSKiB": 4182544,
+      "ownedTreeAbsent": true
+    },
+    "providerCharges": [
+      {
+        "id": "2bbc695c-39f0-4e27-93df-ad22e7534bb3",
+        "amount": -0.0005194,
+        "type": "CHARGE",
+        "createdAt": "2026-09-23T02:16:17.068Z",
+        "requestId": "79659e76d7de4f82a6e08ef056950e05",
+        "modelId": "kimi-k2-5"
+      },
+      {
+        "id": "6bf30493-ac56-4cbd-8a41-4807144aec6f",
+        "amount": -0.00094794,
+        "type": "CHARGE",
+        "createdAt": "2026-09-23T02:16:08.914Z",
+        "requestId": "c2fbd105362340f1b327f3a2340aed64",
+        "modelId": "kimi-k2-5"
+      }
+    ]
+  },
+  "withdrawal": {
+    "txHash": "0x29815eaa8b6a07bb6160351d6f46fe76d9ec9f3b8b9f6030ff455aef46e3c226",
+    "amount": "998532",
+    "redeemed": true,
+    "wrongRecipientRejected": true,
+    "replayRejected": true,
+    "finalTokenBalanceMicroUSDC": "1998532",
+    "qualification": {
+      "phasePassed": true,
+      "flowPassed": true,
+      "elapsedMs": 36979,
+      "peakTreeRSSKiB": 3492784,
+      "ownedTreeAbsent": true
+    },
+    "ethereumTransaction": "0x315f0ab6a244f67efdec49dd1ccb8add73df9b2f255b7d4e0973aad05b2453e0",
+    "ethereumBlock": 11762105
+  },
+  "interruptionEvidence": "native-interruption-2026-09-23.json",
+  "releaseInventory": "release-inventory-2026-09-23.json",
+  "publishedInventory": "published-preview-2026-09-23.json",
+  "publicFlowPassed": true,
+  "scope": "Public V5/Sepolia deployment and full fresh-user financial flow. Repository-wide CI is reported separately on PR #6.",
+  "releaseChecksUrl": "https://github.com/zac-williamson/aztec_experiments/pull/6/checks"
 }
