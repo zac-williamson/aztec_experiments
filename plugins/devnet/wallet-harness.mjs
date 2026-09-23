@@ -1,3 +1,4 @@
+import {observeUnfundedRejection} from './wallet-observation.mjs';
 // Real MetaMask + unchanged built author application. No injected wallet or engine.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -15,7 +16,7 @@ import {settleC01ApplicationMessage} from '../../scripts/c01-settle-application-
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 
-export async function runWalletHarness({fixture,author,directory,origin,onProgress=console.log,signal,scenario='read'}){
+export async function runWalletHarness({fixture,author,directory,origin,onProgress=console.log,signal,scenario='read',onInterruption}){
  const report={passed:false,realMetaMask:true,applicationProofs:process.env.PLUGIN_PROOFS==='true',stage:'launch'};
  const mark=stage=>{report.stage=stage;onProgress(stage);};
  let context,page;
@@ -28,18 +29,19 @@ export async function runWalletHarness({fixture,author,directory,origin,onProgre
  const ledger=async()=>(await ledgerClient.json('/api/v1/x402/transactions/'+ledgerClient.address+'?limit=100&offset=0')).data.transactions;
  const read=async(method,...args)=>(await fixture.board.methods[method](...args).simulate({from:NO_FROM})).result;
  const escrowRead=async(method,...args)=>(await fixture.adapter.methods[method](...args).simulate({from:NO_FROM})).result;
- if(!['read','write'].includes(scenario))throw Error('Unknown plugin scenario');
+ if(!['read','write','interruption'].includes(scenario))throw Error('Unknown plugin scenario');
  const codePath='plugins/smoke/escrow-'+path.basename(directory)+'.mjs';
  const code='export const escrowBillingSmoke = true;\n';
  const text=scenario==='write'?`@bok Use write_file to create ${codePath} with content obtained by decoding this JSON string exactly (including its final newline): ${JSON.stringify(code)}. Then create_pr titled Escrow billing integration smoke. Body: Automated funded Bok integration test; do not merge. Reply with the PR URL and file path.`:'@bok Read PR 1 using read_pr. Reply with its URL, exact changed file path and a short summary. Do not create or change anything.';
  try{
   signal?.throwIfAborted();
   const extension=unpackMetaMask(directory);
-  context=await chromium.launchPersistentContext(path.join(directory,'wallet-browser-profile'),{channel:'chromium',headless:true,args:['--disable-extensions-except='+extension,'--load-extension='+extension,'--js-flags=--max-old-space-size=1024']});
+  const launch=()=>chromium.launchPersistentContext(path.join(directory,'wallet-browser-profile'),{channel:'chromium',headless:true,args:['--disable-extensions-except='+extension,'--load-extension='+extension,'--js-flags=--max-old-space-size=1024']});
+  context=await launch();
   signal?.throwIfAborted();
   const worker=context.serviceWorkers()[0]??await context.waitForEvent('serviceworker',{timeout:20000});
   const extensionId=new URL(worker.url()).host;
-  const walletPage=await onboardMetaMask(context,fixture.signer.mnemonic.phrase,author.password,extensionId,mark,async onboarding=>{
+  let walletPage=await onboardMetaMask(context,fixture.signer.mnemonic.phrase,author.password,extensionId,mark,async onboarding=>{
    const gate=path.join(directory,'accept-wallet-terms');
    // The user explicitly accepted these wallet terms in this task.
    await fs.writeFile(gate,'approved\n');
@@ -49,19 +51,34 @@ export async function runWalletHarness({fixture,author,directory,origin,onProgre
    while(Date.now()<deadline){signal?.throwIfAborted();try{if((await fs.readFile(gate,'utf8')).trim()==='approved')return;}catch(error){if(error.code!=='ENOENT')throw error;}await pause(500);}
    throw Error('Wallet terms confirmation not received');
   });
+  // Onboarding has confirmed persisted account readiness. Start a fresh session
+  // with that same profile so its large setup renderer does not overlap proving.
+  mark('reopen-configured-wallet');await context.close();context=await launch();
+  for(const restored of context.pages())await restored.close();
+  walletPage=await context.newPage();await walletPage.goto('chrome-extension://'+extensionId+'/home.html');
+  await walletPage.getByTestId('unlock-password').fill(author.password);
+  await walletPage.getByTestId('unlock-submit').click();await walletPage.getByTestId('account-menu-icon').waitFor();
   page=await context.newPage();page.setDefaultTimeout(30000);
+  // Configure the test chain before loading the application: a chain change and
+  // page reload otherwise overlap two copies of the browser prover at startup.
+  mark('configure-wallet-network');await page.goto(origin+'/wallet-setup.html');
+  await page.waitForFunction(()=>window.ethereum);
+  await addMetaMaskNetwork({page,walletPage,extensionId,rpcUrl:fixture.net.rpcUrl,mark});
+  mark('authorize-test-origin');
+  const accounts=page.evaluate(()=>window.ethereum.request({method:'eth_requestAccounts'}));
+  await walletPage.getByTestId('confirm-btn').waitFor();
+  assert.equal((await walletPage.getByTestId('confirm-btn').innerText()).trim(),'Connect');
+  await walletPage.getByTestId('confirm-btn').click();
+  assert.deepEqual((await accounts).map(value=>value.toLowerCase()),[fixture.signer.address.toLowerCase()]);
+  await walletPage.close();
   mark('open-author-page');await page.goto(origin+'/user.html');
   await page.waitForFunction(()=>window.__aztec&&window.ethereum&&document.getElementById('wbAztecFile'));
   await page.getByText('Board ready. Connect your wallet to continue.',{exact:true}).waitFor();
-  await addMetaMaskNetwork({page,walletPage,extensionId,rpcUrl:fixture.net.rpcUrl,mark});
-  // Adding a network changes wallet identity; reload before importing application keys.
-  await page.reload();await page.getByText('Board ready. Connect your wallet to continue.',{exact:true}).waitFor();
   mark('restore-funded-author');await page.locator('#wbAccountMenu > summary').click();
   await page.locator('#wbPassword').fill(author.password);await page.locator('#wbAztecFile').setInputFiles(author.backupPath);
   await page.waitForFunction(()=>!!window.walletState?.aztec?.address);
   await page.locator('#wbAccountMenu > summary').click();
   mark('connect-metamask');await page.locator('#wbEthBrowserBtn').click();
-  await walletPage.getByTestId('confirm-btn').waitFor();assert.equal((await walletPage.getByTestId('confirm-btn').innerText()).trim(),'Connect');await walletPage.getByTestId('confirm-btn').click();
   await page.waitForFunction(()=>document.getElementById('postBtn')?.getClientRects().length||document.querySelector('#setupStatus .error'),{},{timeout:120000});
   assert(await page.locator('#postBtn').isVisible(),'Author setup failed: '+await page.locator('#setupStatus').innerText());
   await observeMetaMaskTransactions(page);
@@ -72,13 +89,15 @@ export async function runWalletHarness({fixture,author,directory,origin,onProgre
   await page.locator('#pluginAccountPanel summary').click();
   await action('#pluginBalance');await success();
   assert.match(await page.locator('#pluginStatus').innerText(),/Available: 0(?:\.0)? USDC/);
+  await observeUnfundedRejection(page);
   mark('reject-unfunded-plugin-post-through-ui');
   await page.locator('#msgText').fill(text);await page.locator('#postBtn').click();
   await page.waitForFunction(()=>document.querySelector('#postStatus .error'),{},{timeout:120000});
+  assert.equal(await page.evaluate(()=>window.__pluginInsufficientBalance),true,'Expected escrow insufficient-balance rejection');
   assert.equal(BigInt(await read('get_post_count')),initialCount,'Failed escrow hook must roll back publication');
   assert.equal(Number(await escrowRead('request_count')),0);
-  assert.equal((await ledger()).filter(x=>!priorIds.has(x.id)&&x.type==='CHARGE').length,0,'Unfunded post must not spend provider credits');
-  report.unfundedPost={rejectedThroughBrowser:true,noPublication:true,noProviderCharge:true};
+  if(scenario!=='interruption')assert.equal((await ledger()).filter(x=>!priorIds.has(x.id)&&x.type==='CHARGE').length,0,'Unfunded post must not spend provider credits');
+  report.unfundedPost={rejectedThroughBrowser:true,noPublication:true,...(scenario==='interruption'?{provider:'simulated interruption runner'}:{noProviderCharge:true})};
   async function action(button){await page.locator('#pluginStatus').evaluate(e=>e.removeAttribute('data-outcome'));await page.locator(button).click();}
   async function success(){await page.waitForFunction(()=>document.querySelector('#pluginStatus')?.dataset.outcome,{},{timeout:120000});assert.equal(await page.locator('#pluginStatus').getAttribute('data-outcome'),'success',await page.locator('#pluginStatus').innerText());}
   async function approve(method,to){
@@ -89,8 +108,10 @@ export async function runWalletHarness({fixture,author,directory,origin,onProgre
    const parsed=abi.parseTransaction(tx);assert.equal(parsed.name,method);
    if(method==='approve'){assert.equal(parsed.args[0].toLowerCase(),fixture.descriptor.funding.portalAddress);assert.equal(parsed.args[1],1000000n);}
    if(method==='deposit'){assert.equal(parsed.args[0],fixture.author.address.toString());assert.equal(parsed.args[1],1000000n);}
+   if(walletPage.isClosed())walletPage=await context.newPage();
+   await walletPage.goto('chrome-extension://'+extensionId+'/sidepanel.html');
    await walletPage.getByTestId('confirm-footer-button').click();
-   await page.waitForFunction(()=>!window.__walletTestPending);
+   await page.waitForFunction(()=>!window.__walletTestPending);await walletPage.close();
   }
   mark('deposit-plugin-usdc-through-wallet');await action('#pluginDeposit');
   await approve('approve',await fixture.token.getAddress());await approve('deposit',await fixture.escrowPortal.getAddress());await success();
@@ -116,6 +137,16 @@ export async function runWalletHarness({fixture,author,directory,origin,onProgre
   assert.equal(await page.evaluate(()=>window.__walletTestPending),null);
   assert.equal(await fixture.provider.getBalance(fixture.signer.address),initialEth);
   report.post={noEthereumPayment:true,authorizedInAztec:true};
+  if(scenario==='interruption'){
+   mark('restart-interrupted-service-and-expire');report.interruption=await onInterruption(postId);
+   await action('#pluginRequests');await success();
+   const release=page.locator('#pluginRequestsList').getByRole('button',{name:'Release funds',exact:true});await release.waitFor();
+   mark('release-expired-funds-through-ui');await page.locator('#pluginStatus').evaluate(e=>e.removeAttribute('data-outcome'));await release.click();await success();
+   const released=await escrowRead('invocation',id);assert.equal(Number(released[1]),5);assert.equal(BigInt(released[3]),0n);assert.equal(BigInt(released[4]),0n);
+   assert.equal(BigInt(await escrowRead('balance',fixture.author.address)),1000000n);assert.equal(await fixture.token.balanceOf(await fixture.escrowPortal.getAddress()),1000000n);
+   await assert.rejects(fixture.adapter.methods.release_expired(id).simulate({from:fixture.author.address}));
+   report.interruption={...report.interruption,releasedThroughBrowser:true,restoredMicroUSDC:'1000000',replayRejected:true};report.passed=true;mark('passed');return report;
+  }
   mark('wait-for-live-bok-reply');
   await page.locator('#billboardFeed').getByText(/Bot reply/).waitFor({timeout:240000});
   const replyId=(await read('get_plugin_request',id))[2];assert.notEqual(BigInt(replyId),0n);

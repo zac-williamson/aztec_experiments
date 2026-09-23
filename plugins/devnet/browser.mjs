@@ -19,6 +19,7 @@ const port=automated?8791:8789,servicePort=automated?8792:8786;
 const origin='http://localhost:'+port,token=randomBytes(32).toString('hex');
 console.log('BROWSER_DIRECTORY',directory);
 let fixture,service,web,rpc,stop,runError;
+const rpcFailures=[];
 const abort=new AbortController();
 const stopped=new Promise(resolve=>{stop=()=>{abort.abort();resolve();};});
 process.once('SIGINT',stop);process.once('SIGTERM',stop);
@@ -29,15 +30,16 @@ try{
  await githubApi({token:process.env.GITHUB_TOKEN})('GET','/repos/'+(process.env.PLUGIN_REPOSITORY||'zac-williamson/aztec_experiments'));
  fixture=await bootstrapPluginDevnet({directory,port:servicePort,browserAuthor:true,proofs:process.env.PLUGIN_PROOFS==='true',onProgress:mark});
  const author=await prepareBrowserAuthor({fixture,directory,onProgress:mark});
- rpc=await startU01BrowserRpc({node:fixture.net.node,anvilUrl:fixture.net.rpcUrl,ethereumAccount:fixture.signer.address,origin,token});
+ rpc=await startU01BrowserRpc({node:fixture.net.node,anvilUrl:fixture.net.rpcUrl,ethereumAccount:fixture.signer.address,origin,token,observer:{begin(channel,method){return success=>{if(!success&&rpcFailures.length<16)rpcFailures.push({channel,method});};}}});
  web=await startBoardWeb({fixture,port,privateFee:author.privateFee,browserRpc:{...rpc,token},connectOrigins:['http://127.0.0.1:'+servicePort]});
- service=await runHostedService({config:fixture.serviceConfig,env:{...process.env,PLUGIN_GITHUB_WRITES:process.argv.includes('--github-writes')?'true':'false',PLUGIN_GITHUB_DRAFT:'true'},onError:error=>console.error('BOT_ERROR',error.message)});
+ service=process.argv.includes('--interruption')?await (await import('./interruption.mjs')).startInterruptionService({fixture}):await runHostedService({config:fixture.serviceConfig,env:{...process.env,PLUGIN_GITHUB_WRITES:process.argv.includes('--github-writes')?'true':'false',PLUGIN_GITHUB_DRAFT:'true'},onError:error=>console.error('BOT_ERROR',error.message)});
  await retainPreviewCheckpoint(fixture.serviceConfig);
  await fs.writeFile(path.join(directory,'browser-control.json'),JSON.stringify({origin,backupPath:author.backupPath,backupPassword:author.password,ethereumAccount:fixture.signer.address,ethereumMnemonic:fixture.signer.mnemonic.phrase,ethereumUrl:fixture.net.rpcUrl,publicConfig:fixture.descriptor}),{mode:0o600});
+ mark('fixture-memory '+JSON.stringify(process.memoryUsage()));
  console.log('BROWSER_READY',origin+'/user.html',directory);
  if(automated){
   const {runWalletHarness}=await import('./wallet-harness.mjs');
-  await runWalletHarness({fixture,author,directory,origin,onProgress:mark,signal:abort.signal,scenario:process.argv.includes('--github-writes')?'write':'read'});
+  await runWalletHarness({fixture,author,directory,origin,onProgress:mark,signal:abort.signal,scenario:process.argv.includes('--interruption')?'interruption':process.argv.includes('--github-writes')?'write':'read',onInterruption:post=>service.restartAndExpire(post)});
   await retainPreviewCheckpoint(fixture.serviceConfig);
  }else await stopped;
 }catch(error){runError=error;}finally{
@@ -47,6 +49,7 @@ try{
   const resultPath=path.join(directory,'browser-result.json');
   let result;try{result=JSON.parse(await fs.readFile(resultPath,'utf8'));}catch(error){if(error.code!=='ENOENT')failures.push(error);}
   result??={passed:false,stage:'preparation'};
+  result.rpcFailures=rpcFailures;
   result.cleanupSucceeded=failures.length===0;
   if(runError||failures.length)result.passed=false;
   await fs.writeFile(resultPath,JSON.stringify(result,null,2));

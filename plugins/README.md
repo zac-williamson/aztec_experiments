@@ -59,6 +59,10 @@ fresh operator fee-credit onboarding, and earnings redemption. These commands ru
 under the maintained test supervisor and require successful cleanup. Set
 `PLUGIN_PROOFS=false` explicitly for faster local iteration; public networks keep
 proving enabled. Run expensive qualification scenarios one at a time.
+`PLUGIN_PROOFS=true node --env-file=plugins/.env plugins/devnet/qualify.mjs interruption`
+exercises a real funded request with an explicitly interrupted runner, service restart,
+no replay, expiry and release through the normal UI. It makes no paid inference;
+the separate read/write scenarios qualify actual Venice billing.
 
 See [deployment and operator commands](DEPLOYMENT.md) for independent plugin setup.
 
