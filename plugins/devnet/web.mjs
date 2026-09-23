@@ -1,5 +1,7 @@
 import http from 'node:http';
 import fs from 'node:fs/promises';
+import {createReadStream} from 'node:fs';
+import {pipeline} from 'node:stream/promises';
 import path from 'node:path';
 import {EthCheatCodes,RollupCheatCodes} from '@aztec/ethereum/test';
 import {EthAddress} from '@aztec/foundation/eth-address';
@@ -36,14 +38,27 @@ export async function startBoardWeb({fixture,port=8788,privateFee=null,browserRp
     res.writeHead(upstream.status,{'Content-Type':'application/json'});res.end(await upstream.text());return;
    }
    if(req.method!=='GET'){res.writeHead(405);res.end();return;}
+   if(pathname==='/wallet-setup.html'){res.setHeader('Content-Type','text/html');res.end('<!doctype html><title>Test wallet network setup</title>');return;}
    if(pathname==='/board-reader-config.json'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify(config));return;}
    const file=path.resolve(root,'.'+(pathname==='/'?'/feed.html':decodeURIComponent(pathname)));
    if(!file.startsWith(root+path.sep))throw Error('Invalid path');
-   const body=await fs.readFile(file);
-   if(file.endsWith('.html'))res.setHeader('Content-Security-Policy',contentSecurityPolicy(body.toString(),connectOrigins));
+   const stat=await fs.stat(file);if(!stat.isFile())throw Object.assign(Error('Not a file'),{code:'ENOENT'});
+   if(file.endsWith('.html'))res.setHeader('Content-Security-Policy',contentSecurityPolicy(await fs.readFile(file,'utf8'),connectOrigins));
    res.setHeader('Content-Type',file.endsWith('.html')?'text/html':file.endsWith('.js')?'text/javascript':file.endsWith('.json')?'application/json':file.endsWith('.wasm')?'application/wasm':file.endsWith('.css')?'text/css':'application/octet-stream');
-   res.setHeader('Cache-Control','no-store');res.end(body);
-  }catch(error){res.writeHead(error.code==='ENOENT'?404:502);res.end('Local board request failed');}
+   res.setHeader('Cache-Control','no-store');res.setHeader('Accept-Ranges','bytes');
+   let start=0,end=stat.size-1;
+   if(req.headers.range){
+    const range=/^bytes=(\d+)-(\d*)$/.exec(req.headers.range);
+    if(!range){res.writeHead(416,{'Content-Range':'bytes */'+stat.size});res.end();return;}
+    start=Number(range[1]);end=range[2]?Math.min(Number(range[2]),end):end;
+    if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start>end){res.writeHead(416,{'Content-Range':'bytes */'+stat.size});res.end();return;}
+    res.statusCode=206;res.setHeader('Content-Range',`bytes ${start}-${end}/${stat.size}`);
+   }
+   res.setHeader('Content-Length',end-start+1);
+   // CRS files are large; honor the browser's byte ranges without whole-file buffers.
+   if(stat.size===0){res.end();return;}
+   await pipeline(createReadStream(file,{start,end}),res);
+  }catch(error){if(res.destroyed)return;if(res.headersSent){res.destroy();return;}res.writeHead(error.code==='ENOENT'?404:502);res.end('Local board request failed');}
  });
  await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,'127.0.0.1',resolve);});
  return {url:origin+'/feed.html',close:()=>new Promise(resolve=>{server.close(resolve);server.closeAllConnections();})};

@@ -55,3 +55,15 @@ The flow file records assertions; `qualification-PHASE.json` additionally requir
 successful process exit and cleanup. A flow is qualified only with all four clean
 phase reports. Private wallet, profile, journals and funding receipts stay in the
 ignored author directory. Export only reviewed public transaction evidence.
+
+`recover-fund` is an explicit read-only reconciliation of an interrupted `fund`
+phase; it never approves or deposits again. It requires the original browser
+funding intent and verifies the successful Ethereum event against its sender,
+nonce, recipient and amount, then checks the independent chain baselines. The
+fund report records `reconciled: true`; preserve its original failed report too.
+This is distinct from rerunning `fund` and does not silently retry a payment.
+
+Native verification runs in short-lived read-only processes before and after the
+browser. This releases native runtime memory instead of retaining a second PXE
+alongside the actual browser prover. All descendants remain under the same
+supervisor; the nine-minute and 4 GiB limits apply to the complete phase.
