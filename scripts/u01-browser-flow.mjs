@@ -1,3 +1,4 @@
+import {RollupAbi} from '@aztec/l1-artifacts/RollupAbi';
 import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 import {startRemoteProverFixture,assertRemoteJobs} from './testing/remote-prover-fixture.mjs';
 // TEST ONLY: native disposable funding hands off to an actual isolated browser.
@@ -26,6 +27,26 @@ export function createT04CheckpointScope(sequencer){
   enable(){if(active)return;active=true;sequencer.updateConfig({minTxsPerBlock:0,buildCheckpointIfEmpty:true});},
   restore(){if(!active)return;sequencer.updateConfig(previous);active=false;},
  };
+}
+
+// Drain fixture-created empty checkpoints before allowing ordinary simulation.
+// Actual publication and archiver state are checked; no RPC result is substituted.
+export async function drainT04Checkpoints({node,l1Client,rollupAddress,checkpoints,deadline}) {
+ checkpoints.restore();
+ try {
+  await node.getSequencer().pause();
+  while(Date.now()<deadline) {
+   const tips=await node.getChainTips();
+   if(tips.proposed.number===tips.checkpointed.block.number) {
+    const pending=await l1Client.readContract({address:rollupAddress,abi:RollupAbi,functionName:'getPendingCheckpointNumber'});
+    if(Number(pending)===Number(tips.checkpointed.checkpoint.number))return {
+     proposedBlock:Number(tips.proposed.number),checkpointedBlock:Number(tips.checkpointed.block.number),l1PendingCheckpoint:Number(pending)
+    };
+   }
+   await pause(200);
+  }
+  throw Error('T04_CHECKPOINT_PUBLICATION_DEADLINE');
+ } finally {await node.getSequencer().start();}
 }
 
 export async function runT04Cleanup(steps){
@@ -164,7 +185,7 @@ export async function prepareT04BrowserJourney({node,preparation,instance,l1Clie
  const {validateJourneySignal,validateVerifiedBrowserStages}=await import('./t04-browser-journey.mjs');
  const {verifyJourneyIncludedTransaction,journeyExitLeaf,verifyJourneyRefund,verifyJourneyPrivateChain}=await import('./t04-browser-journey-verify.mjs');
  const fixture=privateFee.browserFixture,account=privateFee.authorAccount,scopeInfo=await node.getNodeInfo();
- assert(privateFee.standalone?.passed&&fixture&&account);assert.equal((await node.getConfig()).realProofs,true);assert(!node.getProverNode());
+ assert(privateFee.standalone?.passed&&fixture&&account);assert.equal((await node.getConfig()).realProofs,applicationProofsEnabled());assert(!node.getProverNode());
  const scope={l1ChainId:String(scopeInfo.l1ChainId),rollupVersion:String(scopeInfo.rollupVersion),rollupAddress:scopeInfo.l1ContractAddresses.rollupAddress.toString().toLowerCase(),portalAddress:ready.portalAddress.toLowerCase(),boardAddress:instance.address.toString()};
  const portal=JSON.parse(await fs.readFile(path.join(ROOT,'billboard/portal/out/BillboardPortal.sol/BillboardPortal.json'),'utf8'));
  const read=(name,args=[])=>l1Client.readContract({address:scope.portalAddress,abi:portal.abi,functionName:name,args});
@@ -182,7 +203,7 @@ export async function prepareT04BrowserJourney({node,preparation,instance,l1Clie
  const deadline=Date.now()+480000;
  const waitFile=async name=>{while(Date.now()<deadline){try{const text=await fs.readFile(path.join(directory,name),'utf8');assert(Buffer.byteLength(text)<=65536);return JSON.parse(text);}catch(error){if(error.code!=='ENOENT')throw error;}try{const failed=JSON.parse(await fs.readFile(path.join(directory,'browser-result.json'),'utf8'));assert(failed.passed,'Browser stopped before lifecycle completed');}catch(error){if(error.code!=='ENOENT')throw error;}await pause(100);}throw Error('T04_STAGE_DEADLINE');};
  const release=async stage=>{const target=path.join(directory,'browser-journey-'+stage+'-verified.json'),tmp=target+'.tmp';await fs.writeFile(tmp,JSON.stringify({stage,verified:true}),{mode:0o600,flag:'wx'});await fs.rename(tmp,target);};
- const stageTx=async stage=>{observation.stage=stage;const signal=validateJourneySignal(await waitFile('browser-journey-'+stage+'.json'));assert.equal(signal.stage,stage);const used=new Set(Object.values(transactions).map(t=>t.tx.getTxHash().toString()));const fresh=signal.transactionHashes.filter(hash=>captures.has(hash)&&!used.has(hash));assert.equal(fresh.length,1,'Exactly one new actual Aztec submission for '+stage);const result=await verifyJourneyIncludedTransaction({node,captures,txHash:fresh[0],expectedPayer:privateFee.payer});assert(!result.tx.chonkProof.isEmpty());transactions[stage]=result;(observation.verifiedStages??=[]).push({stage,txHash:fresh[0],blockNumber:String(result.receipt.blockNumber),blockHash:result.receipt.blockHash.toString(),normalNodeVerification:true,canonicalReceipt:true});const progress=validateVerifiedBrowserStages({schemaVersion:1,stages:observation.verifiedStages}),target=path.join(directory,'browser-verified-stages.json'),temporary=target+'.tmp';await fs.writeFile(temporary,JSON.stringify(progress),{mode:0o600,flag:'wx'});await fs.rename(temporary,target);mark('browser-'+stage+'-verified');return result;};
+ const stageTx=async stage=>{observation.stage=stage;const signal=validateJourneySignal(await waitFile('browser-journey-'+stage+'.json'));assert.equal(signal.stage,stage);const used=new Set(Object.values(transactions).map(t=>t.tx.getTxHash().toString()));const fresh=signal.transactionHashes.filter(hash=>captures.has(hash)&&!used.has(hash));assert.equal(fresh.length,1,'Exactly one new actual Aztec submission for '+stage);const result=await verifyJourneyIncludedTransaction({node,captures,txHash:fresh[0],expectedPayer:privateFee.payer});assert(!result.tx.chonkProof.isEmpty());transactions[stage]=result;(observation.verifiedStages??=[]).push({stage,txHash:fresh[0],blockNumber:String(result.receipt.blockNumber),blockHash:result.receipt.blockHash.toString(),normalNodeVerification:applicationProofsEnabled(),canonicalReceipt:true});const progress=validateVerifiedBrowserStages({schemaVersion:1,stages:observation.verifiedStages}),target=path.join(directory,'browser-verified-stages.json'),temporary=target+'.tmp';await fs.writeFile(temporary,JSON.stringify(progress),{mode:0o600,flag:'wx'});await fs.rename(temporary,target);mark('browser-'+stage+'-verified');return result;};
  const eligible=async timestamp=>{const seq=node.getSequencer(),current=seq.getSequencer().getConfig(),previous={minTxsPerBlock:current.minTxsPerBlock,buildCheckpointIfEmpty:current.buildCheckpointIfEmpty};seq.updateConfig({minTxsPerBlock:0,buildCheckpointIfEmpty:true});try{while(Date.now()<deadline){const b=await node.getBlock('checkpointed');if(b&&BigInt(b.header.globalVariables.timestamp.toString())>=timestamp)return;await pause(500);}throw Error('T04_ELIGIBILITY_DEADLINE');}finally{seq.updateConfig(previous);}};
  const cleanup=()=>runT04Cleanup([()=>remoteFixture?.close(),()=>claimCheckpoints.restore(),()=>preserveBrowserRpcFootprint(directory,observer,observation).catch(()=>{observation.rpcFootprintPreservationFailed=true;}),()=>capture?.close(),()=>rpc?.close(),()=>wallet?.stop(),()=>fs.rm(backupPath,{force:true})]);
  try{
@@ -193,7 +214,12 @@ export async function prepareT04BrowserJourney({node,preparation,instance,l1Clie
     if(process.env.BOARD_TEST_REMOTE==='1'){remoteFixture=await startRemoteProverFixture({directory,board:instance.address.toString(),info:await node.getNodeInfo(),bbPath:path.join(directory,'bb-one-thread'),privateFeeAddress:publicConfig.privateFee.contractAddress,origins:[browserControl.origin]});publicConfig.remoteProver={url:remoteFixture.config.url};}
   await privateFee.close();await Barretenberg.destroySingleton();
   capture=captureU01BrowserSubmissions(node,{captures});observer=createT03RpcObserver({roles:{author:account.address.toString(),payer:privateFee.payer,board:scope.boardAddress,funder:depositor}});
-  rpc=await startU01BrowserRpc({node,anvilUrl:rpcUrl,ethereumAccount:depositor,origin:browserControl.origin,token:browserControl.rpcToken,observer});
+  let claimPublication;
+  rpc=await startU01BrowserRpc({node,anvilUrl:rpcUrl,ethereumAccount:depositor,origin:browserControl.origin,token:browserControl.rpcToken,observer,beforeNodeCall:async method=>{
+   if(method!=='simulatePublicCalls')return;
+   claimPublication??=drainT04Checkpoints({node,l1Client,rollupAddress:scope.rollupAddress,checkpoints:claimCheckpoints,deadline}).then(result=>{observation.claimPublicationBarrier=result;});
+   await claimPublication;
+  }});
   claimCheckpoints.enable();
   await fs.writeFile(path.join(directory,'browser-ready.json'),JSON.stringify(createBrowserHandoff({nodeUrl:rpc.nodeUrl,ethereumUrl:rpc.ethereumUrl,publicConfig,backupPath,ethereumAccount:depositor,message},{directory,browserMode:'lifecycle',depositAmount:formatEther(amount)})),{mode:0o600});mark('browser-ready');
   let receipt,refundBefore;

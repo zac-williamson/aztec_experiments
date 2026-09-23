@@ -6,8 +6,9 @@ import vm from 'node:vm';
 const source=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 function context() {
  const portal={value:'portal'},state={aztec:{address:{toString:()=> 'public-account'},secretKey:'private-key-marker',salt:'0'},ethType:'browser',ethAccount:'0xabc',ethChainId:'1',ethSigner:{sendTransaction:async()=> 'sent'}};
+ state.ethTransport={request:async({method})=>method==='eth_accounts'?['0xabc']:'0x1'};
  const requests=[],scope={window:{walletState:state,billboardPrivateFee:{contractAddress:'payer'},ethereum:{request:async({method})=>method==='eth_accounts'?['0xabc']:'0x1'}},
- document:{getElementById:()=>portal},navigator:{locks:{request:async(name,opts,fn)=>{requests.push(name);assert.equal(opts.ifAvailable,true);return fn({name});}}},
+ document:{getElementById:id=>id==='remoteProving'?null:portal},navigator:{locks:{request:async(name,opts,fn)=>{requests.push(name);assert.equal(opts.ifAvailable,true);return fn({name});}}},
  _walletGeneration:0,_assertWalletLive(){if(state.invalidated)throw new Error('Context invalid');},_invalidateWalletContext(){state.invalidated=true;},
  _getConfigRevision:()=>0,_connectionConfig:()=>({portal:portal.value}),publicOperationFailure:()=>new Error('Operation failed'),
  _getNodeUrl:()=> 'http://node',ETH_RPC_URL:'http://eth',buildEnv:()=>({}),buildConfig:(action,extra)=>({action,...extra}),JSON,BigInt};
@@ -23,7 +24,7 @@ test('same-page overlapping calls and another-tab unavailable lock reject withou
 });
 test('provider account and chain switches prevent engine execution',async()=>{
  for(const method of ['eth_accounts','eth_chainId']){
-  const f=context();let called=false;f.c.window.ethereum.request=async arg=>arg.method===method?(method==='eth_accounts'?['0xdef']:'0x2'):(arg.method==='eth_accounts'?['0xabc']:'0x1');
+  const f=context();let called=false;f.state.ethTransport.request=async arg=>arg.method===method?(method==='eth_accounts'?['0xdef']:'0x2'):(arg.method==='eth_accounts'?['0xabc']:'0x1');
   await assert.rejects(f.c.makeCallEngine(async()=>{called=true;})('post','status'));assert.equal(called,false);assert.equal(f.state.invalidated,true);
  }
 });
@@ -34,7 +35,7 @@ test('portal mutation blocks signing and proof hooks during an operation',async(
 });
 test('engine witness errors and initial provider errors are both redacted',async()=>{
  for(const stage of ['engine','provider']){
-  const f=context();if(stage==='provider')f.c.window.ethereum.request=async()=>{throw new Error('private-witness-marker');};
+  const f=context();if(stage==='provider')f.state.ethTransport.request=async()=>{throw new Error('private-witness-marker');};
   await assert.rejects(f.c.makeCallEngine(async()=>{throw new Error('private-witness-marker');})('post','status'),e=>!e.message.includes('private-witness-marker'));
  }
 });
@@ -58,4 +59,9 @@ test('RPC aliases for the same account acquire the same cross-tab lock',async()=
  await first.c.makeCallEngine(async()=>1)('status','status');
  await second.c.makeCallEngine(async()=>1)('status','status');
  assert.equal(first.requests[0],second.requests[0]);
+});
+
+test('transaction guards use the selected provider even when the global belongs to a different wallet',async()=>{
+ const f=context();Object.defineProperty(f.c.window,'ethereum',{get(){throw Error('Wrong global provider');}});
+ assert.equal(await f.c.makeCallEngine(async()=> 'selected')('post','status'),'selected');
 });

@@ -1,6 +1,6 @@
 // Browser custody: passkey or explicitly imported Aztec account, recovery files, and
 // an external Ethereum signer. A page has one immutable wallet context.
-window.walletState = { aztec:null, ethSigner:null, ethProvider:null, ethAccount:null, ethType:null, invalidated:false };
+window.walletState = { aztec:null, ethSigner:null, ethProvider:null, ethTransport:null, ethAccount:null, ethType:null, invalidated:false };
 let _onReady=null, _onAztecLoad=null, _requireEth=true, _readyFired=false;
 let _autoPasskey=false;
 let _walletBusy=false, _walletGeneration=0, _connectingEth=null;
@@ -115,17 +115,28 @@ async function exportAccountRecovery(password) {
 function _firstEthereumAccount(accounts) {
   return Array.isArray(accounts) && accounts.length>0 && accounts.every(account=>typeof account==='string' && /^0x[0-9a-fA-F]{40}$/.test(account)) ? accounts[0].toLowerCase() : null;
 }
-async function connectEthereumAccount() {
+async function connectEthereumAccount(transport) {
   return _walletOperation(async()=>{
     if(window.walletState.ethSigner) {
       if(_autoPasskey && !window.walletState.aztec) {await _openPasskeyAccount();return;}
       throw new Error('An Ethereum wallet is already connected.');
     }
-    if(!window.ethereum)throw Object.assign(new Error('An Ethereum browser wallet is required.'),{code:'BB_BROWSER_WALLET_MISSING'});
+    if(typeof transport?.request!=='function')throw Object.assign(new Error('Choose an Ethereum wallet.'),{code:'BB_BROWSER_WALLET_MISSING'});
+    _bindEthereumProvider(transport);
     const generation=_walletGeneration;
-    const connection={account:null};_connectingEth=connection;
+    const connection={account:null,switchingTo:null};_connectingEth=connection;
     try {
-    const provider=new ethers.BrowserProvider(window.ethereum);
+    const expected=typeof _getPublicConfig==='function'?_getPublicConfig()?.network?.chainId:null;
+    if(expected!==null&&expected!==undefined){
+      const chainId='0x'+BigInt(expected).toString(16);
+      if(BigInt(await transport.request({method:'eth_chainId'}))!==BigInt(expected)){
+        connection.switchingTo=chainId;
+        try{await transport.request({method:'wallet_switchEthereumChain',params:[{chainId}]});}
+        catch(error){throw Object.assign(new Error('Switch your wallet to the board network.'),{code:error?.code===4001?'BB_WALLET_REJECTED':'BB_WALLET_NETWORK'});}
+        if(BigInt(await transport.request({method:'eth_chainId'}))!==BigInt(expected))throw Object.assign(new Error('Wallet network mismatch.'),{code:'BB_WALLET_NETWORK'});
+      }
+    }
+    const provider=new ethers.BrowserProvider(transport);
     const requested=await provider.send('eth_requestAccounts',[]);
     const signer=await provider.getSigner(), account=await signer.getAddress();
     const network=await provider.getNetwork(),current=await provider.send('eth_accounts',[]);
@@ -134,9 +145,9 @@ async function connectEthereumAccount() {
     if(_firstEthereumAccount(requested)!==selected || _firstEthereumAccount(current)!==selected || (connection.account!==null && connection.account!==selected)) {
       _invalidateWalletContext();throw new Error('Wallet context changed.');
     }
-    window.walletState.ethSigner=signer;window.walletState.ethProvider=provider;window.walletState.ethAccount=account;
+    window.walletState.ethTransport=transport;window.walletState.ethSigner=signer;window.walletState.ethProvider=provider;window.walletState.ethAccount=account;
     window.walletState.ethType='browser';window.walletState.ethChainId=String(network.chainId);_walletGeneration++;
-    // Do not force mainnet: engine verifies signer, node and portal chain agreement.
+    // The engine independently verifies signer, node and portal chain agreement.
     _wlog('Ethereum wallet connected.','success');
     if(_autoPasskey && !window.walletState.aztec)await _openPasskeyAccount();
     _checkReady();
@@ -174,9 +185,15 @@ function configureAccount(options={}) {
   _autoPasskey=options.autoPasskey===true;_requireEth=options.requireEth!==false;
   _onReady=options.onReady||null;_onAztecLoad=options.onAztecLoad||null;
   _accountNotify=options.onChange||(()=>{});_accountLog=options.onMessage||(()=>{});
-  if(_accountProvider===window.ethereum)return;
-  _accountProvider=window.ethereum;
-  if(window.ethereum?.on) for(const name of ['accountsChanged','chainChanged','disconnect'])window.ethereum.on(name,accounts=>{
+}
+function _bindEthereumProvider(transport) {
+  if(_accountProvider===transport)return;
+  for(const [name,handler] of _accountListeners)_accountProvider?.removeListener?.(name,handler);
+  _accountListeners=[];_accountProvider=transport;
+  if(transport.on) for(const name of ['accountsChanged','chainChanged','disconnect']) {
+    const handler=accounts=>{
+    if(_accountProvider!==transport)return;
+    if(name==='chainChanged' && _connectingEth?.switchingTo && accounts===_connectingEth.switchingTo)return;
     if(name==='accountsChanged') {
       const selected=_firstEthereumAccount(accounts);
       if(window.walletState.ethType==='browser' && selected===window.walletState.ethAccount?.toLowerCase()) return;
@@ -185,9 +202,11 @@ function configureAccount(options={}) {
       if(_connectingEth && window.walletState.ethType!=='browser' && selected!==null && (_connectingEth.account===null || _connectingEth.account===selected)) {_connectingEth.account=selected;return;}
     }
     if(window.walletState.ethType==='browser' || _connectingEth) {_invalidateWalletContext();_updateAccountState();}
-  });
- }
-let _accountProvider;
+    };
+    _accountListeners.push([name,handler]);transport.on(name,handler);
+  }
+}
+let _accountProvider, _accountListeners=[];
 /** Account operations return data; rendering, downloads and reloads belong to the caller. */
 window.BillboardAccount=Object.freeze({configure:configureAccount,snapshot:accountSnapshot,
   connect:connectEthereumAccount,importPasskey:importPasskeyAccount,importRecovery:importAccountRecovery,

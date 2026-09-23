@@ -1,3 +1,4 @@
+import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 import {startRemoteProverFixture,assertRemoteJobs} from './testing/remote-prover-fixture.mjs';
 // TEST ONLY. Native setup stops before approval/bridge; the browser funds itself.
 import assert from 'node:assert/strict';
@@ -13,14 +14,13 @@ import {GasFees} from '@aztec/stdlib/gas';
 import {Fr} from '@aztec/foundation/curves/bn254';
 import {NoteStatus} from '@aztec/stdlib/note';
 import {IERC20Abi} from '@aztec/l1-artifacts/IERC20Abi';
-import {RollupAbi} from '@aztec/l1-artifacts/RollupAbi';
 import {FeeJuicePortalAbi} from '@aztec/l1-artifacts/FeeJuicePortalAbi';
 import {formatEther,parseEventLogs} from 'viem';
 import {JsonRpcProvider} from 'ethers';
 import {recoverPrivateFeeClaim} from '../shared/private-fee-funding.mjs';
 import {prepareW01UnfundedWallet} from './w01-unfunded-wallet.mjs';
 import {createBrowserHandoff,validateJourneySignal} from './t04-browser-journey.mjs';
-import {createT04CheckpointScope,runT04Cleanup} from './u01-browser-flow.mjs';
+import {createT04CheckpointScope,drainT04Checkpoints,runT04Cleanup} from './u01-browser-flow.mjs';
 import {startU01BrowserRpc} from './u01-browser-rpc.mjs';
 import {captureU01BrowserSubmissions,verifyU01BrowserPost} from './u01-browser-post-verify.mjs';
 import {verifyJourneyIncludedTransaction} from './t04-browser-journey-verify.mjs';
@@ -29,8 +29,8 @@ const n=value=>BigInt(value.toString()),pause=ms=>new Promise(resolve=>setTimeou
 const silent=Object.fromEntries(['trace','debug','verbose','info','warn','error','fatal'].map(key=>[key,()=>{}]));silent.getBindings=()=>({});
 
 export async function observeColdBrowserFees({node,preparation,instance,l1Client,directory,rpcUrl,browserControl,ready,reportStage:mark}) {
- const observation={passed:false,nativeFunding:false,browserProofs:3};
- let remoteFixture,setup,rpc,capture,provider;
+ const observation={passed:false,nativeFunding:false,browserTransactions:3,applicationProofs:applicationProofsEnabled()};
+ let remoteFixture,setup,rpc,capture,provider,collateralPublication,collateralBarrierArmed=false;
  const checkpoints=createT04CheckpointScope(node.getSequencer()),captures=new Map(),transactions={};
  const backupPath=path.join(directory,'browser-wallet.encrypted.json'),deadline=Date.now()+480000;
  const waitFile=async filename=>{
@@ -52,22 +52,8 @@ export async function observeColdBrowserFees({node,preparation,instance,l1Client
  // End forced empty production and let its already-proposed blocks reach L1.
  // The browser then exercises the ordinary transaction-triggered sequencer.
  const drainEmptyCheckpoints=async stage=>{
-  checkpoints.restore();
-  await node.getSequencer().pause();
-  try{
-   while(Date.now()<deadline){
-    const tips=await node.getChainTips();
-    if(tips.proposed.number===tips.checkpointed.block.number){
-     const pending=await l1Client.readContract({address:setup.info.l1ContractAddresses.rollupAddress.toString(),abi:RollupAbi,functionName:'getPendingCheckpointNumber'});
-     if(Number(pending)===Number(tips.checkpointed.checkpoint.number)){
-      (observation.publicationBarriers??=[]).push({stage,proposedBlock:Number(tips.proposed.number),checkpointedBlock:Number(tips.checkpointed.block.number),l1PendingCheckpoint:Number(pending)});
-      return;
-     }
-    }
-    await pause(200);
-   }
-   throw Error('Cold fee checkpoint publication deadline');
-  }finally{await node.getSequencer().start();}
+  const result=await drainT04Checkpoints({node,l1Client,rollupAddress:setup.info.l1ContractAddresses.rollupAddress.toString(),checkpoints,deadline});
+  (observation.publicationBarriers??=[]).push({stage,...result});
  };
  const signalFor=async stage=>{const value=validateJourneySignal(await waitFile('browser-journey-'+stage+'.json'));assert.equal(value.stage,stage);return value;};
  const verifyStage=async stage=>{
@@ -111,7 +97,10 @@ export async function observeColdBrowserFees({node,preparation,instance,l1Client
   await fs.writeFile(backupPath,JSON.stringify(backup),{mode:0o600,flag:'wx'});
   await setup.close();await Barretenberg.destroySingleton();
   capture=captureU01BrowserSubmissions(node,{captures});
-  rpc=await startU01BrowserRpc({node,anvilUrl:rpcUrl,ethereumAccount:sender,origin:browserControl.origin,token:browserControl.rpcToken});
+  rpc=await startU01BrowserRpc({node,anvilUrl:rpcUrl,ethereumAccount:sender,origin:browserControl.origin,token:browserControl.rpcToken,beforeNodeCall:async method=>{
+   if(method!=='simulatePublicCalls'||!collateralBarrierArmed)return;
+   collateralPublication??=drainEmptyCheckpoints('collateral-claim');await collateralPublication;
+  }});
   checkpoints.enable();
   const message='Genuine browser cold private fee funding and paid post';
   await fs.writeFile(path.join(directory,'browser-ready.json'),JSON.stringify(createBrowserHandoff({nodeUrl:rpc.nodeUrl,ethereumUrl:rpc.ethereumUrl,publicConfig,backupPath,ethereumAccount:sender,message},{directory,browserMode:'funding',depositAmount:formatEther(depositAmount),fundingAmount:formatEther(fundingAmount)})),{mode:0o600,flag:'wx'});mark('browser-ready');
@@ -137,8 +126,8 @@ export async function observeColdBrowserFees({node,preparation,instance,l1Client
   assert(available);assert.equal(captures.size,0,'No private transaction before browser fee claim');
   await drainEmptyCheckpoints('fee-claim');
   observation.funding={externalWalletExtension:browserControl.ethereumWallet==='metamask',txHash:record.txHash,amount:String(fundingAmount),canonicalReceipt:true,authenticatedRecovery:true};await release('fee-deposit');
-  await verifyStage('fee-claim');checkpoints.enable();await release('fee-claim');
-  const collateral=await verifyStage('claim'),amount=await read('getDeposit',[sender]);assert.equal(amount,depositAmount);assert.equal(await read('totalDeposited'),liabilityBefore+amount);
+  await verifyStage('fee-claim');checkpoints.enable();collateralBarrierArmed=true;await release('fee-claim');
+  const collateral=await verifyStage('claim');checkpoints.enable();const amount=await read('getDeposit',[sender]);assert.equal(amount,depositAmount);assert.equal(await read('totalDeposited'),liabilityBefore+amount);
   const collateralEnd=await l1Client.getBlockNumber({cacheTime:0});
   const deposits=await l1Client.getLogs({address:ready.portalAddress,event:portal.abi.find(item=>item.type==='event'&&item.name==='Deposited'),fromBlock:startL1Block+1n,toBlock:collateralEnd});
   const ownDeposits=deposits.filter(event=>event.args.depositor.toLowerCase()===sender);assert.equal(ownDeposits.length,1);

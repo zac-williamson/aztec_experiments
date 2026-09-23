@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "verifiedAt": "2026-09-22T22:49:06.884763+00:00",
+  "verifiedAt": "2026-09-23T01:18:38.035129+00:00",
   "website": "https://d30njln0kead8n.cloudfront.net",
   "endpoint": "https://d30njln0kead8n.cloudfront.net/prover",
   "instance": "i-0abeb28cb8033a1ee",
@@ -97,8 +97,126 @@
           "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
         }
       }
-    ]
+    ],
+    "walletIntegration": {
+      "published": {
+        "objects": [
+          {
+            "path": "user.html",
+            "sha256": "da7df5b343e2daeeab12773276a05cd6e0653b588bf55d45a0779e5711e128ca",
+            "matchesBuiltArtifact": true
+          },
+          {
+            "path": "fee-juice.html",
+            "sha256": "da9a8fb10c1b6274dc8996952359e04c07f61c58362bc24c0f7a31f17fa5b097",
+            "matchesBuiltArtifact": true
+          },
+          {
+            "path": "censor.html",
+            "sha256": "6cadf6a313e3f532c98b502e8162992b79656ba7822af72a9b8afdd53e124898",
+            "matchesBuiltArtifact": true
+          },
+          {
+            "path": "deploy.html",
+            "sha256": "9842efa8e374f856d5f8c6183f32b033416acff2f82850a538494205ab8f898d",
+            "matchesBuiltArtifact": true
+          },
+          {
+            "path": "board-reader-config.json",
+            "sha256": "9a8f0d43439db0cf3598eb1071c3e3ee716f4195f6186713ff8421ce5c7e5ebd",
+            "matchesBuiltArtifact": true
+          }
+        ],
+        "health": {
+          "ready": true,
+          "proofs": "real",
+          "queue": {
+            "jobs": 0,
+            "bytes": 0,
+            "running": false,
+            "submitted": 0,
+            "completed": 0,
+            "failed": 0
+          }
+        }
+      },
+      "configuration": {
+        "passed": true,
+        "checkedAt": "2026-09-23T01:02:01.788Z",
+        "privateFeeAddress": "0x28c2a3107cb397750c63c542dd0be34716d8b0b1d3e76b3b7dff85241ad09720",
+        "classId": "0x0b2a7aeab37124435ea959d80c674a8571863177abc0e9de98969d05daed3865",
+        "publicationVerified": true,
+        "networkVerified": true,
+        "gasSettingsValid": true,
+        "feeCapSufficient": true,
+        "maximumReserve": "65715547156054800000"
+      },
+      "liveChrome": {
+        "walletChoices": [
+          "Rabby Wallet",
+          "MetaMask",
+          "Coinbase Wallet",
+          "Phantom"
+        ],
+        "cancelRetainsSetup": true,
+        "remoteDefaultOn": true,
+        "postingToggleRoundtrip": true,
+        "fundingToggleRoundtrip": true,
+        "fundingDisabledBeforeWalletSetup": true,
+        "userWalletConnected": false
+      },
+      "componentTestsPassed": 141,
+      "localApplicationProofs": false,
+      "integrationEvidence": [
+        "wallet-selection-extension-20260923k.json",
+        "wallet-passkey-chrome-20260923.json",
+        "wallet-recovery-chrome-20260923.json",
+        "application-34493c6f-e27d-43b7-9450-7b26406eb7c8.json",
+        "application-9606a15e-398d-4d87-9003-4a907d9e487a.json",
+        "application-8cd75142-18d9-4a4a-b283-987c1d4dd077.json"
+      ],
+      "maintenanceAccessRemoved": true,
+      "budgetShutdownStillActive": true
+    }
   },
   "publicTestnetTransactionSubmittedDuringDeployment": false,
-  "priorRealProofQualification": "prover/QUALIFICATION.md"
+  "priorRealProofQualification": "prover/QUALIFICATION.md",
+  "publicBoardConfig": {
+    "schemaVersion": 1,
+    "network": {
+      "nodeUrl": "https://v5.testnet.rpc.aztec-labs.com",
+      "ethRpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
+      "chainId": "11155111",
+      "rollupVersion": "1821665230",
+      "rollupAddress": "0xd73a91bdcf6891c7642f3e460036e1ef2cc23178"
+    },
+    "board": {
+      "portalAddress": "0x794df4e4af56748e9eb5cc3ea75a73961d9f9566",
+      "contractAddress": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
+    },
+    "privateFee": {
+      "contractAddress": "0x28c2a3107cb397750c63c542dd0be34716d8b0b1d3e76b3b7dff85241ad09720",
+      "gasSettings": {
+        "gasLimits": {
+          "daGas": "117668",
+          "l2Gas": "6540000"
+        },
+        "teardownGasLimits": {
+          "daGas": "58834",
+          "l2Gas": "817500"
+        },
+        "maxFeesPerGas": {
+          "feePerDaGas": "0",
+          "feePerL2Gas": "10048248800620"
+        },
+        "maxPriorityFeesPerGas": {
+          "feePerDaGas": "0",
+          "feePerL2Gas": "0"
+        }
+      }
+    },
+    "remoteProver": {
+      "url": "https://d30njln0kead8n.cloudfront.net/prover"
+    }
+  }
 }

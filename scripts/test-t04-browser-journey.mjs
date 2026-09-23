@@ -118,14 +118,14 @@ test('MetaMask is accepted only for explicit Chromium lifecycle and funding',asy
 
 test('MetaMask request observation preserves provider result and refuses overlapping transactions',async()=>{
  const {observeMetaMaskTransactions}=await import('./t04-metamask.mjs');
- const prior=globalThis.window;let release,calls=0;
+ const prior=globalThis.__testMetaMask;let release,calls=0;
  const tx={method:'eth_sendTransaction',params:[{to:'fixture'}]},provider={request:async request=>{calls++;assert.equal(request,tx);return new Promise(resolve=>{release=resolve;});}};
  try{
-  globalThis.window={ethereum:provider};await observeMetaMaskTransactions({evaluate:fn=>fn()});
+  globalThis.__testMetaMask=provider;await observeMetaMaskTransactions({evaluate:fn=>fn()});
   const sending=provider.request(tx);assert.deepEqual(globalThis.__walletTestPending,tx.params);
   await assert.rejects(provider.request(tx),/Overlapping/);assert.equal(calls,1);
   release('canonical-hash');assert.equal(await sending,'canonical-hash');assert.equal(globalThis.__walletTestPending,null);
- }finally{globalThis.window=prior;delete globalThis.__walletTestPending;}
+ }finally{globalThis.__testMetaMask=prior;delete globalThis.__walletTestPending;}
 });
 
 test('request guard attributes blank extension iframes without exempting application requests',async()=>{

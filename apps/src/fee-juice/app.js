@@ -1,5 +1,10 @@
 // Private fee funding: public recovery records only; wallet secrets never enter recovery records.
 let fundingRecord = null;
+let feeWalletReady = false;
+function setFeeWalletReady(ready) {
+  feeWalletReady=ready;
+  for(const id of ['depositBtn','claimBtn'])document.getElementById(id).disabled=!ready;
+}
 const application=createBillboardApplication({kind:'fees'});
 async function callEngine(action,statusDiv,extra={}) {
   return application.run(action,extra,(message,level)=>log(message,level||'info',statusDiv));
@@ -14,6 +19,7 @@ async function recoverSavedFeeEthereum(retry=false) {
 }
 setupRpcAuth();
 function safeFundingError(error) {
+  if(error?.code==='BB_WALLET_NOT_READY')return 'Connect your wallet and wait for account setup to finish before funding fees.';
   if(error?.code==='BB_REMOTE_PROVER_FAILED')return 'Remote proving failed. Retry or turn off Remote proving to prove on this device.';
   if(error?.code==='PRIVATE_FEE_CAP_TOO_LOW')return 'The configured transaction fee cap is below the network’s current minimum. The board operator needs to update its fee settings before you can continue.';
   if(error?.code==='BB_ETH_RECOVERY_REQUIRED')return 'Check the saved Ethereum fee request before starting another deposit.';
@@ -26,6 +32,7 @@ function safeFundingError(error) {
 }
 async function loadWalletAndCheck() {
   const result = await callEngine('status', 'setupStatus');
+  setFeeWalletReady(true);
   document.getElementById('azaddr').value = result.feePayer;
   log('Wallet ready. Deposits fund the shared private fee contract.', 'success', 'setupStatus');
 }
@@ -44,6 +51,7 @@ async function importRecovery(event) {
   } catch (_) {log('Could not load the recovery record.', 'error', 'claimStatus');}
 }
 async function doDepositPage() {
+  if(!feeWalletReady){log(safeFundingError({code:'BB_WALLET_NOT_READY'}),'error','depositStatus');return;}
   return withBtn('depositBtn','Depositing...','depositStatus',async()=>{
     try {
       const result=await callEngine('deposit','depositStatus',{depositAmount:document.getElementById('amount').value.trim()});
@@ -53,6 +61,7 @@ async function doDepositPage() {
   });
 }
 async function doClaimPage() {
+  if(!feeWalletReady){log(safeFundingError({code:'BB_WALLET_NOT_READY'}),'error','claimStatus');return;}
   return withBtn('claimBtn','Claiming...','claimStatus',async()=>{
     try {
       if(!fundingRecord)throw new Error();
@@ -66,13 +75,14 @@ async function doClaimPage() {
 }
 
 function initializePrivateFees() {
+  setFeeWalletReady(false);
   const publicConfig = _getPublicConfig();
   const fee = ethers.formatUnits(BigInt(BillboardConfig.maximumFee(publicConfig)), 18);
   document.getElementById('azaddr').value = publicConfig.privateFee.contractAddress;
-  document.getElementById('feeBudget').textContent = 'This site currently charges ' + fee + ' AZTEC per private transaction. Deposit more than this to pay for the claim and leave fee credit. Allow additional credit for posting and withdrawing.';
+  document.getElementById('feeBudget').textContent = 'Each private transaction requires up to ' + fee + ' AZTEC in available credit. You pay the actual fee; unused gas returns to your private balance. Deposit more than this amount to cover the claim and leave credit for posting and withdrawing.';
   if (!window.__aztec?.createPXE) {waitForBundle(initializePrivateFees);return;}
   fundingRecord=application.readFundingRecovery();
-  initWalletButtons('walletButtonsContainer',{autoPasskey:true,statusId:'setupStatus',onReady:async()=>{
+  initWalletButtons('walletButtonsContainer',{autoPasskey:true,statusId:'setupStatus',onChange:state=>{if(state.invalidated)setFeeWalletReady(false);},onReady:async()=>{
     try{await loadWalletAndCheck();}catch(error){log(safeFundingError(error),'error','setupStatus');}
   }});
 }

@@ -31,3 +31,20 @@ test('local fixture preserves node serialization and confines Ethereum authority
  await fixture.close();await fixture.close();await assert.rejects(fetch(fixture.nodeUrl));
  }finally{if(fixture)await fixture.close();await new Promise(resolve=>{upstream.close(resolve);upstream.closeAllConnections();});}
 });
+
+
+test('fixture scheduling hook gates real calls and propagates failure without retries',async()=>{
+ const upstream=http.createServer((req,res)=>{req.resume();res.end(JSON.stringify({jsonrpc:'2.0',id:1,result:'0x7a69'}));});
+ await new Promise(resolve=>upstream.listen(0,'127.0.0.1',resolve));
+ let fixture,release,calls=0,hooks=0,rejectHook=false;
+ const gate=new Promise(resolve=>{release=resolve;});
+ try {
+  fixture=await startU01BrowserRpc({node:{getBlockNumber:async()=>{calls++;return 7;}},anvilUrl:`http://127.0.0.1:${upstream.address().port}/`,ethereumAccount:account,origin,token,beforeNodeCall:async method=>{assert.equal(method,'getBlockNumber');hooks++;await gate;if(rejectHook)throw Error('barrier failed');}});
+  const call=async()=>{const response=await fetch(fixture.nodeUrl,{method:'POST',headers:{origin,'x-u01-test-token':token,'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'node_getBlockNumber',params:[]})});return response.json();};
+  const pending=[call(),call()];
+  const deadline=Date.now()+2000;while(hooks<2&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,10));
+  assert.equal(hooks,2);assert.equal(calls,0);release();
+  assert.deepEqual((await Promise.all(pending)).map(result=>result.result),[7,7]);assert.equal(calls,2);
+  rejectHook=true;assert((await call()).error);assert.equal(calls,2);
+ }finally{release();await fixture?.close();await new Promise(resolve=>{upstream.close(resolve);upstream.closeAllConnections();});}
+});

@@ -99,10 +99,7 @@ function makeCreateStore() {
 async function getBrowserSigner() {
   const ws = window.walletState;
   if (ws && ws.ethSigner) return ws.ethSigner;
-  if (!window.ethereum) throw new Error('No browser wallet found.');
-  const provider = new ethers.BrowserProvider(window.ethereum);
-  await provider.send('eth_requestAccounts', []);
-  return provider.getSigner();
+  throw Object.assign(new Error('Connect your wallet first.'),{code:'BB_WALLET_NOT_READY'});
 }
 
 // ============================================================
@@ -157,6 +154,8 @@ function publicOperationFailure(error) {
     BB_BROWSER_PROVER_CONFIGURATION:'Browser proving setup could not be verified. Reload this page and check the locally hosted setup files.',
     OPFS_UNAVAILABLE:'Private browser file storage is unavailable or blocked. Wallet storage cannot start.',
     STORAGE_UNAVAILABLE:'Browser storage is unavailable or blocked. Preserve your recovery file before changing browser settings.',
+    BB_WALLET_REJECTED:'Wallet request cancelled. Connect again when you are ready.',
+    BB_WALLET_NETWORK:'Switch your selected wallet to the network configured for this board, then connect again.',
     BB_BROWSER_WALLET_MISSING:'No Ethereum wallet was found in this browser. Open this board in a browser with MetaMask or another Ethereum wallet installed, then connect again.',
     BB_WALLET_NOT_READY:'Connect your Ethereum wallet and finish account setup before depositing.',
     READINESS_TIMEOUT:'Browser capability checks timed out. Retry before starting a wallet operation.',
@@ -198,7 +197,7 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
       _assertWalletLive();
       if(generation!==_walletGeneration || expected!==identity()) throw new Error('Wallet or deployment configuration changed. Reload before continuing.');
       if(ws.ethType==='browser') {
-        const [accounts,chain]=await Promise.all([window.ethereum.request({method:'eth_accounts'}),window.ethereum.request({method:'eth_chainId'})]);
+        const [accounts,chain]=await Promise.all([ws.ethTransport.request({method:'eth_accounts'}),ws.ethTransport.request({method:'eth_chainId'})]);
         if(!Array.isArray(accounts) || accounts[0]?.toLowerCase()!==ws.ethAccount.toLowerCase() || BigInt(chain)!==BigInt(ws.ethChainId)) {
           _invalidateWalletContext(); throw new Error('Wallet account or chain changed.');
         }

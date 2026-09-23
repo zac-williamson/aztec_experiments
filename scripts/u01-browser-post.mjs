@@ -1,7 +1,7 @@
 // TEST ONLY: a real GUI post using a disposable Anvil wallet adapter. No engine,
 // PXE, prover, receipt or Aztec node behavior is replaced by this driver.
 import fs from 'node:fs';
-import {onboardMetaMask,unpackMetaMask,addMetaMaskNetwork,observeMetaMaskTransactions,guardBrowserRequest,assertMetaMaskTransaction} from './t04-metamask.mjs';
+import {discoverTestMetaMask,onboardMetaMask,unpackMetaMask,addMetaMaskNetwork,observeMetaMaskTransactions,guardBrowserRequest,assertMetaMaskTransaction} from './t04-metamask.mjs';
 import {observeProofPhases} from './t04-browser-performance.mjs';
 import {Wallet} from 'ethers';
 import {installBrowserErrorObserver} from './browser-error-observer.mjs';
@@ -30,14 +30,14 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
  const confirmations=[],blockedExtensionRequests=[];let proofPhaseCount=0;
  const external=new Set(),csp=new Set(),paths=new Set(),failedHttp=new Map(),cspDetails=[];
  const publicPath=value=>/^\/(?:rpc\/(?:aztec|ethereum)|(?:user|feed|censor|deploy|fee-juice)\.html|(?:aztec_bundle|public-feed|bb-main.worker|bb-thread.worker|sqlite.worker|sqlite3-opfs-async-proxy)\.js|(?:sqlite3|acvm_js_bg|noirc_abi_wasm_bg)\.wasm|crs\/(?:crs-manifest\.json|g1\.dat|g1_uncompressed\.dat|g2\.dat|grumpkin_g1\.dat))$/.test(value)?value:'other-local-path';
- const observation={passed:false,browserEngine,browserMode,ethereumWallet,sourceStage:stage,elapsedMs:0,diagnosticInstrumentation:diagnostic,proofStageObservation:observeProofStages,performanceQualified:false,diagnosticScope:diagnostic&&journeyDriver?'Formatter-only observation with fixed driver/UI diagnostics; no breakpoint or engine/prover replacement.':diagnostic?'Error formatter and catch breakpoint observation; original application behavior preserved.':'Fixed error-category observer; no debugger. GUI wall time only, not isolated proof performance.'};
+ const observation={passed:false,browserEngine,browserMode,ethereumWallet,sourceStage:stage,elapsedMs:0,diagnosticInstrumentation:diagnostic,proofStageObservation:observeProofStages,performanceQualified:false,diagnosticScope:diagnostic?'Error formatter and catch breakpoint observation; original application behavior preserved.':'Fixed error-category observer; no debugger. GUI wall time only, not isolated proof performance.'};
  const requireValue=(condition)=>{if(!condition)throw Error('Invalid disposable browser test parameters');};
  requireValue(['disposable','metamask'].includes(ethereumWallet));
  requireValue(!extensionWallet||(browserEngine==='chromium'&&['lifecycle','funding'].includes(browserMode)));
  requireValue(['chromium','chrome','firefox','webkit'].includes(browserEngine));
  requireValue(browserEngine==='chromium'||(!browserRecovery&&!diagnostic));
  const selectedBrowser={chromium,chrome:chromium,firefox,webkit}[browserEngine];
- const launchOptions={headless:true,...(browserEngine==='chrome'?{executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{}),...(['chromium','chrome'].includes(browserEngine)?{args:['--js-flags=--max-old-space-size=768']}:{})};
+ const launchOptions={headless:true,...(browserEngine==='chrome'?{executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{}),...(['chromium','chrome'].includes(browserEngine)?{args:['--js-flags=--max-old-space-size=256']}:{})};
  const local=value=>{const u=new URL(value);requireValue(['http:','https:'].includes(u.protocol)&&u.hostname==='127.0.0.1'&&u.port&&!u.username&&!u.password&&!u.search&&!u.hash&&u.pathname==='/');return u;};
  const site=local(origin),node=local(nodeUrl),ethereum=local(ethereumUrl);
  requireValue(site.protocol==='https:'&&node.protocol==='http:'&&ethereum.protocol==='http:');
@@ -102,7 +102,14 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
      const integer=value=>Number.isSafeInteger(value)&&value>=0?value:null;
      void globalThis.recordU01Csp({directive:event.effectiveDirective,blocked,source,line:integer(event.lineNumber),column:integer(event.columnNumber)});
     });
-    if(extensionWallet)return;
+    if(extensionWallet){
+     // Reproduce competing extensions: an unusable, immutable global must never
+     // receive account requests or transactions from the selected MetaMask.
+     Object.defineProperty(globalThis,'ethereum',{configurable:false,get(){throw Error('Conflicting legacy provider');}});
+     const other={request(){throw Error('Unselected wallet was called');}};
+     addEventListener('eip6963:requestProvider',()=>dispatchEvent(new CustomEvent('eip6963:announceProvider',{detail:{info:{uuid:'89c0169a-ff00-4a00-8000-000000000001',name:'Conflicting test wallet'},provider:other}})));
+     return;
+    }
     let id=0;const listeners=new Map();
     const allowed=new Set(['eth_chainId','eth_blockNumber','eth_getBalance','eth_getCode','eth_call','eth_estimateGas','eth_gasPrice','eth_maxPriorityFeePerGas','eth_feeHistory','eth_getBlockByNumber','eth_getBlockByHash','eth_getTransactionCount','eth_getTransactionByHash','eth_getTransactionReceipt','eth_sendTransaction']);
     globalThis.ethereum={isU01DisposableTestAdapter:true,on(name,fn){if(!listeners.has(name))listeners.set(name,new Set());listeners.get(name).add(fn);return this;},removeListener(name,fn){listeners.get(name)?.delete(fn);return this;},async request({method,params=[]}){
@@ -132,14 +139,38 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
    mark('wallet-software');const navigationStarted=Date.now();await page.goto(site.origin+(browserMode==='funding'?'/fee-juice.html':'/user.html'));
    await page.waitForFunction(()=>globalThis.__aztec?.createPXE&&document.getElementById('wbAztecFile'),{},{timeout:remaining()});observation.sdkReadyMs=Date.now()-navigationStarted;
    await page.evaluate(installBrowserErrorObserver);
-   if(extensionWallet){await page.waitForFunction(()=>!!window.ethereum);await addMetaMaskNetwork({page,walletPage,extensionId,rpcUrl:credentials.rpcUrl,mark});credentials=null;await observeMetaMaskTransactions(page);}
+   if(extensionWallet){await discoverTestMetaMask(page);await addMetaMaskNetwork({page,walletPage,extensionId,rpcUrl:credentials.rpcUrl,mark});credentials=null;await observeMetaMaskTransactions(page);}
    mark('hosted-board-loaded');if(remoteTarget){requireValue(await page.getByRole('checkbox',{name:'Remote proving',exact:true}).isChecked());requireValue(await page.getByRole('checkbox',{name:'Remote proving',exact:true}).isEnabled());observation.remoteProver=true;}requireValue(await page.getByLabel('Public configuration JSON',{exact:true}).count()===0);requireValue(await page.evaluate(address=>billboardConfigStore.snapshot().config?.board.contractAddress===address,config.board.contractAddress));
    await page.waitForFunction(()=>globalThis.billboardConfigStore?.snapshot().config!==null);
    mark('encrypted-wallet-restore');await page.locator('#wbAccountMenu > summary').click();await page.locator('#wbPassword').fill(backupPassword);await page.locator('#wbAztecFile').setInputFiles(backupPath);
    await page.waitForFunction(()=>!!globalThis.walletState?.aztec?.address||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});requireValue(await page.evaluate(()=>!!globalThis.walletState?.aztec?.address));
    await page.locator('#wbAccountMenu > summary').click();
-   mark('wallet-connect-and-status');const setupStarted=Date.now();await page.locator('#wbEthBrowserBtn').click();
-   if(extensionWallet){await walletPage.getByTestId('confirm-btn').waitFor();requireValue((await walletPage.getByTestId('confirm-btn').innerText()).trim()==='Connect');await walletPage.getByTestId('confirm-btn').click();await page.waitForFunction(()=>!!window.walletState?.ethAccount);requireValue((await page.evaluate(()=>window.walletState.ethAccount)).toLowerCase()===ethereumAccount.toLowerCase());}
+   mark('wallet-connect-and-status');const setupStarted=Date.now();await page.locator('#wbEthBrowserBtn').click();if(extensionWallet){requireValue(await page.getByRole('dialog').getByRole('button',{name:'Conflicting test wallet',exact:true}).count()===1);}await page.getByRole('dialog').getByRole('button',{name:extensionWallet?'MetaMask':'Browser wallet (legacy)',exact:true}).click();
+   if(extensionWallet){await walletPage.getByTestId('confirm-btn').waitFor();requireValue((await walletPage.getByTestId('confirm-btn').innerText()).trim()==='Connect');await walletPage.getByTestId('confirm-btn').click();await page.waitForFunction(()=>!!window.walletState?.ethAccount);requireValue(await page.evaluate(()=>window.walletState.ethTransport===globalThis.__testMetaMask));requireValue((await page.evaluate(()=>window.walletState.ethAccount)).toLowerCase()===ethereumAccount.toLowerCase());}
+   if(diagnostic){
+   // Stop only at the existing catch-to-safe-error boundary, before its
+   // original error is discarded. Never fetch scope objects or raw error data.
+   const html=fs.readFileSync(path.join(ROOT,'apps/dist/user.html'),'utf8');
+   const statement="throw privateFeeFailure('BB_PRIVATE_FEE_ACTION_FAILED');";
+   requireValue(html.split(statement).length===2);
+   const offset=html.indexOf(statement),lineNumber=html.slice(0,offset).split('\n').length-1;
+   const columnNumber=offset-html.lastIndexOf('\n',offset)-1;
+   observation.catchBreakpoint={file:'/user.html',line:lineNumber+1,column:columnNumber+1};
+   observation.privateFeeCatchDiagnostics=[];
+   debuggerSession=await context.newCDPSession(page);await debuggerSession.send('Debugger.enable');
+   let catchBreakpointId;
+   debuggerSession.on('Debugger.paused',async event=>{
+    try{
+     if(catchBreakpointId&&event.hitBreakpoints?.includes(catchBreakpointId)&&event.callFrames?.[0]&&observation.privateFeeCatchDiagnostics.length<5){
+      const result=await debuggerSession.send('Debugger.evaluateOnCallFrame',{callFrameId:event.callFrames[0].callFrameId,expression:'globalThis.__u01CaptureError(error)',returnByValue:true,silent:true});
+      observation.privateFeeCatchDiagnostics.push(result.exceptionDetails?{evaluationFailed:true}:(result.result.value??{evaluationFailed:true}));
+     }
+    }catch{observation.catchDiagnosticFailed=true;}
+    finally{await debuggerSession.send('Debugger.resume').catch(()=>{});}
+   });
+   const breakpoint=await debuggerSession.send('Debugger.setBreakpointByUrl',{url:site.origin+'/user.html',lineNumber,columnNumber});
+   catchBreakpointId=breakpoint.breakpointId;requireValue(breakpoint.locations.length===1);
+   }
    if(journeyDriver){
     requireValue(typeof journeyDriver==='function'&&!observeProofStages);
     if(browserMode==='funding'){
@@ -156,13 +187,13 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
     const expectedConfirmations=browserMode==='funding'?['fee-approval','fee-deposit','deposit']:['deposit','refund'];
     const feeAddresses=extensionWallet&&browserMode==='funding'?await page.evaluate(async()=>{const info=await window.__aztec.createAztecNodeClient(billboardConfigStore.snapshot().config.network.nodeUrl).getNodeInfo();return {tokenAddress:info.l1ContractAddresses.feeJuiceAddress.toString(),feePortalAddress:info.l1ContractAddresses.feeJuicePortalAddress.toString()};}):{};
     observation.journey=await journeyDriver({page,directory,message,depositAmount,fundingAmount,backupPath,backupPassword,remaining:()=>timeoutMs-(Date.now()-started),signal:lifecycleAbort.signal,mark,
-     onBoardOpened:extensionWallet?async()=>{await page.waitForFunction(()=>!!window.ethereum);await observeMetaMaskTransactions(page);}:undefined,
+     onBoardOpened:extensionWallet?async()=>{await discoverTestMetaMask(page);await observeMetaMaskTransactions(page);}:undefined,
      confirmEthereum:extensionWallet?async stage=>{
       requireValue(stage===expectedConfirmations[confirmations.length]);
       await page.waitForFunction(()=>Array.isArray(globalThis.__walletTestPending),{},{timeout:remaining()});
       await walletPage.getByTestId('parent-selector-confirmation-page').waitFor();
       const pending=await page.evaluate(()=>globalThis.__walletTestPending);
-      assertMetaMaskTransaction({stage,request:pending,account:ethereumAccount,chainId:await page.evaluate(()=>window.ethereum.request({method:'eth_chainId'})),...feeAddresses,privateFeeAddress:config.privateFee.contractAddress,boardPortalAddress:config.board.portalAddress,fundingAmount,collateralAmount:depositAmount});
+      assertMetaMaskTransaction({stage,request:pending,account:ethereumAccount,chainId:await page.evaluate(()=>globalThis.__testMetaMask.request({method:'eth_chainId'})),...feeAddresses,privateFeeAddress:config.privateFee.contractAddress,boardPortalAddress:config.board.portalAddress,fundingAmount,collateralAmount:depositAmount});
       await walletPage.getByTestId('confirm-footer-button').click();confirmations.push(stage);
       await page.waitForFunction(data=>globalThis.__walletTestPending?.[0]?.data!==data,pending[0].data,{timeout:remaining()});
      }:undefined,onSubstage:value=>{observation.driverSubstage=value;}});
@@ -188,30 +219,6 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
     page=recovery.page;observation.recovery={...recovery};
     observation.publicTransactionHashes=[recovery.transactionHash];
     requireValue(recovery.passed===true&&external.size===0&&csp.size===0);observation.passed=true;return;
-   }
-   if(diagnostic){
-   // Stop only at the existing catch-to-safe-error boundary, before its
-   // original error is discarded. Never fetch scope objects or raw error data.
-   const html=fs.readFileSync(path.join(ROOT,'apps/dist/user.html'),'utf8');
-   const statement="throw privateFeeFailure('BB_PRIVATE_FEE_ACTION_FAILED');";
-   requireValue(html.split(statement).length===2);
-   const offset=html.indexOf(statement),lineNumber=html.slice(0,offset).split('\n').length-1;
-   const columnNumber=offset-html.lastIndexOf('\n',offset)-1;
-   observation.catchBreakpoint={file:'/user.html',line:lineNumber+1,column:columnNumber+1};
-   observation.privateFeeCatchDiagnostics=[];
-   debuggerSession=await context.newCDPSession(page);await debuggerSession.send('Debugger.enable');
-   let catchBreakpointId;
-   debuggerSession.on('Debugger.paused',async event=>{
-    try{
-     if(catchBreakpointId&&event.hitBreakpoints?.includes(catchBreakpointId)&&event.callFrames?.[0]&&observation.privateFeeCatchDiagnostics.length<5){
-      const result=await debuggerSession.send('Debugger.evaluateOnCallFrame',{callFrameId:event.callFrames[0].callFrameId,expression:'globalThis.__u01CaptureError(error)',returnByValue:true,silent:true});
-      observation.privateFeeCatchDiagnostics.push(result.exceptionDetails?{evaluationFailed:true}:(result.result.value??{evaluationFailed:true}));
-     }
-    }catch{observation.catchDiagnosticFailed=true;}
-    finally{await debuggerSession.send('Debugger.resume').catch(()=>{});}
-   });
-   const breakpoint=await debuggerSession.send('Debugger.setBreakpointByUrl',{url:site.origin+'/user.html',lineNumber,columnNumber});
-   catchBreakpointId=breakpoint.breakpointId;requireValue(breakpoint.locations.length===1);
    }
    if(observeProofStages){
     const phases=new Set(['start','load','accumulate','finalize','hiding-key','verify','compress']);let observed=0;

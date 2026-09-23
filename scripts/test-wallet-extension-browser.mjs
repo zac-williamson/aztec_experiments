@@ -20,9 +20,9 @@ import {Fr} from '@aztec/foundation/curves/bn254';
 import {AztecAddress} from '@aztec/stdlib/aztec-address';
 import {recoverPrivateFeeClaim} from '../shared/private-fee-funding.mjs';
 import {BarretenbergSync} from '@aztec/bb.js';
-import {derivePrivateFeeAddress} from '../shared/private-fee-client.mjs';
+import {derivePrivateFeeAddress,derivePrivateFeeInstance} from '../shared/private-fee-client.mjs';
 import {generateHosting} from '../deploy/hosting-config.mjs';
-import {onboardMetaMask,unpackMetaMask,addMetaMaskNetwork,guardBrowserRequest} from './t04-metamask.mjs';
+import {discoverTestMetaMask,onboardMetaMask,unpackMetaMask,addMetaMaskNetwork,guardBrowserRequest} from './t04-metamask.mjs';
 import {verifyExtensionCollateral} from './t04-extension-collateral.mjs';
 import {ROOT,assertNodeVersion,anvilBinary} from './toolchain.mjs';
 assertNodeVersion();
@@ -63,30 +63,32 @@ try{
  execFileSync('/usr/bin/openssl',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',key,'-out',cert,'-days','1','-subj','/CN=localhost','-addext','subjectAltName=DNS:localhost,IP:127.0.0.1'],{stdio:'ignore',timeout:10000});
  const caddy=path.join(ROOT,'.build/caddy-2.11.4/caddy'),hosting=path.join(directory,'Caddyfile');await fs.writeFile(hosting,generateHosting({dist:path.join(ROOT,'apps/dist'),site:origin,certificate:cert,key,local:true,origins:[rpcUrl]}).caddyfile);
  children.push(spawn(caddy,['run','--config',hosting,'--adapter','caddyfile'],{env:{PATH:'/usr/bin:/bin',HOME:directory,XDG_DATA_HOME:directory,XDG_CONFIG_HOME:directory},stdio:'ignore'}));await ready(()=>httpsReady(origin));
- stage='extension-launch';context=await chromium.launchPersistentContext(path.join(directory,'profile'),{channel:'chromium',headless:true,ignoreHTTPSErrors:true,acceptDownloads:false,args:['--disable-extensions-except='+extension,'--load-extension='+extension,'--js-flags=--max-old-space-size=768']});
+ stage='extension-launch';context=await chromium.launchPersistentContext(path.join(directory,'profile'),{channel:'chromium',headless:true,ignoreHTTPSErrors:true,acceptDownloads:false,args:['--disable-extensions-except='+extension,'--load-extension='+extension,'--js-flags=--max-old-space-size=256']});
  const blockedContextRequests=[];
  await context.route('**/*',route=>guardBrowserRequest(route,{origin,extensionWallet:true,onBlocked:record=>{if(blockedContextRequests.length<8)blockedContextRequests.push(record);}}));report.blockedContextRequests=blockedContextRequests;
  const worker=context.serviceWorkers()[0]??await context.waitForEvent('serviceworker',{timeout:15000}),extensionId=new URL(worker.url()).host;
  walletPage=await onboardMetaMask(context,user.mnemonic.phrase,randomBytes(24).toString('base64url'),extensionId,value=>{stage=value;});
- stage='application';page=await context.newPage();page.setDefaultTimeout(15000);let unexpectedRequests=0,provingAssetRequests=0;await page.route('**/*',route=>{const url=new URL(route.request().url());if(url.pathname.startsWith('/crs/'))provingAssetRequests++;if(['http:','https:'].includes(url.protocol)&&url.origin!==origin&&url.origin!==new URL(rpcUrl).origin){unexpectedRequests++;return route.abort();}return route.continue();});await page.goto(origin+'/fee-juice.html');await page.waitForFunction(()=>!!window.__aztec?.createAztecNodeClient&&!!window.ethereum);
- await page.evaluate(({addresses})=>{
-  const metadata={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5,l1ContractAddresses:addresses}),getL1ContractAddresses:async()=>addresses};
+ stage='application';page=await context.newPage();page.setDefaultTimeout(15000);let unexpectedRequests=0,provingAssetRequests=0;await page.route('**/*',route=>{const url=new URL(route.request().url());if(url.pathname.startsWith('/crs/'))provingAssetRequests++;if(['http:','https:'].includes(url.protocol)&&url.origin!==origin&&url.origin!==new URL(rpcUrl).origin){unexpectedRequests++;return route.abort();}return route.continue();});await page.goto(origin+'/fee-juice.html');await page.waitForFunction(()=>!!window.__aztec?.createAztecNodeClient);
+ await page.evaluate(async ({addresses})=>{
+  const a=globalThis.__aztec;
+  const canonical=await a.getContractInstanceFromInstantiationParams(a.loadContractArtifact(BILLBOARD_PRIVATE_FEE_ARTIFACT),{salt:a.Fr.ZERO,deployer:a.AztecAddress.ZERO,constructorArgs:[]});
+  const metadata={getContract:async address=>address.toString()===canonical.address.toString()?canonical:undefined,getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5,l1ContractAddresses:addresses}),getL1ContractAddresses:async()=>addresses};
   // Explicit test boundary: real Ethereum fixture identity, no Aztec node/proofs.
   globalThis.__aztec={...globalThis.__aztec,createAztecNodeClient:()=>metadata,createPXE:()=>{throw Error('Unexpected PXE in Ethereum-only test');}};
  },{addresses});
- const config={schemaVersion:1,network:{nodeUrl:origin+'/fixture-node',ethRpcUrl:rpcUrl,chainId:'31337',rollupVersion:'5',rollupAddress:addresses.rollupAddress},board:{portalAddress:addresses.feeJuicePortalAddress,contractAddress:Fr.random().toString()},privateFee:{contractAddress:payer.toString(),gasSettings:{gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'0',l2Gas:'0'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}}};
+ const config={schemaVersion:1,network:{nodeUrl:origin+'/fixture-node',ethRpcUrl:rpcUrl,chainId:'31337',rollupVersion:'5',rollupAddress:addresses.rollupAddress},board:{portalAddress:addresses.feeJuicePortalAddress,contractAddress:Fr.random().toString()},privateFee:{contractAddress:payer.toString(),gasSettings:{gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'0',l2Gas:'1'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}}};
  // Ethereum-only fixture supplies settings directly; the real Aztec browser journey qualifies hosted loading.
  await page.waitForFunction(()=>document.getElementById('setupStatus').textContent.includes('unavailable for posting'));
  await page.evaluate(config=>{billboardConfigStore.install(config);initializePrivateFees();},config);
  await page.waitForFunction(()=>!!globalThis.billboardConfigStore?.snapshot().config);
- report.chainBeforeAddition=await page.evaluate(()=>window.ethereum.request({method:'eth_chainId'}));report.addNetworkState='pending';
+ await discoverTestMetaMask(page);report.chainBeforeAddition=await page.evaluate(()=>globalThis.__testMetaMask.request({method:'eth_chainId'}));report.addNetworkState='pending';
  await addMetaMaskNetwork({page,walletPage,extensionId,rpcUrl,mark:value=>{stage=value;}});report.addNetworkState='resolved';
- stage='restore-application-wallet';await page.locator('#wbPassword').fill(backupPassword);await page.locator('#wbAztecFile').setInputFiles(backupPath);await page.waitForFunction(()=>!!window.walletState?.aztec?.address);
- report.accountsBeforeConnect=await page.evaluate(async expected=>{const accounts=await window.ethereum.request({method:'eth_accounts'});return {count:accounts.length,matchesExpected:accounts.length===1&&accounts[0].toLowerCase()===expected};},user.address.toLowerCase());
- stage='connect-wallet';await page.locator('#wbEthBrowserBtn').click();
+ stage='restore-application-wallet';await page.locator('#wbAccountMenu > summary').click();await page.locator('#wbPassword').fill(backupPassword);await page.locator('#wbAztecFile').setInputFiles(backupPath);await page.waitForFunction(()=>!!window.walletState?.aztec?.address);await page.locator('#wbAccountMenu > summary').click();
+ report.accountsBeforeConnect=await page.evaluate(async expected=>{const accounts=await globalThis.__testMetaMask.request({method:'eth_accounts'});return {count:accounts.length,matchesExpected:accounts.length===1&&accounts[0].toLowerCase()===expected};},user.address.toLowerCase());
+ stage='connect-wallet';await page.locator('#wbEthBrowserBtn').click();await page.getByRole('dialog').getByRole('button',{name:'MetaMask',exact:true}).click();
  await walletPage.getByTestId('confirm-btn').waitFor();assert.equal((await walletPage.getByTestId('confirm-btn').innerText()).trim(),'Connect');await walletPage.getByTestId('confirm-btn').click();
  await page.waitForFunction(()=>window.walletState?.ethAccount);assert.equal((await page.evaluate(()=>window.walletState.ethAccount)).toLowerCase(),user.address.toLowerCase());assert.equal(await page.evaluate(()=>window.walletState.ethChainId),'31337');
- await page.waitForFunction(expected=>document.getElementById('azaddr')?.value===expected,payer.toString());assert.equal(await page.locator('#setupStatus .error').count(),0);assert.equal(unexpectedRequests,0);assert.equal(provingAssetRequests,0);
+ await page.waitForFunction(expected=>document.getElementById('azaddr')?.value===expected&&!document.getElementById('depositBtn').disabled&&document.getElementById('setupStatus').textContent.includes('Wallet ready.'),payer.toString());assert.equal(await page.locator('#setupStatus .error').count(),0);assert.equal(unexpectedRequests,0);assert.equal(provingAssetRequests,0);
  stage='reject-token-approval';await page.locator('#amount').fill('0.000000000000001');await page.locator('#depositBtn').click();
  await walletPage.getByTestId('parent-selector-confirmation-page').waitFor();await walletPage.getByTestId('confirm-footer-cancel-button').click();await page.locator('#depositStatus .error').waitFor();
  assert.equal(await provider.getTransactionCount(user.address),0);assert.equal(await token.allowance(user.address,addresses.feeJuicePortalAddress),0n);assert.equal(await token.balanceOf(user.address),2000n);report.rejectionMovedNoFunds=true;
@@ -96,7 +98,8 @@ try{
  stage='deposit-fees';await page.locator('#depositBtn').click();await walletPage.getByTestId('confirm-footer-button').click();await page.locator('#depositStatus .success').filter({hasText:'Deposit recorded. Download the recovery file, then claim after the bridge message is available.'}).waitFor();
  const record=await page.evaluate(()=>JSON.parse(localStorage.getItem(localStorage.getItem('billboard-private-fee-recovery-latest'))));
  stage='verify-canonical-deposit';const owner=AztecAddress.fromStringUnsafe(await page.evaluate(()=>window.walletState.aztec.address.toString()));assert(await owner.isValid());
- const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5,l1ContractAddresses:addresses})};
+ const canonical=await derivePrivateFeeInstance(feeArtifact);
+ const node={getContract:async address=>address.toString()===canonical.address.toString()?canonical:undefined,getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5,l1ContractAddresses:addresses})};
  const recoveryInput={node,ethProvider:provider,owner,walletSecret:secret,privateFeeArtifact:feeArtifact,record,expectedChainId:'31337',expectedVersion:'5'};
  const claim=await recoverPrivateFeeClaim(recoveryInput);assert.equal(claim.amount,1000n);assert.equal(record.nonce,'1');assert.equal(record.sender.toLowerCase(),user.address.toLowerCase());
  assert.equal(await token.balanceOf(user.address),1000n);assert.equal(await token.balanceOf(addresses.feeJuicePortalAddress),1000n);assert.equal(await token.allowance(user.address,addresses.feeJuicePortalAddress),0n);

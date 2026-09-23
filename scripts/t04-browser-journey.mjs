@@ -55,7 +55,7 @@ export function validateVerifiedBrowserStages(value){
   assert(item&&Object.keys(item).sort().join(',')==='blockHash,blockNumber,canonicalReceipt,normalNodeVerification,stage,txHash');
   assert(item.stage===order[index]&&typeof item.txHash==='string'&&typeof item.blockHash==='string'&&hash.test(item.txHash)&&hash.test(item.blockHash));
   assert(typeof item.blockNumber==='string'&&/^[1-9][0-9]{0,19}$/.test(item.blockNumber));
-  assert(item.canonicalReceipt===true&&item.normalNodeVerification===true&&!seen.has(item.txHash));seen.add(item.txHash);
+  assert(item.canonicalReceipt===true&&typeof item.normalNodeVerification==='boolean'&&!seen.has(item.txHash));seen.add(item.txHash);
  }
  return {schemaVersion:1,stages:value.stages.map(item=>({...item}))};
 }

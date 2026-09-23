@@ -32,6 +32,7 @@ export function unpackMetaMask(directory){
  assert.equal(JSON.parse(fs.readFileSync(path.join(extension,'manifest.json'))).version,'13.49.0.0');return extension;
 }
 export async function onboardMetaMask(context,mnemonic,password,extensionId,mark){
+ for(const page of context.pages())if(page.url().startsWith('chrome-extension://'+extensionId+'/'))await page.close();
  const onboarding=await context.newPage();onboarding.setDefaultTimeout(10000);
  await onboarding.goto('chrome-extension://'+extensionId+'/home.html');
  mark('wallet-import-method');await onboarding.getByTestId('onboarding-import-wallet').click();
@@ -43,18 +44,34 @@ export async function onboardMetaMask(context,mnemonic,password,extensionId,mark
  mark('wallet-password');await onboarding.getByTestId('create-password-new-input').fill(password);await onboarding.getByTestId('create-password-confirm-input').fill(password);await onboarding.getByTestId('create-password-terms').click();await onboarding.getByTestId('create-password-submit').click();
  mark('wallet-passkey');await onboarding.getByTestId('passkey-maybe-later-button').click();
  mark('wallet-privacy');const analytics=onboarding.getByTestId('metametrics-checkbox');await analytics.waitFor();assert.equal(await analytics.getAttribute('data-checked'),'true');await analytics.click();assert.equal(await analytics.getAttribute('data-checked'),'false');assert.equal(await onboarding.getByTestId('metametrics-data-collection-checkbox').getAttribute('data-checked'),'false');await onboarding.getByTestId('metametrics-i-agree').click();
- mark('wallet-completion');await onboarding.getByTestId('onboarding-complete-done').click();await onboarding.locator('[data-testid=onboarding-complete-done][disabled]').waitFor();
- // Completion opens a side panel. Leave this tab alive while its awaited writes
- // finish; inspect the standard full-page wallet in a separate owned tab.
- const walletPage=await context.newPage();walletPage.setDefaultTimeout(10000);await walletPage.goto('chrome-extension://'+extensionId+'/home.html');await walletPage.getByTestId('account-menu-icon').waitFor();return walletPage;
+ mark('wallet-completion');
+ // MetaMask opens its own wallet page at completion; reuse that surface rather
+ // than loading another copy of the extension UI alongside onboarding.
+ await onboarding.getByTestId('onboarding-complete-done').click();
+ const deadline=Date.now()+10000;let walletPage;
+ while(Date.now()<deadline&&!walletPage) {
+  for(const page of context.pages()) {
+   if(page!==onboarding&&page.url().startsWith('chrome-extension://'+extensionId+'/home.html')&&await page.getByTestId('account-menu-icon').isVisible()){walletPage=page;break;}
+  }
+  if(!walletPage)await new Promise(resolve=>setTimeout(resolve,100));
+ }
+ assert(walletPage,'MetaMask did not expose its completed wallet page');
+ walletPage.setDefaultTimeout(10000);
+ for(const page of context.pages())if(page!==walletPage&&page.url().startsWith('chrome-extension://'+extensionId+'/'))await page.close();
+ assert.equal(context.pages().filter(page=>page.url().startsWith('chrome-extension://'+extensionId+'/')).length,1);return walletPage;
+}
+
+export async function discoverTestMetaMask(page){
+ await page.waitForFunction(()=>window.BillboardWalletProviders?.list().some(wallet=>wallet.name==='MetaMask'));
+ await page.evaluate(()=>{globalThis.__testMetaMask=window.BillboardWalletProviders.list().find(wallet=>wallet.name==='MetaMask').provider;});
 }
 
 export async function addMetaMaskNetwork({page,walletPage,extensionId,rpcUrl,mark}){
- await page.evaluate(()=>{let changed;globalThis.__localNetworkReady=new Promise((resolve,reject)=>{changed=chain=>chain==='0x7a69'?resolve():reject(Error('Unexpected setup chain'));window.ethereum.on('chainChanged',changed);}).finally(()=>window.ethereum.removeListener('chainChanged',changed));});
+ await page.evaluate(()=>{let changed;globalThis.__localNetworkReady=new Promise((resolve,reject)=>{changed=chain=>chain==='0x7a69'?resolve():reject(Error('Unexpected setup chain'));globalThis.__testMetaMask.on('chainChanged',changed);}).finally(()=>globalThis.__testMetaMask.removeListener('chainChanged',changed));});
  mark('add-network');await Promise.all([
   page.evaluate(()=>globalThis.__localNetworkReady),
-  page.evaluate(rpcUrl=>window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x7a69',chainName:'Disposable board test',rpcUrls:[rpcUrl],nativeCurrency:{name:'Ether',symbol:'ETH',decimals:18}}]}),rpcUrl).then(async()=>{assert.equal(await page.evaluate(()=>window.ethereum.request({method:'eth_chainId'})),'0x7a69');}),
-  (async()=>{await walletPage.goto('chrome-extension://'+extensionId+'/sidepanel.html');mark('network-confirmation-page');await walletPage.getByTestId('parent-selector-confirmation-page').waitFor();mark('network-name');await walletPage.getByText('Disposable board test',{exact:true}).first().waitFor();mark('network-approve');await walletPage.getByTestId('confirm-footer-button').click();})(),
+  page.evaluate(rpcUrl=>globalThis.__testMetaMask.request({method:'wallet_addEthereumChain',params:[{chainId:'0x7a69',chainName:'Disposable board test',rpcUrls:[rpcUrl],nativeCurrency:{name:'Ether',symbol:'ETH',decimals:18}}]}),rpcUrl).then(async()=>{assert.equal(await page.evaluate(()=>globalThis.__testMetaMask.request({method:'eth_chainId'})),'0x7a69');}),
+  (async()=>{if(!walletPage.url().startsWith('chrome-extension://'+extensionId+'/sidepanel.html'))await walletPage.goto('chrome-extension://'+extensionId+'/sidepanel.html');mark('network-confirmation-page');await walletPage.getByTestId('parent-selector-confirmation-page').waitFor();mark('network-name');await walletPage.getByText('Disposable board test',{exact:true}).first().waitFor();mark('network-approve');await walletPage.getByTestId('confirm-footer-button').click();})(),
  ]);
 }
 
@@ -62,9 +79,9 @@ export async function addMetaMaskNetwork({page,walletPage,extensionId,rpcUrl,mar
 // approve it; unexpected or overlapping transactions stop the test.
 export async function observeMetaMaskTransactions(page){
  await page.evaluate(()=>{
-  const original=window.ethereum.request.bind(window.ethereum);
+  const original=globalThis.__testMetaMask.request.bind(globalThis.__testMetaMask);
   globalThis.__walletTestPending=null;globalThis.__walletTestFailure=null;
-  window.ethereum.request=async request=>{
+  globalThis.__testMetaMask.request=async request=>{
    if(request.method!=='eth_sendTransaction')return original(request);
    if(globalThis.__walletTestPending)throw Error('Overlapping wallet transaction');
    globalThis.__walletTestPending=structuredClone(request.params);

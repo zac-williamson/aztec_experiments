@@ -1,6 +1,7 @@
 # Board prover deployment
 
-Target: one on-demand c8a.4xlarge in us-east-1, 16 physical cores, 32 GiB RAM.
+A c8a.4xlarge provides 16 physical cores and 32 GiB RAM. The current bounded
+trial uses Spot in us-east-2; see live-deployment.json for its shutdown deadline.
 One serial worker; no autoscaling, Redis, public service discovery or wallet on
 this machine. The website's operator selects the endpoint. Browser signing and
 private execution remain local.

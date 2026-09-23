@@ -27,12 +27,36 @@ function downloadAccountRecovery(envelope) {
 async function _loadAztecWallet(file) {try{return await window.BillboardAccount.importRecovery(file,document.getElementById('wbPassword')?.value||'');}finally{_clearBackupPassword();}}
 async function _generateAztecWallet() {try{downloadAccountRecovery(await window.BillboardAccount.create(_backupPassword(true)));}finally{_clearBackupPassword();}}
 async function _exportAztecWallet() {try{downloadAccountRecovery(await window.BillboardAccount.exportRecovery(_backupPassword(true)));}finally{_clearBackupPassword();}}
-async function _loadEthBrowser() {return window.BillboardAccount.connect();}
+async function _loadEthBrowser() {
+  const transport=await chooseEthereumWallet();
+  if(transport)return window.BillboardAccount.connect(transport);
+}
+let _walletPickerOpen=false;
+function chooseEthereumWallet() {
+  if(_walletPickerOpen)return Promise.resolve(null);
+  _walletPickerOpen=true;
+  return new Promise(resolve=>{
+    const dialog=document.createElement('dialog'),title=document.createElement('h2'),choices=document.createElement('div'),cancel=document.createElement('button');
+    title.id='walletPickerTitle';title.textContent='Choose a wallet';dialog.setAttribute('aria-labelledby',title.id);
+    cancel.type='button';cancel.textContent='Cancel';
+    let unsubscribe=()=>{};
+    function finish(provider){unsubscribe();dialog.close();dialog.remove();_walletPickerOpen=false;resolve(provider);}
+    function render(){
+      choices.replaceChildren();
+      const wallets=window.BillboardWalletProviders.list();
+      if(!wallets.length){const message=document.createElement('p');message.textContent='No Ethereum wallet was found. Open this board in a browser with MetaMask or another Ethereum wallet installed.';choices.appendChild(message);}
+      for(const wallet of wallets){const button=document.createElement('button');button.type='button';button.textContent=wallet.name;button.addEventListener('click',()=>finish(wallet.provider));choices.appendChild(button);}
+    }
+    dialog.addEventListener('cancel',event=>{event.preventDefault();finish(null);});cancel.addEventListener('click',()=>finish(null));
+    dialog.append(title,choices,cancel);document.body.appendChild(dialog);
+    unsubscribe=window.BillboardWalletProviders.subscribe(render);render();dialog.showModal();window.BillboardWalletProviders.refresh();
+  });
+}
 async function _importPasskeyAccount() {const result=await window.BillboardAccount.importPasskey();if(result?.reloadRequired)location.reload();}
 function initWalletButtons(containerId,options={}) {
   const autoPasskey=options.autoPasskey===true;
   _statusId=options.statusId||'setupStatus';
-  window.BillboardAccount.configure({...options,onChange:_updateButtonColors,onMessage:walletMessage});
+  window.BillboardAccount.configure({...options,onChange:()=>{_updateButtonColors();options.onChange?.(window.BillboardAccount.snapshot());},onMessage:walletMessage});
   const container=document.getElementById(containerId);if(!container)return;
   container.innerHTML=autoPasskey ? `<div class="wallet-btns"><button class="wallet-btn" id="wbEthBrowserBtn">Connect wallet</button>
     <details class="account-menu" id="wbAccountMenu"><summary>Account</summary><div class="account-menu-panel">
@@ -50,7 +74,7 @@ function initWalletButtons(containerId,options={}) {
     <label>Repeat password when creating a backup <input type="password" id="wbPasswordConfirm" autocomplete="new-password" maxlength="1024"></label>
     <p>Keep your encrypted recovery file and password. Export again after each transaction or recovery update. Older files do not contain later requests. Losing your wallet key or a deposit claim secret can make funds unrecoverable. This browser holds decrypted keys while open; use a trusted device. Reload before changing wallets.</p>`;
   if(autoPasskey)document.body.appendChild(document.getElementById('wbAccountMenu'));
-  const handle=run=>async()=>{try{await run();}catch(error){walletMessage(error?.code==='BB_BROWSER_WALLET_MISSING'?publicOperationFailure(error).message:'Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.','error');}};
+  const handle=run=>async()=>{try{await run();}catch(error){walletMessage(['BB_BROWSER_WALLET_MISSING','BB_WALLET_NETWORK','BB_WALLET_REJECTED'].includes(error?.code)?publicOperationFailure(error).message:((error?.code===4001||error?.code==='ACTION_REJECTED')?'Wallet request cancelled. Connect again when you are ready.':'Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.'),'error');}};
   document.getElementById('wbAztecBtn').addEventListener('click',()=>document.getElementById('wbAztecFile').click());
   document.getElementById('wbImportPasskeyBtn')?.addEventListener('click',handle(_importPasskeyAccount));
   document.getElementById('wbAztecGenBtn')?.addEventListener('click',handle(_generateAztecWallet));
