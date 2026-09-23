@@ -1,0 +1,73 @@
+{
+  "complete": false,
+  "network": {
+    "chainId": "11155111",
+    "rollupVersion": "1821665230",
+    "rollupAddress": "0xd73a91bdcf6891c7642f3e460036e1ef2cc23178",
+    "boardAddress": "0x2374be31ee9d56c4734a532da5f3aa03e70587e67c46abfbfc3e77df12b0b8da",
+    "receiver": "0x268b076e85d9f80a647f0b5de6e8ca18cf62e57f8ea7245a7d2e9e06e8421371"
+  },
+  "board": {
+    "l2Addr": "0x2374be31ee9d56c4734a532da5f3aa03e70587e67c46abfbfc3e77df12b0b8da",
+    "portalAddr": "0xb6815f47a27a31B3Cad3fCCD5ad1E44c65117592",
+    "readyTxHash": "0x2b851d0835074831185058a8b50b411f0f0385c0fc0865dbc12e035479aa9e1b",
+    "status": "active"
+  },
+  "plugin": {
+    "escrow": "0x268b076e85d9f80a647f0b5de6e8ca18cf62e57f8ea7245a7d2e9e06e8421371",
+    "portal": "0xac6a96b63cd1299d2a167aaf565a6cef7b370790",
+    "bindingTransaction": "0x24eeda8eb0f6249a98a1eb7efdc5b50aa1e9dba218214b338aab3e109c269556",
+    "observedBindingStatus": "proven"
+  },
+  "freshAuthor": {
+    "collateralDeposit": "0xd009e6b890a5bd25ef77267772f25116fda56dfbc32fccf0f02cab8b827f57ed",
+    "collateralClaim": "0x00e13142522b18ac473b04fc5dd8d843fb30dcc61afd6bd3f636df28bcd0616b",
+    "moderationSmokePost": "0x18f478dda5fdeff88085b3e43198a218abd5469dcb6d9afa245625bb1fc08338"
+  },
+  "moderator": {
+    "nativeArmImage": "ghcr.io/ggml-org/llama.cpp@sha256:3a6c3e3b22dca42ae12dbdfb5cb53531ca1f7ea8fd4348e9ef2503b2bc8629a6",
+    "weightsSha256": "03b74727a860a56338e042c4420bb3f04b2fec5734175f4cb9fa853daf52b7e8",
+    "modelDurationMs": 11816.134332999995,
+    "health": {
+      "type": "billboard-moderation-health-v1",
+      "stateCounts": {
+        "queued": 0,
+        "leased": 0,
+        "evaluated-ok": 1,
+        "submit-intent": 0,
+        "submitted": 0,
+        "reconciling": 0,
+        "retryable-error": 0,
+        "confirmed-flag": 0,
+        "expired": 0,
+        "manual-review": 0
+      },
+      "severity": "ok",
+      "checkpointHeight": 92417,
+      "lastSuccessfulIngestAgeMs": 2,
+      "counts": {
+        "retryableErrors": 0,
+        "unresolvedSigning": 0,
+        "manualSigningFences": 0,
+        "awaitingFinality": 0,
+        "expiredObligations": 0,
+        "manualAttention": 0,
+        "unsignedPending": 0
+      },
+      "alerts": []
+    },
+    "verdict": "evaluated-ok"
+  },
+  "pending": [
+    "Plugin portal finality and activation",
+    "HTTPS descriptor and preview publication: deployment AWS login expired",
+    "Full four-phase public MetaMask qualification",
+    "Release merge after public qualification"
+  ],
+  "sourceSha256": {
+    "censor-daemon/daemon.mjs": "847a0bbca2fe14822892b16b9d43fb17ecf6cde7e0cd7a4d096bcf450a2388e5",
+    "plugins/main.mjs": "a35e27a1ef974d46b5f2ddfe5ddf049a248fbd9181ad983caf28fa2f8c467db5",
+    "plugins/public/browser.mjs": "a2a373d5b24c389f4e15903cee5977be1988317b4e0578f1c084816ab490b159",
+    "plugins/public/fees.mjs": "8c1b352a916c47a5fa4e564f41603148ec7cfbdba664f2faab079a84b8faadc2"
+  }
+}

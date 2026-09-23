@@ -8,15 +8,16 @@ Root remains sole writer. Current lanes: public deployment/access/fresh accounts
 Venice cost-bound / treasury API investigation (provider_budget). Heavy tests remain
 serialized. Do not reuse personal wallets or rent infrastructure. Public testnet
 transactions and release integration are now in scope; local bot hosting retained.
-Checkpoint: one reservation per invocation and concurrent independent users implemented.
-Native-proof live browser qualification passed (.build/plugin-browser-8Bdsjj): PR #5,
-three paid Venice calls, 1667 micro-USDC charged, 998333 redeemed. 57 unit tests pass.
-Independent review public_latency found no remaining escrow-budget blocker; its
-concurrent Venice top-up finding was fixed with serialized readiness and a regression.
-Fresh public operator fee claim checkpointed; waiting for network finality. Fresh
-Ethereum account received faucet Sepolia ETH and 20 test USDC. Existing AWS SSO
-access and static HTTPS hosting confirmed. Next: compatible public board deployment,
-CCTP treasury transfer, local service installation, and public qualification.
+Checkpoint (September 23, 00:07 UTC): implementation and current-source native-proof
+local wallet flow pass. Public board activated; fresh author admitted. CCTP test
+transfer finalized. Both local bot and censor are running; a real public test post
+was evaluated OK in 11.8 seconds. Plugin binding is proven, awaiting finality.
+The public preview and descriptor are prepared; existing AWS deployment login is
+expired and the active compute role denies upload. User was asked to refresh
+`aws login --profile message-board`. No AWS permission workaround attempted.
+Next: activate/register plugin, publish reviewed preview, run four public browser
+phases, then release. Draft implementation PR #6 contains committed work; it is not
+a completed public deployment. Evidence: public-deployment-2026-09-23.json.
 
 User scope: fix the September 22 deployment gaps; trusted operator cost reporting
 is accepted. This worktree remains separate from the main application release graph.
@@ -114,3 +115,11 @@ September 23 checkpoint:
 - Local moderator preparation: Docker started; ARM b11058 image and pinned 9B
   weights downloading. Same upstream release as the existing remote moderator.
   Operator private fee bridge sent; native claim pending, isolated from bot funds.
+
+- Current source pushed as draft PR #6. Site preview preserves the existing root
+  website, with independently reviewed equivalent CSP and new /plugins-preview/
+  policies; staged public inventory now includes its board configuration.
+- Local censor startup/isolated runtime passed. Fresh real public test post 0
+  evaluated OK in 11816 ms; no queue errors or feed lag. This is one smoke example,
+  not broad moderation quality qualification.
+- All task-owned source changes committed; public qualification/merge remain open.

@@ -134,3 +134,20 @@ Before a planned stop, wait for `active: 0`, then run
 `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.aztec.bok.plist`.
 Interrupted invocations follow the documented on-chain expiry rules; the service
 never repeats an uncertain provider call on restart.
+
+The separate `local.aztec.bok-moderator` LaunchAgent runs the existing censor
+service for this board. It uses its own claimed private Fee Juice balance and
+persistent moderation queue. The bot's public Fee Juice balance is not a substitute.
+The installed local model is Qwen3.5-9B-Q4_K_M, SHA-256
+`03b74727a860a56338e042c4420bb3f04b2fec5734175f4cb9fa853daf52b7e8`,
+in the native ARM llama.cpp b11058 image
+`ghcr.io/ggml-org/llama.cpp@sha256:3a6c3e3b22dca42ae12dbdfb5cb53531ca1f7ea8fd4348e9ef2503b2bc8629a6`.
+It uses four threads, context 4096 and an 8192 MiB container limit. Docker Desktop
+must be running. The service does not automatically restart after a runtime error;
+inspect `.build/public-plugin/moderator*.log` and the durable queue before restarting.
+Health must show successful feed ingestion and no pending error, not merely a live
+process. A clean moderation decision is distinct from contract screening.
+
+These are testnet installation records. Preserve the private deployment directory,
+wallets and queue; they are not disposable test output. The public browser sequence
+is documented in [public/README.md](public/README.md).
