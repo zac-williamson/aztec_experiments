@@ -51,3 +51,37 @@ test('request IDs are canonical fields usable by cancellation; results filter ot
  f.args.action='cancel';f.args.input={postId:result.requests[0].postId};f.args.send=async()=>{};
  await pluginAccountAction(f.args);assert.equal(cancelled,result.requests[0].postId);
 });
+
+test('public redemption waits for finality without creating a submission intent',async()=>{
+ const f=fixture({withdrawal:{txHash:'l2'}});f.args.action='redeem';
+ f.args.descriptor.scope.chainId='11155111';f.args.signer.provider.getNetwork=async()=>({chainId:11155111n});
+ f.args.handles.aztecNode.getTxEffect=async()=>{throw Error('Must not request proof before finality');};
+ await assert.rejects(pluginAccountAction(f.args),/awaits network finality/);
+ assert.deepEqual(f.state(),{withdrawal:{txHash:'l2'}});
+});
+
+test('failed redemption gas preflight does not poison the saved withdrawal',async()=>{
+ const withdrawal={txHash:'l2',recipient,amount:'123',nonce:'0x'+'55'.repeat(32)},f=fixture({withdrawal});f.args.action='redeem';
+ f.args.handles.aztecNode.getTxReceipt=async()=>({status:'finalized',executionResult:'success'});
+ f.args.handles.aztecNode.getTxEffect=async()=>({data:{l2ToL1Msgs:[{isZero:()=>false}]}});
+ f.args.handles.aztecNode.getL2ToL1MembershipWitness=async()=>({epochNumber:1,numCheckpointsInEpoch:1,leafIndex:0n,siblingPath:{toBufferArray:()=>[]}});
+ let estimates=0;f.args.signer.estimateGas=async()=>{estimates++;throw Error('Outbox is not yet usable');};
+ for(let attempt=0;attempt<2;attempt++){
+  await assert.rejects(pluginAccountAction(f.args),/Outbox is not yet usable/);
+  assert.deepEqual(f.state(),{withdrawal});assert.equal(f.state().withdrawal.redemption,undefined);
+ }
+ assert.equal(estimates,2);
+});
+
+test('failed deposit gas preflight leaves funding retryable after approval',async()=>{
+ const f=fixture();f.args.action='deposit';f.args.handles.address=receiver;
+ f.args.sdk.Fr.ONE='1';f.args.sdk.computeSecretHash=async()=>receiver;
+ let approvals=0,estimates=0;f.args.signer.provider.getTransactionReceipt=async()=>({status:1,logs:[]});
+ f.args.signer.sendTransaction=async()=>{approvals++;return {hash:'approval',wait:async()=>({status:1})};};
+ f.args.signer.estimateGas=async()=>{estimates++;throw Error('Insufficient token balance');};
+ for(let attempt=0;attempt<2;attempt++){
+  await assert.rejects(pluginAccountAction(f.args),/Insufficient token balance/);
+  assert.deepEqual(f.state(),{});
+ }
+ assert.equal(approvals,2);assert.equal(estimates,2);
+});

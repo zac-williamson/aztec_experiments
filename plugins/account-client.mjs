@@ -44,8 +44,9 @@ export async function pluginAccountAction({action,input,descriptor,sdk:a,handles
   onProgress('Deposit USDC into the plugin portal.');
   // The Inbox marker is public: the message binds the authenticated Aztec recipient.
   // Capture the Ethereum nonce before submission so a lost wallet response is discoverable.
+  const gasLimit=await portal.deposit.estimateGas(h.address.toString(),amount,secretHash.toString());
   const record={amount:String(amount),secret:String(secret),sender:await signer.getAddress(),nonce:await signer.getNonce('pending'),startBlock:await signer.provider.getBlockNumber()};store.write({...state(),deposit:record});
-  let tx;try{tx=await portal.deposit(h.address.toString(),amount,secretHash.toString(),{nonce:record.nonce});}catch(error){if(error.code===4001||error.code==='ACTION_REJECTED')store.write({...state(),deposit:null});throw error;}
+  let tx;try{tx=await portal.deposit(h.address.toString(),amount,secretHash.toString(),{nonce:record.nonce,gasLimit});}catch(error){if(error.code===4001||error.code==='ACTION_REJECTED')store.write({...state(),deposit:null});throw error;}
   record.txHash=tx.hash;store.write({...state(),deposit:record});
   const receipt=await tx.wait();const event=receipt.logs.map(l=>{try{return portal.interface.parseLog(l);}catch{return null;}}).find(e=>e?.name==='Deposited');
   record.leafIndex=String(event.args.index);record.key=event.args.key;store.write({...state(),deposit:record});
@@ -119,15 +120,18 @@ export async function pluginAccountAction({action,input,descriptor,sdk:a,handles
    if(receipt.status===1){store.write({...state(),withdrawal:null});return {transactionHash:receipt.hash};}
    delete record.redemption;store.write({...state(),withdrawal:record});
   }
+  if(scope.chainId!=='31337'&&(l2Receipt.status!=='finalized'||l2Receipt.executionResult!=='success'))throw Error('Withdrawal awaits network finality. Try claiming later.');
   const effect=await h.aztecNode.getTxEffect(txHash);
   const leaf=effect?.data.l2ToL1Msgs.find(x=>!x.isZero());if(!leaf)throw Error('Withdrawal message unavailable');
   const w=await h.aztecNode.getL2ToL1MembershipWitness(txHash,leaf);
   if(!w)throw Error('Withdrawal awaits network settlement. Try claiming later.');
   onProgress('Claiming withdrawn USDC on Ethereum.');
   const args=[record.recipient,BigInt(record.amount),record.nonce,BigInt(w.epochNumber),BigInt(w.numCheckpointsInEpoch),w.leafIndex,w.siblingPath.toBufferArray().map(b=>'0x'+Buffer.from(b).toString('hex'))];
+  // Reject an unusable Outbox claim before saving an ambiguous broadcast intent.
+  const gasLimit=await portal.withdraw.estimateGas(...args);
   record.redemption={sender:await signer.getAddress(),nonce:await signer.getNonce('pending'),startBlock:await signer.provider.getBlockNumber(),data:portal.interface.encodeFunctionData('withdraw',args)};
   store.write({...state(),withdrawal:record});
-  let tx;try{tx=await portal.withdraw(...args,{nonce:record.redemption.nonce});}catch(error){if(error.code===4001||error.code==='ACTION_REJECTED'){delete record.redemption;store.write({...state(),withdrawal:record});}throw error;}
+  let tx;try{tx=await portal.withdraw(...args,{nonce:record.redemption.nonce,gasLimit});}catch(error){if(error.code===4001||error.code==='ACTION_REJECTED'){delete record.redemption;store.write({...state(),withdrawal:record});}throw error;}
   record.redemption.txHash=tx.hash;store.write({...state(),withdrawal:record});
   const receipt=await tx.wait();
   store.write({...state(),withdrawal:null});return {transactionHash:receipt.hash};

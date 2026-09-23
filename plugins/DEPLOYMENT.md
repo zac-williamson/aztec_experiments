@@ -46,7 +46,10 @@ inspection and a new operation state; never delete pending financial records.
 The generated service config points to the operator's private file. Keep it local.
 Start `npm run bot:serve -- /absolute/path/SERVICE.json`. Publish the `descriptor`
 object from SERVICE.json as a static JSON file on an existing HTTPS site. This
-needs no reverse proxy or public inbound access to the operator. Add that HTTPS
+needs no reverse proxy or public inbound access to the operator. When the descriptor
+is hosted on a different origin from the board page, serve that public JSON with
+`Access-Control-Allow-Origin: *` (no credentials). CSP permission alone does not
+permit cross-origin fetching. Verify the fetch in a browser before registering. Add that HTTPS
 origin to the application CSP when it differs from the frontend origin. The local
 service binds loopback; `/health` reports active jobs and the latest outcome.
 Then register its pinned descriptor with the board:
