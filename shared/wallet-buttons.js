@@ -33,7 +33,7 @@ async function _generateAztecWallet() {try{downloadAccountRecovery(await window.
 async function _exportAztecWallet() {try{downloadAccountRecovery(await window.BillboardAccount.exportRecovery(_backupPassword(true)));}finally{_clearBackupPassword();}}
 async function _loadEthBrowser() {
   const wallet=await chooseEthereumWallet();
-  if(wallet)return window.BillboardAccount.connect(wallet.provider,wallet.name);
+  if(wallet)return window.BillboardAccount.connect(wallet.provider,wallet.name,{selectAccount:wallet.rdns==='io.metamask'});
 }
 let _walletPickerOpen=false;
 function chooseEthereumWallet() {

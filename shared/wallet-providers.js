@@ -7,7 +7,7 @@
     const detail=event.detail,info=detail?.info,provider=detail?.provider;
     if(!info||typeof info.uuid!=='string'||!info.uuid||info.uuid.length>128||typeof info.name!=='string'||!info.name.trim()||info.name.length>128||typeof provider?.request!=='function')return;
     if(announced.has(info.uuid)||[...announced.values()].some(entry=>entry.provider===provider)||announced.size>=32)return;
-    announced.set(info.uuid,Object.freeze({id:info.uuid,name:info.name,provider}));notify();
+    announced.set(info.uuid,Object.freeze({id:info.uuid,name:info.name,rdns:info.rdns,provider}));notify();
   });
   function list(){
     if(announced.size)return [...announced.values()];

@@ -247,5 +247,24 @@
       "noUserTransactionsSubmitted": true,
       "independentReview": "wallet_identity_review approved selected-wallet identity, invalidation notifications and persistent navigation gate"
     }
+  },
+  "walletAccountSelectionCorrection": {
+    "verifiedAt": "2026-09-23T13:24:40.283300+00:00",
+    "cause": "MetaMask reported an existing eth_accounts permission for this origin, dated2026-09-21, containing a different account from the current account in the user screenshot. Ordinary eth_requestAccounts reused that permission.",
+    "change": "Explicit MetaMask wallet_requestPermissions account selection before network validation and signer activation; canceled passkey retry honors the new selection.",
+    "checks": {
+      "regressions": 50,
+      "realMetaMaskComponent": "execution/evidence/T04/wallet-account-selection-20260923.json",
+      "existingPermissionRequiresApproval": true,
+      "diagnosticOnlyReadAccountsAndPermissions": true,
+      "temporaryDiagnosticObjectsDeleted": true,
+      "liveChrome": "After Connect then MetaMask, board stays on setup with no connected account, awaiting fresh permission approval; no automatic passkey or deposit advancement."
+    },
+    "pages": {
+      "user.html": "187739b5e8f7a2aba20d39074bb42d39971ff0554803b10d22c44e4955d67d80",
+      "fee-juice.html": "89e84332d61070c8db8b4d1333d9d30b94a714fb001781d272ea8caa1e573fc6",
+      "censor.html": "2c29f16826e6e9355fca9855e5e3c5d6ca82a7b83710920e31b9b2642775c6d4",
+      "deploy.html": "6d65d9a35c4f66f40f5042bfd5efff99a98cefcf02f0006b836bf34e152bf219"
+    }
   }
 }

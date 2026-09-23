@@ -117,17 +117,22 @@ async function exportAccountRecovery(password) {
 function _firstEthereumAccount(accounts) {
   return Array.isArray(accounts) && accounts.length>0 && accounts.every(account=>typeof account==='string' && /^0x[0-9a-fA-F]{40}$/.test(account)) ? accounts[0].toLowerCase() : null;
 }
-async function connectEthereumAccount(transport, walletName='Browser wallet') {
+async function connectEthereumAccount(transport, walletName='Browser wallet', {selectAccount=false}={}) {
   return _walletOperation(async()=>{
     if(window.walletState.ethSigner) {
-      if(_autoPasskey && !window.walletState.aztec) {await _openPasskeyAccount();return;}
-      throw new Error('An Ethereum wallet is already connected.');
+      if(window.walletState.aztec || !_autoPasskey)throw new Error('An Ethereum wallet is already connected.');
+      // A cancelled passkey has not activated an application account. Honour
+      // the next explicit wallet selection instead of reusing the old signer.
+      Object.assign(window.walletState,{ethSigner:null,ethProvider:null,ethTransport:null,ethAccount:null,ethType:null,ethWalletName:null,ethChainId:null});
+      _walletGeneration++;_updateAccountState();
     }
     if(typeof transport?.request!=='function')throw Object.assign(new Error('Choose an Ethereum wallet.'),{code:'BB_BROWSER_WALLET_MISSING'});
     _bindEthereumProvider(transport);
     const generation=_walletGeneration;
     const connection={account:null,switchingTo:null};_connectingEth=connection;
     try {
+    // MetaMask account selection must not silently reuse an older site grant.
+    if(selectAccount)await transport.request({method:'wallet_requestPermissions',params:[{eth_accounts:{}}]});
     const expected=typeof _getPublicConfig==='function'?_getPublicConfig()?.network?.chainId:null;
     if(expected!==null&&expected!==undefined){
       const chainId='0x'+BigInt(expected).toString(16);

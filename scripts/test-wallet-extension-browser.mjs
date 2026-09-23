@@ -112,6 +112,17 @@ try{
  const recovered=await recoverPrivateFeeClaim({...recoveryInput,record:savedAgain});assert.equal(recovered.leafIndex.toString(),claim.leafIndex.toString());assert.equal(await provider.getTransactionCount(user.address),2);
  assert.equal(unexpectedRequests,0);assert.equal(provingAssetRequests,0);report.depositAmount='1000';report.canonicalRecoveryVerified=true;report.explicitRetryVerified=true;
  stage='board-collateral-refund';report.collateral=await verifyExtensionCollateral({page,walletPage,provider,publisher,operator,user,rpcUrl});
+ stage='reselect-already-authorized-account';
+ await page.reload();await page.waitForFunction(()=>window.BillboardWalletProviders?.list().some(wallet=>wallet.rdns==='io.metamask')&&window.BillboardAccount);
+ // Isolate the account controls from Aztec setup for this Ethereum-only check.
+ await page.evaluate(()=>initWalletButtons('walletButtonsContainer',{autoPasskey:false}));
+ await page.locator('#wbEthBrowserBtn').click();await page.getByRole('dialog').getByRole('button',{name:'MetaMask',exact:true}).click();
+ await walletPage.getByTestId('confirm-btn').waitFor();
+ assert.equal(await page.evaluate(()=>window.BillboardAccount.snapshot().ethereumConnected),false);
+ await walletPage.getByTestId('confirm-btn').click();
+ await page.waitForFunction(()=>window.BillboardAccount.snapshot().ethereumConnected);
+ assert.equal(await page.locator('#wbConnectionStatus').innerText(),'MetaMask · '+user.address);
+ report.existingPermissionRequiresApproval=true;
  assert(blockedContextRequests.every(record=>record.owner==='extension'&&record.hostname==='metamask.github.io'));
  report.passed=true;report.realExtension=true;report.browserVersion=context.browser().version();report.extensionVersion='13.49.0.0';report.connectedLocalAccount=true;report.userEthereumTransactions=await provider.getTransactionCount(user.address);assert.equal(report.userEthereumTransactions,4);report.scope='Real MetaMask connection, rejected approval, explicit approval retry, fee deposit, board collateral/refund and read-only canonical recovery; controlled Outbox roots, no Aztec claim/proof';
 }catch(error){

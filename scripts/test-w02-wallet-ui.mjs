@@ -186,3 +186,38 @@ test('explicit invalidation notifies consumers, including outside wallet events'
  assert.equal(notifications,before+1);assert.equal(f.context.window.BillboardAccount.snapshot().ethereumConnected,false);
  f.context.window.BillboardAccount.invalidate();assert.equal(notifications,before+1);
 });
+
+
+test('explicit account selection requests fresh permission before activating a signer',async()=>{
+ const f=fixture(),calls=[];browserConnection(f);
+ f.context.window.ethereum.request=async request=>{calls.push(request);assert.equal(f.context.window.walletState.ethSigner,null);return[];};
+ await f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask',{selectAccount:true});
+ assert.equal(calls.length,1);assert.equal(calls[0].method,'wallet_requestPermissions');
+ assert.equal(JSON.stringify(calls[0].params),'[{"eth_accounts":{}}]');
+});
+test('rejected account selection cannot silently reuse a previously authorized account',async()=>{
+ const f=fixture();browserConnection(f);f.context.window.ethereum.request=async()=>{throw Object.assign(Error('Rejected'),{code:4001});};
+ await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask',{selectAccount:true}));
+ assert.equal(f.context.window.BillboardAccount.snapshot().ethereumConnected,false);assert.equal(f.context.window.walletState.ethSigner,null);
+});
+
+
+test('after passkey cancellation a new connection still requests account selection',async()=>{
+ const f=passkeyFixture({fail:true});let selections=0;
+ f.context.window.ethereum.request=async()=>{selections++;return[];};
+ for(let i=0;i<2;i++)await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask',{selectAccount:true}));
+ assert.equal(selections,2);assert.equal(f.context.window.walletState.aztec,null);
+});
+
+test('permission selection can replace an older origin grant before signer activation',async()=>{
+ const f=fixture(),old='0x'+'12'.repeat(20),selected='0x'+'34'.repeat(20);let authorized=old;
+ f.context.window.ethereum.request=async({method})=>{assert.equal(method,'wallet_requestPermissions');authorized=selected;f.listeners.accountsChanged([selected]);return[];};
+ f.context.ethers={BrowserProvider:class {
+  async send(method){assert(['eth_requestAccounts','eth_accounts'].includes(method));return[authorized];}
+  async getSigner(){return{getAddress:async()=>authorized};}
+  async getNetwork(){return{chainId:31337n};}
+ }};
+ await f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask',{selectAccount:true});
+ assert.equal(f.context.window.BillboardAccount.snapshot().ethereumAddress,selected);
+ assert.notEqual(f.context.window.BillboardAccount.snapshot().ethereumAddress,old);
+});
