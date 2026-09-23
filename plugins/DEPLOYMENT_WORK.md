@@ -38,6 +38,14 @@ release requires those checks to pass. Detailed evidence is under `plugins/evide
 The operator is trusted to report usage, and Venice's conservative input bound
 remains documented. This is a pinned V5/Sepolia candidate, not a mainnet deployment.
 
+Final CI portability checkpoint: the browser component supervisor now uses the
+operating system's temporary directory. The bounded wallet component scenario passed
+with cleanup; plugin_fit independently approved the lifecycle change. The Ethereum
+fixture also now supplies the published Aztec instance required by the current API.
+All original real-receipt/recovery assertions pass. Both interface fixtures, browser
+SDK/IndexedDB checks, CLI SDK checks and all 40 Solidity regressions pass locally.
+The release inventory was refreshed solely for the latest CI workflow hash.
+
 User scope: fix the September 22 deployment gaps; trusted operator cost reporting
 is accepted. This worktree remains separate from the main application release graph.
 

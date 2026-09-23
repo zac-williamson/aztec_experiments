@@ -27,7 +27,7 @@
   "inputs": {
     ".build/contracts-manifest.json": "80ad312a49d2c5f5e1e31304ce1b69eeceb498d3144693e1d12b0a6dac7a1c51",
     ".build/sdk/sdk-manifest.json": "59f18a54bfe7d530cb869465eb141ff9739471de018506e779ecd916afbd5b89",
-    ".github/workflows/build.yml": "85a9751f4d01d2fdc2aacc777b3723dc1f20b6be693e83d8a6330727e1abd508",
+    ".github/workflows/build.yml": "3ef99d33afbca3b6fe9d0ff7121036c78acbdc353111306688bc4ec2d21aa376",
     "apps/build.mjs": "2ee60da3630d72b0c9dab1a120e0003cc1ee8098dd275431768fbf12157c479a",
     "apps/dist/crs/crs-manifest.json": "4927de3e03d69f4e640a841f9421dd0b93819b5e3d42c142d12ee079d5a402be",
     "apps/src/billboard/billboard_artifact.json": "c628b08af019875001cc4b131bd49aa4987784e89eda08b6282f71c598b7924b",
