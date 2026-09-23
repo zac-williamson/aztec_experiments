@@ -55,6 +55,16 @@ local whole-workspace diagnostic hit its nine-minute aggregate deadline (540166 
 peak 2668800 KiB, owned tree absent); its failed report is preserved, not counted as
 a pass. The complete Linux run above passed all tests in separately bounded batches.
 
+Final Linux run 35814725470 passed the entire application/contract/browser stage,
+then exposed a test-only TCP reset in the container isolation positive control:
+the client destroyed its socket before reading the fixture response. An uncaught
+host socket error ended the test before its asynchronous cleanup finished, corrupting
+the next test's resource baseline. The positive control now consumes and verifies
+the complete response before graceful closure. A disposable Linux reproduction
+observed 10/10 peer resets with the original code and zero with the fix; all three
+actual local isolation tests pass. Independent review: plugin_fit. No isolation
+assertion or production code changed.
+
 User scope: fix the September 22 deployment gaps; trusted operator cost reporting
 is accepted. This worktree remains separate from the main application release graph.
 

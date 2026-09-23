@@ -197,7 +197,7 @@
     "censor-daemon/model-runtime-probe.cjs": "42e177b2cde047e574a3a27f60b9113ab8f0bd8d6ba21d668fa14bca93beea2b",
     "censor-daemon/model-runtime-proxy.cjs": "82419a64b28b7115f10ee24fc81167dd093b724d10b9497b6ace14d70535201e",
     "censor-daemon/model-runtime.mjs": "f7663e839c821cfc752805264dc660268b69a68dae76e0986789c96713c0fab0",
-    "censor-daemon/model-runtime.test.mjs": "a395fc5e1e88839d2770794d7381765c7b6279d4f0ed586064b57f83e4a00545",
+    "censor-daemon/model-runtime.test.mjs": "f8952e4fe84843916281dbda1dd1521d849baf896c564bb9abc12813d915a194",
     "censor-daemon/model-version.mjs": "e8cca70ef7424b6371f5a23eb315d8fe37d31e7bf9e990affaf78aff31577b7d",
     "censor-daemon/moderation.mjs": "8143eeb1845bd915c4fe0212726eb59ee8c2b2d4ba339f9b0e3050a2f7f52cda",
     "censor-daemon/prompt-template.json": "a73ccbcb3cdd57d9c17f7afd7db6163e74f84d2e1657f9e71bdb4be0f49e1d44",
