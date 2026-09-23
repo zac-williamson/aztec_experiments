@@ -60,7 +60,6 @@
   },
   "pending": [
     "Plugin portal finality and activation",
-    "HTTPS descriptor and preview publication: deployment AWS login expired",
     "Full four-phase public MetaMask qualification",
     "Release merge after public qualification"
   ],
@@ -69,5 +68,14 @@
     "plugins/main.mjs": "a35e27a1ef974d46b5f2ddfe5ddf049a248fbd9181ad983caf28fa2f8c467db5",
     "plugins/public/browser.mjs": "a2a373d5b24c389f4e15903cee5977be1988317b4e0578f1c084816ab490b159",
     "plugins/public/fees.mjs": "8c1b352a916c47a5fa4e564f41603148ec7cfbdba664f2faab079a84b8faadc2"
+  },
+  "publication": {
+    "url": "https://d30njln0kead8n.cloudfront.net/plugins-preview/feed.html",
+    "descriptorUrl": "https://d30njln0kead8n.cloudfront.net/plugins/bok.json",
+    "httpStatus": 200,
+    "artifactBytesMatched": true,
+    "securityHeadersPresent": true,
+    "profile": "message-board-deploy",
+    "browserQualificationComplete": false
   }
 }

@@ -123,3 +123,18 @@ September 23 checkpoint:
   evaluated OK in 11816 ms; no queue errors or feed lag. This is one smoke example,
   not broad moderation quality qualification.
 - All task-owned source changes committed; public qualification/merge remain open.
+
+Credential correction: the Remote prover service task established the long-lived
+Identity Center session and message-board-deploy / MessageBoardCompute2 profile.
+The prior request to refresh the legacy message-board login was incorrect.
+Verified current STS identity and successful Bok descriptor S3 upload using
+message-board-deploy. No user authentication or permission change was required.
+Continue publication through that profile, preserving the existing root site.
+
+Publication correction completed: uploaded the reviewed /plugins-preview/ static
+inventory and descriptor, published the CSP function with current ETag after
+verifying the old live policy was unchanged, and invalidated preview paths.
+HTTPS feed returns 200 with matching artifact bytes, COOP/COEP/CSP headers;
+HTTPS descriptor bytes match the expected pinned document. Existing root-site
+policies preserved. Plugin binding still awaits finality; public wallet phases
+and release remain outstanding. AWS authentication is not a blocker.
