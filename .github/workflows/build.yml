@@ -47,7 +47,7 @@ jobs:
           npm run check:artifacts
           node scripts/release-artifact-manifest.mjs write "$RUNNER_TEMP/release-artifacts.json"
           node scripts/release-artifact-manifest.mjs check "$RUNNER_TEMP/release-artifacts.json"
-          node --test scripts/test-release-artifact-manifest.mjs scripts/test-frontend-provenance.mjs scripts/test-native-prover-pin.mjs
+          node --test scripts/test-release-artifact-manifest.mjs scripts/test-frontend-provenance.mjs scripts/test-native-prover-pin.mjs scripts/test-txe-message-witness.mjs
           npm run test:build
           NODE_BACKEND=js npm run test:plugins
           node --test scripts/test-a01-ci.mjs scripts/test-built-private-fees.mjs scripts/test-c05-browser-feed.mjs scripts/test-c05-moderation-client.mjs scripts/test-screening-history-client.mjs scripts/test-private-fee-config.mjs scripts/test-engine-private-fee.mjs
