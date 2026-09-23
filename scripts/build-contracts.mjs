@@ -57,7 +57,7 @@ export function buildContracts() {
   const portalDir = path.join(billboard, 'portal');
   const portalDependency = JSON.parse(fs.readFileSync(path.join(portalDir, 'node_modules/@aztec/l1-artifacts/package.json'), 'utf8'));
   if (portalDependency.version !== pins.aztec) throw new Error('Portal L1 dependency version mismatch');
-  execFileSync(forge, ['build'], { cwd: portalDir, stdio: 'inherit' });
+  execFileSync(forge, ['build','--force'], { cwd: portalDir, stdio: 'inherit' });
   const portal = JSON.parse(fs.readFileSync(path.join(portalDir, 'out/BillboardPortal.sol/BillboardPortal.json'), 'utf8'));
   const constructor = portal.abi.find(f => f.type === 'constructor');
   if (constructor?.inputs.length !== 6 || !portal.bytecode?.object || !portal.deployedBytecode?.object) {

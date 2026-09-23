@@ -40,7 +40,7 @@ export function buildPortalRuntime({forge=process.env.FORGE||'forge',output=path
   assertNodeVersion();
   if(!execFileSync(forge,['--version'],{encoding:'utf8'}).includes('Version: '+pins.foundry))throw new Error('Unexpected Foundry version');
   const portal=path.join(ROOT,'billboard/portal'),isolated=path.join(ROOT,'.build/d01-portal-ast');
-  execFileSync(forge,['build','--ast','--out',path.join(isolated,'out'),'--cache-path',path.join(isolated,'cache')],{cwd:portal,stdio:'pipe',timeout:120000});
+  execFileSync(forge,['build','--force','--ast','--out',path.join(isolated,'out'),'--cache-path',path.join(isolated,'cache')],{cwd:portal,stdio:'pipe',timeout:120000});
   const artifact=json(path.join(isolated,'out/BillboardPortal.sol/BillboardPortal.json'));
   const canonical=json(path.join(portal,'out/BillboardPortal.sol/BillboardPortal.json'));
   const result=portalRuntimeMetadata(artifact,canonical,name=>{
