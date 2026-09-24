@@ -96,3 +96,21 @@ and the wallet seed are never included by this adapter.
 
 See [deployment instructions](../deploy/prover/README.md) for the C8a service,
 private CloudFront origin, publication permissions and rollback requirements.
+
+## Proving preference and operation lifetime
+
+The browser preference model (`shared/proving-preference.js`) owns the choice of
+local or remote proving. The checkbox is only a view adapter. At operation entry,
+`makeCallEngine` captures the selected mode and a detached board configuration
+before its first asynchronous step. The resulting prover selection is fixed for
+that operation, including setup, proof generation, submission and receipt checks.
+Changing the preference applies to the next operation; it does not cancel, reset
+or retry the current one. A compound deposit-and-claim flow contains two separate
+transactions: a change during the Ethereum deposit may select the prover for the
+subsequent Aztec claim, without modifying the deposit.
+
+Wallet identity, network and board configuration remain independently guarded.
+Changing the board’s configured endpoint is a board-configuration change, not a
+proving preference. Recovery continues to use saved transaction records; changing
+mode does not discard a proof or authorize resubmission. Prover errors do not
+trigger an automatic local/remote fallback.

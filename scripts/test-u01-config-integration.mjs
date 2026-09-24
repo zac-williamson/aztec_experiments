@@ -5,8 +5,8 @@ import vm from 'node:vm';
 const app=fs.readFileSync(new URL('../shared/app-env.js',import.meta.url),'utf8'),helper=fs.readFileSync(new URL('../shared/public-app-config.js',import.meta.url),'utf8');
 function config(){return {schemaVersion:1,network:{nodeUrl:'https://node.example/',ethRpcUrl:'https://eth.example/',chainId:'1',rollupVersion:'5',rollupAddress:'0x'+'11'.repeat(20)},board:{portalAddress:'0x'+'22'.repeat(20),contractAddress:'0x'+'01'.repeat(32)},privateFee:{contractAddress:'0x'+'02'.repeat(32),gasSettings:{gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'0',l2Gas:'0'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}}};}
 function fixture(){
- const c=vm.createContext({URL,TextEncoder,ethers:{},log(){},document:{getElementById:()=>null},navigator:{locks:{request:async(_n,_o,fn)=>fn({})}},_walletGeneration:0,_assertWalletLive(){},_invalidateWalletContext(){},_updateButtonColors(){}});
- c.window=c;vm.runInContext(helper,c);c.billboardConfigStore=c.BillboardConfig.createStore({storage:{getItem:()=>null,setItem(){},removeItem(){}}});c.billboardConfigStore.install(config());c.walletState={aztec:{secretKey:'wallet-private',salt:0,address:{toString:()=> 'public-owner'}}};c.BillboardReadiness={check:async()=>({ready:true})};c.BillboardConnectionCheck={verify:async()=>({verified:true})};vm.runInContext(app,c);return c;
+ const c=vm.createContext({structuredClone,URL,TextEncoder,ethers:{},log(){},document:{getElementById:()=>null},navigator:{locks:{request:async(_n,_o,fn)=>fn({})}},_walletGeneration:0,_assertWalletLive(){},_invalidateWalletContext(){},_updateButtonColors(){}});
+ c.window=c;vm.runInContext(helper,c);c.billboardConfigStore=c.BillboardConfig.createStore({storage:{getItem:()=>null,setItem(){},removeItem(){}}});c.billboardConfigStore.install(config());c.walletState={aztec:{secretKey:'wallet-private',salt:0,address:{toString:()=> 'public-owner'}}};c.BillboardReadiness={check:async()=>({ready:true})};c.BillboardConnectionCheck={verify:async()=>({verified:true})};vm.runInContext(fs.readFileSync(new URL('../shared/proving-preference.js',import.meta.url),'utf8'),c);vm.runInContext(app,c);return c;
 }
 test('validated store supplies authoritative connection and fee settings; extra cannot override',()=>{const c=fixture(),claim={salt:'local-secret'};c.RPC_CONFIG={aztecNodeUrl:'https://wrong/',apiKey:'secret'};c.billboardPrivateFee={contractAddress:'wrong'};const actual=c.buildConfig('post',{aztecNodeUrl:'wrong',ethRpcUrl:'wrong',portalAddress:'wrong',expectedBoardAddress:'wrong',expectedNetworkScope:{},privateFee:{},aztecWallet:{},aztecApiKey:'wrong',privateFeeClaim:claim});const selected=c.billboardConfigStore.snapshot().config;assert.equal(actual.aztecNodeUrl,selected.network.nodeUrl);assert.equal(actual.ethRpcUrl,selected.network.ethRpcUrl);assert.equal(actual.portalAddress,selected.board.portalAddress);assert.equal(actual.expectedBoardAddress,selected.board.contractAddress);assert.equal(actual.expectedNetworkScope.rollup,selected.network.rollupAddress);assert.equal(actual.privateFee,selected.privateFee);assert.equal(actual.aztecApiKey,'');assert.equal(actual.aztecWallet.secretKey,'wallet-private');assert.equal(actual.privateFeeClaim,claim);});
 test('private engine errors remain bounded and recognized outcomes actionable',async()=>{const c=fixture();for(const code of [undefined,'BB_SUBMISSION_UNKNOWN'])await assert.rejects(c.makeCallEngine(async()=>{throw Object.assign(Error('wallet-private'),{code});})('post','status'),e=>e.code===(code??'BB_OPERATION_FAILED')&&!e.message.includes('wallet-private'));});
@@ -31,3 +31,41 @@ test('config switch while runtime helper is pending blocks entry, proof and sign
 test('bundle load failure is bounded and offers public reader without raw errors',()=>{const c=fixture();let callback=0,tick,cleared=0,alert;const nodes=new Map();c.document={getElementById:id=>nodes.get(id)??null,createElement:tag=>({tag,setAttribute(){},append(...children){this.children=children;}}),body:{prepend(node){alert=node;nodes.set(node.id,node);}}};c.setInterval=fn=>{tick=fn;return 1;};c.clearInterval=()=>cleared++;c.waitForBundle(()=>callback++);for(let i=0;i<120;i++)tick();assert.equal(callback,0);assert.equal(cleared,1);assert.match(alert.textContent,/Wallet software could not load/);assert.equal(alert.children[1].href,'feed.html');c.__billboardBundleFailed=true;c.waitForBundle(()=>callback++);assert.equal(callback,0);});
 
 test('browser proof failure has fixed reload/recovery guidance without provider details',()=>{const c=fixture();const error=c.publicOperationFailure({code:'BB_BROWSER_PROOF_FAILED',message:'secret witness detail'});assert.equal(error.code,'BB_BROWSER_PROOF_FAILED');assert.match(error.message,/Reload and restore/);assert.match(error.message,/check saved transactions/);assert(!error.message.includes('secret'));});
+
+function barrier(){let arrived,release;const reached=new Promise(r=>arrived=r),gate=new Promise(r=>release=r);return {reached,release,wait:async()=>{arrived();await gate;}};}
+for(const initial of ['remote','local'])for(const phase of ['lock','readiness','board','portal','simulation','proof','sign','submission','receipt']){
+ test(`proving preference ${initial} stays fixed across ${phase}; next operation sees change`,async()=>{
+  const c=fixture(),selected=config();selected.remoteProver={url:'https://prover.example/'};c.billboardConfigStore.install(selected);
+  c.BillboardProving.setMode(initial);
+  const b=barrier();let pause=true;const wait=async name=>{if(pause&&phase===name){pause=false;await b.wait();}};
+  c.navigator.locks.request=async(_name,_options,fn)=>{await wait('lock');return fn({});};
+  c.BillboardReadiness.check=()=>wait('readiness');
+  verifier(c,()=>wait('board'));c.BillboardConnectionCheck.verify=()=>wait('portal');
+  let signatures=0,sends=0,engineCalls=0;
+  c.walletState.ethSigner={signMessage:async()=>{await wait('sign');signatures++;return 'signature';}};
+  const run=c.makeCallEngine(async(env,actual)=>{
+    engineCalls++;const url=actual.remoteProver?.url;
+    await wait('simulation');await actual.preProveHook({});await wait('proof');
+    await (await env.getBrowserSigner()).signMessage('test');
+    await actual.contextGuard();await wait('submission');sends++;
+    await wait('receipt');await actual.contextGuard();
+    assert.equal(actual.remoteProver?.url,url);return {url,txHash:'saved-transaction'};
+  },{artifact:{}});
+  const first=run('post',()=>{});await b.reached;
+  c.BillboardProving.setMode(initial==='remote'?'local':'remote');b.release();
+  const result=await first;assert.equal(result.url,initial==='remote'?selected.remoteProver.url:undefined);
+  assert.equal(result.txHash,'saved-transaction');assert.equal(sends,1);assert.equal(signatures,1);
+  const next=await run('post',()=>{});assert.equal(next.url,initial==='local'?selected.remoteProver.url:undefined);assert.equal(engineCalls,2);assert.equal(sends,2);
+ });
+}
+test('proving preference and connection snapshot never read UI, and extras cannot choose another prover',async()=>{
+ const c=fixture();c.document.getElementById=()=>{throw Error('No DOM reads');};
+ const run=c.makeCallEngine(async(_env,actual)=>actual.remoteProver);
+ assert.equal(await run('status',()=>{},{remoteProver:{url:'https://unapproved.example/'}}),undefined);
+});
+test('prover error does not retry or switch mode; next recovery operation retains journal input',async()=>{
+ const c=fixture(),selected=config();selected.remoteProver={url:'https://prover.example/'};c.billboardConfigStore.install(selected);
+ let calls=0;const run=c.makeCallEngine(async(_env,actual)=>{calls++;if(actual.action==='post'){c.BillboardProving.setMode('local');throw Error('prover failed');}assert.equal(actual.acknowledgeTx,'original-hash');assert.equal(actual.remoteProver,undefined);return 'recovered';});
+ await assert.rejects(run('post',()=>{}));assert.equal(calls,1);
+ assert.equal(await run('recover',()=>{},{acknowledgeTx:'original-hash'}),'recovered');assert.equal(calls,2);
+});

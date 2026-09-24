@@ -305,5 +305,16 @@
       "deploy.html": "1d6799ee65d5c35dc2f94ab82bb77f29ba51f4462202113bb47aecb82bc98edd"
     },
     "invalidationStatus": "Completed"
+  },
+  "operationProvingPreference": {
+    "verifiedAt": "2026-09-24T14:31:00.952212+00:00",
+    "evidence": "execution/evidence/T04/proving-preference-20260924.json",
+    "pages": {
+      "user.html": "69f8efeb441bb2b91dcf0593d6aeb17b37b207cb8329f76a1d849d16c55c8b03",
+      "fee-juice.html": "ad4b3a44829c2b98d67ac84d5c2faee4bc9162a860b72639eb34338e796f66cb",
+      "censor.html": "41e7211e6cb6946b67b2e4dcc5950ccd8cd11f3ffa5318f956463200f738414b",
+      "deploy.html": "cf3326e7fceced07987573c1be616d5eb2524e1089633d65947844c984b6e13c"
+    },
+    "invalidationStatus": "Completed"
   }
 }

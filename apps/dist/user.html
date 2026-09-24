@@ -43600,6 +43600,24 @@ Object.assign(globalThis, { extractDepositInfo, readBillboardDepositInfo });
 
 </script>
 <script>
+// Application preference, independent of views, wallet identity and board state.
+// Each operation samples this once. Changes affect only subsequent operations.
+function createProvingPreference() {
+  let mode='remote';
+  const listeners=new Set();
+  return Object.freeze({
+    snapshot:()=>mode,
+    setMode(next) {
+      if(next!=='local'&&next!=='remote')throw new Error('Invalid proving mode.');
+      if(mode===next)return;
+      mode=next;
+      for(const listener of listeners)listener(mode);
+    },
+    subscribe(listener) {listeners.add(listener);return ()=>listeners.delete(listener);},
+  });
+}
+window.BillboardProving=createProvingPreference();
+
 // ============================================================
 // shared/app-env.js — Common browser environment for all apps
 // ============================================================
@@ -43626,7 +43644,7 @@ function _connectionConfig() {
   return {aztecNodeUrl:config.network.nodeUrl,ethRpcUrl:config.network.ethRpcUrl,
     portalAddress:config.board.portalAddress,expectedBoardAddress:config.board.contractAddress,
     expectedNetworkScope:{chainId:config.network.chainId,version:config.network.rollupVersion,rollup:config.network.rollupAddress},
-    privateFee:config.privateFee,remoteProver:config.remoteProver&&document.getElementById('remoteProving')?.checked!==false?{url:config.remoteProver.url,board:config.board.contractAddress}:undefined};
+    privateFee:config.privateFee,remoteProver:config.remoteProver?{url:config.remoteProver.url,board:config.board.contractAddress}:undefined};
 }
 function _getEthRpcUrl() { return _connectionConfig().ethRpcUrl; }
 window.billboardConfigStore?.subscribe(()=>{
@@ -43796,6 +43814,11 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
     if(!ws?.aztec?.address) throw new Error('Load an Aztec wallet first.');
     const identity=()=>JSON.stringify([_getConfigRevision(),connection(),ws.aztec?.secretKey,ws.aztec?.salt,ws.ethAccount,ws.ethChainId],(_,value)=>typeof value==='bigint'?value.toString():value);
     const expected=identity();
+    // Capture before acquiring locks or performing any asynchronous work.
+    const operationConnection=structuredClone(connection());
+    operationConnection.remoteProver=window.BillboardProving.snapshot()==='remote' ? operationConnection.remoteProver : undefined;
+    if(operationConnection.remoteProver)Object.freeze(operationConnection.remoteProver);
+    Object.freeze(operationConnection);
     async function guard() {
       _assertWalletLive();
       if(generation!==_walletGeneration || expected!==identity()) throw new Error('Wallet or deployment configuration changed. Reload before continuing.');
@@ -43835,7 +43858,7 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
         await window.BillboardReadiness.check();
         await guard();
         await verifyBoard();
-        const env=buildEnv({...envExtra,log:onProgress}),config=buildConfig(action,extra,connection());
+        const env=buildEnv({...envExtra,log:onProgress}),config=buildConfig(action,extra,operationConnection);
         const prior=config.preProveHook;
         config.contextGuard=guard;
         config.preProveHook=async value=>{await guard();await verifyBoard();if(prior)await prior(value);await guard();};
@@ -43861,14 +43884,6 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
     } finally {running=false;}
   };
 }
-
-// Both posting and funding snapshot this single control through _connectionConfig.
-(function bindRemoteProving(){
- const toggle=document.getElementById('remoteProving');if(!toggle)return;
- let previousUrl;
- const refresh=()=>{const url=window.billboardConfigStore?.snapshot().config?.remoteProver?.url;if(url!==previousUrl){toggle.checked=!!url;previousUrl=url;}toggle.disabled=!url;toggle.title=url?'Use this board’s prover. Private witness data is shared with its operator.':'This board has not configured a remote prover.';toggle.setAttribute('aria-description',toggle.title);};
- window.billboardConfigStore?.subscribe(refresh);refresh();
-})();
 
 // Browser application boundary. SDK objects and transaction acknowledgements stay here.
 /**
@@ -44019,6 +44034,23 @@ function saveFundingRecord(record) {
   return Object.freeze({run,readDeposit,readDepositTerms,readPolicy,readModerator,readFeed,reset,publicConfiguration,readFundingRecovery,importFundingRecovery:saveFundingRecord,
     get connected(){return handles!==null;},get revision(){return revision;}});
 }
+
+// View adapter only. No operation state or wallet lifecycle is owned here.
+(function bindRemoteProving(){
+  const toggle=document.getElementById('remoteProving');if(!toggle)return;
+  const preference=window.BillboardProving;
+  const render=()=>{
+    const available=!!window.billboardConfigStore?.snapshot().config?.remoteProver?.url;
+    toggle.checked=available&&preference.snapshot()==='remote';
+    toggle.disabled=!available;
+    toggle.title=available?'Use this board’s prover for the next operation. Changes do not affect an operation already in progress. Private witness data is shared with its operator.':'This board has not configured a remote prover.';
+    toggle.setAttribute('aria-description',toggle.title);
+  };
+  toggle.addEventListener('change',()=>preference.setMode(toggle.checked?'remote':'local'));
+  preference.subscribe(render);
+  window.billboardConfigStore?.subscribe(render);
+  render();
+})();
 
 </script>
 <script>

@@ -24,7 +24,7 @@ function _connectionConfig() {
   return {aztecNodeUrl:config.network.nodeUrl,ethRpcUrl:config.network.ethRpcUrl,
     portalAddress:config.board.portalAddress,expectedBoardAddress:config.board.contractAddress,
     expectedNetworkScope:{chainId:config.network.chainId,version:config.network.rollupVersion,rollup:config.network.rollupAddress},
-    privateFee:config.privateFee,remoteProver:config.remoteProver&&document.getElementById('remoteProving')?.checked!==false?{url:config.remoteProver.url,board:config.board.contractAddress}:undefined};
+    privateFee:config.privateFee,remoteProver:config.remoteProver?{url:config.remoteProver.url,board:config.board.contractAddress}:undefined};
 }
 function _getEthRpcUrl() { return _connectionConfig().ethRpcUrl; }
 window.billboardConfigStore?.subscribe(()=>{
@@ -194,6 +194,11 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
     if(!ws?.aztec?.address) throw new Error('Load an Aztec wallet first.');
     const identity=()=>JSON.stringify([_getConfigRevision(),connection(),ws.aztec?.secretKey,ws.aztec?.salt,ws.ethAccount,ws.ethChainId],(_,value)=>typeof value==='bigint'?value.toString():value);
     const expected=identity();
+    // Capture before acquiring locks or performing any asynchronous work.
+    const operationConnection=structuredClone(connection());
+    operationConnection.remoteProver=window.BillboardProving.snapshot()==='remote' ? operationConnection.remoteProver : undefined;
+    if(operationConnection.remoteProver)Object.freeze(operationConnection.remoteProver);
+    Object.freeze(operationConnection);
     async function guard() {
       _assertWalletLive();
       if(generation!==_walletGeneration || expected!==identity()) throw new Error('Wallet or deployment configuration changed. Reload before continuing.');
@@ -233,7 +238,7 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
         await window.BillboardReadiness.check();
         await guard();
         await verifyBoard();
-        const env=buildEnv({...envExtra,log:onProgress}),config=buildConfig(action,extra,connection());
+        const env=buildEnv({...envExtra,log:onProgress}),config=buildConfig(action,extra,operationConnection);
         const prior=config.preProveHook;
         config.contextGuard=guard;
         config.preProveHook=async value=>{await guard();await verifyBoard();if(prior)await prior(value);await guard();};
@@ -259,11 +264,3 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
     } finally {running=false;}
   };
 }
-
-// Both posting and funding snapshot this single control through _connectionConfig.
-(function bindRemoteProving(){
- const toggle=document.getElementById('remoteProving');if(!toggle)return;
- let previousUrl;
- const refresh=()=>{const url=window.billboardConfigStore?.snapshot().config?.remoteProver?.url;if(url!==previousUrl){toggle.checked=!!url;previousUrl=url;}toggle.disabled=!url;toggle.title=url?'Use this board’s prover. Private witness data is shared with its operator.':'This board has not configured a remote prover.';toggle.setAttribute('aria-description',toggle.title);};
- window.billboardConfigStore?.subscribe(refresh);refresh();
-})();
