@@ -168,6 +168,8 @@ function publicOperationFailure(error) {
     BB_TRANSACTION_FAILED:'The transaction did not execute successfully. Check its receipt before trying again.',
     BB_STATE_CONFLICT:'Transaction state changed. Refresh the account before creating a new proof.',
     BB_NO_SAVED_ETHEREUM_TRANSACTION:'No saved Ethereum request exists for this wallet and portal.',
+    BB_ETH_REQUEST_CANCELLED:'Payment cancelled. No transaction was sent. You can try again.',
+    BB_ETH_INSUFFICIENT_FUNDS:'Not enough ETH for this payment and gas. Add funds, then try again.',
     BB_ETH_RECOVERY_REQUIRED:'Check the saved Ethereum request in Wallet Setup before starting another payment.',
     BB_ETH_SUBMISSION_UNKNOWN:'Ethereum submission is uncertain. Keep this browser profile and check the saved Ethereum request in Wallet Setup.',
     BB_ETH_TRANSACTION_FAILED:'The Ethereum request reverted or was replaced. Check its saved request before starting another payment.',

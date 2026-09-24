@@ -22,7 +22,7 @@ function fixture(storage,kind='deposit') {
   getBlock:async n=>{n=n==='latest'?head:n;return {number:n,hash:fork?blockHash(n+9000):blockHash(n),parentHash:blockHash(n-1),prefetchedTransactions:blocks.get(n)||[]};},
   getTransaction:async h=>transactions.get(h)||null,getTransactionReceipt:async h=>receipts.get(h)||null,waitForTransaction:async h=>receipts.get(h)||null};
  const signer={getAddress:async()=>scope.depositor,sendTransaction:async request=>{
-  requests.push(request);if(mode==='reject')throw new Error('private wallet response');
+  requests.push(request);if([4001,'ACTION_REJECTED','INSUFFICIENT_FUNDS'].includes(mode))throw Object.assign(new Error('private wallet detail'),{code:mode});if(mode==='reject')throw new Error('private wallet response');
   if(request.nonce!==nonce)throw new Error('nonce already used');
   const hash=field(),body={...request,hash};transactions.set(hash,body);head++;nonce++;blocks.set(head,[body]);
   const event=kind==='deposit'?iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,100,expected.secretHash,field(),2]):iface.encodeEventLog(iface.getEvent('Withdrawn'),[scope.depositor,100]);
@@ -38,6 +38,31 @@ for(const backend of ['file','indexeddb']) {
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bb-eth-journal-'));
   try{const storage=backend==='file'?createFileJournalStorage(dir):createBrowserJournalStorage(new IDBFactory());await fn(fixture(storage,kind),{storage,dir});}finally{fs.rmSync(dir,{recursive:true,force:true});}
  }
+ for(const code of [4001,'ACTION_REJECTED','INSUFFICIENT_FUNDS']) {
+ test(`${backend}: definitive ${code} first attempt permits fresh payment after restart`,()=>use(async f=>{
+   f.mode(code);await assert.rejects((await f.newSession()).send(f.intent),{code:code==='INSUFFICIENT_FUNDS'?'BB_ETH_INSUFFICIENT_FUNDS':'BB_ETH_REQUEST_CANCELLED'});
+   await (await f.newSession()).assertCanStart();f.mode('normal');
+   const result=await (await f.newSession()).send(f.intent);assert.equal(result.outcome,'success');assert.equal(f.requests[0].nonce,f.requests[1].nonce);
+ }));
+ test(`${backend}: ${code} during retry cannot erase an uncertain original request`,()=>use(async f=>{
+   f.mode('reject');await assert.rejects((await f.newSession()).send(f.intent),{code:'BB_ETH_SUBMISSION_UNKNOWN'});
+   f.mode(code);await assert.rejects((await f.newSession()).recover({retry:true}),{code:'BB_ETH_SUBMISSION_UNKNOWN'});
+   await assert.rejects((await f.newSession()).assertCanStart(),{code:'BB_ETH_RECOVERY_REQUIRED'});
+   f.mode('normal');assert.equal((await (await f.newSession()).recover({retry:true})).outcome,'success');
+   assert(f.requests.every(r=>r.nonce===f.requests[0].nonce&&r.data===f.requests[0].data));
+ }));
+ }
+ test(`${backend}: cancellation preserves prior confirmed record and does not skip a nonce`,()=>use(async f=>{
+   const first=await (await f.newSession()).send(f.intent);f.mode('ACTION_REJECTED');
+   await assert.rejects((await f.newSession({acknowledgeTx:first.txHash})).send(f.intent),{code:'BB_ETH_REQUEST_CANCELLED'});
+   const j=await f.newSession();assert.equal((await j.recover()).txHash,first.txHash);f.mode('normal');await j.send(f.intent);
+   assert.equal(f.requests[1].nonce,f.requests[2].nonce);
+ }));
+ test(`${backend}: cancellation rollback storage failure retains recovery protection`,()=>use(async(f,{storage})=>{
+   let writes=0;const failing={read:key=>storage.read(key),compareAndSwap:async(...args)=>{if(++writes===2)throw Error('disk full');return storage.compareAndSwap(...args);}};
+   f.mode('ACTION_REJECTED');await assert.rejects((await f.newSession({storage:failing})).send(f.intent),{code:'BB_JOURNAL_INVALID'});
+   await assert.rejects((await f.newSession()).assertCanStart(),{code:'BB_ETH_RECOVERY_REQUIRED'});
+ }));
  test(`${backend}: empty Ethereum journal reports its own recovery route`,()=>use(async f=>{await assert.rejects((await f.newSession()).recover(),{code:'BB_NO_SAVED_ETHEREUM_TRANSACTION'});assert.equal(f.requests.length,0);}));
  for(const kind of ['deposit','withdraw'])test(`${backend}: ${kind} requires matching canonical receipt and event`,()=>use(async f=>{
   const j=await f.newSession(),result=await j.send(f.intent);assert.equal(result.outcome,'success');assert.equal(f.requests.length,1);

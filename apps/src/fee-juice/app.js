@@ -19,6 +19,7 @@ async function recoverSavedFeeEthereum(retry=false) {
 }
 setupRpcAuth();
 function safeFundingError(error) {
+  if(['BB_ETH_REQUEST_CANCELLED','BB_ETH_INSUFFICIENT_FUNDS'].includes(error?.code))return publicOperationFailure(error).message;
   if(error?.code==='BB_WALLET_NOT_READY')return 'Connect your wallet and wait for account setup to finish before funding fees.';
   if(error?.code==='BB_REMOTE_PROVER_FAILED')return 'Remote proving failed. Retry or turn off Remote proving to prove on this device.';
   if(error?.code==='PRIVATE_FEE_CAP_TOO_LOW')return 'The configured transaction fee cap is below the network’s current minimum. The board operator needs to update its fee settings before you can continue.';

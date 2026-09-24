@@ -94,10 +94,10 @@ try{
  stage='reject-token-approval';await page.locator('#amount').fill('0.000000000000001');await page.locator('#depositBtn').click();
  await walletPage.getByTestId('parent-selector-confirmation-page').waitFor();await walletPage.getByTestId('confirm-footer-cancel-button').click();await page.locator('#depositStatus .error').waitFor();
  assert.equal(await provider.getTransactionCount(user.address),0);assert.equal(await token.allowance(user.address,addresses.feeJuicePortalAddress),0n);assert.equal(await token.balanceOf(user.address),2000n);report.rejectionMovedNoFunds=true;
- stage='check-rejected-approval';await page.getByRole('button',{name:'Check saved Ethereum fee request',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('#depositStatus .error').length===2);assert.equal(await provider.getTransactionCount(user.address),0);assert.equal(await walletPage.getByTestId('confirm-footer-button').isVisible(),false);
- stage='retry-saved-approval';await page.getByRole('button',{name:'Retry saved Ethereum fee request',exact:true}).click();await walletPage.getByTestId('confirm-footer-button').click();
- stage='approval-receipt';await page.locator('#depositStatus .success').filter({hasText:'Token approval recovered. Continue with the deposit.'}).waitFor();assert.equal(await provider.getTransactionCount(user.address),1);assert.equal(await token.allowance(user.address,addresses.feeJuicePortalAddress),1000n);
- stage='deposit-fees';await page.locator('#depositBtn').click();await walletPage.getByTestId('confirm-footer-button').click();await page.locator('#depositStatus .success').filter({hasText:'Deposit recorded. Download the recovery file, then claim after the bridge message is available.'}).waitFor();
+ await page.locator('#depositStatus .error').filter({hasText:'Payment cancelled. No transaction was sent. You can try again.'}).waitFor();
+ stage='normal-retry-after-cancellation';await page.locator('#depositBtn').click();await walletPage.getByTestId('confirm-footer-button').click();
+ stage='approval-receipt';await ready(async()=>await provider.getTransactionCount(user.address)===1&&await token.allowance(user.address,addresses.feeJuicePortalAddress)===1000n);
+ stage='deposit-fees';await walletPage.getByTestId('confirm-footer-button').waitFor();await walletPage.getByTestId('confirm-footer-button').click();await page.locator('#depositStatus .success').filter({hasText:'Deposit recorded. Download the recovery file, then claim after the bridge message is available.'}).waitFor();
  const record=await page.evaluate(()=>JSON.parse(localStorage.getItem(localStorage.getItem('billboard-private-fee-recovery-latest'))));
  stage='verify-canonical-deposit';const owner=AztecAddress.fromStringUnsafe(await page.evaluate(()=>window.walletState.aztec.address.toString()));assert(await owner.isValid());
  const canonical=await derivePrivateFeeInstance(feeArtifact);
@@ -110,7 +110,7 @@ try{
  stage='recover-saved-deposit';await page.getByRole('button',{name:'Check saved Ethereum fee request',exact:true}).click();await page.locator('#depositStatus .success').filter({hasText:'Private fee deposit recovered. Claim after the bridge message is available.'}).waitFor();
  const savedAgain=await page.evaluate(()=>JSON.parse(localStorage.getItem(localStorage.getItem('billboard-private-fee-recovery-latest'))));assert.deepEqual(savedAgain,record);
  const recovered=await recoverPrivateFeeClaim({...recoveryInput,record:savedAgain});assert.equal(recovered.leafIndex.toString(),claim.leafIndex.toString());assert.equal(await provider.getTransactionCount(user.address),2);
- assert.equal(unexpectedRequests,0);assert.equal(provingAssetRequests,0);report.depositAmount='1000';report.canonicalRecoveryVerified=true;report.explicitRetryVerified=true;
+ assert.equal(unexpectedRequests,0);assert.equal(provingAssetRequests,0);report.depositAmount='1000';report.canonicalRecoveryVerified=true;report.normalRetryAfterCancellationVerified=true;
  stage='board-collateral-refund';report.collateral=await verifyExtensionCollateral({page,walletPage,provider,publisher,operator,user,rpcUrl});
  // MetaMask may show this optional marketing modal after a transaction.
  // Handle the real overlay during actionability checks, including late arrival.
@@ -138,7 +138,7 @@ try{
  assert.equal(await page.locator('#wbConnectionStatus').innerText(),'MetaMask · '+secondAccount);
  report.existingPermissionRequiresApproval=true;report.reselectedDifferentAccount=true;
  assert(blockedContextRequests.every(record=>record.owner==='extension'&&record.hostname==='metamask.github.io'));
- report.passed=true;report.realExtension=true;report.browserVersion=context.browser().version();report.extensionVersion='13.49.0.0';report.connectedLocalAccount=true;report.userEthereumTransactions=await provider.getTransactionCount(user.address);assert.equal(report.userEthereumTransactions,4);report.scope='Real MetaMask connection, rejected approval, explicit approval retry, fee deposit, board collateral/refund and read-only canonical recovery; controlled Outbox roots, no Aztec claim/proof';
+ report.passed=true;report.realExtension=true;report.browserVersion=context.browser().version();report.extensionVersion='13.49.0.0';report.connectedLocalAccount=true;report.userEthereumTransactions=await provider.getTransactionCount(user.address);assert.equal(report.userEthereumTransactions,4);report.scope='Real MetaMask connection, rejected approval, normal retry after cancelled approval, fee deposit, board collateral/refund and read-only canonical recovery; controlled Outbox roots, no Aztec claim/proof';
 }catch(error){
  report.passed=false;report.failure={stage,errorClass:error.name};
  const location=String(error.stack).match(/(?:t04-extension-collateral|test-wallet-extension-browser)\.mjs:\d+:\d+/);if(location)report.failure.location=location[0];process.exitCode=1;

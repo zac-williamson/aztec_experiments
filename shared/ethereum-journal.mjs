@@ -181,13 +181,24 @@ export async function createEthereumJournal({storage,walletSecret,walletSalt,sco
     const result=await verifyEthereumIntentReceipt(provider,saved.value,acknowledged,read);if(!result)throw unknown();
     return saved;
   }
-  async function broadcast(saved) {
+  async function broadcast(saved,previous) {
     const record=saved.value;if(!signer)throw unknown();
     await network(reader());
     if(lower(await signer.getAddress())!==record.from)throw unknown();
     if(contextGuard)await contextGuard();
     let response;
-    try{response=await signer.sendTransaction({from:record.from,to:record.to,data:record.data,value:BigInt(record.value),nonce:record.nonce,chainId:BigInt(record.chainId)});}catch{throw transactionError('BB_ETH_SUBMISSION_UNKNOWN','Ethereum submission is uncertain. Keep its saved request and use recovery.');}
+    try{response=await signer.sendTransaction({from:record.from,to:record.to,data:record.data,value:BigInt(record.value),nonce:record.nonce,chainId:BigInt(record.chainId)});}catch(error){
+      // Only the first attempt can establish that this new intent was never sent.
+      // A rejected retry says nothing about an earlier attempt: keep its record.
+      const rejected=error?.code===4001||error?.code==='ACTION_REJECTED';
+      const unfunded=error?.code==='INSUFFICIENT_FUNDS';
+      if(previous && (rejected||unfunded)) {
+        await slot.write(saved,previous.value);
+        throw transactionError(rejected?'BB_ETH_REQUEST_CANCELLED':'BB_ETH_INSUFFICIENT_FUNDS',
+          rejected?'Payment cancelled. No transaction was sent. You can try again.':'Not enough ETH for this payment and gas. Add funds, then try again.');
+      }
+      throw transactionError('BB_ETH_SUBMISSION_UNKNOWN','Ethereum submission is uncertain. Keep its saved request and use recovery.');
+    }
     // Wallet responses acknowledge submission; only canonical RPC data confirms intent.
     if(!hash(lower(response?.hash)))throw unknown();
     return slot.write(saved,{...record,txHash:lower(response.hash)});
@@ -215,7 +226,7 @@ export async function createEthereumJournal({storage,walletSecret,walletSalt,sco
       const record=validateIntent({version:1,from:scope.depositor,to:intentDestination(expected,scope),chainId:scope.chainId,nonce,data:lower(data),value:String(value),expected,
         startBlock:start.number,startHash:lower(start.hash),nextBlock:start.number+1,cursorHash:null,txHash:null},scope);
       const saved=await slot.write(previous,record);
-      const result=await finish(await broadcast(saved));
+      const result=await finish(await broadcast(saved,previous));
       if(result.outcome!=='success')throw transactionError('BB_ETH_TRANSACTION_FAILED','The Ethereum request reverted or was replaced. Reconcile it before another action.');
       return result;
     },

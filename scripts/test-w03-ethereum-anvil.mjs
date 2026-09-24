@@ -20,7 +20,7 @@ import {FeeJuicePortalAbi} from '@aztec/l1-artifacts/FeeJuicePortalAbi';
 import {AztecAddress} from '@aztec/stdlib/aztec-address';
 import {Fr} from '@aztec/foundation/curves/bn254';
 import {BarretenbergSync} from '@aztec/bb.js';
-import {derivePrivateFeeAddress} from '../shared/private-fee-client.mjs';
+import {derivePrivateFeeAddress,derivePrivateFeeInstance} from '../shared/private-fee-client.mjs';
 import {fundPrivateFees,recoverPrivateFeeFunding,recoverPrivateFeeClaim} from '../shared/private-fee-funding.mjs';
 assertNodeVersion();
 const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'bb-eth-live-'));
@@ -51,6 +51,12 @@ try {
   const options={storage,walletSecret,walletSalt,scope:journalScope,provider,signer:lostResponseSigner};
   stage='deposit-with-lost-hash';
   const secretHash=field(),amount='1000';
+  stage='unfunded-payment-then-fund-and-retry';
+  await provider.send('anvil_setBalance',[user.address,'0x0']);
+  await assert.rejects((await createEthereumJournal({...options,signer:user})).send({data:portal.interface.encodeFunctionData('deposit',[secretHash]),value:amount,expected:{kind:'deposit',amount,secretHash}}),{code:'BB_ETH_INSUFFICIENT_FUNDS'});
+  await (await createEthereumJournal({...options,signer:user})).assertCanStart();
+  await provider.send('anvil_setBalance',[user.address,'0x3635c9adc5dea00000']);
+  stage='deposit-with-lost-hash';
   await assert.rejects((await createEthereumJournal(options)).send({data:portal.interface.encodeFunctionData('deposit',[secretHash]),value:amount,expected:{kind:'deposit',amount,secretHash}}),{code:'BB_ETH_SUBMISSION_UNKNOWN'});
   const deposit=await (await createEthereumJournal({...options,signer:null})).recover();assert.equal(deposit.outcome,'success');assert.equal(sends,1);assert.equal(await portal.getDeposit(user.address),1000n);
   stage='refund-with-lost-hash';
@@ -69,7 +75,8 @@ try {
   await (await token.mint(user.address,1000n)).wait();
   const privateFeeArtifact=JSON.parse(fs.readFileSync(path.join(ROOT,'apps/src/billboard/private_fee_artifact.json')));
   const privateFeeAddress=await derivePrivateFeeAddress(privateFeeArtifact),owner=AztecAddress.fromFieldUnsafe(Fr.fromString(journalScope.account));
-  const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5,l1ContractAddresses:{rollupAddress:await publisher.getAddress(),feeJuicePortalAddress:await feePortal.getAddress(),feeJuiceAddress:await token.getAddress()}})};
+  // Aztec publication metadata is a fixture; Ethereum transactions below are real local-chain calls.
+  const node={getContract:async()=>derivePrivateFeeInstance(privateFeeArtifact),getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5,l1ContractAddresses:{rollupAddress:await publisher.getAddress(),feeJuicePortalAddress:await feePortal.getAddress(),feeJuiceAddress:await token.getAddress()}})};
   const publicRecords=[];
   const feeInput={node,ethProvider:provider,ethSigner:{...lostResponseSigner,provider},owner,walletSecret,walletSalt,privateFeeAddress,privateFeeArtifact,amount:'1000',expectedChainId:'31337',expectedVersion:'5',journalStorage:storage,saveRecovery:async record=>publicRecords.push(record)};
   const recoverFee=()=>recoverPrivateFeeFunding({...feeInput,ethSigner:undefined,ethProvider:provider,sender:user.address});
@@ -107,7 +114,7 @@ try {
   assert.equal(activated.outcome,'success');assert.equal(await freshPortal.depositsEnabled(),true);assert.equal(sends,6);
   assert.equal((await (await createEthereumJournal(activationOptions)).reconcilePrevious({retry:true})).txHash,activated.txHash);assert.equal(sends,6);
   passed=true;
-}catch(error){console.log(JSON.stringify({passed:false,stage,errorClass:error.name,code:error.code||null}));process.exitCode=1;}
+}catch(error){console.log(JSON.stringify({passed:false,stage,errorClass:error.name,code:error.code||null,actualCode:error.actual?.code,diagnostic:error.actual?.diagnostic,expectedCode:error.expected?.code,assertionSite:error.stack?.match(/test-w03-ethereum-anvil.mjs:\d+:\d+/)?.[0]}));process.exitCode=1;}
 finally {
   await BarretenbergSync.destroySingleton();
   clearTimeout(watchdog);if(provider)provider.destroy();

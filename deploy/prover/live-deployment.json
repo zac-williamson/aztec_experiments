@@ -316,5 +316,35 @@
       "deploy.html": "cf3326e7fceced07987573c1be616d5eb2524e1089633d65947844c984b6e13c"
     },
     "invalidationStatus": "Completed"
+  },
+  "paymentCancellation": {
+    "pages": [
+      {
+        "path": "user.html",
+        "sha256": "6aed383555fd444306813c171a477282696fad63d4bd1626a98b48f446a1ede5"
+      },
+      {
+        "path": "fee-juice.html",
+        "sha256": "46116da94f0a8df2ef7f618089de5b09008ef3b09595e40f39ae48e645176f5f"
+      },
+      {
+        "path": "censor.html",
+        "sha256": "a75822d5cf4aec66cf9c24dd68ca256d03cc0433e7d3af3915ab05d5505bb61e"
+      },
+      {
+        "path": "deploy.html",
+        "sha256": "0a3dcc967f8e40e5321ed702d01eeb95e05c1442934d38d969a9439ea41d7714"
+      },
+      {
+        "path": "sdk-manifest.json",
+        "sha256": "7cd65bfb0bfce0d4cff43c21b8e1df17abcf4fd95e49b6a120e64b8a1581ae55"
+      },
+      {
+        "path": "aztec_bundle.js",
+        "sha256": "6c0234e3f32d7577aa57527444d121d0fb514b34b1cd3891e15fe970f767acad"
+      }
+    ],
+    "invalidation": "Completed",
+    "realMetaMaskRegression": "payment-cancellation-metamask-20260924-retry.json"
   }
 }

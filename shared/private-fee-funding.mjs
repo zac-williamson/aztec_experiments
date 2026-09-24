@@ -125,7 +125,7 @@ export async function fundPrivateFees(input){
     record={...record,leafIndex:claim.leafIndex.toBigInt().toString()};phase='save-confirmed-claim';await saveRecovery(copy(record));
     return copy(record);
   }catch(error){
-    const journalCode=['BB_JOURNAL_INVALID','BB_ETH_RECOVERY_REQUIRED','BB_ETH_SUBMISSION_UNKNOWN','BB_ETH_TRANSACTION_FAILED'].includes(error?.code);
+    const journalCode=['BB_ETH_REQUEST_CANCELLED','BB_ETH_INSUFFICIENT_FUNDS','BB_JOURNAL_INVALID','BB_ETH_RECOVERY_REQUIRED','BB_ETH_SUBMISSION_UNKNOWN','BB_ETH_TRANSACTION_FAILED'].includes(error?.code);
     const wrapped=journalCode?new PrivateFeeFundingError(error.code,record):depositAttempted?new PrivateFeeFundingError('PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN',record):
       error instanceof PrivateFeeFundingError?error:new PrivateFeeFundingError('PRIVATE_FEE_FUNDING_FAILED');
     // Finite codes only: never copy provider messages, payloads, transaction arguments or stacks.
