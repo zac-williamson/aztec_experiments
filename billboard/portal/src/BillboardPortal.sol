@@ -23,7 +23,13 @@ contract BillboardPortal is ReentrancyGuard {
     uint256 public immutable L1_CHAIN_ID;
     bytes32 public immutable CONFIG_HASH;
 
-    mapping(address => uint128) public activeDeposit;
+    struct Deposit {
+        uint128 amount;
+        bytes32 secretHash;
+        bytes32 key;
+        uint256 index;
+    }
+    mapping(address => Deposit) private deposits;
     uint256 public totalDeposited;
     bool public depositsEnabled;
 
@@ -67,20 +73,21 @@ contract BillboardPortal is ReentrancyGuard {
         require(msg.value >= MIN_DEPOSIT, "Below min deposit");
         require(msg.value <= MAX_DEPOSIT, "Above max deposit");
         require(uint256(secretHash) > 0 && uint256(secretHash) < Constants.P, "Invalid secret hash");
-        require(activeDeposit[msg.sender] == 0, "Already have an active deposit");
+        require(deposits[msg.sender].amount == 0, "Already have an active deposit");
         uint128 amount = uint128(msg.value); // Constructor caps MAX_DEPOSIT at u96.
-        activeDeposit[msg.sender] = amount;
+        deposits[msg.sender].amount = amount;
         totalDeposited += amount;
         (key, index) = INBOX.sendL2Message(DataStructures.L2Actor(L2_CONTRACT, VERSION),
             PortalMessages.receipt(false, L1_CHAIN_ID, address(this), L2_CONTRACT, VERSION, msg.sender, amount), secretHash);
+        deposits[msg.sender] = Deposit(amount, secretHash, key, index);
         emit Deposited(msg.sender, amount, secretHash, key, index);
     }
 
     /// @dev All effects and Outbox consumption revert if bridge verification or payment fails.
     function withdraw(uint256 epoch, uint256 checkpointCount, uint256 leafIndex, bytes32[] calldata path) external nonReentrant {
-        uint128 amount = activeDeposit[msg.sender];
+        uint128 amount = deposits[msg.sender].amount;
         require(amount != 0, "No active deposit");
-        delete activeDeposit[msg.sender];
+        delete deposits[msg.sender];
         totalDeposited -= amount;
         _consume(PortalMessages.receipt(true, L1_CHAIN_ID, address(this), L2_CONTRACT, VERSION,
             msg.sender, amount), epoch, checkpointCount, leafIndex, path);
@@ -99,7 +106,12 @@ contract BillboardPortal is ReentrancyGuard {
     }
 
     function getDeposit(address depositor) external view returns (uint128 amount) {
-        return activeDeposit[depositor];
+        return deposits[depositor].amount;
+    }
+
+    /// @notice Complete public claim metadata. The private claim secret stays with the depositor.
+    function getActiveDeposit(address depositor) external view returns (Deposit memory) {
+        return deposits[depositor];
     }
 
     receive() external payable { revert("Unsolicited ETH"); }

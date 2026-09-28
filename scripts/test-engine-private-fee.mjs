@@ -93,7 +93,7 @@ function mainHarness(action,isDummy=false) {
   const iface=new ethers.Interface(['event Deposited(address indexed depositor,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
   const event=iface.encodeEventLog(iface.getEvent('Deposited'),[depositor,amount,secretHash.toString(),new Fr(77).toString(),42n]);
   const provider={getLogs:async()=>[],getCode:async()=> '0x01',getNetwork:async()=>({chainId:31337n}),destroy(){},getBlock:async()=>({number:1,hash:'canonical-eth'}),getTransactionReceipt:async hash=>({hash,status:1,blockNumber:1,blockHash:'canonical-eth',logs:[{index:0,address:portal,...event}]})};
-  class Portal {L2_CONTRACT=async()=>board.toString();L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>rollup;VERSION=async()=>1n;async getDeposit(){return amount;}}
+  class Portal {L2_CONTRACT=async()=>board.toString();L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>rollup;VERSION=async()=>1n;async getDeposit(){return amount;}async getActiveDeposit(){return {amount,secretHash:secretHash.toString(),key:new Fr(77).toString(),index:42n};}}
   const node={getL1ToL2MessageMembershipWitness:async()=>[42n,new SiblingPath(L1_TO_L2_MSG_TREE_HEIGHT,Array.from({length:L1_TO_L2_MSG_TREE_HEIGHT},()=>Fr.ONE.toBuffer()))],getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:1}),getL1ContractAddresses:async()=>({rollupAddress:rollup}),getBlockNumber:async()=>1,
     getBlock:async number=>({number,hash:'block',header:{globalVariables:{timestamp:100n}},body:{txEffects:[]}}),getBlocks:async(from,count)=>Array.from({length:count},(_,i)=>({number:Number(from)+i,hash:'block',body:{txEffects:[]}})),getContract:async()=>({address:board}),getPublicStorageAt:async()=>{authorBalanceReads++;throw new Error('Author fee lookup forbidden');}};
   const note=()=>({schemaVersion:1n,depositChainId:5n,amount:missingNote||(action==='claim'&&!sent)?0n:amount,nextAllowedTime:0n,lastRealPostIndex:0n,lastScreenedIndex:0n,headSequence:0n,...noteOverrides});
@@ -370,7 +370,7 @@ test('successful retried screening releases its step guard before the following 
 
 function savedClaimHarness(overrides={}) {
  const h=mainHarness('recover');h.setMissingNote(true);
- const intent={schemaVersion:1,kind:'claim',depositor:'0x0000000000000000000000000000000000000004',amount:'1000000000000000',leafIndex:'42',secretHash:new Fr(9).toString(),transactionHash:new Fr(3).toString(),depositChain:new Fr(5).toString(),...overrides};
+ const intent={schemaVersion:2,kind:'claim',depositor:'0x0000000000000000000000000000000000000004',amount:'1000000000000000',leafIndex:'42',secretHash:new Fr(9).toString(),messageKey:new Fr(77).toString(),depositChain:new Fr(5).toString(),...overrides};
  const operation=JSON.stringify(intent),operations=[];
  h.env.createTransactionJournal=async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},
   recover:async()=>{throw Object.assign(new Error('stale'),{code:'BB_RECOVERY_REQUIRED'});},inspect:async()=>({operation}),
@@ -384,7 +384,7 @@ test('stale claim restores exact original receipt and claim identity without dep
  const args=h.requests[0].action.args;
  assert.equal(args[1],1000000000000000n);assert.equal(args[2].toString(),h.secret.toString());assert.equal(args[3],42n);
 });
-for(const [key,value] of [['amount','1'],['leafIndex','43'],['depositChain',new Fr(6).toString()],['secretHash',new Fr(10).toString()],['depositor','0x0000000000000000000000000000000000000005']])test(`stale claim rejects changed ${key} before another fee payment`,async()=>{
+for(const [key,value] of [['messageKey',new Fr(78).toString()],['amount','1'],['leafIndex','43'],['depositChain',new Fr(6).toString()],['secretHash',new Fr(10).toString()],['depositor','0x0000000000000000000000000000000000000005']])test(`stale claim rejects changed ${key} before another fee payment`,async()=>{
  const h=savedClaimHarness({[key]:value});await assert.rejects(h.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(h.requests.length,0);
 });
 test('an existing note is not confirmation of an unresolved saved claim transaction',async()=>{
@@ -395,18 +395,21 @@ test('failed claim does not enter the former thirty-attempt loop',async()=>{
  await assert.rejects(h.run());assert.equal(sends,1);assert.equal(h.requests.length,1);
 });
 
-test('saved claim rejects a receipt returned for another transaction',async()=>{
- const h=savedClaimHarness(),read=h.provider.getTransactionReceipt;
- h.provider.getTransactionReceipt=async hash=>({...await read(hash),hash:new Fr(999).toString()});
- await assert.rejects(h.run(),{code:'BB_RECOVERY_UNKNOWN'});assert.equal(h.requests.length,0);
+test('saved claim rejects a replaced active deposit before proving',async()=>{
+ const h=savedClaimHarness(),read=h.Portal.prototype.getActiveDeposit;
+ h.Portal.prototype.getActiveDeposit=async()=>({...await read(),key:new Fr(999).toString()});
+ await assert.rejects(h.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(h.requests.length,0);
 });
-test('saved claim rejects a reorged Ethereum receipt',async()=>{
- const h=savedClaimHarness();h.provider.getBlock=async()=>({number:1,hash:'different block'});
- await assert.rejects(h.run(),{code:'BB_RECOVERY_UNKNOWN'});assert.equal(h.requests.length,0);
+test('saved claim rejects a block changed during metadata retrieval',async()=>{
+ const h=savedClaimHarness();let read=false;
+ const original=h.Portal.prototype.getActiveDeposit;
+ h.Portal.prototype.getActiveDeposit=async()=>{read=true;return original();};
+ h.provider.getBlock=async()=>({number:1,hash:read?'changed':'original'});
+ await assert.rejects(h.run(),/Ethereum changed/);assert.equal(h.requests.length,0);
 });
-test('saved claim receipt reads time out before any proof or fee preparation',async()=>{
- const h=savedClaimHarness();h.provider.getTransactionReceipt=()=>new Promise(()=>{});
- h.env.aztec.boundedTransactionRead=(fn,timeout)=>{assert(timeout>0&&timeout<=60000);return transactionOutcomes.boundedTransactionRead(fn,20);};
+test('saved claim metadata timeout cannot prepare fees or proofs',async()=>{
+ const h=savedClaimHarness();h.Portal.prototype.getActiveDeposit=()=>new Promise(()=>{});
+ h.env.aztec.boundedTransactionRead=(fn,timeout)=>{assert(timeout>0&&timeout<=20000);return transactionOutcomes.boundedTransactionRead(fn,20);};
  await assert.rejects(h.run(),{code:'BB_DEPOSIT_LOOKUP_FAILED'});assert.equal(h.requests.length,0);
 });
 
@@ -531,11 +534,6 @@ test('list cannot report an unreadable flag as an unflagged post',async()=>{
   return target[name];
  }})};};
  await assert.rejects(h.run(),/flag unavailable/);assert.equal(flagReads,1);assert(!h.logs.some(text=>text.includes('posts loaded')));
-});
-for(const hash of ['0x123','not-a-hash'])test(`deposit recovery rejects ${String(hash)} without scanning or payment`,async()=>{
- const h=mainHarness('claim');h.config.reuseTxHash=hash;let scans=0;
- h.provider.getLogs=async()=>{scans++;throw Error('forbidden discovery');};
- await assert.rejects(h.run(),/deposit transaction hash/);assert.equal(scans,0);assert.equal(h.requests.length,0);
 });
 test('bare reuse cannot turn recovery into a new deposit',async()=>{
  const h=mainHarness('deposit');h.config.reuse=true;delete h.config.reuseTxHash;
@@ -698,9 +696,9 @@ for (const failure of ['revert','gas-change']) test(`adjusted fee reservation is
  assert.equal(simulations,2);assert.equal(proofs,0);
 });
 
-test('claim discovers current deposit after reload without a transaction hash',async()=>{
- const h=mainHarness('claim');h.env.aztec.boundedTransactionRead=transactionOutcomes.boundedTransactionRead;delete h.config.reuseTxHash;const hash=new Fr(3).toString();
- const receipt=await h.provider.getTransactionReceipt(hash);let scans=0;
- h.provider.getLogs=async filter=>{if(filter.topics[0]!==ethers.id('Deposited(address,uint128,bytes32,bytes32,uint256)'))return [];scans++;return [{...receipt.logs[0],blockNumber:1,transactionHash:hash}];};
- await h.run();assert.equal(scans,1);assert.equal(h.requests.length,1);assert.equal(JSON.parse(h.operations[0]).transactionHash,hash);
+test('claim retrieves active metadata after reload without receipts or log scans',async()=>{
+ const h=mainHarness('claim');h.env.aztec.boundedTransactionRead=transactionOutcomes.boundedTransactionRead;delete h.config.reuseTxHash;
+ h.provider.getTransactionReceipt=async()=>{throw Error('receipt lookup forbidden');};
+ h.provider.getLogs=async()=>{throw Error('historical scan forbidden');};
+ await h.run();assert.equal(h.requests.length,1);assert.equal(JSON.parse(h.operations[0]).messageKey,new Fr(77).toString());
 });

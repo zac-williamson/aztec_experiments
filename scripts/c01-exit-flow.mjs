@@ -1,3 +1,4 @@
+import {applicationProofsEnabled,applicationProver} from './testing/proof-policy.mjs';
 // TEST ONLY: genuine no-post private exit and ordinary inclusion; no L1 settlement/withdrawal.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -73,7 +74,7 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
     if(exitState!==undefined)observation.scope='genuine screened-post L2 withdrawal and ordinary checkpoint inclusion';
     assert(path.isAbsolute(directory));const url=new URL(rpcUrl);
     assert.equal(url.protocol,'http:');assert.equal(url.hostname,'127.0.0.1');assert(!url.username&&!url.password);
-    assert.equal(await l1Client.getChainId(),31337);assert.equal((await node.getConfig()).realProofs,true);
+    assert.equal(await l1Client.getChainId(),31337);assert.equal((await node.getConfig()).realProofs,applicationProofsEnabled());
     const info=await node.getNodeInfo();assert.equal(Number(info.l1ChainId),31337);
     assert.equal(String(info.rollupVersion),claim.scope.rollupVersion);assert.equal(claim.scope.l1ChainId,'31337');
     assert.equal(info.l1ContractAddresses.rollupAddress.toString().toLowerCase(),claim.scope.rollupAddress);
@@ -87,7 +88,7 @@ export async function proveAndIncludeC01Exit({node,preparation,instance,claimRes
     const native={backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1};
     for(const key of ['backend','bbPath','threads'])assert.equal(Barretenberg.getSingleton().options[key],native[key]);
     mark('reopen-exit-wallet');
-    wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
+    wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:applicationProver(native),autoSync:false,syncChainTip:'checkpointed'}});
     const account=authorAccount;
     const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'c01-disposable');
     assert(manager.address.equals(account.address));await wallet.registerContract(instance,boardArtifact);await wallet.pxe.sync();

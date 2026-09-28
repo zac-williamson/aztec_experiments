@@ -211,10 +211,7 @@ async function doDepositPage() {
     // Phase 2: Wait for L2 ingest + claim on L2
     log('', 'info', 'depositStatus');
     log('Waiting for L2 to ingest deposit, then claiming...', 'info', 'depositStatus');
-    await claimExisting({
-
-      reuseTxHash: depInfo.txHash,
-    });
+    await claimExisting({});
 
     log('Deposit claimed on L2! Proceeding to post page.', 'success', 'depositStatus');
     _stateResult.state = 'postable';
@@ -223,10 +220,8 @@ async function doDepositPage() {
   }
 
   // deposited_l1_not_claimed_l2: claim the existing deposit
-  const txHash = _stateResult?.depositInfo?.txHash;
-  const extra = txHash ? {reuseTxHash:txHash} : {};
   log('Claiming existing deposit on L2...', 'info', 'depositStatus');
-  await claimExisting(extra);
+  await claimExisting({});
   log('Deposit claimed on L2! Proceeding to post page.', 'success', 'depositStatus');
   _stateResult.state = 'postable';
   nextPage();

@@ -59,12 +59,17 @@ try {
   stage='deposit-with-lost-hash';
   await assert.rejects((await createEthereumJournal(options)).send({data:portal.interface.encodeFunctionData('deposit',[secretHash]),value:amount,expected:{kind:'deposit',amount,secretHash}}),{code:'BB_ETH_SUBMISSION_UNKNOWN'});
   const deposit=await (await createEthereumJournal({...options,signer:null})).recover();assert.equal(deposit.outcome,'success');assert.equal(sends,1);assert.equal(await portal.getDeposit(user.address),1000n);
+  stage='direct-deposit-recovery';
+  const active=await portal.getActiveDeposit(user.address);
+  assert.equal(active.amount,1000n);assert.equal(active.secretHash,secretHash);
+  assert.equal(active.key,deposit.event.key);assert.equal(active.index,deposit.event.index);
   stage='refund-with-lost-hash';
   const exitRoot=await leaf(await sha256Field(encodeEscrowCommitment('exit',scope,{depositor:user.address.toLowerCase(),amount})));
   await (await publisher.publish(2,1,exitRoot)).wait();
   const refundJournal=await createEthereumJournal({...options,acknowledgeTx:deposit.txHash});
   await assert.rejects(refundJournal.send({data:portal.interface.encodeFunctionData('withdraw',[2,1,0,[]]),value:'0',expected:{kind:'withdraw',amount}}),{code:'BB_ETH_SUBMISSION_UNKNOWN'});
   assert.equal(await portal.getDeposit(user.address),0n);
+  const cleared=await portal.getActiveDeposit(user.address);assert.deepEqual([...cleared],[0n,'0x'+'00'.repeat(32),'0x'+'00'.repeat(32),0n]);
   const refund=await (await createEthereumJournal({...options,signer:null})).recover();assert.equal(refund.outcome,'success');assert.equal(refund.event.amount,1000n);assert.equal(sends,2);
   const again=await (await createEthereumJournal({...options,signer:lostResponseSigner})).recover({retry:true});assert.equal(again.txHash,refund.txHash);assert.equal(sends,2);
   stage='deploy-real-fee-inbox-and-token';

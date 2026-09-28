@@ -1,3 +1,4 @@
+import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 // TEST ONLY: real application Outbox consumption/accounting after official controlled settlement.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -33,7 +34,7 @@ export async function withdrawC01L1({node,preparation,ready,exitResult,settlemen
     const url=new URL(rpcUrl);assert.equal(url.protocol,'http:');assert.equal(url.hostname,'127.0.0.1');
     assert(!url.username&&!url.password);assert.equal(await l1Client.getChainId(),31337);
     assert.equal(claim.scope.l1ChainId,'31337');assert.equal(l1Client.account?.address.toLowerCase(),claim.depositor);
-    assert.equal((await node.getConfig()).realProofs,true);
+    assert.equal((await node.getConfig()).realProofs,applicationProofsEnabled());
     const info=await node.getNodeInfo();assert.equal(Number(info.l1ChainId),31337);
     assert.equal(String(info.rollupVersion),claim.scope.rollupVersion);
     assert.equal(info.l1ContractAddresses.rollupAddress.toString().toLowerCase(),claim.scope.rollupAddress);
