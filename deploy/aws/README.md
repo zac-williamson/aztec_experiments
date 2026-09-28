@@ -177,3 +177,19 @@ This revision is prepared and locally checked, but is not deployed: the AWS CLI
 session expired. The live alarm still monitors moderator health only. Deployment
 must install the updated script and publisher together, run one verified backup,
 and confirm the new metric and alarm before claiming backup monitoring works.
+
+## Current board migration — 28 September 2026
+
+The moderator now runs `/srv/board/operator-direct-deposit-20260928` against portal
+`0x2e552bcd767b6ac942836d23052d69f411c48a38`, with its queue in
+`/srv/board/state/moderation-direct-deposit-20260928`. Its existing wallet and
+shared private-fee contract are unchanged. The old release and state remain on
+the host for recovery. Both service units and the backup script above describe
+this deployment.
+
+The live check evaluated two benign posts, including a newly submitted real
+testnet transaction. The backup was downloaded and its file hashes and SQLite
+integrity checked; the restarted moderator retained both results and reported
+no queue errors or checkpointed feed lag. This check did not generate a new
+violation/flag transaction. Full public deployment evidence is recorded in
+`deploy/prover/live-deployment.json`.

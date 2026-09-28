@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "verifiedAt": "2026-09-28T13:43:37.851266+00:00",
+  "verifiedAt": "2026-09-28T17:02:51.054892+00:00",
   "website": "https://d30njln0kead8n.cloudfront.net",
   "endpoint": "https://d30njln0kead8n.cloudfront.net/prover",
   "instance": "i-0eaa1171b734be7ca",
@@ -467,7 +467,90 @@
     },
     "browserDevnetEvidence": "application-e97e1aa4-2f4d-4d6c-88ef-77aa8ab41d88",
     "browserDevnetProofsEnabled": false,
-    "moderatorMigration": "Pending: MessageBoardCompute2 lacks ssm:SendCommand on existing censor instance i-0cb8555882d6cfecc. Existing moderator was not modified.",
+    "moderatorMigration": {
+      "verifiedAt": "2026-09-28T17:02:51.054892+00:00",
+      "status": "complete",
+      "instance": "i-0cb8555882d6cfecc",
+      "region": "eu-west-2",
+      "release": "/srv/board/operator-direct-deposit-20260928",
+      "packageManifestSha256": "8f9294410e51dd8111d60cce918ec0fb1f3c2f39e5fadcd0a97b0bfe9c825803",
+      "verifiedPackageFiles": 1939,
+      "sourceCommit": "c2a8fb4",
+      "newStateDirectory": "/srv/board/state/moderation-direct-deposit-20260928",
+      "walletAndPrivateFeeContractPreserved": true,
+      "oldStatePreserved": true,
+      "freshTestPostTx": "0x03d533faed16e2f93e92354bba53fc784ea5775b9f548cdcbe17562822aac84a",
+      "evaluations": [
+        {
+          "state": "evaluated-ok",
+          "postId": "0x0c744439136439541aecf5a6bba393106c302f6a1069ca403ad52b539c3aeb8d",
+          "postIndex": null,
+          "decision": {
+            "isViolation": false
+          },
+          "errorCode": null,
+          "scope": {
+            "l1ChainId": "11155111",
+            "rollupVersion": "1821665230",
+            "rollupAddress": "0xd73a91bdcf6891c7642f3e460036e1ef2cc23178",
+            "boardAddress": "0x2836febce7767ea0f0562ca1b6095dc1ed068f05ab534d6385fbdd7560d0c75a",
+            "portalAddress": "0x2e552bcd767b6ac942836d23052d69f411c48a38"
+          }
+        },
+        {
+          "state": "evaluated-ok",
+          "postId": "0x15b0c1d8468fbb28ab76ea537e340699476ad14210049844b69089f06796d37b",
+          "postIndex": null,
+          "decision": {
+            "isViolation": false
+          },
+          "errorCode": null,
+          "scope": {
+            "l1ChainId": "11155111",
+            "rollupVersion": "1821665230",
+            "rollupAddress": "0xd73a91bdcf6891c7642f3e460036e1ef2cc23178",
+            "boardAddress": "0x2836febce7767ea0f0562ca1b6095dc1ed068f05ab534d6385fbdd7560d0c75a",
+            "portalAddress": "0x2e552bcd767b6ac942836d23052d69f411c48a38"
+          }
+        }
+      ],
+      "healthAfterBackupRestart": {
+        "type": "billboard-moderation-health-v1",
+        "stateCounts": {
+          "queued": 0,
+          "leased": 0,
+          "evaluated-ok": 2,
+          "submit-intent": 0,
+          "submitted": 0,
+          "reconciling": 0,
+          "retryable-error": 0,
+          "confirmed-flag": 0,
+          "expired": 0,
+          "manual-review": 0
+        },
+        "severity": "ok",
+        "checkpointHeight": 99366,
+        "lastSuccessfulIngestAgeMs": 6,
+        "counts": {
+          "retryableErrors": 0,
+          "unresolvedSigning": 0,
+          "manualSigningFences": 0,
+          "awaitingFinality": 0,
+          "expiredObligations": 0,
+          "manualAttention": 0,
+          "unsignedPending": 0
+        },
+        "alerts": []
+      },
+      "backup": {
+        "verifiedDownloadAndHashesAndSQLite": true,
+        "timerActive": true,
+        "key": "moderator-state/20260928T170100Z-965817.tar.gz",
+        "sha256": "074d007d63579c0b8e97ff96825f95d454efee0fcc11c0c6d65463e9a90318e6"
+      },
+      "qualificationScope": "Live benign-message evaluation and durable restart; no violation/flag transaction generated during migration.",
+      "independentReview": "remote_review approved service and backup mapping and stop/copy/start sequence."
+    },
     "maxComputeUSD": 9.6
   }
 }
