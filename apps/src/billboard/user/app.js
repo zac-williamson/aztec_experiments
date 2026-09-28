@@ -152,7 +152,7 @@ function onShowDeposit() {
     if (newSection) newSection.style.display = 'none';
     if (recoverSection) recoverSection.style.display = '';
     if (navBtn) { navBtn.style.display = ''; navBtn.textContent = 'Claim deposit →'; }
-    log('Enter the deposit transaction hash from your Ethereum wallet or recovery record.', 'info', 'depositBalanceCheck');
+    log('Deposit found on Ethereum. Claim it to start posting.', 'info', 'depositBalanceCheck');
   } else if (state === 'postable') {
     log('Deposit already claimed on L2. Proceeding to post page.', 'success', 'depositBalanceCheck');
     if (navBtn) navBtn.style.display = 'none';
@@ -204,7 +204,6 @@ async function doDepositPage() {
     // Persist the completed phase before attempting the separate L2 claim.
     // A delayed message or rejected claim must never offer another ETH deposit.
     _stateResult={...(_stateResult||{}),state:'deposited_l1_not_claimed_l2',depositInfo:depInfo};
-    const existing=document.getElementById('existingTxHash');if(existing)existing.value=depInfo.txHash;
     const newSection=document.getElementById('newDepositSection');if(newSection)newSection.style.display='none';
     const recoverSection=document.getElementById('recoverDepositSection');if(recoverSection)recoverSection.style.display='';
     const nav=document.getElementById('navNext');if(nav)nav.textContent='Claim deposit →';
@@ -224,10 +223,8 @@ async function doDepositPage() {
   }
 
   // deposited_l1_not_claimed_l2: claim the existing deposit
-  const txHash = _stateResult?.depositInfo?.txHash || document.getElementById('existingTxHash').value.trim();
-  const extra = {  };
-  if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) { highlightMissing(['existingTxHash']); throw new Error('Enter the deposit transaction hash from your Ethereum wallet or recovery record.'); }
-  extra.reuseTxHash = txHash;
+  const txHash = _stateResult?.depositInfo?.txHash;
+  const extra = txHash ? {reuseTxHash:txHash} : {};
   log('Claiming existing deposit on L2...', 'info', 'depositStatus');
   await claimExisting(extra);
   log('Deposit claimed on L2! Proceeding to post page.', 'success', 'depositStatus');

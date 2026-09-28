@@ -406,8 +406,8 @@ test('saved claim rejects a reorged Ethereum receipt',async()=>{
 });
 test('saved claim receipt reads time out before any proof or fee preparation',async()=>{
  const h=savedClaimHarness();h.provider.getTransactionReceipt=()=>new Promise(()=>{});
- h.env.aztec.boundedTransactionRead=(fn,timeout)=>{assert.equal(timeout,20000);return transactionOutcomes.boundedTransactionRead(fn,20);};
- await assert.rejects(h.run(),{code:'BB_SUBMISSION_UNKNOWN'});assert.equal(h.requests.length,0);
+ h.env.aztec.boundedTransactionRead=(fn,timeout)=>{assert(timeout>0&&timeout<=60000);return transactionOutcomes.boundedTransactionRead(fn,20);};
+ await assert.rejects(h.run(),{code:'BB_DEPOSIT_LOOKUP_FAILED'});assert.equal(h.requests.length,0);
 });
 
 for(const action of ['transfer-censor','set-moderation-policy','declare-immoral'])test(`explicit recovery restores exact saved ${action} arguments`,async()=>{
@@ -532,7 +532,7 @@ test('list cannot report an unreadable flag as an unflagged post',async()=>{
  }})};};
  await assert.rejects(h.run(),/flag unavailable/);assert.equal(flagReads,1);assert(!h.logs.some(text=>text.includes('posts loaded')));
 });
-for(const hash of [undefined,'0x123','not-a-hash'])test(`deposit recovery rejects ${String(hash)} without scanning or payment`,async()=>{
+for(const hash of ['0x123','not-a-hash'])test(`deposit recovery rejects ${String(hash)} without scanning or payment`,async()=>{
  const h=mainHarness('claim');h.config.reuseTxHash=hash;let scans=0;
  h.provider.getLogs=async()=>{scans++;throw Error('forbidden discovery');};
  await assert.rejects(h.run(),/deposit transaction hash/);assert.equal(scans,0);assert.equal(h.requests.length,0);
@@ -696,4 +696,11 @@ for (const failure of ['revert','gas-change']) test(`adjusted fee reservation is
  const wallet=c.BillboardPrivateFeeRouting.createAztecWallet({BaseWallet,GasSettings},{proveTx:async()=>{proofs++;throw Error('must not prove');}},{},{},()=>{},Fr.ONE);
  await assert.rejects(wallet.sendTx({}, {from:owner,fee:{gasSettings:gas()}}),{code:failure==='revert'?'BB_SIMULATION_FAILED':'BB_GAS_LIMIT_EXCEEDED'});
  assert.equal(simulations,2);assert.equal(proofs,0);
+});
+
+test('claim discovers current deposit after reload without a transaction hash',async()=>{
+ const h=mainHarness('claim');h.env.aztec.boundedTransactionRead=transactionOutcomes.boundedTransactionRead;delete h.config.reuseTxHash;const hash=new Fr(3).toString();
+ const receipt=await h.provider.getTransactionReceipt(hash);let scans=0;
+ h.provider.getLogs=async filter=>{if(filter.topics[0]!==ethers.id('Deposited(address,uint128,bytes32,bytes32,uint256)'))return [];scans++;return [{...receipt.logs[0],blockNumber:1,transactionHash:hash}];};
+ await h.run();assert.equal(scans,1);assert.equal(h.requests.length,1);assert.equal(JSON.parse(h.operations[0]).transactionHash,hash);
 });

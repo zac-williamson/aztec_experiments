@@ -346,5 +346,27 @@
     ],
     "invalidation": "Completed",
     "realMetaMaskRegression": "payment-cancellation-metamask-20260924-retry.json"
+  },
+  "automaticDepositDiscovery": {
+    "pages": [
+      {
+        "path": "user.html",
+        "sha256": "3f4d4c1474ea8bfb5b5b6835126882593e2cbe066718b9a9b42f051f04307807"
+      },
+      {
+        "path": "fee-juice.html",
+        "sha256": "fc362f4b293e00212fc7019af9d8ffcc069224395c2686b42cd5e286325d3250"
+      },
+      {
+        "path": "censor.html",
+        "sha256": "f0fff37d988fc6d7c5469a1d52a7ec00d01bd7b6e4df8104c62992305a6d02a0"
+      },
+      {
+        "path": "deploy.html",
+        "sha256": "3d7dc4131230419f8fa1ab738b41224bc8420720c65065d136a9292f6a91437d"
+      }
+    ],
+    "tests": 126,
+    "liveClaimVerified": false
   }
 }

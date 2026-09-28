@@ -499,6 +499,29 @@
 
   // Read-only readiness check at a refreshed current PXE anchor. Proving may refresh it again.
   // Missing messages never allocate fees, prove, submit, or repeat an L1 deposit.
+  // Discovery reads only the configured portal and connected depositor. Receipt,
+  // active amount, refund history and secret are authenticated by doReuseDeposit.
+  async function findLatestDepositTransaction({provider,ethers,portal,depositor,head,read,contextGuard,deadline=Date.now()+60000}) {
+    const topic=ethers.id('Deposited(address,uint128,bytes32,bytes32,uint256)');
+    const actor=ethers.zeroPadValue(depositor,32);
+    for(let to=head;to>=0;) {
+      if(contextGuard)await read(contextGuard,Math.min(20000,Math.max(1,deadline-Date.now())));
+      const remaining=deadline-Date.now();
+      if(remaining<=0)throw Object.assign(new Error('Deposit lookup timed out. Try Claim deposit again.'),{code:'BB_DEPOSIT_LOOKUP_FAILED'});
+      const from=Math.max(0,to-49999);
+      let logs;
+      try{logs=await read(()=>provider.getLogs({address:portal,fromBlock:from,toBlock:to,topics:[topic,actor]}),remaining);}
+      catch{throw Object.assign(new Error('Ethereum deposit lookup is unavailable. Try Claim deposit again.'),{code:'BB_DEPOSIT_LOOKUP_FAILED'});}
+      if(!Array.isArray(logs)||logs.some(log=>log.removed||log.address?.toLowerCase()!==portal.toLowerCase()||
+        log.topics?.[0]?.toLowerCase()!==topic.toLowerCase()||log.topics?.[1]?.toLowerCase()!==actor.toLowerCase()||
+        !Number.isSafeInteger(log.blockNumber)||log.blockNumber<from||log.blockNumber>to||!Number.isSafeInteger(log.index)||log.index<0||
+        !/^0x[0-9a-fA-F]{64}$/.test(log.transactionHash)))throw Object.assign(new Error('Ethereum returned invalid deposit history.'),{code:'BB_DEPOSIT_LOOKUP_FAILED'});
+      if(logs.length){logs.sort((a,b)=>b.blockNumber-a.blockNumber||b.index-a.index);return logs[0].transactionHash;}
+      to=from-1;
+    }
+    throw Object.assign(new Error('The active deposit could not be located. Try Claim deposit again.'),{code:'BB_DEPOSIT_LOOKUP_FAILED'});
+  }
+
   async function waitForDepositMessage({a,wallet,node,key,index,contextGuard,timeoutMs=20000,pollMs=1000}) {
     const pending=()=>Object.assign(new Error('The confirmed deposit is not yet available to claim. Retry the same claim later.'),{code:'BB_DEPOSIT_MESSAGE_PENDING'});
     const unavailable=()=>Object.assign(new Error('Deposit message availability could not be checked. Retry the original claim after restoring the connection.'),{code:'BB_DEPOSIT_MESSAGE_UNAVAILABLE'});
@@ -1152,27 +1175,37 @@
     async function doReuseDeposit() {
       if (!provider || !l1Account || !portalDeployed) throw new Error('A verified portal and depositor are required.');
       secretStore();
-      const head = await provider.getBlock('latest');
+      const deadline=Date.now()+60000;
+      const read=async operation=>{
+        const remaining=deadline-Date.now();
+        if(remaining<=0)throw Object.assign(new Error('Deposit lookup timed out.'),{code:'BB_DEPOSIT_LOOKUP_FAILED'});
+        try{return await a.boundedTransactionRead(operation,Math.min(20000,remaining));}
+        catch{throw Object.assign(new Error('Deposit lookup unavailable. Try Claim deposit again.'),{code:'BB_DEPOSIT_LOOKUP_FAILED'});}
+      };
+      const head = await read(()=>provider.getBlock('latest'));
       if (!head?.hash || !Number.isSafeInteger(head.number)) throw new Error('Current Ethereum block unavailable.');
-      const active = await new ethers.Contract(portalAddr,PORTAL_ABI,provider).getDeposit(l1Account,{blockTag:head.number});
+      const active = await read(()=>new ethers.Contract(portalAddr,PORTAL_ABI,provider).getDeposit(l1Account,{blockTag:head.number}));
       if (BigInt(active) === 0n) throw new Error('No active L1 receipt to recover.');
-      const txHash=config.reuseTxHash;
+      const txHash=config.reuseTxHash??await findLatestDepositTransaction({provider,ethers,portal:portalAddr,depositor:l1Account,
+        head:head.number,read,contextGuard:config.contextGuard,deadline});
       if(typeof txHash!=='string'||!/^0x[0-9a-fA-F]{64}$/.test(txHash))throw new Error('Provide the deposit transaction hash from your Ethereum wallet or recovery record.');
       // Authenticate the exact canonical receipt before using its Inbox key.
-      const receipt=await provider.getTransactionReceipt(txHash);
+      const receipt=await read(()=>provider.getTransactionReceipt(txHash));
       if(!receipt||receipt.status!==1)throw Object.assign(new Error('Successful deposit receipt unavailable.'),{code:'BB_RECOVERY_UNKNOWN'});
       const receiptHash=receipt.hash??receipt.transactionHash;
       if(typeof receiptHash!=='string'||receiptHash.toLowerCase()!==txHash.toLowerCase()||!receipt.blockHash||
          !Number.isSafeInteger(receipt.blockNumber)||receipt.blockNumber<1)throw Object.assign(new Error('Saved deposit receipt identity is unavailable.'),{code:'BB_RECOVERY_UNKNOWN'});
-      const block=await provider.getBlock(receipt.blockNumber);
+      const block=await read(()=>provider.getBlock(receipt.blockNumber));
       if(block?.hash!==receipt.blockHash)throw Object.assign(new Error('Saved deposit receipt is not canonical.'),{code:'BB_RECOVERY_UNKNOWN'});
       const event=parsedDeposit(receipt);
       if (event.amount !== BigInt(active)) throw new Error('Deposit event does not match the active receipt.');
       const depositLog=receipt.logs.find(log=>log.address.toLowerCase()===portalAddr.toLowerCase()&&log.topics[0]?.toLowerCase()===ethers.id(DEPOSIT_SIGNATURE).toLowerCase()&&new ethers.Interface(PORTAL_ABI).parseLog(log)?.args.depositor.toLowerCase()===l1Account.toLowerCase());
       if (!depositLog || !Number.isSafeInteger(depositLog.index) || receipt.blockNumber>head.number) throw new Error('Deposit event position unavailable.');
-      const withdrawals=await provider.getLogs({address:portalAddr,fromBlock:receipt.blockNumber,toBlock:head.number,topics:[ethers.id('Withdrawn(address,uint128)'),ethers.zeroPadValue(l1Account,32)]});
-      if(withdrawals.some(log=>log.blockNumber>receipt.blockNumber||(log.blockNumber===receipt.blockNumber&&log.index>depositLog.index))) throw new Error('This deposit was already refunded. Supply the current deposit transaction.');
-      if((await provider.getBlock(head.number))?.hash!==head.hash) throw new Error('Ethereum history changed while checking the deposit.');
+      for(let from=receipt.blockNumber;from<=head.number;from+=50000){
+        const withdrawals=await read(()=>provider.getLogs({address:portalAddr,fromBlock:from,toBlock:Math.min(head.number,from+49999),topics:[ethers.id('Withdrawn(address,uint128)'),ethers.zeroPadValue(l1Account,32)]}));
+        if(withdrawals.some(log=>log.blockNumber>receipt.blockNumber||(log.blockNumber===receipt.blockNumber&&log.index>depositLog.index))) throw new Error('This deposit was already refunded.');
+      }
+      if((await read(()=>provider.getBlock(head.number)))?.hash!==head.hash) throw new Error('Ethereum history changed while checking the deposit.');
       const secret = await restoreSecret(event.secretHash);
       depositInfo = { amount:event.amount, key:event.key, leafIndex:event.index, secret,
         secretHash:event.secretHash.toLowerCase(), txHash };
@@ -1249,7 +1282,7 @@
       // If we don't have depositInfo yet, try to reuse an existing deposit
       if (!depositInfo) {
         log('No deposit info from this session. Searching L1 for existing deposits...', 'info');
-        await a.boundedTransactionRead(()=>doReuseDeposit(),20000);
+        await doReuseDeposit();
       }
 
       const depositorField = a.Fr.fromHexString(l1Account);
