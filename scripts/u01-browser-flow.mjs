@@ -1,3 +1,4 @@
+import {Fr} from '@aztec/foundation/curves/bn254';
 import {RollupAbi} from '@aztec/l1-artifacts/RollupAbi';
 import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 import {startRemoteProverFixture,assertRemoteJobs} from './testing/remote-prover-fixture.mjs';
@@ -29,19 +30,32 @@ export function createT04CheckpointScope(sequencer){
  };
 }
 
+// Setup also simulates public calls. Keep producing checkpoints until the real
+// deposit message is included; otherwise the harness itself prevents a claim.
+export async function depositCheckpointReady({node,readDeposit}) {
+ const deposit=await readDeposit();
+ if(BigInt(deposit.amount)===0n)return false;
+ const block=await node.getBlock('checkpointed');
+ if(!block)return false;
+ const witness=await node.getL1ToL2MessageMembershipWitness(block.number,Fr.fromString(deposit.key));
+ return !!witness&&BigInt(witness[0])===BigInt(deposit.index);
+}
+
 // Drain fixture-created empty checkpoints before allowing ordinary simulation.
 // Actual publication and archiver state are checked; no RPC result is substituted.
-export async function drainT04Checkpoints({node,l1Client,rollupAddress,checkpoints,deadline}) {
+export async function drainT04Checkpoints({node,l1Client,rollupAddress,checkpoints,deadline,onStage=()=>{}}) {
  checkpoints.restore();
  try {
+  onStage('checkpoint-pause-start');
   await node.getSequencer().pause();
+  onStage('checkpoint-pause-complete');
   while(Date.now()<deadline) {
    const tips=await node.getChainTips();
    if(tips.proposed.number===tips.checkpointed.block.number) {
     const pending=await l1Client.readContract({address:rollupAddress,abi:RollupAbi,functionName:'getPendingCheckpointNumber'});
-    if(Number(pending)===Number(tips.checkpointed.checkpoint.number))return {
+    if(Number(pending)===Number(tips.checkpointed.checkpoint.number)){onStage('checkpoint-converged');return {
      proposedBlock:Number(tips.proposed.number),checkpointedBlock:Number(tips.checkpointed.block.number),l1PendingCheckpoint:Number(pending)
-    };
+    };}
    }
    await pause(200);
   }
@@ -217,7 +231,8 @@ export async function prepareT04BrowserJourney({node,preparation,instance,l1Clie
   let claimPublication;
   rpc=await startU01BrowserRpc({node,anvilUrl:rpcUrl,ethereumAccount:depositor,origin:browserControl.origin,token:browserControl.rpcToken,observer,beforeNodeCall:async method=>{
    if(method!=='simulatePublicCalls')return;
-   claimPublication??=drainT04Checkpoints({node,l1Client,rollupAddress:scope.rollupAddress,checkpoints:claimCheckpoints,deadline}).then(result=>{observation.claimPublicationBarrier=result;});
+   if(!claimPublication&&!await depositCheckpointReady({node,readDeposit:()=>read('getActiveDeposit',[depositor])}))return;
+   claimPublication??=drainT04Checkpoints({node,l1Client,rollupAddress:scope.rollupAddress,checkpoints:claimCheckpoints,deadline,onStage:mark}).then(result=>{observation.claimPublicationBarrier=result;});
    await claimPublication;
   }});
   claimCheckpoints.enable();

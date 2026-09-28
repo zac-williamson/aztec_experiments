@@ -196,7 +196,7 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
       assertMetaMaskTransaction({stage,request:pending,account:ethereumAccount,chainId:await page.evaluate(()=>globalThis.__testMetaMask.request({method:'eth_chainId'})),...feeAddresses,privateFeeAddress:config.privateFee.contractAddress,boardPortalAddress:config.board.portalAddress,fundingAmount,collateralAmount:depositAmount});
       await walletPage.getByTestId('confirm-footer-button').click();confirmations.push(stage);
       await page.waitForFunction(data=>globalThis.__walletTestPending?.[0]?.data!==data,pending[0].data,{timeout:remaining()});
-     }:undefined,onSubstage:value=>{observation.driverSubstage=value;}});
+     }:undefined,onSubstage:value=>{observation.driverSubstage=value;mark('journey-'+safeJourneyDriverFailure(null,value).substage);}});
     if(extensionWallet){requireValue(confirmations.join(',')===expectedConfirmations.join(','));requireValue(!await walletPage.getByTestId('confirm-footer-button').isVisible());observation.walletConfirmations=confirmations;}
     requireValue(observation.journey.passed===true&&external.size===0&&csp.size===0);if(browserMode==='performance')observation.publicTransactionHashes=observation.journey.samples.map(sample=>sample.transactionHash);observation.passed=true;return;
    }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createT04CheckpointScope,drainT04Checkpoints,runT04Cleanup} from './u01-browser-flow.mjs';
+import {createT04CheckpointScope,drainT04Checkpoints,runT04Cleanup,depositCheckpointReady} from './u01-browser-flow.mjs';
 
 function fixture(){
  const config={minTxsPerBlock:3,buildCheckpointIfEmpty:false,unrelated:99},updates=[];
@@ -49,4 +49,14 @@ test('publication drain waits for actual convergence and always resumes producti
   else {assert.deepEqual(await drainT04Checkpoints(options),{proposedBlock:2,checkpointedBlock:2,l1PendingCheckpoint:1});assert.equal(reads,2);}
   assert.deepEqual(order,['restore','pause','start']);
  }
+});
+
+test('setup simulations cannot close checkpoint production before actual deposit membership',async()=>{
+ let deposit={amount:0n,key:'0x'+'01'.padStart(64,'0'),index:42n},witness,reads=0;
+ const node={getBlock:async()=>({number:7}),getL1ToL2MessageMembershipWitness:async(block,key)=>{reads++;assert.equal(block,7);assert.equal(key.toString(),deposit.key);return witness;}};
+ const check=()=>depositCheckpointReady({node,readDeposit:async()=>deposit});
+ assert.equal(await check(),false);assert.equal(reads,0);
+ deposit={...deposit,amount:1n};assert.equal(await check(),false);
+ witness=[43n,{}];assert.equal(await check(),false);
+ witness=[42n,{}];assert.equal(await check(),true);
 });

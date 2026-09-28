@@ -91,7 +91,7 @@ export function transactionHashes(text){
  return [...new Set([...text.matchAll(/(?:Transaction hash:|Tx hash:|L1 refund transaction:)\s*(0x[0-9a-fA-F]{64})/g)].map(match=>match[1].toLowerCase()))];
 }
 export function safeJourneyDriverFailure(error,substage){
- const stages=new Set(['fee-deposit','fee-claim','open-board','wait-deposit-page','fill-amount','click-deposit','await-deposit-claim','claim-checkpoint','post','screen','withdraw','refund']);
+ const stages=new Set(['fee-deposit','fee-claim','open-board','wait-deposit-page','select-amount','click-deposit','await-deposit-claim','claim-checkpoint','post','screen','withdraw','refund']);
  const names=new Set(['Error','TypeError','RangeError','ReferenceError','SyntaxError','AssertionError','TimeoutError','DOMException']);
  return {substage:stages.has(substage)?substage:'other',exceptionClass:names.has(error?.name)?error.name:'OtherError'};
 }
