@@ -1,185 +1,23 @@
 {
   "schemaVersion": 1,
-  "verifiedAt": "2026-09-23T01:18:38.035129+00:00",
+  "verifiedAt": "2026-09-28T13:43:37.851266+00:00",
   "website": "https://d30njln0kead8n.cloudfront.net",
   "endpoint": "https://d30njln0kead8n.cloudfront.net/prover",
-  "instance": "i-0abeb28cb8033a1ee",
+  "instance": "i-0eaa1171b734be7ca",
   "region": "us-east-2",
   "type": "c8a.4xlarge",
   "physicalCores": 16,
   "market": "spot",
   "maxHourlyUSD": 0.4,
-  "terminateAt": "2026-09-24 16:33:57 UTC",
+  "terminateAt": "2026-09-29 12:49:03 UTC",
   "totalTestingBudgetUSD": 50,
   "runtimeCommit": "0fcede64d922fac453e73eafa86ebc9c3843b6f1",
   "distribution": "E3BMCK3MOVYK1K",
-  "vpcOrigin": "vo_Bu6ihqLvc6DDHoL4lMRE9m",
+  "vpcOrigin": "vo_I161Bxl0TCiFUpJ724rfIh",
   "subnet": "subnet-01823546337ad0883",
   "securityGroup": "sg-0ad63fdc913e7df46",
   "routeTable": "rtb-04e5b7b3c6468d144",
-  "checks": {
-    "api": {
-      "health": {
-        "status": 200,
-        "body": {
-          "ready": true,
-          "proofs": "real",
-          "queue": {
-            "jobs": 0,
-            "bytes": 0,
-            "running": false,
-            "submitted": 0,
-            "completed": 0,
-            "failed": 0
-          }
-        }
-      },
-      "invalidJob": {
-        "status": 400,
-        "body": {
-          "error": "Request rejected"
-        }
-      },
-      "foreignOrigin": {
-        "status": 403,
-        "body": {
-          "error": "Origin rejected"
-        }
-      },
-      "after": {
-        "status": 200,
-        "body": {
-          "ready": true,
-          "proofs": "real",
-          "queue": {
-            "jobs": 0,
-            "bytes": 0,
-            "running": false,
-            "submitted": 0,
-            "completed": 0,
-            "failed": 0
-          }
-        }
-      }
-    },
-    "browser": [
-      {
-        "name": "user.html",
-        "status": "Board ready. Connect your wallet to continue.",
-        "errors": [],
-        "count": 1,
-        "checked": true,
-        "enabled": true,
-        "remote": {
-          "url": "https://d30njln0kead8n.cloudfront.net/prover",
-          "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
-        },
-        "local": null,
-        "restored": {
-          "url": "https://d30njln0kead8n.cloudfront.net/prover",
-          "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
-        }
-      },
-      {
-        "name": "fee-juice.html",
-        "status": "Board ready. Connect your wallet to continue.",
-        "errors": [],
-        "count": 1,
-        "checked": true,
-        "enabled": true,
-        "remote": {
-          "url": "https://d30njln0kead8n.cloudfront.net/prover",
-          "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
-        },
-        "local": null,
-        "restored": {
-          "url": "https://d30njln0kead8n.cloudfront.net/prover",
-          "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
-        }
-      }
-    ],
-    "walletIntegration": {
-      "published": {
-        "objects": [
-          {
-            "path": "user.html",
-            "sha256": "da7df5b343e2daeeab12773276a05cd6e0653b588bf55d45a0779e5711e128ca",
-            "matchesBuiltArtifact": true
-          },
-          {
-            "path": "fee-juice.html",
-            "sha256": "da9a8fb10c1b6274dc8996952359e04c07f61c58362bc24c0f7a31f17fa5b097",
-            "matchesBuiltArtifact": true
-          },
-          {
-            "path": "censor.html",
-            "sha256": "6cadf6a313e3f532c98b502e8162992b79656ba7822af72a9b8afdd53e124898",
-            "matchesBuiltArtifact": true
-          },
-          {
-            "path": "deploy.html",
-            "sha256": "9842efa8e374f856d5f8c6183f32b033416acff2f82850a538494205ab8f898d",
-            "matchesBuiltArtifact": true
-          },
-          {
-            "path": "board-reader-config.json",
-            "sha256": "9a8f0d43439db0cf3598eb1071c3e3ee716f4195f6186713ff8421ce5c7e5ebd",
-            "matchesBuiltArtifact": true
-          }
-        ],
-        "health": {
-          "ready": true,
-          "proofs": "real",
-          "queue": {
-            "jobs": 0,
-            "bytes": 0,
-            "running": false,
-            "submitted": 0,
-            "completed": 0,
-            "failed": 0
-          }
-        }
-      },
-      "configuration": {
-        "passed": true,
-        "checkedAt": "2026-09-23T01:02:01.788Z",
-        "privateFeeAddress": "0x28c2a3107cb397750c63c542dd0be34716d8b0b1d3e76b3b7dff85241ad09720",
-        "classId": "0x0b2a7aeab37124435ea959d80c674a8571863177abc0e9de98969d05daed3865",
-        "publicationVerified": true,
-        "networkVerified": true,
-        "gasSettingsValid": true,
-        "feeCapSufficient": true,
-        "maximumReserve": "65715547156054800000"
-      },
-      "liveChrome": {
-        "walletChoices": [
-          "Rabby Wallet",
-          "MetaMask",
-          "Coinbase Wallet",
-          "Phantom"
-        ],
-        "cancelRetainsSetup": true,
-        "remoteDefaultOn": true,
-        "postingToggleRoundtrip": true,
-        "fundingToggleRoundtrip": true,
-        "fundingDisabledBeforeWalletSetup": true,
-        "userWalletConnected": false
-      },
-      "componentTestsPassed": 141,
-      "localApplicationProofs": false,
-      "integrationEvidence": [
-        "wallet-selection-extension-20260923k.json",
-        "wallet-passkey-chrome-20260923.json",
-        "wallet-recovery-chrome-20260923.json",
-        "application-34493c6f-e27d-43b7-9450-7b26406eb7c8.json",
-        "application-9606a15e-398d-4d87-9003-4a907d9e487a.json",
-        "application-8cd75142-18d9-4a4a-b283-987c1d4dd077.json"
-      ],
-      "maintenanceAccessRemoved": true,
-      "budgetShutdownStillActive": true
-    }
-  },
-  "publicTestnetTransactionSubmittedDuringDeployment": false,
+  "publicTestnetTransactionSubmittedDuringDeployment": true,
   "priorRealProofQualification": "prover/QUALIFICATION.md",
   "publicBoardConfig": {
     "schemaVersion": 1,
@@ -191,8 +29,8 @@
       "rollupAddress": "0xd73a91bdcf6891c7642f3e460036e1ef2cc23178"
     },
     "board": {
-      "portalAddress": "0x794df4e4af56748e9eb5cc3ea75a73961d9f9566",
-      "contractAddress": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
+      "portalAddress": "0x2e552bcd767b6ac942836d23052d69f411c48a38",
+      "contractAddress": "0x2836febce7767ea0f0562ca1b6095dc1ed068f05ab534d6385fbdd7560d0c75a"
     },
     "privateFee": {
       "contractAddress": "0x28c2a3107cb397750c63c542dd0be34716d8b0b1d3e76b3b7dff85241ad09720",
@@ -368,5 +206,268 @@
     ],
     "tests": 126,
     "liveClaimVerified": false
+  },
+  "previousRuntime": {
+    "instance": "i-0abeb28cb8033a1ee",
+    "vpcOrigin": "vo_Bu6ihqLvc6DDHoL4lMRE9m",
+    "terminateAt": "2026-09-24 16:33:57 UTC",
+    "verifiedAt": "2026-09-23T01:18:38.035129+00:00",
+    "checks": {
+      "api": {
+        "health": {
+          "status": 200,
+          "body": {
+            "ready": true,
+            "proofs": "real",
+            "queue": {
+              "jobs": 0,
+              "bytes": 0,
+              "running": false,
+              "submitted": 0,
+              "completed": 0,
+              "failed": 0
+            }
+          }
+        },
+        "invalidJob": {
+          "status": 400,
+          "body": {
+            "error": "Request rejected"
+          }
+        },
+        "foreignOrigin": {
+          "status": 403,
+          "body": {
+            "error": "Origin rejected"
+          }
+        },
+        "after": {
+          "status": 200,
+          "body": {
+            "ready": true,
+            "proofs": "real",
+            "queue": {
+              "jobs": 0,
+              "bytes": 0,
+              "running": false,
+              "submitted": 0,
+              "completed": 0,
+              "failed": 0
+            }
+          }
+        }
+      },
+      "browser": [
+        {
+          "name": "user.html",
+          "status": "Board ready. Connect your wallet to continue.",
+          "errors": [],
+          "count": 1,
+          "checked": true,
+          "enabled": true,
+          "remote": {
+            "url": "https://d30njln0kead8n.cloudfront.net/prover",
+            "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
+          },
+          "local": null,
+          "restored": {
+            "url": "https://d30njln0kead8n.cloudfront.net/prover",
+            "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
+          }
+        },
+        {
+          "name": "fee-juice.html",
+          "status": "Board ready. Connect your wallet to continue.",
+          "errors": [],
+          "count": 1,
+          "checked": true,
+          "enabled": true,
+          "remote": {
+            "url": "https://d30njln0kead8n.cloudfront.net/prover",
+            "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
+          },
+          "local": null,
+          "restored": {
+            "url": "https://d30njln0kead8n.cloudfront.net/prover",
+            "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
+          }
+        }
+      ],
+      "walletIntegration": {
+        "published": {
+          "objects": [
+            {
+              "path": "user.html",
+              "sha256": "da7df5b343e2daeeab12773276a05cd6e0653b588bf55d45a0779e5711e128ca",
+              "matchesBuiltArtifact": true
+            },
+            {
+              "path": "fee-juice.html",
+              "sha256": "da9a8fb10c1b6274dc8996952359e04c07f61c58362bc24c0f7a31f17fa5b097",
+              "matchesBuiltArtifact": true
+            },
+            {
+              "path": "censor.html",
+              "sha256": "6cadf6a313e3f532c98b502e8162992b79656ba7822af72a9b8afdd53e124898",
+              "matchesBuiltArtifact": true
+            },
+            {
+              "path": "deploy.html",
+              "sha256": "9842efa8e374f856d5f8c6183f32b033416acff2f82850a538494205ab8f898d",
+              "matchesBuiltArtifact": true
+            },
+            {
+              "path": "board-reader-config.json",
+              "sha256": "9a8f0d43439db0cf3598eb1071c3e3ee716f4195f6186713ff8421ce5c7e5ebd",
+              "matchesBuiltArtifact": true
+            }
+          ],
+          "health": {
+            "ready": true,
+            "proofs": "real",
+            "queue": {
+              "jobs": 0,
+              "bytes": 0,
+              "running": false,
+              "submitted": 0,
+              "completed": 0,
+              "failed": 0
+            }
+          }
+        },
+        "configuration": {
+          "passed": true,
+          "checkedAt": "2026-09-23T01:02:01.788Z",
+          "privateFeeAddress": "0x28c2a3107cb397750c63c542dd0be34716d8b0b1d3e76b3b7dff85241ad09720",
+          "classId": "0x0b2a7aeab37124435ea959d80c674a8571863177abc0e9de98969d05daed3865",
+          "publicationVerified": true,
+          "networkVerified": true,
+          "gasSettingsValid": true,
+          "feeCapSufficient": true,
+          "maximumReserve": "65715547156054800000"
+        },
+        "liveChrome": {
+          "walletChoices": [
+            "Rabby Wallet",
+            "MetaMask",
+            "Coinbase Wallet",
+            "Phantom"
+          ],
+          "cancelRetainsSetup": true,
+          "remoteDefaultOn": true,
+          "postingToggleRoundtrip": true,
+          "fundingToggleRoundtrip": true,
+          "fundingDisabledBeforeWalletSetup": true,
+          "userWalletConnected": false
+        },
+        "componentTestsPassed": 141,
+        "localApplicationProofs": false,
+        "integrationEvidence": [
+          "wallet-selection-extension-20260923k.json",
+          "wallet-passkey-chrome-20260923.json",
+          "wallet-recovery-chrome-20260923.json",
+          "application-34493c6f-e27d-43b7-9450-7b26406eb7c8.json",
+          "application-9606a15e-398d-4d87-9003-4a907d9e487a.json",
+          "application-8cd75142-18d9-4a4a-b283-987c1d4dd077.json"
+        ],
+        "maintenanceAccessRemoved": true,
+        "budgetShutdownStillActive": true
+      }
+    }
+  },
+  "checks": {
+    "httpsHealth": {
+      "ready": true,
+      "proofs": "real",
+      "queue": {
+        "jobs": 0,
+        "bytes": 0,
+        "running": false,
+        "submitted": 0,
+        "completed": 0,
+        "failed": 0
+      }
+    },
+    "publishedAssets": {
+      "user.html": {
+        "sha256": "e4dfbcad795c7971d4823fa7a5ef25c2b9b34cb76d574abdeb10f01ab30ffea1",
+        "matchesBuild": true
+      },
+      "censor.html": {
+        "sha256": "6246146c226fe0f8220d3d964b86aae2273c04a46c19d21d2f667f5b629176ef",
+        "matchesBuild": true
+      },
+      "deploy.html": {
+        "sha256": "1626454d11c1786f65dcf48214c98dd2f218add5f8f33a5d4f8669e8686eee2a",
+        "matchesBuild": true
+      },
+      "fee-juice.html": {
+        "sha256": "f2c5d06a4ed319c4793649aeb660858e7dfb02dc507c4e9194b318da4bf01987",
+        "matchesBuild": true
+      },
+      "aztec_bundle.js": {
+        "sha256": "46847bfee3e539c4e41cb89100a4d40531246a6dd6b8f23a2e9f3eccfe4bf7bd",
+        "matchesBuild": true
+      },
+      "sdk-manifest.json": {
+        "sha256": "206c8a3d4bc349d6b67911ab2d47d8beab68361d88b90b3f4a3403b4b5235c49",
+        "matchesBuild": true
+      }
+    },
+    "chromeBoardReady": true,
+    "remoteToggleDefaultOnAndRoundTrip": true,
+    "temporarySshAccessRemoved": true,
+    "currentRuntimeRealProofJobTested": false,
+    "runtimeMatchesPreviouslyQualifiedPackage": true
+  },
+  "newBoardDeployment": {
+    "codeCommit": "5a66237",
+    "harnessCommit": "764e20b",
+    "board": "0x2836febce7767ea0f0562ca1b6095dc1ed068f05ab534d6385fbdd7560d0c75a",
+    "portal": "0x2e552bcd767b6ac942836d23052d69f411c48a38",
+    "status": "active; website published and Chrome verified",
+    "bindingTx": "0x1435fb6fc661d277ba9f7b349da9bbebe894c2841d38b0710964079a434d2752",
+    "depositRecovery": {
+      "verifiedAt": "2026-09-28T13:36:39.390Z",
+      "network": "Aztec V5 testnet / Ethereum Sepolia",
+      "sourceCommit": "5a66237",
+      "deposit": {
+        "checkedAt": "2026-09-28T13:30:39.864Z",
+        "portal": "0x2E552bCD767B6aC942836d23052D69f411C48a38",
+        "depositor": "0xfAAf8ec59543bFc4D4C98ee2eebf455385EECF97",
+        "elapsedMs": 323,
+        "amount": "10000000000000",
+        "secretHash": "0x0311de506ff495c5ea7839c3bbce2c55e1dfc27bc9ea0dc31bf4358e5da2ddf0",
+        "key": "0x00e11102cc460751cfbca0547cbefe36f974be379df2151b85f62d0db337ffc5",
+        "index": "93960192",
+        "method": "getActiveDeposit",
+        "historicalLogsQueried": false
+      },
+      "claim": {
+        "txHash": "0x2006958e53a62df3ec547a31075a75ec837a231fbf927228c062849d47290bae",
+        "status": "checkpointed",
+        "executionResult": "success",
+        "blockNumber": 99186,
+        "blockHash": "0x27ddcfca8d43cd1b6038e574391ab4bd198ac4ba6c4420262e97e250d8cf29e4"
+      },
+      "freshProcess": true,
+      "transactionHashSupplied": false,
+      "realProof": true,
+      "finalWalletState": "postable"
+    },
+    "post": {
+      "verifiedAt": "2026-09-28T13:39:31.399Z",
+      "txHash": "0x0238b7371b05ba550d307c40159c0c6662fdcb69ed7060aa53e957fbc1ce0ee2",
+      "status": "checkpointed",
+      "executionResult": "success",
+      "blockNumber": 99189,
+      "blockHash": "0x03a74948d3862e1759f00509671d62f3285b5af3324054da4b7c3b164e062b26",
+      "message": "Fresh deployment recovery test: deposit restored after restart.",
+      "realProof": true
+    },
+    "browserDevnetEvidence": "application-e97e1aa4-2f4d-4d6c-88ef-77aa8ab41d88",
+    "browserDevnetProofsEnabled": false,
+    "moderatorMigration": "Pending: MessageBoardCompute2 lacks ssm:SendCommand on existing censor instance i-0cb8555882d6cfecc. Existing moderator was not modified.",
+    "maxComputeUSD": 9.6
   }
 }
