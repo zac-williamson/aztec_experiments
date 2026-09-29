@@ -499,11 +499,11 @@
 
   // Read-only readiness check at a refreshed current PXE anchor. Proving may refresh it again.
   // Missing messages never allocate fees, prove, submit, or repeat an L1 deposit.
-  async function waitForDepositMessage({a,wallet,node,key,index,contextGuard,timeoutMs=20000,pollMs=1000}) {
+  async function waitForDepositMessage({a,wallet,node,key,index,contextGuard,timeoutMs=240000,pollMs=1000}) {
     const pending=()=>Object.assign(new Error('The confirmed deposit is not yet available to claim. Retry the same claim later.'),{code:'BB_DEPOSIT_MESSAGE_PENDING'});
     const unavailable=()=>Object.assign(new Error('Deposit message availability could not be checked. Retry the original claim after restoring the connection.'),{code:'BB_DEPOSIT_MESSAGE_UNAVAILABLE'});
     const invalid=()=>Object.assign(new Error('Deposit message membership does not match the confirmed receipt.'),{code:'BB_DEPOSIT_MESSAGE_INVALID'});
-    if(!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>20000||!Number.isInteger(pollMs)||pollMs<1)throw invalid();
+    if(!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>240000||!Number.isInteger(pollMs)||pollMs<1)throw invalid();
     let message,expected;
     try{if(typeof key!=='string'||!/^0x[0-9a-fA-F]{64}$/.test(key))throw invalid();message=new a.Fr(BigInt(key));expected=BigInt(index);if(expected<0n||expected>=1n<<36n)throw invalid();}catch{throw invalid();}
     const deadline=Date.now()+timeoutMs;
@@ -1104,7 +1104,7 @@
       if (!record || record.schemaVersion !== 1 || record.secretHash !== hash ||
           typeof record.secret !== 'string' || !/^0x[0-9a-f]{64}$/.test(record.secret) ||
           BigInt(record.secret) <= 0n || BigInt(record.secret) >= a.Fr.MODULUS) {
-        throw new Error('The matching saved claim secret is missing or invalid. Restore its backup before claiming.');
+        throw Object.assign(new Error('The matching saved claim secret is missing or invalid. Restore its backup before claiming.'),{code:'BB_CLAIM_SECRET_MISSING'});
       }
       const computed = await a.computeSecretHash(new a.Fr(BigInt(record.secret)));
       if (computed.toString().toLowerCase() !== hash) throw new Error('Saved claim secret does not match the deposit.');

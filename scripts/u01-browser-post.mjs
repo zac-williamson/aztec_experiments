@@ -135,11 +135,21 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
     const worker=context.serviceWorkers()[0]??await context.waitForEvent('serviceworker',{timeout:15000});extensionId=new URL(worker.url()).host;
     walletPage=await onboardMetaMask(context,credentials.mnemonic,backupPassword,extensionId,mark);
    }
-   page=await context.newPage();page.setDefaultTimeout(Math.min(20000,remaining()));
+   page=context.pages().find(p=>p.url()==='about:blank')??await context.newPage();page.setDefaultTimeout(Math.min(20000,remaining()));
+   if(extensionWallet){
+    // Configure the real wallet before loading the application's large SDK.
+    await page.goto(site.origin+'/feed.html');
+    await page.evaluate(()=>{
+      const receive=event=>{if(event.detail?.info?.name==='MetaMask'){globalThis.__testMetaMask=event.detail.provider;window.removeEventListener('eip6963:announceProvider',receive);}};
+      window.addEventListener('eip6963:announceProvider',receive);window.dispatchEvent(new Event('eip6963:requestProvider'));
+    });
+    await page.waitForFunction(()=>!!globalThis.__testMetaMask);
+    await addMetaMaskNetwork({page,walletPage,extensionId,rpcUrl:credentials.rpcUrl,mark});credentials=null;
+   }
    mark('wallet-software');const navigationStarted=Date.now();await page.goto(site.origin+(browserMode==='funding'?'/fee-juice.html':'/user.html'));
    await page.waitForFunction(()=>globalThis.__aztec?.createPXE&&document.getElementById('wbAztecFile'),{},{timeout:remaining()});observation.sdkReadyMs=Date.now()-navigationStarted;
    await page.evaluate(installBrowserErrorObserver);
-   if(extensionWallet){await discoverTestMetaMask(page);await addMetaMaskNetwork({page,walletPage,extensionId,rpcUrl:credentials.rpcUrl,mark});credentials=null;await observeMetaMaskTransactions(page);}
+   if(extensionWallet){await discoverTestMetaMask(page);await observeMetaMaskTransactions(page);}
    mark('hosted-board-loaded');if(remoteTarget){requireValue(await page.getByRole('checkbox',{name:'Remote proving',exact:true}).isChecked());requireValue(await page.getByRole('checkbox',{name:'Remote proving',exact:true}).isEnabled());observation.remoteProver=true;}requireValue(await page.getByLabel('Public configuration JSON',{exact:true}).count()===0);requireValue(await page.evaluate(address=>billboardConfigStore.snapshot().config?.board.contractAddress===address,config.board.contractAddress));
    await page.waitForFunction(()=>globalThis.billboardConfigStore?.snapshot().config!==null);
    mark('encrypted-wallet-restore');await page.locator('#wbAccountMenu > summary').click();await page.locator('#wbPassword').fill(backupPassword);await page.locator('#wbAztecFile').setInputFiles(backupPath);

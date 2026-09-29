@@ -111,7 +111,24 @@ for(const backend of ['file','indexeddb']) {
  test(`${backend}: reverted or replaced transaction is not a successful payment`,()=>use(async f=>{
   const result=await (await f.newSession()).send(f.intent);f.receipts.get(result.txHash).status=0;
   assert.equal((await (await f.newSession()).recover()).outcome,'reverted');
-  f.receipts.get(result.txHash).status=1;f.transactions.get(result.txHash).data='0x';assert.equal((await (await f.newSession()).recover()).outcome,'replaced');
+  f.receipts.get(result.txHash).status=1;f.transactions.get(result.txHash).data='0x';f.receipts.get(result.txHash).logs=[];assert.equal((await (await f.newSession()).recover()).outcome,'replaced');
+ }));
+ test(`${backend}: wallet-wrapped deposit is recognized by its exact portal effect`,()=>use(async f=>{
+  const result=await (await f.newSession()).send(f.intent),tx=f.transactions.get(result.txHash),receipt=f.receipts.get(result.txHash);
+  tx.to=addr();tx.value=0n;tx.data='0x12345678';receipt.to=tx.to;
+  assert.equal((await (await f.newSession()).recover()).outcome,'success');
+ }));
+ for(const change of ['secret','amount','depositor','address','duplicate','reverted','reorg'])test(`${backend}: wrapped deposit rejects ${change}`,()=>use(async f=>{
+  const result=await (await f.newSession()).send(f.intent),tx=f.transactions.get(result.txHash),receipt=f.receipts.get(result.txHash);
+  tx.to=addr();tx.value=0n;tx.data='0x12345678';receipt.to=tx.to;
+  if(change==='address')receipt.logs[0].address=addr();
+  if(change==='duplicate')receipt.logs.push(receipt.logs[0]);
+  if(change==='reverted')receipt.status=0;
+  if(change==='reorg')f.fork();
+  if(['secret','amount','depositor'].includes(change))receipt.logs=[{address:f.scope.portal,...iface.encodeEventLog(iface.getEvent('Deposited'),[change==='depositor'?addr():f.scope.depositor,change==='amount'?101:100,change==='secret'?field():f.intent.expected.secretHash,field(),2])}];
+  if(change==='address')assert.equal((await (await f.newSession()).recover()).outcome,'replaced');
+  else if(change==='reverted')assert.equal((await (await f.newSession()).recover()).outcome,'reverted');
+  else await assert.rejects((await f.newSession()).recover(),{code:'BB_ETH_RECOVERY_REQUIRED'});
  }));
  for(const change of ['missing','amount','address','duplicate'])test(`${backend}: ${change} refund event cannot prove payment`,()=>use(async f=>{
   const result=await (await f.newSession()).send(f.intent),receipt=f.receipts.get(result.txHash);

@@ -97,6 +97,29 @@ function saveFundingRecord(record) {
     const {handles:privateHandles,receipt:privateReceipt,...data}=result;
     return data;
   }
+  // The application owns the complete funding operation. Rendering and duplicate
+  // clicks cannot split it into separately initiated payment and claim actions.
+  let fundingOperation=null,fundingState=null,fundingStamp=null;
+  /** @param {BoardInput} input @param {BoardProgress} onProgress @returns {Promise<BoardResult>} */
+  function completeDeposit(input={},onProgress=()=>{}) {
+    if(fundingOperation){check(fundingStamp);return fundingOperation;}
+    const expected=stamp();fundingStamp=expected;fundingState=null;
+    fundingOperation=(async()=>{
+      let result=await run('status',{},onProgress);check(expected);fundingState=result.state;
+      if(result.state==='postable')return result;
+      if(result.state==='zero_balance_need_deposit') {
+        if(!input.depositAmount)throw Object.assign(new Error('Select a deposit amount.'),{code:'BB_WALLET_NOT_READY'});
+        result=await run('deposit',input,onProgress);check(expected);fundingState='deposited_l1_not_claimed_l2';
+      } else if(result.state!=='deposited_l1_not_claimed_l2') {
+        throw Object.assign(new Error('Recover the existing operation before depositing.'),{code:'BB_RECOVERY_REQUIRED'});
+      }
+      onProgress('Deposit confirmed. Finishing setup automatically; no further Ethereum payment is needed.','info');
+      check(expected);
+      const claimed=await run('claim',{},onProgress);check(expected);fundingState=claimed.state;
+      return claimed;
+    })().finally(()=>{fundingOperation=null;});
+    return fundingOperation;
+  }
   /** @returns {Promise<{amount:bigint,depositChainId:bigint,nextAllowedTime:bigint,lastScreenedIndex:bigint,lastRealPostIndex:bigint,chainTime:number}>} */
   async function readDeposit() {
     const h=connectedHandles(),expected=stamp();
@@ -139,11 +162,12 @@ function saveFundingRecord(record) {
     if(stamp()!==expected)throw Error('Configuration changed. Refresh the board.');return page;
   }
   async function reset() {
+    fundingState=null;
     const previous=handles;handles=null;withdrawTxHash=undefined;fundingRecord=null;revision++;
     journalAcknowledgements.clear();ethereumAcknowledgements.clear();
     if(previous?.pxe?.stop)await previous.pxe.stop();
   }
   window.billboardConfigStore?.subscribe(()=>{reset().catch(()=>{_invalidateWalletContext();});});
-  return Object.freeze({run,readDeposit,readDepositTerms,readPolicy,readModerator,readFeed,reset,publicConfiguration,readFundingRecovery,importFundingRecovery:saveFundingRecord,
-    get connected(){return handles!==null;},get revision(){return revision;}});
+  return Object.freeze({run,completeDeposit,readDeposit,readDepositTerms,readPolicy,readModerator,readFeed,reset,publicConfiguration,readFundingRecovery,importFundingRecovery:saveFundingRecord,
+    get fundingState(){return fundingStamp===stamp()?fundingState:null;},get connected(){return handles!==null;},get revision(){return revision;}});
 }

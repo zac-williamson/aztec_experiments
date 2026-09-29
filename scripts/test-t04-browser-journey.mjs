@@ -66,7 +66,7 @@ test('actual browser journey stops after one deposit action when claim reports a
  let clicks=0;
  const page={
   waitForFunction:async()=>{},
-  locator:selector=>({waitFor:async()=>{},press:async()=>{},textContent:async()=>selector==='#depositLimits'?'Minimum 0.001 ETH · Maximum 0.01 ETH':selector==='#depositSelection'?'0.001 ETH':'ERROR: claim failed',click:async()=>{assert.equal(selector,'#navNext');clicks++;},count:async()=>1}),
+  locator:selector=>({waitFor:async()=>{},press:async()=>{},textContent:async()=>selector==='#depositLimits'?'Minimum 0.001 ETH · Maximum 0.01 ETH':selector==='#depositSelection'?'0.001 ETH':'ERROR: claim failed',click:async()=>{assert.equal(selector,'#navNext');clicks++;},count:async()=>clicks?1:0}),
  };
  await assert.rejects(driveT04BrowserJourney({page,directory:'/unused',message:'message',depositAmount:'0.001',remaining:()=>1000,mark(){}}));
  assert.equal(clicks,1);

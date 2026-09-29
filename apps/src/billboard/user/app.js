@@ -151,8 +151,8 @@ function onShowDeposit() {
   } else if (state === 'deposited_l1_not_claimed_l2') {
     if (newSection) newSection.style.display = 'none';
     if (recoverSection) recoverSection.style.display = '';
-    if (navBtn) { navBtn.style.display = ''; navBtn.textContent = 'Claim deposit →'; }
-    log('Deposit found on Ethereum. Claim it to start posting.', 'info', 'depositBalanceCheck');
+    if (navBtn) { navBtn.style.display = ''; navBtn.textContent = 'Resume setup →'; }
+    log('Deposit found on Ethereum. Finishing setup automatically.', 'info', 'depositBalanceCheck');
   } else if (state === 'postable') {
     log('Deposit already claimed on L2. Proceeding to post page.', 'success', 'depositBalanceCheck');
     if (navBtn) navBtn.style.display = 'none';
@@ -170,61 +170,16 @@ function onShowDeposit() {
 
 async function doDepositPage() {
   if(!application.connected || !_stateResult)throw Object.assign(new Error('Connect your wallet before depositing.'),{code:'BB_WALLET_NOT_READY'});
-  async function claimExisting(extra) {
-    try{return await callEngine('claim','depositStatus',extra);}
-    catch(error){const safe=publicOperationFailure(error);log(safe.message,'error','depositStatus');throw safe;}
+  const input=_stateResult.state==='zero_balance_need_deposit'?{depositAmount:ethers.formatEther(selectedDepositWei())}:{};
+  try {
+    const result=await application.completeDeposit(input,(message,level)=>log(message,level||'info','depositStatus'));
+    _stateResult=result;
+    if(result.state==='postable'){log('Deposit claimed on L2! You can now post.','success','depositStatus');showPage(2);}
+  } catch(error) {
+    if(application.fundingState)_stateResult={..._stateResult,state:application.fundingState};
+    if(_currentPage===1)onShowDeposit();
+    throw error;
   }
-  const state = _stateResult ? _stateResult.state : 'unknown';
-
-  if (state === 'postable') { nextPage(); return; }
-  if (state === 'withdrawal_needs_verification') { showPage(4); return; }
-
-  if (state === 'zero_balance_need_deposit') {
-    clearMissingHighlight();
-    const amountStr = ethers.formatEther(selectedDepositWei());
-
-    const operationRevision=_getConfigRevision();
-    // Phase 1: Deposit on L1
-    log('Making new L1 deposit...', 'info', 'depositStatus');
-    let depResult;
-    try {
-      depResult = await callEngine('deposit', 'depositStatus', {
-
-        depositAmount: amountStr,
-      });
-    } catch (e) {
-      const msg = e.message || String(e);
-      if (/insufficient funds/i.test(msg)) {
-        throw new Error('L1 deposit failed: not enough ETH balance for the deposit plus gas fees.');
-      }
-      throw e;
-    }
-    if(operationRevision!==_getConfigRevision())throw Error('Configuration changed. Recover the original deposit before continuing.');
-    const depInfo = depResult.depositInfo;
-    // Persist the completed phase before attempting the separate L2 claim.
-    // A delayed message or rejected claim must never offer another ETH deposit.
-    _stateResult={...(_stateResult||{}),state:'deposited_l1_not_claimed_l2',depositInfo:depInfo};
-    const newSection=document.getElementById('newDepositSection');if(newSection)newSection.style.display='none';
-    const recoverSection=document.getElementById('recoverDepositSection');if(recoverSection)recoverSection.style.display='';
-    const nav=document.getElementById('navNext');if(nav)nav.textContent='Claim deposit →';
-
-    // Phase 2: Wait for L2 ingest + claim on L2
-    log('', 'info', 'depositStatus');
-    log('Waiting for L2 to ingest deposit, then claiming...', 'info', 'depositStatus');
-    await claimExisting({});
-
-    log('Deposit claimed on L2! Proceeding to post page.', 'success', 'depositStatus');
-    _stateResult.state = 'postable';
-    nextPage();
-    return;
-  }
-
-  // deposited_l1_not_claimed_l2: claim the existing deposit
-  log('Claiming existing deposit on L2...', 'info', 'depositStatus');
-  await claimExisting({});
-  log('Deposit claimed on L2! Proceeding to post page.', 'success', 'depositStatus');
-  _stateResult.state = 'postable';
-  nextPage();
 }
 
 // ============================================================
@@ -523,10 +478,11 @@ function waitForBundleThenInit() {
       ethRpcUrl: _getPublicConfig()?.network.ethRpcUrl,
       onReady: async () => {
         try {
-          await loadWalletAndConnect();
+          const result=await loadWalletAndConnect();
           nextPage();
+          if(result.state==='deposited_l1_not_claimed_l2')await doDepositPage();
         } catch (e) {
-          log('Setup did not complete. Check your connection and configuration, then reload and restore your encrypted wallet backup to retry. Check saved transactions before sending again.', 'error', 'setupStatus');
+          log(publicOperationFailure(e).message, 'error', _currentPage===1?'depositStatus':'setupStatus');
           console.error('Application operation did not complete.');
         }
       },

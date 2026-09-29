@@ -58,3 +58,28 @@ test('deployment settings export uses the captured manifest, never a later edite
  const config=await api.publicConfiguration({portalAddr:'0xABC',l2Addr:'0xDEF'},null,{network});
  assert.equal(config.network.nodeUrl,'old-node');assert.equal(config.network.rollupAddress,'old-rollup');assert.equal(config.board.contractAddress,'0xdef');
 });
+
+for(const initial of ['zero_balance_need_deposit','deposited_l1_not_claimed_l2','postable'])test(`funding completes ${initial} without a second UI action`,async()=>{
+ const f=fixture(),actions=[];
+ f.ctx.makeCallEngine=()=>async(action)=>{actions.push(action);return {state:action==='status'?initial:action==='deposit'?'deposited_l1_not_claimed_l2':'postable'};};
+ const api=f.ctx.createBillboardApplication();
+ const result=await api.completeDeposit({depositAmount:'0.01'});
+ assert.equal(result.state,'postable');
+ assert.deepEqual(actions,initial==='postable'?['status']:initial==='zero_balance_need_deposit'?['status','deposit','claim']:['status','claim']);
+});
+test('duplicate funding requests share one operation and a failed claim never sends another deposit',async()=>{
+ const f=fixture(),actions=[];let release,paid=false,fail=true;const gate=new Promise(r=>release=r);
+ f.ctx.makeCallEngine=()=>async(action)=>{actions.push(action);if(action==='status'){await gate;return {state:paid?'deposited_l1_not_claimed_l2':'zero_balance_need_deposit'};}if(action==='deposit'){paid=true;return {};}if(fail)throw Object.assign(Error('missing'),{code:'BB_CLAIM_SECRET_MISSING'});return {state:'postable'};};
+ const api=f.ctx.createBillboardApplication();const first=api.completeDeposit({depositAmount:'0.01'}),second=api.completeDeposit({depositAmount:'0.02'});assert.equal(first,second);release();
+ await assert.rejects(first,{code:'BB_CLAIM_SECRET_MISSING'});fail=false;await api.completeDeposit();assert.deepEqual(actions,['status','deposit','claim','status','claim']);
+});
+test('configuration change after payment stops automatic continuation',async()=>{
+ const f=fixture(),actions=[];let api;
+ f.ctx.makeCallEngine=()=>async(action)=>{actions.push(action);if(action==='deposit')f.change();return {state:'zero_balance_need_deposit'};};
+ api=f.ctx.createBillboardApplication();await assert.rejects(api.completeDeposit({depositAmount:'0.01'}));assert.deepEqual(actions,['status','deposit']);
+});
+
+test('progress callback cannot switch the board before claim starts',async()=>{
+ const f=fixture(),actions=[];f.ctx.makeCallEngine=()=>async action=>{actions.push(action);return {state:'deposited_l1_not_claimed_l2'};};
+ const api=f.ctx.createBillboardApplication();await assert.rejects(api.completeDeposit({},message=>{if(message.startsWith('Deposit confirmed'))f.change();}));assert.deepEqual(actions,['status']);assert.equal(api.fundingState,null);
+});

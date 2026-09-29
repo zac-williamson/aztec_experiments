@@ -18640,11 +18640,11 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
 
   // Read-only readiness check at a refreshed current PXE anchor. Proving may refresh it again.
   // Missing messages never allocate fees, prove, submit, or repeat an L1 deposit.
-  async function waitForDepositMessage({a,wallet,node,key,index,contextGuard,timeoutMs=20000,pollMs=1000}) {
+  async function waitForDepositMessage({a,wallet,node,key,index,contextGuard,timeoutMs=240000,pollMs=1000}) {
     const pending=()=>Object.assign(new Error('The confirmed deposit is not yet available to claim. Retry the same claim later.'),{code:'BB_DEPOSIT_MESSAGE_PENDING'});
     const unavailable=()=>Object.assign(new Error('Deposit message availability could not be checked. Retry the original claim after restoring the connection.'),{code:'BB_DEPOSIT_MESSAGE_UNAVAILABLE'});
     const invalid=()=>Object.assign(new Error('Deposit message membership does not match the confirmed receipt.'),{code:'BB_DEPOSIT_MESSAGE_INVALID'});
-    if(!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>20000||!Number.isInteger(pollMs)||pollMs<1)throw invalid();
+    if(!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>240000||!Number.isInteger(pollMs)||pollMs<1)throw invalid();
     let message,expected;
     try{if(typeof key!=='string'||!/^0x[0-9a-fA-F]{64}$/.test(key))throw invalid();message=new a.Fr(BigInt(key));expected=BigInt(index);if(expected<0n||expected>=1n<<36n)throw invalid();}catch{throw invalid();}
     const deadline=Date.now()+timeoutMs;
@@ -19245,7 +19245,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       if (!record || record.schemaVersion !== 1 || record.secretHash !== hash ||
           typeof record.secret !== 'string' || !/^0x[0-9a-f]{64}$/.test(record.secret) ||
           BigInt(record.secret) <= 0n || BigInt(record.secret) >= a.Fr.MODULUS) {
-        throw new Error('The matching saved claim secret is missing or invalid. Restore its backup before claiming.');
+        throw Object.assign(new Error('The matching saved claim secret is missing or invalid. Restore its backup before claiming.'),{code:'BB_CLAIM_SECRET_MISSING'});
       }
       const computed = await a.computeSecretHash(new a.Fr(BigInt(record.secret)));
       if (computed.toString().toLowerCase() !== hash) throw new Error('Saved claim secret does not match the deposit.');
@@ -20807,9 +20807,10 @@ function publicOperationFailure(error) {
     BB_WALLET_SYNC_PENDING:'Your claim is confirmed, but wallet synchronization failed. Keep the saved receipt and refresh before posting; do not make another deposit.',
     BB_RECOVERY_REQUIRED:'Recover the saved Aztec transaction from Wallet Setup before sending another transaction.',
     BB_JOURNAL_INVALID:'Transaction recovery storage could not be authenticated or saved. Preserve this browser profile and recovery records before continuing.',
-    BB_DEPOSIT_LOOKUP_FAILED:'We could not retrieve your deposit from Ethereum. Try Claim deposit again; you do not need to deposit again.',
-    BB_DEPOSIT_MESSAGE_PENDING:'Your ETH deposit is confirmed. Its message is not yet available to claim; retry this same claim later. Do not deposit again.',
-    BB_DEPOSIT_MESSAGE_UNAVAILABLE:'Your ETH deposit is confirmed, but message availability could not be checked. Restore the connection and retry the original claim; do not deposit again.',
+    BB_CLAIM_SECRET_MISSING:'This Ethereum deposit belongs to a saved private wallet whose claim secret is missing from this browser. Restore the encrypted backup made after that deposit. Creating a new wallet or clearing storage cannot recover it. Do not deposit again.',
+    BB_DEPOSIT_LOOKUP_FAILED:'We could not retrieve your deposit from Ethereum. Choose Resume setup; you do not need to deposit again.',
+    BB_DEPOSIT_MESSAGE_PENDING:'Your ETH deposit is confirmed. Its message is not yet available to claim; choose Resume setup later. Do not deposit again.',
+    BB_DEPOSIT_MESSAGE_UNAVAILABLE:'Your ETH deposit is confirmed, but message availability could not be checked. Restore the connection and resume setup; do not deposit again.',
     BB_DEPOSIT_MESSAGE_INVALID:'The deposit message does not match its receipt. Preserve the original transaction and recover it before continuing.',
     BB_NO_SAVED_TRANSACTION:'No saved Aztec transaction exists for this wallet and board.',
     BB_RECOVERY_UNKNOWN:'Recovery state could not be verified. Keep your recovery records and retry the lookup; do not create a replacement deposit.',
@@ -20998,6 +20999,29 @@ function saveFundingRecord(record) {
     const {handles:privateHandles,receipt:privateReceipt,...data}=result;
     return data;
   }
+  // The application owns the complete funding operation. Rendering and duplicate
+  // clicks cannot split it into separately initiated payment and claim actions.
+  let fundingOperation=null,fundingState=null,fundingStamp=null;
+  /** @param {BoardInput} input @param {BoardProgress} onProgress @returns {Promise<BoardResult>} */
+  function completeDeposit(input={},onProgress=()=>{}) {
+    if(fundingOperation){check(fundingStamp);return fundingOperation;}
+    const expected=stamp();fundingStamp=expected;fundingState=null;
+    fundingOperation=(async()=>{
+      let result=await run('status',{},onProgress);check(expected);fundingState=result.state;
+      if(result.state==='postable')return result;
+      if(result.state==='zero_balance_need_deposit') {
+        if(!input.depositAmount)throw Object.assign(new Error('Select a deposit amount.'),{code:'BB_WALLET_NOT_READY'});
+        result=await run('deposit',input,onProgress);check(expected);fundingState='deposited_l1_not_claimed_l2';
+      } else if(result.state!=='deposited_l1_not_claimed_l2') {
+        throw Object.assign(new Error('Recover the existing operation before depositing.'),{code:'BB_RECOVERY_REQUIRED'});
+      }
+      onProgress('Deposit confirmed. Finishing setup automatically; no further Ethereum payment is needed.','info');
+      check(expected);
+      const claimed=await run('claim',{},onProgress);check(expected);fundingState=claimed.state;
+      return claimed;
+    })().finally(()=>{fundingOperation=null;});
+    return fundingOperation;
+  }
   /** @returns {Promise<{amount:bigint,depositChainId:bigint,nextAllowedTime:bigint,lastScreenedIndex:bigint,lastRealPostIndex:bigint,chainTime:number}>} */
   async function readDeposit() {
     const h=connectedHandles(),expected=stamp();
@@ -21040,13 +21064,14 @@ function saveFundingRecord(record) {
     if(stamp()!==expected)throw Error('Configuration changed. Refresh the board.');return page;
   }
   async function reset() {
+    fundingState=null;
     const previous=handles;handles=null;withdrawTxHash=undefined;fundingRecord=null;revision++;
     journalAcknowledgements.clear();ethereumAcknowledgements.clear();
     if(previous?.pxe?.stop)await previous.pxe.stop();
   }
   window.billboardConfigStore?.subscribe(()=>{reset().catch(()=>{_invalidateWalletContext();});});
-  return Object.freeze({run,readDeposit,readDepositTerms,readPolicy,readModerator,readFeed,reset,publicConfiguration,readFundingRecovery,importFundingRecovery:saveFundingRecord,
-    get connected(){return handles!==null;},get revision(){return revision;}});
+  return Object.freeze({run,completeDeposit,readDeposit,readDepositTerms,readPolicy,readModerator,readFeed,reset,publicConfiguration,readFundingRecovery,importFundingRecovery:saveFundingRecord,
+    get fundingState(){return fundingStamp===stamp()?fundingState:null;},get connected(){return handles!==null;},get revision(){return revision;}});
 }
 
 // View adapter only. No operation state or wallet lifecycle is owned here.

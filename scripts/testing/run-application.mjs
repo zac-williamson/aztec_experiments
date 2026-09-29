@@ -39,7 +39,7 @@ export async function runApplication(name) {
     assert.equal(await fs.realpath(handoff.backupPath),handoff.backupPath);
     const remaining=scenario.deadlineMs-Math.round(performance.now()-supervisor.started)-15000;assert(remaining>0,'Browser needs time for cleanup before the supervisor deadline');
     const exit=await supervisor.start('browser',process.execPath,['--max-old-space-size=128',ENTRY,'browser-worker',directory],{
-      cwd:ROOT,env:{PATH:path.dirname(process.execPath)+':/usr/bin:/bin',HOME:process.env.HOME,TMPDIR:directory,NODE_OPTIONS:''},
+      cwd:ROOT,env:{BOARD_TEST_DIAGNOSTIC:process.env.BOARD_TEST_DIAGNOSTIC??'0',PATH:path.dirname(process.execPath)+':/usr/bin:/bin',HOME:process.env.HOME,TMPDIR:directory,NODE_OPTIONS:''},
       input:{...handoff,...control,timeoutMs:Math.min(480000,remaining)},onRecord:stage('browser')});
     report.browser=await readResult('browser');assert.equal(exit.code,0);assert.equal(report.browser.passed,true);
   }

@@ -41,6 +41,18 @@ export async function depositCheckpointReady({node,readDeposit}) {
  return !!witness&&BigInt(witness[0])===BigInt(deposit.index);
 }
 
+// A browser can see a proposed message before its checkpoint is published.
+// Once a deposit exists, wait for real publication rather than forwarding a
+// simulation into the fixture's intentionally advancing checkpoint stream.
+export async function waitForDepositCheckpoint({node,readDeposit,deadline}) {
+ if(BigInt((await readDeposit()).amount)===0n)return false;
+ while(Date.now()<deadline) {
+  if(await depositCheckpointReady({node,readDeposit}))return true;
+  await pause(200);
+ }
+ throw Error('T04_DEPOSIT_PUBLICATION_DEADLINE');
+}
+
 // Drain fixture-created empty checkpoints before allowing ordinary simulation.
 // Actual publication and archiver state are checked; no RPC result is substituted.
 export async function drainT04Checkpoints({node,l1Client,rollupAddress,checkpoints,deadline,onStage=()=>{}}) {
@@ -231,8 +243,11 @@ export async function prepareT04BrowserJourney({node,preparation,instance,l1Clie
   let claimPublication;
   rpc=await startU01BrowserRpc({node,anvilUrl:rpcUrl,ethereumAccount:depositor,origin:browserControl.origin,token:browserControl.rpcToken,observer,beforeNodeCall:async method=>{
    if(method!=='simulatePublicCalls')return;
-   if(!claimPublication&&!await depositCheckpointReady({node,readDeposit:()=>read('getActiveDeposit',[depositor])}))return;
-   claimPublication??=drainT04Checkpoints({node,l1Client,rollupAddress:scope.rollupAddress,checkpoints:claimCheckpoints,deadline,onStage:mark}).then(result=>{observation.claimPublicationBarrier=result;});
+   if(!claimPublication&&BigInt((await read('getActiveDeposit',[depositor])).amount)===0n)return;
+   claimPublication??=(async()=>{
+    assert(await waitForDepositCheckpoint({node,readDeposit:()=>read('getActiveDeposit',[depositor]),deadline}));
+    observation.claimPublicationBarrier=await drainT04Checkpoints({node,l1Client,rollupAddress:scope.rollupAddress,checkpoints:claimCheckpoints,deadline,onStage:mark});
+   })();
    await claimPublication;
   }});
   claimCheckpoints.enable();

@@ -82,7 +82,10 @@ export async function verifyEthereumIntentReceipt(provider,record,txHash,read=fn
   const [tx,block]=await Promise.all([read(()=>provider.getTransaction(txHash)),read(()=>provider.getBlock(receipt.blockNumber))]);
   if(!tx||lower(tx.hash)!==txHash||lower(tx.from)!==record.from||Number(tx.nonce)!==record.nonce||String(tx.chainId)!==record.chainId||
     lower(block?.hash)!==lower(receipt.blockHash)||lower(receipt.from)!==record.from||lower(receipt.to)!==lower(tx.to))throw unknown();
-  if(!matchesRequest(tx,record))return {outcome:'replaced',txHash,receipt,event:null};
+  const direct=matchesRequest(tx,record);
+  // Wallets may wrap a deposit in an execution contract. The verified portal's
+  // exact escrow event proves its effect; outer calldata alone does not.
+  if(!direct && record.expected.kind!=='deposit')return {outcome:'replaced',txHash,receipt,event:null};
   if(receipt.status===0)return {outcome:'reverted',txHash,receipt,event:null};
   if(!Array.isArray(receipt.logs))throw unknown();
   const expected=record.expected;
@@ -108,6 +111,7 @@ export async function verifyEthereumIntentReceipt(provider,record,txHash,read=fn
       (expected.kind==='deposit'&&lower(parsed.args.secretHash)!==expected.secretHash))throw unknown();
     events.push(parsed.args);
   }
+  if(!direct && events.length===0)return {outcome:'replaced',txHash,receipt,event:null};
   if(events.length!==1)throw unknown();
   return {outcome:'success',txHash,receipt,event:events[0]};
 }

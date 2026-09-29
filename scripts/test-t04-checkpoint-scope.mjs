@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createT04CheckpointScope,drainT04Checkpoints,runT04Cleanup,depositCheckpointReady} from './u01-browser-flow.mjs';
+import {createT04CheckpointScope,drainT04Checkpoints,runT04Cleanup,depositCheckpointReady,waitForDepositCheckpoint} from './u01-browser-flow.mjs';
 
 function fixture(){
  const config={minTxsPerBlock:3,buildCheckpointIfEmpty:false,unrelated:99},updates=[];
@@ -60,3 +60,11 @@ test('setup simulations cannot close checkpoint production before actual deposit
  witness=[43n,{}];assert.equal(await check(),false);
  witness=[42n,{}];assert.equal(await check(),true);
 });
+
+ test('deposit publication wait polls until checkpointed membership exists',async()=>{
+ let calls=0;const deposit={amount:1n,key:'0x'+'01'.padStart(64,'0'),index:42n};
+ const node={getBlock:async()=>({number:7}),getL1ToL2MessageMembershipWitness:async()=>++calls===1?undefined:[42n,{}]};
+ assert.equal(await waitForDepositCheckpoint({node,readDeposit:async()=>deposit,deadline:Date.now()+2000}),true);assert.equal(calls,2);
+ assert.equal(await waitForDepositCheckpoint({node,readDeposit:async()=>({...deposit,amount:0n}),deadline:Date.now()+1000}),false);
+ await assert.rejects(waitForDepositCheckpoint({node,readDeposit:async()=>deposit,deadline:Date.now()-1}),/T04_DEPOSIT_PUBLICATION_DEADLINE/);
+ });

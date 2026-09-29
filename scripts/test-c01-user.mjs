@@ -162,3 +162,8 @@ test('actual recovery rejects inconsistent deposit metadata and requires its sav
   const mismatch=depositHarness({store,reuse:true,activeAmount:1_000_000_000_000_000n,recoveryHash:new Fr(3).toString()});
   await assert.rejects(mismatch.run(),/missing or invalid/);assert.equal(mismatch.sent(),0);
 });
+
+test('wiped claim storage reports missing secret and cannot send another payment',async()=>{
+ const h=depositHarness({store:{save:async()=>{throw Error('must not save');},load:async()=>null},reuse:true,activeAmount:10000000000000n});
+ await assert.rejects(h.run(),{code:'BB_CLAIM_SECRET_MISSING'});assert.equal(h.sent(),0);
+});
