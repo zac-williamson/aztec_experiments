@@ -702,3 +702,29 @@ test('claim retrieves active metadata after reload without receipts or log scans
  h.provider.getLogs=async()=>{throw Error('historical scan forbidden');};
  await h.run();assert.equal(h.requests.length,1);assert.equal(JSON.parse(h.operations[0]).messageKey,new Fr(77).toString());
 });
+
+for(const code of ['PRIVATE_FEE_BALANCE_INSUFFICIENT','PRIVATE_FEE_CLAIM_INSUFFICIENT','UNTRUSTED'])test(`fee readiness preserves only safe classification: ${code}`,async()=>{
+ const c=context();let sends=0;
+ const sender=c.BillboardPrivateFeeRouting.createPrivateFeeSender({a:{GasSettings,preparePrivateFeePayment:async()=>{throw Object.assign(Error('private secret'),{code});}},config:{privateFee:{contractAddress:'fee',gasSettings:gas()}},privateFeeArtifact:{},contract:{methods:{claim_deposit:()=>({send:()=>{sends++;}})}},wallet:{},node:{},owner:{},scope:{l1ChainId:'31337',rollupVersion:'1'}});
+ await assert.rejects(sender('claim',[]),e=>e.code===(code==='UNTRUSTED'?'BB_PRIVATE_FEE_PREPARATION_FAILED':code)&&!e.message.includes('secret'));assert.equal(sends,0);
+});
+
+test('public claim failures keep useful safe classifications across repeated formatting',async()=>{
+ const env=await readFile(new URL('../shared/app-env.js',import.meta.url),'utf8');
+ const format=new Function(env.slice(env.indexOf('function publicOperationFailure('),env.indexOf('function makeCallEngine('))+';return publicOperationFailure;')();
+ for(const code of ['BB_DEPOSIT_READ','PRIVATE_FEE_BALANCE_INSUFFICIENT','PRIVATE_FEE_CLAIM_INSUFFICIENT','BB_PRIVATE_FEE_PREPARATION_FAILED','BB_PRIVATE_FEE_ACTION_FAILED']){
+  const result=format(format(Object.assign(Error('SECRET_RPC_PAYLOAD'),{code})));assert.equal(result.code,code);assert(!result.message.includes('SECRET'));assert(!result.message.includes('Wallet operation did not complete'));
+ }
+ assert.equal(format(Object.assign(Error('SECRET_RPC_PAYLOAD'),{code:'SECRET_CODE'})).code,'BB_OPERATION_FAILED');
+});
+
+for(const ready of [false,true])test(`new Ethereum deposit checks fee readiness before secret storage or payment: ${ready}`,async()=>{
+ const h=mainHarness('deposit');delete h.config.reuseTxHash;h.config.depositAmount='0.001';h.setMissingNote(true);
+ h.Portal.prototype.getDeposit=async()=>0n;h.Portal.prototype.depositsEnabled=async()=>true;h.Portal.prototype.MIN_DEPOSIT=async()=>1n;h.Portal.prototype.MAX_DEPOSIT=async()=>10n**18n;
+ let checks=0,saves=0,payments=0;
+ h.env.aztec.preparePrivateFeePayment=async()=>{checks++;if(!ready)throw Object.assign(Error('private balance detail'),{code:'PRIVATE_FEE_BALANCE_INSUFFICIENT'});return {paymentMethod:'private',gasSettings:gas()};};
+ h.config.claimSecretStore.save=async()=>{saves++;throw Object.assign(Error('Stop at storage boundary'),{code:'TEST_STORAGE'});};
+ h.env.createEthereumJournal=async()=>({assertCanStart:async()=>{},send:async()=>{payments++;throw Error('must not pay');}});
+ await assert.rejects(h.run(),{code:ready?'TEST_STORAGE':'PRIVATE_FEE_BALANCE_INSUFFICIENT'});
+ assert.equal(checks,1);assert.equal(saves,ready?1:0);assert.equal(payments,0);assert.equal(h.requests.length,0);
+});

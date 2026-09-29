@@ -142,6 +142,12 @@ function buildConfig(action, extra, connection=_connectionConfig()) {
 // ============================================================
 function publicOperationFailure(error) {
   const messages={
+    BB_DEPOSIT_READ:'The private wallet could not read the board deposit state. Resume setup to check again; do not send another deposit while its status is unknown.',
+    PRIVATE_FEE_BALANCE_INSUFFICIENT:'Your private transaction fee balance is below the required fee budget. Fund private transaction fees, then resume the interrupted operation.',
+    PRIVATE_FEE_CLAIM_INSUFFICIENT:'The pending private fee funding is below the required fee budget. Add private transaction fee funding before resuming the interrupted operation.',
+    BB_PRIVATE_FEE_PREPARATION_FAILED:'Private transaction fee preparation failed before proving. Check the connection and private fee settings, then resume the interrupted operation.',
+    BB_PRIVATE_FEE_ACTION_FAILED:'The private transaction could not be completed. Check saved transactions before retrying.',
+    BB_PRIVATE_FEE_UNAVAILABLE:'Private transaction fee settings are unavailable. The board operator must correct its configuration before setup can continue.',
     PRIVATE_FEE_CAP_TOO_LOW:'The configured transaction fee cap is below the network’s current minimum. The board operator needs to update its fee settings before you can continue.',
     INSECURE_CONTEXT:'Wallet actions require HTTPS or localhost.',
     SHARED_MEMORY_UNAVAILABLE:'Wallet actions require cross-origin isolation and shared memory. Check the hosting configuration or use a supported browser.',

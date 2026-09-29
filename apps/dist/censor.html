@@ -41630,23 +41630,31 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     catch (_) { throw privateFeeFailure(); }
   }
 
+  // Read-only fee readiness: shared by deposit preflight and the actual private action.
+  // It registers local contract data but neither reserves fees nor sends a transaction.
+  async function preparePrivateFee({a,config,privateFeeArtifact,wallet,node,owner,scope,claim}) {
+    const route = requirePrivateFeeConfiguration(a,config,privateFeeArtifact);
+    try {
+      const prepared = await a.preparePrivateFeePayment({wallet,node,owner,
+        privateFeeAddress:route.contractAddress,privateFeeArtifact,
+        expectedChainId:scope.l1ChainId,expectedVersion:scope.rollupVersion,
+        gasSettings:route.gasSettings,claim});
+      if(!prepared?.paymentMethod || !prepared.gasSettings)throw privateFeeFailure();
+      return prepared;
+    } catch(error) {
+      throw privateFeeFailure(['PRIVATE_FEE_CAP_TOO_LOW','PRIVATE_FEE_BALANCE_INSUFFICIENT','PRIVATE_FEE_CLAIM_INSUFFICIENT'].includes(error?.code)?error.code:'BB_PRIVATE_FEE_PREPARATION_FAILED');
+    }
+  }
+
   function createPrivateFeeSender({ a, config, privateFeeArtifact, contract, wallet, node, owner, scope }) {
-    const route = requirePrivateFeeConfiguration(a, config, privateFeeArtifact);
+    requirePrivateFeeConfiguration(a, config, privateFeeArtifact);
     // A bridge claim may bootstrap the first payment. Subsequent actions spend the private note.
     let claim = config.privateFeeClaim;
     return async function sendPrivateFeeAction(kind, args) {
       const methods = {claim: 'claim_deposit', post: 'post', withdraw: 'withdraw', set_moderation_policy:'set_moderation_policy', declare_immoral:'declare_immoral', transfer_censor:'transfer_censor'};
       const method = Object.hasOwn(methods,kind) ? methods[kind] : undefined;
       if (!method) throw privateFeeFailure('BB_PRIVATE_FEE_UNSUPPORTED_ACTION');
-      let prepared;
-      try {
-        prepared = await a.preparePrivateFeePayment({ wallet, node, owner,
-          privateFeeAddress: route.contractAddress, privateFeeArtifact,
-          expectedChainId: scope.l1ChainId, expectedVersion: scope.rollupVersion,
-          gasSettings: route.gasSettings, claim,
-        });
-        if (!prepared?.paymentMethod || !prepared.gasSettings) throw privateFeeFailure();
-      } catch (error) { throw privateFeeFailure(error?.code==='PRIVATE_FEE_CAP_TOO_LOW'?'PRIVATE_FEE_CAP_TOO_LOW':'BB_PRIVATE_FEE_PREPARATION_FAILED'); }
+      const prepared = await preparePrivateFee({a,config,privateFeeArtifact,wallet,node,owner,scope,claim});
       try {
         const result = await contract.methods[method](...args).send({
           from: owner, fee: {paymentMethod: prepared.paymentMethod, gasSettings: prepared.gasSettings},
@@ -41780,7 +41788,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     let action = config.action || 'status';
     if(config.reuse)throw new Error('Provide the saved deposit transaction hash with --reuse-tx.');
     if (config.inspectOnly && action !== 'declare-immoral') throw new Error('Journal inspection requires declare-immoral.');
-    if (!config.inspectOnly && ['claim', 'post', 'withdraw', 'auto', 'declare-immoral', 'transfer-censor', 'set-moderation-policy'].includes(action)) requirePrivateFeeConfiguration(a, config, env.privateFeeArtifact);
+    if (!config.inspectOnly && ['deposit', 'claim', 'post', 'withdraw', 'auto', 'declare-immoral', 'transfer-censor', 'set-moderation-policy'].includes(action)) requirePrivateFeeConfiguration(a, config, env.privateFeeArtifact);
 
     // ============================================================
     // Step 1: Derive account keys
@@ -42060,7 +42068,7 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
     // ============================================================
     // Decide if we need full PXE setup
     // ============================================================
-    const needsPXE = ['status', 'claim', 'post', 'list', 'withdraw', 'declare-immoral', 'transfer-censor', 'set-moderation-policy', 'auto'].includes(action);
+    const needsPXE = ['status', 'deposit', 'claim', 'post', 'list', 'withdraw', 'declare-immoral', 'transfer-censor', 'set-moderation-policy', 'auto'].includes(action);
     const needsCRS = needsPXE;
 
     let pxe = null, wallet = null, contract = null;
@@ -42305,6 +42313,10 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
       const amount = ethers.parseEther(config.depositAmount);
       const [minimum, maximum] = await Promise.all([portal.MIN_DEPOSIT(),portal.MAX_DEPOSIT()]);
       if (amount < minimum || amount > maximum) throw new Error('Deposit amount is outside the configured portal bounds.');
+      log('Checking private transaction fee readiness before depositing ETH...', 'info');
+      await preparePrivateFee({a,config,privateFeeArtifact:env.privateFeeArtifact,wallet,node:aztecNode,owner:address,
+        scope:{l1ChainId:String(nodeInfo.l1ChainId),rollupVersion:String(version)},claim:config.privateFeeClaim});
+      if(config.contextGuard)await config.contextGuard();
       const secret = generateSecret(a);
       const secretHash = (await a.computeSecretHash(secret)).toString().toLowerCase();
       const record = { schemaVersion: 1, secretHash, secret: secret.toString().toLowerCase() };
@@ -42458,10 +42470,12 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         return;
       }
 
+      log('  Waiting for Ethereum deposit availability on Aztec...', 'info');
       await waitForDepositMessage({a,wallet,node:aztecNode,key:depositInfo.key,index:leafIndex,contextGuard:config.contextGuard});
 
       // One attempt per action. Message availability and uncertain submission
       // remain retryable outcomes; never run a ten-minute blind retry loop.
+      log('  Deposit message ready. Preparing private transaction fees...', 'info');
       const result = await sendPrivate('claim', [depositorField, amount, secret, leafIndex]);
       const receipt = result.receipt;
       log('  Claim confirmed. Tx hash: ' + receipt.txHash + ', block: ' + receipt.blockNumber, 'success');
@@ -43691,6 +43705,12 @@ function buildConfig(action, extra, connection=_connectionConfig()) {
 // ============================================================
 function publicOperationFailure(error) {
   const messages={
+    BB_DEPOSIT_READ:'The private wallet could not read the board deposit state. Resume setup to check again; do not send another deposit while its status is unknown.',
+    PRIVATE_FEE_BALANCE_INSUFFICIENT:'Your private transaction fee balance is below the required fee budget. Fund private transaction fees, then resume the interrupted operation.',
+    PRIVATE_FEE_CLAIM_INSUFFICIENT:'The pending private fee funding is below the required fee budget. Add private transaction fee funding before resuming the interrupted operation.',
+    BB_PRIVATE_FEE_PREPARATION_FAILED:'Private transaction fee preparation failed before proving. Check the connection and private fee settings, then resume the interrupted operation.',
+    BB_PRIVATE_FEE_ACTION_FAILED:'The private transaction could not be completed. Check saved transactions before retrying.',
+    BB_PRIVATE_FEE_UNAVAILABLE:'Private transaction fee settings are unavailable. The board operator must correct its configuration before setup can continue.',
     PRIVATE_FEE_CAP_TOO_LOW:'The configured transaction fee cap is below the network’s current minimum. The board operator needs to update its fee settings before you can continue.',
     INSECURE_CONTEXT:'Wallet actions require HTTPS or localhost.',
     SHARED_MEMORY_UNAVAILABLE:'Wallet actions require cross-origin isolation and shared memory. Check the hosting configuration or use a supported browser.',
