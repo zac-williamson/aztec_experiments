@@ -142,6 +142,9 @@ function buildConfig(action, extra, connection=_connectionConfig()) {
 // ============================================================
 function publicOperationFailure(error) {
   const messages={
+    PRIVATE_FEE_FUNDING_TOKEN_BALANCE:'Your Ethereum wallet needs more AZTEC tokens for transaction fees. Add AZTEC on the configured test network, then resume setup; no additional board deposit was sent.',
+    PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN:'Fee funding was submitted but its confirmation is uncertain. Resume setup to check the saved payment before another is sent.',
+    PRIVATE_FEE_RECOVERY_FAILED:'The saved fee funding could not be verified. Check the connection and resume setup; do not send another fee payment.',
     BB_DEPOSIT_READ:'The private wallet could not read the board deposit state. Resume setup to check again; do not send another deposit while its status is unknown.',
     PRIVATE_FEE_BALANCE_INSUFFICIENT:'Your private transaction fee balance is below the required fee budget. Fund private transaction fees, then resume the interrupted operation.',
     PRIVATE_FEE_CLAIM_INSUFFICIENT:'The pending private fee funding is below the required fee budget. Add private transaction fee funding before resuming the interrupted operation.',

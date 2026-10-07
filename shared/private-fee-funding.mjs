@@ -1,6 +1,9 @@
 import {createEthereumJournal} from './ethereum-journal.mjs';
 // User-funded Fee Juice bridge. Recovery metadata is public; secrets derive from the existing wallet key.
 import { Interface, getAddress } from 'ethers';
+import { computeFeeJuiceMessageNullifier } from '@aztec/stdlib/messaging';
+import { siloNullifier } from '@aztec/stdlib/hash';
+import { MerkleTreeId } from '@aztec/stdlib/trees';
 import { Fr } from '@aztec/foundation/curves/bn254';
 import { poseidon2HashWithSeparator } from '@aztec/foundation/crypto/poseidon';
 import { ProtocolContractAddress } from '@aztec/protocol-contracts';
@@ -160,6 +163,15 @@ export async function recoverPrivateFeeClaim(input){
     check(eq(event.to,scope.privateFeeAddress)&&event.amount===uint(record.amount)&&eq(event.secretHash,secretHash.toString()),'PRIVATE_FEE_RECOVERY_EVENT_MISMATCH');
     const leafIndex=new Fr(uint(event.index,254));
     check(record.leafIndex===undefined||uint(record.leafIndex,254)===leafIndex.toBigInt(),'PRIVATE_FEE_RECOVERY_EVENT_MISMATCH');
-    return {amount:uint(record.amount),salt,secret,leafIndex};
+    return {amount:uint(record.amount),salt,secret,leafIndex,messageKey:event.key};
   }catch(error){if(error instanceof PrivateFeeFundingError)throw error;throw new PrivateFeeFundingError('PRIVATE_FEE_RECOVERY_FAILED');}
+}
+
+/** Check the protocol Fee Juice nullifier locally; never disclose the bridge secret. */
+export async function isPrivateFeeClaimConsumed({node,claim}) {
+  const inner=await computeFeeJuiceMessageNullifier(Fr.fromString(claim.messageKey),claim.secret);
+  const nullifier=await siloNullifier(ProtocolContractAddress.FeeJuice,inner);
+  const indices=await node.findLeavesIndexes('latest',MerkleTreeId.NULLIFIER_TREE,[nullifier]);
+  check(Array.isArray(indices)&&indices.length===1,'PRIVATE_FEE_RECOVERY_FAILED');
+  return indices[0]!==undefined;
 }

@@ -87,7 +87,7 @@ function saveFundingRecord(record) {
     const common=isBoard?{portalAddress:_getPublicConfig()?.board.portalAddress,dataDirPrefix:kind==='moderator'?'pxe_bb_censor_':'pxe_bb_',
       depositChainId:handles?.depositChainId,withdrawTxHash,
       claimSecretStore:makeClaimSecretStore(ws.aztec?.secretKey,ws.aztec?.salt),censorWalletJson:ws.aztec?.raw}:{};
-    const result=await execute(action,onProgress,{...common,...input,...(kind==='fees'?{saveRecovery:saveFundingRecord}:{}),acknowledgeTx:journalAcknowledgements.get(identity),acknowledgeEthereumTx:ethereumAcknowledgements.get(identity)});
+    const result=await execute(action,onProgress,{...common,...input,...(['fees','author'].includes(kind)?{saveRecovery:saveFundingRecord}:{}),...(kind==='author'?{automaticFeeFunding:true}:{}),acknowledgeTx:journalAcknowledgements.get(identity),acknowledgeEthereumTx:ethereumAcknowledgements.get(identity)});
     check(expected);
     if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
     if(result?.lastEthereumTxHash)ethereumAcknowledgements.set(identity,result.lastEthereumTxHash);

@@ -1,3 +1,4 @@
+import {ensureOnboardingFees} from '../shared/fee-onboarding.mjs';
 import {jsonStringify,jsonParseWithSchema} from '@aztec/foundation/json-rpc';
 import {BlockResponseSchema} from '@aztec/stdlib/interfaces/client';
 import {BlockHeader} from '@aztec/stdlib/tx';
@@ -727,4 +728,23 @@ for(const ready of [false,true])test(`new Ethereum deposit checks fee readiness 
  h.env.createEthereumJournal=async()=>({assertCanStart:async()=>{},send:async()=>{payments++;throw Error('must not pay');}});
  await assert.rejects(h.run(),{code:ready?'TEST_STORAGE':'PRIVATE_FEE_BALANCE_INSUFFICIENT'});
  assert.equal(checks,1);assert.equal(saves,ready?1:0);assert.equal(payments,0);assert.equal(h.requests.length,0);
+});
+
+for(const recovered of [false,true])test(`automatic fee funding reaches board claim with recovered=${recovered}`,async()=>{
+ const h=mainHarness('claim'),calls=[];
+ h.config.automaticFeeFunding=true;h.config.saveRecovery=async()=>{};
+ h.env.createJournalStorage=()=>({});
+ const a=h.env.aztec,prepare=a.preparePrivateFeePayment;
+ a.preparePrivateFeePayment=async input=>{if(!input.claim)throw {code:'PRIVATE_FEE_BALANCE_INSUFFICIENT'};return prepare(input);};
+ a.ensureOnboardingFees=ensureOnboardingFees;
+ a.normalizePrivateFeeGasSettings=()=>({maximumFee:100n});
+ a.recoverPrivateFeeFunding=async input=>{assert.equal(input.acknowledgeEthereumTx,undefined);calls.push('recover');if(!recovered)throw {code:'BB_NO_SAVED_ETHEREUM_TRANSACTION'};return {outcome:'funded',record:'saved'};};
+ a.fundPrivateFees=async input=>{assert.equal(input.amount,200n);calls.push('fund');return 'new';};
+ const claim={amount:200n,salt:Fr.ONE,secret:Fr.ONE,leafIndex:new Fr(42),messageKey:new Fr(77).toString()};
+ a.recoverPrivateFeeClaim=async()=>claim;
+ a.isPrivateFeeClaimConsumed=async()=>false;
+ h.onAction(()=>calls.push('board-claim'));
+ const result=await h.run();assert.equal(result.state,'postable');
+ assert.deepEqual(calls,recovered?['recover','board-claim']:['recover','fund','board-claim']);
+ assert.equal(h.requests.at(-1).claim,claim);assert.equal(h.requests.at(-1).action.kind,'claim');
 });

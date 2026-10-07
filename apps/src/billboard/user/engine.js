@@ -1128,6 +1128,31 @@
       if (event.amount <= 0n || event.amount >= (1n << 96n)) throw new Error('Invalid V1 receipt event.');
       return event;
     }
+    async function ensureDepositFees() {
+      const scope={l1ChainId:String(nodeInfo.l1ChainId),rollupVersion:String(version)};
+      const checkBalance=()=>preparePrivateFee({a,config,privateFeeArtifact:env.privateFeeArtifact,
+        wallet,node:aztecNode,owner:address,scope,claim:config.privateFeeClaim});
+      if(!config.automaticFeeFunding)return checkBalance();
+      const route=requirePrivateFeeConfiguration(a,config,env.privateFeeArtifact);
+      const input={node:aztecNode,owner:address,privateFeeAddress:route.contractAddress,
+        privateFeeArtifact:env.privateFeeArtifact,walletSecret:secretKeyHex,walletSalt:saltVal,
+        expectedChainId:scope.l1ChainId,expectedVersion:scope.rollupVersion,
+        ethProvider:provider,ethSigner,journalStorage:env.createJournalStorage(),
+        saveRecovery:config.saveRecovery,contextGuard:config.contextGuard};
+      const guarded=fn=>async(...args)=>{if(config.contextGuard)await config.contextGuard();
+        const result=await fn(...args);if(config.contextGuard)await config.contextGuard();return result;};
+      const claim=await a.ensureOnboardingFees({checkBalance,
+        recoverFunding:guarded(()=>a.recoverPrivateFeeFunding(input)),
+        fund:guarded(acknowledgeEthereumTx=>a.fundPrivateFees({...input,acknowledgeEthereumTx,
+          amount:a.normalizePrivateFeeGasSettings(route.gasSettings).maximumFee*2n})),
+        recoverClaim:guarded(record=>a.recoverPrivateFeeClaim({...input,record})),
+        isConsumed:guarded(claim=>a.isPrivateFeeClaimConsumed({node:aztecNode,claim})),
+        waitForMessage:claim=>waitForDepositMessage({a,wallet,node:aztecNode,key:claim.messageKey,
+          index:claim.leafIndex.toBigInt(),contextGuard:config.contextGuard}),onProgress:log});
+      if(claim)config.privateFeeClaim=claim;
+      await checkBalance();
+    }
+
     async function doDeposit() {
       if (!ethSigner || !portalDeployed) throw new Error('A verified portal and L1 signer are required.');
       const store = secretStore();
@@ -1141,8 +1166,7 @@
       const [minimum, maximum] = await Promise.all([portal.MIN_DEPOSIT(),portal.MAX_DEPOSIT()]);
       if (amount < minimum || amount > maximum) throw new Error('Deposit amount is outside the configured portal bounds.');
       log('Checking private transaction fee readiness before depositing ETH...', 'info');
-      await preparePrivateFee({a,config,privateFeeArtifact:env.privateFeeArtifact,wallet,node:aztecNode,owner:address,
-        scope:{l1ChainId:String(nodeInfo.l1ChainId),rollupVersion:String(version)},claim:config.privateFeeClaim});
+      await ensureDepositFees();
       if(config.contextGuard)await config.contextGuard();
       const secret = generateSecret(a);
       const secretHash = (await a.computeSecretHash(secret)).toString().toLowerCase();
@@ -1303,6 +1327,7 @@
       // One attempt per action. Message availability and uncertain submission
       // remain retryable outcomes; never run a ten-minute blind retry loop.
       log('  Deposit message ready. Preparing private transaction fees...', 'info');
+      if(config.automaticFeeFunding)await ensureDepositFees();
       const result = await sendPrivate('claim', [depositorField, amount, secret, leafIndex]);
       const receipt = result.receipt;
       log('  Claim confirmed. Tx hash: ' + receipt.txHash + ', block: ' + receipt.blockNumber, 'success');
