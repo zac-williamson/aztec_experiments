@@ -10,7 +10,7 @@
       "evidence": "integrated-regressions.log"
     },
     "diagnostics": {
-      "passed": 2,
+      "passed": 5,
       "failed": 0,
       "evidence": "diagnostics-regressions.log"
     },
@@ -49,7 +49,7 @@
       "scripts/application-type-environment.d.ts": "94c088837e34edba7cf25a5c555f0beb3908b766d8c05d8d245c848adcca9b10",
       "scripts/browser-error-observer.mjs": "08d5e451967b721ff03729dd8cda3a0edb8007cde356dd19d4b375cd27b871e5",
       "scripts/test-application-interface.mjs": "6c5de83604cb5ba662104d8792ac69d19f4f9901ccddc2e3f693f5378e1ff666",
-      "scripts/test-browser-error-observer.mjs": "5ec9637addfe99ec878a438d09f58698bb44e261e1bae2b73a9b7845f4dbf58f",
+      "scripts/test-browser-error-observer.mjs": "338cc58e24f74c29fe0db41228e008697bc919fd69485664888b8c82786826ce",
       "scripts/test-deposit-custody.mjs": "22fc13d525feee33126d41c52ec69ea95d3cfdac13e3a6f8cc83d48f1e066988",
       "scripts/test-deposit-message-ready.mjs": "f2f091417f8398b2e3a1bb9b6b087ad012c9f9499c8bec830e776586ee1e480c",
       "scripts/test-engine-private-fee.mjs": "c7d066d1f1e57853912e07af1661f2c2a54c374711b86f0c9b4a3891e890f5c7",
@@ -111,12 +111,13 @@
     "browser.json": "2e85606f5993736dc5b1999179b0271803d43d911b8406c0e2ed223ef65480e7",
     "core-regressions.log": "53d8cdfa6d365d32d8d1fc27c93a880eb2975fb159430886331007bcc9350c05",
     "deployment-populated-390.png": "a7416481bdcc41ab9a7465052e41dfbdfe2c31f74a025d2aad42e1cd277c31a6",
-    "diagnostics-regressions.log": "28677938f0d8b0cf63b39e2629ea3c91f399f0bae332d3ccfcc4507e9b151599",
+    "diagnostics-regressions.log": "1980caf1b062dae019867d668fb21c704ccc16e179861e70045bc7e10a73bb6b",
     "fee-ownership-regressions.log": "eac097a745abceba222b2fa4f87100ac67e898901e038677d199d56a28f3f7e0",
     "hosted-links.log": "24522b2959ca0176ab90fa9bedaac71afd4b3d18bc36cff701f40377c2b61a98",
     "integrated-regressions.log": "92ae7c12b9b46214e4aa8182d9b572ace50832ba37e76c5abd221e9ce3fd1269",
-    "prior-failures.json": "f76b5d743fda7954a08207bfb4ee604c2173c55def062fb76da7f11a08070e7a",
+    "prior-failures.json": "abb05da429778aaa6e7fa6f6a22b33f2f3b035158801fd29f49a687aebb70517",
     "prover-budget.json": "712edc06001a398b932d39cfeb40a6225d6d546a200dedd956888e452b802174",
+    "prover-health.json": "e27e05d25c6962d9c27b161f27c8e34d278c22cf28c09516f7663a1992ce6658",
     "prover-shutdown.txt": "c71429bcce53bc80bc8d754e65b0f214ed11895997bf20b45d0c7a191f7898d7",
     "public-deployment-regressions.log": "cc4f651cdf6098fc1a49f2703b88184cde3c962be49bf837b5fb25aa100a00de",
     "published-artifacts.json": "137b455d71076e1943894ee77fc005ffb672ed78882994aeb5727f6291d4ce69",
