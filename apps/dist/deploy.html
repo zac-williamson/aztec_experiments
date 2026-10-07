@@ -1,256 +1,86 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billboard — Deploy</title>
-<style>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Create a board</title><style>
+:root{color-scheme:light dark;--bg:#f7f8fa;--surface:#fff;--text:#19212d;--muted:#526070;--line:#d5dbe3;--control-border:#7a8796;--accent:#234fc0;--accent-text:#fff;--soft:#eaf0ff;--error:#b42318;--success:#176b3b;--warning:#785300;--focus:#2364e8;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px;line-height:1.6}
+@media(prefers-color-scheme:dark){:root{--bg:#11151b;--surface:#191f28;--text:#edf1f7;--muted:#adb9c8;--line:#394453;--control-border:#728198;--accent:#abc4ff;--accent-text:#11254c;--soft:#26334b;--error:#ffaaa1;--success:#86dcac;--warning:#edcf87;--focus:#abc4ff}}
+*{box-sizing:border-box}body{margin:0 auto;padding:0 24px 64px;max-width:860px;background:var(--bg);color:var(--text)}[hidden]{display:none!important}h1{font-size:2rem;line-height:1.2;letter-spacing:-.04em;margin:32px 0 12px}h2{font-size:1.3rem;line-height:1.35;margin:0 0 16px}h3{font-size:1rem}p{margin:12px 0}a{color:var(--accent);text-underline-offset:3px}button,input,select,textarea{font:inherit}button{border:1px solid transparent;border-radius:7px;padding:10px 18px;background:var(--accent);color:var(--accent-text);font-weight:600;cursor:pointer;min-height:44px;margin:6px 0}button:hover{filter:brightness(.94)}button.secondary,.nav-back{background:var(--surface);color:var(--text);border-color:var(--line);font-weight:500}button:disabled{opacity:.55;cursor:not-allowed}button.danger{color:var(--error);background:var(--surface);border-color:var(--line)}:focus-visible{outline:3px solid var(--focus);outline-offset:4px}input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select{display:block;width:100%;border:1px solid var(--control-border);border-radius:6px;padding:10px 12px;color:var(--text);background:var(--surface);min-height:44px}textarea{resize:vertical;line-height:1.6}input[type=range]{width:100%;accent-color:var(--accent);height:36px}input[type=checkbox],input[type=radio]{width:18px;height:18px;accent-color:var(--accent);vertical-align:middle;flex-shrink:0}label{display:block;font-weight:600;margin:14px 0 6px}label.toggle{display:flex;align-items:center;gap:10px;font-weight:500}.small,.muted,.sub,.ref{font-size:.875rem;color:var(--muted)}.warn{color:var(--warning)}.error,.err,.field-error{color:var(--error)}.success,.ok{color:var(--success)}.field-error{font-size:.875rem}.missing,[aria-invalid=true]{border-color:var(--error)!important}.card,.task-panel{background:var(--surface);border:1px solid var(--line);padding:24px;border-radius:10px;margin:24px 0}.site-header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 0;border-bottom:1px solid var(--line)}.brand{color:var(--text);font-weight:700;text-decoration:none}.site-header nav{display:flex;gap:20px;margin-left:auto}.site-header nav a{text-decoration:none;color:var(--muted)}.site-header nav a[aria-current=page]{color:var(--text);font-weight:650}.testnet-notice{font-size:.8rem;color:var(--muted);margin:10px 0 24px}.account-menu{position:relative;font-size:.9rem}.account-menu summary{cursor:pointer;padding:8px;border:1px solid var(--line);border-radius:7px}.account-menu-panel{position:absolute;right:0;z-index:20;top:48px;width:min(360px,calc(100vw - 48px));background:var(--surface);border:1px solid var(--line);padding:20px;border-radius:8px;box-shadow:0 8px 32px #0003;max-height:75vh;overflow:auto}.account-menu-panel button{width:100%;text-align:left}.account-menu-panel details{margin:16px 0}.account-address{overflow-wrap:anywhere}.wallet-btns,.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.wallet-group{flex:1}.message{border-top:1px solid var(--line);padding:24px 0;overflow-wrap:anywhere}.message-meta{display:flex;justify-content:space-between;gap:16px;color:var(--muted);font-size:.8rem}.message-text,.policy-text{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit}.message-text{font-size:1.0625rem;margin:12px 0}.policy-box,details.rules{background:var(--soft);border-radius:8px;padding:14px 18px;margin:20px 0}.billboard-feed{max-height:none;overflow:visible}.empty-state{padding:32px 0;color:var(--muted)}summary{cursor:pointer}details>summary{font-weight:600}details pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.75rem}details.diagnostics{margin:20px 0}.operation{border-left:3px solid var(--accent);padding:4px 0 4px 18px;margin:24px 0}.operation>p:first-child{font-weight:600}.operation details{font-size:.8rem;color:var(--muted)}.status-container{font-family:inherit;white-space:pre-wrap;font-size:.9rem;overflow-wrap:anywhere}.status{padding:4px 0}.status.info{color:var(--muted)}.status.working{color:var(--accent)}.balance-list{display:grid;grid-template-columns:1fr auto;gap:8px 16px}.balance-list dt,.balance-list dd{margin:0}.balance-list dd{font-variant-numeric:tabular-nums;overflow-wrap:anywhere;min-width:0}.countdown{font-size:.875rem;color:var(--muted)}.countdown.ready{color:var(--success)}.capacity{display:flex;justify-content:space-between;gap:12px;font-size:.8rem;color:var(--muted)}.page{display:none}.page.active{display:block}.nav-bar{display:flex;gap:16px;align-items:center;justify-content:space-between}.block-monitor{display:none}hr{border:0;border-top:1px solid var(--line);margin:24px 0}dialog{background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:28px;max-width:min(520px,calc(100vw - 32px))}dialog::backdrop{background:#0008}dialog button{margin-right:8px}dialog h2{margin-bottom:16px}code{overflow-wrap:anywhere;font-size:.85em}output{font-weight:650;font-size:1.25rem}.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin-right:8px}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:540px){body{padding:0 16px 40px}.site-header{gap:12px;flex-wrap:wrap}.site-header nav{gap:16px}.brand{font-size:.9rem}.site-header #accountSlot{margin-left:auto}.card,.task-panel{padding:18px}h1{font-size:1.7rem}.actions>button{flex:1}.balance-list{grid-template-columns:1fr}.balance-list dd{margin-bottom:8px}.message{padding:20px 0}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
-  :root { color-scheme: light dark; }
-  * { box-sizing: border-box; }
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-         max-width: 720px; margin: 0 auto; padding: 1rem; line-height: 1.5; }
-  h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
-  .sub { color: #888; font-size: 0.9rem; margin-bottom: 1.5rem; }
-  .small { font-size: 0.85rem; color: #aaa; }
-  .small.muted { color: #777; }
-  .small.warn { color: #d29922; }
+</style></head><body>
+<script>
+// Shared presentation of verified public board data. No wallet or SDK dependencies.
+(function(root){
+  const el=(tag,text,cls)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(cls)node.className=cls;return node;};
+  function url(page,fragment=location.hash){const target=new URL(page,location.href);target.hash=fragment;return target;}
+  function header({title='Message board',section='Read'}={}){
+    const head=el('header',undefined,'site-header');head.id='siteHeader';
+    const brand=el('a','Message boards','brand');brand.href='boards.html';
+    const nav=el('nav');nav.setAttribute('aria-label','Main navigation');
+    for(const [label,page]of [['Read','feed.html'],['Write','user.html']]){const link=el('a',label);link.href=url(page);link.dataset.boardLink='';if(label===section)link.setAttribute('aria-current','page');nav.append(link);}
+    const share=el('button','Copy board link','secondary');share.type='button';share.onclick=async()=>{const target=url('feed.html');target.search='';try{await navigator.clipboard.writeText(target.href);share.textContent='Link copied';}catch{share.textContent='Copy unavailable';}};nav.append(share);
+    const account=el('div');account.id='accountSlot';head.append(brand,nav,account);document.body.prepend(head);
+    const notice=el('p','Testnet · Test funds only','testnet-notice');head.after(notice);
+    document.querySelector('h1')?.replaceChildren(document.createTextNode(title));return head;
+  }
+  function identity(config){
+    const address=config?.board?.contractAddress;if(!address)return;
+    const notice=document.querySelector('.testnet-notice');if(notice)notice.textContent=String(config.network.chainId)==='11155111'?'Testnet · Test funds only':String(config.network.chainId)==='1'?'Ethereum mainnet':'Ethereum network '+config.network.chainId;
+    const name='Board '+address.slice(2,8);const heading=document.querySelector('[data-board-title]');if(heading)heading.textContent=name;
+    document.title=name+' · Message board';
+    root.BillboardCatalog?.load(config.network).then(labels=>{const label=labels.find(x=>x.address===address);if(label&&heading){heading.textContent=label.name;document.title=label.name;}}).catch(()=>{});
+    for(const anchor of document.querySelectorAll('[data-board-link]'))anchor.href=url(anchor.getAttribute('href'),location.hash);
+  }
+  function renderMessages(container,posts,{append=false,onModerate}={}){
+    const previous=new Map([...container.querySelectorAll('article[data-post-id]')].map(node=>[node.dataset.postId,node]));
+    const nodes=[];
+    for(const post of posts){
+      const signature=JSON.stringify([post.text,post.flagged,post.flag?.reason,post.publishedAt,Boolean(onModerate)]);let article=previous.get(post.postId);
+      if(!article||article.dataset.signature!==signature){
+        article=el('article',undefined,'message');article.dataset.postId=post.postId;article.dataset.signature=signature;article.id='message-'+post.postId;
+        const meta=el('div',undefined,'message-meta'),time=el('time');const seconds=Number(post.publishedAt);
+        if(Number.isSafeInteger(seconds)&&seconds>0){const date=new Date(seconds*1000);time.dateTime=date.toISOString();time.textContent=date.toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});}else time.textContent='Publication time unavailable';
+        const link=el('a','Link');const target=url('feed.html');target.searchParams.set('message',post.postId);link.href=target;link.setAttribute('aria-label','Link to message '+post.orderIndex);
+        meta.append(time,link);article.append(meta,el('p',post.flagged?'Message removed by moderator.':post.text,'message-text'));
+        if(post.flagged){article.append(el('p','Reason: '+(post.flag?.reason||'No reason supplied'),'small'));if(onModerate){const original=el('details');original.append(el('summary','Show removed message'),el('p',post.text,'message-text'));article.append(original);}}
+        if(onModerate&&!post.flagged){const button=el('button','Moderate','secondary');button.onclick=()=>onModerate(post);article.append(button);}
+      }
+      nodes.push(article);
+    }
+    if(append){for(const node of nodes)if(!previous.has(node.dataset.postId))container.append(node);}
+    else {const active=document.activeElement,card=active?.closest('article[data-post-id]'),focusIndex=card?[...card.querySelectorAll('a,button,summary')].indexOf(active):-1;container.replaceChildren(...nodes);if(active?.isConnected)active.focus({preventScroll:true});else if(card){const replacement=nodes.find(node=>node.dataset.postId===card.dataset.postId);const target=replacement?.querySelectorAll('a,button,summary')[focusIndex]||replacement?.querySelector('a');target?.focus({preventScroll:true});}}
+    if(!container.children.length)container.append(el('p','No messages yet. Be the first to write one.','empty-state'));
+  }
+  function rules(container,policies){const text=policies?.at(-1)?.text;container.hidden=!text;if(text){let body=container.querySelector('[data-rules-text]');if(!body){container.replaceChildren(el('summary','Board rules'));body=el('p',undefined,'policy-text');body.dataset.rulesText='';container.append(body);}body.textContent=text;}}
+  function bindOperation(application,container){
+    const status=el('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+    const hint=el('p',undefined,'small');const pause=el('button','Pause and continue later','secondary');pause.onclick=()=>{if(application.requestPause()){pause.disabled=true;pause.textContent='Pausing…';}};const details=el('details');details.append(el('summary','Details'));
+    const elapsed=el('p',undefined,'small'),history=el('ol');history.setAttribute('aria-label','Operation stages reached');let current=null;const showElapsed=()=>{elapsed.textContent=current?.startedAt?'Elapsed: '+Math.floor(((current.endedAt||Date.now())-current.startedAt)/1000)+' seconds':'';};const timer=setInterval(showElapsed,1000);
+    const report=el('pre'),copy=el('button','Copy diagnostic report','secondary');copy.type='button';copy.onclick=async()=>{await navigator.clipboard.writeText(application.diagnosticReport());copy.textContent='Copied';};details.append(history,report,copy);container.replaceChildren(status,hint,elapsed,pause,details);
+    const unsubscribe=application.subscribe(state=>{current=state;showElapsed();history.replaceChildren(...(state.history||[]).map(stage=>el('li',root.BillboardOperations?.stages[stage]||stage)));pause.hidden=!['bridge','settlement','screening'].includes(state.stage)||!['working','waiting'].includes(state.status);if(pause.hidden){pause.disabled=false;pause.textContent='Pause and continue later';}container.hidden=state.status==='idle';status.textContent=state.message;status.className=state.status==='failed'?'error':state.status==='complete'?'success':'';
+      hint.textContent=state.stage==='bridge'?'Your payment is confirmed. Setup continues automatically when the network is ready.':state.stage==='queued'?'Your request is accepted. It starts when the board’s prover is free.':state.stage==='proving'?'Proof generation can take several minutes. '+(state.mode==='remote'?'Using this board’s prover.':'Using this device.') :state.stage==='settlement'?'Your withdrawal is recorded. This can take longer than posting; we will ask for the final wallet approval when it is ready.':'';
+      report.textContent=application.diagnosticReport();copy.textContent='Copy diagnostic report';});return()=>{clearInterval(timer);unsubscribe();};
+  }
+  root.BillboardView=Object.freeze({header,identity,renderMessages,rules,bindOperation,url,element:el});
+})(globalThis);
 
-  /* Pagination */
-  .page { display: none; }
-  .page.active { display: block; }
-  .page.active > .card { animation: fadeIn 0.25s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+</script>
+<script>
+// Optional operator labels. Chain identity and addresses are still verified by the public reader.
+(function(root){
+ let request;
+ async function load(network){
+  request??=fetch('board-catalog.json',{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(10000)}).then(async response=>{
+   if(!response.ok)throw Error('Catalog unavailable');const data=await response.json();
+   if(data.schemaVersion!==1||typeof data.network!=='string'||!Array.isArray(data.boards)||data.boards.length>1000)throw Error('Invalid catalog');
+   for(const board of data.boards)if(!/^0x[0-9a-f]{64}$/.test(board.address)||typeof board.name!=='string'||board.name.length>100||typeof board.description!=='string'||board.description.length>500||!['current','retired'].includes(board.status))throw Error('Invalid board label');
+   return data;
+  });
+  const data=await request;if(data.network!==[network.chainId,network.rollupAddress,network.rollupVersion].join(':'))return [];
+  return data.boards.map(board=>Object.freeze({...board}));
+ }
+ root.BillboardCatalog=Object.freeze({load});
+})(globalThis);
 
-  /* Nav bar (inline, bottom right of content) */
-  .nav-bar { display: flex; align-items: center; gap: 0.75rem;
-             justify-content: flex-end; padding: 0.5rem 0 1.5rem 0; }
-  .nav-back { background: #333; color: #ccc; border: none; border-radius: 8px;
-              padding: 0.5rem 0.8rem; cursor: pointer; font-size: 0.9rem;
-              visibility: hidden; }
-  .nav-back:hover { background: #444; }
-  .nav-progress { font-size: 0.85rem; color: #888; font-variant-numeric: tabular-nums;
-                  margin-right: auto; }
-  .nav-next { background: #6c4bd6; color: #fff; border: none; border-radius: 8px;
-              padding: 0.6rem 1.2rem; cursor: pointer; font-size: 1rem; font-weight: 600;
-              min-width: 8rem; text-align: center; }
-  .nav-next:hover { background: #5a3cc0; }
-  .nav-next:disabled { background: #555; cursor: not-allowed; }
-  .nav-next.working { background: #4a3a8a; }
-
-  /* Cards & inputs */
-  .card { border: 1px solid #333; border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem;
-          background: rgba(127,127,127,0.05); }
-  label { display: block; font-size: 0.85rem; margin: 0.75rem 0 0.25rem; }
-  input, textarea { width: 100%; box-sizing: border-box; padding: 0.55rem; font-size: 0.95rem;
-          border-radius: 6px; border: 1px solid #444; background: inherit; color: inherit;
-          font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-  input.missing, textarea.missing, select.missing { border-color: #f85149; }
-  .field-error { color: #f85149; font-size: 0.85rem; margin: 0.25rem 0; }
-  button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus-visible, h2[tabindex]:focus-visible { outline: 2px solid #58a6ff; outline-offset: 3px; }
-  button { cursor: pointer; border: none; border-radius: 8px; padding: 0.7rem 1rem;
-           font-size: 1rem; font-weight: 600; color: #fff; background: #6c4bd6; margin-top: 0.5rem; }
-  button:hover { background: #5a3cc0; }
-  button:disabled { background: #555; cursor: not-allowed; }
-  button.secondary { background: #333; font-weight: 500; font-size: 0.9rem; }
-  button.secondary:hover { background: #444; }
-  button.working, .nav-next.working { opacity: 0.8; }
-
-  /* Public identifiers and user text must fit narrow reading screens. */
-  #boardConfiguration, #messages article { overflow-wrap: anywhere; }
-
-  /* Wallet buttons */
-  .wallet-btns { display: flex; flex-direction: column; gap: 0.6rem; }
-  button.wallet-btn { background: #333; font-weight: 500; font-size: 0.9rem; }
-  button.wallet-btn:hover { background: #444; }
-  button.wallet-btn.loaded { background: #238636; }
-  button.wallet-btn.loaded:hover { background: #2ea043; }
-  button.wallet-btn.other { background: #3a6b3a; }
-  button.wallet-btn.other:hover { background: #457a45; }
-  .wallet-group { display: flex; flex-direction: column; gap: 0.3rem; }
-  .wallet-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; color: #aaa; text-transform: uppercase; }
-  .wallet-label small { font-weight: 400; text-transform: none; color: #777; font-size: 0.7rem; }
-  .wallet-btn-row { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
-
-  /* Status messages */
-  .status-container { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            font-size: 0.82rem; min-height: 1.5rem; margin-top: 0.75rem; max-height: 300px; overflow-y: auto; }
-  .status { padding: 0.15rem 0; }
-  .status.info { color: #aaa; }
-  .status.success { color: #3fb950; }
-  .status.error { color: #f85149; }
-  .status.warn { color: #d29922; }
-  .status.working { color: #58a6ff; }
-
-  .spinner { display: inline-block; width: 0.7rem; height: 0.7rem; border: 2px solid #58a6ff;
-             border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;
-             margin-right: 0.4rem; vertical-align: middle; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .ok { color: #3fb950; } .err { color: #f85149; } .muted { color: #888; }
-  .ref { font-size: 0.78rem; color: #888; word-break: break-all; }
-  a { color: #58a6ff; }
-  hr { border: none; border-top: 1px solid #333; margin: 1rem 0; }
-  code { background: rgba(127,127,127,0.15); padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.85rem; }
-
-  /* Block monitor (top-right fixed indicator) */
-  .block-monitor {
-    position: fixed; top: 8px; right: 12px;
-    font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    background: rgba(127,127,127,0.08); padding: 4px 10px; border-radius: 6px;
-    z-index: 9999; pointer-events: none; color: #888;
-    border: 1px solid rgba(127,127,127,0.15);
-  }
-  .block-monitor.ok { color: #3fb950; }
-  .block-monitor.err { color: #f85149; }
-
-  /* Countdown timer (page 3 of user app) */
-  .countdown {
-    font-size: 0.95rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    padding: 0.6rem 0.8rem; border-radius: 6px; margin-bottom: 0.75rem;
-    font-variant-numeric: tabular-nums; text-align: center;
-  }
-  .countdown.ready { background: rgba(63,185,80,0.12); color: #3fb950; }
-  .countdown.waiting { background: rgba(210,153,34,0.12); color: #d29922; }
-  .countdown.warn { background: rgba(248,81,73,0.10); color: #d29922; }
-
-  /* Billboard feed */
-  .billboard-card { padding-bottom: 0.5rem; }
-  .billboard-feed {
-    display: flex; flex-direction: column; gap: 0.6rem;
-    max-height: 840px; overflow-y: auto; padding-right: 0.3rem;
-    margin-top: 0.5rem;
-  }
-  .billboard-feed::-webkit-scrollbar { width: 6px; }
-  .billboard-feed::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-  .billboard-post {
-    padding: 0.8rem 1rem; border-radius: 10px;
-    background: rgba(108,75,214,0.08); border: 1px solid rgba(108,75,214,0.18);
-    font-size: 0.95rem; line-height: 1.55; word-wrap: break-word; overflow-wrap: break-word;
-    animation: fadeIn 0.3s ease;
-  }
-  .billboard-post.new { animation: postIn 0.4s ease; }
-  @keyframes postIn {
-    from { opacity: 0; transform: translateY(-6px); background: rgba(108,75,214,0.20); }
-    to { opacity: 1; transform: none; background: rgba(108,75,214,0.08); }
-  }
-  .billboard-post-meta {
-    font-size: 0.72rem; color: #888; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    margin-bottom: 0.35rem; display: flex; gap: 0.6rem; align-items: center;
-  }
-  .billboard-post-num {
-    background: rgba(108,75,214,0.25); color: #b8a0ff; border-radius: 4px;
-    padding: 0.05rem 0.4rem; font-weight: 600; font-size: 0.7rem;
-  }
-  .billboard-post-text { color: #2a2040; }
-  .billboard-post.flagged {
-    background: rgba(194,65,65,0.08); border: 1px solid rgba(194,65,65,0.25);
-  }
-  .billboard-post-text.flagged-text { color: #888; font-style: italic; }
-  /* Censored posts (greyed out, only shown when user opts in) */
-  .billboard-post.censored {
-    background: rgba(127,127,127,0.06); border: 1px solid rgba(127,127,127,0.15);
-    opacity: 0.6;
-  }
-  .billboard-post-text.censored-text { color: #777; font-style: italic; }
-  .censored-divider {
-    height: 1px; background: rgba(127,127,127,0.2); margin: 0.8rem 0;
-  }
-  .censored-toggle {
-    text-align: center; font-size: 0.78rem; color: #888; cursor: pointer;
-    padding: 0.6rem 0; margin-top: 0.4rem; text-decoration: underline;
-  }
-  .censored-toggle:hover { color: #aaa; }
-  /* Moderation policy box */
-  .policy-box {
-    background: rgba(108,75,214,0.05); border: 1px solid rgba(108,75,214,0.15);
-    border-radius: 10px; padding: 0.8rem 1rem; margin-bottom: 0.8rem;
-  }
-  .policy-box h3 { margin: 0 0 0.4rem 0; font-size: 0.85rem; color: #b8a0ff; }
-  .policy-text {
-    font-family: inherit; font-size: 0.82rem; line-height: 1.5; color: #555;
-    white-space: pre-wrap; word-wrap: break-word; margin: 0;
-  }
-  /* Confirmation dialog for viewing censored posts */
-  .censor-confirm-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
-    z-index: 10000;
-  }
-  .censor-confirm-dialog {
-    background: #1a1a2e; border: 1px solid #444; border-radius: 12px;
-    padding: 1.5rem; max-width: 400px; width: 90%;
-    color: #e0e0e0;
-  }
-  .censor-confirm-dialog h3 { margin: 0 0 0.5rem; font-size: 1.1rem; color: #fff; }
-  .censor-confirm-dialog .small { color: #ccc; margin-bottom: 1rem; }
-  .censor-confirm-buttons { display: flex; gap: 0.6rem; justify-content: flex-end; }
-  .censor-confirm-buttons button { margin-top: 0; }
-  /* Sudoku challenge */
-  .sudoku-dialog { max-width: 420px; }
-  .sudoku-grid {
-    display: grid;
-    grid-template-columns: repeat(9, 1fr);
-    gap: 0;
-    margin: 0.5rem auto 1rem;
-    width: 360px;
-    border: 2px solid #666;
-    border-radius: 4px;
-    background: #111;
-  }
-  .sudoku-cell {
-    width: 40px; height: 40px;
-    text-align: center;
-    font-size: 1.1rem;
-    font-family: monospace;
-    border: 1px solid #333;
-    background: #1a1a2e;
-    color: #e0e0e0;
-    outline: none;
-    padding: 0;
-  }
-  .sudoku-cell.given {
-    background: #2a2a4e;
-    color: #fff;
-    font-weight: 700;
-  }
-  .sudoku-cell:focus {
-    background: #1e3a5f;
-    box-shadow: inset 0 0 0 2px #4a9eff;
-  }
-  .sudoku-border-right { border-right: 2px solid #666 !important; }
-  .sudoku-border-bottom { border-bottom: 2px solid #666 !important; }
-  .sudoku-cell.sudoku-conflict {
-    color: #c24141;
-    background: rgba(194,65,65,0.15);
-  }
-  .sudoku-status { text-align: center; min-height: 1.5rem; margin-bottom: 0.5rem; }
-  .sudoku-solved { color: #4ade80; font-weight: 600; font-size: 0.95rem; }
-  .flagged-badge {
-    background: rgba(194,65,65,0.3); color: #c24141; border-radius: 4px;
-    padding: 0.05rem 0.4rem; font-weight: 600; font-size: 0.7rem;
-  }
-  .censor-response {
-    margin-top: 0.4rem; padding: 0.4rem 0.6rem; border-radius: 6px;
-    background: rgba(194,65,65,0.06); font-size: 0.85rem; color: #6a4040;
-    border-left: 3px solid rgba(194,65,65,0.3);
-  }
-  .billboard-empty {
-    text-align: center; color: #888; font-size: 0.9rem; padding: 2rem 0;
-  }
-  .billboard-loading {
-    text-align: center; color: #888; font-size: 0.85rem; padding: 1rem 0;
-  }
-  .billboard-loading .spinner { width: 0.9rem; height: 0.9rem; }
-
-.account-menu { position:fixed; top:1rem; right:1rem; z-index:30; background:#202020; border:1px solid #555; border-radius:.6rem; }
-.account-menu summary { cursor:pointer; padding:.7rem 1rem; }
-.account-menu-panel { position:absolute; right:0; top:100%; z-index:20; width:min(22rem,85vw); padding:1rem; background:#202020; border:1px solid #555; border-radius:.6rem; box-shadow:0 8px 24px #0006; }
-.account-menu-panel button { display:block; width:100%; margin:.4rem 0; }
-
-</style>
-</head>
-<body>
+</script>
 <script>
 (function (root) {
   'use strict';
@@ -316,20 +146,24 @@
     const api=root.BillboardConfig,doc=container.ownerDocument;
     const panel=doc.createElement('section');panel.setAttribute('aria-label','Board configuration');
     function element(tag,text){const node=doc.createElement(tag);if(text)node.textContent=text;panel.append(node);return node;}
-    element('h2','Board configuration');
-    element('p','Import public connection settings for this board. Never paste a wallet backup, password, recovery claim or RPC API key. Endpoints can observe connection metadata; do not share URLs containing secret path tokens.');
+    element('h2','Select a board');
+    element('p','Paste a board link or choose its public configuration file.');
     const summary=element('p'),status=element('p');status.setAttribute('role','status');
     const label=element('label','Public configuration JSON');const input=doc.createElement('textarea');input.rows=7;input.maxLength=api.MAX_BYTES;label.append(input);
+    const advanced=doc.createElement('details'),advancedTitle=doc.createElement('summary');advancedTitle.textContent='Advanced connection settings';advanced.append(advancedTitle,label);panel.append(advanced);
     const fileLabel=element('label','Choose configuration file');const file=doc.createElement('input');file.type='file';file.accept='.json,application/json';fileLabel.append(file);
     function button(text,action){const b=element('button',text);b.type='button';b.addEventListener('click',action);return b;}
     let destroyed=false;
+    const linkLabel=element('label','Board link'),boardLink=doc.createElement('input');boardLink.type='url';boardLink.placeholder='https://…';linkLabel.append(boardLink);
+    const openLink=button('Use board link',async()=>{const selected=store.snapshot();openLink.disabled=true;try{if(!boardLink.value.trim())throw Object.assign(Error(),{code:'BB_BOARD_LINK_INVALID'});const result=await root.loadHostedBoard(boardLink.value.trim());if(destroyed)return;if(store.snapshot()!==selected)throw Error('Selection changed');store.install(result.config);status.textContent='Board selected.';}catch(error){if(!destroyed)status.textContent=root.boardConnectionFailure(error).message;}finally{if(!destroyed)openLink.disabled=false;}});
     const imported=button('Import configuration',()=>{try{store.install(api.parse(input.value));input.value='';status.textContent=store.snapshot().error??'Public configuration imported. Live network checks run when connecting.';}catch(error){status.textContent=error.message;}});
+    advanced.append(imported);
     file.addEventListener('change',async()=>{const chosen=file.files?.[0];if(!chosen)return;const snapshot=store.snapshot();imported.disabled=true;try{if(chosen.size>api.MAX_BYTES)throw new Error('Configuration exceeds size limit');const text=await chosen.text();if(destroyed)return;if(store.snapshot()!==snapshot)throw new Error('Configuration changed while reading file; select it again');store.install(api.parse(text));input.value='';status.textContent=store.snapshot().error??'Public configuration imported. Live network checks run when connecting.';}catch(error){if(!destroyed)status.textContent=error.message;}finally{if(!destroyed){imported.disabled=false;file.value='';}}});
     const exported=button('Export configuration',()=>{const {config}=store.snapshot();if(!config)return;const url=URL.createObjectURL(new Blob([JSON.stringify(config,null,2)+'\n'],{type:'application/json'}));const anchor=doc.createElement('a');anchor.href=url;anchor.download='board-public-config.json';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),0);});
     button('Clear configuration',()=>{store.clear();input.value='';});
     function render(snapshot){const c=snapshot.config;exported.disabled=!c;
-      summary.textContent=c?`Ethereum chain ${c.network.chainId}; rollup version ${c.network.rollupVersion}. Board ${c.board.contractAddress}. Portal ${c.board.portalAddress}. Node ${c.network.nodeUrl}. Ethereum RPC ${c.network.ethRpcUrl}. ${c.privateFee?`Private fee contract ${c.privateFee.contractAddress}. Reservation ceiling ${api.maximumFee(c)} Fee Juice base units per transaction. Unused reserved credit is returned privately.`:'Public reading only: private fee settings are missing; wallet actions are unavailable.'} Imported settings are not proof of live chain verification.`:'No board configuration selected. Import settings to connect.';
-      status.textContent=snapshot.error??(snapshot.persisted?'Public settings are saved for this browser origin.':'');
+      summary.textContent=c?'Selected board '+c.board.contractAddress.slice(2,8)+(c.privateFee?' · Posting configured.':' · Reading only.'): 'No board selected.';
+      status.textContent=snapshot.error??(c&&snapshot.persisted?'Board selection saved on this device.':'');
     }
     const unsubscribe=store.subscribe(render);render(store.snapshot());container.append(panel);
     return {destroy(){destroyed=true;unsubscribe();panel.remove();}};
@@ -346,15 +180,18 @@
     if(!response.ok)throw Error('Board settings unavailable');
     return root.BillboardConfig.parse(await response.text());
   };
-  root.loadHostedBoard=async function(){
+  root.loadHostedBoard=async function(link){
+    const explicit=link!==undefined;let fragment;try{const parsed=explicit?new URL(link):new URL(location.href);if(explicit&&(!['https:','http:'].includes(parsed.protocol)||!parsed.hash))throw Error();fragment=parsed.hash;}catch{throw Object.assign(Error('Invalid board link'),{code:'BB_BOARD_LINK_INVALID'});}
     const hosted=await root.loadHostedSettings();
     const networkId=[hosted.network.chainId,hosted.network.rollupAddress,hosted.network.rollupVersion].join(':');
-    const match=location.hash.match(/^#network=([0-9]+:0x[0-9a-f]{40}:[0-9]+)&board=(0x[0-9a-f]{64})$/);
-    if(location.hash&&(!match||match[1]!==networkId))throw Error('Invalid board or network link');
+    const match=fragment.match(/^#network=([0-9]+:0x[0-9a-f]{40}:[0-9]+)&board=(0x[0-9a-f]{64})$/);
+    if(fragment&&!match)throw Object.assign(Error('Invalid board link'),{code:'BB_BOARD_LINK_INVALID'});
+    if(match&&match[1]!==networkId)throw Object.assign(Error('Unsupported network'),{code:'BB_BOARD_NETWORK_UNSUPPORTED'});
     const boardAddress=match?match[2]:hosted.board.contractAddress;
     const result=await root.BillboardPublic.connectPublicBoard({network:hosted.network,boardAddress,metadata:root.BillboardPublic.metadata,storage:root.BillboardPublic.browserPublicFeedStorage()});
     return {...result,config:root.BillboardConfig.validate({...result.config,privateFee:hosted.privateFee,...(boardAddress===hosted.board.contractAddress&&hosted.remoteProver?{remoteProver:hosted.remoteProver}:{})}),fragment:'network='+networkId+'&board='+boardAddress};
   };
+  root.boardConnectionFailure=error=>({BB_BOARD_LINK_INVALID:{message:'This board link is incomplete or invalid. Choose a board from the directory.',retry:false},BB_BOARD_NETWORK_UNSUPPORTED:{message:'This site does not serve the network in that link. Open it on the board operator’s site.',retry:false},BB_BOARD_INCOMPATIBLE:{message:'This board uses a different contract version. Ask its operator for the matching app.',retry:false},BB_BOARD_NOT_FOUND:{message:'No board was found at this address. Check the link with its operator.',retry:false}}[error?.code]||{message:'The board could not be reached. Your account and messages are unchanged. Try again.',retry:true});
   if(document.body?.hasAttribute('data-public-board-reader'))return;
   if(document.body?.hasAttribute('data-hosted-board')){
     // Page-local settings cannot inherit or overwrite another board's saved settings.
@@ -370,7 +207,7 @@
         if(!result.config.privateFee){status.textContent='Posting and fee funding are not enabled for this board. You can still read messages.';return;}
         root.billboardConfigStore.install(result.config);
         status.textContent='Board ready. Connect your wallet to continue.';initialize();
-      }catch{status.textContent='This board is unavailable for posting. Reload to try again.';}
+      }catch(error){const failure=root.boardConnectionFailure(error);status.textContent=failure.message;if(failure.retry){const retry=document.createElement('button');retry.className='secondary';retry.textContent='Try again';retry.onclick=()=>root.initializeHostedBoard(initialize);status.append(retry);}}
     };
     return;
   }
@@ -379,7 +216,7 @@
   const mount=()=>{
     if(document.getElementById('deploymentManifest'))return;
     const container=document.createElement('div');container.id='boardConfiguration';container.className='card';
-    document.body.prepend(container);root.BillboardConfigUI.mount(container,root.billboardConfigStore);
+    (document.getElementById('boardSelection')||document.querySelector('main')||document.body).prepend(container);root.BillboardConfigUI.mount(container,root.billboardConfigStore);
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })(globalThis);
@@ -499,36 +336,17 @@
   root.BillboardConnectionCheck=Object.freeze({verify});
 })(globalThis);
 
-</script>
-
-<h1>Billboard — Deploy</h1>
-<p class="small">Deploy and verify the Billboard contracts on L1 (Ethereum) and L2 (Aztec).</p>
-<p class="small"><b>Loads a 56MB bundle + 1.7MB contract artifact. Be patient.</b></p>
-<p class="small warn">⚠️ <b>Alpha experimental software.</b> Not meant for production use.</p>
-<p class="small" id="threadingInfo"></p>
-
-<div class="card">
-  <h2>Configuration</h2>
-  <p>Import the reviewed deployment configuration. Network, deposit limits, policy and censor must agree with this file before any deployment transaction is prepared.</p>
-  <label for="manifestFile">Deployment configuration file</label>
-  <input id="manifestFile" type="file" accept="application/json,.json" onchange="importDeploymentManifest(this)">
-  <textarea id="deploymentManifest" hidden></textarea>
-  <p id="manifestSummary" class="small">No configuration imported.</p>
-  <input id="secretKey" type="hidden"><input id="salt" type="hidden" value="0">
-  <label for="readyTxHash">Portal binding transaction (to resume activation)</label>
-  <input id="readyTxHash" placeholder="Optional transaction hash">
-  <label><input type="checkbox" id="retryEthereum"> Retry a saved Ethereum request with its original nonce</label>
-
-  <div id="walletButtonsContainer"></div>
-  <label for="publicFeeGas">Private fee gas settings for the public connection file (JSON, optional)</label>
-  <textarea id="publicFeeGas" rows="4" spellcheck="false"></textarea>
-  <p class="small">Use the reviewed gas settings for this release. The ownerless fee contract address is derived from the bundled artifact. Without fee settings the exported file supports public reading only. Each private transaction reserves a fee budget and returns unused credit privately. The refund contract must be published before funding it.</p>
-  <button id="deployButton" type="button" onclick="startDeploy()" style="margin-top: 12px; font-size: 1.1em; padding: 10px 24px; cursor: pointer;">Deploy</button>
-  <p class="small" id="deployHint">Load both wallets above, then click Deploy.</p>
-  <div id="status" class="status-container" role="status" aria-live="polite" style="max-height: 60vh; overflow-y: auto;"></div>
-</div>
-
-<!-- The 58MB bundle -->
+</script><script src="public-feed.js"></script><main><h1>Create a board</h1><p>Review the board rules and deposit settings before deploying.</p><section class="task-panel"><h2>Board settings</h2><p>Connect the deployment accounts below, set the board rules, then review the settings. This creates a board on this site’s network.</p>
+<label for="newRules">Board rules</label><textarea id="newRules" maxlength="1488" rows="4"></textarea>
+<label for="newMinimum">Minimum refundable deposit (ETH)</label><input id="newMinimum" inputmode="decimal" value="0.000001">
+<label for="newMaximum">Maximum refundable deposit (ETH)</label><input id="newMaximum" inputmode="decimal" value="0.00001">
+<label for="newInterval">Posting interval at minimum deposit (seconds)</label><input id="newInterval" type="number" min="1" value="60">
+<label for="newWindow">Moderation period (seconds)</label><input id="newWindow" type="number" min="1" value="3600">
+<label for="newMultiplier">Penalty multiplier</label><input id="newMultiplier" type="number" min="1" value="4">
+<label for="newAllowance">Saved posting allowance (intervals)</label><input id="newAllowance" type="number" min="1" value="2">
+<label for="newModerator">Moderator’s private account address</label><input id="newModerator" placeholder="0x…">
+<button id="prepareBoard" class="secondary">Review board settings</button>
+<details><summary>Import advanced deployment settings</summary><label for="manifestFile">Reviewed deployment configuration</label><input id="manifestFile" type="file" accept="application/json,.json" onchange="importDeploymentManifest(this)"><textarea id="deploymentManifest" hidden></textarea></details><dl id="manifestSummary" class="balance-list"></dl></section><section class="task-panel"><h2>Deployment accounts</h2><div id="walletButtonsContainer"></div></section><details class="task-panel"><summary>Advanced settings</summary><label for="publicFeeGas">Private transaction fee settings (JSON)</label><textarea id="publicFeeGas" rows="4"></textarea><p class="small">These settings are included in the exported connection file. Hosted posting is checked separately against this site’s actual configuration.</p><label for="readyTxHash">Saved activation transaction</label><input id="readyTxHash"><label class="toggle"><input type="checkbox" id="retryEthereum"> Retry an interrupted Ethereum request with its original nonce</label></details><button id="deployButton" onclick="startDeploy()">Create board</button><p id="status" role="status"></p><div id="operationStatus" class="operation" hidden></div><dl id="capabilities" class="balance-list"></dl><p class="actions"><a id="readBoard" hidden>Read this board</a><a id="postBoard" hidden>Open posting</a></p><button id="downloadConfig" class="secondary" hidden>Download connection settings</button></main><!-- The 58MB bundle -->
 <script src="aztec_bundle.js" onerror="window.__billboardBundleFailed=true"></script>
 <script>window.BILLBOARD_CRS_MANIFEST = {"schemaVersion":2,"aztecVersion":"5.2.0","provenance":{"package":"@aztec/bb.js","version":"5.2.0","source":"node_modules/@aztec/bb.js/dest/node/crs/net_crs.js","sourceSha256":"98182144b264c587733e40e5ed22446d704af132eb36ed0b02b307a99cda4da5","observedAt":"2026-09-12","method":"SHA-256 of exact ranged responses downloaded from the primary URLs. These are locally recorded content pins, not a separate publisher checksum attestation.","pointBudget":"BN254 preserves at least the existing 1048577-point capacity, rounded to the next 131072-point/4MiB compressed chunk. Grumpkin preserves 65537 points. Capacity for production proofs is verified separately."},"files":[{"name":"g1.dat","url":"https://crs.aztec-cdn.foundation/g1_compressed.dat","fallbackUrl":"https://crs.aztec-labs.com/g1_compressed.dat","bytes":37748736,"numPoints":1179648,"format":"bn254-g1-compressed-32-byte","range":{"start":0,"end":37748735},"sha256":"8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416"},{"name":"g2.dat","url":"https://crs.aztec-cdn.foundation/g2.dat","fallbackUrl":"https://crs.aztec-labs.com/g2.dat","bytes":128,"numPoints":1,"format":"bn254-g2-uncompressed-128-byte","range":{"start":0,"end":127},"sha256":"01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f"},{"name":"grumpkin_g1.dat","url":"https://crs.aztec-cdn.foundation/grumpkin_g1_v2.dat","fallbackUrl":"https://crs.aztec-labs.com/grumpkin_g1_v2.dat","bytes":4194368,"numPoints":65537,"format":"grumpkin-g1-v2-uncompressed-64-byte","range":{"start":0,"end":4194367},"sha256":"b4988c0ae3dd058b781045aeb70000d7b7fb5ffe557ed4f81c64b437c39a61c9"}],"derivedG1":{"name":"g1_uncompressed.dat","bytes":75497472,"numPoints":1179648,"format":"bn254-g1-uncompressed-64-byte","sha256":"2aefa0bc53704a61d887ff316d56b6f8bed968859b8b894c3677f11797779dac","derivation":{"method":"bb-srs-init-v1","packageVersion":"5.2.0","inputName":"g1.dat","inputSha256":"8d6fb7829bcfbfeaf02a79104539bfd3777a328ec46d3331e37effca2ee1b416","g2Sha256":"01797bfc4de5a96f0e516a9ea4537d18786dc30cb991aca4274c95822b69c32f","wasmSource":"node_modules/@aztec/bb.js/dest/node/barretenberg_wasm/barretenberg-threads.wasm.gz","wasmSha256":"9106f6164e4714a87ce1cf13ceac4d22109767a16e6fb997f1af7e7fcc81ae45"}}};
 // Shared browser/Node CRS loading. The manifest comes from the source build,
@@ -39873,14 +39691,14 @@ const __$G=typeof globalThis!=="undefined"?globalThis:typeof window!=="undefined
   async function ceremony(ethereumAccount, {create = false, credentialId} = {}) {
     const identity = account(ethereumAccount);
     if (!global.isSecureContext || !navigator.credentials || !global.PublicKeyCredential) {
-      throw Error('Passkeys require a supported browser and HTTPS.');
+      throw Object.assign(Error('Passkeys require a supported browser and HTTPS.'),{code:'BB_PASSKEY_UNSUPPORTED'});
     }
     const userId = crypto.getRandomValues(new Uint8Array(32));
     const prfInput = await digest(domain + '/prf');
     const challenge = crypto.getRandomValues(new Uint8Array(32));
     const common = {challenge,timeout:120000,extensions:{prf:{eval:{first:prfInput}}}};
     let credential;
-    if (create) {
+    try { if (create) {
       credential = await navigator.credentials.create({publicKey:{...common,
         rp:{id:location.hostname,name:'Anonymous Message Board'},
         user:{id:userId,name:identity,displayName:'Message board ' + identity.slice(0,8)},
@@ -39892,6 +39710,7 @@ const __$G=typeof globalThis!=="undefined"?globalThis:typeof window!=="undefined
         userVerification:'required',...(credentialId ? {allowCredentials:[{type:'public-key',id:decodeId(credentialId)}]} : {}),
       }});
     }
+    } catch(error) {if(error?.name==='NotAllowedError'||error?.name==='AbortError')throw Object.assign(Error('Passkey approval cancelled.'),{code:'BB_PASSKEY_CANCELLED'});throw Object.assign(Error('Passkey unavailable.'),{code:'BB_PASSKEY_UNSUPPORTED'});}
     if (!credential || credential.type !== 'public-key') throw Error('Passkey approval was not completed.');
     const id = encodeId(credential.rawId);
     if (credentialId && id !== credentialId) throw Error('The selected passkey does not match this account.');
@@ -39901,7 +39720,7 @@ const __$G=typeof globalThis!=="undefined"?globalThis:typeof window!=="undefined
     if (create && !output && credential.getClientExtensionResults().prf?.enabled === true) {
       return ceremony(identity, {credentialId:id});
     }
-    if (!output) throw Error('This passkey does not support private account recovery (PRF). Use a PRF-capable passkey.');
+    if (!output) throw Object.assign(Error('Passkey PRF unavailable.'),{code:'BB_PASSKEY_UNSUPPORTED'});
     try { return {wallet:await derive(output,identity),credentialId:id}; }
     finally { new Uint8Array(output).fill(0); }
   }
@@ -40173,20 +39992,26 @@ globalThis.BillboardClaimBackup=Object.freeze({
   restoreRecords(wallet,claims){return makeClaimSecretStore(wallet.secretKey,wallet.salt).restoreRecords(claims);},
 });
 
+// Only public search progress; private keys and claim secrets never enter this cache.
+function createDepositRecoveryProgress(){
+  const key=identity=>'board-deposit-search:'+identity;
+  return Object.freeze({read:async identity=>{const value=localStorage.getItem(key(identity));if(!value)return null;try{return JSON.parse(value);}catch{localStorage.removeItem(key(identity));return null;}},write:async(identity,value)=>localStorage.setItem(key(identity),JSON.stringify(value)),clear:async identity=>localStorage.removeItem(key(identity))});
+}
+
 // Browser custody: passkey or explicitly imported Aztec account, recovery files, and
 // an external Ethereum signer. A page has one immutable wallet context.
 window.walletState = { aztec:null, ethSigner:null, ethProvider:null, ethTransport:null, ethAccount:null, ethType:null, ethWalletName:null, invalidated:false };
-let _onReady=null, _onAztecLoad=null, _requireEth=true, _readyFired=false;
-let _autoPasskey=false;
+let _onReady=null, _onSetupError=(_error)=>_wlog('Account unlocked, but setup did not finish. Try account setup again.','error'), _onAztecLoad=null, _requireEth=true, _readyFired=false;
+let _autoPasskey=false, _canEndSession=()=>true;
 let _walletBusy=false, _walletGeneration=0, _connectingEth=null;
 /** @type {(state:ReturnType<typeof accountSnapshot>)=>void} */
 let _accountNotify=()=>{};
 /** @type {(message:string,type:string)=>void} */
 let _accountLog=()=>{};
 function _wlog(message,type='info') { _accountLog(message,type); }
-function _updateAccountState() { _accountNotify(accountSnapshot()); }
+function _updateAccountState() { try{_accountNotify(accountSnapshot());}catch{ /* Rendering cannot change custody state. */ } }
 /** Public account state contains no signing material. */
-function accountSnapshot() { return {address:window.walletState.aztec?.address.toString()||null,ethereumAddress:window.walletState.ethAccount,busy:_walletBusy,invalidated:window.walletState.invalidated,ethereumWalletName:window.walletState.ethWalletName,ethereumConnected:!!window.walletState.ethSigner && !window.walletState.invalidated}; }
+function accountSnapshot() { return {address:window.walletState.aztec?.address.toString()||null,ethereumAddress:window.walletState.ethAccount,busy:_walletBusy,invalidated:window.walletState.invalidated,ethereumWalletName:window.walletState.ethWalletName,needsPasskey:_autoPasskey&&!!window.walletState.ethSigner&&!window.walletState.aztec,ethereumConnected:!!window.walletState.ethSigner && !window.walletState.invalidated}; }
 function _assertWalletLive() { if(window.walletState.invalidated) throw new Error('Wallet context changed. Reload this page before continuing.'); }
 function _invalidateWalletContext() {
   if(window.walletState.invalidated)return;
@@ -40203,7 +40028,7 @@ function _checkReady() {
   if(_readyFired || window.walletState.invalidated) return;
   if(window.walletState.aztec && (!_requireEth || window.walletState.ethSigner)) {
     _readyFired=true;
-    Promise.resolve().then(()=>_onReady?.()).catch(()=>{_readyFired=false;_wlog('Wallet setup did not complete. Check your network and configuration, then reload to retry.','error');});
+    Promise.resolve().then(()=>_onReady?.()).catch(error=>{_readyFired=false;try{_onSetupError(error);}catch{_wlog('Account unlocked, but setup did not finish. Try account setup again.','error');}});
   }
 }
 async function _deriveAccountAddress(a,secretKeyHex,saltVal) {
@@ -40217,7 +40042,7 @@ async function _deriveAccountAddress(a,secretKeyHex,saltVal) {
   return {address:instance.address,partialAddress:await a.computePartialAddress(instance)};
 }
 async function _prepareWallet(raw,allowExisting=false) {
-  if(window.walletState.aztec && !allowExisting) throw new Error('A wallet is already loaded. Reload to use another wallet.');
+  if(window.walletState.aztec && !allowExisting) throw Object.assign(Error('Lock the current account before restoring another.'),{code:'BB_ACCOUNT_REPLACEMENT'});
   const wallet=window.BillboardWalletBackup.validateWallet(raw);
   if(!window.__aztec?.Fr) throw new Error('Wait for the application to load before opening a wallet.');
   const derived=await _deriveAccountAddress(window.__aztec,wallet.secretKey,wallet.salt);
@@ -40225,7 +40050,7 @@ async function _prepareWallet(raw,allowExisting=false) {
   return {...wallet,...derived,raw:wallet};
 }
 function _activateWallet(prepared) {
-  _assertWalletLive(); if(window.walletState.aztec) throw new Error('A wallet is already loaded.');
+  _assertWalletLive(); if(window.walletState.aztec) throw Object.assign(Error('Lock the current account before restoring another.'),{code:'BB_ACCOUNT_REPLACEMENT'});
   window.walletState.aztec=prepared; _walletGeneration++;
   _wlog('Aztec wallet loaded: '+prepared.address.toString(),'success');
   _updateAccountState(); if(_onAztecLoad) {try {_onAztecLoad(prepared.address.toString());}catch {_wlog('Wallet loaded, but address display did not update. Reload before continuing.','error');_invalidateWalletContext();}} _checkReady();
@@ -40252,9 +40077,12 @@ async function importAccountRecovery(file,password) {
   return _walletOperation(async()=>{
     {
       if(!file || file.size>32*1024*1024+4096) throw new Error();
-      const parsed=JSON.parse(await file.text());
-      // Raw CLI wallets may be imported, but every browser export is encrypted.
-      const payload=parsed.secretKey?{wallet:parsed,claims:[]}:await window.BillboardWalletBackup.decrypt(parsed,password);
+      let parsed,payload;
+      try {
+        parsed=JSON.parse(await file.text());
+        // Raw CLI wallets may be imported, but every browser export is encrypted.
+        payload=parsed.secretKey?{wallet:parsed,claims:[]}:await window.BillboardWalletBackup.decrypt(parsed,password);
+      } catch { throw Object.assign(Error('Invalid recovery file or password.'),{code:'BB_BACKUP_INVALID'}); }
       const prepared=await _prepareWallet(payload.wallet);
       if(payload.claims.length||payload.journals?.length)await _withRecoveryLock(prepared,async()=>{
       if(payload.claims.length) {
@@ -40336,7 +40164,7 @@ async function connectEthereumAccount(transport, walletName='Browser wallet', {s
     // The engine independently verifies signer, node and portal chain agreement.
     _wlog(window.walletState.ethWalletName+' connected: '+account,'success');
     _updateAccountState();
-    if(_autoPasskey && !window.walletState.aztec)await _openPasskeyAccount();
+    if(_autoPasskey && !window.walletState.aztec && localStorage.getItem(_passkeyRecordKey()))await _openPasskeyAccount();
     _checkReady();
     } finally {_connectingEth=null;}
   });
@@ -40364,20 +40192,36 @@ async function _openPasskeyAccount(importExisting=false) {
     _activateWallet(prepared);
   });
 }
+async function createPasskeyAccount() {
+  return _walletOperation(()=>_openPasskeyAccount(false));
+}
+async function endAccountSession(){
+  if(_walletBusy||!_canEndSession())throw Object.assign(Error('Operation in progress.'),{code:'BB_OPERATION_BUSY'});
+  _walletBusy=true;_updateAccountState();
+  try{
+    const end=async()=>{_readyFired=false;_walletGeneration++;_bindEthereumProvider(null);window.walletState.invalidated=true;return {reload:true};};
+    const address=window.walletState.aztec?.address;
+    if(!address)return await end();
+    return await navigator.locks.request('billboard-wallet:'+address.toString(),{ifAvailable:true},async lock=>{if(!lock)throw Object.assign(Error('Wallet busy in another tab.'),{code:'BB_OPERATION_BUSY'});return end();});
+  }finally{_walletBusy=false;_updateAccountState();}
+}
 async function importPasskeyAccount() {
+  if(window.walletState.aztec)throw Object.assign(Error('Lock before switching private accounts.'),{code:'BB_ACCOUNT_REPLACEMENT'});
+  if(!_canEndSession())throw Object.assign(Error('Operation in progress.'),{code:'BB_OPERATION_BUSY'});
   return _walletOperation(async()=>{return _openPasskeyAccount(true);});
 }
-/** @param {{autoPasskey?:boolean,requireEth?:boolean,onReady?:()=>void|Promise<void>,onAztecLoad?:(address:string)=>void,onChange?:(state:ReturnType<typeof accountSnapshot>)=>void,onMessage?:(message:string,type:string)=>void}} options */
+/** @param {{canEndSession?:()=>boolean,autoPasskey?:boolean,requireEth?:boolean,onReady?:()=>void|Promise<void>,onSetupError?:(error:unknown)=>void,onAztecLoad?:(address:string)=>void,onChange?:(state:ReturnType<typeof accountSnapshot>)=>void,onMessage?:(message:string,type:string)=>void}} options */
 function configureAccount(options={}) {
   _autoPasskey=options.autoPasskey===true;_requireEth=options.requireEth!==false;
-  _onReady=options.onReady||null;_onAztecLoad=options.onAztecLoad||null;
+  _canEndSession=options.canEndSession||(()=>true);
+  _onReady=options.onReady||null;if(options.onSetupError)_onSetupError=options.onSetupError;_onAztecLoad=options.onAztecLoad||null;
   _accountNotify=options.onChange||(()=>{});_accountLog=options.onMessage||(()=>{});
 }
 function _bindEthereumProvider(transport) {
   if(_accountProvider===transport)return;
   for(const [name,handler] of _accountListeners)_accountProvider?.removeListener?.(name,handler);
   _accountListeners=[];_accountProvider=transport;
-  if(transport.on) for(const name of ['accountsChanged','chainChanged','disconnect','connect']) {
+  if(transport?.on) for(const name of ['accountsChanged','chainChanged','disconnect','connect']) {
     const handler=value=>{
     if(_accountProvider!==transport)return;
     if(window.walletState.ethType!=='browser') {
@@ -40400,18 +40244,21 @@ function _bindEthereumProvider(transport) {
 let _accountProvider, _accountListeners=[];
 /** Account operations return data; rendering, downloads and reloads belong to the caller. */
 window.BillboardAccount=Object.freeze({configure:configureAccount,snapshot:accountSnapshot,
-  connect:connectEthereumAccount,importPasskey:importPasskeyAccount,importRecovery:importAccountRecovery,
+  endSession:endAccountSession,createPasskey:createPasskeyAccount,connect:connectEthereumAccount,importPasskey:importPasskeyAccount,importRecovery:importAccountRecovery,
   create:createAccount,exportRecovery:exportAccountRecovery,invalidate:_invalidateWalletContext});
 
 // Account controls: rendering and browser file handling only.
 let _statusId="setupStatus";
-function walletMessage(message,type="info") { if(typeof log==="function")log(message,type,_statusId); }
+function walletMessage(message,type="info") { const region=document.getElementById("wbAccountStatus");if(region){region.textContent=message;region.className=type==="error"?"error":"";} if(typeof log==="function")log(message,type,_statusId); }
 function _updateButtonColors() {
   const state=window.BillboardAccount.snapshot();
   const connection=document.getElementById('wbConnectionStatus');
   if(connection)connection.textContent=state.invalidated
-    ? 'Wallet connection changed. Reload to reconnect before continuing.'
-    : state.ethereumConnected ? state.ethereumWalletName+' · '+state.ethereumAddress : 'No Ethereum wallet connected.';
+    ? 'Wallet connection changed. Switch wallet to reconnect.'
+    : state.ethereumConnected ? state.ethereumWalletName+' · '+state.ethereumAddress.slice(0,6)+'…'+state.ethereumAddress.slice(-4) : 'No Ethereum wallet connected.';
+  const summary=document.querySelector('#wbAccountMenu > summary');if(summary)summary.textContent=state.ethereumConnected?'Account · '+state.ethereumAddress.slice(0,6)+'…'+state.ethereumAddress.slice(-4):'Account';
+  const eth=document.getElementById('wbEthIdentity'),privateId=document.getElementById('wbPrivateIdentity');if(eth)eth.textContent=state.ethereumAddress||'Ethereum wallet not connected';if(privateId)privateId.textContent=state.address||'Private account locked';
+  const choice=document.getElementById('wbPasskeyChoice');if(choice)choice.hidden=!state.needsPasskey;
   for(const id of ['wbAztecBtn','wbAztecGenBtn','wbEthBrowserBtn']) {
     const el=document.getElementById(id); if(el) el.disabled=state.busy || state.invalidated || (id==='wbEthBrowserBtn'?state.ethereumConnected && !!state.address:!!state.address);
   }
@@ -40419,11 +40266,12 @@ function _updateButtonColors() {
 function _backupPassword(confirm=false) {
   const input=document.getElementById('wbPassword'), repeat=document.getElementById('wbPasswordConfirm');
   const password=input?.value || '';
-  if(password.length<12 || password.length>1024) throw new Error('Use a backup password of at least 12 characters.');
-  if(confirm && password!==repeat?.value) throw new Error('The backup passwords do not match.');
+  for(const el of [input,repeat])el?.removeAttribute('aria-invalid');
+  if(password.length<12 || password.length>1024) throw Object.assign(new Error(),{code:'BB_BACKUP_PASSWORD',field:'wbPassword'});
+  if(confirm && password!==repeat?.value) throw Object.assign(new Error(),{code:'BB_BACKUP_PASSWORD_MATCH',field:'wbPasswordConfirm'});
   return password;
 }
-function _clearBackupPassword() { for(const id of ['wbPassword','wbPasswordConfirm']) { const el=document.getElementById(id); if(el)el.value=''; } }
+function _clearBackupPassword() { for(const id of ['wbPassword','wbPasswordConfirm','wbRestorePassword']) { const el=document.getElementById(id); if(el)el.value=''; } }
 function _downloadJson(filename,obj) {
   const url=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)+'\n'],{type:'application/json'}));
   const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();
@@ -40431,9 +40279,9 @@ function _downloadJson(filename,obj) {
 }
 function downloadAccountRecovery(envelope) {
   _downloadJson('aztec-recovery-'+window.BillboardAccount.snapshot().address.slice(2,18)+'.json',envelope);
-  walletMessage('Encrypted recovery file downloaded. Keep it and its password safely. Export again after each transaction or recovery update. Older files do not contain later requests.','success');
+  walletMessage('Encrypted recovery file downloaded. Keep it and its password safely. It restores your account; it also includes the pending requests saved at the time of export.','success');
 }
-async function _loadAztecWallet(file) {try{return await window.BillboardAccount.importRecovery(file,document.getElementById('wbPassword')?.value||'');}finally{_clearBackupPassword();}}
+async function _loadAztecWallet(file) {try{return await window.BillboardAccount.importRecovery(file,document.getElementById('wbRestorePassword')?.value||'');}finally{_clearBackupPassword();}}
 async function _generateAztecWallet() {try{downloadAccountRecovery(await window.BillboardAccount.create(_backupPassword(true)));}finally{_clearBackupPassword();}}
 async function _exportAztecWallet() {try{downloadAccountRecovery(await window.BillboardAccount.exportRecovery(_backupPassword(true)));}finally{_clearBackupPassword();}}
 async function _loadEthBrowser() {
@@ -40465,27 +40313,39 @@ async function _importPasskeyAccount() {const result=await window.BillboardAccou
 function initWalletButtons(containerId,options={}) {
   const autoPasskey=options.autoPasskey===true;
   _statusId=options.statusId||'setupStatus';
-  window.BillboardAccount.configure({...options,onChange:()=>{_updateButtonColors();options.onChange?.(window.BillboardAccount.snapshot());},onMessage:walletMessage});
+  window.BillboardAccount.configure({...options,onSetupError:error=>walletMessage(publicOperationFailure(error).message,'error'),onChange:()=>{_updateButtonColors();options.onChange?.(window.BillboardAccount.snapshot());},onMessage:walletMessage});
   const container=document.getElementById(containerId);if(!container)return;
   container.innerHTML=autoPasskey ? `<div class="wallet-btns"><button class="wallet-btn" id="wbEthBrowserBtn">Connect wallet</button>
+    <div id="wbPasskeyChoice" hidden><p>Have you used this private account before?</p><button id="wbExistingPasskeyBtn">Unlock with existing passkey</button><button class="secondary" id="wbNewPasskeyBtn">Create a new account</button><p class="small">Use the same Ethereum wallet and passkey when returning on another device.</p></div>
     <details class="account-menu" id="wbAccountMenu"><summary>Account</summary><div class="account-menu-panel">
-    <button class="secondary" id="wbImportPasskeyBtn">Import existing passkey account</button>
+    <p id="wbConnectionStatus" class="account-address"></p><p id="wbAccountStatus" role="status" aria-live="polite"></p>
+    <button class="secondary" id="wbLockBtn">Lock account</button><button class="secondary" id="wbSwitchBtn">Switch wallet</button>
+    <div id="accountActions"></div>
+    <details><summary>Restore account</summary>
+    <button class="secondary" id="wbImportPasskeyBtn">Use existing passkey</button>
     <button class="secondary" id="wbAztecBtn">Import recovery file</button>
     <input type="file" id="wbAztecFile" accept=".json" hidden>
-    <label>Recovery file password<input type="password" id="wbPassword" autocomplete="new-password" minlength="12" maxlength="1024"></label>
+    <label>Existing recovery file password<input type="password" id="wbRestorePassword" autocomplete="current-password" maxlength="1024"></label>
+    </details><details><summary>Back up account</summary>
+    <label>New recovery file password<input type="password" id="wbPassword" autocomplete="new-password" minlength="12" maxlength="1024"></label>
     <label>Confirm password for export<input type="password" id="wbPasswordConfirm" autocomplete="new-password" maxlength="1024"></label>
     <button class="secondary" id="wbBackupBtn">Export recovery file</button>
-    <p>Recovery files also preserve deposit secrets and pending transactions. Export after making deposits. Import a file before connecting; reload first if an account is already open.</p>
-    </div></details></div><p>Your passkey secures your private account. Ethereum approves funding and L1 transactions.</p>` : `<input type="file" id="wbAztecFile" accept=".json" hidden>
+    <p>Your same passkey and Ethereum wallet restore new board deposits on another device. A recovery file is an alternative way to restore the private account and includes pending requests at export time. Older deposits created before automatic recovery need their original backup. Lock your account before importing another.</p>
+    </details></div></details></div>` : `<input type="file" id="wbAztecFile" accept=".json" hidden>
     <div class="wallet-btns"><div class="wallet-group"><span class="wallet-label">Ethereum</span><button class="secondary wallet-btn" id="wbEthBrowserBtn">Connect browser wallet</button></div>
     <div class="wallet-group"><span class="wallet-label">Aztec</span><button class="secondary wallet-btn" id="wbAztecBtn">Restore wallet</button><button class="secondary wallet-btn" id="wbAztecGenBtn">Create wallet</button><button class="secondary wallet-btn" id="wbBackupBtn">Export recovery file</button></div></div>
-    <label>Recovery password <input type="password" id="wbPassword" autocomplete="new-password" minlength="12" maxlength="1024"></label>
+    <label>Existing recovery file password <input type="password" id="wbRestorePassword" autocomplete="current-password" maxlength="1024"></label>
+    <label>New backup password <input type="password" id="wbPassword" autocomplete="new-password" minlength="12" maxlength="1024"></label>
     <label>Repeat password when creating a backup <input type="password" id="wbPasswordConfirm" autocomplete="new-password" maxlength="1024"></label>
-    <p>Keep your encrypted recovery file and password. Export again after each transaction or recovery update. Older files do not contain later requests. Losing your wallet key or a deposit claim secret can make funds unrecoverable. This browser holds decrypted keys while open; use a trusted device. Reload before changing wallets.</p>`;
-  const connection=document.createElement('p');connection.id='wbConnectionStatus';connection.setAttribute('role','status');
-  document.body.appendChild(connection);
-  if(autoPasskey)document.body.appendChild(document.getElementById('wbAccountMenu'));
-  const handle=run=>async()=>{try{await run();}catch(error){walletMessage(['BB_BROWSER_WALLET_MISSING','BB_WALLET_NETWORK','BB_WALLET_REJECTED','BB_WALLET_DISCONNECTED'].includes(error?.code)?publicOperationFailure(error).message:((error?.code===4001||error?.code==='ACTION_REJECTED')?'Wallet request cancelled. Connect again when you are ready.':'Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.'),'error');}};
+    <p>Keep your encrypted recovery file and password. It restores your private account and includes pending requests at export time. New deposits are recoverable from the same private account and Ethereum wallet. Older deposits need their original backup. Losing your private account can make funds unrecoverable. This browser holds decrypted keys while open; use a trusted device. Lock your account before changing wallets.</p>`;
+  if(!autoPasskey){const connection=document.createElement('p');connection.id='wbConnectionStatus';container.append(connection);const lock=document.createElement('button');lock.id='wbLockBtn';lock.className='secondary';lock.textContent='Lock account';container.append(lock);const change=document.createElement('button');change.id='wbSwitchBtn';change.className='secondary';change.textContent='Switch wallet';container.append(change);}
+  const identities=document.createElement('details');identities.innerHTML='<summary>Account addresses</summary><p class="small">Ethereum pays deposits. Your private account posts messages.</p><p id="wbEthIdentity" class="account-address"></p><button id="wbCopyEth" class="secondary">Copy Ethereum address</button><p id="wbPrivateIdentity" class="account-address"></p><button id="wbCopyPrivate" class="secondary">Copy private account address</button>';(document.querySelector('.account-menu-panel')||container).prepend(identities);
+  for(const [id,key]of [['wbCopyEth','ethereumAddress'],['wbCopyPrivate','address']])document.getElementById(id).onclick=async()=>{const address=window.BillboardAccount.snapshot()[key];if(address){try{await navigator.clipboard.writeText(address);walletMessage('Address copied.');}catch{walletMessage('Copy was unavailable. Select the address above to copy it.');}}};
+  if(autoPasskey)(document.getElementById('accountSlot')||container).appendChild(document.getElementById('wbAccountMenu'));
+  document.getElementById('wbExistingPasskeyBtn')?.addEventListener('click',()=>handle(_importPasskeyAccount)());
+  document.getElementById('wbNewPasskeyBtn')?.addEventListener('click',()=>handle(()=>window.BillboardAccount.createPasskey())());
+  for(const id of ['wbLockBtn','wbSwitchBtn'])document.getElementById(id)?.addEventListener('click',()=>handle(async()=>{await window.BillboardAccount.endSession();location.reload();})());
+  const handle=run=>async()=>{try{await run();}catch(error){const safe=publicOperationFailure(error?.code===4001||error?.code==='ACTION_REJECTED'?{code:'BB_WALLET_REJECTED'}:error);walletMessage(safe.message,'error');const field=safe.field&&document.getElementById(safe.field);if(field){field.setAttribute('aria-invalid','true');field.focus();}}};
   document.getElementById('wbAztecBtn').addEventListener('click',()=>document.getElementById('wbAztecFile').click());
   document.getElementById('wbImportPasskeyBtn')?.addEventListener('click',handle(_importPasskeyAccount));
   document.getElementById('wbAztecGenBtn')?.addEventListener('click',handle(_generateAztecWallet));
@@ -41231,6 +41091,35 @@ if (typeof module !== 'undefined' && module.exports) {
 
 </script>
 <script>
+// Application-owned progress. Only a bounded, public vocabulary crosses into views.
+(function(root){
+  const stages=Object.freeze({
+    checking:'Checking your account',preparing:'Preparing your transaction',
+    wallet:'Confirm the request in your wallet',funding:'Adding transaction credit',
+    deposit:'Sending your refundable deposit',bridge:'Waiting for your deposit to reach the board',
+    queued:'Waiting in the board’s proof queue',proving:'Creating your private proof',submitting:'Sending your transaction',
+    confirming:'Waiting for confirmation',syncing:'Updating your account',
+    screening:'Preparing your deposit for return',settlement:'Waiting for Ethereum settlement',
+    complete:'Complete',failed:'Could not finish',cancelled:'Cancelled',idle:''
+  });
+  function createOperationState({now=()=>Date.now(),id=()=>crypto.randomUUID()}={}){
+    let state=Object.freeze({id:null,action:null,status:'idle',stage:'idle',message:'',mode:null,error:null,startedAt:null,result:null,failedAtStage:null,endedAt:null,history:Object.freeze([])});
+    const listeners=new Set();
+    const publish=patch=>{state=Object.freeze({...state,...patch});for(const listener of listeners){try{listener(state);}catch{ /* Rendering cannot alter an operation outcome. */ }}return state;};
+    return Object.freeze({
+      snapshot:()=>state,
+      subscribe(listener){listeners.add(listener);try{listener(state);}catch{}return()=>listeners.delete(listener);},
+      begin(action,mode){if(state.status==='working'||state.status==='waiting')throw Object.assign(Error('An operation is already running.'),{code:'BB_OPERATION_BUSY'});return publish({id:id(),action,mode,status:'working',stage:'checking',message:stages.checking,error:null,startedAt:now(),result:null,failedAtStage:null,endedAt:null,history:Object.freeze([])});},
+      progress(stage){if(!Object.hasOwn(stages,stage)||!['working','waiting'].includes(state.status))return;return publish({history:Object.freeze([...new Set([...state.history,stage])]),stage,message:stages[stage],status:['wallet','bridge','confirming','settlement','queued'].includes(stage)?'waiting':'working'});},
+      receipt(value){const result={...state.result};for(const key of ['state','lastL2TxHash','lastEthereumTxHash','postId','feePaid','refundAmount','refundRecipient'])if(typeof value?.[key]==='string')result[key]=value[key];return publish({result:Object.freeze(result)});},
+      finish(){return publish({endedAt:now(),status:'complete',stage:'complete',message:stages.complete,error:null});},
+      fail(error){if(error.code==='BB_OPERATION_PAUSED')return publish({endedAt:now(),status:'paused',message:'Paused. Your completed payments are saved.',error:Object.freeze({code:error.code})});const cancelled=['BB_WALLET_REJECTED','BB_ETH_REQUEST_CANCELLED'].includes(error.code);return publish({endedAt:now(),failedAtStage:state.stage,status:cancelled?'cancelled':'failed',stage:cancelled?'cancelled':'failed',message:error.message,error:Object.freeze({code:error.code||'BB_OPERATION_FAILED',phase:error.phase==='fee-funding'?'fee-funding':null,field:error.field||null,action:error.action||'retry'})});},
+      report(){return JSON.stringify({schema:1,operationId:state.id,operation:state.action,stage:state.failedAtStage||state.stage,status:state.status,proving:state.mode,errorCode:state.error?.code??null},null,2);},
+    });
+  }
+  root.BillboardOperations=Object.freeze({create:createOperationState,stages});
+})(globalThis);
+
 // Application preference, independent of views, wallet identity and board state.
 // Each operation samples this once. Changes affect only subsequent operations.
 function createProvingPreference() {
@@ -41364,6 +41253,7 @@ function buildEnv(extra) {
     initCRS: makeInitCRS(),
     createStore: makeCreateStore(),
     getBrowserSigner: getBrowserSigner,
+    depositRecoveryProgress:createDepositRecoveryProgress(),
   };
   if (extra) Object.assign(env, extra);
   return env;
@@ -41393,6 +41283,32 @@ function buildConfig(action, extra, connection=_connectionConfig()) {
 // ============================================================
 function publicOperationFailure(error) {
   const messages={
+    BB_SCREENING_NO_PROGRESS:'Withdrawal preparation paused because the network did not advance screening. No further preparation fees will be spent. Refresh your account before continuing.',
+    BB_SCREENING_HISTORY_UNAVAILABLE:'Your message history could not be verified. Refresh your account before continuing withdrawal.',
+    BB_WITHDRAWAL_REVIEW:'Review the current withdrawal estimate before continuing.',
+    BB_WITHDRAWAL_BUDGET:'Withdrawal preparation reached the approved limit. Review the remaining work before continuing; no more fees will be spent automatically.',
+    BB_POST_COOLDOWN:'Your next post is not available yet. Wait for the posting countdown to finish.',
+    BB_NO_WITHDRAWAL:'There is no refundable deposit available for this account.',
+    BB_OPERATION_BUSY:'Another operation is still running. Let it finish before starting this one.',
+    BB_MESSAGE_EMPTY:'Write a message before posting.',
+    BB_MESSAGE_LONG:'Your message is too long. Shorten it to fit the 992-byte limit.',
+    BB_PASSKEY_CANCELLED:'Passkey approval was cancelled. Your account has not changed. Try unlocking again when ready.',
+    BB_PASSKEY_UNSUPPORTED:'This browser or passkey cannot unlock a private account. Use a passkey with PRF support, or restore your encrypted recovery file.',
+    BB_POLICY_CHANGED:'The board rules changed while you were reviewing. Open the current rules and review your change again.',
+    BB_MODERATOR_ADDRESS:'Enter a valid, nonzero Aztec moderator address.',
+    BB_POLICY_LENGTH:'Enter board rules between 1 and 1,488 UTF-8 bytes.',
+    BB_MODERATION_INPUT:'Choose a message and keep the removal reason within 200 UTF-8 bytes.',
+    BB_OPERATION_PAUSED:'Paused. Your confirmed payments are saved. Continue when you are ready.',
+    BB_ACCOUNT_REPLACEMENT:'Lock this account before restoring a different private account.',
+    BB_MODERATOR_REVIEW_REQUIRED:'The saved proof is no longer usable. Review the action before approving a new proof.',
+    BB_MODERATOR_REVIEW_CHANGED:'The account, board or saved action changed. Open its review again.',
+    BB_DEPLOYMENT_MANIFEST:'Check the deployment settings and review them again before creating the board.',
+    BB_FUNDING_AMOUNT:'Enter a valid AZTEC amount greater than the maximum transaction fee.',
+    BB_BACKUP_PASSWORD:'Use a recovery password of at least 12 characters.',
+    BB_BACKUP_PASSWORD_MATCH:'The recovery passwords do not match.',
+    BB_BACKUP_INVALID:'This recovery file could not be opened. Check its password and choose the encrypted wallet file.',
+    BB_SIMULATION_FAILED:'The network could not validate this transaction. Nothing was submitted. Refresh your account and try again.',
+    BB_GAS_LIMIT_EXCEEDED:'This transaction needs a higher fee limit. The board operator must update its settings.',
     PRIVATE_FEE_FUNDING_TOKEN_BALANCE:'Your Ethereum wallet needs more AZTEC tokens for transaction fees. Add AZTEC on the configured test network, then resume setup; no additional board deposit was sent.',
     PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN:'Fee funding was submitted but its confirmation is uncertain. Resume setup to check the saved payment before another is sent.',
     PRIVATE_FEE_RECOVERY_FAILED:'The saved fee funding could not be verified. Check the connection and resume setup; do not send another fee payment.',
@@ -41409,6 +41325,11 @@ function publicOperationFailure(error) {
     WORKER_UNAVAILABLE:'Browser workers are unavailable or blocked. Check the browser and hosting settings.',
     CRYPTO_UNAVAILABLE:'Browser cryptography is unavailable.',
     LOCKS_UNAVAILABLE:'Browser storage locks are unavailable; wallet actions cannot safely continue.',
+    BB_REMOTE_PROVER_TIMEOUT:'The prover took too long. No transaction was submitted by this proof attempt. Resume to check saved work before trying again.',
+    BB_REMOTE_PROVER_OFFLINE:'The board’s prover could not be reached. Retry when it is available, or turn off Remote proving before resuming.',
+    BB_REMOTE_PROVER_BUSY:'The board’s prover is at capacity or rate-limited. Wait before retrying, or turn off Remote proving for the next attempt.',
+    BB_REMOTE_PROVER_REJECTED:'The prover rejected this request. The board operator needs to check its configuration.',
+    BB_REMOTE_PROVER_RESPONSE:'The prover returned an invalid response. The board operator needs to check the service.',
     BB_REMOTE_PROVER_FAILED:'Remote proving did not complete. Try again or turn off Remote proving to prove locally.',
     BB_BROWSER_PROOF_FAILED:'Browser proving did not complete. Reload and restore your wallet, then check saved transactions before trying again.',
     BB_BROWSER_PROVER_CONFIGURATION:'Browser proving setup could not be verified. Reload this page and check the locally hosted setup files.',
@@ -41430,8 +41351,8 @@ function publicOperationFailure(error) {
     BB_NO_SAVED_ETHEREUM_TRANSACTION:'No saved Ethereum request exists for this wallet and portal.',
     BB_ETH_REQUEST_CANCELLED:'Payment cancelled. No transaction was sent. You can try again.',
     BB_ETH_INSUFFICIENT_FUNDS:'Not enough ETH for this payment and gas. Add funds, then try again.',
-    BB_ETH_RECOVERY_REQUIRED:'Check the saved Ethereum request in Wallet Setup before starting another payment.',
-    BB_ETH_SUBMISSION_UNKNOWN:'Ethereum submission is uncertain. Keep this browser profile and check the saved Ethereum request in Wallet Setup.',
+    BB_ETH_RECOVERY_REQUIRED:'A previous payment needs checking. Use Resume in Activity; no new payment will be made until its status is known.',
+    BB_ETH_SUBMISSION_UNKNOWN:'Ethereum submission is uncertain. Keep this browser profile and use Resume in Activity to check the payment.',
     BB_ETH_TRANSACTION_FAILED:'The Ethereum request reverted or was replaced. Check its saved request before starting another payment.',
     BB_WALLET_SYNC_PENDING:'Your claim is confirmed, but wallet synchronization failed. Keep the saved receipt and refresh before posting; do not make another deposit.',
     BB_RECOVERY_REQUIRED:'Recover the saved Aztec transaction from Wallet Setup before sending another transaction.',
@@ -41446,7 +41367,7 @@ function publicOperationFailure(error) {
     BB_SETTLEMENT_PENDING:'Your withdrawal is recorded. Network settlement is pending; retry the Ethereum claim later.',
   };
   const code=typeof error?.code==='string'&&Object.hasOwn(messages,error.code)?error.code:'BB_OPERATION_FAILED';
-  return Object.assign(new Error(messages[code]||'Wallet operation did not complete. Check the connection and recovery records; reload if the account or network changed.'),{code});
+  return Object.assign(new Error(messages[code]||'This operation could not finish. Open Activity to check it before trying again. Details contains a report for the board operator.'),{code,phase:error?.phase==='fee-funding'?'fee-funding':null,field:['msgText','newCensorAddr','moderationPolicyInput','censorResponseText','amount','wbPassword','wbPasswordConfirm','wbRestorePassword'].includes(error?.field)?error.field:null});
 }
 
 function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connectionConfig}={}) {
@@ -41460,10 +41381,11 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
     const expected=identity();
     // Capture before acquiring locks or performing any asynchronous work.
     const operationConnection=structuredClone(connection());
-    operationConnection.remoteProver=window.BillboardProving.snapshot()==='remote' ? operationConnection.remoteProver : undefined;
-    if(operationConnection.remoteProver)Object.freeze(operationConnection.remoteProver);
+    operationConnection.remoteProver=(extra?.provingMode??window.BillboardProving.snapshot())==='remote' ? operationConnection.remoteProver : undefined;
+    if(operationConnection.remoteProver)operationConnection.remoteProver=Object.freeze({...operationConnection.remoteProver,onStatus:state=>extra?.onStage?.(state==='queued'?'queued':'proving')});
     Object.freeze(operationConnection);
     async function guard() {
+      if(extra?.pauseRequested?.())throw Object.assign(Error('Paused.'),{code:'BB_OPERATION_PAUSED'});
       _assertWalletLive();
       if(generation!==_walletGeneration || expected!==identity()) throw new Error('Wallet or deployment configuration changed. Reload before continuing.');
       if(ws.ethType==='browser') {
@@ -41502,9 +41424,10 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
         await window.BillboardReadiness.check();
         await guard();
         await verifyBoard();
-        const env=buildEnv({...envExtra,log:onProgress}),config=buildConfig(action,extra,operationConnection);
+        const env=buildEnv({...envExtra,log:onProgress,progress:extra?.onStage||(()=>{})}),config=buildConfig(action,extra,operationConnection);
         const prior=config.preProveHook;
         config.contextGuard=guard;
+        config.waitForBridge=true;
         config.preProveHook=async value=>{await guard();await verifyBoard();if(prior)await prior(value);await guard();};
         env.getBrowserSigner=async()=>{
           await guard(); if(!ws.ethSigner) throw new Error('Connect an Ethereum wallet first.');
@@ -41512,7 +41435,7 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
           return new Proxy(signer,{get(target,property){
             const value=Reflect.get(target,property,target);
             if(typeof value!=='function')return value;
-            if(['sendTransaction','signTransaction','signMessage','signTypedData'].includes(property))return async(...args)=>{await guard();await verifyBoard();await guard();return value.apply(target,args);};
+            if(['sendTransaction','signTransaction','signMessage','signTypedData'].includes(property))return async(...args)=>{await guard();await verifyBoard();await guard();env.progress('wallet');const result=await value.apply(target,args);env.progress('confirming');return result;};
             return value.bind(target);
           }});
         };
@@ -41531,7 +41454,7 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
 
 // Browser application boundary. SDK objects and transaction acknowledgements stay here.
 /**
- * @typedef {'status'|'deposit'|'claim'|'post'|'withdraw'|'claim-l1'|'recover'|'recover-eth'|'recover-l2'|'declare-immoral'|'set-moderation-policy'|'transfer-censor'|'deploy'} BoardAction
+ * @typedef {'status'|'balance'|'deposit'|'claim'|'post'|'withdraw'|'claim-l1'|'recover'|'recover-eth'|'recover-l2'|'declare-immoral'|'set-moderation-policy'|'transfer-censor'|'deploy'} BoardAction
  * @callback BoardProgress
  * @param {string} message
  * @param {string} [level]
@@ -41541,10 +41464,16 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
  * @property {boolean} [isDummy] Advance screening without publishing text.
  * @property {string} [depositAmount] Decimal token amount.
  * @property {string} [reuseTxHash] Existing Ethereum deposit hash.
+ * @property {number} [maxScreeningSteps]
+ * @property {string} [maximumCreditSpend]
+ * @property {boolean} [prepareWithdrawal]
+ * @property {string} [postId]
+ * @property {string} [expectedPolicyVersion]
  * @property {boolean} [retryEthereum] Retry the saved request with its original nonce.
  * @property {number} [postIndex] Public post index to flag.
  * @property {string} [censorResponse] Public removal reason.
  * @property {string} [newCensor] Replacement Aztec moderator address.
+ * @property {{txHash:string,operation:string,policyVersion:string,allowReplacement:boolean}} [moderatorRecovery]
  * @property {string} [moderationPolicy] New policy text.
  * @property {object} [fundingRecord] Public fee-deposit recovery record.
  * @property {string} [readyTxHash] Saved deployment activation transaction.
@@ -41552,6 +41481,12 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
  * @typedef {Object} BoardResult
  * @property {string} [state] Engine outcome, e.g. postable or transaction_recovered.
  * @property {string} [status] Deployment activation status.
+ * @property {string} [outcome] Ethereum funding outcome.
+ * @property {string} [amount]
+ * @property {string} [feeBalance]
+ * @property {string} [refundAmount]
+ * @property {string} [refundRecipient]
+ * @property {boolean} [claimConsumed]
  * @property {string} [lastL2TxHash]
  * @property {string} [lastEthereumTxHash]
  * @property {string|null} [withdrawTxHash]
@@ -41566,7 +41501,9 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
  * @param {{kind?: 'author'|'moderator'|'fees'|'deploy', deploymentConfig?: ()=>{deploymentManifest:any}, pause?: Function}} options
  */
 function createBillboardApplication({kind='author',deploymentConfig,pause}={}) {
-  let handles=null,withdrawTxHash,revision=0,fundingRecord=null;
+  const operation=window.BillboardOperations.create();
+  let workflow=false,pauseRequested=false,lastIntent=null,moderatorRecoveryReview=null;
+  let handles=null,withdrawTxHash,revision=0,fundingRecord=null,savedOperation=null;
   const journalAcknowledgements=new Map(),ethereumAcknowledgements=new Map();
   const isBoard=kind==='author'||kind==='moderator';
   const execute=makeCallEngine((env,config)=>kind==='deploy'?runDeploy(env,config):kind==='fees'?runFeeJuiceFlow(env,config):runBillboardUser(env,config),{
@@ -41602,53 +41539,107 @@ function saveFundingRecord(record) {
     const saved=key&&localStorage.getItem(key);
     return saved?saveFundingRecord(JSON.parse(saved)):null;
   }
+  async function prepareDeployment(board) {
+    if(kind!=='deploy')throw Error('Deployment interface required.');
+    const expected=stamp(),account=window.BillboardAccount.snapshot(),a=window.__aztec;
+    if(!account.address||!account.ethereumConnected)throw Object.assign(Error('Connect both accounts first.'),{code:'BB_WALLET_NOT_READY'});
+    const hosted=await window.loadHostedSettings(),n=hosted.network,node=a.createAztecNodeClient(n.nodeUrl),info=await node.getNodeInfo();
+    if(String(info.l1ChainId)!==n.chainId||String(info.rollupVersion)!==n.rollupVersion||info.l1ContractAddresses.rollupAddress.toString().toLowerCase()!==n.rollupAddress)throw Object.assign(Error('Network changed.'),{code:'BB_CONNECTION_VERIFICATION_FAILED'});
+    const hash=value=>ethers.sha256(ethers.toUtf8Bytes(JSON.stringify(value)));
+    const manifest=a.validateDeploymentManifest({schemaVersion:1,profile:'operator',network:{nodeUrl:n.nodeUrl,ethRpcUrl:n.ethRpcUrl,chainId:n.chainId,rollupVersion:n.rollupVersion,rollup:n.rollupAddress,inbox:info.l1ContractAddresses.inboxAddress.toString().toLowerCase(),outbox:info.l1ContractAddresses.outboxAddress.toString().toLowerCase()},actors:{aztecDeployer:account.address.toLowerCase(),ethereumDeployer:account.ethereumAddress.toLowerCase()},board:{...board,salt:a.Fr.random().toBigInt().toString(),minDeposit:ethers.parseEther(board.minDeposit).toString(),maxDeposit:ethers.parseEther(board.maxDeposit).toString()},artifacts:{boardJsonSha256:hash(BILLBOARD_ARTIFACT),boardClassId:window.BillboardPublic.metadata.classId,portalCreationSha256:ethers.sha256(PORTAL_BYTECODE),portalRuntimeMetadataSha256:hash(a.portalRuntimeMetadata)}});
+    check(expected);return {manifest,gas:hosted.privateFee?.gasSettings||null};
+  }
   async function publicConfiguration(result,gasSettings,manifest) {
     if(kind!=='deploy')throw Error('Deployment configuration required.');
     const n=manifest.network;
     const privateFee=gasSettings?{contractAddress:(await window.__aztec.derivePrivateFeeAddress(BILLBOARD_PRIVATE_FEE_ARTIFACT)).toString(),gasSettings}:null;
     return window.BillboardConfig.validate({schemaVersion:1,network:{nodeUrl:n.nodeUrl,ethRpcUrl:n.ethRpcUrl,chainId:n.chainId,rollupVersion:n.rollupVersion,rollupAddress:n.rollup},board:{portalAddress:result.portalAddr.toLowerCase(),contractAddress:result.l2Addr.toLowerCase()},privateFee});
   }
+  async function deploymentCapabilities(result,manifest) {
+    const report={reading:'not-checked',hostedReading:false,deposits:result.status==='active'?'verified':'pending',posting:'not-checked',remoteProver:'not-configured',moderator:'configured'};
+    if(result.status!=='active')return report;
+    const exported=await publicConfiguration(result,null,manifest);
+    try {
+      await window.BillboardPublic.connectPublicBoard({network:exported.network,boardAddress:exported.board.contractAddress,metadata:window.BillboardPublic.metadata,storage:window.BillboardPublic.browserPublicFeedStorage()});
+      report.reading='verified';
+    } catch { report.reading='unavailable'; }
+    try {
+      const hosted=await window.loadHostedSettings();
+      if(['chainId','rollupVersion','rollupAddress'].some(key=>String(hosted.network[key]).toLowerCase()!==String(exported.network[key]).toLowerCase()) )return report;
+      await window.BillboardPublic.connectPublicBoard({network:hosted.network,boardAddress:exported.board.contractAddress,metadata:window.BillboardPublic.metadata,storage:window.BillboardPublic.browserPublicFeedStorage()});report.hostedReading=true;
+      if(!hosted.privateFee)return report;
+      const config=window.BillboardConfig.validate({...exported,network:hosted.network,privateFee:hosted.privateFee});
+      await window.BillboardConnectionCheck.verify({sdk:window.__aztec,ethers,config,privateFeeArtifact:BILLBOARD_PRIVATE_FEE_ARTIFACT,verifyFee:true});
+      report.posting='configuration-verified';
+      if(hosted.board.contractAddress===exported.board.contractAddress&&hosted.remoteProver)report.remoteProver='configured';
+    } catch { report.posting='not-checked'; }
+    return report;
+  }
   function stamp(){return JSON.stringify([revision,_getConfigRevision(),_walletGeneration]);}
   function check(expected){_assertWalletLive();if(stamp()!==expected)throw Error('Account or configuration changed. Reconnect.');}
   function connectedHandles(){_assertWalletLive();if(!handles)throw Error('Board account is not connected.');return handles;}
   /** @param {BoardAction} action @param {BoardInput} input @param {BoardProgress} onProgress @returns {Promise<BoardResult>} */
-  async function run(action,input={},onProgress=()=>{}) {
+  async function runEngine(action,input={},onProgress=()=>{}) {
     const expected=stamp(),ws=window.walletState;
     const identity=JSON.stringify([ws.aztec?.address.toString(),_getConfigRevision(),_getPublicConfig()]);
     const common=isBoard?{portalAddress:_getPublicConfig()?.board.portalAddress,dataDirPrefix:kind==='moderator'?'pxe_bb_censor_':'pxe_bb_',
       depositChainId:handles?.depositChainId,withdrawTxHash,
       claimSecretStore:makeClaimSecretStore(ws.aztec?.secretKey,ws.aztec?.salt),censorWalletJson:ws.aztec?.raw}:{};
-    const result=await execute(action,onProgress,{...common,...input,...(['fees','author'].includes(kind)?{saveRecovery:saveFundingRecord}:{}),...(kind==='author'?{automaticFeeFunding:true}:{}),acknowledgeTx:journalAcknowledgements.get(identity),acknowledgeEthereumTx:ethereumAcknowledgements.get(identity)});
+    const result=await execute(action,onProgress,{...common,...input,...(['fees','author'].includes(kind)?{saveRecovery:saveFundingRecord}:{}),...(kind==='author'?{automaticFeeFunding:true}:{}),pauseRequested:()=>pauseRequested,provingMode:operation.snapshot().mode,onStage:stage=>operation.progress(stage),acknowledgeTx:journalAcknowledgements.get(identity),acknowledgeEthereumTx:ethereumAcknowledgements.get(identity)});
     check(expected);
     if(result?.lastL2TxHash)journalAcknowledgements.set(identity,result.lastL2TxHash);
     if(result?.lastEthereumTxHash)ethereumAcknowledgements.set(identity,result.lastEthereumTxHash);
     if(result?.handles)handles=result.handles;
     if(result&&Object.hasOwn(result,'withdrawTxHash'))withdrawTxHash=result.withdrawTxHash;
     if(kind==='fees'&&result.record)saveFundingRecord(result.record);
+    operation.receipt(result);
     const {handles:privateHandles,receipt:privateReceipt,...data}=result;
     return data;
+  }
+  async function transact(action,run) {
+    operation.begin(action,_getPublicConfig()?.remoteProver?.url?window.BillboardProving.snapshot():'local');pauseRequested=false;
+    try {const value=await run();operation.finish();return value;}
+    catch(error){const safe=publicOperationFailure(error);operation.fail(safe);throw safe;}
+  }
+  async function run(action,input={},onProgress=()=>{}) {
+    if(workflow)throw Object.assign(Error('Wait for the current operation.'),{code:'BB_OPERATION_BUSY'});
+    validateInput(action,input);
+    if(!['status','recover','recover-eth','recover-l2'].includes(action))lastIntent={action,input:structuredClone(input)};
+    return transact(action,()=>runEngine(action,input,onProgress));
+  }
+  function validateInput(action,input) {
+    const invalid=(code,field)=>{throw Object.assign(Error(code),{code,field});};
+    if(action==='post'&&!input.isDummy){if(typeof input.message!=='string'||!input.message.trim())invalid('BB_MESSAGE_EMPTY','msgText');if(new TextEncoder().encode(input.message).length>992)invalid('BB_MESSAGE_LONG','msgText');}
+    if(action==='transfer-censor'&&(!/^0x[0-9a-fA-F]{64}$/.test(input.newCensor||'')||BigInt(input.newCensor)<=0n||BigInt(input.newCensor)>=21888242871839275222246405745257275088548364400416034343698204186575808495617n))invalid('BB_MODERATOR_ADDRESS','newCensorAddr');
+    if(action==='set-moderation-policy'&&(!input.moderationPolicy?.trim()||new TextEncoder().encode(input.moderationPolicy).length>1488))invalid('BB_POLICY_LENGTH','moderationPolicyInput');
+    if(action==='declare-immoral'&&((input.postIndex!==undefined&&(!Number.isSafeInteger(input.postIndex)||input.postIndex<0))||new TextEncoder().encode(input.censorResponse||'').length>200))invalid('BB_MODERATION_INPUT','censorResponseText');
   }
   // The application owns the complete funding operation. Rendering and duplicate
   // clicks cannot split it into separately initiated payment and claim actions.
   let fundingOperation=null,fundingState=null,fundingStamp=null;
+  function onboardingKey(){const config=_getPublicConfig();return 'board-onboarding-v1:'+JSON.stringify([config.network,config.board,window.walletState.aztec?.address.toString(),window.walletState.ethAccount]);}
+  function savedDepositInput(){try{const amount=localStorage.getItem(onboardingKey());return amount&&/^\d+(?:\.\d{1,18})?$/.test(amount)?{depositAmount:amount}:{};}catch{return {};}}
   /** @param {BoardInput} input @param {BoardProgress} onProgress @returns {Promise<BoardResult>} */
   function completeDeposit(input={},onProgress=()=>{}) {
     if(fundingOperation){check(fundingStamp);return fundingOperation;}
+    if(workflow)throw Object.assign(Error('Operation in progress.'),{code:'BB_OPERATION_BUSY'});
     const expected=stamp();fundingStamp=expected;fundingState=null;
-    fundingOperation=(async()=>{
-      let result=await run('status',{},onProgress);check(expected);fundingState=result.state;
+    workflow=true;
+    fundingOperation=transact('onboarding',async()=>{
+      let result=await runEngine('status',{},onProgress);check(expected);fundingState=result.state;
       if(result.state==='postable')return result;
       if(result.state==='zero_balance_need_deposit') {
+        if(input.depositAmount)localStorage.setItem(onboardingKey(),input.depositAmount);
         if(!input.depositAmount)throw Object.assign(new Error('Select a deposit amount.'),{code:'BB_WALLET_NOT_READY'});
-        result=await run('deposit',input,onProgress);check(expected);fundingState='deposited_l1_not_claimed_l2';
+        result=await runEngine('deposit',input,onProgress);check(expected);fundingState='deposited_l1_not_claimed_l2';
       } else if(result.state!=='deposited_l1_not_claimed_l2') {
         throw Object.assign(new Error('Recover the existing operation before depositing.'),{code:'BB_RECOVERY_REQUIRED'});
       }
       onProgress('Deposit confirmed. Finishing setup automatically; no further Ethereum payment is needed.','info');
       check(expected);
-      const claimed=await run('claim',{},onProgress);check(expected);fundingState=claimed.state;
+      const claimed=await runEngine('claim',input.retryEthereum?{retryEthereum:true}:{},onProgress);check(expected);fundingState=claimed.state;localStorage.removeItem(onboardingKey());
       return claimed;
-    })().finally(()=>{fundingOperation=null;});
+    }).finally(()=>{fundingOperation=null;workflow=false;});
     return fundingOperation;
   }
   /** @returns {Promise<{amount:bigint,depositChainId:bigint,nextAllowedTime:bigint,lastScreenedIndex:bigint,lastRealPostIndex:bigint,chainTime:number}>} */
@@ -41676,6 +41667,14 @@ function saveFundingRecord(record) {
     const fields=result?.result?.[0],length=Number(result?.result?.[1]??0);
     return length>0?window.unpackFieldsToString(fields,length):'';
   }
+  async function readPolicyReview() {
+    const h=connectedHandles(),expected=stamp();
+    const value=await h.contract.methods.get_moderation_policy_snapshot().simulate({from:window.__aztec.NO_FROM});check(expected);
+    const tuple=value?.result??value;
+    return {text:window.unpackFieldsToString(tuple[0],Number(tuple[1])),version:tuple[2].toString()};
+  }
+  function reviewPolicyChange(moderationPolicy){validateInput('set-moderation-policy',{moderationPolicy});return {moderationPolicy};}
+  function reviewTransfer(address){validateInput('transfer-censor',{newCensor:address});return {address:address.toLowerCase()};}
   /** @returns {Promise<{address:string,active:boolean,isCurrentAccount:boolean,multiplier:number}>} */
   async function readModerator() {
     const h=connectedHandles(),expected=stamp();
@@ -41687,19 +41686,171 @@ function saveFundingRecord(record) {
     if(!Number.isSafeInteger(multiplier)||multiplier<1||multiplier>65535)throw Error('Invalid moderator settings');
     check(expected);return {address,active:n!==0n,isCurrentAccount:BigInt(h.address.toString())===n,multiplier};
   }
+  // Read-only chain reconciliation. Returns no request payloads or SDK objects.
+  async function readActivity() {
+    const h=connectedHandles(),expected=stamp(),config=_getPublicConfig(),ws=window.walletState,a=window.__aztec;
+    const identity=JSON.stringify([ws.aztec.address.toString(),_getConfigRevision(),config]);
+    const scope={account:ws.aztec.address.toString().toLowerCase(),chainId:config.network.chainId,rollup:config.network.rollupAddress,version:config.network.rollupVersion,board:config.board.contractAddress,portal:config.board.portalAddress};
+    const storage=a.createBrowserJournalStorage(),custody={storage,walletSecret:ws.aztec.secretKey,walletSalt:ws.aztec.salt,scope};
+    const l2=await a.createL2Journal({...custody,Tx:a.Tx,node:h.aztecNode});
+    const saved=await l2.inspect(),items=[];savedOperation=null;
+    if(saved){
+      let kind='transaction';try{const intent=JSON.parse(saved.operation);kind=typeof intent.kind==='string'?intent.kind:'moderation';}catch{}
+      const receipt=await h.aztecNode.getTxReceipt(a.TxHash.fromString(saved.txHash));
+      const confirmed=receipt.txHash?.toString()===saved.txHash&&['checkpointed','proven','finalized'].includes(receipt.status)&&receipt.blockNumber!==undefined&&String((await h.aztecNode.getBlock(receipt.blockNumber))?.hash)===String(receipt.blockHash);
+      check(expected);
+      if(confirmed)journalAcknowledgements.set(identity,saved.txHash);else savedOperation={layer:'aztec',kind};
+      items.push({layer:'aztec',kind,txHash:saved.txHash,status:confirmed?(receipt.executionResult==='success'?'confirmed':'failed'):'pending',feePaid:confirmed&&receipt.transactionFee!==undefined?String(receipt.transactionFee):null});
+    }
+    if(ws.ethAccount){
+      const provider=new ethers.JsonRpcProvider(config.network.ethRpcUrl);
+      try{
+        const journal=await a.createEthereumJournal({...custody,scope:{...scope,depositor:ws.ethAccount.toLowerCase()},provider});
+        const summary=await journal.inspectSummary();check(expected);
+        if(summary){const resolved=summary.outcome!=='unknown';if(resolved)ethereumAcknowledgements.set(identity,summary.txHash);else if(!savedOperation)savedOperation={layer:'ethereum',kind:summary.kind};items.push({layer:'ethereum',kind:summary.kind,txHash:summary.txHash,status:resolved?(summary.outcome==='success'?'confirmed':'failed'):'pending'});}
+        const contracts=await h.aztecNode.getL1ContractAddresses();
+        const feeJournal=await a.createEthereumJournal({...custody,scope:{...scope,board:config.privateFee.contractAddress,portal:contracts.feeJuicePortalAddress.toString().toLowerCase(),token:contracts.feeJuiceAddress.toString().toLowerCase(),depositor:ws.ethAccount.toLowerCase()},provider});
+        const funding=await feeJournal.inspectSummary();check(expected);
+        if(funding){if(funding.outcome==='unknown'&&!savedOperation)savedOperation={layer:'funding',kind:funding.kind};items.push({layer:'ethereum',kind:'fee-funding',txHash:funding.txHash,status:funding.outcome==='unknown'?'pending':funding.outcome==='success'?'confirmed':'failed'});}
+      }finally{provider.destroy();}
+    }
+    check(expected);return items;
+  }
+  async function readModeratorRecovery() {
+    if(kind!=='moderator')throw Error('Moderator interface required.');
+    const expected=stamp(),items=await readActivity();moderatorRecoveryReview=null;
+    const pending=items.find(item=>item.layer==='aztec'&&item.status==='pending');if(!pending)return null;
+    if(pending.kind!=='moderation')return {action:'other-board-operation',txHash:pending.txHash};
+    const h=connectedHandles(),config=_getPublicConfig(),ws=window.walletState,a=window.__aztec;
+    const journal=await a.createL2Journal({storage:a.createBrowserJournalStorage(),walletSecret:ws.aztec.secretKey,walletSalt:ws.aztec.salt,scope:{account:ws.aztec.address.toString().toLowerCase(),chainId:config.network.chainId,rollup:config.network.rollupAddress,version:config.network.rollupVersion,board:config.board.contractAddress,portal:config.board.portalAddress},Tx:a.Tx,node:h.aztecNode});
+    const saved=await journal.inspect();if(!saved||saved.txHash!==pending.txHash)throw Object.assign(Error('Saved action changed.'),{code:'BB_MODERATOR_REVIEW_CHANGED'});
+    const action=window.BillboardModerationCodec.restoreModeratorOperation(a,saved.operation),policy=await readPolicyReview(),authority=await readModerator();check(expected);
+    let message=null;if(action.action==='declare-immoral'){const id=a.Fr.fromString(action.postId);const fields=await h.contract.methods.get_post(id).simulate({from:a.NO_FROM}),length=await h.contract.methods.get_post_length(id).simulate({from:a.NO_FROM});message=window.unpackFieldsToString(fields.result??fields,Number(extractInt(length)));check(expected);}
+    const id=crypto.randomUUID(),canReplace=authority.isCurrentAccount&&(action.action!=='declare-immoral'||action.expectedPolicyVersion===policy.version);
+    moderatorRecoveryReview={id,scope:expected,txHash:saved.txHash,operation:saved.operation,policyVersion:policy.version,canReplace};
+    return {id,txHash:saved.txHash,...action,message,currentPolicy:policy.text,canReplace};
+  }
+  function resumeModeratorRecovery(id,allowReplacement=false){const review=moderatorRecoveryReview;if(!review||review.id!==id||review.scope!==stamp()||(allowReplacement&&!review.canReplace))throw Object.assign(Error('Review changed.'),{code:'BB_MODERATOR_REVIEW_CHANGED'});return run('recover',{moderatorRecovery:{txHash:review.txHash,operation:review.operation,policyVersion:review.policyVersion,allowReplacement}});}
+  async function resume() {
+    const last=operation.snapshot();
+    if(last.error?.phase==='fee-funding'||savedOperation?.layer==='funding')return completeDeposit({...savedDepositInput(),retryEthereum:true});
+    if(last.status==='paused'){if(last.action==='withdrawal')return completeWithdrawal();if(last.action==='onboarding')return completeDeposit(savedDepositInput());}
+    if(last.error?.code==='BB_DEPOSIT_MESSAGE_UNAVAILABLE'||last.error?.code==='BB_DEPOSIT_READ')return completeDeposit();
+    const ethereum=savedOperation?.layer==='ethereum'||last.error?.code?.startsWith('BB_ETH_')||last.error?.code==='PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN';
+    try{const recovered=await run(ethereum?'recover-eth':'recover',{retryEthereum:ethereum});if(recovered.refundAmount&&recovered.refundRecipient)return recovered;}
+    catch(error){if(/** @type {{code?:string}} */(error).code!=='BB_NO_SAVED_TRANSACTION')throw error;if(last.action==='onboarding')return completeDeposit(savedDepositInput());if(lastIntent)return run(lastIntent.action,lastIntent.input);throw error;}
+    const result=await run('status');
+    if(kind==='author'&&result.state==='deposited_l1_not_claimed_l2')return completeDeposit();
+    if(kind==='author'&&result.state==='withdrawal_needs_verification')return completeWithdrawal();
+    return result;
+  }
+  let feeOperation=null;
+  function completeFeeFunding(input={}) {
+    if(feeOperation)return feeOperation;
+    if(workflow)throw Object.assign(Error('Operation in progress.'),{code:'BB_OPERATION_BUSY'});
+    workflow=true;
+    const expected=stamp();
+    async function completeFunding(){
+      if(!input.resumeOnly&&(typeof input.depositAmount!=='string'||!/^\d+(?:\.\d{1,18})?$/.test(input.depositAmount)||ethers.parseEther(input.depositAmount)<=fundingQuote().maximumFee))throw Object.assign(Error('Invalid amount.'),{code:'BB_FUNDING_AMOUNT'});
+      let recovered;
+      try{recovered=await runEngine('recover-eth',{retryEthereum:input.resumeOnly===true});}catch(error){if(/** @type {{code?:string}} */(error).code!=='BB_NO_SAVED_ETHEREUM_TRANSACTION')throw error;}
+      let record=recovered?.record;
+      if(recovered?.outcome==='funded'&&recovered.claimConsumed){
+        try{await runEngine('recover-l2');}catch(error){if(!['BB_NO_SAVED_TRANSACTION'].includes(/** @type {{code?:string}} */(error).code||''))throw error;}
+        if(input.resumeOnly)return {state:'funded'};
+      }
+      if(input.resumeOnly&&(!recovered||['reverted','replaced'].includes(recovered.outcome||'')))throw Object.assign(Error('No funding to resume.'),{code:'BB_NO_SAVED_ETHEREUM_TRANSACTION'});
+      if(recovered?.outcome!=='funded'||recovered.claimConsumed){
+        if(recovered&&!recovered.claimConsumed&&!['approved','reverted','replaced'].includes(recovered.outcome||''))throw Object.assign(Error('Funding requires recovery.'),{code:'BB_ETH_RECOVERY_REQUIRED'});
+        if(input.resumeOnly&&recovered?.outcome==='approved'&&!recovered.amount)throw Object.assign(Error('Saved funding amount missing.'),{code:'BB_JOURNAL_INVALID'});
+        const amount=input.resumeOnly&&recovered?.outcome==='approved'?ethers.formatEther(BigInt(/** @type {string} */(recovered.amount))):input.depositAmount;
+        const result=await runEngine('deposit',{...input,depositAmount:amount});record=result.record;
+      }
+      try{return await runEngine('claim',{fundingRecord:record});}catch(error){if(/** @type {{code?:string}} */(error).code!=='BB_RECOVERY_REQUIRED'||!input.resumeOnly)throw error;const result=await runEngine('recover-l2');if(result.state==='transaction_reverted')throw Object.assign(Error('Credit claim reverted.'),{code:'BB_TRANSACTION_FAILED'});return result;}
+    }
+    feeOperation=transact('fee-funding',async()=>{
+      const result=await completeFunding();operation.progress('syncing');
+      // The funding outcome remains successful if a subsequent balance read is unavailable.
+      // The application retains ownership until that read finishes, so a second top-up cannot race it.
+      try{const feeBalance=await readFeeBalance();return {...result,feeBalance:feeBalance.toString()};}
+      catch{check(expected);return {...result,feeBalance:null};}
+    }).finally(()=>{feeOperation=null;workflow=false;});
+    return feeOperation;
+  }
+  function fundingQuote() {
+    const config=_getPublicConfig();
+    const maximum=BigInt(window.BillboardConfig.maximumFee(config));
+    return {maximumFee:maximum,fundingAmount:maximum*2n};
+  }
+  async function estimateDepositGas(depositAmount){
+    const expected=stamp(),config=_getPublicConfig(),account=window.BillboardAccount.snapshot();
+    if(!account.ethereumConnected)throw Object.assign(Error('Connect a wallet.'),{code:'BB_WALLET_NOT_READY'});
+    const provider=new ethers.JsonRpcProvider(config.network.ethRpcUrl);
+    try{const data=new ethers.Interface(['function deposit(bytes32 secretHash) payable']).encodeFunctionData('deposit',['0x'+'01'.repeat(32)]);
+      const [gas,fees]=await Promise.all([provider.estimateGas({from:account.ethereumAddress,to:config.board.portalAddress,data,value:ethers.parseEther(depositAmount)}),provider.getFeeData()]);check(expected);
+      if(fees.maxFeePerGas===null)throw Error('Fee estimate unavailable');return {maximumGasCost:gas*fees.maxFeePerGas};
+    }finally{provider.destroy();}
+  }
+  async function readFeeBalance() {
+    if(kind==='fees'){const expected=stamp(),result=await execute('balance',()=>{},{});check(expected);return BigInt(result.feeBalance);}
+    const h=connectedHandles(),expected=stamp(),a=window.__aztec;
+    const address=a.AztecAddress.fromString(_getPublicConfig().privateFee.contractAddress);
+    const artifact=a.loadContractArtifact(BILLBOARD_PRIVATE_FEE_ARTIFACT);
+    await h.wallet.registerContract(await a.derivePrivateFeeInstance(artifact),artifact);
+    const feeContract=await a.Contract.at(address,artifact,h.wallet);
+    const value=await feeContract.methods.balance_of(h.address).simulate({from:h.address});
+    check(expected);return extractBigInt(value);
+  }
+  async function readAccount(){const expected=stamp();const deposit=await readDeposit(),feeBalance=await readFeeBalance();check(expected);return {deposit,feeBalance,...fundingQuote()};}
+  async function readWithdrawalPlan() {
+    const h=connectedHandles(),expected=stamp(),info=await readDeposit();
+    const remaining=info.lastRealPostIndex>info.lastScreenedIndex?info.lastRealPostIndex-info.lastScreenedIndex:0n;
+    let readyAt=info.nextAllowedTime;
+    if(remaining>0n){
+      const [child]=await window.BillboardScreeningHistory.readScreeningHints(h.contract,h.address,info.depositChainId);
+      if(!child?.note)throw Object.assign(Error('Screening history missing.'),{code:'BB_SCREENING_HISTORY_UNAVAILABLE'});
+      if(!child.note.is_dummy){const deadline=extractBigInt(await h.contract.methods.get_post_flag_deadline(child.note.post_id).simulate({from:window.__aztec.NO_FROM}));if(deadline>readyAt)readyAt=deadline;}
+    }
+    check(expected);
+    const steps=Number(remaining>20n?20n:remaining);
+    return {scope:expected,depositChainId:info.depositChainId,amount:info.amount,readyAt:Number(readyAt),chainTime:info.chainTime,remaining:Number(remaining),maxScreeningSteps:steps,maximumCreditSpend:fundingQuote().maximumFee*BigInt(steps+1)};
+  }
+  let withdrawalOperation=null;
+  /** @param {{scope:string,maxScreeningSteps:number,maximumCreditSpend:bigint}|null} [plan] @param {BoardProgress} [onProgress] */
+  function completeWithdrawal(plan=null,onProgress=()=>{}) {
+    if(withdrawalOperation)return withdrawalOperation;
+    if(workflow)throw Object.assign(Error('Operation in progress.'),{code:'BB_OPERATION_BUSY'});
+    workflow=true;const expected=stamp();
+    withdrawalOperation=transact('withdrawal',async()=>{
+      let result=await runEngine('status',{},onProgress);check(expected);
+      if(result.state==='postable'){
+        if(!plan||plan.scope!==expected||!Number.isInteger(plan.maxScreeningSteps)||plan.maxScreeningSteps<0||plan.maxScreeningSteps>20||typeof plan.maximumCreditSpend!=='bigint')throw Object.assign(Error('Review withdrawal first.'),{code:'BB_WITHDRAWAL_REVIEW'});
+        result=await runEngine('withdraw',{prepareWithdrawal:true,maxScreeningSteps:plan.maxScreeningSteps,maximumCreditSpend:plan.maximumCreditSpend.toString()},onProgress);
+      }
+      else if(result.state!=='withdrawal_needs_verification')throw Object.assign(Error('No withdrawal to complete.'),{code:'BB_NO_WITHDRAWAL'});
+      while(true){
+        check(expected);if(pauseRequested)throw Object.assign(Error('Paused.'),{code:'BB_OPERATION_PAUSED'});operation.progress('settlement');
+        try{return await runEngine('claim-l1',{},onProgress);}
+        catch(error){if(/** @type {{code?:string}} */(error).code!=='BB_SETTLEMENT_PENDING')throw error;}
+        await new Promise(resolve=>setTimeout(resolve,30000));
+      }
+    }).finally(()=>{withdrawalOperation=null;workflow=false;});
+    return withdrawalOperation;
+  }
   async function readFeed(options={}) {
     const expected=stamp(),config=_getPublicConfig();
     const page=await window.BillboardPublic.readFeed({...options,portalAddress:config.board.portalAddress,nodeUrl:config.network.nodeUrl,ethereumUrl:config.network.ethRpcUrl,expectedConfig:config});
     if(stamp()!==expected)throw Error('Configuration changed. Refresh the board.');return page;
   }
+  function requestPause(){if(!['bridge','settlement','screening'].includes(operation.snapshot().stage))return false;pauseRequested=true;return true;}
   async function reset() {
-    fundingState=null;
+    fundingState=null;savedOperation=null;lastIntent=null;moderatorRecoveryReview=null;
     const previous=handles;handles=null;withdrawTxHash=undefined;fundingRecord=null;revision++;
     journalAcknowledgements.clear();ethereumAcknowledgements.clear();
     if(previous?.pxe?.stop)await previous.pxe.stop();
   }
   window.billboardConfigStore?.subscribe(()=>{reset().catch(()=>{_invalidateWalletContext();});});
-  return Object.freeze({run,completeDeposit,readDeposit,readDepositTerms,readPolicy,readModerator,readFeed,reset,publicConfiguration,readFundingRecovery,importFundingRecovery:saveFundingRecord,
+  return Object.freeze({subscribe:operation.subscribe,operation:operation.snapshot,diagnosticReport:operation.report,run,resume,requestPause,completeFeeFunding,completeDeposit,completeWithdrawal,readWithdrawalPlan,fundingQuote,estimateDepositGas,readAccount,readFeeBalance,readActivity,readDeposit,readDepositTerms,readPolicy,readPolicyReview,reviewPolicyChange,readModeratorRecovery,resumeModeratorRecovery,reviewTransfer,readModerator,readFeed,reset,prepareDeployment,publicConfiguration,deploymentCapabilities,readFundingRecovery,importFundingRecovery:saveFundingRecord,
     get fundingState(){return fundingStamp===stamp()?fundingState:null;},get connected(){return handles!==null;},get revision(){return revision;}});
 }
 
@@ -41708,11 +41859,12 @@ function saveFundingRecord(record) {
   const toggle=document.getElementById('remoteProving');if(!toggle)return;
   const preference=window.BillboardProving;
   const render=()=>{
-    const available=!!window.billboardConfigStore?.snapshot().config?.remoteProver?.url;
+    const endpoint=window.billboardConfigStore?.snapshot().config?.remoteProver?.url;const available=!!endpoint;const host=available?new URL(endpoint,location.href).host:'';
     toggle.checked=available&&preference.snapshot()==='remote';
     toggle.disabled=!available;
     toggle.title=available?'Use this board’s prover for the next operation. Changes do not affect an operation already in progress. Private witness data is shared with its operator.':'This board has not configured a remote prover.';
     toggle.setAttribute('aria-description',toggle.title);
+    const explanation=document.getElementById('provingExplanation');if(explanation)explanation.textContent=available?'The board’s server ('+host+') creates your proof and can see the private data needed to do so. Turn this off to prove on this device. Your signing keys stay here. Changes apply to your next operation.':'This board has no remote prover. Proofs are created on this device.';
   };
   toggle.addEventListener('change',()=>preference.setMode(toggle.checked?'remote':'local'));
   preference.subscribe(render);
@@ -41722,156 +41874,57 @@ function saveFundingRecord(record) {
 
 </script>
 <script>
-// ============================================================
-// app.js — Browser wrapper for the deploy engine
-// ============================================================
-// Thin layer: loads wallet buttons, builds env/config from
-// shared/app-env.js, calls runDeploy().
-// ============================================================
-
-// ============================================================
-// Bundle readiness
-// ============================================================
-if (!checkBundle('status')) {
-  waitForBundle(() => checkBundle('status'));
-}
-
-// Setup RPC auth immediately
-setupRpcAuth();
-
-// ============================================================
-// Pause handler — file picker for wallet imports
-// ============================================================
-function pickFile(accept) {
-  return new Promise((resolve, reject) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = accept || '.json';
-    input.style.display = 'none';
-    document.body.appendChild(input);
-    input.addEventListener('change', async (e) => {
-      document.body.removeChild(input);
-      const file = e.target.files[0];
-      if (!file) { reject(new Error('No file selected')); return; }
-      try {
-        const text = await file.text();
-        resolve(JSON.parse(text));
-      } catch (err) {
-        reject(new Error('Failed to parse file: ' + err.message));
-      }
-    });
-    input.click();
-  });
-}
-
-async function pause(reason, data) {
-  if (reason === 'import-aztec-wallet') {
-    log('Please select your Aztec wallet.json file...', 'info', 'status');
-    const wallet = await pickFile('.json');
-    log('  Loaded: ' + (wallet.address || '(no address field)'), 'success', 'status');
-    return wallet;
-  }
-  if (reason === 'import-eth-wallet') {
-    log('Please select your ETH wallet JSON file...', 'info', 'status');
-    const wallet = await pickFile('.json');
-    log('  Loaded: ' + wallet.address, 'success', 'status');
-    return wallet;
-  }
-  throw new Error('Unknown pause reason: ' + reason);
-}
-
-// ============================================================
-// Threading detection
-// ============================================================
-function getThreadingMode() {
-  if (typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated) {
-    return 'multi-threaded (crossOriginIsolated)';
-  }
-  if (location.protocol === 'file:') {
-    return 'unsupported for wallet actions (file://)';
-  }
-  return 'unsupported for wallet actions (missing cross-origin isolation)';
-}
-
-// ============================================================
-// Main — start the deploy flow
-// ============================================================
-const application=createBillboardApplication({kind:'deploy',pause,
-  deploymentConfig:()=>window.__aztec.deploymentManifestConfig(JSON.parse(document.getElementById('deploymentManifest').value))});
-function callDeploy(action,statusDiv,input){return application.run(action,input,(message,level)=>log(message,level||'info',statusDiv));}
-let deploymentReportUrl;
-async function startDeploy() {
-  if(deploymentReportUrl){URL.revokeObjectURL(deploymentReportUrl);deploymentReportUrl=null;}
-  clearStatus('status');
-
-  const threading = getThreadingMode();
-  log('Threading mode: ' + threading, 'info', 'status');
-  log('Protocol: ' + location.protocol, 'info', 'status');
-
-  if (!window.__aztec || !window.__aztec.createPXE) {
-    log('ERROR: Aztec bundle not loaded. Refresh the page.', 'error', 'status');
-    return;
-  }
-
-  let extraConfig;
-  try{extraConfig=window.__aztec.deploymentManifestConfig(JSON.parse(document.getElementById('deploymentManifest').value));}
-  catch(error){log('Import a valid reviewed deployment manifest before deploying.','error','status');return;}
-  extraConfig.retryEthereum=document.getElementById('retryEthereum')?.checked===true;
-  extraConfig.readyTxHash=document.getElementById('readyTxHash').value.trim()||undefined;
-  extraConfig.dataDirPrefix='pxe_bb_';
-
-  try {
-    const result = await callDeploy('deploy', 'status', extraConfig);
-    log('', 'info', 'status');
-    log(result.status === 'active' ? 'Deployment complete. The board is ready to use.' : 'Deployment saved. Network settlement is pending; resume with the same settings later.', result.status === 'active' ? 'success' : 'info', 'status');
-    const report=new Blob([JSON.stringify({schemaVersion:1,manifest:extraConfig.deploymentManifest,...result},null,2)],{type:'application/json'});
-    const reportLink=document.createElement('a');reportLink.textContent='Download deployment report';reportLink.download='deployment-report.json';deploymentReportUrl=URL.createObjectURL(report);reportLink.href=deploymentReportUrl;document.getElementById('status').appendChild(reportLink);
-    if (result.readyTxHash) document.getElementById('readyTxHash').value = result.readyTxHash;
-    log('  Salt: ' + extraConfig.contractSalt, 'info', 'status');
-    log('  L2:   ' + result.l2Addr, 'info', 'status');
-    log('  L1:   ' + result.portalAddr, 'info', 'status');
-
-    if(result.status==='active') {
-      const holder=document.createElement('div'),status=document.getElementById('status');
-      const connect=document.createElement('button');connect.type='button';connect.textContent='Use this board';
-      const download=document.createElement('button');download.type='button';download.textContent='Download public connection settings';
-      const makePublic=async()=>{
-        const text=document.getElementById('publicFeeGas').value.trim();
-        return application.publicConfiguration(result,text?JSON.parse(text):null,extraConfig.deploymentManifest);
-      };
-      connect.addEventListener('click',async()=>{try{const config=await makePublic();location.href='user.html#network='+[config.network.chainId,config.network.rollupAddress,config.network.rollupVersion].join(':')+'&board='+config.board.contractAddress;}catch{log('Could not prepare public settings. Check the fee gas JSON. The deployment report is still available.','error','status');}});
-      download.addEventListener('click',async()=>{try{const config=await makePublic(),url=URL.createObjectURL(new Blob([JSON.stringify(config,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='board-public-config.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch{log('Could not prepare public settings. Check the fee gas JSON. The deployment report is still available.','error','status');}});
-      holder.append(connect,download);status.append(holder);
-    }
-  } catch (e) {
-    log('', 'error', 'status');
-    log('ERROR: ' + 'operation did not complete; check configuration and recovery records', 'error', 'status');
-    console.error('Application operation did not complete.');
-  }
-}
-
-// ============================================================
-// Init — wallet buttons with auto-start
-// ============================================================
-function waitForBundleThenInit() {
-  if (window.__aztec && window.__aztec.createPXE) {
-    initWalletButtons('walletButtonsContainer', {
-      statusId: 'status',
-      onReady: async () => {
-        log('Both wallets ready. Click the Deploy button to begin.', 'success', 'status');
-      },
-    });
-  } else {
-    waitForBundle(waitForBundleThenInit);
-  }
-}
-waitForBundleThenInit();
-
+const view=BillboardView,element=id=>document.getElementById(id);
+view.header({title:'Create a board',section:''});
+const application=createBillboardApplication({kind:'deploy',deploymentConfig:()=>window.__aztec.deploymentManifestConfig(JSON.parse(element('deploymentManifest').value))});
+view.bindOperation(application,element('operationStatus'));
+const saveKey='board-deployment-resume-v1';
+let selected=null,publicConfig=null,attemptBusy=false,revision=0;
+function controls(){const busy=attemptBusy||['working','waiting'].includes(application.operation().status);for(const id of ['deployButton','manifestFile','publicFeeGas','readyTxHash','retryEthereum','prepareBoard','newMinimum','newMaximum','newInterval','newWindow','newMultiplier','newAllowance','newModerator','newRules'])element(id).disabled=busy;}
+application.subscribe(controls);
+function clearCompletion(){publicConfig=null;for(const id of ['readBoard','postBoard','downloadConfig'])element(id).hidden=true;element('capabilities').replaceChildren();}
+function describe(m){element('manifestSummary').replaceChildren();const pairs=[['Network','Ethereum '+m.network.chainId+' / Aztec '+m.network.rollupVersion],['Refundable deposit',ethers.formatEther(m.board.minDeposit)+'–'+ethers.formatEther(m.board.maxDeposit)+' ETH'],['Posting interval at minimum deposit',m.board.baseCooldown+' seconds'],['Moderation period',m.board.censorWindow+' seconds'],['Saved posting allowance',m.board.maxSaveUp+' intervals'],['Penalty for an eligible removal',(Number(m.board.kMultiplier)-1)+' additional posting intervals'],['Moderator',m.board.censor],['Board rules',m.board.policy]];for(const [label,value]of pairs)element('manifestSummary').append(view.element('dt',label),view.element('dd',String(value)));}
 async function importDeploymentManifest(input){
-  const file=input.files?.[0];if(!file)return;
-  try{if(file.size>65536)throw Error();const text=await file.text();const m=window.__aztec.validateDeploymentManifest(JSON.parse(text));document.getElementById('deploymentManifest').value=JSON.stringify(m);document.getElementById('manifestSummary').textContent='Configuration to review: chain '+m.network.chainId+', rollup '+m.network.rollup+', Aztec deployer '+m.actors.aztecDeployer+', Ethereum deployer '+m.actors.ethereumDeployer+', censor '+m.board.censor+'. Deposit range (wei): '+m.board.minDeposit+'–'+m.board.maxDeposit+'. Policy: '+m.board.policy;}
-  catch{document.getElementById('deploymentManifest').value='';document.getElementById('manifestSummary').textContent='Invalid deployment manifest.';}
+ if(attemptBusy)return;
+ const file=input.files?.[0];if(!file)return;
+ const version=++revision;clearCompletion();selected=null;
+ try{if(file.size>65536)throw Error();const manifest=window.__aztec.validateDeploymentManifest(JSON.parse(await file.text()));if(version!==revision)return;selected=manifest;element('deploymentManifest').value=JSON.stringify(selected);element('readyTxHash').value='';describe(selected);element('status').textContent='Review these settings, then connect the deployment accounts.';}
+ catch{if(version!==revision)return;element('deploymentManifest').value='';element('status').textContent='Choose a valid deployment configuration file.';}
 }
+function saveResume(attempt,hash){localStorage.setItem(saveKey,JSON.stringify({schema:1,manifest:attempt.manifest,gas:attempt.gas,readyTxHash:hash||attempt.readyTxHash}));}
+async function startDeploy(){
+ if(attemptBusy)return;
+ if(!selected){element('status').textContent='Choose and review a deployment configuration first.';return;}
+ const attempt={revision:++revision,manifest:structuredClone(selected),gas:element('publicFeeGas').value.trim(),readyTxHash:element('readyTxHash').value,retry:element('retryEthereum').checked};
+ attemptBusy=true;controls();clearCompletion();
+ try{
+  const gas=attempt.gas?JSON.parse(attempt.gas):null;if(gas)window.__aztec.normalizePrivateFeeGasSettings(gas);
+  const input={...window.__aztec.deploymentManifestConfig(attempt.manifest),readyTxHash:attempt.readyTxHash||undefined,retryEthereum:attempt.retry,dataDirPrefix:'pxe_bb_'};
+  saveResume(attempt);
+  const result=await application.run('deploy',input);if(attempt.revision!==revision)return;
+  if(result.readyTxHash)element('readyTxHash').value=result.readyTxHash;saveResume(attempt,result.readyTxHash);
+  publicConfig=await application.publicConfiguration(result,gas,attempt.manifest);
+  element('downloadConfig').hidden=false;element('deployButton').textContent='Continue deployment';
+  element('status').textContent=result.status==='active'?'Contracts deployed. Checking board configuration…':'Activation is waiting for network settlement. Your deployment is saved; continue here later.';
+  const checks=await application.deploymentCapabilities(result,attempt.manifest);if(attempt.revision!==revision)return;
+  for(const [key,label]of [['reading','Read messages'],['deposits','Accept deposits'],['posting','Posting configuration'],['remoteProver','Remote prover'],['moderator','Moderator address']])element('capabilities').append(view.element('dt',label),view.element('dd',checks[key].replaceAll('-',' ')));
+  const fragment='network='+[publicConfig.network.chainId,publicConfig.network.rollupAddress,publicConfig.network.rollupVersion].join(':')+'&board='+publicConfig.board.contractAddress;
+  element('readBoard').href=view.url('feed.html',fragment);element('readBoard').hidden=!checks.hostedReading;
+  element('postBoard').href=view.url('user.html',fragment);element('postBoard').hidden=checks.posting!=='configuration-verified';
+  if(result.status==='active')element('status').textContent=checks.posting==='configuration-verified'?'Contracts deployed and posting configuration checked. Account funding and prover readiness are checked when connecting.':'Contracts deployed. Configure hosted posting and check the services below before inviting users.';
+ }catch(error){element('status').textContent=publicOperationFailure(error).message;}
+ finally{attemptBusy=false;controls();}
+}
+for(const id of ['newMinimum','newMaximum','newInterval','newWindow','newMultiplier','newAllowance','newModerator','newRules'])element(id).oninput=()=>{revision++;selected=null;clearCompletion();element('manifestSummary').replaceChildren();element('status').textContent='Settings changed. Review them again before creating the board.';};
+element('prepareBoard').onclick=async()=>{if(attemptBusy)return;const version=++revision;selected=null;clearCompletion();try{const {manifest,gas}=await application.prepareDeployment({minDeposit:element('newMinimum').value,maxDeposit:element('newMaximum').value,baseCooldown:element('newInterval').value,censorWindow:element('newWindow').value,kMultiplier:element('newMultiplier').value,maxSaveUp:element('newAllowance').value,censor:element('newModerator').value.trim().toLowerCase(),policy:element('newRules').value.trim()});if(version!==revision)return;selected=manifest;element('deploymentManifest').value=JSON.stringify(manifest);element('publicFeeGas').value=gas?JSON.stringify(gas):'';element('readyTxHash').value='';describe(manifest);element('status').textContent='Review the settings above. Create board will ask for wallet approvals.';}catch(error){element('status').textContent=error.code==='BB_WALLET_NOT_READY'?'Connect both deployment accounts first.':'Check the board settings: positive amounts and intervals, minimum no greater than maximum, valid moderator address, and rules within 1,488 UTF-8 bytes.';}};
+element('downloadConfig').onclick=()=>{if(publicConfig)_downloadJson('board-public-config.json',publicConfig);};
+function initialize(){
+ if(!window.__aztec?.createPXE){element('status').textContent='Loading wallet software…';waitForBundle(initialize);return;}
+ try{const text=localStorage.getItem(saveKey);if(text){const saved=JSON.parse(text);if(saved.schema!==1)throw Error();selected=window.__aztec.validateDeploymentManifest(saved.manifest);element('deploymentManifest').value=JSON.stringify(selected);element('publicFeeGas').value=saved.gas;element('readyTxHash').value=saved.readyTxHash||'';describe(selected);element('deployButton').textContent='Continue deployment';}}
+ catch{element('status').textContent='Saved deployment settings could not be opened. Import the reviewed configuration.';}
+ initWalletButtons('walletButtonsContainer',{statusId:'status',canEndSession:()=>!attemptBusy&&!['working','waiting'].includes(application.operation().status),onReady:()=>{if(!element('newModerator').value)element('newModerator').value=window.BillboardAccount.snapshot().address;element('status').textContent='Accounts connected. Review your settings before creating the board.';}});
+}
+initialize();
 
 </script>
 </body>

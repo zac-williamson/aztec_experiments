@@ -1,3 +1,4 @@
+import {normalizePrivateFeeGasSettings} from '../shared/private-fee-client.mjs';
 import {ensureOnboardingFees} from '../shared/fee-onboarding.mjs';
 import {jsonStringify,jsonParseWithSchema} from '@aztec/foundation/json-rpc';
 import {BlockResponseSchema} from '@aztec/stdlib/interfaces/client';
@@ -83,7 +84,7 @@ import {EthAddress} from '@aztec/foundation/eth-address';
 import {NoteStatus} from '@aztec/stdlib/note';
 import {sha256ToField} from '@aztec/foundation/crypto/sha256';
 function mainHarness(action,isDummy=false) {
-  let c=context();const requests=[],logs=[],operations=[];let actionReceipt={status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)},sent=false,authorBalanceReads=0,postExists=!['post','recover'].includes(action),missingNote=false,noteOverrides={},actionHook=null,readHook=null,censorValue=null;
+  let c=context();const requests=[],logs=[],operations=[],readResults=new Map();let actionReceipt={status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)},sent=false,authorBalanceReads=0,postExists=!['post','recover'].includes(action),missingNote=false,noteOverrides={},actionHook=null,readHook=null,censorValue=null;
   // Timers only represent UI yields in this inert test; no network/proof work is performed.
   c.setTimeout=callback=>setTimeout(callback,0);
   const addr=AztecAddress.fromFieldUnsafe(new Fr(12));
@@ -101,10 +102,11 @@ function mainHarness(action,isDummy=false) {
   c.readBillboardDepositInfo=async()=>note();
   const methods=new Proxy({}, {get:(_target,name)=>{
     if(['post','withdraw','claim_deposit','transfer_censor','declare_immoral','set_moderation_policy'].includes(name)) return (...args)=>({send:async opts=>{assert.equal(opts.from,addr);assert.equal(opts.fee.paymentMethod,'private-method');if(actionHook)await actionHook(name,args);sent=true;requests.at(-1).action={kind:action,args};return {receipt:actionReceipt};}});
-    return ()=>({simulate:async()=>{if(readHook)await readHook(name);return name==='get_censor'?(censorValue??addr.toField()):name==='get_post_exists'?postExists:name==='get_screen_hints'?[null,null]:1n;}});
+    return ()=>({simulate:async()=>{if(readHook)await readHook(name);return readResults.has(name)?readResults.get(name):name==='get_censor'?(censorValue??addr.toField()):name==='get_post_exists'?postExists:name==='get_screen_hints'?[{note:{is_dummy:true}},null]:1n;}});
   }});
   class BaseWallet {constructor(pxe){this.pxe=pxe;}}
-  const a={...transactionOutcomes,NoteStatus,Fr,AztecAddress,EthAddress,NO_FROM,GasSettings,BaseWallet,sha256ToField,Buffer,
+  const a={normalizePrivateFeeGasSettings,...transactionOutcomes,NoteStatus,Fr,AztecAddress,EthAddress,NO_FROM,GasSettings,BaseWallet,sha256ToField,Buffer,
+    deriveBoardDepositSecret:async()=>({secret:secret.toString(),secretHash:secretHash.toString()}),
     deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
     SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;getSigningPublicKey=async()=>({x:Fr.ONE,y:Fr.ONE});},
     getContractInstanceFromInstantiationParams:async()=>({address:addr}),computePartialAddress:async()=>Fr.ZERO,
@@ -125,7 +127,7 @@ function mainHarness(action,isDummy=false) {
     node.getBlocks=async()=>[{number:1,hash:'block',body:{txEffects:[{txHash,l2ToL1Msgs:[leaf]}]}}];
     node.getTxReceipt=async()=>({txHash,status:'checkpointed',executionResult,blockNumber:1,blockHash:'block'});
   }
-  return {restartEngine:()=>{c=context();c.setTimeout=callback=>setTimeout(callback,0);c.readBillboardDepositInfo=async()=>note();},setActionReceipt:value=>actionReceipt=value,setTimer:fn=>{c.setTimeout=fn;},run:()=>c.runBillboardUser(env,config),setWithdrawalHistory,env,config,node,provider,Portal,requests,logs,operations,setCensor:value=>censorValue=value,setMissingNote:value=>missingNote=value,setNoteState:value=>noteOverrides=value,onAction:value=>actionHook=value,onRead:value=>readHook=value,setPostExists:value=>postExists=value,authorBalanceReads:()=>authorBalanceReads,secret};
+  return {setReadResult:(name,value)=>readResults.set(name,value),restartEngine:()=>{c=context();c.setTimeout=callback=>setTimeout(callback,0);c.readBillboardDepositInfo=async()=>note();},setActionReceipt:value=>actionReceipt=value,setTimer:fn=>{c.setTimeout=fn;},run:()=>c.runBillboardUser(env,config),setWithdrawalHistory,env,config,node,provider,Portal,requests,logs,operations,setCensor:value=>censorValue=value,setMissingNote:value=>missingNote=value,setNoteState:value=>noteOverrides=value,onAction:value=>actionHook=value,onRead:value=>readHook=value,setPostExists:value=>postExists=value,authorBalanceReads:()=>authorBalanceReads,secret};
 }
 for(const [action,dummy] of [['claim',false],['post',false],['post',true],['withdraw',false]]) {
   test(`actual main ${action}${dummy?' dummy':''} uses standard author call with private fee payment`,async()=>{
@@ -667,7 +669,7 @@ for(const scenario of ['matching','older-refund','missing-witness','rpc-error'])
  const data=new ethers.Interface(['function withdraw(uint256,uint256,uint256,bytes32[])']).encodeFunctionData('withdraw',[1,1,scenario==='older-refund'?3:2,['0x'+'00'.repeat(32)]]);
  h.env.createEthereumJournal=async()=>({assertCanStart:async()=>{},send:async()=>{throw Error('Recovery must not send');},recover:async()=>({outcome:'success',txHash:new Fr(100).toString(),request:{data,expected:{kind:'withdraw',amount:'1000000000000000'}}})});
  if(scenario==='rpc-error')await assert.rejects(h.run(),{code:'BB_RECOVERY_UNKNOWN'});
- else{const result=await h.run();assert.equal(Object.hasOwn(result,'withdrawTxHash'),scenario==='matching');if(scenario==='matching')assert.equal(result.withdrawTxHash,null);}
+ else{const result=await h.run();assert.equal(Object.hasOwn(result,'withdrawTxHash'),scenario==='matching');if(scenario==='matching'){assert.equal(result.withdrawTxHash,null);assert.equal(result.refundAmount,'1000000000000000');assert.match(result.refundRecipient,/^0x[0-9a-fA-F]{40}$/);}else assert.equal(result.refundAmount,undefined);}
  assert.equal(reads,1);assert.equal(h.requests.length,0);assert(!h.logs.some(text=>text.includes('private provider error')));
 });
 
@@ -725,7 +727,7 @@ for(const ready of [false,true])test(`new Ethereum deposit checks fee readiness 
  let checks=0,saves=0,payments=0;
  h.env.aztec.preparePrivateFeePayment=async()=>{checks++;if(!ready)throw Object.assign(Error('private balance detail'),{code:'PRIVATE_FEE_BALANCE_INSUFFICIENT'});return {paymentMethod:'private',gasSettings:gas()};};
  h.config.claimSecretStore.save=async()=>{saves++;throw Object.assign(Error('Stop at storage boundary'),{code:'TEST_STORAGE'});};
- h.env.createEthereumJournal=async()=>({assertCanStart:async()=>{},send:async()=>{payments++;throw Error('must not pay');}});
+ h.env.createEthereumJournal=async()=>({assertCanStart:async()=>{},send:async build=>{await build(7);payments++;throw Error('must not pay');}});
  await assert.rejects(h.run(),{code:ready?'TEST_STORAGE':'PRIVATE_FEE_BALANCE_INSUFFICIENT'});
  assert.equal(checks,1);assert.equal(saves,ready?1:0);assert.equal(payments,0);assert.equal(h.requests.length,0);
 });
@@ -748,3 +750,16 @@ for(const recovered of [false,true])test(`automatic fee funding reaches board cl
  assert.deepEqual(calls,recovered?['recover','board-claim']:['recover','fund','board-claim']);
  assert.equal(h.requests.at(-1).claim,claim);assert.equal(h.requests.at(-1).action.kind,'claim');
 });
+test('withdrawal preparation cannot start a proof beyond the reviewed step budget',async()=>{const h=mainHarness('withdraw');h.config.prepareWithdrawal=true;h.config.maxScreeningSteps=0;h.config.maximumCreditSpend='100000';h.setNoteState({headSequence:1n,lastRealPostIndex:1n,lastScreenedIndex:0n});await assert.rejects(h.run(),{code:'BB_WITHDRAWAL_BUDGET'});assert.equal(h.requests.length,0);});
+test('withdrawal stops spending when screening does not advance',async()=>{const h=mainHarness('withdraw');h.config.prepareWithdrawal=true;h.config.maxScreeningSteps=2;h.config.maximumCreditSpend='100000';h.setNoteState({headSequence:1n,lastRealPostIndex:1n,lastScreenedIndex:0n});await assert.rejects(h.run(),{code:'BB_SCREENING_NO_PROGRESS'});assert.equal(h.requests.length,1);});
+test('withdrawal waits through the actual moderation deadline before any proof',async()=>{const h=mainHarness('withdraw');h.config.prepareWithdrawal=true;h.config.maxScreeningSteps=2;h.config.maximumCreditSpend='100000';h.setNoteState({headSequence:1n,lastRealPostIndex:1n,lastScreenedIndex:0n});h.setReadResult('get_screen_hints',[{note:{is_dummy:false,post_id:new Fr(3)}},null]);h.setReadResult('get_post_flag_deadline',1000n);let waits=0;h.setTimer((callback,ms)=>{assert(ms<=30000);waits++;return setTimeout(callback,0);});h.config.contextGuard=async()=>{if(waits)throw Object.assign(Error('Paused'),{code:'BB_OPERATION_PAUSED'});};await assert.rejects(h.run(),{code:'BB_OPERATION_PAUSED'});assert.equal(h.requests.length,0);assert.equal(waits,1);});
+
+for (const mode of ['confirmed','stale','approved','changed'])test(`reviewed moderator recovery: ${mode}`,async()=>{
+ const original=mainHarness('transfer-censor');await original.run();const operation=original.operations.at(-1),txHash=new Fr(99).toString(),h=mainHarness('recover');let recoveries=0,replacements=0;
+ h.config.moderatorRecovery={txHash,operation,policyVersion:new Fr(1).toString(),allowReplacement:mode==='approved'};
+ h.env.createTransactionJournal=async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed(){},inspect:async()=>({operation,txHash:mode==='changed'?new Fr(100).toString():txHash}),recover:async()=>{recoveries++;if(mode==='confirmed')return {txHash:new Fr(99),executionResult:'success'};throw Object.assign(Error('stale'),{code:'BB_RECOVERY_REQUIRED'});},allowReplacement:async value=>{replacements++;assert.equal(value,operation);},setOperation:value=>h.operations.push(value)});
+ if(mode==='changed'){await assert.rejects(h.run(),{code:'BB_MODERATOR_REVIEW_CHANGED'});assert.equal(recoveries,0);}else if(mode==='stale')await assert.rejects(h.run(),{code:'BB_MODERATOR_REVIEW_REQUIRED'});else {const result=await h.run();if(mode==='confirmed')assert.equal(result.state,'transaction_recovered');}
+ assert.equal(replacements,mode==='approved'?1:0);assert.equal(h.requests.length,mode==='approved'?1:0);if(mode==='approved')assert.deepEqual(h.operations,[operation]);
+});
+
+test('post returns its public message identity and actual fee to the application',async()=>{const h=mainHarness('post');h.setActionReceipt({status:'checkpointed',blockNumber:1,transactionFee:123n});const result=await h.run();assert.equal(result.postId,new Fr(5).toString());assert.equal(result.feePaid,'123');});

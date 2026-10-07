@@ -1,42 +1,31 @@
-let connection=null,cursor=null,busy=false,generation=0;
-const element=id=>document.getElementById(id);
-function render(posts,append){
- if(!append)element('messages').replaceChildren();
- for(const p of posts){const article=document.createElement('article');article.className='card';const label=document.createElement('p');label.textContent='#'+p.orderIndex;article.append(label);
- const text=document.createElement('p');text.textContent=p.flagged?'Message removed by moderator.':p.text;article.append(text);
- if(p.flagged){const reason=document.createElement('p');reason.textContent='Reason: '+p.flag.reason;article.append(reason);}
- element('messages').append(article);}
-}
-function resetConnection(){element('post-link').removeAttribute('href');element('post-link').hidden=true;element('board-link').removeAttribute('href');element('board-link').hidden=true;connection=null;cursor=null;busy=false;element('messages').replaceChildren();element('more').hidden=true;element('refresh').hidden=true;element('connect').hidden=true;}
+const view=BillboardView,element=id=>document.getElementById(id);
+view.header({section:'Read'});
+let connection=null,cursor=null,busy=false,generation=0,signature='',older=false,targetResolved=false,historyComplete=false;
+const target=new URL(location.href).searchParams.get('message');
 async function refresh(append=false){
  if(busy||!connection)return;busy=true;const selected=connection;
  try{
-  const progress=append?null:await selected.feed.sync(),page=await selected.feed.page({limit:50,cursor:append?cursor:null});
-  if(connection!==selected)return;
-  cursor=page.nextCursor;render(page.posts,append);
-  element('more').hidden=!cursor;element('refresh').hidden=false;
-  element('status').textContent=progress&&!progress.complete?'Loading older history. Refresh to continue.':element('messages').children.length?'Messages loaded.':'No messages yet.';
- }catch(error){
-  if(connection===selected){
-   if(error.code==='PUBLIC_FEED_CONFLICT'){connection=null;element('more').hidden=true;element('refresh').hidden=true;}
-   element('connect').hidden=false;element('status').textContent='Could not update messages. Try again.';
-  }
- }finally{if(connection===selected)busy=false;}
+  let progress;if(!append)progress=await selected.feed.sync();
+  const page=await selected.feed.page({limit:50,cursor:append?cursor:null});if(connection!==selected)return;
+  older=append||false;if(progress)historyComplete=progress.complete;cursor=page.nextCursor;view.renderMessages(element('messages'),page.posts,{append});view.rules(element('boardRules'),page.policies);if(!append)signature=JSON.stringify(page.posts);
+  element('more').hidden=!cursor;element('refresh').hidden=true;element('status').textContent=progress&&!progress.complete?'Loading message history…':'';
+  if(target&&!targetResolved){const found=document.getElementById('message-'+target);if(found){targetResolved=true;found.tabIndex=-1;found.focus({preventScroll:true});found.scrollIntoView({block:'center'});}else if(!cursor&&historyComplete)element('status').textContent='This message is not available on this board.';}
+  if(progress&&!progress.complete)setTimeout(()=>refresh(),1000);
+  else if(target&&!targetResolved&&!document.getElementById('message-'+target)&&cursor)setTimeout(()=>refresh(true),0);
+ }catch(error){if(connection!==selected)return;element('connect').hidden=false;element('status').textContent='Messages could not be updated. Your displayed messages are still available.';}
+ finally{if(connection===selected)busy=false;}
 }
 async function openBoard(){
- const selected=++generation;resetConnection();busy=true;element('status').textContent='Loading messages…';
- try{
-  const result=await loadHostedBoard();
-  if(selected!==generation)return;
-  connection=result;
-  const link=new URL(location.href);link.hash=result.fragment;
-  history.replaceState(null,'',link);element('board-link').href=link.href;element('board-link').hidden=false;
-  if(result.config.privateFee){const postLink=new URL('user.html',location.href);postLink.hash=result.fragment;element('post-link').href=postLink.href;element('post-link').hidden=false;}
- }catch{
-  if(selected===generation){element('status').textContent='Could not load this board. Try again.';element('connect').hidden=false;}
- }finally{if(selected===generation)busy=false;}
- if(selected===generation&&connection)await refresh();
+ const selected=++generation;connection=null;cursor=null;busy=false;older=false;element('messages').replaceChildren();element('connect').hidden=true;element('status').textContent='Loading messages…';
+ try{const result=await loadHostedBoard();if(selected!==generation)return;connection=result;const canonical=new URL(location.href);canonical.hash=result.fragment;history.replaceState(null,'',canonical);view.identity(result.config);element('availability').textContent=result.config.privateFee?'':'This board is open for reading. Posting is not enabled by its operator.';await refresh();}
+ catch(error){const failure=boardConnectionFailure(error);element('status').textContent=failure.message;element('connect').hidden=!failure.retry;}
 }
-element('connect').onclick=openBoard;element('more').onclick=()=>refresh(true);element('refresh').onclick=()=>refresh();
-window.addEventListener('hashchange',openBoard);
+element('connect').onclick=openBoard;element('more').onclick=()=>refresh(true);element('refresh').onclick=()=>refresh();window.addEventListener('hashchange',openBoard);
+setInterval(async()=>{
+ if(!connection||busy||document.hidden||older)return;busy=true;const selected=connection;
+ try{await selected.feed.sync();const page=await selected.feed.page({limit:50});if(connection!==selected)return;
+   if(JSON.stringify(page.posts)!==signature){element('refresh').hidden=false;element('more').hidden=true;}
+ }catch{if(connection===selected)element('status').textContent='Updates are temporarily unavailable.';}
+ finally{if(connection===selected)busy=false;}
+},15000);
 openBoard();

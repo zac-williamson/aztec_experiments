@@ -1,12 +1,15 @@
 // Account controls: rendering and browser file handling only.
 let _statusId="setupStatus";
-function walletMessage(message,type="info") { if(typeof log==="function")log(message,type,_statusId); }
+function walletMessage(message,type="info") { const region=document.getElementById("wbAccountStatus");if(region){region.textContent=message;region.className=type==="error"?"error":"";} if(typeof log==="function")log(message,type,_statusId); }
 function _updateButtonColors() {
   const state=window.BillboardAccount.snapshot();
   const connection=document.getElementById('wbConnectionStatus');
   if(connection)connection.textContent=state.invalidated
-    ? 'Wallet connection changed. Reload to reconnect before continuing.'
-    : state.ethereumConnected ? state.ethereumWalletName+' · '+state.ethereumAddress : 'No Ethereum wallet connected.';
+    ? 'Wallet connection changed. Switch wallet to reconnect.'
+    : state.ethereumConnected ? state.ethereumWalletName+' · '+state.ethereumAddress.slice(0,6)+'…'+state.ethereumAddress.slice(-4) : 'No Ethereum wallet connected.';
+  const summary=document.querySelector('#wbAccountMenu > summary');if(summary)summary.textContent=state.ethereumConnected?'Account · '+state.ethereumAddress.slice(0,6)+'…'+state.ethereumAddress.slice(-4):'Account';
+  const eth=document.getElementById('wbEthIdentity'),privateId=document.getElementById('wbPrivateIdentity');if(eth)eth.textContent=state.ethereumAddress||'Ethereum wallet not connected';if(privateId)privateId.textContent=state.address||'Private account locked';
+  const choice=document.getElementById('wbPasskeyChoice');if(choice)choice.hidden=!state.needsPasskey;
   for(const id of ['wbAztecBtn','wbAztecGenBtn','wbEthBrowserBtn']) {
     const el=document.getElementById(id); if(el) el.disabled=state.busy || state.invalidated || (id==='wbEthBrowserBtn'?state.ethereumConnected && !!state.address:!!state.address);
   }
@@ -14,11 +17,12 @@ function _updateButtonColors() {
 function _backupPassword(confirm=false) {
   const input=document.getElementById('wbPassword'), repeat=document.getElementById('wbPasswordConfirm');
   const password=input?.value || '';
-  if(password.length<12 || password.length>1024) throw new Error('Use a backup password of at least 12 characters.');
-  if(confirm && password!==repeat?.value) throw new Error('The backup passwords do not match.');
+  for(const el of [input,repeat])el?.removeAttribute('aria-invalid');
+  if(password.length<12 || password.length>1024) throw Object.assign(new Error(),{code:'BB_BACKUP_PASSWORD',field:'wbPassword'});
+  if(confirm && password!==repeat?.value) throw Object.assign(new Error(),{code:'BB_BACKUP_PASSWORD_MATCH',field:'wbPasswordConfirm'});
   return password;
 }
-function _clearBackupPassword() { for(const id of ['wbPassword','wbPasswordConfirm']) { const el=document.getElementById(id); if(el)el.value=''; } }
+function _clearBackupPassword() { for(const id of ['wbPassword','wbPasswordConfirm','wbRestorePassword']) { const el=document.getElementById(id); if(el)el.value=''; } }
 function _downloadJson(filename,obj) {
   const url=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)+'\n'],{type:'application/json'}));
   const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();
@@ -26,9 +30,9 @@ function _downloadJson(filename,obj) {
 }
 function downloadAccountRecovery(envelope) {
   _downloadJson('aztec-recovery-'+window.BillboardAccount.snapshot().address.slice(2,18)+'.json',envelope);
-  walletMessage('Encrypted recovery file downloaded. Keep it and its password safely. Export again after each transaction or recovery update. Older files do not contain later requests.','success');
+  walletMessage('Encrypted recovery file downloaded. Keep it and its password safely. It restores your account; it also includes the pending requests saved at the time of export.','success');
 }
-async function _loadAztecWallet(file) {try{return await window.BillboardAccount.importRecovery(file,document.getElementById('wbPassword')?.value||'');}finally{_clearBackupPassword();}}
+async function _loadAztecWallet(file) {try{return await window.BillboardAccount.importRecovery(file,document.getElementById('wbRestorePassword')?.value||'');}finally{_clearBackupPassword();}}
 async function _generateAztecWallet() {try{downloadAccountRecovery(await window.BillboardAccount.create(_backupPassword(true)));}finally{_clearBackupPassword();}}
 async function _exportAztecWallet() {try{downloadAccountRecovery(await window.BillboardAccount.exportRecovery(_backupPassword(true)));}finally{_clearBackupPassword();}}
 async function _loadEthBrowser() {
@@ -60,27 +64,39 @@ async function _importPasskeyAccount() {const result=await window.BillboardAccou
 function initWalletButtons(containerId,options={}) {
   const autoPasskey=options.autoPasskey===true;
   _statusId=options.statusId||'setupStatus';
-  window.BillboardAccount.configure({...options,onChange:()=>{_updateButtonColors();options.onChange?.(window.BillboardAccount.snapshot());},onMessage:walletMessage});
+  window.BillboardAccount.configure({...options,onSetupError:error=>walletMessage(publicOperationFailure(error).message,'error'),onChange:()=>{_updateButtonColors();options.onChange?.(window.BillboardAccount.snapshot());},onMessage:walletMessage});
   const container=document.getElementById(containerId);if(!container)return;
   container.innerHTML=autoPasskey ? `<div class="wallet-btns"><button class="wallet-btn" id="wbEthBrowserBtn">Connect wallet</button>
+    <div id="wbPasskeyChoice" hidden><p>Have you used this private account before?</p><button id="wbExistingPasskeyBtn">Unlock with existing passkey</button><button class="secondary" id="wbNewPasskeyBtn">Create a new account</button><p class="small">Use the same Ethereum wallet and passkey when returning on another device.</p></div>
     <details class="account-menu" id="wbAccountMenu"><summary>Account</summary><div class="account-menu-panel">
-    <button class="secondary" id="wbImportPasskeyBtn">Import existing passkey account</button>
+    <p id="wbConnectionStatus" class="account-address"></p><p id="wbAccountStatus" role="status" aria-live="polite"></p>
+    <button class="secondary" id="wbLockBtn">Lock account</button><button class="secondary" id="wbSwitchBtn">Switch wallet</button>
+    <div id="accountActions"></div>
+    <details><summary>Restore account</summary>
+    <button class="secondary" id="wbImportPasskeyBtn">Use existing passkey</button>
     <button class="secondary" id="wbAztecBtn">Import recovery file</button>
     <input type="file" id="wbAztecFile" accept=".json" hidden>
-    <label>Recovery file password<input type="password" id="wbPassword" autocomplete="new-password" minlength="12" maxlength="1024"></label>
+    <label>Existing recovery file password<input type="password" id="wbRestorePassword" autocomplete="current-password" maxlength="1024"></label>
+    </details><details><summary>Back up account</summary>
+    <label>New recovery file password<input type="password" id="wbPassword" autocomplete="new-password" minlength="12" maxlength="1024"></label>
     <label>Confirm password for export<input type="password" id="wbPasswordConfirm" autocomplete="new-password" maxlength="1024"></label>
     <button class="secondary" id="wbBackupBtn">Export recovery file</button>
-    <p>Recovery files also preserve deposit secrets and pending transactions. Export after making deposits. Import a file before connecting; reload first if an account is already open.</p>
-    </div></details></div><p>Your passkey secures your private account. Ethereum approves funding and L1 transactions.</p>` : `<input type="file" id="wbAztecFile" accept=".json" hidden>
+    <p>Your same passkey and Ethereum wallet restore new board deposits on another device. A recovery file is an alternative way to restore the private account and includes pending requests at export time. Older deposits created before automatic recovery need their original backup. Lock your account before importing another.</p>
+    </details></div></details></div>` : `<input type="file" id="wbAztecFile" accept=".json" hidden>
     <div class="wallet-btns"><div class="wallet-group"><span class="wallet-label">Ethereum</span><button class="secondary wallet-btn" id="wbEthBrowserBtn">Connect browser wallet</button></div>
     <div class="wallet-group"><span class="wallet-label">Aztec</span><button class="secondary wallet-btn" id="wbAztecBtn">Restore wallet</button><button class="secondary wallet-btn" id="wbAztecGenBtn">Create wallet</button><button class="secondary wallet-btn" id="wbBackupBtn">Export recovery file</button></div></div>
-    <label>Recovery password <input type="password" id="wbPassword" autocomplete="new-password" minlength="12" maxlength="1024"></label>
+    <label>Existing recovery file password <input type="password" id="wbRestorePassword" autocomplete="current-password" maxlength="1024"></label>
+    <label>New backup password <input type="password" id="wbPassword" autocomplete="new-password" minlength="12" maxlength="1024"></label>
     <label>Repeat password when creating a backup <input type="password" id="wbPasswordConfirm" autocomplete="new-password" maxlength="1024"></label>
-    <p>Keep your encrypted recovery file and password. Export again after each transaction or recovery update. Older files do not contain later requests. Losing your wallet key or a deposit claim secret can make funds unrecoverable. This browser holds decrypted keys while open; use a trusted device. Reload before changing wallets.</p>`;
-  const connection=document.createElement('p');connection.id='wbConnectionStatus';connection.setAttribute('role','status');
-  document.body.appendChild(connection);
-  if(autoPasskey)document.body.appendChild(document.getElementById('wbAccountMenu'));
-  const handle=run=>async()=>{try{await run();}catch(error){walletMessage(['BB_BROWSER_WALLET_MISSING','BB_WALLET_NETWORK','BB_WALLET_REJECTED','BB_WALLET_DISCONNECTED'].includes(error?.code)?publicOperationFailure(error).message:((error?.code===4001||error?.code==='ACTION_REJECTED')?'Wallet request cancelled. Connect again when you are ready.':'Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.'),'error');}};
+    <p>Keep your encrypted recovery file and password. It restores your private account and includes pending requests at export time. New deposits are recoverable from the same private account and Ethereum wallet. Older deposits need their original backup. Losing your private account can make funds unrecoverable. This browser holds decrypted keys while open; use a trusted device. Lock your account before changing wallets.</p>`;
+  if(!autoPasskey){const connection=document.createElement('p');connection.id='wbConnectionStatus';container.append(connection);const lock=document.createElement('button');lock.id='wbLockBtn';lock.className='secondary';lock.textContent='Lock account';container.append(lock);const change=document.createElement('button');change.id='wbSwitchBtn';change.className='secondary';change.textContent='Switch wallet';container.append(change);}
+  const identities=document.createElement('details');identities.innerHTML='<summary>Account addresses</summary><p class="small">Ethereum pays deposits. Your private account posts messages.</p><p id="wbEthIdentity" class="account-address"></p><button id="wbCopyEth" class="secondary">Copy Ethereum address</button><p id="wbPrivateIdentity" class="account-address"></p><button id="wbCopyPrivate" class="secondary">Copy private account address</button>';(document.querySelector('.account-menu-panel')||container).prepend(identities);
+  for(const [id,key]of [['wbCopyEth','ethereumAddress'],['wbCopyPrivate','address']])document.getElementById(id).onclick=async()=>{const address=window.BillboardAccount.snapshot()[key];if(address){try{await navigator.clipboard.writeText(address);walletMessage('Address copied.');}catch{walletMessage('Copy was unavailable. Select the address above to copy it.');}}};
+  if(autoPasskey)(document.getElementById('accountSlot')||container).appendChild(document.getElementById('wbAccountMenu'));
+  document.getElementById('wbExistingPasskeyBtn')?.addEventListener('click',()=>handle(_importPasskeyAccount)());
+  document.getElementById('wbNewPasskeyBtn')?.addEventListener('click',()=>handle(()=>window.BillboardAccount.createPasskey())());
+  for(const id of ['wbLockBtn','wbSwitchBtn'])document.getElementById(id)?.addEventListener('click',()=>handle(async()=>{await window.BillboardAccount.endSession();location.reload();})());
+  const handle=run=>async()=>{try{await run();}catch(error){const safe=publicOperationFailure(error?.code===4001||error?.code==='ACTION_REJECTED'?{code:'BB_WALLET_REJECTED'}:error);walletMessage(safe.message,'error');const field=safe.field&&document.getElementById(safe.field);if(field){field.setAttribute('aria-invalid','true');field.focus();}}};
   document.getElementById('wbAztecBtn').addEventListener('click',()=>document.getElementById('wbAztecFile').click());
   document.getElementById('wbImportPasskeyBtn')?.addEventListener('click',handle(_importPasskeyAccount));
   document.getElementById('wbAztecGenBtn')?.addEventListener('click',handle(_generateAztecWallet));

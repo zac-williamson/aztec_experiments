@@ -1,150 +1,51 @@
-// ============================================================
-// app.js — Browser wrapper for the deploy engine
-// ============================================================
-// Thin layer: loads wallet buttons, builds env/config from
-// shared/app-env.js, calls runDeploy().
-// ============================================================
-
-// ============================================================
-// Bundle readiness
-// ============================================================
-if (!checkBundle('status')) {
-  waitForBundle(() => checkBundle('status'));
-}
-
-// Setup RPC auth immediately
-setupRpcAuth();
-
-// ============================================================
-// Pause handler — file picker for wallet imports
-// ============================================================
-function pickFile(accept) {
-  return new Promise((resolve, reject) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = accept || '.json';
-    input.style.display = 'none';
-    document.body.appendChild(input);
-    input.addEventListener('change', async (e) => {
-      document.body.removeChild(input);
-      const file = e.target.files[0];
-      if (!file) { reject(new Error('No file selected')); return; }
-      try {
-        const text = await file.text();
-        resolve(JSON.parse(text));
-      } catch (err) {
-        reject(new Error('Failed to parse file: ' + err.message));
-      }
-    });
-    input.click();
-  });
-}
-
-async function pause(reason, data) {
-  if (reason === 'import-aztec-wallet') {
-    log('Please select your Aztec wallet.json file...', 'info', 'status');
-    const wallet = await pickFile('.json');
-    log('  Loaded: ' + (wallet.address || '(no address field)'), 'success', 'status');
-    return wallet;
-  }
-  if (reason === 'import-eth-wallet') {
-    log('Please select your ETH wallet JSON file...', 'info', 'status');
-    const wallet = await pickFile('.json');
-    log('  Loaded: ' + wallet.address, 'success', 'status');
-    return wallet;
-  }
-  throw new Error('Unknown pause reason: ' + reason);
-}
-
-// ============================================================
-// Threading detection
-// ============================================================
-function getThreadingMode() {
-  if (typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated) {
-    return 'multi-threaded (crossOriginIsolated)';
-  }
-  if (location.protocol === 'file:') {
-    return 'unsupported for wallet actions (file://)';
-  }
-  return 'unsupported for wallet actions (missing cross-origin isolation)';
-}
-
-// ============================================================
-// Main — start the deploy flow
-// ============================================================
-const application=createBillboardApplication({kind:'deploy',pause,
-  deploymentConfig:()=>window.__aztec.deploymentManifestConfig(JSON.parse(document.getElementById('deploymentManifest').value))});
-function callDeploy(action,statusDiv,input){return application.run(action,input,(message,level)=>log(message,level||'info',statusDiv));}
-let deploymentReportUrl;
-async function startDeploy() {
-  if(deploymentReportUrl){URL.revokeObjectURL(deploymentReportUrl);deploymentReportUrl=null;}
-  clearStatus('status');
-
-  const threading = getThreadingMode();
-  log('Threading mode: ' + threading, 'info', 'status');
-  log('Protocol: ' + location.protocol, 'info', 'status');
-
-  if (!window.__aztec || !window.__aztec.createPXE) {
-    log('ERROR: Aztec bundle not loaded. Refresh the page.', 'error', 'status');
-    return;
-  }
-
-  let extraConfig;
-  try{extraConfig=window.__aztec.deploymentManifestConfig(JSON.parse(document.getElementById('deploymentManifest').value));}
-  catch(error){log('Import a valid reviewed deployment manifest before deploying.','error','status');return;}
-  extraConfig.retryEthereum=document.getElementById('retryEthereum')?.checked===true;
-  extraConfig.readyTxHash=document.getElementById('readyTxHash').value.trim()||undefined;
-  extraConfig.dataDirPrefix='pxe_bb_';
-
-  try {
-    const result = await callDeploy('deploy', 'status', extraConfig);
-    log('', 'info', 'status');
-    log(result.status === 'active' ? 'Deployment complete. The board is ready to use.' : 'Deployment saved. Network settlement is pending; resume with the same settings later.', result.status === 'active' ? 'success' : 'info', 'status');
-    const report=new Blob([JSON.stringify({schemaVersion:1,manifest:extraConfig.deploymentManifest,...result},null,2)],{type:'application/json'});
-    const reportLink=document.createElement('a');reportLink.textContent='Download deployment report';reportLink.download='deployment-report.json';deploymentReportUrl=URL.createObjectURL(report);reportLink.href=deploymentReportUrl;document.getElementById('status').appendChild(reportLink);
-    if (result.readyTxHash) document.getElementById('readyTxHash').value = result.readyTxHash;
-    log('  Salt: ' + extraConfig.contractSalt, 'info', 'status');
-    log('  L2:   ' + result.l2Addr, 'info', 'status');
-    log('  L1:   ' + result.portalAddr, 'info', 'status');
-
-    if(result.status==='active') {
-      const holder=document.createElement('div'),status=document.getElementById('status');
-      const connect=document.createElement('button');connect.type='button';connect.textContent='Use this board';
-      const download=document.createElement('button');download.type='button';download.textContent='Download public connection settings';
-      const makePublic=async()=>{
-        const text=document.getElementById('publicFeeGas').value.trim();
-        return application.publicConfiguration(result,text?JSON.parse(text):null,extraConfig.deploymentManifest);
-      };
-      connect.addEventListener('click',async()=>{try{const config=await makePublic();location.href='user.html#network='+[config.network.chainId,config.network.rollupAddress,config.network.rollupVersion].join(':')+'&board='+config.board.contractAddress;}catch{log('Could not prepare public settings. Check the fee gas JSON. The deployment report is still available.','error','status');}});
-      download.addEventListener('click',async()=>{try{const config=await makePublic(),url=URL.createObjectURL(new Blob([JSON.stringify(config,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='board-public-config.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch{log('Could not prepare public settings. Check the fee gas JSON. The deployment report is still available.','error','status');}});
-      holder.append(connect,download);status.append(holder);
-    }
-  } catch (e) {
-    log('', 'error', 'status');
-    log('ERROR: ' + 'operation did not complete; check configuration and recovery records', 'error', 'status');
-    console.error('Application operation did not complete.');
-  }
-}
-
-// ============================================================
-// Init — wallet buttons with auto-start
-// ============================================================
-function waitForBundleThenInit() {
-  if (window.__aztec && window.__aztec.createPXE) {
-    initWalletButtons('walletButtonsContainer', {
-      statusId: 'status',
-      onReady: async () => {
-        log('Both wallets ready. Click the Deploy button to begin.', 'success', 'status');
-      },
-    });
-  } else {
-    waitForBundle(waitForBundleThenInit);
-  }
-}
-waitForBundleThenInit();
-
+const view=BillboardView,element=id=>document.getElementById(id);
+view.header({title:'Create a board',section:''});
+const application=createBillboardApplication({kind:'deploy',deploymentConfig:()=>window.__aztec.deploymentManifestConfig(JSON.parse(element('deploymentManifest').value))});
+view.bindOperation(application,element('operationStatus'));
+const saveKey='board-deployment-resume-v1';
+let selected=null,publicConfig=null,attemptBusy=false,revision=0;
+function controls(){const busy=attemptBusy||['working','waiting'].includes(application.operation().status);for(const id of ['deployButton','manifestFile','publicFeeGas','readyTxHash','retryEthereum','prepareBoard','newMinimum','newMaximum','newInterval','newWindow','newMultiplier','newAllowance','newModerator','newRules'])element(id).disabled=busy;}
+application.subscribe(controls);
+function clearCompletion(){publicConfig=null;for(const id of ['readBoard','postBoard','downloadConfig'])element(id).hidden=true;element('capabilities').replaceChildren();}
+function describe(m){element('manifestSummary').replaceChildren();const pairs=[['Network','Ethereum '+m.network.chainId+' / Aztec '+m.network.rollupVersion],['Refundable deposit',ethers.formatEther(m.board.minDeposit)+'–'+ethers.formatEther(m.board.maxDeposit)+' ETH'],['Posting interval at minimum deposit',m.board.baseCooldown+' seconds'],['Moderation period',m.board.censorWindow+' seconds'],['Saved posting allowance',m.board.maxSaveUp+' intervals'],['Penalty for an eligible removal',(Number(m.board.kMultiplier)-1)+' additional posting intervals'],['Moderator',m.board.censor],['Board rules',m.board.policy]];for(const [label,value]of pairs)element('manifestSummary').append(view.element('dt',label),view.element('dd',String(value)));}
 async function importDeploymentManifest(input){
-  const file=input.files?.[0];if(!file)return;
-  try{if(file.size>65536)throw Error();const text=await file.text();const m=window.__aztec.validateDeploymentManifest(JSON.parse(text));document.getElementById('deploymentManifest').value=JSON.stringify(m);document.getElementById('manifestSummary').textContent='Configuration to review: chain '+m.network.chainId+', rollup '+m.network.rollup+', Aztec deployer '+m.actors.aztecDeployer+', Ethereum deployer '+m.actors.ethereumDeployer+', censor '+m.board.censor+'. Deposit range (wei): '+m.board.minDeposit+'–'+m.board.maxDeposit+'. Policy: '+m.board.policy;}
-  catch{document.getElementById('deploymentManifest').value='';document.getElementById('manifestSummary').textContent='Invalid deployment manifest.';}
+ if(attemptBusy)return;
+ const file=input.files?.[0];if(!file)return;
+ const version=++revision;clearCompletion();selected=null;
+ try{if(file.size>65536)throw Error();const manifest=window.__aztec.validateDeploymentManifest(JSON.parse(await file.text()));if(version!==revision)return;selected=manifest;element('deploymentManifest').value=JSON.stringify(selected);element('readyTxHash').value='';describe(selected);element('status').textContent='Review these settings, then connect the deployment accounts.';}
+ catch{if(version!==revision)return;element('deploymentManifest').value='';element('status').textContent='Choose a valid deployment configuration file.';}
 }
+function saveResume(attempt,hash){localStorage.setItem(saveKey,JSON.stringify({schema:1,manifest:attempt.manifest,gas:attempt.gas,readyTxHash:hash||attempt.readyTxHash}));}
+async function startDeploy(){
+ if(attemptBusy)return;
+ if(!selected){element('status').textContent='Choose and review a deployment configuration first.';return;}
+ const attempt={revision:++revision,manifest:structuredClone(selected),gas:element('publicFeeGas').value.trim(),readyTxHash:element('readyTxHash').value,retry:element('retryEthereum').checked};
+ attemptBusy=true;controls();clearCompletion();
+ try{
+  const gas=attempt.gas?JSON.parse(attempt.gas):null;if(gas)window.__aztec.normalizePrivateFeeGasSettings(gas);
+  const input={...window.__aztec.deploymentManifestConfig(attempt.manifest),readyTxHash:attempt.readyTxHash||undefined,retryEthereum:attempt.retry,dataDirPrefix:'pxe_bb_'};
+  saveResume(attempt);
+  const result=await application.run('deploy',input);if(attempt.revision!==revision)return;
+  if(result.readyTxHash)element('readyTxHash').value=result.readyTxHash;saveResume(attempt,result.readyTxHash);
+  publicConfig=await application.publicConfiguration(result,gas,attempt.manifest);
+  element('downloadConfig').hidden=false;element('deployButton').textContent='Continue deployment';
+  element('status').textContent=result.status==='active'?'Contracts deployed. Checking board configuration…':'Activation is waiting for network settlement. Your deployment is saved; continue here later.';
+  const checks=await application.deploymentCapabilities(result,attempt.manifest);if(attempt.revision!==revision)return;
+  for(const [key,label]of [['reading','Read messages'],['deposits','Accept deposits'],['posting','Posting configuration'],['remoteProver','Remote prover'],['moderator','Moderator address']])element('capabilities').append(view.element('dt',label),view.element('dd',checks[key].replaceAll('-',' ')));
+  const fragment='network='+[publicConfig.network.chainId,publicConfig.network.rollupAddress,publicConfig.network.rollupVersion].join(':')+'&board='+publicConfig.board.contractAddress;
+  element('readBoard').href=view.url('feed.html',fragment);element('readBoard').hidden=!checks.hostedReading;
+  element('postBoard').href=view.url('user.html',fragment);element('postBoard').hidden=checks.posting!=='configuration-verified';
+  if(result.status==='active')element('status').textContent=checks.posting==='configuration-verified'?'Contracts deployed and posting configuration checked. Account funding and prover readiness are checked when connecting.':'Contracts deployed. Configure hosted posting and check the services below before inviting users.';
+ }catch(error){element('status').textContent=publicOperationFailure(error).message;}
+ finally{attemptBusy=false;controls();}
+}
+for(const id of ['newMinimum','newMaximum','newInterval','newWindow','newMultiplier','newAllowance','newModerator','newRules'])element(id).oninput=()=>{revision++;selected=null;clearCompletion();element('manifestSummary').replaceChildren();element('status').textContent='Settings changed. Review them again before creating the board.';};
+element('prepareBoard').onclick=async()=>{if(attemptBusy)return;const version=++revision;selected=null;clearCompletion();try{const {manifest,gas}=await application.prepareDeployment({minDeposit:element('newMinimum').value,maxDeposit:element('newMaximum').value,baseCooldown:element('newInterval').value,censorWindow:element('newWindow').value,kMultiplier:element('newMultiplier').value,maxSaveUp:element('newAllowance').value,censor:element('newModerator').value.trim().toLowerCase(),policy:element('newRules').value.trim()});if(version!==revision)return;selected=manifest;element('deploymentManifest').value=JSON.stringify(manifest);element('publicFeeGas').value=gas?JSON.stringify(gas):'';element('readyTxHash').value='';describe(manifest);element('status').textContent='Review the settings above. Create board will ask for wallet approvals.';}catch(error){element('status').textContent=error.code==='BB_WALLET_NOT_READY'?'Connect both deployment accounts first.':'Check the board settings: positive amounts and intervals, minimum no greater than maximum, valid moderator address, and rules within 1,488 UTF-8 bytes.';}};
+element('downloadConfig').onclick=()=>{if(publicConfig)_downloadJson('board-public-config.json',publicConfig);};
+function initialize(){
+ if(!window.__aztec?.createPXE){element('status').textContent='Loading wallet software…';waitForBundle(initialize);return;}
+ try{const text=localStorage.getItem(saveKey);if(text){const saved=JSON.parse(text);if(saved.schema!==1)throw Error();selected=window.__aztec.validateDeploymentManifest(saved.manifest);element('deploymentManifest').value=JSON.stringify(selected);element('publicFeeGas').value=saved.gas;element('readyTxHash').value=saved.readyTxHash||'';describe(selected);element('deployButton').textContent='Continue deployment';}}
+ catch{element('status').textContent='Saved deployment settings could not be opened. Import the reviewed configuration.';}
+ initWalletButtons('walletButtonsContainer',{statusId:'status',canEndSession:()=>!attemptBusy&&!['working','waiting'].includes(application.operation().status),onReady:()=>{if(!element('newModerator').value)element('newModerator').value=window.BillboardAccount.snapshot().address;element('status').textContent='Accounts connected. Review your settings before creating the board.';}});
+}
+initialize();

@@ -82,7 +82,7 @@ export async function recoverPrivateFeeFunding(input) {
   const journal=await fundingJournal({...input,ethProvider},scope,sender);
   const result=await journal.recover({retry:input.retry===true});
   if(result.outcome!=='success')return {outcome:result.outcome,lastEthereumTxHash:result.txHash};
-  if(result.request.expected.kind==='approve')return {outcome:'approved',lastEthereumTxHash:result.txHash};
+  if(result.request.expected.kind==='approve')return {outcome:'approved',amount:result.request.expected.amount,lastEthereumTxHash:result.txHash};
   const record={schema:SCHEMA,...scope,sender,nonce:String(result.request.nonce),amount:result.request.expected.amount,txHash:result.txHash,leafIndex:String(result.event.index)};
   const {secretHash}=await claimSecrets({...input,record});
   check(eq(secretHash,result.request.expected.secretHash),'PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH');

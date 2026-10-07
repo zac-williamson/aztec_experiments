@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 import {installBrowserErrorObserver} from './browser-error-observer.mjs';
 
 test('portable error observer preserves formatter behavior and exports only bounded safe fields',()=>{
@@ -38,7 +39,7 @@ test('common formatter captures fee-page coordinates and preserves its result',(
  }finally{for(const[key,value]of Object.entries(saved)){if(value===undefined)delete globalThis[key];else globalThis[key]=value;}}
 });
 
-test('plain RPC cause exports only bounded redacted message and code',()=>{
+test('plain RPC cause exports only numeric code',()=>{
  const keys=['location','publicOperationFailure','__u01FormatterDiagnostics','__u01CaptureError'];
  const saved=Object.fromEntries(keys.map(k=>[k,globalThis[k]]));
  try{
@@ -46,7 +47,23 @@ test('plain RPC cause exports only bounded redacted message and code',()=>{
   const cause={code:-32000,message:'Invalid transaction 0x'+'a'.repeat(640)+' details '+'x'.repeat(600),data:{secret:'DO_NOT_EXPORT'}};
   const outer=new Error('GENERIC_SECRET',{cause});const result=globalThis.__u01CaptureError(outer);
   assert.equal(result.chain[0].rpcError,undefined);assert.equal(result.chain[1].rpcError.code,-32000);
-  assert.equal(result.chain[1].rpcError.message.length,512);assert(result.chain[1].rpcError.message.startsWith('Invalid transaction [hex] details'));
+  assert.deepEqual(result.chain[1].rpcError,{code:-32000});
   const text=JSON.stringify(result);assert(!text.includes('GENERIC_SECRET'));assert(!text.includes('DO_NOT_EXPORT'));assert(!text.includes('0xaaaa'));
  }finally{for(const [k,v]of Object.entries(saved)){if(v===undefined)delete globalThis[k];else globalThis[k]=v;}}
+});
+
+test('diagnostic observer never exports raw messages, RPC data or unknown codes',()=>{
+ const context=vm.createContext({URL,location:{origin:'https://board.test'},publicOperationFailure:()=>({message:'Safe message'})});
+ vm.runInContext('('+installBrowserErrorObserver.toString()+')()',context);
+ vm.runInContext(`const error=new Error('short-password-123');error.code='SECRET_CODE';error.cause={code:-32000,message:'short-password-123 decimal witness 123456 base64 c2VjcmV0',data:'private'};globalThis.result=publicOperationFailure(error);`,context);
+ const output=JSON.stringify(context.__u01FormatterDiagnostics);
+ assert.doesNotMatch(output,/short-password|SECRET_CODE|decimal witness|123456|c2VjcmV0|private/);
+ assert.match(output,/-32000/);assert.equal(context.result.message,'Safe message');
+});
+
+test('diagnostic observer only retains approved same-origin source locations and fixed categories',()=>{
+ const context=vm.createContext({URL,location:{origin:'https://board.test'},publicOperationFailure:()=>null});
+ vm.runInContext('('+installBrowserErrorObserver.toString()+')()',context);
+ vm.runInContext(`const error=new TypeError('Private data');error.stack='TypeError: Private data\\n at fn (https://board.test/fee-juice.html:100:20)\\n at fn (https://other.test/secret:2:3)';publicOperationFailure(error);`,context);
+ const report=context.__u01FormatterDiagnostics[0].chain[0];assert.equal(report.categories.typeError,true);assert.equal(report.frames.length,1);assert.equal(report.frames[0].file,'/fee-juice.html');
 });

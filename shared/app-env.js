@@ -113,6 +113,7 @@ function buildEnv(extra) {
     initCRS: makeInitCRS(),
     createStore: makeCreateStore(),
     getBrowserSigner: getBrowserSigner,
+    depositRecoveryProgress:createDepositRecoveryProgress(),
   };
   if (extra) Object.assign(env, extra);
   return env;
@@ -142,6 +143,32 @@ function buildConfig(action, extra, connection=_connectionConfig()) {
 // ============================================================
 function publicOperationFailure(error) {
   const messages={
+    BB_SCREENING_NO_PROGRESS:'Withdrawal preparation paused because the network did not advance screening. No further preparation fees will be spent. Refresh your account before continuing.',
+    BB_SCREENING_HISTORY_UNAVAILABLE:'Your message history could not be verified. Refresh your account before continuing withdrawal.',
+    BB_WITHDRAWAL_REVIEW:'Review the current withdrawal estimate before continuing.',
+    BB_WITHDRAWAL_BUDGET:'Withdrawal preparation reached the approved limit. Review the remaining work before continuing; no more fees will be spent automatically.',
+    BB_POST_COOLDOWN:'Your next post is not available yet. Wait for the posting countdown to finish.',
+    BB_NO_WITHDRAWAL:'There is no refundable deposit available for this account.',
+    BB_OPERATION_BUSY:'Another operation is still running. Let it finish before starting this one.',
+    BB_MESSAGE_EMPTY:'Write a message before posting.',
+    BB_MESSAGE_LONG:'Your message is too long. Shorten it to fit the 992-byte limit.',
+    BB_PASSKEY_CANCELLED:'Passkey approval was cancelled. Your account has not changed. Try unlocking again when ready.',
+    BB_PASSKEY_UNSUPPORTED:'This browser or passkey cannot unlock a private account. Use a passkey with PRF support, or restore your encrypted recovery file.',
+    BB_POLICY_CHANGED:'The board rules changed while you were reviewing. Open the current rules and review your change again.',
+    BB_MODERATOR_ADDRESS:'Enter a valid, nonzero Aztec moderator address.',
+    BB_POLICY_LENGTH:'Enter board rules between 1 and 1,488 UTF-8 bytes.',
+    BB_MODERATION_INPUT:'Choose a message and keep the removal reason within 200 UTF-8 bytes.',
+    BB_OPERATION_PAUSED:'Paused. Your confirmed payments are saved. Continue when you are ready.',
+    BB_ACCOUNT_REPLACEMENT:'Lock this account before restoring a different private account.',
+    BB_MODERATOR_REVIEW_REQUIRED:'The saved proof is no longer usable. Review the action before approving a new proof.',
+    BB_MODERATOR_REVIEW_CHANGED:'The account, board or saved action changed. Open its review again.',
+    BB_DEPLOYMENT_MANIFEST:'Check the deployment settings and review them again before creating the board.',
+    BB_FUNDING_AMOUNT:'Enter a valid AZTEC amount greater than the maximum transaction fee.',
+    BB_BACKUP_PASSWORD:'Use a recovery password of at least 12 characters.',
+    BB_BACKUP_PASSWORD_MATCH:'The recovery passwords do not match.',
+    BB_BACKUP_INVALID:'This recovery file could not be opened. Check its password and choose the encrypted wallet file.',
+    BB_SIMULATION_FAILED:'The network could not validate this transaction. Nothing was submitted. Refresh your account and try again.',
+    BB_GAS_LIMIT_EXCEEDED:'This transaction needs a higher fee limit. The board operator must update its settings.',
     PRIVATE_FEE_FUNDING_TOKEN_BALANCE:'Your Ethereum wallet needs more AZTEC tokens for transaction fees. Add AZTEC on the configured test network, then resume setup; no additional board deposit was sent.',
     PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN:'Fee funding was submitted but its confirmation is uncertain. Resume setup to check the saved payment before another is sent.',
     PRIVATE_FEE_RECOVERY_FAILED:'The saved fee funding could not be verified. Check the connection and resume setup; do not send another fee payment.',
@@ -158,6 +185,11 @@ function publicOperationFailure(error) {
     WORKER_UNAVAILABLE:'Browser workers are unavailable or blocked. Check the browser and hosting settings.',
     CRYPTO_UNAVAILABLE:'Browser cryptography is unavailable.',
     LOCKS_UNAVAILABLE:'Browser storage locks are unavailable; wallet actions cannot safely continue.',
+    BB_REMOTE_PROVER_TIMEOUT:'The prover took too long. No transaction was submitted by this proof attempt. Resume to check saved work before trying again.',
+    BB_REMOTE_PROVER_OFFLINE:'The board’s prover could not be reached. Retry when it is available, or turn off Remote proving before resuming.',
+    BB_REMOTE_PROVER_BUSY:'The board’s prover is at capacity or rate-limited. Wait before retrying, or turn off Remote proving for the next attempt.',
+    BB_REMOTE_PROVER_REJECTED:'The prover rejected this request. The board operator needs to check its configuration.',
+    BB_REMOTE_PROVER_RESPONSE:'The prover returned an invalid response. The board operator needs to check the service.',
     BB_REMOTE_PROVER_FAILED:'Remote proving did not complete. Try again or turn off Remote proving to prove locally.',
     BB_BROWSER_PROOF_FAILED:'Browser proving did not complete. Reload and restore your wallet, then check saved transactions before trying again.',
     BB_BROWSER_PROVER_CONFIGURATION:'Browser proving setup could not be verified. Reload this page and check the locally hosted setup files.',
@@ -179,8 +211,8 @@ function publicOperationFailure(error) {
     BB_NO_SAVED_ETHEREUM_TRANSACTION:'No saved Ethereum request exists for this wallet and portal.',
     BB_ETH_REQUEST_CANCELLED:'Payment cancelled. No transaction was sent. You can try again.',
     BB_ETH_INSUFFICIENT_FUNDS:'Not enough ETH for this payment and gas. Add funds, then try again.',
-    BB_ETH_RECOVERY_REQUIRED:'Check the saved Ethereum request in Wallet Setup before starting another payment.',
-    BB_ETH_SUBMISSION_UNKNOWN:'Ethereum submission is uncertain. Keep this browser profile and check the saved Ethereum request in Wallet Setup.',
+    BB_ETH_RECOVERY_REQUIRED:'A previous payment needs checking. Use Resume in Activity; no new payment will be made until its status is known.',
+    BB_ETH_SUBMISSION_UNKNOWN:'Ethereum submission is uncertain. Keep this browser profile and use Resume in Activity to check the payment.',
     BB_ETH_TRANSACTION_FAILED:'The Ethereum request reverted or was replaced. Check its saved request before starting another payment.',
     BB_WALLET_SYNC_PENDING:'Your claim is confirmed, but wallet synchronization failed. Keep the saved receipt and refresh before posting; do not make another deposit.',
     BB_RECOVERY_REQUIRED:'Recover the saved Aztec transaction from Wallet Setup before sending another transaction.',
@@ -195,7 +227,7 @@ function publicOperationFailure(error) {
     BB_SETTLEMENT_PENDING:'Your withdrawal is recorded. Network settlement is pending; retry the Ethereum claim later.',
   };
   const code=typeof error?.code==='string'&&Object.hasOwn(messages,error.code)?error.code:'BB_OPERATION_FAILED';
-  return Object.assign(new Error(messages[code]||'Wallet operation did not complete. Check the connection and recovery records; reload if the account or network changed.'),{code});
+  return Object.assign(new Error(messages[code]||'This operation could not finish. Open Activity to check it before trying again. Details contains a report for the board operator.'),{code,phase:error?.phase==='fee-funding'?'fee-funding':null,field:['msgText','newCensorAddr','moderationPolicyInput','censorResponseText','amount','wbPassword','wbPasswordConfirm','wbRestorePassword'].includes(error?.field)?error.field:null});
 }
 
 function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connectionConfig}={}) {
@@ -209,10 +241,11 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
     const expected=identity();
     // Capture before acquiring locks or performing any asynchronous work.
     const operationConnection=structuredClone(connection());
-    operationConnection.remoteProver=window.BillboardProving.snapshot()==='remote' ? operationConnection.remoteProver : undefined;
-    if(operationConnection.remoteProver)Object.freeze(operationConnection.remoteProver);
+    operationConnection.remoteProver=(extra?.provingMode??window.BillboardProving.snapshot())==='remote' ? operationConnection.remoteProver : undefined;
+    if(operationConnection.remoteProver)operationConnection.remoteProver=Object.freeze({...operationConnection.remoteProver,onStatus:state=>extra?.onStage?.(state==='queued'?'queued':'proving')});
     Object.freeze(operationConnection);
     async function guard() {
+      if(extra?.pauseRequested?.())throw Object.assign(Error('Paused.'),{code:'BB_OPERATION_PAUSED'});
       _assertWalletLive();
       if(generation!==_walletGeneration || expected!==identity()) throw new Error('Wallet or deployment configuration changed. Reload before continuing.');
       if(ws.ethType==='browser') {
@@ -251,9 +284,10 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
         await window.BillboardReadiness.check();
         await guard();
         await verifyBoard();
-        const env=buildEnv({...envExtra,log:onProgress}),config=buildConfig(action,extra,operationConnection);
+        const env=buildEnv({...envExtra,log:onProgress,progress:extra?.onStage||(()=>{})}),config=buildConfig(action,extra,operationConnection);
         const prior=config.preProveHook;
         config.contextGuard=guard;
+        config.waitForBridge=true;
         config.preProveHook=async value=>{await guard();await verifyBoard();if(prior)await prior(value);await guard();};
         env.getBrowserSigner=async()=>{
           await guard(); if(!ws.ethSigner) throw new Error('Connect an Ethereum wallet first.');
@@ -261,7 +295,7 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
           return new Proxy(signer,{get(target,property){
             const value=Reflect.get(target,property,target);
             if(typeof value!=='function')return value;
-            if(['sendTransaction','signTransaction','signMessage','signTypedData'].includes(property))return async(...args)=>{await guard();await verifyBoard();await guard();return value.apply(target,args);};
+            if(['sendTransaction','signTransaction','signMessage','signTypedData'].includes(property))return async(...args)=>{await guard();await verifyBoard();await guard();env.progress('wallet');const result=await value.apply(target,args);env.progress('confirming');return result;};
             return value.bind(target);
           }});
         };

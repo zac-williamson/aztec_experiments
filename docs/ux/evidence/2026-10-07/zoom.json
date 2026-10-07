@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "browserZoom": 2,
+  "before": {
+    "width": 1280,
+    "dpr": 1
+  },
+  "after": {
+    "width": 640,
+    "dpr": 2,
+    "overflow": false
+  },
+  "checks": [
+    "Actual chrome.tabs.setZoom(2) halves layout viewport",
+    "No horizontal overflow",
+    "Account backup controls visible and keyboard-focusable",
+    "Semantic navigation, message input, post action and readiness exposed in browser accessibility tree"
+  ],
+  "limit": "Accessibility-tree checks do not replace human screen-reader testing."
+}

@@ -37,14 +37,14 @@
   async function ceremony(ethereumAccount, {create = false, credentialId} = {}) {
     const identity = account(ethereumAccount);
     if (!global.isSecureContext || !navigator.credentials || !global.PublicKeyCredential) {
-      throw Error('Passkeys require a supported browser and HTTPS.');
+      throw Object.assign(Error('Passkeys require a supported browser and HTTPS.'),{code:'BB_PASSKEY_UNSUPPORTED'});
     }
     const userId = crypto.getRandomValues(new Uint8Array(32));
     const prfInput = await digest(domain + '/prf');
     const challenge = crypto.getRandomValues(new Uint8Array(32));
     const common = {challenge,timeout:120000,extensions:{prf:{eval:{first:prfInput}}}};
     let credential;
-    if (create) {
+    try { if (create) {
       credential = await navigator.credentials.create({publicKey:{...common,
         rp:{id:location.hostname,name:'Anonymous Message Board'},
         user:{id:userId,name:identity,displayName:'Message board ' + identity.slice(0,8)},
@@ -56,6 +56,7 @@
         userVerification:'required',...(credentialId ? {allowCredentials:[{type:'public-key',id:decodeId(credentialId)}]} : {}),
       }});
     }
+    } catch(error) {if(error?.name==='NotAllowedError'||error?.name==='AbortError')throw Object.assign(Error('Passkey approval cancelled.'),{code:'BB_PASSKEY_CANCELLED'});throw Object.assign(Error('Passkey unavailable.'),{code:'BB_PASSKEY_UNSUPPORTED'});}
     if (!credential || credential.type !== 'public-key') throw Error('Passkey approval was not completed.');
     const id = encodeId(credential.rawId);
     if (credentialId && id !== credentialId) throw Error('The selected passkey does not match this account.');
@@ -65,7 +66,7 @@
     if (create && !output && credential.getClientExtensionResults().prf?.enabled === true) {
       return ceremony(identity, {credentialId:id});
     }
-    if (!output) throw Error('This passkey does not support private account recovery (PRF). Use a PRF-capable passkey.');
+    if (!output) throw Object.assign(Error('Passkey PRF unavailable.'),{code:'BB_PASSKEY_UNSUPPORTED'});
     try { return {wallet:await derive(output,identity),credentialId:id}; }
     finally { new Uint8Array(output).fill(0); }
   }

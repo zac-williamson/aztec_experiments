@@ -3,16 +3,17 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {loadContractArtifact} from '@aztec/stdlib/abi';
 import {Fr} from '@aztec/foundation/curves/bn254';
 import {normalizePrivateFeeGasSettings} from '../shared/private-fee-client.mjs';
 import {boundedTransactionRead} from '../shared/transaction-outcomes.mjs';
 const source=fs.readFileSync(new URL('../apps/src/fee-juice/engine.js',import.meta.url),'utf8');
 function harness(){
- const calls=[],owner={toString:()=> 'owner'},payer={toString:()=> 'shared'},wallet={},claim={amount:'100',salt:'private-salt',secret:'private-secret',leafIndex:'1'};
+ const calls=[],owner={toString:()=> 'owner'},payer={toString:()=> 'shared'},wallet={},claim={amount:'100',salt:'private-salt',secret:'private-secret',leafIndex:Fr.ONE,messageKey:Fr.ONE};
  const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5}),getL1ContractAddresses:async()=>({rollupAddress:'rollup',feeJuicePortalAddress:'fee-portal'})};
  const pxe={registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{},stop:async()=>calls.push('stop')};
- const context=vm.createContext({BillboardPrivateFeeRouting:{createAztecWallet:(...args)=>{wallet.journal=args.at(-1).transactionJournal;return wallet;}}});vm.runInContext(source,context);
- const a={Fr,boundedTransactionRead,normalizePrivateFeeGasSettings,deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
+ const context=vm.createContext({BillboardDepositReadiness:{waitForDepositMessage:async input=>{assert.equal(input.index,1n);calls.push('bridge-ready');}},BillboardPrivateFeeRouting:{createAztecWallet:(...args)=>{wallet.journal=args.at(-1).transactionJournal;return wallet;}}});vm.runInContext(source,context);
+ const a={Fr,boundedTransactionRead,isPrivateFeeClaimConsumed:async()=>false,normalizePrivateFeeGasSettings,deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
   SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;},
   getContractInstanceFromInstantiationParams:async()=>({address:owner}),derivePrivateFeeAddress:async()=>payer,createAztecNodeClient:()=>node,
   computePartialAddress:async()=>Fr.ONE,createPXE:async()=>pxe,AccountManager:{create:async()=>({address:owner})},
@@ -24,7 +25,7 @@ function harness(){
  const env={createJournalStorage:()=>({}),createTransactionJournal:async input=>{calls.push(['journal',input]);return journal;},aztec:a,privateFeeArtifact:{},log:message=>calls.push(['log',message]),initCRS:async()=>{},createStore:async()=>({}),getBrowserSigner:async()=>({provider:{}}),ethers:{parseUnits:()=>100n,JsonRpcProvider:class {destroy(){calls.push('provider-destroy');}}},
  fundPrivateFees:async input=>{calls.push(['fund',input]);const record={nonce:'1'};await input.saveRecovery(record);return record;}};
  const config={aztecWallet:{secretKey:Fr.ONE.toString(),salt:0},privateFee:{contractAddress:'shared',gasSettings:{gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'1',l2Gas:'2'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}},fundingRecord:{schema:'private-fee-funding-v1',chainId:'31337',version:'5',rollupAddress:'rollup',portalAddress:'fee-portal',tokenAddress:'token',privateFeeAddress:'shared',sender:'sender',nonce:'1',amount:'100',txHash:Fr.ONE.toString()},saveRecovery:async record=>calls.push(['save',record]),depositAmount:'0.1'};
- return {calls,owner,claim,a,env,config,wallet,journal,run:action=>context.runFeeJuiceFlow(env,{...config,action})};
+ return {calls,owner,claim,a,env,config,wallet,journal,readiness:context.BillboardDepositReadiness,run:action=>context.runFeeJuiceFlow(env,{...config,action})};
 }
 test('funding deposits to shared address and passes mandatory recovery callback',async()=>{
  const h=harness();const result=await h.run('deposit');assert.equal(result.record.nonce,'1');
@@ -33,6 +34,7 @@ test('funding deposits to shared address and passes mandatory recovery callback'
 });
 test('standalone claim uses standard author entrypoint with only private fee payload, then stops PXE',async()=>{
  const h=harness();await h.run('claim');const preparation=h.calls.find(c=>c[0]==='prepare')[1];assert.equal(preparation.claim,h.claim);
+ assert(h.calls.indexOf('bridge-ready')>=0&&h.calls.indexOf('bridge-ready')<h.calls.findIndex(c=>c[0]==='prepare'));
  const send=h.calls.find(c=>c[0]==='send')[1];assert.equal(send.from,h.owner);assert.equal(send.fee.paymentMethod,'private');
  assert.equal(h.calls.filter(c=>c==='stop').length,1);assert(h.wallet.journal);assert(h.calls.indexOf('journal-preflight')<h.calls.findIndex(c=>c[0]==='recover'));assert.equal(h.calls.find(c=>c[0]==='journal')[1].scope.portal,'fee-portal');assert(!h.calls.filter(c=>c[0]==='log').some(c=>c[1].includes('private-secret')));
 });
@@ -40,9 +42,10 @@ test('standalone claim uses standard author entrypoint with only private fee pay
 test('browser recovery storage preserves earlier deposits and refuses conflicting replacements or secrets',()=>{
  const app=fs.readFileSync(new URL('../apps/src/fee-juice/app.js',import.meta.url),'utf8');
  const map=new Map(),c=vm.createContext({window:{},BILLBOARD_PRIVATE_FEE_ARTIFACT:{},makeCallEngine:()=>()=>{},localStorage:{getItem:key=>map.get(key),setItem:(key,value)=>map.set(key,value)}});
+ vm.runInContext(fs.readFileSync(new URL('../shared/operation-state.js',import.meta.url),'utf8'),c);c.window.BillboardOperations=c.BillboardOperations;
  vm.runInContext(fs.readFileSync(new URL('../shared/application.js',import.meta.url),'utf8'),c);
  c.application=vm.runInContext("createBillboardApplication({kind:'fees'})",c);
- vm.runInContext('let fundingRecord=null;'+app.slice(app.indexOf('function saveFundingRecord('),app.indexOf('function downloadRecovery(')),c);
+ c.saveFundingRecord=c.application.importFundingRecovery;
  const record={schema:'private-fee-funding-v1',chainId:'1',version:'1',rollupAddress:'rollup',portalAddress:'portal',tokenAddress:'token',privateFeeAddress:'shared',sender:'sender',nonce:'1',amount:'100'};
  c.saveFundingRecord(record);c.saveFundingRecord({...record,txHash:'hash'});
  assert.throws(()=>c.saveFundingRecord({...record,amount:'200'}),/conflicts/);
@@ -150,7 +153,18 @@ test('claim failure keeps its internal cause without exposing it in the public m
 test('fee claim preserves low-cap diagnostic and displays a safe actionable message',async()=>{
  const h=harness();h.env.aztec.preparePrivateFeePayment=async()=>{throw Object.assign(Error('private input'),{code:'PRIVATE_FEE_CAP_TOO_LOW'});};
  await assert.rejects(h.run('claim'),{code:'PRIVATE_FEE_CAP_TOO_LOW'});assert(!h.calls.some(c=>c[0]==='send'));
- const app=fs.readFileSync(new URL('../apps/src/fee-juice/app.js',import.meta.url),'utf8'),c=vm.createContext({});
- vm.runInContext(app.slice(app.indexOf('function safeFundingError('),app.indexOf('async function loadWalletAndCheck(')),c);
- const message=c.safeFundingError({code:'PRIVATE_FEE_CAP_TOO_LOW',message:'private input'});assert.match(message,/operator needs to update/);assert(!message.includes('private input'));
+ const app=fs.readFileSync(new URL('../shared/app-env.js',import.meta.url),'utf8'),c=vm.createContext({});
+ vm.runInContext(app.slice(app.indexOf('function publicOperationFailure('),app.indexOf('function makeCallEngine(')),c);
+ const message=c.publicOperationFailure({code:'PRIVATE_FEE_CAP_TOO_LOW',message:'private input'}).message;assert.match(message,/operator needs to update/);assert(!message.includes('private input'));
 });
+
+for(const fails of [false,true])test('read-only fee balance owns and closes its PXE: '+fails,async()=>{
+ const h=harness();h.env.privateFeeArtifact=JSON.parse(fs.readFileSync(new URL('../apps/src/billboard/private_fee_artifact.json',import.meta.url)));h.a.loadContractArtifact=loadContractArtifact;
+ h.env.initCRS=()=>assert.fail('A balance read must not initialize proving');h.env.getBrowserSigner=()=>assert.fail('A balance read must not request a signer');h.wallet.registerContract=async()=>{};h.a.derivePrivateFeeInstance=async()=>({address:h.owner});
+ const original=h.a.createPXE;h.a.createPXE=async(...args)=>{assert.equal(args[1].proverEnabled,false);return original(...args);};
+ h.a.Contract={at:async(_address,artifact)=>{const balance=artifact.functions.find(fn=>fn.name==='balance_of');assert.equal(balance.functionType,'utility');assert.equal(balance.parameters.length,1);return {methods:{balance_of:owner=>({simulate:async()=>{assert.equal(owner,h.owner);if(fails)throw Error('network unavailable');return {result:42n};}})}};}};
+ if(fails)await assert.rejects(h.run('balance'),/network unavailable/);else{const result=await h.run('balance');assert.equal(result.feeBalance,'42');assert(!('handles'in result));}
+ assert.equal(h.calls.filter(c=>c==='stop').length,1);assert(!h.calls.some(c=>c[0]==='send'||c[0]==='fund'||c==='journal-preflight'));
+});
+
+test('a paused fee bridge wait prevents preparation and submission',async()=>{const h=harness();h.readiness.waitForDepositMessage=async()=>{throw {code:'BB_OPERATION_PAUSED'};};await assert.rejects(h.run('claim'),{code:'BB_OPERATION_PAUSED'});assert(!h.calls.some(c=>c[0]==='prepare'||c[0]==='send'));assert.equal(h.calls.filter(c=>c==='stop').length,1);});

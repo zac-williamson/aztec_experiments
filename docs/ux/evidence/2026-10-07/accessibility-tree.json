@@ -1,0 +1,554 @@
+[
+  {
+    "role": "RootWebArea",
+    "name": "Board 111111 · Message board"
+  },
+  {
+    "role": "banner",
+    "name": ""
+  },
+  {
+    "role": "paragraph",
+    "name": ""
+  },
+  {
+    "role": "main",
+    "name": ""
+  },
+  {
+    "role": "link",
+    "name": "Message boards"
+  },
+  {
+    "role": "navigation",
+    "name": "Main navigation"
+  },
+  {
+    "role": "generic",
+    "name": ""
+  },
+  {
+    "role": "StaticText",
+    "name": "Testnet · Test funds only"
+  },
+  {
+    "role": "heading",
+    "name": "Board 111111"
+  },
+  {
+    "role": "paragraph",
+    "name": ""
+  },
+  {
+    "role": "status",
+    "name": ""
+  },
+  {
+    "role": "region",
+    "name": "Write a message"
+  },
+  {
+    "role": "generic",
+    "name": ""
+  },
+  {
+    "role": "group",
+    "name": ""
+  },
+  {
+    "role": "region",
+    "name": "Messages"
+  },
+  {
+    "role": "paragraph",
+    "name": ""
+  },
+  {
+    "role": "StaticText",
+    "name": "Message boards"
+  },
+  {
+    "role": "link",
+    "name": "Read"
+  },
+  {
+    "role": "link",
+    "name": "Write"
+  },
+  {
+    "role": "button",
+    "name": "Copy board link"
+  },
+  {
+    "role": "group",
+    "name": ""
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Testnet · Test funds only"
+  },
+  {
+    "role": "StaticText",
+    "name": "Board 111111"
+  },
+  {
+    "role": "StaticText",
+    "name": "Read freely. Join the conversation with a refundable deposit."
+  },
+  {
+    "role": "heading",
+    "name": "Write a message"
+  },
+  {
+    "role": "status",
+    "name": ""
+  },
+  {
+    "role": "LabelText",
+    "name": ""
+  },
+  {
+    "role": "textbox",
+    "name": "Your public message"
+  },
+  {
+    "role": "generic",
+    "name": ""
+  },
+  {
+    "role": "generic",
+    "name": ""
+  },
+  {
+    "role": "alert",
+    "name": ""
+  },
+  {
+    "role": "button",
+    "name": "Post message"
+  },
+  {
+    "role": "button",
+    "name": "Discard draft"
+  },
+  {
+    "role": "status",
+    "name": ""
+  },
+  {
+    "role": "checkbox",
+    "name": "Remote proving"
+  },
+  {
+    "role": "paragraph",
+    "name": ""
+  },
+  {
+    "role": "paragraph",
+    "name": ""
+  },
+  {
+    "role": "DisclosureTriangle",
+    "name": "Activity & interrupted operations"
+  },
+  {
+    "role": "heading",
+    "name": "Messages"
+  },
+  {
+    "role": "status",
+    "name": ""
+  },
+  {
+    "role": "generic",
+    "name": ""
+  },
+  {
+    "role": "link",
+    "name": "Read older messages"
+  },
+  {
+    "role": "StaticText",
+    "name": "Messages are public. Moderation can hide a message here but cannot erase it from blockchain history."
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Message "
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "boards"
+  },
+  {
+    "role": "StaticText",
+    "name": "Read"
+  },
+  {
+    "role": "StaticText",
+    "name": "Write"
+  },
+  {
+    "role": "StaticText",
+    "name": "Copy board link"
+  },
+  {
+    "role": "DisclosureTriangle",
+    "name": "Account · 0x1111…1111"
+  },
+  {
+    "role": "generic",
+    "name": ""
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Board 111111"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Read freely. Join the conversation with a refundable deposit."
+  },
+  {
+    "role": "StaticText",
+    "name": "Write a message"
+  },
+  {
+    "role": "StaticText",
+    "name": "Ready to post"
+  },
+  {
+    "role": "StaticText",
+    "name": "Your public message"
+  },
+  {
+    "role": "generic",
+    "name": ""
+  },
+  {
+    "role": "StaticText",
+    "name": "Draft saved in this browser"
+  },
+  {
+    "role": "StaticText",
+    "name": "0 / 992 bytes"
+  },
+  {
+    "role": "StaticText",
+    "name": "Post message"
+  },
+  {
+    "role": "StaticText",
+    "name": "Discard draft"
+  },
+  {
+    "role": "StaticText",
+    "name": "The board’s server creates your proof and can see the private data needed to do so. Turn this off to prove on this device. Your signing keys stay here. Changes apply to your next operation."
+  },
+  {
+    "role": "StaticText",
+    "name": "Activity & interrupted operations"
+  },
+  {
+    "role": "StaticText",
+    "name": "Messages"
+  },
+  {
+    "role": "paragraph",
+    "name": ""
+  },
+  {
+    "role": "StaticText",
+    "name": "Read older messages"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Messages are public. Moderation can hide a message here but cannot erase it from "
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "blockchain history."
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Read"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Write"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Copy board "
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "link"
+  },
+  {
+    "role": "StaticText",
+    "name": "Account · 0x1111…1111"
+  },
+  {
+    "role": "generic",
+    "name": ""
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Write a message"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Ready to post"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Your public message"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Draft saved in this browser"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "0 / 992 bytes"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Post message"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Discard draft"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "The board’s server creates your proof and can see the private data needed to do so. Turn "
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "this off to prove on this device. Your signing keys stay here. Changes apply to your next "
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "operation."
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Activity & interrupted operations"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Messages"
+  },
+  {
+    "role": "StaticText",
+    "name": "No messages yet. Be the first to write one."
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Read older messages"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Account · 0x1111…"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "1111"
+  },
+  {
+    "role": "group",
+    "name": ""
+  },
+  {
+    "role": "paragraph",
+    "name": ""
+  },
+  {
+    "role": "status",
+    "name": ""
+  },
+  {
+    "role": "button",
+    "name": "Lock account"
+  },
+  {
+    "role": "button",
+    "name": "Switch wallet"
+  },
+  {
+    "role": "generic",
+    "name": ""
+  },
+  {
+    "role": "group",
+    "name": ""
+  },
+  {
+    "role": "group",
+    "name": ""
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "No messages yet. Be the first to write one."
+  },
+  {
+    "role": "DisclosureTriangle",
+    "name": "Account addresses"
+  },
+  {
+    "role": "StaticText",
+    "name": "undefined · 0x1111…1111"
+  },
+  {
+    "role": "StaticText",
+    "name": "Lock account"
+  },
+  {
+    "role": "StaticText",
+    "name": "Switch wallet"
+  },
+  {
+    "role": "button",
+    "name": "Balance & activity"
+  },
+  {
+    "role": "DisclosureTriangle",
+    "name": "Restore account"
+  },
+  {
+    "role": "DisclosureTriangle",
+    "name": "Back up account"
+  },
+  {
+    "role": "LabelText",
+    "name": ""
+  },
+  {
+    "role": "LabelText",
+    "name": ""
+  },
+  {
+    "role": "button",
+    "name": "Export recovery file"
+  },
+  {
+    "role": "paragraph",
+    "name": ""
+  },
+  {
+    "role": "StaticText",
+    "name": "Account addresses"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "undefined · 0x1111…1111"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Lock account"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Switch wallet"
+  },
+  {
+    "role": "StaticText",
+    "name": "Balance & activity"
+  },
+  {
+    "role": "StaticText",
+    "name": "Restore account"
+  },
+  {
+    "role": "StaticText",
+    "name": "Back up account"
+  },
+  {
+    "role": "StaticText",
+    "name": "New recovery file password"
+  },
+  {
+    "role": "textbox",
+    "name": "New recovery file password"
+  },
+  {
+    "role": "StaticText",
+    "name": "Confirm password for export"
+  },
+  {
+    "role": "textbox",
+    "name": "Confirm password for export"
+  },
+  {
+    "role": "StaticText",
+    "name": "Export recovery file"
+  },
+  {
+    "role": "StaticText",
+    "name": "Your same passkey and Ethereum wallet restore new board deposits on another device. A recovery file is an alternative way to restore the private account and includes pending requests at export time. Older deposits created before automatic recovery need their original backup. Lock your account before importing another."
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Account addresses"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Balance & activity"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Restore account"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Back up account"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "New recovery file password"
+  },
+  {
+    "role": "generic",
+    "name": ""
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Confirm password for export"
+  },
+  {
+    "role": "generic",
+    "name": ""
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Export recovery file"
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Your same passkey and Ethereum wallet restore "
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "new board deposits on another device. A "
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "recovery file is an alternative way to restore the "
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "private account and includes pending requests "
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "at export time. Older deposits created before "
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "automatic recovery need their original backup. "
+  },
+  {
+    "role": "InlineTextBox",
+    "name": "Lock your account before importing another."
+  }
+]

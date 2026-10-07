@@ -1,26 +1,8 @@
-import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';
-const helpers=fs.readFileSync(new URL('../shared/helpers.js',import.meta.url),'utf8');
-const author=fs.readFileSync(new URL('../apps/src/billboard/user/app.js',import.meta.url),'utf8');
-function fixture(){const elements=new Map(['navBack','navNext','navProgress'].map(id=>[id,{style:{},classList:{toggle(){},add(){},remove(){}}}]));const c=vm.createContext({document:{getElementById:id=>elements.get(id),querySelectorAll:()=>[],querySelector:()=>null},queueMicrotask(){},console,setTimeout});vm.runInContext(helpers,c);for(const n of ['doDepositPage','onShowDeposit','doProceedToWithdraw','onShowPost','doWithdrawPage','onShowWithdraw','doClaimL1Page','onShowClaimL1'])c[n]=()=>{};vm.runInContext(author.slice(author.indexOf('initPages(['),author.indexOf('\n]);',author.indexOf('initPages(['))+4),c);return{c,elements};}
-test('wallet setup cannot be skipped before or after returning to it',()=>{const f=fixture();for(let i=0;i<2;i++){assert.equal(f.elements.get('navNext').style.display,'none');f.c.doNavAction();assert.equal(f.elements.get('navProgress').textContent,'1 / 5');f.c.showPage(1);f.c.prevPage();}});
-test('deposit rejects an uninitialized account before calling an engine',async()=>{const start=author.indexOf('async function doDepositPage()'),end=author.indexOf('\n// =====',start);let calls=0;const c=vm.createContext({_stateResult:null,application:{connected:false},publicOperationFailure:e=>e,callEngine(){calls++;throw Error('engine called');}});vm.runInContext(author.slice(start,end),c);await assert.rejects(c.doDepositPage(),e=>e.code==='BB_WALLET_NOT_READY');assert.equal(calls,0);});
-test('fee deposit and claim cannot start before wallet setup succeeds',async()=>{
- const source=fs.readFileSync(new URL('../apps/src/fee-juice/app.js',import.meta.url),'utf8');
- const template=fs.readFileSync(new URL('../apps/src/fee-juice/template.html',import.meta.url),'utf8');
- for(const id of ['depositBtn','claimBtn'])assert(template.includes('id="'+id+'" disabled'));
- let calls=0;const c=vm.createContext({feeWalletReady:false,log(){},safeFundingError:()=> 'Not ready',withBtn(){calls++;throw Error('Operation started');}});
- const start=source.indexOf('async function doDepositPage()'),end=source.indexOf('function initializePrivateFees()',start);
- vm.runInContext(source.slice(start,end),c);await c.doDepositPage();await c.doClaimPage();assert.equal(calls,0);
-});
-
-
-test('invalidated wallet keeps navigation actions disabled across page changes',()=>{
- const f=fixture();let calls=0;f.c.initPages([{label:'Deposit',action:()=>{calls++;}},{label:'Post',action:()=>{calls++;}}]);
- f.c.setPageActionsEnabled(false);f.c.showPage(1);f.c.prevPage();f.c.doNavAction();
- assert.equal(f.elements.get('navNext').disabled,true);assert.equal(calls,0);
-});
-test('action failure cannot re-enable navigation after wallet invalidation',async()=>{
- const f=fixture();let fail;f.c.initPages([{label:'Deposit',action:()=>new Promise((_r,reject)=>{fail=reject;})}]);
- f.c.doNavAction();await Promise.resolve();f.c.setPageActionsEnabled(false);fail(Error('Disconnected'));
- await new Promise(resolve=>setImmediate(resolve));assert.equal(f.elements.get('navNext').disabled,true);
-});
+// UI/controller acceptance; real wallet/proof acceptance lives in test-hosted-onboarding.mjs.
+import test from 'node:test';import assert from 'node:assert/strict';import {fixture} from './ux-page-fixture.mjs';
+test('author has no payment or composer before account setup; direct deposit handler cannot start it',async()=>{const f=await fixture();try{assert.equal(await f.page.locator('#depositPanel').isVisible(),false);assert.equal(await f.page.locator('#composer').isVisible(),false);await f.page.evaluate(()=>deposit());assert.deepEqual(await f.page.evaluate(()=>calls),[]);}finally{await f.close();}});
+test('onboarding finishes at composer, preserves draft and renders actual cooldown',async()=>{const f=await fixture();try{await f.page.evaluate(async()=>{account.address='test-account';localStorage.setItem('board-draft:'+config.board.contractAddress+':test-account','Saved message');await walletOptions.onReady();});assert.equal(await f.page.locator('#depositCooldown').innerText(),'Post about every 60 seconds.');await f.page.locator('#depositBtn').click();await f.page.locator('#composer').waitFor({state:'visible'});assert.equal(await f.page.locator('#msgText').inputValue(),'Saved message');assert.equal(await f.page.locator('#withdrawPanel').isVisible(),false);assert.equal(await f.page.locator('#depositPanel').isVisible(),false);}finally{await f.close();}});
+test('account invalidation disables payment and posting after setup',async()=>{const f=await fixture();try{await f.page.evaluate(async()=>{account.address='a';await walletOptions.onReady();account.invalidated=true;walletOptions.onChange(account);});assert.equal(await f.page.locator('#depositBtn').isDisabled(),true);await f.page.evaluate(()=>deposit());assert(!await f.page.evaluate(()=>calls.includes('completeDeposit')));}finally{await f.close();}});
+test('fee funding cannot start before private account readiness',async()=>{const f=await fixture('fee-juice');try{await f.page.evaluate(()=>fund());assert.deepEqual(await f.page.evaluate(()=>calls),[]);await f.page.evaluate(async()=>{account.address='a';await walletOptions.onReady();});await f.page.locator('#depositBtn').click();await f.page.waitForFunction(()=>calls.includes('completeFeeFunding'));}finally{await f.close();}});
+test('postable account cannot post after invalidation',async()=>{const f=await fixture();try{await f.page.evaluate(async()=>{account.address='a';initialState='postable';await walletOptions.onReady();});await f.page.locator('#msgText').fill('A draft');assert.equal(await f.page.locator('#postBtn').isDisabled(),false);await f.page.evaluate(()=>{account.invalidated=true;walletOptions.onChange(account);});assert.equal(await f.page.locator('#postBtn').isDisabled(),true);}finally{await f.close();}});
+test('late operation failure cannot re-enable payments after account invalidation',async()=>{const f=await fixture();try{await f.page.evaluate(async()=>{account.address='a';await walletOptions.onReady();applicationPort.completeDeposit=()=>{emit({status:'working',stage:'proving'});return new Promise((_,reject)=>window.rejectPending=reject);};void deposit();});await f.page.evaluate(()=>{account.invalidated=true;walletOptions.onChange(account);emit({status:'failed',stage:'failed',message:'failed'});rejectPending({code:'BB_WALLET_DISCONNECTED'});});assert.equal(await f.page.locator('#depositBtn').isDisabled(),true);assert.equal(await f.page.locator('#postBtn').isDisabled(),true);}finally{await f.close();}});

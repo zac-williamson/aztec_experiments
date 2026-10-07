@@ -11,7 +11,8 @@ export async function connectPublicBoard({network,boardAddress,metadata,storage,
   if(typeof boardAddress!=='string'||!/^0x[0-9a-f]{64}$/.test(boardAddress)||word(boardAddress)===0n)throw Error('Invalid board link.');
   const node=publicNode(network.nodeUrl,{fetchImpl});
   const [instance,head]=await Promise.all([node.getContract(boardAddress),node.getBlockData('checkpointed')]);
-  if(!metadata.classId||instance?.currentContractClassId!==metadata.classId||instance?.originalContractClassId!==metadata.classId)throw Error('Board contract does not match this application release.');
+  if(!instance)throw Object.assign(Error('Board not found'),{code:'BB_BOARD_NOT_FOUND'});
+  if(!metadata.classId||instance?.currentContractClassId!==metadata.classId||instance?.originalContractClassId!==metadata.classId)throw incompatible('Board contract does not match this application release.');
   if(!head?.blockHash)throw Error('No checkpointed board state is available.');
   const portalAddress=address(word(await node.getPublicStorageAt({hash:head.blockHash},boardAddress,field(metadata.storage.portal))));
   const config={schemaVersion:1,network,board:{contractAddress:boardAddress,portalAddress},privateFee:null};
@@ -39,7 +40,8 @@ export async function connectPublicFeed({nodeUrl,ethereumUrl,portalAddress,metad
       scope.boardAddress!==b.contractAddress||scope.portalAddress!==b.portalAddress) throw incompatible('Live board does not match the imported configuration.');
   }
   const [instance,head]=await Promise.all([node.getContract(scope.boardAddress),node.getBlockData('checkpointed')]);
-  if(!metadata.classId||instance?.currentContractClassId!==metadata.classId||instance?.originalContractClassId!==metadata.classId)throw Error('Board contract does not match this application release.');
+  if(!instance)throw Object.assign(Error('Board not found'),{code:'BB_BOARD_NOT_FOUND'});
+  if(!metadata.classId||instance?.currentContractClassId!==metadata.classId||instance?.originalContractClassId!==metadata.classId)throw incompatible('Board contract does not match this application release.');
   if(!head?.blockHash)throw Error('No checkpointed board state is available.');
   // Pinned PublicImmutable stores Packable fields at consecutive slots, followed
   // by their hash. Config consists of ten scalar fields in declaration order.

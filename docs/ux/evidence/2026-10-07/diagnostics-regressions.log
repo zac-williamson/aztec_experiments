@@ -1,0 +1,13 @@
+✔ portable error observer preserves formatter behavior and exports only bounded safe fields (2.932125ms)
+✔ common formatter captures fee-page coordinates and preserves its result (0.320875ms)
+✔ plain RPC cause exports only numeric code (0.128458ms)
+✔ diagnostic observer never exports raw messages, RPC data or unknown codes (1.068084ms)
+✔ diagnostic observer only retains approved same-origin source locations and fixed categories (0.323375ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 57.374542

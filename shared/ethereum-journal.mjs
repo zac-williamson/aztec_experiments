@@ -218,6 +218,12 @@ export async function createEthereumJournal({storage,walletSecret,walletSalt,sco
     if(!after)throw unknown();return confirmed(after,saved.value);
   }
   return {
+    async inspectSummary(){
+      const saved=await load();if(!saved.value)return null;
+      const record=saved.value;
+      const result=record.txHash?await verifyEthereumIntentReceipt(provider,record,record.txHash,reader()):null;
+      return {kind:record.expected.kind,txHash:record.txHash,outcome:result?.outcome??'unknown'};
+    },
     assertCanStart,get lastTxHash(){return lastHash;},
     async send(intent) {
       const previous=await assertCanStart(),read=reader();await network(read);

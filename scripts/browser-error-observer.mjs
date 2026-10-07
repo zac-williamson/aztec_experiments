@@ -1,6 +1,6 @@
 // Test-only observer: fixed error categories and same-origin source coordinates.
 // Generic error messages, symbols, wallet values and RPC payloads never leave the page.
-// Plain RPC error causes retain only their code and a bounded message with hex values redacted.
+// Plain RPC error causes retain only their numeric code.
 export function installBrowserErrorObserver() {
 
     const original=globalThis.publicOperationFailure;if(typeof original!=='function')throw Error('Diagnostic formatter unavailable');
@@ -21,7 +21,7 @@ export function installBrowserErrorObserver() {
        const message=typeof current?.message==='string'?current.message:'';
        const categories={memory:/out of memory|memory allocation|allocat(?:e|ion).*memory|memory.*grow|grow.*memory/i.test(message),outOfBounds:/out.of.bounds/i.test(message),srs:/\b(?:srs|crs)\b|structured reference string/i.test(message),assertion:/assert(?:ion)?(?: failed| failure)?/i.test(message),typeError:constructor==='TypeError'||/\btypeerror\b/i.test(message)};
        const rpcError=Object.getPrototypeOf(current)===Object.prototype&&Number.isInteger(current.code)&&typeof current.message==='string'
-        ? {code:current.code,message:current.message.replace(/0x[0-9a-f]+/gi,'[hex]').slice(0,512)} : undefined;
+        ? {code:current.code} : undefined;
        chain.push({constructor:names.has(constructor)?constructor:'OtherError',code:codes.has(current?.code)?current.code:null,frames,categories,...(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(current?.stage)?{stage:current.stage}:{}),...(rpcError?{rpcError}:{})});current=current?.cause;
       }
       return {chain};

@@ -17,7 +17,7 @@ export { Fr } from '@aztec/aztec.js/fields';
 export { Contract, ContractFunctionInteraction, BatchCall, DeployMethod, NO_WAIT,
   getContractClassFromArtifact, getContractInstanceFromInstantiationParams } from '@aztec/aztec.js/contracts';
 export { NO_FROM } from '@aztec/aztec.js/account';
-export { createPrivateFeeDeployment, normalizePrivateFeeGasSettings, preparePrivateFeePayment, derivePrivateFeeBridgeSecret, derivePrivateFeeAddress } from './private-fee-client.mjs';
+export { createPrivateFeeDeployment, normalizePrivateFeeGasSettings, preparePrivateFeePayment, derivePrivateFeeInstance, derivePrivateFeeBridgeSecret, derivePrivateFeeAddress } from './private-fee-client.mjs';
 export { ensureOnboardingFees } from './fee-onboarding.mjs';
 export { fundPrivateFees, recoverPrivateFeeClaim, recoverPrivateFeeFunding, isPrivateFeeClaimConsumed } from './private-fee-funding.mjs';
 export { FunctionCall, FunctionSelector, FunctionType, encodeArguments, loadContractArtifact } from '@aztec/aztec.js/abi';
@@ -60,3 +60,5 @@ export { NoteStatus } from '@aztec/stdlib/note';
 export {validateDeploymentManifest,deploymentManifestConfig,verifyDeploymentInputs,preflightDeploymentNetwork,deploymentPolicyVersion} from './deployment-manifest.mjs';
 export {verifyPortalRuntime} from './portal-runtime.mjs';
 export {default as portalRuntimeMetadata} from './portal-runtime.json' with {type:'json'};
+
+export {deriveBoardDepositSecret,recoverBoardDepositSecret} from './deposit-custody.mjs';

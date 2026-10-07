@@ -163,6 +163,7 @@
 
       async sendTx(executionPayload, opts) {
         const log = this._log;
+        this._progress('preparing');
         const previousJournal = this._transactionJournal ? await this._transactionJournal.assertCanStart() : null;
         const fixedGas = !!opts.fee?.gasSettings;
         const checkedGas = fixedGas ? a.GasSettings.from(opts.fee.gasSettings) : null;
@@ -220,6 +221,7 @@
         if (['daGas', 'l2Gas'].some(key => finalSimulation.gasUsed.totalGas[key] > finalGasSettings.gasLimits[key] || finalSimulation.gasUsed.teardownGas[key] > finalGasSettings.teardownGasLimits[key])) {
           throw Object.assign(new Error('This transaction exceeds the estimated fee limits. No proof or transaction was submitted.'), {code:'BB_GAS_LIMIT_EXCEEDED'});
         }
+        this._progress('proving');
         log('  Proving tx (can take minutes)...', 'info');
 
         const txRequest = await this.createTxExecutionRequestFromPayloadAndFee(executionPayload, opts.from, feeOpts2);
@@ -237,19 +239,23 @@
           ? (await a.extractApplicationNullifier(provenTx, tx, this._applicationNullifierBoard, this._applicationNoteNullifier)).toString() : undefined;
         if (this._transactionJournal) await this._transactionJournal.prepare(tx, previousJournal, {applicationNullifier});
         if (this._contextGuard) await this._contextGuard();
+        this._progress('submitting');
         await a.submitOnceWithReconciliation(rawNode,tx);
+        this._progress('confirming');
         const waitOpts=typeof opts.wait==='object'?opts.wait:{};
         const receipt=await a.waitForSuccessfulReceipt(rawNode,tx,{
           timeoutMs:(waitOpts.timeout ?? 540)*1000,intervalMs:(waitOpts.interval ?? 5)*1000,
           now:()=>Date.now(),sleep:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
         });
         if (this._transactionJournal) this._transactionJournal.confirmed(receipt);
+        this._actualFees=(this._actualFees||0n)+BigInt(receipt.transactionFee??0);
         log('  Tx confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
         return { receipt };
       }
     }
 
     const wallet = new AztecWallet(pxe, aztecNode);
+    wallet._progress = opts.progress || (()=>{});
     wallet._preProveHook = opts.preProveHook || null;
     wallet._contextGuard = opts.contextGuard || null;
     wallet._transactionJournal = opts.transactionJournal || null;
@@ -389,7 +395,7 @@
     if (expectedPolicyVersion !== undefined && canonicalPostId(a, expectedPolicyVersion, true) !== version) throw new Error('Current policy changed or does not match the reviewed policy');
     return [postIdField, new a.Fr(BigInt(version)), packed.fields.map(value => new a.Fr(value)), packed.byteLength];
   }
-  g.BillboardModerationCodec = Object.freeze({ packModerationReason, decodeModerationReason, moderationArguments, readPolicySnapshot });
+  g.BillboardModerationCodec = Object.freeze({ packModerationReason, decodeModerationReason, moderationArguments, readPolicySnapshot, restoreModeratorOperation });
 
   function restoreModeratorOperation(a, encoded) {
     try {
@@ -489,7 +495,7 @@
         claim = undefined;
         return result;
       } catch (error) {
-        if (['BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID', 'BB_BROWSER_PROOF_FAILED', 'BB_REMOTE_PROVER_FAILED'].includes(error?.code)) {const failure=privateFeeFailure(error.code);if(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(error.stage))failure.stage=error.stage;throw failure;}
+        if (['BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID', 'BB_BROWSER_PROOF_FAILED', 'BB_REMOTE_PROVER_TIMEOUT','BB_REMOTE_PROVER_OFFLINE','BB_REMOTE_PROVER_BUSY','BB_REMOTE_PROVER_REJECTED','BB_REMOTE_PROVER_RESPONSE','BB_REMOTE_PROVER_FAILED'].includes(error?.code)) {const failure=privateFeeFailure(error.code);if(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(error.stage))failure.stage=error.stage;throw failure;}
         if (error?.code === 'BB_STATE_CONFLICT') {
           const allowed = ['Existing nullifier', 'Block header not found'];
           if (Array.isArray(error.stateReasons) && error.stateReasons.length > 0 && error.stateReasons.every(reason => allowed.includes(reason))) {
@@ -507,16 +513,17 @@
 
   // Read-only readiness check at a refreshed current PXE anchor. Proving may refresh it again.
   // Missing messages never allocate fees, prove, submit, or repeat an L1 deposit.
-  async function waitForDepositMessage({a,wallet,node,key,index,contextGuard,timeoutMs=240000,pollMs=1000}) {
+  async function waitForDepositMessage({a,wallet,node,key,index,contextGuard,timeoutMs=240000,pollMs=1000,waitUntilAvailable=false,onStage=()=>{}}) {
     const pending=()=>Object.assign(new Error('The confirmed deposit is not yet available to claim. Retry the same claim later.'),{code:'BB_DEPOSIT_MESSAGE_PENDING'});
     const unavailable=()=>Object.assign(new Error('Deposit message availability could not be checked. Retry the original claim after restoring the connection.'),{code:'BB_DEPOSIT_MESSAGE_UNAVAILABLE'});
     const invalid=()=>Object.assign(new Error('Deposit message membership does not match the confirmed receipt.'),{code:'BB_DEPOSIT_MESSAGE_INVALID'});
     if(!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>240000||!Number.isInteger(pollMs)||pollMs<1)throw invalid();
     let message,expected;
     try{if(typeof key!=='string'||!/^0x[0-9a-fA-F]{64}$/.test(key))throw invalid();message=new a.Fr(BigInt(key));expected=BigInt(index);if(expected<0n||expected>=1n<<36n)throw invalid();}catch{throw invalid();}
-    const deadline=Date.now()+timeoutMs;
+    const deadline=waitUntilAvailable?Infinity:Date.now()+timeoutMs;
+    onStage('bridge');
     const bounded=async fn=>{
-      const left=deadline-Date.now();if(left<=0)throw pending();
+      const left=Math.min(timeoutMs,deadline-Date.now());if(left<=0)throw pending();
       let timer;try{return await Promise.race([Promise.resolve().then(fn),new Promise((_,reject)=>{timer=setTimeout(()=>reject(pending()),left);})]);}finally{clearTimeout(timer);}
     };
     while(Date.now()<deadline){
@@ -701,6 +708,8 @@
     if(action==='recover') {
       if(!transactionJournal)throw new Error('Transaction journal is required for recovery.');
       if(config.contextGuard)await config.contextGuard();
+      const reviewed=config.moderatorRecovery;
+      if(reviewed){const saved=await transactionJournal.inspect();if(!saved||saved.txHash!==reviewed.txHash||saved.operation!==reviewed.operation)throw Object.assign(Error('Saved action changed.'),{code:'BB_MODERATOR_REVIEW_CHANGED'});restoreModeratorOperation(a,saved.operation);}
       let receipt;
       try { receipt = await transactionJournal.recover(); }
       catch(error) {
@@ -712,8 +721,13 @@
         let kind,metadata;try{metadata=JSON.parse(saved.operation);kind=metadata?.kind;}catch{throw error;}
         if(Array.isArray(metadata)) {
           const restored=restoreModeratorOperation(a,saved.operation);
+          if(reviewed){
+            if(!reviewed.allowReplacement)throw Object.assign(Error('Saved proof needs fresh review.'),{code:'BB_MODERATOR_REVIEW_REQUIRED'});
+            if(saved.txHash!==reviewed.txHash||saved.operation!==reviewed.operation)throw Object.assign(Error('Saved action changed.'),{code:'BB_MODERATOR_REVIEW_CHANGED'});
+            if(restored.action==='declare-immoral'&&restored.expectedPolicyVersion!==reviewed.policyVersion)throw Object.assign(Error('Rules changed.'),{code:'BB_POLICY_CHANGED'});
+          }
           resumedModeratorOperation=saved.operation;action=restored.action;
-          config={...config,...restored,reconcilePrevious:false,censorWalletJson:config.censorWalletJson||config.aztecWallet};
+          config={...config,...restored,...(reviewed?{expectedPolicyVersion:reviewed.policyVersion}:{}),reconcilePrevious:false,censorWalletJson:config.censorWalletJson||config.aztecWallet};
         } else if(kind==='post') {
           resumedPost = parsePostOperation(a, saved.operation);
           action='post';
@@ -844,7 +858,7 @@
         }
         log(success?'Saved Ethereum request and portal event verified.':'Saved Ethereum request '+recovered.outcome+'; the original action did not succeed.',success?'success':'warn');
         log('Ethereum transaction: '+recovered.txHash,'info');
-        return {recovered:true,lastEthereumTxHash:recovered.txHash,state:success?'ethereum_recovered':'ethereum_'+recovered.outcome,...(refundedSavedWithdrawal?{withdrawTxHash:null}:{})};
+        return {recovered:true,lastEthereumTxHash:recovered.txHash,state:success?'ethereum_recovered':'ethereum_'+recovered.outcome,...(refundedSavedWithdrawal?{withdrawTxHash:null,refundAmount:String(recovered.request.expected.amount),refundRecipient:l1Account}:{})};
       }
       await ethereumJournal.assertCanStart();
     }
@@ -915,6 +929,7 @@
         if(pxe.setRemoteProver)await pxe.setRemoteProver(config.remoteProver);
         wallet = cached.wallet;
         wallet._log = log;
+        wallet._progress = env.progress || (()=>{});
         wallet._preProveHook = config.preProveHook || null;
         wallet._contextGuard = config.contextGuard || null;
         wallet._transactionJournal = transactionJournal;
@@ -968,7 +983,7 @@
         // Step 7: Create wallet
         // ============================================================
         log('Step 7: Creating wallet...', 'info');
-        wallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, secretKey, { preProveHook: config.preProveHook, contextGuard: config.contextGuard, transactionJournal });
+        wallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, secretKey, { progress:env.progress,preProveHook: config.preProveHook, contextGuard: config.contextGuard, transactionJournal });
         const accountManager = await a.AccountManager.create(wallet, secretKey, accountContract, { salt: new a.Fr(saltVal) });
         wallet._accountManager = accountManager;
         log('  Wallet ready.', 'success');
@@ -1141,14 +1156,14 @@
         saveRecovery:config.saveRecovery,contextGuard:config.contextGuard};
       const guarded=fn=>async(...args)=>{if(config.contextGuard)await config.contextGuard();
         const result=await fn(...args);if(config.contextGuard)await config.contextGuard();return result;};
-      const claim=await a.ensureOnboardingFees({checkBalance,
-        recoverFunding:guarded(()=>a.recoverPrivateFeeFunding(input)),
+      let claim;try {claim=await a.ensureOnboardingFees({checkBalance,
+        recoverFunding:guarded(()=>a.recoverPrivateFeeFunding({...input,retry:config.retryEthereum===true})),
         fund:guarded(acknowledgeEthereumTx=>a.fundPrivateFees({...input,acknowledgeEthereumTx,
           amount:a.normalizePrivateFeeGasSettings(route.gasSettings).maximumFee*2n})),
         recoverClaim:guarded(record=>a.recoverPrivateFeeClaim({...input,record})),
         isConsumed:guarded(claim=>a.isPrivateFeeClaimConsumed({node:aztecNode,claim})),
         waitForMessage:claim=>waitForDepositMessage({a,wallet,node:aztecNode,key:claim.messageKey,
-          index:claim.leafIndex.toBigInt(),contextGuard:config.contextGuard}),onProgress:log});
+          index:claim.leafIndex.toBigInt(),contextGuard:config.contextGuard,waitUntilAvailable:config.waitForBridge===true,onStage:env.progress}),onProgress:log});}catch(error){error.phase='fee-funding';throw error;}
       if(claim)config.privateFeeClaim=claim;
       await checkBalance();
     }
@@ -1168,16 +1183,16 @@
       log('Checking private transaction fee readiness before depositing ETH...', 'info');
       await ensureDepositFees();
       if(config.contextGuard)await config.contextGuard();
-      const secret = generateSecret(a);
-      const secretHash = (await a.computeSecretHash(secret)).toString().toLowerCase();
-      const record = { schemaVersion: 1, secretHash, secret: secret.toString().toLowerCase() };
-      // A successful durable commit and verified read-back must precede ANY L1 submission.
-      await store.save(secretScope(), record);
-      if (await restoreSecret(secretHash) !== record.secret) throw new Error('Claim-secret storage read-back failed.');
-      log('Claim secret saved locally. Sending deposit...', 'info');
-      if (config.contextGuard) await config.contextGuard();
-      const paid=await ethereumJournal.send({data:new ethers.Interface(PORTAL_ABI).encodeFunctionData('deposit',[secretHash]),value:amount.toString(),
-        expected:{kind:'deposit',amount:amount.toString(),secretHash}});
+      let record;
+      const paid=await ethereumJournal.send(async nonce=>{
+        const derived=await a.deriveBoardDepositSecret({walletSecret:secretKeyHex,walletSalt:saltVal,scope:secretScope(),owner:address.toString(),nonce});
+        record={schemaVersion:1,...derived};
+        await store.save(secretScope(),record);
+        if(await restoreSecret(record.secretHash)!==record.secret)throw Error('Claim-secret storage read-back failed.');
+        if(config.contextGuard)await config.contextGuard();
+        return {data:new ethers.Interface(PORTAL_ABI).encodeFunctionData('deposit',[record.secretHash]),value:amount.toString(),expected:{kind:'deposit',amount:amount.toString(),secretHash:record.secretHash}};
+      });
+      const secretHash=record.secretHash;
       const event=paid.event;
       depositInfo = { amount, key:event.key, leafIndex: event.index, secret: record.secret, secretHash, txHash: paid.txHash };
       portalL1Balance = amount;
@@ -1205,7 +1220,13 @@
       canonicalPostId(a,event.key,true);
       if(BigInt(event.index)<0n || BigInt(event.index)>=(1n<<36n)) throw new Error('Invalid deposit message index.');
       if((await read(()=>provider.getBlock(head.number)))?.hash!==head.hash) throw new Error('Ethereum changed while checking the deposit. Please retry.');
-      const secret = await restoreSecret(event.secretHash);
+      let secret;
+      try{secret=await restoreSecret(event.secretHash);}catch(error){
+        if(error.code!=='BB_CLAIM_SECRET_MISSING')throw error;
+        env.progress?.('checking');
+        const recovered=await a.recoverBoardDepositSecret({provider,read,scope:secretScope(),active:event,head,walletSecret:secretKeyHex,walletSalt:saltVal,owner:address.toString(),guard:config.contextGuard,progress:env.depositRecoveryProgress});
+        await secretStore().save(secretScope(),{schemaVersion:1,...recovered});secret=await restoreSecret(recovered.secretHash);
+      }
       depositInfo = { amount:BigInt(event.amount), key:event.key, leafIndex:BigInt(event.index), secret,
         secretHash:event.secretHash.toLowerCase() };
       portalL1Balance=event.amount;
@@ -1244,6 +1265,7 @@
       privateFeeSender ??= createPrivateFeeSender({ a, config, privateFeeArtifact: env.privateFeeArtifact,
         contract, wallet, node: aztecNode, owner: address,
         scope: { l1ChainId: String(nodeInfo.l1ChainId), rollupVersion: String(version) } });
+      if(config.maximumCreditSpend!==undefined&&wallet._actualFees+a.normalizePrivateFeeGasSettings(config.privateFee.gasSettings).maximumFee>BigInt(config.maximumCreditSpend))throw Object.assign(Error('Approved fee limit reached.'),{code:'BB_WITHDRAWAL_BUDGET'});
       const result = await privateFeeSender(kind, args);
       // A confirmed saved step no longer constrains the next intentional action.
       resumedSpend = null;
@@ -1322,7 +1344,7 @@
       }
 
       log('  Waiting for Ethereum deposit availability on Aztec...', 'info');
-      await waitForDepositMessage({a,wallet,node:aztecNode,key:depositInfo.key,index:leafIndex,contextGuard:config.contextGuard});
+      await waitForDepositMessage({a,wallet,node:aztecNode,key:depositInfo.key,index:leafIndex,contextGuard:config.contextGuard,waitUntilAvailable:config.waitForBridge===true,onStage:env.progress});
 
       // One attempt per action. Message availability and uncertain submission
       // remain retryable outcomes; never run a ten-minute blind retry loop.
@@ -1403,7 +1425,7 @@
           }
           log('  Cooldown expired!', 'success');
         } else {
-          throw new Error('Too early to post. Wait ' + waitSec + ' more seconds (~' + Math.ceil(waitSec / 60) + ' min).');
+          throw Object.assign(new Error('Posting cooldown is active.'),{code:'BB_POST_COOLDOWN'});
         }
       }
       log('  Time lock check passed.', 'success');
@@ -1421,7 +1443,7 @@
       const exists=unwrapPostValue(await contract.methods.get_post_exists(postId).simulate({ from: a.NO_FROM }));
       if(exists!==false)throw Object.assign(new Error('Post publication must be reconciled before another proof.'),{code:'BB_RECOVERY_REQUIRED'});
       transactionJournal.setOperation(operation);
-      const result = await sendPrivate('post', [
+      const sent = await sendPrivate('post', [
         requireDepositChain(),
         postNonce,
         fields.map(f => new a.Fr(f)),
@@ -1430,11 +1452,13 @@
         childHint,
         grandchildHint
       ]);
-      const receipt = result.receipt;
+      const receipt = sent.receipt;
       log('  TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
       if (receipt.transactionFee !== undefined) {
         log('  Fee paid: ' + toAztec(BigInt(receipt.transactionFee), 6) + ' AZTEC', 'info');
       }
+      result.postId=postId.toString();
+      if(receipt.transactionFee!==undefined)result.feePaid=String(receipt.transactionFee);
       log('  Message posted.', 'success');
     }
 
@@ -1587,6 +1611,7 @@
     // WITHDRAW action (L2)
     // ============================================================
     async function doWithdraw() {
+      wallet._actualFees=0n;let preparedSteps=0;
       if (!contract) throw new Error('PXE setup required for withdraw.');
 
       // Note absence alone cannot distinguish an unclaimed receipt, incomplete
@@ -1636,13 +1661,15 @@
           waitReason = 'cooldown: ' + (noteInfo.nextAllowedTime - eligibilityNow).toString() + 's remaining';
         }
         if (!canWithdraw) {
-          if (config.action === 'auto') {
+          if (config.action === 'auto' || config.prepareWithdrawal) {
+            env.progress?.('screening');
             log('  Withdraw not ready: ' + waitReason + '. Will make dummy posts to advance screening.', 'info');
             // Make dummy posts until screening catches up
-            for (let attempt = 0; attempt < 20; attempt++) {
+            for (let attempt = 0; config.prepareWithdrawal || attempt < 20; attempt++) {
+              await config.contextGuard?.();
               // Wait until next_allowed_time (so we can make a dummy post)
               const info3 = await readDepositInfo();
-              if (info3.amount === 0n) { canWithdraw = true; break; }
+              if (info3.amount === 0n) throw Object.assign(Error('Deposit state changed.'),{code:'BB_RECOVERY_REQUIRED'});
               if (info3.lastRealPostIndex === NO_REAL_POST) {
                 let now3 = BigInt(await getL2Timestamp(a, aztecNode));
                 if (info3.nextAllowedTime <= now3) { canWithdraw = true; break; }
@@ -1663,8 +1690,19 @@
                 await sleep(Math.min(waitSec * 1000 + 5000, 60000));
                 continue;
               }
+              const [child] = await readScreeningHints(contract,address,requireDepositChain());
+              if(!child?.note || typeof child.note.is_dummy!=='boolean')throw Object.assign(Error('Screening history unavailable.'),{code:'BB_SCREENING_HISTORY_UNAVAILABLE'});
+              if(!child.note.is_dummy){
+                const deadline=BigInt(unwrapPostValue(await contract.methods.get_post_flag_deadline(child.note.post_id).simulate({from:a.NO_FROM})).toString());
+                if(deadline>now4){env.progress?.('screening');await sleep(Math.min(Number(deadline-now4)*1000,30000));continue;}
+              }
+              const priorScreened=info3.lastScreenedIndex;
+              if(config.prepareWithdrawal&&preparedSteps>=config.maxScreeningSteps)throw Object.assign(Error('Approved preparation limit reached.'),{code:'BB_WITHDRAWAL_BUDGET'});
+              preparedSteps++;
               log('  Making dummy post #' + (attempt + 1) + ' to advance screening...', 'info');
               await doDummyPost();
+              await wallet.pxe.sync();
+              if((await readDepositInfo()).lastScreenedIndex<=priorScreened)throw Object.assign(Error('Screening made no progress.'),{code:'BB_SCREENING_NO_PROGRESS'});
               // Check if we can withdraw now
               await sleep(5000);
             }
@@ -1777,6 +1815,7 @@
         expected:{kind:'withdraw',amount:withdrawAmount.toString()},
       });
       log('  L1 refund transaction: '+refunded.txHash,'info');
+      result.refundAmount=withdrawAmount.toString();result.refundRecipient=l1Account;
       config.withdrawTxHash = null;
       stateStatus = 'zero_balance_need_deposit';
       log('  Matching Withdrawn event and canonical receipt verified. ETH claimed successfully!','success');
@@ -1836,7 +1875,7 @@
       await pxe.registerContract(censorInstance);
       log('  Censor account registered.', 'success');
 
-      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk, {preProveHook:config.preProveHook,contextGuard:config.contextGuard,transactionJournal});
+      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk, {progress:env.progress,preProveHook:config.preProveHook,contextGuard:config.contextGuard,transactionJournal});
       const censorAccountManager = await a.AccountManager.create(censorWallet, censorSk, censorAccountContract, { salt: new a.Fr(censorSaltVal) });
       censorWallet._accountManager = censorAccountManager;
 
@@ -1872,6 +1911,11 @@
 
       const { censorWallet, censorAddress, censorContract } = await _loadCensorWalletAndContract();
 
+      if(config.expectedPolicyVersion!==undefined){
+        const snapshot=await censorContract.methods.get_moderation_policy_snapshot().simulate({from:a.NO_FROM});
+        const current=snapshot?.result??snapshot;
+        if(canonicalPostId(a,current[2],true)!==canonicalPostId(a,config.expectedPolicyVersion,true))throw Object.assign(Error('Board rules changed since review.'),{code:'BB_POLICY_CHANGED'});
+      }
       log('Setting moderation policy (' + policyLen + ' bytes)...', 'info');
       const result = await sendCensorPrivate(censorWallet,censorAddress,censorContract,'set_moderation_policy',[
         policyFields.map(f => new a.Fr(f)),new a.Fr(BigInt(policyLen))
