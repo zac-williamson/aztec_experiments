@@ -6,9 +6,10 @@ import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {ROOT} from './toolchain.mjs';
 import {Interface,parseEther} from 'ethers';
-export function assertMetaMaskTransaction({stage,request,account,chainId,tokenAddress,feePortalAddress,privateFeeAddress,boardPortalAddress,fundingAmount,collateralAmount}){
+export function assertMetaMaskTransaction({stage,request,account,chainId,tokenAddress,feePortalAddress,privateFeeAddress,boardPortalAddress,fundingAmount,collateralAmount,expectedChainId=31337n}){
  assert(Array.isArray(request)&&request.length===1);const tx=request[0];
- assert.equal(BigInt(chainId),31337n);assert(tx.chainId===undefined||BigInt(tx.chainId)===31337n);
+ assert([31337n,11155111n].includes(BigInt(expectedChainId)),'Only disposable devnet or Sepolia testnet');
+ assert.equal(BigInt(chainId),BigInt(expectedChainId));assert(tx.chainId===undefined||BigInt(tx.chainId)===BigInt(expectedChainId));
  assert.equal(tx.from?.toLowerCase(),account.toLowerCase());
  const methods={'fee-approval':'approve','fee-deposit':'depositToAztecPublic',deposit:'deposit',refund:'withdraw'};
  assert(Object.hasOwn(methods,stage));

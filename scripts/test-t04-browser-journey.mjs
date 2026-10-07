@@ -91,11 +91,11 @@ test('non-Chromium lifecycle scenarios retain one explicit engine and existing b
 
 test('cold funding driver never claims or deposits again after a failed deposit',async()=>{
  const {driveT04BrowserFunding}=await import('./t04-browser-funding.mjs');
- const clicks=[];
- const page={waitForFunction:async()=>{},evaluate:async()=>'{"schemaVersion":1}',
-  locator:selector=>({fill:async()=>{},click:async()=>clicks.push(selector),count:async()=>selector==='#setupStatus .error'?0:1})};
- await assert.rejects(driveT04BrowserFunding({page,directory:'/unused',message:'message',depositAmount:'0.001',fundingAmount:'1.0',remaining:()=>1000,mark(){},onSubstage(){}}));
- assert.deepEqual(clicks,['#depositBtn']);
+ const clicks=[],confirmations=[];
+ const page={waitForFunction:async()=>{},
+  locator:selector=>({waitFor:async()=>{},press:async()=>{},textContent:async()=>selector==='#depositLimits'?'Minimum 0.001 ETH · Maximum 0.01 ETH':selector==='#depositSelection'?'0.001 ETH':'ERROR: fee failed',click:async()=>clicks.push(selector),count:async()=>clicks.length?1:0})};
+ await assert.rejects(driveT04BrowserFunding({page,directory:'/unused',message:'message',depositAmount:'0.001',remaining:()=>1000,mark(){},onSubstage(){},confirmEthereum:async stage=>{confirmations.push(stage);if(stage==='fee-deposit')throw Error('payment failed');}}));
+ assert.deepEqual(clicks,['#navNext']);assert.deepEqual(confirmations,['fee-approval','fee-deposit']);
 });
 
 test('handoff accepts actual SDK whole-token formatting and rejects invalid amounts',async()=>{
@@ -146,6 +146,9 @@ test('MetaMask confirmation guard binds exact account, chain, target, amount and
  const cases=[['fee-approval',options.tokenAddress,'approve',[options.feePortalAddress,10n**18n],0n],['fee-deposit',options.feePortalAddress,'depositToAztecPublic',[options.privateFeeAddress,10n**18n,field('6')],0n],['deposit',options.boardPortalAddress,'deposit',[field('6')],10n**15n],['refund',options.boardPortalAddress,'withdraw',[1n,1n,0n,[field('6')]],0n]];
  for(const [stage,to,method,args,value] of cases){
   const request=[{from:options.account,to,data:abi.encodeFunctionData(method,args),value:'0x'+value.toString(16)}],input={...options,stage,request};assertMetaMaskTransaction(input);
+  assertMetaMaskTransaction({...input,chainId:'0xaa36a7',expectedChainId:11155111n});
+  assert.throws(()=>assertMetaMaskTransaction({...input,expectedChainId:11155111n}));
+  assert.throws(()=>assertMetaMaskTransaction({...input,chainId:'0x1',expectedChainId:1n}));
   for(const mutation of [{from:address('9')},{to:address('9')},{chainId:'0x1'},{value:'0x'+(value+1n).toString(16)},{data:request[0].data+'00'},{data:'0x00000000'}])assert.throws(()=>assertMetaMaskTransaction({...input,request:[{...request[0],...mutation}]}));
   assert.throws(()=>assertMetaMaskTransaction({...input,chainId:'0x1'}));assert.throws(()=>assertMetaMaskTransaction({...input,stage:'unknown'}));assert.throws(()=>assertMetaMaskTransaction({...input,request:[...request,...request]}));
   if(stage.startsWith('fee-')){

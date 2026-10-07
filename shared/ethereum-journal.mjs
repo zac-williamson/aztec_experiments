@@ -83,9 +83,10 @@ export async function verifyEthereumIntentReceipt(provider,record,txHash,read=fn
   if(!tx||lower(tx.hash)!==txHash||lower(tx.from)!==record.from||Number(tx.nonce)!==record.nonce||String(tx.chainId)!==record.chainId||
     lower(block?.hash)!==lower(receipt.blockHash)||lower(receipt.from)!==record.from||lower(receipt.to)!==lower(tx.to))throw unknown();
   const direct=matchesRequest(tx,record);
-  // Wallets may wrap a deposit in an execution contract. The verified portal's
-  // exact escrow event proves its effect; outer calldata alone does not.
-  if(!direct && record.expected.kind!=='deposit')return {outcome:'replaced',txHash,receipt,event:null};
+  // Wallet execution envelopes may differ from the requested call. For user
+  // payments, verify the exact effect emitted by the configured contract below.
+  const effectKinds=['deposit','withdraw','approve','fee-deposit'];
+  if(!direct && !effectKinds.includes(record.expected.kind))return {outcome:'replaced',txHash,receipt,event:null};
   if(receipt.status===0)return {outcome:'reverted',txHash,receipt,event:null};
   if(!Array.isArray(receipt.logs))throw unknown();
   const expected=record.expected;

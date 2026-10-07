@@ -38,7 +38,7 @@ There are no implicit defaults, cascading environment flags or legacy aliases. T
 | `contention` | Ten authors posting from one anchor; explicitly genesis-funded constraint fixture |
 | `screening` | Authenticated screening constraints; explicitly genesis-funded constraint fixture |
 | `browser-firefox-post`, `browser-webkit-post` | Explicit engine private-fee posting; no automatic browser substitution |
-| `browser-cold-fees`, `browser-metamask-cold-fees` | Actual fee-page deposit and private claim from zero credit, then paid collateral claim and post; the MetaMask case approves the exact token allowance, fee deposit and collateral deposit in the real extension |
+| `browser-metamask-cold-fees` | One board Deposit click from zero credit automatically funds fees and claims collateral, then enables a paid post; MetaMask approves the exact token allowance, fee deposit and collateral deposit in the real extension |
 | `browser-metamask-journey` | Real MetaMask approvals and browser application deposit through refund |
 | `browser-chrome-performance`, `browser-firefox-performance`, `browser-webkit-performance` | Two independently verified posts in one browser; measure cold and warm proving intervals separately from inclusion. A single run does not qualify percentiles. |
 | `browser-post` | Actual GUI posting after native private-fee setup |

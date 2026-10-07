@@ -146,7 +146,7 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
     await page.waitForFunction(()=>!!globalThis.__testMetaMask);
     await addMetaMaskNetwork({page,walletPage,extensionId,rpcUrl:credentials.rpcUrl,mark});credentials=null;
    }
-   mark('wallet-software');const navigationStarted=Date.now();await page.goto(site.origin+(browserMode==='funding'?'/fee-juice.html':'/user.html'));
+   mark('wallet-software');const navigationStarted=Date.now();await page.goto(site.origin+'/user.html');
    await page.waitForFunction(()=>globalThis.__aztec?.createPXE&&document.getElementById('wbAztecFile'),{},{timeout:remaining()});observation.sdkReadyMs=Date.now()-navigationStarted;
    await page.evaluate(installBrowserErrorObserver);
    if(extensionWallet){await discoverTestMetaMask(page);await observeMetaMaskTransactions(page);}
@@ -183,13 +183,10 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
    }
    if(journeyDriver){
     requireValue(typeof journeyDriver==='function'&&!observeProofStages);
-    if(browserMode==='funding'){
-     await page.waitForFunction(()=>document.getElementById('setupStatus')?.textContent.includes('Wallet ready. Deposits fund the shared private fee contract.')||document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
-     requireValue(await page.locator('#setupStatus .error').count()===0);
-    }else if(browserMode==='performance'){
+    if(browserMode==='performance'){
      await page.waitForFunction(()=>document.getElementById('postBtn')?.getClientRects().length>0||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});requireValue(await page.locator('#postBtn').isVisible());
     }else{
-     requireValue(browserMode==='lifecycle');
+     requireValue(['lifecycle','funding'].includes(browserMode));
      await page.waitForFunction(()=>document.getElementById('page-1')?.classList.contains('active')||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
      requireValue(await page.locator('#page-1').isVisible());
     }

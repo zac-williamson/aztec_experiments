@@ -113,11 +113,11 @@ for(const backend of ['file','indexeddb']) {
   assert.equal((await (await f.newSession()).recover()).outcome,'reverted');
   f.receipts.get(result.txHash).status=1;f.transactions.get(result.txHash).data='0x';f.receipts.get(result.txHash).logs=[];assert.equal((await (await f.newSession()).recover()).outcome,'replaced');
  }));
- test(`${backend}: wallet-wrapped deposit is recognized by its exact portal effect`,()=>use(async f=>{
+ for(const kind of ['deposit','withdraw'])test(`${backend}: wallet-wrapped ${kind} is recognized by its exact portal effect`,()=>use(async f=>{
   const result=await (await f.newSession()).send(f.intent),tx=f.transactions.get(result.txHash),receipt=f.receipts.get(result.txHash);
   tx.to=addr();tx.value=0n;tx.data='0x12345678';receipt.to=tx.to;
   assert.equal((await (await f.newSession()).recover()).outcome,'success');
- }));
+ },kind));
  for(const change of ['secret','amount','depositor','address','duplicate','reverted','reorg'])test(`${backend}: wrapped deposit rejects ${change}`,()=>use(async f=>{
   const result=await (await f.newSession()).send(f.intent),tx=f.transactions.get(result.txHash),receipt=f.receipts.get(result.txHash);
   tx.to=addr();tx.value=0n;tx.data='0x12345678';receipt.to=tx.to;

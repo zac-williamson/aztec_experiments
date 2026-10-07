@@ -1,4 +1,4 @@
-import {createEthereumJournal} from './ethereum-journal.mjs';
+import {createEthereumJournal,verifyEthereumIntentReceipt} from './ethereum-journal.mjs';
 // User-funded Fee Juice bridge. Recovery metadata is public; secrets derive from the existing wallet key.
 import { Interface, getAddress } from 'ethers';
 import { computeFeeJuiceMessageNullifier } from '@aztec/stdlib/messaging';
@@ -152,15 +152,15 @@ export async function recoverPrivateFeeClaim(input){
     check(receipt.status===1,'PRIVATE_FEE_RECOVERY_REVERTED');
     const block=await ethProvider.getBlock(receipt.blockNumber);
     check(block&&eq(block.hash,receipt.blockHash),'PRIVATE_FEE_RECOVERY_REORG');
-    check(eq(transaction.hash,record.txHash)&&eq(receipt.hash??receipt.transactionHash,record.txHash)&&eq(transaction.from,record.sender)&&eq(transaction.to,scope.portalAddress)&&
-      uint(transaction.nonce,64)===uint(record.nonce,64)&&uint(transaction.chainId,64)===uint(scope.chainId,64)&&BigInt(transaction.value)===0n,'PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH');
     const expectedData=portalAbi.encodeFunctionData('depositToAztecPublic',[scope.privateFeeAddress,uint(record.amount),secretHash.toString()]);
-    check(eq(transaction.data,expectedData),'PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH');
-    const events=[];
-    for(const log of receipt.logs??[]){if(eq(log.address,scope.portalAddress)){try{const parsed=portalAbi.parseLog(log);if(parsed?.name==='DepositToAztecPublic')events.push(parsed.args);}catch{}}}
-    check(events.length===1,'PRIVATE_FEE_RECOVERY_EVENT_MISMATCH');
-    const event=events[0];
-    check(eq(event.to,scope.privateFeeAddress)&&event.amount===uint(record.amount)&&eq(event.secretHash,secretHash.toString()),'PRIVATE_FEE_RECOVERY_EVENT_MISMATCH');
+    const intent={from:record.sender.toLowerCase(),to:scope.portalAddress.toLowerCase(),nonce:Number(uint(record.nonce,64)),
+      chainId:scope.chainId,data:expectedData.toLowerCase(),value:'0',
+      expected:{kind:'fee-deposit',recipient:scope.privateFeeAddress.toLowerCase(),amount:String(record.amount),secretHash:secretHash.toString().toLowerCase()}};
+    let verified;
+    try { verified=await verifyEthereumIntentReceipt(ethProvider,intent,record.txHash.toLowerCase()); }
+    catch { throw new PrivateFeeFundingError('PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH'); }
+    check(verified?.outcome==='success','PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH');
+    const event=verified.event;
     const leafIndex=new Fr(uint(event.index,254));
     check(record.leafIndex===undefined||uint(record.leafIndex,254)===leafIndex.toBigInt(),'PRIVATE_FEE_RECOVERY_EVENT_MISMATCH');
     return {amount:uint(record.amount),salt,secret,leafIndex,messageKey:event.key};
