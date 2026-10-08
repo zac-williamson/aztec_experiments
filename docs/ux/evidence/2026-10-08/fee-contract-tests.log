@@ -1,0 +1,130 @@
+{"profile":"C01 consistent-scope TXE","chain":1,"version":1,"originalPublicVersion":2,"realProofs":false,"port":59388}
+[15:29:31.814] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[billboard_contract] Running 0 test functions
+[billboard_contract] [0m[32m0 tests passed[0m
+[billboard_test] Running 0 test functions
+[billboard_test] [0m[32m0 tests passed[0m
+[private_fee_contract] Running 0 test functions
+[private_fee_contract] [0m[32m0 tests passed[0m
+[private_fee_test] Running 14 test functions
+[private_fee_test] Testing private_fee_cold_start_rejects_insufficient_bridge ... [0m[32mok[0m
+[private_fee_test] Testing private_fee_claim_cannot_mint_twice ... [0m[32mok[0m
+[15:29:37.124] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:37.125] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:37.125] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:37.125] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:37.127] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-KRlcPh/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[15:29:37.138] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-N8FlXp/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[15:29:37.147] INFO: txe_node Aztec Node version: txe
+[15:29:37.147] INFO: txe_node Aztec Node started on chain 0x1
+[15:29:37.147] INFO: txe_node Aztec Node version: txe
+[15:29:37.147] INFO: txe_node Aztec Node started on chain 0x1
+[15:29:37.162] INFO: txe:top_level_context Created block 1 with timestamp 1791469777
+[15:29:37.165] INFO: txe:top_level_context Created block 1 with timestamp 1791469777
+[15:29:37.250] INFO: txe:top_level_context Created block 2 with timestamp 1791469777
+[15:29:37.252] INFO: txe:top_level_context Created block 2 with timestamp 1791469777
+[15:29:37.544] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.005076624999999694s {"blockNumber":4,"successfulCount":1,"failedCount":0,"duration":0.005076624999999694,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":800,"l2Gas":483700},"totalSizeInBytes":800,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[15:29:37.759] ERROR: world-state:database Call BATCH_INSERT failed: Error: Unable to insert values into tree NullifierTree leaf type NullifierLeafValue is not updateable and 0x0fb9add328596507096c29d6675d59686364d5feff8c38c1d50b4a38d50ce880 is already present: [Error: Unable to insert values into tree NullifierTree leaf type NullifierLeafValue is not updateable and 0x0fb9add328596507096c29d6675d59686364d5feff8c38c1d50b4a38d50ce880 is already present] {"treeId":"NULLIFIER_TREE","forkId":5,"leavesCount":64}
+[15:29:37.759] WARN: simulator:public-processor Failed to process tx 0x28d051874014213d80c8de5c5ef8d6cc6d75d0b414655613d23e8dff886e4dfb: Transaction 0x28d051874014213d80c8de5c5ef8d6cc6d75d0b414655613d23e8dff886e4dfb failed with duplicate nullifiers Error: Transaction 0x28d051874014213d80c8de5c5ef8d6cc6d75d0b414655613d23e8dff886e4dfb failed with duplicate nullifiers
+    at PublicProcessor.doTreeInsertionsForPrivateOnlyTx (file:///Users/zac/Documents/ChatGPT/Anonymous-Message-Board-remote-prover/node_modules/@aztec/simulator/dest/public/public_processor/public_processor.js:765:19)
+    at async PublicProcessor.processPrivateOnlyTx (file:///Users/zac/Documents/ChatGPT/Anonymous-Message-Board-remote-prover/node_modules/@aztec/simulator/dest/public/public_processor/public_processor.js:834:9)
+    at async file:///Users/zac/Documents/ChatGPT/Anonymous-Message-Board-remote-prover/node_modules/@aztec/telemetry-client/dest/telemetry.js:35:33
+    at async PublicProcessor.processTxWithinDeadline (file:///Users/zac/Documents/ChatGPT/Anonymous-Message-Board-remote-prover/node_modules/@aztec/simulator/dest/public/public_processor/public_processor.js:784:20)
+    at async elapsed (file:///Users/zac/Documents/ChatGPT/Anonymous-Message-Board-remote-prover/node_modules/@aztec/foundation/dest/timer/elapsed.js:8:20)
+    at async PublicProcessor.processTx (file:///Users/zac/Documents/ChatGPT/Anonymous-Message-Board-remote-prover/node_modules/@aztec/simulator/dest/public/public_processor/public_processor.js:731:64)
+    at async file:///Users/zac/Documents/ChatGPT/Anonymous-Message-Board-remote-prover/node_modules/@aztec/telemetry-client/dest/telemetry.js:35:33
+    at async elapsed (file:///Users/zac/Documents/ChatGPT/Anonymous-Message-Board-remote-prover/node_modules/@aztec/foundation/dest/timer/elapsed.js:8:20)
+    at async PublicProcessor.process (file:///Users/zac/Documents/ChatGPT/Anonymous-Message-Board-remote-prover/node_modules/@aztec/simulator/dest/public/public_processor/public_processor.js:580:88)
+    at async TXEOracleTopLevelContext.privateCallNewFlow (file:///Users/zac/Documents/ChatGPT/Anonymous-Message-Board-remote-prover/node_modules/@aztec/txe/dest/oracle/txe_oracle_top_level_context.js:434:25)
+[15:29:37.759] INFO: simulator:public-processor Processed 0 successful txs and 1 failed txs (0 silently skipped, 0ms wasted) in 0.004504125000000385s {"blockNumber":5,"successfulCount":0,"failedCount":1,"duration":0.004504125000000385,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":0,"l2Gas":0},"totalSizeInBytes":0,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[15:29:39.046] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:39.047] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-LWIn9T/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[15:29:39.056] INFO: txe_node Aztec Node version: txe
+[15:29:39.056] INFO: txe_node Aztec Node started on chain 0x1
+[15:29:39.068] INFO: txe:top_level_context Created block 1 with timestamp 1791469779
+[15:29:39.100] INFO: txe:top_level_context Created block 2 with timestamp 1791469779
+[private_fee_test] Testing private_fee_cold_start_rejects_underreservation ... [0m[32mok[0m
+[15:29:39.278] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:39.278] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-FVDyho/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[15:29:39.287] INFO: txe_node Aztec Node version: txe
+[15:29:39.287] INFO: txe_node Aztec Node started on chain 0x1
+[15:29:39.298] INFO: txe:top_level_context Created block 1 with timestamp 1791469779
+[15:29:39.330] INFO: txe:top_level_context Created block 2 with timestamp 1791469779
+[private_fee_test] Testing private_fee_cold_start_rejects_zero_reservation ... [0m[32mok[0m
+[private_fee_test] Testing private_fee_existing_credit_rejects_underreservation ... [0m[32mok[0m
+[private_fee_test] Testing private_fee_existing_credit_rejects_zero_reservation ... [0m[32mok[0m
+[15:29:40.744] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:40.744] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-e1q8Yz/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[15:29:40.753] INFO: txe_node Aztec Node version: txe
+[15:29:40.753] INFO: txe_node Aztec Node started on chain 0x1
+[15:29:40.765] INFO: txe:top_level_context Created block 1 with timestamp 1791469780
+[15:29:40.795] INFO: txe:top_level_context Created block 2 with timestamp 1791469780
+[15:29:40.916] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.0045022920000010345s {"blockNumber":4,"successfulCount":1,"failedCount":0,"duration":0.0045022920000010345,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":800,"l2Gas":483700},"totalSizeInBytes":800,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[15:29:40.928] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:40.929] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-ag2d7s/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[15:29:40.938] INFO: txe_node Aztec Node version: txe
+[15:29:40.938] INFO: txe_node Aztec Node started on chain 0x1
+[15:29:40.961] INFO: txe:top_level_context Created block 1 with timestamp 1791469780
+[15:29:40.995] INFO: txe:top_level_context Created block 2 with timestamp 1791469780
+[private_fee_test] Testing private_fee_mint_credits_only_bound_owner ... [0m[32mok[0m
+[private_fee_test] Testing private_fee_outsider_cannot_call_balance_recursion ... [0m[32mok[0m
+[15:29:42.511] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:42.513] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-epem4m/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[15:29:42.522] INFO: txe_node Aztec Node version: txe
+[15:29:42.522] INFO: txe_node Aztec Node started on chain 0x1
+[15:29:42.533] INFO: txe:top_level_context Created block 1 with timestamp 1791469782
+[15:29:42.561] INFO: txe:top_level_context Created block 2 with timestamp 1791469782
+[15:29:42.562] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:42.563] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-TVad7r/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[15:29:42.572] INFO: txe_node Aztec Node version: txe
+[15:29:42.572] INFO: txe_node Aztec Node started on chain 0x1
+[15:29:42.584] INFO: txe:top_level_context Created block 1 with timestamp 1791469782
+[15:29:42.626] INFO: txe:top_level_context Created block 2 with timestamp 1791469782
+[15:29:42.709] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.008192000000000917s {"blockNumber":4,"successfulCount":1,"failedCount":0,"duration":0.008192000000000917,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":800,"l2Gas":483700},"totalSizeInBytes":800,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[15:29:42.832] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.0037904579999994896s {"blockNumber":4,"successfulCount":1,"failedCount":0,"duration":0.0037904579999994896,"rate":0,"totalPublicGas":{"daGas":0,"l2Gas":0},"totalBlockGas":{"daGas":800,"l2Gas":483700},"totalSizeInBytes":800,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[15:29:44.428] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:44.429] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-MKKtU4/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[15:29:44.438] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:44.438] INFO: txe_node Aztec Node version: txe
+[15:29:44.438] INFO: txe_node Aztec Node started on chain 0x1
+[15:29:44.439] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-7Qcsbr/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[15:29:44.446] INFO: txe_node Aztec Node version: txe
+[15:29:44.446] INFO: txe_node Aztec Node started on chain 0x1
+[15:29:44.456] INFO: txe:top_level_context Created block 1 with timestamp 1791469784
+[15:29:44.458] INFO: txe:top_level_context Created block 1 with timestamp 1791469784
+[15:29:44.492] INFO: txe:top_level_context Created block 2 with timestamp 1791469784
+[15:29:44.494] INFO: txe:top_level_context Created block 2 with timestamp 1791469784
+[15:29:44.538] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.012133166999999957s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.012133166999999957,"rate":98160.68632369472,"totalPublicGas":{"daGas":0,"l2Gas":1191},"totalBlockGas":{"daGas":0,"l2Gas":1191},"totalSizeInBytes":128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}
+[15:29:44.542] WARN: txe:top_level_context Could not find function artifact in contract PrivateFPC for function '0x4e241b56' when enriching error callstack
+[private_fee_test] Testing private_fee_outsider_cannot_complete_refund ... [0m[32mok[0m
+[private_fee_test] Testing private_fee_unclaimed_bridge_cannot_mint ... [0m[32mok[0m
+[private_fee_test] Testing private_fee_unfunded_owner_cannot_pay ... [0m[32mok[0m
+[private_fee_test] Testing private_fee_wrong_amount_cannot_inflate_credit ... [0m[32mok[0m
+[15:29:46.002] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:46.003] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-yu8tvF/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[15:29:46.011] INFO: txe_node Aztec Node version: txe
+[15:29:46.011] INFO: txe_node Aztec Node started on chain 0x1
+[15:29:46.023] INFO: txe:top_level_context Created block 1 with timestamp 1791469786
+[15:29:46.053] INFO: txe:top_level_context Created block 2 with timestamp 1791469786
+[15:29:46.077] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:46.078] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-AA3mmE/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[15:29:46.090] INFO: txe_node Aztec Node version: txe
+[15:29:46.090] INFO: txe_node Aztec Node started on chain 0x1
+[15:29:46.102] INFO: txe:top_level_context Created block 1 with timestamp 1791469786
+[15:29:46.148] INFO: txe:top_level_context Created block 2 with timestamp 1791469786
+[private_fee_test] Testing private_fee_wrong_owner_cannot_mint_known_salt ... [0m[32mok[0m
+[private_fee_test] Testing private_fee_zero_refund_skips_note_completion ... [0m[32mok[0m
+[private_fee_test] [0m[32m14 tests passed[0m
+[15:29:47.635] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:47.636] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-oyN9he/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[15:29:47.644] INFO: txe_node Aztec Node version: txe
+[15:29:47.644] INFO: txe_node Aztec Node started on chain 0x1
+[15:29:47.656] INFO: txe:top_level_context Created block 1 with timestamp 1791469787
+[15:29:47.685] INFO: txe:top_level_context Created block 2 with timestamp 1791469787
+[15:29:47.709] INFO: kv-store:lmdb-v2 Starting data store with maxReaders 2
+[15:29:47.710] INFO: world-state:database Creating world state data store at directory /var/folders/ym/q1vh2x5n58xbsmpmvs5_6w3r0000gn/T/aztec-world-state-fQheZu/world_state with map sizes {"archiveTreeMapSizeKb":10485760,"nullifierTreeMapSizeKb":10485760,"noteHashTreeMapSizeKb":10485760,"messageTreeMapSizeKb":10485760,"publicDataTreeMapSizeKb":10485760} and 2 threads (ephemeral=true).
+[15:29:47.717] INFO: txe_node Aztec Node version: txe
+[15:29:47.717] INFO: txe_node Aztec Node started on chain 0x1
+[15:29:47.735] INFO: txe:top_level_context Created block 1 with timestamp 1791469787
+[15:29:47.777] INFO: txe:top_level_context Created block 2 with timestamp 1791469787
+[15:29:47.815] INFO: simulator:public-processor Processed 1 successful txs and 0 failed txs (0 silently skipped, 0ms wasted) in 0.014948124999998981s {"blockNumber":3,"successfulCount":1,"failedCount":0,"duration":0.014948124999998981,"rate":138278.21215036273,"totalPublicGas":{"daGas":0,"l2Gas":2067},"totalBlockGas":{"daGas":0,"l2Gas":2067},"totalSizeInBytes":128,"silentlySkippedCount":0,"silentlySkippedDurationMs":0}

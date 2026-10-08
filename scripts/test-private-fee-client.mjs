@@ -31,7 +31,7 @@ test('canonical shared address has no owner, salt, or initializer',async()=>{
 test('private balance payment emits only pay_fee with shared payer',async()=>{
   const {input,state}=fixture(),result=await preparePrivateFeePayment(input),payload=await result.paymentMethod.getExecutionPayload();
   assert.equal(state.registered,1);assert.equal(state.reads,1);assert.equal(payload.calls.length,1);
-  const call=payload.calls[0];assert.equal(call.name,'pay_fee');assert(call.to.equals(instance.address));assert.equal(call.args.length,0);assert.equal(call.type,'private');assert(!call.hideMsgSender&&!call.isStatic);
+  const call=payload.calls[0];assert.equal(call.name,'pay_fee');assert(call.to.equals(instance.address));assert.deepEqual(call.args.map(String),[Fr.ONE.toString()]);assert.equal(call.type,'private');assert(!call.hideMsgSender&&!call.isStatic);
   assert(payload.feePayer.equals(instance.address));assert.equal(payload.authWitnesses.length,0);assert.equal(payload.capsules.length,0);assert((await result.paymentMethod.getAsset()).equals(ProtocolContractAddress.FeeJuice));
   assert.equal(result.metadata.maximumFee,'1300');assert.equal(result.metadata.refundUnusedGas,true);assert.notEqual(result.gasSettings,input.gasSettings);
 });
@@ -42,8 +42,8 @@ test('cold-start emits actual FeeJuice claim then private mint-and-pay; never re
   const [claim,mint]=payload.calls,secret=await poseidon2HashWithSeparator([new Fr(51),owner.toField()],3952304070);
   assert(claim.to.equals(ProtocolContractAddress.FeeJuice));assert(claim.selector.equals(await FunctionSelector.fromSignature('claim((Field),u128,Field,Field)')));
   assert.deepEqual(claim.args.map(String),[instance.address.toField(),new Fr(5000),secret,new Fr(9)].map(String));
-  assert(mint.to.equals(instance.address));assert(mint.selector.equals(await FunctionSelector.fromSignature('mint_and_pay_fee(u128,Field,Field)')));
-  assert.deepEqual(mint.args.map(String),[new Fr(5000),new Fr(51),new Fr(9)].map(String));
+  assert(mint.to.equals(instance.address));assert(mint.selector.equals(await FunctionSelector.fromSignature('mint_and_pay_fee(u128,Field,Field,u128)')));
+  assert.deepEqual(mint.args.map(String),[new Fr(5000),new Fr(51),new Fr(9),Fr.ONE].map(String));
   input.claim.amount='1';input.claim.salt=new Fr(99);assert.deepEqual((await result.paymentMethod.getExecutionPayload()).calls.map(c=>c.args.map(String)),payload.calls.map(c=>c.args.map(String)));
 });
 test('bridge secret and hash bind local salt and author',async()=>{
@@ -53,7 +53,7 @@ test('bridge secret and hash bind local salt and author',async()=>{
   assert(!(await derivePrivateFeeBridgeSecret({...args,owner:AztecAddress.fromFieldUnsafe(new Fr(43))})).equals(secret));
 });
 test('rejects empty private balance without public fallback',()=>reject((i,s)=>{s.balance=0n;},'PRIVATE_FEE_BALANCE_INSUFFICIENT'));
-test('rejects insufficient cold-start funding',()=>reject(i=>{i.claim={amount:'1299',salt:new Fr(1),leafIndex:new Fr(2)};},'PRIVATE_FEE_CLAIM_INSUFFICIENT'));
+test('rejects empty cold-start funding',()=>reject(i=>{i.claim={amount:'0',salt:new Fr(1),leafIndex:new Fr(2)};},'PRIVATE_FEE_CLAIM_INSUFFICIENT'));
 test('rejects wrong bridge secret',()=>reject(i=>{i.claim={amount:'5000',salt:new Fr(1),secret:new Fr(3),leafIndex:new Fr(2)};},'PRIVATE_FEE_CLAIM_SECRET_MISMATCH'));
 test('rejects zero bridge salt',()=>reject(i=>{i.claim={amount:'5000',salt:Fr.ZERO,leafIndex:new Fr(2)};},'PRIVATE_FEE_INVALID_CLAIM'));
 test('rejects unsupported chain',()=>reject((i,s)=>{s.chain=9;},'PRIVATE_FEE_CHAIN_MISMATCH'));
@@ -81,10 +81,10 @@ test('rejects extra public entrypoint hidden behind generated dispatcher',async(
   await assert.rejects(()=>derivePrivateFeeInstance({...artifact,nonDispatchPublicFunctions:[extra]}),e=>e.code==='PRIVATE_FEE_ARTIFACT_INVALID');
 });
 
-test('one-unit private-credit shortfall rejects without author public balance, funding or submission',async()=>{
+test('credit below configured ceiling is prepared for measurement without funding or submission',async()=>{
  const {input,state}=fixture();state.balance=1299n;let forbidden=0;
  input.node.getPublicStorageAt=input.node.sendTx=input.wallet.sendTx=input.wallet.proveTx=async()=>{forbidden++;throw Error('Public fallback forbidden');};
- await assert.rejects(preparePrivateFeePayment(input),e=>e.code==='PRIVATE_FEE_BALANCE_INSUFFICIENT');
+ const prepared=await preparePrivateFeePayment(input);assert.equal(prepared.availableCredit,1299n);assert.equal(prepared.paymentMethod.reservation,1n);
  assert.equal(forbidden,0);assert.equal(state.reads,1);assert.equal(state.balance,1299n);
 });
 test('balance and identity provider failures never produce a fallback payment or expose error details',async()=>{

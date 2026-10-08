@@ -1,0 +1,12 @@
+{
+  "ready": true,
+  "proofs": "real",
+  "queue": {
+    "jobs": 0,
+    "bytes": 0,
+    "running": false,
+    "submitted": 4,
+    "completed": 4,
+    "failed": 0
+  }
+}

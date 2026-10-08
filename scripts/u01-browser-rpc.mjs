@@ -11,7 +11,7 @@ async function boundedBody(stream){let size=0;const parts=[];for await(const par
 function respond(res,status,value){res.writeHead(status,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(value));}
 async function listen(handler){const server=http.createServer(handler);server.requestTimeout=20000;server.headersTimeout=10000;server.keepAliveTimeout=1000;await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});return server;}
 function stop(server){return new Promise(resolve=>{server.close(resolve);server.closeAllConnections();});}
-export async function startU01BrowserRpc({node,anvilUrl,ethereumAccount,origin,token,observer}){
+export async function startU01BrowserRpc({node,anvilUrl,ethereumAccount,origin,token,observer,beforeNodeCall}){
  const target=new URL(anvilUrl),expectedOrigin=new URL(origin);
  if(target.protocol!=='http:'||target.hostname!=='127.0.0.1'||!target.port||target.username||target.password||target.search||target.hash||target.pathname!=='/')throw Error('Explicit loopback Anvil URL required');
  if(!['https:','http:'].includes(expectedOrigin.protocol)||expectedOrigin.origin!==origin||!['127.0.0.1','localhost'].includes(expectedOrigin.hostname))throw Error('Exact local browser origin required');
@@ -25,9 +25,9 @@ export async function startU01BrowserRpc({node,anvilUrl,ethereumAccount,origin,t
  // Observation is optional and must never change transport or application outcomes.
  function begin(channel,method,args){try{return observer?.begin(channel,method,args)??(()=>{});}catch{return ()=>{};}}
  function finish(done,success){try{done(success);}catch{}}
- const observedNode=observer?new Proxy(node,{get(target,key){const value=Reflect.get(target,key,target);if(typeof value!=='function')return value;
+ const observedNode=(observer||beforeNodeCall)?new Proxy(node,{get(target,key){const value=Reflect.get(target,key,target);if(typeof value!=='function')return value;
   if(!Object.hasOwn(AztecNodeApiSchema,key))return value.bind(target);
-  return async(...args)=>{const done=begin('aztec',key,args);try{const result=await value.apply(target,args);finish(done,true);return result;}catch(error){finish(done,false);throw error;}};
+  return async(...args)=>{const done=begin('aztec',key,args);try{await beforeNodeCall?.(key);const result=await value.apply(target,args);finish(done,true);return result;}catch(error){finish(done,false);throw error;}};
  }}):node;
  const rpc=createNamespacedSafeJsonRpcServer({node:[observedNode,AztecNodeApiSchema],aztec:[observedNode,AztecNodeApiSchema]},{maxBatchSize:100,maxBodySizeBytes:10*1024*1024,corsAllowedOrigins:[origin],corsAllowedHeaders:['content-type','x-u01-test-token'],log:silent});
  const callback=rpc.getApp().callback();let nodeServer,ethereumServer;

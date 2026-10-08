@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createT04CheckpointScope,runT04Cleanup} from './u01-browser-flow.mjs';
+import {createT04CheckpointScope,drainT04Checkpoints,runT04Cleanup,depositCheckpointReady,waitForDepositCheckpoint} from './u01-browser-flow.mjs';
 
 function fixture(){
  const config={minTxsPerBlock:3,buildCheckpointIfEmpty:false,unrelated:99},updates=[];
@@ -37,3 +37,34 @@ test('restoration failure cannot skip RPC, wallet or backup cleanup',async()=>{
  ]),error=>error instanceof AggregateError&&error.errors.length===2&&error.errors[0]===failure);
  assert.deepEqual(visited,['restore','rpc','wallet','backup']);
 });
+
+
+test('publication drain waits for actual convergence and always resumes production',async()=>{
+ for(const failure of [null,'pause','read','deadline']) {
+  const order=[];let reads=0;
+  const sequencer={pause:async()=>{order.push('pause');if(failure==='pause')throw Error('pause failed');},start:async()=>{order.push('start');}};
+  const node={getSequencer:()=>sequencer,getChainTips:async()=>{if(failure==='read')throw Error('read failed');reads++;return {proposed:{number:2},checkpointed:{block:{number:2},checkpoint:{number:1}}};}};
+  const options={node,l1Client:{readContract:async()=>reads===1?0n:1n},rollupAddress:'0x'+'12'.repeat(20),checkpoints:{restore:()=>order.push('restore')},deadline:Date.now()+(failure==='deadline'?-1:2000)};
+  if(failure)await assert.rejects(drainT04Checkpoints(options));
+  else {assert.deepEqual(await drainT04Checkpoints(options),{proposedBlock:2,checkpointedBlock:2,l1PendingCheckpoint:1});assert.equal(reads,2);}
+  assert.deepEqual(order,['restore','pause','start']);
+ }
+});
+
+test('setup simulations cannot close checkpoint production before actual deposit membership',async()=>{
+ let deposit={amount:0n,key:'0x'+'01'.padStart(64,'0'),index:42n},witness,reads=0;
+ const node={getBlock:async()=>({number:7}),getL1ToL2MessageMembershipWitness:async(block,key)=>{reads++;assert.equal(block,7);assert.equal(key.toString(),deposit.key);return witness;}};
+ const check=()=>depositCheckpointReady({node,readDeposit:async()=>deposit});
+ assert.equal(await check(),false);assert.equal(reads,0);
+ deposit={...deposit,amount:1n};assert.equal(await check(),false);
+ witness=[43n,{}];assert.equal(await check(),false);
+ witness=[42n,{}];assert.equal(await check(),true);
+});
+
+ test('deposit publication wait polls until checkpointed membership exists',async()=>{
+ let calls=0;const deposit={amount:1n,key:'0x'+'01'.padStart(64,'0'),index:42n};
+ const node={getBlock:async()=>({number:7}),getL1ToL2MessageMembershipWitness:async()=>++calls===1?undefined:[42n,{}]};
+ assert.equal(await waitForDepositCheckpoint({node,readDeposit:async()=>deposit,deadline:Date.now()+2000}),true);assert.equal(calls,2);
+ assert.equal(await waitForDepositCheckpoint({node,readDeposit:async()=>({...deposit,amount:0n}),deadline:Date.now()+1000}),false);
+ await assert.rejects(waitForDepositCheckpoint({node,readDeposit:async()=>deposit,deadline:Date.now()-1}),/T04_DEPOSIT_PUBLICATION_DEADLINE/);
+ });

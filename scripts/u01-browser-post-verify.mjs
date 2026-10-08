@@ -1,3 +1,4 @@
+import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 // TEST ONLY. Independent chain/PXE verification; never persist returned baseline notes.
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -82,7 +83,7 @@ export async function verifyU01BrowserPost({node,preparation,instance,claimResul
  if(!txHash){assert.equal(evidence.captures.size,1,'Ambiguous browser submissions');txHash=evidence.captures.keys().next().value;}
  const captured=evidence.captures.get(String(txHash));assert(captured,'No actual browser-submitted transaction captured');
  const {tx,preSubmissionValidation}=captured;
- assert.equal((await node.getConfig()).realProofs,true);assert(!node.getProverNode());assert.equal(Number((await node.getNodeInfo()).l1ChainId),31337);
+ assert.equal((await node.getConfig()).realProofs,applicationProofsEnabled());assert(!node.getProverNode());assert.equal(Number((await node.getNodeInfo()).l1ChainId),31337);
  assert.equal(tx.getTxHash().toString(),String(txHash));assert(!tx.chonkProof.isEmpty());assert.equal(preSubmissionValidation.result,'valid');
  assert.equal(tx.data.feePayer.toString(),String(privateFee.payer));
  const hash=TxHash.fromString(String(txHash)),receipt=await node.getTxReceipt(hash);assert(included(receipt));assert.equal(receipt.txHash.toString(),String(txHash));
@@ -118,7 +119,7 @@ export async function verifyU01BrowserPost({node,preparation,instance,claimResul
  const feeInstance=await derivePrivateFeeInstance(JSON.parse(await fs.readFile(new URL('../apps/src/billboard/private_fee_artifact.json',import.meta.url),'utf8')));
  const afterPayerBalance=await getFeeJuiceBalance(feeInstance.address,node);assert.equal(afterPayerBalance,BigInt(beforePayerBalance)-BigInt(receipt.transactionFee.toString()));
  const publicFootprint=classifyT03PublicFootprint({tx,effect:effect.data,roles:{author:account.address,sharedPayer:privateFee.payer,board:instance.address}});
- return{publicFootprint,passed:true,scope:'one genuine browser-proved next post; native fixture preparation and read-only verification',applicationProofs:true,networkProofs:false,txHash:String(txHash),proofSha256:sha(tx.chonkProof.toBuffer()),nodePreSubmissionValidation:'valid',normalNodeVerification:true,status:receipt.status,executionResult:receipt.executionResult,blockNumber:String(receipt.blockNumber),blockHash:receipt.blockHash.toString(),postId:id.toString(),feePayer:tx.data.feePayer.toString(),transactionFee:String(receipt.transactionFee),exactDepositNullifier:true,exactReplacementNote:true,exactPostNote:true,exactCooldown:true,publicContentChecked:true,privateFeeDebitChecked:true,publicFeePayerDebitChecked:true,authorPublicFeeBalanceZero:true};
+ return{publicFootprint,passed:true,scope:applicationProofsEnabled()?'one genuine browser-proved next post; native fixture preparation and read-only verification':'one browser post with disabled proofs; canonical application checks only',applicationProofs:applicationProofsEnabled(),networkProofs:false,txHash:String(txHash),proofSha256:sha(tx.chonkProof.toBuffer()),nodePreSubmissionValidation:'valid',normalNodeVerification:applicationProofsEnabled(),status:receipt.status,executionResult:receipt.executionResult,blockNumber:String(receipt.blockNumber),blockHash:receipt.blockHash.toString(),postId:id.toString(),feePayer:tx.data.feePayer.toString(),transactionFee:String(receipt.transactionFee),exactDepositNullifier:true,exactReplacementNote:true,exactPostNote:true,exactCooldown:true,publicContentChecked:true,privateFeeDebitChecked:true,publicFeePayerDebitChecked:true,authorPublicFeeBalanceZero:true};
 }
 
 // Independent withdrawal oracle: the old note is consumed and Ethereum escrow

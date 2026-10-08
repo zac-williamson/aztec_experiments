@@ -16,7 +16,7 @@ export async function runBrowser(directory,control) {
     validateBrowserWorkerControl(control,{directory});
     result=await runU01BrowserPost({...control,directory,
       journeyDriver:control.browserMode==='performance'?driveT04BrowserPerformance:control.browserMode==='lifecycle'?driveT04BrowserJourney:control.browserMode==='funding'?driveT04BrowserFunding:undefined,
-      diagnostic:false,observeProofStages:control.browserMode==='post',
+      diagnostic:process.env.BOARD_TEST_DIAGNOSTIC==='1',observeProofStages:control.browserMode==='post',
       onStage:stage=>console.log(JSON.stringify({stage}))});
   }catch(error){result={passed:false,failure:describeFailure(error)};}
   await fs.writeFile(path.join(directory,'browser-result.json'),JSON.stringify(result)+'\n',{flag:'wx',mode:0o600});

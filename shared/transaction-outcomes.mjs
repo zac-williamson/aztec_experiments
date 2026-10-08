@@ -19,6 +19,16 @@ export function requireSuccessfulReceipt(receipt,txHash) {
   }
   return receipt;
 }
+// A bounded read-only check. Pending/dropped is not permission to replace or resend.
+export async function readCanonicalReceipt(node,txHash,{readTimeoutMs=20000}={}) {
+  const receipt=await boundedTransactionRead(()=>node.getTxReceipt(txHash),readTimeoutMs);
+  if(hash(receipt?.txHash)!==hash(txHash))throw transactionError('BB_SUBMISSION_UNKNOWN','Receipt identity does not match.');
+  if(pending.has(receipt.status)||receipt.status==='dropped')return null;
+  if(!accepted.has(receipt.status)||!Number.isSafeInteger(receipt.blockNumber)||receipt.blockNumber<1||!receipt.blockHash||!['success','reverted'].includes(receipt.executionResult))throw transactionError('BB_SUBMISSION_UNKNOWN','Receipt is incomplete.');
+  const block=await boundedTransactionRead(()=>node.getBlock(receipt.blockNumber),readTimeoutMs);
+  if(!block||hash(block.hash)!==hash(receipt.blockHash))throw transactionError('BB_SUBMISSION_UNKNOWN','Receipt block is not canonical.');
+  return receipt;
+}
 export async function submitOnceWithReconciliation(node,tx) {
   try {await boundedTransactionRead(()=>node.sendTx(tx));}
   catch {

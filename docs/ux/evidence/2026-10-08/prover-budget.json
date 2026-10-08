@@ -1,0 +1,10 @@
+{
+  "authorizedUSD": 50,
+  "reportedProverComputeUSD": 8.47,
+  "unreportedPriorAllowanceUSD": 26.4,
+  "previousConservativeTotalUSD": 47.87,
+  "newMaximumComputeUSD": 1.6,
+  "ancillaryAllowanceUSD": 5,
+  "conservativeTotalUSD": 49.47,
+  "deadline": "2026-10-08 19:29:26 UTC"
+}

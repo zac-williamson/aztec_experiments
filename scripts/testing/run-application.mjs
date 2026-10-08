@@ -13,7 +13,7 @@ export async function runApplication(name) {
   assertNodeVersion();assertAztecPackages();
   assert.equal(process.platform,'darwin');assert.equal(process.arch,'arm64');
   const scenario=getScenario(name),browser=scenario.browser!=='none';
-  const report={schemaVersion:2,scenario:name,profile:scenario.description,startedAt:new Date().toISOString(),passed:false,stages:[]};
+  const report={applicationProofs:process.env.BOARD_TEST_PROOFS!=='disabled',remoteProver:process.env.BOARD_TEST_REMOTE==='1',schemaVersion:2,scenario:name,profile:scenario.description,startedAt:new Date().toISOString(),passed:false,stages:[]};
   const evidence=path.join(ROOT,'execution/evidence',scenario.evidenceTask,'application-'+randomUUID()+'.json');
   await fs.mkdir(path.dirname(evidence),{recursive:true});
   const directory=await fs.mkdtemp('/private/tmp/board-test-');
@@ -37,9 +37,9 @@ export async function runApplication(name) {
     const handoff=JSON.parse(await fs.readFile(path.join(directory,'browser-ready.json'),'utf8'));
     validateBrowserHandoff(handoff,{directory,browserMode:scenario.browser});
     assert.equal(await fs.realpath(handoff.backupPath),handoff.backupPath);
-    const remaining=scenario.deadlineMs-Math.round(performance.now()-supervisor.started);assert(remaining>0);
+    const remaining=scenario.deadlineMs-Math.round(performance.now()-supervisor.started)-15000;assert(remaining>0,'Browser needs time for cleanup before the supervisor deadline');
     const exit=await supervisor.start('browser',process.execPath,['--max-old-space-size=128',ENTRY,'browser-worker',directory],{
-      cwd:ROOT,env:{PATH:path.dirname(process.execPath)+':/usr/bin:/bin',HOME:process.env.HOME,TMPDIR:directory,NODE_OPTIONS:''},
+      cwd:ROOT,env:{BOARD_TEST_DIAGNOSTIC:process.env.BOARD_TEST_DIAGNOSTIC??'0',PATH:path.dirname(process.execPath)+':/usr/bin:/bin',HOME:process.env.HOME,TMPDIR:directory,NODE_OPTIONS:''},
       input:{...handoff,...control,timeoutMs:Math.min(480000,remaining)},onRecord:stage('browser')});
     report.browser=await readResult('browser');assert.equal(exit.code,0);assert.equal(report.browser.passed,true);
   }
@@ -58,8 +58,8 @@ export async function runApplication(name) {
       control={ethereumWallet:scenario.ethereumWallet??'disposable',browserEngine:scenario.browserEngine,browserMode:scenario.browser,origin:'https://127.0.0.1:'+port,rpcToken:randomBytes(32).toString('hex'),backupPassword:randomBytes(32).toString('base64url')};
     }
     const {crs,profile}=await prepareRuntime(directory,scenario,report);
-    const exit=await supervisor.start('fixture','/usr/bin/sandbox-exec',['-f',profile,process.execPath,ENTRY,'fixture-worker',name,directory],{
-      cwd:ROOT,env:{HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'silent',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',C01_APPLICATION_BB_THREADS:String(scenario.applicationThreads),NODE_BACKEND:'js',FORGE_BIN:'/Users/zac/.foundry/bin/forge',C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
+    const exit=await supervisor.start('fixture','/usr/bin/sandbox-exec',['-f',profile,process.execPath,'--max-old-space-size=384',ENTRY,'fixture-worker',name,directory],{
+      cwd:ROOT,env:{BOARD_TEST_PROOFS:process.env.BOARD_TEST_PROOFS??'real',BOARD_TEST_REMOTE:process.env.BOARD_TEST_REMOTE??'0',HOME:directory,TMPDIR:directory,PATH:path.dirname(process.execPath)+':/usr/bin:/bin',LOG_LEVEL:'silent',LOG_JSON:'1',LANG:'C',HARDWARE_CONCURRENCY:'1',C01_APPLICATION_BB_THREADS:String(scenario.applicationThreads),NODE_BACKEND:'js',FORGE_BIN:'/Users/zac/.foundry/bin/forge',C01_NETWORK_ROOT:directory,C01_ACVM_ROOT:path.join(directory,'acvm'),CRS_PATH:crs,FORGE_BROADCAST_TIMEOUT_MS:'240000',FOUNDRY_SOLC:'/Users/zac/Library/Application Support/svm/0.8.30/solc-0.8.30'},
       input:{browserControl:control??null,operatorPackage:operatorPackage??null},onRecord:stage('fixture')});
     report.worker=await readResult('worker');
     assert.equal(exit.code,0);assert.equal(report.worker.passed,true);

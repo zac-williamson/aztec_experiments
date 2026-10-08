@@ -1,29 +1,8 @@
-let directory,networkId,count=0;
-const el=id=>document.getElementById(id);
-async function findBoards(){
- el('more').hidden=true;el('status').textContent='Finding boards…';
- try{
-  let result;
-  // A bounded batch keeps discovery resumable without an indexer service.
-  for(let page=0;page<20;page++){
-   result=await directory.next();
-   for(const board of result.boards){
-    const card=document.createElement('article');card.className='card';const link=document.createElement(board.ready?'a':'span');
-    const url=new URL('feed.html',location.href);url.hash='network='+networkId+'&board='+board.address;if(board.ready)link.href=url.href;
-    link.textContent='Board '+board.address.slice(0,10)+'…'+board.address.slice(-6);card.append(link);if(!board.ready){const status=document.createElement('p');status.textContent=board.unavailable?'This board is unavailable.':'Setup is not complete yet.';card.append(status);}el('boards').append(card);count++;
-   }
-   el('status').textContent=count+' board'+(count===1?'':'s')+' found. Searching…';
-   if(result.complete)break;
-  }
-  el('more').hidden=result.complete;
-  el('status').textContent=result.complete?(count?count+' board'+(count===1?'':'s')+' found.':'No compatible boards found.')+' Search complete through block '+result.block+'.':count+' boards found so far. More history remains to search.';
- }catch(error){if(error.code==='BB_DIRECTORY_REORG'){el('boards').replaceChildren();count=0;}el('status').textContent='Could not finish finding boards. Reload to start a new search. The list above may be incomplete.';}
-}
-(async()=>{
- try{
-  const config=await loadHostedSettings();networkId=[config.network.chainId,config.network.rollupAddress,config.network.rollupVersion].join(':');
-  el('network').textContent='Aztec on '+(config.network.chainId==='11155111'?'Sepolia':config.network.chainId==='1'?'Ethereum mainnet':'Ethereum network '+config.network.chainId)+'.';
-  directory=BillboardPublic.createBoardDirectory({network:config.network,metadata:BillboardPublic.metadata});await findBoards();
- }catch{el('status').textContent='The board directory is unavailable. Reload to try again.';}
-})();
-el('more').onclick=findBoards;
+const el=id=>document.getElementById(id),view=BillboardView;
+view.header({title:'Message boards',section:''});
+let directory,config,networkId,busy=false,complete=false,count=0;
+const seen=new Set();let labels=[];
+function card(board){if(seen.has(board.address))return;seen.add(board.address);count++;const article=view.element('article',undefined,'card');const current=board.address===config.board.contractAddress,label=labels.find(item=>item.address===board.address);const link=view.element(board.ready?'a':'span',label?.name||(current?'This site’s board':'Community board '+board.address.slice(2,8)));const href=view.url('feed.html','network='+networkId+'&board='+board.address);if(board.ready)link.href=href;article.append(link);if(label)article.append(view.element('p',label.description),view.element('p',label.status==='retired'?'Retired deployment':'Current test board','small'));if(current)article.append(view.element('p','The board currently supported by this site.','small'));if(!board.ready)article.append(view.element('p',board.unavailable?'Unavailable right now.':'Setup is still in progress.','small'));const details=view.element('details');details.append(view.element('summary','Board address'),view.element('p',board.address,'account-address'));article.append(details);if(current)el('boards').prepend(article);else el('boards').append(article);if(board.ready)recentActivity(board,article);}
+async function recentActivity(board,article){const status=view.element('p','Checking recent activity…','small');article.append(status);try{const connection=await BillboardPublic.connectPublicBoard({network:config.network,boardAddress:board.address,metadata:BillboardPublic.metadata,storage:BillboardPublic.browserPublicFeedStorage()});const progress=await connection.feed.sync(),page=await connection.feed.page({limit:1});const latest=page.posts[0];status.textContent=latest?.publishedAt?'Latest indexed message: '+new Date(Number(latest.publishedAt)*1000).toLocaleString():progress.complete?'No messages yet.':'Message history is still being indexed.';}catch{status.textContent='Recent activity unavailable.';}}
+async function findBoards(){if(busy||complete)return;busy=true;el('more').hidden=true;try{const result=await directory.next();for(const board of result.boards)card(board);complete=result.complete;el('status').textContent=complete?(count?'':'No boards are available yet.'):'Finding more boards…';if(!complete)setTimeout(findBoards,300);}catch(error){if(error.code==='BB_DIRECTORY_REORG'){directory=BillboardPublic.createBoardDirectory({network:config.network,metadata:BillboardPublic.metadata});seen.clear();count=0;el('boards').replaceChildren();}el('status').textContent='Some boards could not be loaded. You can still open those shown below.';el('more').hidden=false;el('more').textContent='Try again';}finally{busy=false;}}
+(async()=>{try{config=await loadHostedSettings();try{labels=await BillboardCatalog.load(config.network);}catch{}networkId=[config.network.chainId,config.network.rollupAddress,config.network.rollupVersion].join(':');el('network').textContent='Boards on the Aztec test network.';directory=BillboardPublic.createBoardDirectory({network:config.network,metadata:BillboardPublic.metadata});await findBoards();}catch{el('status').textContent='The directory could not be reached. Reload to try again.';}})();el('more').onclick=findBoards;

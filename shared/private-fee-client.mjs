@@ -2,7 +2,7 @@ import { Contract } from '@aztec/aztec.js/contracts';
 import { Fr } from '@aztec/foundation/curves/bn254';
 import { poseidon2HashWithSeparator } from '@aztec/foundation/crypto/poseidon';
 import { AztecAddress } from '@aztec/stdlib/aztec-address';
-import { loadContractArtifact, getAllFunctionAbis } from '@aztec/stdlib/abi';
+import { loadContractArtifact, getAllFunctionAbis, FunctionSelector } from '@aztec/stdlib/abi';
 import { getContractInstanceFromInstantiationParams, computeContractAddressFromInstance } from '@aztec/stdlib/contract';
 import { Gas, GasFees, GasSettings } from '@aztec/stdlib/gas';
 import { computeSecretHash } from '@aztec/stdlib/hash';
@@ -36,7 +36,7 @@ function artifactOf(value) {
   const publicFunctions=functions.filter(f=>f.functionType==='public'&&f.name!=='public_dispatch');
   check(artifact.name==='PrivateFPC'&&!functions.some(f=>f.isInitializer)&&publicFunctions.length===1&&
     publicFunctions[0].name==='_complete_refund'&&publicFunctions[0].isOnlySelf&&publicFunctions[0].parameters.length===2,'PRIVATE_FEE_ARTIFACT_INVALID');
-  for(const [name,count] of [['pay_fee',0],['mint_and_pay_fee',3]]) {
+  for(const [name,count] of [['pay_fee',1],['mint_and_pay_fee',4]]) {
     check(artifact.functions.some(f=>f.name===name&&f.functionType==='private'&&f.parameters.length===count),'PRIVATE_FEE_ARTIFACT_INVALID');
   }
   return artifact;
@@ -92,21 +92,23 @@ async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,e
   const artifact=artifactOf(privateFeeArtifact),canonical=await derivePrivateFeeInstance(artifact);
   check(equal(canonical.address,payer),'PRIVATE_FEE_NONCANONICAL_ADDRESS');
   await requirePublishedPrivateFee(node,canonical);
-  let paymentMethod;
+  let paymentMethod,availableCredit;
   if(claim!==undefined) {
     check(claim&&typeof claim==='object'&&!Array.isArray(claim),'PRIVATE_FEE_INVALID_CLAIM');
     const amount=uint(claim.amount,128),salt=field(claim.salt),leafIndex=field(claim.leafIndex);
-    check(amount>=fixed.maximumFee,'PRIVATE_FEE_CLAIM_INSUFFICIENT');
+    check(amount>0n,'PRIVATE_FEE_CLAIM_INSUFFICIENT');availableCredit=amount;
     const secret=await derivePrivateFeeBridgeSecret({salt,owner:author});
     check(claim.secret===undefined||equal(field(claim.secret),secret),'PRIVATE_FEE_CLAIM_SECRET_MISMATCH');
-    paymentMethod=new PrivateMintAndPayFeePaymentMethod(payer,{amount,salt,leafIndex,secret});
+    paymentMethod=new PrivateMintAndPayFeePaymentMethod(payer,{amount,salt,leafIndex,secret},1n);
   }
   await wallet.registerContract(canonical,artifact);
   if(!paymentMethod) {
     check(wallet.executeUtility,'PRIVATE_FEE_PROVIDER_REQUIRED');
     const {result}=await Contract.at(payer,artifact,wallet).methods.balance_of(author).simulate({from:author});
-    check(uint(result,128)>=fixed.maximumFee,'PRIVATE_FEE_BALANCE_INSUFFICIENT');
-    paymentMethod=new PrivateFeePaymentMethod(payer);
+    availableCredit=uint(result,128);check(availableCredit>0n,'PRIVATE_FEE_BALANCE_INSUFFICIENT');
+    paymentMethod=new PrivateFeePaymentMethod(payer,1n);
   }
-  return {paymentMethod,gasSettings:fixed.gasSettings,metadata:{maximumFee:fixed.maximumFee.toString(),feePayer:payer.toString(),mode:claim===undefined?'private-balance':'bridge-claim',refundUnusedGas:true}};
+  const refund=getAllFunctionAbis(artifact).find(f=>f.name==='_complete_refund');
+  const refundSelector=(await FunctionSelector.fromNameAndParameters(refund.name,refund.parameters)).toString();
+  return {paymentMethod,availableCredit,refundSelector,gasSettings:fixed.gasSettings,metadata:{maximumFee:fixed.maximumFee.toString(),feePayer:payer.toString(),mode:claim===undefined?'private-balance':'bridge-claim',refundUnusedGas:true}};
 }

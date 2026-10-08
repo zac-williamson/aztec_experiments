@@ -1,3 +1,4 @@
+import {applicationProofsEnabled,applicationProver} from './testing/proof-policy.mjs';
 // TEST ONLY. Publish canonical FPC using funded deployer; author remains unfunded.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -31,7 +32,7 @@ export async function prepareW01UnfundedWallet({node,preparation,directory,persi
  let wallet;
  const open=()=>EmbeddedWallet.create(node,{ephemeral:persistentDirectory===undefined,pxe:{
   ...(persistentDirectory===undefined?{}:{dataDirectory:persistentDirectory}),proverEnabled:true,
-  proverOrOptions:{backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1},
+  proverOrOptions:applicationProver({backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1}),
   autoSync:false,syncChainTip:'checkpointed'}});
  const close=async()=>{if(wallet){await wallet.stop();wallet=undefined;}};
  try{

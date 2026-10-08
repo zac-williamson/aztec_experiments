@@ -1,4 +1,4 @@
-import { transactionError, boundedTransactionRead, classifyDroppedTransaction, submitOnceWithReconciliation, waitForCanonicalReceipt } from './transaction-outcomes.mjs';
+import { readCanonicalReceipt, transactionError, boundedTransactionRead, classifyDroppedTransaction, submitOnceWithReconciliation, waitForCanonicalReceipt } from './transaction-outcomes.mjs';
 import {createEncryptedJournalSlot} from './journal-record.mjs';
 const fail=()=>transactionError('BB_RECOVERY_REQUIRED','Recover the saved transaction before starting another operation.');
 const invalid=()=>transactionError('BB_JOURNAL_INVALID','Transaction recovery storage could not be authenticated. Preserve it before continuing.');
@@ -100,6 +100,12 @@ export async function createL2Journal({storage,walletSecret,walletSalt,scope,Tx,
   return {
     assertCanStart,prepare,confirmed,
     async inspect(){const saved=await read();return saved.value?{operation:saved.value.operation??null,txHash:saved.value.txHash,predecessorTxHashes:(saved.value.replacements??[]).map(item=>item.txHash),...(saved.value.applicationNullifier?{applicationNullifier:saved.value.applicationNullifier}:{})}:null;},
+    async inspectOutcome(){
+      const saved=await read();if(!saved.tx)return null;
+      const receipt=await readCanonicalReceipt(node,saved.tx.getTxHash(),waitOptions);
+      if((await read()).encoded!==saved.encoded)throw fail();
+      return {operation:saved.value.operation??null,txHash:saved.value.txHash,applicationNullifier:saved.value.applicationNullifier??null,outcome:receipt?.executionResult??'pending',receipt};
+    },
     async allowReplacement(expectedOperation){
       const saved=await read();
       if(!saved.tx||!expectedOperation||saved.value.operation!==expectedOperation||(saved.value.replacements?.length??0)>=8)throw fail();

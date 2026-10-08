@@ -29,7 +29,7 @@ const keyFor=(s,h)=>ownerId+':'+aadFor(s,h);
 function appContext() {
   const context={crypto:webcrypto,indexedDB:new IDBFactory(),TextEncoder,TextDecoder,Uint8Array,URL,URLSearchParams,console,log(){},
     location:{search:''},document:{getElementById:()=>null},__aztec:{createPXE(){}},ETH_RPC_URL:'',
-    checkBundle:()=>true,setupRpcAuth(){},makeCallEngine:()=>()=>{},runBillboardUser(){},initPages(){},initWalletButtons(){},initializeHostedBoard(){}};
+    createBillboardApplication:()=>({}),checkBundle:()=>true,setupRpcAuth(){},makeCallEngine:()=>()=>{},runBillboardUser(){},initPages(){},initWalletButtons(){},initializeHostedBoard(){}};
   context.window=context;vm.createContext(context);
   // Hosted bootstrap remains inert here: this fixture tests encrypted custody.
   // Actual hosted initialization is covered by the browser journey.
@@ -102,7 +102,8 @@ function depositHarness({store,enabled=true,activeAmount=0n,refunded=false,reuse
   class Portal {
     constructor(_address,_abi,runner){assert.equal(runner,provider);this.interface=iface;}
     L2_CONTRACT=async()=>scope.boardAddress;L1_CHAIN_ID=async()=>31337n;ROLLUP=async()=>scope.rollupAddress;VERSION=async()=>1n;
-    getDeposit=async()=>activeAmount;depositsEnabled=async()=>enabled;
+    getDeposit=async()=>activeAmount;
+    getActiveDeposit=async()=>({amount:refunded?0n:activeAmount,secretHash:recoveryHash,key:new Fr(77).toString(),index:32n});depositsEnabled=async()=>enabled;
     MIN_DEPOSIT=async()=>1n;MAX_DEPOSIT=async()=>10n**20n;
     async deposit(hash,{value}) {
       sent++;sequence.push('send');assert(saved,'L1 submission preceded durable storage');
@@ -112,7 +113,7 @@ function depositHarness({store,enabled=true,activeAmount=0n,refunded=false,reuse
   }
   const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:1}),getL1ContractAddresses:async()=>({rollupAddress:scope.rollupAddress}),
     getBlockNumber:async()=>1,getPublicStorageAt:async()=>Fr.ZERO,getContract:async()=>({address})};
-  const a={Fr,AztecAddress,EthAddress,deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
+  const a={boundedTransactionRead:fn=>fn(),Fr,AztecAddress,EthAddress,deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
     SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({});getImmutablesHash=async()=>Fr.ZERO;},
     getContractInstanceFromInstantiationParams:async()=>({address}),computePartialAddress:async()=>Fr.ZERO,
     createAztecNodeClient:()=>node,deriveStorageSlotInMap:async()=>Fr.ZERO,loadContractArtifact:x=>x,
@@ -152,12 +153,17 @@ test('actual deposit flow fails closed for mismatched read-back and existing rec
   const active=depositHarness({activeAmount:1_000_000_000_000_000n});await assert.rejects(active.run(),/active L1 receipt/);assert.equal(active.sent(),0);
 });
 
-test('actual recovery rejects an already refunded deposit event at the same amount and requires its saved secret',async()=>{
+test('actual recovery rejects inconsistent deposit metadata and requires its saved secret',async()=>{
   const recovery={schemaVersion:1,secretHash:new Fr(2).toString(),secret:new Fr(1).toString()};
   const store={save:async()=>{throw new Error('Recovery must not create a new secret');},load:async()=>recovery};
   const valid=depositHarness({store,reuse:true,activeAmount:1_000_000_000_000_000n});const result=await valid.run();
   assert.equal(result.depositInfo.leafIndex,32n);assert(!('secret' in result.depositInfo));assert.equal(valid.sent(),0);
-  const stale=depositHarness({store,reuse:true,activeAmount:1_000_000_000_000_000n,refunded:true});await assert.rejects(stale.run(),/already refunded/);assert.equal(stale.sent(),0);
+  const stale=depositHarness({store,reuse:true,activeAmount:1_000_000_000_000_000n,refunded:true});await assert.rejects(stale.run(),/metadata does not match/);assert.equal(stale.sent(),0);
   const mismatch=depositHarness({store,reuse:true,activeAmount:1_000_000_000_000_000n,recoveryHash:new Fr(3).toString()});
   await assert.rejects(mismatch.run(),/missing or invalid/);assert.equal(mismatch.sent(),0);
+});
+
+test('wiped claim storage reports missing secret and cannot send another payment',async()=>{
+ const h=depositHarness({store:{save:async()=>{throw Error('must not save');},load:async()=>null},reuse:true,activeAmount:10000000000000n});
+ await assert.rejects(h.run(),{code:'BB_CLAIM_SECRET_MISSING'});assert.equal(h.sent(),0);
 });

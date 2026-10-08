@@ -64,8 +64,8 @@ const sharedFiles = {
   CRS_CLIENT: loadShared('crs-client.js'),
   POSEIDON2: loadShared('poseidon2.js'),
   ETHERS: loadShared('ethers.min.js'),
-  WALLET_BUTTONS: loadShared('passkey-wallet.js') + '\n' + loadShared('wallet-backup.js') + '\n' + loadShared('claim-secret-store.js') + '\n' + loadShared('account.js') + '\n' + loadShared('wallet-buttons.js'),
-  APP_ENV: loadShared('app-env.js') + '\n' + loadShared('application.js'),
+  WALLET_BUTTONS: loadShared('wallet-providers.js') + '\n' + loadShared('passkey-wallet.js') + '\n' + loadShared('wallet-backup.js') + '\n' + loadShared('claim-secret-store.js') + '\n' + loadShared('account.js') + '\n' + loadShared('wallet-buttons.js'),
+  APP_ENV: loadShared('operation-state.js') + '\n' + loadShared('proving-preference.js') + '\n' + loadShared('app-env.js') + '\n' + loadShared('application.js') + '\n' + loadShared('proving-toggle.js'),
   MODERATION_POLICY: loadShared('moderation-policy.js'),
 };
 
@@ -104,7 +104,7 @@ function buildApp(appRelPath) {
   }
 
   let html = fs.readFileSync(templatePath, 'utf8');
-  const configScripts=['public-app-config.js','public-app-config-ui.js','public-app-bootstrap.js','browser-readiness.js','browser-connection-check.js'].map(name=>{
+  const configScripts=['board-view.js','board-catalog.js','public-app-config.js','public-app-config-ui.js','public-app-bootstrap.js','browser-readiness.js','browser-connection-check.js'].map(name=>{
     const source=loadShared(name);if(!source)throw new Error('Missing browser configuration/capability helper');
     return `<script>\n${source}\n</script>`;
   }).join('\n');
@@ -185,6 +185,8 @@ function buildApp(appRelPath) {
 
 // Ensure dist exists
 fs.mkdirSync(DIST, { recursive: true });
+
+fs.copyFileSync(path.resolve(__dirname, '../shared/board-catalog.json'), path.join(DIST, 'board-catalog.json'));
 
 // Copy source-built SDK, actual upstream worker entrypoints, and runtime WASM assets.
 const sdkManifest = checkSdk(path.resolve(__dirname, '..'), SDK);

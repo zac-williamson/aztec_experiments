@@ -68,9 +68,9 @@ for(const [label,mutate,code] of [
   ['reverted',f=>{f.state.receipt.status=0;},'PRIVATE_FEE_RECOVERY_REVERTED'],
   ['wrong nonce',f=>{f.state.transaction.nonce++;},'PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH'],
   ['wrong sender',f=>{f.state.transaction.from=rollup;},'PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH'],
-  ['wrong calldata',f=>{f.state.transaction.data='0x';},'PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH'],
-  ['missing event',f=>{f.state.receipt.logs=[];},'PRIVATE_FEE_RECOVERY_EVENT_MISMATCH'],
-  ['duplicate event',f=>{f.state.receipt.logs.push(f.state.receipt.logs[0]);},'PRIVATE_FEE_RECOVERY_EVENT_MISMATCH'],
+  ['wrong calldata without effect',f=>{f.state.transaction.data='0x';f.state.receipt.logs=[];},'PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH'],
+  ['missing event',f=>{f.state.receipt.logs=[];},'PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH'],
+  ['duplicate event',f=>{f.state.receipt.logs.push(f.state.receipt.logs[0]);},'PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH'],
 ])test(`recovery rejects ${label}`,async()=>{const f=fixture(),record=await fundPrivateFees(f.input);mutate(f);await assert.rejects(()=>f.recover(record),e=>e.code===code);assert.equal(f.state.calls.length,2);});
 test('public record from another wallet cannot recover credit',async()=>{const f=fixture(),record=await fundPrivateFees(f.input);f.input.walletSecret=new Fr(124);await assert.rejects(()=>f.recover(record),e=>e.code==='PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH');});
 test('public record from another owner cannot recover credit',async()=>{const f=fixture(),record=await fundPrivateFees(f.input);f.input.owner=AztecAddress.fromFieldUnsafe(new Fr(43));await assert.rejects(()=>f.recover(record),e=>e.code==='PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH');});
@@ -126,4 +126,36 @@ test('wrong signer network cannot approve on an otherwise correct read network',
 test('unpublished fee contract prevents approvals and deposits',async()=>{
  const f=fixture();f.input.node.getContract=async()=>undefined;
  await assert.rejects(fundPrivateFees(f.input));assert.deepEqual(f.state.calls,[]);assert.deepEqual(f.state.saved,[]);
+});
+
+for(const lost of [false,true])test(`wallet execution envelope funds and recovers exact fee credit (lost response: ${lost})`,async()=>{
+ const f=fixture(),send=f.input.ethSigner.sendTransaction;
+ f.input.ethSigner.sendTransaction=async request=>{
+  const tx=await send(request),receipt=request.to===tokenAddress?f.state.approvalReceipt:f.state.receipt;
+  tx.to=rollup;tx.data='0xcef6d209';receipt.to=tx.to;
+  if(lost&&request.to===portalAddress)throw Error('lost response');
+  return tx;
+ };
+ let record;
+ if(lost){await assert.rejects(fundPrivateFees(f.input),{code:'BB_ETH_SUBMISSION_UNKNOWN'});record=(await recoverPrivateFeeFunding(f.input)).record;}
+ else record=await fundPrivateFees(f.input);
+ assert.equal((await f.recover(record)).amount,4000n);
+ assert.equal((await recoverPrivateFeeFunding(f.input)).outcome,'funded');
+ assert.deepEqual(f.state.calls,['approve','depositToAztecPublic']);
+});
+for(const change of ['emitter','recipient','amount','secret','duplicate','sender','nonce','chain','reverted','reorg'])test(`wrapped fee deposit rejects ${change}`,async()=>{
+ const f=fixture(),record=await fundPrivateFees(f.input),tx=f.state.transaction,receipt=f.state.receipt;
+ tx.to=rollup;tx.data='0xcef6d209';receipt.to=tx.to;
+ if(change==='emitter')receipt.logs[0].address=tokenAddress;
+ if(change==='duplicate')receipt.logs.push(receipt.logs[0]);
+ if(change==='sender')tx.from=rollup;
+ if(change==='nonce')tx.nonce++;
+ if(change==='chain')tx.chainId=2n;
+ if(change==='reverted')receipt.status=0;
+ if(change==='reorg')f.state.blockHash='0x'+'99'.repeat(32);
+ if(['recipient','amount','secret'].includes(change)){
+  const a=portal.parseLog(receipt.logs[0]).args;
+  receipt.logs=[{address:portalAddress,...portal.encodeEventLog(portal.getEvent('DepositToAztecPublic'),[change==='recipient'?Fr.ZERO.toString():a.to,change==='amount'?4001:a.amount,change==='secret'?Fr.ZERO.toString():a.secretHash,a.key,a.index])}];
+ }
+ await assert.rejects(f.recover(record));assert.equal(f.state.calls.length,2);
 });

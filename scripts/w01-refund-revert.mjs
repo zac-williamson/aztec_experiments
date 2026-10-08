@@ -4,8 +4,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {Contract, BatchCall} from '@aztec/aztec.js/contracts';
 import {loadContractArtifact} from '@aztec/stdlib/abi';
-import {TxStatus, TxExecutionResult} from '@aztec/stdlib/tx';
+import {TxStatus, TxExecutionResult, mergeExecutionPayloads} from '@aztec/stdlib/tx';
 import {resolveAssertionMessageFromRevertData} from '@aztec/simulator/client';
+import {PrivateFeePaymentMethod} from '../shared/private-fee-payment.mjs';
 import {proveApplicationAction} from './prove-application-action.mjs';
 
 export async function observePrivateFeeRefundRevert({node,instance,privateFee,mineL1,mark,observation}) {
@@ -14,15 +15,27 @@ export async function observePrivateFeeRefundRevert({node,instance,privateFee,mi
   await wallet.registerContract(instance,artifact);await wallet.pxe.sync();
   const board=Contract.at(instance.address,artifact,wallet);
   const censor=async()=>String((await board.methods.get_censor().simulate({from:owner})).result);
+  // This negative scenario deliberately bypasses the successful-execution
+  // estimator: sign a fixed test reservation, then assert the exact revert.
+  const rejectedAction=async({owner:from,interaction})=>{
+    assert(from.equals(owner));
+    const gas=privateFee.browserFixture.gas.clone(),reservation=gas.getFeeLimit().toBigInt();
+    assert(BigInt(privateFee.privateBalance)>=reservation);
+    const payment=new PrivateFeePaymentMethod(privateFee.browserFixture.instance.address,reservation);
+    const payload=mergeExecutionPayloads([await payment.getExecutionPayload(),await interaction.request()]);
+    return {maximumFee:String(reservation),interaction:{request:async()=>payload},
+      options:{from:owner,additionalScopes:[owner],fee:{gasSettings:gas}},expectedFeePayer:payment.address};
+  };
   const before=await censor();assert.notEqual(before,owner.toString());
   observation.passed=false;observation.transactions=[];
   let fees=0n;
+  await privateFee.verify(fees);
   for(const [label,interaction,expected] of [
     ['unauthorized-transfer',board.methods.transfer_censor(owner),TxExecutionResult.REVERTED],
     ['subsequent-payment',new BatchCall(wallet,[]),TxExecutionResult.SUCCESS],
   ]) {
     await mark?.('private-fee:'+label);
-    const {tx,maximumFee}=await proveApplicationAction({wallet,owner,interaction,payerMode:'private',privateFeeAction:privateFee.privateFeeAction});
+    const {tx,maximumFee}=await proveApplicationAction({wallet,owner,interaction,payerMode:'private',privateFeeAction:expected===TxExecutionResult.REVERTED?rejectedAction:privateFee.privateFeeAction});
     assert.equal((await node.isValidTx(tx)).result,'valid');
     if(expected===TxExecutionResult.REVERTED) {
       const simulation=await node.simulatePublicCalls(tx,false);

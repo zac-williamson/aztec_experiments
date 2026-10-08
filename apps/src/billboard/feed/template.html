@@ -1,6 +1,2 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Billboard — Read messages</title><!--STYLES--></head><body data-public-board-reader>
-<p><a href="boards.html">Browse boards</a></p><h1>Billboard</h1><p>Read public messages without connecting a wallet.</p>
-<p><a id="board-link" hidden>Link to this board</a> <a id="post-link" hidden>Post a message</a></p><button id="connect" hidden>Retry</button>
-<p id="status" role="status">Loading messages…</p><div id="messages"></div><button id="more" hidden>Older messages</button><button id="refresh" hidden>Refresh</button>
-<p class="small">Posts are public. Moderation hides messages here; it cannot erase blockchain history.</p>
-<script src="public-feed.js"></script><!--APP--></body></html>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Message board</title><!--STYLES--></head><body data-public-board-reader>
+<main><h1 data-board-title>Message board</h1><p class="sub">Read the conversation. No wallet needed.</p><p id="availability" class="small"></p><details id="boardRules" class="rules" hidden><summary>Board rules</summary><p data-rules-text></p></details><p id="status" role="status">Loading messages…</p><button id="connect" hidden>Try again</button><button id="refresh" class="secondary" hidden>Show latest messages</button><div id="messages"></div><button id="more" class="secondary" hidden>Older messages</button><p class="small">Messages are public. Moderation hides messages here; it cannot erase blockchain history.</p></main><script src="public-feed.js"></script><!--APP--></body></html>

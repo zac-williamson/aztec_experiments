@@ -9,7 +9,7 @@ let browser;
 if(process.env.U01_BOUNDED_BROWSER!=='true')throw Error('Run through run-bounded-browser-check.mjs.');
 try {
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
- browser=await chromium.launch({headless:true});
+ browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
  const page=await browser.newPage();page.setDefaultTimeout(10000);
  const cdp=await page.context().newCDPSession(page);
  await cdp.send('WebAuthn.enable');

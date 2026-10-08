@@ -1,0 +1,33 @@
+{
+  "spotInterruption": {
+    "source": ".build/hosted-ux-onboarding-20261007/result-spot-interruption.json",
+    "outcome": "AWS reclaimed Spot capacity during claim. UI reported prover unavailable; confirmed deposit retained. Replacement Spot restored within cap."
+  },
+  "resume": {
+    "overallPassed": false,
+    "source": ".build/hosted-ux-onboarding-20261007/result.json",
+    "claim": {
+      "txHash": "0x2de911fc9f8686c9a507e03a37601baafdbeb47aeb89fb1af8958691eae0c68b",
+      "status": "checkpointed",
+      "blockNumber": 110303,
+      "blockHash": "0x1ac8730408ab4290b302c34a70a911357eed66e2b802af830ae1f0501db6e485",
+      "transactionFee": "1200712803663035304"
+    },
+    "post": {
+      "txHash": "0x2e98311f8ba21fc3fdb21313ea3a2f7b9e22f3b801f6a388d95d52ee7c3d7133",
+      "status": "checkpointed",
+      "blockNumber": 110304,
+      "blockHash": "0x27d057b803fd8a25575254f7a0b5b6f9b5d151be6f4928e7bb82ffeb0a4cc2cc",
+      "transactionFee": "3851407941247769016"
+    },
+    "outcome": "Canonical claim and post succeeded without another Ethereum payment. Harness failed because the engine discarded postId; fixed shadowed result and fresh journey verified success link.",
+    "ethereumNonceBefore": 3,
+    "ethereumPendingNonceBefore": 3,
+    "ethereumNonceAfter": 3,
+    "ethereumPendingNonceAfter": 3
+  },
+  "balance": {
+    "source": ".build/hosted-ux-fee-balance-20261007/result-before-abi-fix.json",
+    "outcome": "Raw Noir artifact passed to Contract.at; SDK could not encode balance_of. Normalize through SDK loadContractArtifact in both adapters. Real-artifact tests and live read-only follow-up passed."
+  }
+}

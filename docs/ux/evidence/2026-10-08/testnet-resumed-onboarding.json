@@ -1,0 +1,163 @@
+{
+  "passed": true,
+  "network": "Sepolia / Aztec V5 testnet",
+  "url": "https://d30njln0kead8n.cloudfront.net/user.html#network=11155111:0xd73a91bdcf6891c7642f3e460036e1ef2cc23178:1821665230&board=0x267c4246a61590539743a81acdaa1895019fef3e5f2c07038cc729b87e93b3df",
+  "startedAt": "2026-10-08T16:22:35.184Z",
+  "stages": [
+    {
+      "stage": "published-board",
+      "at": "2026-10-08T16:22:42.792Z"
+    },
+    {
+      "stage": "sepolia-network",
+      "at": "2026-10-08T16:23:01.045Z"
+    },
+    {
+      "stage": "fund-disposable-test-wallet",
+      "at": "2026-10-08T16:23:01.057Z"
+    },
+    {
+      "stage": "connect-with-fresh-passkey",
+      "at": "2026-10-08T16:23:01.519Z"
+    },
+    {
+      "stage": "complete-wallet-setup",
+      "at": "2026-10-08T16:23:02.312Z"
+    },
+    {
+      "stage": "automatic-testnet-claim",
+      "at": "2026-10-08T16:23:02.312Z"
+    },
+    {
+      "stage": "testnet-post",
+      "at": "2026-10-08T16:24:45.596Z"
+    },
+    {
+      "stage": "confirmed-testnet-post",
+      "at": "2026-10-08T16:25:51.770Z"
+    }
+  ],
+  "ethereumAccount": "0x8226906d8a5cd2b1D8Ca14CAb2889F6806470DF1",
+  "authorPageSha256": "087c6303410bc48ba0180fe36a5695a567878c5e5fd6b15b73e95e34c2fbf6be",
+  "config": {
+    "schemaVersion": 1,
+    "network": {
+      "nodeUrl": "https://v5.testnet.rpc.aztec-labs.com/",
+      "ethRpcUrl": "https://ethereum-sepolia-rpc.publicnode.com/",
+      "chainId": "11155111",
+      "rollupVersion": "1821665230",
+      "rollupAddress": "0xd73a91bdcf6891c7642f3e460036e1ef2cc23178"
+    },
+    "board": {
+      "portalAddress": "0x8081fb65e2b6a6b37a6b093af3cbea292e69809b",
+      "contractAddress": "0x267c4246a61590539743a81acdaa1895019fef3e5f2c07038cc729b87e93b3df"
+    },
+    "privateFee": {
+      "contractAddress": "0x1d53fdabe6b9175ad9925925f1374e5fd424ff007a9d9edbf027355b98b719f9",
+      "gasSettings": {
+        "gasLimits": {
+          "daGas": "117668",
+          "l2Gas": "6540000"
+        },
+        "teardownGasLimits": {
+          "daGas": "58834",
+          "l2Gas": "817500"
+        },
+        "maxFeesPerGas": {
+          "feePerDaGas": "0",
+          "feePerL2Gas": "10048248800620"
+        },
+        "maxPriorityFeesPerGas": {
+          "feePerDaGas": "0",
+          "feePerL2Gas": "0"
+        }
+      }
+    },
+    "remoteProver": {
+      "url": "https://d30njln0kead8n.cloudfront.net/prover"
+    }
+  },
+  "sdkSha256": "8178227b289d9e9306c8d5032c0d41f1de82f3de1ce2fabb68b964fe9d50ac73",
+  "proverBefore": {
+    "ready": true,
+    "proofs": "real",
+    "queue": {
+      "jobs": 0,
+      "bytes": 0,
+      "running": false,
+      "submitted": 0,
+      "completed": 0,
+      "failed": 0
+    }
+  },
+  "testFunding": {
+    "recipient": "0x8226906d8a5cd2b1D8Ca14CAb2889F6806470DF1",
+    "eth": "0x48afbbcaf244f45e16163c915f1a519b5718c3901f80430aed230fa04ba5a1d0",
+    "token": "0xbe2185e000cbd85cc66195170fe749d73e4b8987061bf6a46434169eb652e388",
+    "mintedAmount": "1000000000000000000000"
+  },
+  "scenario": "resume-confirmed-deposit-after-spot-interruption",
+  "ethereumNonceBefore": 3,
+  "ethereumPendingNonceBefore": 3,
+  "walletPath": "restored-disposable-test-backup",
+  "aztecAccount": "0x024c5b9d1f48c61f18988494771c3d2d767dd7cdbe436e2e80238d7ad20ac10d",
+  "claimHashes": [
+    "0x25322de4010a2209958ae299c8e1d1d408e6bf5a65b3bf1eccd04da415a018af"
+  ],
+  "ethereumNonceAfter": 3,
+  "ethereumPendingNonceAfter": 3,
+  "claim": {
+    "txHash": "0x25322de4010a2209958ae299c8e1d1d408e6bf5a65b3bf1eccd04da415a018af",
+    "status": "checkpointed",
+    "blockNumber": 111404,
+    "blockHash": "0x05f77184dfbfb5f9d1f0b77725dbe4799106960160fd15e567c4c11f90c5ada0",
+    "transactionFee": "1200712803663035304"
+  },
+  "message": "Automated end-to-end test: one deposit, automatic claim, remote proof. 2026-10-08T16:24:45.597Z",
+  "post": {
+    "txHash": "0x0957edc3b8b75d51769ac241988e4a29648659cb280ef08ef26914b1936c9a8d",
+    "status": "checkpointed",
+    "blockNumber": 111405,
+    "blockHash": "0x1e05042fbc8f1b6295d57426d0ff3ae8b0bb5ab260f9edea6d6c6e9e8d47c163",
+    "transactionFee": "3851407941247769016"
+  },
+  "proverAfter": {
+    "ready": true,
+    "proofs": "real",
+    "queue": {
+      "jobs": 1,
+      "bytes": 0,
+      "running": false,
+      "submitted": 2,
+      "completed": 2,
+      "failed": 0
+    }
+  },
+  "publication": {
+    "schemaVersion": 1,
+    "scope": {
+      "l1ChainId": "11155111",
+      "rollupVersion": "1821665230",
+      "rollupAddress": "0xd73a91bdcf6891c7642f3e460036e1ef2cc23178",
+      "boardAddress": "0x267c4246a61590539743a81acdaa1895019fef3e5f2c07038cc729b87e93b3df",
+      "portalAddress": "0x8081fb65e2b6a6b37a6b093af3cbea292e69809b"
+    },
+    "type": "PostPublished",
+    "position": {
+      "blockNumber": "111405",
+      "blockHash": "0x1e05042fbc8f1b6295d57426d0ff3ae8b0bb5ab260f9edea6d6c6e9e8d47c163",
+      "txHash": "0x0957edc3b8b75d51769ac241988e4a29648659cb280ef08ef26914b1936c9a8d",
+      "txIndexWithinBlock": "0",
+      "logIndexWithinTx": "0"
+    },
+    "payload": {
+      "postId": "0x0ed96520577c01fa23b2041639ec1c7b917848d8ba5d56ebaac5e405d11a161b",
+      "orderIndex": "4",
+      "text": "Automated end-to-end test: one deposit, automatic claim, remote proof. 2026-10-08T16:24:45.597Z",
+      "publishedAt": "1791476748",
+      "flagDeadline": "1791480348",
+      "policyVersion": "0x0032123567d046d9d86c0c81e0be070d33d4148e59dd99fd19731dc136fb4fd5"
+    }
+  },
+  "finishedAt": "2026-10-08T16:25:51.941Z"
+}

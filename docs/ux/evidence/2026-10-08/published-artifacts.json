@@ -1,0 +1,62 @@
+[
+  {
+    "path": "aztec_bundle.js",
+    "sha256": "8178227b289d9e9306c8d5032c0d41f1de82f3de1ce2fabb68b964fe9d50ac73",
+    "matched": true,
+    "hasContentSecurityPolicy": false
+  },
+  {
+    "path": "public-feed.js",
+    "sha256": "c5f29d6819f39dab165363b8bc930384b07faa3d7501a98f14236ac2dd0518db",
+    "matched": true,
+    "hasContentSecurityPolicy": false
+  },
+  {
+    "path": "sdk-manifest.json",
+    "sha256": "5f8710efb70ee5670a267108b92534c75b992e91a3bcdd447aa2b3942c5c8fba",
+    "matched": true,
+    "hasContentSecurityPolicy": false
+  },
+  {
+    "path": "board-catalog.json",
+    "sha256": "6d02460e9f763b67248365c5abb77ef04e0a369b493bc21ca373c8ea99e58679",
+    "matched": true,
+    "hasContentSecurityPolicy": false
+  },
+  {
+    "path": "boards.html",
+    "sha256": "968c343231e400947666024e6491f6e26b7dbafd67abe884ff8e0c201c150720",
+    "matched": true,
+    "hasContentSecurityPolicy": true
+  },
+  {
+    "path": "feed.html",
+    "sha256": "2f5efd9c31f6dc524ab455124bad1f0ec9382a18284f4d18269878a89956295c",
+    "matched": true,
+    "hasContentSecurityPolicy": true
+  },
+  {
+    "path": "user.html",
+    "sha256": "1d9ec6b04fc1009f378d009bfd82a1cb50a33187743d1c1d28bf2723f31c1db9",
+    "matched": true,
+    "hasContentSecurityPolicy": true
+  },
+  {
+    "path": "censor.html",
+    "sha256": "685a1306661739ce1dbe87855ef036cef064ca53e24cb3506b2a6dbe8f3db3ef",
+    "matched": true,
+    "hasContentSecurityPolicy": true
+  },
+  {
+    "path": "deploy.html",
+    "sha256": "16bfb71b47c2afa141782f996fc2fdc3296bf77e689d966933f2694467b34893",
+    "matched": true,
+    "hasContentSecurityPolicy": true
+  },
+  {
+    "path": "fee-juice.html",
+    "sha256": "c53085651b267fdc16ab3a735573f39ebfe66da796b823c51c0bcaebc4c8bddc",
+    "matched": true,
+    "hasContentSecurityPolicy": true
+  }
+]

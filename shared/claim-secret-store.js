@@ -169,3 +169,9 @@ globalThis.BillboardClaimBackup=Object.freeze({
   exportRecords(wallet){return makeClaimSecretStore(wallet.secretKey,wallet.salt).exportRecords();},
   restoreRecords(wallet,claims){return makeClaimSecretStore(wallet.secretKey,wallet.salt).restoreRecords(claims);},
 });
+
+// Only public search progress; private keys and claim secrets never enter this cache.
+function createDepositRecoveryProgress(){
+  const key=identity=>'board-deposit-search:'+identity;
+  return Object.freeze({read:async identity=>{const value=localStorage.getItem(key(identity));if(!value)return null;try{return JSON.parse(value);}catch{localStorage.removeItem(key(identity));return null;}},write:async(identity,value)=>localStorage.setItem(key(identity),JSON.stringify(value)),clear:async identity=>localStorage.removeItem(key(identity))});
+}

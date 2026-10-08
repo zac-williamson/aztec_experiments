@@ -154,6 +154,7 @@
       }
 
       async sendTx(executionPayload, opts) {
+        this._progress('preparing');
         const previousJournal = this._transactionJournal ? await this._transactionJournal.assertCanStart() : null;
         log('  Estimating gas (simulating tx)...', 'info');
         const feeOptions = await this.completeFeeOptions({
@@ -194,6 +195,7 @@
           from: opts.from, feePayer: executionPayload.feePayer, gasSettings: finalGasSettings,
         });
         const txRequest = await this.createTxExecutionRequestFromPayloadAndFee(executionPayload, opts.from, feeOpts2);
+        this._progress('proving');
         const provenTx = await this.pxe.proveTx(txRequest, {
           scopes: this.scopesFrom(opts.from, opts.additionalScopes ?? [], opts.sendMessagesAs),
           senderForTags: this.senderForTagsFrom(opts.from, opts.sendMessagesAs),
@@ -205,7 +207,9 @@
         log('  Transaction hash: ' + txHash.toString(), 'info');
         if(this._contextGuard)await this._contextGuard();
         if (this._transactionJournal) await this._transactionJournal.prepare(tx, previousJournal);
+        this._progress('submitting');
         await a.submitOnceWithReconciliation(rawNode,tx);
+        this._progress('confirming');
         const waitOpts=typeof opts.wait==='object'?opts.wait:{};
         const receipt=await a.waitForSuccessfulReceipt(rawNode,tx,{
           timeoutMs:(waitOpts.timeout ?? 540)*1000,intervalMs:(waitOpts.interval ?? 5)*1000,
@@ -218,6 +222,7 @@
     }
 
     const wallet = new AztecWallet(pxe, aztecNode);
+    wallet._progress = opts.progress || (()=>{});
     wallet._preProveHook = opts.preProveHook || null;
     wallet._contextGuard = opts.contextGuard || null;
     wallet._transactionJournal = opts.transactionJournal || null;
@@ -358,6 +363,7 @@
     // ============================================================
     // Step 4: Initialize CRS
     // ============================================================
+    env.progress?.('preparing');
     log('Step 3: Initializing CRS...', 'info');
     await initCRS();
     log('  CRS ready.', 'success');
@@ -389,6 +395,7 @@
     await pxe.registerContract(instance);
     log('  Contract registered.', 'success');
 
+    env.progress?.('syncing');
     log('  Syncing PXE with node...', 'info');
     await pxe.sync();
     log('  PXE synced.', 'success');
@@ -397,7 +404,7 @@
     // Step 7: Create wallet
     // ============================================================
     log('Step 6: Creating wallet...', 'info');
-    const wallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, { preProveHook: config.preProveHook, contextGuard: config.contextGuard });
+    const wallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, { preProveHook: config.preProveHook, contextGuard: config.contextGuard, progress: env.progress });
     const accountManager = await a.AccountManager.create(wallet, secretKey, accountContract, { salt: new a.Fr(saltVal) });
     wallet._accountManager = accountManager;
     log('  Wallet ready.', 'success');

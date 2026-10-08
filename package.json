@@ -48,7 +48,10 @@
     "test:portal": "cd billboard/portal && FOUNDRY_PROFILE=regression forge test --offline",
     "test:harness": "node scripts/test-harness.mjs harness",
     "test:components": "node scripts/test-harness.mjs components",
-    "test:e2e": "node scripts/test-c01-application.mjs"
+    "test:e2e": "node scripts/test-c01-application.mjs",
+    "prover": "node prover/start.mjs",
+    "test:remote-prover": "node --test scripts/test-remote-prover.mjs scripts/test-remote-prover-worker.mjs scripts/test-private-pxe-browser.mjs",
+    "test:remote-prover:browser": "node scripts/test-remote-prover-browser.mjs"
   },
   "overrides": {
     "systeminformation": "5.31.7",

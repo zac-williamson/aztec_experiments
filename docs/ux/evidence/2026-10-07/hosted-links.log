@@ -1,0 +1,15 @@
+✔ explicit invalid board link: garbage (3.038166ms)
+✔ explicit invalid board link: https://board.test/user.html (0.461ms)
+✔ explicit invalid board link: javascript:alert(1) (0.383375ms)
+✔ explicit invalid board link: https://board.test/#bad (0.582458ms)
+✔ unsupported network is different from an invalid link (0.6885ms)
+✔ canonical explicit link and ordinary default both resolve the hosted board (0.813ms)
+✔ permanent incompatibility and temporary connectivity expose different next actions (0.639667ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 77.274167

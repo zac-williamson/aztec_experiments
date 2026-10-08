@@ -1,42 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billboard — Deploy</title>
-<!--STYLES-->
-</head>
-<body>
-
-<h1>Billboard — Deploy</h1>
-<p class="small">Deploy and verify the Billboard contracts on L1 (Ethereum) and L2 (Aztec).</p>
-<p class="small"><b>Loads a 56MB bundle + 1.7MB contract artifact. Be patient.</b></p>
-<p class="small warn">⚠️ <b>Alpha experimental software.</b> Not meant for production use.</p>
-<p class="small" id="threadingInfo"></p>
-
-<div class="card">
-  <h2>Configuration</h2>
-  <p>Import the reviewed deployment configuration. Network, deposit limits, policy and censor must agree with this file before any deployment transaction is prepared.</p>
-  <label for="manifestFile">Deployment configuration file</label>
-  <input id="manifestFile" type="file" accept="application/json,.json" onchange="importDeploymentManifest(this)">
-  <textarea id="deploymentManifest" hidden></textarea>
-  <p id="manifestSummary" class="small">No configuration imported.</p>
-  <input id="secretKey" type="hidden"><input id="salt" type="hidden" value="0">
-  <label for="readyTxHash">Portal binding transaction (to resume activation)</label>
-  <input id="readyTxHash" placeholder="Optional transaction hash">
-  <label><input type="checkbox" id="retryEthereum"> Retry a saved Ethereum request with its original nonce</label>
-
-  <div id="walletButtonsContainer"></div>
-  <label for="publicFeeGas">Private fee gas settings for the public connection file (JSON, optional)</label>
-  <textarea id="publicFeeGas" rows="4" spellcheck="false"></textarea>
-  <p class="small">Use the reviewed gas settings for this release. The ownerless fee contract address is derived from the bundled artifact. Without fee settings the exported file supports public reading only. Each private transaction reserves a fee budget and returns unused credit privately. The refund contract must be published before funding it.</p>
-  <button id="deployButton" type="button" onclick="startDeploy()" style="margin-top: 12px; font-size: 1.1em; padding: 10px 24px; cursor: pointer;">Deploy</button>
-  <p class="small" id="deployHint">Load both wallets above, then click Deploy.</p>
-  <div id="status" class="status-container" role="status" aria-live="polite" style="max-height: 60vh; overflow-y: auto;"></div>
-</div>
-
-<!-- The 58MB bundle -->
-<script src="aztec_bundle.js"></script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Create a board</title><!--STYLES--></head><body><script src="public-feed.js"></script><main><h1>Create a board</h1><p>Review the board rules and deposit settings before deploying.</p><section class="task-panel"><h2>Board settings</h2><p>Connect the deployment accounts below, set the board rules, then review the settings. This creates a board on this site’s network.</p>
+<label for="newRules">Board rules</label><textarea id="newRules" maxlength="1488" rows="4"></textarea>
+<label for="newMinimum">Minimum refundable deposit (ETH)</label><input id="newMinimum" inputmode="decimal" value="0.000001">
+<label for="newMaximum">Maximum refundable deposit (ETH)</label><input id="newMaximum" inputmode="decimal" value="0.00001">
+<label for="newInterval">Posting interval at minimum deposit (seconds)</label><input id="newInterval" type="number" min="1" value="60">
+<label for="newWindow">Moderation period (seconds)</label><input id="newWindow" type="number" min="1" value="3600">
+<label for="newMultiplier">Penalty multiplier</label><input id="newMultiplier" type="number" min="1" value="4">
+<label for="newAllowance">Saved posting allowance (intervals)</label><input id="newAllowance" type="number" min="1" value="2">
+<label for="newModerator">Moderator’s private account address</label><input id="newModerator" placeholder="0x…">
+<button id="prepareBoard" class="secondary">Review board settings</button>
+<details><summary>Import advanced deployment settings</summary><label for="manifestFile">Reviewed deployment configuration</label><input id="manifestFile" type="file" accept="application/json,.json" onchange="importDeploymentManifest(this)"><textarea id="deploymentManifest" hidden></textarea></details><dl id="manifestSummary" class="balance-list"></dl></section><section class="task-panel"><h2>Deployment accounts</h2><div id="walletButtonsContainer"></div></section><details class="task-panel"><summary>Advanced settings</summary><label for="publicFeeGas">Private transaction fee settings (JSON)</label><textarea id="publicFeeGas" rows="4"></textarea><p class="small">These settings are included in the exported connection file. Hosted posting is checked separately against this site’s actual configuration.</p><label for="readyTxHash">Saved activation transaction</label><input id="readyTxHash"><label class="toggle"><input type="checkbox" id="retryEthereum"> Retry an interrupted Ethereum request with its original nonce</label></details><button id="deployButton" onclick="startDeploy()">Create board</button><p id="status" role="status"></p><div id="operationStatus" class="operation" hidden></div><dl id="capabilities" class="balance-list"></dl><p class="actions"><a id="readBoard" hidden>Read this board</a><a id="postBoard" hidden>Open posting</a></p><button id="downloadConfig" class="secondary" hidden>Download connection settings</button></main><!-- The 58MB bundle -->
+<script src="aztec_bundle.js" defer></script>
 <!--RPC_CONFIG-->
 <!--HELPERS-->
 <!--ARTIFACT-->

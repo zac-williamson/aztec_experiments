@@ -62,8 +62,8 @@ systemctl stop board-moderator.service
 [[ $(systemctl show --property=Result --value board-moderator.service) == success ]]
 [[ $(systemctl show --property=MainPID --value board-moderator.service) == 0 ]]
 cd /srv/board
-inputs=(state/moderator.json state/private-fee-retroactive.json state/deployment-retroactive.json
-  state/transaction-journal-v1 state/moderation-retroactive
+inputs=(state/moderator.json state/private-fee-retroactive.json state/deployment-direct-deposit-20260928.json
+  state/transaction-journal-v1 state/moderation-direct-deposit-20260928
   "${release#/srv/board/}/.pxe-cache-v2" "${release#/srv/board/}/operator-package.json"
   model-manifest.json runtime.json)
 for item in "${inputs[@]}"; do [[ -e $item ]]; done
@@ -79,7 +79,7 @@ aws s3 cp "s3://$bucket/$key" "$work/download.tar.gz" --only-show-errors
 cmp "$work/state.tar.gz" "$work/download.tar.gz"
 tar -xzf "$work/download.tar.gz" -C "$work/restored" --no-same-owner
 (cd "$work/restored" && sha256sum --check --quiet metadata/files.sha256)
-python3 - "$work/restored/state/moderation-retroactive" <<'PY'
+python3 - "$work/restored/state/moderation-direct-deposit-20260928" <<'PY'
 import pathlib, sqlite3, sys
 databases = list(pathlib.Path(sys.argv[1]).glob('*.sqlite'))
 assert databases, 'Moderation database missing'

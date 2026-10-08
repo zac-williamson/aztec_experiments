@@ -7,6 +7,7 @@ const bootstrap=fs.readFileSync(new URL('../shared/public-app-bootstrap.js',impo
 const address=n=>'0x'+n.repeat(64),rollup='0x'+'1'.repeat(40);
 const config={schemaVersion:1,network:{nodeUrl:'https://node.example/',ethRpcUrl:'https://eth.example/',chainId:'1',rollupVersion:'5',rollupAddress:rollup},board:{portalAddress:'0x'+'2'.repeat(40),contractAddress:address('3')},privateFee:{contractAddress:address('1'),gasSettings:{gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'0',l2Gas:'0'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}}};
 // Use field-sized addresses (0x33... exceeds the Aztec field).
+config.remoteProver={url:'https://prover.example/'};
 config.board.contractAddress='0x03'+'3'.repeat(62);
 const other='0x04'+'4'.repeat(62),fragment=board=>'#network=1:'+rollup+':5&board='+board;
 function fixture({hash=fragment(other),fee=true,fetchFailure=false,resolve}={}){
@@ -26,4 +27,9 @@ for(const options of [{fee:false},{fetchFailure:true},{hash:fragment(other).repl
 });
 test('a board change during verification reloads before installing settings or initializing wallets',async()=>{
  const f=fixture({resolve:c=>{c.location.hash=fragment(config.board.contractAddress);}});let initialized=0;await f.c.initializeHostedBoard(()=>initialized++);assert.equal(initialized,0);assert.equal(f.c.billboardConfigStore.snapshot().config,null);assert.equal(f.counts().reloads,1);
+});
+
+test('hosted board retains its remote prover and another board cannot inherit it',async()=>{
+ const own=fixture({hash:fragment(config.board.contractAddress)});await own.c.initializeHostedBoard(()=>{});assert.equal(own.c.billboardConfigStore.snapshot().config.remoteProver.url,config.remoteProver.url);
+ const otherBoard=fixture();await otherBoard.c.initializeHostedBoard(()=>{});assert.equal(otherBoard.c.billboardConfigStore.snapshot().config.remoteProver,undefined);
 });

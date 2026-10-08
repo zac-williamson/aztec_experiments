@@ -1,248 +1,96 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Browse boards</title><style>
-
-  :root { color-scheme: light dark; }
-  * { box-sizing: border-box; }
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-         max-width: 720px; margin: 0 auto; padding: 1rem; line-height: 1.5; }
-  h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
-  .sub { color: #888; font-size: 0.9rem; margin-bottom: 1.5rem; }
-  .small { font-size: 0.85rem; color: #aaa; }
-  .small.muted { color: #777; }
-  .small.warn { color: #d29922; }
-
-  /* Pagination */
-  .page { display: none; }
-  .page.active { display: block; }
-  .page.active > .card { animation: fadeIn 0.25s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-
-  /* Nav bar (inline, bottom right of content) */
-  .nav-bar { display: flex; align-items: center; gap: 0.75rem;
-             justify-content: flex-end; padding: 0.5rem 0 1.5rem 0; }
-  .nav-back { background: #333; color: #ccc; border: none; border-radius: 8px;
-              padding: 0.5rem 0.8rem; cursor: pointer; font-size: 0.9rem;
-              visibility: hidden; }
-  .nav-back:hover { background: #444; }
-  .nav-progress { font-size: 0.85rem; color: #888; font-variant-numeric: tabular-nums;
-                  margin-right: auto; }
-  .nav-next { background: #6c4bd6; color: #fff; border: none; border-radius: 8px;
-              padding: 0.6rem 1.2rem; cursor: pointer; font-size: 1rem; font-weight: 600;
-              min-width: 8rem; text-align: center; }
-  .nav-next:hover { background: #5a3cc0; }
-  .nav-next:disabled { background: #555; cursor: not-allowed; }
-  .nav-next.working { background: #4a3a8a; }
-
-  /* Cards & inputs */
-  .card { border: 1px solid #333; border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem;
-          background: rgba(127,127,127,0.05); }
-  label { display: block; font-size: 0.85rem; margin: 0.75rem 0 0.25rem; }
-  input, textarea { width: 100%; box-sizing: border-box; padding: 0.55rem; font-size: 0.95rem;
-          border-radius: 6px; border: 1px solid #444; background: inherit; color: inherit;
-          font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-  input.missing, textarea.missing, select.missing { border-color: #f85149; }
-  .field-error { color: #f85149; font-size: 0.85rem; margin: 0.25rem 0; }
-  button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus-visible, h2[tabindex]:focus-visible { outline: 2px solid #58a6ff; outline-offset: 3px; }
-  button { cursor: pointer; border: none; border-radius: 8px; padding: 0.7rem 1rem;
-           font-size: 1rem; font-weight: 600; color: #fff; background: #6c4bd6; margin-top: 0.5rem; }
-  button:hover { background: #5a3cc0; }
-  button:disabled { background: #555; cursor: not-allowed; }
-  button.secondary { background: #333; font-weight: 500; font-size: 0.9rem; }
-  button.secondary:hover { background: #444; }
-  button.working, .nav-next.working { opacity: 0.8; }
-
-  /* Public identifiers and user text must fit narrow reading screens. */
-  #boardConfiguration, #messages article { overflow-wrap: anywhere; }
-
-  /* Wallet buttons */
-  .wallet-btns { display: flex; flex-direction: column; gap: 0.6rem; }
-  button.wallet-btn { background: #333; font-weight: 500; font-size: 0.9rem; }
-  button.wallet-btn:hover { background: #444; }
-  button.wallet-btn.loaded { background: #238636; }
-  button.wallet-btn.loaded:hover { background: #2ea043; }
-  button.wallet-btn.other { background: #3a6b3a; }
-  button.wallet-btn.other:hover { background: #457a45; }
-  .wallet-group { display: flex; flex-direction: column; gap: 0.3rem; }
-  .wallet-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; color: #aaa; text-transform: uppercase; }
-  .wallet-label small { font-weight: 400; text-transform: none; color: #777; font-size: 0.7rem; }
-  .wallet-btn-row { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
-
-  /* Status messages */
-  .status-container { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            font-size: 0.82rem; min-height: 1.5rem; margin-top: 0.75rem; max-height: 300px; overflow-y: auto; }
-  .status { padding: 0.15rem 0; }
-  .status.info { color: #aaa; }
-  .status.success { color: #3fb950; }
-  .status.error { color: #f85149; }
-  .status.warn { color: #d29922; }
-  .status.working { color: #58a6ff; }
-
-  .spinner { display: inline-block; width: 0.7rem; height: 0.7rem; border: 2px solid #58a6ff;
-             border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;
-             margin-right: 0.4rem; vertical-align: middle; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .ok { color: #3fb950; } .err { color: #f85149; } .muted { color: #888; }
-  .ref { font-size: 0.78rem; color: #888; word-break: break-all; }
-  a { color: #58a6ff; }
-  hr { border: none; border-top: 1px solid #333; margin: 1rem 0; }
-  code { background: rgba(127,127,127,0.15); padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.85rem; }
-
-  /* Block monitor (top-right fixed indicator) */
-  .block-monitor {
-    position: fixed; top: 8px; right: 12px;
-    font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    background: rgba(127,127,127,0.08); padding: 4px 10px; border-radius: 6px;
-    z-index: 9999; pointer-events: none; color: #888;
-    border: 1px solid rgba(127,127,127,0.15);
-  }
-  .block-monitor.ok { color: #3fb950; }
-  .block-monitor.err { color: #f85149; }
-
-  /* Countdown timer (page 3 of user app) */
-  .countdown {
-    font-size: 0.95rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    padding: 0.6rem 0.8rem; border-radius: 6px; margin-bottom: 0.75rem;
-    font-variant-numeric: tabular-nums; text-align: center;
-  }
-  .countdown.ready { background: rgba(63,185,80,0.12); color: #3fb950; }
-  .countdown.waiting { background: rgba(210,153,34,0.12); color: #d29922; }
-  .countdown.warn { background: rgba(248,81,73,0.10); color: #d29922; }
-
-  /* Billboard feed */
-  .billboard-card { padding-bottom: 0.5rem; }
-  .billboard-feed {
-    display: flex; flex-direction: column; gap: 0.6rem;
-    max-height: 840px; overflow-y: auto; padding-right: 0.3rem;
-    margin-top: 0.5rem;
-  }
-  .billboard-feed::-webkit-scrollbar { width: 6px; }
-  .billboard-feed::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-  .billboard-post {
-    padding: 0.8rem 1rem; border-radius: 10px;
-    background: rgba(108,75,214,0.08); border: 1px solid rgba(108,75,214,0.18);
-    font-size: 0.95rem; line-height: 1.55; word-wrap: break-word; overflow-wrap: break-word;
-    animation: fadeIn 0.3s ease;
-  }
-  .billboard-post.new { animation: postIn 0.4s ease; }
-  @keyframes postIn {
-    from { opacity: 0; transform: translateY(-6px); background: rgba(108,75,214,0.20); }
-    to { opacity: 1; transform: none; background: rgba(108,75,214,0.08); }
-  }
-  .billboard-post-meta {
-    font-size: 0.72rem; color: #888; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    margin-bottom: 0.35rem; display: flex; gap: 0.6rem; align-items: center;
-  }
-  .billboard-post-num {
-    background: rgba(108,75,214,0.25); color: #b8a0ff; border-radius: 4px;
-    padding: 0.05rem 0.4rem; font-weight: 600; font-size: 0.7rem;
-  }
-  .billboard-post-text { color: #2a2040; }
-  .billboard-post.flagged {
-    background: rgba(194,65,65,0.08); border: 1px solid rgba(194,65,65,0.25);
-  }
-  .billboard-post-text.flagged-text { color: #888; font-style: italic; }
-  /* Censored posts (greyed out, only shown when user opts in) */
-  .billboard-post.censored {
-    background: rgba(127,127,127,0.06); border: 1px solid rgba(127,127,127,0.15);
-    opacity: 0.6;
-  }
-  .billboard-post-text.censored-text { color: #777; font-style: italic; }
-  .censored-divider {
-    height: 1px; background: rgba(127,127,127,0.2); margin: 0.8rem 0;
-  }
-  .censored-toggle {
-    text-align: center; font-size: 0.78rem; color: #888; cursor: pointer;
-    padding: 0.6rem 0; margin-top: 0.4rem; text-decoration: underline;
-  }
-  .censored-toggle:hover { color: #aaa; }
-  /* Moderation policy box */
-  .policy-box {
-    background: rgba(108,75,214,0.05); border: 1px solid rgba(108,75,214,0.15);
-    border-radius: 10px; padding: 0.8rem 1rem; margin-bottom: 0.8rem;
-  }
-  .policy-box h3 { margin: 0 0 0.4rem 0; font-size: 0.85rem; color: #b8a0ff; }
-  .policy-text {
-    font-family: inherit; font-size: 0.82rem; line-height: 1.5; color: #555;
-    white-space: pre-wrap; word-wrap: break-word; margin: 0;
-  }
-  /* Confirmation dialog for viewing censored posts */
-  .censor-confirm-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
-    z-index: 10000;
-  }
-  .censor-confirm-dialog {
-    background: #1a1a2e; border: 1px solid #444; border-radius: 12px;
-    padding: 1.5rem; max-width: 400px; width: 90%;
-    color: #e0e0e0;
-  }
-  .censor-confirm-dialog h3 { margin: 0 0 0.5rem; font-size: 1.1rem; color: #fff; }
-  .censor-confirm-dialog .small { color: #ccc; margin-bottom: 1rem; }
-  .censor-confirm-buttons { display: flex; gap: 0.6rem; justify-content: flex-end; }
-  .censor-confirm-buttons button { margin-top: 0; }
-  /* Sudoku challenge */
-  .sudoku-dialog { max-width: 420px; }
-  .sudoku-grid {
-    display: grid;
-    grid-template-columns: repeat(9, 1fr);
-    gap: 0;
-    margin: 0.5rem auto 1rem;
-    width: 360px;
-    border: 2px solid #666;
-    border-radius: 4px;
-    background: #111;
-  }
-  .sudoku-cell {
-    width: 40px; height: 40px;
-    text-align: center;
-    font-size: 1.1rem;
-    font-family: monospace;
-    border: 1px solid #333;
-    background: #1a1a2e;
-    color: #e0e0e0;
-    outline: none;
-    padding: 0;
-  }
-  .sudoku-cell.given {
-    background: #2a2a4e;
-    color: #fff;
-    font-weight: 700;
-  }
-  .sudoku-cell:focus {
-    background: #1e3a5f;
-    box-shadow: inset 0 0 0 2px #4a9eff;
-  }
-  .sudoku-border-right { border-right: 2px solid #666 !important; }
-  .sudoku-border-bottom { border-bottom: 2px solid #666 !important; }
-  .sudoku-cell.sudoku-conflict {
-    color: #c24141;
-    background: rgba(194,65,65,0.15);
-  }
-  .sudoku-status { text-align: center; min-height: 1.5rem; margin-bottom: 0.5rem; }
-  .sudoku-solved { color: #4ade80; font-weight: 600; font-size: 0.95rem; }
-  .flagged-badge {
-    background: rgba(194,65,65,0.3); color: #c24141; border-radius: 4px;
-    padding: 0.05rem 0.4rem; font-weight: 600; font-size: 0.7rem;
-  }
-  .censor-response {
-    margin-top: 0.4rem; padding: 0.4rem 0.6rem; border-radius: 6px;
-    background: rgba(194,65,65,0.06); font-size: 0.85rem; color: #6a4040;
-    border-left: 3px solid rgba(194,65,65,0.3);
-  }
-  .billboard-empty {
-    text-align: center; color: #888; font-size: 0.9rem; padding: 2rem 0;
-  }
-  .billboard-loading {
-    text-align: center; color: #888; font-size: 0.85rem; padding: 1rem 0;
-  }
-  .billboard-loading .spinner { width: 0.9rem; height: 0.9rem; }
-
-.account-menu { position:fixed; top:1rem; right:1rem; z-index:30; background:#202020; border:1px solid #555; border-radius:.6rem; }
-.account-menu summary { cursor:pointer; padding:.7rem 1rem; }
-.account-menu-panel { position:absolute; right:0; top:100%; z-index:20; width:min(22rem,85vw); padding:1rem; background:#202020; border:1px solid #555; border-radius:.6rem; box-shadow:0 8px 24px #0006; }
-.account-menu-panel button { display:block; width:100%; margin:.4rem 0; }
+:root{color-scheme:light dark;--bg:#f7f8fa;--surface:#fff;--text:#19212d;--muted:#526070;--line:#d5dbe3;--control-border:#7a8796;--accent:#234fc0;--accent-text:#fff;--soft:#eaf0ff;--error:#b42318;--success:#176b3b;--warning:#785300;--focus:#2364e8;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px;line-height:1.6}
+@media(prefers-color-scheme:dark){:root{--bg:#11151b;--surface:#191f28;--text:#edf1f7;--muted:#adb9c8;--line:#394453;--control-border:#728198;--accent:#abc4ff;--accent-text:#11254c;--soft:#26334b;--error:#ffaaa1;--success:#86dcac;--warning:#edcf87;--focus:#abc4ff}}
+*{box-sizing:border-box}body{margin:0 auto;padding:0 24px 64px;max-width:860px;background:var(--bg);color:var(--text)}[hidden]{display:none!important}h1{font-size:2rem;line-height:1.2;letter-spacing:-.04em;margin:32px 0 12px}h2{font-size:1.3rem;line-height:1.35;margin:0 0 16px}h3{font-size:1rem}p{margin:12px 0}a{color:var(--accent);text-underline-offset:3px}button,input,select,textarea{font:inherit}button{border:1px solid transparent;border-radius:7px;padding:10px 18px;background:var(--accent);color:var(--accent-text);font-weight:600;cursor:pointer;min-height:44px;margin:6px 0}button:hover{filter:brightness(.94)}button.secondary,.nav-back{background:var(--surface);color:var(--text);border-color:var(--line);font-weight:500}button:disabled{opacity:.55;cursor:not-allowed}button.danger{color:var(--error);background:var(--surface);border-color:var(--line)}:focus-visible{outline:3px solid var(--focus);outline-offset:4px}input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select{display:block;width:100%;border:1px solid var(--control-border);border-radius:6px;padding:10px 12px;color:var(--text);background:var(--surface);min-height:44px}textarea{resize:vertical;line-height:1.6}input[type=range]{width:100%;accent-color:var(--accent);height:36px}input[type=checkbox],input[type=radio]{width:18px;height:18px;accent-color:var(--accent);vertical-align:middle;flex-shrink:0}label{display:block;font-weight:600;margin:14px 0 6px}label.toggle{display:flex;align-items:center;gap:10px;font-weight:500}.small,.muted,.sub,.ref{font-size:.875rem;color:var(--muted)}.warn{color:var(--warning)}.error,.err,.field-error{color:var(--error)}.success,.ok{color:var(--success)}.field-error{font-size:.875rem}.missing,[aria-invalid=true]{border-color:var(--error)!important}.card,.task-panel{background:var(--surface);border:1px solid var(--line);padding:24px;border-radius:10px;margin:24px 0}.site-header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 0;border-bottom:1px solid var(--line)}.brand{color:var(--text);font-weight:700;text-decoration:none}.site-header nav{display:flex;gap:20px;margin-left:auto}.site-header nav a{text-decoration:none;color:var(--muted)}.site-header nav a[aria-current=page]{color:var(--text);font-weight:650}.testnet-notice{font-size:.8rem;color:var(--muted);margin:10px 0 24px}.account-menu{position:relative;font-size:.9rem}.account-menu summary{cursor:pointer;padding:8px;border:1px solid var(--line);border-radius:7px}.account-menu-panel{position:absolute;right:0;z-index:20;top:48px;width:min(360px,calc(100vw - 48px));background:var(--surface);border:1px solid var(--line);padding:20px;border-radius:8px;box-shadow:0 8px 32px #0003;max-height:75vh;overflow:auto}.account-menu-panel button{width:100%;text-align:left}.account-menu-panel details{margin:16px 0}.account-address{overflow-wrap:anywhere}.wallet-btns,.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.wallet-group{flex:1}.message{border-top:1px solid var(--line);padding:24px 0;overflow-wrap:anywhere}.message-meta{display:flex;justify-content:space-between;gap:16px;color:var(--muted);font-size:.8rem}.message-text,.policy-text{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit}.message-text{font-size:1.0625rem;margin:12px 0}.policy-box,details.rules{background:var(--soft);border-radius:8px;padding:14px 18px;margin:20px 0}.billboard-feed{max-height:none;overflow:visible}.empty-state{padding:32px 0;color:var(--muted)}summary{cursor:pointer}details>summary{font-weight:600}details pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.75rem}details.diagnostics{margin:20px 0}.operation{border-left:3px solid var(--accent);padding:4px 0 4px 18px;margin:24px 0}.operation>p:first-child{font-weight:600}.operation details{font-size:.8rem;color:var(--muted)}.status-container{font-family:inherit;white-space:pre-wrap;font-size:.9rem;overflow-wrap:anywhere}.status{padding:4px 0}.status.info{color:var(--muted)}.status.working{color:var(--accent)}.balance-list{display:grid;grid-template-columns:1fr auto;gap:8px 16px}.balance-list dt,.balance-list dd{margin:0}.balance-list dd{font-variant-numeric:tabular-nums;overflow-wrap:anywhere;min-width:0}.countdown{font-size:.875rem;color:var(--muted)}.countdown.ready{color:var(--success)}.capacity{display:flex;justify-content:space-between;gap:12px;font-size:.8rem;color:var(--muted)}.page{display:none}.page.active{display:block}.nav-bar{display:flex;gap:16px;align-items:center;justify-content:space-between}.block-monitor{display:none}hr{border:0;border-top:1px solid var(--line);margin:24px 0}dialog{background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:28px;max-width:min(520px,calc(100vw - 32px))}dialog::backdrop{background:#0008}dialog button{margin-right:8px}dialog h2{margin-bottom:16px}code{overflow-wrap:anywhere;font-size:.85em}output{font-weight:650;font-size:1.25rem}.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin-right:8px}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:540px){body{padding:0 16px 40px}.site-header{gap:12px;flex-wrap:wrap}.site-header nav{gap:16px}.brand{font-size:.9rem}.site-header #accountSlot{margin-left:auto}.card,.task-panel{padding:18px}h1{font-size:1.7rem}.actions>button{flex:1}.balance-list{grid-template-columns:1fr}.balance-list dd{margin-bottom:8px}.message{padding:20px 0}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 </style></head><body data-public-board-reader>
+<script>
+// Shared presentation of verified public board data. No wallet or SDK dependencies.
+(function(root){
+  const el=(tag,text,cls)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(cls)node.className=cls;return node;};
+  function url(page,fragment=location.hash){const target=new URL(page,location.href);target.hash=fragment;if(target.origin===location.origin&&(location.pathname.endsWith('/censor.html')||new URL(location.href).searchParams.get('return')==='moderator')&&['feed.html','fee-juice.html','user.html'].includes(target.pathname.split('/').pop()))target.searchParams.set('return','moderator');return target;}
+  function header({title='Message board',section='Read'}={}){
+    const head=el('header',undefined,'site-header');head.id='siteHeader';
+    const brand=el('a','Message boards','brand');brand.href='boards.html';
+    const nav=el('nav');nav.setAttribute('aria-label','Main navigation');
+    for(const [label,page]of [['Read','feed.html'],['Write','user.html']]){const link=el('a',label);link.href=url(page);link.dataset.boardLink='';if(label===section)link.setAttribute('aria-current','page');nav.append(link);}
+    const share=el('button','Copy board link','secondary');share.type='button';share.dataset.copyBoardLink='';share.onclick=async()=>{const target=url('feed.html');target.search='';try{await navigator.clipboard.writeText(target.href);share.textContent='Link copied';}catch{share.textContent='Copy unavailable';}};nav.append(share);if(new URL(location.href).searchParams.get('return')==='moderator'){const back=el('a','Return to moderation');back.href=url('censor.html');nav.append(back);}
+    const account=el('div');account.id='accountSlot';head.append(brand,nav,account);document.body.prepend(head);
+    const notice=el('p','Testnet · Test funds only','testnet-notice');head.after(notice);
+    document.querySelector('h1')?.replaceChildren(document.createTextNode(title));return head;
+  }
+  let identityVersion=0;
+  function identity(config){
+    const version=++identityVersion,address=config?.board?.contractAddress;
+    for(const anchor of document.querySelectorAll('[data-board-link]')){const page=anchor.dataset.boardPage||anchor.getAttribute('href');if(page)anchor.dataset.boardPage=page;if(address)anchor.href=url(page,location.hash);else anchor.removeAttribute('href');}
+    const share=document.querySelector('[data-copy-board-link]');if(share)share.disabled=!address;
+    if(!address){const heading=document.querySelector('[data-board-title]');if(heading)heading.textContent='Message board';document.title='Message board';return;}
+    const notice=document.querySelector('.testnet-notice');if(notice)notice.textContent=String(config.network.chainId)==='11155111'?'Testnet · Test funds only':String(config.network.chainId)==='1'?'Ethereum mainnet':'Ethereum network '+config.network.chainId;
+    const name='Board '+address.slice(2,8);const heading=document.querySelector('[data-board-title]');if(heading)heading.textContent=name;
+    document.title=name+' · Message board';
+    root.BillboardCatalog?.load(config.network).then(labels=>{const label=labels.find(x=>x.address===address);if(version===identityVersion&&label&&heading){heading.textContent=label.name;document.title=label.name;}}).catch(()=>{});
+  }
+  function renderMessages(container,posts,{append=false,onModerate}={}){
+    const previous=new Map([...container.querySelectorAll('article[data-post-id]')].map(node=>[node.dataset.postId,node]));
+    const nodes=[];
+    for(const post of posts){
+      const signature=JSON.stringify([post.text,post.flagged,post.flag?.reason,post.publishedAt,Boolean(onModerate)]);let article=previous.get(post.postId);
+      if(!article||article.dataset.signature!==signature){
+        article=el('article',undefined,'message');article.dataset.postId=post.postId;article.dataset.signature=signature;article.id='message-'+post.postId;
+        const meta=el('div',undefined,'message-meta'),time=el('time');const seconds=Number(post.publishedAt);
+        if(Number.isSafeInteger(seconds)&&seconds>0){const date=new Date(seconds*1000);time.dateTime=date.toISOString();time.textContent=date.toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});}else time.textContent='Publication time unavailable';
+        const link=el('a','Link');const target=url('feed.html');target.searchParams.set('message',post.postId);link.href=target;link.setAttribute('aria-label','Link to message '+post.orderIndex);
+        meta.append(time,link);article.append(meta,el('p',post.flagged?'Message removed by moderator.':post.text,'message-text'));
+        if(post.flagged){article.append(el('p','Reason: '+(post.flag?.reason||'No reason supplied'),'small'));if(onModerate){const original=el('details');original.append(el('summary','Show removed message'),el('p',post.text,'message-text'));article.append(original);}}
+        if(onModerate&&!post.flagged){const button=el('button','Moderate','secondary');button.onclick=()=>onModerate(post);article.append(button);}
+      }
+      nodes.push(article);
+    }
+    if(append){for(const node of nodes)if(!previous.has(node.dataset.postId))container.append(node);}
+    else {const active=document.activeElement,card=active?.closest('article[data-post-id]'),focusIndex=card?[...card.querySelectorAll('a,button,summary')].indexOf(active):-1;container.replaceChildren(...nodes);if(active?.isConnected)active.focus({preventScroll:true});else if(card){const replacement=nodes.find(node=>node.dataset.postId===card.dataset.postId);const target=replacement?.querySelectorAll('a,button,summary')[focusIndex]||replacement?.querySelector('a');target?.focus({preventScroll:true});}}
+    if(!container.children.length)container.append(el('p','No messages yet. Be the first to write one.','empty-state'));
+  }
+  function rules(container,policies,participation){
+    const text=policies?.at(-1)?.text;container.hidden=!text&&!participation;
+    let body=container.querySelector('[data-rules-text]');if(!body){container.replaceChildren(el('summary','Board rules'));body=el('p',undefined,'policy-text');body.dataset.rulesText='';container.append(body);}body.textContent=text||'No written rules published.';
+    let terms=container.querySelector('[data-participation]');if(!terms){terms=el('p',undefined,'small');terms.dataset.participation='';container.append(terms);}terms.hidden=!participation;
+    if(participation){const eth=value=>{const digits=String(value).padStart(19,'0');return digits.slice(0,-18)+'.'+digits.slice(-18).replace(/0+$/,'');};
+      terms.textContent='Refundable deposit: '+eth(participation.minDeposit)+'–'+eth(participation.maxDeposit)+' ETH. At the minimum deposit, one posting interval is '+participation.baseCooldown+' seconds; larger deposits shorten it. Save up to '+participation.maxSaveUp+' intervals for consecutive posts. A removal confirmed within '+participation.censorWindow+' seconds of publication under the same rules adds '+(Number(participation.kMultiplier)-1)+' posting intervals when your account next checks it.';
+    }
+  }
+  function bindOperation(application,container){
+    const status=el('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+    const hint=el('p',undefined,'small');const pause=el('button','Pause and continue later','secondary');pause.onclick=()=>{if(application.requestPause()){pause.disabled=true;pause.textContent='Pausing…';}};const details=el('details');details.append(el('summary','Details'));
+    const elapsed=el('p',undefined,'small'),history=el('ol');history.setAttribute('aria-label','Operation stages reached');let current=null;const showElapsed=()=>{elapsed.textContent=current?.startedAt?'Elapsed: '+Math.floor(((current.endedAt||Date.now())-current.startedAt)/1000)+' seconds':'';};const timer=setInterval(showElapsed,1000);
+    const report=el('pre'),copy=el('button','Copy diagnostic report','secondary');copy.type='button';copy.onclick=async()=>{await navigator.clipboard.writeText(application.diagnosticReport());copy.textContent='Copied';};details.append(history,report,copy);container.replaceChildren(status,hint,elapsed,pause,details);
+    const unsubscribe=application.subscribe(state=>{current=state;showElapsed();history.replaceChildren(...(state.history||[]).map(stage=>el('li',root.BillboardOperations?.stages[stage]||stage)));pause.hidden=!['bridge','settlement','screening'].includes(state.stage)||!['working','waiting'].includes(state.status);if(pause.hidden){pause.disabled=false;pause.textContent='Pause and continue later';}container.hidden=state.status==='idle';status.textContent=state.message;status.className=state.status==='failed'?'error':state.status==='complete'?'success':'';
+      hint.textContent=state.stage==='bridge'?'Your payment is confirmed. Setup continues automatically when the network is ready.':state.stage==='queued'?'Your request is accepted. It starts when the board’s prover is free.':state.stage==='proving'?'Proof generation can take several minutes. '+(state.mode==='remote'?'Using this board’s prover.':'Using this device.') :state.stage==='settlement'?'Your withdrawal is recorded. This can take longer than posting; we will ask for the final wallet approval when it is ready.':'';
+      report.textContent=application.diagnosticReport();copy.textContent='Copy diagnostic report';});return()=>{clearInterval(timer);unsubscribe();};
+  }
+  root.BillboardView=Object.freeze({header,identity,renderMessages,rules,bindOperation,url,element:el});
+})(globalThis);
+
+</script>
+<script>
+// Optional operator labels. Chain identity and addresses are still verified by the public reader.
+(function(root){
+ let request;
+ async function load(network){
+  request??=fetch('board-catalog.json',{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(10000)}).then(async response=>{
+   if(!response.ok)throw Error('Catalog unavailable');const data=await response.json();
+   if(data.schemaVersion!==1||typeof data.network!=='string'||!Array.isArray(data.boards)||data.boards.length>1000)throw Error('Invalid catalog');
+   for(const board of data.boards)if(!/^0x[0-9a-f]{64}$/.test(board.address)||typeof board.name!=='string'||board.name.length>100||typeof board.description!=='string'||board.description.length>500||!['current','retired'].includes(board.status))throw Error('Invalid board label');
+   return data;
+  });
+  const data=await request;if(data.network!==[network.chainId,network.rollupAddress,network.rollupVersion].join(':'))return [];
+  return data.boards.map(board=>Object.freeze({...board}));
+ }
+ root.BillboardCatalog=Object.freeze({load});
+})(globalThis);
+
+</script>
 <script>
 (function (root) {
   'use strict';
@@ -272,25 +120,27 @@
     check(da>0n&&l2>0n&&maximum>0n&&maximum<(1n<<128n)&&BigInt(out.teardownGasLimits.daGas)<=da&&BigInt(out.teardownGasLimits.l2Gas)<=l2&&BigInt(out.maxPriorityFeesPerGas.feePerDaGas)<=fda&&BigInt(out.maxPriorityFeesPerGas.feePerL2Gas)<=fl2,'Invalid private fee limits');
     return {contractAddress:address(value.contractAddress,32),gasSettings:out};
   }
+  function remote(value){exact(value,['url']);const url=endpoint(value.url),u=new URL(url);check(u.protocol==='https:'||['localhost','127.0.0.1','[::1]'].includes(u.hostname),'Prover requires HTTPS');return {url};}
   function validate(value){
-    exact(value,['schemaVersion','network','board'],['privateFee']);check(value.schemaVersion===1,'Unsupported configuration version');
+    exact(value,['schemaVersion','network','board'],['privateFee','remoteProver']);check(value.schemaVersion===1,'Unsupported configuration version');
     const n=value.network,b=value.board;exact(n,['nodeUrl','ethRpcUrl','chainId','rollupVersion','rollupAddress']);exact(b,['portalAddress','contractAddress']);
-    return freeze({schemaVersion:1,network:{nodeUrl:endpoint(n.nodeUrl),ethRpcUrl:endpoint(n.ethRpcUrl),chainId:uint(n.chainId,64,true),rollupVersion:uint(n.rollupVersion,32,true),rollupAddress:address(n.rollupAddress,20)},board:{portalAddress:address(b.portalAddress,20),contractAddress:address(b.contractAddress,32)},privateFee:fee(value.privateFee)});
+    return freeze({schemaVersion:1,network:{nodeUrl:endpoint(n.nodeUrl),ethRpcUrl:endpoint(n.ethRpcUrl),chainId:uint(n.chainId,64,true),rollupVersion:uint(n.rollupVersion,32,true),rollupAddress:address(n.rollupAddress,20)},board:{portalAddress:address(b.portalAddress,20),contractAddress:address(b.contractAddress,32)},privateFee:fee(value.privateFee),...(value.remoteProver===undefined?{}:{remoteProver:remote(value.remoteProver)})});
   }
   function parse(text){check(typeof text==='string'&&new TextEncoder().encode(text).length<=MAX_BYTES,'Configuration exceeds size limit');let value;try{value=JSON.parse(text);}catch{throw new Error('Invalid configuration JSON');}return validate(value);}
   function maximumFee(config){const f=validate(config).privateFee;if(!f)return null;const g=f.gasSettings;return (BigInt(g.gasLimits.daGas)*BigInt(g.maxFeesPerGas.feePerDaGas)+BigInt(g.gasLimits.l2Gas)*BigInt(g.maxFeesPerGas.feePerL2Gas)).toString();}
   function createStore(options={}){
+    const pageOnly=options.persistence==='page';
     let storage=options.storage,eventTarget=options.eventTarget??root,accessError=null;
-    if(!Object.hasOwn(options,'storage'))try{storage=root.localStorage;}catch{accessError='Public configuration storage is unavailable';}
+    if(!pageOnly&&!Object.hasOwn(options,'storage'))try{storage=root.localStorage;}catch{accessError='Public configuration storage is unavailable';}
     let revision=0,state;const listeners=new Set();
-    function update(config,error,persisted){state=freeze({config,revision:++revision,error,persisted});for(const fn of listeners)try{fn(state);}catch{}return state;}
+    function update(config,error,persisted){state=freeze({config,revision:++revision,error,persisted,persistence:pageOnly?'page':'device'});for(const fn of listeners)try{fn(state);}catch{}return state;}
     function load(text,persisted){try{return update(text===null?null:parse(text),null,persisted);}catch{return update(null,'Stored public configuration is invalid; import it again',false);}}
-    try{if(!storage)throw new Error();load(storage.getItem(STORAGE_KEY),true);}catch{update(null,accessError??'Public configuration storage is unavailable',false);}
+    try{if(pageOnly)update(null,null,false);else {if(!storage)throw new Error();load(storage.getItem(STORAGE_KEY),true);}}catch{update(null,accessError??'Public configuration storage is unavailable',false);}
     function onStorage(event){if(event.storageArea&&event.storageArea!==storage)return;if(event.key!==STORAGE_KEY&&event.key!==null)return;load(event.key===null?null:event.newValue,true);}
-    eventTarget?.addEventListener?.('storage',onStorage);
+    if(!pageOnly)eventTarget?.addEventListener?.('storage',onStorage);
     return Object.freeze({snapshot:()=>state,
-      install(value){const config=validate(value);let error=null,persisted=true;try{storage.setItem(STORAGE_KEY,JSON.stringify(config));}catch{persisted=false;error='Configuration is active for this page only; storage is unavailable';}return update(config,error,persisted);},
-      clear(){let error=null,persisted=true;try{storage.removeItem(STORAGE_KEY);}catch{persisted=false;error='Configuration cleared for this page only; saved storage could not be removed';}return update(null,error,persisted);},
+      install(value){const config=validate(value);if(pageOnly)return update(config,null,false);let error=null,persisted=true;try{storage.setItem(STORAGE_KEY,JSON.stringify(config));}catch{persisted=false;error='Configuration is active for this page only; storage is unavailable';}return update(config,error,persisted);},
+      clear(){if(pageOnly)return update(null,null,false);let error=null,persisted=true;try{storage.removeItem(STORAGE_KEY);}catch{persisted=false;error='Configuration cleared for this page only; saved storage could not be removed';}return update(null,error,persisted);},
       assertCurrent(snapshot){check(snapshot===state,'Board configuration changed; restart this operation');check(state.config!==null,'Import a board configuration first');return state.config;},
       subscribe(fn){check(typeof fn==='function','Subscriber must be a function');listeners.add(fn);return ()=>listeners.delete(fn);},
       destroy(){eventTarget?.removeEventListener?.('storage',onStorage);listeners.clear();}
@@ -307,20 +157,24 @@
     const api=root.BillboardConfig,doc=container.ownerDocument;
     const panel=doc.createElement('section');panel.setAttribute('aria-label','Board configuration');
     function element(tag,text){const node=doc.createElement(tag);if(text)node.textContent=text;panel.append(node);return node;}
-    element('h2','Board configuration');
-    element('p','Import public connection settings for this board. Never paste a wallet backup, password, recovery claim or RPC API key. Endpoints can observe connection metadata; do not share URLs containing secret path tokens.');
+    element('h2','Select a board');
+    element('p','Paste a board link or choose its public configuration file.');
     const summary=element('p'),status=element('p');status.setAttribute('role','status');
     const label=element('label','Public configuration JSON');const input=doc.createElement('textarea');input.rows=7;input.maxLength=api.MAX_BYTES;label.append(input);
+    const advanced=doc.createElement('details'),advancedTitle=doc.createElement('summary');advancedTitle.textContent='Advanced connection settings';advanced.append(advancedTitle,label);panel.append(advanced);
     const fileLabel=element('label','Choose configuration file');const file=doc.createElement('input');file.type='file';file.accept='.json,application/json';fileLabel.append(file);
     function button(text,action){const b=element('button',text);b.type='button';b.addEventListener('click',action);return b;}
     let destroyed=false;
+    const linkLabel=element('label','Board link'),boardLink=doc.createElement('input');boardLink.type='url';boardLink.placeholder='https://…';linkLabel.append(boardLink);
+    const openLink=button('Use board link',async()=>{const selected=store.snapshot();openLink.disabled=true;try{if(!boardLink.value.trim())throw Object.assign(Error(),{code:'BB_BOARD_LINK_INVALID'});const result=await root.loadHostedBoard(boardLink.value.trim());if(destroyed)return;if(store.snapshot()!==selected)throw Error('Selection changed');store.install(result.config);status.textContent='Board selected.';}catch(error){if(!destroyed)status.textContent=root.boardConnectionFailure(error).message;}finally{if(!destroyed)openLink.disabled=false;}});
     const imported=button('Import configuration',()=>{try{store.install(api.parse(input.value));input.value='';status.textContent=store.snapshot().error??'Public configuration imported. Live network checks run when connecting.';}catch(error){status.textContent=error.message;}});
+    advanced.append(imported);
     file.addEventListener('change',async()=>{const chosen=file.files?.[0];if(!chosen)return;const snapshot=store.snapshot();imported.disabled=true;try{if(chosen.size>api.MAX_BYTES)throw new Error('Configuration exceeds size limit');const text=await chosen.text();if(destroyed)return;if(store.snapshot()!==snapshot)throw new Error('Configuration changed while reading file; select it again');store.install(api.parse(text));input.value='';status.textContent=store.snapshot().error??'Public configuration imported. Live network checks run when connecting.';}catch(error){if(!destroyed)status.textContent=error.message;}finally{if(!destroyed){imported.disabled=false;file.value='';}}});
     const exported=button('Export configuration',()=>{const {config}=store.snapshot();if(!config)return;const url=URL.createObjectURL(new Blob([JSON.stringify(config,null,2)+'\n'],{type:'application/json'}));const anchor=doc.createElement('a');anchor.href=url;anchor.download='board-public-config.json';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),0);});
     button('Clear configuration',()=>{store.clear();input.value='';});
     function render(snapshot){const c=snapshot.config;exported.disabled=!c;
-      summary.textContent=c?`Ethereum chain ${c.network.chainId}; rollup version ${c.network.rollupVersion}. Board ${c.board.contractAddress}. Portal ${c.board.portalAddress}. Node ${c.network.nodeUrl}. Ethereum RPC ${c.network.ethRpcUrl}. ${c.privateFee?`Private fee contract ${c.privateFee.contractAddress}. Reservation ceiling ${api.maximumFee(c)} Fee Juice base units per transaction. Unused reserved credit is returned privately.`:'Public reading only: private fee settings are missing; wallet actions are unavailable.'} Imported settings are not proof of live chain verification.`:'No board configuration selected. Import settings to connect.';
-      status.textContent=snapshot.error??(snapshot.persisted?'Public settings are saved for this browser origin.':'');
+      summary.textContent=c?'Selected board '+c.board.contractAddress.slice(2,8)+(c.privateFee?' · Posting configured.':' · Reading only.'): 'No board selected.';
+      status.textContent=snapshot.error??(c?(snapshot.persisted?'Board selection saved on this device.':'Board selected for this page.'):'');
     }
     const unsubscribe=store.subscribe(render);render(store.snapshot());container.append(panel);
     return {destroy(){destroyed=true;unsubscribe();panel.remove();}};
@@ -337,19 +191,22 @@
     if(!response.ok)throw Error('Board settings unavailable');
     return root.BillboardConfig.parse(await response.text());
   };
-  root.loadHostedBoard=async function(){
+  root.loadHostedBoard=async function(link){
+    const explicit=link!==undefined;let fragment;try{const parsed=explicit?new URL(link):new URL(location.href);if(explicit&&(!['https:','http:'].includes(parsed.protocol)||!parsed.hash))throw Error();fragment=parsed.hash;}catch{throw Object.assign(Error('Invalid board link'),{code:'BB_BOARD_LINK_INVALID'});}
     const hosted=await root.loadHostedSettings();
     const networkId=[hosted.network.chainId,hosted.network.rollupAddress,hosted.network.rollupVersion].join(':');
-    const match=location.hash.match(/^#network=([0-9]+:0x[0-9a-f]{40}:[0-9]+)&board=(0x[0-9a-f]{64})$/);
-    if(location.hash&&(!match||match[1]!==networkId))throw Error('Invalid board or network link');
+    const match=fragment.match(/^#network=([0-9]+:0x[0-9a-f]{40}:[0-9]+)&board=(0x[0-9a-f]{64})$/);
+    if(fragment&&!match)throw Object.assign(Error('Invalid board link'),{code:'BB_BOARD_LINK_INVALID'});
+    if(match&&match[1]!==networkId)throw Object.assign(Error('Unsupported network'),{code:'BB_BOARD_NETWORK_UNSUPPORTED'});
     const boardAddress=match?match[2]:hosted.board.contractAddress;
     const result=await root.BillboardPublic.connectPublicBoard({network:hosted.network,boardAddress,metadata:root.BillboardPublic.metadata,storage:root.BillboardPublic.browserPublicFeedStorage()});
-    return {...result,config:root.BillboardConfig.validate({...result.config,privateFee:hosted.privateFee}),fragment:'network='+networkId+'&board='+boardAddress};
+    return {...result,config:root.BillboardConfig.validate({...result.config,privateFee:hosted.privateFee,...(boardAddress===hosted.board.contractAddress&&hosted.remoteProver?{remoteProver:hosted.remoteProver}:{})}),fragment:'network='+networkId+'&board='+boardAddress};
   };
+  root.boardConnectionFailure=error=>({BB_BOARD_LINK_INVALID:{message:'This board link is incomplete or invalid. Choose a board from the directory.',retry:false},BB_BOARD_NETWORK_UNSUPPORTED:{message:'This site does not serve the network in that link. Open it on the board operator’s site.',retry:false},BB_BOARD_INCOMPATIBLE:{message:'This board uses a different contract version. Ask its operator for the matching app.',retry:false},BB_BOARD_NOT_FOUND:{message:'No board was found at this address. Check the link with its operator.',retry:false}}[error?.code]||{message:'The board could not be reached. Your account and messages are unchanged. Try again.',retry:true});
   if(document.body?.hasAttribute('data-public-board-reader'))return;
   if(document.body?.hasAttribute('data-hosted-board')){
     // Page-local settings cannot inherit or overwrite another board's saved settings.
-    root.billboardConfigStore=root.BillboardConfig.createStore({storage:{getItem:()=>null,setItem(){},removeItem(){}},eventTarget:{}});
+    root.billboardConfigStore=root.BillboardConfig.createStore({persistence:'page'});
     root.initializeHostedBoard=async function(initialize){
       const status=document.getElementById('setupStatus');status.textContent='Loading board…';
       try{
@@ -361,16 +218,38 @@
         if(!result.config.privateFee){status.textContent='Posting and fee funding are not enabled for this board. You can still read messages.';return;}
         root.billboardConfigStore.install(result.config);
         status.textContent='Board ready. Connect your wallet to continue.';initialize();
-      }catch{status.textContent='This board is unavailable for posting. Reload to try again.';}
+      }catch(error){const failure=root.boardConnectionFailure(error);status.textContent=failure.message;if(failure.retry){const retry=document.createElement('button');retry.className='secondary';retry.textContent='Try again';retry.onclick=()=>root.initializeHostedBoard(initialize);status.append(retry);}}
     };
     return;
   }
   let storage;try{storage=root.localStorage;}catch{}
-  root.billboardConfigStore=root.BillboardConfig.createStore({storage:storage||null,eventTarget:root});
+  const moderatorPage=document.body?.hasAttribute('data-moderator-board');
+  const selectedFragment=c=>'#network='+[c.network.chainId,c.network.rollupAddress,c.network.rollupVersion].join(':')+'&board='+c.board.contractAddress;
+  root.rememberSelectedBoard=function(config){config=root.BillboardConfig.validate(config);history.replaceState({...history.state,billboardSelectedConfiguration:config},'',selectedFragment(config));};
+  root.forgetSelectedBoard=function(){const state={...history.state,billboardSelectedConfiguration:null};history.replaceState(state,'',location.pathname+location.search);};
+  root.reloadSelectedBoard=async function(){
+    const selected=root.billboardConfigStore.snapshot(),config=root.BillboardConfig.validate(selected.config);
+    await root.BillboardAccount.endSession();
+    root.billboardConfigStore.assertCurrent(selected);root.rememberSelectedBoard(config);
+    location.reload();
+  };
+  const incomingModerator=moderatorPage&&!!location.hash;
+  root.billboardConfigStore=root.BillboardConfig.createStore({storage:storage||null,persistence:incomingModerator||(moderatorPage&&Object.hasOwn(history.state??{},'billboardSelectedConfiguration'))?'page':'device',eventTarget:root});
+  root.initializeSelectedBoard=async function(initialize){
+    if(!incomingModerator){initialize();return;}
+    const navigation=history.state?.billboardSelectedConfiguration;
+    if(navigation){try{const config=root.BillboardConfig.validate(navigation);if(selectedFragment(config)===location.hash){root.billboardConfigStore.install(config);initialize();return;}}catch{}}
+    const requested=location.href,before=root.billboardConfigStore.snapshot(),status=document.getElementById('setupStatus');status.textContent='Loading the selected board…';
+    try{const result=await root.loadHostedBoard(requested);
+      if(location.href!==requested||root.billboardConfigStore.snapshot().revision!==before.revision)return;
+      root.billboardConfigStore.install(result.config);status.textContent='';initialize();
+    }catch(error){if(location.href!==requested||root.billboardConfigStore.snapshot().revision!==before.revision)return;const failure=root.boardConnectionFailure(error);status.textContent=failure.message;if(failure.retry){const retry=document.createElement('button');retry.textContent='Try again';retry.onclick=()=>root.initializeSelectedBoard(initialize);status.append(retry);}}
+  };
+  if(document.body?.hasAttribute('data-moderator-board'))root.addEventListener('hashchange',()=>location.reload());
   const mount=()=>{
     if(document.getElementById('deploymentManifest'))return;
     const container=document.createElement('div');container.id='boardConfiguration';container.className='card';
-    document.body.prepend(container);root.BillboardConfigUI.mount(container,root.billboardConfigStore);
+    (document.getElementById('boardSelection')||document.querySelector('main')||document.body).prepend(container);root.BillboardConfigUI.mount(container,root.billboardConfigStore);
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })(globalThis);
@@ -495,34 +374,13 @@
 <p id="status" role="status">Finding boards…</p><div id="boards"></div><button id="more" hidden>Find more boards</button>
 <p class="small">This directory finds publicly published boards compatible with this version of the app. New boards may still be starting up.</p>
 <script src="public-feed.js"></script><script>
-let directory,networkId,count=0;
-const el=id=>document.getElementById(id);
-async function findBoards(){
- el('more').hidden=true;el('status').textContent='Finding boards…';
- try{
-  let result;
-  // A bounded batch keeps discovery resumable without an indexer service.
-  for(let page=0;page<20;page++){
-   result=await directory.next();
-   for(const board of result.boards){
-    const card=document.createElement('article');card.className='card';const link=document.createElement(board.ready?'a':'span');
-    const url=new URL('feed.html',location.href);url.hash='network='+networkId+'&board='+board.address;if(board.ready)link.href=url.href;
-    link.textContent='Board '+board.address.slice(0,10)+'…'+board.address.slice(-6);card.append(link);if(!board.ready){const status=document.createElement('p');status.textContent=board.unavailable?'This board is unavailable.':'Setup is not complete yet.';card.append(status);}el('boards').append(card);count++;
-   }
-   el('status').textContent=count+' board'+(count===1?'':'s')+' found. Searching…';
-   if(result.complete)break;
-  }
-  el('more').hidden=result.complete;
-  el('status').textContent=result.complete?(count?count+' board'+(count===1?'':'s')+' found.':'No compatible boards found.')+' Search complete through block '+result.block+'.':count+' boards found so far. More history remains to search.';
- }catch(error){if(error.code==='BB_DIRECTORY_REORG'){el('boards').replaceChildren();count=0;}el('status').textContent='Could not finish finding boards. Reload to start a new search. The list above may be incomplete.';}
-}
-(async()=>{
- try{
-  const config=await loadHostedSettings();networkId=[config.network.chainId,config.network.rollupAddress,config.network.rollupVersion].join(':');
-  el('network').textContent='Aztec on '+(config.network.chainId==='11155111'?'Sepolia':config.network.chainId==='1'?'Ethereum mainnet':'Ethereum network '+config.network.chainId)+'.';
-  directory=BillboardPublic.createBoardDirectory({network:config.network,metadata:BillboardPublic.metadata});await findBoards();
- }catch{el('status').textContent='The board directory is unavailable. Reload to try again.';}
-})();
-el('more').onclick=findBoards;
+const el=id=>document.getElementById(id),view=BillboardView;
+view.header({title:'Message boards',section:''});
+let directory,config,networkId,busy=false,complete=false,count=0;
+const seen=new Set();let labels=[];
+function card(board){if(seen.has(board.address))return;seen.add(board.address);count++;const article=view.element('article',undefined,'card');const current=board.address===config.board.contractAddress,label=labels.find(item=>item.address===board.address);const link=view.element(board.ready?'a':'span',label?.name||(current?'This site’s board':'Community board '+board.address.slice(2,8)));const href=view.url('feed.html','network='+networkId+'&board='+board.address);if(board.ready)link.href=href;article.append(link);if(label)article.append(view.element('p',label.description),view.element('p',label.status==='retired'?'Retired deployment':'Current test board','small'));if(current)article.append(view.element('p','The board currently supported by this site.','small'));if(!board.ready)article.append(view.element('p',board.unavailable?'Unavailable right now.':'Setup is still in progress.','small'));const details=view.element('details');details.append(view.element('summary','Board address'),view.element('p',board.address,'account-address'));article.append(details);if(current)el('boards').prepend(article);else el('boards').append(article);if(board.ready)recentActivity(board,article);}
+async function recentActivity(board,article){const status=view.element('p','Checking recent activity…','small');article.append(status);try{const connection=await BillboardPublic.connectPublicBoard({network:config.network,boardAddress:board.address,metadata:BillboardPublic.metadata,storage:BillboardPublic.browserPublicFeedStorage()});const progress=await connection.feed.sync(),page=await connection.feed.page({limit:1});const latest=page.posts[0];status.textContent=latest?.publishedAt?'Latest indexed message: '+new Date(Number(latest.publishedAt)*1000).toLocaleString():progress.complete?'No messages yet.':'Message history is still being indexed.';}catch{status.textContent='Recent activity unavailable.';}}
+async function findBoards(){if(busy||complete)return;busy=true;el('more').hidden=true;try{const result=await directory.next();for(const board of result.boards)card(board);complete=result.complete;el('status').textContent=complete?(count?'':'No boards are available yet.'):'Finding more boards…';if(!complete)setTimeout(findBoards,300);}catch(error){if(error.code==='BB_DIRECTORY_REORG'){directory=BillboardPublic.createBoardDirectory({network:config.network,metadata:BillboardPublic.metadata});seen.clear();count=0;el('boards').replaceChildren();}el('status').textContent='Some boards could not be loaded. You can still open those shown below.';el('more').hidden=false;el('more').textContent='Try again';}finally{busy=false;}}
+(async()=>{try{config=await loadHostedSettings();try{labels=await BillboardCatalog.load(config.network);}catch{}networkId=[config.network.chainId,config.network.rollupAddress,config.network.rollupVersion].join(':');el('network').textContent='Boards on the Aztec test network.';directory=BillboardPublic.createBoardDirectory({network:config.network,metadata:BillboardPublic.metadata});await findBoards();}catch{el('status').textContent='The directory could not be reached. Reload to try again.';}})();el('more').onclick=findBoards;
 
 </script></body></html>

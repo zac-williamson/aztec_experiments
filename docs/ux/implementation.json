@@ -1,0 +1,1053 @@
+{
+  "scope": "All 60 accepted findings in 2026-10-07-audit.json",
+  "status": "Implemented after independent re-audit and review followups; qualification limits are explicit per finding and in the evidence record.",
+  "architecture": "interfaces.md",
+  "verification": "evidence/2026-10-08/results.json",
+  "findings": [
+    {
+      "id": "UX-01",
+      "title": "Posting is step 3 of a withdrawal wizard",
+      "status": "implemented",
+      "change": "End onboarding when posting becomes available. Make the board and composer the home screen; put \u201cGet deposit back\u201d in Account.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/user/template.html",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-application-interface.mjs"
+      ]
+    },
+    {
+      "id": "UX-02",
+      "title": "Infrastructure copy precedes the actual task",
+      "status": "implemented",
+      "change": "Lead with board identity, messages and one primary action. Show a short explicit testnet notice; put explanations at the decision they affect.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/user/template.html",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-application-interface.mjs"
+      ]
+    },
+    {
+      "id": "UX-03",
+      "title": "The interface is a transaction log",
+      "status": "implemented",
+      "change": "Render concise operation stages from application data. Put safe diagnostics in a collapsed Details panel with a copy action. Never parse logs to drive UI state.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/user/template.html",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-application-interface.mjs"
+      ]
+    },
+    {
+      "id": "UX-04",
+      "title": "No consistent navigation or board identity",
+      "status": "implemented",
+      "change": "Use a shared header with board name, Read, Write and Account. Keep operator tools in a separate area. Preserve verified board/network identity across links.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/user/template.html",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-application-interface.mjs"
+      ]
+    },
+    {
+      "id": "UX-05",
+      "title": "Withdrawal warnings occupy the writing screen",
+      "status": "implemented",
+      "change": "Show posting readiness beside the composer. Show withdrawal preparation only when requesting the deposit back. Expose moderation rules as readable board information.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/user/template.html",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-application-interface.mjs"
+      ]
+    },
+    {
+      "id": "UX-06",
+      "title": "There is no log out or switch account action",
+      "status": "implemented",
+      "change": "Add explicit Lock account and Switch wallet actions through the account API. Preserve pending-operation records and safely handle active work before switching.",
+      "components": [
+        "shared/account.js",
+        "shared/wallet-buttons.js",
+        "shared/deposit-custody.mjs",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-wallet-setup-gate.mjs",
+        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-deposit-custody.mjs",
+        "scripts/test-application-interface.mjs"
+      ]
+    },
+    {
+      "id": "UX-07",
+      "title": "A returning user can be steered into a new passkey",
+      "status": "implemented",
+      "change": "Offer Use existing account and Create account at the right point in connection. Do not infer a new person from missing local storage.",
+      "components": [
+        "shared/account.js",
+        "shared/wallet-buttons.js",
+        "shared/deposit-custody.mjs",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-wallet-setup-gate.mjs",
+        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-deposit-custody.mjs",
+        "scripts/test-application-interface.mjs"
+      ]
+    },
+    {
+      "id": "UX-08",
+      "title": "Connected and ready are conflated",
+      "status": "implemented",
+      "change": "Separate wallet connection, private-account unlock and board readiness. Retry setup with the loaded wallet; preserve the meaningful failure.",
+      "components": [
+        "shared/account.js",
+        "shared/wallet-buttons.js",
+        "shared/deposit-custody.mjs",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-deposit-custody.mjs",
+        "scripts/test-ux-reopened-browser.mjs",
+        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-wallet-setup-gate.mjs"
+      ],
+      "implementationNote": "Setup can retry with the unlocked account; terms and payment eligibility remain disabled until verified data is ready."
+    },
+    {
+      "id": "UX-09",
+      "title": "Recovery instructions point to a hard-to-reach screen",
+      "status": "implemented",
+      "change": "Create persistent Activity access and contextual recovery actions on the affected operation. Remove navigation loops.",
+      "components": [
+        "shared/account.js",
+        "shared/wallet-buttons.js",
+        "shared/deposit-custody.mjs",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-wallet-setup-gate.mjs",
+        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-deposit-custody.mjs",
+        "scripts/test-application-interface.mjs"
+      ]
+    },
+    {
+      "id": "UX-10",
+      "title": "Everyone is shown three technical recovery buttons",
+      "status": "implemented",
+      "change": "Check relevant pending operations automatically. Present \u201cFinish setting up\u201d, \u201cCheck message\u201d or \u201cCheck withdrawal\u201d only when needed. Keep low-level tools in diagnostics.",
+      "components": [
+        "shared/account.js",
+        "shared/wallet-buttons.js",
+        "shared/deposit-custody.mjs",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-deposit-custody.mjs",
+        "scripts/test-ux-reopened-browser.mjs",
+        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-wallet-setup-gate.mjs"
+      ],
+      "implementationNote": "Canonical read-only Activity reconciliation identifies pending work, uses contextual actions, and prioritizes an unfinished Ethereum refund before settlement."
+    },
+    {
+      "id": "UX-11",
+      "title": "Passkey recovery and payment recovery are not the same",
+      "status": "implemented",
+      "change": "Make the recovery guarantee explicit and address missing payment recovery in the custody design. Offer an integrated backup flow when necessary; do not rely on remembering repeated manual exports.",
+      "components": [
+        "shared/account.js",
+        "shared/wallet-buttons.js",
+        "shared/deposit-custody.mjs",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-wallet-setup-gate.mjs",
+        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-deposit-custody.mjs",
+        "scripts/test-application-interface.mjs"
+      ],
+      "qualification": "New deposits recover from the same private account and Ethereum wallet using canonical nonce-bound derivation. Older random-secret deposits require their original recovery material."
+    },
+    {
+      "id": "UX-12",
+      "title": "Account menu is a recovery-file form",
+      "status": "implemented",
+      "change": "Show wallet name/address, private-account status, balances and session controls first. Use separate Restore and Backup tasks with action-specific password fields.",
+      "components": [
+        "shared/account.js",
+        "shared/wallet-buttons.js",
+        "shared/deposit-custody.mjs",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-wallet-setup-gate.mjs",
+        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-deposit-custody.mjs",
+        "scripts/test-application-interface.mjs"
+      ]
+    },
+    {
+      "id": "UX-13",
+      "title": "Backup validation becomes a generic failure",
+      "status": "implemented",
+      "change": "Show the exact safe field error next to its input; distinguish wrong password, invalid file, account already open and storage failure.",
+      "components": [
+        "shared/account.js",
+        "shared/wallet-buttons.js",
+        "shared/deposit-custody.mjs",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-deposit-custody.mjs",
+        "scripts/test-ux-reopened-browser.mjs",
+        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-wallet-setup-gate.mjs"
+      ],
+      "implementationNote": "Raw and encrypted recovery validation retain safe typed errors; semantic recovery-file fields map to visible controls and a real status region on operator pages."
+    },
+    {
+      "id": "UX-14",
+      "title": "Current identity is separated from its controls",
+      "status": "implemented",
+      "change": "Put a compact wallet label and shortened address in the semantic header, with full verified identities and copy actions inside Account.",
+      "components": [
+        "shared/account.js",
+        "shared/wallet-buttons.js",
+        "shared/deposit-custody.mjs",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-wallet-setup-gate.mjs",
+        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-deposit-custody.mjs",
+        "scripts/test-application-interface.mjs"
+      ]
+    },
+    {
+      "id": "UX-15",
+      "title": "Deposit is not a comprehensible payment decision",
+      "status": "implemented",
+      "change": "Before payment, show refundable deposit, AZTEC fee funding, estimated Ethereum gas and expected wallet confirmations. Distinguish funding credit from fees actually spent.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/fee-juice/app.js",
+        "apps/src/fee-juice/engine.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-deposit-message-ready.mjs",
+        "scripts/test-private-fee-funding-engine.mjs"
+      ],
+      "qualification": "Numeric gas estimate covers the ETH deposit component. Approval and AZTEC funding gas are disclosed by the wallet at approval; the interface explicitly does not present the deposit estimate as the combined total."
+    },
+    {
+      "id": "UX-16",
+      "title": "The deposit slider lacks a concise decision summary",
+      "status": "implemented",
+      "change": "Keep the requested slider. Present \u201cDeposit X ETH \u00b7 roughly one post every Y\u201d and the actual board limits; explain burst allowance and penalties under Board rules.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/fee-juice/app.js",
+        "apps/src/fee-juice/engine.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-deposit-message-ready.mjs",
+        "scripts/test-private-fee-funding-engine.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "implementationNote": "The slider summarizes the selected deposit and replenishment interval; board rules explain bursts and moderation penalties."
+    },
+    {
+      "id": "UX-17",
+      "title": "Funding and bridge waits look stalled",
+      "status": "implemented",
+      "change": "Use named phases with completed steps, elapsed time, approval prompts and known waiting reasons. Use measured estimates only where supported; never fake percentages.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/fee-juice/app.js",
+        "apps/src/fee-juice/engine.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-deposit-message-ready.mjs",
+        "scripts/test-private-fee-funding-engine.mjs"
+      ]
+    },
+    {
+      "id": "UX-18",
+      "title": "Expected bridge delay becomes an error/retry task",
+      "status": "implemented",
+      "change": "Keep the durable operation in a waiting state; continue safe readiness checks while open and resume after reopening. Offer a deliberate pause without re-sending the payment.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/fee-juice/app.js",
+        "apps/src/fee-juice/engine.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-deposit-message-ready.mjs",
+        "scripts/test-private-fee-funding-engine.mjs"
+      ]
+    },
+    {
+      "id": "UX-19",
+      "title": "Useful balances are missing from the main account view",
+      "status": "implemented",
+      "change": "Show these as three distinct concepts, with sensible precision and transaction details available on demand.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/fee-juice/app.js",
+        "apps/src/fee-juice/engine.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-deposit-message-ready.mjs",
+        "scripts/test-private-fee-funding-engine.mjs"
+      ]
+    },
+    {
+      "id": "UX-20",
+      "title": "The separate fee page retains manual bridge accounting",
+      "status": "implemented",
+      "change": "Make Add transaction funds an integrated account task using the same funding coordinator and progress model, with credited balance on completion. Keep hash entry out of ordinary use.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/fee-juice/app.js",
+        "apps/src/fee-juice/engine.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-deposit-message-ready.mjs",
+        "scripts/test-private-fee-funding-engine.mjs"
+      ],
+      "qualification": "Fee engine owns its read-only PXE lifetime. Top-up coordinator retains ownership through the balance refresh; the view receives a plain balance result."
+    },
+    {
+      "id": "UX-21",
+      "title": "Fee controls are available without relevant state",
+      "status": "implemented",
+      "change": "Derive availability from actual funding state and show the reason where useful. Do not present impossible actions as valid choices.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/fee-juice/app.js",
+        "apps/src/fee-juice/engine.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-deposit-message-ready.mjs",
+        "scripts/test-private-fee-funding-engine.mjs"
+      ]
+    },
+    {
+      "id": "UX-22",
+      "title": "Fee amounts have machine precision and no useful recommendation",
+      "status": "implemented",
+      "change": "Show rounded readable amounts with exact values in details, a recommended top-up and its purpose. Do not imply a guaranteed number of posts from a variable network fee.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/fee-juice/app.js",
+        "apps/src/fee-juice/engine.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-deposit-message-ready.mjs",
+        "scripts/test-private-fee-funding-engine.mjs"
+      ]
+    },
+    {
+      "id": "UX-23",
+      "title": "Default remote proving lacks a visible explanation",
+      "status": "implemented",
+      "change": "Keep the single toggle. State visibly that private transaction information is shared with the configured prover operator, identify that operator, and provide fuller details accessibly.",
+      "components": [
+        "shared/proving-toggle.js",
+        "shared/remote-prover-client.mjs",
+        "shared/operation-state.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-remote-prover-client.mjs"
+      ]
+    },
+    {
+      "id": "UX-24",
+      "title": "The proving toggle is visually broken",
+      "status": "implemented",
+      "change": "Use a compact, properly aligned checkbox or switch with a complete clickable label and normal keyboard behavior.",
+      "components": [
+        "shared/proving-toggle.js",
+        "shared/remote-prover-client.mjs",
+        "shared/operation-state.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-remote-prover-client.mjs"
+      ]
+    },
+    {
+      "id": "UX-25",
+      "title": "Proving choice does not clearly communicate current work",
+      "status": "implemented",
+      "change": "Keep operation configuration immutable. Show the active operation\u2019s mode in its progress; make \u201capplies to the next transaction\u201d visible when relevant.",
+      "components": [
+        "shared/proving-toggle.js",
+        "shared/remote-prover-client.mjs",
+        "shared/operation-state.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-remote-prover-client.mjs"
+      ]
+    },
+    {
+      "id": "UX-26",
+      "title": "Prover failures prescribe generic retries or reloads",
+      "status": "implemented",
+      "change": "Return safe typed service statuses through the API. Offer Retry or Use this device only when valid for the saved operation; never silently change trust modes.",
+      "components": [
+        "shared/proving-toggle.js",
+        "shared/remote-prover-client.mjs",
+        "shared/operation-state.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-remote-prover-client.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "qualification": "Live Spot interruption produced the specific prover-unavailable state while retaining the confirmed payment. Recovery qualification is recorded separately.",
+      "implementationNote": "Allocation-search failure is distinct from insufficient funds and cannot trigger a new payment. Native SDK simulation preserves exact public gas results for estimation; final simulation is strict."
+    },
+    {
+      "id": "UX-27",
+      "title": "Ready is described as expiration",
+      "status": "implemented",
+      "change": "Use \u201cReady to post\u201d or \u201cYou can post again in \u2026\u201d, driven by verified chain state. Do not claim readiness solely from a local clock.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/feed/app.js",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs"
+      ]
+    },
+    {
+      "id": "UX-28",
+      "title": "Screening is an unexplained author chore",
+      "status": "implemented",
+      "change": "Remove it from normal composing. Orchestrate necessary screening inside an explicitly authorized withdrawal workflow, preserving moderation windows, verified eligibility and fee limits, and explaining fees and required approvals.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/feed/app.js",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs"
+      ]
+    },
+    {
+      "id": "UX-29",
+      "title": "Message validation can produce a wallet error",
+      "status": "implemented",
+      "change": "Show a live capacity indicator and inline validation, preserve text, and prevent an invalid submission. Keep technical byte detail secondary.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/feed/app.js",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs"
+      ]
+    },
+    {
+      "id": "UX-30",
+      "title": "No explicit draft lifecycle",
+      "status": "implemented",
+      "change": "Define safe draft preservation scoped to board/account, with deliberate privacy/retention behavior. Preserve failed drafts and never silently publish a restored draft.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/feed/app.js",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "implementationNote": "Drafts are scoped and retained across failures, editing during proof, resume, and storage failures; only the confirmed submitted draft is cleared."
+    },
+    {
+      "id": "UX-31",
+      "title": "Success is a pile of confirmations rather than a clear result",
+      "status": "implemented",
+      "change": "Show one \u201cPosted\u201d confirmation, link/highlight the published message, and keep the composer available for the next post. Put fee/receipt detail under Activity.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/feed/app.js",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "implementationNote": "Canonical post success links its public message and preserves any newer draft."
+    },
+    {
+      "id": "UX-32",
+      "title": "Public reading and logged-in reading are inconsistent",
+      "status": "implemented",
+      "change": "Share one feed presentation and navigation model while keeping public reading independent of wallet initialization.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/feed/app.js",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs"
+      ]
+    },
+    {
+      "id": "UX-33",
+      "title": "Messages lack ordinary context and stable sharing affordances",
+      "status": "implemented",
+      "change": "Show readable time, a stable per-message link and status where relevant. Keep chain IDs and transaction hashes in details.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/feed/app.js",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs"
+      ]
+    },
+    {
+      "id": "UX-34",
+      "title": "The public reader omits the board rules",
+      "status": "implemented",
+      "change": "Expose the same readable Board rules from both views, before someone pays to participate.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/feed/app.js",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "implementationNote": "Reader and moderator show verified participation terms and policy history."
+    },
+    {
+      "id": "UX-35",
+      "title": "New messages require manual refresh in the public reader",
+      "status": "implemented",
+      "change": "Use an explicit new-message update affordance or gentle refresh that preserves reading position. Load history as history with bounded progress and a clear Older messages action.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/feed/app.js",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs"
+      ]
+    },
+    {
+      "id": "UX-36",
+      "title": "Reading status dominates useful content",
+      "status": "implemented",
+      "change": "Use a compact navigation row, a proper Copy board link action and a quiet sync status only when useful. Give content the strongest hierarchy.",
+      "components": [
+        "apps/src/billboard/user/app.js",
+        "apps/src/billboard/feed/app.js",
+        "shared/board-view.js"
+      ],
+      "checks": [
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs"
+      ]
+    },
+    {
+      "id": "UX-37",
+      "title": "Four indistinguishable boards are listed by address",
+      "status": "implemented",
+      "change": "Add operator-provided names/descriptions tied to verified addresses, recent activity and availability. Identify the current test board and clearly mark retired operator deployments.",
+      "components": [
+        "apps/src/billboard/boards/app.js",
+        "shared/board-catalog.json",
+        "shared/public-app-bootstrap.js",
+        "shared/public-feed-connection.mjs"
+      ],
+      "checks": [
+        "scripts/test-hosted-board-link.mjs",
+        "scripts/test-u01-config-integration.mjs",
+        "scripts/test-u01-journey-browser.mjs"
+      ]
+    },
+    {
+      "id": "UX-38",
+      "title": "Discovery makes the user operate a chain scan",
+      "status": "implemented",
+      "change": "Show usable results early, continue bounded discovery, and provide meaningful loading/empty/retry states. Keep scan position in diagnostics.",
+      "components": [
+        "apps/src/billboard/boards/app.js",
+        "shared/board-catalog.json",
+        "shared/public-app-bootstrap.js",
+        "shared/public-feed-connection.mjs"
+      ],
+      "checks": [
+        "scripts/test-hosted-board-link.mjs",
+        "scripts/test-u01-config-integration.mjs",
+        "scripts/test-u01-journey-browser.mjs"
+      ]
+    },
+    {
+      "id": "UX-39",
+      "title": "Bad links and temporary outages share a useless retry",
+      "status": "implemented",
+      "change": "Distinguish invalid link, unsupported network, unavailable board and temporary connection problems. Offer Browse boards or Retry as appropriate.",
+      "components": [
+        "apps/src/billboard/boards/app.js",
+        "shared/board-catalog.json",
+        "shared/public-app-bootstrap.js",
+        "shared/public-feed-connection.mjs"
+      ],
+      "checks": [
+        "scripts/test-hosted-board-link.mjs",
+        "scripts/test-u01-config-integration.mjs",
+        "scripts/test-u01-journey-browser.mjs"
+      ]
+    },
+    {
+      "id": "UX-40",
+      "title": "Unavailable posting silently disappears",
+      "status": "implemented",
+      "change": "Keep a clear reading-only state and a short explanation of unavailable posting. Avoid showing a working board as an unexplained missing button.",
+      "components": [
+        "apps/src/billboard/boards/app.js",
+        "shared/board-catalog.json",
+        "shared/public-app-bootstrap.js",
+        "shared/public-feed-connection.mjs"
+      ],
+      "checks": [
+        "scripts/test-hosted-board-link.mjs",
+        "scripts/test-u01-config-integration.mjs",
+        "scripts/test-u01-journey-browser.mjs"
+      ]
+    },
+    {
+      "id": "UX-41",
+      "title": "Withdrawal is exposed as two blockchain tasks",
+      "status": "implemented",
+      "change": "Present one Get deposit back journey with requested, waiting, ready for wallet confirmation and received states. Required wallet signatures remain explicit.",
+      "components": [
+        "shared/application.js",
+        "apps/src/billboard/user/engine.js",
+        "apps/src/billboard/user/app.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-u01-journey-browser.mjs"
+      ],
+      "qualification": "Settlement orchestration and pause are tested at the application/engine boundary. No new real withdrawal settlement was run for this UX change."
+    },
+    {
+      "id": "UX-42",
+      "title": "Eligibility gives chores rather than a plan",
+      "status": "implemented",
+      "change": "Show the refundable amount, why it is waiting, the next eligible time when known and any preparation/fee steps. Prepare through application APIs within the user\u2019s authorized fee limits; preserve moderation windows and verify eligibility before each action.",
+      "components": [
+        "shared/application.js",
+        "apps/src/billboard/user/engine.js",
+        "apps/src/billboard/user/app.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-u01-journey-browser.mjs"
+      ]
+    },
+    {
+      "id": "UX-43",
+      "title": "Normal settlement is presented as ERROR",
+      "status": "implemented",
+      "change": "Render an ordinary waiting state, check readiness automatically and only request the final Ethereum action when available. Persist progress across sessions.",
+      "components": [
+        "shared/application.js",
+        "apps/src/billboard/user/engine.js",
+        "apps/src/billboard/user/app.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "implementationNote": "Canonical Activity identifies pending settlement and resumes the application-owned withdrawal process.",
+      "qualification": "Actual controller/application recovery paths tested; a new real testnet withdrawal settlement was not exercised in this UX pass."
+    },
+    {
+      "id": "UX-44",
+      "title": "Final withdrawal has no completed screen",
+      "status": "implemented",
+      "change": "Show amount received, destination, receipt and Return to board. Derive available actions from completed state rather than restoring the old button blindly.",
+      "components": [
+        "shared/application.js",
+        "apps/src/billboard/user/engine.js",
+        "apps/src/billboard/user/app.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "qualification": "Actual controller/application recovery paths tested; a new real testnet withdrawal settlement was not exercised in this UX pass.",
+      "implementationNote": "Both fresh and resumed refunds render the same final amount/recipient/receipt screen."
+    },
+    {
+      "id": "UX-45",
+      "title": "Moderator navigation can change boards",
+      "status": "implemented",
+      "change": "Generate every link from the verified current context and retain a return path. Add cross-board navigation tests.",
+      "components": [
+        "apps/src/billboard/censor/app.js",
+        "shared/public-app-config-ui.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-hosted-board-link.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs",
+        "scripts/test-hosted-board-link.mjs"
+      ],
+      "implementationNote": "A selected moderator board clears stale authority; an invalidated account explicitly ends its session and reloads the exact validated navigation configuration."
+    },
+    {
+      "id": "UX-46",
+      "title": "A moderator manually types a post number",
+      "status": "implemented",
+      "change": "Put Moderate on the actual message. Review the message, reason and concrete penalty before submission; validate integer identifiers strictly.",
+      "components": [
+        "apps/src/billboard/censor/app.js",
+        "shared/public-app-config-ui.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-hosted-board-link.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "implementationNote": "Feed messages provide contextual moderation; older-page results survive polling and stale board requests cannot overwrite replacement data."
+    },
+    {
+      "id": "UX-47",
+      "title": "Authority transfer has no clear consequence review",
+      "status": "implemented",
+      "change": "Use a dedicated transfer review with the full validated address, operator confirmation of the destination, and a loss-of-authority explanation before the final action.",
+      "components": [
+        "apps/src/billboard/censor/app.js",
+        "shared/public-app-config-ui.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-hosted-board-link.mjs"
+      ]
+    },
+    {
+      "id": "UX-48",
+      "title": "Immoral/censor/K language obscures board rules",
+      "status": "implemented",
+      "change": "Use Moderator and Hide for rule violation. Show the rule, reason and actual posting-delay effect; retain contract terminology only in diagnostics.",
+      "components": [
+        "apps/src/billboard/censor/app.js",
+        "shared/public-app-config-ui.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-hosted-board-link.mjs"
+      ]
+    },
+    {
+      "id": "UX-49",
+      "title": "Configuration overwhelms the moderator entry point",
+      "status": "implemented",
+      "change": "Lead with Select board and Unlock moderator account. Accept a board link/config file; put raw JSON and infrastructure settings behind Advanced. Correct empty/saved states.",
+      "components": [
+        "apps/src/billboard/censor/app.js",
+        "shared/public-app-config-ui.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-hosted-board-link.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs",
+        "scripts/test-hosted-board-link.mjs"
+      ],
+      "implementationNote": "Incoming links cannot inherit another board; custom configurations survive repeated reloads; Clear leaves no selection even if older device settings exist."
+    },
+    {
+      "id": "UX-50",
+      "title": "Policy editing lacks a clear review of what changes",
+      "status": "implemented",
+      "change": "Edit from the current policy, show a change review and a live indicator of the actual UTF-8 byte limit, and provide precise field errors. Clearly state when the new rules apply.",
+      "components": [
+        "apps/src/billboard/censor/app.js",
+        "shared/public-app-config-ui.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-hosted-board-link.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "implementationNote": "Changed policies require an explicit comparison against the latest version while retaining the proposed text."
+    },
+    {
+      "id": "UX-51",
+      "title": "Board creation is a raw operator form",
+      "status": "implemented",
+      "change": "Separate Create board from advanced configuration. Show readable settings, validation and actual loading progress, with technical files available for operators who need them.",
+      "components": [
+        "apps/src/billboard/deploy/app.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs",
+        "scripts/test-w03-deploy-engine.mjs"
+      ],
+      "implementationNote": "Guided validated settings and a review precede deployment; the engine reports typed preparation, synchronization, proving, submission and confirmation stages."
+    },
+    {
+      "id": "UX-52",
+      "title": "Creation success does not reliably lead to a usable posting board",
+      "status": "implemented",
+      "change": "Use a deployment checklist with saved Resume state. Completion must show verified reading/posting/prover/moderator availability and route to what actually works.",
+      "components": [
+        "apps/src/billboard/deploy/app.js",
+        "shared/application.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "qualification": "Completion distinguishes contract deployment, verified reading and checked posting configuration. It does not claim a newly deployed board has passed a real posting transaction.",
+      "implementationNote": "Validated versioned resume records, edit-generation guards, canonical portal/moderator checks and live remote-prover health distinguish deployed contracts from verified capabilities."
+    },
+    {
+      "id": "UX-53",
+      "title": "Safe validation errors are destroyed globally",
+      "status": "implemented",
+      "change": "Use typed user-actionable errors with field/reason/action data through existing interfaces. Keep unexpected diagnostics sanitized without hiding the real next step.",
+      "components": [
+        "shared/app-env.js",
+        "shared/operation-state.js",
+        "shared/styles.css",
+        "shared/board-view.js",
+        "shared/wallet-buttons.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-wallet-setup-gate.mjs"
+      ]
+    },
+    {
+      "id": "UX-54",
+      "title": "Status, cancellation, waiting and failure are conflated",
+      "status": "implemented",
+      "change": "Define a consistent vocabulary: waiting for you, working, waiting for network, complete, cancelled and failed. Every actionable failure must offer the applicable action and say what was already completed.",
+      "components": [
+        "shared/app-env.js",
+        "shared/operation-state.js",
+        "shared/styles.css",
+        "shared/board-view.js",
+        "shared/wallet-buttons.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-wallet-setup-gate.mjs"
+      ]
+    },
+    {
+      "id": "UX-55",
+      "title": "Important text has poor contrast",
+      "status": "implemented",
+      "change": "Use explicit light/dark color tokens and verify contrast for text, links, warnings, disabled controls and focus states. Do not solve this by recoloring one sentence.",
+      "components": [
+        "shared/app-env.js",
+        "shared/operation-state.js",
+        "shared/styles.css",
+        "shared/board-view.js",
+        "shared/wallet-buttons.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-wallet-setup-gate.mjs"
+      ]
+    },
+    {
+      "id": "UX-56",
+      "title": "Visual hierarchy makes routine actions look equally urgent",
+      "status": "implemented",
+      "change": "Define primary/secondary/destructive actions consistently; use normal body typography for prose, generous reading rhythm, compact metadata and a single clear page flow.",
+      "components": [
+        "shared/app-env.js",
+        "shared/operation-state.js",
+        "shared/styles.css",
+        "shared/board-view.js",
+        "shared/wallet-buttons.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-wallet-setup-gate.mjs"
+      ]
+    },
+    {
+      "id": "UX-57",
+      "title": "Visual and keyboard order do not agree",
+      "status": "implemented",
+      "change": "Use a semantic header with matching DOM order. Announce concise phase changes, make diagnostics non-live, preserve focus and label actionable readiness updates.",
+      "components": [
+        "shared/app-env.js",
+        "shared/operation-state.js",
+        "shared/styles.css",
+        "shared/board-view.js",
+        "shared/wallet-buttons.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-wallet-setup-gate.mjs"
+      ]
+    },
+    {
+      "id": "UX-58",
+      "title": "Motion and responsive behavior lack complete qualification",
+      "status": "implemented",
+      "change": "Respect reduced motion and test real 390px layouts, zoom, keyboard and screen-reader flows. Check floating Account, long addresses, control wrapping and touch explanations.",
+      "components": [
+        "shared/app-env.js",
+        "shared/operation-state.js",
+        "shared/styles.css",
+        "shared/board-view.js",
+        "shared/wallet-buttons.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-wallet-setup-gate.mjs"
+      ],
+      "qualification": "390px layouts, light/dark contrast, keyboard traversal, reduced-motion styles, actual 200% Chromium zoom and native accessibility-tree roles/names passed. Human screen-reader testing remains unverified."
+    },
+    {
+      "id": "UX-59",
+      "title": "Loading and unavailable states expose the wrong affordances",
+      "status": "implemented",
+      "change": "Render a coherent loading state with a meaningful status. Enable normal actions only when their prerequisites exist and show a useful Retry on failure.",
+      "components": [
+        "shared/app-env.js",
+        "shared/operation-state.js",
+        "shared/styles.css",
+        "shared/board-view.js",
+        "shared/wallet-buttons.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs",
+        "scripts/test-wallet-setup-gate.mjs"
+      ],
+      "implementationNote": "Deposit readiness waits for verified terms; late gas estimates cannot mutate a replacement view; failed setup can retry without replacing the account."
+    },
+    {
+      "id": "UX-60",
+      "title": "There is no concise support handoff",
+      "status": "implemented",
+      "change": "Provide Copy diagnostic report containing safe operation ID, stage and error code, excluding keys, claim secrets and private witnesses. The app retains transaction accounting.",
+      "components": [
+        "shared/app-env.js",
+        "shared/operation-state.js",
+        "shared/styles.css",
+        "shared/board-view.js",
+        "shared/wallet-buttons.js"
+      ],
+      "checks": [
+        "scripts/test-application-interface.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-wallet-setup-gate.mjs"
+      ]
+    }
+  ]
+}

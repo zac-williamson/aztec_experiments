@@ -11,7 +11,8 @@ export async function connectPublicBoard({network,boardAddress,metadata,storage,
   if(typeof boardAddress!=='string'||!/^0x[0-9a-f]{64}$/.test(boardAddress)||word(boardAddress)===0n)throw Error('Invalid board link.');
   const node=publicNode(network.nodeUrl,{fetchImpl});
   const [instance,head]=await Promise.all([node.getContract(boardAddress),node.getBlockData('checkpointed')]);
-  if(!metadata.classId||instance?.currentContractClassId!==metadata.classId||instance?.originalContractClassId!==metadata.classId)throw Error('Board contract does not match this application release.');
+  if(!instance)throw Object.assign(Error('Board not found'),{code:'BB_BOARD_NOT_FOUND'});
+  if(!metadata.classId||instance?.currentContractClassId!==metadata.classId||instance?.originalContractClassId!==metadata.classId)throw incompatible('Board contract does not match this application release.');
   if(!head?.blockHash)throw Error('No checkpointed board state is available.');
   const portalAddress=address(word(await node.getPublicStorageAt({hash:head.blockHash},boardAddress,field(metadata.storage.portal))));
   const config={schemaVersion:1,network,board:{contractAddress:boardAddress,portalAddress},privateFee:null};
@@ -39,17 +40,21 @@ export async function connectPublicFeed({nodeUrl,ethereumUrl,portalAddress,metad
       scope.boardAddress!==b.contractAddress||scope.portalAddress!==b.portalAddress) throw incompatible('Live board does not match the imported configuration.');
   }
   const [instance,head]=await Promise.all([node.getContract(scope.boardAddress),node.getBlockData('checkpointed')]);
-  if(!metadata.classId||instance?.currentContractClassId!==metadata.classId||instance?.originalContractClassId!==metadata.classId)throw Error('Board contract does not match this application release.');
+  if(!instance)throw Object.assign(Error('Board not found'),{code:'BB_BOARD_NOT_FOUND'});
+  if(!metadata.classId||instance?.currentContractClassId!==metadata.classId||instance?.originalContractClassId!==metadata.classId)throw incompatible('Board contract does not match this application release.');
   if(!head?.blockHash)throw Error('No checkpointed board state is available.');
   // Pinned PublicImmutable stores Packable fields at consecutive slots, followed
   // by their hash. Config consists of ten scalar fields in declaration order.
   const read=async slot=>word(await node.getPublicStorageAt({hash:head.blockHash},scope.boardAddress,field(slot)));
   const base=BigInt(metadata.storage.config);
-  const [boundPortal,configChain,configRollup,configVersion,censorWindow]=await Promise.all([read(metadata.storage.portal),read(base),read(base+1n),read(base+2n),read(base+7n)]);
+  const [boundPortal,configChain,configRollup,configVersion,censorWindow,minDeposit,maxDeposit,baseCooldown,kMultiplier,maxSaveUp]=await Promise.all([read(metadata.storage.portal),read(base),read(base+1n),read(base+2n),read(base+7n),read(base+3n),read(base+4n),read(base+5n),read(base+6n),read(base+8n)]);
   if(address(boundPortal)!==portalAddress||configChain!==l1ChainId||configRollup!==rollup||configVersion!==version)throw incompatible('Board and portal configuration do not agree.');
+  if(minDeposit<=0n||maxDeposit<minDeposit||maxDeposit>=1n<<96n||baseCooldown<=0n||baseCooldown>=1n<<32n||kMultiplier<1n||kMultiplier>=1n<<16n||maxSaveUp<1n||maxSaveUp>=1n<<16n||censorWindow<=0n||censorWindow>=1n<<32n)throw incompatible('Invalid participation terms.');
+  const moderator=field(await read(metadata.storage.censor));
+  const participation=Object.freeze(Object.fromEntries(Object.entries({minDeposit,maxDeposit,baseCooldown,kMultiplier,maxSaveUp,censorWindow}).map(([key,value])=>[key,String(value)])));
   const source=await createPublicFeedSource({node,scope,artifact:metadata.artifact,eventTags:metadata.eventTags,censorWindow:String(censorWindow)});
   const feed=createPublicFeed({scope,source,storage});
-  return Object.freeze({feed,scope,censorWindow:String(censorWindow)});
+  return Object.freeze({feed,scope,censorWindow:String(censorWindow),participation,moderator});
 }
 let publicDatabase;
 export function browserPublicFeedStorage(){

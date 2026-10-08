@@ -58,6 +58,33 @@
       }
       await transactionJournal.assertCanStart();
     }
+    async function withPrivateWallet(run,prove=false){
+      let pxe;
+      try{
+      if(prove)await env.initCRS();
+      const contracts=await node.getL1ContractAddresses();
+      const dataDirectory='pxe_private_fee_'+owner.toString()+'_'+contracts.rollupAddress;
+      const store=await env.createStore({...contracts,l1ChainId:info.l1ChainId,accountAddress:owner.toString(),dataDirectory});
+      pxe=await a.createPXE(node,{proverEnabled:prove,autoSync:true,dataDirectory},{store,remoteProver:config.remoteProver});
+      await pxe.registerAccount(keys,await a.computePartialAddress(instance));
+      await pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact);
+      await pxe.registerContract(instance);
+      await pxe.sync();
+      const wallet=g.BillboardPrivateFeeRouting.createAztecWallet(a,pxe,node,node,log,secretKey,{progress:env.progress,preProveHook:config.preProveHook,contextGuard:config.contextGuard,transactionJournal});
+      wallet._accountManager=await a.AccountManager.create(wallet,secretKey,accountContract,{salt});
+      const constructorArtifact=accountArtifact.functions.find(f=>f.name==='constructor');
+      if(constructorArtifact){const signingPublicKey=await accountContract.getSigningPublicKey();await new a.ContractFunctionInteraction(wallet,owner,constructorArtifact,[signingPublicKey.x,signingPublicKey.y]).simulate({from:owner});}
+      return await run(wallet);
+      }finally{if(pxe)await pxe.stop().catch(()=>{});}
+    }
+    if(config.action==='balance')return withPrivateWallet(async wallet=>{
+      const artifact=a.loadContractArtifact(env.privateFeeArtifact);
+      await wallet.registerContract(await a.derivePrivateFeeInstance(artifact),artifact);
+      const contract=await a.Contract.at(privateFeeAddress,artifact,wallet);
+      const balance=await contract.methods.balance_of(owner).simulate({from:owner});
+      if(config.contextGuard)await config.contextGuard();
+      return {feeBalance:String(balance?.result??balance)};
+    });
     const ethProvider=new env.ethers.JsonRpcProvider(config.ethRpcUrl);
     try {
     if(config.action==='recover-eth') {
@@ -65,6 +92,7 @@
         walletSecret:config.aztecWallet.secretKey,walletSalt:salt.toString(),expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion),
         ethProvider,ethSigner:await env.getBrowserSigner(),journalStorage:env.createJournalStorage(),sender:config.fundingRecord?.sender,retry:config.retryEthereum===true,saveRecovery:config.saveRecovery,contextGuard:config.contextGuard});
       log(result.outcome==='funded'?'Private fee deposit recovered. Claim after the bridge message is available.':result.outcome==='approved'?'Token approval recovered. Continue with the deposit.':'The previous Ethereum request failed or was replaced.', ['funded','approved'].includes(result.outcome)?'success':'warn');
+      if(result.outcome==='funded'){const claim=await a.recoverPrivateFeeClaim({node,ethProvider,owner,walletSecret:config.aztecWallet.secretKey,privateFeeArtifact:env.privateFeeArtifact,record:result.record,expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion)});return {...result,claimConsumed:await a.isPrivateFeeClaimConsumed({node,claim})};}
       return result;
     }
     if(config.action==='deposit'){
@@ -86,30 +114,17 @@
     if(resumedOperation&&operation!==resumedOperation)throw invalidIntent();
     if(typeof transactionJournal.setOperation!=='function')throw Object.assign(new Error('Private fee claim operation storage is required.'),{code:'BB_JOURNAL_INVALID'});
     transactionJournal.setOperation(operation);
-    let pxe;
-    try{
-      await env.initCRS();
-      const contracts=await node.getL1ContractAddresses();
-      const dataDirectory='pxe_private_fee_'+owner.toString()+'_'+contracts.rollupAddress;
-      const store=await env.createStore({...contracts,l1ChainId:info.l1ChainId,accountAddress:owner.toString(),dataDirectory});
-      pxe=await a.createPXE(node,{proverEnabled:true,autoSync:true,dataDirectory},{store});
-      await pxe.registerAccount(keys,await a.computePartialAddress(instance));
-      await pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact);
-      await pxe.registerContract(instance);
-      await pxe.sync();
-      const wallet=g.BillboardPrivateFeeRouting.createAztecWallet(a,pxe,node,node,log,secretKey,{preProveHook:config.preProveHook,contextGuard:config.contextGuard,transactionJournal});
-      wallet._accountManager=await a.AccountManager.create(wallet,secretKey,accountContract,{salt});
-      const constructorArtifact=accountArtifact.functions.find(f=>f.name==='constructor');
-      if(constructorArtifact){const signingPublicKey=await accountContract.getSigningPublicKey();await new a.ContractFunctionInteraction(wallet,owner,constructorArtifact,[signingPublicKey.x,signingPublicKey.y]).simulate({from:owner});}
+    try{return await withPrivateWallet(async wallet=>{
+      await g.BillboardDepositReadiness.waitForDepositMessage({a,wallet,node,key:claim.messageKey,index:claim.leafIndex.toBigInt(),contextGuard:config.contextGuard,waitUntilAvailable:config.waitForBridge===true,onStage:env.progress});
       const prepared=await a.preparePrivateFeePayment({wallet,node,owner,privateFeeAddress,privateFeeArtifact:env.privateFeeArtifact,
         expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion),gasSettings:config.privateFee.gasSettings,claim});
-      const result=await new a.BatchCall(wallet,[]).send({from:owner,fee:{paymentMethod:prepared.paymentMethod,gasSettings:prepared.gasSettings}});
+      const result=await a.sendPrivateFeeTransaction({wallet,node,interaction:new a.BatchCall(wallet,[]),prepared,from:owner,guard:config.contextGuard});
       log('Your private fee balance is ready for board transactions.','success');
       return {ok:true,receipt:result.receipt,lastL2TxHash:transactionJournal.lastTxHash};
-    }catch(error){
-      const code=['PRIVATE_FEE_CAP_TOO_LOW','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID'].includes(error?.code)?error.code:'BB_PRIVATE_FEE_CLAIM_FAILED';
-      const safe=new Error(code==='BB_SUBMISSION_UNKNOWN'?'Submission outcome is unknown. Check the transaction before retrying.':'Private fee claim did not complete. Keep the recovery file and check the deposit before retrying.',{cause:error});safe.code=code;throw safe;
-    }finally{if(pxe)await pxe.stop().catch(()=>{});}
+    },true);}catch(error){
+      const code=['PRIVATE_FEE_BALANCE_INSUFFICIENT','BB_FEE_ESTIMATION_UNSTABLE','BB_GAS_LIMIT_EXCEEDED','BB_SIMULATION_FAILED','BB_OPERATION_PAUSED','BB_REMOTE_PROVER_TIMEOUT','BB_REMOTE_PROVER_OFFLINE','BB_REMOTE_PROVER_BUSY','BB_REMOTE_PROVER_REJECTED','BB_REMOTE_PROVER_RESPONSE','BB_REMOTE_PROVER_FAILED','PRIVATE_FEE_CAP_TOO_LOW','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID'].includes(error?.code)?error.code:'BB_PRIVATE_FEE_CLAIM_FAILED';
+      const safe=new Error(code==='BB_SUBMISSION_UNKNOWN'?'Submission outcome is unknown. Check the transaction before retrying.':'Private fee claim did not complete. Keep the recovery file and check the deposit before retrying.',{cause:error});safe.code=code;if(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(error?.stage))safe.stage=error.stage;throw safe;
+    }
     } finally {ethProvider.destroy();}
   };
 })();

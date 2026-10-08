@@ -1,0 +1,29 @@
+{
+  "checked": true,
+  "account": "0x139ac64b3dd83f326fcdcf6d6de10bdf9b515ffe750f6e3f8564daeec21d2367",
+  "configuredFeeAddress": "0x19536930b58cb5a4664142f4d19aa7c5c1ba72d25f0cdb70c6e6ebe22af5c0af",
+  "derivedFeeAddress": "0x28c2a3107cb397750c63c542dd0be34716d8b0b1d3e76b3b7dff85241ad09720",
+  "artifactMatchesConfiguration": false,
+  "maximumConfiguredFee": "13734911092572275520",
+  "gasSettingsValid": false,
+  "spendableCredit": "0",
+  "coversConfiguredMaximum": false,
+  "gasSettings": {
+    "gasLimits": {
+      "daGas": 2112,
+      "l2Gas": 1366896
+    },
+    "teardownGasLimits": {
+      "daGas": 0,
+      "l2Gas": 0
+    },
+    "maxFeesPerGas": {
+      "feePerDaGas": "0",
+      "feePerL2Gas": "10048248800620"
+    },
+    "maxPriorityFeesPerGas": {
+      "feePerDaGas": "0",
+      "feePerL2Gas": "0"
+    }
+  }
+}

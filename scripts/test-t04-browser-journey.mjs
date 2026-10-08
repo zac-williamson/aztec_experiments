@@ -66,7 +66,7 @@ test('actual browser journey stops after one deposit action when claim reports a
  let clicks=0;
  const page={
   waitForFunction:async()=>{},
-  locator:selector=>({waitFor:async()=>{},fill:async()=>{},click:async()=>{assert.equal(selector,'#navNext');clicks++;},count:async()=>1}),
+  locator:selector=>({waitFor:async()=>{},press:async()=>{},textContent:async()=>selector==='#depositLimits'?'Minimum 0.001 ETH · Maximum 0.01 ETH':selector==='#depositSelection'?'0.001 ETH':'ERROR: claim failed',click:async()=>{assert.equal(selector,'#navNext');clicks++;},count:async()=>clicks?1:0}),
  };
  await assert.rejects(driveT04BrowserJourney({page,directory:'/unused',message:'message',depositAmount:'0.001',remaining:()=>1000,mark(){}}));
  assert.equal(clicks,1);
@@ -91,11 +91,11 @@ test('non-Chromium lifecycle scenarios retain one explicit engine and existing b
 
 test('cold funding driver never claims or deposits again after a failed deposit',async()=>{
  const {driveT04BrowserFunding}=await import('./t04-browser-funding.mjs');
- const clicks=[];
- const page={waitForFunction:async()=>{},evaluate:async()=>'{"schemaVersion":1}',
-  locator:selector=>({fill:async()=>{},click:async()=>clicks.push(selector),count:async()=>selector==='#setupStatus .error'?0:1})};
- await assert.rejects(driveT04BrowserFunding({page,directory:'/unused',message:'message',depositAmount:'0.001',fundingAmount:'1.0',remaining:()=>1000,mark(){},onSubstage(){}}));
- assert.deepEqual(clicks,['#depositBtn']);
+ const clicks=[],confirmations=[];
+ const page={waitForFunction:async()=>{},
+  locator:selector=>({waitFor:async()=>{},press:async()=>{},textContent:async()=>selector==='#depositLimits'?'Minimum 0.001 ETH · Maximum 0.01 ETH':selector==='#depositSelection'?'0.001 ETH':'ERROR: fee failed',click:async()=>clicks.push(selector),count:async()=>clicks.length?1:0})};
+ await assert.rejects(driveT04BrowserFunding({page,directory:'/unused',message:'message',depositAmount:'0.001',remaining:()=>1000,mark(){},onSubstage(){},confirmEthereum:async stage=>{confirmations.push(stage);if(stage==='fee-deposit')throw Error('payment failed');}}));
+ assert.deepEqual(clicks,['#navNext']);assert.deepEqual(confirmations,['fee-approval','fee-deposit']);
 });
 
 test('handoff accepts actual SDK whole-token formatting and rejects invalid amounts',async()=>{
@@ -118,14 +118,14 @@ test('MetaMask is accepted only for explicit Chromium lifecycle and funding',asy
 
 test('MetaMask request observation preserves provider result and refuses overlapping transactions',async()=>{
  const {observeMetaMaskTransactions}=await import('./t04-metamask.mjs');
- const prior=globalThis.window;let release,calls=0;
+ const prior=globalThis.__testMetaMask;let release,calls=0;
  const tx={method:'eth_sendTransaction',params:[{to:'fixture'}]},provider={request:async request=>{calls++;assert.equal(request,tx);return new Promise(resolve=>{release=resolve;});}};
  try{
-  globalThis.window={ethereum:provider};await observeMetaMaskTransactions({evaluate:fn=>fn()});
+  globalThis.__testMetaMask=provider;await observeMetaMaskTransactions({evaluate:fn=>fn()});
   const sending=provider.request(tx);assert.deepEqual(globalThis.__walletTestPending,tx.params);
   await assert.rejects(provider.request(tx),/Overlapping/);assert.equal(calls,1);
   release('canonical-hash');assert.equal(await sending,'canonical-hash');assert.equal(globalThis.__walletTestPending,null);
- }finally{globalThis.window=prior;delete globalThis.__walletTestPending;}
+ }finally{globalThis.__testMetaMask=prior;delete globalThis.__walletTestPending;}
 });
 
 test('request guard attributes blank extension iframes without exempting application requests',async()=>{
@@ -146,6 +146,9 @@ test('MetaMask confirmation guard binds exact account, chain, target, amount and
  const cases=[['fee-approval',options.tokenAddress,'approve',[options.feePortalAddress,10n**18n],0n],['fee-deposit',options.feePortalAddress,'depositToAztecPublic',[options.privateFeeAddress,10n**18n,field('6')],0n],['deposit',options.boardPortalAddress,'deposit',[field('6')],10n**15n],['refund',options.boardPortalAddress,'withdraw',[1n,1n,0n,[field('6')]],0n]];
  for(const [stage,to,method,args,value] of cases){
   const request=[{from:options.account,to,data:abi.encodeFunctionData(method,args),value:'0x'+value.toString(16)}],input={...options,stage,request};assertMetaMaskTransaction(input);
+  assertMetaMaskTransaction({...input,chainId:'0xaa36a7',expectedChainId:11155111n});
+  assert.throws(()=>assertMetaMaskTransaction({...input,expectedChainId:11155111n}));
+  assert.throws(()=>assertMetaMaskTransaction({...input,chainId:'0x1',expectedChainId:1n}));
   for(const mutation of [{from:address('9')},{to:address('9')},{chainId:'0x1'},{value:'0x'+(value+1n).toString(16)},{data:request[0].data+'00'},{data:'0x00000000'}])assert.throws(()=>assertMetaMaskTransaction({...input,request:[{...request[0],...mutation}]}));
   assert.throws(()=>assertMetaMaskTransaction({...input,chainId:'0x1'}));assert.throws(()=>assertMetaMaskTransaction({...input,stage:'unknown'}));assert.throws(()=>assertMetaMaskTransaction({...input,request:[...request,...request]}));
   if(stage.startsWith('fee-')){

@@ -146,6 +146,8 @@ contract PortalV1Test is PortalFixtures {
             secretHash:bytes32(uint256(123)),index:index});
         require(key==Hash.sha256ToField(m),"Canonical Inbox key differs from scoped receipt");
         require(portal.INBOX().getTotalMessagesInserted()==1,"Inbox did not insert once");
+        BillboardPortal.Deposit memory saved=portal.getActiveDeposit(ALICE);
+        require(saved.amount==2 ether && saved.secretHash==bytes32(uint256(123)) && saved.key==key && saved.index==index,"Claim metadata mismatch");
         expectReceipt(ALICE,2 ether);
         require(portal.totalDeposited()==2 ether,"Wrong receipt accounting");
     }
@@ -174,6 +176,8 @@ contract PortalV1Test is PortalFixtures {
         bytes32 oldExit=exitRoot(portal,ALICE,2 ether); rollup.publish(2,1,oldExit);
         vm.prank(ALICE); portal.withdraw(2,1,0,new bytes32[](0));
         expectReceipt(ALICE,0); expectReceipt(BOB,3 ether);
+        BillboardPortal.Deposit memory cleared=portal.getActiveDeposit(ALICE);
+        require(cleared.amount==0 && cleared.secretHash==0 && cleared.key==0 && cleared.index==0,"Refund retained claim metadata");
         require(portal.totalDeposited()==3 ether && ALICE.balance==2 ether,"Refund accounting failed");
         control.expectRevert(); vm.prank(ALICE); portal.withdraw(2,1,0,new bytes32[](0));
         depositAs(portal,ALICE,2 ether); expectReceipt(ALICE,2 ether);

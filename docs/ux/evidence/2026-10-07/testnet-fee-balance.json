@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "network": "Sepolia / Aztec V5 testnet",
+  "ethereumAccount": "0xe60845ad5859FE7bc621De7703F97E87aBBBbdfD",
+  "startedAt": "2026-10-07T19:11:58.322Z",
+  "pageSha256": "ba664f358b37e7dece100670114046d6fe15396d1f34cc691c161ff51befcbc7",
+  "nonceBefore": 3,
+  "feeBalance": "126378973567198795680",
+  "nonceAfter": 3,
+  "finishedAt": "2026-10-07T19:12:16.390Z"
+}

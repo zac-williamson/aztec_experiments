@@ -22,13 +22,15 @@ if(process.env.U01_BOUNDED_BROWSER!=='true')throw Error('Run through run-bounded
 async function readyUser(page) {
  await page.waitForFunction(()=>window.__aztec?.createEthereumJournal);
  // Wallet component scope: hosted board discovery has separate coverage.
- await page.evaluate(()=>initWalletButtons('walletButtonsContainer',{autoPasskey:true}));
- await page.locator('#wbAccountMenu summary').click();
+ await page.evaluate(()=>{_getPublicConfig=()=>({network:{chainId:'31337'}});initWalletButtons('walletButtonsContainer',{autoPasskey:true});});
+ await page.locator('#wbAccountMenu > summary').click();
+ await page.getByText('Restore account',{exact:true}).click();
+ await page.getByText('Back up account',{exact:true}).click();
 }
 try {
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const origin='http://localhost:'+server.address().port;
-  browser=await chromium.launch({headless:true});
+  browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
   async function open(pageName='user.html') {
     const context=await browser.newContext({acceptDownloads:true});
     await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){externalRequests++;return route.abort();}return route.continue();});
@@ -39,6 +41,7 @@ try {
     return {context,page};
   }
   stage='create-passkey-account';const first=await open();
+  await first.page.locator('#wbAccountMenu > summary').click();
   const cdp=await first.context.newCDPSession(first.page);
   await cdp.send('WebAuthn.enable');
   await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',ctap2Version:'ctap2_1',transport:'internal',hasResidentKey:true,hasUserVerification:true,hasPrf:true,automaticPresenceSimulation:true,isUserVerified:true}});
@@ -47,7 +50,10 @@ try {
     _onReady=null;
     window.ethereum={request:async({method})=>{if(method==='eth_chainId')return '0x7a69';if(['eth_accounts','eth_requestAccounts'].includes(method))return ['0x'+'12'.repeat(20)];throw Error('Unexpected Ethereum request');}};
   });
-  await first.page.locator('#wbEthBrowserBtn').click();
+  await first.page.locator('#wbEthBrowserBtn').click();await first.page.getByRole('dialog').getByRole('button',{name:'Browser wallet (legacy)',exact:true}).click();
+  await first.page.waitForFunction(()=>!BillboardAccount.snapshot().busy);
+  assert.equal(await first.page.evaluate(()=>BillboardAccount.snapshot().needsPasskey),true,await first.page.locator('#wbAccountStatus').textContent());
+  await first.page.locator('#wbNewPasskeyBtn').click();
   await first.page.waitForFunction(()=>window.walletState.aztec?.address);
   const address=await first.page.evaluate(()=>window.walletState.aztec.address.toString());
   stage='saved-passkey-reconnect';
@@ -56,10 +62,13 @@ try {
     window.ethereum={request:async({method})=>{if(method==='eth_chainId')return '0x7a69';if(['eth_accounts','eth_requestAccounts'].includes(method))return ['0x'+'12'.repeat(20)];throw Error('Unexpected Ethereum request');}};
   });
   await first.page.reload();await readyUser(first.page);
+  await first.page.locator('#wbAccountMenu > summary').click();
   await first.page.locator('#wbEthBrowserBtn').click();
+  await first.page.getByRole('dialog').getByRole('button',{name:'Browser wallet (legacy)',exact:true}).click();
   await first.page.waitForFunction(()=>window.walletState.aztec?.address);
   assert.equal(await first.page.evaluate(()=>window.walletState.aztec.address.toString()),address);
   assert.equal(await first.page.evaluate(()=>localStorage.getItem('billboard-passkey-v1:0x'+'12'.repeat(20))),savedAccount);
+  await first.page.locator('#wbAccountMenu > summary').click();
   stage='save-disposable-claim';
   const commitment=await first.page.evaluate(async()=>{
     const a=window.__aztec,w=window.walletState.aztec,secret=a.Fr.random(),hash=(await a.computeSecretHash(secret)).toString();
@@ -73,12 +82,13 @@ try {
   const download=await exported,encrypted=await fs.readFile(await download.path());
   assert.equal(JSON.parse(encrypted).kind,'aztec-billboard-encrypted-wallet');
   stage='wrong-password';const second=await open();
-  await second.page.locator('#wbPassword').fill('wrong-password-for-test');
+  await second.page.locator('#wbRestorePassword').fill('wrong-password-for-test');
   await second.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:encrypted});
-  await second.page.waitForFunction(()=>document.getElementById('wbPassword').value==='');
+  await second.page.waitForFunction(()=>document.getElementById('wbRestorePassword').value==='');
+  await second.page.waitForFunction(()=>document.getElementById('wbAccountStatus').textContent.includes('password'));
   assert.equal(await second.page.evaluate(()=>window.walletState.aztec),null);
   stage='restore-fresh-profile';
-  await second.page.locator('#wbPassword').fill(password);
+  await second.page.locator('#wbRestorePassword').fill(password);
   await second.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:encrypted});
   await second.page.waitForFunction(()=>window.walletState.aztec?.address);
   assert.equal(await second.page.evaluate(()=>window.walletState.aztec.address.toString()),address);
@@ -91,7 +101,7 @@ try {
   stage='same-profile-tab-exclusion';
   const other=await first.context.newPage();other.setDefaultTimeout(15000);
   await other.goto(origin+'/user.html');await readyUser(other);
-  await other.locator('#wbPassword').fill(password);await other.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:encrypted});
+  await other.locator('#wbRestorePassword').fill(password);await other.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:encrypted});
   await other.waitForFunction(()=>window.walletState.aztec?.address);
   await first.page.evaluate(()=>{
     navigator.locks.request('billboard-wallet:'+window.walletState.aztec.address.toString(),async()=>{
@@ -113,7 +123,7 @@ try {
   });
   stage='journal-reload-and-wallet-restore';
   await first.page.reload();await readyUser(first.page);
-  await first.page.locator('#wbPassword').fill(password);await first.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:encrypted});
+  await first.page.locator('#wbRestorePassword').fill(password);await first.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:encrypted});
   await first.page.waitForFunction(()=>window.walletState.aztec?.address);
   const recovery=await first.page.evaluate(async txHash=>{
     const a=window.__aztec,w=window.walletState.aztec;let submissions=0,status='dropped',blocked=false;
@@ -137,7 +147,7 @@ try {
     return secretHash;
   });
   stage='ethereum-intent-reload';await first.page.reload();await readyUser(first.page);
-  await first.page.locator('#wbPassword').fill(password);await first.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:encrypted});await first.page.waitForFunction(()=>window.walletState.aztec?.address);
+  await first.page.locator('#wbRestorePassword').fill(password);await first.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:encrypted});await first.page.waitForFunction(()=>window.walletState.aztec?.address);
   const ethRecovered=await first.page.evaluate(async secretHash=>{
     const a=window.__aztec,w=window.walletState.aztec,scope={account:w.address.toString(),chainId:'31337',rollup:'0x'+'11'.repeat(20),version:'5',board:'0x'+'0'.repeat(63)+'2',portal:'0x'+'22'.repeat(20),depositor:'0x'+'33'.repeat(20)};
     const blockHash='0x'+'01'.repeat(32),txHash='0x'+'04'.repeat(32);let tx=null,receipt=null,nonce=null,submissions=0;
@@ -159,7 +169,7 @@ try {
   const portable=await fs.readFile(await (await portableDownload).path());
   await first.context.close();
   stage='restore-journals-fresh-profile';const third=await open('censor.html');
-  await third.page.locator('#wbPassword').fill(password);await third.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:portable});
+  await third.page.locator('#wbRestorePassword').fill(password);await third.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:portable});
   await third.page.waitForFunction(()=>window.walletState.aztec?.address);
   const portableResult=await third.page.evaluate(async txHash=>{
     const a=window.__aztec,w=window.walletState.aztec,storage=a.createBrowserJournalStorage();
@@ -171,21 +181,22 @@ try {
     return {count:records.length,claims:(await BillboardClaimBackup.exportRecords(w)).length,blocked,hash:(await journal.recover()).txHash.toString()};
   },savedHash);
   assert.deepEqual(portableResult,{count:2,claims:1,blocked:true,hash:savedHash});
-  assert.equal(await third.page.getByRole('button',{name:'Recover saved moderator transaction'}).count(),1);
+  assert.equal(await third.page.getByRole('button',{name:'Check saved action',includeHidden:true}).count(),1);
   await third.context.close();
 
   stage='deployment-resume-ui';const deploy=await open('deploy.html');
-  await deploy.page.locator('#wbPassword').fill(password);await deploy.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:portable});
+  await deploy.page.locator('#wbRestorePassword').fill(password);await deploy.page.locator('#wbAztecFile').setInputFiles({name:'recovery.json',mimeType:'application/json',buffer:portable});
   await deploy.page.waitForFunction(()=>window.walletState.aztec?.address);
   const deployResult=await deploy.page.evaluate(async()=>{
     let calls=0;
     window.runDeploy=async()=>{calls++;return{status:'pending-settlement',l2Addr:'0x'+'2'.padStart(64,'0'),portalAddr:'0x'+'22'.repeat(20),readyTxHash:'0x'+'44'.repeat(32)};};
     const word=n=>'0x'+BigInt(n).toString(16).padStart(64,'0');
     document.getElementById('deploymentManifest').value=JSON.stringify({schemaVersion:1,profile:'local-test',network:{nodeUrl:'http://localhost:8080/',ethRpcUrl:'http://localhost:8545/',chainId:'31337',rollupVersion:'5',rollup:'0x'+'33'.repeat(20),inbox:'0x'+'66'.repeat(20),outbox:'0x'+'77'.repeat(20)},actors:{aztecDeployer:window.walletState.aztec.address.toString(),ethereumDeployer:'0x'+'44'.repeat(20)},board:{salt:'1',minDeposit:'1',maxDeposit:'100',baseCooldown:'10',kMultiplier:'64',censorWindow:'10',maxSaveUp:'16',censor:word(1),policy:'Be kind.'},artifacts:{boardJsonSha256:word(1),boardClassId:word(2),portalCreationSha256:word(3),portalRuntimeMetadataSha256:word(4)}});
+    await importDeploymentManifest({files:[{size:10000,text:async()=>document.getElementById('deploymentManifest').value}]});
     await startDeploy();
-    const pending=document.getElementById('status').textContent.includes('Network settlement is pending');
+    const pending=document.getElementById('status').textContent.includes('Activation is waiting for network settlement');
     const hashSaved=document.getElementById('readyTxHash').value==='0x'+'44'.repeat(32);
-    const noReadyLink=!document.querySelector('#status a[href^="user.html"]');
+    const noReadyLink=document.getElementById('postBoard').hidden;
     let release;const held=navigator.locks.request('billboard-wallet:'+window.walletState.aztec.address.toString(),async()=>{
       await new Promise(resolve=>release=resolve);
     });

@@ -47,9 +47,9 @@ pub contract PrivateFPC {
     /// Reserves the maximum fee; teardown returns the unused credit privately.
     #[external("private")]
     #[allow_phase_change]
-    fn pay_fee() {
+    fn pay_fee(reservation: u128) {
         let sender = self.msg_sender();
-        let max_gas_cost = self.internal._deduct_max_gas_cost(sender);
+        let max_gas_cost = self.internal._deduct_fee_reservation(sender, reservation);
         let refund_note = UintNote::partial(sender, self.context, sender, self.address);
         self.set_as_teardown(PrivateFPC::at(self.address)._complete_refund(refund_note, max_gas_cost));
 
@@ -76,7 +76,7 @@ pub contract PrivateFPC {
     /// @param leaf_index The L1 message leaf index from the deposit transaction.
     #[external("private")]
     #[allow_phase_change]
-    fn mint_and_pay_fee(amount: u128, salt: Field, leaf_index: Field) {
+    fn mint_and_pay_fee(amount: u128, salt: Field, leaf_index: Field, reservation: u128) {
         let claimer = self.msg_sender();
 
         let feejuice_nullifier = compute_feejuice_claim_nullifier(
@@ -99,7 +99,9 @@ pub contract PrivateFPC {
 
         // Credit (amount - max_gas_cost) to claimer. The fee is implicitly deducted
         // since the full amount was bridged but only the remainder is credited.
-        let max_gas_cost = get_max_gas_cost(self.context);
+        assert(reservation > 0, "Fee reservation must be positive");
+        assert(reservation >= get_max_gas_cost(self.context), "Fee reservation below transaction maximum");
+        let max_gas_cost = reservation;
         assert(amount >= max_gas_cost, "Amount too low to cover gas cost");
         self.storage.balances.at(claimer).add(amount - max_gas_cost).deliver(
             MessageDelivery::onchain_unconstrained(),
@@ -189,8 +191,10 @@ pub contract PrivateFPC {
     /// @param account The address to deduct the gas cost from
     /// @return The max gas cost that was deducted
     #[internal("private")]
-    fn _deduct_max_gas_cost(account: AztecAddress) -> u128 {
-        let max_gas_cost = get_max_gas_cost(self.context);
+    fn _deduct_fee_reservation(account: AztecAddress, reservation: u128) -> u128 {
+        assert(reservation > 0, "Fee reservation must be positive");
+        assert(reservation >= get_max_gas_cost(self.context), "Fee reservation below transaction maximum");
+        let max_gas_cost = reservation;
 
         let change =
             self.internal._subtract_balance(account, max_gas_cost, INITIAL_TRANSFER_CALL_MAX_NOTES);

@@ -42,9 +42,9 @@
     "constructor(address rollup, bytes32 l2Contract, uint256 version, uint256 minDeposit, uint256 maxDeposit, bytes32 configHash)",
     "function deposit(bytes32 secretHash) payable returns (bytes32, uint256)",
     "function withdraw(uint256 epoch, uint256 numCheckpointsInEpoch, uint256 leafIndex, bytes32[] path)",
-    "function activeDeposit(address) view returns (uint128 amount)",
     "function depositsEnabled() view returns (bool)",
     "function getDeposit(address) view returns (uint128 amount)",
+    "function getActiveDeposit(address) view returns (tuple(uint128 amount, bytes32 secretHash, bytes32 key, uint256 index))",
     "function MAX_DEPOSIT() view returns (uint256)",
     "function CONFIG_HASH() view returns (bytes32)",
     "function L1_CHAIN_ID() view returns (uint256)",
@@ -163,6 +163,7 @@
 
       async sendTx(executionPayload, opts) {
         const log = this._log;
+        this._progress('preparing');
         const previousJournal = this._transactionJournal ? await this._transactionJournal.assertCanStart() : null;
         const fixedGas = !!opts.fee?.gasSettings;
         const checkedGas = fixedGas ? a.GasSettings.from(opts.fee.gasSettings) : null;
@@ -179,7 +180,7 @@
           additionalScopes: opts.additionalScopes, sendMessagesAs: opts.sendMessagesAs,
         });
 
-        if (!simResult.publicInputs || (simResult.publicInputs.forPublic && !simResult.publicOutput) || simResult.publicOutput?.revertReason) {
+        if (!simResult.publicInputs || (simResult.publicInputs.forPublic && !simResult.publicOutput?.txEffect?.revertCode?.isOK()) || simResult.publicOutput?.revertReason) {
           throw Object.assign(new Error('Transaction simulation did not complete successfully. No proof or transaction was submitted.'), {code:'BB_SIMULATION_FAILED'});
         }
         const gu = simResult.gasUsed;
@@ -188,8 +189,8 @@
           throw Object.assign(new Error('This transaction exceeds the configured fee limits. No proof or transaction was submitted.'), {code:'BB_GAS_LIMIT_EXCEEDED'});
         }
         const pad = 1 + this._estimatedGasPadding;
-        const gasLimits = gu.totalGas.mul(pad);
-        const teardownGasLimits = gu.teardownGas.mul(pad);
+        const gasLimits = fixedGas ? checkedGas.gasLimits.clone() : gu.totalGas.mul(pad);
+        const teardownGasLimits = fixedGas ? checkedGas.teardownGasLimits.clone() : gu.teardownGas.mul(pad);
         if (fixedGas) for (const key of ['daGas', 'l2Gas']) {
           gasLimits[key] = Math.min(gasLimits[key], checkedGas.gasLimits[key]);
           teardownGasLimits[key] = Math.min(teardownGasLimits[key], checkedGas.teardownGasLimits[key]);
@@ -202,24 +203,25 @@
         });
         const maxFee = finalGasSettings.getFeeLimit().toBigInt();
         log('  Estimated gas: L2=' + gasLimits.l2Gas.toLocaleString() + ' DA=' + gasLimits.daGas.toLocaleString(), 'info');
-        log('  Fee reservation: ' + maxFee.toLocaleString() + ' Fee Juice (' + toAztec(maxFee, 4) + ' AZTEC)', 'info');
+        log('  Maximum transaction fee: ' + maxFee.toLocaleString() + ' Fee Juice (' + toAztec(maxFee, 4) + ' AZTEC)', 'info');
         if (this._preProveHook) {
           await this._preProveHook({ gasLimits, maxFee, feeOptions, teardownGasLimits });
         }
         const feeOpts2 = await this.completeFeeOptions({
           from: opts.from, feePayer: executionPayload.feePayer, gasSettings: finalGasSettings,
         });
-        // A smaller reservation can select different notes. Validate the exact final transaction once.
+        // Validate the final gas settings before proving; the signed payment payload remains unchanged.
         const finalSimulation = await this.simulateViaEntrypoint(executionPayload, {
           from: opts.from, feeOptions: feeOpts2, skipTxValidation: false, skipFeeEnforcement: false,
           additionalScopes: opts.additionalScopes, sendMessagesAs: opts.sendMessagesAs,
         });
-        if (!finalSimulation.publicInputs || (finalSimulation.publicInputs.forPublic && !finalSimulation.publicOutput) || finalSimulation.publicOutput?.revertReason) {
+        if (!finalSimulation.publicInputs || (finalSimulation.publicInputs.forPublic && !finalSimulation.publicOutput?.txEffect?.revertCode?.isOK()) || finalSimulation.publicOutput?.revertReason) {
           throw Object.assign(new Error('Transaction simulation did not complete successfully. No proof or transaction was submitted.'), {code:'BB_SIMULATION_FAILED'});
         }
         if (['daGas', 'l2Gas'].some(key => finalSimulation.gasUsed.totalGas[key] > finalGasSettings.gasLimits[key] || finalSimulation.gasUsed.teardownGas[key] > finalGasSettings.teardownGasLimits[key])) {
           throw Object.assign(new Error('This transaction exceeds the estimated fee limits. No proof or transaction was submitted.'), {code:'BB_GAS_LIMIT_EXCEEDED'});
         }
+        this._progress('proving');
         log('  Proving tx (can take minutes)...', 'info');
 
         const txRequest = await this.createTxExecutionRequestFromPayloadAndFee(executionPayload, opts.from, feeOpts2);
@@ -237,19 +239,23 @@
           ? (await a.extractApplicationNullifier(provenTx, tx, this._applicationNullifierBoard, this._applicationNoteNullifier)).toString() : undefined;
         if (this._transactionJournal) await this._transactionJournal.prepare(tx, previousJournal, {applicationNullifier});
         if (this._contextGuard) await this._contextGuard();
+        this._progress('submitting');
         await a.submitOnceWithReconciliation(rawNode,tx);
+        this._progress('confirming');
         const waitOpts=typeof opts.wait==='object'?opts.wait:{};
         const receipt=await a.waitForSuccessfulReceipt(rawNode,tx,{
           timeoutMs:(waitOpts.timeout ?? 540)*1000,intervalMs:(waitOpts.interval ?? 5)*1000,
           now:()=>Date.now(),sleep:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
         });
         if (this._transactionJournal) this._transactionJournal.confirmed(receipt);
+        this._actualFees=(this._actualFees||0n)+BigInt(receipt.transactionFee??0);
         log('  Tx confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
         return { receipt };
       }
     }
 
     const wallet = new AztecWallet(pxe, aztecNode);
+    wallet._progress = opts.progress || (()=>{});
     wallet._preProveHook = opts.preProveHook || null;
     wallet._contextGuard = opts.contextGuard || null;
     wallet._transactionJournal = opts.transactionJournal || null;
@@ -389,7 +395,7 @@
     if (expectedPolicyVersion !== undefined && canonicalPostId(a, expectedPolicyVersion, true) !== version) throw new Error('Current policy changed or does not match the reviewed policy');
     return [postIdField, new a.Fr(BigInt(version)), packed.fields.map(value => new a.Fr(value)), packed.byteLength];
   }
-  g.BillboardModerationCodec = Object.freeze({ packModerationReason, decodeModerationReason, moderationArguments, readPolicySnapshot });
+  g.BillboardModerationCodec = Object.freeze({ packModerationReason, decodeModerationReason, moderationArguments, readPolicySnapshot, restoreModeratorOperation });
 
   function restoreModeratorOperation(a, encoded) {
     try {
@@ -457,31 +463,37 @@
     catch (_) { throw privateFeeFailure(); }
   }
 
+  // Read-only fee readiness: shared by deposit preflight and the actual private action.
+  // It registers local contract data but neither reserves fees nor sends a transaction.
+  async function preparePrivateFee({a,config,privateFeeArtifact,wallet,node,owner,scope,claim}) {
+    const route = requirePrivateFeeConfiguration(a,config,privateFeeArtifact);
+    try {
+      const prepared = await a.preparePrivateFeePayment({wallet,node,owner,
+        privateFeeAddress:route.contractAddress,privateFeeArtifact,
+        expectedChainId:scope.l1ChainId,expectedVersion:scope.rollupVersion,
+        gasSettings:route.gasSettings,claim});
+      if(!prepared?.paymentMethod || !prepared.gasSettings)throw privateFeeFailure();
+      return prepared;
+    } catch(error) {
+      throw privateFeeFailure(['PRIVATE_FEE_CAP_TOO_LOW','PRIVATE_FEE_BALANCE_INSUFFICIENT','PRIVATE_FEE_CLAIM_INSUFFICIENT'].includes(error?.code)?error.code:'BB_PRIVATE_FEE_PREPARATION_FAILED');
+    }
+  }
+
   function createPrivateFeeSender({ a, config, privateFeeArtifact, contract, wallet, node, owner, scope }) {
-    const route = requirePrivateFeeConfiguration(a, config, privateFeeArtifact);
+    requirePrivateFeeConfiguration(a, config, privateFeeArtifact);
     // A bridge claim may bootstrap the first payment. Subsequent actions spend the private note.
     let claim = config.privateFeeClaim;
     return async function sendPrivateFeeAction(kind, args) {
       const methods = {claim: 'claim_deposit', post: 'post', withdraw: 'withdraw', set_moderation_policy:'set_moderation_policy', declare_immoral:'declare_immoral', transfer_censor:'transfer_censor'};
       const method = Object.hasOwn(methods,kind) ? methods[kind] : undefined;
       if (!method) throw privateFeeFailure('BB_PRIVATE_FEE_UNSUPPORTED_ACTION');
-      let prepared;
+      const prepared = await preparePrivateFee({a,config,privateFeeArtifact,wallet,node,owner,scope,claim});
       try {
-        prepared = await a.preparePrivateFeePayment({ wallet, node, owner,
-          privateFeeAddress: route.contractAddress, privateFeeArtifact,
-          expectedChainId: scope.l1ChainId, expectedVersion: scope.rollupVersion,
-          gasSettings: route.gasSettings, claim,
-        });
-        if (!prepared?.paymentMethod || !prepared.gasSettings) throw privateFeeFailure();
-      } catch (error) { throw privateFeeFailure(error?.code==='PRIVATE_FEE_CAP_TOO_LOW'?'PRIVATE_FEE_CAP_TOO_LOW':'BB_PRIVATE_FEE_PREPARATION_FAILED'); }
-      try {
-        const result = await contract.methods[method](...args).send({
-          from: owner, fee: {paymentMethod: prepared.paymentMethod, gasSettings: prepared.gasSettings},
-        });
+        const result = await a.sendPrivateFeeTransaction({wallet,node,interaction:contract.methods[method](...args),prepared,from:owner,guard:config.contextGuard});
         claim = undefined;
         return result;
       } catch (error) {
-        if (['BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID', 'BB_BROWSER_PROOF_FAILED'].includes(error?.code)) throw privateFeeFailure(error.code);
+        if (['PRIVATE_FEE_BALANCE_INSUFFICIENT','BB_FEE_ESTIMATION_UNSTABLE','BB_GAS_LIMIT_EXCEEDED','BB_SIMULATION_FAILED','BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID', 'BB_BROWSER_PROOF_FAILED', 'BB_REMOTE_PROVER_TIMEOUT','BB_REMOTE_PROVER_OFFLINE','BB_REMOTE_PROVER_BUSY','BB_REMOTE_PROVER_REJECTED','BB_REMOTE_PROVER_RESPONSE','BB_REMOTE_PROVER_FAILED'].includes(error?.code)) {const failure=privateFeeFailure(error.code);if(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(error.stage))failure.stage=error.stage;throw failure;}
         if (error?.code === 'BB_STATE_CONFLICT') {
           const allowed = ['Existing nullifier', 'Block header not found'];
           if (Array.isArray(error.stateReasons) && error.stateReasons.length > 0 && error.stateReasons.every(reason => allowed.includes(reason))) {
@@ -499,16 +511,17 @@
 
   // Read-only readiness check at a refreshed current PXE anchor. Proving may refresh it again.
   // Missing messages never allocate fees, prove, submit, or repeat an L1 deposit.
-  async function waitForDepositMessage({a,wallet,node,key,index,contextGuard,timeoutMs=20000,pollMs=1000}) {
+  async function waitForDepositMessage({a,wallet,node,key,index,contextGuard,timeoutMs=240000,pollMs=1000,waitUntilAvailable=false,onStage=()=>{}}) {
     const pending=()=>Object.assign(new Error('The confirmed deposit is not yet available to claim. Retry the same claim later.'),{code:'BB_DEPOSIT_MESSAGE_PENDING'});
     const unavailable=()=>Object.assign(new Error('Deposit message availability could not be checked. Retry the original claim after restoring the connection.'),{code:'BB_DEPOSIT_MESSAGE_UNAVAILABLE'});
     const invalid=()=>Object.assign(new Error('Deposit message membership does not match the confirmed receipt.'),{code:'BB_DEPOSIT_MESSAGE_INVALID'});
-    if(!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>20000||!Number.isInteger(pollMs)||pollMs<1)throw invalid();
+    if(!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>240000||!Number.isInteger(pollMs)||pollMs<1)throw invalid();
     let message,expected;
     try{if(typeof key!=='string'||!/^0x[0-9a-fA-F]{64}$/.test(key))throw invalid();message=new a.Fr(BigInt(key));expected=BigInt(index);if(expected<0n||expected>=1n<<36n)throw invalid();}catch{throw invalid();}
-    const deadline=Date.now()+timeoutMs;
+    const deadline=waitUntilAvailable?Infinity:Date.now()+timeoutMs;
+    onStage('bridge');
     const bounded=async fn=>{
-      const left=deadline-Date.now();if(left<=0)throw pending();
+      const left=Math.min(timeoutMs,deadline-Date.now());if(left<=0)throw pending();
       let timer;try{return await Promise.race([Promise.resolve().then(fn),new Promise((_,reject)=>{timer=setTimeout(()=>reject(pending()),left);})]);}finally{clearTimeout(timer);}
     };
     while(Date.now()<deadline){
@@ -607,7 +620,7 @@
     let action = config.action || 'status';
     if(config.reuse)throw new Error('Provide the saved deposit transaction hash with --reuse-tx.');
     if (config.inspectOnly && action !== 'declare-immoral') throw new Error('Journal inspection requires declare-immoral.');
-    if (!config.inspectOnly && ['claim', 'post', 'withdraw', 'auto', 'declare-immoral', 'transfer-censor', 'set-moderation-policy'].includes(action)) requirePrivateFeeConfiguration(a, config, env.privateFeeArtifact);
+    if (!config.inspectOnly && ['deposit', 'claim', 'post', 'withdraw', 'auto', 'declare-immoral', 'transfer-censor', 'set-moderation-policy'].includes(action)) requirePrivateFeeConfiguration(a, config, env.privateFeeArtifact);
 
     // ============================================================
     // Step 1: Derive account keys
@@ -672,7 +685,7 @@
     log('  L2 billboard: ' + l2AddrHex, 'success');
     log('  L1 portal: ' + portalAddr, 'info');
 
-    const journalActions = ['claim','post','withdraw','auto','recover','declare-immoral','set-moderation-policy','transfer-censor'];
+    const journalActions = ['status','claim','post','withdraw','auto','recover','declare-immoral','set-moderation-policy','transfer-censor'];
     if(journalActions.includes(action) && typeof env.createTransactionJournal!=='function')throw Object.assign(new Error('Durable transaction journal is required.'),{code:'BB_JOURNAL_INVALID'});
     const transactionJournal = journalActions.includes(action)
       ? await env.createTransactionJournal({walletSecret:secretKeyHex,walletSalt:saltVal,
@@ -693,6 +706,8 @@
     if(action==='recover') {
       if(!transactionJournal)throw new Error('Transaction journal is required for recovery.');
       if(config.contextGuard)await config.contextGuard();
+      const reviewed=config.moderatorRecovery;
+      if(reviewed){const saved=await transactionJournal.inspect();if(!saved||saved.txHash!==reviewed.txHash||saved.operation!==reviewed.operation)throw Object.assign(Error('Saved action changed.'),{code:'BB_MODERATOR_REVIEW_CHANGED'});restoreModeratorOperation(a,saved.operation);}
       let receipt;
       try { receipt = await transactionJournal.recover(); }
       catch(error) {
@@ -704,22 +719,27 @@
         let kind,metadata;try{metadata=JSON.parse(saved.operation);kind=metadata?.kind;}catch{throw error;}
         if(Array.isArray(metadata)) {
           const restored=restoreModeratorOperation(a,saved.operation);
+          if(reviewed){
+            if(!reviewed.allowReplacement)throw Object.assign(Error('Saved proof needs fresh review.'),{code:'BB_MODERATOR_REVIEW_REQUIRED'});
+            if(saved.txHash!==reviewed.txHash||saved.operation!==reviewed.operation)throw Object.assign(Error('Saved action changed.'),{code:'BB_MODERATOR_REVIEW_CHANGED'});
+            if(restored.action==='declare-immoral'&&restored.expectedPolicyVersion!==reviewed.policyVersion)throw Object.assign(Error('Rules changed.'),{code:'BB_POLICY_CHANGED'});
+          }
           resumedModeratorOperation=saved.operation;action=restored.action;
-          config={...config,...restored,reconcilePrevious:false,censorWalletJson:config.censorWalletJson||config.aztecWallet};
+          config={...config,...restored,...(reviewed?{expectedPolicyVersion:reviewed.policyVersion}:{}),reconcilePrevious:false,censorWalletJson:config.censorWalletJson||config.aztecWallet};
         } else if(kind==='post') {
           resumedPost = parsePostOperation(a, saved.operation);
           action='post';
           config={...config,action,isDummy:false,message:resumedPost.message,depositChainId:resumedPost.depositChain};
         } else if(kind==='claim') {
           const intent=JSON.parse(saved.operation);
-          if(Object.keys(intent).sort().join()!=='amount,depositChain,depositor,kind,leafIndex,schemaVersion,secretHash,transactionHash'||intent.schemaVersion!==1||
-            !/^0x[0-9a-f]{40}$/.test(intent.depositor)||!/^0x[0-9a-f]{64}$/.test(intent.transactionHash)||
+          if(Object.keys(intent).sort().join()!=='amount,depositChain,depositor,kind,leafIndex,messageKey,schemaVersion,secretHash'||intent.schemaVersion!==2||
+            !/^0x[0-9a-f]{40}$/.test(intent.depositor)||!/^0x[0-9a-f]{64}$/.test(intent.messageKey)||
             !/^[1-9][0-9]*$/.test(intent.amount)||!/^(0|[1-9][0-9]*)$/.test(intent.leafIndex))throw error;
-          canonicalPostId(a,intent.depositChain,true);canonicalPostId(a,intent.secretHash,true);
+          canonicalPostId(a,intent.depositChain,true);canonicalPostId(a,intent.secretHash,true);canonicalPostId(a,intent.messageKey,true);
           if(BigInt(intent.amount)>=1n<<128n)throw error;
-          new a.Fr(BigInt(intent.leafIndex));
+          if(BigInt(intent.leafIndex)>=(1n<<36n))throw error;
           resumedClaim={intent,operation:saved.operation};action='claim';
-          config={...config,action,reuseTxHash:intent.transactionHash,depositChainId:intent.depositChain};
+          config={...config,action,depositChainId:intent.depositChain};
         } else if(kind==='dummy'||kind==='withdraw') {
           const intent=JSON.parse(saved.operation);
           if(Object.keys(intent).sort().join()!=='depositChain,headSequence,kind,schemaVersion'||intent.schemaVersion!==1||
@@ -738,17 +758,18 @@
         const succeeded=receipt.executionResult==='success';
         log((succeeded?'Saved transaction succeeded. Hash: ':'Saved transaction reverted; the action failed. Hash: ')+receipt.txHash.toString(),succeeded?'success':'warn');
         const saved=await transactionJournal.inspect();
-        let recoveredWithdrawal=false;
+        let recoveredWithdrawal=false,recoveredPost={};
         if(succeeded&&saved?.operation&&saved.txHash===receipt.txHash.toString()) {
           const intent=JSON.parse(saved.operation);
           recoveredWithdrawal=intent?.kind==='withdraw';
+          if(intent?.kind==='post'){const post=parsePostOperation(a,saved.operation);recoveredPost={recoveredAction:'post',postId:(await a.poseidon2HashWithSeparator([new a.Fr(1),l2Addr.toField(),new a.Fr(BigInt(post.nonce))],0x42420102)).toString(),...(receipt.transactionFee!==undefined?{feePaid:String(receipt.transactionFee)}:{})};}
         }
-        return {recovered:true,lastL2TxHash:receipt.txHash.toString(),...(recoveredWithdrawal?{withdrawTxHash:receipt.txHash.toString()}:{}),state:succeeded?'transaction_recovered':'transaction_reverted'};
+        return {recovered:true,...recoveredPost,lastL2TxHash:receipt.txHash.toString(),...(recoveredWithdrawal?{withdrawTxHash:receipt.txHash.toString()}:{}),state:succeeded?'transaction_recovered':'transaction_reverted'};
       }
     }
     // Check before any action-specific state changes, including auto-mode L1 sends.
     let reconciledModerator=null;
-    if(transactionJournal) {
+    if(transactionJournal && action!=='status') {
       if(config.reconcilePrevious===true&&['declare-immoral','set-moderation-policy','transfer-censor'].includes(action)) {
         if(typeof transactionJournal.reconcilePrevious!=='function')throw Object.assign(new Error('Moderator recovery is unavailable.'),{code:'BB_JOURNAL_INVALID'});
         try { reconciledModerator=await transactionJournal.reconcilePrevious(); }
@@ -836,7 +857,7 @@
         }
         log(success?'Saved Ethereum request and portal event verified.':'Saved Ethereum request '+recovered.outcome+'; the original action did not succeed.',success?'success':'warn');
         log('Ethereum transaction: '+recovered.txHash,'info');
-        return {recovered:true,lastEthereumTxHash:recovered.txHash,state:success?'ethereum_recovered':'ethereum_'+recovered.outcome,...(refundedSavedWithdrawal?{withdrawTxHash:null}:{})};
+        return {recovered:true,lastEthereumTxHash:recovered.txHash,state:success?'ethereum_recovered':'ethereum_'+recovered.outcome,...(refundedSavedWithdrawal?{withdrawTxHash:null,refundAmount:String(recovered.request.expected.amount),refundRecipient:l1Account}:{})};
       }
       await ethereumJournal.assertCanStart();
     }
@@ -887,7 +908,7 @@
     // ============================================================
     // Decide if we need full PXE setup
     // ============================================================
-    const needsPXE = ['status', 'claim', 'post', 'list', 'withdraw', 'declare-immoral', 'transfer-censor', 'set-moderation-policy', 'auto'].includes(action);
+    const needsPXE = ['status', 'deposit', 'claim', 'post', 'list', 'withdraw', 'declare-immoral', 'transfer-censor', 'set-moderation-policy', 'auto'].includes(action);
     const needsCRS = needsPXE;
 
     let pxe = null, wallet = null, contract = null;
@@ -904,8 +925,10 @@
       if (cached) {
         log('  Reusing cached PXE/wallet setup.', 'success');
         pxe = cached.pxe;
+        if(pxe.setRemoteProver)await pxe.setRemoteProver(config.remoteProver);
         wallet = cached.wallet;
         wallet._log = log;
+        wallet._progress = env.progress || (()=>{});
         wallet._preProveHook = config.preProveHook || null;
         wallet._contextGuard = config.contextGuard || null;
         wallet._transactionJournal = transactionJournal;
@@ -930,7 +953,7 @@
         pxe = await measured('pxe',()=>a.createPXE(aztecNode, {
           proverEnabled: true, autoSync: true,
           dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
-        }, { store }));
+        }, { store,remoteProver:config.remoteProver }));
         log('  PXE created.', 'success');
 
         // ============================================================
@@ -959,7 +982,7 @@
         // Step 7: Create wallet
         // ============================================================
         log('Step 7: Creating wallet...', 'info');
-        wallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, secretKey, { preProveHook: config.preProveHook, contextGuard: config.contextGuard, transactionJournal });
+        wallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, secretKey, { progress:env.progress,preProveHook: config.preProveHook, contextGuard: config.contextGuard, transactionJournal });
         const accountManager = await a.AccountManager.create(wallet, secretKey, accountContract, { salt: new a.Fr(saltVal) });
         wallet._accountManager = accountManager;
         log('  Wallet ready.', 'success');
@@ -1003,7 +1026,31 @@
     // ============================================================
     // Resolve state
     // ============================================================
-    if (l2NoteInfo && l2NoteInfo.amount > 0n) {
+    // Restore only the authenticated withdrawal for this exact active deposit cycle.
+    let depositInfo=null,savedState=null;
+    if(action==='status'&&transactionJournal){
+      if(typeof transactionJournal.inspectOutcome!=='function')throw Object.assign(Error('Journal inspection unavailable.'),{code:'BB_JOURNAL_INVALID'});
+      savedState=await transactionJournal.inspectOutcome();
+      if(portalL1Balance>0n)config.withdrawTxHash=null;
+      if(savedState?.outcome==='pending')stateStatus='transaction_needs_recovery';
+      if(savedState&&portalL1Balance>0n&&(!l2NoteInfo||l2NoteInfo.amount===0n)){
+        let intent;try{intent=JSON.parse(savedState.operation);}catch{}
+        if(intent?.kind==='withdraw'){
+          if(Object.keys(intent).sort().join()!=='depositChain,headSequence,kind,schemaVersion'||intent.schemaVersion!==1||typeof intent.headSequence!=='string'||!/^(0|[1-9][0-9]*)$/.test(intent.headSequence)||BigInt(intent.headSequence)>=1n<<64n||!savedState.applicationNullifier)throw Object.assign(Error('Invalid withdrawal record.'),{code:'BB_JOURNAL_INVALID'});
+          canonicalPostId(a,intent.depositChain,true);
+          await doReuseDeposit();
+          const currentChain=await deriveDepositChain(depositInfo);
+          if(currentChain===BigInt(intent.depositChain)){
+            selectedChain=currentChain;
+            if(savedState.outcome==='success')config.withdrawTxHash=savedState.txHash;
+            else stateStatus='transaction_needs_recovery';
+          }
+        }
+      }
+    }
+    if(stateStatus==='transaction_needs_recovery'){
+      // Present Activity; an interrupted action must not trigger another claim.
+    } else if (l2NoteInfo && l2NoteInfo.amount > 0n) {
       stateStatus = 'postable';
     } else if (config.withdrawTxHash) {
       // An unread or zero aggregate balance is not a receipt for this withdrawal.
@@ -1083,7 +1130,7 @@
     // DEPOSIT action
     // ============================================================
     // Private in-memory record; public action results omit the secret.
-    let depositInfo = null;
+
     function secretScope() {
       if (!l1Account) throw new Error('An L1 depositor is required for secret custody.');
       return { l1ChainId: String(BigInt(nodeInfo.l1ChainId)), rollupAddress: rollupAddr.toLowerCase(),
@@ -1103,7 +1150,7 @@
       if (!record || record.schemaVersion !== 1 || record.secretHash !== hash ||
           typeof record.secret !== 'string' || !/^0x[0-9a-f]{64}$/.test(record.secret) ||
           BigInt(record.secret) <= 0n || BigInt(record.secret) >= a.Fr.MODULUS) {
-        throw new Error('The matching saved claim secret is missing or invalid. Restore its backup before claiming.');
+        throw Object.assign(new Error('The matching saved claim secret is missing or invalid. Restore its backup before claiming.'),{code:'BB_CLAIM_SECRET_MISSING'});
       }
       const computed = await a.computeSecretHash(new a.Fr(BigInt(record.secret)));
       if (computed.toString().toLowerCase() !== hash) throw new Error('Saved claim secret does not match the deposit.');
@@ -1119,6 +1166,35 @@
       if (event.amount <= 0n || event.amount >= (1n << 96n)) throw new Error('Invalid V1 receipt event.');
       return event;
     }
+    async function ensureDepositFees(interaction) {
+      const scope={l1ChainId:String(nodeInfo.l1ChainId),rollupVersion:String(version)};
+      const checkBalance=async()=>{
+        const prepared=await preparePrivateFee({a,config,privateFeeArtifact:env.privateFeeArtifact,
+          wallet,node:aztecNode,owner:address,scope,claim:config.privateFeeClaim});
+        if(interaction)await a.estimatePrivateFeeTransaction({wallet,node:aztecNode,interaction,prepared,from:address,guard:config.contextGuard});
+        return prepared;
+      };
+      if(!config.automaticFeeFunding)return checkBalance();
+      const route=requirePrivateFeeConfiguration(a,config,env.privateFeeArtifact);
+      const input={node:aztecNode,owner:address,privateFeeAddress:route.contractAddress,
+        privateFeeArtifact:env.privateFeeArtifact,walletSecret:secretKeyHex,walletSalt:saltVal,
+        expectedChainId:scope.l1ChainId,expectedVersion:scope.rollupVersion,
+        ethProvider:provider,ethSigner,journalStorage:env.createJournalStorage(),
+        saveRecovery:config.saveRecovery,contextGuard:config.contextGuard};
+      const guarded=fn=>async(...args)=>{if(config.contextGuard)await config.contextGuard();
+        const result=await fn(...args);if(config.contextGuard)await config.contextGuard();return result;};
+      let claim;try {claim=await a.ensureOnboardingFees({checkBalance,
+        recoverFunding:guarded(()=>a.recoverPrivateFeeFunding({...input,retry:config.retryEthereum===true})),
+        fund:guarded(acknowledgeEthereumTx=>a.fundPrivateFees({...input,acknowledgeEthereumTx,
+          amount:a.normalizePrivateFeeGasSettings(route.gasSettings).maximumFee*2n})),
+        recoverClaim:guarded(record=>a.recoverPrivateFeeClaim({...input,record})),
+        isConsumed:guarded(claim=>a.isPrivateFeeClaimConsumed({node:aztecNode,claim})),
+        waitForMessage:claim=>waitForDepositMessage({a,wallet,node:aztecNode,key:claim.messageKey,
+          index:claim.leafIndex.toBigInt(),contextGuard:config.contextGuard,waitUntilAvailable:config.waitForBridge===true,onStage:env.progress}),onProgress:log});}catch(error){error.phase='fee-funding';throw error;}
+      if(claim)config.privateFeeClaim=claim;
+      await checkBalance();
+    }
+
     async function doDeposit() {
       if (!ethSigner || !portalDeployed) throw new Error('A verified portal and L1 signer are required.');
       const store = secretStore();
@@ -1131,16 +1207,19 @@
       const amount = ethers.parseEther(config.depositAmount);
       const [minimum, maximum] = await Promise.all([portal.MIN_DEPOSIT(),portal.MAX_DEPOSIT()]);
       if (amount < minimum || amount > maximum) throw new Error('Deposit amount is outside the configured portal bounds.');
-      const secret = generateSecret(a);
-      const secretHash = (await a.computeSecretHash(secret)).toString().toLowerCase();
-      const record = { schemaVersion: 1, secretHash, secret: secret.toString().toLowerCase() };
-      // A successful durable commit and verified read-back must precede ANY L1 submission.
-      await store.save(secretScope(), record);
-      if (await restoreSecret(secretHash) !== record.secret) throw new Error('Claim-secret storage read-back failed.');
-      log('Claim secret saved locally. Sending deposit...', 'info');
-      if (config.contextGuard) await config.contextGuard();
-      const paid=await ethereumJournal.send({data:new ethers.Interface(PORTAL_ABI).encodeFunctionData('deposit',[secretHash]),value:amount.toString(),
-        expected:{kind:'deposit',amount:amount.toString(),secretHash}});
+      log('Checking private transaction fee readiness before depositing ETH...', 'info');
+      await ensureDepositFees();
+      if(config.contextGuard)await config.contextGuard();
+      let record;
+      const paid=await ethereumJournal.send(async nonce=>{
+        const derived=await a.deriveBoardDepositSecret({walletSecret:secretKeyHex,walletSalt:saltVal,scope:secretScope(),owner:address.toString(),nonce});
+        record={schemaVersion:1,...derived};
+        await store.save(secretScope(),record);
+        if(await restoreSecret(record.secretHash)!==record.secret)throw Error('Claim-secret storage read-back failed.');
+        if(config.contextGuard)await config.contextGuard();
+        return {data:new ethers.Interface(PORTAL_ABI).encodeFunctionData('deposit',[record.secretHash]),value:amount.toString(),expected:{kind:'deposit',amount:amount.toString(),secretHash:record.secretHash}};
+      });
+      const secretHash=record.secretHash;
       const event=paid.event;
       depositInfo = { amount, key:event.key, leafIndex: event.index, secret: record.secret, secretHash, txHash: paid.txHash };
       portalL1Balance = amount;
@@ -1151,30 +1230,32 @@
     async function doReuseDeposit() {
       if (!provider || !l1Account || !portalDeployed) throw new Error('A verified portal and depositor are required.');
       secretStore();
-      const head = await provider.getBlock('latest');
+      const deadline=Date.now()+60000;
+      const read=async operation=>{
+        const remaining=deadline-Date.now();
+        if(remaining<=0)throw Object.assign(new Error('Deposit lookup timed out.'),{code:'BB_DEPOSIT_LOOKUP_FAILED'});
+        try{return await a.boundedTransactionRead(operation,Math.min(20000,remaining));}
+        catch{throw Object.assign(new Error('Deposit lookup unavailable. Try Claim deposit again.'),{code:'BB_DEPOSIT_LOOKUP_FAILED'});}
+      };
+      const head = await read(()=>provider.getBlock('latest'));
       if (!head?.hash || !Number.isSafeInteger(head.number)) throw new Error('Current Ethereum block unavailable.');
-      const active = await new ethers.Contract(portalAddr,PORTAL_ABI,provider).getDeposit(l1Account,{blockTag:head.number});
+      const active = await read(()=>new ethers.Contract(portalAddr,PORTAL_ABI,provider).getDeposit(l1Account,{blockTag:head.number}));
       if (BigInt(active) === 0n) throw new Error('No active L1 receipt to recover.');
-      const txHash=config.reuseTxHash;
-      if(typeof txHash!=='string'||!/^0x[0-9a-fA-F]{64}$/.test(txHash))throw new Error('Provide the deposit transaction hash from your Ethereum wallet or recovery record.');
-      // Authenticate the exact canonical receipt before using its Inbox key.
-      const receipt=await provider.getTransactionReceipt(txHash);
-      if(!receipt||receipt.status!==1)throw Object.assign(new Error('Successful deposit receipt unavailable.'),{code:'BB_RECOVERY_UNKNOWN'});
-      const receiptHash=receipt.hash??receipt.transactionHash;
-      if(typeof receiptHash!=='string'||receiptHash.toLowerCase()!==txHash.toLowerCase()||!receipt.blockHash||
-         !Number.isSafeInteger(receipt.blockNumber)||receipt.blockNumber<1)throw Object.assign(new Error('Saved deposit receipt identity is unavailable.'),{code:'BB_RECOVERY_UNKNOWN'});
-      const block=await provider.getBlock(receipt.blockNumber);
-      if(block?.hash!==receipt.blockHash)throw Object.assign(new Error('Saved deposit receipt is not canonical.'),{code:'BB_RECOVERY_UNKNOWN'});
-      const event=parsedDeposit(receipt);
-      if (event.amount !== BigInt(active)) throw new Error('Deposit event does not match the active receipt.');
-      const depositLog=receipt.logs.find(log=>log.address.toLowerCase()===portalAddr.toLowerCase()&&log.topics[0]?.toLowerCase()===ethers.id(DEPOSIT_SIGNATURE).toLowerCase()&&new ethers.Interface(PORTAL_ABI).parseLog(log)?.args.depositor.toLowerCase()===l1Account.toLowerCase());
-      if (!depositLog || !Number.isSafeInteger(depositLog.index) || receipt.blockNumber>head.number) throw new Error('Deposit event position unavailable.');
-      const withdrawals=await provider.getLogs({address:portalAddr,fromBlock:receipt.blockNumber,toBlock:head.number,topics:[ethers.id('Withdrawn(address,uint128)'),ethers.zeroPadValue(l1Account,32)]});
-      if(withdrawals.some(log=>log.blockNumber>receipt.blockNumber||(log.blockNumber===receipt.blockNumber&&log.index>depositLog.index))) throw new Error('This deposit was already refunded. Supply the current deposit transaction.');
-      if((await provider.getBlock(head.number))?.hash!==head.hash) throw new Error('Ethereum history changed while checking the deposit.');
-      const secret = await restoreSecret(event.secretHash);
-      depositInfo = { amount:event.amount, key:event.key, leafIndex:event.index, secret,
-        secretHash:event.secretHash.toLowerCase(), txHash };
+      const event = await read(()=>new ethers.Contract(portalAddr,PORTAL_ABI,provider).getActiveDeposit(l1Account,{blockTag:head.number}));
+      if (BigInt(event.amount) !== BigInt(active)) throw new Error('Deposit metadata does not match the active deposit.');
+      canonicalPostId(a,event.secretHash,true);
+      canonicalPostId(a,event.key,true);
+      if(BigInt(event.index)<0n || BigInt(event.index)>=(1n<<36n)) throw new Error('Invalid deposit message index.');
+      if((await read(()=>provider.getBlock(head.number)))?.hash!==head.hash) throw new Error('Ethereum changed while checking the deposit. Please retry.');
+      let secret;
+      try{secret=await restoreSecret(event.secretHash);}catch(error){
+        if(error.code!=='BB_CLAIM_SECRET_MISSING')throw error;
+        env.progress?.('checking');
+        const recovered=await a.recoverBoardDepositSecret({provider,read,scope:secretScope(),active:event,head,walletSecret:secretKeyHex,walletSalt:saltVal,owner:address.toString(),guard:config.contextGuard,progress:env.depositRecoveryProgress});
+        await secretStore().save(secretScope(),{schemaVersion:1,...recovered});secret=await restoreSecret(recovered.secretHash);
+      }
+      depositInfo = { amount:BigInt(event.amount), key:event.key, leafIndex:BigInt(event.index), secret,
+        secretHash:event.secretHash.toLowerCase() };
       portalL1Balance=event.amount;
       log('Recovered the active receipt using its saved claim secret.', 'success');
     }
@@ -1211,6 +1292,7 @@
       privateFeeSender ??= createPrivateFeeSender({ a, config, privateFeeArtifact: env.privateFeeArtifact,
         contract, wallet, node: aztecNode, owner: address,
         scope: { l1ChainId: String(nodeInfo.l1ChainId), rollupVersion: String(version) } });
+      if(config.maximumCreditSpend!==undefined&&wallet._actualFees+a.normalizePrivateFeeGasSettings(config.privateFee.gasSettings).maximumFee>BigInt(config.maximumCreditSpend))throw Object.assign(Error('Approved fee limit reached.'),{code:'BB_WITHDRAWAL_BUDGET'});
       const result = await privateFeeSender(kind, args);
       // A confirmed saved step no longer constrains the next intentional action.
       resumedSpend = null;
@@ -1241,24 +1323,27 @@
     // ============================================================
     // CLAIM action (claim deposit on L2)
     // ============================================================
+    async function deriveDepositChain(info){
+      const content=escrowContent(a,ethers,false,l2Addr,portalAddr,l1Account,info.amount,version,nodeInfo.l1ChainId);
+      return (await a.poseidon2HashWithSeparator([new a.Fr(1),l2Addr.toField(),address.toField(),content,new a.Fr(BigInt(info.secret)),new a.Fr(BigInt(info.leafIndex))],0x42420101)).toBigInt();
+    }
     async function doClaim() {
       if (!contract) throw new Error('PXE setup required for claim.');
       if (!ethSigner) throw new Error('L1 signer required for claim.');
 
       // If we don't have depositInfo yet, try to reuse an existing deposit
       if (!depositInfo) {
-        log('No deposit info from this session. Searching L1 for existing deposits...', 'info');
-        await a.boundedTransactionRead(()=>doReuseDeposit(),20000);
+        log('Retrieving your deposit from Ethereum...', 'info');
+        await doReuseDeposit();
       }
 
       const depositorField = a.Fr.fromHexString(l1Account);
       const amount = depositInfo.amount;
       const secret = new a.Fr(BigInt(depositInfo.secret));
       const leafIndex = depositInfo.leafIndex;
-      const claimContent = escrowContent(a,ethers,false,l2Addr,portalAddr,l1Account,amount,version,nodeInfo.l1ChainId);
-      selectedChain = (await a.poseidon2HashWithSeparator([new a.Fr(1),l2Addr.toField(),address.toField(),claimContent,secret,new a.Fr(BigInt(leafIndex))],0x42420101)).toBigInt();
+      selectedChain = await deriveDepositChain(depositInfo);
       if (selectedChain === 0n) throw new Error('Invalid derived deposit identity');
-      claimOperation=JSON.stringify({schemaVersion:1,kind:'claim',depositor:l1Account.toLowerCase(),amount:String(amount),leafIndex:String(leafIndex),secretHash:depositInfo.secretHash.toLowerCase(),transactionHash:depositInfo.txHash.toLowerCase(),depositChain:new a.Fr(selectedChain).toString()});
+      claimOperation=JSON.stringify({schemaVersion:2,kind:'claim',depositor:l1Account.toLowerCase(),amount:String(amount),leafIndex:String(leafIndex),secretHash:depositInfo.secretHash.toLowerCase(),messageKey:depositInfo.key.toLowerCase(),depositChain:new a.Fr(selectedChain).toString()});
       if(resumedClaim&&claimOperation!==resumedClaim.operation)throw Object.assign(new Error('The original claim receipt or beneficiary does not match the saved request.'),{code:'BB_RECOVERY_REQUIRED'});
 
       log('Claiming deposit on L2...', 'info');
@@ -1288,10 +1373,13 @@
         return;
       }
 
-      await waitForDepositMessage({a,wallet,node:aztecNode,key:depositInfo.key,index:leafIndex,contextGuard:config.contextGuard});
+      log('  Waiting for Ethereum deposit availability on Aztec...', 'info');
+      await waitForDepositMessage({a,wallet,node:aztecNode,key:depositInfo.key,index:leafIndex,contextGuard:config.contextGuard,waitUntilAvailable:config.waitForBridge===true,onStage:env.progress});
 
       // One attempt per action. Message availability and uncertain submission
       // remain retryable outcomes; never run a ten-minute blind retry loop.
+      log('  Deposit message ready. Preparing private transaction fees...', 'info');
+      if(config.automaticFeeFunding)await ensureDepositFees(contract.methods.claim_deposit(depositorField,amount,secret,leafIndex));
       const result = await sendPrivate('claim', [depositorField, amount, secret, leafIndex]);
       const receipt = result.receipt;
       log('  Claim confirmed. Tx hash: ' + receipt.txHash + ', block: ' + receipt.blockNumber, 'success');
@@ -1367,7 +1455,7 @@
           }
           log('  Cooldown expired!', 'success');
         } else {
-          throw new Error('Too early to post. Wait ' + waitSec + ' more seconds (~' + Math.ceil(waitSec / 60) + ' min).');
+          throw Object.assign(new Error('Posting cooldown is active.'),{code:'BB_POST_COOLDOWN'});
         }
       }
       log('  Time lock check passed.', 'success');
@@ -1385,7 +1473,8 @@
       const exists=unwrapPostValue(await contract.methods.get_post_exists(postId).simulate({ from: a.NO_FROM }));
       if(exists!==false)throw Object.assign(new Error('Post publication must be reconciled before another proof.'),{code:'BB_RECOVERY_REQUIRED'});
       transactionJournal.setOperation(operation);
-      const result = await sendPrivate('post', [
+      if(config.onPostPrepared)await config.onPostPrepared({postId:postId.toString()});
+      const sent = await sendPrivate('post', [
         requireDepositChain(),
         postNonce,
         fields.map(f => new a.Fr(f)),
@@ -1394,11 +1483,13 @@
         childHint,
         grandchildHint
       ]);
-      const receipt = result.receipt;
+      const receipt = sent.receipt;
       log('  TX confirmed! Block: ' + receipt.blockNumber + ', Status: ' + receipt.status, 'success');
       if (receipt.transactionFee !== undefined) {
         log('  Fee paid: ' + toAztec(BigInt(receipt.transactionFee), 6) + ' AZTEC', 'info');
       }
+      result.postId=postId.toString();
+      if(receipt.transactionFee!==undefined)result.feePaid=String(receipt.transactionFee);
       log('  Message posted.', 'success');
     }
 
@@ -1551,6 +1642,7 @@
     // WITHDRAW action (L2)
     // ============================================================
     async function doWithdraw() {
+      wallet._actualFees=0n;let preparedSteps=0;
       if (!contract) throw new Error('PXE setup required for withdraw.');
 
       // Note absence alone cannot distinguish an unclaimed receipt, incomplete
@@ -1600,13 +1692,15 @@
           waitReason = 'cooldown: ' + (noteInfo.nextAllowedTime - eligibilityNow).toString() + 's remaining';
         }
         if (!canWithdraw) {
-          if (config.action === 'auto') {
+          if (config.action === 'auto' || config.prepareWithdrawal) {
+            env.progress?.('screening');
             log('  Withdraw not ready: ' + waitReason + '. Will make dummy posts to advance screening.', 'info');
             // Make dummy posts until screening catches up
-            for (let attempt = 0; attempt < 20; attempt++) {
+            for (let attempt = 0; config.prepareWithdrawal || attempt < 20; attempt++) {
+              await config.contextGuard?.();
               // Wait until next_allowed_time (so we can make a dummy post)
               const info3 = await readDepositInfo();
-              if (info3.amount === 0n) { canWithdraw = true; break; }
+              if (info3.amount === 0n) throw Object.assign(Error('Deposit state changed.'),{code:'BB_RECOVERY_REQUIRED'});
               if (info3.lastRealPostIndex === NO_REAL_POST) {
                 let now3 = BigInt(await getL2Timestamp(a, aztecNode));
                 if (info3.nextAllowedTime <= now3) { canWithdraw = true; break; }
@@ -1627,8 +1721,19 @@
                 await sleep(Math.min(waitSec * 1000 + 5000, 60000));
                 continue;
               }
+              const [child] = await readScreeningHints(contract,address,requireDepositChain());
+              if(!child?.note || typeof child.note.is_dummy!=='boolean')throw Object.assign(Error('Screening history unavailable.'),{code:'BB_SCREENING_HISTORY_UNAVAILABLE'});
+              if(!child.note.is_dummy){
+                const deadline=BigInt(unwrapPostValue(await contract.methods.get_post_flag_deadline(child.note.post_id).simulate({from:a.NO_FROM})).toString());
+                if(deadline>now4){env.progress?.('screening');await sleep(Math.min(Number(deadline-now4)*1000,30000));continue;}
+              }
+              const priorScreened=info3.lastScreenedIndex;
+              if(config.prepareWithdrawal&&preparedSteps>=config.maxScreeningSteps)throw Object.assign(Error('Approved preparation limit reached.'),{code:'BB_WITHDRAWAL_BUDGET'});
+              preparedSteps++;
               log('  Making dummy post #' + (attempt + 1) + ' to advance screening...', 'info');
               await doDummyPost();
+              await wallet.pxe.sync();
+              if((await readDepositInfo()).lastScreenedIndex<=priorScreened)throw Object.assign(Error('Screening made no progress.'),{code:'BB_SCREENING_NO_PROGRESS'});
               // Check if we can withdraw now
               await sleep(5000);
             }
@@ -1741,6 +1846,7 @@
         expected:{kind:'withdraw',amount:withdrawAmount.toString()},
       });
       log('  L1 refund transaction: '+refunded.txHash,'info');
+      result.refundAmount=withdrawAmount.toString();result.refundRecipient=l1Account;
       config.withdrawTxHash = null;
       stateStatus = 'zero_balance_need_deposit';
       log('  Matching Withdrawn event and canonical receipt verified. ETH claimed successfully!','success');
@@ -1800,7 +1906,7 @@
       await pxe.registerContract(censorInstance);
       log('  Censor account registered.', 'success');
 
-      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk, {preProveHook:config.preProveHook,contextGuard:config.contextGuard,transactionJournal});
+      const censorWallet = createAztecWallet(a, pxe, aztecNode, rawNode, log, censorSk, {progress:env.progress,preProveHook:config.preProveHook,contextGuard:config.contextGuard,transactionJournal});
       const censorAccountManager = await a.AccountManager.create(censorWallet, censorSk, censorAccountContract, { salt: new a.Fr(censorSaltVal) });
       censorWallet._accountManager = censorAccountManager;
 
@@ -1836,6 +1942,11 @@
 
       const { censorWallet, censorAddress, censorContract } = await _loadCensorWalletAndContract();
 
+      if(config.expectedPolicyVersion!==undefined){
+        const snapshot=await censorContract.methods.get_moderation_policy_snapshot().simulate({from:a.NO_FROM});
+        const current=snapshot?.result??snapshot;
+        if(canonicalPostId(a,current[2],true)!==canonicalPostId(a,config.expectedPolicyVersion,true))throw Object.assign(Error('Board rules changed since review.'),{code:'BB_POLICY_CHANGED'});
+      }
       log('Setting moderation policy (' + policyLen + ' bytes)...', 'info');
       const result = await sendCensorPrivate(censorWallet,censorAddress,censorContract,'set_moderation_policy',[
         policyFields.map(f => new a.Fr(f)),new a.Fr(BigInt(policyLen))

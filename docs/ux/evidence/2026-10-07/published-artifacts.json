@@ -1,0 +1,52 @@
+[
+  {
+    "path": "aztec_bundle.js",
+    "sha256": "af91bde987cbe7b2bec3a029626a6ebfe9390c0b1b7ea8f3f85ae421dc0ea17e",
+    "etag": "\"d043e4a81c6218ce350bd087d91f4d3e\""
+  },
+  {
+    "path": "public-feed.js",
+    "sha256": "a6e192accdc83e0e52f1546d693ca99b54b3b26ff1bcf7018ce7a35375842b79",
+    "etag": "\"0eeea7cfc1cbd57a53ebf3fb1539e9d4\""
+  },
+  {
+    "path": "sdk-manifest.json",
+    "sha256": "8c2f49b74f856c16c4231bc053f56c3815f1c59902adafe26e9868973e4623e7",
+    "etag": "\"fc8c6f9b5e450ecd478987a3ca9d5468\""
+  },
+  {
+    "path": "board-catalog.json",
+    "sha256": "6d02460e9f763b67248365c5abb77ef04e0a369b493bc21ca373c8ea99e58679",
+    "etag": "\"b38e72aff2772d6e85f17fbbb17bd61d\""
+  },
+  {
+    "path": "boards.html",
+    "sha256": "760fe61da8be1507df27c8ab1fa2548ed0ef3f9b19766029fc80a3fd34d2ae3d",
+    "etag": "\"74916317984da3cc2ccded331f531633\""
+  },
+  {
+    "path": "feed.html",
+    "sha256": "3ad3654e4cb3a983a12093c2abdb75b1f43cc7d3e31844740ca2c29ebcc7aeb9",
+    "etag": "\"8c8e135db2681b8f78f546d5098a0997\""
+  },
+  {
+    "path": "user.html",
+    "sha256": "5ecff669b5a791c2894fc65d0a7bd31aa7446219b095b63337d396162bb41886",
+    "etag": "\"23be5552eb1cf7f081cf23400d0de060\""
+  },
+  {
+    "path": "censor.html",
+    "sha256": "2ba3b1f369df09953d12fedd260fe43915a59b19c266031ddf205350e87c9bd1",
+    "etag": "\"b68032090e17f705a0297849ab064b90\""
+  },
+  {
+    "path": "deploy.html",
+    "sha256": "a1c9cd8538e85fc1b8faeae56fd3d98271ca010f0a16a59a42d2075cf94f60e4",
+    "etag": "\"bea9cc64afd9df5c88d7cf9b9f90b91c\""
+  },
+  {
+    "path": "fee-juice.html",
+    "sha256": "ba664f358b37e7dece100670114046d6fe15396d1f34cc691c161ff51befcbc7",
+    "etag": "\"d7b87dfc131871f16ee26593a1535732\""
+  }
+]

@@ -1,7 +1,8 @@
+import {RoutedKernelProver} from './routed-kernel-prover.mjs';
+import {createRemoteProverClient} from './remote-prover-client.mjs';
 import { Buffer } from 'node:buffer';
 import { createPXE as createSdkPXE } from '@aztec/pxe/client/lazy';
 import { Barretenberg, BackendType } from '@aztec/bb.js';
-import { BBLazyPrivateKernelProver } from '@aztec/bb-prover/client/lazy';
 import { WASMSimulator } from '@aztec/simulator/client';
 import { ChonkProofWithPublicInputs } from '@aztec/stdlib/proofs';
 import { proveBrowserChonk } from './browser-chonk-stream.mjs';
@@ -67,8 +68,9 @@ export async function initializeBrowserProver(supplied) {
 }
 // Keep the SDK circuit simulator/artifact provider. Only the application-to-BB
 // input lifetime changes: each circuit is consumed before expanding the next.
-class BrowserPrivateKernelProver extends BBLazyPrivateKernelProver {
+class BrowserPrivateKernelProver extends RoutedKernelProver {
   async createChonkProof(executionSteps) {
+    if(this.transport||!this.proofsEnabled)return super.createChonkProof(executionSteps);
     const bb=await Barretenberg.initSingleton({...this.options,logger:discard});
     const result=await proveBrowserChonk(executionSteps,bb);
     const proof=ChonkProofWithPublicInputs.fromBufferArray(result.proofFields);
@@ -78,17 +80,27 @@ class BrowserPrivateKernelProver extends BBLazyPrivateKernelProver {
 }
 export async function createPXE(node,config,options={}) {
   let selected=options;
+  let remote=options.remoteProver;
+  const info=await node.getNodeInfo();
+  const proofsEnabled=info?.realProofs!==false;
+  if(!proofsEnabled && Number(info.l1ChainId)!==31337)throw Error('Disabled proofs require local devnet');
+  const transport=()=>remote?createRemoteProverClient({...remote,chainId:info.l1ChainId,rollupVersion:info.rollupVersion,proofsEnabled}):proofsEnabled?null:{prove:async()=>({mode:'disabled'})};
+  const route=(simulator,proverOptions)=>new RoutedKernelProver(simulator,proverOptions,{proofsEnabled,transport:transport()});
   if(typeof window !== 'undefined') {
     const proverOrOptions=await initializeBrowserProver(options.proverOrOptions);
     const simulator=options.simulator??new WASMSimulator();
-    selected={...options,simulator,proverOrOptions:new BrowserPrivateKernelProver(simulator,{...proverOrOptions,logger:privateLogger})};
+    selected={...options,simulator,proverOrOptions:new BrowserPrivateKernelProver(simulator,{...proverOrOptions,logger:privateLogger},{proofsEnabled,transport:transport()})};
+  }else if(remote||!proofsEnabled){
+    const simulator=options.simulator??new WASMSimulator();selected={...options,simulator,proverOrOptions:route(simulator,options.proverOrOptions??{})};
   }else if(config?.proverEnabled===true){
     if(['proverOrOptions','backend','threads','skipSrsInit','bbPath'].some(key=>options[key]!==undefined||config[key]!==undefined)||options.simulator!==undefined||!cliProverInitialization)throw cliFailure();
     const initialized=cliProverInitialization;
     const singleton=await Barretenberg.initSingleton({...initialized.options,logger:discard});
     if(singleton!==initialized.singleton) {cliProverInitialization=undefined;throw cliFailure();}
     const simulator=new WASMSimulator();
-    selected={...options,simulator,proverOrOptions:new BrowserPrivateKernelProver(simulator,{...initialized.options,logger:privateLogger})};
+    selected={...options,simulator,proverOrOptions:new BrowserPrivateKernelProver(simulator,{...initialized.options,logger:privateLogger},{proofsEnabled:true,transport:null})};
   }
-  return createSdkPXE(node,config,{...selected,loggers:{store:privateLogger,pxe:privateLogger,prover:privateLogger}});
+  const pxe=await createSdkPXE(node,config,{...selected,loggers:{store:privateLogger,pxe:privateLogger,prover:privateLogger}});
+  if(selected.proverOrOptions instanceof RoutedKernelProver)pxe.setRemoteProver=async value=>{remote=value;selected.proverOrOptions.setTransport(transport());};
+  return pxe;
 }

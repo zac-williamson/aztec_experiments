@@ -71,14 +71,14 @@ unconstrained fn private_fee_unclaimed_bridge_cannot_mint() {
 #[test(should_fail_with = "Balance too low")]
 unconstrained fn private_fee_unfunded_owner_cannot_pay() {
     let (env, fpc, user, _) = setup();
-    env.call_private_opts(user, CallPrivateOptions::new().with_gas_settings(gas()), PrivateFPC::at(fpc).pay_fee());
+    env.call_private_opts(user, CallPrivateOptions::new().with_gas_settings(gas()), PrivateFPC::at(fpc).pay_fee(1300));
 }
 
 #[test(should_fail_with = "Amount too low to cover gas cost")]
 unconstrained fn private_fee_cold_start_rejects_insufficient_bridge() {
     let (env, fpc, user, _) = setup();
     seed_claim(env, fpc, user, 1299, 123);
-    env.call_private_opts(user, CallPrivateOptions::new().with_gas_settings(gas()), PrivateFPC::at(fpc).mint_and_pay_fee(1299, 123, 42));
+    env.call_private_opts(user, CallPrivateOptions::new().with_gas_settings(gas()), PrivateFPC::at(fpc).mint_and_pay_fee(1299, 123, 42, 1300));
 }
 
 #[test(should_fail)]
@@ -95,10 +95,37 @@ unconstrained fn private_fee_outsider_cannot_complete_refund() {
     env.call_public(user, PrivateFPC::at(fpc)._complete_refund(Deserialize::deserialize([0]), 0));
 }
 
-// TXE supplies zero transaction fees and permits a chosen sender. This tests
-// only the zero-refund branch, not real teardown or protocol fee accounting.
+// TXE supplies zero transaction fees; this covers only the zero-refund branch.
 #[test]
 unconstrained fn private_fee_zero_refund_skips_note_completion() {
     let (env, fpc, _, _) = setup();
     env.call_public(fpc, PrivateFPC::at(fpc)._complete_refund(Deserialize::deserialize([0]), 0));
+}
+
+#[test(should_fail_with = "Fee reservation below transaction maximum")]
+unconstrained fn private_fee_existing_credit_rejects_underreservation() {
+    let (env, fpc, user, _) = setup();
+    seed_claim(env, fpc, user, 5000, 123);
+    env.call_private(user, PrivateFPC::at(fpc).mint(5000, 123, 42));
+    env.call_private_opts(user, CallPrivateOptions::new().with_gas_settings(gas()), PrivateFPC::at(fpc).pay_fee(1299));
+}
+
+#[test(should_fail_with = "Fee reservation below transaction maximum")]
+unconstrained fn private_fee_cold_start_rejects_underreservation() {
+    let (env, fpc, user, _) = setup();
+    seed_claim(env, fpc, user, 5000, 123);
+    env.call_private_opts(user, CallPrivateOptions::new().with_gas_settings(gas()), PrivateFPC::at(fpc).mint_and_pay_fee(5000, 123, 42, 1299));
+}
+
+#[test(should_fail_with = "Fee reservation must be positive")]
+unconstrained fn private_fee_existing_credit_rejects_zero_reservation() {
+    let (env, fpc, user, _) = setup();
+    env.call_private_opts(user, CallPrivateOptions::new().with_gas_settings(gas()), PrivateFPC::at(fpc).pay_fee(0));
+}
+
+#[test(should_fail_with = "Fee reservation must be positive")]
+unconstrained fn private_fee_cold_start_rejects_zero_reservation() {
+    let (env, fpc, user, _) = setup();
+    seed_claim(env, fpc, user, 5000, 123);
+    env.call_private_opts(user, CallPrivateOptions::new().with_gas_settings(gas()), PrivateFPC::at(fpc).mint_and_pay_fee(5000, 123, 42, 0));
 }

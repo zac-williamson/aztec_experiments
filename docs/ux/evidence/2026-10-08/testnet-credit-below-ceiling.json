@@ -1,0 +1,52 @@
+{
+  "passed": true,
+  "scope": "Real existing-credit fee payment; empty application payload",
+  "startedAt": "2026-10-08T16:31:49.068Z",
+  "proofs": "real",
+  "backend": "native",
+  "threads": 4,
+  "sourceHashes": {
+    "scripts/test-private-fee-testnet-low-credit.mjs": "e74f3359f78b3cf2fbda35aaca98298c18e952629a40c0f9baa08850a53de69a",
+    "shared/private-fee-estimation.mjs": "b31b249c8e4eea4638be1f26435a1b695a4e1a5a242d491a26223fe8557326f3",
+    "shared/private-fee-simulation.mjs": "d5223eeac62acda7bd696a987ddf9d30f85a9f7005e0500605d63fac348450c7",
+    "shared/private-fee-payment.mjs": "de7ad78b551e546fcc96a2f0fdfb9f8a3b09cdcfd82669458770d81f3d1058d3",
+    "shared/private-fee-client.mjs": "575a3f066f7c551d3ab2dceb4feace63c1aaed568e56cd24b3d99cbef96eec18",
+    "apps/src/billboard/user/engine.js": "1b8d246b7f53b2a0dd705c737e0b5931730d7e92c75a801ff2ad0ddb58cf2371",
+    "apps/src/billboard/private_fee_artifact.json": "ec62072d08a7a1f32008f0f81db96d8490009a7ab357070274517de9022eb5a1"
+  },
+  "account": "0x024c5b9d1f48c61f18988494771c3d2d767dd7cdbe436e2e80238d7ad20ac10d",
+  "balanceBefore": "126378973567198795680",
+  "configuredMaximum": "126378973567203840000",
+  "gasSettings": {
+    "gasLimits": {
+      "daGas": "117668",
+      "l2Gas": "6540000"
+    },
+    "teardownGasLimits": {
+      "daGas": "58834",
+      "l2Gas": "817500"
+    },
+    "maxFeesPerGas": {
+      "feePerDaGas": "0",
+      "feePerL2Gas": "19324002074496"
+    },
+    "maxPriorityFeesPerGas": {
+      "feePerDaGas": "0",
+      "feePerL2Gas": "0"
+    }
+  },
+  "reservation": "14543379229280211072",
+  "passes": 1,
+  "authorPublicBefore": "0",
+  "txHash": "0x020351245e767cc554fbcfc90ef26985f34ffd109f3477d58cab8e2f5aee1c11",
+  "feePayer": "0x1d53fdabe6b9175ad9925925f1374e5fd424ff007a9d9edbf027355b98b719f9",
+  "balanceAfter": "125476263795806372160",
+  "receipt": {
+    "txHash": "0x020351245e767cc554fbcfc90ef26985f34ffd109f3477d58cab8e2f5aee1c11",
+    "blockNumber": 111411,
+    "blockHash": "0x22e7ff48a202f3d1690d66f87d8bb8efa33d9a36e420cd21fbac0352b242b7f6",
+    "status": "checkpointed",
+    "transactionFee": "902709771392423520"
+  },
+  "finishedAt": "2026-10-08T16:33:09.199Z"
+}

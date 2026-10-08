@@ -1,14 +1,14 @@
 // Test-only observer: fixed error categories and same-origin source coordinates.
 // Generic error messages, symbols, wallet values and RPC payloads never leave the page.
-// Plain RPC error causes retain only their code and a bounded message with hex values redacted.
+// Plain RPC error causes retain only their numeric code.
 export function installBrowserErrorObserver() {
 
     const original=globalThis.publicOperationFailure;if(typeof original!=='function')throw Error('Diagnostic formatter unavailable');
     globalThis.__u01FormatterDiagnostics=[];
     globalThis.__u01CaptureError=function(error){
      try{
-      const names=new Set(['Error','TypeError','RangeError','ReferenceError','SyntaxError','EvalError','URIError','AggregateError','DOMException','RuntimeError','CompileError','LinkError']);
-      const codes=new Set(['BB_DEPOSIT_READ','BB_GAS_LIMIT_EXCEEDED','BB_SIMULATION_FAILED','BB_PRIVATE_FEE_PREPARATION_FAILED','BB_DEPOSIT_MESSAGE_PENDING','BB_DEPOSIT_MESSAGE_INVALID','BB_DEPOSIT_MESSAGE_UNAVAILABLE','BB_ETH_SUBMISSION_UNKNOWN','BB_ETH_TRANSACTION_FAILED','BB_ETH_RECOVERY_REQUIRED','BB_RECOVERY_UNKNOWN','BB_NO_SAVED_ETHEREUM_TRANSACTION','BB_OPERATION_FAILED','BB_CONNECTION_VERIFICATION_FAILED','BB_FEE_CONFIG_REQUIRED','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID','BB_PRIVATE_FEE_AMOUNT','BB_PRIVATE_FEE_ACTION_FAILED','BB_PRIVATE_FEE_CLAIM_FAILED','PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN','INSECURE_CONTEXT','SHARED_MEMORY_UNAVAILABLE','WASM_UNAVAILABLE','WORKER_UNAVAILABLE','CRYPTO_UNAVAILABLE','LOCKS_UNAVAILABLE','STORAGE_UNAVAILABLE','OPFS_UNAVAILABLE','READINESS_TIMEOUT']);
+      const names=new Set(['Error','TypeError','RangeError','ReferenceError','SyntaxError','EvalError','URIError','AggregateError','DOMException','RuntimeError','CompileError','LinkError','SimulationError']);
+      const codes=new Set(['BB_REMOTE_PROVER_FAILED','BB_DEPOSIT_READ','BB_GAS_LIMIT_EXCEEDED','BB_SIMULATION_FAILED','BB_PRIVATE_FEE_PREPARATION_FAILED','BB_DEPOSIT_MESSAGE_PENDING','BB_DEPOSIT_MESSAGE_INVALID','BB_DEPOSIT_MESSAGE_UNAVAILABLE','BB_ETH_SUBMISSION_UNKNOWN','BB_ETH_TRANSACTION_FAILED','BB_ETH_RECOVERY_REQUIRED','BB_RECOVERY_UNKNOWN','BB_NO_SAVED_ETHEREUM_TRANSACTION','BB_OPERATION_FAILED','BB_CONNECTION_VERIFICATION_FAILED','BB_FEE_CONFIG_REQUIRED','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID','BB_PRIVATE_FEE_AMOUNT','BB_PRIVATE_FEE_ACTION_FAILED','BB_PRIVATE_FEE_CLAIM_FAILED','PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN','INSECURE_CONTEXT','SHARED_MEMORY_UNAVAILABLE','WASM_UNAVAILABLE','WORKER_UNAVAILABLE','CRYPTO_UNAVAILABLE','LOCKS_UNAVAILABLE','STORAGE_UNAVAILABLE','OPFS_UNAVAILABLE','READINESS_TIMEOUT']);
       const chain=[],seen=new Set();let current=error;
       while(current!==null&&current!==undefined&&chain.length<5&&!seen.has(current)){
        seen.add(current);const constructor=current?.constructor?.name,frames=[];
@@ -19,10 +19,14 @@ export function installBrowserErrorObserver() {
        }
        // Raw messages stay inside this page. Only fixed category booleans leave.
        const message=typeof current?.message==='string'?current.message:'';
+       const originalMessage=typeof current?.getOriginalMessage==='function'?String(current.getOriginalMessage()):message;
+       const simulation={gas:/out of gas|Not enough (?:DAGAS|L2GAS)/i.test(originalMessage),setup:/\[SETUP\]/.test(originalMessage),fee:/fee|gas price/i.test(originalMessage),note:/note|balance/i.test(originalMessage),nullifier:/nullifier/i.test(originalMessage),validation:/validat|transaction invalid/i.test(originalMessage),bridge:/message|membership|inbox/i.test(originalMessage),teardown:/teardown|refund/i.test(originalMessage)};
+       const knownSimulationReason=['Out of gas','out of gas','Not enough L2GAS gas left','Not enough DAGAS gas left','Execution reverted'].includes(originalMessage)?originalMessage:null;
+       const simulationStack=typeof current?.getCallStack==='function'?(current.getCallStack()||[]).slice(0,8).map(frame=>({contract:frame?.contractAddress?.toString()===globalThis.billboardConfigStore?.snapshot()?.config?.privateFee?.contractAddress?'fee':frame?.contractAddress?.toString()===globalThis.billboardConfigStore?.snapshot()?.config?.board?.contractAddress?'board':'other',selector:/^0x[0-9a-f]{8}$/.test(frame?.functionSelector?.toString()||'')?frame.functionSelector.toString():null})):[];
        const categories={memory:/out of memory|memory allocation|allocat(?:e|ion).*memory|memory.*grow|grow.*memory/i.test(message),outOfBounds:/out.of.bounds/i.test(message),srs:/\b(?:srs|crs)\b|structured reference string/i.test(message),assertion:/assert(?:ion)?(?: failed| failure)?/i.test(message),typeError:constructor==='TypeError'||/\btypeerror\b/i.test(message)};
        const rpcError=Object.getPrototypeOf(current)===Object.prototype&&Number.isInteger(current.code)&&typeof current.message==='string'
-        ? {code:current.code,message:current.message.replace(/0x[0-9a-f]+/gi,'[hex]').slice(0,512)} : undefined;
-       chain.push({constructor:names.has(constructor)?constructor:'OtherError',code:codes.has(current?.code)?current.code:null,frames,categories,...(rpcError?{rpcError}:{})});current=current?.cause;
+        ? {code:current.code} : undefined;
+       chain.push({constructor:names.has(constructor)?constructor:'OtherError',code:codes.has(current?.code)?current.code:null,frames,categories,simulation,knownSimulationReason,simulationStack,...(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(current?.stage)?{stage:current.stage}:{}),...(rpcError?{rpcError}:{})});current=current?.cause;
       }
       return {chain};
      }catch{return {sanitizerFailed:true};}

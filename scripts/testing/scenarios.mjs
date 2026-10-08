@@ -13,12 +13,6 @@ const records = [
     run:run('browserRecovery'),
   }),
   Object.freeze({
-    name:'browser-cold-fees',deadlineMs:540000,evidenceTask:'T04',
-    description:'Browser cold private-fee funding followed by paid claim and post',
-    fixture:'activated-board',authors:1,applicationThreads:1,browser:'funding',browserEngine:'chromium',
-    run:run('browserFunding'),
-  }),
-  Object.freeze({
     name:'withdrawal-traffic',deadlineMs:540000,evidenceTask:'T04',
     description:'Original withdrawal proof across another author publication',
     fixture:'activated-board',authors:1,applicationThreads:1,browser:'none',

@@ -1,0 +1,44 @@
+{
+  "parents": {
+    "master": "91da43c1410bb41b50b92139f57f3c7105cda4bc",
+    "feature": "26090f62219c6ec210a3f1c4c0429edf89274745"
+  },
+  "passed": true,
+  "regressions": 311,
+  "uiChecks": 26,
+  "builtChromeWalletRecovery": true,
+  "build": true,
+  "review": "merge_review independent read-only review approved source resolutions and test adapters",
+  "sourceHashes": {
+    "shared/account.js": "92c89975961f5984f351d38e6115fe8d68086b4eb7b438ad9d19574628d89059",
+    "shared/wallet-buttons.js": "0aad93a9e055a29327cecab662f5d1a4d6ca987617fb7abe0dcc3081432da3ed",
+    "shared/passkey-wallet.js": "5f27433ccfcba746cd8b8f7b0116c7365f2d6bd744444818d41e9e439aec5060",
+    "billboard/private_fee_test/src/lib.nr": "4414ffd76cf89df9edf95445ada44341e0ab2dc2fe690bedde79252526eeab5d",
+    "scripts/w01-refund-revert.mjs": "91c87998e69f01c25f03357dc0eb13aa70638511d20b38c5dc3dda85037c8c27",
+    "scripts/testing/fixture-worker.mjs": "75386821509504855898175fcd3a5d0c8720795102d57df364fd37c9c1d7c796",
+    "scripts/c01-real-node.mjs": "bab54277736b6a701ff48fd653548465b9065f9109ab166f845f7ec8a9c89d8a",
+    "scripts/test-w02-wallet-ui.mjs": "022266be3673c089c9ef9bfb624b4a7b7dbe75e0aabe626a88417ad5275d75f8",
+    "scripts/test-w02-browser.mjs": "e35c95552b115577453c95ed4d42e4229951fa08f3d2f4d6870d3869ad5dda1a",
+    "scripts/ux-page-fixture.mjs": "69d3b7d79424691dd64e3c9076ae426aeb55b61cb361acebeb2f75a7da11b3bf"
+  },
+  "resolutions": [
+    "Retain feature wallet interfaces, typed diagnostics and immutable active account; preserve master account safety invariants in adapted tests.",
+    "Retain both node and contention failure observations and master activation mining.",
+    "Preserve all 14 fee contract tests; adapt intentional refund-revert scenario to explicitly reserved test payment without relaxing production estimation.",
+    "Update built browser regression for wallet chooser, account menu, distinct restore password, deployment import API and pending status.",
+    "Use fileURLToPath in UI fixture so paths with spaces work.",
+    "Regenerate built application pages."
+  ],
+  "failedAttempts": [
+    "Initial local server test blocked by sandbox; rerun with loopback access passed.",
+    "Copied toolchain/dependency caches needed in isolated checkout; provenance-checked build passed.",
+    "Adapted one new test expectation to public generic error message.",
+    "Old browser test menu overlay, restore field and UI selectors updated; final built wallet run passed.",
+    "UI fixture failed on percent-encoded spaces; fileURLToPath correction passed all 26 checks."
+  ],
+  "limits": [
+    "No new real-proof or testnet run for this merge; prior feature evidence remains scoped to its recorded source.",
+    "New master negative refund scenario reviewed for API compatibility; not newly qualified with a real proof here.",
+    "No cloud changes or GitHub push."
+  ]
+}

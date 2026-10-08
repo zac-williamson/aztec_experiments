@@ -1,0 +1,177 @@
+{
+  "script": "scripts/test-w02-browser.mjs",
+  "args": [],
+  "passed": true,
+  "observations": [
+    {
+      "passed": true,
+      "actualBuiltBrowser": true,
+      "freshProfiles": 4,
+      "maximumConcurrentProfiles": 2,
+      "deploymentPendingUiAndWalletLock": true,
+      "actualPortableJournalRestore": true,
+      "wrongPasswordRejected": true,
+      "sameRestoredAddress": true,
+      "restoredClaimCommitmentVerified": true,
+      "actualCrossTabExclusion": true,
+      "actualJournalReloadRecovery": true,
+      "actualEthereumIntentReloadRecovery": true,
+      "externalRequestsBlocked": 0,
+      "secretsWrittenToEvidence": false
+    }
+  ],
+  "deadlineMs": 60000,
+  "rssLimitKiB": 4194304,
+  "peakTreeRSSKiB": 1990896,
+  "rssSamples": [
+    {
+      "elapsedMs": 1003,
+      "rssKiB": 621648
+    },
+    {
+      "elapsedMs": 2298,
+      "rssKiB": 1399248
+    },
+    {
+      "elapsedMs": 3329,
+      "rssKiB": 1474640
+    },
+    {
+      "elapsedMs": 4360,
+      "rssKiB": 1990896
+    },
+    {
+      "elapsedMs": 5402,
+      "rssKiB": 1777920
+    },
+    {
+      "elapsedMs": 6466,
+      "rssKiB": 1709584
+    },
+    {
+      "elapsedMs": 7515,
+      "rssKiB": 1472048
+    },
+    {
+      "elapsedMs": 8718,
+      "rssKiB": 1283696
+    },
+    {
+      "elapsedMs": 10004,
+      "rssKiB": 1456960
+    },
+    {
+      "elapsedMs": 11048,
+      "rssKiB": 1460864
+    },
+    {
+      "elapsedMs": 12116,
+      "rssKiB": 742240
+    },
+    {
+      "elapsedMs": 13182,
+      "rssKiB": 1452384
+    },
+    {
+      "elapsedMs": 14215,
+      "rssKiB": 1502976
+    }
+  ],
+  "failures": [],
+  "children": [
+    {
+      "role": "ui",
+      "code": 0,
+      "signal": null,
+      "cleanupComplete": true
+    }
+  ],
+  "sourceHashes": {
+    "scripts/test-w02-browser.mjs": "e35c95552b115577453c95ed4d42e4229951fa08f3d2f4d6870d3869ad5dda1a",
+    "shared/passkey-wallet.js": "5f27433ccfcba746cd8b8f7b0116c7365f2d6bd744444818d41e9e439aec5060",
+    "shared/account.js": "92c89975961f5984f351d38e6115fe8d68086b4eb7b438ad9d19574628d89059",
+    "shared/application.js": "d65e28dce1ebaad9c39e531a67fd941212f684b750760eec70cee063e11d7c43",
+    "shared/wallet-buttons.js": "0aad93a9e055a29327cecab662f5d1a4d6ca987617fb7abe0dcc3081432da3ed",
+    "shared/wallet-backup.js": "aa3ec28f3242ce744a747a75f1fac2e3afac9326554cf2e687701ea5939a58fc",
+    "scripts/run-bounded-browser-check.mjs": "2b28c6da9bbbe857f49f4c2705fcfb64e48c7f1721c5c68da500ff9a0ff6b7dc",
+    "scripts/testing/supervisor.mjs": "a5cdd5d62f354b46c4a97e27e5993e7dec559bc469919068790e3bf37e1ffcbd",
+    "scripts/owned-test-process-tree.mjs": "5a1f04078b56f30881d2e9f4a3777cae645f7c989b2d347eb00de74debe35e83",
+    "deploy/hosting-config.mjs": "ffed5fef02024e525dedd3ef9dab542792769da30396e5b553990d5f12b9f41e",
+    ".build/apps-manifest.json": "3cbf75802164b82acaaca25cd8d7174fc613d1cdb9b2e6660b8311f2e014202e",
+    ".build/sdk/sdk-manifest.json": "5f8710efb70ee5670a267108b92534c75b992e91a3bcdd447aa2b3942c5c8fba"
+  },
+  "peakMemory": {
+    "elapsedMs": 4360,
+    "processes": [
+      {
+        "role": "supervisor",
+        "pid": 90683,
+        "ppid": 70769,
+        "rssKiB": 51952
+      },
+      {
+        "role": "ui",
+        "pid": 90696,
+        "ppid": 90683,
+        "rssKiB": 154016
+      },
+      {
+        "role": "ui",
+        "pid": 90697,
+        "ppid": 90696,
+        "rssKiB": 216416
+      },
+      {
+        "role": "ui",
+        "pid": 90705,
+        "ppid": 90697,
+        "rssKiB": 117952
+      },
+      {
+        "role": "ui",
+        "pid": 90706,
+        "ppid": 90697,
+        "rssKiB": 88752
+      },
+      {
+        "role": "ui",
+        "pid": 90708,
+        "ppid": 90697,
+        "rssKiB": 64384
+      },
+      {
+        "role": "ui",
+        "pid": 90713,
+        "ppid": 90697,
+        "rssKiB": 140464
+      },
+      {
+        "role": "ui",
+        "pid": 90715,
+        "ppid": 90697,
+        "rssKiB": 505680
+      },
+      {
+        "role": "ui",
+        "pid": 90724,
+        "ppid": 90697,
+        "rssKiB": 140880
+      },
+      {
+        "role": "ui",
+        "pid": 90725,
+        "ppid": 90697,
+        "rssKiB": 412208
+      },
+      {
+        "role": "ui",
+        "pid": 90727,
+        "ppid": 90697,
+        "rssKiB": 98192
+      }
+    ]
+  },
+  "elapsedMs": 14867,
+  "ownedTreeAbsent": true,
+  "temporaryDirectoryRemoved": true
+}

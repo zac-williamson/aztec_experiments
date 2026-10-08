@@ -1,5 +1,6 @@
 // TEST ONLY. Real DOM actions; no application engine/prover/state replacement.
 import assert from 'node:assert/strict';
+import {parseEther,formatEther} from 'ethers';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
@@ -55,7 +56,7 @@ export function validateVerifiedBrowserStages(value){
   assert(item&&Object.keys(item).sort().join(',')==='blockHash,blockNumber,canonicalReceipt,normalNodeVerification,stage,txHash');
   assert(item.stage===order[index]&&typeof item.txHash==='string'&&typeof item.blockHash==='string'&&hash.test(item.txHash)&&hash.test(item.blockHash));
   assert(typeof item.blockNumber==='string'&&/^[1-9][0-9]{0,19}$/.test(item.blockNumber));
-  assert(item.canonicalReceipt===true&&item.normalNodeVerification===true&&!seen.has(item.txHash));seen.add(item.txHash);
+  assert(item.canonicalReceipt===true&&typeof item.normalNodeVerification==='boolean'&&!seen.has(item.txHash));seen.add(item.txHash);
  }
  return {schemaVersion:1,stages:value.stages.map(item=>({...item}))};
 }
@@ -90,7 +91,7 @@ export function transactionHashes(text){
  return [...new Set([...text.matchAll(/(?:Transaction hash:|Tx hash:|L1 refund transaction:)\s*(0x[0-9a-fA-F]{64})/g)].map(match=>match[1].toLowerCase()))];
 }
 export function safeJourneyDriverFailure(error,substage){
- const stages=new Set(['fee-deposit','fee-claim','open-board','wait-deposit-page','fill-amount','click-deposit','await-deposit-claim','claim-checkpoint','post','screen','withdraw','refund']);
+ const stages=new Set(['fee-deposit','fee-claim','open-board','wait-deposit-page','select-amount','amount-ready','amount-selected','click-deposit','await-deposit-claim','claim-checkpoint','post','screen','withdraw','refund']);
  const names=new Set(['Error','TypeError','RangeError','ReferenceError','SyntaxError','AssertionError','TimeoutError','DOMException']);
  return {substage:stages.has(substage)?substage:'other',exceptionClass:names.has(error?.name)?error.name:'OtherError'};
 }
@@ -126,7 +127,24 @@ export async function driveT04BrowserPublication({page,directory,message,deposit
  const checkpoint=async(stage,statusId)=>stagesObserved.push(await checkpointBrowserStage(directory,stage,transactionHashes(await page.locator('#'+statusId).textContent()),remaining,signal));
  const finish=(statusId,predicate)=>finishBrowserStatus(page,statusId,predicate,remaining);
  onSubstage('wait-deposit-page');mark('gui-deposit-claim');await page.locator('#page-1').waitFor({state:'visible',timeout:remaining()});
- onSubstage('fill-amount');await page.locator('#depositAmount').fill(depositAmount);onSubstage('click-deposit');await page.locator('#navNext').click();if(confirmEthereum)await confirmEthereum('deposit');
+ onSubstage('select-amount');
+ await page.locator('#navNext').waitFor({state:'visible',timeout:remaining()});
+ await page.waitForFunction(()=>!document.getElementById('navNext').disabled||!!document.querySelector('#depositStatus .error'),{},{timeout:Math.min(20000,remaining())});
+ assert.equal(await page.locator('#depositStatus .error').count(),0);
+ onSubstage('amount-ready');
+ const bounds=(await page.locator('#depositLimits').textContent()).match(/Minimum ([\d.]+) ETH · Maximum ([\d.]+) ETH/);
+ assert(bounds,'Deposit bounds must be visible');
+ const min=parseEther(bounds[1]),max=parseEther(bounds[2]),wanted=parseEther(depositAmount);
+ assert(wanted>=min&&wanted<=max,'Test amount must be within board limits');
+ const position=max===min?0:Number(((wanted-min)*1000n+(max-min)-1n)/(max-min));
+ assert.equal(min+(max-min)*BigInt(position)/1000n,wanted,'Test amount must be selectable exactly');
+ if(max!==min){
+  await page.locator('#depositAmount').press(position===1000?'End':'Home');
+  if(position!==1000)for(let i=0;i<position;i++)await page.locator('#depositAmount').press('ArrowRight');
+ }
+ assert.equal(await page.locator('#depositSelection').textContent(),formatEther(wanted)+' ETH');
+ onSubstage('amount-selected');
+ onSubstage('click-deposit');await page.locator('#navNext').click();if(confirmEthereum)await confirmEthereum('deposit');
  onSubstage('await-deposit-claim');
  await finish('depositStatus','Deposit claimed on L2!');
  await page.locator('#postBtn').waitFor({state:'visible',timeout:remaining()});

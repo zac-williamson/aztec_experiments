@@ -25,7 +25,7 @@ const server=http.createServer(async(req,res)=>{try{
   else if(q.method==='node_getContract')result={currentContractClassId:classId,originalContractClassId:classId};
   else if(q.method==='node_getNodeInfo')result={l1ChainId:31337,rollupVersion:5,l1ContractAddresses:{rollupAddress:rollup}};
   else if(q.method==='node_getBlockData')result={header:{globalVariables:{blockNumber:q.params[0]==='checkpointed'?head:q.params[0]}},blockHash:hex(99+(q.params[0]==='checkpointed'?head:q.params[0]))};
-  else if(q.method==='node_getPublicStorageAt'){const s=BigInt(q.params[2]);result=hex(({[metadata.storage.portal]:BigInt(q.params[1]===hex(4)?otherPortal:portal),[metadata.storage.config]:31337n,[BigInt(metadata.storage.config)+1n]:BigInt(rollup),[BigInt(metadata.storage.config)+2n]:5n,[BigInt(metadata.storage.config)+7n]:100n})[s]);}
+  else if(q.method==='node_getPublicStorageAt'){const s=BigInt(q.params[2]);result=hex(({[metadata.storage.portal]:BigInt(q.params[1]===hex(4)?otherPortal:portal),[metadata.storage.censor]:42n,[metadata.storage.config]:31337n,[BigInt(metadata.storage.config)+1n]:BigInt(rollup),[BigInt(metadata.storage.config)+2n]:5n,[BigInt(metadata.storage.config)+7n]:100n,[BigInt(metadata.storage.config)+3n]:1n,[BigInt(metadata.storage.config)+4n]:10n,[BigInt(metadata.storage.config)+5n]:60n,[BigInt(metadata.storage.config)+6n]:4n,[BigInt(metadata.storage.config)+8n]:2n})[s]);}
   else if(q.method==='node_findLeavesIndexes')result=[{l2BlockNumber:1,l2BlockHash:blockHash,data:'1'}];
   else if(q.method==='node_getPrivateLogsByTags')result=[[3,4].map((address,index)=>({logData:[metadata.instancePublicationTag,hex(address),hex(2),hex(0),classId,hex(0),hex(0)],blockNumber:index+1,txIndexWithinBlock:0,logIndexWithinTx:0}))];
   else if(q.method==='node_getPublicLogsByTags'){logRequests++;const x=q.params[0];result=x.tags.map(t=>{const tag=typeof t==='string'?t:t.tag,type=Object.keys(metadata.eventTags).find(k=>metadata.eventTags[k]===tag);return logs[type].filter(l=>l.blockNumber>=x.fromBlock&&l.blockNumber<x.toBlock&&(!t.afterLog||l.blockNumber>t.afterLog.blockNumber||(l.blockNumber===t.afterLog.blockNumber&&l.logIndexWithinTx>t.afterLog.logIndexWithinTx))).slice(0,x.limitPerTag);});}
@@ -33,7 +33,7 @@ const server=http.createServer(async(req,res)=>{try{
   res.setHeader('Content-Type','application/json');res.end(JSON.stringify({jsonrpc:'2.0',id:q.id,result}));return;
  }
  if(req.url==='/board-reader-config.json'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify(publicConfig));return;}
- const file={'/feed.html':'feed.html','/boards.html':'boards.html','/public-feed.js':'public-feed.js','/user.html':'user.html','/fee-juice.html':'fee-juice.html','/aztec_bundle.js':'aztec_bundle.js'}[req.url];if(!file){res.writeHead(404);res.end();return;}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':'text/html');res.end(fs.readFileSync(path.join(ROOT,'apps/dist',file)));
+ const file={'/feed.html':'feed.html','/boards.html':'boards.html','/public-feed.js':'public-feed.js','/user.html':'user.html','/fee-juice.html':'fee-juice.html','/aztec_bundle.js':'aztec_bundle.js'}[new URL(req.url,'http://fixture.test').pathname];if(!file){res.writeHead(404);res.end();return;}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':'text/html');res.end(fs.readFileSync(path.join(ROOT,'apps/dist',file)));
  }catch{res.writeHead(500);res.end('test server failure');}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port,tmp=fs.mkdtempSync(path.join(os.tmpdir(),'public-feed-browser-'));let browser;
 try{
@@ -53,9 +53,9 @@ try{
  publicConfig.board.contractAddress=hex(4);
  await page.evaluate(config=>localStorage.setItem('billboard.public-config.v1',JSON.stringify(config)),publicConfig);
  const initialLogs=logRequests;await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#messages article').length===50);assert.equal(logRequests,initialLogs);publicConfig.board.contractAddress=hex(3);
- assert.equal(await page.locator('#board-link').getAttribute('href'),origin+'/feed.html'+boardFragment);
- await page.goto(origin+'/feed.html#board=invalid');await page.waitForFunction(()=>document.getElementById('status').textContent==='Could not load this board. Try again.');assert.equal(await page.locator('#messages article').count(),0);assert.equal(await page.locator('#board-link').getAttribute('href'),null);
- await page.goto(origin+'/feed.html'+boardFragment.replace('network=31337:', 'network=1:'));await page.waitForFunction(()=>document.getElementById('status').textContent==='Could not load this board. Try again.');assert.equal(await page.locator('#messages article').count(),0);
+ assert.equal(await page.getByRole('link',{name:'Read',exact:true}).getAttribute('href'),origin+'/feed.html'+boardFragment);
+ await page.goto(origin+'/feed.html#board=invalid');await page.waitForFunction(()=>document.getElementById('status').textContent.includes('incomplete or invalid'));assert.equal(await page.locator('#messages article').count(),0);assert.equal(await page.locator('[data-board-link]').first().getAttribute('href'),null);
+ await page.goto(origin+'/feed.html'+boardFragment.replace('network=31337:', 'network=1:'));await page.waitForFunction(()=>document.getElementById('status').textContent.includes('does not serve the network'));assert.equal(await page.locator('#messages article').count(),0);
  await page.goto(origin+'/feed.html'+boardFragment);await page.waitForFunction(()=>document.querySelectorAll('#messages article').length===50);
  assert.equal(await page.evaluate(()=>typeof window.__aztec),'undefined');assert.deepEqual(await page.evaluate(async()=> (await indexedDB.databases()).map(d=>d.name)),['aztec-billboard-public-feed-v2']);assert.deepEqual(forbidden,[]);
  const cliOutput=await new Promise((resolve,reject)=>{const child=spawn(process.execPath,[path.join(ROOT,'apps/src/billboard/user/cli.mjs'),'list','--json','--portal-address',portal,'--node-url',origin+'/node','--eth-rpc',origin+'/eth','--public-feed-cache',path.join(tmp,'cache')],{cwd:tmp,stdio:['ignore','pipe','pipe']});let out='',err='';const timer=setTimeout(()=>{child.kill('SIGKILL');reject(Error('CLI deadline'));},20000);child.stdout.on('data',b=>out+=b);child.stderr.on('data',b=>err+=b);child.on('error',reject);child.on('exit',code=>{clearTimeout(timer);code===0?resolve(out):reject(Error('CLI failed: '+err.slice(-300)+' '+out.slice(-300)));});});
@@ -68,7 +68,7 @@ try{
    const cdp=await fresh.newCDPSession(reader);await cdp.send('Network.enable');await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:100,downloadThroughput:2500000,uploadThroughput:2500000});
    const start=performance.now();await reader.goto(origin+'/feed.html');const navigated=performance.now();
 
-   await reader.waitForFunction(()=>document.querySelectorAll('#messages article').length===50&&document.getElementById('status').textContent==='Messages loaded.');const rendered=performance.now();
+   await reader.waitForFunction(()=>document.querySelectorAll('#messages article').length===50&&document.getElementById('status').textContent==='');const rendered=performance.now();
    assert.equal(await reader.evaluate(()=>typeof window.__aztec),'undefined');
    return {elapsedMs:rendered-start,navigationMs:navigated-start,loadAndRenderMs:rendered-navigated};
   }finally{await fresh.close();}
@@ -105,20 +105,23 @@ try{
   assert(report.warm100PostPages.p95Ms<=2000,'100-post page p95 exceeds 2 seconds');assert(report.coldReader.p95Ms<=3000,'Fresh reader p95 exceeds 3 seconds');
  }
  if(!performanceMode){
-  await page.goto(origin+'/boards.html');await page.waitForFunction(()=>document.getElementById('status').textContent.includes('Search complete'));
+  const targetId=hex(150);await page.goto(origin+'/feed.html?message='+targetId+boardFragment);await page.waitForFunction(id=>document.activeElement?.id==='message-'+id,targetId).catch(async error=>{console.error('Reader focus diagnostic',await page.evaluate(id=>({active:document.activeElement?.outerHTML.slice(0,500),target:document.getElementById('message-'+id)?.outerHTML.slice(0,400),status:document.getElementById('status')?.textContent,url:location.href}),targetId));throw error;});
+  await page.evaluate(hash=>{location.hash=hash;},boardFragment.replace(hex(3),hex(4)));await page.waitForFunction(({id,board})=>document.activeElement?.id==='message-'+id&&document.querySelector('[data-board-link]')?.href.includes(board),{id:targetId,board:hex(4)});
+  assert.equal(new URL(page.url()).hash,boardFragment.replace(hex(3),hex(4)));
+  await page.goto(origin+'/boards.html');await page.waitForFunction(()=>document.querySelectorAll('#boards a').length>0&&document.getElementById('status').textContent==='');
   assert.equal(await page.locator('#boards a').count(),2);
-  badReadiness=true;await page.reload();await page.waitForFunction(()=>document.getElementById('status').textContent.includes('Search complete'));
+  badReadiness=true;await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#boards a').length>0&&document.getElementById('status').textContent==='');
   assert.equal(await page.locator('#boards a').count(),1,'Incompatible readiness must not hide the next valid board');
   assert((await page.locator('#boards a').getAttribute('href')).includes(hex(4)));
   badReadiness=false;await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#boards a').length===2);
   await page.locator('#boards a').nth(1).click();await page.waitForFunction(()=>document.querySelectorAll('#messages article').length===50);
   assert.equal(new URL(page.url()).hash,boardFragment.replace(hex(3),hex(4)));
-  await page.getByRole('link',{name:'Browse boards',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('#boards a').length===2);
+  await page.getByRole('link',{name:'Message boards',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('#boards a').length===2);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   await page.setViewportSize({width:1280,height:900});await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#boards a').length===2);
   await page.locator('#boards a').first().click();await page.waitForFunction(()=>document.querySelectorAll('#messages article').length===50);
   assert.equal(new URL(page.url()).hash,boardFragment);
-  await page.getByRole('link',{name:'Browse boards',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('#boards a').length===2);
+  await page.getByRole('link',{name:'Message boards',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('#boards a').length===2);
   console.log(JSON.stringify({passed:true,twoBoardDirectory:true,directoryToSelectedBoardAndBack:true,mobileDirectory:true,desktopDirectory:true,incompatiblePortalDoesNotHideValidBoard:true}));
   publicConfig.privateFee={contractAddress:hex(9),gasSettings:{gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'0',l2Gas:'0'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}};
   publicConfig.board.contractAddress=hex(4);
@@ -132,7 +135,7 @@ try{
     assert.equal(await author.evaluate(()=>billboardConfigStore.snapshot().config.board.contractAddress),hex(3));
     for(const href of await author.locator('[data-board-link]').evaluateAll(links=>links.map(link=>link.href)))assert.equal(new URL(href).hash,boardFragment);
    }
-   await author.goto(origin+'/feed.html'+boardFragment);await author.locator('#post-link').waitFor();assert.equal(new URL(await author.locator('#post-link').getAttribute('href')).hash,boardFragment);
+   await author.goto(origin+'/feed.html'+boardFragment);await author.getByRole('link',{name:'Write',exact:true}).waitFor();assert.equal(new URL(await author.getByRole('link',{name:'Write',exact:true}).getAttribute('href')).hash,boardFragment);
    await author.goto(origin+'/fee-juice.html'+boardFragment);await author.locator('#wbEthBrowserBtn').waitFor();
    publicConfig.privateFee=null;await author.reload();await author.waitForFunction(()=>document.getElementById('setupStatus').textContent.includes('not enabled for this board'));
    assert.equal(await author.locator('#wbEthBrowserBtn').count(),0,'Missing fee settings must prevent wallet initialization');

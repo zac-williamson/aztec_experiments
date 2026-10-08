@@ -1,0 +1,5 @@
+NEXT                        LEFT LAST                        PASSED UNIT                    ACTIVATES
+Thu 2026-10-08 14:24:06 UTC  19h Wed 2026-10-07 18:24:30 UTC      - board-budget-stop.timer board-budget-stop.service
+
+1 timers listed.
+Pass --all to see loaded but inactive timers, too.

@@ -1,0 +1,36 @@
+{
+  "preserved": [
+    {
+      "record": "failure-claim-sdk-revert.json",
+      "passed": false,
+      "stage": "automatic-testnet-claim",
+      "sha256": "4cfae4215d8201977d6db811f68f8e1f9953fa3524a7c4cd58c9b8761fac4290"
+    },
+    {
+      "record": "failure-claim-simulation.json",
+      "passed": false,
+      "stage": "automatic-testnet-claim",
+      "sha256": "d9809d719aa8854978d9feae1dc88e2199616fd1ac8e1892a13937a34d124270"
+    },
+    {
+      "record": "failure-deposit-readiness.json",
+      "passed": false,
+      "stage": "export-disposable-wallet-backup",
+      "sha256": "9c0dccc27dcccf5c8ddd8f722a178f9d82ba374339dde4fb53a79634294e89cc"
+    },
+    {
+      "record": "failure-test-funds.json",
+      "passed": false,
+      "stage": "fund-disposable-test-wallet",
+      "sha256": "b5a235d4bafafaa669b3242db89f57545ed4e18aee698f4dafb5f8f9837427e1"
+    },
+    {
+      "record": "failure-test-wallet-gas.json",
+      "passed": false,
+      "stage": "automatic-testnet-claim",
+      "sha256": "06d06a8cea06eba54319f3a3d5c7d44270b6a0012d015f67d632fd7f1bb5cf7b"
+    }
+  ],
+  "lowCreditHarness": "Initial run failed before estimation because JSON gas strings were passed directly to GasSettings.from. Production normalizer used; subsequent native test passed.",
+  "moderatorDiagnostic": "Read-only adapter failures retained under .build/ux-moderator-credit-20261008; no submitted transactions."
+}

@@ -1,3 +1,5 @@
+import {startRemoteProverFixture} from './testing/remote-prover-fixture.mjs';
+import {applicationProofsEnabled,applicationProver} from './testing/proof-policy.mjs';
 import { applicationNativeProfile } from './c01-native-profile.mjs';
 // TEST ONLY: ten independently owned rights, one actual private anchor, real client proofs.
 import assert from 'node:assert/strict';
@@ -61,11 +63,12 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
     executionResult:Object.values(TxExecutionResult).includes(r.executionResult)?r.executionResult:null,
     blockNumber:r.blockNumber==null?null:String(r.blockNumber),
     errorCategory:typeof r.error==='string'?(r.error==='Tx dropped by P2P node'?r.error:'other receipt error'):null}));
+  let remoteFixture;
   try{
     assertNodeVersion();assertAztecPackages();assert(path.isAbsolute(directory));assert.equal(typeof mineL1,'function');
     progressPath=path.join(directory,'c03-contention-progress.json');await persist();
     const url=new URL(rpcUrl);assert.equal(url.protocol,'http:');assert.equal(url.hostname,'127.0.0.1');assert(!url.username&&!url.password);
-    assert.equal(await l1Client.getChainId(),31337);assert.equal((await node.getConfig()).realProofs,true);assert(!node.getProverNode());
+    assert.equal(await l1Client.getChainId(),31337);assert.equal((await node.getConfig()).realProofs,applicationProofsEnabled());assert(!node.getProverNode());
     assert(Array.isArray(authorClaims)&&authorClaims.length===count);
     assert.equal(new Set(authorClaims.map(x=>x.account.address.toString())).size,count,'Distinct Aztec authors required');
     const info=await node.getNodeInfo();assert.equal(Number(info.l1ChainId),31337);
@@ -73,7 +76,8 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
     const boardArtifact=await artifact(preparation);
     const native={backend:BackendType.NativeUnixSocket,...applicationNativeProfile(directory)};
     for(const key of ['backend','bbPath','threads'])assert.equal(Barretenberg.getSingleton().options[key],native[key]);
-    wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
+    if(process.env.BOARD_TEST_REMOTE==='1')remoteFixture=await startRemoteProverFixture({directory,board:instance.address.toString(),info,bbPath:native.bbPath});
+    wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:applicationProver(native,remoteFixture?.config),autoSync:false,syncChainTip:'checkpointed'}});
     await mark('register-'+count+'-accounts');
     for(const {account,claimResult} of authorClaims){
       assert(claimResult.passed&&claimResult.exactDeliveredNoteChecked);
@@ -237,10 +241,11 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
     await artifact(preparation);observation.passed=true;observation.contentionQualified=count===10;observation.uniqueIdsAndOrder=true;
     observation.limitations=(count===10?'Ten distinct rights only':'One-author diagnostic only; not ten-author qualification')+(observation.recovery?'; real private-fee-note conflict and journal-linked post proof replacement; no protocol throughput/finality claim.':'; no same-note conflict/refresh or protocol throughput/finality claim.');
     await mark('verified');return observation;
-  }catch(error){observation.passed=false;observation.failure={errorClass:error?.name??'Error',stage};await persist();const failure=new Error(`C03_CONTENTION_FAILED:${stage}:${error?.name??'Error'}`);
+  }catch(error){observation.passed=false;observation.failure={errorClass:error?.name??'Error',stage,remoteStage:error?.stage,code:error?.code};await persist();const failure=new Error(`C03_CONTENTION_FAILED:${stage}:${error?.name??'Error'}`);
     failure.contentionObservation={...observation,passed:false,stage,errorClass:error?.name??'Error',
       location:error?.stack?.split('\n').filter(line=>line.trimStart().startsWith('at ')).slice(0,3).join('\n')};throw failure;
   }finally{
+    await remoteFixture?.close();
     for(const [emitter,event,listener] of listeners)emitter.off(event,listener);
     try{if(sequencer&&previousConfig)sequencer.updateConfig(previousConfig);}
     finally{if(wallet){try{await wallet.stop();observation.walletStopped=true;await persist();}

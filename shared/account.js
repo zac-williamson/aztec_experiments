@@ -1,21 +1,23 @@
 // Browser custody: passkey or explicitly imported Aztec account, recovery files, and
 // an external Ethereum signer. A page has one immutable wallet context.
-window.walletState = { aztec:null, ethSigner:null, ethProvider:null, ethAccount:null, ethType:null, invalidated:false };
-let _onReady=null, _onAztecLoad=null, _requireEth=true, _readyFired=false;
-let _autoPasskey=false;
+window.walletState = { aztec:null, ethSigner:null, ethProvider:null, ethTransport:null, ethAccount:null, ethType:null, ethWalletName:null, invalidated:false };
+let _onReady=null, _onSetupError=(_error)=>_wlog('Account unlocked, but setup did not finish. Try account setup again.','error'), _onAztecLoad=null, _requireEth=true, _readyFired=false;
+let _autoPasskey=false, _canEndSession=()=>true;
 let _walletBusy=false, _walletGeneration=0, _connectingEth=null;
 /** @type {(state:ReturnType<typeof accountSnapshot>)=>void} */
 let _accountNotify=()=>{};
 /** @type {(message:string,type:string)=>void} */
 let _accountLog=()=>{};
 function _wlog(message,type='info') { _accountLog(message,type); }
-function _updateAccountState() { _accountNotify(accountSnapshot()); }
+function _updateAccountState() { try{_accountNotify(accountSnapshot());}catch{ /* Rendering cannot change custody state. */ } }
 /** Public account state contains no signing material. */
-function accountSnapshot() { return {address:window.walletState.aztec?.address.toString()||null,ethereumAddress:window.walletState.ethAccount,busy:_walletBusy,invalidated:window.walletState.invalidated,ethereumConnected:!!window.walletState.ethSigner}; }
+function accountSnapshot() { return {address:window.walletState.aztec?.address.toString()||null,ethereumAddress:window.walletState.ethAccount,busy:_walletBusy,invalidated:window.walletState.invalidated,ethereumWalletName:window.walletState.ethWalletName,needsPasskey:_autoPasskey&&!!window.walletState.ethSigner&&!window.walletState.aztec,ethereumConnected:!!window.walletState.ethSigner && !window.walletState.invalidated}; }
 function _assertWalletLive() { if(window.walletState.invalidated) throw new Error('Wallet context changed. Reload this page before continuing.'); }
 function _invalidateWalletContext() {
+  if(window.walletState.invalidated)return;
   window.walletState.invalidated=true; _walletGeneration++;
   _wlog('Wallet account or network changed. Reload this page to reconnect; pending transactions must be checked before retrying.','error');
+  _updateAccountState();
 }
 async function _walletOperation(run) {
   _assertWalletLive(); if(_walletBusy) throw new Error('Another wallet operation is in progress.');
@@ -26,7 +28,7 @@ function _checkReady() {
   if(_readyFired || window.walletState.invalidated) return;
   if(window.walletState.aztec && (!_requireEth || window.walletState.ethSigner)) {
     _readyFired=true;
-    Promise.resolve().then(()=>_onReady?.()).catch(()=>{_readyFired=false;_wlog('Wallet setup did not complete. Check your network and configuration, then reload to retry.','error');});
+    Promise.resolve().then(()=>_onReady?.()).catch(error=>{_readyFired=false;try{_onSetupError(error);}catch{_wlog('Account unlocked, but setup did not finish. Try account setup again.','error');}});
   }
 }
 async function _deriveAccountAddress(a,secretKeyHex,saltVal) {
@@ -40,15 +42,15 @@ async function _deriveAccountAddress(a,secretKeyHex,saltVal) {
   return {address:instance.address,partialAddress:await a.computePartialAddress(instance)};
 }
 async function _prepareWallet(raw,allowExisting=false) {
-  if(window.walletState.aztec && !allowExisting) throw new Error('A wallet is already loaded. Reload to use another wallet.');
-  const wallet=window.BillboardWalletBackup.validateWallet(raw);
+  if(window.walletState.aztec && !allowExisting) throw Object.assign(Error('Lock the current account before restoring another.'),{code:'BB_ACCOUNT_REPLACEMENT'});
+  let wallet;try{wallet=window.BillboardWalletBackup.validateWallet(raw);}catch{throw Object.assign(Error('Invalid recovery file.'),{code:'BB_BACKUP_FORMAT',field:'recoveryFile'});}
   if(!window.__aztec?.Fr) throw new Error('Wait for the application to load before opening a wallet.');
   const derived=await _deriveAccountAddress(window.__aztec,wallet.secretKey,wallet.salt);
-  if(raw.address && String(raw.address).toLowerCase()!==derived.address.toString().toLowerCase()) throw new Error('Wallet address does not match its key and salt.');
+  if(raw.address && String(raw.address).toLowerCase()!==derived.address.toString().toLowerCase()) throw Object.assign(Error('Wallet address does not match its key and salt.'),{code:'BB_BACKUP_FORMAT',field:'recoveryFile'});
   return {...wallet,...derived,raw:wallet};
 }
 function _activateWallet(prepared) {
-  _assertWalletLive(); if(window.walletState.aztec) throw new Error('A wallet is already loaded.');
+  _assertWalletLive(); if(window.walletState.aztec) throw Object.assign(Error('Lock the current account before restoring another.'),{code:'BB_ACCOUNT_REPLACEMENT'});
   window.walletState.aztec=prepared; _walletGeneration++;
   _wlog('Aztec wallet loaded: '+prepared.address.toString(),'success');
   _updateAccountState(); if(_onAztecLoad) {try {_onAztecLoad(prepared.address.toString());}catch {_wlog('Wallet loaded, but address display did not update. Reload before continuing.','error');_invalidateWalletContext();}} _checkReady();
@@ -74,10 +76,14 @@ async function _writeWalletBackup(wallet,password) {
 async function importAccountRecovery(file,password) {
   return _walletOperation(async()=>{
     {
-      if(!file || file.size>32*1024*1024+4096) throw new Error();
-      const parsed=JSON.parse(await file.text());
-      // Raw CLI wallets may be imported, but every browser export is encrypted.
-      const payload=parsed.secretKey?{wallet:parsed,claims:[]}:await window.BillboardWalletBackup.decrypt(parsed,password);
+      if(!file)throw Object.assign(Error('Choose a file.'),{code:'BB_BACKUP_FORMAT'});
+      if(file.size>32*1024*1024+4096)throw Object.assign(Error('File too large.'),{code:'BB_BACKUP_SIZE'});
+      let parsed,payload;
+      try {
+        parsed=JSON.parse(await file.text());
+        // Raw CLI wallets may be imported, but every browser export is encrypted.
+        payload=parsed.secretKey?{wallet:parsed,claims:[]}:await window.BillboardWalletBackup.decrypt(parsed,password);
+      } catch(error) { if(['BB_BACKUP_FORMAT','BB_BACKUP_UNLOCK'].includes(/** @type {{code?:string}} */(error)?.code||''))throw error;throw Object.assign(Error('Invalid recovery file.'),{code:'BB_BACKUP_FORMAT'}); }
       const prepared=await _prepareWallet(payload.wallet);
       if(payload.claims.length||payload.journals?.length)await _withRecoveryLock(prepared,async()=>{
       if(payload.claims.length) {
@@ -115,30 +121,51 @@ async function exportAccountRecovery(password) {
 function _firstEthereumAccount(accounts) {
   return Array.isArray(accounts) && accounts.length>0 && accounts.every(account=>typeof account==='string' && /^0x[0-9a-fA-F]{40}$/.test(account)) ? accounts[0].toLowerCase() : null;
 }
-async function connectEthereumAccount() {
+async function connectEthereumAccount(transport, walletName='Browser wallet', {selectAccount=false}={}) {
   return _walletOperation(async()=>{
     if(window.walletState.ethSigner) {
-      if(_autoPasskey && !window.walletState.aztec) {await _openPasskeyAccount();return;}
-      throw new Error('An Ethereum wallet is already connected.');
+      if(window.walletState.aztec || !_autoPasskey)throw new Error('An Ethereum wallet is already connected.');
+      // A cancelled passkey has not activated an application account. Honour
+      // the next explicit wallet selection instead of reusing the old signer.
+      Object.assign(window.walletState,{ethSigner:null,ethProvider:null,ethTransport:null,ethAccount:null,ethType:null,ethWalletName:null,ethChainId:null});
+      _walletGeneration++;_updateAccountState();
     }
-    if(!window.ethereum)throw new Error('An Ethereum browser wallet is required.');
+    if(typeof transport?.request!=='function')throw Object.assign(new Error('Choose an Ethereum wallet.'),{code:'BB_BROWSER_WALLET_MISSING'});
+    _bindEthereumProvider(transport);
     const generation=_walletGeneration;
-    const connection={account:null};_connectingEth=connection;
+    const connection={disconnected:false};_connectingEth=connection;
     try {
-    const provider=new ethers.BrowserProvider(window.ethereum);
+    // MetaMask account selection must not silently reuse an older site grant.
+    if(selectAccount)await transport.request({method:'wallet_requestPermissions',params:[{eth_accounts:{}}]});
+    const expected=typeof _getPublicConfig==='function'?_getPublicConfig()?.network?.chainId:null;
+    if(expected!==null&&expected!==undefined){
+      const chainId='0x'+BigInt(expected).toString(16);
+      if(BigInt(await transport.request({method:'eth_chainId'}))!==BigInt(expected)){
+        try{await transport.request({method:'wallet_switchEthereumChain',params:[{chainId}]});}
+        catch(error){throw Object.assign(new Error('Switch your wallet to the board network.'),{code:/** @type {{code?:number}} */ (error)?.code===4001?'BB_WALLET_REJECTED':'BB_WALLET_NETWORK'});}
+        if(BigInt(await transport.request({method:'eth_chainId'}))!==BigInt(expected))throw Object.assign(new Error('Wallet network mismatch.'),{code:'BB_WALLET_NETWORK'});
+      }
+    }
+    const provider=new ethers.BrowserProvider(transport);
     const requested=await provider.send('eth_requestAccounts',[]);
     const signer=await provider.getSigner(), account=await signer.getAddress();
-    const network=await provider.getNetwork(),current=await provider.send('eth_accounts',[]);
+    const network=await provider.getNetwork();
+    const chain=BigInt(await transport.request({method:'eth_chainId'}));
+    const current=await transport.request({method:'eth_accounts'});
     _assertWalletLive(); if(generation!==_walletGeneration)throw new Error('Wallet context changed.');
+    if(connection.disconnected)throw Object.assign(new Error('Wallet disconnected during setup. Reconnect your wallet and try again.'),{code:'BB_WALLET_DISCONNECTED'});
+    if(chain!==network.chainId || (expected!==null&&expected!==undefined&&chain!==BigInt(expected)))throw Object.assign(new Error('Wallet network mismatch.'),{code:'BB_WALLET_NETWORK'});
     const selected=account.toLowerCase();
-    if(_firstEthereumAccount(requested)!==selected || _firstEthereumAccount(current)!==selected || (connection.account!==null && connection.account!==selected)) {
+    if(_firstEthereumAccount(requested)!==selected || _firstEthereumAccount(current)!==selected) {
       _invalidateWalletContext();throw new Error('Wallet context changed.');
     }
-    window.walletState.ethSigner=signer;window.walletState.ethProvider=provider;window.walletState.ethAccount=account;
+    window.walletState.ethTransport=transport;window.walletState.ethSigner=signer;window.walletState.ethProvider=provider;window.walletState.ethAccount=account;
+    window.walletState.ethWalletName=typeof walletName==='string' && walletName.trim() && walletName.length<=128?walletName:'Browser wallet';
     window.walletState.ethType='browser';window.walletState.ethChainId=String(network.chainId);_walletGeneration++;
-    // Do not force mainnet: engine verifies signer, node and portal chain agreement.
-    _wlog('Ethereum wallet connected.','success');
-    if(_autoPasskey && !window.walletState.aztec)await _openPasskeyAccount();
+    // The engine independently verifies signer, node and portal chain agreement.
+    _wlog(window.walletState.ethWalletName+' connected: '+account,'success');
+    _updateAccountState();
+    if(_autoPasskey && !window.walletState.aztec && localStorage.getItem(_passkeyRecordKey()))await _openPasskeyAccount();
     _checkReady();
     } finally {_connectingEth=null;}
   });
@@ -169,29 +196,57 @@ async function _openPasskeyAccount(importExisting=false) {
     _activateWallet(prepared);
   });
 }
+async function createPasskeyAccount() {
+  return _walletOperation(()=>_openPasskeyAccount(false));
+}
+async function endAccountSession(){
+  if(_walletBusy||!_canEndSession())throw Object.assign(Error('Operation in progress.'),{code:'BB_OPERATION_BUSY'});
+  _walletBusy=true;_updateAccountState();
+  try{
+    const end=async()=>{_readyFired=false;_walletGeneration++;_bindEthereumProvider(null);window.walletState.invalidated=true;return {reload:true};};
+    const address=window.walletState.aztec?.address;
+    if(!address)return await end();
+    return await navigator.locks.request('billboard-wallet:'+address.toString(),{ifAvailable:true},async lock=>{if(!lock)throw Object.assign(Error('Wallet busy in another tab.'),{code:'BB_OPERATION_BUSY'});return end();});
+  }finally{_walletBusy=false;_updateAccountState();}
+}
 async function importPasskeyAccount() {
+  if(window.walletState.aztec)throw Object.assign(Error('Lock before switching private accounts.'),{code:'BB_ACCOUNT_REPLACEMENT'});
+  if(!_canEndSession())throw Object.assign(Error('Operation in progress.'),{code:'BB_OPERATION_BUSY'});
   return _walletOperation(async()=>{return _openPasskeyAccount(true);});
 }
-/** @param {{autoPasskey?:boolean,requireEth?:boolean,onReady?:()=>void|Promise<void>,onAztecLoad?:(address:string)=>void,onChange?:(state:ReturnType<typeof accountSnapshot>)=>void,onMessage?:(message:string,type:string)=>void}} options */
+/** @param {{canEndSession?:()=>boolean,autoPasskey?:boolean,requireEth?:boolean,onReady?:()=>void|Promise<void>,onSetupError?:(error:unknown)=>void,onAztecLoad?:(address:string)=>void,onChange?:(state:ReturnType<typeof accountSnapshot>)=>void,onMessage?:(message:string,type:string)=>void}} options */
 function configureAccount(options={}) {
   _autoPasskey=options.autoPasskey===true;_requireEth=options.requireEth!==false;
-  _onReady=options.onReady||null;_onAztecLoad=options.onAztecLoad||null;
+  _canEndSession=options.canEndSession||(()=>true);
+  _onReady=options.onReady||null;if(options.onSetupError)_onSetupError=options.onSetupError;_onAztecLoad=options.onAztecLoad||null;
   _accountNotify=options.onChange||(()=>{});_accountLog=options.onMessage||(()=>{});
-  if(_accountProvider===window.ethereum)return;
-  _accountProvider=window.ethereum;
-  if(window.ethereum?.on) for(const name of ['accountsChanged','chainChanged','disconnect'])window.ethereum.on(name,accounts=>{
-    if(name==='accountsChanged') {
-      const selected=_firstEthereumAccount(accounts);
-      if(window.walletState.ethType==='browser' && selected===window.walletState.ethAccount?.toLowerCase()) return;
-      // Initial permission approval announces the account being connected. Verify
-      // it against both the requested signer and a final account read before use.
-      if(_connectingEth && window.walletState.ethType!=='browser' && selected!==null && (_connectingEth.account===null || _connectingEth.account===selected)) {_connectingEth.account=selected;return;}
+}
+function _bindEthereumProvider(transport) {
+  if(_accountProvider===transport)return;
+  for(const [name,handler] of _accountListeners)_accountProvider?.removeListener?.(name,handler);
+  _accountListeners=[];_accountProvider=transport;
+  if(transport?.on) for(const name of ['accountsChanged','chainChanged','disconnect','connect']) {
+    const handler=value=>{
+    if(_accountProvider!==transport)return;
+    if(window.walletState.ethType!=='browser') {
+      // No session exists yet. Selection and network changes are reconciled by
+      // the final direct provider reads before activation, not by notifications.
+      if(_connectingEth && name==='disconnect')_connectingEth.disconnected=true;
+      if(_connectingEth && name==='connect')_connectingEth.disconnected=false;
+      return;
     }
-    if(window.walletState.ethType==='browser' || _connectingEth) {_invalidateWalletContext();_updateAccountState();}
-  });
- }
-let _accountProvider;
+    if(name==='connect')return;
+    if(name==='accountsChanged' && _firstEthereumAccount(value)===window.walletState.ethAccount?.toLowerCase())return;
+    if(name==='chainChanged') {
+      try{if(BigInt(value)===BigInt(window.walletState.ethChainId))return;}catch{}
+    }
+    _invalidateWalletContext();
+    };
+    _accountListeners.push([name,handler]);transport.on(name,handler);
+  }
+}
+let _accountProvider, _accountListeners=[];
 /** Account operations return data; rendering, downloads and reloads belong to the caller. */
 window.BillboardAccount=Object.freeze({configure:configureAccount,snapshot:accountSnapshot,
-  connect:connectEthereumAccount,importPasskey:importPasskeyAccount,importRecovery:importAccountRecovery,
+  endSession:endAccountSession,createPasskey:createPasskeyAccount,connect:connectEthereumAccount,importPasskey:importPasskeyAccount,importRecovery:importAccountRecovery,
   create:createAccount,exportRecovery:exportAccountRecovery,invalidate:_invalidateWalletContext});

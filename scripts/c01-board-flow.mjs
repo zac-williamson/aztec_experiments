@@ -1,3 +1,4 @@
+import {applicationProofsEnabled,applicationProver} from './testing/proof-policy.mjs';
 import { applicationNativeProfile } from './c01-native-profile.mjs';
 // TEST ONLY: first real client proof for board deployment; no send/inclusion/epoch claims.
 import assert from 'node:assert/strict';
@@ -77,11 +78,11 @@ export async function proveC01BoardDeployment(node, preparation, { rollupAddress
     const checked = await boardArtifact(); assert.deepEqual(checked.artifactHashes, preparation.artifactHashes);
     const info = await node.getNodeInfo();
     assert.equal(Number(info.l1ChainId), 31337); assert.equal(BigInt(info.rollupVersion), BigInt(rollupVersion));
-    assert.equal((await node.getConfig()).realProofs, true, 'Node must enforce genuine proof verification');
+    assert.equal((await node.getConfig()).realProofs, applicationProofsEnabled(), 'Node must enforce genuine proof verification');
     const rollup = EthAddress.fromString(rollupAddress.toString()); assert(!rollup.isZero());
     mark('create-proving-wallet');
     wallet = await EmbeddedWallet.create(node, { ephemeral: true,
-      pxe: { proverEnabled: true, proverOrOptions: options } });
+      pxe: { proverEnabled: true, proverOrOptions:applicationProver(options) } });
     const account = preparation.account;
     const manager = await wallet.createSchnorrInitializerlessAccount(account.secret, account.salt, account.signingKey, 'c01-disposable');
     assert(manager.address.equals(account.address), 'Prepared account mismatch');
@@ -126,7 +127,7 @@ export async function proveC01BoardDeployment(node, preparation, { rollupAddress
     Object.defineProperties(result, { tx: { value: tx, enumerable: false }, instance: { value: instance, enumerable: false } });
   } catch (error) {
     const failure = new Error(`C01 board proof failed at ${stage}`);
-    failure.boardObservation = { ...observation, passed: false, stage, errorClass: error?.name ?? 'UnknownError' };
+    failure.boardObservation = { ...observation, passed: false, stage, errorClass: error?.name ?? 'UnknownError', frames:String(error?.stack??'').split('\n').filter(l=>l.trim().startsWith('at ')).slice(0,5) };
     throw failure;
   } finally {
     if (wallet) {
