@@ -65,7 +65,7 @@
       const contracts=await node.getL1ContractAddresses();
       const dataDirectory='pxe_private_fee_'+owner.toString()+'_'+contracts.rollupAddress;
       const store=await env.createStore({...contracts,l1ChainId:info.l1ChainId,accountAddress:owner.toString(),dataDirectory});
-      pxe=await a.createPXE(node,{proverEnabled:prove,autoSync:true,dataDirectory},{store,remoteProver:config.remoteProver});
+      pxe=await a.createPXE(node,{proverEnabled:prove&&a.provingEnabledForNode(info),autoSync:true,dataDirectory},{store,remoteProver:config.remoteProver,readOnly:!prove});
       await pxe.registerAccount(keys,await a.computePartialAddress(instance));
       await pxe.registerContractClass(a.SchnorrInitializerlessAccountContractArtifact);
       await pxe.registerContract(instance);

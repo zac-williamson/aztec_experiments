@@ -1,0 +1,12 @@
+{"passed":true,"checks":["one post in flight, completed-message link, cleared confirmed draft","literal untrusted text, public removal explanation without exposed removed content","review does not withdraw, reviewed budget passed to API, terminal refund receipt","account failure remains visible after onboarding","account controls reachable by keyboard traversal","resumed refund replaces paused controls with the same completed screen","moderator field validation and account invalidation close authority reviews","deployment review sends nothing, displays penalty, fits narrow screen and expires on edit","reader static layout, light/dark, narrow/wide","directory static layout, light/dark, narrow/wide","moderator static layout, light/dark, narrow/wide","deployment static layout, light/dark, narrow/wide","fees static layout, light/dark, narrow/wide"],"output":"/Users/zac/Documents/ChatGPT/Anonymous Message Board/merge-remote-prover/.build/ux-browser-20261008"}
+✔ scripts/test-u01-journey-browser.mjs (3646.322042ms)
+{"passed":true,"checks":["editing during proof preserves the new draft","resumed confirmation links the post without discarding later edits","storage failure cannot erase an unsaved draft during account refresh","completed account status cannot enable payment before verified deposit terms arrive","late gas estimate success cannot affect a replaced account view","late gas estimate failure cannot affect a replaced account view","older messages remain moderatable and are not erased by polling","rules conflict retains draft and requires explicit comparison against latest version","invalidated moderator session requests explicit reload without bypassing wallet guard","old board failure cannot overwrite replacement board status","fee setup can retry without replacing the unlocked account","stale deployment restoration success cannot overwrite edited settings","stale deployment restoration failure cannot overwrite edited settings"]}
+✔ scripts/test-ux-reopened-browser.mjs (2967.664292ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3653.003625

@@ -1,5 +1,6 @@
 import {RoutedKernelProver} from './routed-kernel-prover.mjs';
 import {createRemoteProverClient} from './remote-prover-client.mjs';
+import {provingEnabledForNode} from './proving-policy.mjs';
 import { Buffer } from 'node:buffer';
 import { createPXE as createSdkPXE } from '@aztec/pxe/client/lazy';
 import { Barretenberg, BackendType } from '@aztec/bb.js';
@@ -80,19 +81,21 @@ class BrowserPrivateKernelProver extends RoutedKernelProver {
 }
 export async function createPXE(node,config,options={}) {
   let selected=options;
+  const readOnly=options.readOnly===true;
   let remote=options.remoteProver;
   const info=await node.getNodeInfo();
-  const proofsEnabled=info?.realProofs!==false;
-  if(!proofsEnabled && Number(info.l1ChainId)!==31337)throw Error('Disabled proofs require local devnet');
+  const proofsEnabled=provingEnabledForNode(info);
+  if(info.realProofs===false && Number(info.l1ChainId)!==31337)throw Error('Disabled proofs require local devnet');
   const transport=()=>remote?createRemoteProverClient({...remote,chainId:info.l1ChainId,rollupVersion:info.rollupVersion,proofsEnabled}):proofsEnabled?null:{prove:async()=>({mode:'disabled'})};
   const route=(simulator,proverOptions)=>new RoutedKernelProver(simulator,proverOptions,{proofsEnabled,transport:transport()});
-  if(typeof window !== 'undefined') {
+  if(config?.proverEnabled===false && proofsEnabled && !readOnly)throw new Error('Proofs may only be disabled on the disposable local devnet');
+  if(!readOnly && typeof window !== 'undefined' && proofsEnabled) {
     const proverOrOptions=await initializeBrowserProver(options.proverOrOptions);
     const simulator=options.simulator??new WASMSimulator();
     selected={...options,simulator,proverOrOptions:new BrowserPrivateKernelProver(simulator,{...proverOrOptions,logger:privateLogger},{proofsEnabled,transport:transport()})};
-  }else if(remote||!proofsEnabled){
+  }else if(!readOnly && (remote||!proofsEnabled)){
     const simulator=options.simulator??new WASMSimulator();selected={...options,simulator,proverOrOptions:route(simulator,options.proverOrOptions??{})};
-  }else if(config?.proverEnabled===true){
+  }else if(!readOnly && config?.proverEnabled===true){
     if(['proverOrOptions','backend','threads','skipSrsInit','bbPath'].some(key=>options[key]!==undefined||config[key]!==undefined)||options.simulator!==undefined||!cliProverInitialization)throw cliFailure();
     const initialized=cliProverInitialization;
     const singleton=await Barretenberg.initSingleton({...initialized.options,logger:discard});
@@ -101,6 +104,7 @@ export async function createPXE(node,config,options={}) {
     selected={...options,simulator,proverOrOptions:new BrowserPrivateKernelProver(simulator,{...initialized.options,logger:privateLogger},{proofsEnabled:true,transport:null})};
   }
   const pxe=await createSdkPXE(node,config,{...selected,loggers:{store:privateLogger,pxe:privateLogger,prover:privateLogger}});
+  if(readOnly)pxe.proveTx=async()=>{throw new Error('Read-only PXE cannot prove transactions');};
   if(selected.proverOrOptions instanceof RoutedKernelProver)pxe.setRemoteProver=async value=>{remote=value;selected.proverOrOptions.setTransport(transport());};
   return pxe;
 }

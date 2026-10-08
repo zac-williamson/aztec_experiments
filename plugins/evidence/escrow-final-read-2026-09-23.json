@@ -1,0 +1,80 @@
+{
+  "passed": true,
+  "realMetaMask": true,
+  "applicationProofs": true,
+  "stage": "passed",
+  "unfundedPost": {
+    "rejectedThroughBrowser": true,
+    "noPublication": true,
+    "noProviderCharge": true
+  },
+  "deposit": {
+    "amount": "1000000",
+    "asset": "USDC",
+    "claimedThroughBrowser": true
+  },
+  "postId": "20775075378071868683696507697409743295810038624117811748817041578379678228282",
+  "post": {
+    "noEthereumPayment": true,
+    "authorizedInAztec": true
+  },
+  "reply": {
+    "postId": "0x301675aec2ef61b4894d88306922d05f5f2a7da8533deba08cde4bcd0da6400f",
+    "text": "**URL:** https://github.com/zac-williamson/aztec_experiments/pull/1\n\n**Changed file:** `docs/bok-live-smoke.md`\n\n**Summary:** Adds a new documentation file describing Billboard, an anonymous message board on Aztec. Depositors claim private posting rights via ETH, with moderation capabilities and passkey-based Aztec accounts. This is a draft PR used for automated integration testing, not a production change.",
+    "visible": true,
+    "flagged": false
+  },
+  "veniceCharges": [
+    {
+      "id": "3c9bab68-ecce-437a-8487-b6635bcf0966",
+      "amount": -0.0010654,
+      "balanceAfter": 4.97453784,
+      "type": "CHARGE",
+      "createdAt": "2026-09-22T23:48:45.383Z",
+      "requestId": "680cd8a25d1c4d9aabb5612a964a1594",
+      "modelId": "kimi-k2-5"
+    },
+    {
+      "id": "c2270333-5f7b-4e32-9d7b-a09d0bfb11ad",
+      "amount": -0.000392,
+      "balanceAfter": 4.97560324,
+      "type": "CHARGE",
+      "createdAt": "2026-09-22T23:48:41.942Z",
+      "requestId": "675dc2cf84c640a2a796bcc13566c4bd",
+      "modelId": "kimi-k2-5"
+    }
+  ],
+  "settlement": {
+    "chargedMicroUSDC": "1458",
+    "remainingMicroUSDC": "998542",
+    "reserved": "0",
+    "providerMicroUSDC": "1458"
+  },
+  "requestStatus": {
+    "shownThroughBrowser": true
+  },
+  "withdrawal": {
+    "returnedMicroUSDC": "998542",
+    "throughBrowser": true,
+    "wrongRecipientRejected": true,
+    "replayRejected": true
+  },
+  "cleanupSucceeded": true,
+  "supervisor": {
+    "elapsedMs": 388838,
+    "peakTreeRSSKiB": 3246576,
+    "ownedTreeAbsent": true,
+    "failures": []
+  },
+  "sourceHead": "05cfec0ca71b7a022e2d856df2cad9fe8761a120",
+  "sourceSha256": {
+    "plugins/main.mjs": "a35e27a1ef974d46b5f2ddfe5ddf049a248fbd9181ad983caf28fa2f8c467db5",
+    "plugins/devnet/web.mjs": "97127b55d297823265416be6f836f272234110cd2ad5b303a56793f63aac1708",
+    "plugins/escrow.mjs": "e18e399c237295a6262a2c2b39172cb4d560229be5dc28af2c4a71fe94486e1f",
+    "plugins/metering.mjs": "d2247b49e2bfa79477884b7ab209e9648db1511d589a074f4cde852d9f1dd4d6",
+    "plugins/venice-metered.mjs": "90b3c6445d422285e7d55707e6771c8b25936a406e23f150b840858a9b0db27f",
+    "apps/dist/aztec_bundle.js": "6650f14159bb2504778c67d975ca25730406b4d0c8039b9f5006abcbc15a65af",
+    "apps/dist/user.html": "e96f6d7300a2007da9971aacfcb49c4f8f144c99f44c9bb321d212de7b6133f7"
+  },
+  "network": "disposable local Ethereum/Aztec; live Venice and GitHub read"
+}

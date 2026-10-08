@@ -1,0 +1,58 @@
+{
+  "passed": true,
+  "realMetaMask": true,
+  "applicationProofs": false,
+  "stage": "passed",
+  "postId": "0x0394bee7689a5a63cf410e93827043ce8482a8ea8b5eb45146a0fd8a17094166",
+  "rejection": {
+    "noPayment": true,
+    "noReply": true,
+    "noVeniceCharge": true,
+    "observationMs": 6500
+  },
+  "payment": {
+    "transactionHash": "0xbd390fdf7ece5656fabfc1fcb1a1ea17c6d9a2a19266237a4ecd4c234b90b9c6",
+    "amountWei": "1000000000000000",
+    "payer": "0xB0CA2F760FD5dfd39aA79f646eA44B78EEfa3C31",
+    "blockNumber": 250
+  },
+  "reply": {
+    "postId": "0x049c2ed03b8ecacb240d46964259e3c985440a9b298387e419efaf41685974b2",
+    "text": "**PR #1:** https://github.com/zac-williamson/aztec_experiments/pull/1\n\n**Changed file:** `docs/bok-live-smoke.md` (added, 9 lines)\n\n**Summary:** Adds documentation for \"Billboard\", an anonymous message board on Aztec where posters deposit ETH for private posting rights. Describes rate-limiting, moderation system, and account creation. PR description states this is an automated integration test, not a production change.",
+    "visible": true,
+    "flagged": false
+  },
+  "cleanupSucceeded": true,
+  "providerCharges": [
+    {
+      "requestId": "7fe8cbea6a974493b485d50f9ecae627",
+      "model": "kimi-k2-5",
+      "amountUsd": -0.00104636,
+      "createdAt": "2026-09-22T14:07:13.556Z"
+    },
+    {
+      "requestId": "450b8163022d49b2a81f1bcdea9448d9",
+      "model": "kimi-k2-5",
+      "amountUsd": -0.0003605,
+      "createdAt": "2026-09-22T14:07:09.526Z"
+    }
+  ],
+  "inferenceCostUsd": 0.00140686,
+  "date": "2026-09-22",
+  "processExitCode": 0,
+  "scope": "Real author webpage and MetaMask extension; local Ethereum/Aztec with application proving disabled; real paid Venice Kimi and GitHub PR read; visible uncensored authenticated reply. Fixture prepares collateral/private fee credit. No production deployment or browser PR-creation claim.",
+  "sourceBaseCommit": "23f1dd0ed9c7eb9dc99195a5c98239eb4906c52b",
+  "runDirectory": ".build/plugin-browser-b0UFqR",
+  "screenshot": "wallet-2026-09-22.png",
+  "review": "Independent read-only plugin_fit review: no blockers; exact DOM text plus normalized rendered text preserves acceptance.",
+  "sourceSha256": {
+    "plugins/devnet/wallet-harness.mjs": "637cb55a2fe64914ef832bfd19f619d8fb2a57f931c5381be04ff943f781cff9",
+    "plugins/devnet/browser.mjs": "a9a5201f2ad4ae618b1b93cbf2775949206c490da0e28724f24c8f39ea15ba4a",
+    "plugins/devnet/browser-fixture.mjs": "e34b5081280a665f39a70de12d773b96ec8f74e1160cf6b00af073f3c362fcef",
+    "scripts/t04-metamask.mjs": "02ab2faa49ca7ead06df3deeee88fcda8cedd3f1ab5cf137c127343d27d52ea8",
+    "plugins/worker.mjs": "20e579208b819577f524f9f2a45ff9623efdbd1d9f64378e5c5492e372e12440",
+    "plugins/venice.mjs": "b5071a0e13275eaab6530db44aab780c971b595af28d103333da21fe0709bb97",
+    "plugins/main.mjs": "46b0e6cd03fafb2da2f050d3fde004a1d3f424d66eaa78b1887d84b18fa55def"
+  },
+  "screenshotSha256": "cfaca8bacfc1b25a5bc55a7fe0d8ea67b4acc9587820ed98aaf7d9d0ff020542"
+}

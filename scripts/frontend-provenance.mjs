@@ -6,13 +6,14 @@ import { ROOT } from './toolchain.mjs';
 const manifestName = '.build/apps-manifest.json';
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const required = [
+  'plugins/client.mjs', 'plugins/invocation.mjs', 'plugins/application.mjs', 'plugins/account-view.mjs', 'plugins/protocol.mjs', 'plugins/account-client.mjs', 'plugins/request-status.mjs', 'plugins/adapter_artifact.json',
   'apps/build.mjs', 'scripts/build-public-feed.mjs',
   ...['public-board-directory.mjs','public-feed.mjs','public-feed-projection.mjs','public-feed-storage.mjs','public-feed-source.mjs','public-feed-metadata.mjs','public-feed-rpc.mjs','public-feed-connection.mjs','public-feed-browser.mjs','protocol-schema.mjs','transaction-outcomes.mjs'].map(x=>`shared/${x}`), 'scripts/frontend-provenance.mjs', 'scripts/check-artifacts.mjs',
   'scripts/check-sdk.mjs', 'scripts/build-crs.mjs', 'scripts/toolchain.mjs',
   'package.json', 'package-lock.json', 'crs-manifest.json',
   '.build/contracts-manifest.json', '.build/sdk/sdk-manifest.json', 'apps/dist/crs/crs-manifest.json',
   'node_modules/ethers/dist/ethers.umd.min.js',
-  ...['styles.css', 'helpers.js', 'aztec-lib.js', 'crs-client.js', 'poseidon2.js',
+  ...['wallet-providers.js', 'board-catalog.json', 'board-view.js', 'board-catalog.js', 'operation-state.js', 'proving-preference.js', 'proving-toggle.js', 'styles.css', 'helpers.js', 'aztec-lib.js', 'crs-client.js', 'poseidon2.js',
     'public-app-config.js', 'public-app-config-ui.js', 'public-app-bootstrap.js', 'browser-readiness.js', 'browser-connection-check.js', 'account.js','application.js','wallet-buttons.js', 'passkey-wallet.js', 'wallet-backup.js', 'claim-secret-store.js', 'app-env.js', 'moderation-policy.js', 'rpc-config.example.json'].map(x => `shared/${x}`),
 ];
 function safe(root, name) {
@@ -58,7 +59,7 @@ function outputs(root) {
     } else throw new Error(`Unsupported frontend output: ${name}`);
   };
   visit('apps/dist');
-  return hashes(root, [...names, 'apps/dist/public-feed.js', 'apps/dist/public-feed-metadata.json']);
+  return hashes(root, [...names, 'apps/dist/board-catalog.json', 'apps/dist/plugins.js', 'apps/dist/public-feed.js', 'apps/dist/public-feed-metadata.json']);
 }
 export function beginFrontendBuild(root = ROOT, { partial = false, rpcOverride = false } = {}) {
   fs.rmSync(path.join(root, manifestName), { force: true });

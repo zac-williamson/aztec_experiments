@@ -46,7 +46,8 @@ test('actual container excludes dummy signer files/env and denies egress to a re
     const before = await runtime.inspect();
     const hostName = process.platform === 'darwin' ? 'host.docker.internal' : before.proxy.NetworkSettings.Networks[before.proxyNetwork.Name].Gateway;
     const control = await promisify(execFile)('docker', ['exec', runtime.proxyId, 'node', '-e',
-      "require('dns').lookup(process.argv[2],(e,a)=>{if(e)throw e;const s=require('net').connect(Number(process.argv[1]),a,()=>{console.log(a);s.destroy()});s.setTimeout(3000,()=>process.exit(2));s.on('error',()=>process.exit(3))})", String(hostPort), hostName], { encoding: 'utf8', timeout: 10000 });
+      // Drain the positive-control response: destroying an unread socket resets its peer on Linux.
+      "require('dns').lookup(process.argv[2],(e,a)=>{if(e)throw e;let body='';const s=require('net').connect(Number(process.argv[1]),a);s.setEncoding('utf8');s.on('data',chunk=>body+=chunk);s.once('end',()=>{if(body!=='fixture')process.exit(4);console.log(a)});s.setTimeout(3000,()=>process.exit(2));s.on('error',()=>process.exit(3))})", String(hostPort), hostName], { encoding: 'utf8', timeout: 10000 });
     const egressHost = control.stdout.trim();
     assert.ok(net.isIP(egressHost));
     const response = await fetch(`http://127.0.0.1:${port}/v1/chat/completions`, {

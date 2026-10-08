@@ -1,0 +1,1 @@
+{"passed":true,"checks":["compiled plugin API loads","disconnected controls disabled","shared operation disables all plugin actions","public result renders","untrusted request status stays text","narrow layout fits"]}

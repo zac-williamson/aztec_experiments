@@ -19,7 +19,8 @@ An unavailable remote service fails explicitly; there is no automatic local retr
 
 The same toggle is available on the posting and private-fee funding pages.
 Standalone fee funding is allowed only for the operator-configured
-`privateFeeAddress`; other jobs must contain a call to the configured board.
+`privateFeeAddress`; other jobs must contain a call to the configured board or an explicitly allowed plugin.
+For plugin account funding/withdrawal, set `pluginAddresses` to the escrow addresses registered on this board. The default empty list rejects standalone plugin jobs. The worker checks the signed account payload: only the configured private fee contract and these adapters’ claim, withdraw, cancel and release operations are accepted; unrelated targets, methods and networks are rejected. Keep this operator allowlist synchronized when enabling a board plugin.
 The catalog includes the pinned SDK’s protocol and standard preloaded contracts.
 
 GET `/healthz` reports mode and aggregate queue counters without job IDs.

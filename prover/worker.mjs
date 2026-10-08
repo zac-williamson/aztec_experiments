@@ -1,4 +1,5 @@
 // Single disposable worker: never log witnesses or SDK exceptions.
+import {pluginSelectors,validatePluginPayload} from './plugin-policy.mjs';
 import fs from 'node:fs/promises';
 import {gunzipSync} from 'node:zlib';
 import {decompressWitness} from '@aztec/noir-acvm_js';
@@ -31,7 +32,16 @@ try{
   if(BigInt(inputs.inputs.tx_context.chain_id)!==BigInt(metadata.chainId)||BigInt(inputs.inputs.tx_context.version)!==BigInt(metadata.rollupVersion))throw Error('Wrong fee network');
   if(circuits[i].functionName==='PrivateFPC:mint_and_pay_fee')feeClaims++;
  }
- if(!boardCalls&&!feeClaims)throw Error('Board operation or authorized fee claim required');
+ const pluginAddresses=JSON.parse(process.env.PROVER_PLUGINS||'[]');
+ for(let i=0;i<circuits.length;i++)if(circuits[i].functionName.startsWith('PluginAdapter:')){
+  const input=abiDecode(circuits[i].abi,decompressWitness(witnesses[i])).inputs.inputs;
+  if(circuits[i].functionName!=='PluginAdapter:claim'||!pluginAddresses.some(address=>BigInt(address)===BigInt(input.call_context.contract_address.inner))||BigInt(input.tx_context.chain_id)!==BigInt(metadata.chainId)||BigInt(input.tx_context.version)!==BigInt(metadata.rollupVersion))throw Error('Unapproved plugin circuit');
+ }
+ if(!boardCalls){
+  const selectors=await pluginSelectors();let authorized=0;
+  for(let i=0;i<circuits.length;i++)if(circuits[i].functionName==='SchnorrInitializerlessAccount:entrypoint')authorized+=validatePluginPayload(abiDecode(circuits[i].abi,decompressWitness(witnesses[i])).inputs,{metadata,pluginAddresses,privateFeeAddress:process.env.PROVER_PRIVATE_FEE,selectors,allowFeeOnly:feeClaims>0});
+  if(!authorized&&!feeClaims)throw Error('Board operation or authorized plugin/fee claim required');
+ }
  setStage('prove');
  if(metadata.mode==='disabled'){
   if(process.env.PROVER_PROOFS!=='disabled')throw Error('Mode mismatch');

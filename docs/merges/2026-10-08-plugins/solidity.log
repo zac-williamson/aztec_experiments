@@ -1,0 +1,75 @@
+Compiling 107 files with Solc 0.8.27
+Solc 0.8.27 finished in 4.40s
+Compiler run successful with warnings:
+Warning (5159): "selfdestruct" has been deprecated. Note that, starting from the Cancun hard fork, the underlying opcode no longer deletes the code and data associated with an account and only transfers its Ether to the beneficiary, unless executed in the same transaction in which the contract was created (see EIP-6780). Any use in newly deployed contracts is strongly discouraged even if the new behavior is taken into account. Future changes to the EVM might further reduce the functionality of the opcode.
+  --> test/PortalV1.t.sol:67:76:
+   |
+67 | contract ForceSurplus { constructor(address payable destination) payable { selfdestruct(destination); } }
+   |                                                                            ^^^^^^^^^^^^
+
+
+Ran 4 tests for test/PluginPayments.t.sol:PluginPaymentsTest
+[PASS] testDuplicateRejected() (gas: 91677)
+[PASS] testDustCannotConsumeInvocation() (gas: 91447)
+[PASS] testOnlyOwnerWithdraws() (gas: 123377)
+[PASS] testWrongHashCannotPoisonLegitimatePayment() (gas: 158945)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 8.90ms (803.79µs CPU time)
+
+Ran 4 tests for test/PortalCodecVectors.t.sol:PortalCodecVectorsTest
+[PASS] test_claim() (gas: 1592)
+[PASS] test_claim_boundary() (gas: 1570)
+[PASS] test_exit() (gas: 1539)
+[PASS] test_ready() (gas: 1548)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 9.85ms (4.27ms CPU time)
+
+Ran 3 tests for test/PortalArtifactRegression.t.sol:PortalSourceControlTest
+[PASS] testConfiguredMinimumRejectsBelowAndAcceptsExact() (gas: 1438207)
+[PASS] testRedepositDoesNotDoubleCountWithdrawnFunds() (gas: 1480790)
+[PASS] testWithdrawalClearsIndividualAndReducesAggregateLiabilities() (gas: 1473176)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 14.02ms (9.17ms CPU time)
+
+Ran 6 tests for test/PortalReentrancy.t.sol:PortalReentrancyTest
+[PASS] testInboxDepositRejectsAllReentrantEntrypointsAfterEffects() (gas: 356248)
+[PASS] testOutboxActivationRejectsAllReentrantEntrypoints() (gas: 121453)
+[PASS] testOutboxWithdrawalRejectsAllReentrantEntrypointsAfterReceiptCleared() (gas: 332550)
+[PASS] testRejectingInboxRollsBackReceiptValueAndCanRetry() (gas: 476612)
+[PASS] testRejectingOutboxRollsBackActivationAndCanRetry() (gas: 203912)
+[PASS] testRejectingOutboxRollsBackWithdrawalAndCanRetry() (gas: 369939)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 16.06ms (8.38ms CPU time)
+
+Ran 3 tests for test/PortalArtifactRegression.t.sol:PortalKnownBadFixtureTest
+[PASS] testKnownBadFixtureAcceptsDepositBelowConfiguredMinimum() (gas: 2103242)
+[PASS] testKnownBadFixtureLeavesAggregateAfterRefund() (gas: 2181591)
+[PASS] testKnownBadFixtureRejectedByProductionArtifactGuard() (gas: 1191771)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 30.25ms (30.36ms CPU time)
+
+Ran 3 tests for test/PortalArtifactRegression.t.sol:PortalGeneratedArtifactTest
+[PASS] testConfiguredMinimumRejectsBelowAndAcceptsExact() (gas: 6061985)
+[PASS] testRedepositDoesNotDoubleCountWithdrawnFunds() (gas: 6100283)
+[PASS] testWithdrawalClearsIndividualAndReducesAggregateLiabilities() (gas: 6092787)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 38.40ms (59.69ms CPU time)
+
+Ran 15 tests for test/PortalV1.t.sol:PortalV1Test
+[PASS] testBridgeActorsArePinnedDespiteRollupGetterChanges() (gas: 447759)
+[PASS] testCanonicalExitRefundAndRedepositRejectOldProof() (gas: 607697)
+[PASS] testCanonicalInboxMessageMatchesScopedReceiptAndEnvelope() (gas: 297919)
+[PASS] testConstructorAcceptsMaximumSupportedScalarBounds() (gas: 1053673)
+[PASS] testConstructorRejectsInvalidScopeAndEconomicBounds() (gas: 657648)
+[PASS] testDisabledUntilCanonicalReadyAndActivationCannotRepeat() (gas: 333241)
+[PASS] testEachExitReceiptWordIsAuthenticatedAndFailureRollsBack() (gas: 479857)
+[PASS] testEveryReadyWordIsAuthenticatedByCanonicalOutbox() (gas: 284172)
+[PASS] testInboxFailureRollsBackReceiptValueAndTotal() (gas: 1446917)
+[PASS] testInvalidBridgeAndChangedChainReject() (gas: 253970)
+[PASS] testMinMaxSecretAndActiveReceiptBounds() (gas: 490573)
+[PASS] testRefundReentrancyBlockedAndEffectsPrecedeCallback() (gas: 678308)
+[PASS] testRejectUnsolicitedEtherAndKeepForcedSurplusSeparate() (gas: 350803)
+[PASS] testRejectedRefundRollsBackCanonicalConsumptionThenRetrySucceeds() (gas: 716990)
+[PASS] testWrongReadyEnvelopeAndMerkleProofReject() (gas: 260100)
+Suite result: ok. 15 passed; 0 failed; 0 skipped; finished in 40.45ms (12.98ms CPU time)
+
+Ran 2 tests for test/PortalConservation.t.sol:PortalConservationTest
+[PASS] testFuzzBoundedMultiuserConservation(uint256) (runs: 32, μ: 1511080, ~: 1510495)
+[PASS] testOriginalStaleAggregateRegressionAcrossRedeposit() (gas: 735954)
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 193.59ms (186.12ms CPU time)
+
+Ran 8 test suites in 224.18ms (351.51ms CPU time): 40 tests passed, 0 failed, 0 skipped (40 total tests)

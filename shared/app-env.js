@@ -143,6 +143,7 @@ function buildConfig(action, extra, connection=_connectionConfig()) {
 // ============================================================
 function publicOperationFailure(error) {
   const messages={
+    BB_PLUGIN_UNKNOWN:'This plugin is not registered on this board.',
     BB_SCREENING_NO_PROGRESS:'Withdrawal preparation paused because the network did not advance screening. No further preparation fees will be spent. Refresh your account before continuing.',
     BB_SCREENING_HISTORY_UNAVAILABLE:'Your message history could not be verified. Refresh your account before continuing withdrawal.',
     BB_WITHDRAWAL_REVIEW:'Review the current withdrawal estimate before continuing.',
@@ -277,7 +278,7 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
       if(!window.BillboardConnectionCheck)throw new Error('Portal verification is unavailable.');
       await window.BillboardConnectionCheck.verify({sdk:window.__aztec,ethers,config,
         privateFeeArtifact:envExtra.privateFeeArtifact,
-        verifyFee:['deposit','claim','post','withdraw','auto','declare-immoral','set-moderation-policy','transfer-censor'].includes(action)});
+        verifyFee:['plugin-account','deposit','claim','post','withdraw','auto','declare-immoral','set-moderation-policy','transfer-censor'].includes(action)});
       await guard();
     }
     if(!navigator.locks?.request) throw new Error('This browser cannot safely coordinate wallet tabs. Use a browser with Web Locks support.');

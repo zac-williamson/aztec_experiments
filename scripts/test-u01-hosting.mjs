@@ -9,3 +9,13 @@ test('CSP hashes exact inline bodies, handlers and constrains RPC origins',()=>{
 test('static route allowlist excludes private files and rejects symlinks',t=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'hosting-unit-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));fs.writeFileSync(path.join(dir,'feed.html'),'<script>1</script>');fs.writeFileSync(path.join(dir,'board-reader-config.json'),'{}');fs.writeFileSync(path.join(dir,'.secret.json'),'{}');fs.writeFileSync(path.join(dir,'source.map'),'{}');fs.writeFileSync(path.join(dir,'wallet.json'),'{}');fs.writeFileSync(path.join(dir,'private-source.js'),'');const r=generateHosting({dist:dir,site:'https://localhost:8443',local:true});assert.deepEqual(r.inventory.map(x=>x.path),['board-reader-config.json','feed.html']);assert(!r.caddyfile.includes('browse'));assert(r.caddyfile.includes('encode zstd gzip'));assert(r.caddyfile.includes('respond 404'));fs.symlinkSync('/etc/passwd',path.join(dir,'bad.json'));assert.throws(()=>generateHosting({dist:dir,site:'https://localhost:8443',local:true}),/symlink/);});
 
 test('large setup inventory hashes full contents across chunks without whole-file allocation',t=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'hosting-hash-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));fs.mkdirSync(path.join(dir,'crs'));fs.writeFileSync(path.join(dir,'feed.html'),'<script>1</script>');const bytes=Buffer.alloc(1024*1024+37,7);bytes[256*1024]=19;bytes[bytes.length-1]=91;fs.writeFileSync(path.join(dir,'crs/g1.dat'),bytes);const original=fs.readFileSync;fs.readFileSync=function(name,...args){assert(!String(name).endsWith('g1.dat'),'Large asset must be hashed incrementally');return original.call(this,name,...args);};try{const result=generateHosting({dist:dir,site:'https://localhost:8443',local:true});assert.equal(result.inventory.find(x=>x.path==='crs/g1.dat').sha256,createHash('sha256').update(bytes).digest('hex'));}finally{fs.readFileSync=original;}});
+
+test('author page plugin bundle is served by the production allowlist',()=>{
+ const dist=path.resolve('apps/dist');
+ const html=fs.readFileSync(path.join(dist,'user.html'),'utf8');
+ const hosted=generateHosting({dist,site:'https://board.example',origins:['https://bot.example']});
+ const inventory=new Set(hosted.inventory.map(file=>file.path));
+ assert(html.includes('src="plugins.js"'),'Built author app must load generic plugin client');
+ for(const match of html.matchAll(/<script[^>]+src="([^"?#]+)"/g))assert(inventory.has(match[1]),'Unserved author dependency: '+match[1]);
+ assert(hosted.caddyfile.includes('/plugins.js'));
+});

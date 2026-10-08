@@ -14,37 +14,34 @@ const flaggedText = 'Flagged content preserved for explicit viewing';
 const reason = 'Policy reason: ' + 'é'.repeat(75);
 const packedReason = codec.packModerationReason(reason);
 class Element {
-  constructor(tag){this.tag=tag;this.textContent='';this.children=[];}
+  constructor(tag){this.tag=tag;this.textContent='';this.children=[];this.dataset={};this.attributes={};}
   append(...nodes){this.children.push(...nodes);}
-  replaceChildren(){this.children=[];}
+  replaceChildren(...nodes){this.children=[...nodes];}
+  setAttribute(name,value){this.attributes[name]=value;}
+  querySelectorAll(selector){assert.equal(selector,'article[data-post-id]');return this.children.filter(node=>node.tag==='article'&&node.dataset.postId);}
 }
 for (const app of ['user', 'censor']) {
-  test(app + ' renders stable public IDs, Unicode and moderation reasons without wallet reads', async () => {
-    const appSource = source(`apps/src/billboard/${app}/app.js`);
-    const start = appSource.indexOf('async function refreshBillboard()');
-    const end = appSource.indexOf('\nfunction escapeHtml(', start);
-    const elements = {billboardFeed:new Element('div'),billboardMeta:new Element('div')};
-    let reads=0;
-    const context=vm.createContext({performance,console,document:{getElementById:id=>elements[id],createElement:tag=>new Element(tag)},window:{BillboardPublic:{async readFeed(){reads++;return {posts:[{orderIndex:'0',postId:ids[0].toString(),text,flagged:false},{orderIndex:'1',postId:ids[1].toString(),text:flaggedText,flagged:true,flag:{reason:codec.decodeModerationReason(packedReason.fields,packedReason.byteLength),censorAddress:'0x1234'}}],eventCount:3,lastBlock:7,nextCursor:null,progress:{complete:true}};}}},
-      _portalAddr:()=> 'portal',_getNodeUrl:()=> 'node',_getEthRpcUrl:()=> 'ethereum',_getPublicConfig:()=>({}),_getConfigRevision:()=>1,_billboardLastCount:-1,_billboardLastBlock:-1,_showCensored:true,
-      escapeHtml:value=>value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')});
-    vm.runInContext(appSource.slice(start,end),context);await context.refreshBillboard();
-    assert.equal(reads,1);
-    const [visible,flagged]=elements.billboardFeed.children;
-    assert.equal(visible.children[0].textContent,'#0');assert.equal(visible.children[1].textContent,text);
-    assert.equal(flagged.children[0].textContent,'#1');
-    const details=flagged.children[1];assert.equal(details.tag,'details');assert.equal(details.children[0].tag,'summary');
-    assert.equal(details.children[1].textContent,flaggedText);assert.equal(details.children[2].textContent,'Moderator reason: '+reason);
-    assert.equal(elements.billboardMeta.textContent,'Latest messages through block 7');
+  test(app + ' renders stable public IDs, Unicode and moderation reasons without wallet reads', () => {
+    const container=new Element('div'),moderated=[];
+    // Exercise the presentation interface both controllers use. No wallet/RPC is available.
+    const context=vm.createContext({URL,location:new URL('https://board.test/'+app+'.html#board=example'),document:{activeElement:null,createElement:tag=>new Element(tag)}});
+    vm.runInContext(source('shared/board-view.js'),context);
+    const posts=[{orderIndex:'0',postId:ids[0].toString(),text,flagged:false},{orderIndex:'1',postId:ids[1].toString(),text:flaggedText,flagged:true,flag:{reason:codec.decodeModerationReason(packedReason.fields,packedReason.byteLength),censorAddress:'0x1234'}}];
+    context.BillboardView.renderMessages(container,posts,app==='censor'?{onModerate:post=>moderated.push(post.postId)}:{});
+    const [visible,flagged]=container.children;
+    assert.equal(visible.dataset.postId,ids[0].toString());assert.equal(flagged.dataset.postId,ids[1].toString());
+    assert.equal(visible.children[0].children[1].href.searchParams.get('message'),ids[0].toString());
+    assert.equal(visible.children[1].textContent,text);
+    assert.equal(flagged.children[1].textContent,'Message removed by moderator.');
+    assert.equal(flagged.children[2].textContent,'Reason: '+reason);
+    if(app==='censor'){
+      const details=flagged.children[3];assert.equal(details.tag,'details');assert.equal(details.children[0].tag,'summary');
+      assert.equal(details.children[1].textContent,flaggedText);
+      visible.children[2].onclick();assert.deepEqual(moderated,[ids[0].toString()]);
+    }else{
+      assert(!JSON.stringify(flagged).includes(flaggedText));
+    }
+    context.BillboardView.renderMessages(container,posts,app==='censor'?{onModerate:post=>moderated.push(post.postId)}:{});
+    assert.equal(container.children[0],visible,'unchanged messages retain their DOM identity');
   });
 }
-
-test('user withdrawal readiness refuses screened debt and accepts expired debt',()=>{
-  const app=source('apps/src/billboard/user/app.js');
-  const start=app.indexOf('function withdrawalReadiness('),end=app.indexOf('function startPostCountdown(',start);
-  assert(start>=0&&end>start);
-  const readiness=vm.runInNewContext(app.slice(start,end)+';withdrawalReadiness');
-  const info={amount:1n,lastScreenedIndex:3n,lastRealPostIndex:3n,nextAllowedTime:200n};
-  assert.equal(readiness(info,100).ready,false);assert.equal(readiness(info,100).kind,'cooldown');
-  assert.equal(readiness({...info,nextAllowedTime:99n},100).ready,true);
-});

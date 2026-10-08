@@ -55,8 +55,8 @@ import fs from 'node:fs';
 import {connectPublicBoard,connectPublicFeed} from '../shared/public-feed-connection.mjs';
 function connectionFixture(){
  const artifact=JSON.parse(fs.readFileSync(new URL('../apps/src/billboard/billboard_artifact.json',import.meta.url)));
- const metadata={classId:hex(9),artifact:{outputs:{structs:{events:artifact.outputs.structs.events}}},eventTags:{PolicyPublished:hex(11),PostPublished:hex(12),PostFlagged:hex(13)},storage:{portal:'1',config:'3'},portalSelectors:{L2_CONTRACT:'0x11111111',ROLLUP:'0x22222222',VERSION:'0x33333333',L1_CHAIN_ID:'0x44444444'}};
- const slots={1:BigInt(scope.portalAddress),3:1n,4:BigInt(scope.rollupAddress),5:1n,10:10n},instance={currentContractClassId:metadata.classId,originalContractClassId:metadata.classId},calls=[];
+ const metadata={classId:hex(9),artifact:{outputs:{structs:{events:artifact.outputs.structs.events}}},eventTags:{PolicyPublished:hex(11),PostPublished:hex(12),PostFlagged:hex(13),PluginConfigured:hex(14),PluginInvoked:hex(15),PluginReplyLinked:hex(16)},storage:{portal:'1',config:'3',censor:'2'},portalSelectors:{L2_CONTRACT:'0x11111111',ROLLUP:'0x22222222',VERSION:'0x33333333',L1_CHAIN_ID:'0x44444444'}};
+ const slots={1:BigInt(scope.portalAddress),2:7n,3:1n,4:BigInt(scope.rollupAddress),5:1n,6:1n,7:10n,8:60n,9:4n,10:10n,11:2n},instance={currentContractClassId:metadata.classId,originalContractClassId:metadata.classId},calls=[];
  const portalFields={L2_CONTRACT:3n,ROLLUP:BigInt(scope.rollupAddress),VERSION:1n,L1_CHAIN_ID:1n};
  const fetchImpl=async(_url,options)=>{
   const request=JSON.parse(options.body),{method,params}=request;calls.push(request);let result;
@@ -78,7 +78,7 @@ function connectionFixture(){
 }
 test('connection reads pinned immutable slots at one block and matches both contract class IDs',async()=>{
  const f=connectionFixture(),connected=await f.run();assert.deepEqual(connected.scope,scope);assert.equal(connected.censorWindow,'10');
- assert.deepEqual(f.calls.filter(c=>c.method==='node_getPublicStorageAt').map(c=>Number(BigInt(c.params[2]))).sort((a,b)=>a-b),[1,3,4,5,10]);
+ assert.deepEqual(f.calls.filter(c=>c.method==='node_getPublicStorageAt').map(c=>Number(BigInt(c.params[2]))).sort((a,b)=>a-b),[1,2,3,4,5,6,7,8,9,10,11]);
 });
 for(const key of ['currentContractClassId','originalContractClassId'])test(`matching public slots cannot bypass a wrong ${key}`,async()=>{
  const f=connectionFixture();f.instance[key]=hex(88);await assert.rejects(f.run(),/application release/);assert(!f.calls.some(c=>c.method==='node_getPublicStorageAt'));

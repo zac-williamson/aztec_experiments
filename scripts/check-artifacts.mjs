@@ -36,9 +36,23 @@ export function checkArtifacts(root = ROOT) {
   if (metadata.sources['src/BillboardPortal.sol'].keccak256 !== keccak256(fs.readFileSync(path.join(root, 'billboard/portal/src/BillboardPortal.sol')))) {
     throw new Error('Solidity artifact does not match current portal source');
   }
+  const pluginAdapterBytes = fs.readFileSync(path.join(root, 'plugins/adapter_artifact.json'));
+  const pluginAdapter = JSON.parse(pluginAdapterBytes);
+  const pluginPrivate = pluginAdapter.functions?.filter(f => f.custom_attributes?.includes('abi_private')) ?? [];
+  if (pluginAdapter.name !== 'PluginAdapter' || pluginAdapter.transpiled !== true ||
+      !pluginPrivate.some(f => f.name === 'claim') || pluginPrivate.some(f => !f.verification_key)) {
+    throw new Error('Plugin adapter lacks transpilation or private verification keys');
+  }
+  const pluginPortalBytes = fs.readFileSync(path.join(root, 'billboard/portal/out/PluginPortal.sol/PluginPortal.json'));
+  const pluginPortal = JSON.parse(pluginPortalBytes);
+  const pluginMetadata = typeof pluginPortal.metadata === 'string' ? JSON.parse(pluginPortal.metadata) : pluginPortal.metadata;
+  if (!pluginPortal.bytecode?.object || !pluginPortal.deployedBytecode?.object ||
+      pluginMetadata?.sources?.['src/PluginPortal.sol']?.keccak256 !== keccak256(fs.readFileSync(path.join(root, 'billboard/portal/src/PluginPortal.sol')))) {
+    throw new Error('Plugin portal artifact does not match current portal source');
+  }
   const manifest = JSON.parse(read('.build/contracts-manifest.json'));
   if (JSON.stringify(manifest.inputs) !== JSON.stringify(contractInputs(root))) throw new Error('Contract build inputs changed; rebuild contracts');
-  if (manifest.noir !== sha(fs.readFileSync(path.join(root, canonicalPath))) || manifest.portal !== sha(portal.bytecode.object) || manifest.privateFee !== sha(privateFeeBytes)) throw new Error('Contract artifact differs from build manifest');
+  if (manifest.pluginAdapter !== sha(pluginAdapterBytes) || manifest.pluginPortal !== sha(pluginPortalBytes) || manifest.noir !== sha(fs.readFileSync(path.join(root, canonicalPath))) || manifest.portal !== sha(portal.bytecode.object) || manifest.privateFee !== sha(privateFeeBytes)) throw new Error('Contract artifact differs from build manifest');
   return { privateFeeSha256: sha(privateFeeBytes), noirSha256: createHash('sha256').update(canonical).digest('hex'), portalBytecodeSha256: createHash('sha256').update(portal.bytecode.object).digest('hex') };
 }
 

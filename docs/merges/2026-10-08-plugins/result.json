@@ -1,0 +1,51 @@
+{
+  "parents": {
+    "master": "c5bb3595638f4a321ecd37524378c452913846df",
+    "plugins": "cf4731ceb9ee4a220655ebbd2f1d8bc27fdcec26"
+  },
+  "pullRequest": "https://github.com/zac-williamson/aztec_experiments/pull/6",
+  "passed": true,
+  "checks": {
+    "regressions": 581,
+    "additionalCiAndInterfaceTests": 132,
+    "remoteWorkerTests": 6,
+    "solidityTests": 40,
+    "noirEscrowTests": 18,
+    "noirPrivateFeeTests": 14,
+    "browserJourneyChecks": 26,
+    "compiledPluginViewChecks": 6,
+    "builtWalletBrowser": true,
+    "contractsSdkAppsBuild": true,
+    "frontendSdkProvenance": true
+  },
+  "review": [
+    "plugin_merge_review: no remaining source integration blocker",
+    "plugin_build_review: harness and renderer fix approved"
+  ],
+  "resolutions": [
+    "Preserve current wallet UX, operation ownership, proving preference snapshots and estimated private fee flow.",
+    "Plugin operations use the application interface, shared guarded engine, canonical journal receipts and fee estimator.",
+    "Remote prover admits configured plugin targets only and validates mixed jobs plus actual SDK fee encodings.",
+    "Rebuild contract artifacts, SDK and pages; update legacy test fixtures to current public interfaces.",
+    "Exclude removed-message text from regular-reader DOM reuse signatures."
+  ],
+  "limits": [
+    "No fresh live testnet or real combined plugin proof qualification was performed for this merge.",
+    "Remote worker tests use explicitly disabled proofs; these are admission/routing checks, not cryptographic evidence.",
+    "No live deployment or operator configuration changed. Hosted plugin proving requires board-specific pluginAddresses configuration."
+  ],
+  "sourceHashes": {
+    "shared/application.js": "b860ed761238516dc1c2cc6e9facdb6854df947761973e2acdecc9e6a8c03b23",
+    "shared/board-view.js": "9b93f4150aed59e4b2736475efe6056800a091af0ae1f8c94ad61d499729a749",
+    "plugins/application.mjs": "9a49562a2b37743feaaea426f99b0cdb09f432c1b9bf4d1b7683a2ca8ab43eb5",
+    "plugins/account-client.mjs": "5c65e4b52b423df76d6872f4962322a2ebca0919a3c05ce7c0619c8f1a5e1737",
+    "plugins/account-view.mjs": "a4b317f90680fdf0aba8e6e3b4ef011547a0bfebbb5d3fe7d7fca85c2ffbba5e",
+    "plugins/invocation.mjs": "b064e27f4849cbaa9782fde1c7202381cb095ec96b3376a877e60418c2bbae29",
+    "prover/plugin-policy.mjs": "49a0b448b56e26ea0cccc109bcaf250653b43f93383778fd16d52d97e02c4e5f",
+    "prover/worker.mjs": "fdb4998044da3b3276c1752cfc89e693d1af6d37e08da149a4a475f9618e65a1",
+    "shared/private-pxe.mjs": "3d06172deb8a9327cf641392f4a0071723ffc7780ac8d253a6f41bd86e030382",
+    "apps/src/billboard/user/engine.js": "c801756cea5ceddc5177e4c72c6e1353ab538b4ec0395b885396594e6c8a07bb",
+    "scripts/test-c05-browser-feed.mjs": "757d1157dc28c00ca5f14fb45a93d0000f718dabf00d654025172fc097bcd689",
+    "scripts/test-application-interface.mjs": "4ca2362240034e07e44cf85a7f3d54972427a688cfa207718d651432c166dcce"
+  }
+}

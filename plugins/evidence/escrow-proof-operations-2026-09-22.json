@@ -1,0 +1,53 @@
+{
+  "scenario": "operations",
+  "applicationProofs": true,
+  "passed": true,
+  "elapsedMs": 318524,
+  "peakTreeRSSKiB": 1725856,
+  "ownedTreeAbsent": true,
+  "failures": [],
+  "result": {
+    "passed": true,
+    "scenario": "operator-contract-lifecycle",
+    "applicationProofs": true,
+    "stage": "passed",
+    "zeroBalanceFeeOnboarding": true,
+    "earnings": {
+      "withdrawnMicroUSDC": "123",
+      "userBalanceMicroUSDC": "999877",
+      "distinctOperator": true
+    },
+    "cleanupSucceeded": true
+  },
+  "runDirectory": ".build/plugin-operations-XviQRC",
+  "scope": "Local actual contracts with native application proofs; official local epoch settlement controls. Synthetic 123 micro-USDC charge, no inference in this operator scenario.",
+  "subsequentChange": "Early wrong-actor replay guard added after this run; separate real-contract regression qualification recorded in deployment work.",
+  "postRunRegression": {
+    "passed": true,
+    "applicationProofs": false,
+    "elapsedMs": 260449,
+    "peakTreeRSSKiB": 1318224,
+    "ownedTreeAbsent": true,
+    "failures": [],
+    "result": {
+      "passed": true,
+      "scenario": "operator-contract-lifecycle",
+      "applicationProofs": false,
+      "stage": "passed",
+      "zeroBalanceFeeOnboarding": true,
+      "earnings": {
+        "withdrawnMicroUSDC": "123",
+        "userBalanceMicroUSDC": "999877",
+        "distinctOperator": true
+      },
+      "cleanupSucceeded": true
+    },
+    "runDirectory": ".build/plugin-operations-EwLhcd",
+    "checks": "Repeated deployment commands reuse the saved transaction; wrong-actor replay fails and leaves the entire saved state unchanged.",
+    "sourceSha256": {
+      "plugins/operator.mjs": "1755285b15cf213e57e30ab443aff6ee019dff51920619b56a2e6ab23e25095e",
+      "plugins/operations.mjs": "4df07f0560ea50faa1f0c4e3b15cbc8f38bad285931ef5c48cc0aef4434e7b23",
+      "plugins/devnet/operator-test.mjs": "b1b846382169678ec79fc7cf9dd3439de115b72c4f3c294a183c09d509697f95"
+    }
+  }
+}

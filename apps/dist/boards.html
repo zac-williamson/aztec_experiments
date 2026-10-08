@@ -36,13 +36,13 @@
     const previous=new Map([...container.querySelectorAll('article[data-post-id]')].map(node=>[node.dataset.postId,node]));
     const nodes=[];
     for(const post of posts){
-      const signature=JSON.stringify([post.text,post.flagged,post.flag?.reason,post.publishedAt,Boolean(onModerate)]);let article=previous.get(post.postId);
+      const signature=JSON.stringify([post.flagged&&!onModerate?null:post.text,post.flagged,post.flag?.reason,post.publishedAt,post.pluginReply,Boolean(onModerate)]);let article=previous.get(post.postId);
       if(!article||article.dataset.signature!==signature){
         article=el('article',undefined,'message');article.dataset.postId=post.postId;article.dataset.signature=signature;article.id='message-'+post.postId;
         const meta=el('div',undefined,'message-meta'),time=el('time');const seconds=Number(post.publishedAt);
         if(Number.isSafeInteger(seconds)&&seconds>0){const date=new Date(seconds*1000);time.dateTime=date.toISOString();time.textContent=date.toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});}else time.textContent='Publication time unavailable';
         const link=el('a','Link');const target=url('feed.html');target.searchParams.set('message',post.postId);link.href=target;link.setAttribute('aria-label','Link to message '+post.orderIndex);
-        meta.append(time,link);article.append(meta,el('p',post.flagged?'Message removed by moderator.':post.text,'message-text'));
+        if(post.pluginReply)meta.append(el('span','Bot reply'));meta.append(time,link);article.append(meta,el('p',post.flagged?'Message removed by moderator.':post.text,'message-text'));
         if(post.flagged){article.append(el('p','Reason: '+(post.flag?.reason||'No reason supplied'),'small'));if(onModerate){const original=el('details');original.append(el('summary','Show removed message'),el('p',post.text,'message-text'));article.append(original);}}
         if(onModerate&&!post.flagged){const button=el('button','Moderate','secondary');button.onclick=()=>onModerate(post);article.append(button);}
       }

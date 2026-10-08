@@ -1,6 +1,7 @@
 // UI component adapter; the same supervisor owns resources as application scenarios.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {ROOT,assertNodeVersion,anvilBinary} from './toolchain.mjs';
@@ -15,7 +16,7 @@ const reportPath=path.resolve(ROOT,output);
 assert(reportPath.startsWith(path.join(ROOT,'execution/evidence',(passkey||publicFeed||walletExtension)?'T04':'U01')+path.sep));
 await fs.mkdir(path.dirname(reportPath),{recursive:true});
 const file=await fs.open(reportPath,'wx');
-const directory=await fs.mkdtemp('/private/tmp/board-ui-');
+const directory=await fs.mkdtemp(path.join(os.tmpdir(),'board-ui-'));
 const report={script,args,passed:false,observations:[]};
 const owner=new Supervisor({deadlineMs:passkey?60000:walletExtension?120000:540000,report});
 try{

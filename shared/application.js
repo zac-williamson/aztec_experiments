@@ -1,11 +1,14 @@
 // Browser application boundary. SDK objects and transaction acknowledgements stay here.
 /**
- * @typedef {'status'|'balance'|'deposit'|'claim'|'post'|'withdraw'|'claim-l1'|'recover'|'recover-eth'|'recover-l2'|'declare-immoral'|'set-moderation-policy'|'transfer-censor'|'deploy'} BoardAction
+ * @typedef {'status'|'balance'|'deposit'|'claim'|'post'|'withdraw'|'claim-l1'|'recover'|'recover-eth'|'recover-l2'|'declare-immoral'|'set-moderation-policy'|'transfer-censor'|'deploy'|'plugin-account'} BoardAction
  * @callback BoardProgress
  * @param {string} message
  * @param {string} [level]
  * @returns {void}
  * @typedef {Object} BoardInput
+ * @property {string} [pluginAction]
+ * @property {object} [pluginInput]
+ * @property {string} [pluginHandle]
  * @property {string} [message] Public post text, at most 992 UTF-8 bytes.
  * @property {boolean} [isDummy] Advance screening without publishing text.
  * @property {string} [depositAmount] Decimal token amount.
@@ -52,7 +55,7 @@ function createBillboardApplication({kind='author',deploymentConfig,pause}={}) {
   let handles=null,withdrawTxHash,revision=0,fundingRecord=null,savedOperation=null;
   const journalAcknowledgements=new Map(),ethereumAcknowledgements=new Map();
   const isBoard=kind==='author'||kind==='moderator';
-  const execute=makeCallEngine((env,config)=>kind==='deploy'?runDeploy(env,config):kind==='fees'?runFeeJuiceFlow(env,config):runBillboardUser(env,config),{
+  const execute=makeCallEngine((env,config)=>kind==='deploy'?runDeploy(env,config):kind==='fees'?runFeeJuiceFlow(env,config):config.action==='plugin-account'?window.BillboardPlugins.runAccountOperation({env,config,connect:runBillboardUser,storage:localStorage}):runBillboardUser(env,config),{
     ...(isBoard||kind==='deploy'?{artifact:BILLBOARD_ARTIFACT,portalBytecode:PORTAL_BYTECODE}:{}),
     ...(kind!=='deploy'?{privateFeeArtifact:BILLBOARD_PRIVATE_FEE_ARTIFACT}:{}),
     ...(pause?{pause}:{}),
@@ -154,6 +157,14 @@ function saveFundingRecord(record) {
   /** @param {BoardAction} action @param {BoardInput} input @param {BoardProgress} onProgress @returns {Promise<BoardResult>} */
   async function runEngine(action,input={},onProgress=()=>{}) {
     const expected=stamp(),ws=window.walletState;
+    if(action==='post'&&!input.isDummy&&window.BillboardPlugins?.mentions(input.message||'').length){
+      const api=window.BillboardPlugins,h=connectedHandles(),config=_getPublicConfig();
+      const scope={chainId:config.network.chainId,rollupVersion:config.network.rollupVersion,rollupAddress:config.network.rollupAddress,boardAddress:config.board.contractAddress};
+      const plan=await api.prepareInvocation({text:input.message,scope,lookup:async id=>{
+        const {result}=await h.contract.methods.get_plugin(window.__aztec.Fr.fromString(id)).simulate({from:window.__aztec.NO_FROM});check(expected);
+        const [receiver,enabled,descriptor,length]=result;return {receiver:String(receiver),enabled,descriptor:descriptor.map(String),length:Number(length)};
+      }});check(expected);input={...input,...(plan?{pluginHandle:plan.handleField}:{})};
+    }
     const identity=JSON.stringify([ws.aztec?.address.toString(),_getConfigRevision(),_getPublicConfig()]);
     const common=isBoard?{portalAddress:_getPublicConfig()?.board.portalAddress,dataDirPrefix:kind==='moderator'?'pxe_bb_censor_':'pxe_bb_',
       depositChainId:handles?.depositChainId,withdrawTxHash,
@@ -176,11 +187,12 @@ function saveFundingRecord(record) {
     catch(error){const safe=publicOperationFailure(error);operation.fail(safe);throw safe;}
   }
   async function run(action,input={},onProgress=()=>{}) {
-    if(workflow)throw Object.assign(Error('Wait for the current operation.'),{code:'BB_OPERATION_BUSY'});
+    if(workflow||['working','waiting'].includes(operation.snapshot().status))throw Object.assign(Error('Wait for the current operation.'),{code:'BB_OPERATION_BUSY'});
     validateInput(action,input);
     if(!['status','recover','recover-eth','recover-l2'].includes(action))lastIntent={action,input:structuredClone(input)};
     return transact(action,()=>runEngine(action,input,onProgress));
   }
+  function pluginAccount(action,input={},onProgress=()=>{}) {return run('plugin-account',{pluginAction:action,pluginInput:input},onProgress);}
   function validateInput(action,input) {
     const invalid=(code,field)=>{throw Object.assign(Error(code),{code,field});};
     if(action==='post'&&!input.isDummy){if(typeof input.message!=='string'||!input.message.trim())invalid('BB_MESSAGE_EMPTY','msgText');if(new TextEncoder().encode(input.message).length>992)invalid('BB_MESSAGE_LONG','msgText');}
@@ -429,6 +441,6 @@ function saveFundingRecord(record) {
     if(previous?.pxe?.stop)await previous.pxe.stop();
   }
   window.billboardConfigStore?.subscribe(()=>{reset().catch(()=>{_invalidateWalletContext();});});
-  return Object.freeze({subscribe:operation.subscribe,operation:operation.snapshot,diagnosticReport:operation.report,run,resume,requestPause,completeFeeFunding,completeDeposit,completeWithdrawal,readWithdrawalPlan,fundingQuote,estimateDepositGas,readAccount,readFeeBalance,readActivity,readDeposit,readDepositTerms,readPolicy,readPolicyReview,reviewPolicyChange,readModeratorRecovery,resumeModeratorRecovery,reviewTransfer,readModerator,readFeed,reset,prepareDeployment,saveDeployment,readDeployment,publicConfiguration,deploymentCapabilities,readFundingRecovery,importFundingRecovery:saveFundingRecord,
+  return Object.freeze({subscribe:operation.subscribe,operation:operation.snapshot,diagnosticReport:operation.report,run,pluginAccount,resume,requestPause,completeFeeFunding,completeDeposit,completeWithdrawal,readWithdrawalPlan,fundingQuote,estimateDepositGas,readAccount,readFeeBalance,readActivity,readDeposit,readDepositTerms,readPolicy,readPolicyReview,reviewPolicyChange,readModeratorRecovery,resumeModeratorRecovery,reviewTransfer,readModerator,readFeed,reset,prepareDeployment,saveDeployment,readDeployment,publicConfiguration,deploymentCapabilities,readFundingRecovery,importFundingRecovery:saveFundingRecord,
     get fundingState(){return fundingStamp===stamp()?fundingState:null;},get connected(){return handles!==null;},get revision(){return revision;}});
 }

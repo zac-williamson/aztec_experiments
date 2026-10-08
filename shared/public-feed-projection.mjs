@@ -1,9 +1,9 @@
 // Incremental public-event projection. A staged range changes nothing until apply().
 // Undo retains only entries touched by that range and the previous current policy.
 export function createFeedProjection(fail) {
- const posts=[],ids=new Map(),policies=new Map();let currentPolicy=null;
+ const posts=[],ids=new Map(),policies=new Map(),plugins=new Map();let currentPolicy=null;
  function stage(events){
-  const postChanges=new Map(),policyChanges=new Map(),postBefore=new Map(),policyBefore=new Map();
+  const postChanges=new Map(),policyChanges=new Map(),postBefore=new Map(),policyBefore=new Map(),pluginChanges=new Map(),pluginBefore=new Map();
   const originalLength=posts.length,oldCurrent=currentPolicy;
   let length=originalLength,nextCurrent=currentPolicy;
   const newIds=new Map();
@@ -21,15 +21,29 @@ export function createFeedProjection(fail) {
     if(BigInt(p.orderIndex)!==BigInt(length))throw fail('Public post history has a gap.');
     if(ids.has(p.postId)||newIds.has(p.postId))throw fail('Duplicate public post identity.');
     newIds.set(p.postId,length);putPost(length++,{...p,publication:e.position,flagged:false,flag:null});
-   }else{
+   }else if(e.type==='PluginConfigured'){
+    const old=pluginChanges.get(p.handle)??plugins.get(p.handle);
+    if(old&&(old.receiver!==p.receiver||old.descriptor!==p.descriptor))throw fail('Plugin identity changed.');
+    if(!pluginBefore.has(p.handle))pluginBefore.set(p.handle,plugins.get(p.handle));pluginChanges.set(p.handle,p);
+   }else if(e.type==='PluginInvoked'){
+    const i=newIds.has(p.postId)?newIds.get(p.postId):ids.get(p.postId),post=getPost(i);
+    const plugin=pluginChanges.get(p.handle)??plugins.get(p.handle);
+    if(!post||post.pluginRequest||post.pluginReply||!plugin?.enabled)throw fail('Invalid plugin invocation.');
+    putPost(i,{...post,pluginRequest:{handle:p.handle,receiver:plugin.receiver}});
+   }else if(e.type==='PluginReplyLinked'){
+    const i=newIds.has(p.postId)?newIds.get(p.postId):ids.get(p.postId),post=getPost(i);
+    const parentIndex=newIds.has(p.parentId)?newIds.get(p.parentId):ids.get(p.parentId),parent=getPost(parentIndex);
+    if(!post||post.pluginRequest||post.pluginReply||!parent?.pluginRequest||parent.pluginRequest.handle!==p.handle||parent.replyPostId)throw fail('Invalid plugin reply.');
+    putPost(i,{...post,pluginReply:{handle:p.handle,parentId:p.parentId}});putPost(parentIndex,{...parent,replyPostId:p.postId});
+   }else if(e.type==='PostFlagged'){
     const i=newIds.has(p.postId)?newIds.get(p.postId):ids.get(p.postId),post=getPost(i);
     if(!post||nextCurrent!==p.policyVersion||post.flagged)throw fail('Invalid public flag history.');
     putPost(i,{...post,flagged:true,flag:{...p,position:e.position}});
-   }
+   }else throw fail('Unsupported event.');
   }
   return {
-   apply(){for(const [i,p] of postChanges)posts[i]=p;for(const [id,i] of newIds)ids.set(id,i);for(const [id,p] of policyChanges)policies.set(id,p);currentPolicy=nextCurrent;},
-   undo(){for(const [i,p] of postBefore)if(i<originalLength)posts[i]=p;posts.length=originalLength;for(const id of newIds.keys())ids.delete(id);for(const [id,p] of policyBefore){if(p===undefined)policies.delete(id);else policies.set(id,p);}currentPolicy=oldCurrent;},
+   apply(){for(const [id,p] of pluginChanges)plugins.set(id,p);for(const [i,p] of postChanges)posts[i]=p;for(const [id,i] of newIds)ids.set(id,i);for(const [id,p] of policyChanges)policies.set(id,p);currentPolicy=nextCurrent;},
+   undo(){for(const [id,p] of pluginBefore){if(p===undefined)plugins.delete(id);else plugins.set(id,p);}for(const [i,p] of postBefore)if(i<originalLength)posts[i]=p;posts.length=originalLength;for(const id of newIds.keys())ids.delete(id);for(const [id,p] of policyBefore){if(p===undefined)policies.delete(id);else policies.set(id,p);}currentPolicy=oldCurrent;},
   };
  }
  function page(limit,upper,before){

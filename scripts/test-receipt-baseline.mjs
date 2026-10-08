@@ -15,18 +15,18 @@ function fixture(consumer,{receipts=[mined()],submitError,proofError,simulationE
  class BaseWallet {
   constructor(pxe){this.pxe=pxe;}
   completeFeeOptions=async()=>({gasSettings:{maxFeesPerGas:{},maxPriorityFeesPerGas:{}}});
-  simulateViaEntrypoint=async()=>{calls.simulation++;if(simulationError)throw simulationError;return {gasUsed:{totalGas:gas,teardownGas:gas}};};
+  simulateViaEntrypoint=async()=>{calls.simulation++;if(simulationError)throw simulationError;return {publicInputs:{forPublic:false},gasUsed:{totalGas:gas,teardownGas:gas}};};
   createTxExecutionRequestFromPayloadAndFee=async()=>({});
   scopesFrom=()=>[];senderForTagsFrom=()=>undefined;
  }
- const sdk={...outcomes,BaseWallet,GasSettings:{from:value=>value}};
+ const sdk={...outcomes,BaseWallet,GasSettings:{from:value=>({...value,getFeeLimit:()=>({toBigInt:()=>1n})})}};
  const pxe={proveTx:async()=>{calls.proof++;if(proofError)throw proofError;return{toTx:async()=>({getTxHash:()=>hash})};}};
  const node={sendTx:async()=>{calls.submit++;if(submitError)throw submitError;},
   getTxReceipt:async()=>{const value=receipts[Math.min(calls.receipt++,receipts.length-1)];if(value instanceof Error)throw value;return value;},
   getBlock:async()=>({hash:blockHash}),isValidTx:async()=>validation};
  class Clock extends Date {static now(){return now;}}
  const log=(message,level)=>logs.push({message,level});
- const c=vm.createContext({window:{__aztec:sdk},Date:Clock,log,toAztec:String,setTimeout:(fn,ms)=>{now+=ms;queueMicrotask(fn);},clearTimeout(){}});
+ const c=vm.createContext({window:{__aztec:sdk},performance,Date:Clock,log,toAztec:String,setTimeout:(fn,ms)=>{now+=ms;queueMicrotask(fn);},clearTimeout(){}});
  let wallet;
  if(consumer==='shared') {
   vm.runInContext(fs.readFileSync(new URL('../shared/aztec-lib.js',import.meta.url),'utf8'),c);
@@ -34,7 +34,9 @@ function fixture(consumer,{receipts=[mined()],submitError,proofError,simulationE
  }else{
   const source=fs.readFileSync(new URL(`../apps/src/billboard/${consumer}/engine.js`,import.meta.url),'utf8');
   vm.runInContext(source.replace(/\}\)\(\);\s*$/,'g.testWalletFactory=createAztecWallet;})();'),c);
-  wallet=c.testWalletFactory(sdk,pxe,node,node,log,null,{preProveHook,transactionJournal});
+  wallet=consumer==='user'
+   ? c.testWalletFactory(sdk,pxe,node,node,log,null,{preProveHook,transactionJournal})
+   : c.testWalletFactory(sdk,pxe,node,node,log,{preProveHook,transactionJournal});
  }
  return{calls,logs,send:()=>wallet.sendTx({},{from:'fixture',wait:{timeout:0.03,interval:0.01}}),confirmed:()=>logs.some(x=>x.level==='success'&&x.message.includes('Tx confirmed!'))};
 }

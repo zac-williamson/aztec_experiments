@@ -1,0 +1,14 @@
+✔ actual isolated worker accepts configured board and rejects forged board/network metadata (2050.596208ms)
+✔ native route switched to local delegates to its SDK implementation (56.422958ms)
+✔ standalone fee funding is limited to the configured fee contract and network (2862.3995ms)
+✔ plugin-only proofs require configured receivers, exact entrypoint calls and network (6560.114583ms)
+✔ board and fee calls cannot bypass a private plugin claim binding (3055.81625ms)
+✔ actual fee payloads and plugin calls encode into the accepted account policy (9.432292ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15659.260667

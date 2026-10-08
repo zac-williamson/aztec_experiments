@@ -1,0 +1,10 @@
+{
+  "platform": "linux",
+  "originalResets": 10,
+  "fixedResets": 0,
+  "connectionsPerCase": 10,
+  "passed": true,
+  "scope": "Disposable Linux TCP positive-control reproduction, not application isolation qualification",
+  "actualLocalIsolationTestsPassed": 3,
+  "review": "plugin_fit"
+}

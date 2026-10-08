@@ -1,4 +1,4 @@
-// Actual user module evaluation. UI/network/identity fixtures are inert; no wallet, chain or prover.
+// Custody module and user engine tests. Browser presentation has separate journey coverage.
 import {createEthereumJournal} from '../shared/ethereum-journal.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -7,6 +7,8 @@ import vm from 'node:vm';
 import { webcrypto, createDecipheriv, createHash } from 'node:crypto';
 import { IDBFactory } from 'fake-indexeddb';
 import * as ethers from 'ethers';
+import {GasSettings} from '@aztec/stdlib/gas';
+import {provingEnabledForNode} from '../shared/proving-policy.mjs';
 import { Fr } from '@aztec/foundation/curves/bn254';
 import { sha256ToField } from '@aztec/foundation/crypto/sha256';
 import { AztecAddress } from '@aztec/stdlib/aztec-address';
@@ -16,7 +18,6 @@ const backupSource = await fs.readFile(new URL('../shared/wallet-backup.js',impo
 const claimSource=await fs.readFile(new URL('../shared/claim-secret-store.js',import.meta.url),'utf8');
 const configSource=await fs.readFile(new URL('../shared/public-app-config.js',import.meta.url),'utf8');
 const appEnvSource=await fs.readFile(new URL('../shared/app-env.js',import.meta.url),'utf8');
-const appSource = await fs.readFile(new URL('../apps/src/billboard/user/app.js',import.meta.url),'utf8');
 const engineSource = await fs.readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8');
 const scope={l1ChainId:'31337',rollupAddress:'0x1111111111111111111111111111111111111111',rollupVersion:'1',
   boardAddress:'0x'+ '2'.padStart(64,'0'),portalAddress:'0x3333333333333333333333333333333333333333',depositor:'0x0000000000000000000000000000000000000004'};
@@ -29,6 +30,7 @@ const keyFor=(s,h)=>ownerId+':'+aadFor(s,h);
 function appContext() {
   const context={crypto:webcrypto,indexedDB:new IDBFactory(),TextEncoder,TextDecoder,Uint8Array,URL,URLSearchParams,console,log(){},
     location:{search:''},document:{getElementById:()=>null},__aztec:{createPXE(){}},ETH_RPC_URL:'',
+    BILLBOARD_ARTIFACT:{},BILLBOARD_PRIVATE_FEE_ARTIFACT:{},PORTAL_BYTECODE:'',
     createBillboardApplication:()=>({}),checkBundle:()=>true,setupRpcAuth(){},makeCallEngine:()=>()=>{},runBillboardUser(){},initPages(){},initWalletButtons(){},initializeHostedBoard(){}};
   context.window=context;vm.createContext(context);
   // Hosted bootstrap remains inert here: this fixture tests encrypted custody.
@@ -38,7 +40,7 @@ function appContext() {
   vm.runInContext(configSource,context,{filename:'shared/public-app-config.js'});
   context.billboardConfigStore=context.BillboardConfig.createStore({storage:null});
   vm.runInContext(appEnvSource,context,{filename:'shared/app-env.js'});
-  vm.runInContext(backupSource,context,{filename:'shared/wallet-backup.js'});vm.runInContext(claimSource,context);vm.runInContext(appSource,context,{filename:'user/app.js'});return context;
+  vm.runInContext(backupSource,context,{filename:'shared/wallet-backup.js'});vm.runInContext(claimSource,context);return context;
 }
 async function editEnvelope(context,key,transform) {
   const db=await new Promise((resolve,reject)=>{const req=context.indexedDB.open('aztec-billboard-claim-secrets-v2',1);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});
@@ -83,7 +85,7 @@ test('browser save observes transaction abort and never reports durable success'
   try {await assert.rejects(store.save(scope,record),/did not commit/);} finally {proto.transaction=original;db.close();}
   assert.equal(await store.load(scope,record.secretHash),null);
 });
-function engineContext(){const context={performance,console,Buffer,TextEncoder,setTimeout,clearTimeout};vm.createContext(context);vm.runInContext(engineSource,context,{filename:'user/engine.js'});return context;}
+function engineContext(){const context={performance,console,Buffer,TextEncoder,setTimeout,clearTimeout,readBillboardDepositInfo:async()=>({amount:0n,depositChainId:0n})};vm.createContext(context);vm.runInContext(engineSource,context,{filename:'user/engine.js'});return context;}
 test('actual engine codec matches frozen claim, boundary and exit commitments',async()=>{
   const c=engineContext();const vectors=JSON.parse(await fs.readFile(new URL('../scripts/fixtures/protocol/commitments-v1.json',import.meta.url)));
   for(const vector of vectors.cases.filter(x=>['claim','claim-boundary','exit'].includes(x.name))){
@@ -113,8 +115,8 @@ function depositHarness({store,enabled=true,activeAmount=0n,refunded=false,reuse
   }
   const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:1}),getL1ContractAddresses:async()=>({rollupAddress:scope.rollupAddress}),
     getBlockNumber:async()=>1,getPublicStorageAt:async()=>Fr.ZERO,getContract:async()=>({address})};
-  const a={boundedTransactionRead:fn=>fn(),Fr,AztecAddress,EthAddress,deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
-    SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({});getImmutablesHash=async()=>Fr.ZERO;},
+  const a={provingEnabledForNode,GasSettings,preparePrivateFeePayment:async()=>({paymentMethod:{},gasSettings:GasSettings.from({gasLimits:{daGas:1000,l2Gas:1000000},teardownGasLimits:{daGas:100,l2Gas:10000},maxFeesPerGas:{feePerDaGas:1n,feePerL2Gas:1n},maxPriorityFeesPerGas:{feePerDaGas:0n,feePerL2Gas:0n}})}),deriveBoardDepositSecret:async()=>({secret:new Fr(1).toString(),secretHash:new Fr(2).toString()}),recoverBoardDepositSecret:async()=>{throw Object.assign(Error('The matching saved claim secret is missing or invalid.'),{code:'BB_CLAIM_SECRET_MISSING'});},BaseWallet:class{constructor(pxe){this.pxe=pxe;}},AccountManager:{create:async()=>({})},Contract:{at:async()=>({methods:{get_config:()=>({simulate:async()=>({})})}})},createPXE:async()=>({registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{}}),boundedTransactionRead:fn=>fn(),Fr,AztecAddress,EthAddress,deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
+    SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;getSigningPublicKey=async()=>({});},
     getContractInstanceFromInstantiationParams:async()=>({address}),computePartialAddress:async()=>Fr.ZERO,
     createAztecNodeClient:()=>node,deriveStorageSlotInMap:async()=>Fr.ZERO,loadContractArtifact:x=>x,
     // Deterministic hash stub isolates custody/ordering; cryptographic SDK compatibility is separately qualified.
@@ -131,9 +133,9 @@ function depositHarness({store,enabled=true,activeAmount=0n,refunded=false,reuse
     const tx=await new Portal(scope.portalAddress,iface,provider).deposit(parsed.args[0],{value:request.value});
     sentBody={...request,hash:tx.hash};sentReceipt={...await tx.wait(),hash:tx.hash,from:scope.depositor,to:scope.portalAddress,blockNumber:2,blockHash:'0x'+'2'.padStart(64,'0')};return sentBody;
   }};
-  const env={createEthereumJournal:options=>createEthereumJournal({...options,storage:{read:async key=>journalRecords.get(key)??null,compareAndSwap:async(key,old,next)=>{assert.equal(journalRecords.get(key)??null,old);journalRecords.set(key,next);}}}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},
+  const env={privateFeeArtifact:{},initCRS:async()=>{},createStore:async()=>({}),createEthereumJournal:options=>createEthereumJournal({...options,storage:{read:async key=>journalRecords.get(key)??null,compareAndSwap:async(key,old,next)=>{assert.equal(journalRecords.get(key)??null,old);journalRecords.set(key,next);}}}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{},
     log:message=>logs.push(message),getBrowserSigner:async()=>signer};
-  const config={action:'deposit',portalAddress:scope.portalAddress,ethRpcUrl:'http://fixture.invalid',aztecNodeUrl:'http://fixture.invalid',
+  const config={privateFee:{contractAddress:'fee',gasSettings:GasSettings.from({gasLimits:{daGas:1000,l2Gas:1000000},teardownGasLimits:{daGas:100,l2Gas:10000},maxFeesPerGas:{feePerDaGas:1n,feePerL2Gas:1n},maxPriorityFeesPerGas:{feePerDaGas:0n,feePerL2Gas:0n}})},action:'deposit',portalAddress:scope.portalAddress,ethRpcUrl:'http://fixture.invalid',aztecNodeUrl:'http://fixture.invalid',
     aztecWallet:{secretKey:walletSecret,salt:'0x00'},depositAmount:'0.001',reuseTxHash:reuse?'0x'+'b'.repeat(64):undefined,claimSecretStore:store===undefined?defaultStore:store};
   return {run:()=>c.runBillboardUser(env,config),sent:()=>sent,logs,sequence,secret:()=>saved?.secret};
 }

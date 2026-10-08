@@ -52,5 +52,23 @@
         "sha256": "88501301c43e2cb3231009e68bd76af17cc0f7e9981f9d37ceabc6b857febb2f"
       }
     }
+  },
+  "nativeProver": {
+    "linux-x64": {
+      "version": "5.2.0-nightly.20260807",
+      "sha256": "5a1c1ccd835e257217880936f837847fd74c8d5993497527f070fb2308f9145b"
+    },
+    "linux-arm64": {
+      "version": "5.2.0",
+      "sha256": "36e4f49699cce2ce2d7e403ea446c856402172b3fc01793d0f4053a92a61a64b"
+    },
+    "darwin-x64": {
+      "version": "5.2.0",
+      "sha256": "94c03cbbd7b302213df3d59c7b1f85ffa05009cbd61bc03dbec662f3407c8249"
+    },
+    "darwin-arm64": {
+      "version": "5.2.0",
+      "sha256": "208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031"
+    }
   }
 }

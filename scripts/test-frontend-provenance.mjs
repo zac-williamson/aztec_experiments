@@ -9,14 +9,15 @@ function fixture(run) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'frontend-provenance-'));
   const write = (name, value = name) => { const file = path.join(root, name); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, value); };
   for (const name of [
+    'plugins/client.mjs', 'plugins/invocation.mjs', 'plugins/application.mjs', 'plugins/account-view.mjs', 'plugins/protocol.mjs', 'plugins/account-client.mjs', 'plugins/request-status.mjs', 'plugins/adapter_artifact.json', 'apps/dist/plugins.js',
     'apps/build.mjs', 'scripts/build-public-feed.mjs', 'apps/dist/public-feed.js', 'apps/dist/public-feed-metadata.json',
     ...['public-board-directory.mjs','public-feed.mjs','public-feed-projection.mjs','public-feed-storage.mjs','public-feed-source.mjs','public-feed-metadata.mjs','public-feed-rpc.mjs','public-feed-connection.mjs','public-feed-browser.mjs','protocol-schema.mjs','transaction-outcomes.mjs'].map(x=>`shared/${x}`), 'scripts/frontend-provenance.mjs', 'scripts/check-artifacts.mjs', 'scripts/check-sdk.mjs',
     'scripts/build-crs.mjs', 'scripts/toolchain.mjs', 'package.json', 'package-lock.json', 'crs-manifest.json',
     '.build/contracts-manifest.json', '.build/sdk/sdk-manifest.json', 'apps/dist/crs/crs-manifest.json',
     'node_modules/ethers/dist/ethers.umd.min.js', 'apps/src/user/template.html', 'apps/src/user/app.js',
     'apps/src/user/engine.js', 'apps/src/user/billboard_artifact.json', 'apps/src/user/private_fee_artifact.json',
-    'apps/dist/user.html',
-    ...['styles.css', 'helpers.js', 'aztec-lib.js', 'crs-client.js', 'poseidon2.js', 'account.js','application.js','wallet-buttons.js',
+    'apps/dist/user.html', 'apps/dist/board-catalog.json',
+    ...['wallet-providers.js', 'board-catalog.json', 'board-view.js', 'board-catalog.js', 'operation-state.js', 'proving-preference.js', 'proving-toggle.js', 'styles.css', 'helpers.js', 'aztec-lib.js', 'crs-client.js', 'poseidon2.js', 'account.js','application.js','wallet-buttons.js',
       'public-app-config.js', 'public-app-config-ui.js', 'public-app-bootstrap.js', 'browser-readiness.js', 'browser-connection-check.js', 'passkey-wallet.js', 'wallet-backup.js', 'claim-secret-store.js', 'app-env.js', 'moderation-policy.js', 'rpc-config.example.json'].map(name => `shared/${name}`),
   ]) write(name);
   const build = () => finishFrontendBuild(root, beginFrontendBuild(root));
@@ -30,7 +31,7 @@ test('build provenance rejects changed frontend sources paired with old HTML', (
 }));
 
 test('build provenance rejects output changes and removed output', () => fixture(({ root, write, build }) => {
-  build(); write('apps/dist/user.html', 'stale HTML');
+  build(); write('apps/dist/user.html', 'apps/dist/board-catalog.json', 'stale HTML');
   assert.throws(() => checkFrontend(root), /output drift/);
   build(); fs.unlinkSync(path.join(root, 'apps/dist/user.html'));
   assert.throws(() => checkFrontend(root), /ENOENT/);
@@ -95,4 +96,11 @@ test('output symlink escapes and cycles cannot bypass the served HTML inventory'
   fs.unlinkSync(path.join(root, 'apps/dist/outside'));
   fs.symlinkSync('.', path.join(root, 'apps/dist/cycle'));
   assert.throws(() => checkFrontend(root), /symlink cycle/);
+}));
+
+test('plugin source and distributed bundle are bound to frontend provenance', () => fixture(({ root, write, build }) => {
+  build(); write('plugins/account-client.mjs', 'changed escrow funding behavior');
+  assert.throws(() => checkFrontend(root), /input drift/);
+  build(); write('apps/dist/plugins.js', 'stale plugin bundle');
+  assert.throws(() => checkFrontend(root), /output drift/);
 }));

@@ -7,6 +7,7 @@ import {BlockHash} from '@aztec/stdlib/block';
 import {AppendOnlyTreeSnapshot} from '@aztec/stdlib/trees';
 import {Tx,TxHash,TxSimulationResult} from '@aztec/stdlib/tx';
 import {createL2Journal} from '../shared/l2-journal.mjs';
+import {provingEnabledForNode} from '../shared/proving-policy.mjs';
 import * as transactionOutcomes from '../shared/transaction-outcomes.mjs';
 // Actual application routing, with explicit node/proof/payment-preparer doubles.
 import assert from 'node:assert/strict';
@@ -22,11 +23,11 @@ const source=await readFile(new URL('../apps/src/billboard/user/engine.js',impor
 const policySource=await readFile(new URL('../shared/moderation-policy.js',import.meta.url),'utf8');
 function context(){const c=vm.createContext({performance,console,Buffer,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});vm.runInContext(policySource,c);vm.runInContext(source,c);return c;}
 const gas=()=>new GasSettings(new Gas(100,200),new Gas(1,2),new GasFees(3n,4n),new GasFees(0n,0n));
-function fixture(failure){
+function fixture(failure,pluginHandle){
  const c=context(),prepared=[],sends=[],owner={toString:()=> 'owner'};
  const paymentMethod={getExecutionPayload(){}};
- const a={GasSettings,sendPrivateFeeTransaction:async ({interaction,prepared,from})=>interaction.send({from,fee:{paymentMethod:prepared.paymentMethod,gasSettings:prepared.gasSettings}}),preparePrivateFeePayment:async input=>{prepared.push(input);return {paymentMethod,gasSettings:gas()};}};
- const config={privateFee:{contractAddress:'fee',gasSettings:gas()},privateFeeClaim:{amount:'100',salt:'secret-salt',leafIndex:'2'}};
+ const a={Fr,GasSettings,sendPrivateFeeTransaction:async ({interaction,prepared,from})=>interaction.send({from,fee:{paymentMethod:prepared.paymentMethod,gasSettings:prepared.gasSettings}}),preparePrivateFeePayment:async input=>{prepared.push(input);return {paymentMethod,gasSettings:gas()};}};
+ const config={pluginHandle,privateFee:{contractAddress:'fee',gasSettings:gas()},privateFeeClaim:{amount:'100',salt:'secret-salt',leafIndex:'2'}};
  const contract={methods:new Proxy({},{get:(_,method)=>(...args)=>({send:async opts=>{sends.push({method,args,opts});if(failure)throw failure;return {receipt:{status:'checkpointed'}};}})})};
  const sender=c.BillboardPrivateFeeRouting.createPrivateFeeSender({a,config,privateFeeArtifact:{},contract,wallet:{},node:{},owner,scope:{l1ChainId:'31337',rollupVersion:'1'}});
  return {sender,prepared,sends,owner,paymentMethod};
@@ -101,11 +102,11 @@ function mainHarness(action,isDummy=false) {
   const note=()=>({schemaVersion:1n,depositChainId:5n,amount:missingNote||(action==='claim'&&!sent)?0n:amount,nextAllowedTime:0n,lastRealPostIndex:0n,lastScreenedIndex:0n,headSequence:0n,...noteOverrides});
   c.readBillboardDepositInfo=async()=>note();
   const methods=new Proxy({}, {get:(_target,name)=>{
-    if(['post','withdraw','claim_deposit','transfer_censor','declare_immoral','set_moderation_policy'].includes(name)) return (...args)=>({send:async opts=>{assert.equal(opts.from,addr);assert.equal(opts.fee.paymentMethod,'private-method');if(actionHook)await actionHook(name,args);sent=true;requests.at(-1).action={kind:action,args};return {receipt:actionReceipt};}});
+    if(['post_with_plugin','post','withdraw','claim_deposit','transfer_censor','declare_immoral','set_moderation_policy'].includes(name)) return (...args)=>({send:async opts=>{assert.equal(opts.from,addr);assert.equal(opts.fee.paymentMethod,'private-method');if(actionHook)await actionHook(name,args);sent=true;requests.at(-1).action={kind:action,args};return {receipt:actionReceipt};}});
     return ()=>({simulate:async()=>{if(readHook)await readHook(name);return readResults.has(name)?readResults.get(name):name==='get_censor'?(censorValue??addr.toField()):name==='get_post_exists'?postExists:name==='get_screen_hints'?[{note:{is_dummy:true}},null]:1n;}});
   }});
   class BaseWallet {constructor(pxe){this.pxe=pxe;}}
-  const a={estimatePrivateFeeTransaction:async()=>({}),normalizePrivateFeeGasSettings,...transactionOutcomes,NoteStatus,Fr,AztecAddress,EthAddress,NO_FROM,GasSettings,BaseWallet,sha256ToField,Buffer,
+  const a={provingEnabledForNode,estimatePrivateFeeTransaction:async()=>({}),normalizePrivateFeeGasSettings,...transactionOutcomes,NoteStatus,Fr,AztecAddress,EthAddress,NO_FROM,GasSettings,BaseWallet,sha256ToField,Buffer,
     deriveBoardDepositSecret:async()=>({secret:secret.toString(),secretHash:secretHash.toString()}),
     deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
     SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;getSigningPublicKey=async()=>({x:Fr.ONE,y:Fr.ONE});},
@@ -240,16 +241,16 @@ test('moderator recovery with unknown outcome cannot prepare another private fee
  await assert.rejects(h.run(),{code:'BB_SUBMISSION_UNKNOWN'});assert.equal(h.requests.length,0);
 });
 
-test('actual recovery dispatcher restores the saved message and nonce before requesting a fresh post proof',async()=>{
+for(const plugin of [false,true])test('actual recovery dispatcher restores saved message, nonce and plugin: '+plugin,async()=>{
  const h=mainHarness('recover'),nonce=new Fr(123).toString(),operations=[];
- const operation=JSON.stringify({schemaVersion:1,kind:'post',nonce,message:'original saved text',depositChain:new Fr(5).toString()});
+ const operation=JSON.stringify({schemaVersion:plugin?2:1,kind:'post',nonce,message:'original saved text',depositChain:new Fr(5).toString(),...(plugin?{pluginHandle:new Fr(8).toString()}:{})});
  let allowed=0;
  h.config.message='a different new message';h.config.isDummy=true;
  h.env.createTransactionJournal=async()=>({assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},
   recover:async()=>{throw Object.assign(new Error('stale'),{code:'BB_RECOVERY_REQUIRED'});},inspect:async()=>({operation}),
   allowReplacement:async expected=>{assert.equal(expected,operation);allowed++;},setOperation:value=>operations.push(value)});
  await h.run();assert.equal(allowed,1);assert.deepEqual(operations,[operation]);assert.equal(h.requests.length,1);
- assert.equal(h.requests[0].action.args[1].toString(),nonce);assert.equal(h.requests[0].action.args[4],false);
+ assert.equal(h.requests[0].action.args[1].toString(),nonce);if(plugin)assert.equal(h.requests[0].action.args.at(-1).toString(),new Fr(8).toString());else assert.equal(h.requests[0].action.args[4],false);
  assert.equal(context().BillboardPostCodec.decodePostMessage(h.requests[0].action.args[2].map(x=>x.toBigInt()),h.requests[0].action.args[3]),'original saved text');
 });
 test('already published stable identity blocks a replacement before fee preparation',async()=>{
@@ -325,7 +326,7 @@ test('actual wallet passes attributed application spend to the durable journal b
  const proven={toTx:async()=>tx},pxe={proveTx:async()=>proven};
  const node={sendTx:async()=>calls.push('submit'),getTxReceipt:async()=>receipt,getBlock:async()=>({hash:'block'})};
  const journal={assertCanStart:async()=>null,prepare:async(value,previous,binding)=>{assert.equal(value,tx);assert.equal(binding.applicationNullifier,appNullifier.toString());calls.push('saved');},confirmed:()=>{}};
- const a={...transactionOutcomes,BaseWallet,GasSettings,extractApplicationNullifier:async(result,value,board)=>{assert.equal(result,proven);assert.equal(value,tx);assert.equal(board,'board');calls.push('attributed');return appNullifier;}};
+ const a={provingEnabledForNode,...transactionOutcomes,BaseWallet,GasSettings,extractApplicationNullifier:async(result,value,board)=>{assert.equal(result,proven);assert.equal(value,tx);assert.equal(board,'board');calls.push('attributed');return appNullifier;}};
  const wallet=c.BillboardPrivateFeeRouting.createAztecWallet(a,pxe,node,node,()=>{},Fr.ONE,{transactionJournal:journal});wallet._applicationNullifierBoard='board';
  await wallet.sendTx({}, {from:owner,fee:{gasSettings:gas()}});
  assert.deepEqual(calls,['attributed','saved','submit']);
@@ -772,4 +773,23 @@ for(const scenario of ['current','old-cycle','pending','reverted','malformed'])t
  if(scenario==='malformed')await assert.rejects(h.run(),{code:'BB_JOURNAL_INVALID'});
  else {const result=await h.run();assert.equal(result.state,scenario==='current'?'withdrawal_needs_verification':scenario==='old-cycle'?'deposited_l1_not_claimed_l2':'transaction_needs_recovery');assert.equal(result.withdrawTxHash,scenario==='current'?new Fr(99).toString():null);}
  assert.equal(writes,0);assert.equal(h.requests.length,0);
+});
+
+test('plugin posting preserves private fee routing and leaves dummy posts unchanged',async()=>{
+ const h=fixture(undefined,'123');const args=[1,2,['text'],4,false,6,7];
+ await h.sender('post',args);await h.sender('post',[...args.slice(0,4),true,6,7]);
+ assert.equal(h.sends[0].method,'post_with_plugin');assert.deepEqual(Array.from(h.sends[0].args.slice(0,6)),[1,2,['text'],4,6,7]);assert.equal(h.sends[0].args[6].toBigInt(),123n);
+ assert.equal(h.sends[1].method,'post');assert.equal(h.sends[1].args[4],true);
+ for(const send of h.sends){assert.equal(send.opts.from,h.owner);assert.equal(send.opts.fee.paymentMethod,h.paymentMethod);}
+});
+
+test('plugin metadata persists after the proof journal and context changes stop broadcast',async()=>{
+ const c=context(),calls=[],hash=new Fr(90),tx={getTxHash:()=>hash},receipt={txHash:hash,status:'checkpointed',executionResult:'success',blockNumber:1,blockHash:'block'};let changed=false;
+ class BaseWallet {constructor(pxe){this.pxe=pxe;}async completeFeeOptions(opts){return {gasSettings:opts.gasSettings};}async simulateViaEntrypoint(){return {publicInputs:{forPublic:{}},publicOutput:{txEffect:{revertCode:{isOK:()=>true}}},gasUsed:{totalGas:new Gas(1,1),teardownGas:new Gas(0,0)}};}async createTxExecutionRequestFromPayloadAndFee(){return 'request';}scopesFrom(){return [];}senderForTagsFrom(){return owner;}}
+ const a={...transactionOutcomes,BaseWallet,GasSettings},pxe={proveTx:async()=>({toTx:async()=>tx})},node={sendTx:async()=>calls.push('send'),getTxReceipt:async()=>receipt,getBlock:async()=>({hash:'block'})};
+ const journal={setOperation:()=>calls.push('intent'),assertCanStart:async()=>null,prepare:async()=>calls.push('proof-saved'),confirmed:()=>calls.push('confirmed')};
+ const wallet=c.BillboardPrivateFeeRouting.createAztecWallet(a,pxe,node,node,()=>{},Fr.ONE,{contextGuard:async()=>{if(changed)throw {code:'BB_WALLET_NOT_READY'};}});
+ const opts={from:owner,fee:{gasSettings:gas()},transactionJournal:journal,journalOperation:JSON.stringify({kind:'extension'}),beforeSubmit:async()=>calls.push('plugin-saved')};
+ await wallet.sendTx({},opts);assert.deepEqual(calls,['intent','proof-saved','plugin-saved','send','confirmed']);
+ calls.length=0;opts.beforeSubmit=async()=>{calls.push('plugin-saved');changed=true;};await assert.rejects(wallet.sendTx({},opts),{code:'BB_WALLET_NOT_READY'});assert.deepEqual(calls,['intent','proof-saved','plugin-saved']);
 });

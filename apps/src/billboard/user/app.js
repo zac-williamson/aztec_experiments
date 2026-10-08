@@ -102,3 +102,5 @@ function initialize(){
   element('setupStatus').textContent='';poller=setInterval(()=>{if(!document.hidden){refreshMessages();refreshReadiness();}},15000);
 }
 initializeHostedBoard(initialize);
+
+window.BillboardPlugins?.mountAccountPanel({container:element('pluginAccountPanel'),application,formatError:publicOperationFailure});

@@ -10,8 +10,25 @@
 <section id="accountPanel" class="task-panel" hidden><h2>Your account</h2><dl id="balances" class="balance-list"></dl><button id="withdrawStart" class="secondary">Get deposit back</button><p><a data-board-link href="fee-juice.html">Add transaction credit</a></p><button id="closeAccount" class="secondary">Back to messages</button></section>
 <section id="withdrawPanel" class="task-panel" hidden><h2 id="withdrawHeading">Get your deposit back</h2><div id="withdrawReview"><p id="withdrawSummary"></p><p>Posting stops when you withdraw. The app prepares your deposit and waits for settlement, then your Ethereum wallet asks for the final approval.</p><p class="small">Preparation and withdrawal use transaction credit. Returning ETH also requires Ethereum gas. The board’s moderation period may delay withdrawal.</p><button id="withdrawConfirm">Return my deposit</button><button id="withdrawCancel" class="secondary">Keep posting</button></div><p id="withdrawResult" role="status"></p></section>
 <details id="activityPanel" class="task-panel" hidden><summary>Activity &amp; interrupted operations</summary><p id="activityStatus"></p><div id="activityRecords"></div><button id="resumeOperation" class="secondary" hidden>Resume interrupted operation</button></details>
+  <details class="task-panel" id="pluginAccountPanel">
+    <summary>AI plugins</summary>
+    <p>Mention a registered plugin, such as @bok, in your message. Plugin calls share your Aztec account address with that plugin. Ordinary messages remain separate from plugin calls.</p>
+    <p>Calls reserve a maximum budget and charge actual usage. Unused funds return to your balance. If a model requires more balance, its reply states the minimum.</p>
+    <label for="pluginHandle">Plugin</label><input id="pluginHandle" value="bok">
+    <label for="pluginAmount">Amount (USDC)</label><input id="pluginAmount" inputmode="decimal" value="1">
+    <button id="pluginRequests" data-plugin-action="requests">My requests</button>
+    <div id="pluginRequestsList"></div>
+    <button id="pluginBalance" data-plugin-action="balance">Check balance</button>
+    <button id="pluginDeposit" data-plugin-action="deposit">Deposit</button>
+    <button id="pluginClaim" data-plugin-action="claim">Claim deposit</button>
+    <button id="pluginWithdraw" data-plugin-action="withdraw">Withdraw</button>
+    <button id="pluginRedeem" data-plugin-action="redeem">Claim withdrawal</button>
+    <div id="pluginStatus" role="status"></div>
+  </details>
 <section aria-labelledby="messagesHeading"><h2 id="messagesHeading">Messages</h2><p id="billboardMeta" class="small" role="status">Loading messages…</p><button id="newMessages" class="secondary" hidden>Show new messages</button><div id="billboardFeed"></div><a data-board-link href="feed.html">Read older messages</a></section>
 <p class="small">Messages are public. Moderation can hide a message here but cannot erase it from blockchain history.</p></main>
+
+
 <!-- The 58MB bundle -->
 <script src="aztec_bundle.js"></script>
 <!--RPC_CONFIG-->

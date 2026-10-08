@@ -1,0 +1,110 @@
+{
+  "date": "2026-09-21",
+  "scope": "Real Venice and GitHub; actual Aztec/Ethereum contracts on disposable local devnet, application proving disabled. No browser-wallet UI or production deployment claim.",
+  "swap": {
+    "transactionHash": "0x17f04fb35b1500d24c353da71467371e2e4950f7a7dd70b8aff88a4865a53786",
+    "status": 1,
+    "usdcBalance": "5000000",
+    "maxEth": "0.001833507253493253"
+  },
+  "veniceSettlement": [
+    {
+      "transactionHash": "0xef8b9aaea5cea18822a2897e989bd6d0bc15ee752d102a5e2f4ffbb53800d54f",
+      "recipient": "0x2670b922ef37c7df47158725c0cc407b5382293f",
+      "usdc": 5
+    }
+  ],
+  "scenarios": [
+    {
+      "passed": true,
+      "processExitCode": 0,
+      "model": "kimi-k2-5",
+      "postId": "0x0341fdb556b94ecc9f3668a53e672e9829a5816efebd99fdead65bbed8e2c928",
+      "localEthereumPayment": {
+        "transactionHash": "0xdb983f29ac2ae4bb036f412947c932d599e2a1bedab87653d6074d1b5afd5366",
+        "amountWei": "1000000000000000"
+      },
+      "replyId": "13086342531869261074588087659437277709594847999491149238489148422690317961296",
+      "replyText": "https://github.com/zac-williamson/aztec_experiments/pull/1",
+      "prUrl": "https://github.com/zac-williamson/aztec_experiments/pull/1",
+      "prHead": "37bcdf6099e77b2357b66479eea14f83261c212f",
+      "censored": true,
+      "cleanupSucceeded": "Executable exited 0 after awaited cleanup",
+      "inferenceCostUsd": 0.00442204,
+      "providerCharges": [
+        {
+          "requestId": "f814efa9a9af4b2f96c40093af0f7bba",
+          "model": "kimi-k2-5",
+          "amountUsd": -0.00053844
+        },
+        {
+          "requestId": "4c660cd1110f4ffeb1658b8c14b42b53",
+          "model": "kimi-k2-5",
+          "amountUsd": -0.001078
+        },
+        {
+          "requestId": "4144a6e54d084dcebdf5661c6cccec25",
+          "model": "kimi-k2-5",
+          "amountUsd": -0.0021329
+        },
+        {
+          "requestId": "2c35388699f14a0e96520c6e5f2af5a0",
+          "model": "kimi-k2-5",
+          "amountUsd": -0.0006727
+        }
+      ]
+    },
+    {
+      "passed": true,
+      "processExitCode": 0,
+      "model": "z-ai-glm-5-3-flash",
+      "postId": "0x231d285ce626c23885411143136d466e1519295def15ead21f647789f890f9bb",
+      "localEthereumPayment": {
+        "transactionHash": "0xa0684f4f399c0146573087db6062d0266c2180868cc078955677a52f4537b264",
+        "amountWei": "1000000000000000"
+      },
+      "replyId": "10702114006095608764354821396743303928670278927320369574936189665205184924503",
+      "replyText": "**PR 1:** https://github.com/zac-williamson/aztec_experiments/pull/1 — \"Bok live integration smoke test\" (open, draft)\n\n**Changed file:** `docs/bok-live-smoke.md` (added, +9 lines)\n\n**Summary:** Adds a docs file describing Billboard, an anonymous message board on Aztec where posters deposit ETH via an Ethereum portal for private posting rights, with rate limiting, a moderator role, an LLM-based moderation daemon, passkey-backed accounts, Fee Juice-funded fees, targeting Aztec v5.2.0. The PR body notes it's an automated integration test, not a production change.",
+      "prUrl": "https://github.com/zac-williamson/aztec_experiments/pull/1",
+      "prHead": "37bcdf6099e77b2357b66479eea14f83261c212f",
+      "censored": true,
+      "cleanupSucceeded": true,
+      "inferenceCostUsd": 0.0002818,
+      "providerCharges": [
+        {
+          "requestId": "chatcmpl-a4db46f1cd4991eafa8a46a5452ced13",
+          "model": "z-ai-glm-5-3-flash",
+          "amountUsd": -0.0002017
+        },
+        {
+          "requestId": "chatcmpl-8636ffa5351593bd100109f6905faae3",
+          "model": "z-ai-glm-5-3-flash",
+          "amountUsd": -0.0000801
+        }
+      ]
+    }
+  ],
+  "allLiveInferenceCostUsd": 0.012423499999999997,
+  "veniceCreditRemainingUsd": 4.9875765,
+  "regressionsPassed": 28,
+  "sourceFiles": {
+    "plugins/venice.mjs": "b5071a0e13275eaab6530db44aab780c971b595af28d103333da21fe0709bb97",
+    "plugins/github-tools.mjs": "1e1170ab7406bb56ef74d37bbb8aac27de61de21a7aa668e8bc3277a49c475aa",
+    "plugins/main.mjs": "46b0e6cd03fafb2da2f050d3fde004a1d3f424d66eaa78b1887d84b18fa55def",
+    "plugins/agent.mjs": "d5e53d86e401a1dbf2f9e8a92fe5b5b551e75c6a536591374b3da0c119863f4f",
+    "plugins/bok.mjs": "f278892c1656ae60098eb62753730fb1a60f8902d9447e752f83ebc44cc2382e",
+    "plugins/devnet/test-e2e.mjs": "b3e27ace4f251240fa9cd703ce9511733392a3fa689d792a36c8982d788f7efd",
+    "plugins/devnet/live.mjs": "c8e37f658d7fa5d87b114f0558fa7923681e879f2fb585ff4d499ac50b4748df"
+  },
+  "failuresFound": [
+    "Unprefixed wallet key rejected: normalized locally.",
+    "Legacy x402 SDK envelope: adapted to v2 requirements. Wallet held ETH, so exactly 5 USDC was acquired for the top-up.",
+    "GitHub PR metadata truncated changed files: compact and bound serialized tool response.",
+    "One subsequent Venice HTTP 400 was not reproduced in isolated paid execution or final E2E; provider error details now retained. No automatic retries."
+  ],
+  "limits": [
+    "Exclusive wallet use required for ledger-difference attribution.",
+    "Emergency 540-second test timeout still terminates abruptly.",
+    "Board-revenue conversion to Base USDC remains manual."
+  ]
+}

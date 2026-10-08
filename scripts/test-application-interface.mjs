@@ -1,4 +1,6 @@
 import {loadContractArtifact} from '@aztec/stdlib/abi';
+import {mentions,handleField,packText} from '../plugins/protocol.mjs';
+import {prepareInvocation} from '../plugins/client.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -10,7 +12,7 @@ const source=fs.readFileSync(new URL('../shared/application.js',import.meta.url)
 function fixture(kind='author') {
  let configuration=0,fail=false,result={state:'postable'},subscriber;
  const calls=[],state={aztec:{address:{toString:()=> '1'},secretKey:'private',salt:'salt',raw:{secretKey:'private'}}};
- const saved=new Map();const ctx={structuredClone,localStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)},crypto,TextEncoder,publicOperationFailure:e=>e,window:{walletState:state,billboardConfigStore:{subscribe:f=>subscriber=f},__aztec:{NO_FROM:0},BillboardPublic:{readFeed:async()=>({posts:[]})}},
+ const saved=new Map();const ctx={structuredClone,localStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)},crypto,TextEncoder,publicOperationFailure:e=>e,window:{BillboardPlugins:{mentions:()=>[]},walletState:state,billboardConfigStore:{subscribe:f=>subscriber=f},__aztec:{NO_FROM:0},BillboardPublic:{readFeed:async()=>({posts:[]})}},
   BILLBOARD_ARTIFACT:{},PORTAL_BYTECODE:'',BILLBOARD_PRIVATE_FEE_ARTIFACT:{},_getConfigRevision:()=>configuration,_getPublicConfig:()=>({board:{portalAddress:'portal'},network:{},remoteProver:{url:'https://prover.test'}}),_walletGeneration:0,
   _assertWalletLive:()=>{if(state.invalidated)throw Error('invalidated');},_invalidateWalletContext:()=>state.invalidated=true,
   makeClaimSecretStore:()=>({}),extractInt:v=>v,readBillboardDepositInfo:async()=>({amount:1n,depositChainId:2n}),getL2Timestamp:async()=>100,
@@ -202,4 +204,40 @@ test('restored settlement gives priority to an uncertain Ethereum refund',async(
  f.ctx._getPublicConfig=()=>({network:{chainId:'1',rollupAddress:'rollup',rollupVersion:'1'},board:{contractAddress:'board',portalAddress:'portal'},privateFee:{contractAddress:'fee'}});
  a.createBrowserJournalStorage=()=>({});a.createL2Journal=async()=>({inspectOutcome:async()=>({outcome:'success',operation:JSON.stringify({kind:'withdraw'}),txHash:hash})});a.createEthereumJournal=async({scope})=>({inspectSummary:async()=>scope.board==='board'?{outcome:'unknown',kind:'withdraw',txHash:'ethereum-refund'}:null});
  f.setResult({state:'withdrawal_needs_verification',withdrawTxHash:hash,handles:{aztecNode:{getL1ContractAddresses:async()=>({feeJuicePortalAddress:'feePortal',feeJuiceAddress:'token'})}}});await f.api.run('status');await f.api.readActivity();f.setResult({refundAmount:'1',refundRecipient:f.state.ethAccount});await f.api.resume();assert.equal(f.calls.at(-1).action,'recover-eth');assert(!f.calls.some(c=>c.action==='claim-l1'));
+});
+
+test('posting adapter connects portable plugin APIs without exposing private handles',async()=>{
+ const f=fixture(),values=new Map(),id='0x'+'1'.padStart(64,'0'),receiver='0x'+'2'.padStart(64,'0');
+ const scope={chainId:'31337',rollupVersion:'1',rollupAddress:'0x'+'12'.repeat(20),boardAddress:id};
+ const descriptor={protocol:'billboard-plugin/v2',scope:{...scope,receiver},description:'bok',funding:{protocol:'aztec-escrow-usdc/v1',portalAddress:'0x'+'34'.repeat(20),tokenAddress:'0x'+'56'.repeat(20)}};
+ f.ctx._getPublicConfig=()=>({network:scope,board:{contractAddress:id}});
+ f.ctx.localStorage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)};
+ f.ctx.getBrowserSigner=async()=>({provider:'wallet'});f.ctx.window.__aztec.Fr={fromString:x=>x};
+ const url=packText('https://example.test/descriptor',8);
+ f.setResult({handles:{address:id,contract:{methods:{get_plugin:handle=>{assert.equal(handle,handleField('bok'));return {simulate:async()=>({result:[receiver,true,url.fields,url.length]})};}}}}});
+ await f.api.run('status');f.setResult({postId:id,lastL2TxHash:'post-tx'});
+ f.ctx.getBrowserSigner=async()=>{throw Error('Posting must not request an Ethereum signature');};
+ f.ctx.window.BillboardPlugins={mentions,prepareInvocation:args=>prepareInvocation({...args,loadDescriptor:async()=>descriptor})};
+ const result=await f.api.run('post',{message:'@bok help'});
+ assert.equal(f.calls.at(-1).input.pluginHandle,handleField('bok'));assert.equal(values.size,0);assert.equal(result.postId,id);assert(!('handles' in result));
+});
+
+test('plugin account shares the operation lock and captures proving before asynchronous work',async()=>{
+ const f=fixture();let release,mode='remote';const gate=new Promise(r=>release=r),seen=[];
+ f.ctx.window.BillboardProving.snapshot=()=>mode;
+ f.ctx.makeCallEngine=()=>async(action,_progress,input)=>{seen.push({action,input});await gate;return {lastL2TxHash:'plugin-hash'};};
+ const api=f.ctx.createBillboardApplication();const pending=api.pluginAccount('claim',{handle:'bok'});mode='local';
+ await assert.rejects(api.run('post',{message:'overlap'}),{code:'BB_OPERATION_BUSY'});await assert.rejects(api.pluginAccount('balance',{handle:'bok'}),{code:'BB_OPERATION_BUSY'});
+ release();await pending;assert.equal(seen.length,1);assert.equal(seen[0].input.provingMode,'remote');assert.equal(seen[0].action,'plugin-account');
+ await api.run('post',{message:'next'});assert.equal(seen[1].input.provingMode,'local');assert.equal(seen[1].input.acknowledgeTx,'plugin-hash');
+});
+
+
+test('withdrawal review reports screened cooldown debt and clears expired debt',async()=>{
+ const f=fixture();let nextAllowedTime=200n;
+ f.ctx.window.BillboardConfig={maximumFee:()=>7n};
+ f.ctx.readBillboardDepositInfo=async()=>({amount:1n,depositChainId:2n,lastScreenedIndex:3n,lastRealPostIndex:3n,nextAllowedTime});
+ f.setResult({handles:{contract:{},address:'1'}});await f.api.run('status');
+ const waiting=await f.api.readWithdrawalPlan();assert.equal(waiting.chainTime,100);assert.equal(waiting.readyAt,200);assert.equal(waiting.waitingReason,'Your posting cooldown is still running.');assert.equal(waiting.remaining,0);
+ nextAllowedTime=99n;const ready=await f.api.readWithdrawalPlan();assert.equal(ready.readyAt,99);assert.equal(ready.waitingReason,null);assert.equal(ready.maxScreeningSteps,0);
 });

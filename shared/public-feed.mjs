@@ -16,7 +16,7 @@ export function createPublicFeed({ scope, source, storage, startBlock=1, rangeSi
   scope=validateScope(scope);
   if (![startBlock,rangeSize,pagesPerSync,maxEvents,maxCheckpoints,maxRollbackChecks,timeoutMs].every(integer) ||
       rangeSize<1||rangeSize>1000||pagesPerSync<1||pagesPerSync>20||maxEvents<1||maxCheckpoints<1||maxRollbackChecks<1||timeoutMs<1||timeoutMs>60000) throw fail('Invalid public feed limits.');
-  const key=`public-feed-v2:${scopeKey(scope)}:${startBlock}`;
+  const key=`public-feed-v3:${scopeKey(scope)}:${startBlock}`;
   let state=null,headText=null,loading=null,busy=false;
   let ranges=[],projection=createFeedProjection(fail);
   const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value);

@@ -114,6 +114,15 @@ export function validateFeedEvent(event, expected) {
     text(p.reason, 200, 'flag reason');
     timestamp(p.flaggedAt, 'flag timestamp');
     field(p.policyVersion, 'policy version at moderation');
+  } else if(event.type === 'PluginConfigured') {
+    exact(p,['handle','receiver','enabled','descriptor'],'plugin configuration');
+    nonzeroField(p.handle,'plugin handle');nonzeroField(p.receiver,'plugin receiver');
+    if(typeof p.enabled!=='boolean')throw Error('Invalid plugin enabled state');
+    text(p.descriptor,248,'plugin descriptor');
+  } else if(event.type === 'PluginInvoked') {
+    exact(p,['postId','handle'],'plugin invocation');nonzeroField(p.postId,'post');nonzeroField(p.handle,'handle');
+  } else if(event.type === 'PluginReplyLinked') {
+    exact(p,['postId','parentId','handle'],'plugin reply');nonzeroField(p.postId,'reply');nonzeroField(p.parentId,'parent');nonzeroField(p.handle,'handle');
   } else throw new Error('Unsupported event type');
   return freeze(structuredClone(event));
 }
