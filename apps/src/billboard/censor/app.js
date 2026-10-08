@@ -1,22 +1,42 @@
 const application=createBillboardApplication({kind:'moderator'}),view=BillboardView,element=id=>document.getElementById(id);
 view.header({title:'Moderate board',section:''});view.bindOperation(application,element('operationStatus'));
-let moderator=null,currentPolicy=null,feedBusy=false,generation=0;
+let moderator=null,currentPolicy=null,feedBusy=false,generation=0,connecting=false,initialized=false,nextCursor=null,browsingOlder=false;
 const busy=()=>['working','waiting'].includes(application.operation().status);
 function failure(error,region=element('moderatorStatus')){const safe=publicOperationFailure(error);region.textContent=safe.message;const field=safe.field&&element(safe.field);if(field){if(!region.id)region.id='moderationError';field.setAttribute('aria-invalid','true');field.setAttribute('aria-describedby',region.id);field.focus();}}
-function review(title,content,submit,label='Confirm'){
+function review(title,content,submit,label='Confirm',reviewAgain){
  const reviewedGeneration=generation;
  const dialog=view.element('dialog'),heading=view.element('h2',title),status=view.element('p');status.setAttribute('role','status');dialog.setAttribute('aria-label',title);dialog.dataset.moderationReview='';const confirm=view.element('button',label),cancel=view.element('button','Cancel','secondary');dialog.append(heading,...content,status,confirm,cancel);document.body.append(dialog);dialog.showModal();
- cancel.onclick=()=>{dialog.close();dialog.remove();};dialog.addEventListener('cancel',()=>dialog.remove());confirm.onclick=async()=>{confirm.disabled=true;cancel.disabled=true;try{if(reviewedGeneration!==generation)throw Object.assign(Error('Board changed.'),{code:'BB_ACCOUNT_REPLACEMENT'});const afterClose=await submit();dialog.close();dialog.remove();await refresh();if(typeof afterClose==='function')await afterClose();}catch(error){failure(error,status);element('checkSavedAction').hidden=false;confirm.disabled=false;cancel.disabled=false;}};
+ cancel.onclick=()=>{dialog.close();dialog.remove();};dialog.addEventListener('cancel',()=>dialog.remove());confirm.onclick=async()=>{confirm.disabled=true;cancel.disabled=true;try{if(reviewedGeneration!==generation)throw Object.assign(Error('Board changed.'),{code:'BB_ACCOUNT_REPLACEMENT'});const afterClose=await submit();dialog.close();dialog.remove();await refresh({reset:true});if(typeof afterClose==='function')await afterClose();}catch(error){if(reviewedGeneration!==generation)return;failure(error,status);cancel.disabled=false;if(error.code==='BB_POLICY_CHANGED'&&reviewAgain){confirm.textContent='Review latest rules';confirm.disabled=false;confirm.onclick=()=>{dialog.close();dialog.remove();reviewAgain();};}else{element('checkSavedAction').hidden=false;confirm.disabled=false;}}};
 }
-async function moderate(post){
- try{const policy=await application.readPolicyReview();const content=view.element('p',post.text,'message-text'),label=view.element('label','Reason for removal'),reason=view.element('textarea'),capacity=view.element('p','0 / 200 bytes','small');reason.id='censorResponseText';label.htmlFor=reason.id;reason.oninput=()=>{reason.removeAttribute('aria-invalid');capacity.textContent=new TextEncoder().encode(reason.value).length+' / 200 bytes';};
+async function moderate(post,savedReason=''){
+ const selected=generation;try{const policy=await application.readPolicyReview();if(selected!==generation)return;const content=view.element('p',post.text,'message-text'),label=view.element('label','Reason for removal'),reason=view.element('textarea'),capacity=view.element('p','0 / 200 bytes','small');reason.value=savedReason;reason.id='censorResponseText';label.htmlFor=reason.id;reason.oninput=()=>{reason.removeAttribute('aria-invalid');capacity.textContent=new TextEncoder().encode(reason.value).length+' / 200 bytes';};
  const sameRules=String(post.policyVersion)===policy.version;const explanation=view.element('p','This hides the message from the board. '+(sameRules?'If confirmed before '+new Date(Number(post.flagDeadline)*1000).toLocaleString()+', this removal adds '+(moderator.multiplier-1)+' normal posting intervals when the author’s account next checks it.':'These rules differ from the rules at publication, so no extra waiting-time penalty applies.'),'small');
- review('Review message removal',[content,view.element('p','Current rules: '+policy.text),label,reason,capacity,explanation],()=>application.run('declare-immoral',{postId:post.postId,expectedPolicyVersion:policy.version,censorResponse:reason.value.trim()}),'Remove message');}catch(error){failure(error);}
+ review('Review message removal',[content,view.element('p','Current rules: '+policy.text),label,reason,capacity,explanation],()=>application.run('declare-immoral',{postId:post.postId,expectedPolicyVersion:policy.version,censorResponse:reason.value.trim()}),'Remove message',()=>moderate(post,reason.value));}catch(error){if(selected!==generation)return;failure(error);}
 }
-async function refresh(){if(feedBusy||!_getPublicConfig())return;feedBusy=true;const selected=generation;try{const page=await application.readFeed();if(selected!==generation)return;view.renderMessages(element('billboardFeed'),page.posts,{onModerate:moderator?.isCurrentAccount?moderate:undefined});view.rules(element('boardRules'),page.policies);element('billboardMeta').textContent=page.progress.complete?'':'Loading message history…';if(!page.progress.complete)setTimeout(()=>{if(selected===generation)refresh();},1000);}catch{element('billboardMeta').textContent='Messages could not be refreshed.';}finally{feedBusy=false;}}
-async function connect(){try{await application.run('status');element('checkSavedAction').hidden=!await application.readModeratorRecovery();moderator=await application.readModerator();element('moderatorStatus').textContent=moderator.isCurrentAccount?'You can moderate this board.':'This account does not control moderation for this board.';element('moderatorTools').hidden=!moderator.isCurrentAccount;currentPolicy=await application.readPolicyReview();element('moderationPolicyInput').value=currentPolicy.text;capacity();element('retrySetup').hidden=true;await refresh();}catch(error){failure(error);element('retrySetup').hidden=false;throw error;}}
+async function refresh({older=false,reset=false}={}){
+ if(feedBusy||!_getPublicConfig()||(!older&&!reset&&browsingOlder))return;
+ if(reset){nextCursor=null;browsingOlder=false;}if(older&&!nextCursor)return;
+ feedBusy=true;const selected=generation;element('loadOlder').disabled=true;
+ try{const page=await application.readFeed({cursor:older?nextCursor:null});if(selected!==generation)return;
+  view.renderMessages(element('billboardFeed'),page.posts,{append:older,onModerate:moderator?.isCurrentAccount?moderate:undefined});
+  browsingOlder ||=older;nextCursor=page.nextCursor??null;view.rules(element('boardRules'),page.policies,page.participation);
+  element('loadOlder').hidden=!nextCursor;element('showLatest').hidden=!browsingOlder;
+  element('billboardMeta').textContent=page.progress.complete?'':'Loading message history…';
+  if(!page.progress.complete&&!browsingOlder)setTimeout(()=>{if(selected===generation)refresh();},1000);
+ }catch(error){if(selected!==generation)return;element('billboardMeta').textContent=error.code==='BB_PUBLIC_FEED_CURSOR_STALE'?'The message history changed. Show the latest messages to continue.':'Messages could not be refreshed. Your current view is unchanged.';element('showLatest').hidden=false;}
+ finally{if(selected===generation){feedBusy=false;element('loadOlder').disabled=false;}}
+}
+async function connect(){
+ if(connecting||busy())return;connecting=true;const selected=generation;element('retrySetup').disabled=true;
+ try{await application.run('status');const recovery=await application.readModeratorRecovery(),authority=await application.readModerator(),policy=await application.readPolicyReview();if(selected!==generation)return;
+  moderator=authority;currentPolicy=policy;element('checkSavedAction').hidden=!recovery;
+  element('moderatorStatus').textContent=authority.isCurrentAccount?'You can moderate this board.':'This account does not control moderation for this board.';
+  element('moderatorTools').hidden=!authority.isCurrentAccount;element('moderationPolicyInput').value=policy.text;capacity();element('retrySetup').hidden=true;await refresh({reset:true});
+ }catch(error){if(selected!==generation)return;failure(error);element('retrySetup').hidden=false;throw error;}
+ finally{if(selected===generation){connecting=false;element('retrySetup').disabled=false;}}
+}
 async function reviewSavedAction(replace=false){
- try{const saved=await application.readModeratorRecovery();element('checkSavedAction').hidden=!saved;if(!saved){element('moderatorStatus').textContent='Saved action checked. You can continue.';return;}
+ const selected=generation;try{const saved=await application.readModeratorRecovery();if(selected!==generation)return;element('checkSavedAction').hidden=!saved;if(!saved){element('moderatorStatus').textContent='Saved action checked. You can continue.';return;}
  if(saved.action==='other-board-operation'){element('moderatorStatus').textContent='Finish the saved board operation from Write → Account → Activity.';return;}
  if(replace&&!saved.canReplace){element('moderatorStatus').textContent='This action cannot be recreated under the current rules or authority. You can still check its original transaction.';return;}
  const content=[view.element('p','Current rules: '+saved.currentPolicy),view.element('p',saved.txHash,'account-address')];
@@ -24,19 +44,25 @@ async function reviewSavedAction(replace=false){
  if(saved.action==='set-moderation-policy')content.push(view.element('p','New rules: '+saved.moderationPolicy,'policy-text'));
  if(saved.action==='transfer-censor')content.push(view.element('p','Transfer authority to '+saved.newCensor+'. Your account will lose moderator access.','account-address'));
  content.push(view.element('p',replace?'Approve a new proof of this same action under the rules shown above.':'This checks or resends the original transaction. It does not create a new proof.'));
- review(replace?'Review replacement proof':'Review saved action',content,async()=>{try{const result=await application.resumeModeratorRecovery(saved.id,replace);await connect();element('moderatorStatus').textContent=result.state==='transaction_reverted'?'The transaction was rejected by the network. Review a new action if needed.':'Saved action completed.';}catch(error){if(error.code==='BB_MODERATOR_REVIEW_REQUIRED'){return()=>reviewSavedAction(true);}throw error;}},replace?'Approve new proof':'Resume saved transaction');
- }catch(error){failure(error);}
+ review(replace?'Review replacement proof':'Review saved action',content,async()=>{try{const result=await application.resumeModeratorRecovery(saved.id,replace);if(selected!==generation)return;await connect();if(selected!==generation)return;element('moderatorStatus').textContent=result.state==='transaction_reverted'?'The transaction was rejected by the network. Review a new action if needed.':'Saved action completed.';}catch(error){if(error.code==='BB_MODERATOR_REVIEW_REQUIRED'){return()=>reviewSavedAction(true);}throw error;}},replace?'Approve new proof':'Resume saved transaction');
+ }catch(error){if(selected!==generation)return;failure(error);}
 }
 element('checkSavedAction').onclick=()=>reviewSavedAction();
 function capacity(){element('moderationPolicyInput').removeAttribute('aria-invalid');element('policyCapacity').textContent=new TextEncoder().encode(element('moderationPolicyInput').value).length+' / 1,488 bytes';}
-element('moderationPolicyInput').oninput=capacity;element('retrySetup').onclick=()=>connect().catch(()=>{});
-element('reviewPolicy').onclick=()=>{let next;try{next=application.reviewPolicyChange(element('moderationPolicyInput').value.trim()).moderationPolicy;}catch(error){failure(error);return;}review('Review board rules',[view.element('h3','Current'),view.element('p',currentPolicy?.text||'','policy-text'),view.element('h3','New'),view.element('p',next,'policy-text')],async()=>{await application.run('set-moderation-policy',{moderationPolicy:next,expectedPolicyVersion:currentPolicy.version});currentPolicy=await application.readPolicyReview();},'Publish rules');};
-element('reviewTransfer').onclick=()=>{try{const {address}=application.reviewTransfer(element('newCensorAddr').value.trim());review('Transfer moderation',[view.element('p',address,'account-address'),view.element('p','This account will control the board. Your current account will lose moderation authority. Make sure the recipient gave you this exact Aztec address.')],async()=>{await application.run('transfer-censor',{newCensor:address});await connect();},'Transfer authority');}catch(error){failure(error);}};
-function initialize(){if(!window.__aztec?.createPXE){waitForBundle(initialize);return;}initWalletButtons('walletButtonsContainer',{requireEth:false,statusId:'setupStatus',canEndSession:()=>!busy(),onReady:connect,onChange:state=>{if(state.invalidated){generation++;moderator=null;element('moderatorTools').hidden=true;for(const button of element('billboardFeed').querySelectorAll('button'))button.remove();for(const dialog of document.querySelectorAll('[data-moderation-review]')){dialog.close();dialog.remove();}refresh();}}});}
-function configurationChanged(snapshot){
- generation++;moderator=null;currentPolicy=null;feedBusy=false;element('moderatorTools').hidden=true;element('moderatorStatus').textContent='';element('billboardFeed').replaceChildren();for(const dialog of document.querySelectorAll('[data-moderation-review]')){dialog.close();dialog.remove();}
- if(snapshot.config){const c=snapshot.config;history.replaceState(null,'','#network='+[c.network.chainId,c.network.rollupAddress,c.network.rollupVersion].join(':')+'&board='+c.board.contractAddress);view.identity(c);refresh();}
+element('moderationPolicyInput').oninput=capacity;element('retrySetup').onclick=()=>{if(window.BillboardAccount.snapshot().invalidated)window.reloadSelectedBoard().catch(failure);else connect().catch(()=>{});};
+async function reviewPolicy(){
+ const selected=generation;try{const next=application.reviewPolicyChange(element('moderationPolicyInput').value.trim()).moderationPolicy,policy=await application.readPolicyReview();if(selected!==generation)return;
+  currentPolicy=policy;review('Review board rules',[view.element('h3','Current'),view.element('p',policy.text,'policy-text'),view.element('h3','New'),view.element('p',next,'policy-text')],async()=>{await application.run('set-moderation-policy',{moderationPolicy:next,expectedPolicyVersion:policy.version});currentPolicy=await application.readPolicyReview();},'Publish rules',reviewPolicy);
+ }catch(error){if(selected!==generation)return;failure(error);}
 }
-window.billboardConfigStore.subscribe(configurationChanged);configurationChanged(window.billboardConfigStore.snapshot());
+element('reviewPolicy').onclick=reviewPolicy;
+element('loadOlder').onclick=()=>refresh({older:true});element('showLatest').onclick=()=>refresh({reset:true});
+element('reviewTransfer').onclick=()=>{try{const {address}=application.reviewTransfer(element('newCensorAddr').value.trim());review('Transfer moderation',[view.element('p',address,'account-address'),view.element('p','This account will control the board. Your current account will lose moderation authority. Make sure the recipient gave you this exact Aztec address.')],async()=>{await application.run('transfer-censor',{newCensor:address});await connect();},'Transfer authority');}catch(error){failure(error);}};
+function initialize(){if(initialized)return;if(!window.__aztec?.createPXE){waitForBundle(initialize);return;}initialized=true;initWalletButtons('walletButtonsContainer',{requireEth:false,statusId:'setupStatus',canEndSession:()=>!busy(),onReady:connect,onChange:state=>{if(state.invalidated){generation++;moderator=null;element('moderatorTools').hidden=true;for(const button of element('billboardFeed').querySelectorAll('button'))button.remove();for(const dialog of document.querySelectorAll('[data-moderation-review]')){dialog.close();dialog.remove();}refresh();}}});}
+function configurationChanged(snapshot,initial=false){
+ generation++;moderator=null;currentPolicy=null;feedBusy=false;connecting=false;nextCursor=null;browsingOlder=false;element('loadOlder').hidden=true;element('showLatest').hidden=true;element('checkSavedAction').hidden=true;element('retrySetup').hidden=!snapshot.config||!window.BillboardAccount.snapshot().address;element('retrySetup').disabled=false;element('retrySetup').textContent=window.BillboardAccount.snapshot().invalidated?'Reload and connect to selected board':'Connect to selected board';element('moderatorTools').hidden=true;element('moderatorStatus').textContent='';element('billboardFeed').replaceChildren();for(const dialog of document.querySelectorAll('[data-moderation-review]')){dialog.close();dialog.remove();}
+ if(snapshot.config){const c=snapshot.config;window.rememberSelectedBoard(c);view.identity(c);refresh();initialize();}else{view.identity(null);if(!initial)window.forgetSelectedBoard();}
+}
+window.billboardConfigStore.subscribe(configurationChanged);configurationChanged(window.billboardConfigStore.snapshot(),true);
 setInterval(()=>{if(!document.hidden)refresh();},15000);
-initialize();
+window.initializeSelectedBoard(initialize);

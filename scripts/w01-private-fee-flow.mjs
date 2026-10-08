@@ -5,6 +5,7 @@ import path from 'node:path';
 import {getFeeJuiceBalance} from '@aztec/aztec.js/utils';
 import {Contract} from '@aztec/aztec.js/contracts';
 import {GasFees} from '@aztec/stdlib/gas';
+import {estimatePrivateFeeTransaction} from '../shared/private-fee-estimation.mjs';
 import {preparePrivateFeePayment} from '../shared/private-fee-client.mjs';
 import {bridgePrivateFeeCredit} from './w01-private-funding.mjs';
 export async function prepareW01PrivateFees({node,preparation,l1Client,directory,fundingDirectory,rpcUrl,mineL1,standalone=false,persistentDirectory,gasSettings,reportStage:mark}){
@@ -23,8 +24,9 @@ export async function prepareW01PrivateFees({node,preparation,l1Client,directory
     const privateFeeAction=async({wallet:actionWallet,owner,interaction})=>{
       assert(owner.equals(author.address));
       const prepared=await preparePrivateFeePayment({wallet:actionWallet,node,owner,privateFeeAddress:instance.address,privateFeeArtifact:raw,expectedChainId:31337,expectedVersion:info.rollupVersion,gasSettings:gas, ...(first?{claim:funded.claim}:{})});
-      first=false;allocated+=BigInt(prepared.metadata.maximumFee);
-      return {maximumFee:prepared.metadata.maximumFee,interaction,options:{from:owner,additionalScopes:[owner],fee:{paymentMethod:prepared.paymentMethod,gasSettings:prepared.gasSettings}},expectedFeePayer:instance.address};
+      const estimated=await estimatePrivateFeeTransaction({wallet:actionWallet,node,interaction,prepared,from:owner});
+      first=false;allocated+=estimated.reservation;
+      return {maximumFee:String(estimated.reservation),interaction:{request:async()=>estimated.payload},options:{from:owner,additionalScopes:[owner],fee:{gasSettings:estimated.gasSettings}},expectedFeePayer:instance.address};
     };
     if(standalone){const {proveAndIncludePrivateFeeStandalone}=await import('./w01-private-fee-standalone.mjs');observation.standalone=await proveAndIncludePrivateFeeStandalone({wallet:setup.wallet,owner:author.address,privateFeeAction,node,mineL1,mark});}
     const verify=async(fees,netOtherPoolChange=0n)=>{

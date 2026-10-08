@@ -1,24 +1,27 @@
 // Shared presentation of verified public board data. No wallet or SDK dependencies.
 (function(root){
   const el=(tag,text,cls)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(cls)node.className=cls;return node;};
-  function url(page,fragment=location.hash){const target=new URL(page,location.href);target.hash=fragment;return target;}
+  function url(page,fragment=location.hash){const target=new URL(page,location.href);target.hash=fragment;if(target.origin===location.origin&&(location.pathname.endsWith('/censor.html')||new URL(location.href).searchParams.get('return')==='moderator')&&['feed.html','fee-juice.html','user.html'].includes(target.pathname.split('/').pop()))target.searchParams.set('return','moderator');return target;}
   function header({title='Message board',section='Read'}={}){
     const head=el('header',undefined,'site-header');head.id='siteHeader';
     const brand=el('a','Message boards','brand');brand.href='boards.html';
     const nav=el('nav');nav.setAttribute('aria-label','Main navigation');
     for(const [label,page]of [['Read','feed.html'],['Write','user.html']]){const link=el('a',label);link.href=url(page);link.dataset.boardLink='';if(label===section)link.setAttribute('aria-current','page');nav.append(link);}
-    const share=el('button','Copy board link','secondary');share.type='button';share.onclick=async()=>{const target=url('feed.html');target.search='';try{await navigator.clipboard.writeText(target.href);share.textContent='Link copied';}catch{share.textContent='Copy unavailable';}};nav.append(share);
+    const share=el('button','Copy board link','secondary');share.type='button';share.dataset.copyBoardLink='';share.onclick=async()=>{const target=url('feed.html');target.search='';try{await navigator.clipboard.writeText(target.href);share.textContent='Link copied';}catch{share.textContent='Copy unavailable';}};nav.append(share);if(new URL(location.href).searchParams.get('return')==='moderator'){const back=el('a','Return to moderation');back.href=url('censor.html');nav.append(back);}
     const account=el('div');account.id='accountSlot';head.append(brand,nav,account);document.body.prepend(head);
     const notice=el('p','Testnet · Test funds only','testnet-notice');head.after(notice);
     document.querySelector('h1')?.replaceChildren(document.createTextNode(title));return head;
   }
+  let identityVersion=0;
   function identity(config){
-    const address=config?.board?.contractAddress;if(!address)return;
+    const version=++identityVersion,address=config?.board?.contractAddress;
+    for(const anchor of document.querySelectorAll('[data-board-link]')){const page=anchor.dataset.boardPage||anchor.getAttribute('href');if(page)anchor.dataset.boardPage=page;if(address)anchor.href=url(page,location.hash);else anchor.removeAttribute('href');}
+    const share=document.querySelector('[data-copy-board-link]');if(share)share.disabled=!address;
+    if(!address){const heading=document.querySelector('[data-board-title]');if(heading)heading.textContent='Message board';document.title='Message board';return;}
     const notice=document.querySelector('.testnet-notice');if(notice)notice.textContent=String(config.network.chainId)==='11155111'?'Testnet · Test funds only':String(config.network.chainId)==='1'?'Ethereum mainnet':'Ethereum network '+config.network.chainId;
     const name='Board '+address.slice(2,8);const heading=document.querySelector('[data-board-title]');if(heading)heading.textContent=name;
     document.title=name+' · Message board';
-    root.BillboardCatalog?.load(config.network).then(labels=>{const label=labels.find(x=>x.address===address);if(label&&heading){heading.textContent=label.name;document.title=label.name;}}).catch(()=>{});
-    for(const anchor of document.querySelectorAll('[data-board-link]'))anchor.href=url(anchor.getAttribute('href'),location.hash);
+    root.BillboardCatalog?.load(config.network).then(labels=>{const label=labels.find(x=>x.address===address);if(version===identityVersion&&label&&heading){heading.textContent=label.name;document.title=label.name;}}).catch(()=>{});
   }
   function renderMessages(container,posts,{append=false,onModerate}={}){
     const previous=new Map([...container.querySelectorAll('article[data-post-id]')].map(node=>[node.dataset.postId,node]));
@@ -40,7 +43,14 @@
     else {const active=document.activeElement,card=active?.closest('article[data-post-id]'),focusIndex=card?[...card.querySelectorAll('a,button,summary')].indexOf(active):-1;container.replaceChildren(...nodes);if(active?.isConnected)active.focus({preventScroll:true});else if(card){const replacement=nodes.find(node=>node.dataset.postId===card.dataset.postId);const target=replacement?.querySelectorAll('a,button,summary')[focusIndex]||replacement?.querySelector('a');target?.focus({preventScroll:true});}}
     if(!container.children.length)container.append(el('p','No messages yet. Be the first to write one.','empty-state'));
   }
-  function rules(container,policies){const text=policies?.at(-1)?.text;container.hidden=!text;if(text){let body=container.querySelector('[data-rules-text]');if(!body){container.replaceChildren(el('summary','Board rules'));body=el('p',undefined,'policy-text');body.dataset.rulesText='';container.append(body);}body.textContent=text;}}
+  function rules(container,policies,participation){
+    const text=policies?.at(-1)?.text;container.hidden=!text&&!participation;
+    let body=container.querySelector('[data-rules-text]');if(!body){container.replaceChildren(el('summary','Board rules'));body=el('p',undefined,'policy-text');body.dataset.rulesText='';container.append(body);}body.textContent=text||'No written rules published.';
+    let terms=container.querySelector('[data-participation]');if(!terms){terms=el('p',undefined,'small');terms.dataset.participation='';container.append(terms);}terms.hidden=!participation;
+    if(participation){const eth=value=>{const digits=String(value).padStart(19,'0');return digits.slice(0,-18)+'.'+digits.slice(-18).replace(/0+$/,'');};
+      terms.textContent='Refundable deposit: '+eth(participation.minDeposit)+'–'+eth(participation.maxDeposit)+' ETH. At the minimum deposit, one posting interval is '+participation.baseCooldown+' seconds; larger deposits shorten it. Save up to '+participation.maxSaveUp+' intervals for consecutive posts. A removal confirmed within '+participation.censorWindow+' seconds of publication under the same rules adds '+(Number(participation.kMultiplier)-1)+' posting intervals when your account next checks it.';
+    }
+  }
   function bindOperation(application,container){
     const status=el('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
     const hint=el('p',undefined,'small');const pause=el('button','Pause and continue later','secondary');pause.onclick=()=>{if(application.requestPause()){pause.disabled=true;pause.textContent='Pausing…';}};const details=el('details');details.append(el('summary','Details'));

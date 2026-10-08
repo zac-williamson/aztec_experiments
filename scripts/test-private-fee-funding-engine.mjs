@@ -18,7 +18,7 @@ function harness(){
   getContractInstanceFromInstantiationParams:async()=>({address:owner}),derivePrivateFeeAddress:async()=>payer,createAztecNodeClient:()=>node,
   computePartialAddress:async()=>Fr.ONE,createPXE:async()=>pxe,AccountManager:{create:async()=>({address:owner})},
   recoverPrivateFeeClaim:async input=>{calls.push(['recover',input]);return claim;},
-  preparePrivateFeePayment:async input=>{calls.push(['prepare',input]);return {paymentMethod:'private',gasSettings:{}};},
+  sendPrivateFeeTransaction:async ({interaction,prepared,from})=>interaction.send({from,fee:{paymentMethod:prepared.paymentMethod,gasSettings:prepared.gasSettings}}),preparePrivateFeePayment:async input=>{calls.push(['prepare',input]);return {paymentMethod:'private',gasSettings:{}};},
   BatchCall:class{constructor(w,actions){assert.equal(w,wallet);assert.equal(actions.length,0);}send=async opts=>{calls.push(['send',opts]);return {receipt:{status:'checkpointed'}};}}
  };
  const journal={assertCanStart:async()=>calls.push('journal-preflight'),setOperation:operation=>calls.push(['operation',operation]),lastTxHash:'saved-hash'};

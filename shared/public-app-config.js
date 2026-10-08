@@ -35,17 +35,18 @@
   function parse(text){check(typeof text==='string'&&new TextEncoder().encode(text).length<=MAX_BYTES,'Configuration exceeds size limit');let value;try{value=JSON.parse(text);}catch{throw new Error('Invalid configuration JSON');}return validate(value);}
   function maximumFee(config){const f=validate(config).privateFee;if(!f)return null;const g=f.gasSettings;return (BigInt(g.gasLimits.daGas)*BigInt(g.maxFeesPerGas.feePerDaGas)+BigInt(g.gasLimits.l2Gas)*BigInt(g.maxFeesPerGas.feePerL2Gas)).toString();}
   function createStore(options={}){
+    const pageOnly=options.persistence==='page';
     let storage=options.storage,eventTarget=options.eventTarget??root,accessError=null;
-    if(!Object.hasOwn(options,'storage'))try{storage=root.localStorage;}catch{accessError='Public configuration storage is unavailable';}
+    if(!pageOnly&&!Object.hasOwn(options,'storage'))try{storage=root.localStorage;}catch{accessError='Public configuration storage is unavailable';}
     let revision=0,state;const listeners=new Set();
-    function update(config,error,persisted){state=freeze({config,revision:++revision,error,persisted});for(const fn of listeners)try{fn(state);}catch{}return state;}
+    function update(config,error,persisted){state=freeze({config,revision:++revision,error,persisted,persistence:pageOnly?'page':'device'});for(const fn of listeners)try{fn(state);}catch{}return state;}
     function load(text,persisted){try{return update(text===null?null:parse(text),null,persisted);}catch{return update(null,'Stored public configuration is invalid; import it again',false);}}
-    try{if(!storage)throw new Error();load(storage.getItem(STORAGE_KEY),true);}catch{update(null,accessError??'Public configuration storage is unavailable',false);}
+    try{if(pageOnly)update(null,null,false);else {if(!storage)throw new Error();load(storage.getItem(STORAGE_KEY),true);}}catch{update(null,accessError??'Public configuration storage is unavailable',false);}
     function onStorage(event){if(event.storageArea&&event.storageArea!==storage)return;if(event.key!==STORAGE_KEY&&event.key!==null)return;load(event.key===null?null:event.newValue,true);}
-    eventTarget?.addEventListener?.('storage',onStorage);
+    if(!pageOnly)eventTarget?.addEventListener?.('storage',onStorage);
     return Object.freeze({snapshot:()=>state,
-      install(value){const config=validate(value);let error=null,persisted=true;try{storage.setItem(STORAGE_KEY,JSON.stringify(config));}catch{persisted=false;error='Configuration is active for this page only; storage is unavailable';}return update(config,error,persisted);},
-      clear(){let error=null,persisted=true;try{storage.removeItem(STORAGE_KEY);}catch{persisted=false;error='Configuration cleared for this page only; saved storage could not be removed';}return update(null,error,persisted);},
+      install(value){const config=validate(value);if(pageOnly)return update(config,null,false);let error=null,persisted=true;try{storage.setItem(STORAGE_KEY,JSON.stringify(config));}catch{persisted=false;error='Configuration is active for this page only; storage is unavailable';}return update(config,error,persisted);},
+      clear(){if(pageOnly)return update(null,null,false);let error=null,persisted=true;try{storage.removeItem(STORAGE_KEY);}catch{persisted=false;error='Configuration cleared for this page only; saved storage could not be removed';}return update(null,error,persisted);},
       assertCurrent(snapshot){check(snapshot===state,'Board configuration changed; restart this operation');check(state.config!==null,'Import a board configuration first');return state.config;},
       subscribe(fn){check(typeof fn==='function','Subscriber must be a function');listeners.add(fn);return ()=>listeners.delete(fn);},
       destroy(){eventTarget?.removeEventListener?.('storage',onStorage);listeners.clear();}

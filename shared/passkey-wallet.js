@@ -20,7 +20,7 @@
   }
   async function derive(prf, ethereumAccount) {
     const bytes = new Uint8Array(prf);
-    if (bytes.byteLength !== 32) throw Error('This passkey does not support private account recovery (PRF).');
+    if (bytes.byteLength !== 32) throw Object.assign(Error('This passkey does not support private account recovery (PRF).'),{code:'BB_PASSKEY_PRF_UNSUPPORTED'});
     const identity = account(ethereumAccount);
     const key = await crypto.subtle.importKey('raw', bytes, 'HKDF', false, ['deriveBits']);
     async function deriveField(label) {
@@ -66,7 +66,7 @@
     if (create && !output && credential.getClientExtensionResults().prf?.enabled === true) {
       return ceremony(identity, {credentialId:id});
     }
-    if (!output) throw Object.assign(Error('Passkey PRF unavailable.'),{code:'BB_PASSKEY_UNSUPPORTED'});
+    if (!output) throw Object.assign(Error('This passkey does not support private account recovery (PRF). Use a PRF-capable passkey.'),{code:'BB_PASSKEY_PRF_UNSUPPORTED'});
     try { return {wallet:await derive(output,identity),credentialId:id}; }
     finally { new Uint8Array(output).fill(0); }
   }

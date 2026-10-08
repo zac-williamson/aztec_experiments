@@ -47,11 +47,14 @@ export async function connectPublicFeed({nodeUrl,ethereumUrl,portalAddress,metad
   // by their hash. Config consists of ten scalar fields in declaration order.
   const read=async slot=>word(await node.getPublicStorageAt({hash:head.blockHash},scope.boardAddress,field(slot)));
   const base=BigInt(metadata.storage.config);
-  const [boundPortal,configChain,configRollup,configVersion,censorWindow]=await Promise.all([read(metadata.storage.portal),read(base),read(base+1n),read(base+2n),read(base+7n)]);
+  const [boundPortal,configChain,configRollup,configVersion,censorWindow,minDeposit,maxDeposit,baseCooldown,kMultiplier,maxSaveUp]=await Promise.all([read(metadata.storage.portal),read(base),read(base+1n),read(base+2n),read(base+7n),read(base+3n),read(base+4n),read(base+5n),read(base+6n),read(base+8n)]);
   if(address(boundPortal)!==portalAddress||configChain!==l1ChainId||configRollup!==rollup||configVersion!==version)throw incompatible('Board and portal configuration do not agree.');
+  if(minDeposit<=0n||maxDeposit<minDeposit||maxDeposit>=1n<<96n||baseCooldown<=0n||baseCooldown>=1n<<32n||kMultiplier<1n||kMultiplier>=1n<<16n||maxSaveUp<1n||maxSaveUp>=1n<<16n||censorWindow<=0n||censorWindow>=1n<<32n)throw incompatible('Invalid participation terms.');
+  const moderator=field(await read(metadata.storage.censor));
+  const participation=Object.freeze(Object.fromEntries(Object.entries({minDeposit,maxDeposit,baseCooldown,kMultiplier,maxSaveUp,censorWindow}).map(([key,value])=>[key,String(value)])));
   const source=await createPublicFeedSource({node,scope,artifact:metadata.artifact,eventTags:metadata.eventTags,censorWindow:String(censorWindow)});
   const feed=createPublicFeed({scope,source,storage});
-  return Object.freeze({feed,scope,censorWindow:String(censorWindow)});
+  return Object.freeze({feed,scope,censorWindow:String(censorWindow),participation,moderator});
 }
 let publicDatabase;
 export function browserPublicFeedStorage(){

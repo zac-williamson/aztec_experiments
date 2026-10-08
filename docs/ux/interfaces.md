@@ -27,6 +27,28 @@ The user interface renders user tasks; it does not own a transaction lifecycle.
 - User-visible progress comes from typed stages, never from parsing console output. Diagnostic reports whitelist public operation metadata and exclude signing keys, witnesses and claim secrets.
 - Deposit recovery derives a domain-separated secret from the private account and exact Ethereum nonce/scope. Fresh-device lookup validates canonical receipts and checkpoints only public search progress. Older random-secret deposits still require their original recovery material.
 
+## Fee estimation boundary
+
+`preparePrivateFeePayment` verifies the canonical payer and returns available private
+credit plus an immutable payment intent. It does not require that credit to cover
+the board's entire configured gas ceiling. `estimatePrivateFeeTransaction` consumes
+that intent and the application's execution payload through a simulation interface.
+It returns the exact payload, reservation and gas settings used for the transaction.
+The wallet preserves those settings and validates the full execution again before
+proving. The fee contract checks that the reservation covers the signed maximum;
+its teardown returns the unused amount privately.
+
+Zero fee prices are used only for local, private-only measurement. Public simulation
+uses real configured prices, bounded by network and protocol gas limits. A narrowly
+identified refund out-of-gas result may inform a subsequent full simulation; it is
+never accepted as successful execution. A failed allocation search is distinct from
+insufficient credit and cannot trigger another Ethereum funding payment.
+
+A new-credit funding suggestion remains conservative because an exact bootstrap
+claim requires a real bridge witness. This funding policy is separate from the
+balance needed to spend existing credit. The UI must not present the operator's
+ceiling as an actual transaction fee.
+
 ## Verification boundaries
 
 Unit/integration tests exercise the real application and engine boundaries with explicit ports. Browser presentation tests run actual templates and controllers with application doubles; they make no cryptographic or testnet claim. The separate hosted acceptance run uses disposable real MetaMask, real Sepolia transactions and native remote proofs, and independently verifies canonical receipts and the public post event.

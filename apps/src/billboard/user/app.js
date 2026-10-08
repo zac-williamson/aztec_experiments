@@ -4,22 +4,23 @@ const view=window.BillboardView, element=id=>document.getElementById(id);
 view.header({section:'Write'});
 view.bindOperation(application,element('operationStatus'));
 let accountState=null,terms=null,ready=false,invalidated=false,operationBusy=false,feedBusy=false,feedSignature='',pendingFeed=null;
-let poller=null,readinessBusy=false,withdrawalPlan=null;
+let poller=null,readinessBusy=false,withdrawalPlan=null,draftRevision=0,pendingDraft=null,loadedDraftKey=null,gasEstimateRevision=0;
 const hidden=(id,value)=>element(id).hidden=value;
 const isBusy=()=>['working','waiting'].includes(application.operation().status);
 function showFailure(error){element('setupStatus').textContent=publicOperationFailure(error).message;element('setupStatus').className='error';hidden('retrySetup',!window.BillboardAccount.snapshot().address);}
 function draftKey(){return 'board-draft:'+_getPublicConfig()?.board.contractAddress+':'+(window.BillboardAccount.snapshot().address||'guest');}
-function updateDraft(save=false){const bytes=new TextEncoder().encode(element('msgText').value).length;element('messageCapacity').textContent=bytes+' / 992 bytes';element('messageError').textContent=bytes>992?'Shorten this message before posting.':'';element('msgText').setAttribute('aria-invalid',String(bytes>992));element('postBtn').disabled=invalidated||operationBusy||!ready||bytes===0||bytes>992;if(!save)return;try{localStorage.setItem(draftKey(),element('msgText').value);element('draftState').textContent='Draft saved in this browser';}catch{element('draftState').textContent='Draft is only kept while this page is open';}}
-function loadDraft(){try{element('msgText').value=localStorage.getItem(draftKey())||'';}catch{}updateDraft();}
+function updateDraft(save=false){if(save)draftRevision++;const bytes=new TextEncoder().encode(element('msgText').value).length;element('messageCapacity').textContent=bytes+' / 992 bytes';element('messageError').textContent=bytes>992?'Shorten this message before posting.':'';element('msgText').setAttribute('aria-invalid',String(bytes>992));element('postBtn').disabled=invalidated||operationBusy||!ready||bytes===0||bytes>992;if(!save)return;try{localStorage.setItem(draftKey(),element('msgText').value);element('draftState').textContent='Draft saved in this browser';}catch{element('draftState').textContent='Draft is only kept while this page is open';}}
+function loadDraft(){const key=draftKey();if(loadedDraftKey===key)return;loadedDraftKey=key;draftRevision++;try{element('msgText').value=localStorage.getItem(draftKey())||'';}catch{}updateDraft();}
 function renderAmount(){if(!terms)return;const amount=terms.minWei+(terms.maxWei-terms.minWei)*BigInt(element('depositAmount').value)/1000n;const value=ethers.formatEther(amount)+' ETH';element('depositSelection').textContent=value;element('depositCost').textContent=value;const seconds=(terms.baseCooldown*terms.minWei+amount-1n)/amount;element('depositCooldown').textContent='Post about every '+seconds+' seconds.';element('depositAmount').setAttribute('aria-valuetext',value+'; '+seconds+' seconds between posts');}
-async function refreshGasEstimate(){const amount=selectedAmount();element('depositGas').textContent='Calculating…';try{const quote=await application.estimateDepositGas(amount);if(selectedAmount()!==amount)return;const eth=Number(ethers.formatEther(quote.maximumGasCost));element('depositGas').textContent=(eth<0.00000001?'<0.00000001':eth.toFixed(8))+' ETH at current fee limits';}catch{if(selectedAmount()===amount)element('depositGas').textContent='Estimate unavailable; your wallet will show the fee before approval.';}}
+async function refreshGasEstimate(){const quotedTerms=terms,revision=++gasEstimateRevision;if(!quotedTerms||invalidated)return;const amount=selectedAmount(),current=()=>terms===quotedTerms&&!invalidated&&revision===gasEstimateRevision&&selectedAmount()===amount;element('depositGas').textContent='Calculating…';try{const quote=await application.estimateDepositGas(amount);if(!current())return;const eth=Number(ethers.formatEther(quote.maximumGasCost));element('depositGas').textContent=(eth<0.00000001?'<0.00000001':eth.toFixed(8))+' ETH at current fee limits';}catch{if(current())element('depositGas').textContent='Estimate unavailable; your wallet will show the fee before approval.';}}
 function selectedAmount(){return ethers.formatEther(terms.minWei+(terms.maxWei-terms.minWei)*BigInt(element('depositAmount').value)/1000n);}
 async function presentAccount(result){
-  accountState=result;element('setupStatus').textContent='';hidden('connectPanel',true);hidden('depositPanel',result.state!=='zero_balance_need_deposit');hidden('composer',result.state!=='postable');hidden('provingSettings',false);hidden('activityPanel',false);
+  accountState=result;element('setupStatus').textContent='';hidden('connectPanel',true);hidden('depositPanel',true);terms=null;element('depositBtn').disabled=true;hidden('composer',result.state!=='postable');hidden('provingSettings',false);hidden('activityPanel',false);
   if(result.state==='zero_balance_need_deposit'){
     terms=await application.readDepositTerms();element('depositAmount').disabled=terms.minWei===terms.maxWei;
     element('depositLimits').textContent=ethers.formatEther(terms.minWei)+'–'+ethers.formatEther(terms.maxWei)+' ETH';renderAmount();refreshGasEstimate();
     element('feeCost').textContent=Number(ethers.formatEther(application.fundingQuote().fundingAmount)).toFixed(2)+' AZTEC';
+    hidden('depositPanel',false);element('depositBtn').disabled=isBusy()||invalidated;
   }
   if(result.state==='postable'){await refreshReadiness();loadDraft();}
   if(result.state==='withdrawal_needs_verification'){hidden('withdrawPanel',false);element('withdrawSummary').textContent='Your withdrawal is already recorded. Continue to check settlement and return your ETH.';element('withdrawConfirm').textContent='Continue withdrawal';withdrawalPlan=null;}
@@ -41,13 +42,19 @@ async function refreshReadiness(){
   catch{ready=false;element('postCountdown').textContent='Could not check posting availability. We will check again shortly.';updateDraft();}finally{readinessBusy=false;}
 }
 async function post(){
-  element('postResult').textContent='';
-  try{const result=await application.run('post',{message:element('msgText').value.trim()});element('msgText').value='';updateDraft(true);element('postResult').textContent='Message posted. ';if(result.postId){const link=view.element('a','View your message');const url=view.url('feed.html');url.searchParams.set('message',result.postId);link.href=url;element('postResult').append(link);}await refreshReadiness();await refreshMessages(true);await refreshActivity();}
+  element('postResult').textContent='';const message=element('msgText').value.trim();pendingDraft={revision:draftRevision,key:draftKey()};
+  try{const result=await application.run('post',{message});presentPost(result);await refreshReadiness();await refreshMessages(true);await refreshActivity();}
   catch(error){element('messageError').textContent=publicOperationFailure(error).message;hidden('resumeOperation',false);}
+}
+function presentPost(result){
+ const unchanged=pendingDraft&&pendingDraft.revision===draftRevision&&pendingDraft.key===draftKey();
+ if(unchanged){element('msgText').value='';updateDraft(true);}pendingDraft=null;
+ element('postResult').textContent='Message posted. '+(!unchanged&&element('msgText').value?'Your current draft is still saved. ':'');
+ if(result.postId){const link=view.element('a','View your message');const target=view.url('feed.html');target.searchParams.set('message',result.postId);link.href=target;element('postResult').append(link);}
 }
 async function refreshMessages(apply=false){
   if(feedBusy||!_getPublicConfig())return;feedBusy=true;
-  try{const page=await application.readFeed();const signature=JSON.stringify(page.posts);view.rules(element('boardRules'),page.policies);
+  try{const page=await application.readFeed();const signature=JSON.stringify(page.posts);view.rules(element('boardRules'),page.policies,page.participation);
     if(!feedSignature||apply){view.renderMessages(element('billboardFeed'),page.posts);feedSignature=signature;pendingFeed=null;hidden('newMessages',true);}
     else if(signature!==feedSignature){pendingFeed=page;hidden('newMessages',false);}
     element('billboardMeta').textContent=page.progress.complete?'':'Loading earlier messages…';
@@ -61,8 +68,9 @@ async function refreshActivity(){
     row.append(view.element('summary',label+' · '+item.status));
     if(item.txHash)row.append(view.element('p',item.txHash,'account-address'));
     if(item.feePaid)row.append(view.element('p','Actual network fee: '+Number(ethers.formatEther(BigInt(item.feePaid))).toFixed(4)+' AZTEC'));
-    container.append(row);pending ||=item.status==='pending';
+    container.append(row);pending ||=item.status==='pending'||Boolean(item.nextAction);
   }
+  const interrupted=items.find(item=>item.status==='pending'||item.nextAction);element('resumeOperation').textContent=interrupted?.kind==='post'?'Check message':interrupted?.kind==='withdraw'||interrupted?.kind==='refund'?'Check withdrawal':interrupted&&['deposit','claim','fee-funding','fee-deposit','fee-approval','fee-claim'].includes(interrupted.kind)?'Finish setup':'Check saved transaction';
   hidden('resumeOperation',!pending);if(pending)element('activityStatus').textContent='A saved operation needs checking before another transaction.';
 }
 async function showAccount(){
@@ -71,7 +79,7 @@ async function showAccount(){
   catch{balances.textContent='Could not load balances. Close and reopen Account to try again.';}
 }
 async function reviewWithdrawal(){
-  try{withdrawalPlan=await application.readWithdrawalPlan();const plan=withdrawalPlan;element('withdrawSummary').textContent='Return '+ethers.formatEther(plan.amount)+' ETH. '+(plan.readyAt>plan.chainTime?'Preparation can start after '+new Date(plan.readyAt*1000).toLocaleString()+'. ':'')+(plan.remaining?'Up to '+plan.maxScreeningSteps+' preparation transactions, then withdrawal. ':'')+'Maximum total credit spend for this attempt: '+Number(ethers.formatEther(plan.maximumCreditSpend)).toFixed(2)+' AZTEC. You pay actual fees only.';hidden('withdrawPanel',false);element('withdrawConfirm').focus();}
+  try{withdrawalPlan=await application.readWithdrawalPlan();const plan=withdrawalPlan;element('withdrawSummary').textContent='Return '+ethers.formatEther(plan.amount)+' ETH. '+(plan.readyAt>plan.chainTime?(plan.waitingReason?plan.waitingReason+' ':'')+'Preparation can start after '+new Date(plan.readyAt*1000).toLocaleString()+'. ':'')+(plan.remaining?'Up to '+plan.maxScreeningSteps+' preparation transactions, then withdrawal. ':'')+'Maximum total credit spend for this attempt: '+Number(ethers.formatEther(plan.maximumCreditSpend)).toFixed(2)+' AZTEC. You pay actual fees only.';hidden('withdrawPanel',false);element('withdrawConfirm').focus();}
   catch(error){showFailure(error);}
 }
 function presentWithdrawal(result){
@@ -81,11 +89,11 @@ async function withdraw(){
   try{presentWithdrawal(await application.completeWithdrawal(withdrawalPlan));}
   catch(error){element('withdrawResult').textContent=publicOperationFailure(error).message;hidden('resumeOperation',false);}
 }
-application.subscribe(state=>{operationBusy=['working','waiting'].includes(state.status);for(const id of ['depositBtn','withdrawConfirm','resumeOperation','retrySetup'])element(id).disabled=operationBusy||invalidated;element('withdrawCancel').disabled=operationBusy;updateDraft();element('activeProving').textContent=operationBusy?'Current operation: '+(state.mode==='remote'?'board’s prover':'this device')+'. Toggle changes apply next time.':'';});
+application.subscribe(state=>{operationBusy=['working','waiting'].includes(state.status);for(const id of ['depositBtn','withdrawConfirm','resumeOperation','retrySetup'])element(id).disabled=operationBusy||invalidated;element('depositBtn').disabled=operationBusy||invalidated||!terms;element('withdrawCancel').disabled=operationBusy;updateDraft();element('activeProving').textContent=operationBusy?'Current operation: '+(state.mode==='remote'?'board’s prover':'this device')+'. Toggle changes apply next time.':'';});
 element('depositAmount').oninput=()=>{renderAmount();element('depositGas').textContent='Release the slider to update the estimate.';};element('depositAmount').onchange=refreshGasEstimate;element('depositBtn').onclick=deposit;element('retrySetup').onclick=()=>setupAccount().catch(()=>{});element('postBtn').onclick=post;element('msgText').oninput=()=>updateDraft(true);
 element('discardDraft').onclick=()=>{element('msgText').value='';updateDraft(true);};element('newMessages').onclick=()=>{if(pendingFeed){view.renderMessages(element('billboardFeed'),pendingFeed.posts);feedSignature=JSON.stringify(pendingFeed.posts);pendingFeed=null;hidden('newMessages',true);}};
 element('closeAccount').onclick=()=>hidden('accountPanel',true);element('withdrawStart').onclick=reviewWithdrawal;element('withdrawConfirm').onclick=withdraw;element('withdrawCancel').onclick=()=>hidden('withdrawPanel',true);
-element('resumeOperation').onclick=async()=>{try{const result=await application.resume();if(result.refundAmount&&result.refundRecipient)presentWithdrawal(result);else await presentAccount(result);hidden('resumeOperation',true);}catch(error){if(error.code==='BB_WITHDRAWAL_REVIEW'){hidden('resumeOperation',true);await reviewWithdrawal();}else showFailure(error);}};
+element('resumeOperation').onclick=async()=>{try{const result=await application.resume();if(result.refundAmount&&result.refundRecipient)presentWithdrawal(result);else {if(result.postId)presentPost(result);await presentAccount(result);}hidden('resumeOperation',true);}catch(error){if(error.code==='BB_WITHDRAWAL_REVIEW'){hidden('resumeOperation',true);await reviewWithdrawal();}else showFailure(error);}};
 function initialize(){
   view.identity(_getPublicConfig());refreshMessages();
   if(!window.__aztec?.createPXE){waitForBundle(initialize);return;}

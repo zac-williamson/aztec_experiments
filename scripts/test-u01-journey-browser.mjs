@@ -1,6 +1,6 @@
 // Real templates, styles and controllers; explicit application ports. No proof claims.
 import assert from 'node:assert/strict';import fs from 'node:fs/promises';import path from 'node:path';import {chromium} from 'playwright';import {fixture} from './ux-page-fixture.mjs';
-const output=path.resolve('.build/ux-browser-20261007');await fs.mkdir(output,{recursive:true});
+const output=path.resolve('.build/ux-browser-20261008');await fs.mkdir(output,{recursive:true});
 const checks=[];const f=await fixture();
 try{
  const page=f.page;

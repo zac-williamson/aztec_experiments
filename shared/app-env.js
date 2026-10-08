@@ -52,8 +52,8 @@ function waitForBundle(cb) {
     if(document.getElementById('bundleFailure'))return;
     const message=document.createElement('p');message.id='bundleFailure';message.setAttribute('role','alert');
     message.textContent='Wallet software could not load. Check the connection and reload this page. Public messages remain available in the reader.';
-    const link=document.createElement('a');link.href='feed.html';link.textContent='Open public reader';
-    message.append(' ',link);document.body.prepend(message);
+    const link=document.createElement('a');link.href=new URL('feed.html'+location.hash,location.href).href;link.textContent='Open public reader';
+    const retry=document.createElement('button');retry.textContent='Reload application';retry.onclick=()=>location.reload();message.append(' ',link,' ',retry);document.body.prepend(message);
   };
   if(window.__billboardBundleFailed){fail();return;}
   const interval=setInterval(()=>{
@@ -152,6 +152,9 @@ function publicOperationFailure(error) {
     BB_OPERATION_BUSY:'Another operation is still running. Let it finish before starting this one.',
     BB_MESSAGE_EMPTY:'Write a message before posting.',
     BB_MESSAGE_LONG:'Your message is too long. Shorten it to fit the 992-byte limit.',
+    BB_ACCOUNT_RECORD_INVALID:'Saved account information is damaged. Open Account to use your existing passkey or restore an encrypted backup. Your saved data has not been replaced.',
+    BB_PASSKEY_PRF_UNSUPPORTED:'This passkey cannot unlock your private account. Use a passkey with PRF support, or restore your encrypted recovery file.',
+    BB_FEE_ESTIMATION_UNSTABLE:'The fee estimate did not settle. No transaction was sent. Try again after the account finishes syncing.',
     BB_PASSKEY_CANCELLED:'Passkey approval was cancelled. Your account has not changed. Try unlocking again when ready.',
     BB_PASSKEY_UNSUPPORTED:'This browser or passkey cannot unlock a private account. Use a passkey with PRF support, or restore your encrypted recovery file.',
     BB_POLICY_CHANGED:'The board rules changed while you were reviewing. Open the current rules and review your change again.',
@@ -166,6 +169,12 @@ function publicOperationFailure(error) {
     BB_FUNDING_AMOUNT:'Enter a valid AZTEC amount greater than the maximum transaction fee.',
     BB_BACKUP_PASSWORD:'Use a recovery password of at least 12 characters.',
     BB_BACKUP_PASSWORD_MATCH:'The recovery passwords do not match.',
+    BB_DEPLOYMENT_RECORD:'Saved deployment details could not be read. Import your reviewed deployment configuration to continue.',
+    BB_DEPLOYMENT_STORAGE:'This browser could not save deployment progress. Allow site storage before deploying.',
+    BB_DEPLOYMENT_INPUT:'Check the highlighted board setting.',
+    BB_BACKUP_FORMAT:'This is not a valid wallet recovery file. Choose the JSON file you exported.',
+    BB_BACKUP_SIZE:'This recovery file is too large. Choose a wallet recovery file smaller than 32 MB.',
+    BB_BACKUP_UNLOCK:'The password did not unlock this file, or the encrypted file is damaged. Check the password and try again.',
     BB_BACKUP_INVALID:'This recovery file could not be opened. Check its password and choose the encrypted wallet file.',
     BB_SIMULATION_FAILED:'The network could not validate this transaction. Nothing was submitted. Refresh your account and try again.',
     BB_GAS_LIMIT_EXCEEDED:'This transaction needs a higher fee limit. The board operator must update its settings.',
@@ -227,7 +236,7 @@ function publicOperationFailure(error) {
     BB_SETTLEMENT_PENDING:'Your withdrawal is recorded. Network settlement is pending; retry the Ethereum claim later.',
   };
   const code=typeof error?.code==='string'&&Object.hasOwn(messages,error.code)?error.code:'BB_OPERATION_FAILED';
-  return Object.assign(new Error(messages[code]||'This operation could not finish. Open Activity to check it before trying again. Details contains a report for the board operator.'),{code,phase:error?.phase==='fee-funding'?'fee-funding':null,field:['msgText','newCensorAddr','moderationPolicyInput','censorResponseText','amount','wbPassword','wbPasswordConfirm','wbRestorePassword'].includes(error?.field)?error.field:null});
+  return Object.assign(new Error(messages[code]||'This operation could not finish. Open Activity to check it before trying again. Details contains a report for the board operator.'),{code,phase:error?.phase==='fee-funding'?'fee-funding':null,field:['msgText','newCensorAddr','moderationPolicyInput','censorResponseText','amount','wbPassword','wbPasswordConfirm','wbRestorePassword','newMinimum','newMaximum','newInterval','newWindow','newMultiplier','newAllowance','newModerator','newRules','recoveryFile'].includes(error?.field)?error.field:null});
 }
 
 function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connectionConfig}={}) {

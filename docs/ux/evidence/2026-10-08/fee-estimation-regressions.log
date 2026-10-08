@@ -1,0 +1,34 @@
+✔ portable error observer preserves formatter behavior and exports only bounded safe fields (2.117042ms)
+✔ common formatter captures fee-page coordinates and preserves its result (0.367541ms)
+✔ plain RPC cause exports only numeric code (0.164083ms)
+✔ diagnostic observer never exports raw messages, RPC data or unknown codes (2.462541ms)
+✔ diagnostic observer only retains approved same-origin source locations and fixed categories (0.41125ms)
+✔ credit below board ceiling funds a real-priced measured reservation (58.382542ms)
+✔ allocation respects both priced dimensions [object Object] (0.780709ms)
+✔ allocation respects both priced dimensions [object Object] (0.9435ms)
+✔ allocation respects both priced dimensions [object Object] (0.4675ms)
+✔ only exact expected refund OOG is accepted as the zero-teardown probe (0.547667ms)
+✔ an application shortage grows the probe and never returns its incomplete gas as a quote (0.850875ms)
+✔ search exhaustion is distinct from insufficient balance and cannot send (0.865917ms)
+✔ fragmentation cannot silently trigger another funding payment (0.953875ms)
+✔ setup throws and final failures stop before any proof or submission (1.509167ms)
+✔ context changes stop measurement before simulation (0.26175ms)
+✔ cold claim retains bridge witness and application payload (2.193375ms)
+✔ SDK adapter sends zero-priced private measurement only to local PXE, with account scopes (0.39975ms)
+✔ SDK adapter retains native public revert gas while strict wallet validation still rejects it (0.252625ms)
+✔ native refund out-of-gas spelling is measured, never accepted as a final result (0.859041ms)
+✔ refund probe cannot accept wrong-selector native out-of-gas (0.907916ms)
+✔ refund probe cannot accept nested native out-of-gas (0.526ms)
+✔ operator ceilings above node limits do not reject a small measured transaction (0.69225ms)
+✔ reverted final simulation without optional reason cannot be accepted (0.555666ms)
+✔ cold setup out-of-gas fails closed rather than disguising rejection as funding shortage (0.515833ms)
+✔ actual wallet preserves the measured proof budget and refuses late reasonless reverts: false (34.77625ms)
+✔ actual wallet preserves the measured proof budget and refuses late reasonless reverts: true (1.454292ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 821.620334

@@ -80,11 +80,11 @@
     } finally { plaintext.fill(0); }
   }
   async function decrypt(envelope, password, options = {}) {
-    if (!exact(envelope, ['schemaVersion', 'kind', 'kdf', 'iterations', 'salt', 'iv', 'ciphertext']) || envelope.schemaVersion !== 1 || envelope.kind !== 'aztec-billboard-encrypted-wallet' || envelope.kdf !== 'PBKDF2-SHA256' || envelope.iterations !== 600000 || !/^[0-9a-f]{32}$/.test(envelope.salt) || !/^[0-9a-f]{24}$/.test(envelope.iv) || typeof envelope.ciphertext !== 'string' || envelope.ciphertext.length < 32 || envelope.ciphertext.length > 32 * 1024 * 1024 + 32 || envelope.ciphertext.length % 2 || !/^[0-9a-f]+$/.test(envelope.ciphertext)) throw new Error('Invalid encrypted wallet backup.');
+    if (!exact(envelope, ['schemaVersion', 'kind', 'kdf', 'iterations', 'salt', 'iv', 'ciphertext']) || envelope.schemaVersion !== 1 || envelope.kind !== 'aztec-billboard-encrypted-wallet' || envelope.kdf !== 'PBKDF2-SHA256' || envelope.iterations !== 600000 || !/^[0-9a-f]{32}$/.test(envelope.salt) || !/^[0-9a-f]{24}$/.test(envelope.iv) || typeof envelope.ciphertext !== 'string' || envelope.ciphertext.length < 32 || envelope.ciphertext.length > 32 * 1024 * 1024 + 32 || envelope.ciphertext.length % 2 || !/^[0-9a-f]+$/.test(envelope.ciphertext)) throw Object.assign(new Error('Invalid encrypted wallet backup.'),{code:'BB_BACKUP_FORMAT',field:'recoveryFile'});
     let plaintext;
     try {
       plaintext = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes(envelope.iv), additionalData: aad, tagLength: 128 }, await key(password, bytes(envelope.salt)), bytes(envelope.ciphertext)));
-    } catch (_) { throw new Error('Cannot unlock wallet backup: wrong password or damaged file.'); }
+    } catch (_) { throw Object.assign(new Error('Cannot unlock wallet backup: wrong password or damaged file.'),{code:'BB_BACKUP_UNLOCK',field:'wbRestorePassword'}); }
     try { return validatePayload(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(plaintext)), options); }
     finally { plaintext.fill(0); }
   }

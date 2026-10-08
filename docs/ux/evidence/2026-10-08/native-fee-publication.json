@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "chainId": 11155111,
+  "rollupVersion": 1821665230,
+  "address": "0x1d53fdabe6b9175ad9925925f1374e5fd424ff007a9d9edbf027355b98b719f9",
+  "proofs": "real",
+  "backend": "native",
+  "threads": 4,
+  "startedAt": "2026-10-08T15:21:45.945Z",
+  "txHash": "0x1086e376e3ab271fed526043d2ba90464a7eab1d672d9f43325df85f9b8d5540",
+  "finishedAt": "2026-10-08T15:23:27.017Z"
+}

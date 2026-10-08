@@ -180,7 +180,7 @@
           additionalScopes: opts.additionalScopes, sendMessagesAs: opts.sendMessagesAs,
         });
 
-        if (!simResult.publicInputs || (simResult.publicInputs.forPublic && !simResult.publicOutput) || simResult.publicOutput?.revertReason) {
+        if (!simResult.publicInputs || (simResult.publicInputs.forPublic && !simResult.publicOutput?.txEffect?.revertCode?.isOK()) || simResult.publicOutput?.revertReason) {
           throw Object.assign(new Error('Transaction simulation did not complete successfully. No proof or transaction was submitted.'), {code:'BB_SIMULATION_FAILED'});
         }
         const gu = simResult.gasUsed;
@@ -189,8 +189,8 @@
           throw Object.assign(new Error('This transaction exceeds the configured fee limits. No proof or transaction was submitted.'), {code:'BB_GAS_LIMIT_EXCEEDED'});
         }
         const pad = 1 + this._estimatedGasPadding;
-        const gasLimits = gu.totalGas.mul(pad);
-        const teardownGasLimits = gu.teardownGas.mul(pad);
+        const gasLimits = fixedGas ? checkedGas.gasLimits.clone() : gu.totalGas.mul(pad);
+        const teardownGasLimits = fixedGas ? checkedGas.teardownGasLimits.clone() : gu.teardownGas.mul(pad);
         if (fixedGas) for (const key of ['daGas', 'l2Gas']) {
           gasLimits[key] = Math.min(gasLimits[key], checkedGas.gasLimits[key]);
           teardownGasLimits[key] = Math.min(teardownGasLimits[key], checkedGas.teardownGasLimits[key]);
@@ -203,19 +203,19 @@
         });
         const maxFee = finalGasSettings.getFeeLimit().toBigInt();
         log('  Estimated gas: L2=' + gasLimits.l2Gas.toLocaleString() + ' DA=' + gasLimits.daGas.toLocaleString(), 'info');
-        log('  Fee reservation: ' + maxFee.toLocaleString() + ' Fee Juice (' + toAztec(maxFee, 4) + ' AZTEC)', 'info');
+        log('  Maximum transaction fee: ' + maxFee.toLocaleString() + ' Fee Juice (' + toAztec(maxFee, 4) + ' AZTEC)', 'info');
         if (this._preProveHook) {
           await this._preProveHook({ gasLimits, maxFee, feeOptions, teardownGasLimits });
         }
         const feeOpts2 = await this.completeFeeOptions({
           from: opts.from, feePayer: executionPayload.feePayer, gasSettings: finalGasSettings,
         });
-        // A smaller reservation can select different notes. Validate the exact final transaction once.
+        // Validate the final gas settings before proving; the signed payment payload remains unchanged.
         const finalSimulation = await this.simulateViaEntrypoint(executionPayload, {
           from: opts.from, feeOptions: feeOpts2, skipTxValidation: false, skipFeeEnforcement: false,
           additionalScopes: opts.additionalScopes, sendMessagesAs: opts.sendMessagesAs,
         });
-        if (!finalSimulation.publicInputs || (finalSimulation.publicInputs.forPublic && !finalSimulation.publicOutput) || finalSimulation.publicOutput?.revertReason) {
+        if (!finalSimulation.publicInputs || (finalSimulation.publicInputs.forPublic && !finalSimulation.publicOutput?.txEffect?.revertCode?.isOK()) || finalSimulation.publicOutput?.revertReason) {
           throw Object.assign(new Error('Transaction simulation did not complete successfully. No proof or transaction was submitted.'), {code:'BB_SIMULATION_FAILED'});
         }
         if (['daGas', 'l2Gas'].some(key => finalSimulation.gasUsed.totalGas[key] > finalGasSettings.gasLimits[key] || finalSimulation.gasUsed.teardownGas[key] > finalGasSettings.teardownGasLimits[key])) {
@@ -489,13 +489,11 @@
       if (!method) throw privateFeeFailure('BB_PRIVATE_FEE_UNSUPPORTED_ACTION');
       const prepared = await preparePrivateFee({a,config,privateFeeArtifact,wallet,node,owner,scope,claim});
       try {
-        const result = await contract.methods[method](...args).send({
-          from: owner, fee: {paymentMethod: prepared.paymentMethod, gasSettings: prepared.gasSettings},
-        });
+        const result = await a.sendPrivateFeeTransaction({wallet,node,interaction:contract.methods[method](...args),prepared,from:owner,guard:config.contextGuard});
         claim = undefined;
         return result;
       } catch (error) {
-        if (['BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID', 'BB_BROWSER_PROOF_FAILED', 'BB_REMOTE_PROVER_TIMEOUT','BB_REMOTE_PROVER_OFFLINE','BB_REMOTE_PROVER_BUSY','BB_REMOTE_PROVER_REJECTED','BB_REMOTE_PROVER_RESPONSE','BB_REMOTE_PROVER_FAILED'].includes(error?.code)) {const failure=privateFeeFailure(error.code);if(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(error.stage))failure.stage=error.stage;throw failure;}
+        if (['PRIVATE_FEE_BALANCE_INSUFFICIENT','BB_FEE_ESTIMATION_UNSTABLE','BB_GAS_LIMIT_EXCEEDED','BB_SIMULATION_FAILED','BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID', 'BB_BROWSER_PROOF_FAILED', 'BB_REMOTE_PROVER_TIMEOUT','BB_REMOTE_PROVER_OFFLINE','BB_REMOTE_PROVER_BUSY','BB_REMOTE_PROVER_REJECTED','BB_REMOTE_PROVER_RESPONSE','BB_REMOTE_PROVER_FAILED'].includes(error?.code)) {const failure=privateFeeFailure(error.code);if(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(error.stage))failure.stage=error.stage;throw failure;}
         if (error?.code === 'BB_STATE_CONFLICT') {
           const allowed = ['Existing nullifier', 'Block header not found'];
           if (Array.isArray(error.stateReasons) && error.stateReasons.length > 0 && error.stateReasons.every(reason => allowed.includes(reason))) {
@@ -687,7 +685,7 @@
     log('  L2 billboard: ' + l2AddrHex, 'success');
     log('  L1 portal: ' + portalAddr, 'info');
 
-    const journalActions = ['claim','post','withdraw','auto','recover','declare-immoral','set-moderation-policy','transfer-censor'];
+    const journalActions = ['status','claim','post','withdraw','auto','recover','declare-immoral','set-moderation-policy','transfer-censor'];
     if(journalActions.includes(action) && typeof env.createTransactionJournal!=='function')throw Object.assign(new Error('Durable transaction journal is required.'),{code:'BB_JOURNAL_INVALID'});
     const transactionJournal = journalActions.includes(action)
       ? await env.createTransactionJournal({walletSecret:secretKeyHex,walletSalt:saltVal,
@@ -760,17 +758,18 @@
         const succeeded=receipt.executionResult==='success';
         log((succeeded?'Saved transaction succeeded. Hash: ':'Saved transaction reverted; the action failed. Hash: ')+receipt.txHash.toString(),succeeded?'success':'warn');
         const saved=await transactionJournal.inspect();
-        let recoveredWithdrawal=false;
+        let recoveredWithdrawal=false,recoveredPost={};
         if(succeeded&&saved?.operation&&saved.txHash===receipt.txHash.toString()) {
           const intent=JSON.parse(saved.operation);
           recoveredWithdrawal=intent?.kind==='withdraw';
+          if(intent?.kind==='post'){const post=parsePostOperation(a,saved.operation);recoveredPost={recoveredAction:'post',postId:(await a.poseidon2HashWithSeparator([new a.Fr(1),l2Addr.toField(),new a.Fr(BigInt(post.nonce))],0x42420102)).toString(),...(receipt.transactionFee!==undefined?{feePaid:String(receipt.transactionFee)}:{})};}
         }
-        return {recovered:true,lastL2TxHash:receipt.txHash.toString(),...(recoveredWithdrawal?{withdrawTxHash:receipt.txHash.toString()}:{}),state:succeeded?'transaction_recovered':'transaction_reverted'};
+        return {recovered:true,...recoveredPost,lastL2TxHash:receipt.txHash.toString(),...(recoveredWithdrawal?{withdrawTxHash:receipt.txHash.toString()}:{}),state:succeeded?'transaction_recovered':'transaction_reverted'};
       }
     }
     // Check before any action-specific state changes, including auto-mode L1 sends.
     let reconciledModerator=null;
-    if(transactionJournal) {
+    if(transactionJournal && action!=='status') {
       if(config.reconcilePrevious===true&&['declare-immoral','set-moderation-policy','transfer-censor'].includes(action)) {
         if(typeof transactionJournal.reconcilePrevious!=='function')throw Object.assign(new Error('Moderator recovery is unavailable.'),{code:'BB_JOURNAL_INVALID'});
         try { reconciledModerator=await transactionJournal.reconcilePrevious(); }
@@ -1027,7 +1026,31 @@
     // ============================================================
     // Resolve state
     // ============================================================
-    if (l2NoteInfo && l2NoteInfo.amount > 0n) {
+    // Restore only the authenticated withdrawal for this exact active deposit cycle.
+    let depositInfo=null,savedState=null;
+    if(action==='status'&&transactionJournal){
+      if(typeof transactionJournal.inspectOutcome!=='function')throw Object.assign(Error('Journal inspection unavailable.'),{code:'BB_JOURNAL_INVALID'});
+      savedState=await transactionJournal.inspectOutcome();
+      if(portalL1Balance>0n)config.withdrawTxHash=null;
+      if(savedState?.outcome==='pending')stateStatus='transaction_needs_recovery';
+      if(savedState&&portalL1Balance>0n&&(!l2NoteInfo||l2NoteInfo.amount===0n)){
+        let intent;try{intent=JSON.parse(savedState.operation);}catch{}
+        if(intent?.kind==='withdraw'){
+          if(Object.keys(intent).sort().join()!=='depositChain,headSequence,kind,schemaVersion'||intent.schemaVersion!==1||typeof intent.headSequence!=='string'||!/^(0|[1-9][0-9]*)$/.test(intent.headSequence)||BigInt(intent.headSequence)>=1n<<64n||!savedState.applicationNullifier)throw Object.assign(Error('Invalid withdrawal record.'),{code:'BB_JOURNAL_INVALID'});
+          canonicalPostId(a,intent.depositChain,true);
+          await doReuseDeposit();
+          const currentChain=await deriveDepositChain(depositInfo);
+          if(currentChain===BigInt(intent.depositChain)){
+            selectedChain=currentChain;
+            if(savedState.outcome==='success')config.withdrawTxHash=savedState.txHash;
+            else stateStatus='transaction_needs_recovery';
+          }
+        }
+      }
+    }
+    if(stateStatus==='transaction_needs_recovery'){
+      // Present Activity; an interrupted action must not trigger another claim.
+    } else if (l2NoteInfo && l2NoteInfo.amount > 0n) {
       stateStatus = 'postable';
     } else if (config.withdrawTxHash) {
       // An unread or zero aggregate balance is not a receipt for this withdrawal.
@@ -1107,7 +1130,7 @@
     // DEPOSIT action
     // ============================================================
     // Private in-memory record; public action results omit the secret.
-    let depositInfo = null;
+
     function secretScope() {
       if (!l1Account) throw new Error('An L1 depositor is required for secret custody.');
       return { l1ChainId: String(BigInt(nodeInfo.l1ChainId)), rollupAddress: rollupAddr.toLowerCase(),
@@ -1143,10 +1166,14 @@
       if (event.amount <= 0n || event.amount >= (1n << 96n)) throw new Error('Invalid V1 receipt event.');
       return event;
     }
-    async function ensureDepositFees() {
+    async function ensureDepositFees(interaction) {
       const scope={l1ChainId:String(nodeInfo.l1ChainId),rollupVersion:String(version)};
-      const checkBalance=()=>preparePrivateFee({a,config,privateFeeArtifact:env.privateFeeArtifact,
-        wallet,node:aztecNode,owner:address,scope,claim:config.privateFeeClaim});
+      const checkBalance=async()=>{
+        const prepared=await preparePrivateFee({a,config,privateFeeArtifact:env.privateFeeArtifact,
+          wallet,node:aztecNode,owner:address,scope,claim:config.privateFeeClaim});
+        if(interaction)await a.estimatePrivateFeeTransaction({wallet,node:aztecNode,interaction,prepared,from:address,guard:config.contextGuard});
+        return prepared;
+      };
       if(!config.automaticFeeFunding)return checkBalance();
       const route=requirePrivateFeeConfiguration(a,config,env.privateFeeArtifact);
       const input={node:aztecNode,owner:address,privateFeeAddress:route.contractAddress,
@@ -1296,6 +1323,10 @@
     // ============================================================
     // CLAIM action (claim deposit on L2)
     // ============================================================
+    async function deriveDepositChain(info){
+      const content=escrowContent(a,ethers,false,l2Addr,portalAddr,l1Account,info.amount,version,nodeInfo.l1ChainId);
+      return (await a.poseidon2HashWithSeparator([new a.Fr(1),l2Addr.toField(),address.toField(),content,new a.Fr(BigInt(info.secret)),new a.Fr(BigInt(info.leafIndex))],0x42420101)).toBigInt();
+    }
     async function doClaim() {
       if (!contract) throw new Error('PXE setup required for claim.');
       if (!ethSigner) throw new Error('L1 signer required for claim.');
@@ -1310,8 +1341,7 @@
       const amount = depositInfo.amount;
       const secret = new a.Fr(BigInt(depositInfo.secret));
       const leafIndex = depositInfo.leafIndex;
-      const claimContent = escrowContent(a,ethers,false,l2Addr,portalAddr,l1Account,amount,version,nodeInfo.l1ChainId);
-      selectedChain = (await a.poseidon2HashWithSeparator([new a.Fr(1),l2Addr.toField(),address.toField(),claimContent,secret,new a.Fr(BigInt(leafIndex))],0x42420101)).toBigInt();
+      selectedChain = await deriveDepositChain(depositInfo);
       if (selectedChain === 0n) throw new Error('Invalid derived deposit identity');
       claimOperation=JSON.stringify({schemaVersion:2,kind:'claim',depositor:l1Account.toLowerCase(),amount:String(amount),leafIndex:String(leafIndex),secretHash:depositInfo.secretHash.toLowerCase(),messageKey:depositInfo.key.toLowerCase(),depositChain:new a.Fr(selectedChain).toString()});
       if(resumedClaim&&claimOperation!==resumedClaim.operation)throw Object.assign(new Error('The original claim receipt or beneficiary does not match the saved request.'),{code:'BB_RECOVERY_REQUIRED'});
@@ -1349,7 +1379,7 @@
       // One attempt per action. Message availability and uncertain submission
       // remain retryable outcomes; never run a ten-minute blind retry loop.
       log('  Deposit message ready. Preparing private transaction fees...', 'info');
-      if(config.automaticFeeFunding)await ensureDepositFees();
+      if(config.automaticFeeFunding)await ensureDepositFees(contract.methods.claim_deposit(depositorField,amount,secret,leafIndex));
       const result = await sendPrivate('claim', [depositorField, amount, secret, leafIndex]);
       const receipt = result.receipt;
       log('  Claim confirmed. Tx hash: ' + receipt.txHash + ', block: ' + receipt.blockNumber, 'success');
@@ -1443,6 +1473,7 @@
       const exists=unwrapPostValue(await contract.methods.get_post_exists(postId).simulate({ from: a.NO_FROM }));
       if(exists!==false)throw Object.assign(new Error('Post publication must be reconciled before another proof.'),{code:'BB_RECOVERY_REQUIRED'});
       transactionJournal.setOperation(operation);
+      if(config.onPostPrepared)await config.onPostPrepared({postId:postId.toString()});
       const sent = await sendPrivate('post', [
         requireDepositChain(),
         postNonce,

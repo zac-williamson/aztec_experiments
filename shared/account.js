@@ -43,10 +43,10 @@ async function _deriveAccountAddress(a,secretKeyHex,saltVal) {
 }
 async function _prepareWallet(raw,allowExisting=false) {
   if(window.walletState.aztec && !allowExisting) throw Object.assign(Error('Lock the current account before restoring another.'),{code:'BB_ACCOUNT_REPLACEMENT'});
-  const wallet=window.BillboardWalletBackup.validateWallet(raw);
+  let wallet;try{wallet=window.BillboardWalletBackup.validateWallet(raw);}catch{throw Object.assign(Error('Invalid recovery file.'),{code:'BB_BACKUP_FORMAT',field:'recoveryFile'});}
   if(!window.__aztec?.Fr) throw new Error('Wait for the application to load before opening a wallet.');
   const derived=await _deriveAccountAddress(window.__aztec,wallet.secretKey,wallet.salt);
-  if(raw.address && String(raw.address).toLowerCase()!==derived.address.toString().toLowerCase()) throw new Error('Wallet address does not match its key and salt.');
+  if(raw.address && String(raw.address).toLowerCase()!==derived.address.toString().toLowerCase()) throw Object.assign(Error('Wallet address does not match its key and salt.'),{code:'BB_BACKUP_FORMAT',field:'recoveryFile'});
   return {...wallet,...derived,raw:wallet};
 }
 function _activateWallet(prepared) {
@@ -76,13 +76,14 @@ async function _writeWalletBackup(wallet,password) {
 async function importAccountRecovery(file,password) {
   return _walletOperation(async()=>{
     {
-      if(!file || file.size>32*1024*1024+4096) throw new Error();
+      if(!file)throw Object.assign(Error('Choose a file.'),{code:'BB_BACKUP_FORMAT'});
+      if(file.size>32*1024*1024+4096)throw Object.assign(Error('File too large.'),{code:'BB_BACKUP_SIZE'});
       let parsed,payload;
       try {
         parsed=JSON.parse(await file.text());
         // Raw CLI wallets may be imported, but every browser export is encrypted.
         payload=parsed.secretKey?{wallet:parsed,claims:[]}:await window.BillboardWalletBackup.decrypt(parsed,password);
-      } catch { throw Object.assign(Error('Invalid recovery file or password.'),{code:'BB_BACKUP_INVALID'}); }
+      } catch(error) { if(['BB_BACKUP_FORMAT','BB_BACKUP_UNLOCK'].includes(/** @type {{code?:string}} */(error)?.code||''))throw error;throw Object.assign(Error('Invalid recovery file.'),{code:'BB_BACKUP_FORMAT'}); }
       const prepared=await _prepareWallet(payload.wallet);
       if(payload.claims.length||payload.journals?.length)await _withRecoveryLock(prepared,async()=>{
       if(payload.claims.length) {
@@ -176,8 +177,11 @@ async function _openPasskeyAccount(importExisting=false) {
   return navigator.locks.request('billboard-passkey:'+account.toLowerCase(),async()=>{
     _assertWalletLive();if(generation!==_walletGeneration)throw Error('Wallet context changed.');
     const key=_passkeyRecordKey(),text=localStorage.getItem(key);
-    const record=importExisting || text===null?null:JSON.parse(text);
-    if(record && (record.version!==1 || typeof record.credentialId!=='string' || !/^0x[0-9a-f]{64}$/i.test(record.address)))throw Error('Saved account information is invalid. Import your account from Account settings.');
+    let record=null;
+    if(!importExisting && text!==null) {
+      try {record=JSON.parse(text);} catch {throw Object.assign(Error('Saved account information is invalid. Import your account from Account settings.'),{code:'BB_ACCOUNT_RECORD_INVALID'});}
+      if(!record || typeof record!=='object' || Array.isArray(record) || record.version!==1 || typeof record.credentialId!=='string' || !record.credentialId || !/^0x[0-9a-f]{64}$/i.test(record.address))throw Object.assign(Error('Saved account information is invalid. Import your account from Account settings.'),{code:'BB_ACCOUNT_RECORD_INVALID'});
+    }
     _wlog(importExisting || record?'Approve your passkey to unlock your account.':'Set up a passkey to secure your account.');
     const result=await BillboardPasskey.ceremony(account,{create:!importExisting && !record,credentialId:importExisting?undefined:record?.credentialId});
     _assertWalletLive();if(generation!==_walletGeneration)throw Error('Wallet context changed.');

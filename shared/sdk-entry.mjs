@@ -62,3 +62,5 @@ export {verifyPortalRuntime} from './portal-runtime.mjs';
 export {default as portalRuntimeMetadata} from './portal-runtime.json' with {type:'json'};
 
 export {deriveBoardDepositSecret,recoverBoardDepositSecret} from './deposit-custody.mjs';
+
+export {estimatePrivateFeeTransaction,sendPrivateFeeTransaction} from './private-fee-estimation.mjs';

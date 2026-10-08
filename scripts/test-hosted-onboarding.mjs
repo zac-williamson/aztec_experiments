@@ -13,8 +13,9 @@ import {installBrowserErrorObserver} from './browser-error-observer.mjs';
 import {createPublicFeedSource} from '../shared/public-feed-source.mjs';
 import {publicNode} from '../shared/public-feed-rpc.mjs';
 import {ROOT} from './toolchain.mjs';
-const resumeDeposit=process.argv.includes('--resume-deposit'),freshRun=process.argv.includes('--fresh');assert(process.argv.slice(2).every(arg=>['--resume-deposit','--fresh'].includes(arg)));assert(!(resumeDeposit&&freshRun));
-const directory=path.join(ROOT,freshRun?'.build/hosted-ux-fresh-20261007':'.build/hosted-ux-onboarding-20261007');
+const args=process.argv.slice(2),resumeDeposit=args.includes('--resume-deposit'),resumeFunded=args.includes('--resume-funded'),freshRun=args.includes('--fresh'),run=args.find(arg=>arg.startsWith('--run='))?.slice(6);
+assert(args.every(arg=>['--resume-deposit','--resume-funded','--fresh'].includes(arg)||/^--run=[a-z0-9-]+$/.test(arg)));assert(args.filter(arg=>arg.startsWith('--run=')).length<=1);assert([resumeDeposit,resumeFunded,freshRun].filter(Boolean).length<=1);
+const directory=path.join(ROOT,run?'.build/hosted-'+run:freshRun?'.build/hosted-ux-fresh-20261007':'.build/hosted-ux-onboarding-20261007');
 const privateDir=path.join(directory,'private');await fs.mkdir(privateDir,{recursive:true,mode:0o700});
 const origin='https://d30njln0kead8n.cloudfront.net';
 const board='0x267c4246a61590539743a81acdaa1895019fef3e5f2c07038cc729b87e93b3df';
@@ -27,7 +28,7 @@ const mark=value=>{stage=value;report.stages.push({stage,at:new Date().toISOStri
 const stageTimeout=20*60*1000; // Testnet message ingestion/proof/inclusion, not a local fixture deadline.
 const save=()=>fs.writeFile(path.join(directory,'result.json'),JSON.stringify(report,null,2)+'\n');
 try{
- if(resumeDeposit){for(const file of [path.join(privateDir,'identity.json'),path.join(privateDir,'aztec-wallet.encrypted.json'),path.join(directory,'test-funding.json')])assert((await fs.stat(file)).isFile(),'Resume requires retained disposable account and funding records');}
+ if(resumeDeposit||resumeFunded){for(const file of [path.join(privateDir,'identity.json'),path.join(privateDir,'aztec-wallet.encrypted.json'),path.join(directory,'test-funding.json')])assert((await fs.stat(file)).isFile(),'Resume requires retained disposable account and funding records');}
  let identity;
  try{identity=JSON.parse(await fs.readFile(path.join(privateDir,'identity.json'),'utf8'));}
  catch(error){if(error.code!=='ENOENT')throw error;const w=Wallet.createRandom();identity={mnemonic:w.mnemonic.phrase,address:w.address,password:randomBytes(32).toString('base64url')};await fs.writeFile(path.join(privateDir,'identity.json'),JSON.stringify(identity),{flag:'wx',mode:0o600});}
@@ -76,10 +77,10 @@ try{
  const fundingFile=path.join(directory,'test-funding.json');let transfers;
  try{transfers=JSON.parse(await fs.readFile(fundingFile,'utf8'));}catch(error){if(error.code!=='ENOENT')throw error;transfers={recipient:identity.address};}
  assert.equal(transfers.recipient,identity.address);
- if(resumeDeposit){assert(transfers.eth&&transfers.token,'Resume must never provision test funds');}
- if(!resumeDeposit&&!transfers.eth){assert.equal(await provider.getTransactionCount(identity.address),0);const tx=await operator.sendTransaction({to:identity.address,value:parseEther('0.003')});transfers.eth=tx.hash;await fs.writeFile(fundingFile,JSON.stringify(transfers));assert.equal((await tx.wait(1,180000)).status,1);}
- if(!resumeDeposit&&!transfers.token){const faucet=new Contract(info.l1ContractAddresses.feeAssetHandlerAddress.toString(),['function FEE_ASSET() view returns(address)','function mintAmount() view returns(uint256)','function mint(address)'],operator);assert.equal((await faucet.FEE_ASSET()).toLowerCase(),tokenAddress.toLowerCase());const mintAmount=await faucet.mintAmount();assert(mintAmount>=funding&&mintAmount<=parseEther('10000'));const estimated=await faucet.mint.estimateGas(identity.address);assert(estimated<1000000n);const tx=await faucet.mint(identity.address,{gasLimit:estimated*2n});transfers.token=tx.hash;transfers.mintedAmount=String(mintAmount);await fs.writeFile(fundingFile,JSON.stringify(transfers));assert.equal((await tx.wait(1,180000)).status,1);}
- report.testFunding=transfers;const nonceBefore=await provider.getTransactionCount(identity.address,'latest');if(resumeDeposit){assert.equal(await portal.getDeposit(identity.address),amount);report.scenario='resume-confirmed-deposit-after-spot-interruption';report.ethereumNonceBefore=nonceBefore;report.ethereumPendingNonceBefore=await provider.getTransactionCount(identity.address,'pending');assert.equal(report.ethereumPendingNonceBefore,nonceBefore,'Resume scenario requires no pending Ethereum payment');}else{assert.equal(await portal.getDeposit(identity.address),0n);report.scenario='fresh-onboarding';}
+ if(resumeDeposit||resumeFunded){assert(transfers.eth&&transfers.token,'Resume must never provision test funds');}
+ if(!resumeDeposit&&!resumeFunded&&!transfers.eth){assert.equal(await provider.getTransactionCount(identity.address),0);const tx=await operator.sendTransaction({to:identity.address,value:parseEther('0.003')});transfers.eth=tx.hash;await fs.writeFile(fundingFile,JSON.stringify(transfers));assert.equal((await tx.wait(1,180000)).status,1);}
+ if(!resumeDeposit&&!resumeFunded&&!transfers.token){const faucet=new Contract(info.l1ContractAddresses.feeAssetHandlerAddress.toString(),['function FEE_ASSET() view returns(address)','function mintAmount() view returns(uint256)','function mint(address)'],operator);assert.equal((await faucet.FEE_ASSET()).toLowerCase(),tokenAddress.toLowerCase());const mintAmount=await faucet.mintAmount();assert(mintAmount>=funding&&mintAmount<=parseEther('10000'));const estimated=await faucet.mint.estimateGas(identity.address);assert(estimated<1000000n);const tx=await faucet.mint(identity.address,{gasLimit:estimated*2n});transfers.token=tx.hash;transfers.mintedAmount=String(mintAmount);await fs.writeFile(fundingFile,JSON.stringify(transfers));assert.equal((await tx.wait(1,180000)).status,1);}
+ report.testFunding=transfers;const nonceBefore=await provider.getTransactionCount(identity.address,'latest');if(resumeDeposit){assert.equal(await portal.getDeposit(identity.address),amount);report.scenario='resume-confirmed-deposit-after-spot-interruption';report.ethereumNonceBefore=nonceBefore;report.ethereumPendingNonceBefore=await provider.getTransactionCount(identity.address,'pending');assert.equal(report.ethereumPendingNonceBefore,nonceBefore,'Resume scenario requires no pending Ethereum payment');}else{assert.equal(await portal.getDeposit(identity.address),0n);report.scenario=resumeFunded?'resume-confirmed-fee-funding':'fresh-onboarding';if(resumeFunded){assert.equal(nonceBefore,2);assert.equal(await provider.getTransactionCount(identity.address,'pending'),nonceBefore);report.ethereumNonceBefore=nonceBefore;}}
  mark('connect-with-fresh-passkey');
  const backup=path.join(privateDir,'aztec-wallet.encrypted.json');
  if(await fs.stat(backup).catch(()=>null)){
@@ -95,7 +96,7 @@ try{
  const connected=page.waitForFunction(()=>BillboardAccount.snapshot().ethereumConnected,{},{timeout:180000});
  const connectState=await Promise.race([connected.then(()=> 'connected'),walletPage.getByTestId('confirm-btn').waitFor({timeout:60000}).then(()=> 'approve')]);
  if(connectState==='approve'){assert.equal((await walletPage.getByTestId('confirm-btn').innerText()).trim(),'Connect');await walletPage.getByTestId('confirm-btn').click();}await connected;
- if(!await page.evaluate(()=>!!BillboardAccount.snapshot().address)){await page.locator('#wbNewPasskeyBtn').click();await page.waitForFunction(()=>!!BillboardAccount.snapshot().address,{},{timeout:180000});}
+ if(!await page.evaluate(()=>!!BillboardAccount.snapshot().address)){assert(!resumeDeposit&&!resumeFunded,'Resume cannot create another private account');await page.locator('#wbNewPasskeyBtn').click();await page.waitForFunction(()=>!!BillboardAccount.snapshot().address,{},{timeout:180000});}
  assert.equal((await page.evaluate(()=>BillboardAccount.snapshot().ethereumAddress)).toLowerCase(),identity.address.toLowerCase());report.aztecAccount=await page.evaluate(()=>BillboardAccount.snapshot().address);
  mark('complete-wallet-setup');
  if(!resumeDeposit){
@@ -109,7 +110,7 @@ try{
  await page.locator('#depositPanel').waitFor({state:'visible',timeout:stageTimeout});assert(await page.getByRole('checkbox',{name:'Remote proving',exact:true}).isChecked());await page.waitForFunction(()=>!document.getElementById('depositBtn').disabled||['failed','cancelled','paused'].includes(application.operation().status),{},{timeout:stageTimeout});assert(!['failed','cancelled','paused'].includes(await page.evaluate(()=>application.operation().status)),'Operation did not complete normally');
  await page.locator('#depositAmount').press('End');assert.equal(await page.locator('#depositSelection').textContent(),formatEther(amount)+' ETH');
  mark('single-deposit-click');await page.locator('#depositBtn').click();report.walletConfirmations=[];
- for(const action of ['fee-approval','fee-deposit','deposit']){
+ for(const action of (resumeFunded?['deposit']:['fee-approval','fee-deposit','deposit'])){
   mark('approve-'+action);
   await page.waitForFunction(()=>Array.isArray(__walletTestPending)||['failed','cancelled','paused'].includes(application.operation().status),{},{timeout:stageTimeout});assert(!['failed','cancelled','paused'].includes(await page.evaluate(()=>application.operation().status)),'Operation did not complete normally');
   const pending=await page.evaluate(()=>__walletTestPending);assertMetaMaskTransaction({stage:action,request:pending,account:identity.address,chainId:await page.evaluate(()=>__testMetaMask.request({method:'eth_chainId'})),expectedChainId:11155111n,tokenAddress,feePortalAddress,privateFeeAddress:config.privateFee.contractAddress,boardPortalAddress:portalAddress,fundingAmount:formatEther(funding),collateralAmount:formatEther(amount)});
@@ -125,6 +126,7 @@ try{
   while(Date.now()<deadline){receipt=await node.getTxReceipt(TxHash.fromString(hash));if(['checkpointed','proven','finalized'].includes(receipt.status))break;assert(!['dropped','reverted'].includes(receipt.status));await new Promise(r=>setTimeout(r,5000));}
   assert.equal(receipt.executionResult,'success');assert(['checkpointed','proven','finalized'].includes(receipt.status));const block=await node.getBlock(receipt.blockNumber);assert.equal(block.hash.toString(),receipt.blockHash.toString());return {txHash:hash,status:receipt.status,blockNumber:receipt.blockNumber,blockHash:receipt.blockHash.toString(),transactionFee:String(receipt.transactionFee)};};
  if(resumeDeposit){report.ethereumNonceAfter=await provider.getTransactionCount(identity.address,'latest');assert.equal(report.ethereumNonceAfter,nonceBefore,'Resuming must not send another Ethereum payment');report.ethereumPendingNonceAfter=await provider.getTransactionCount(identity.address,'pending');assert.equal(report.ethereumPendingNonceAfter,nonceBefore,'Resuming must not leave a new pending Ethereum payment');assert.equal(await page.evaluate(()=>globalThis.__walletTestPending??null),null,'Resuming must not request another Ethereum payment');}
+ if(resumeFunded){report.ethereumNonceAfter=await provider.getTransactionCount(identity.address,'latest');assert.equal(report.ethereumNonceAfter,nonceBefore+1,'Funding retry must send only the board deposit');assert.equal(await provider.getTransactionCount(identity.address,'pending'),nonceBefore+1);assert.equal(await page.evaluate(()=>globalThis.__walletTestPending??null),null);}
  report.claim=await verify(report.claimHashes[0]);assert.equal(await portal.getDeposit(identity.address),amount);await save();
  mark('testnet-post');const message='Automated end-to-end test: one deposit, automatic claim, remote proof. '+new Date().toISOString();report.message=message;
  await page.locator('#postBtn').waitFor({state:'visible',timeout:stageTimeout});await page.locator('#msgText').fill(message);await page.locator('#postBtn').click();

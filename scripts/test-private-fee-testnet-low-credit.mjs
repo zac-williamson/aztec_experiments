@@ -1,0 +1,74 @@
+// Explicit real-testnet regression: existing private credit below the configured
+// ceiling must pay a smaller measured transaction. No funding or board mutation.
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {createAztecNodeClient} from '@aztec/aztec.js/node';
+import {createPXE,getPXEConfig} from '@aztec/pxe/server';
+import {BackendType,Barretenberg,BarretenbergSync} from '@aztec/bb.js';
+import {Fr} from '@aztec/foundation/curves/bn254';
+import {deriveKeys,deriveMasterMessageSigningSecretKey} from '@aztec/stdlib/keys';
+import {getContractInstanceFromInstantiationParams,computePartialAddress} from '@aztec/stdlib/contract';
+import {loadContractArtifact} from '@aztec/stdlib/abi';
+import {GasSettings} from '@aztec/stdlib/gas';
+import {BaseWallet} from '@aztec/wallet-sdk/base-wallet';
+import {AccountManager} from '@aztec/aztec.js/wallet';
+import {Contract,BatchCall,ContractFunctionInteraction} from '@aztec/aztec.js/contracts';
+import {SchnorrInitializerlessAccountContract,SchnorrInitializerlessAccountContractArtifact} from '@aztec/accounts/schnorr';
+import {getFeeJuiceBalance} from '@aztec/aztec.js/utils';
+import {preparePrivateFeePayment,derivePrivateFeeInstance,normalizePrivateFeeGasSettings} from '../shared/private-fee-client.mjs';
+import {estimatePrivateFeeTransaction} from '../shared/private-fee-estimation.mjs';
+import {submitOnceWithReconciliation,waitForSuccessfulReceipt} from '../shared/transaction-outcomes.mjs';
+import {ROOT,assertNodeVersion} from './toolchain.mjs';
+assertNodeVersion();process.umask(0o077);
+const [run]=process.argv.slice(2);assert(/^[a-z0-9-]+$/.test(run||'')&&process.argv.length===3);
+const source=path.join(ROOT,'.build/hosted-'+run),directory=path.join(ROOT,'.build/low-credit-'+run);
+const onboarding=JSON.parse(await fs.readFile(path.join(source,'result.json'),'utf8'));assert(onboarding.passed,'Qualify onboarding first');
+await fs.mkdir(directory,{recursive:false});
+const report={passed:false,scope:'Real existing-credit fee payment; empty application payload',startedAt:new Date().toISOString(),proofs:'real',backend:'native',threads:4};
+const save=()=>fs.writeFile(path.join(directory,'result.json'),JSON.stringify(report,null,2)+'\n');
+const inputPaths=['scripts/test-private-fee-testnet-low-credit.mjs','shared/private-fee-estimation.mjs','shared/private-fee-simulation.mjs','shared/private-fee-payment.mjs','shared/private-fee-client.mjs','apps/src/billboard/user/engine.js','apps/src/billboard/private_fee_artifact.json'];
+report.sourceHashes=Object.fromEntries(await Promise.all(inputPaths.map(async name=>[name,createHash('sha256').update(await fs.readFile(path.join(ROOT,name))).digest('hex')])));
+const config=onboarding.config,node=createAztecNodeClient(config.network.nodeUrl),info=await node.getNodeInfo();
+assert.equal(info.l1ChainId,11155111);assert.equal(info.rollupVersion,1821665230);assert.equal(info.l1ContractAddresses.rollupAddress.toString().toLowerCase(),config.network.rollupAddress);
+const nativeOptions={backend:BackendType.NativeUnixSocket,bbPath:path.join(ROOT,'node_modules/@aztec/bb.js/build/arm64-macos/bb'),threads:4};
+let pxe;
+try{
+ const native=await Barretenberg.initSingleton(nativeOptions);assert.equal(native.options.backend,nativeOptions.backend);assert.equal(native.options.threads,4);
+ const context=vm.createContext({crypto,TextEncoder,TextDecoder,Uint8Array,performance,setTimeout,clearTimeout,console});
+ vm.runInContext(await fs.readFile(path.join(ROOT,'shared/wallet-backup.js'),'utf8'),context);
+ const identity=JSON.parse(await fs.readFile(path.join(source,'private/identity.json'),'utf8'));
+ assert.equal(identity.address,onboarding.ethereumAccount);
+ const envelope=JSON.parse(await fs.readFile(path.join(source,'private/aztec-wallet.encrypted.json'),'utf8'));
+ const {wallet:restored}=await context.BillboardWalletBackup.decrypt(envelope,identity.password);
+ const secret=Fr.fromString(restored.secretKey),salt=Fr.fromString(restored.salt),keys=await deriveKeys(secret);
+ const accountContract=new SchnorrInitializerlessAccountContract(deriveMasterMessageSigningSecretKey(secret));
+ const accountArtifact=await accountContract.getContractArtifact(),instance=await getContractInstanceFromInstantiationParams(accountArtifact,{salt,publicKeys:keys.publicKeys,immutablesHash:await accountContract.getImmutablesHash()});
+ assert.equal(instance.address.toString(),onboarding.aztecAccount);report.account=instance.address.toString();
+ pxe=await createPXE(node,{...getPXEConfig(),proverEnabled:true,dataDirectory:path.join(directory,'pxe'),autoSync:false,syncChainTip:'checkpointed'},{proverOrOptions:nativeOptions});
+ await pxe.registerAccount(keys,await computePartialAddress(instance));await pxe.registerContractClass(SchnorrInitializerlessAccountContractArtifact);await pxe.registerContract(instance);await pxe.sync();
+ vm.runInContext(await fs.readFile(path.join(ROOT,'apps/src/billboard/user/engine.js'),'utf8'),context);
+ const submissionNode=new Proxy(node,{get(target,key){if(key==='sendTx')return async tx=>{assert(!report.txHash,'One submission only');report.txHash=tx.getTxHash().toString();report.feePayer=tx.data.feePayer.toString();await save();return target.sendTx(tx);};const value=Reflect.get(target,key);return typeof value==='function'?value.bind(target):value;}});
+ const wallet=context.BillboardPrivateFeeRouting.createAztecWallet({BaseWallet,GasSettings,submitOnceWithReconciliation,waitForSuccessfulReceipt},pxe,node,submissionNode,()=>{},secret);
+ wallet._accountManager=await AccountManager.create(wallet,secret,accountContract,{salt});
+ const constructor=accountArtifact.functions.find(f=>f.name==='constructor');if(constructor){const key=await accountContract.getSigningPublicKey();await new ContractFunctionInteraction(wallet,instance.address,constructor,[key.x,key.y]).simulate({from:instance.address});}
+ const raw=JSON.parse(await fs.readFile(path.join(ROOT,'apps/src/billboard/private_fee_artifact.json'),'utf8')),artifact=loadContractArtifact(raw),fpc=await derivePrivateFeeInstance(raw);
+ assert.equal(fpc.address.toString(),config.privateFee.contractAddress);await wallet.registerContract(fpc,artifact);await pxe.sync();
+ const contract=await Contract.at(fpc.address,artifact,wallet),balance=async()=>BigInt((await contract.methods.balance_of(instance.address).simulate({from:instance.address})).result);
+ const before=await balance();assert(before>0n);report.balanceBefore=String(before);
+ const gas=structuredClone(config.privateFee.gasSettings),minimum=(await node.getCurrentMinFees()).feePerL2Gas;
+ gas.maxFeesPerGas.feePerL2Gas=String([BigInt(gas.maxFeesPerGas.feePerL2Gas),before/BigInt(gas.gasLimits.l2Gas)+1n,minimum].reduce((a,b)=>a>b?a:b));
+ const ceiling=normalizePrivateFeeGasSettings(gas).maximumFee;assert(ceiling>before);report.configuredMaximum=String(ceiling);report.gasSettings=gas;
+ const prepared=await preparePrivateFeePayment({wallet,node,owner:instance.address,privateFeeAddress:fpc.address.toString(),privateFeeArtifact:raw,expectedChainId:11155111,expectedVersion:info.rollupVersion,gasSettings:gas});
+ const estimated=await estimatePrivateFeeTransaction({wallet,node,interaction:new BatchCall(wallet,[]),prepared,from:instance.address});
+ assert.equal(estimated.payload.calls.length,1);assert.equal(estimated.payload.calls[0].name,'pay_fee');assert(estimated.reservation>0n&&estimated.reservation<=before);report.reservation=String(estimated.reservation);report.passes=estimated.passes;
+ const authorPublicBefore=await getFeeJuiceBalance(instance.address,node);report.authorPublicBefore=String(authorPublicBefore);await save();
+ const {receipt}=await wallet.sendTx(estimated.payload,{from:instance.address,fee:{gasSettings:estimated.gasSettings},wait:{timeout:1200}});
+ assert.equal(receipt.executionResult,'success');assert(['checkpointed','proven','finalized'].includes(receipt.status));assert.equal((await node.getBlock(receipt.blockNumber)).hash.toString(),receipt.blockHash.toString());assert.equal(report.feePayer,fpc.address.toString());
+ await pxe.sync();const after=await balance(),fee=BigInt(receipt.transactionFee);assert(fee>0n);assert.equal(after,before-fee);assert.equal(await getFeeJuiceBalance(instance.address,node),authorPublicBefore);
+ report.balanceAfter=String(after);report.receipt={txHash:receipt.txHash.toString(),blockNumber:receipt.blockNumber,blockHash:receipt.blockHash.toString(),status:receipt.status,transactionFee:String(fee)};report.passed=true;
+}catch(error){report.failure={name:error.name,code:error.code??null};process.exitCode=1;}
+finally{report.finishedAt=new Date().toISOString();await save();await pxe?.stop();await Barretenberg.destroySingleton();BarretenbergSync.destroySingleton();}
+console.log(JSON.stringify(report));

@@ -118,11 +118,11 @@
       await g.BillboardDepositReadiness.waitForDepositMessage({a,wallet,node,key:claim.messageKey,index:claim.leafIndex.toBigInt(),contextGuard:config.contextGuard,waitUntilAvailable:config.waitForBridge===true,onStage:env.progress});
       const prepared=await a.preparePrivateFeePayment({wallet,node,owner,privateFeeAddress,privateFeeArtifact:env.privateFeeArtifact,
         expectedChainId:String(info.l1ChainId),expectedVersion:String(info.rollupVersion),gasSettings:config.privateFee.gasSettings,claim});
-      const result=await new a.BatchCall(wallet,[]).send({from:owner,fee:{paymentMethod:prepared.paymentMethod,gasSettings:prepared.gasSettings}});
+      const result=await a.sendPrivateFeeTransaction({wallet,node,interaction:new a.BatchCall(wallet,[]),prepared,from:owner,guard:config.contextGuard});
       log('Your private fee balance is ready for board transactions.','success');
       return {ok:true,receipt:result.receipt,lastL2TxHash:transactionJournal.lastTxHash};
     },true);}catch(error){
-      const code=['BB_OPERATION_PAUSED','BB_REMOTE_PROVER_TIMEOUT','BB_REMOTE_PROVER_OFFLINE','BB_REMOTE_PROVER_BUSY','BB_REMOTE_PROVER_REJECTED','BB_REMOTE_PROVER_RESPONSE','BB_REMOTE_PROVER_FAILED','PRIVATE_FEE_CAP_TOO_LOW','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID'].includes(error?.code)?error.code:'BB_PRIVATE_FEE_CLAIM_FAILED';
+      const code=['PRIVATE_FEE_BALANCE_INSUFFICIENT','BB_FEE_ESTIMATION_UNSTABLE','BB_GAS_LIMIT_EXCEEDED','BB_SIMULATION_FAILED','BB_OPERATION_PAUSED','BB_REMOTE_PROVER_TIMEOUT','BB_REMOTE_PROVER_OFFLINE','BB_REMOTE_PROVER_BUSY','BB_REMOTE_PROVER_REJECTED','BB_REMOTE_PROVER_RESPONSE','BB_REMOTE_PROVER_FAILED','PRIVATE_FEE_CAP_TOO_LOW','BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID'].includes(error?.code)?error.code:'BB_PRIVATE_FEE_CLAIM_FAILED';
       const safe=new Error(code==='BB_SUBMISSION_UNKNOWN'?'Submission outcome is unknown. Check the transaction before retrying.':'Private fee claim did not complete. Keep the recovery file and check the deposit before retrying.',{cause:error});safe.code=code;if(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(error?.stage))safe.stage=error.stage;throw safe;
     }
     } finally {ethProvider.destroy();}

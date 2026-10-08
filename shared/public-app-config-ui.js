@@ -21,7 +21,7 @@
     button('Clear configuration',()=>{store.clear();input.value='';});
     function render(snapshot){const c=snapshot.config;exported.disabled=!c;
       summary.textContent=c?'Selected board '+c.board.contractAddress.slice(2,8)+(c.privateFee?' · Posting configured.':' · Reading only.'): 'No board selected.';
-      status.textContent=snapshot.error??(c&&snapshot.persisted?'Board selection saved on this device.':'');
+      status.textContent=snapshot.error??(c?(snapshot.persisted?'Board selection saved on this device.':'Board selected for this page.'):'');
     }
     const unsubscribe=store.subscribe(render);render(store.snapshot());container.append(panel);
     return {destroy(){destroyed=true;unsubscribe();panel.remove();}};

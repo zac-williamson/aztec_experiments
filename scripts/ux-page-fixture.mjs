@@ -1,7 +1,7 @@
 // Real presentation/controller modules with explicit application ports; no custody or chain qualification.
 import fs from 'node:fs/promises';import {chromium} from 'playwright';
 const root=new URL('../',import.meta.url);
-export async function fixture(kind='billboard/user',{context}={}){
+export async function fixture(kind='billboard/user',{context,beforeController}={}){
  const browser=context?null:await chromium.launch({headless:true});const page=context?await context.newPage():await browser.newPage({viewport:{width:390,height:844}});
  const close=()=>browser?browser.close():page.close();
  const errors=[];page.on('pageerror',error=>errors.push(error));try{
@@ -14,10 +14,10 @@ export async function fixture(kind='billboard/user',{context}={}){
   window.billboardConfigStore={snapshot:()=>({config:null}),subscribe:listener=>{window.configChanged=listener;return()=>{};}};
   window._getPublicConfig=()=>config;window.publicOperationFailure=e=>({code:e.code,field:e.field,message:e.message||e.code});window.initialState='zero_balance_need_deposit';
   window.BillboardAccount={snapshot:()=>account,configure:options=>{window.walletOptions=options;}};window.BillboardWalletProviders={list:()=>[],subscribe:()=>()=>{},refresh(){}};window.__aztec={createPXE(){}};
-  window.initializeHostedBoard=callback=>callback();
+  window.forgetSelectedBoard=()=>{};window.rememberSelectedBoard=()=>{};window.initializeHostedBoard=callback=>callback();window.initializeSelectedBoard=callback=>callback();
   window.ethers={formatEther:value=>String(Number(value)/1e18)};
   const listeners=new Set();window.operationState={status:'idle'};window.emit=state=>{operationState=state;for(const listener of listeners)listener(state);};
-  window.applicationPort={connected:false,subscribe:listener=>{listeners.add(listener);listener(operationState);return()=>listeners.delete(listener);},operation:()=>operationState,diagnosticReport:()=> '{}',readFundingRecovery:()=>null,
+  window.applicationPort={connected:false,subscribe:listener=>{listeners.add(listener);listener(operationState);return()=>listeners.delete(listener);},operation:()=>operationState,diagnosticReport:()=> '{}',readFundingRecovery:()=>null,readDeployment:()=>null,saveDeployment:value=>value,
    run:async action=>{calls.push(action);if(!account.address)throw {code:'BB_WALLET_NOT_READY'};applicationPort.connected=true;return {state:initialState};},
    completeDeposit:async()=>{calls.push('completeDeposit');return {state:'postable'};},completeFeeFunding:async()=>calls.push('completeFeeFunding'),
    readActivity:async()=>[],readDepositTerms:async()=>({minWei:1000000000000n,maxWei:10000000000000n,baseCooldown:60n}),fundingQuote:()=>({maximumFee:10n**18n,fundingAmount:2n*10n**18n}),
@@ -25,6 +25,7 @@ export async function fixture(kind='billboard/user',{context}={}){
   window.createBillboardApplication=()=>applicationPort;
  });
  await page.addScriptTag({path:new URL('../shared/wallet-buttons.js',import.meta.url).pathname});
+ if(beforeController)await page.evaluate(beforeController);
  await page.addScriptTag({path:new URL('apps/src/'+kind+'/app.js',root).pathname});
  return {page,errors,async close(){await close();if(errors.length)throw errors[0];}};
  }catch(error){await close();throw error;}

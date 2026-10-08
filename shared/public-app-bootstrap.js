@@ -20,7 +20,7 @@
   if(document.body?.hasAttribute('data-public-board-reader'))return;
   if(document.body?.hasAttribute('data-hosted-board')){
     // Page-local settings cannot inherit or overwrite another board's saved settings.
-    root.billboardConfigStore=root.BillboardConfig.createStore({storage:{getItem:()=>null,setItem(){},removeItem(){}},eventTarget:{}});
+    root.billboardConfigStore=root.BillboardConfig.createStore({persistence:'page'});
     root.initializeHostedBoard=async function(initialize){
       const status=document.getElementById('setupStatus');status.textContent='Loading board…';
       try{
@@ -37,7 +37,29 @@
     return;
   }
   let storage;try{storage=root.localStorage;}catch{}
-  root.billboardConfigStore=root.BillboardConfig.createStore({storage:storage||null,eventTarget:root});
+  const moderatorPage=document.body?.hasAttribute('data-moderator-board');
+  const selectedFragment=c=>'#network='+[c.network.chainId,c.network.rollupAddress,c.network.rollupVersion].join(':')+'&board='+c.board.contractAddress;
+  root.rememberSelectedBoard=function(config){config=root.BillboardConfig.validate(config);history.replaceState({...history.state,billboardSelectedConfiguration:config},'',selectedFragment(config));};
+  root.forgetSelectedBoard=function(){const state={...history.state,billboardSelectedConfiguration:null};history.replaceState(state,'',location.pathname+location.search);};
+  root.reloadSelectedBoard=async function(){
+    const selected=root.billboardConfigStore.snapshot(),config=root.BillboardConfig.validate(selected.config);
+    await root.BillboardAccount.endSession();
+    root.billboardConfigStore.assertCurrent(selected);root.rememberSelectedBoard(config);
+    location.reload();
+  };
+  const incomingModerator=moderatorPage&&!!location.hash;
+  root.billboardConfigStore=root.BillboardConfig.createStore({storage:storage||null,persistence:incomingModerator||(moderatorPage&&Object.hasOwn(history.state??{},'billboardSelectedConfiguration'))?'page':'device',eventTarget:root});
+  root.initializeSelectedBoard=async function(initialize){
+    if(!incomingModerator){initialize();return;}
+    const navigation=history.state?.billboardSelectedConfiguration;
+    if(navigation){try{const config=root.BillboardConfig.validate(navigation);if(selectedFragment(config)===location.hash){root.billboardConfigStore.install(config);initialize();return;}}catch{}}
+    const requested=location.href,before=root.billboardConfigStore.snapshot(),status=document.getElementById('setupStatus');status.textContent='Loading the selected board…';
+    try{const result=await root.loadHostedBoard(requested);
+      if(location.href!==requested||root.billboardConfigStore.snapshot().revision!==before.revision)return;
+      root.billboardConfigStore.install(result.config);status.textContent='';initialize();
+    }catch(error){if(location.href!==requested||root.billboardConfigStore.snapshot().revision!==before.revision)return;const failure=root.boardConnectionFailure(error);status.textContent=failure.message;if(failure.retry){const retry=document.createElement('button');retry.textContent='Try again';retry.onclick=()=>root.initializeSelectedBoard(initialize);status.append(retry);}}
+  };
+  if(document.body?.hasAttribute('data-moderator-board'))root.addEventListener('hashchange',()=>location.reload());
   const mount=()=>{
     if(document.getElementById('deploymentManifest'))return;
     const container=document.createElement('div');container.id='boardConfiguration';container.className='card';

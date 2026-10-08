@@ -25,6 +25,12 @@ for(const backend of ['file','indexeddb']) {
   const temp=fs.mkdtempSync(path.join(os.tmpdir(),'bb-journal-test-'));
   try {const idb=new IDBFactory(),storage=backend==='file'?createFileJournalStorage(temp):createBrowserJournalStorage(idb);await fn(fixture(storage),{temp,idb,storage});}finally{fs.rmSync(temp,{recursive:true,force:true});}
  }
+ test(`${backend}: read-only outcome never rebroadcasts or acknowledges`,()=>withStorage(async f=>{
+  const journal=await f.newSession();journal.setOperation('post');await journal.prepare(f.tx,await journal.assertCanStart());
+  const reopened=await f.newSession();assert.equal((await reopened.inspectOutcome()).outcome,'pending');assert.equal(f.sent.length,0);await assert.rejects(reopened.assertCanStart(),{code:'BB_RECOVERY_REQUIRED'});
+  f.setStatus('checkpointed');assert.equal((await reopened.inspectOutcome()).outcome,'success');assert.equal(f.sent.length,0);await assert.rejects(reopened.assertCanStart(),{code:'BB_RECOVERY_REQUIRED'});
+  f.setExecution('reverted');assert.equal((await reopened.inspectOutcome()).outcome,'reverted');f.reorg();await assert.rejects(reopened.inspectOutcome(),{code:'BB_SUBMISSION_UNKNOWN'});assert.equal(f.sent.length,0);
+ }));
  test(`${backend}: operation metadata survives restart and canonical recovery alone permits the next operation`,()=>withStorage(async f=>{
   const operation=JSON.stringify(['transfer_censor',['recipient']]),j=await f.newSession();
   assert.equal(await j.reconcilePrevious(),null);j.setOperation(operation);await j.prepare(f.tx,await j.assertCanStart());

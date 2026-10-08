@@ -50,7 +50,7 @@ function fixture({lostBinding=false,lostDeploy=false,existing=true,staleDeploy=f
   if(lose)throw new Error('synthetic lost response');
   const receipt=await node.getTxReceipt(tx.getTxHash());journal.confirmed(receipt);return{receipt};
  }
- const a={verifyDeploymentInputs,preflightDeploymentNetwork,deploymentPolicyVersion,verifyPortalRuntime,portalRuntimeMetadata:runtimeMetadata,boundedTransactionRead,Fr,AztecAddress,EthAddress,Tx:FixtureTx,TxHash:{fromString:x=>x},BaseWallet:class{},
+ const a={verifyDeploymentInputs,preflightDeploymentNetwork,deploymentPolicyVersion,verifyPortalRuntime,portalRuntimeMetadata:runtimeMetadata,boundedTransactionRead,Fr,AztecAddress,EthAddress,Tx:FixtureTx,TxHash:{fromString:x=>x},BaseWallet:class{async getContractClassMetadata(){return {isContractClassPubliclyRegistered:true};}},
   deriveSigningKey:()=>({}),deriveKeys:async()=>({publicKeys:{}}),computePartialAddress:async()=>new Fr(1),
   getContractClassFromArtifact:async()=>({id:field(12)}),getContractInstanceFromInstantiationParams:async()=>instance,deriveStorageSlotInMap:async()=>new Fr(1),
   SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>field(0);getSigningPublicKey=async()=>({});},
@@ -150,3 +150,7 @@ for(const method of ['is_portal_set','get_config_hash','get_portal'])test('criti
 });
 for(const value of [null,undefined,0,'false',{}])test('malformed portal binding boolean '+JSON.stringify(value)+' fails closed',async()=>{const f=fixture(),previous=f.env.aztec.Contract.at;f.env.aztec.Contract.at=async(...args)=>{const contract=await previous(...args);contract.methods.is_portal_set=()=>({simulate:async()=>value});return contract;};await assert.rejects(f.run(),/Malformed portal binding/);assert.equal(f.bindings,0);});
 test('preactivation deposit state is bounded and malformed value fails',async()=>{const f=fixture();f.env.aztec.boundedTransactionRead=fn=>boundedTransactionRead(fn,20);f.portal.depositsEnabled=()=>new Promise(()=>{});await assert.rejects(f.run(),{code:'BB_SUBMISSION_UNKNOWN'});f.portal.depositsEnabled=async()=> 'false';await assert.rejects(f.run(),/Malformed portal deposit/);});
+
+test('deployment initialization exposes typed preparation and synchronization progress',async()=>{
+ const f=fixture(),stages=[];f.env.progress=stage=>stages.push(stage);await f.run();assert.deepEqual(stages,['preparing','syncing']);
+});

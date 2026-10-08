@@ -10,24 +10,27 @@
 // Shared presentation of verified public board data. No wallet or SDK dependencies.
 (function(root){
   const el=(tag,text,cls)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(cls)node.className=cls;return node;};
-  function url(page,fragment=location.hash){const target=new URL(page,location.href);target.hash=fragment;return target;}
+  function url(page,fragment=location.hash){const target=new URL(page,location.href);target.hash=fragment;if(target.origin===location.origin&&(location.pathname.endsWith('/censor.html')||new URL(location.href).searchParams.get('return')==='moderator')&&['feed.html','fee-juice.html','user.html'].includes(target.pathname.split('/').pop()))target.searchParams.set('return','moderator');return target;}
   function header({title='Message board',section='Read'}={}){
     const head=el('header',undefined,'site-header');head.id='siteHeader';
     const brand=el('a','Message boards','brand');brand.href='boards.html';
     const nav=el('nav');nav.setAttribute('aria-label','Main navigation');
     for(const [label,page]of [['Read','feed.html'],['Write','user.html']]){const link=el('a',label);link.href=url(page);link.dataset.boardLink='';if(label===section)link.setAttribute('aria-current','page');nav.append(link);}
-    const share=el('button','Copy board link','secondary');share.type='button';share.onclick=async()=>{const target=url('feed.html');target.search='';try{await navigator.clipboard.writeText(target.href);share.textContent='Link copied';}catch{share.textContent='Copy unavailable';}};nav.append(share);
+    const share=el('button','Copy board link','secondary');share.type='button';share.dataset.copyBoardLink='';share.onclick=async()=>{const target=url('feed.html');target.search='';try{await navigator.clipboard.writeText(target.href);share.textContent='Link copied';}catch{share.textContent='Copy unavailable';}};nav.append(share);if(new URL(location.href).searchParams.get('return')==='moderator'){const back=el('a','Return to moderation');back.href=url('censor.html');nav.append(back);}
     const account=el('div');account.id='accountSlot';head.append(brand,nav,account);document.body.prepend(head);
     const notice=el('p','Testnet · Test funds only','testnet-notice');head.after(notice);
     document.querySelector('h1')?.replaceChildren(document.createTextNode(title));return head;
   }
+  let identityVersion=0;
   function identity(config){
-    const address=config?.board?.contractAddress;if(!address)return;
+    const version=++identityVersion,address=config?.board?.contractAddress;
+    for(const anchor of document.querySelectorAll('[data-board-link]')){const page=anchor.dataset.boardPage||anchor.getAttribute('href');if(page)anchor.dataset.boardPage=page;if(address)anchor.href=url(page,location.hash);else anchor.removeAttribute('href');}
+    const share=document.querySelector('[data-copy-board-link]');if(share)share.disabled=!address;
+    if(!address){const heading=document.querySelector('[data-board-title]');if(heading)heading.textContent='Message board';document.title='Message board';return;}
     const notice=document.querySelector('.testnet-notice');if(notice)notice.textContent=String(config.network.chainId)==='11155111'?'Testnet · Test funds only':String(config.network.chainId)==='1'?'Ethereum mainnet':'Ethereum network '+config.network.chainId;
     const name='Board '+address.slice(2,8);const heading=document.querySelector('[data-board-title]');if(heading)heading.textContent=name;
     document.title=name+' · Message board';
-    root.BillboardCatalog?.load(config.network).then(labels=>{const label=labels.find(x=>x.address===address);if(label&&heading){heading.textContent=label.name;document.title=label.name;}}).catch(()=>{});
-    for(const anchor of document.querySelectorAll('[data-board-link]'))anchor.href=url(anchor.getAttribute('href'),location.hash);
+    root.BillboardCatalog?.load(config.network).then(labels=>{const label=labels.find(x=>x.address===address);if(version===identityVersion&&label&&heading){heading.textContent=label.name;document.title=label.name;}}).catch(()=>{});
   }
   function renderMessages(container,posts,{append=false,onModerate}={}){
     const previous=new Map([...container.querySelectorAll('article[data-post-id]')].map(node=>[node.dataset.postId,node]));
@@ -49,7 +52,14 @@
     else {const active=document.activeElement,card=active?.closest('article[data-post-id]'),focusIndex=card?[...card.querySelectorAll('a,button,summary')].indexOf(active):-1;container.replaceChildren(...nodes);if(active?.isConnected)active.focus({preventScroll:true});else if(card){const replacement=nodes.find(node=>node.dataset.postId===card.dataset.postId);const target=replacement?.querySelectorAll('a,button,summary')[focusIndex]||replacement?.querySelector('a');target?.focus({preventScroll:true});}}
     if(!container.children.length)container.append(el('p','No messages yet. Be the first to write one.','empty-state'));
   }
-  function rules(container,policies){const text=policies?.at(-1)?.text;container.hidden=!text;if(text){let body=container.querySelector('[data-rules-text]');if(!body){container.replaceChildren(el('summary','Board rules'));body=el('p',undefined,'policy-text');body.dataset.rulesText='';container.append(body);}body.textContent=text;}}
+  function rules(container,policies,participation){
+    const text=policies?.at(-1)?.text;container.hidden=!text&&!participation;
+    let body=container.querySelector('[data-rules-text]');if(!body){container.replaceChildren(el('summary','Board rules'));body=el('p',undefined,'policy-text');body.dataset.rulesText='';container.append(body);}body.textContent=text||'No written rules published.';
+    let terms=container.querySelector('[data-participation]');if(!terms){terms=el('p',undefined,'small');terms.dataset.participation='';container.append(terms);}terms.hidden=!participation;
+    if(participation){const eth=value=>{const digits=String(value).padStart(19,'0');return digits.slice(0,-18)+'.'+digits.slice(-18).replace(/0+$/,'');};
+      terms.textContent='Refundable deposit: '+eth(participation.minDeposit)+'–'+eth(participation.maxDeposit)+' ETH. At the minimum deposit, one posting interval is '+participation.baseCooldown+' seconds; larger deposits shorten it. Save up to '+participation.maxSaveUp+' intervals for consecutive posts. A removal confirmed within '+participation.censorWindow+' seconds of publication under the same rules adds '+(Number(participation.kMultiplier)-1)+' posting intervals when your account next checks it.';
+    }
+  }
   function bindOperation(application,container){
     const status=el('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
     const hint=el('p',undefined,'small');const pause=el('button','Pause and continue later','secondary');pause.onclick=()=>{if(application.requestPause()){pause.disabled=true;pause.textContent='Pausing…';}};const details=el('details');details.append(el('summary','Details'));
@@ -119,17 +129,18 @@
   function parse(text){check(typeof text==='string'&&new TextEncoder().encode(text).length<=MAX_BYTES,'Configuration exceeds size limit');let value;try{value=JSON.parse(text);}catch{throw new Error('Invalid configuration JSON');}return validate(value);}
   function maximumFee(config){const f=validate(config).privateFee;if(!f)return null;const g=f.gasSettings;return (BigInt(g.gasLimits.daGas)*BigInt(g.maxFeesPerGas.feePerDaGas)+BigInt(g.gasLimits.l2Gas)*BigInt(g.maxFeesPerGas.feePerL2Gas)).toString();}
   function createStore(options={}){
+    const pageOnly=options.persistence==='page';
     let storage=options.storage,eventTarget=options.eventTarget??root,accessError=null;
-    if(!Object.hasOwn(options,'storage'))try{storage=root.localStorage;}catch{accessError='Public configuration storage is unavailable';}
+    if(!pageOnly&&!Object.hasOwn(options,'storage'))try{storage=root.localStorage;}catch{accessError='Public configuration storage is unavailable';}
     let revision=0,state;const listeners=new Set();
-    function update(config,error,persisted){state=freeze({config,revision:++revision,error,persisted});for(const fn of listeners)try{fn(state);}catch{}return state;}
+    function update(config,error,persisted){state=freeze({config,revision:++revision,error,persisted,persistence:pageOnly?'page':'device'});for(const fn of listeners)try{fn(state);}catch{}return state;}
     function load(text,persisted){try{return update(text===null?null:parse(text),null,persisted);}catch{return update(null,'Stored public configuration is invalid; import it again',false);}}
-    try{if(!storage)throw new Error();load(storage.getItem(STORAGE_KEY),true);}catch{update(null,accessError??'Public configuration storage is unavailable',false);}
+    try{if(pageOnly)update(null,null,false);else {if(!storage)throw new Error();load(storage.getItem(STORAGE_KEY),true);}}catch{update(null,accessError??'Public configuration storage is unavailable',false);}
     function onStorage(event){if(event.storageArea&&event.storageArea!==storage)return;if(event.key!==STORAGE_KEY&&event.key!==null)return;load(event.key===null?null:event.newValue,true);}
-    eventTarget?.addEventListener?.('storage',onStorage);
+    if(!pageOnly)eventTarget?.addEventListener?.('storage',onStorage);
     return Object.freeze({snapshot:()=>state,
-      install(value){const config=validate(value);let error=null,persisted=true;try{storage.setItem(STORAGE_KEY,JSON.stringify(config));}catch{persisted=false;error='Configuration is active for this page only; storage is unavailable';}return update(config,error,persisted);},
-      clear(){let error=null,persisted=true;try{storage.removeItem(STORAGE_KEY);}catch{persisted=false;error='Configuration cleared for this page only; saved storage could not be removed';}return update(null,error,persisted);},
+      install(value){const config=validate(value);if(pageOnly)return update(config,null,false);let error=null,persisted=true;try{storage.setItem(STORAGE_KEY,JSON.stringify(config));}catch{persisted=false;error='Configuration is active for this page only; storage is unavailable';}return update(config,error,persisted);},
+      clear(){if(pageOnly)return update(null,null,false);let error=null,persisted=true;try{storage.removeItem(STORAGE_KEY);}catch{persisted=false;error='Configuration cleared for this page only; saved storage could not be removed';}return update(null,error,persisted);},
       assertCurrent(snapshot){check(snapshot===state,'Board configuration changed; restart this operation');check(state.config!==null,'Import a board configuration first');return state.config;},
       subscribe(fn){check(typeof fn==='function','Subscriber must be a function');listeners.add(fn);return ()=>listeners.delete(fn);},
       destroy(){eventTarget?.removeEventListener?.('storage',onStorage);listeners.clear();}
@@ -163,7 +174,7 @@
     button('Clear configuration',()=>{store.clear();input.value='';});
     function render(snapshot){const c=snapshot.config;exported.disabled=!c;
       summary.textContent=c?'Selected board '+c.board.contractAddress.slice(2,8)+(c.privateFee?' · Posting configured.':' · Reading only.'): 'No board selected.';
-      status.textContent=snapshot.error??(c&&snapshot.persisted?'Board selection saved on this device.':'');
+      status.textContent=snapshot.error??(c?(snapshot.persisted?'Board selection saved on this device.':'Board selected for this page.'):'');
     }
     const unsubscribe=store.subscribe(render);render(store.snapshot());container.append(panel);
     return {destroy(){destroyed=true;unsubscribe();panel.remove();}};
@@ -195,7 +206,7 @@
   if(document.body?.hasAttribute('data-public-board-reader'))return;
   if(document.body?.hasAttribute('data-hosted-board')){
     // Page-local settings cannot inherit or overwrite another board's saved settings.
-    root.billboardConfigStore=root.BillboardConfig.createStore({storage:{getItem:()=>null,setItem(){},removeItem(){}},eventTarget:{}});
+    root.billboardConfigStore=root.BillboardConfig.createStore({persistence:'page'});
     root.initializeHostedBoard=async function(initialize){
       const status=document.getElementById('setupStatus');status.textContent='Loading board…';
       try{
@@ -212,7 +223,29 @@
     return;
   }
   let storage;try{storage=root.localStorage;}catch{}
-  root.billboardConfigStore=root.BillboardConfig.createStore({storage:storage||null,eventTarget:root});
+  const moderatorPage=document.body?.hasAttribute('data-moderator-board');
+  const selectedFragment=c=>'#network='+[c.network.chainId,c.network.rollupAddress,c.network.rollupVersion].join(':')+'&board='+c.board.contractAddress;
+  root.rememberSelectedBoard=function(config){config=root.BillboardConfig.validate(config);history.replaceState({...history.state,billboardSelectedConfiguration:config},'',selectedFragment(config));};
+  root.forgetSelectedBoard=function(){const state={...history.state,billboardSelectedConfiguration:null};history.replaceState(state,'',location.pathname+location.search);};
+  root.reloadSelectedBoard=async function(){
+    const selected=root.billboardConfigStore.snapshot(),config=root.BillboardConfig.validate(selected.config);
+    await root.BillboardAccount.endSession();
+    root.billboardConfigStore.assertCurrent(selected);root.rememberSelectedBoard(config);
+    location.reload();
+  };
+  const incomingModerator=moderatorPage&&!!location.hash;
+  root.billboardConfigStore=root.BillboardConfig.createStore({storage:storage||null,persistence:incomingModerator||(moderatorPage&&Object.hasOwn(history.state??{},'billboardSelectedConfiguration'))?'page':'device',eventTarget:root});
+  root.initializeSelectedBoard=async function(initialize){
+    if(!incomingModerator){initialize();return;}
+    const navigation=history.state?.billboardSelectedConfiguration;
+    if(navigation){try{const config=root.BillboardConfig.validate(navigation);if(selectedFragment(config)===location.hash){root.billboardConfigStore.install(config);initialize();return;}}catch{}}
+    const requested=location.href,before=root.billboardConfigStore.snapshot(),status=document.getElementById('setupStatus');status.textContent='Loading the selected board…';
+    try{const result=await root.loadHostedBoard(requested);
+      if(location.href!==requested||root.billboardConfigStore.snapshot().revision!==before.revision)return;
+      root.billboardConfigStore.install(result.config);status.textContent='';initialize();
+    }catch(error){if(location.href!==requested||root.billboardConfigStore.snapshot().revision!==before.revision)return;const failure=root.boardConnectionFailure(error);status.textContent=failure.message;if(failure.retry){const retry=document.createElement('button');retry.textContent='Try again';retry.onclick=()=>root.initializeSelectedBoard(initialize);status.append(retry);}}
+  };
+  if(document.body?.hasAttribute('data-moderator-board'))root.addEventListener('hashchange',()=>location.reload());
   const mount=()=>{
     if(document.getElementById('deploymentManifest'))return;
     const container=document.createElement('div');container.id='boardConfiguration';container.className='card';

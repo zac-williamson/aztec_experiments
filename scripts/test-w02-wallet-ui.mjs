@@ -118,6 +118,12 @@ test('saved metadata unlocks the exact passkey instead of creating',async()=>{
 test('cancelled passkey or changed Ethereum context never activates an account',async()=>{
  for(const options of [{fail:true},{change:true}]){const f=passkeyFixture(options);await f.context.window.BillboardAccount.connect(f.context.window.ethereum);await assert.rejects(f.context.window.BillboardAccount.createPasskey());assert.equal(f.context.window.walletState.aztec,null);assert.equal(f.records.size,0);}
 });
+for(const saved of ['null','false','0','""','[]','{}'])test(`invalid saved account ${saved} cannot create a replacement`,async()=>{
+ const f=passkeyFixture({saved});
+ await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum),{code:'BB_ACCOUNT_RECORD_INVALID'});
+ assert.equal(f.calls.length,0);assert.equal(f.records.get(f.storageKey),saved);
+ assert.equal(f.context.window.walletState.aztec,null);
+});
 test('corrupt metadata fails closed, explicit import repairs it',async()=>{
  const f=passkeyFixture({saved:'invalid json'});await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum));assert.equal(f.calls.length,0);
  await f.context._importPasskeyAccount();assert.equal(f.calls[0].create,false);assert.equal(JSON.parse(f.records.get(f.storageKey)).credentialId,'AQID');
@@ -265,4 +271,16 @@ test('active application work prevents lock and passkey replacement',async()=>{
 test('a throwing rendering listener cannot leave custody busy',async()=>{
  const f=fixture();f.context.window.BillboardAccount.configure({onChange:()=>{throw Error('render');},requireEth:false});
  await f.context._loadAztecWallet(file({secretKey:key,salt}));assert.equal(f.context.window.BillboardAccount.snapshot().busy,false);
+});
+
+test('damaged metadata is typed and the public formatter gives an explicit recovery action',async()=>{
+ const f=passkeyFixture({saved:'null'});await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum),{code:'BB_ACCOUNT_RECORD_INVALID'});
+ const env=fs.readFileSync(new URL('../shared/app-env.js',import.meta.url),'utf8');vm.runInContext(env.slice(env.indexOf('function publicOperationFailure('),env.indexOf('function makeCallEngine(')),f.context);
+ assert.match(f.context.publicOperationFailure({code:'BB_ACCOUNT_RECORD_INVALID'}).message,/existing passkey|encrypted backup/);
+ assert.equal(f.calls.length,0);assert.equal(f.records.get(f.storageKey),'null');
+});
+
+test('invalid raw wallet fields and mismatched address have actionable import errors',async()=>{
+ const invalid=fixture();invalid.context.window.BillboardWalletBackup.validateWallet=()=>{throw Error('Invalid salt');};await assert.rejects(invalid.context._loadAztecWallet(file({secretKey:key,salt})),{code:'BB_BACKUP_FORMAT',field:'recoveryFile'});assert.equal(invalid.context.window.walletState.aztec,null);
+ const mismatch=fixture();await assert.rejects(mismatch.context._loadAztecWallet(file({secretKey:key,salt,address:'0x'+'2'.repeat(64)})),{code:'BB_BACKUP_FORMAT',field:'recoveryFile'});assert.equal(mismatch.context.window.walletState.aztec,null);
 });

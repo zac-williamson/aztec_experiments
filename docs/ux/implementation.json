@@ -1,8 +1,8 @@
 {
   "scope": "All 60 accepted findings in 2026-10-07-audit.json",
-  "status": "All 60 findings implemented and deployed to testnet; qualification scope and remaining limits recorded in evidence.",
+  "status": "Implemented after independent re-audit and review followups; qualification limits are explicit per finding and in the evidence record.",
   "architecture": "interfaces.md",
-  "verification": "evidence/2026-10-07/results.json",
+  "verification": "evidence/2026-10-08/results.json",
   "findings": [
     {
       "id": "UX-01",
@@ -127,11 +127,13 @@
         "shared/application.js"
       ],
       "checks": [
-        "scripts/test-wallet-setup-gate.mjs",
-        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-application-interface.mjs",
         "scripts/test-deposit-custody.mjs",
-        "scripts/test-application-interface.mjs"
-      ]
+        "scripts/test-ux-reopened-browser.mjs",
+        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-wallet-setup-gate.mjs"
+      ],
+      "implementationNote": "Setup can retry with the unlocked account; terms and payment eligibility remain disabled until verified data is ready."
     },
     {
       "id": "UX-09",
@@ -163,11 +165,13 @@
         "shared/application.js"
       ],
       "checks": [
-        "scripts/test-wallet-setup-gate.mjs",
-        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-application-interface.mjs",
         "scripts/test-deposit-custody.mjs",
-        "scripts/test-application-interface.mjs"
-      ]
+        "scripts/test-ux-reopened-browser.mjs",
+        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-wallet-setup-gate.mjs"
+      ],
+      "implementationNote": "Canonical read-only Activity reconciliation identifies pending work, uses contextual actions, and prioritizes an unfinished Ethereum refund before settlement."
     },
     {
       "id": "UX-11",
@@ -218,11 +222,13 @@
         "shared/application.js"
       ],
       "checks": [
-        "scripts/test-wallet-setup-gate.mjs",
-        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-application-interface.mjs",
         "scripts/test-deposit-custody.mjs",
-        "scripts/test-application-interface.mjs"
-      ]
+        "scripts/test-ux-reopened-browser.mjs",
+        "scripts/test-w02-wallet-ui.mjs",
+        "scripts/test-wallet-setup-gate.mjs"
+      ],
+      "implementationNote": "Raw and encrypted recovery validation retain safe typed errors; semantic recovery-file fields map to visible controls and a real status region on operator pages."
     },
     {
       "id": "UX-14",
@@ -274,8 +280,10 @@
       "checks": [
         "scripts/test-application-interface.mjs",
         "scripts/test-deposit-message-ready.mjs",
-        "scripts/test-private-fee-funding-engine.mjs"
-      ]
+        "scripts/test-private-fee-funding-engine.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "implementationNote": "The slider summarizes the selected deposit and replenishment interval; board rules explain bursts and moderation penalties."
     },
     {
       "id": "UX-17",
@@ -437,9 +445,11 @@
       ],
       "checks": [
         "scripts/test-application-interface.mjs",
-        "scripts/test-remote-prover-client.mjs"
+        "scripts/test-remote-prover-client.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
       ],
-      "qualification": "Live Spot interruption produced the specific prover-unavailable state while retaining the confirmed payment. Recovery qualification is recorded separately."
+      "qualification": "Live Spot interruption produced the specific prover-unavailable state while retaining the confirmed payment. Recovery qualification is recorded separately.",
+      "implementationNote": "Allocation-search failure is distinct from insufficient funds and cannot trigger a new payment. Native SDK simulation preserves exact public gas results for estimation; final simulation is strict."
     },
     {
       "id": "UX-27",
@@ -500,10 +510,12 @@
         "shared/board-view.js"
       ],
       "checks": [
-        "scripts/test-u01-journey-browser.mjs",
         "scripts/test-application-interface.mjs",
-        "scripts/test-engine-private-fee.mjs"
-      ]
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "implementationNote": "Drafts are scoped and retained across failures, editing during proof, resume, and storage failures; only the confirmed submitted draft is cleared."
     },
     {
       "id": "UX-31",
@@ -516,10 +528,12 @@
         "shared/board-view.js"
       ],
       "checks": [
-        "scripts/test-u01-journey-browser.mjs",
         "scripts/test-application-interface.mjs",
-        "scripts/test-engine-private-fee.mjs"
-      ]
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "implementationNote": "Canonical post success links its public message and preserves any newer draft."
     },
     {
       "id": "UX-32",
@@ -564,10 +578,12 @@
         "shared/board-view.js"
       ],
       "checks": [
-        "scripts/test-u01-journey-browser.mjs",
         "scripts/test-application-interface.mjs",
-        "scripts/test-engine-private-fee.mjs"
-      ]
+        "scripts/test-engine-private-fee.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "implementationNote": "Reader and moderator show verified participation terms and policy history."
     },
     {
       "id": "UX-35",
@@ -715,8 +731,11 @@
       "checks": [
         "scripts/test-application-interface.mjs",
         "scripts/test-engine-private-fee.mjs",
-        "scripts/test-u01-journey-browser.mjs"
-      ]
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "implementationNote": "Canonical Activity identifies pending settlement and resumes the application-owned withdrawal process.",
+      "qualification": "Actual controller/application recovery paths tested; a new real testnet withdrawal settlement was not exercised in this UX pass."
     },
     {
       "id": "UX-44",
@@ -731,9 +750,11 @@
       "checks": [
         "scripts/test-application-interface.mjs",
         "scripts/test-engine-private-fee.mjs",
-        "scripts/test-u01-journey-browser.mjs"
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
       ],
-      "qualification": "Normal, paused/resumed and canonically recovered refunds share the completion presentation; only a matched saved L2 withdrawal can yield refund details."
+      "qualification": "Actual controller/application recovery paths tested; a new real testnet withdrawal settlement was not exercised in this UX pass.",
+      "implementationNote": "Both fresh and resumed refunds render the same final amount/recipient/receipt screen."
     },
     {
       "id": "UX-45",
@@ -746,11 +767,14 @@
         "shared/application.js"
       ],
       "checks": [
-        "scripts/test-u01-journey-browser.mjs",
         "scripts/test-application-interface.mjs",
         "scripts/test-engine-private-fee.mjs",
+        "scripts/test-hosted-board-link.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs",
         "scripts/test-hosted-board-link.mjs"
-      ]
+      ],
+      "implementationNote": "A selected moderator board clears stale authority; an invalidated account explicitly ends its session and reloads the exact validated navigation configuration."
     },
     {
       "id": "UX-46",
@@ -763,11 +787,13 @@
         "shared/application.js"
       ],
       "checks": [
-        "scripts/test-u01-journey-browser.mjs",
         "scripts/test-application-interface.mjs",
         "scripts/test-engine-private-fee.mjs",
-        "scripts/test-hosted-board-link.mjs"
-      ]
+        "scripts/test-hosted-board-link.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "implementationNote": "Feed messages provide contextual moderation; older-page results survive polling and stale board requests cannot overwrite replacement data."
     },
     {
       "id": "UX-47",
@@ -814,11 +840,14 @@
         "shared/application.js"
       ],
       "checks": [
-        "scripts/test-u01-journey-browser.mjs",
         "scripts/test-application-interface.mjs",
         "scripts/test-engine-private-fee.mjs",
+        "scripts/test-hosted-board-link.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs",
         "scripts/test-hosted-board-link.mjs"
-      ]
+      ],
+      "implementationNote": "Incoming links cannot inherit another board; custom configurations survive repeated reloads; Clear leaves no selection even if older device settings exist."
     },
     {
       "id": "UX-50",
@@ -831,11 +860,13 @@
         "shared/application.js"
       ],
       "checks": [
-        "scripts/test-u01-journey-browser.mjs",
         "scripts/test-application-interface.mjs",
         "scripts/test-engine-private-fee.mjs",
-        "scripts/test-hosted-board-link.mjs"
-      ]
+        "scripts/test-hosted-board-link.mjs",
+        "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs"
+      ],
+      "implementationNote": "Changed policies require an explicit comparison against the latest version while retaining the proposed text."
     },
     {
       "id": "UX-51",
@@ -847,9 +878,12 @@
         "shared/application.js"
       ],
       "checks": [
+        "scripts/test-application-interface.mjs",
         "scripts/test-u01-journey-browser.mjs",
-        "scripts/test-application-interface.mjs"
-      ]
+        "scripts/test-ux-reopened-browser.mjs",
+        "scripts/test-w03-deploy-engine.mjs"
+      ],
+      "implementationNote": "Guided validated settings and a review precede deployment; the engine reports typed preparation, synchronization, proving, submission and confirmation stages."
     },
     {
       "id": "UX-52",
@@ -861,10 +895,12 @@
         "shared/application.js"
       ],
       "checks": [
+        "scripts/test-application-interface.mjs",
         "scripts/test-u01-journey-browser.mjs",
-        "scripts/test-application-interface.mjs"
+        "scripts/test-ux-reopened-browser.mjs"
       ],
-      "qualification": "Completion distinguishes contract deployment, verified reading and checked posting configuration. It does not claim a newly deployed board has passed a real posting transaction."
+      "qualification": "Completion distinguishes contract deployment, verified reading and checked posting configuration. It does not claim a newly deployed board has passed a real posting transaction.",
+      "implementationNote": "Validated versioned resume records, edit-generation guards, canonical portal/moderator checks and live remote-prover health distinguish deployed contracts from verified capabilities."
     },
     {
       "id": "UX-53",
@@ -990,8 +1026,10 @@
       "checks": [
         "scripts/test-application-interface.mjs",
         "scripts/test-u01-journey-browser.mjs",
+        "scripts/test-ux-reopened-browser.mjs",
         "scripts/test-wallet-setup-gate.mjs"
-      ]
+      ],
+      "implementationNote": "Deposit readiness waits for verified terms; late gas estimates cannot mutate a replacement view; failed setup can retry without replacing the account."
     },
     {
       "id": "UX-60",
