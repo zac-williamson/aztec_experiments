@@ -67,6 +67,12 @@ const records = [
     run: run('privateFees'),
   }),
   Object.freeze({
+    name:'private-fee-refund-revert',deadlineMs:540000,evidenceTask:'W01',
+    description:'Private refund after an included application revert and subsequent payment',
+    fixture:'activated-board',authors:1,applicationThreads:1,browser:'none',
+    run:run('privateFeeRefundRevert'),
+  }),
+  Object.freeze({
     name: 'private-fee-post', deadlineMs: 540000, evidenceTask: 'W01',
     description: 'Cold private fee claim and ordinary post',
     fixture: 'activated-board', authors: 1, applicationThreads: 1, browser: 'none',

@@ -16,10 +16,10 @@ export async function observeRepeatedPrivatePosts(s){
  const observation={passed:false,sequence:['A1','A2','B1'],authors:[],posts:[]};
  s.observation.privacy=observation;
  const artifact=loadContractArtifact(JSON.parse(await fs.readFile(path.join(ROOT,'apps/src/billboard/billboard_artifact.json'),'utf8')));
- const records=[],identities=[];let initialPool,totalFunding=0n,totalFees=0n,payer;
+ const records=[],identities=[];let initialPool,totalFunding=0n,totalFees=0n,payer,first;
  for(const [label,texts] of [['A',['A1','A2']],['B',['B1']]]){
   const fundingDirectory=path.join(s.directory,'author-'+label);await fs.mkdir(fundingDirectory,{mode:0o700});
-  const fee=await prepareW01PrivateFees({...s.common,fundingDirectory,standalone:false});
+  const fee=await prepareW01PrivateFees({...s.common,fundingDirectory,standalone:false,persistentDirectory:path.join(s.directory,'privacy-wallet-'+label)});
   const authorObservation={label,fee};observation.authors.push(authorObservation);let actionFailure;
   try{
    const account=privateKeyToAccount(generatePrivateKey());
@@ -43,12 +43,18 @@ export async function observeRepeatedPrivatePosts(s){
     observation.posts.push({name,...post.summary});
    }
    await fee.verify(fees);totalFees+=fees;totalFunding+=fee.browserFixture.fundedAmount;
+   if(label==='A')first={fee,fees};
   }catch(error){actionFailure=error;throw error;}
   finally{
    try{await fee.close();authorObservation.walletStopped=true;}
    catch(error){authorObservation.walletStopped=false;if(!actionFailure)throw error;}
   }
  }
+ try{
+  await first.fee.reopen();
+  await first.fee.verify(first.fees,totalFunding-first.fee.browserFixture.fundedAmount-(totalFees-first.fees));
+  observation.firstAuthorBalanceUnchangedAfterSecondAuthor=true;
+ }finally{await first.fee.close();}
  assert(!identities[0].owner.equals(identities[1].owner));
  const coinbase=(await s.node.getConfig()).coinbase;
  const funders=identities.flatMap(identity=>[identity.collateralFunder,identity.feeFunder]);

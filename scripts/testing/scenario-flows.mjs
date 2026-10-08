@@ -7,6 +7,7 @@ import {observeRepeatedPrivatePosts} from '../t03-repeated-posts.mjs';
 import assert from 'node:assert/strict';
 import {withActivatedBoard} from '../c01-bridge-flow.mjs';
 import {prepareW01PrivateFees} from '../w01-private-fee-flow.mjs';
+import {observePrivateFeeRefundRevert} from '../w01-refund-revert.mjs';
 import {depositAndClaimC01} from '../c01-deposit-flow.mjs';
 import {proveAndIncludeC01Exit} from '../c01-exit-flow.mjs';
 import {settleC01Message} from '../c01-settle-application-message.mjs';
@@ -94,6 +95,14 @@ export function privateFees(ctx){
     await claim(s,false,'private');
     await exit(s,false);
     return ()=>refund(s,false);
+  });
+}
+export function privateFeeRefundRevert(ctx){
+  return withActivatedBoard(ctx,async s=>{
+    await fees(s,true);
+    s.observation.refundRevert={};
+    await observePrivateFeeRefundRevert({...s.common,privateFee:s.privateFee,mark:ctx.mark,observation:s.observation.refundRevert});
+    return complete;
   });
 }
 export function noteAttribution(ctx){
