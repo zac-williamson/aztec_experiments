@@ -2,7 +2,7 @@
 // these tests do not claim to prove an L1 bridge or a real fee-paying transaction.
 use private_fee_contract::PrivateFPC;
 use aztec::{
-    protocol::{address::AztecAddress, constants::FEE_JUICE_ADDRESS,
+    protocol::{address::AztecAddress, constants::FEE_JUICE_ADDRESS, traits::Deserialize,
         abis::{gas::Gas, gas_fees::GasFees, gas_settings::GasSettings}},
     test::helpers::test_environment::{TestEnvironment, CallPrivateOptions},
 };
@@ -87,4 +87,18 @@ unconstrained fn private_fee_outsider_cannot_call_balance_recursion() {
     seed_claim(env, fpc, user, 5000, 123);
     env.call_private(user, PrivateFPC::at(fpc).mint(5000, 123, 42));
     env.call_private(other, PrivateFPC::at(fpc).recurse_subtract_balance_internal(user, 1));
+}
+
+#[test(should_fail_with = "Function _complete_refund can only be called by the same contract")]
+unconstrained fn private_fee_outsider_cannot_complete_refund() {
+    let (env, fpc, user, _) = setup();
+    env.call_public(user, PrivateFPC::at(fpc)._complete_refund(Deserialize::deserialize([0]), 0));
+}
+
+// TXE supplies zero transaction fees and permits a chosen sender. This tests
+// only the zero-refund branch, not real teardown or protocol fee accounting.
+#[test]
+unconstrained fn private_fee_zero_refund_skips_note_completion() {
+    let (env, fpc, _, _) = setup();
+    env.call_public(fpc, PrivateFPC::at(fpc)._complete_refund(Deserialize::deserialize([0]), 0));
 }

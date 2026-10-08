@@ -17,3 +17,9 @@ successful and reverted application calls, zero refunds, unauthorized completion
 and a second owner's unchanged balance. The published class/instance and nonzero
 teardown allowance are prerequisites. TXE setup-phase rejection is not evidence
 that these positive refund paths work.
+
+The public TXE checks reject an outsider calling `_complete_refund` and exercise
+the zero-refund branch with TXE's zero transaction fee. The latter deliberately
+uses the contract address as caller and a dummy partial note: it verifies that
+zero refunds skip note completion. It does not establish real transaction
+reservation/fee equality or teardown accounting.
