@@ -9,6 +9,7 @@ import {createBlobClient} from '@aztec/blob-client/client';
 import {initTelemetryClient} from '@aztec/telemetry-client';
 import {RollupContract} from '@aztec/ethereum/contracts/rollup';
 import {RunningPromise} from '@aztec/foundation/running-promise';
+import {withC01ClientMining} from './c01-client-mining.mjs';
 export async function qualifyC01RealNode({config,deployment,genesis,directory,privateKey,address,preparation,mark,browserControl,scenario,operatorPackage}){
   assert(scenario&&typeof scenario.run==='function');
   assert(['node','included-board','activated-board'].includes(scenario.fixture));
@@ -57,7 +58,10 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
       Object.assign(ctx,{instance:observation.board.instance,inclusion:observation.inclusion});observation.sequencerStarted=true;
       if(scenario.fixture==='activated-board'){
         const {prepareAndProveC01Ready}=await import('./c01-ready-flow.mjs');
-        observation.ready=await prepareAndProveC01Ready({...ctx,deploymentReceipt:ctx.inclusion,rollupVersion:deployment.rollupVersion});assert(observation.ready.passed);
+        observation.readyMining={};
+        observation.ready=await withC01ClientMining({rpcUrl:config.l1RpcUrls[0],dateProvider,observation:observation.readyMining},
+          ()=>prepareAndProveC01Ready({...ctx,deploymentReceipt:ctx.inclusion,rollupVersion:deployment.rollupVersion}));
+        assert(observation.ready.passed);
         mark('ready-inclusion');observation.readyInclusion=await includeC01Board({node,tx:observation.ready.tx,rpcUrl:config.l1RpcUrls[0],dateProvider,startSequencer:false});assert(observation.readyInclusion.passed);
         const effect=await node.getTxEffect(observation.ready.tx.getTxHash());assert(effect?.data);assert(effect.data.l2ToL1Msgs.some(message=>message.toString()===observation.ready.expectedReadyLeaf));
         Object.assign(observation.ready,{readyEmitted:true,bindingSubmitted:true});
@@ -72,6 +76,12 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
     else observation.scenario=result;
     observation.scope=scenario.description;observation.epochSchedulingStarted=false;observation.idleProverAgentCreated=false;
     observation.passed=true;
+  }catch(error){
+    if(error.inclusionObservation){
+      if(observation.ready)observation.readyInclusion=error.inclusionObservation;
+      else observation.inclusion=error.inclusionObservation;
+    }
+    error.nodeObservation=observation;throw error;
   }finally{
     try{if(node){await node.stop();observation.nodeStopped=true;}}
     finally{try{const failures=[];for(const unsubscribe of subscriptions){try{unsubscribe();}catch(error){failures.push(error);}}await Promise.all(loops.map(loop=>loop.runningPromise));if(failures.length)throw new AggregateError(failures);}finally{RollupContract.prototype.listenToSlasherChanged=oldListen;RunningPromise.prototype.start=oldStart;}}

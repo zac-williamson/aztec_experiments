@@ -10,17 +10,22 @@ export async function includeC01Board({node,tx,rpcUrl,dateProvider,startSequence
   const client=createPublicClient({chain:foundry,transport:http(rpcUrl,{retryCount:0,timeout:5000})});
   assert.equal(await client.getChainId(),31337);
   const start=await client.getBlock();
-  synchronizeC01MinedClock(dateProvider,Number(start.timestamp));
+  const observation={passed:false,txHash:tx.getTxHash().toString(),adjustments:[],
+    initialClockLeadSeconds:synchronizeC01MinedClock(dateProvider,Number(start.timestamp))};
+  try{
   assert(node.validatorClient,'Actual validator client absent');
   await node.validatorClient.registerHandlers();
   node.getSequencer().updateConfig({minTxsPerBlock:1});
   await node.sendTx(tx);
   if(startSequencer)await node.getSequencer().start();
-  const adjustments=[];
+  const adjustments=observation.adjustments;
   const deadline=Date.now()+120000;
   let receipt;
   while(Date.now()<deadline){
     receipt=await node.getTxReceipt(tx.getTxHash());
+    observation.status=receipt.status;observation.executionResult=receipt.executionResult;
+    observation.sequencerState=node.getSequencer().getSequencer().getState();
+    observation.nodeClockSeconds=dateProvider.nowInSeconds();
     if([TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(receipt.status))break;
     assert.notEqual(receipt.status,TxStatus.DROPPED,'Board transaction dropped');
     // Mine only ordinary disposable L1 blocks; never touch proof state or Outbox roots.
@@ -32,8 +37,9 @@ export async function includeC01Board({node,tx,rpcUrl,dateProvider,startSequence
   }
   assert([TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(receipt.status),'Board checkpoint inclusion timed out');
   assert.equal(receipt.executionResult,TxExecutionResult.SUCCESS);
-  return {passed:true,txHash:tx.getTxHash().toString(),status:receipt.status,executionResult:receipt.executionResult,
+  return Object.assign(observation,{passed:true,txHash:tx.getTxHash().toString(),status:receipt.status,executionResult:receipt.executionResult,
     blockNumber:String(receipt.blockNumber),transactionFee:String(receipt.transactionFee),
     ordinarySequencer:true,syntheticSettlement:false,epochProofAccepted:false,
-    clockProfile:'controlled disposable L1 mining and node clock synchronization; no throughput/finality claim',adjustments};
+    clockProfile:'controlled disposable L1 mining and node clock synchronization; no throughput/finality claim',adjustments});
+  }catch(error){error.inclusionObservation=observation;throw error;}
 }
