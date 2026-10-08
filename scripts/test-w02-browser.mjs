@@ -50,6 +50,16 @@ try {
   await first.page.locator('#wbEthBrowserBtn').click();
   await first.page.waitForFunction(()=>window.walletState.aztec?.address);
   const address=await first.page.evaluate(()=>window.walletState.aztec.address.toString());
+  stage='saved-passkey-reconnect';
+  const savedAccount=await first.page.evaluate(()=>localStorage.getItem('billboard-passkey-v1:0x'+'12'.repeat(20)));
+  await first.page.addInitScript(()=>{
+    window.ethereum={request:async({method})=>{if(method==='eth_chainId')return '0x7a69';if(['eth_accounts','eth_requestAccounts'].includes(method))return ['0x'+'12'.repeat(20)];throw Error('Unexpected Ethereum request');}};
+  });
+  await first.page.reload();await readyUser(first.page);
+  await first.page.locator('#wbEthBrowserBtn').click();
+  await first.page.waitForFunction(()=>window.walletState.aztec?.address);
+  assert.equal(await first.page.evaluate(()=>window.walletState.aztec.address.toString()),address);
+  assert.equal(await first.page.evaluate(()=>localStorage.getItem('billboard-passkey-v1:0x'+'12'.repeat(20))),savedAccount);
   stage='save-disposable-claim';
   const commitment=await first.page.evaluate(async()=>{
     const a=window.__aztec,w=window.walletState.aztec,secret=a.Fr.random(),hash=(await a.computeSecretHash(secret)).toString();

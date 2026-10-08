@@ -50,7 +50,14 @@ function initWalletButtons(containerId,options={}) {
     <label>Repeat password when creating a backup <input type="password" id="wbPasswordConfirm" autocomplete="new-password" maxlength="1024"></label>
     <p>Keep your encrypted recovery file and password. Export again after each transaction or recovery update. Older files do not contain later requests. Losing your wallet key or a deposit claim secret can make funds unrecoverable. This browser holds decrypted keys while open; use a trusted device. Reload before changing wallets.</p>`;
   if(autoPasskey)document.body.appendChild(document.getElementById('wbAccountMenu'));
-  const handle=run=>async()=>{try{await run();}catch{walletMessage('Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.','error');}};
+  const handle=run=>async()=>{try{await run();}catch(error){
+    const messages={
+      BB_ACCOUNT_RECORD_INVALID:'Saved account information is damaged. Use Account → Import existing passkey account, or reload and import your recovery file.',
+      BB_PASSKEY_UNSUPPORTED:'Passkeys require a supported browser and HTTPS.',
+      BB_PASSKEY_PRF_UNSUPPORTED:'This passkey cannot unlock a private account. Use a passkey that supports PRF, or import your recovery file from Account settings.',
+    };
+    walletMessage(Object.hasOwn(messages,error?.code)?messages[error.code]:'Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.','error');
+  }};
   document.getElementById('wbAztecBtn').addEventListener('click',()=>document.getElementById('wbAztecFile').click());
   document.getElementById('wbImportPasskeyBtn')?.addEventListener('click',handle(_importPasskeyAccount));
   document.getElementById('wbAztecGenBtn')?.addEventListener('click',handle(_generateAztecWallet));

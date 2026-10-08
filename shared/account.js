@@ -150,8 +150,11 @@ async function _openPasskeyAccount(importExisting=false) {
   return navigator.locks.request('billboard-passkey:'+account.toLowerCase(),async()=>{
     _assertWalletLive();if(generation!==_walletGeneration)throw Error('Wallet context changed.');
     const key=_passkeyRecordKey(),text=localStorage.getItem(key);
-    const record=importExisting || text===null?null:JSON.parse(text);
-    if(record && (record.version!==1 || typeof record.credentialId!=='string' || !/^0x[0-9a-f]{64}$/i.test(record.address)))throw Error('Saved account information is invalid. Import your account from Account settings.');
+    let record=null;
+    if(!importExisting && text!==null) {
+      try {record=JSON.parse(text);} catch {throw Object.assign(Error('Saved account information is invalid. Import your account from Account settings.'),{code:'BB_ACCOUNT_RECORD_INVALID'});}
+      if(!record || typeof record!=='object' || Array.isArray(record) || record.version!==1 || typeof record.credentialId!=='string' || !record.credentialId || !/^0x[0-9a-f]{64}$/i.test(record.address))throw Object.assign(Error('Saved account information is invalid. Import your account from Account settings.'),{code:'BB_ACCOUNT_RECORD_INVALID'});
+    }
     _wlog(importExisting || record?'Approve your passkey to unlock your account.':'Set up a passkey to secure your account.');
     const result=await BillboardPasskey.ceremony(account,{create:!importExisting && !record,credentialId:importExisting?undefined:record?.credentialId});
     _assertWalletLive();if(generation!==_walletGeneration)throw Error('Wallet context changed.');

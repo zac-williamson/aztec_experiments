@@ -39824,7 +39824,7 @@ const __$G=typeof globalThis!=="undefined"?globalThis:typeof window!=="undefined
   }
   async function derive(prf, ethereumAccount) {
     const bytes = new Uint8Array(prf);
-    if (bytes.byteLength !== 32) throw Error('This passkey does not support private account recovery (PRF).');
+    if (bytes.byteLength !== 32) throw Object.assign(Error('This passkey does not support private account recovery (PRF).'),{code:'BB_PASSKEY_PRF_UNSUPPORTED'});
     const identity = account(ethereumAccount);
     const key = await crypto.subtle.importKey('raw', bytes, 'HKDF', false, ['deriveBits']);
     async function deriveField(label) {
@@ -39841,7 +39841,7 @@ const __$G=typeof globalThis!=="undefined"?globalThis:typeof window!=="undefined
   async function ceremony(ethereumAccount, {create = false, credentialId} = {}) {
     const identity = account(ethereumAccount);
     if (!global.isSecureContext || !navigator.credentials || !global.PublicKeyCredential) {
-      throw Error('Passkeys require a supported browser and HTTPS.');
+      throw Object.assign(Error('Passkeys require a supported browser and HTTPS.'),{code:'BB_PASSKEY_UNSUPPORTED'});
     }
     const userId = crypto.getRandomValues(new Uint8Array(32));
     const prfInput = await digest(domain + '/prf');
@@ -39869,7 +39869,7 @@ const __$G=typeof globalThis!=="undefined"?globalThis:typeof window!=="undefined
     if (create && !output && credential.getClientExtensionResults().prf?.enabled === true) {
       return ceremony(identity, {credentialId:id});
     }
-    if (!output) throw Error('This passkey does not support private account recovery (PRF). Use a PRF-capable passkey.');
+    if (!output) throw Object.assign(Error('This passkey does not support private account recovery (PRF). Use a PRF-capable passkey.'),{code:'BB_PASSKEY_PRF_UNSUPPORTED'});
     try { return {wallet:await derive(output,identity),credentialId:id}; }
     finally { new Uint8Array(output).fill(0); }
   }
@@ -40293,8 +40293,11 @@ async function _openPasskeyAccount(importExisting=false) {
   return navigator.locks.request('billboard-passkey:'+account.toLowerCase(),async()=>{
     _assertWalletLive();if(generation!==_walletGeneration)throw Error('Wallet context changed.');
     const key=_passkeyRecordKey(),text=localStorage.getItem(key);
-    const record=importExisting || text===null?null:JSON.parse(text);
-    if(record && (record.version!==1 || typeof record.credentialId!=='string' || !/^0x[0-9a-f]{64}$/i.test(record.address)))throw Error('Saved account information is invalid. Import your account from Account settings.');
+    let record=null;
+    if(!importExisting && text!==null) {
+      try {record=JSON.parse(text);} catch {throw Object.assign(Error('Saved account information is invalid. Import your account from Account settings.'),{code:'BB_ACCOUNT_RECORD_INVALID'});}
+      if(!record || typeof record!=='object' || Array.isArray(record) || record.version!==1 || typeof record.credentialId!=='string' || !record.credentialId || !/^0x[0-9a-f]{64}$/i.test(record.address))throw Object.assign(Error('Saved account information is invalid. Import your account from Account settings.'),{code:'BB_ACCOUNT_RECORD_INVALID'});
+    }
     _wlog(importExisting || record?'Approve your passkey to unlock your account.':'Set up a passkey to secure your account.');
     const result=await BillboardPasskey.ceremony(account,{create:!importExisting && !record,credentialId:importExisting?undefined:record?.credentialId});
     _assertWalletLive();if(generation!==_walletGeneration)throw Error('Wallet context changed.');
@@ -40388,7 +40391,14 @@ function initWalletButtons(containerId,options={}) {
     <label>Repeat password when creating a backup <input type="password" id="wbPasswordConfirm" autocomplete="new-password" maxlength="1024"></label>
     <p>Keep your encrypted recovery file and password. Export again after each transaction or recovery update. Older files do not contain later requests. Losing your wallet key or a deposit claim secret can make funds unrecoverable. This browser holds decrypted keys while open; use a trusted device. Reload before changing wallets.</p>`;
   if(autoPasskey)document.body.appendChild(document.getElementById('wbAccountMenu'));
-  const handle=run=>async()=>{try{await run();}catch{walletMessage('Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.','error');}};
+  const handle=run=>async()=>{try{await run();}catch(error){
+    const messages={
+      BB_ACCOUNT_RECORD_INVALID:'Saved account information is damaged. Use Account → Import existing passkey account, or reload and import your recovery file.',
+      BB_PASSKEY_UNSUPPORTED:'Passkeys require a supported browser and HTTPS.',
+      BB_PASSKEY_PRF_UNSUPPORTED:'This passkey cannot unlock a private account. Use a passkey that supports PRF, or import your recovery file from Account settings.',
+    };
+    walletMessage(Object.hasOwn(messages,error?.code)?messages[error.code]:'Wallet operation did not complete. Check the file, password and connection. An already loaded wallet cannot be replaced; reload to switch.','error');
+  }};
   document.getElementById('wbAztecBtn').addEventListener('click',()=>document.getElementById('wbAztecFile').click());
   document.getElementById('wbImportPasskeyBtn')?.addEventListener('click',handle(_importPasskeyAccount));
   document.getElementById('wbAztecGenBtn')?.addEventListener('click',handle(_generateAztecWallet));

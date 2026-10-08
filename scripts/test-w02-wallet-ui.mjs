@@ -118,7 +118,40 @@ test('saved metadata unlocks the exact passkey instead of creating',async()=>{
 test('cancelled passkey or changed Ethereum context never activates an account',async()=>{
  for(const options of [{fail:true},{change:true}]){const f=passkeyFixture(options);await assert.rejects(f.context._loadEthBrowser());assert.equal(f.context.window.walletState.aztec,null);assert.equal(f.records.size,0);}
 });
+for(const saved of ['null','false','0','""','[]','{}'])test(`invalid saved account ${saved} cannot create a replacement`,async()=>{
+ const f=passkeyFixture({saved});
+ await assert.rejects(f.context._loadEthBrowser(),/Saved account information is invalid/);
+ assert.equal(f.calls.length,0);assert.equal(f.records.get(f.storageKey),saved);
+ assert.equal(f.context.window.walletState.aztec,null);
+});
 test('corrupt metadata fails closed, explicit import repairs it',async()=>{
  const f=passkeyFixture({saved:'invalid json'});await assert.rejects(f.context._loadEthBrowser());assert.equal(f.calls.length,0);
  await f.context._importPasskeyAccount();assert.equal(f.calls[0].create,false);assert.equal(JSON.parse(f.records.get(f.storageKey)).credentialId,'AQID');
+});
+
+test('invalid saved account shows recovery instructions without replacing it',async()=>{
+ const f=passkeyFixture({saved:'null'});
+ await f.element('wbEthBrowserBtn').click();
+ assert(f.logs.some(message=>message.includes('Import existing passkey account')));
+ assert.equal(f.calls.length,0);assert.equal(f.records.get(f.storageKey),'null');
+});
+test('explicit passkey import selects the next account without replacing the active wallet',async()=>{
+ const f=passkeyFixture();await f.context._loadEthBrowser();
+ const active=f.context.window.walletState.aztec,nextAddress='0x'+'2'.padStart(64,'0');
+ f.context.window.__aztec.getContractInstanceFromInstantiationParams=async()=>({address:{toString:()=>nextAddress}});
+ f.context.BillboardPasskey.ceremony=async(_account,options)=>{
+   assert.equal(options.create,false);assert.equal(options.credentialId,undefined);
+   return {wallet:{secretKey:nextAddress,salt},credentialId:'BAUG'};
+ };
+ const result=await f.context.window.BillboardAccount.importPasskey();
+ assert.equal(result.reloadRequired,true);assert.equal(f.context.window.walletState.aztec,active);
+ assert.deepEqual(JSON.parse(f.records.get(f.storageKey)),{version:1,credentialId:'BAUG',address:nextAddress});
+});
+for(const code of ['BB_PASSKEY_UNSUPPORTED','BB_PASSKEY_PRF_UNSUPPORTED','UNRECOGNIZED'])test(`passkey UI safely reports ${code}`,async()=>{
+ const f=passkeyFixture();
+ f.context.BillboardPasskey.ceremony=async()=>{throw Object.assign(Error('PRIVATE_ERROR_DETAIL'),{code});};
+ await f.element('wbEthBrowserBtn').click();
+ assert(!f.logs.some(message=>message.includes('PRIVATE_ERROR_DETAIL')));
+ assert(f.logs.some(message=>message.includes(code==='BB_PASSKEY_UNSUPPORTED'?'HTTPS':code==='BB_PASSKEY_PRF_UNSUPPORTED'?'supports PRF':'Wallet operation did not complete')));
+ assert.equal(f.context.window.walletState.aztec,null);assert.equal(f.records.size,0);
 });
