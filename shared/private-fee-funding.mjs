@@ -1,12 +1,12 @@
 import {createEthereumJournal,verifyEthereumIntentReceipt} from './ethereum-journal.mjs';
 // User-funded Fee Juice bridge. Recovery metadata is public; secrets derive from the existing wallet key.
 import { Interface, getAddress } from 'ethers';
-import { computeFeeJuiceMessageNullifier } from '@aztec/stdlib/messaging';
-import { siloNullifier } from '@aztec/stdlib/hash';
-import { MerkleTreeId } from '@aztec/stdlib/trees';
-import { Fr } from '@aztec/foundation/curves/bn254';
-import { poseidon2HashWithSeparator } from '@aztec/foundation/crypto/poseidon';
-import { ProtocolContractAddress } from '@aztec/protocol-contracts';
+import { computeFeeJuiceMessageNullifier } from '@aztec-labs/stdlib/messaging';
+import { siloNullifier } from '@aztec-labs/stdlib/hash';
+import { MerkleTreeId } from '@aztec-labs/stdlib/trees';
+import { Fr } from '@aztec-labs/foundation/curves/bn254';
+import { poseidon2HashWithSeparator } from '@aztec-labs/foundation/crypto/poseidon';
+import { ProtocolContractAddress } from '@aztec-labs/protocol-contracts';
 import { derivePrivateFeeInstance, requirePublishedPrivateFee, derivePrivateFeeBridgeSecret, derivePrivateFeeBridgeSecretHash } from './private-fee-client.mjs';
 
 const portalAbi=new Interface([

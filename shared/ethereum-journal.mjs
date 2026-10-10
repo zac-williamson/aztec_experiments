@@ -121,9 +121,9 @@ export async function createEthereumJournal({storage,walletSecret,walletSalt,sco
   if(!integer(minimumNonce))throw invalid();
   if(!Number.isFinite(timeoutMs)||timeoutMs<=0||timeoutMs>20000)throw invalid();
   let acknowledged=acknowledgeTx,lastHash=null;
-  function reader() {
+  function reader({preserveInsufficientFunds=false}={}) {
     const deadline=Date.now()+timeoutMs;
-    return async fn=>{if(Date.now()>=deadline)throw unknown();let timer;try{return await Promise.race([Promise.resolve().then(fn),new Promise((_,reject)=>{timer=setTimeout(()=>reject(unknown()),Math.max(0,deadline-Date.now()));})]);}catch(error){if(error?.code==='BB_JOURNAL_INVALID')throw error;throw unknown();}finally{clearTimeout(timer);}};
+    return async fn=>{if(Date.now()>=deadline)throw unknown();let timer;try{return await Promise.race([Promise.resolve().then(fn),new Promise((_,reject)=>{timer=setTimeout(()=>reject(unknown()),Math.max(0,deadline-Date.now()));})]);}catch(error){if(error?.code==='BB_JOURNAL_INVALID'||(preserveInsufficientFunds&&error?.code==='INSUFFICIENT_FUNDS'))throw error;throw unknown();}finally{clearTimeout(timer);}};
   }
   async function load() {const saved=await slot.read();if(saved.value!==null)validateIntent(saved.value,scope);return saved;}
   async function network(read) {
@@ -192,7 +192,17 @@ export async function createEthereumJournal({storage,walletSecret,walletSalt,sco
     if(lower(await signer.getAddress())!==record.from)throw unknown();
     if(contextGuard)await contextGuard();
     let response;
-    try{response=await signer.sendTransaction({from:record.from,to:record.to,data:record.data,value:BigInt(record.value),nonce:record.nonce,chainId:BigInt(record.chainId)});}catch(error){
+    const request={from:record.from,to:record.to,data:record.data,value:BigInt(record.value),nonce:record.nonce,chainId:BigInt(record.chainId)};
+    try{
+      if(['deposit','fee-deposit'].includes(record.expected.kind)) {
+        // Match the V6 SDK deposit allowance for changing shared Inbox state.
+        const estimate=await reader({preserveInsufficientFunds:true})(()=>provider.estimateGas(request));
+        if(typeof estimate!=='bigint'||estimate<=0n)throw unknown();
+        request.gasLimit=estimate*2n;
+        if(contextGuard)await contextGuard();
+      }
+      response=await signer.sendTransaction(request);
+    }catch(error){
       // Only the first attempt can establish that this new intent was never sent.
       // A rejected retry says nothing about an earlier attempt: keep its record.
       const rejected=error?.code===4001||error?.code==='ACTION_REJECTED';

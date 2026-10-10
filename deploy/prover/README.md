@@ -1,7 +1,7 @@
 # Board prover deployment
 
-A c8a.4xlarge provides 16 physical cores and 32 GiB RAM. The current bounded
-trial uses Spot in us-east-2; see live-deployment.json for its shutdown deadline.
+A c7a.4xlarge provides 16 physical cores and 32 GiB RAM. The current bounded
+deployment uses Spot in us-east-1; see live-deployment.json for its shutdown deadline.
 One serial worker; no autoscaling, Redis, public service discovery or wallet on
 this machine. The website's operator selects the endpoint. Browser signing and
 private execution remain local.
@@ -15,9 +15,9 @@ whose SHA256 has been verified against Node's release checksums. Run:
 python3 deploy/prover/package.py NEW_OUTPUT --node-archive VERIFIED_NODE_ARCHIVE
 ```
 
-The official 5.2.0 npm package’s Linux binary reports a nightly version label.
-The remote runtime accepts that label only with its pinned SHA256, verified against
-the package-lock npm archive integrity; it does not accept arbitrary nightlies.
+The native binary must match the platform SHA256 in toolchain.json before it can
+execute, and must report the exact pinned V6 version. Its source is the
+integrity-locked official @aztec-foundation/bb.js npm package.
 
 The output contains source, installed dependencies, trusted circuit artifacts,
 CRS files, native Linux BB and Node. prover-release.json records every file hash.

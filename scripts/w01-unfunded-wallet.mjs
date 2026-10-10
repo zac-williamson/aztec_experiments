@@ -3,11 +3,11 @@ import {applicationProofsEnabled,applicationProver} from './testing/proof-policy
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {generateSchnorrAccounts} from '@aztec/accounts/testing';
-import {getFeeJuiceBalance} from '@aztec/aztec.js/utils';
-import {EmbeddedWallet} from '@aztec/wallets/embedded';
-import {BackendType} from '@aztec/bb.js';
-import {loadContractArtifact} from '@aztec/stdlib/abi';
+import {generateSchnorrAccounts} from '@aztec-labs/accounts/testing';
+import {getFeeJuiceBalance} from '@aztec-labs/aztec.js/utils';
+import {EmbeddedWallet} from '@aztec-labs/wallets/embedded';
+import {BackendType} from '@aztec-foundation/bb.js';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
 import {derivePrivateFeeInstance,createPrivateFeeDeployment,requirePublishedPrivateFee} from '../shared/private-fee-client.mjs';
 import {restoreApplicationAuthor} from './w02-wallet-restore.mjs';
 import {ROOT} from './toolchain.mjs';

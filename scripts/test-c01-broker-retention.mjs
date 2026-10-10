@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {test} from 'node:test';
-import {EpochNumber} from '@aztec/foundation/branded-types';
-import {InMemoryBrokerDatabase, ProvingBroker, defaultProverBrokerConfig} from '@aztec/prover-client/broker';
-import {makeProvingJobId} from '@aztec/stdlib/interfaces/server';
-import {ProvingRequestType} from '@aztec/stdlib/proofs';
+import {EpochNumber} from '@aztec-labs/foundation/branded-types';
+import {InMemoryBrokerDatabase, ProvingBroker, defaultProverBrokerConfig} from '@aztec-labs/prover-client/broker';
+import {makeProvingJobId} from '@aztec-labs/stdlib/interfaces/server';
+import {ProvingRequestType} from '@aztec-labs/stdlib/proofs';
 
 // Scheduling-only opaque inputs: no agent, circuit, proof store, RPC or proof runs.
 const type = ProvingRequestType.PARITY_BASE;

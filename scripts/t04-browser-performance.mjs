@@ -1,7 +1,7 @@
 // TEST ONLY: two actual posts, one live browser wallet/prover, existing rendezvous.
 import assert from 'node:assert/strict';
 import os from 'node:os';
-import {GasSettings} from '@aztec/stdlib/gas';
+import {GasSettings} from '@aztec-labs/stdlib/gas';
 import {writeJourneySignal,waitJourneyRelease,transactionHashes} from './t04-browser-journey.mjs';
 export function readProofIntervals(){
  const result={};

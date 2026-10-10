@@ -1,14 +1,14 @@
 import {estimatePrivateFeeTransaction} from '../../shared/private-fee-estimation.mjs';
-import {Gas} from '@aztec/stdlib/gas';
+import {Gas} from '@aztec-labs/stdlib/gas';
 // Local browser preparation only. The browser owns post creation and plugin payment.
 import fs from 'node:fs/promises';
 import {drainDevnetCheckpoints} from './network.mjs';
 import path from 'node:path';
 import vm from 'node:vm';
 import {webcrypto,randomBytes} from 'node:crypto';
-import {BatchCall} from '@aztec/aztec.js/contracts';
-import {GasFees} from '@aztec/stdlib/gas';
-import {TxStatus} from '@aztec/stdlib/tx';
+import {BatchCall} from '@aztec-labs/aztec.js/contracts';
+import {GasFees} from '@aztec-labs/stdlib/gas';
+import {TxStatus} from '@aztec-labs/stdlib/tx';
 import {derivePrivateFeeInstance,createPrivateFeeDeployment,requirePublishedPrivateFee,preparePrivateFeePayment} from '../../shared/private-fee-client.mjs';
 import {bridgePrivateFeeCredit} from '../../scripts/w01-private-funding.mjs';
 

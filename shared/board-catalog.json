@@ -1,10 +1,12 @@
 {
- "schemaVersion":1,
- "network":"11155111:0xd73a91bdcf6891c7642f3e460036e1ef2cc23178:1821665230",
- "boards":[
-  {"address":"0x267c4246a61590539743a81acdaa1895019fef3e5f2c07038cc729b87e93b3df","name":"Anonymous message board","description":"The current test board. Read, post anonymously, and try the refundable deposit flow.","status":"current"},
-  {"address":"0x2c0b356a9e1547e9bf65d887bfb92772a0dba6730b0497d9b01c37c219de97a3","name":"Earlier onboarding test board","description":"An earlier deployment, replaced by the current test board. Existing messages remain readable.","status":"retired"},
-  {"address":"0x2836febce7767ea0f0562ca1b6095dc1ed068f05ab534d6385fbdd7560d0c75a","name":"Earlier deposit recovery test board","description":"An earlier deployment, replaced by the current test board. Existing messages remain readable.","status":"retired"},
-  {"address":"0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9","name":"Original test board","description":"The original test deployment. Use the current board to try the app.","status":"retired"}
- ]
+  "schemaVersion": 1,
+  "network": "11155111:0x8c2fb2a68a3d362ab1de99e06f83f8903160bbd9:2914217885",
+  "boards": [
+    {
+      "address": "0x0346558fcce04c4bf0b0907c1ef20858b9583123ef55bceb7125cb3fc3fb3752",
+      "name": "Anonymous message board",
+      "description": "The Aztec V6 test board. Read, post anonymously, and try the refundable deposit flow.",
+      "status": "current"
+    }
+  ]
 }

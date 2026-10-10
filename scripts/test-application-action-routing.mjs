@@ -1,9 +1,9 @@
 // Unit checks of actual harness routing; doubles are not proof evidence.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { NO_FROM } from '@aztec/aztec.js/account';
-import { AztecAddress } from '@aztec/stdlib/aztec-address';
-import { Fr } from '@aztec/foundation/curves/bn254';
+import { NO_FROM } from '@aztec-labs/aztec.js/account';
+import { AztecAddress } from '@aztec-labs/stdlib/aztec-address';
+import { Fr } from '@aztec-labs/foundation/curves/bn254';
 import { proveApplicationAction, measureApplicationGas } from './prove-application-action.mjs';
 const owner=AztecAddress.fromFieldUnsafe(new Fr(1)),privatePayer=AztecAddress.fromFieldUnsafe(new Fr(2));
 function fixture(payer=privatePayer) {

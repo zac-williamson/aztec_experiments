@@ -3,14 +3,15 @@ import fs from 'node:fs/promises';
 import {createReadStream} from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {ROOT,anvilBinary} from '../toolchain.mjs';
+import {ROOT,anvilBinary,bbBinary} from '../toolchain.mjs';
+import {validateCrsManifest} from '../build-crs.mjs';
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 export async function fingerprints() {
   const result = {};
   result['localAnvilBinary'] = sha(await fs.readFile(anvilBinary()));
   for (const name of ['scripts/t04-metamask.mjs','scripts/t04-browser-performance.mjs','scripts/t04-browser-funding.mjs','scripts/t04-cold-browser-fees.mjs','scripts/w01-unfunded-wallet.mjs','scripts/application-post.mjs','scripts/t04-wallet-absence.mjs','scripts/t04-withdraw-traffic.mjs','scripts/t03-repeated-posts.mjs','scripts/o01-censor-command-flow.mjs','scripts/o01-censor-command-io.mjs','scripts/t04-browser-journey.mjs','scripts/t04-browser-journey-verify.mjs','scripts/t04-browser-post-recovery.mjs','scripts/t04-post-response-loss.mjs','scripts/run-bounded-browser-check.mjs','scripts/u01-browser-flow.mjs','scripts/u01-browser-post-verify.mjs','scripts/u01-browser-post.mjs','scripts/browser-error-observer.mjs','scripts/u01-browser-rpc.mjs','scripts/t03-rpc-observer.mjs','scripts/t03-public-footprint.mjs','deploy/hosting-config.mjs','scripts/c01-native-profile.mjs','scripts/test-c01-application.mjs','scripts/owned-test-process-tree.mjs','scripts/c01-settle-application-message.mjs','scripts/c01-application-deployment.mjs',
-    'scripts/w03-note-attribution.mjs','shared/application-nullifier.mjs','scripts/w03-proof-recovery.mjs','shared/l2-journal.mjs','shared/transaction-outcomes.mjs','shared/journal-backup.mjs','scripts/prove-application-action.mjs','scripts/w02-wallet-restore.mjs','shared/wallet-backup.js','scripts/w01-private-fee-standalone.mjs','scripts/w01-refund-revert.mjs','scripts/w01-private-fee-flow.mjs','scripts/w01-private-funding.mjs','shared/private-fee-client.mjs','shared/private-fee-payment.mjs','shared/private-fee-funding.mjs','shared/ethereum-journal.mjs','shared/journal-record.mjs','apps/src/billboard/user/transaction-journal-store.mjs','scripts/c01-settle-ready.mjs','scripts/c01-settle-message.mjs','scripts/c01-bridge-flow.mjs','scripts/c02-screening-flow.mjs','scripts/t02-screening-journey.mjs','scripts/t02-redeposit-flow.mjs','scripts/t02-wrong-origin.mjs','scripts/t02-claim-boundary.mjs','scripts/test-t02-claim-boundary.mjs','node_modules/@aztec/pxe/src/node/caching_aztec_node.ts','node_modules/@aztec/pxe/dest/node/caching_aztec_node.js','node_modules/@aztec/pxe/src/pxe.ts','node_modules/@aztec/pxe/dest/pxe.js','node_modules/@aztec/pxe/src/block_synchronizer/block_synchronizer.ts','node_modules/@aztec/pxe/dest/block_synchronizer/block_synchronizer.js','node_modules/@aztec/l1-artifacts/dest/InboxAbi.js','node_modules/@aztec/l1-artifacts/l1-contracts/src/core/messagebridge/Inbox.sol','scripts/t02-redeposit-replay.mjs','node_modules/@aztec/l1-artifacts/dest/OutboxAbi.js','node_modules/@aztec/l1-artifacts/l1-contracts/src/core/messagebridge/Outbox.sol','scripts/c03-author-claims.mjs','scripts/c03-contention-flow.mjs','scripts/c01-client-mining.mjs','scripts/c01-deposit-flow.mjs','scripts/c01-exit-flow.mjs','scripts/c01-withdraw-l1.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
-    'node_modules/@aztec/ethereum/dest/deploy_aztec_l1_contracts.js']) {
+    'scripts/w03-note-attribution.mjs','shared/application-nullifier.mjs','scripts/w03-proof-recovery.mjs','shared/l2-journal.mjs','shared/transaction-outcomes.mjs','shared/journal-backup.mjs','scripts/prove-application-action.mjs','scripts/w02-wallet-restore.mjs','shared/wallet-backup.js','scripts/w01-private-fee-standalone.mjs','scripts/w01-refund-revert.mjs','scripts/w01-private-fee-flow.mjs','scripts/w01-private-funding.mjs','shared/private-fee-client.mjs','shared/private-fee-payment.mjs','shared/private-fee-funding.mjs','shared/ethereum-journal.mjs','shared/journal-record.mjs','apps/src/billboard/user/transaction-journal-store.mjs','scripts/c01-settle-ready.mjs','scripts/c01-settle-message.mjs','scripts/c01-bridge-flow.mjs','scripts/c02-screening-flow.mjs','scripts/t02-screening-journey.mjs','scripts/t02-redeposit-flow.mjs','scripts/t02-wrong-origin.mjs','scripts/t02-claim-boundary.mjs','scripts/test-t02-claim-boundary.mjs','node_modules/@aztec-labs/pxe/src/node/caching_aztec_node.ts','node_modules/@aztec-labs/pxe/dest/node/caching_aztec_node.js','node_modules/@aztec-labs/pxe/src/pxe.ts','node_modules/@aztec-labs/pxe/dest/pxe.js','node_modules/@aztec-labs/pxe/src/block_synchronizer/block_synchronizer.ts','node_modules/@aztec-labs/pxe/dest/block_synchronizer/block_synchronizer.js','node_modules/@aztec-foundation/l1-artifacts/dest/InboxAbi.js','node_modules/@aztec-foundation/l1-artifacts/l1-contracts/src/core/messagebridge/Inbox.sol','scripts/t02-redeposit-replay.mjs','node_modules/@aztec-foundation/l1-artifacts/dest/OutboxAbi.js','node_modules/@aztec-foundation/l1-artifacts/l1-contracts/src/core/messagebridge/Outbox.sol','scripts/c03-author-claims.mjs','scripts/c03-contention-flow.mjs','scripts/c01-client-mining.mjs','scripts/c01-deposit-flow.mjs','scripts/c01-exit-flow.mjs','scripts/c01-withdraw-l1.mjs','scripts/c01-ready-flow.mjs','scripts/c01-board-inclusion.mjs','scripts/c01-board-flow.mjs','scripts/c01-real-node.mjs','scripts/toolchain.mjs','package-lock.json','toolchain.json',
+    'node_modules/@aztec-labs/ethereum/dest/deploy_aztec_l1_contracts.js']) {
     result[name] = sha(await fs.readFile(path.join(ROOT, name)));
   }
   for(const name of await fs.readdir(path.join(ROOT,'prover')))if(name.endsWith('.mjs'))result['prover/'+name]=sha(await fs.readFile(path.join(ROOT,'prover',name)));
@@ -51,16 +52,14 @@ export async function verifyCensorPackage(){
 export async function prepareRuntime(directory,scenario,report) {
     const crs=path.join(directory,'crs');await fs.mkdir(crs);
     const manifestBytes=await fs.readFile(path.join(ROOT,'crs-manifest.json'));
-    assert.equal(sha(manifestBytes),'4927de3e03d69f4e640a841f9421dd0b93819b5e3d42c142d12ee079d5a402be');
-    const manifest=JSON.parse(manifestBytes);
+    const manifest=validateCrsManifest(JSON.parse(manifestBytes));
     report.setup=[];
     for(const [entry,name] of [[manifest.derivedG1,'bn254_g1.dat'],[manifest.files.find(f=>f.name==='g2.dat'),'bn254_g2.dat'],[manifest.files.find(f=>f.name==='grumpkin_g1.dat'),'grumpkin_g1_v2.flat.dat']]){
       const bytes=await fs.readFile(path.join(ROOT,'apps/dist/crs',entry.name));assert.equal(bytes.length,entry.bytes);assert.equal(sha(bytes),entry.sha256);
       await fs.writeFile(path.join(crs,name),bytes,{flag:'wx',mode:0o400});report.setup.push({name,sha256:entry.sha256,bytes:entry.bytes});
     }
-    const bb=path.join(ROOT,'node_modules/@aztec/bb.js/build/arm64-macos/bb');
+    const bb=bbBinary();
     const binarySha=sha(await fs.readFile(bb));
-    assert.equal(binarySha,'208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031');
     report.networkProofs=false;report.controlledSettlement=scenario.fixture==='activated-board';report.binarySha256=binarySha;
     assert(!bb.includes("'"));
     await fs.writeFile(path.join(directory,'bb-one-thread'),"#!/bin/sh\nHARDWARE_CONCURRENCY=1 exec '"+bb+"' \"$@\"\n",{flag:'wx',mode:0o700});

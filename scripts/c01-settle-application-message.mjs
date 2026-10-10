@@ -4,15 +4,15 @@ import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import {realpath, writeFile, rename} from 'node:fs/promises';
-import {RollupCheatCodes, EthCheatCodes} from '@aztec/ethereum/test';
-import {RollupContract, OutboxContract} from '@aztec/ethereum/contracts';
-import {RollupAbi} from '@aztec/l1-artifacts/RollupAbi';
-import {EthAddress} from '@aztec/foundation/eth-address';
-import {BlockNumber, CheckpointNumber, EpochNumber} from '@aztec/foundation/branded-types';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {createLogger} from '@aztec/foundation/log';
-import {settleEpochOutbox} from '@aztec/prover-client/test';
-import {TxHash, TxStatus, TxExecutionResult} from '@aztec/stdlib/tx';
+import {RollupCheatCodes, EthCheatCodes} from '@aztec-labs/ethereum/test';
+import {RollupContract, OutboxContract} from '@aztec-labs/ethereum/contracts';
+import {RollupAbi} from '@aztec-foundation/l1-artifacts/RollupAbi';
+import {EthAddress} from '@aztec-labs/foundation/eth-address';
+import {BlockNumber, CheckpointNumber, EpochNumber} from '@aztec-labs/foundation/branded-types';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {createLogger} from '@aztec-labs/foundation/log';
+import {settleEpochOutbox} from '@aztec-labs/prover-client/test';
+import {TxHash, TxStatus, TxExecutionResult} from '@aztec-labs/stdlib/tx';
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const successful = receipt => [TxStatus.CHECKPOINTED, TxStatus.PROVEN, TxStatus.FINALIZED].includes(receipt.status)

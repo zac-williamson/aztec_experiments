@@ -27,7 +27,7 @@ GET `/healthz` reports mode and aggregate queue counters without job IDs.
 POST `/v1/jobs` accepts the binary envelope and returns an opaque job ID.
 GET `/v1/jobs/:id` returns queued/running/complete/failed. IDs are bearer secrets.
 Clients poll the same job; no implicit submission retry. API version is 1 and
-SDK/circuits are pinned to repository version 5.2.0. Circuit bytecode/VKs never
+SDK/circuits are pinned to repository version 6.0.0-rc.1. Circuit bytecode/VKs never
 come from the requester. A circuit ID hashes length-prefixed bytecode plus VK.
 
 ## Local development

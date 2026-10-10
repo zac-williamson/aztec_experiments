@@ -1,9 +1,9 @@
 {
-  "nodeUrl": "https://v5.testnet.rpc.aztec-labs.com",
+  "nodeUrl": "https://aztec-testnet.drpc.org",
   "ethereumUrl": "https://ethereum-sepolia-rpc.publicnode.com",
   "chainId": "11155111",
-  "rollupVersion": "1821665230",
-  "rollupAddress": "0xd73a91bdcf6891c7642f3e460036e1ef2cc23178",
+  "rollupVersion": "2914217885",
+  "rollupAddress": "0x8c2fb2a68a3d362ab1de99e06f83f8903160bbd9",
   "boardAddress": "REPLACE_WITH_NEW_PLUGIN_ENABLED_BOARD",
   "operatorAddress": "REPLACE_WITH_OPERATOR_AZTEC_ADDRESS",
   "operatorFile": "/absolute/private/path/operator.json",

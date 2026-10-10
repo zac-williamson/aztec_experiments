@@ -1,5 +1,5 @@
 // TEST ONLY: aggregate classifications, never retain request arguments or responses.
-import {AztecNodeApiSchema} from '@aztec/stdlib/interfaces/client';
+import {AztecNodeApiSchema} from '@aztec-labs/stdlib/interfaces/client';
 const roleNames=new Set(['author','payer','board','moderator','funder']);
 const ethereumMethods=new Set(['eth_chainId','net_version','eth_blockNumber','eth_getBlockByNumber','eth_getBlockByHash','eth_getBalance','eth_getCode','eth_getStorageAt','eth_call','eth_estimateGas','eth_gasPrice','eth_maxPriorityFeePerGas','eth_feeHistory','eth_getTransactionCount','eth_getTransactionByHash','eth_getTransactionReceipt','eth_getLogs','eth_sendTransaction','eth_sendRawTransaction','eth_accounts','eth_requestAccounts']);
 const sizeBucket=n=>n===0?'empty':n<=256?'1-256':n<=4096?'257-4096':n<=65536?'4097-65536':n<=1048576?'65537-1048576':'over-1048576';

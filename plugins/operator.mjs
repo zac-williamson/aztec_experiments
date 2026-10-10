@@ -1,20 +1,22 @@
+import {prepareNativeRuntime} from '../prover/runtime.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {BackendType,Barretenberg,BarretenbergSync} from '@aztec/bb.js';
-import {createAztecNodeClient,waitForTx} from '@aztec/aztec.js/node';
-import {BatchCall,Contract,Contract as AztecContract} from '@aztec/aztec.js/contracts';
-import {getFeeJuiceBalance} from '@aztec/aztec.js/utils';
-import {FeeJuicePaymentMethodWithClaim} from '@aztec/aztec.js/fee';
-import {NO_FROM} from '@aztec/aztec.js/account';
-import {EmbeddedWallet} from '@aztec/wallets/embedded';
-import {GrumpkinScalar} from '@aztec/foundation/curves/grumpkin';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {AztecAddress} from '@aztec/stdlib/aztec-address';
-import {EthAddress} from '@aztec/foundation/eth-address';
-import {loadContractArtifact} from '@aztec/stdlib/abi';
-import {getContractClassFromArtifact} from '@aztec/stdlib/contract';
-import {Tx,TxHash,TxStatus} from '@aztec/stdlib/tx';
+import {BackendType,Barretenberg,BarretenbergSync} from '@aztec-foundation/bb.js';
+import {createAztecNodeClient} from '../shared/aztec-node-client.mjs';
+import {waitForTx} from '@aztec-labs/aztec.js/node';
+import {BatchCall,Contract,Contract as AztecContract} from '@aztec-labs/aztec.js/contracts';
+import {getFeeJuiceBalance} from '@aztec-labs/aztec.js/utils';
+import {FeeJuicePaymentMethodWithClaim} from '@aztec-labs/aztec.js/fee';
+import {NO_FROM} from '@aztec-labs/aztec.js/account';
+import {EmbeddedWallet} from '@aztec-labs/wallets/embedded';
+import {GrumpkinScalar} from '@aztec-labs/foundation/curves/grumpkin';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
+import {EthAddress} from '@aztec-labs/foundation/eth-address';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
+import {getContractClassFromArtifact} from '@aztec-labs/stdlib/contract';
+import {Tx,TxHash,TxStatus} from '@aztec-labs/stdlib/tx';
 import {JsonRpcProvider,Wallet,Contract as EthereumContract,ContractFactory,getCreateAddress,keccak256,parseUnits,formatUnits,sha256,toUtf8Bytes} from 'ethers';
 import {API_VERSION,packText,handleField,validateDescriptor} from './protocol.mjs';
 import {provingEnabledForNode} from '../shared/proving-policy.mjs';
@@ -24,10 +26,10 @@ const read=async p=>JSON.parse(await fs.readFile(p,'utf8'));
 /** Each command performs one reviewable operation; state contains exact tx hashes.
  * Keys are read from a separate mode-0600 actor file, never deployment output.
  */
-export async function operatorCommand({command,config,statePath,actor,ethereumKey,amount,recipient,claim}){
+export async function operatorCommand({command,config,statePath,actor,ethereumKey,amount,recipient,claim,onProgress=()=>{}}){
  const [adapterJson,portalJson,boardJson]=await Promise.all([read(new URL('./adapter_artifact.json',import.meta.url)),read(new URL('../billboard/portal/out/PluginPortal.sol/PluginPortal.json',import.meta.url)),read(new URL('../apps/src/billboard/billboard_artifact.json',import.meta.url))]);
  const fingerprints=[adapterJson,portalJson,boardJson].map(x=>sha256(toUtf8Bytes(JSON.stringify(x))));
- const node=createAztecNodeClient(config.nodeUrl),info=await node.getNodeInfo();
+ const node=createAztecNodeClient(config.nodeUrl);onProgress('network-identity');const info=await node.getNodeInfo();
  const provider=new JsonRpcProvider(config.ethereumUrl,undefined,{cacheTimeout:-1});
  let wallet,lock;
  await fs.mkdir(path.dirname(path.resolve(statePath)),{recursive:true,mode:0o700});
@@ -50,15 +52,19 @@ export async function operatorCommand({command,config,statePath,actor,ethereumKe
    await store.write({...store.read(),operations:{...store.read().operations,[currentOperation]:{hash,raw:tx.toBuffer().toString('hex'),actor:actor.address}}});
    return node.sendTx(tx);
   };}});
-  wallet=await EmbeddedWallet.create(recordedNode,{ephemeral:true,pxe:{proverEnabled:provingEnabledForNode(info),proverOrOptions:{backend:BackendType.NativeUnixSocket,threads:1}}});
-  const account=await wallet.createSchnorrInitializerlessAccount(Fr.fromString(actor.secret),Fr.fromString(actor.salt),GrumpkinScalar.fromString(actor.signingKey),'plugin operator');
-  if(account.address.toString()!==actor.address)throw Error('Actor key/address mismatch');
-  const from=account.address;
+  const from=AztecAddress.fromStringUnsafe(actor.address);
+  async function initializeWallet(){
+   onProgress('initialize-private-wallet');
+   wallet=await EmbeddedWallet.create(recordedNode,{ephemeral:true,pxe:{proverEnabled:provingEnabledForNode(info),proverOrOptions:{backend:BackendType.NativeUnixSocket,...await prepareNativeRuntime({}),threads:1}}});
+   const account=await wallet.createSchnorrInitializerlessAccount(Fr.fromString(actor.secret),Fr.fromString(actor.salt),GrumpkinScalar.fromString(actor.signingKey),'plugin operator');
+   if(!account.address.equals(from))throw Error('Actor key/address mismatch');
+  }
   if(command==='fees')return {publicFeeJuice:String(await getFeeJuiceBalance(from,node)),account:String(from)};
   if(['deploy-escrow','bind','register','withdraw-earnings'].includes(command)&&await getFeeJuiceBalance(from,node)===0n)throw Error('Fund the actor public Fee Juice account before submitting Aztec operations');
   const wait={timeout:180,waitForStatus:TxStatus.CHECKPOINTED};
   const send=async(name,interaction,fee)=>{currentOperation=name;try{const old=store.read().operations[name];if(old){if(old.actor!==actor.address)throw Error('Operation belongs to another actor');const receipt=await node.getTxReceipt(TxHash.fromString(old.hash));if(receipt.status==='dropped'){await node.sendTx(Tx.fromBuffer(Buffer.from(old.raw,'hex')));}return await waitForTx(node,TxHash.fromString(old.hash),wait);}return (await interaction.send({from,wait,...(fee?{fee}: {})})).receipt;}finally{currentOperation=null;}};
   if(command==='claim-fees'){
+   await initializeWallet();
    if(!claim)throw Error('Provide --claim with the private fee bridge receipt JSON path');
    const c=await read(claim);const paymentMethod=new FeeJuicePaymentMethodWithClaim(from,{claimAmount:BigInt(c.claimAmount),claimSecret:Fr.fromString(c.claimSecret),messageLeafIndex:BigInt(c.messageLeafIndex)});
    await send('claim-fees-'+from+'-'+c.messageLeafIndex,new BatchCall(wallet,[]),{paymentMethod});
@@ -68,18 +74,18 @@ export async function operatorCommand({command,config,statePath,actor,ethereumKe
   const ethSend=async(name,transaction)=>{
    if(!signer)throw Error('Configure PLUGIN_ETHEREUM_PRIVATE_KEY locally');
    return recordedTransaction({store,name,identity:JSON.stringify(transaction,(_,v)=>typeof v==='bigint'?String(v):v),prepare:async()=>{
-    const populated=await signer.populateTransaction(transaction),raw=await signer.signTransaction(populated);return {hash:keccak256(raw),raw};
+    onProgress('prepare-ethereum-transaction');const populated=await signer.populateTransaction(transaction),raw=await signer.signTransaction(populated);return {hash:keccak256(raw),raw};
    },broadcast:async r=>{if(!await provider.getTransaction(r.hash))await provider.broadcastTransaction(r.raw);},wait:async r=>{const receipt=await provider.waitForTransaction(r.hash,1,120000);if(!receipt)throw Error('Ethereum transaction still pending');if(receipt.status!==1)throw Error('Ethereum transaction reverted');return receipt;}});
   };
   const artifact=loadContractArtifact(adapterJson);
   if(command==='deploy-escrow'){
+   await initializeWallet();
    const deployment=Contract.deploy(wallet,artifact,[AztecAddress.fromStringUnsafe(config.boardAddress),AztecAddress.fromStringUnsafe(config.operatorAddress),BigInt(chain),BigInt(info.rollupVersion)],'init',{deployer:from,salt:Fr.fromString(store.read().salt)});
    const address=(await deployment.getInstance()).address.toString();await store.write({...store.read(),escrow:address});await send(command,deployment);return {escrow:address};
   }
   const escrowAddress=store.read().escrow;if(!escrowAddress)throw Error('Deploy escrow first');
-  const instance=await node.getContract(AztecAddress.fromStringUnsafe(escrowAddress),'latest');if(!instance)throw Error('Escrow unavailable');
+  onProgress('read-escrow');const instance=await node.getContract(AztecAddress.fromStringUnsafe(escrowAddress),'latest');if(!instance)throw Error('Escrow unavailable');
   if(String(instance.currentContractClassId)!==String((await getContractClassFromArtifact(artifact)).id))throw Error('Escrow artifact mismatch');
-  await wallet.registerContract(instance,artifact);const escrow=await Contract.at(instance.address,artifact,wallet);
   const portalArtifact=portalJson;
   if(command==='deploy-portal'){
    if(!signer)throw Error('Configure PLUGIN_ETHEREUM_PRIVATE_KEY locally');
@@ -91,12 +97,22 @@ export async function operatorCommand({command,config,statePath,actor,ethereumKe
   }
   const portalAddress=store.read().portal;if(!portalAddress)throw Error('Deploy portal first');
   const portal=new EthereumContract(portalAddress,portalArtifact.abi,provider);
-  if(String(await portal.escrow())!==escrowAddress||(await portal.token()).toLowerCase()!==config.tokenAddress.toLowerCase())throw Error('Portal identity mismatch');
-  if(command==='bind'){await send(command,escrow.methods.set_portal(EthAddress.fromString(portalAddress)));return {bound:true};}
+  onProgress('read-portal');if(String(await portal.escrow())!==escrowAddress||(await portal.token()).toLowerCase()!==config.tokenAddress.toLowerCase())throw Error('Portal identity mismatch');
   if(command==='activate'){
+   onProgress('activate-portal');
    if(!await portal.active())await ethSend(command,await portal.activate.populateTransaction(...await outboxArguments(node,TxHash.fromString(store.read().operations.bind.hash),{requireFinalized:!config.development})));return {active:true};
   }
   const descriptor=validateDescriptor({protocol:API_VERSION,scope:{chainId:chain,rollupVersion:config.rollupVersion,rollupAddress:config.rollupAddress,boardAddress:config.boardAddress,receiver:escrowAddress},funding:{protocol:'aztec-escrow-usdc/v1',portalAddress,tokenAddress:config.tokenAddress},description:config.description||config.handle},{chainId:chain,rollupVersion:config.rollupVersion,rollupAddress:config.rollupAddress,boardAddress:config.boardAddress,receiver:escrowAddress});
+  if(command==='config')return {descriptor,nodeUrl:config.nodeUrl,ethereumUrl:config.ethereumUrl,development:!!config.development,host:'127.0.0.1',port:8787,repository:config.repository,operatorFile:config.operatorFile};
+  if(command==='redeem-earnings'){
+   const w=store.read().withdrawal;if(!w)throw Error('No earnings withdrawal pending');
+   const txHash=TxHash.fromString(store.read().operations['withdraw-'+w.nonce].hash);
+   await ethSend('redeem-'+w.nonce,await portal.withdraw.populateTransaction(w.recipient,parseUnits(w.amount,6),w.nonce,...await outboxArguments(node,txHash,{requireFinalized:!config.development})));
+   await store.write({...store.read(),withdrawal:null});return {redeemedUSDC:w.amount};
+  }
+  if(!['bind','register','earnings','withdraw-earnings'].includes(command))throw Error('Unknown operator command');
+  await initializeWallet();await wallet.registerContract(instance,artifact);const escrow=await Contract.at(instance.address,artifact,wallet);
+  if(command==='bind'){await send(command,escrow.methods.set_portal(EthAddress.fromString(portalAddress)));return {bound:true};}
   if(command==='register'){
    if(!await portal.active())throw Error('Activate portal first');
    const boardArtifact=loadContractArtifact(boardJson),boardInstance=await node.getContract(AztecAddress.fromStringUnsafe(config.boardAddress),'latest');
@@ -113,13 +129,7 @@ export async function operatorCommand({command,config,statePath,actor,ethereumKe
    if(!withdrawal){withdrawal={amount,recipient,nonce:Fr.random().toString()};await store.write({...store.read(),withdrawal});}
    await send('withdraw-'+withdrawal.nonce,escrow.methods.withdraw(parseUnits(amount,6),EthAddress.fromString(recipient),true,Fr.fromString(withdrawal.nonce)));return {withdrawalPending:true};
   }
-  if(command==='redeem-earnings'){
-   const w=store.read().withdrawal;if(!w)throw Error('No earnings withdrawal pending');
-   const txHash=TxHash.fromString(store.read().operations['withdraw-'+w.nonce].hash);
-   await ethSend('redeem-'+w.nonce,await portal.withdraw.populateTransaction(w.recipient,parseUnits(w.amount,6),w.nonce,...await outboxArguments(node,txHash,{requireFinalized:!config.development})));
-   await store.write({...store.read(),withdrawal:null});return {redeemedUSDC:w.amount};
-  }
-  if(command==='config')return {descriptor,nodeUrl:config.nodeUrl,ethereumUrl:config.ethereumUrl,development:!!config.development,host:'127.0.0.1',port:8787,repository:config.repository,operatorFile:config.operatorFile};
+
   throw Error('Unknown operator command');
  }finally{try{await wallet?.stop();}finally{provider.destroy();await lock?.close();await fs.unlink(statePath+'.lock');}}
 }

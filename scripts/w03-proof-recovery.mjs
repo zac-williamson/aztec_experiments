@@ -2,8 +2,8 @@
 // another genuine transaction, then rebuild the same post via the durable journal.
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import {BatchCall} from '@aztec/aztec.js/contracts';
-import {Tx} from '@aztec/stdlib/tx';
+import {BatchCall} from '@aztec-labs/aztec.js/contracts';
+import {Tx} from '@aztec-labs/stdlib/tx';
 import {createL2Journal} from '../shared/l2-journal.mjs';
 import {createJournalBackup} from '../shared/journal-backup.mjs';
 import {createFileJournalStorage} from '../apps/src/billboard/user/transaction-journal-store.mjs';

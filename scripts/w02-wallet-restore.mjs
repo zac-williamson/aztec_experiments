@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import vm from 'node:vm';
 import { webcrypto, randomBytes } from 'node:crypto';
-import { Fr } from '@aztec/foundation/curves/bn254';
-import { deriveMasterMessageSigningSecretKey } from '@aztec/stdlib/keys';
-import { getSchnorrInitializerlessAccountContractAddress } from '@aztec/accounts/schnorr';
+import { Fr } from '@aztec-labs/foundation/curves/bn254';
+import { deriveMasterMessageSigningSecretKey } from '@aztec-labs/stdlib/keys';
+import { getSchnorrInitializerlessAccountContractAddress } from '@aztec-labs/accounts/schnorr';
 
 export async function restoreApplicationAuthor(generated) {
   // SDK testing accounts use independently random signing keys. The application

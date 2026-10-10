@@ -379,13 +379,13 @@ function saveFundingRecord(record) {
     const provider=new ethers.JsonRpcProvider(config.network.ethRpcUrl);
     try{const data=new ethers.Interface(['function deposit(bytes32 secretHash) payable']).encodeFunctionData('deposit',['0x'+'01'.repeat(32)]);
       const [gas,fees]=await Promise.all([provider.estimateGas({from:account.ethereumAddress,to:config.board.portalAddress,data,value:ethers.parseEther(depositAmount)}),provider.getFeeData()]);check(expected);
-      if(fees.maxFeePerGas===null)throw Error('Fee estimate unavailable');return {maximumGasCost:gas*fees.maxFeePerGas};
+      if(fees.maxFeePerGas===null)throw Error('Fee estimate unavailable');return {maximumGasCost:gas*2n*fees.maxFeePerGas};
     }finally{provider.destroy();}
   }
   async function readFeeBalance() {
     if(kind==='fees'){const expected=stamp(),result=await execute('balance',()=>{},{});check(expected);return BigInt(result.feeBalance);}
     const h=connectedHandles(),expected=stamp(),a=window.__aztec;
-    const address=a.AztecAddress.fromString(_getPublicConfig().privateFee.contractAddress);
+    const address=a.AztecAddress.fromStringUnsafe(_getPublicConfig().privateFee.contractAddress);
     const artifact=a.loadContractArtifact(BILLBOARD_PRIVATE_FEE_ARTIFACT);
     await h.wallet.registerContract(await a.derivePrivateFeeInstance(artifact),artifact);
     const feeContract=await a.Contract.at(address,artifact,h.wallet);

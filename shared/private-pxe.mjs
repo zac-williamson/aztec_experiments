@@ -2,10 +2,10 @@ import {RoutedKernelProver} from './routed-kernel-prover.mjs';
 import {createRemoteProverClient} from './remote-prover-client.mjs';
 import {provingEnabledForNode} from './proving-policy.mjs';
 import { Buffer } from 'node:buffer';
-import { createPXE as createSdkPXE } from '@aztec/pxe/client/lazy';
-import { Barretenberg, BackendType } from '@aztec/bb.js';
-import { WASMSimulator } from '@aztec/simulator/client';
-import { ChonkProofWithPublicInputs } from '@aztec/stdlib/proofs';
+import { createPXE as createSdkPXE } from '@aztec-labs/pxe/client/lazy';
+import { Barretenberg, BackendType } from '@aztec-foundation/bb.js';
+import { WASMSimulator } from '@aztec-labs/simulator/client';
+import { ChonkProofWithPublicInputs } from '@aztec-labs/stdlib/proofs';
 import { proveBrowserChonk } from './browser-chonk-stream.mjs';
 
 // PXE/prover diagnostics may contain private execution data. The application

@@ -46,7 +46,7 @@ checkNoirDependencyTrees();
   if(extra.length){
    assert.equal(raw.functions.some(f=>f.custom_attributes?.includes('abi_public')),false);
    assert.equal(extra.length,1);assert.equal(extra[0].name,'public_dispatch');
-   const reference='node_modules/@aztec/accounts/artifacts/SchnorrInitializerlessAccount.json';
+   const reference='node_modules/@aztec-labs/accounts/artifacts/SchnorrInitializerlessAccount.json';
    const referenceBytes=fs.readFileSync(path.join(ROOT,reference));
    const sdk=JSON.parse(fs.readFileSync(path.join(ROOT,'.build/sdk/sdk-manifest.json')));
    assert.equal(sha(referenceBytes),sdk.inputs[reference]);inputs[reference]=sha(referenceBytes);

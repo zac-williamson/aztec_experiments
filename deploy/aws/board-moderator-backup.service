@@ -7,5 +7,5 @@ After=network-online.target
 Type=oneshot
 User=root
 UMask=0077
-ExecStart=/bin/bash /srv/board/backup-moderator.sh /srv/board/operator-direct-deposit-20260928 anonymous-message-board-testnet-backups-nvdhcyurtoga
+ExecStart=/bin/bash /srv/board/backup-moderator.sh /srv/board/operator-v6-20261010 anonymous-message-board-testnet-backups-nvdhcyurtoga /srv/board/state/v6-20261010
 TimeoutStartSec=480

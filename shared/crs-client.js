@@ -11,7 +11,7 @@
     && Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
 
   function validateManifest(manifest) {
-    if (manifest?.schemaVersion !== 2 || manifest.aztecVersion !== '5.2.0' || !Array.isArray(manifest.files) || manifest.files.length !== 3) {
+    if (manifest?.schemaVersion !== 2 || manifest.aztecVersion !== '6.0.0-rc.1' || !Array.isArray(manifest.files) || manifest.files.length !== 3) {
       throw new Error('Missing or incompatible build-pinned CRS manifest');
     }
     const files = new Map();
@@ -36,8 +36,8 @@
       || provenance.method !== 'bb-srs-init-v1' || provenance.packageVersion !== manifest.aztecVersion
       || provenance.inputName !== 'g1.dat' || provenance.inputSha256 !== files.get('g1.dat').sha256
       || provenance.g2Sha256 !== files.get('g2.dat').sha256
-      || provenance.wasmSource !== 'node_modules/@aztec/bb.js/dest/node/barretenberg_wasm/barretenberg-threads.wasm.gz'
-      || provenance.wasmSha256 !== '9106f6164e4714a87ce1cf13ceac4d22109767a16e6fb997f1af7e7fcc81ae45') {
+      || provenance.wasmSource !== 'node_modules/@aztec-foundation/bb.js/dest/node/barretenberg_wasm/barretenberg-threads.wasm.gz'
+      || provenance.wasmSha256 !== 'd2f89b18d869cdac2ebfd27d33710e16fb10a9a8066f8dc957bac478b3725ea2') {
       throw new Error('Invalid pinned CRS entry: derivedG1');
     }
     return { files, derivedG1: Object.freeze({ ...derived, derivation: Object.freeze({ ...provenance }) }) };

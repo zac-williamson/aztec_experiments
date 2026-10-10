@@ -1,9 +1,9 @@
 // Controlled execution fixtures with real field hashing; no genuine proofs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Fr } from '@aztec/foundation/curves/bn254';
-import { AztecAddress } from '@aztec/stdlib/aztec-address';
-import { siloNullifier } from '@aztec/stdlib/hash';
+import { Fr } from '@aztec-labs/foundation/curves/bn254';
+import { AztecAddress } from '@aztec-labs/stdlib/aztec-address';
+import { siloNullifier } from '@aztec-labs/stdlib/hash';
 import { extractApplicationNullifier } from '../shared/application-nullifier.mjs';
 const board = AztecAddress.fromFieldUnsafe(new Fr(42));
 const other = AztecAddress.fromFieldUnsafe(new Fr(43));

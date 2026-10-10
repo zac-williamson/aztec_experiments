@@ -1,13 +1,13 @@
 import test,{after} from 'node:test';
 import assert from 'node:assert/strict';
-import {Gas,GasFees,GasSettings} from '@aztec/stdlib/gas';
-import {ExecutionPayload,TxSimulationResult} from '@aztec/stdlib/tx';
-import {RevertCode} from '@aztec/stdlib/avm';
-import {SimulationError} from '@aztec/stdlib/errors';
-import {FunctionSelector} from '@aztec/stdlib/abi';
-import {AztecAddress} from '@aztec/stdlib/aztec-address';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {BarretenbergSync} from '@aztec/bb.js';
+import {Gas,GasFees,GasSettings} from '@aztec-labs/stdlib/gas';
+import {ExecutionPayload,TxSimulationResult} from '@aztec-labs/stdlib/tx';
+import {RevertCode} from '@aztec-labs/stdlib/avm';
+import {SimulationError} from '@aztec-labs/stdlib/errors';
+import {FunctionSelector} from '@aztec-labs/stdlib/abi';
+import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {BarretenbergSync} from '@aztec-foundation/bb.js';
 import {PrivateFeePaymentMethod,PrivateMintAndPayFeePaymentMethod} from '../shared/private-fee-payment.mjs';
 import {estimatePrivateFeeTransaction,sendPrivateFeeTransaction} from '../shared/private-fee-estimation.mjs';
 import {createPrivateFeeSimulator} from '../shared/private-fee-simulation.mjs';
@@ -47,6 +47,16 @@ test('an application shortage grows the probe and never returns its incomplete g
 });
 test('search exhaustion is distinct from insufficient balance and cannot send',async()=>{
  const h=fixture({available:85n,main:new Gas(2,55)});await assert.rejects(sendPrivateFeeTransaction(h.input),{code:'BB_FEE_ESTIMATION_UNSTABLE'});assert.equal(h.sends.length,0);assert(h.calls.length<25);
+});
+test('a ceiling above credit can be affordable, while one gas unit priced above credit cannot',async()=>{
+ const available=500n,oldPrice=available/1000n+1n;
+ const affordable=fixture({available,prices:new GasFees(0n,oldPrice)});
+ assert(affordable.input.prepared.gasSettings.getFeeLimit().toBigInt()>available);
+ assert((await estimatePrivateFeeTransaction(affordable.input)).maximumFee<=available);
+ const exhausted=fixture({available,prices:new GasFees(0n,available+1n)});
+ await assert.rejects(estimatePrivateFeeTransaction(exhausted.input),{code:'BB_FEE_ESTIMATION_UNSTABLE'});
+ assert(exhausted.calls.length>0&&exhausted.calls.every(c=>c.phase==='private'));
+ assert.equal(exhausted.sends.length,0);
 });
 test('fragmentation cannot silently trigger another funding payment',async()=>{
  const h=fixture({available:120n,privateGas:r=>r>90n?new Gas(10,200):new Gas(10,20)});await assert.rejects(sendPrivateFeeTransaction(h.input),{code:'BB_FEE_ESTIMATION_UNSTABLE'});assert.equal(h.sends.length,0);

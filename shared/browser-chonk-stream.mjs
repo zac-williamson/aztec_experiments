@@ -1,8 +1,8 @@
-import {flattenChonkProofFields} from '@aztec/bb.js';
-import {serializeWitness} from '@aztec/noir-noirc_abi';
+import {CircuitKind,flattenChonkProofFields} from '@aztec-foundation/bb.js';
+import {serializeWitness} from '@aztec-foundation/noir-noirc_abi';
 import {ungzip} from 'pako';
 
-// Pinned 5.2.0 BBPrivateKernelProver/AztecClientBackend sequence, with one
+// Pinned V6 BBPrivateKernelProver/AztecClientBackend sequence, with one
 // decompressed circuit/witness pair queued at a time. Original executionSteps
 // remain caller-owned; this does not bound BB's intrinsic proof working set.
 const activeBackends=new WeakSet(),failedBackends=new WeakSet();
@@ -11,17 +11,15 @@ export async function proveBrowserChonk(executionSteps,barretenberg) {
   if(!Array.isArray(executionSteps)||executionSteps.length===0||!barretenberg||activeBackends.has(barretenberg)||failedBackends.has(barretenberg))throw failure();
   activeBackends.add(barretenberg);
   try {
-    await barretenberg.chonkStart({numCircuits:executionSteps.length});
-    let lastBytecode;
+    if(executionSteps.some(step=>![CircuitKind.App,CircuitKind.Kernel,CircuitKind.HidingKernel].includes(step.kind)||!(step.vk instanceof Uint8Array)||step.vk.length===0)||executionSteps.at(-1).kind!==CircuitKind.HidingKernel)throw failure();
+    await barretenberg.chonkStart({kinds:executionSteps.map(step=>step.kind)});
     for(let index=0;index<executionSteps.length;index++){
       const step=executionSteps[index],bytecode=ungzip(step.bytecode);
-      await barretenberg.chonkLoad({circuit:{name:step.functionName||`circuit_${index}`,bytecode,verificationKey:step.vk||new Uint8Array(0)}});
+      await barretenberg.chonkLoad({circuit:{name:step.functionName||`circuit_${index}`,bytecode,verificationKey:step.vk},kind:step.kind});
       await barretenberg.chonkAccumulate({witness:ungzip(serializeWitness(step.witness))});
-      if(index===executionSteps.length-1)lastBytecode=bytecode;
     }
     const {proof}=await barretenberg.chonkProve({});
-    const {bytes:vk}=await barretenberg.chonkComputeVk({circuit:{name:executionSteps.at(-1).functionName||'circuit',bytecode:lastBytecode},useZkFlavor:true});
-    lastBytecode=undefined;
+    const vk=executionSteps.at(-1).vk;
     const proofFields=flattenChonkProofFields(proof);
     // Same local native-structured verification performed by upstream
     // AztecClientBackend.verifyNative; never return an unchecked proof.

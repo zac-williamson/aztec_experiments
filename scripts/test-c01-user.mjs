@@ -7,12 +7,12 @@ import vm from 'node:vm';
 import { webcrypto, createDecipheriv, createHash } from 'node:crypto';
 import { IDBFactory } from 'fake-indexeddb';
 import * as ethers from 'ethers';
-import {GasSettings} from '@aztec/stdlib/gas';
+import {GasSettings} from '@aztec-labs/stdlib/gas';
 import {provingEnabledForNode} from '../shared/proving-policy.mjs';
-import { Fr } from '@aztec/foundation/curves/bn254';
-import { sha256ToField } from '@aztec/foundation/crypto/sha256';
-import { AztecAddress } from '@aztec/stdlib/aztec-address';
-import { EthAddress } from '@aztec/foundation/eth-address';
+import { Fr } from '@aztec-labs/foundation/curves/bn254';
+import { sha256ToField } from '@aztec-labs/foundation/crypto/sha256';
+import { AztecAddress } from '@aztec-labs/stdlib/aztec-address';
+import { EthAddress } from '@aztec-labs/foundation/eth-address';
 
 const backupSource = await fs.readFile(new URL('../shared/wallet-backup.js',import.meta.url),'utf8');
 const claimSource=await fs.readFile(new URL('../shared/claim-secret-store.js',import.meta.url),'utf8');
@@ -126,9 +126,11 @@ function depositHarness({store,enabled=true,activeAmount=0n,refunded=false,reuse
   const receiptLookup=provider.getTransactionReceipt;
   provider.getBlock=async n=>({number:n==='latest'?1:n,hash:'0x'+Number(n==='latest'?1:n).toString(16).padStart(64,'0')});
   provider.getTransactionCount=async()=>0;
+  provider.estimateGas=async request=>{assert.equal(request.to,scope.portalAddress);assert.equal(request.from,scope.depositor);return 100000n;};
   provider.getTransaction=async()=>sentBody;
   provider.getTransactionReceipt=async h=>sentReceipt||receiptLookup(h);
   const signer={getAddress:async()=>scope.depositor,provider:{getNetwork:async()=>({chainId:31337n}),getTransaction:async()=>{throw Error('Wallet reader forbidden');}},sendTransaction:async request=>{
+    assert.equal(request.gasLimit,200000n);
     const parsed=new ethers.Interface(['function deposit(bytes32) payable']).parseTransaction({data:request.data});
     const tx=await new Portal(scope.portalAddress,iface,provider).deposit(parsed.args[0],{value:request.value});
     sentBody={...request,hash:tx.hash};sentReceipt={...await tx.wait(),hash:tx.hash,from:scope.depositor,to:scope.portalAddress,blockNumber:2,blockHash:'0x'+'2'.padStart(64,'0')};return sentBody;

@@ -1,4 +1,4 @@
-import {Barretenberg,BarretenbergSync} from '@aztec/bb.js';
+import {Barretenberg,BarretenbergSync} from '@aztec-foundation/bb.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';

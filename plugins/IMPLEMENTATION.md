@@ -1,3 +1,7 @@
+> The V5 implementation and deployment history below is superseded for the current
+> live application by the [V6 testnet handover](../deploy/V6-TESTNET.md).
+> Preserve V5 recovery configuration for any older deposits.
+
 # Current implementation: per-plugin Aztec escrow
 
 The accepted design and interfaces are in [ESCROW_SPEC.md](ESCROW_SPEC.md).

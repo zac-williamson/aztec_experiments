@@ -1,7 +1,7 @@
-import {ProtocolContractAddress} from '@aztec/protocol-contracts';
-import {ProtocolContractArtifact} from '@aztec/protocol-contracts/providers/bundle';
-import {encode} from '@aztec/entrypoints/encoding';
-import {FunctionCall,FunctionSelector,loadContractArtifact} from '@aztec/stdlib/abi';
+import {ProtocolContractAddress} from '@aztec-labs/protocol-contracts';
+import {ProtocolContractArtifact} from '@aztec-labs/protocol-contracts/providers/bundle';
+import {encode} from '@aztec-labs/entrypoints/encoding';
+import {FunctionCall,FunctionSelector,loadContractArtifact} from '@aztec-labs/stdlib/abi';
 import artifact from '../plugins/adapter_artifact.json' with {type:'json'};
 import feeArtifact from '../apps/src/billboard/private_fee_artifact.json' with {type:'json'};
 const selector=async(raw,name)=>{const artifact=loadContractArtifact(raw);return BigInt((await FunctionSelector.fromNameAndParameters([...artifact.functions,...artifact.nonDispatchPublicFunctions].find(f=>f.name===name))).toString());};

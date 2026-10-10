@@ -10,13 +10,13 @@ import { gunzipSync } from 'node:zlib';
 import { ROOT, assertNodeVersion, assertAztecPackages } from './toolchain.mjs';
 const SELF = fileURLToPath(import.meta.url);
 const DEADLINE_MS = 300000;
-const BB = path.join(ROOT, 'node_modules/@aztec/bb.js/build/arm64-macos/bb');
-const ARTIFACT = 'node_modules/@aztec/noir-protocol-circuits-types/artifacts/rollup_checkpoint_padding.json';
+const BB = path.join(ROOT, 'node_modules/@aztec-foundation/bb.js/build/arm64-macos/bb');
+const ARTIFACT = 'node_modules/@aztec-labs/noir-protocol-circuits-types/artifacts/rollup_checkpoint_padding.json';
 const PINS = {
   'crs-manifest.json': '4927de3e03d69f4e640a841f9421dd0b93819b5e3d42c142d12ee079d5a402be',
   [ARTIFACT]: '8e9b00531edf18405e516cbb443ec3c59e205e329a18e0e9fbcdd55cef1cd900',
-  'node_modules/@aztec/bb.js/build/arm64-macos/bb': '208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031',
-  'node_modules/@aztec/noir-acvm_js/nodejs/acvm_js_bg.wasm': 'bcd66e862a95a57f7f2ae3cb97e24d007d2ad710ac7490262c3c92a5b823775d',
+  'node_modules/@aztec-foundation/bb.js/build/arm64-macos/bb': '208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031',
+  'node_modules/@aztec-foundation/noir-acvm_js/nodejs/acvm_js_bg.wasm': 'bcd66e862a95a57f7f2ae3cb97e24d007d2ad710ac7490262c3c92a5b823775d',
 };
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function verifiedFile(filename, bytes, digest) {
@@ -34,8 +34,8 @@ async function fingerprints() {
     await verifiedFile(path.join(ROOT, name), undefined, digest); result[name] = digest;
   }
   for (const name of ['scripts/test-c01-native-proof.mjs', 'scripts/toolchain.mjs', 'package-lock.json', 'toolchain.json',
-    'node_modules/@aztec/bb-prover/dest/bb/bb_js_backend.js',
-    'node_modules/@aztec/bb.js/dest/node/bb_backends/node/native_socket.js']) {
+    'node_modules/@aztec-labs/bb-prover/dest/bb/bb_js_backend.js',
+    'node_modules/@aztec-foundation/bb.js/dest/node/bb_backends/node/native_socket.js']) {
     result[name] = sha(await fs.readFile(path.join(ROOT, name)));
   }
   return result;
@@ -77,9 +77,9 @@ async function worker(directory) {
     globalThis.fetch = async () => { throw new Error('Network fetch forbidden in local proof harness'); };
     mark('witness');
     const [{ WASMSimulator }, acvm, circuits, { ServerCircuitVks }, { CheckpointPaddingRollupPrivateInputs }, { BBJsInstance }] = await Promise.all([
-      import('@aztec/simulator/client'), import('@aztec/noir-acvm_js'),
-      import('@aztec/noir-protocol-circuits-types/server'), import('@aztec/noir-protocol-circuits-types/server/vks'),
-      import('@aztec/stdlib/rollup'), import('@aztec/bb-prover'),
+      import('@aztec-labs/simulator/client'), import('@aztec-foundation/noir-acvm_js'),
+      import('@aztec-labs/noir-protocol-circuits-types/server'), import('@aztec-labs/noir-protocol-circuits-types/server/vks'),
+      import('@aztec-labs/stdlib/rollup'), import('@aztec-labs/bb-prover'),
     ]);
     const artifact = circuits.getServerCircuitArtifact('CheckpointPaddingRollupArtifact');
     const rawArtifact = JSON.parse(await fs.readFile(path.join(ROOT, ARTIFACT), 'utf8'));

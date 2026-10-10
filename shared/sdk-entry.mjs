@@ -9,54 +9,55 @@ globalThis.Buffer ??= Buffer;
 export { createPXE, initializeBrowserProver, initializeCliProver } from './private-pxe.mjs';
 export { boundedTransactionRead, requireSuccessfulReceipt, submitOnceWithReconciliation, classifyDroppedTransaction, waitForSuccessfulReceipt } from './transaction-outcomes.mjs';
 export { openPXEStore, getPXEStoreIdentity, PXE_DATA_SCHEMA_VERSION } from './sdk-store.mjs';
-export { AztecSQLiteOPFSStore } from '@aztec/kv-store/sqlite-opfs';
-export { BaseWallet } from '@aztec/wallet-sdk/base-wallet';
-export { AccountManager, DeployAccountMethod } from '@aztec/aztec.js/wallet';
-export { AztecAddress, CompleteAddress, EthAddress } from '@aztec/aztec.js/addresses';
-export { Fr } from '@aztec/aztec.js/fields';
-export { GrumpkinScalar } from '@aztec/foundation/curves/grumpkin';
+export { AztecSQLiteOPFSStore } from '@aztec-labs/kv-store/sqlite-opfs';
+export { BaseWallet } from '@aztec-labs/wallet-sdk/base-wallet';
+export { AccountManager, DeployAccountMethod } from '@aztec-labs/aztec.js/wallet';
+export { AztecAddress, CompleteAddress, EthAddress } from '@aztec-labs/aztec.js/addresses';
+export { Fr } from '@aztec-labs/aztec.js/fields';
+export { GrumpkinScalar } from '@aztec-labs/foundation/curves/grumpkin';
 export { Contract, ContractFunctionInteraction, BatchCall, DeployMethod, NO_WAIT,
-  getContractClassFromArtifact, getContractInstanceFromInstantiationParams } from '@aztec/aztec.js/contracts';
-export { NO_FROM } from '@aztec/aztec.js/account';
+  getContractClassFromArtifact, getContractInstanceFromInstantiationParams } from '@aztec-labs/aztec.js/contracts';
+export { NO_FROM } from '@aztec-labs/aztec.js/account';
 export { createPrivateFeeDeployment, normalizePrivateFeeGasSettings, preparePrivateFeePayment, derivePrivateFeeInstance, derivePrivateFeeBridgeSecret, derivePrivateFeeAddress } from './private-fee-client.mjs';
 export { ensureOnboardingFees } from './fee-onboarding.mjs';
 export { fundPrivateFees, recoverPrivateFeeClaim, recoverPrivateFeeFunding, isPrivateFeeClaimConsumed } from './private-fee-funding.mjs';
-export { FunctionCall, FunctionSelector, FunctionType, encodeArguments, loadContractArtifact } from '@aztec/aztec.js/abi';
-export { Capsule, HashedValues, ExecutionPayload, TxExecutionRequest, TxHash } from '@aztec/aztec.js/tx';
+export { FunctionCall, FunctionSelector, FunctionType, encodeArguments, loadContractArtifact } from '@aztec-labs/aztec.js/abi';
+export { Capsule, HashedValues, ExecutionPayload, TxExecutionRequest, TxHash } from '@aztec-labs/aztec.js/tx';
 export { createEthereumJournal, verifyEthereumIntentReceipt } from './ethereum-journal.mjs';
 export { createL2Journal } from './l2-journal.mjs';
 export { createBrowserJournalStorage } from './journal-indexeddb.mjs';
-export { Tx, TxContext } from '@aztec/stdlib/tx';
-export { Gas, GasSettings } from '@aztec/stdlib/gas';
-export { MerkleTreeId } from '@aztec/stdlib/trees';
-export { computePartialAddress } from '@aztec/stdlib/contract';
+export { Tx, TxContext } from '@aztec-labs/stdlib/tx';
+export { Gas, GasSettings } from '@aztec-labs/stdlib/gas';
+export { MerkleTreeId } from '@aztec-labs/stdlib/trees';
+export { computePartialAddress } from '@aztec-labs/stdlib/contract';
 export { deriveKeys, deriveKeysFromMasterSecretKeys, deriveMasterMessageSigningSecretKey,
   deriveMasterMessageSigningSecretKey as deriveSigningKey,
-  deriveMasterMessageSigningSecretKey as deriveMasterMessageSigningSecretKeyAlias } from '@aztec/stdlib/keys';
-export { computeSecretHash, deriveStorageSlotInMap, siloNullifier } from '@aztec/stdlib/hash';
+  deriveMasterMessageSigningSecretKey as deriveMasterMessageSigningSecretKeyAlias } from '@aztec-labs/stdlib/keys';
+export { computeSecretHash, deriveStorageSlotInMap, siloNullifier } from '@aztec-labs/stdlib/hash';
 export { computeFeeJuiceMessageNullifier,
   computeFeeJuiceMessageNullifier as computeL1ToL2MessageNullifier,
-  getNonNullifiedL1ToL2MessageWitness } from '@aztec/stdlib/messaging';
-export { createAztecNodeClient, waitForNode, waitForTx } from '@aztec/aztec.js/node';
+  getNonNullifiedL1ToL2MessageWitness } from '@aztec-labs/stdlib/messaging';
+export {createAztecNodeClient} from './aztec-node-client.mjs';
+export {waitForNode, waitForTx} from '@aztec-labs/aztec.js/node';
 export { PrivateFeePaymentMethod, PrivateMintAndPayFeePaymentMethod } from './private-fee-payment.mjs';
-export { ProtocolContractAddress, ProtocolContractAddress as FeeJuiceAddressHolder } from '@aztec/protocol-contracts';
-import { ProtocolContractAddress } from '@aztec/protocol-contracts';
+export { ProtocolContractAddress, ProtocolContractAddress as FeeJuiceAddressHolder } from '@aztec-labs/protocol-contracts';
+import { ProtocolContractAddress } from '@aztec-labs/protocol-contracts';
 export const FeeJuiceAddress = ProtocolContractAddress.FeeJuice;
-export { FeeJuiceArtifact } from '@aztec/protocol-contracts/fee-juice';
+export { FeeJuiceArtifact } from '@aztec-labs/protocol-contracts/fee-juice';
 export { SchnorrAccountContract, SchnorrAccountContractArtifact,
   SchnorrInitializerlessAccountContract, SchnorrInitializerlessAccountContractArtifact,
-  getSchnorrAccountContractAddress, getSchnorrInitializerlessAccountContractAddress } from '@aztec/accounts/schnorr';
-export { Barretenberg, BarretenbergSync } from '@aztec/bb.js';
-export { poseidon2Hash, poseidon2HashBytes, poseidon2HashWithSeparator } from '@aztec/foundation/crypto/poseidon';
-export { sha256ToField } from '@aztec/foundation/crypto/sha256';
-export { initSync as initACVMSync } from '@aztec/noir-acvm_js';
-export { initSync as initAbiSync } from '@aztec/noir-noirc_abi';
+  getSchnorrAccountContractAddress, getSchnorrInitializerlessAccountContractAddress } from '@aztec-labs/accounts/schnorr';
+export { Barretenberg, BarretenbergSync } from '@aztec-foundation/bb.js';
+export { poseidon2Hash, poseidon2HashBytes, poseidon2HashWithSeparator } from '@aztec-labs/foundation/crypto/poseidon';
+export { sha256ToField } from '@aztec-labs/foundation/crypto/sha256';
+export { initSync as initACVMSync } from '@aztec-foundation/noir-acvm_js';
+export { initSync as initAbiSync } from '@aztec-foundation/noir-noirc_abi';
 
 export { createJournalBackup } from './journal-backup.mjs';
 
 export { extractApplicationNullifier } from './application-nullifier.mjs';
 
-export { NoteStatus } from '@aztec/stdlib/note';
+export { NoteStatus } from '@aztec-labs/stdlib/note';
 
 export {validateDeploymentManifest,deploymentManifestConfig,verifyDeploymentInputs,preflightDeploymentNetwork,deploymentPolicyVersion} from './deployment-manifest.mjs';
 export {verifyPortalRuntime} from './portal-runtime.mjs';

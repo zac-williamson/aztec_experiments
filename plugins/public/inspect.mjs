@@ -1,9 +1,9 @@
 // Read-only verification in a short-lived process so native WASM allocations
 // cannot overlap the real browser's prover. Never submits a transaction.
 import fs from 'node:fs/promises';import path from 'node:path';import assert from 'node:assert/strict';
-import {Barretenberg,BarretenbergSync,BackendType} from '@aztec/bb.js';
-import {createAztecNodeClient} from '@aztec/aztec.js/node';import {EmbeddedWallet} from '@aztec/wallets/embedded';import {Contract} from '@aztec/aztec.js/contracts';import {NO_FROM} from '@aztec/aztec.js/account';
-import {AztecAddress} from '@aztec/stdlib/aztec-address';import {Fr} from '@aztec/foundation/curves/bn254';import {loadContractArtifact} from '@aztec/stdlib/abi';import {unpackText} from '../protocol.mjs';
+import {Barretenberg,BarretenbergSync,BackendType} from '@aztec-foundation/bb.js';
+import {createAztecNodeClient} from '../../shared/aztec-node-client.mjs';import {EmbeddedWallet} from '@aztec-labs/wallets/embedded';import {Contract} from '@aztec-labs/aztec.js/contracts';import {NO_FROM} from '@aztec-labs/aztec.js/account';
+import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';import {Fr} from '@aztec-labs/foundation/curves/bn254';import {loadContractArtifact} from '@aztec-labs/stdlib/abi';import {unpackText} from '../protocol.mjs';
 const [servicePath,directory,selection='{}']=process.argv.slice(2),read=async p=>JSON.parse(await fs.readFile(p,'utf8'));
 let wallet,result,failed=false;
 try{

@@ -2,8 +2,8 @@
 import http from 'node:http';
 import {timingSafeEqual} from 'node:crypto';
 import {Transaction} from 'ethers';
-import {createNamespacedSafeJsonRpcServer} from '@aztec/foundation/json-rpc/server';
-import {AztecNodeApiSchema} from '@aztec/stdlib/interfaces/client';
+import {createNamespacedSafeJsonRpcServer} from '@aztec-labs/foundation/json-rpc/server';
+import {AztecNodeApiSchema} from '@aztec-labs/stdlib/interfaces/client';
 const LIMIT=4*1024*1024;
 const METHODS=new Set(['eth_chainId','net_version','eth_blockNumber','eth_getBlockByNumber','eth_getBlockByHash','eth_getBalance','eth_getCode','eth_getStorageAt','eth_call','eth_estimateGas','eth_gasPrice','eth_maxPriorityFeePerGas','eth_feeHistory','eth_getTransactionCount','eth_getTransactionByHash','eth_getTransactionReceipt','eth_getLogs','eth_sendTransaction','eth_sendRawTransaction']);
 const silent=Object.assign(()=>{},{trace(){},debug(){},verbose(){},info(){},warn(){},error(){},fatal(){}});

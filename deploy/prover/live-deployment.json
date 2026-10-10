@@ -1,51 +1,63 @@
 {
-  "schemaVersion": 1,
-  "verifiedAt": "2026-09-28T17:02:51.054892+00:00",
+  "schemaVersion": 2,
+  "verifiedAt": "2026-10-10T13:51:13.054861+00:00",
   "website": "https://d30njln0kead8n.cloudfront.net",
   "endpoint": "https://d30njln0kead8n.cloudfront.net/prover",
-  "instance": "i-0eaa1171b734be7ca",
-  "region": "us-east-2",
-  "type": "c8a.4xlarge",
+  "aztecVersion": "6.0.0-rc.1",
+  "instance": "i-0025eb05db3c2491c",
+  "region": "us-east-1",
+  "availabilityZone": "us-east-1b",
+  "type": "c7a.4xlarge",
   "physicalCores": 16,
   "market": "spot",
   "maxHourlyUSD": 0.4,
-  "terminateAt": "2026-09-29 12:49:03 UTC",
-  "totalTestingBudgetUSD": 50,
-  "runtimeCommit": "0fcede64d922fac453e73eafa86ebc9c3843b6f1",
+  "terminateAt": "2026-10-13T08:42:31Z",
+  "totalTestingBudgetUSD": 100,
+  "budget": {
+    "approvedTotalUSD": 100,
+    "priorConservativeTotalUSD": 49.47,
+    "newMaximumComputeUSD": 28.8,
+    "newAncillaryReserveUSD": 5,
+    "conservativeMaximumTotalUSD": 83.27,
+    "deadline": "2026-10-13 08:42:31 UTC",
+    "maximumHourlyUSD": 0.4,
+    "instanceCount": 1,
+    "scope": "Remote prover testing campaign; existing moderator operating costs are separate."
+  },
   "distribution": "E3BMCK3MOVYK1K",
-  "vpcOrigin": "vo_I161Bxl0TCiFUpJ724rfIh",
-  "subnet": "subnet-01823546337ad0883",
-  "securityGroup": "sg-0ad63fdc913e7df46",
-  "routeTable": "rtb-04e5b7b3c6468d144",
-  "publicTestnetTransactionSubmittedDuringDeployment": true,
-  "priorRealProofQualification": "prover/QUALIFICATION.md",
+  "vpcOrigin": "vo_1ni7Gt8asXQDAMJVsKkcPg",
+  "securityGroup": "sg-03065d3c141f9b030",
+  "subnet": "subnet-a705ce88",
+  "runtimeRelease": "v6-20261010",
+  "runtimeBaseCommit": "0baa9c3426bfc348c1873e61e5f9a54ebd0431d0",
+  "sourceIdentity": "The release file inventory identifies uncommitted migration source; the base commit alone does not.",
   "publicBoardConfig": {
     "schemaVersion": 1,
     "network": {
-      "nodeUrl": "https://v5.testnet.rpc.aztec-labs.com",
+      "nodeUrl": "https://aztec-testnet.drpc.org",
       "ethRpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
       "chainId": "11155111",
-      "rollupVersion": "1821665230",
-      "rollupAddress": "0xd73a91bdcf6891c7642f3e460036e1ef2cc23178"
+      "rollupVersion": "2914217885",
+      "rollupAddress": "0x8c2fb2a68a3d362ab1de99e06f83f8903160bbd9"
     },
     "board": {
-      "portalAddress": "0x2e552bcd767b6ac942836d23052d69f411c48a38",
-      "contractAddress": "0x2836febce7767ea0f0562ca1b6095dc1ed068f05ab534d6385fbdd7560d0c75a"
+      "portalAddress": "0xe664b6b5fd7575616653f75374d5fc7e8544b982",
+      "contractAddress": "0x0346558fcce04c4bf0b0907c1ef20858b9583123ef55bceb7125cb3fc3fb3752"
     },
     "privateFee": {
-      "contractAddress": "0x28c2a3107cb397750c63c542dd0be34716d8b0b1d3e76b3b7dff85241ad09720",
+      "contractAddress": "0x22ce1b66cdd0b8d62e4cc10bfcab5c2870a55f9a8d9907a23102490efaac8484",
       "gasSettings": {
         "gasLimits": {
-          "daGas": "117668",
+          "daGas": "117624",
           "l2Gas": "6540000"
         },
         "teardownGasLimits": {
-          "daGas": "58834",
+          "daGas": "58812",
           "l2Gas": "817500"
         },
         "maxFeesPerGas": {
           "feePerDaGas": "0",
-          "feePerL2Gas": "10048248800620"
+          "feePerL2Gas": "10000000000000"
         },
         "maxPriorityFeesPerGas": {
           "feePerDaGas": "0",
@@ -57,500 +69,230 @@
       "url": "https://d30njln0kead8n.cloudfront.net/prover"
     }
   },
-  "walletIdentityCorrection": {
-    "verifiedAt": "2026-09-23T13:08:39.501236+00:00",
-    "pages": {
-      "user.html": {
-        "sha256": "aa859b3600a3a5e024d582f1005c8b1ac02845e14857f690ea0c4fdb6d0ac0c6",
-        "matchesBuild": true
+  "boardDeployment": {
+    "schemaVersion": 1,
+    "recordedAt": "2026-10-10T09:53:28.262Z",
+    "manifest": {
+      "schemaVersion": 1,
+      "profile": "operator",
+      "network": {
+        "nodeUrl": "https://aztec-testnet.drpc.org",
+        "ethRpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
+        "chainId": "11155111",
+        "rollupVersion": "2914217885",
+        "rollup": "0x8c2fb2a68a3d362ab1de99e06f83f8903160bbd9",
+        "inbox": "0x816ce1861ec258f99279e75a3ee6b5dfc9571e30",
+        "outbox": "0xb9dae0f8c5dd6524c1015ffe6494d9fd0623df0d"
       },
-      "fee-juice.html": {
-        "sha256": "5fde4a50208600835644db6fb3f9faa74339fe23d26046194d29b9f740e116f4",
-        "matchesBuild": true
+      "actors": {
+        "aztecDeployer": "0x2d9b4c933a94c3d416e8203661ad402374ad5a16231c7392433de5bfbf733119",
+        "ethereumDeployer": "0x0443527ca2fd922e62cda88a087757116c71dc21"
       },
-      "censor.html": {
-        "sha256": "387e6235dcebbd732881ad46d4c35443c580355e4cf305acefb065a57540f60f",
-        "matchesBuild": true
+      "board": {
+        "salt": "2026101001",
+        "minDeposit": "1000000000000",
+        "maxDeposit": "10000000000000",
+        "baseCooldown": "60",
+        "kMultiplier": "2",
+        "censorWindow": "3600",
+        "maxSaveUp": "2",
+        "censor": "0x21d6775865a9c5e62c28dc784edd367de074d4752f7319cf7f80f0ddbf6c102d",
+        "policy": "Test board: flag credible threats of violence against people. Do not flag ordinary criticism, disagreement, or clearly fictional discussion."
       },
-      "deploy.html": {
-        "sha256": "2d5cb832dd0980ca05d7e36b51a6b527242994e444fc1ddd68f0ffcdb1be3e58",
-        "matchesBuild": true
+      "artifacts": {
+        "boardJsonSha256": "0x8a8749bf41ec373ea092549f71831941aeb2382f832f1c4be590c907d1a15b21",
+        "boardClassId": "0x001d8104a27687ac1ccc9b348e5a04e49d6860d363d36d2bea8646e48b973f37",
+        "portalCreationSha256": "0xf9d746a3fbabc4af69b0289eb5ffe7c03315992198af060ea458a6c8994199d5",
+        "portalRuntimeMetadataSha256": "0x9ffe920e2bd2e82d560a0090c395e29a2eb1cc22b0c51b0dd1e499562b407ae0"
       }
     },
-    "checks": {
-      "regressionTests": 46,
-      "realMetaMaskComponent": "execution/evidence/T04/wallet-identity-extension-final-20260923.json",
-      "liveChrome": "Explicit MetaMask selection returns an Ethereum account; selected wallet and exact address now visible. No new wallet approval appeared in existing profile. User screenshot connection mismatch remains under investigation.",
-      "noStorageCleared": true,
-      "noUserTransactionsSubmitted": true,
-      "independentReview": "wallet_identity_review approved selected-wallet identity, invalidation notifications and persistent navigation gate"
+    "l2Addr": "0x0346558fcce04c4bf0b0907c1ef20858b9583123ef55bceb7125cb3fc3fb3752",
+    "portalAddr": "0xE664b6b5fd7575616653f75374d5Fc7e8544B982",
+    "readyTxHash": "0x21dc6047ccf191a84a6402a1929005cc391830844654a7ca004f3da41da99d13",
+    "configHash": "0x0085669738e00f4f7ea69243c75893f0f3b89806d7045c2654c6503481c6c7bb",
+    "intentDigest": "0xe480121015ec9447c6e22f5eadc2001a917e5f2e185239a9034f0372e983435f",
+    "policyVersion": "0x00f3a5d642af5b3350b9bfa51de40800eb2c34bd0ec331d8465607c9fdf176aa",
+    "status": "active"
+  },
+  "previousDeployment": "history/v5-20260928.json",
+  "qualification": {
+    "health": "replacement public ready; real proofs; one accepted browser proof",
+    "realRemoteProof": {
+      "status": "passed",
+      "txHash": "0x09e809e7b8c77fb34bdf7a7ca903969890a6368a235d452f7dbe5471327a3cb6",
+      "privateCreditVerified": true,
+      "blockNumber": 15343
+    },
+    "browser": {
+      "status": "passed onboarding",
+      "receipt": ".build/hosted-v6-onboarding-20261010/result.json",
+      "claim": "0x0476506cce9f69ab264c49c5ccff2b81f1cecbe0836492124805948d952ec81f",
+      "post": "0x0d70066e95f5953d193dacd5e2a0c4eaed342ebf2197ca33ba85a47e8ee7e20d",
+      "remaining": [
+        "plugin reply and refund",
+        "board withdrawal/refund"
+      ],
+      "latestModerationDeadline": "2026-10-10T14:48:12Z"
+    },
+    "moderator": {
+      "status": "passed; canonical flag finalized and moderator confirmed-flag",
+      "postId": "0x16a9777c0fedba326e12abd5d387e2116d68cd2f0427348efda3998b9ae138f2",
+      "flagTransaction": "0x0cf507e4a92f5fe6a7b2cfe9a7f3dabdaaeeac22788dc61aa7b2af89619bf8e8",
+      "policyAndCensorVerified": true,
+      "insidePenaltyWindow": true,
+      "backupVerified": true,
+      "blockNumber": 15402
+    },
+    "plugin": {
+      "status": "new request checkpointed; paid reply pending normal finality",
+      "originalRequest": {
+        "state": 6,
+        "charged": "0",
+        "reserved": "0"
+      },
+      "newRequest": {
+        "postId": "0x05576a599da430db1c5c11a46eac3fa5cd8e4707abe9f0c625a0dd9a551adc2c",
+        "hash": "0x227f0ec9c66a908f5c0337c6b0d1f58456a9968fdae468589dcac8ee79caffdb",
+        "blockNumber": 15484
+      },
+      "lazyCheckoutFixInstalled": true,
+      "KeepAlive": true
     }
   },
-  "walletAccountSelectionCorrection": {
-    "verifiedAt": "2026-09-23T13:24:40.283300+00:00",
-    "cause": "MetaMask reported an existing eth_accounts permission for this origin, dated2026-09-21, containing a different account from the current account in the user screenshot. Ordinary eth_requestAccounts reused that permission.",
-    "change": "Explicit MetaMask wallet_requestPermissions account selection before network validation and signer activation; canceled passkey retry honors the new selection.",
-    "checks": {
-      "regressions": 50,
-      "realMetaMaskComponent": "execution/evidence/T04/wallet-account-selection-20260923.json",
-      "existingPermissionRequiresApproval": true,
-      "diagnosticOnlyReadAccountsAndPermissions": true,
-      "temporaryDiagnosticObjectsDeleted": true,
-      "liveChrome": "After Connect then MetaMask, board stays on setup with no connected account, awaiting fresh permission approval; no automatic passkey or deposit advancement."
-    },
-    "pages": {
-      "user.html": "187739b5e8f7a2aba20d39074bb42d39971ff0554803b10d22c44e4955d67d80",
-      "fee-juice.html": "89e84332d61070c8db8b4d1333d9d30b94a714fb001781d272ea8caa1e573fc6",
-      "censor.html": "2c29f16826e6e9355fca9855e5e3c5d6ca82a7b83710920e31b9b2642775c6d4",
-      "deploy.html": "6d65d9a35c4f66f40f5042bfd5efff99a98cefcf02f0006b836bf34e152bf219"
-    }
-  },
-  "walletSelectionEventsCorrection": {
-    "verifiedAt": "2026-09-23T13:42:34.443287+00:00",
-    "change": "Account and chain announcements during explicit MetaMask permission selection no longer invalidate a not-yet-activated signer. Final account checks and post-selection event invalidation retained; disconnect still fails closed.",
-    "regressions": 52,
-    "baselineSelectionEventsRegression": "failed as expected on prior commit",
-    "realMetaMaskEvidence": "execution/evidence/T04/wallet-second-account-20260923g.json",
-    "reselectedDifferentAccount": true,
-    "pages": {
-      "user.html": "a19a2a264fc0005ef0048441089d68cc5523d5a77198bada27c8f392123f3758",
-      "fee-juice.html": "f82a40ed4a7f11e3e29c518411c298be7a5fd3154b8e052ef524bf73507cfd80",
-      "censor.html": "3b056168aba6b7553801360aab887710a551b3f86f5397afbfd50d32b859f652",
-      "deploy.html": "f37017b1bc9386fdc97de2cc8bd43647706f7a07a326bdd3ff867a1c3eb0a662"
-    }
-  },
-  "walletActivationBoundaryCorrection": {
-    "verifiedAt": "2026-09-23T13:55:18.713548+00:00",
-    "change": "Activate signer only after direct final account and chain validation. Track preactivation disconnect/reconnect; invalidate actual changes after activation.",
-    "regressions": 54,
-    "realMetaMaskEvidence": "execution/evidence/T04/wallet-activation-boundary-20260923.json",
-    "pages": {
-      "user.html": "32981aa2d83b76f990c8521a962d5ba983af1b75aae87bade1d4ded5ab074617",
-      "fee-juice.html": "0005dc50af9fdc2ebb5a143803a9aec5f92b99513d04dab82d4e1cd7d2e5e5d7",
-      "censor.html": "f9e33e9f4322075cf9ba48fa80c29ff868eed51732612c626f9ac5903d91768a",
-      "deploy.html": "59d05d5efd76a9fe395c230c7db969ca7cfb2f20a9814ee36aa8e87e34977951"
-    },
-    "invalidationStatus": "Completed",
-    "liveChrome": "Pending fresh approval verification"
-  },
-  "depositSlider": {
-    "verifiedAt": "2026-09-23T14:36:47.554996+00:00",
-    "evidence": "execution/evidence/T04/deposit-slider-20260923.json",
-    "pages": {
-      "user.html": "9e0a94207658d2ef0ab50e44ee605db544557071ded56f5dd25661a4f4108ac4",
-      "fee-juice.html": "3e9363c20cdc015a2477cb168d4c29e3f14cf96f7b1af93197a5abe669b825a1",
-      "censor.html": "996468aa27fc75920a18bc2431d7fc6c9db8afc9589fa652380ddfda0584031a",
-      "deploy.html": "1d6799ee65d5c35dc2f94ab82bb77f29ba51f4462202113bb47aecb82bc98edd"
-    },
-    "invalidationStatus": "Completed"
-  },
-  "operationProvingPreference": {
-    "verifiedAt": "2026-09-24T14:31:00.952212+00:00",
-    "evidence": "execution/evidence/T04/proving-preference-20260924.json",
-    "pages": {
-      "user.html": "69f8efeb441bb2b91dcf0593d6aeb17b37b207cb8329f76a1d849d16c55c8b03",
-      "fee-juice.html": "ad4b3a44829c2b98d67ac84d5c2faee4bc9162a860b72639eb34338e796f66cb",
-      "censor.html": "41e7211e6cb6946b67b2e4dcc5950ccd8cd11f3ffa5318f956463200f738414b",
-      "deploy.html": "cf3326e7fceced07987573c1be616d5eb2524e1089633d65947844c984b6e13c"
-    },
-    "invalidationStatus": "Completed"
-  },
-  "paymentCancellation": {
-    "pages": [
+  "releaseArchives": {
+    "archives": [
       {
-        "path": "user.html",
-        "sha256": "6aed383555fd444306813c171a477282696fad63d4bd1626a98b48f446a1ede5"
+        "archive": ".build/v6/operator-linux-current.tar.gz",
+        "bytes": 209908811,
+        "sha256": "a7c7272f42d866c189fc3ca1982a2be44052084058736f18be8de05b30aeeb4b",
+        "manifest": ".build/v6/operator-linux/operator-package.json",
+        "manifestSha256": "def6542107fa2a82bdcecb3d4450cde54c1289201fa3ea9f84f1aad94186e224",
+        "verifiedFiles": 1939,
+        "verifiedAt": "2026-10-10T11:43:53.419050+00:00",
+        "s3": {
+          "bucket": "anonymous-message-board-testnet-backups-nvdhcyurtoga",
+          "key": "releases/v6-20261010/operator-linux-current.tar.gz",
+          "versionId": "hU.il5JnA_rxuXDJV.t85PLH7eavpkve",
+          "expiration": "2026-11-10T00:00:00Z",
+          "serverSideEncryption": "AES256"
+        }
       },
       {
-        "path": "fee-juice.html",
-        "sha256": "46116da94f0a8df2ef7f618089de5b09008ef3b09595e40f39ae48e645176f5f"
+        "archive": ".build/v6/infra/prover-runtime-current.tar.gz",
+        "bytes": 453339879,
+        "sha256": "1f75a1e1ee568f97ebefe9ae8f9a17aa07d1a8cbd367fa06a69cf2f045d57024",
+        "manifest": ".build/v6/infra/prover-runtime/prover-release.json",
+        "manifestSha256": "50f36b8c2fb46f463ca77b599427748ea66fd84d10983d171c24c2324bd1ae85",
+        "verifiedFiles": 226123,
+        "verifiedAt": "2026-10-10T11:44:03.705734+00:00",
+        "s3": {
+          "bucket": "anonymous-message-board-testnet-backups-nvdhcyurtoga",
+          "key": "releases/v6-20261010/prover-runtime-current.tar.gz",
+          "versionId": "uX8HjolM50hiDUiEWtxbeuFMeGXT4gCz",
+          "expiration": "2026-11-10T00:00:00Z",
+          "serverSideEncryption": "AES256"
+        }
       },
       {
-        "path": "censor.html",
-        "sha256": "a75822d5cf4aec66cf9c24dd68ca256d03cc0433e7d3af3915ab05d5505bb61e"
+        "archive": ".build/v6/plugin-runtime-mac-current.tar.gz",
+        "bytes": 532187865,
+        "sha256": "8392453ded043d9f4762fd5285c79b17247b4bdedc33a1d3a94130d548ce275b",
+        "manifest": ".build/v6/plugin-runtime-mac/plugin-release.json",
+        "manifestSha256": "31fbc2490c1b1c22e4fb46d12b758507eb7dbfe5cce75413f11562c9608719d4",
+        "verifiedFiles": 166649,
+        "verifiedAt": "2026-10-10T13:39:33.574791+00:00",
+        "s3": {
+          "bucket": "anonymous-message-board-testnet-backups-nvdhcyurtoga",
+          "key": "releases/v6-20261010/plugin-runtime-mac-current.tar.gz",
+          "versionId": "hKvOj52SBqjvEvNJko.gO.XR4xS0MurR",
+          "expiration": "2026-11-10T00:00:00Z",
+          "serverSideEncryption": "AES256",
+          "checksumType": "FULL_OBJECT",
+          "checksumSHA256": "g5JFPe0EPZ9HYv1ShcebFyR7S97cM6HTqUEw1UjOJ1s="
+        }
       },
       {
-        "path": "deploy.html",
-        "sha256": "0a3dcc967f8e40e5321ed702d01eeb95e05c1442934d38d969a9439ea41d7714"
+        "archive": ".build/v6/website-current.tar.gz",
+        "bytes": 168467478,
+        "sha256": "5006a3cf94c52d1f5e7bd9bc9cd1b78de00ddc28dc1d8759f22aa7ff09aa4ecd",
+        "manifest": ".build/v6/site-recovery-manifest.json",
+        "manifestSha256": "63bed9ce9d5c05688016a032b1a00979c7890b912efb6a63cdf98d4be5b06b4b",
+        "verifiedFiles": 33,
+        "verifiedAt": "2026-10-10T13:48:26.738877+00:00",
+        "s3": {
+          "bucket": "anonymous-message-board-testnet-backups-nvdhcyurtoga",
+          "key": "releases/v6-20261010/website-current.tar.gz",
+          "versionId": "2Z08rtDE_is1O1PH4dKSdvgeqj3N16P7",
+          "expiration": "2026-11-10T00:00:00Z",
+          "serverSideEncryption": "AES256",
+          "checksumType": "FULL_OBJECT",
+          "checksumSHA256": "UAajz5TFLR9ee9m8nNG3jeAN3CjcHYdZ8iqn/wmqTs0="
+        }
       },
       {
-        "path": "sdk-manifest.json",
-        "sha256": "7cd65bfb0bfce0d4cff43c21b8e1df17abcf4fd95e49b6a120e64b8a1581ae55"
-      },
-      {
-        "path": "aztec_bundle.js",
-        "sha256": "6c0234e3f32d7577aa57527444d121d0fb514b34b1cd3891e15fe970f767acad"
+        "archive": ".build/v6/prover-host-current.tar.gz",
+        "bytes": 17200074,
+        "sha256": "3c06c06ffd821d100680a2fa4b2494672517a2027ae4135257a96a1ade34e152",
+        "manifest": ".build/v6/prover-host-manifest.json",
+        "manifestSha256": "733d525e9cab18fc876183355c8d46681222ebfc2fe6759009c8bf79b653cdf8",
+        "verifiedFiles": 7,
+        "verifiedAt": "2026-10-10T13:52:30.241332+00:00",
+        "s3": {
+          "bucket": "anonymous-message-board-testnet-backups-nvdhcyurtoga",
+          "key": "releases/v6-20261010/prover-host-current.tar.gz",
+          "versionId": ".NeGYl7ejSh6p6FnQulsTzY.1EOhaRRy",
+          "expiration": "2026-11-10T00:00:00Z",
+          "serverSideEncryption": "AES256",
+          "checksumType": "FULL_OBJECT",
+          "checksumSHA256": "PAbAb/2CHRAGgKL6SySUZyUXogJ65BNSV6lqGt404VI="
+        }
       }
     ],
-    "invalidation": "Completed",
-    "realMetaMaskRegression": "payment-cancellation-metamask-20260924-retry.json"
-  },
-  "automaticDepositDiscovery": {
-    "pages": [
-      {
-        "path": "user.html",
-        "sha256": "3f4d4c1474ea8bfb5b5b6835126882593e2cbe066718b9a9b42f051f04307807"
-      },
-      {
-        "path": "fee-juice.html",
-        "sha256": "fc362f4b293e00212fc7019af9d8ffcc069224395c2686b42cd5e286325d3250"
-      },
-      {
-        "path": "censor.html",
-        "sha256": "f0fff37d988fc6d7c5469a1d52a7ec00d01bd7b6e4df8104c62992305a6d02a0"
-      },
-      {
-        "path": "deploy.html",
-        "sha256": "3d7dc4131230419f8fa1ab738b41224bc8420720c65065d136a9292f6a91437d"
-      }
+    "operatorProvenance": [
+      "operator-linux-conversion.json (historical initial conversion)",
+      "operator-cli-correction.json",
+      "moderator-backup-result.json (installed current inventory verified)"
     ],
-    "tests": 126,
-    "liveClaimVerified": false
-  },
-  "previousRuntime": {
-    "instance": "i-0abeb28cb8033a1ee",
-    "vpcOrigin": "vo_Bu6ihqLvc6DDHoL4lMRE9m",
-    "terminateAt": "2026-09-24 16:33:57 UTC",
-    "verifiedAt": "2026-09-23T01:18:38.035129+00:00",
-    "checks": {
-      "api": {
-        "health": {
-          "status": 200,
-          "body": {
-            "ready": true,
-            "proofs": "real",
-            "queue": {
-              "jobs": 0,
-              "bytes": 0,
-              "running": false,
-              "submitted": 0,
-              "completed": 0,
-              "failed": 0
-            }
-          }
-        },
-        "invalidJob": {
-          "status": 400,
-          "body": {
-            "error": "Request rejected"
-          }
-        },
-        "foreignOrigin": {
-          "status": 403,
-          "body": {
-            "error": "Origin rejected"
-          }
-        },
-        "after": {
-          "status": 200,
-          "body": {
-            "ready": true,
-            "proofs": "real",
-            "queue": {
-              "jobs": 0,
-              "bytes": 0,
-              "running": false,
-              "submitted": 0,
-              "completed": 0,
-              "failed": 0
-            }
-          }
-        }
-      },
-      "browser": [
-        {
-          "name": "user.html",
-          "status": "Board ready. Connect your wallet to continue.",
-          "errors": [],
-          "count": 1,
-          "checked": true,
-          "enabled": true,
-          "remote": {
-            "url": "https://d30njln0kead8n.cloudfront.net/prover",
-            "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
-          },
-          "local": null,
-          "restored": {
-            "url": "https://d30njln0kead8n.cloudfront.net/prover",
-            "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
-          }
-        },
-        {
-          "name": "fee-juice.html",
-          "status": "Board ready. Connect your wallet to continue.",
-          "errors": [],
-          "count": 1,
-          "checked": true,
-          "enabled": true,
-          "remote": {
-            "url": "https://d30njln0kead8n.cloudfront.net/prover",
-            "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
-          },
-          "local": null,
-          "restored": {
-            "url": "https://d30njln0kead8n.cloudfront.net/prover",
-            "board": "0x1bbe99183f182c179ca47e0acb0ac5d7ad0e2782271ab9d45b85ea4dacf825c9"
-          }
-        }
-      ],
-      "walletIntegration": {
-        "published": {
-          "objects": [
-            {
-              "path": "user.html",
-              "sha256": "da7df5b343e2daeeab12773276a05cd6e0653b588bf55d45a0779e5711e128ca",
-              "matchesBuiltArtifact": true
-            },
-            {
-              "path": "fee-juice.html",
-              "sha256": "da9a8fb10c1b6274dc8996952359e04c07f61c58362bc24c0f7a31f17fa5b097",
-              "matchesBuiltArtifact": true
-            },
-            {
-              "path": "censor.html",
-              "sha256": "6cadf6a313e3f532c98b502e8162992b79656ba7822af72a9b8afdd53e124898",
-              "matchesBuiltArtifact": true
-            },
-            {
-              "path": "deploy.html",
-              "sha256": "9842efa8e374f856d5f8c6183f32b033416acff2f82850a538494205ab8f898d",
-              "matchesBuiltArtifact": true
-            },
-            {
-              "path": "board-reader-config.json",
-              "sha256": "9a8f0d43439db0cf3598eb1071c3e3ee716f4195f6186713ff8421ce5c7e5ebd",
-              "matchesBuiltArtifact": true
-            }
-          ],
-          "health": {
-            "ready": true,
-            "proofs": "real",
-            "queue": {
-              "jobs": 0,
-              "bytes": 0,
-              "running": false,
-              "submitted": 0,
-              "completed": 0,
-              "failed": 0
-            }
-          }
-        },
-        "configuration": {
-          "passed": true,
-          "checkedAt": "2026-09-23T01:02:01.788Z",
-          "privateFeeAddress": "0x28c2a3107cb397750c63c542dd0be34716d8b0b1d3e76b3b7dff85241ad09720",
-          "classId": "0x0b2a7aeab37124435ea959d80c674a8571863177abc0e9de98969d05daed3865",
-          "publicationVerified": true,
-          "networkVerified": true,
-          "gasSettingsValid": true,
-          "feeCapSufficient": true,
-          "maximumReserve": "65715547156054800000"
-        },
-        "liveChrome": {
-          "walletChoices": [
-            "Rabby Wallet",
-            "MetaMask",
-            "Coinbase Wallet",
-            "Phantom"
-          ],
-          "cancelRetainsSetup": true,
-          "remoteDefaultOn": true,
-          "postingToggleRoundtrip": true,
-          "fundingToggleRoundtrip": true,
-          "fundingDisabledBeforeWalletSetup": true,
-          "userWalletConnected": false
-        },
-        "componentTestsPassed": 141,
-        "localApplicationProofs": false,
-        "integrationEvidence": [
-          "wallet-selection-extension-20260923k.json",
-          "wallet-passkey-chrome-20260923.json",
-          "wallet-recovery-chrome-20260923.json",
-          "application-34493c6f-e27d-43b7-9450-7b26406eb7c8.json",
-          "application-9606a15e-398d-4d87-9003-4a907d9e487a.json",
-          "application-8cd75142-18d9-4a4a-b283-987c1d4dd077.json"
-        ],
-        "maintenanceAccessRemoved": true,
-        "budgetShutdownStillActive": true
+    "websiteEncodingMetadata": {
+      "bytes": 1914,
+      "sha256": "3b804def8e0e00996f91b3cec2dc012280269b5341bf7c1dbdd4fdc7954252d8",
+      "s3": {
+        "bucket": "anonymous-message-board-testnet-backups-nvdhcyurtoga",
+        "key": "releases/v6-20261010/website-content-encoding.json",
+        "versionId": "i1jLGTC6KexdNui_7dREqv_7BdtPXrwV",
+        "expiration": "2026-11-10T00:00:00Z",
+        "serverSideEncryption": "AES256",
+        "checksumType": "FULL_OBJECT",
+        "checksumSHA256": "O4BN744OAJlvkbPOwtwBIoAmm1NBv3wdvdT9x5VCUtg="
       }
     }
   },
-  "checks": {
-    "httpsHealth": {
-      "ready": true,
-      "proofs": "real",
-      "queue": {
-        "jobs": 0,
-        "bytes": 0,
-        "running": false,
-        "submitted": 0,
-        "completed": 0,
-        "failed": 0
-      }
+  "capacityReplacement": {
+    "previous": {
+      "instance": "i-0d045f5a191e4afac",
+      "availabilityZone": "us-east-1c",
+      "type": "c8a.4xlarge",
+      "vpcOrigin": "vo_3rkSISfqVk3BLkHD0WbQIn"
     },
-    "publishedAssets": {
-      "user.html": {
-        "sha256": "e4dfbcad795c7971d4823fa7a5ef25c2b9b34cb76d574abdeb10f01ab30ffea1",
-        "matchesBuild": true
-      },
-      "censor.html": {
-        "sha256": "6246146c226fe0f8220d3d964b86aae2273c04a46c19d21d2f667f5b629176ef",
-        "matchesBuild": true
-      },
-      "deploy.html": {
-        "sha256": "1626454d11c1786f65dcf48214c98dd2f218add5f8f33a5d4f8669e8686eee2a",
-        "matchesBuild": true
-      },
-      "fee-juice.html": {
-        "sha256": "f2c5d06a4ed319c4793649aeb660858e7dfb02dc507c4e9194b318da4bf01987",
-        "matchesBuild": true
-      },
-      "aztec_bundle.js": {
-        "sha256": "46847bfee3e539c4e41cb89100a4d40531246a6dd6b8f23a2e9f3eccfe4bf7bd",
-        "matchesBuild": true
-      },
-      "sdk-manifest.json": {
-        "sha256": "206c8a3d4bc349d6b67911ab2d47d8beab68361d88b90b3f4a3403b4b5235c49",
-        "matchesBuild": true
-      }
-    },
-    "chromeBoardReady": true,
-    "remoteToggleDefaultOnAndRoundTrip": true,
-    "temporarySshAccessRemoved": true,
-    "currentRuntimeRealProofJobTested": false,
-    "runtimeMatchesPreviouslyQualifiedPackage": true
+    "interruptedAt": "2026-10-10T12:20:20Z",
+    "reason": "instance-terminated-no-capacity",
+    "previousInstancesConfirmedAbsent": true,
+    "replacementFleet": "fleet-fb063004-d997-4b14-06b2-a4806ef2c2d6",
+    "deadlineUnchanged": true,
+    "privateHealth": "ready; real proofs",
+    "publicRouting": "Deployed; public health ready, non-prover routing and CSP unchanged"
   },
-  "newBoardDeployment": {
-    "codeCommit": "5a66237",
-    "harnessCommit": "764e20b",
-    "board": "0x2836febce7767ea0f0562ca1b6095dc1ed068f05ab534d6385fbdd7560d0c75a",
-    "portal": "0x2e552bcd767b6ac942836d23052d69f411c48a38",
-    "status": "active; website published and Chrome verified",
-    "bindingTx": "0x1435fb6fc661d277ba9f7b349da9bbebe894c2841d38b0710964079a434d2752",
-    "depositRecovery": {
-      "verifiedAt": "2026-09-28T13:36:39.390Z",
-      "network": "Aztec V5 testnet / Ethereum Sepolia",
-      "sourceCommit": "5a66237",
-      "deposit": {
-        "checkedAt": "2026-09-28T13:30:39.864Z",
-        "portal": "0x2E552bCD767B6aC942836d23052D69f411C48a38",
-        "depositor": "0xfAAf8ec59543bFc4D4C98ee2eebf455385EECF97",
-        "elapsedMs": 323,
-        "amount": "10000000000000",
-        "secretHash": "0x0311de506ff495c5ea7839c3bbce2c55e1dfc27bc9ea0dc31bf4358e5da2ddf0",
-        "key": "0x00e11102cc460751cfbca0547cbefe36f974be379df2151b85f62d0db337ffc5",
-        "index": "93960192",
-        "method": "getActiveDeposit",
-        "historicalLogsQueried": false
-      },
-      "claim": {
-        "txHash": "0x2006958e53a62df3ec547a31075a75ec837a231fbf927228c062849d47290bae",
-        "status": "checkpointed",
-        "executionResult": "success",
-        "blockNumber": 99186,
-        "blockHash": "0x27ddcfca8d43cd1b6038e574391ab4bd198ac4ba6c4420262e97e250d8cf29e4"
-      },
-      "freshProcess": true,
-      "transactionHashSupplied": false,
-      "realProof": true,
-      "finalWalletState": "postable"
-    },
-    "post": {
-      "verifiedAt": "2026-09-28T13:39:31.399Z",
-      "txHash": "0x0238b7371b05ba550d307c40159c0c6662fdcb69ed7060aa53e957fbc1ce0ee2",
-      "status": "checkpointed",
-      "executionResult": "success",
-      "blockNumber": 99189,
-      "blockHash": "0x03a74948d3862e1759f00509671d62f3285b5af3324054da4b7c3b164e062b26",
-      "message": "Fresh deployment recovery test: deposit restored after restart.",
-      "realProof": true
-    },
-    "browserDevnetEvidence": "application-e97e1aa4-2f4d-4d6c-88ef-77aa8ab41d88",
-    "browserDevnetProofsEnabled": false,
-    "moderatorMigration": {
-      "verifiedAt": "2026-09-28T17:02:51.054892+00:00",
-      "status": "complete",
-      "instance": "i-0cb8555882d6cfecc",
-      "region": "eu-west-2",
-      "release": "/srv/board/operator-direct-deposit-20260928",
-      "packageManifestSha256": "8f9294410e51dd8111d60cce918ec0fb1f3c2f39e5fadcd0a97b0bfe9c825803",
-      "verifiedPackageFiles": 1939,
-      "sourceCommit": "c2a8fb4",
-      "newStateDirectory": "/srv/board/state/moderation-direct-deposit-20260928",
-      "walletAndPrivateFeeContractPreserved": true,
-      "oldStatePreserved": true,
-      "freshTestPostTx": "0x03d533faed16e2f93e92354bba53fc784ea5775b9f548cdcbe17562822aac84a",
-      "evaluations": [
-        {
-          "state": "evaluated-ok",
-          "postId": "0x0c744439136439541aecf5a6bba393106c302f6a1069ca403ad52b539c3aeb8d",
-          "postIndex": null,
-          "decision": {
-            "isViolation": false
-          },
-          "errorCode": null,
-          "scope": {
-            "l1ChainId": "11155111",
-            "rollupVersion": "1821665230",
-            "rollupAddress": "0xd73a91bdcf6891c7642f3e460036e1ef2cc23178",
-            "boardAddress": "0x2836febce7767ea0f0562ca1b6095dc1ed068f05ab534d6385fbdd7560d0c75a",
-            "portalAddress": "0x2e552bcd767b6ac942836d23052d69f411c48a38"
-          }
-        },
-        {
-          "state": "evaluated-ok",
-          "postId": "0x15b0c1d8468fbb28ab76ea537e340699476ad14210049844b69089f06796d37b",
-          "postIndex": null,
-          "decision": {
-            "isViolation": false
-          },
-          "errorCode": null,
-          "scope": {
-            "l1ChainId": "11155111",
-            "rollupVersion": "1821665230",
-            "rollupAddress": "0xd73a91bdcf6891c7642f3e460036e1ef2cc23178",
-            "boardAddress": "0x2836febce7767ea0f0562ca1b6095dc1ed068f05ab534d6385fbdd7560d0c75a",
-            "portalAddress": "0x2e552bcd767b6ac942836d23052d69f411c48a38"
-          }
-        }
-      ],
-      "healthAfterBackupRestart": {
-        "type": "billboard-moderation-health-v1",
-        "stateCounts": {
-          "queued": 0,
-          "leased": 0,
-          "evaluated-ok": 2,
-          "submit-intent": 0,
-          "submitted": 0,
-          "reconciling": 0,
-          "retryable-error": 0,
-          "confirmed-flag": 0,
-          "expired": 0,
-          "manual-review": 0
-        },
-        "severity": "ok",
-        "checkpointHeight": 99366,
-        "lastSuccessfulIngestAgeMs": 6,
-        "counts": {
-          "retryableErrors": 0,
-          "unresolvedSigning": 0,
-          "manualSigningFences": 0,
-          "awaitingFinality": 0,
-          "expiredObligations": 0,
-          "manualAttention": 0,
-          "unsignedPending": 0
-        },
-        "alerts": []
-      },
-      "backup": {
-        "verifiedDownloadAndHashesAndSQLite": true,
-        "timerActive": true,
-        "key": "moderator-state/20260928T170100Z-965817.tar.gz",
-        "sha256": "074d007d63579c0b8e97ff96825f95d454efee0fcc11c0c6d65463e9a90318e6"
-      },
-      "qualificationScope": "Live benign-message evaluation and durable restart; no violation/flag transaction generated during migration.",
-      "independentReview": "remote_review approved service and backup mapping and stop/copy/start sequence."
-    },
-    "maxComputeUSD": 9.6
+  "releaseArchiveIndex": {
+    "bytes": 4777,
+    "sha256": "b6acacef9a4eeece58bc052e06fb4d18992adcbf322b9ac2e4271b4f8202ca2d",
+    "s3": {
+      "bucket": "anonymous-message-board-testnet-backups-nvdhcyurtoga",
+      "key": "releases/v6-20261010/current-release-archives.json",
+      "versionId": "O1ybXqCAE88P8zUekflgqZLYmmzKGqr5",
+      "expiration": "2026-11-10T00:00:00Z",
+      "serverSideEncryption": "AES256",
+      "checksumType": "FULL_OBJECT",
+      "checksumSHA256": "tqys75pO7s5YvAUuBvtNGJkq3L8yK5rC5CcbT4ICyi0="
+    }
   }
 }

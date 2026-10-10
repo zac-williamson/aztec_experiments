@@ -3,10 +3,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import { BaseWallet } from '@aztec/wallet-sdk/base-wallet';
-import { NO_FROM } from '@aztec/aztec.js/account';
-import { AztecAddress } from '@aztec/stdlib/aztec-address';
-import { Fr } from '@aztec/foundation/curves/bn254';
+import { BaseWallet } from '@aztec-labs/wallet-sdk/base-wallet';
+import { NO_FROM } from '@aztec-labs/aztec.js/account';
+import { AztecAddress } from '@aztec-labs/stdlib/aztec-address';
+import { Fr } from '@aztec-labs/foundation/curves/bn254';
 
 const owner=new AztecAddress(new Fr(1));
 const additional=new AztecAddress(new Fr(2));

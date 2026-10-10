@@ -3,8 +3,8 @@
 import assert from 'node:assert/strict';import fs from 'node:fs/promises';import path from 'node:path';
 import {chromium} from 'playwright';import {Wallet,JsonRpcProvider,Contract as EthContract,Interface} from 'ethers';
 import {execFile} from 'node:child_process';import {promisify} from 'node:util';
-import {createAztecNodeClient} from '@aztec/aztec.js/node';
-import {Fr} from '@aztec/foundation/curves/bn254';import {TxHash} from '@aztec/stdlib/tx';
+import {createAztecNodeClient} from '../../shared/aztec-node-client.mjs';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';import {TxHash} from '@aztec-labs/stdlib/tx';
 import {onboardMetaMask,unpackMetaMask,observeMetaMaskTransactions} from '../../scripts/t04-metamask.mjs';
 import {observeUnfundedRejection} from '../devnet/wallet-observation.mjs';
 import {startBoardWeb} from '../devnet/web.mjs';import {veniceClient} from '../venice.mjs';import {githubApi} from '../github-tools.mjs';import {outboxArguments} from '../operations.mjs';

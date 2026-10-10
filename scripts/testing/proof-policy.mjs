@@ -1,8 +1,8 @@
-import {BBBundlePrivateKernelProver} from '@aztec/bb-prover/client/bundle';
+import {BBBundlePrivateKernelProver} from '@aztec-labs/bb-prover/client/bundle';
 // Test-only policy; witness generation stays on in both modes.
 import {routedKernelProverClass} from '../../shared/routed-kernel-prover.mjs';
 import {createRemoteProverClient} from '../../shared/remote-prover-client.mjs';
-import {WASMSimulator} from '@aztec/simulator/client';
+import {WASMSimulator} from '@aztec-labs/simulator/client';
 const RoutedKernelProver=routedKernelProverClass(BBBundlePrivateKernelProver);
 export function applicationProofsEnabled(){const mode=process.env.BOARD_TEST_PROOFS??'real';if(!['real','disabled'].includes(mode))throw Error('Invalid BOARD_TEST_PROOFS');return mode==='real';}
 export function applicationProver(options,remote){

@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {AztecAddress} from '@aztec/stdlib/aztec-address';
-import {Tx,TxEffect,HashedValues} from '@aztec/stdlib/tx';
-import {PublicDataWrite} from '@aztec/stdlib/avm';
-import {PartialPrivateTailPublicInputsForPublic,PublicCallRequest} from '@aztec/stdlib/kernel';
-import {PrivateLog,PublicLog} from '@aztec/stdlib/logs';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
+import {Tx,TxEffect,HashedValues} from '@aztec-labs/stdlib/tx';
+import {PublicDataWrite} from '@aztec-labs/stdlib/avm';
+import {PartialPrivateTailPublicInputsForPublic,PublicCallRequest} from '@aztec-labs/stdlib/kernel';
+import {PrivateLog,PublicLog} from '@aztec-labs/stdlib/logs';
 import {classifyT03PublicFootprint,compareT03PublicFootprints} from './t03-public-footprint.mjs';
 const address=n=>new AztecAddress(new Fr(n));
 function fixture(){

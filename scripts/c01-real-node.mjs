@@ -2,14 +2,14 @@ import {applicationProofsEnabled,applicationProver} from './testing/proof-policy
 // TEST ONLY: disposable genuine-verifier node and explicitly selected bridge qualification.
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import {createAztecNodeService} from '@aztec/aztec-node';
-import {SecretValue} from '@aztec/foundation/config';
-import {EthAddress} from '@aztec/foundation/eth-address';
-import {TestDateProvider} from '@aztec/foundation/timer';
-import {createBlobClient} from '@aztec/blob-client/client';
-import {initTelemetryClient} from '@aztec/telemetry-client';
-import {RollupContract} from '@aztec/ethereum/contracts/rollup';
-import {RunningPromise} from '@aztec/foundation/running-promise';
+import {createAztecNodeService} from '@aztec-labs/aztec-node';
+import {SecretValue} from '@aztec-labs/foundation/config';
+import {EthAddress} from '@aztec-labs/foundation/eth-address';
+import {TestDateProvider} from '@aztec-labs/foundation/timer';
+import {createBlobClient} from '@aztec-labs/blob-client/client';
+import {initTelemetryClient} from '@aztec-labs/telemetry-client';
+import {RollupContract} from '@aztec-labs/ethereum/contracts/rollup';
+import {RunningPromise} from '@aztec-labs/foundation/running-promise';
 import {withC01ClientMining} from './c01-client-mining.mjs';
 export async function qualifyC01RealNode({config,deployment,genesis,directory,privateKey,address,preparation,mark,browserControl,scenario,operatorPackage}){
   assert(scenario&&typeof scenario.run==='function');

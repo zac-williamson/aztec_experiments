@@ -2,9 +2,9 @@ import {prepareW01UnfundedWallet} from './w01-unfunded-wallet.mjs';
 // TEST ONLY: user-funded ownerless FPC, canonical instance, cold start then private-balance fees.
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import {getFeeJuiceBalance} from '@aztec/aztec.js/utils';
-import {Contract} from '@aztec/aztec.js/contracts';
-import {GasFees} from '@aztec/stdlib/gas';
+import {getFeeJuiceBalance} from '@aztec-labs/aztec.js/utils';
+import {Contract} from '@aztec-labs/aztec.js/contracts';
+import {GasFees} from '@aztec-labs/stdlib/gas';
 import {estimatePrivateFeeTransaction} from '../shared/private-fee-estimation.mjs';
 import {preparePrivateFeePayment} from '../shared/private-fee-client.mjs';
 import {bridgePrivateFeeCredit} from './w01-private-funding.mjs';

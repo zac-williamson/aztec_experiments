@@ -1,4 +1,5 @@
-import {loadContractArtifact} from '@aztec/stdlib/abi';
+import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
 import {mentions,handleField,packText} from '../plugins/protocol.mjs';
 import {prepareInvocation} from '../plugins/client.mjs';
 import test from 'node:test';
@@ -150,7 +151,7 @@ test('gas quote estimates the selected deposit without signing and disposes stal
  const f=fixture();let disposed=0,request;
  f.ctx.window.BillboardAccount={snapshot:()=>({ethereumConnected:true,ethereumAddress:'0x'+'1'.repeat(40)})};f.ctx._getPublicConfig=()=>({network:{ethRpcUrl:'https://eth.test'},board:{portalAddress:'0x'+'2'.repeat(40)}});
  f.ctx.ethers={...realEthers,JsonRpcProvider:class{async estimateGas(value){request=value;return 50000n;}async getFeeData(){return {maxFeePerGas:3n};}destroy(){disposed++;}}};
- const quote=await f.api.estimateDepositGas('0.00001');assert.equal(quote.maximumGasCost,150000n);assert.equal(request.value,10000000000000n);assert.equal(request.from,'0x'+'1'.repeat(40));assert.equal(f.calls.length,0);assert.equal(disposed,1);
+ const quote=await f.api.estimateDepositGas('0.00001');assert.equal(quote.maximumGasCost,300000n);assert.equal(request.value,10000000000000n);assert.equal(request.from,'0x'+'1'.repeat(40));assert.equal(f.calls.length,0);assert.equal(disposed,1);
  f.ctx.ethers.JsonRpcProvider=class{async estimateGas(){f.change();return 50000n;}async getFeeData(){return {maxFeePerGas:3n};}destroy(){disposed++;}};
  await assert.rejects(f.api.estimateDepositGas('0.00001'),/configuration changed/);assert.equal(disposed,2);
 });
@@ -175,9 +176,9 @@ test('balance unavailability does not reclassify a confirmed top-up as failed',a
 // Use the shipped Noir artifact so the adapter cannot silently pass an unnormalized ABI.
 test('author balance read normalizes the raw contract ABI at the SDK boundary',async()=>{
  const f=fixture(),raw=JSON.parse(fs.readFileSync(new URL('../apps/src/billboard/private_fee_artifact.json',import.meta.url)));
- f.ctx.BILLBOARD_PRIVATE_FEE_ARTIFACT=raw;f.ctx.extractBigInt=BigInt;f.ctx._getPublicConfig=()=>({board:{portalAddress:'portal'},network:{},privateFee:{contractAddress:'fee'}});
+ f.ctx.BILLBOARD_PRIVATE_FEE_ARTIFACT=raw;f.ctx.extractBigInt=BigInt;f.ctx._getPublicConfig=()=>({board:{portalAddress:'portal'},network:{},privateFee:{contractAddress:'0x'+'01'.repeat(32)}});
  const normalized=loadContractArtifact(raw);let registered;const wallet={registerContract:async(_instance,artifact)=>{registered=artifact;}};
- f.ctx.window.__aztec={loadContractArtifact,AztecAddress:{fromString:v=>v},derivePrivateFeeInstance:async()=>({address:'fee'}),Contract:{at:async(address,artifact,w)=>{assert.equal(address,'fee');assert.equal(w,wallet);assert.equal(artifact,registered);assert.deepEqual(artifact.functions,normalized.functions);return {methods:{balance_of:owner=>({simulate:async()=>{assert.equal(owner,'owner');return 42n;}})}};}}};
+ f.ctx.window.__aztec={loadContractArtifact,AztecAddress,derivePrivateFeeInstance:async()=>({address:'fee'}),Contract:{at:async(address,artifact,w)=>{assert.equal(address.toString(),'0x'+'01'.repeat(32));assert.equal(w,wallet);assert.equal(artifact,registered);assert.deepEqual(artifact.functions,normalized.functions);return {methods:{balance_of:owner=>({simulate:async()=>{assert.equal(owner,'owner');return 42n;}})}};}}};
  f.setResult({handles:{wallet,address:'owner'}});await f.api.run('status');assert.equal(await f.api.readFeeBalance(),42n);
 });
 
@@ -201,7 +202,7 @@ test('a freshly reviewed deployment can replace damaged public deployment settin
 
 test('restored settlement gives priority to an uncertain Ethereum refund',async()=>{
  const f=fixture(),a=f.ctx.window.__aztec,hash='0x'+'1'.repeat(64);f.state.ethAccount='0x'+'2'.repeat(40);f.ctx.ethers={JsonRpcProvider:class{destroy(){}}};
- f.ctx._getPublicConfig=()=>({network:{chainId:'1',rollupAddress:'rollup',rollupVersion:'1'},board:{contractAddress:'board',portalAddress:'portal'},privateFee:{contractAddress:'fee'}});
+ f.ctx._getPublicConfig=()=>({network:{chainId:'1',rollupAddress:'rollup',rollupVersion:'1'},board:{contractAddress:'board',portalAddress:'portal'},privateFee:{contractAddress:'0x'+'01'.repeat(32)}});
  a.createBrowserJournalStorage=()=>({});a.createL2Journal=async()=>({inspectOutcome:async()=>({outcome:'success',operation:JSON.stringify({kind:'withdraw'}),txHash:hash})});a.createEthereumJournal=async({scope})=>({inspectSummary:async()=>scope.board==='board'?{outcome:'unknown',kind:'withdraw',txHash:'ethereum-refund'}:null});
  f.setResult({state:'withdrawal_needs_verification',withdrawTxHash:hash,handles:{aztecNode:{getL1ContractAddresses:async()=>({feeJuicePortalAddress:'feePortal',feeJuiceAddress:'token'})}}});await f.api.run('status');await f.api.readActivity();f.setResult({refundAmount:'1',refundRecipient:f.state.ethAccount});await f.api.resume();assert.equal(f.calls.at(-1).action,'recover-eth');assert(!f.calls.some(c=>c.action==='claim-l1'));
 });

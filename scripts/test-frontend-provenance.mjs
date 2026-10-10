@@ -9,7 +9,7 @@ function fixture(run) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'frontend-provenance-'));
   const write = (name, value = name) => { const file = path.join(root, name); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, value); };
   for (const name of [
-    'plugins/client.mjs', 'plugins/invocation.mjs', 'plugins/application.mjs', 'plugins/account-view.mjs', 'plugins/protocol.mjs', 'plugins/account-client.mjs', 'plugins/request-status.mjs', 'plugins/adapter_artifact.json', 'apps/dist/plugins.js',
+    'plugins/client.mjs', 'plugins/invocation.mjs', 'plugins/application.mjs', 'plugins/account-view.mjs', 'plugins/protocol.mjs', 'plugins/account-client.mjs', 'plugins/funding-receipt.mjs', 'plugins/request-status.mjs', 'plugins/adapter_artifact.json', 'apps/dist/plugins.js',
     'apps/build.mjs', 'scripts/build-public-feed.mjs', 'apps/dist/public-feed.js', 'apps/dist/public-feed-metadata.json',
     ...['public-board-directory.mjs','public-feed.mjs','public-feed-projection.mjs','public-feed-storage.mjs','public-feed-source.mjs','public-feed-metadata.mjs','public-feed-rpc.mjs','public-feed-connection.mjs','public-feed-browser.mjs','protocol-schema.mjs','transaction-outcomes.mjs'].map(x=>`shared/${x}`), 'scripts/frontend-provenance.mjs', 'scripts/check-artifacts.mjs', 'scripts/check-sdk.mjs',
     'scripts/build-crs.mjs', 'scripts/toolchain.mjs', 'package.json', 'package-lock.json', 'crs-manifest.json',
@@ -100,6 +100,8 @@ test('output symlink escapes and cycles cannot bypass the served HTML inventory'
 
 test('plugin source and distributed bundle are bound to frontend provenance', () => fixture(({ root, write, build }) => {
   build(); write('plugins/account-client.mjs', 'changed escrow funding behavior');
+  assert.throws(() => checkFrontend(root), /input drift/);
+  build(); write('plugins/funding-receipt.mjs', 'changed canonical receipt verification');
   assert.throws(() => checkFrontend(root), /input drift/);
   build(); write('apps/dist/plugins.js', 'stale plugin bundle');
   assert.throws(() => checkFrontend(root), /output drift/);

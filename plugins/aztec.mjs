@@ -1,7 +1,7 @@
-import {Contract} from '@aztec/aztec.js/contracts';
-import {NO_FROM} from '@aztec/aztec.js/account';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {AztecAddress} from '@aztec/stdlib/aztec-address';
+import {Contract} from '@aztec-labs/aztec.js/contracts';
+import {NO_FROM} from '@aztec-labs/aztec.js/account';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
 import {unpackText} from './protocol.mjs';
 
 /** Reference implementation of the board port; workers import only its interface. */

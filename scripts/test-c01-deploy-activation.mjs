@@ -4,11 +4,11 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import * as ethers from 'ethers';
-import {TxStatus,TxExecutionResult,BlockHeader} from '@aztec/stdlib/tx';
-import {BlockHash,L2Block} from '@aztec/stdlib/block';
-import {BlockResponseSchema} from '@aztec/stdlib/interfaces/client';
-import {AppendOnlyTreeSnapshot} from '@aztec/stdlib/trees';
-import {jsonStringify} from '@aztec/foundation/json-rpc';
+import {TxStatus,TxExecutionResult,BlockHeader} from '@aztec-labs/stdlib/tx';
+import {BlockHash,L2Block} from '@aztec-labs/stdlib/block';
+import {BlockResponseSchema} from '@aztec-labs/stdlib/interfaces/client';
+import {AppendOnlyTreeSnapshot} from '@aztec-labs/stdlib/trees';
+import {jsonStringify} from '@aztec-labs/foundation/json-rpc';
 
 const source=await readFile(new URL('../apps/src/billboard/deploy/engine.js',import.meta.url),'utf8');
 for(const initial of [false,true])test(`class publication uses its own transaction; already published=${initial}`,async()=>{

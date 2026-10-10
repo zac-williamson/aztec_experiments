@@ -4,13 +4,13 @@ import { createHash } from 'node:crypto';
 import { ROOT } from './toolchain.mjs';
 
 export const SDK_ASSETS = [
-  ['node_modules/@aztec/noir-acvm_js/web/acvm_js_bg.wasm', 'acvm_js_bg.wasm'],
-  ['node_modules/@aztec/noir-noirc_abi/web/noirc_abi_wasm_bg.wasm', 'noirc_abi_wasm_bg.wasm'],
-  ['node_modules/@aztec/sqlite3mc-wasm/vendor/jswasm/sqlite3.wasm', 'sqlite3.wasm'],
-  ['node_modules/@aztec/sqlite3mc-wasm/vendor/jswasm/sqlite3-opfs-async-proxy.js', 'sqlite3-opfs-async-proxy.js'],
+  ['node_modules/@aztec-foundation/noir-acvm_js/web/acvm_js_bg.wasm', 'acvm_js_bg.wasm'],
+  ['node_modules/@aztec-foundation/noir-noirc_abi/web/noirc_abi_wasm_bg.wasm', 'noirc_abi_wasm_bg.wasm'],
+  ['node_modules/@aztec-labs/sqlite3mc-wasm/vendor/jswasm/sqlite3.wasm', 'sqlite3.wasm'],
+  ['node_modules/@aztec-labs/sqlite3mc-wasm/vendor/jswasm/sqlite3-opfs-async-proxy.js', 'sqlite3-opfs-async-proxy.js'],
 ];
 const requiredOutputs = ['aztec_bundle.js', 'bb-main.worker.js', 'bb-thread.worker.js', 'sqlite.worker.js', ...SDK_ASSETS.map(([, output]) => output)];
-const requiredInputs = ['shared/sdk-entry.mjs', 'shared/sdk-store.mjs', 'node_modules/@aztec/pxe/dest/storage/metadata.js', 'scripts/toolchain.mjs', 'toolchain.json', ...SDK_ASSETS.map(([input]) => input)];
+const requiredInputs = ['shared/sdk-entry.mjs', 'shared/sdk-store.mjs', 'node_modules/@aztec-labs/pxe/dest/storage/metadata.js', 'scripts/toolchain.mjs', 'toolchain.json', ...SDK_ASSETS.map(([input]) => input)];
 const sha = data => createHash('sha256').update(data).digest('hex');
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 

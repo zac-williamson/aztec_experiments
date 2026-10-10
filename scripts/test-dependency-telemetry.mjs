@@ -13,7 +13,7 @@ async function fixture(mode) {
   // Each mode runs in a fresh process: OpenTelemetry registration is global.
   const { propagation, trace, ROOT_CONTEXT, defaultTextMapGetter } = await import('@opentelemetry/api');
   const { JaegerPropagator } = await import('@opentelemetry/propagator-jaeger');
-  const { initTelemetryClient, getConfigEnvVars } = await import('@aztec/telemetry-client');
+  const { initTelemetryClient, getConfigEnvVars } = await import('@aztec-labs/telemetry-client');
   const malformed = { 'uber-trace-id': '%', 'uberctx-local': '%' };
   if (mode === 'jaeger-resolution') {
     const parent = createRequire(require.resolve('@opentelemetry/sdk-trace-node'));

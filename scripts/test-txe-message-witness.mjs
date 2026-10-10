@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';
-import {allToCompletion} from '@aztec/foundation/promise';
+import {allToCompletion} from '@aztec-labs/foundation/promise';
 import {drainMessageWitnessReads} from './txe-message-witness.mjs';
-const original=fs.readFileSync(new URL('../node_modules/@aztec/stdlib/dest/messaging/l1_to_l2_message.js',import.meta.url),'utf8');
+const original=fs.readFileSync(new URL('../node_modules/@aztec-labs/stdlib/dest/messaging/l1_to_l2_message.js',import.meta.url),'utf8');
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 const deferred=()=>{let resolve;const promise=new Promise(r=>{resolve=r;});return {promise,resolve};};
 function witness(source,siloNullifier){

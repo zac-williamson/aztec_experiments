@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {Fr} from '@aztec/foundation/curves/bn254';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
 import {createT03RpcObserver} from './t03-rpc-observer.mjs';
 const address='0x'+'12'.repeat(32);
 test('classifies exact roles and fixed method without retaining input secrets',()=>{

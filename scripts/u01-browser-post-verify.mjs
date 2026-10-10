@@ -3,14 +3,16 @@ import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import fs from 'node:fs/promises';
-import {Contract} from '@aztec/aztec.js/contracts';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {loadContractArtifact} from '@aztec/stdlib/abi';
-import {NoteStatus} from '@aztec/stdlib/note';
-import {Tx,TxHash,TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
-import {getFeeJuiceBalance} from '@aztec/aztec.js/utils';
+import {BatchCall,Contract} from '@aztec-labs/aztec.js/contracts';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
+import {NoteStatus} from '@aztec-labs/stdlib/note';
+import {Tx,TxHash,TxStatus,TxExecutionResult} from '@aztec-labs/stdlib/tx';
+import {getFeeJuiceBalance} from '@aztec-labs/aztec.js/utils';
 import {derivePrivateFeeInstance,preparePrivateFeePayment} from '../shared/private-fee-client.mjs';
-import {GasSettings} from '@aztec/stdlib/gas';
+import {estimatePrivateFeeTransaction} from '../shared/private-fee-estimation.mjs';
+import {createPrivateFeeSimulator} from '../shared/private-fee-simulation.mjs';
+import {GasSettings} from '@aztec-labs/stdlib/gas';
 import {classifyT03PublicFootprint} from './t03-public-footprint.mjs';
 const number=x=>BigInt(x.toString());
 const sha=x=>createHash('sha256').update(x).digest('hex');
@@ -37,20 +39,27 @@ export async function prepareU01BrowserPostVerification({node,wallet,account,pre
  const beforeFeeBalance=number((await fee.methods.balance_of(account.address).simulate({from:account.address})).result);
  assert(BigInt(maximumFee)>0n&&beforeFeeBalance>=BigInt(maximumFee));
  const beforePayerBalance=await getFeeJuiceBalance((await derivePrivateFeeInstance(JSON.parse(await fs.readFile(new URL('../apps/src/billboard/private_fee_artifact.json',import.meta.url),'utf8')))).address,node);
- // Genuine-state exhaustion is a preparation failure, not another expensive proof.
+ // Positive credit may cover a measured fee below the configured ceiling.
+ // Deliberately price even one measured L2 gas unit above the entire balance.
  const excessiveGas=GasSettings.fromBuffer(gas.toBuffer());
- excessiveGas.maxFeesPerGas.feePerL2Gas=beforeFeeBalance/BigInt(excessiveGas.gasLimits.l2Gas)+1n;
+ excessiveGas.maxFeesPerGas.feePerL2Gas=excessiveGas.maxFeesPerGas.feePerL2Gas>beforeFeeBalance?excessiveGas.maxFeesPerGas.feePerL2Gas:beforeFeeBalance+1n;
  let forbiddenCalls=0;
  const guard=target=>new Proxy(target,{get(object,key){if(['sendTx','proveTx'].includes(key))return ()=>{forbiddenCalls++;throw Error('Unexpected submission during exhaustion probe');};const value=Reflect.get(object,key,object);return typeof value==='function'?value.bind(object):value;}});
  const rawFee=JSON.parse(await fs.readFile(new URL('../apps/src/billboard/private_fee_artifact.json',import.meta.url),'utf8'));
- await assert.rejects(preparePrivateFeePayment({wallet:guard(wallet),node:guard(node),owner:account.address,privateFeeAddress:privateFee.payer,privateFeeArtifact:rawFee,expectedChainId:claimResult.claim.scope.l1ChainId,expectedVersion:claimResult.claim.scope.rollupVersion,gasSettings:excessiveGas}),error=>error.code==='PRIVATE_FEE_BALANCE_INSUFFICIENT');
+ const guardedWallet=guard(wallet),guardedNode=guard(node);
+ const prepared=await preparePrivateFeePayment({wallet:guardedWallet,node:guardedNode,owner:account.address,privateFeeAddress:privateFee.payer,privateFeeArtifact:rawFee,expectedChainId:claimResult.claim.scope.l1ChainId,expectedVersion:claimResult.claim.scope.rollupVersion,gasSettings:excessiveGas});
+ assert.equal(prepared.availableCredit,beforeFeeBalance);assert(BigInt(prepared.metadata.maximumFee)>beforeFeeBalance);
+ const actualSimulator=createPrivateFeeSimulator(guardedWallet,guardedNode),measuredL2Gas=[];let publicSimulations=0;
+ const simulator={private:async(...args)=>{const result=await actualSimulator.private(...args);measuredL2Gas.push(result.gasUsed.totalGas.l2Gas);return result;},public:async(...args)=>{publicSimulations++;return actualSimulator.public(...args);}};
+ await assert.rejects(estimatePrivateFeeTransaction({wallet:guardedWallet,node:guardedNode,interaction:new BatchCall(guardedWallet,[]),prepared,from:account.address,simulator}),error=>error.code==='BB_FEE_ESTIMATION_UNSTABLE');
+ assert(measuredL2Gas.length>0&&measuredL2Gas.every(value=>value>0&&BigInt(value)*excessiveGas.maxFeesPerGas.feePerL2Gas>beforeFeeBalance));assert.equal(publicSimulations,0);
  assert.equal(forbiddenCalls,0);
  assert.equal(number((await fee.methods.balance_of(account.address).simulate({from:account.address})).result),beforeFeeBalance);
  assert.equal(await getFeeJuiceBalance(account.address,node),0n);
  assert.equal(await getFeeJuiceBalance((await derivePrivateFeeInstance(rawFee)).address,node),beforePayerBalance);
  const afterNotes=(await wallet.pxe.debug.getNotes(filter(instance,account))).filter(n=>n.note.items.length===8&&number(n.note.items[1])===number(claimResult.claim.depositChainId));
  assert.equal(afterNotes.length,1);assert(afterNotes[0].siloedNullifier.equals(oldNote.siloedNullifier));assert.deepEqual(afterNotes[0].note.items.map(number),oldNote.note.items.map(number));
- const feeExhaustion={passed:true,stage:'actual private balance preparation; no proof or submission',privateBalanceUnchanged:true,publicBalancesUnchanged:true,depositNoteUnchanged:true,forbiddenCalls};
+ const feeExhaustion={passed:true,stage:'measured private gas is unaffordable at the deliberately selected unit price; bounded estimation rejects before public simulation, proof or submission',measuredL2Gas,publicSimulations,privateBalanceUnchanged:true,publicBalancesUnchanged:true,depositNoteUnchanged:true,forbiddenCalls};
  return{oldNote,oldFields:fields,beforePostCount,beforeFeeBalance,beforePayerBalance,maximumFee:BigInt(maximumFee),account,captures:new Map(),feeExhaustion};
 }
 // Install only for the browser submission window. All submissions still use the

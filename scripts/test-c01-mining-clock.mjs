@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {TestDateProvider} from '@aztec/foundation/timer';
+import {TestDateProvider} from '@aztec-labs/foundation/timer';
 import {synchronizeC01MinedClock} from './c01-client-mining.mjs';
 
 test('mined-clock synchronization prevents accumulated drift across a long proof batch',t=>{

@@ -16,7 +16,7 @@ export function bbBinary() {
     'linux-arm64': 'arm64-linux', 'linux-x64': 'amd64-linux' };
   const key = `${process.platform}-${process.arch}`, platform = platforms[key], pin = pins.nativeProver[key];
   if (!platform || !pin) throw new Error('Unsupported native prover platform');
-  const binary = process.env.BB || path.join(ROOT, 'node_modules/@aztec/bb.js/build', platform, 'bb');
+  const binary = process.env.BB || path.join(ROOT, 'node_modules/@aztec-foundation/bb.js/build', platform, 'bb');
   // The integrity-locked 5.2.0 npm package embeds a nightly version string on
   // Linux x64. Pin the exact platform binary, including explicit BB overrides.
   const digest = createHash('sha256').update(fs.readFileSync(binary)).digest('hex');
@@ -38,7 +38,7 @@ export function nargoBinary() {
 export function assertAztecPackages() {
   const packageJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
   for (const [name, version] of Object.entries({ ...packageJson.dependencies, ...packageJson.devDependencies })) {
-    if (!name.startsWith('@aztec/')) continue;
+    if (!/^@aztec-(labs|foundation)\//.test(name)) continue;
     if (version !== pins.aztec) throw new Error(`Unpinned/mismatched dependency ${name}: ${version}`);
     const installed = JSON.parse(fs.readFileSync(path.join(ROOT, 'node_modules', name, 'package.json'), 'utf8')).version;
     if (installed !== version) throw new Error(`Installed ${name}@${installed} differs from ${version}; run npm ci`);

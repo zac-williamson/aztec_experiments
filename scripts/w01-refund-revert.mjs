@@ -2,10 +2,10 @@
 // wallets, mining, process cleanup and the aggregate resource deadline.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import {Contract, BatchCall} from '@aztec/aztec.js/contracts';
-import {loadContractArtifact} from '@aztec/stdlib/abi';
-import {TxStatus, TxExecutionResult, mergeExecutionPayloads} from '@aztec/stdlib/tx';
-import {resolveAssertionMessageFromRevertData} from '@aztec/simulator/client';
+import {Contract, BatchCall} from '@aztec-labs/aztec.js/contracts';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
+import {TxStatus, TxExecutionResult, mergeExecutionPayloads} from '@aztec-labs/stdlib/tx';
+import {resolveAssertionMessageFromRevertData} from '@aztec-labs/simulator/client';
 import {PrivateFeePaymentMethod} from '../shared/private-fee-payment.mjs';
 import {proveApplicationAction} from './prove-application-action.mjs';
 

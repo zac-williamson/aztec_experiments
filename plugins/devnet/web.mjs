@@ -3,8 +3,8 @@ import fs from 'node:fs/promises';
 import {createReadStream} from 'node:fs';
 import {pipeline} from 'node:stream/promises';
 import path from 'node:path';
-import {EthCheatCodes,RollupCheatCodes} from '@aztec/ethereum/test';
-import {EthAddress} from '@aztec/foundation/eth-address';
+import {EthCheatCodes,RollupCheatCodes} from '@aztec-labs/ethereum/test';
+import {EthAddress} from '@aztec-labs/foundation/eth-address';
 import {contentSecurityPolicy} from '../../deploy/hosting-config.mjs';
 
 /** Official local test settlement prevents proof-disabled preview posts expiring. */

@@ -13,13 +13,13 @@ const SELF = fileURLToPath(import.meta.url);
 const DEADLINE_MS = 300000;
 const RSS_LIMIT_KIB = 8 * 1024 * 1024;
 const execFileAsync = promisify(execFile);
-const BB = path.join(ROOT, 'node_modules/@aztec/bb.js/build/arm64-macos/bb');
-const ARTIFACT = 'node_modules/@aztec/noir-protocol-circuits-types/artifacts/parity_base.json';
+const BB = path.join(ROOT, 'node_modules/@aztec-foundation/bb.js/build/arm64-macos/bb');
+const ARTIFACT = 'node_modules/@aztec-labs/noir-protocol-circuits-types/artifacts/parity_base.json';
 const PINS = {
   'crs-manifest.json': '4927de3e03d69f4e640a841f9421dd0b93819b5e3d42c142d12ee079d5a402be',
   [ARTIFACT]: '429ce3ba64ebb4a1c1c0674cff23cc2a0bb3896e56cab37d215ed03289f4394e',
-  'node_modules/@aztec/bb.js/build/arm64-macos/bb': '208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031',
-  'node_modules/@aztec/noir-acvm_js/nodejs/acvm_js_bg.wasm': 'bcd66e862a95a57f7f2ae3cb97e24d007d2ad710ac7490262c3c92a5b823775d',
+  'node_modules/@aztec-foundation/bb.js/build/arm64-macos/bb': '208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031',
+  'node_modules/@aztec-foundation/noir-acvm_js/nodejs/acvm_js_bg.wasm': 'bcd66e862a95a57f7f2ae3cb97e24d007d2ad710ac7490262c3c92a5b823775d',
 };
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function verifiedFile(filename, bytes, digest) {
@@ -37,8 +37,8 @@ async function fingerprints() {
     await verifiedFile(path.join(ROOT, name), undefined, digest); result[name] = digest;
   }
   for (const name of ['scripts/test-c01-base-parity-proof.mjs', 'scripts/toolchain.mjs', 'package-lock.json', 'toolchain.json',
-    'node_modules/@aztec/bb-prover/dest/bb/bb_js_backend.js',
-    'node_modules/@aztec/bb.js/dest/node/bb_backends/node/native_socket.js']) {
+    'node_modules/@aztec-labs/bb-prover/dest/bb/bb_js_backend.js',
+    'node_modules/@aztec-foundation/bb.js/dest/node/bb_backends/node/native_socket.js']) {
     result[name] = sha(await fs.readFile(path.join(ROOT, name)));
   }
   return result;
@@ -53,7 +53,7 @@ async function hashFile(filename) {
 }
 async function verifyCompressed(manifest, filename, stagedFilename) {
   assert.equal(manifest.schemaVersion, 1);
-  assert.equal(manifest.bbSha256, PINS['node_modules/@aztec/bb.js/build/arm64-macos/bb']);
+  assert.equal(manifest.bbSha256, PINS['node_modules/@aztec-foundation/bb.js/build/arm64-macos/bb']);
   assert.equal(manifest.sourceUrl, 'https://crs.aztec-cdn.foundation/g1_compressed.dat');
   const entry = manifest.compressed;
   assert.equal(entry.name, 'bn254_g1_compressed.dat');
@@ -129,10 +129,10 @@ async function worker(directory) {
     mark('independent-roots');
     const [{ WASMSimulator }, acvm, circuits, { ServerCircuitVks }, { ParityBasePrivateInputs },
       { BBJsInstance }, { Fr }, { poseidon2HashWithSeparator }, { Barretenberg, BackendType }] = await Promise.all([
-      import('@aztec/simulator/client'), import('@aztec/noir-acvm_js'),
-      import('@aztec/noir-protocol-circuits-types/server'), import('@aztec/noir-protocol-circuits-types/server/vks'),
-      import('@aztec/stdlib/parity'), import('@aztec/bb-prover'), import('@aztec/foundation/curves/bn254'),
-      import('@aztec/foundation/crypto/poseidon'), import('@aztec/bb.js'),
+      import('@aztec-labs/simulator/client'), import('@aztec-foundation/noir-acvm_js'),
+      import('@aztec-labs/noir-protocol-circuits-types/server'), import('@aztec-labs/noir-protocol-circuits-types/server/vks'),
+      import('@aztec-labs/stdlib/parity'), import('@aztec-labs/bb-prover'), import('@aztec-labs/foundation/curves/bn254'),
+      import('@aztec-labs/foundation/crypto/poseidon'), import('@aztec-foundation/bb.js'),
     ]);
     // The SDK's Node hash helper otherwise creates a default native singleton with more threads.
     hashRuntime = Barretenberg;

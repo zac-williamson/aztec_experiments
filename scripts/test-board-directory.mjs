@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {PrivateLog} from '@aztec/stdlib/logs';
-import {PublicKeys} from '@aztec/stdlib/keys';
-import {ContractInstancePublishedEvent} from '@aztec/protocol-contracts/instance-registry';
-import {CONTRACT_INSTANCE_PUBLISHED_EVENT_TAG} from '@aztec/protocol-contracts';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {PrivateLog} from '@aztec-labs/stdlib/logs';
+import {PublicKeys} from '@aztec-labs/stdlib/keys';
+import {ContractInstancePublishedEvent} from '@aztec-labs/protocol-contracts/instance-registry';
+import {CONTRACT_INSTANCE_PUBLISHED_EVENT_TAG} from '@aztec-labs/protocol-contracts';
 import {createBoardDirectory,publishedBoard} from '../shared/public-board-directory.mjs';
 const hex=n=>new Fr(n).toString(),metadata={classId:hex(9),registrationNullifier:hex(90),storage:{portal:'1'},portalSelectors:{L2_CONTRACT:'0x11111111',ROLLUP:'0x22222222',VERSION:'0x33333333',L1_CHAIN_ID:'0x44444444'},instancePublicationTag:CONTRACT_INSTANCE_PUBLISHED_EVENT_TAG.toString()};
 const network={nodeUrl:'https://node.example/',ethRpcUrl:'https://eth.example/',chainId:'1',rollupVersion:'5',rollupAddress:'0x'+'1'.repeat(40)};

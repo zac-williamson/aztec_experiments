@@ -1,15 +1,16 @@
 import {estimatePrivateFeeTransaction} from '../../shared/private-fee-estimation.mjs';
-import {Gas} from '@aztec/stdlib/gas';
+import {Gas} from '@aztec-labs/stdlib/gas';
 // Explicit public-testnet preparation phases. A pending phase is resumed from its
 // original receipt/journal; public network settlement is never simulated.
 import fs from 'node:fs/promises';import path from 'node:path';
-import {BackendType,Barretenberg,BarretenbergSync} from '@aztec/bb.js';
-import {createAztecNodeClient,waitForTx} from '@aztec/aztec.js/node';
-import {BatchCall} from '@aztec/aztec.js/contracts';
-import {EmbeddedWallet} from '@aztec/wallets/embedded';
-import {AztecAddress} from '@aztec/stdlib/aztec-address';
-import {Fr} from '@aztec/foundation/curves/bn254';import {GrumpkinScalar} from '@aztec/foundation/curves/grumpkin';
-import {Tx,TxHash,TxStatus} from '@aztec/stdlib/tx';
+import {BackendType,Barretenberg,BarretenbergSync} from '@aztec-foundation/bb.js';
+import {createAztecNodeClient} from '../../shared/aztec-node-client.mjs';
+import {waitForTx} from '@aztec-labs/aztec.js/node';
+import {BatchCall} from '@aztec-labs/aztec.js/contracts';
+import {EmbeddedWallet} from '@aztec-labs/wallets/embedded';
+import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';import {GrumpkinScalar} from '@aztec-labs/foundation/curves/grumpkin';
+import {Tx,TxHash,TxStatus} from '@aztec-labs/stdlib/tx';
 import {JsonRpcProvider,Wallet,Contract,Interface,keccak256} from 'ethers';
 import {derivePrivateFeeInstance,createPrivateFeeDeployment,preparePrivateFeePayment,requirePublishedPrivateFee} from '../../shared/private-fee-client.mjs';
 import {fundPrivateFees,recoverPrivateFeeFunding,recoverPrivateFeeClaim} from '../../shared/private-fee-funding.mjs';

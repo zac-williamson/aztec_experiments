@@ -1,6 +1,6 @@
-import { Fr } from '@aztec/foundation/curves/bn254';
-import { AztecAddress } from '@aztec/stdlib/aztec-address';
-import { siloNullifier } from '@aztec/stdlib/hash';
+import { Fr } from '@aztec-labs/foundation/curves/bn254';
+import { AztecAddress } from '@aztec-labs/stdlib/aztec-address';
+import { siloNullifier } from '@aztec-labs/stdlib/hash';
 
 const unsupported = () => Object.assign(new Error('Application note attribution is unavailable or ambiguous; preserve the original transaction.'), { code: 'BB_APPLICATION_ATTRIBUTION_UNSUPPORTED' });
 const field = value => value instanceof Fr;

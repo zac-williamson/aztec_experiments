@@ -1,12 +1,12 @@
-// Ownerless private Fee Juice payment, using the pinned V5 wallet payment interface.
-import { ProtocolContractAddress } from '@aztec/protocol-contracts';
-import { FunctionCall, FunctionSelector, FunctionType } from '@aztec/stdlib/abi';
-import { ExecutionPayload } from '@aztec/stdlib/tx';
-import { Fr } from '@aztec/foundation/curves/bn254';
+// Ownerless private Fee Juice payment, using the pinned V6 wallet payment interface.
+import { ProtocolContractAddress } from '@aztec-labs/protocol-contracts';
+import { FunctionCall, FunctionSelector, FunctionType } from '@aztec-labs/stdlib/abi';
+import { ExecutionPayload } from '@aztec-labs/stdlib/tx';
+import { Fr } from '@aztec-labs/foundation/curves/bn254';
 
 async function call(name, to, signature, args) {
   return FunctionCall.from({name,to,selector:await FunctionSelector.fromSignature(signature),
-    type:FunctionType.PRIVATE,hideMsgSender:false,isStatic:false,args,returnTypes:[]});
+    type:FunctionType.PRIVATE,hideMsgSender:false,isStatic:false,args});
 }
 export class PrivateFeePaymentMethod {
   #address; #reservation;

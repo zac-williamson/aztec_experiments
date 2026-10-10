@@ -320,7 +320,7 @@ function generateUUID() {
   return new Array(4).fill(0).map(() => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(16)).join("-");
 }
 
-// node_modules/@aztec/bb.js/dest/browser/barretenberg_wasm/helpers/browser/index.js
+// node_modules/@aztec-foundation/bb.js/dest/browser/barretenberg_wasm/helpers/browser/index.js
 function getSharedMemoryAvailable() {
   const globalScope = typeof window !== "undefined" ? window : globalThis;
   return typeof SharedArrayBuffer !== "undefined" && globalScope.crossOriginIsolated;
@@ -341,20 +341,15 @@ function readinessListener(worker, callback) {
   });
 }
 
-// node_modules/@aztec/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_thread/factory/browser/index.js
-async function createThreadWorker() {
-  const worker = new Worker(new URL("./bb-thread.worker.js", import.meta.url), { type: "module" });
-  await new Promise((resolve) => readinessListener(worker, resolve));
-  return worker;
-}
-
-// node_modules/@aztec/bb.js/dest/browser/random/browser/index.js
+// node_modules/@aztec-foundation/bb.js/dest/browser/random/browser/index.js
 var randomBytes = (len) => {
   const getWebCrypto = () => {
-    if (typeof window !== "undefined" && window.crypto)
+    if (typeof window !== "undefined" && window.crypto) {
       return window.crypto;
-    if (typeof globalThis !== "undefined" && globalThis.crypto)
+    }
+    if (typeof globalThis !== "undefined" && globalThis.crypto) {
       return globalThis.crypto;
+    }
     return void 0;
   };
   const crypto = getWebCrypto();
@@ -373,7 +368,7 @@ var randomBytes = (len) => {
   return buf;
 };
 
-// node_modules/@aztec/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_base/index.js
+// node_modules/@aztec-foundation/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_base/index.js
 var BarretenbergWasmBase = class {
   memory;
   instance;
@@ -465,14 +460,22 @@ var BarretenbergWasmBase = class {
     addr = addr >>> 0;
     const m = this.getMemory();
     let i = addr;
-    for (; m[i] !== 0; ++i)
-      ;
+    while (m[i] !== 0) {
+      ++i;
+    }
     const textDecoder = new TextDecoder("ascii");
     return textDecoder.decode(m.slice(addr, i));
   }
 };
 
-// node_modules/@aztec/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_main/heap_allocator.js
+// node_modules/@aztec-foundation/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_thread/factory/browser/index.js
+async function createThreadWorker() {
+  const worker = new Worker(new URL("./bb-thread.worker.js", import.meta.url), { type: "module" });
+  await new Promise((resolve) => readinessListener(worker, resolve));
+  return worker;
+}
+
+// node_modules/@aztec-foundation/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_main/heap_allocator.js
 var HeapAllocator = class {
   wasm;
   allocs = [];
@@ -528,7 +531,7 @@ var HeapAllocator = class {
   }
 };
 
-// node_modules/@aztec/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_main/index.js
+// node_modules/@aztec-foundation/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_main/index.js
 var BarretenbergWasmMain = class _BarretenbergWasmMain extends BarretenbergWasmBase {
   static MAX_THREADS = 32;
   workers = [];
@@ -570,7 +573,7 @@ var BarretenbergWasmMain = class _BarretenbergWasmMain extends BarretenbergWasmB
       if (this.useCustomLogger) {
         this.workers.forEach((worker) => this.setupWorkerLogForwarding(worker));
       }
-      this.remoteWasms = await Promise.all(this.workers.map(getRemoteBarretenbergWasm));
+      this.remoteWasms = this.workers.map(getRemoteBarretenbergWasm);
       await Promise.all(this.remoteWasms.map((w) => w.initThread(module, this.memory, this.useCustomLogger)));
       if (unref) {
         for (const worker of this.workers) {
@@ -687,7 +690,7 @@ var BarretenbergWasmMain = class _BarretenbergWasmMain extends BarretenbergWasmB
   }
 };
 
-// node_modules/@aztec/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_main/factory/browser/main.worker.js
+// node_modules/@aztec-foundation/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_main/factory/browser/main.worker.js
 expose(new BarretenbergWasmMain());
 postMessage(Ready);
 /*! Bundled license information:

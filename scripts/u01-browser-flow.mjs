@@ -1,5 +1,5 @@
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {RollupAbi} from '@aztec/l1-artifacts/RollupAbi';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {RollupAbi} from '@aztec-foundation/l1-artifacts/RollupAbi';
 import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 import {startRemoteProverFixture,assertRemoteJobs} from './testing/remote-prover-fixture.mjs';
 // TEST ONLY: native disposable funding hands off to an actual isolated browser.
@@ -9,9 +9,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import vm from 'node:vm';
 import {webcrypto,randomUUID} from 'node:crypto';
-import {Barretenberg,BackendType} from '@aztec/bb.js';
-import {EmbeddedWallet} from '@aztec/wallets/embedded';
-import {loadContractArtifact} from '@aztec/stdlib/abi';
+import {Barretenberg,BackendType} from '@aztec-foundation/bb.js';
+import {EmbeddedWallet} from '@aztec-labs/wallets/embedded';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
 import {ROOT} from './toolchain.mjs';
 import {validateJourneySignal,createBrowserHandoff} from './t04-browser-journey.mjs';
 import {startU01BrowserRpc} from './u01-browser-rpc.mjs';
@@ -207,7 +207,7 @@ export async function completeU01BrowserPost({node,preparation,instance,l1Client
 // TEST ONLY: full GUI lifecycle handoff. Caller owns mining and must stop it
 // between untilExit() and finishAfterSettlement(). No chain state is substituted.
 export async function prepareT04BrowserJourney({node,preparation,instance,l1Client,directory,rpcUrl,browserControl,privateFee,ready,reportStage:mark}){
- const {Contract}=await import('@aztec/aztec.js/contracts');const {getFeeJuiceBalance}=await import('@aztec/aztec.js/utils');const {formatEther,parseEventLogs}=await import('viem');
+ const {Contract}=await import('@aztec-labs/aztec.js/contracts');const {getFeeJuiceBalance}=await import('@aztec-labs/aztec.js/utils');const {formatEther,parseEventLogs}=await import('viem');
  const {validateJourneySignal,validateVerifiedBrowserStages}=await import('./t04-browser-journey.mjs');
  const {verifyJourneyIncludedTransaction,journeyExitLeaf,verifyJourneyRefund,verifyJourneyPrivateChain}=await import('./t04-browser-journey-verify.mjs');
  const fixture=privateFee.browserFixture,account=privateFee.authorAccount,scopeInfo=await node.getNodeInfo();
@@ -265,7 +265,7 @@ export async function prepareT04BrowserJourney({node,preparation,instance,l1Clie
   },async finishAfterSettlement(settlement){
    assert(settlement.passed);observation.stage='refund';refundBefore={liability:await read('totalDeposited'),portalBalance:await l1Client.getBalance({address:scope.portalAddress}),depositorBalance:await l1Client.getBalance({address:depositor})};await release('exit');
    const signal=validateJourneySignal(await waitFile('browser-journey-refund.json'));assert.equal(signal.stage,'refund');assert.equal(signal.transactionHashes.length,1);
-   observation.refund=await verifyJourneyRefund({l1Client,portalAbi:portal.abi,portalAddress:scope.portalAddress,...receipt,txHash:signal.transactionHashes[0],before:refundBefore});const {OutboxContract}=await import('@aztec/ethereum/contracts');const outbox=new OutboxContract(l1Client,scopeInfo.l1ContractAddresses.outboxAddress.toString());const witness=await node.getL2ToL1MembershipWitness(transactions.exit.tx.getTxHash(),receipt.leaf);assert(witness);const leafId=(1n<<BigInt(witness.siblingPath.pathSize))+witness.leafIndex;assert(await outbox.hasMessageBeenConsumedAtEpoch(witness.epochNumber,leafId));const refunded=await l1Client.getTransactionReceipt({hash:signal.transactionHashes[0]});const consumed=await outbox.getMessageConsumedEvents(refunded.blockHash);assert.equal(consumed.filter(e=>e.messageHash.toLowerCase()===receipt.leaf.toString().toLowerCase()&&e.leafId===leafId&&BigInt(e.epoch)===BigInt(witness.epochNumber)&&BigInt(e.numCheckpointsInEpoch)===BigInt(witness.numCheckpointsInEpoch)).length,1);observation.refund.exactOutboxConsumption=true;await release('refund');
+   observation.refund=await verifyJourneyRefund({l1Client,portalAbi:portal.abi,portalAddress:scope.portalAddress,...receipt,txHash:signal.transactionHashes[0],before:refundBefore});const {OutboxContract}=await import('@aztec-labs/ethereum/contracts');const outbox=new OutboxContract(l1Client,scopeInfo.l1ContractAddresses.outboxAddress.toString());const witness=await node.getL2ToL1MembershipWitness(transactions.exit.tx.getTxHash(),receipt.leaf);assert(witness);const leafId=(1n<<BigInt(witness.siblingPath.pathSize))+witness.leafIndex;assert(await outbox.hasMessageBeenConsumedAtEpoch(witness.epochNumber,leafId));const refunded=await l1Client.getTransactionReceipt({hash:signal.transactionHashes[0]});const consumed=await outbox.getMessageConsumedEvents(refunded.blockHash);assert.equal(consumed.filter(e=>e.messageHash.toLowerCase()===receipt.leaf.toString().toLowerCase()&&e.leafId===leafId&&BigInt(e.epoch)===BigInt(witness.epochNumber)&&BigInt(e.numCheckpointsInEpoch)===BigInt(witness.numCheckpointsInEpoch)).length,1);observation.refund.exactOutboxConsumption=true;await release('refund');
    const result=await waitFile('browser-result.json');assert(result.passed&&result.browserClosed&&result.ownedServerStopped);observation.browser=result;observation.rpcFootprint=observer.snapshot();await rpc.close();rpc=undefined;capture.close();capture=undefined;
    observation.stage='final-verification';wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:false,proverOrOptions:{backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1},autoSync:false,syncChainTip:'checkpointed'}});await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'t04-read-only');
    observation.verification=await verifyJourneyPrivateChain({wallet,node,instance,artifact:preparation.artifact,account,privateFee:fixture,transactions,message,receipt,before});observation.remoteJobs=assertRemoteJobs(remoteFixture,4);observation.passed=true;observation.stage='complete';return observation;

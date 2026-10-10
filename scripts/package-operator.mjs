@@ -33,7 +33,7 @@ export function runtimeInventory(root=ROOT,{nodePath,hashFiles=true,recoveryBund
  const add=(relative,source=path.join(root,relative),expected)=>{assertPermittedPath(relative);if(files.has(relative))return;const stat=regular(source);if(source.startsWith(root+path.sep))noSymlink(root,source);const digest=hashFiles||expected?sha(fs.readFileSync(source)):null;if(expected&&digest!==expected)throw Error('Runtime artifact digest mismatch: '+relative);files.set(relative,{path:relative,source,bytes:stat.size,sha256:digest,executable:!!(stat.mode&0o111)});};
  function packageAt(name,from){
   if(isBuiltin(name))return;
-  if(name.startsWith('@aztec/'))throw Error('Native Aztec import is outside the operator closure; use verified SDK bundle: '+name+' from '+from);
+  if(/^@aztec(?:-labs|-foundation)?\//.test(name))throw Error('Native Aztec import is outside the operator closure; use verified SDK bundle: '+name+' from '+from);
   const req=createRequire(from);let manifest;
   try{manifest=req.resolve(name+'/package.json');}catch{let dir=path.dirname(req.resolve(name));while(dir!==path.dirname(dir)){const candidate=path.join(dir,'package.json');if(fs.existsSync(candidate)&&JSON.parse(fs.readFileSync(candidate)).name===name){manifest=candidate;break;}dir=path.dirname(dir);}}
   if(!manifest)throw Error('Unresolved runtime dependency '+name);

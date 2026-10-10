@@ -18,7 +18,7 @@ test('scenario resource choices retain established native budgets',async()=>{
 
 test('local timing has an SDK-valid build window and Inbox readiness headroom',async()=>{
  const {LOCAL_TIMING}=await import('./testing/fixture-worker.mjs');
- const {buildProposerTimetable}=await import('@aztec/stdlib/timetable');
+ const {buildProposerTimetable}=await import('@aztec-labs/stdlib/timetable');
  const timetable=buildProposerTimetable(LOCAL_TIMING,{slotDuration:LOCAL_TIMING.aztecSlotDuration,ethereumSlotDuration:LOCAL_TIMING.ethereumSlotDuration,l1GenesisTime:0n});
  assert(timetable.getMaxBlocksPerCheckpoint()>=1);
  assert.equal(LOCAL_TIMING.inboxLag,2);

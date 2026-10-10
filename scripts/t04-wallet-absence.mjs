@@ -3,11 +3,11 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {loadContractArtifact} from '@aztec/stdlib/abi';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
 import {exactApplicationDeposit,eligibleApplicationAnchor,postUnflaggedApplicationMessage} from './application-post.mjs';
-import {RollupCheatCodes,EthCheatCodes} from '@aztec/ethereum/test';
-import {RollupContract} from '@aztec/ethereum/contracts';
-import {EthAddress} from '@aztec/foundation/eth-address';
+import {RollupCheatCodes,EthCheatCodes} from '@aztec-labs/ethereum/test';
+import {RollupContract} from '@aztec-labs/ethereum/contracts';
+import {EthAddress} from '@aztec-labs/foundation/eth-address';
 import {ROOT} from './toolchain.mjs';
 
 export async function observeWalletAbsence(s){

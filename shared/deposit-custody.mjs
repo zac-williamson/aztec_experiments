@@ -1,6 +1,6 @@
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {poseidon2HashWithSeparator} from '@aztec/foundation/crypto/poseidon';
-import {computeSecretHash} from '@aztec/stdlib/hash';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {poseidon2HashWithSeparator} from '@aztec-labs/foundation/crypto/poseidon';
+import {computeSecretHash} from '@aztec-labs/stdlib/hash';
 import {Interface} from 'ethers';
 import {verifyEthereumIntentReceipt} from './ethereum-journal.mjs';
 const DOMAIN=0x42424401;

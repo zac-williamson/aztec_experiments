@@ -1,4 +1,4 @@
-import {serializeWitness} from '@aztec/noir-noirc_abi';
+import {serializeWitness} from '@aztec-foundation/noir-noirc_abi';
 import {encodeJob,circuitId} from './remote-prover-wire.mjs';
 const failure=code=>Object.assign(Error('Remote proof did not complete.'),{code});
 /** Proving transport: prove(executionSteps, publicInputs) -> encoded proof result. */

@@ -19,9 +19,11 @@ function fixture(storage,kind='deposit') {
  const data=kind==='deposit'?iface.encodeFunctionData('deposit',[expected.secretHash]):iface.encodeFunctionData('withdraw',[1,1,0,[]]);
  const intent={data,value:kind==='deposit'?'100':'0',expected};
  const provider={getNetwork:async()=>({chainId:31337n}),getBlockNumber:async()=>head,getTransactionCount:async()=>nonce,
+  estimateGas:async()=>100000n,
   getBlock:async n=>{n=n==='latest'?head:n;return {number:n,hash:fork?blockHash(n+9000):blockHash(n),parentHash:blockHash(n-1),prefetchedTransactions:blocks.get(n)||[]};},
   getTransaction:async h=>transactions.get(h)||null,getTransactionReceipt:async h=>receipts.get(h)||null,waitForTransaction:async h=>receipts.get(h)||null};
  const signer={getAddress:async()=>scope.depositor,sendTransaction:async request=>{
+  if(kind==='deposit')assert(request.gasLimit>=150000n,'Inbox state can require more gas than the estimate');
   requests.push(request);if([4001,'ACTION_REJECTED','INSUFFICIENT_FUNDS'].includes(mode))throw Object.assign(new Error('private wallet detail'),{code:mode});if(mode==='reject')throw new Error('private wallet response');
   if(request.nonce!==nonce)throw new Error('nonce already used');
   const hash=field(),body={...request,hash};transactions.set(hash,body);head++;nonce++;blocks.set(head,[body]);
@@ -38,6 +40,31 @@ for(const backend of ['file','indexeddb']) {
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bb-eth-journal-'));
   try{const storage=backend==='file'?createFileJournalStorage(dir):createBrowserJournalStorage(new IDBFactory());await fn(fixture(storage,kind),{storage,dir});}finally{fs.rmSync(dir,{recursive:true,force:true});}
  }
+ test(`${backend}: deposit estimates exact intent with V6 Inbox allowance`,()=>use(async f=>{
+  let estimated;f.provider.estimateGas=async request=>{estimated={...request};return 100000n;};
+  await (await f.newSession()).send(f.intent);
+  const {gasLimit,...sent}=f.requests[0];assert.equal(gasLimit,200000n);assert.deepEqual(sent,estimated);
+ }));
+ test(`${backend}: withdrawal does not estimate or set a deposit gas allowance`,()=>use(async f=>{
+  f.provider.estimateGas=async()=>{throw Error('Unexpected estimate');};
+  assert.equal((await (await f.newSession()).send(f.intent)).outcome,'success');assert.equal(f.requests[0].gasLimit,undefined);
+ },'withdraw'));
+ test(`${backend}: explicit deposit retry refreshes gas but preserves intent`,()=>use(async f=>{
+  f.mode('reject');await assert.rejects((await f.newSession()).send(f.intent),{code:'BB_ETH_SUBMISSION_UNKNOWN'});
+  f.provider.estimateGas=async()=>140000n;f.mode('normal');await (await f.newSession()).recover({retry:true});
+  const {gasLimit:first,...a}=f.requests[0],{gasLimit:second,...b}=f.requests[1];
+  assert.equal(first,200000n);assert.equal(second,280000n);assert.deepEqual(a,b);
+ }));
+ for(const failure of ['reject','timeout','invalid'])test(`${backend}: ${failure} gas estimate cannot sign or erase recovery`,()=>use(async f=>{
+  f.provider.estimateGas=()=>failure==='timeout'?new Promise(()=>{}):failure==='invalid'?0n:Promise.reject(Error('private RPC detail'));
+  await assert.rejects((await f.newSession({timeoutMs:20})).send(f.intent),{code:'BB_ETH_SUBMISSION_UNKNOWN'});
+  assert.equal(f.requests.length,0);await assert.rejects((await f.newSession()).assertCanStart(),{code:'BB_ETH_RECOVERY_REQUIRED'});
+ }));
+ test(`${backend}: definitive insufficient funds during initial estimate permits fresh payment`,()=>use(async f=>{
+  f.provider.estimateGas=async()=>{throw Object.assign(Error('private diagnostic'),{code:'INSUFFICIENT_FUNDS'});};
+  await assert.rejects((await f.newSession()).send(f.intent),{code:'BB_ETH_INSUFFICIENT_FUNDS'});
+  assert.equal(f.requests.length,0);await (await f.newSession()).assertCanStart();
+ }));
  for(const code of [4001,'ACTION_REJECTED','INSUFFICIENT_FUNDS']) {
  test(`${backend}: definitive ${code} first attempt permits fresh payment after restart`,()=>use(async f=>{
    f.mode(code);await assert.rejects((await f.newSession()).send(f.intent),{code:code==='INSUFFICIENT_FUNDS'?'BB_ETH_INSUFFICIENT_FUNDS':'BB_ETH_REQUEST_CANCELLED'});

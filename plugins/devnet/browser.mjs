@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomBytes} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-import {Barretenberg,BarretenbergSync} from '@aztec/bb.js';
+import {Barretenberg,BarretenbergSync} from '@aztec-foundation/bb.js';
 import {bootstrapPluginDevnet} from './bootstrap.mjs';
 import {prepareBrowserAuthor} from './browser-fixture.mjs';
 import {startBoardWeb,retainPreviewCheckpoint} from './web.mjs';

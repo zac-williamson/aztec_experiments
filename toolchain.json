@@ -1,33 +1,33 @@
 {
   "node": "24.21.0",
-  "aztec": "5.2.0",
+  "aztec": "6.0.0-rc.1",
   "solidity": "0.8.27",
   "foundry": "1.4.1",
   "noir": {
-    "version": "1.0.0-beta.25",
-    "commit": "75061fab15986eedee4e7d9104ff87dd9fa4ca10",
+    "version": "1.0.0-rc.3",
+    "commit": "5a7ee9bf5ed8973076df7bb0d2b723024db09ae7",
     "assets": {
       "darwin-arm64": {
-        "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-beta.25/nargo-aarch64-apple-darwin.tar.gz",
-        "sha256": "63ed453d09a65bfc78eef63252423126959d41c85de0da0cf54289c5e266ceb5"
+        "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-rc.3/noir-aarch64-apple-darwin.tar.gz",
+        "sha256": "44157443519c8ede9a2df7e6a4ee513b3d49ef9fdd5774c43311fe6f32887a59"
       },
       "linux-arm64": {
-        "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-beta.25/nargo-aarch64-unknown-linux-gnu.tar.gz",
-        "sha256": "4e86553af99e87c047bae40f1315234709e8d815f6158f3b8a00bf68f512a2b7"
+        "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-rc.3/noir-aarch64-unknown-linux-gnu.tar.gz",
+        "sha256": "98be47cd6b2a81f3857c029acd8298fd590eebeb153ef51e1dc6f10c973e00e9"
       },
       "darwin-x64": {
-        "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-beta.25/nargo-x86_64-apple-darwin.tar.gz",
-        "sha256": "660567c645f841389b1e37ddebd4f6c75417763018ea034e08b28338bf27673c"
+        "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-rc.3/noir-x86_64-apple-darwin.tar.gz",
+        "sha256": "9014ea4b7e88ab2441a949454f2b3dbc2920a82a9353a7a3649a444afed78910"
       },
       "linux-x64": {
-        "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-beta.25/nargo-x86_64-unknown-linux-gnu.tar.gz",
-        "sha256": "bf3410ab94933a4aebd1f988b67ae974c6c227f9456ed0f1e4a3716bb8a30fe9"
+        "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-rc.3/noir-x86_64-unknown-linux-gnu.tar.gz",
+        "sha256": "5792dd962afce1eed834570f95d9f72cc4a09d45cd846d3b80b7a57392732973"
       }
     }
   },
   "sources": [
-    "https://install.aztec.network/5.2.0/versions",
-    "https://api.github.com/repos/noir-lang/noir/releases/tags/v1.0.0-beta.25",
+    "https://install.aztec.network/6.0.0-rc.1/versions",
+    "https://api.github.com/repos/noir-lang/noir/releases/tags/v1.0.0-rc.3",
     "https://nodejs.org/en/blog/release/v24.21.0"
   ],
   "anvil": {
@@ -55,20 +55,20 @@
   },
   "nativeProver": {
     "linux-x64": {
-      "version": "5.2.0-nightly.20260807",
-      "sha256": "5a1c1ccd835e257217880936f837847fd74c8d5993497527f070fb2308f9145b"
+      "version": "6.0.0-rc.1",
+      "sha256": "ba8bbb2b82c573153511e638c97100791f0186ef40ee5dd41e911bb5286b29d9"
     },
     "linux-arm64": {
-      "version": "5.2.0",
-      "sha256": "36e4f49699cce2ce2d7e403ea446c856402172b3fc01793d0f4053a92a61a64b"
+      "version": "6.0.0-rc.1",
+      "sha256": "a208718a80691d8c6dec69d134e21a04f5e2fea5816aad686c5015efaa3f56fb"
     },
     "darwin-x64": {
-      "version": "5.2.0",
-      "sha256": "94c03cbbd7b302213df3d59c7b1f85ffa05009cbd61bc03dbec662f3407c8249"
+      "version": "6.0.0-rc.1",
+      "sha256": "9fb05bb1f1e7bfdc99c899a59ae15eff99abd55b6ffd18d1895d83d006d8e091"
     },
     "darwin-arm64": {
-      "version": "5.2.0",
-      "sha256": "208cc0d9046603f31a8dc6c5ed0de529ccc63155a22078d409262ec6e4122031"
+      "version": "6.0.0-rc.1",
+      "sha256": "0c0661547b0e8a856090627c51673bb72db0f34da88166281c5fb080d508b953"
     }
   }
 }

@@ -82,12 +82,12 @@ export async function addMetaMaskNetwork({page,walletPage,extensionId,rpcUrl,mar
 export async function observeMetaMaskTransactions(page){
  await page.evaluate(()=>{
   const original=globalThis.__testMetaMask.request.bind(globalThis.__testMetaMask);
-  globalThis.__walletTestPending=null;globalThis.__walletTestFailure=null;
+  globalThis.__walletTestPending=null;globalThis.__walletTestFailure=null;globalThis.__walletTestSubmitted=[];
   globalThis.__testMetaMask.request=async request=>{
    if(request.method!=='eth_sendTransaction')return original(request);
    if(globalThis.__walletTestPending)throw Error('Overlapping wallet transaction');
    globalThis.__walletTestPending=structuredClone(request.params);
-   try{return await original(request);}catch(error){
+   try{const hash=await original(request);globalThis.__walletTestSubmitted.push({hash,request:structuredClone(request.params[0])});return hash;}catch(error){
     const nested=error?.data?.originalError??error;const message=String(nested?.message??'');
     globalThis.__walletTestFailure={code:Number.isSafeInteger(nested?.code)?nested.code:null,nonceTooLow:/nonce too low/i.test(message),replacement:/replacement.*underpriced/i.test(message),insufficientFunds:/insufficient funds/i.test(message),transport:/fetch|network|connection/i.test(message)};throw error;
    }finally{globalThis.__walletTestPending=null;}

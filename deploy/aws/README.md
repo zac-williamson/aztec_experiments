@@ -24,7 +24,7 @@ origins. This computes the inline-script security hashes from the built pages:
 
 ```sh
 node deploy/aws/build-template.mjs /absolute/path/stack.json \
-  https://v5.testnet.rpc.aztec-labs.com \
+  https://aztec-testnet.drpc.org \
   https://ethereum-sepolia-rpc.publicnode.com
 aws cloudformation validate-template --region eu-west-2 \
   --template-body file:///absolute/path/stack.json
@@ -178,18 +178,33 @@ session expired. The live alarm still monitors moderator health only. Deployment
 must install the updated script and publisher together, run one verified backup,
 and confirm the new metric and alarm before claiming backup monitoring works.
 
-## Current board migration — 28 September 2026
+## Historical V5 board migration — 28 September 2026
 
 The moderator now runs `/srv/board/operator-direct-deposit-20260928` against portal
 `0x2e552bcd767b6ac942836d23052d69f411c48a38`, with its queue in
 `/srv/board/state/moderation-direct-deposit-20260928`. Its existing wallet and
 shared private-fee contract are unchanged. The old release and state remain on
-the host for recovery. Both service units and the backup script above describe
-this deployment.
+the host for recovery. The V5 runtime and state remain available for recovery; the checked-in units now describe V6.
 
 The live check evaluated two benign posts, including a newly submitted real
 testnet transaction. The backup was downloaded and its file hashes and SQLite
 integrity checked; the restarted moderator retained both results and reported
 no queue errors or checkpointed feed lag. This check did not generate a new
 violation/flag transaction. Full public deployment evidence is recorded in
+`deploy/prover/live-deployment.json`.
+
+
+## Current V6 testnet deployment — 10 October 2026
+
+The moderator runs `/srv/board/operator-v6-20261010` against V6 portal
+`0xe664b6b5fd7575616653f75374d5fc7e8544b982`, with fresh private state in
+`/srv/board/state/v6-20261010`. Its separate private-fee account was funded and
+claimed on V6. The release inventory was verified on the host, including the
+CLI correction that preserves an explicitly supplied signing key in cache scope.
+
+The first V6 backup was downloaded, compared byte-for-byte, and verified for
+file hashes and SQLite integrity on 10 October. The moderator restarted and the
+daily backup timer was restored. A normal post was evaluated as allowed, and a
+credible-threat test post was flagged on-chain by the configured moderator within
+the one-hour window. Full browser refund checks remain separate; see the current deployment record in
 `deploy/prover/live-deployment.json`.

@@ -5,23 +5,24 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {parseEventLogs} from 'viem';
-import {Contract} from '@aztec/aztec.js/contracts';
-import {Barretenberg,BackendType} from '@aztec/bb.js';
-import {DomainSeparator,L1_TO_L2_MSG_TREE_HEIGHT} from '@aztec/constants';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {EthAddress} from '@aztec/foundation/eth-address';
-import {poseidon2HashWithSeparator} from '@aztec/foundation/crypto/poseidon';
-import {sha256ToField} from '@aztec/foundation/crypto/sha256';
-import {loadContractArtifact} from '@aztec/stdlib/abi';
-import {computeSecretHash,siloNullifier} from '@aztec/stdlib/hash';
-import {NoteStatus} from '@aztec/stdlib/note';
-import {L1Actor,L2Actor,L1ToL2Message} from '@aztec/stdlib/messaging';
-import {TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
-import {EmbeddedWallet} from '@aztec/wallets/embedded';
+import {Contract} from '@aztec-labs/aztec.js/contracts';
+import {Barretenberg,BackendType} from '@aztec-foundation/bb.js';
+import {DomainSeparator,L1_TO_L2_MSG_TREE_HEIGHT} from '@aztec-labs/constants';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {EthAddress} from '@aztec-labs/foundation/eth-address';
+import {poseidon2HashWithSeparator} from '@aztec-labs/foundation/crypto/poseidon';
+import {sha256ToField} from '@aztec-labs/foundation/crypto/sha256';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
+import {computeSecretHash,siloNullifier} from '@aztec-labs/stdlib/hash';
+import {NoteStatus} from '@aztec-labs/stdlib/note';
+import {L1Actor,L2Actor,L1ToL2Message} from '@aztec-labs/stdlib/messaging';
+import {TxStatus,TxExecutionResult} from '@aztec-labs/stdlib/tx';
+import {EmbeddedWallet} from '@aztec-labs/wallets/embedded';
 import {encodeEscrowCommitment} from '../shared/protocol-commitments.mjs';
 import {contractInputs} from './artifact-provenance.mjs';
 import {ROOT,assertNodeVersion,assertAztecPackages} from './toolchain.mjs';
 import {proveApplicationAction,measureApplicationGas} from './prove-application-action.mjs';
+import {drainT04Checkpoints} from './u01-browser-flow.mjs';
 const BOARD='apps/src/billboard/billboard_artifact.json';
 const PORTAL='billboard/portal/out/BillboardPortal.sol/BillboardPortal.json';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -138,9 +139,16 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
       if(witness)break;await mine();
     }
     assert(witness,'Real Inbox membership timed out');assert.equal(witness[0],receipt.index);
-    // Empty checkpoints are only needed to make the Inbox message available.
-    // Restore ordinary transaction-driven production before expensive client proving.
-    sequencer.updateConfig(previousSequencerConfig);
+    // V6 fee simulation synchronizes the wallet even with autoSync disabled.
+    // Drain any in-flight empty checkpoint before choosing the shared probe/proof anchor.
+    observation.claimPublicationBarrier=await drainT04Checkpoints({node,l1Client,rollupAddress,
+      checkpoints:{restore:()=>sequencer.updateConfig(previousSequencerConfig)},
+      deadline:membershipDeadline,onStage:mark});
+    await wallet.pxe.sync();anchor=await wallet.pxe.getSyncedBlockHeader();
+    witness=await node.getL1ToL2MessageMembershipWitness(await anchor.toBlockParameter(),message.hash());
+    assert(witness,'Canonical Inbox membership disappeared after checkpoint publication');
+    assert.equal(witness[0],receipt.index);
+    observation.claimAnchor={number:anchor.getBlockNumber(),hash:(await anchor.hash()).toString()};
     assert.equal(witness[1].pathSize,L1_TO_L2_MSG_TREE_HEIGHT);
     let computedRoot=message.hash(),cursor=witness[0];
     for(const sibling of witness[1].toFields()){
@@ -161,6 +169,8 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
       privateFeeAction:payerMode==='private'?context=>privateFeeAction({...context,kind:'claim',args:claimArgs}):undefined});
     observation.feePayer=tx.data.feePayer.toString();
     observation.privateFees=payerMode==='private';
+    observation.provenAnchor={number:tx.data.constants.anchorBlockHeader.getBlockNumber(),
+      hash:(await tx.data.constants.anchorBlockHeader.hash()).toString()};
     assert.deepEqual(tx.data.constants.anchorBlockHeader.toBuffer(),anchor.toBuffer(),'Claim changed selected anchor');
     await canonicalDeposit();assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),canonicalAnchor.hash.toString());
     assert.equal((await node.isValidTx(tx)).result,'valid');

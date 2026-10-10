@@ -128,8 +128,8 @@ test('a concurrent custody change aborts the entire write transaction', async ()
 });
 
 test('pinned Aztec commitment validation rejects poisoning before custody writes', async () => {
-  const { Fr } = await import('@aztec/foundation/curves/bn254');
-  const { computeSecretHash } = await import('@aztec/stdlib/hash');
+  const { Fr } = await import('@aztec-labs/foundation/curves/bn254');
+  const { computeSecretHash } = await import('@aztec-labs/stdlib/hash');
   const secret = new Fr(12345n);
   const value = { scope, record: { schemaVersion: 1, secret: secret.toString(), secretHash: (await computeSecretHash(secret)).toString() } };
   const store = runtime(new IDBFactory(), { Fr, computeSecretHash }).store(wallet.secretKey, wallet.salt);

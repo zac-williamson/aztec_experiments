@@ -5,8 +5,8 @@ import { once } from 'node:events';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
-import { Agent, makeUndiciFetch } from '@aztec/foundation/json-rpc/undici';
-import { NoRetryError } from '@aztec/foundation/retry';
+import { Agent, makeUndiciFetch } from '@aztec-labs/foundation/json-rpc/undici';
+import { NoRetryError } from '@aztec-labs/foundation/retry';
 import { WebSocket, WebSocketServer, Receiver } from 'ws';
 import { WebSocket as SelectedWebSocket } from 'isows';
 import { getWebSocketRpcClient } from '../node_modules/viem/_esm/utils/rpc/webSocket.js';
@@ -30,7 +30,7 @@ async function httpFixture(t, handler) {
 }
 
 test('Foundation resolves the qualified Undici Agent from the actual consumer', () => {
-  const fromFoundation = createRequire(require.resolve('@aztec/foundation/json-rpc/undici'));
+  const fromFoundation = createRequire(require.resolve('@aztec-labs/foundation/json-rpc/undici'));
   assert.equal(fromFoundation('undici/package.json').version, '6.28.1');
   assert.equal(Agent, fromFoundation('undici').Agent);
   assert.equal(process.versions.undici, '7.29.1', 'Node embedded transport is independently pinned');
@@ -190,4 +190,15 @@ test('actual viem JSON-RPC subscription and malformed-message error controls', {
   await deadline(received);
   assert.equal(events[1].params.result, 'event');
   await assert.rejects(client.requestAsync({ body: { method: 'malformed' }, timeout: 1000 }), SyntaxError);
+});
+
+// Error decoders must share the SDK client's constructor, not a stale hoisted copy.
+test('V6 Ethereum client and application share the exact viem error identity',async()=>{
+ const sdkRequire=createRequire(import.meta.resolve('@aztec-labs/ethereum/client'));
+ assert.equal(require.resolve('viem'),sdkRequire.resolve('viem'));
+ const {ContractFunctionRevertedError,encodeErrorResult}=await import('viem');
+ const sdk=await import(new URL('../node_modules/viem/_esm/index.js',import.meta.url));
+ const data=encodeErrorResult({abi:[{type:'error',name:'Error',inputs:[{name:'message',type:'string'}]}],errorName:'Error',args:['No active deposit']});
+ const error=new sdk.ContractFunctionRevertedError({abi:[],data,functionName:'withdraw'});
+ assert(error instanceof ContractFunctionRevertedError);assert.equal(error.reason,'No active deposit');
 });

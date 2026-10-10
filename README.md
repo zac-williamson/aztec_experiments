@@ -1,7 +1,12 @@
 # Billboard — Anonymous Message Board on Aztec
 
 Based on [Vitalik Buterin’s message board](https://github.com/vbuterin/aztec_experiments).
-This application targets Aztec v5.2.0 and is not yet a production release.
+This application targets Aztec v6.0.0-rc.1 testnet and is not yet a production release.
+
+The [hosted V6 testnet board](https://d30njln0kead8n.cloudfront.net) uses the
+[current deployment](deploy/prover/live-deployment.json). See the
+[V6 operator handover](deploy/V6-TESTNET.md) for service locations, recovery
+archives and the remote prover's spending deadline.
 
 ## How it works
 

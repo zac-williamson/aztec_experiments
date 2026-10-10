@@ -1,11 +1,11 @@
 import {normalizePrivateFeeGasSettings} from '../shared/private-fee-client.mjs';
 import {ensureOnboardingFees} from '../shared/fee-onboarding.mjs';
-import {jsonStringify,jsonParseWithSchema} from '@aztec/foundation/json-rpc';
-import {BlockResponseSchema} from '@aztec/stdlib/interfaces/client';
-import {BlockHeader} from '@aztec/stdlib/tx';
-import {BlockHash} from '@aztec/stdlib/block';
-import {AppendOnlyTreeSnapshot} from '@aztec/stdlib/trees';
-import {Tx,TxHash,TxSimulationResult} from '@aztec/stdlib/tx';
+import {jsonStringify,jsonParseWithSchema} from '@aztec-labs/foundation/json-rpc';
+import {BlockResponseSchema} from '@aztec-labs/stdlib/interfaces/client';
+import {BlockHeader} from '@aztec-labs/stdlib/tx';
+import {BlockHash} from '@aztec-labs/stdlib/block';
+import {AppendOnlyTreeSnapshot} from '@aztec-labs/stdlib/trees';
+import {Tx,TxHash,TxSimulationResult} from '@aztec-labs/stdlib/tx';
 import {createL2Journal} from '../shared/l2-journal.mjs';
 import {provingEnabledForNode} from '../shared/proving-policy.mjs';
 import * as transactionOutcomes from '../shared/transaction-outcomes.mjs';
@@ -14,11 +14,11 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import {test} from 'node:test';
-import {SiblingPath} from '@aztec/foundation/trees';
-import {L1_TO_L2_MSG_TREE_HEIGHT} from '@aztec/constants';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {Gas,GasFees,GasSettings} from '@aztec/stdlib/gas';
-import {NO_FROM} from '@aztec/aztec.js/account';
+import {SiblingPath} from '@aztec-labs/foundation/trees';
+import {L1_TO_L2_MSG_TREE_HEIGHT} from '@aztec-labs/constants';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {Gas,GasFees,GasSettings} from '@aztec-labs/stdlib/gas';
+import {NO_FROM} from '@aztec-labs/aztec.js/account';
 const source=await readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8');
 const policySource=await readFile(new URL('../shared/moderation-policy.js',import.meta.url),'utf8');
 function context(){const c=vm.createContext({performance,console,Buffer,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});vm.runInContext(policySource,c);vm.runInContext(source,c);return c;}
@@ -80,10 +80,10 @@ test('actual wallet preserves a fixed fee budget and account scope/tag',async()=
 });
 // Exercise the actual top-level dispatch, not just the exported routing seam.
 import * as ethers from 'ethers';
-import {AztecAddress} from '@aztec/stdlib/aztec-address';
-import {EthAddress} from '@aztec/foundation/eth-address';
-import {NoteStatus} from '@aztec/stdlib/note';
-import {sha256ToField} from '@aztec/foundation/crypto/sha256';
+import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
+import {EthAddress} from '@aztec-labs/foundation/eth-address';
+import {NoteStatus} from '@aztec-labs/stdlib/note';
+import {sha256ToField} from '@aztec-labs/foundation/crypto/sha256';
 function mainHarness(action,isDummy=false) {
   let c=context();const requests=[],logs=[],operations=[],readResults=new Map();let actionReceipt={status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)},sent=false,authorBalanceReads=0,postExists=!['post','recover'].includes(action),missingNote=false,noteOverrides={},actionHook=null,readHook=null,censorValue=null;
   // Timers only represent UI yields in this inert test; no network/proof work is performed.
@@ -443,8 +443,8 @@ test('saved moderator request cannot spend fees after authority transfers away',
 
 // Real production preparer composed with real routing; only wallet/node state is a fixture.
 import {preparePrivateFeePayment,derivePrivateFeeInstance} from '../shared/private-fee-client.mjs';
-import {loadContractArtifact} from '@aztec/stdlib/abi';
-import {BarretenbergSync} from '@aztec/bb.js';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
+import {BarretenbergSync} from '@aztec-foundation/bb.js';
 import {after} from 'node:test';
 after(async()=>{await BarretenbergSync.destroySingleton();});
 test('real preparer failures stop every routed action before proof/send/funding and preserve bootstrap input',async()=>{

@@ -6,10 +6,10 @@ import test,{before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { Interface } from 'ethers';
-import { Fr } from '@aztec/foundation/curves/bn254';
-import { AztecAddress } from '@aztec/stdlib/aztec-address';
-import { BarretenbergSync } from '@aztec/bb.js';
-import { ProtocolContractAddress } from '@aztec/protocol-contracts';
+import { Fr } from '@aztec-labs/foundation/curves/bn254';
+import { AztecAddress } from '@aztec-labs/stdlib/aztec-address';
+import { BarretenbergSync } from '@aztec-foundation/bb.js';
+import { ProtocolContractAddress } from '@aztec-labs/protocol-contracts';
 import { derivePrivateFeeAddress,derivePrivateFeeInstance } from '../shared/private-fee-client.mjs';
 import { fundPrivateFees,recoverPrivateFeeClaim,recoverPrivateFeeFunding } from '../shared/private-fee-funding.mjs';
 const portal=new Interface(['function ROLLUP() view returns(address)','function UNDERLYING() view returns(address)','function VERSION() view returns(uint256)','function L2_TOKEN_ADDRESS() view returns(bytes32)',
@@ -21,9 +21,10 @@ let artifact,privateFeeAddress;
 before(async()=>{artifact=JSON.parse(fs.readFileSync(new URL('../apps/src/billboard/private_fee_artifact.json',import.meta.url)));privateFeeAddress=await derivePrivateFeeAddress(artifact);});
 after(async()=>{await BarretenbergSync.destroySingleton();});
 function fixture(){
-  const state={calls:[],saved:[],balance:5000n,allowance:0n,chain:1n,portalVersion:2n,nonce:7,receipt:null,transaction:null,sendError:false,saveError:false,blockHash,height:10,blocks:new Map(),approvalReceipt:null,approvalTransaction:null};
+  const state={calls:[],estimates:[],saved:[],balance:5000n,allowance:0n,chain:1n,portalVersion:2n,nonce:7,receipt:null,transaction:null,sendError:false,saveError:false,blockHash,height:10,blocks:new Map(),approvalReceipt:null,approvalTransaction:null};
   const approvalHash='0x'+'44'.repeat(32);
   const provider={getNetwork:async()=>({chainId:state.chain}),getTransactionCount:async(_sender,tag)=>{if(tag==='pending')return state.staleNonce&&state.approvalReceipt?state.nonce-1:state.nonce;assert(Number.isSafeInteger(tag)&&tag<=state.height);return 7+[...state.blocks].filter(([block])=>block<=tag).reduce((sum,[,txs])=>sum+txs.length,0);},
+    estimateGas:async request=>{state.estimates.push({...request});return 100000n;},
     call:async({to,data})=>{const abi=to.toLowerCase()===tokenAddress?token:portal,parsed=abi.parseTransaction({data});
       const result={ROLLUP:rollup,UNDERLYING:tokenAddress,VERSION:state.portalVersion,L2_TOKEN_ADDRESS:ProtocolContractAddress.FeeJuice.toString(),balanceOf:state.balance,allowance:state.allowance}[parsed.name];
       return abi.encodeFunctionResult(parsed.name,[result]);},
@@ -32,12 +33,15 @@ function fixture(){
     const abi=request.to.toLowerCase()===tokenAddress?token:portal,parsed=abi.parseTransaction(request);state.calls.push(parsed.name);
     assert.equal(request.nonce,state.nonce,'signer must use the next unconsumed nonce');
     if(parsed.name==='approve'){
+      assert.equal(request.gasLimit,undefined);
       state.allowance=parsed.args[1];state.nonce++;state.height++;
       state.approvalTransaction={...request,hash:approvalHash};state.blocks.set(state.height,[state.approvalTransaction]);
       const event=token.encodeEventLog(token.getEvent('Approval'),[sender,parsed.args[0],parsed.args[1]]);
       state.approvalReceipt={hash:approvalHash,from:sender,to:tokenAddress,status:1,blockNumber:state.height,blockHash,logs:[{address:tokenAddress,...event}]};
       if(state.lostApproval)throw Error('lost approval response');return state.approvalTransaction;
     }
+    assert.equal(request.gasLimit,200000n,'V6 fee deposit must cover changing Inbox state');
+    const {gasLimit,...estimatedIntent}=request;assert.deepEqual(estimatedIntent,state.estimates.at(-1));
     assert(state.saved.length>=1,'public recovery must persist before deposit');assert.equal(state.saved.at(-1).nonce,String(request.nonce));assert.equal(request.nonce,state.nonce);
     if(state.sendError)throw Error('private RPC diagnostic');
     state.transaction={...request,hash:txHash,from:sender,chainId:state.chain};
@@ -53,6 +57,7 @@ function fixture(){
 test('approve then persist nonce-bound public recovery before deposit; recover exact private claim',async()=>{
   const {state,input,recover}=fixture();const record=await fundPrivateFees(input);
   assert.deepEqual(state.calls,['approve','depositToAztecPublic']);assert.equal(record.nonce,'8');assert.equal(record.leafIndex,'9');assert.equal(state.saved.length,3);
+  assert.equal(state.estimates.length,1);assert.equal(portal.parseTransaction(state.estimates[0]).name,'depositToAztecPublic');
   assert.equal(state.saved[0].txHash,undefined);assert.equal(state.saved[1].txHash,txHash);
   const serialized=JSON.stringify(record);assert(!serialized.includes('salt')&&!serialized.includes('secret')&&!serialized.includes(input.owner.toString()));
   const claim=await recover(record);assert.equal(claim.amount,4000n);assert.equal(claim.leafIndex.toBigInt(),9n);assert(!claim.salt.isZero()&&!claim.secret.isZero());

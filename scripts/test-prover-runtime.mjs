@@ -17,6 +17,6 @@ test('native runtime reuses verified read-only CRS and rejects corrupted install
 });
 test('a nightly label alone cannot bypass the pinned native binary check',async()=>{
  const directory=await fs.mkdtemp(path.join(os.tmpdir(),'prover-version-test-')),bbPath=path.join(directory,'bb');
- try{await fs.writeFile(bbPath,"#!/bin/sh\nprintf '%s\\n' '5.2.0-nightly.20260807'\n",{mode:0o700});await assert.rejects(prepareNativeRuntime({bbPath,crsPath:directory}),/Expected prover/);}
+ try{await fs.writeFile(bbPath,"#!/bin/sh\nprintf '%s\\n' '5.2.0-nightly.20260807'\n",{mode:0o700});await assert.rejects(prepareNativeRuntime({bbPath,crsPath:directory}),/checksum mismatch/);}
  finally{await fs.rm(directory,{recursive:true,force:true});}
 });

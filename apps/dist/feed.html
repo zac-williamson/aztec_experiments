@@ -375,6 +375,10 @@ const view=BillboardView,element=id=>document.getElementById(id);
 view.header({section:'Read'});
 let connection=null,cursor=null,busy=false,generation=0,signature='',older=false,targetResolved=false,historyComplete=false;
 const target=new URL(location.href).searchParams.get('message');
+function refreshFailed(error){
+ if(error?.code==='PUBLIC_FEED_CONFLICT'){connection=null;busy=false;element('more').hidden=true;element('refresh').hidden=true;}
+ element('connect').hidden=false;element('status').textContent='Messages could not be updated. Your displayed messages are still available. Try again to reopen the board.';
+}
 async function refresh(append=false){
  if(busy||!connection)return;busy=true;const selected=connection;
  try{
@@ -385,7 +389,7 @@ async function refresh(append=false){
   if(target&&!targetResolved){const found=document.getElementById('message-'+target);if(found){targetResolved=true;found.tabIndex=-1;found.focus({preventScroll:true});found.scrollIntoView({block:'center'});}else if(!cursor&&historyComplete)element('status').textContent='This message is not available on this board.';}
   if(progress&&!progress.complete)setTimeout(()=>{if(connection===selected)refresh();},1000);
   else if(target&&!targetResolved&&!document.getElementById('message-'+target)&&cursor)setTimeout(()=>{if(connection===selected)refresh(true);},0);
- }catch(error){if(connection!==selected)return;element('connect').hidden=false;element('status').textContent='Messages could not be updated. Your displayed messages are still available.';}
+ }catch(error){if(connection!==selected)return;refreshFailed(error);}
  finally{if(connection===selected)busy=false;}
 }
 async function openBoard(){
@@ -398,7 +402,7 @@ setInterval(async()=>{
  if(!connection||busy||document.hidden||older)return;busy=true;const selected=connection;
  try{await selected.feed.sync();const page=await selected.feed.page({limit:50});if(connection!==selected)return;
    if(JSON.stringify(page.posts)!==signature){element('refresh').hidden=false;element('more').hidden=true;}
- }catch{if(connection===selected)element('status').textContent='Updates are temporarily unavailable.';}
+ }catch(error){if(connection===selected)refreshFailed(error);}
  finally{if(connection===selected)busy=false;}
 },15000);
 openBoard();

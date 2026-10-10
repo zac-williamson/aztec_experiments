@@ -1,9 +1,9 @@
-import {Contract,NO_WAIT} from '@aztec/aztec.js/contracts';
-import {waitForTx} from '@aztec/aztec.js/node';
-import {NO_FROM} from '@aztec/aztec.js/account';
-import {AztecAddress} from '@aztec/stdlib/aztec-address';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {TxStatus} from '@aztec/stdlib/tx';
+import {Contract,NO_WAIT} from '@aztec-labs/aztec.js/contracts';
+import {waitForTx} from '@aztec-labs/aztec.js/node';
+import {NO_FROM} from '@aztec-labs/aztec.js/account';
+import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {TxStatus} from '@aztec-labs/stdlib/tx';
 import {packText} from './protocol.mjs';
 /** On-chain financial port. No financial database or service-to-service authority. */
 export async function aztecEscrowPort({wallet,node,address,artifact,operator,development=false}){

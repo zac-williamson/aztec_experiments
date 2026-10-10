@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs/promises';import os from 'node:os';import path from 'node:path';
-import {Tx} from '@aztec/stdlib/tx';import {createAztecNodeClient} from '@aztec/stdlib/interfaces/client';
+import {Tx} from '@aztec-labs/stdlib/tx';import {createAztecNodeClient} from '@aztec-labs/stdlib/interfaces/client';
 import {openO01CommandRpc,runO01PackagedCommand,createO01CommandOutput} from './o01-censor-command-io.mjs';
 const hash='0x'+'ab'.repeat(32);
 test('official RPC schema reaches original node and captures exactly accepted transactions',async()=>{

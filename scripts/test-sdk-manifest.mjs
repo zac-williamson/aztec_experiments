@@ -26,12 +26,12 @@ function fixture(t) {
     'scripts/toolchain.mjs': '// synthetic toolchain',
     'shared/sdk-entry.mjs': '// synthetic SDK entry',
     'shared/sdk-store.mjs': '// synthetic storage adapter',
-    'node_modules/@aztec/pxe/dest/storage/metadata.js': '// synthetic PXE schema',
+    'node_modules/@aztec-labs/pxe/dest/storage/metadata.js': '// synthetic PXE schema',
     'node_modules/fixture-module/index.js': '// synthetic imported module',
-    'node_modules/@aztec/noir-acvm_js/web/acvm_js_bg.wasm': 'synthetic acvm asset',
-    'node_modules/@aztec/noir-noirc_abi/web/noirc_abi_wasm_bg.wasm': 'synthetic abi asset',
-    'node_modules/@aztec/sqlite3mc-wasm/vendor/jswasm/sqlite3.wasm': 'synthetic sqlite asset',
-    'node_modules/@aztec/sqlite3mc-wasm/vendor/jswasm/sqlite3-opfs-async-proxy.js': 'synthetic sqlite proxy',
+    'node_modules/@aztec-foundation/noir-acvm_js/web/acvm_js_bg.wasm': 'synthetic acvm asset',
+    'node_modules/@aztec-foundation/noir-noirc_abi/web/noirc_abi_wasm_bg.wasm': 'synthetic abi asset',
+    'node_modules/@aztec-labs/sqlite3mc-wasm/vendor/jswasm/sqlite3.wasm': 'synthetic sqlite asset',
+    'node_modules/@aztec-labs/sqlite3mc-wasm/vendor/jswasm/sqlite3-opfs-async-proxy.js': 'synthetic sqlite proxy',
   };
   const outputs = {
     'aztec_bundle.js': '// synthetic built bundle',
@@ -68,10 +68,10 @@ for (const [label, filename, error] of [
   ['build script', 'scripts/build-sdk.mjs', /SDK build script changed/],
   ['SDK entry source', 'shared/sdk-entry.mjs', /SDK input changed/],
   ['storage adapter source', 'shared/sdk-store.mjs', /SDK input changed/],
-  ['PXE schema source', 'node_modules/@aztec/pxe/dest/storage/metadata.js', /SDK input changed/],
+  ['PXE schema source', 'node_modules/@aztec-labs/pxe/dest/storage/metadata.js', /SDK input changed/],
   ['imported dependency source', 'node_modules/fixture-module/index.js', /SDK input changed/],
   ['toolchain helper', 'scripts/toolchain.mjs', /SDK input changed/],
-  ['runtime asset source', 'node_modules/@aztec/noir-acvm_js/web/acvm_js_bg.wasm', /SDK input changed/],
+  ['runtime asset source', 'node_modules/@aztec-foundation/noir-acvm_js/web/acvm_js_bg.wasm', /SDK input changed/],
   ['bundle output', '.build/sdk/aztec_bundle.js', /SDK output changed/],
   ['worker output', '.build/sdk/bb-thread.worker.js', /SDK output changed/],
   ['runtime asset output', '.build/sdk/sqlite3.wasm', /SDK output changed/],
@@ -89,7 +89,7 @@ test('protocol version mismatch is rejected', t => {
   assert.throws(() => checkSdk(f.root), /protocol version differs/);
 });
 
-for (const [section, name] of [['inputs', 'shared/sdk-entry.mjs'], ['inputs', 'shared/sdk-store.mjs'], ['inputs', 'node_modules/@aztec/pxe/dest/storage/metadata.js'], ['inputs', 'node_modules/@aztec/noir-acvm_js/web/acvm_js_bg.wasm'], ['outputs', 'sqlite.worker.js'], ['outputs', 'sqlite3.wasm']]) {
+for (const [section, name] of [['inputs', 'shared/sdk-entry.mjs'], ['inputs', 'shared/sdk-store.mjs'], ['inputs', 'node_modules/@aztec-labs/pxe/dest/storage/metadata.js'], ['inputs', 'node_modules/@aztec-foundation/noir-acvm_js/web/acvm_js_bg.wasm'], ['outputs', 'sqlite.worker.js'], ['outputs', 'sqlite3.wasm']]) {
   test(`omitting required ${section} entry ${name} is rejected`, t => {
     const f = fixture(t);
     delete f.manifest[section][name]; f.save();

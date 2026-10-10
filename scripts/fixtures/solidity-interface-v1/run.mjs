@@ -11,7 +11,7 @@ const hash = createHash('sha256').update(fs.readFileSync(vectorFile)).digest('he
 if (hash !== fs.readFileSync(path.join(directory, 'commitment-vectors.sha256'), 'utf8').trim()) {
   throw new Error('Commitment vectors changed; reconcile Solidity fixtures explicitly');
 }
-const l1 = JSON.parse(fs.readFileSync(path.join(ROOT, 'billboard/portal/node_modules/@aztec/l1-artifacts/package.json')));
+const l1 = JSON.parse(fs.readFileSync(path.join(ROOT, 'billboard/portal/node_modules/@aztec-foundation/l1-artifacts/package.json')));
 if (l1.version !== pins.aztec) throw new Error('Solidity protocol library version mismatch');
 const forge = process.env.FORGE || 'forge';
 if (!execFileSync(forge, ['--version'], { encoding: 'utf8' }).includes(`Version: ${pins.foundry}`)) throw new Error('Foundry version mismatch');

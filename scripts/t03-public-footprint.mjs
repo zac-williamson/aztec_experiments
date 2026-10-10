@@ -1,7 +1,7 @@
 // TEST ONLY: classify already-public SDK transaction/effect fields in memory.
 // Never supply wallet notes, execution witnesses or decrypted delivery contents.
 import assert from 'node:assert/strict';
-import {Tx,TxEffect} from '@aztec/stdlib/tx';
+import {Tx,TxEffect} from '@aztec-labs/stdlib/tx';
 
 const ROLES=['author','otherAuthor','sharedPayer','board','moderator','funder','collateralFunder','otherCollateralFunder','feeFunder','otherFeeFunder','coinbase'];
 function scalar(value){

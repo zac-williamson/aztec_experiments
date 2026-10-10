@@ -1,4 +1,4 @@
-// node_modules/@aztec/sqlite3mc-wasm/vendor/jswasm/sqlite3.mjs
+// node_modules/@aztec-labs/sqlite3mc-wasm/vendor/jswasm/sqlite3.mjs
 async function sqlite3InitModule(moduleArg = {}) {
   var moduleRtn;
   var Module = moduleArg;
@@ -12191,7 +12191,7 @@ var toExportForESM = (function() {
 sqlite3InitModule = toExportForESM;
 var sqlite3_default = sqlite3InitModule;
 
-// node_modules/@aztec/sqlite3mc-wasm/dest/index.js
+// node_modules/@aztec-labs/sqlite3mc-wasm/dest/index.js
 var SQLITE3_WASM_URL = new URL("./sqlite3.wasm", import.meta.url);
 function sqlite3InitModule2(options = {}) {
   return new Promise((resolve, reject) => {
@@ -12250,7 +12250,7 @@ function defaultLocateFile(path, prefix) {
   return path === "sqlite3.wasm" ? SQLITE3_WASM_URL.href : new URL(path, prefix || import.meta.url).href;
 }
 
-// node_modules/@aztec/kv-store/dest/sqlite-opfs/errors.js
+// node_modules/@aztec-labs/kv-store/dest/sqlite-opfs/errors.js
 var SqliteEncryptionError = class extends Error {
   code;
   constructor(code, message, opts) {
@@ -12269,10 +12269,10 @@ function isDecryptFailureMessage(message) {
   return SQLITE3MC_DECRYPT_ERROR_PATTERNS.some((p) => p.test(message));
 }
 
-// node_modules/@aztec/kv-store/dest/sqlite-opfs/pool_lock.js
+// node_modules/@aztec-labs/kv-store/dest/sqlite-opfs/pool_lock.js
 var DEFAULT_SAH_POOL_DIRECTORY = ".aztec-kv";
 
-// node_modules/@aztec/kv-store/dest/sqlite-opfs/worker.js
+// node_modules/@aztec-labs/kv-store/dest/sqlite-opfs/worker.js
 var SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS data (
     slot TEXT NOT NULL PRIMARY KEY,
@@ -12505,7 +12505,7 @@ function detectEncryptionCode(req, err, message) {
 }
 /*! Bundled license information:
 
-@aztec/sqlite3mc-wasm/vendor/jswasm/sqlite3.mjs:
+@aztec-labs/sqlite3mc-wasm/vendor/jswasm/sqlite3.mjs:
   (* @preserve
   **
   ** LICENSE for the sqlite3 WebAssembly/JavaScript APIs.

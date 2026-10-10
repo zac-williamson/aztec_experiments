@@ -1,7 +1,7 @@
 import '../../../../shared/wallet-backup.js';
 import {createJournalBackup} from '../../../../shared/journal-backup.mjs';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {computeSecretHash} from '@aztec/stdlib/hash';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {computeSecretHash} from '@aztec-labs/stdlib/hash';
 // Offline portable custody; neither export nor restore contacts a node or signs.
 export async function createRecoveryFile({wallet,storage,claimStore,password}) {
  const canonical=globalThis.BillboardWalletBackup.validateWallet(wallet);

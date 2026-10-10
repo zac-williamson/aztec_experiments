@@ -1,7 +1,7 @@
 // TEST ONLY: genuine dummy proof, deliberately never submitted. Parent owns
 // native resource/deadline supervision and the subsequent withdrawal inclusion.
 import assert from 'node:assert/strict';
-import { Fr } from '@aztec/foundation/curves/bn254';
+import { Fr } from '@aztec-labs/foundation/curves/bn254';
 import { extractApplicationNullifier } from '../shared/application-nullifier.mjs';
 import { proveApplicationAction } from './prove-application-action.mjs';
 

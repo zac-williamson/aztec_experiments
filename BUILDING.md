@@ -38,11 +38,10 @@ npm run bootstrap:noir
 Both npm lockfiles are required. Do not substitute `npm install` in release or CI
 builds. The compiler bootstrap verifies the archive's SHA-256 and the executable's
 version and commit before use. `toolchain.json` records the pins and official
-download sources. The native Aztec **5.2.0** prover and test service come from the
+download sources. The native Aztec **6.0.0-rc.1** prover and test service come from the
 locked npm dependencies; a globally installed Aztec CLI is unnecessary. Native
 provers are checked against platform-specific SHA-256 and exact version pins
-before use. The locked Linux x64 binary reports `5.2.0-nightly.20260807`; the other
-platforms report `5.2.0`. These are exact package identities, not a nightly range. An initial
+before use. All pinned platforms report `6.0.0-rc.1`. An initial
 build needs network access for npm, official compiler downloads, Noir Git
 dependencies, the Solidity compiler, and content-pinned CRS assets. A preexisting developer cache is not a
 prerequisite, although compilers may populate and reuse their own caches.
@@ -163,7 +162,7 @@ on Ubuntu; its presence is not evidence that a hosted run has passed.
 
 `crs-manifest.json` pins official URLs, ranges, byte counts, point counts, and
 SHA-256 values. Its derived G1 entry also binds the compressed input, G2 and the
-exact pinned 5.2 WASM used to derive the full uncompressed representation.
+exact pinned V6 WASM used to derive the full uncompressed representation.
 `npm run build:crs` restores the three downloaded assets from verified cached
 bytes or bounded official downloads, then restores or derives the additional
 72 MiB `g1_uncompressed.dat`. The 64 MiB download cap remains separate from this

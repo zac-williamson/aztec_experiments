@@ -1,7 +1,7 @@
-import {MAX_PROCESSABLE_L2_GAS,MAX_TX_DA_GAS} from '@aztec/constants';
-import {Gas,GasFees,GasSettings} from '@aztec/stdlib/gas';
-import {mergeExecutionPayloads} from '@aztec/stdlib/tx';
-import {getGasLimits} from '@aztec/wallet-sdk/base-wallet';
+import {MAX_PROCESSABLE_L2_GAS,MAX_TX_DA_GAS} from '@aztec-labs/constants';
+import {Gas,GasFees,GasSettings} from '@aztec-labs/stdlib/gas';
+import {mergeExecutionPayloads} from '@aztec-labs/stdlib/tx';
+import {getGasLimits} from '@aztec-labs/wallet-sdk/base-wallet';
 import {createPrivateFeeSimulator} from './private-fee-simulation.mjs';
 const dimensions=['daGas','l2Gas'];
 const fail=code=>Object.assign(new Error(code),{code});

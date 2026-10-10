@@ -1,12 +1,13 @@
-import {BackendType,Barretenberg,BarretenbergSync} from '@aztec/bb.js';
+import {prepareNativeRuntime} from '../prover/runtime.mjs';
+import {BackendType,Barretenberg,BarretenbergSync} from '@aztec-foundation/bb.js';
 import fs from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
-import {getFeeJuiceBalance} from '@aztec/aztec.js/utils';
-import {createAztecNodeClient} from '@aztec/aztec.js/node';
-import {EmbeddedWallet} from '@aztec/wallets/embedded';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {GrumpkinScalar} from '@aztec/foundation/curves/grumpkin';
-import {loadContractArtifact} from '@aztec/stdlib/abi';
+import {getFeeJuiceBalance} from '@aztec-labs/aztec.js/utils';
+import {createAztecNodeClient} from '../shared/aztec-node-client.mjs';
+import {EmbeddedWallet} from '@aztec-labs/wallets/embedded';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {GrumpkinScalar} from '@aztec-labs/foundation/curves/grumpkin';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
 import {validateDescriptor} from './protocol.mjs';
 import {aztecBoardPort} from './aztec.mjs';
 import {aztecEscrowPort} from './escrow.mjs';
@@ -31,7 +32,7 @@ export async function runHostedService({config,env=process.env,onError=error=>co
   const node=createAztecNodeClient(config.nodeUrl),info=await node.getNodeInfo();
   if(config.development&&String(info.l1ChainId)!=='31337')throw Error('Development mode requires a disposable local chain');
   if(String(info.l1ChainId)!==descriptor.scope.chainId||String(info.rollupVersion)!==descriptor.scope.rollupVersion||String(info.l1ContractAddresses.rollupAddress).toLowerCase()!==descriptor.scope.rollupAddress)throw Error('Service network identity mismatch');
-  const wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:provingEnabledForNode(info),proverOrOptions:{backend:BackendType.NativeUnixSocket,threads:1}}});
+  const wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:provingEnabledForNode(info),proverOrOptions:{backend:BackendType.NativeUnixSocket,...await prepareNativeRuntime({}),threads:1}}});
   let server,closed=false;
   async function close(){if(closed)return;closed=true;const failures=[];for(const cleanup of [()=>server?.close(),()=>wallet.stop()]){try{await cleanup();}catch(error){failures.push(error);}}if(failures.length)throw new AggregateError(failures,'Service cleanup failed');}
   try{

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
-import {Fr} from '@aztec/foundation/curves/bn254';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
 import {Interface} from 'ethers';
 import {parseAbi} from 'viem';
 import {journeyExitLeaf,assertJourneyExit,verifyJourneyRefund} from './t04-browser-journey-verify.mjs';
@@ -48,7 +48,7 @@ test('actual refund verifier decodes a real ABI event and rejects wrong receipt 
  async function run(mutation={}){
   const event=iface.encodeEventLog(iface.getEvent('Withdrawn'),[depositor,mutation.amount??amount]);
   const l1Client={
-   getTransactionReceipt:async args=>{assert.deepEqual(args,{hash:txHash});return{status:'success',to:portalAddress,from:depositor,blockNumber:12n,blockHash,logs:[{address:portalAddress,...event}],gasUsed:21000n,effectiveGasPrice:2n};},
+   getTransactionReceipt:async args=>{assert.deepEqual(args,{hash:txHash});return{status:'success',to:mutation.outerTo??portalAddress,from:mutation.from??depositor,blockNumber:12n,blockHash,logs:[{address:mutation.eventAddress??portalAddress,...event}],gasUsed:21000n,effectiveGasPrice:2n};},
    getBlock:async args=>{assert.deepEqual(args,{blockNumber:12n});return{hash:mutation.blockHash??blockHash};},
    readContract:async args=>{assert.equal(args.address,portalAddress);assert.equal(args.abi,portalAbi);if(args.functionName==='getDeposit'){assert.deepEqual(args.args,[depositor]);return 0n;}assert.equal(args.functionName,'totalDeposited');assert.deepEqual(args.args,[]);return before.liability-amount;},
    getBalance:async({address})=>{assert([portalAddress,depositor].includes(address));return address===portalAddress?before.portalBalance-amount:before.depositorBalance+amount-42000n;},
@@ -56,5 +56,6 @@ test('actual refund verifier decodes a real ABI event and rejects wrong receipt 
   return verifyJourneyRefund({l1Client,portalAbi,portalAddress,depositor,amount,txHash,before});
  }
  assert.deepEqual(await run(),{passed:true,txHash,amount:String(amount),gasWei:'42000'});
- for(const mutation of [{amount:amount+1n},{blockHash:'0x'+'ef'.repeat(32)}])await assert.rejects(run(mutation));
+ assert.deepEqual(await run({outerTo:'0x'+'ef'.repeat(20)}),{passed:true,txHash,amount:String(amount),gasWei:'42000'});
+ for(const mutation of [{amount:amount+1n},{blockHash:'0x'+'ef'.repeat(32)},{eventAddress:'0x'+'ef'.repeat(20)},{from:'0x'+'ef'.repeat(20)}])await assert.rejects(run(mutation));
 });

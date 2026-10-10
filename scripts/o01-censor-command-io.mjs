@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import path from 'node:path';
 import {spawn} from 'node:child_process';
-import {createNamespacedSafeJsonRpcServer} from '@aztec/foundation/json-rpc/server';
-import {AztecNodeApiSchema} from '@aztec/stdlib/interfaces/client';
-import {Tx} from '@aztec/stdlib/tx';
+import {createNamespacedSafeJsonRpcServer} from '@aztec-labs/foundation/json-rpc/server';
+import {AztecNodeApiSchema} from '@aztec-labs/stdlib/interfaces/client';
+import {Tx} from '@aztec-labs/stdlib/tx';
 const silent=Object.assign(()=>{},{trace(){},debug(){},verbose(){},info(){},warn(){},error(){},fatal(){}});
 const failure=code=>Object.assign(Error(code),{code});
 export async function openO01CommandRpc({node}){

@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import {Tx} from '@aztec/stdlib/tx';
+import {Tx} from '@aztec-labs/stdlib/tx';
 import {createL2Journal} from '../../../shared/l2-journal.mjs';
 import {createFileJournalStorage} from '../../../apps/src/billboard/user/transaction-journal-store.mjs';
 const {directory,tx,...options}=JSON.parse(fs.readFileSync(0,'utf8'));

@@ -5,17 +5,17 @@ import path from 'node:path';
 import { registerHooks } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import {drainMessageWitnessReads} from './txe-message-witness.mjs';
-import { Fr } from '@aztec/foundation/curves/bn254';
-import { createLogger } from '@aztec/foundation/log';
-import { startHttpRpcServer } from '@aztec/foundation/json-rpc/server';
+import { Fr } from '@aztec-labs/foundation/curves/bn254';
+import { createLogger } from '@aztec-labs/foundation/log';
+import { startHttpRpcServer } from '@aztec-labs/foundation/json-rpc/server';
 import { ROOT, assertNodeVersion, assertAztecPackages } from './toolchain.mjs';
 assertNodeVersion(); assertAztecPackages();
 assert.equal(process.env.TXE_WORKERS, '1');
 process.env.HARDWARE_CONCURRENCY ??= '2';
 // Published unbundled TXE loads account JSON without an import attribute.
 // Supply only the Node-required JSON attribute for this pinned local artifact directory.
-const artifactRoots = ['accounts', 'protocol-contracts', 'standard-contracts'].map(name => pathToFileURL(path.join(ROOT, 'node_modules/@aztec', name, 'artifacts/')).href);
-const messageWitnessUrl=pathToFileURL(path.join(ROOT,'node_modules/@aztec/stdlib/dest/messaging/l1_to_l2_message.js')).href;
+const artifactRoots = ['accounts', 'protocol-contracts', 'standard-contracts'].map(name => pathToFileURL(path.join(ROOT, 'node_modules/@aztec-labs', name, 'artifacts/')).href);
+const messageWitnessUrl=pathToFileURL(path.join(ROOT,'node_modules/@aztec-labs/stdlib/dest/messaging/l1_to_l2_message.js')).href;
 registerHooks({ load(url, context, nextLoad) {
   if(url===messageWitnessUrl){const loaded=nextLoad(url,context);return {...loaded,source:drainMessageWitnessReads(loaded.source)};}
   if (artifactRoots.some(root => url.startsWith(root)) && url.endsWith('.json')) {
@@ -23,7 +23,7 @@ registerHooks({ load(url, context, nextLoad) {
   }
   return nextLoad(url, context);
 } });
-const base = path.join(ROOT, 'node_modules/@aztec/txe/dest');
+const base = path.join(ROOT, 'node_modules/@aztec-labs/txe/dest');
 const { TXEGlobalVariablesBuilder } = await import(pathToFileURL(path.join(base, 'state_machine/global_variable_builder.js')).href);
 const { TXEDispatcher } = await import(pathToFileURL(path.join(base, 'index.js')).href);
 const { TXEStateMachine } = await import(pathToFileURL(path.join(base, 'state_machine/index.js')).href);

@@ -1,13 +1,13 @@
 // Explicit real-contract operations scenario. No inference/provider billing is claimed.
 import fs from 'node:fs/promises';import path from 'node:path';import assert from 'node:assert/strict';
-import {Barretenberg,BarretenbergSync} from '@aztec/bb.js';
-import {generateSchnorrAccounts} from '@aztec/accounts/testing';
-import {L1FeeJuicePortalManager} from '@aztec/aztec.js/ethereum';
-import {createLogger} from '@aztec/foundation/log';
-import {Fr} from '@aztec/foundation/curves/bn254';import {EthAddress} from '@aztec/foundation/eth-address';
-import {Contract as L2Contract} from '@aztec/aztec.js/contracts';import {NO_FROM} from '@aztec/aztec.js/account';
-import {loadContractArtifact} from '@aztec/stdlib/abi';import {TxHash,TxStatus} from '@aztec/stdlib/tx';
-import {computeSecretHash} from '@aztec/stdlib/hash';import {Contract} from 'ethers';
+import {Barretenberg,BarretenbergSync} from '@aztec-foundation/bb.js';
+import {generateSchnorrAccounts} from '@aztec-labs/accounts/testing';
+import {L1FeeJuicePortalManager} from '@aztec-labs/aztec.js/ethereum';
+import {createLogger} from '@aztec-labs/foundation/log';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';import {EthAddress} from '@aztec-labs/foundation/eth-address';
+import {Contract as L2Contract} from '@aztec-labs/aztec.js/contracts';import {NO_FROM} from '@aztec-labs/aztec.js/account';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';import {TxHash,TxStatus} from '@aztec-labs/stdlib/tx';
+import {computeSecretHash} from '@aztec-labs/stdlib/hash';import {Contract} from 'ethers';
 import {bootstrapPluginDevnet} from './bootstrap.mjs';import {drainDevnetCheckpoints} from './network.mjs';
 import {operatorCommand} from '../operator.mjs';import {packText,handleField} from '../protocol.mjs';
 import {settleC01ApplicationMessage} from '../../scripts/c01-settle-application-message.mjs';
@@ -55,7 +55,7 @@ try{
  const deadline=Date.now()+90000;let witness;
  while(Date.now()<deadline){await fixture.wallet.pxe.sync();const header=await fixture.wallet.pxe.getSyncedBlockHeader();witness=await fixture.net.node.getL1ToL2MessageMembershipWitness(header.getBlockNumber(),Fr.fromString(event.args.key));if(witness)break;await new Promise(r=>setTimeout(r,1000));}
  assert(witness);fixture.net.node.getSequencer().updateConfig({minTxsPerBlock:1,buildCheckpointIfEmpty:false});await drainDevnetCheckpoints(fixture.net);
- const artifact=loadContractArtifact(await read('plugins/adapter_artifact.json')),instance=await fixture.net.node.getContract((await import('@aztec/stdlib/aztec-address')).AztecAddress.fromStringUnsafe(state.escrow),'latest');
+ const artifact=loadContractArtifact(await read('plugins/adapter_artifact.json')),instance=await fixture.net.node.getContract((await import('@aztec-labs/stdlib/aztec-address')).AztecAddress.fromStringUnsafe(state.escrow),'latest');
  await fixture.wallet.registerContract(instance,artifact);const escrow=await L2Contract.at(instance.address,artifact,fixture.wallet);
  await fixture.wallet.createSchnorrInitializerlessAccount(fixture.operator.secret,fixture.operator.salt,fixture.operator.signingKey,'operator');
  const opts={from:fixture.author.address,wait:{timeout:120,waitForStatus:TxStatus.CHECKPOINTED}},opOpts={...opts,from:fixture.operator.address};

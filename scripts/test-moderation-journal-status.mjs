@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {AztecAddress} from '@aztec/stdlib/aztec-address';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
 const source=await readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8');
 const policy=await readFile(new URL('../shared/moderation-policy.js',import.meta.url),'utf8');
 function fixture(saved){

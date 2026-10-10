@@ -6,7 +6,7 @@ import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {randomBytes} from 'node:crypto';
-import {Tx,TxHash} from '@aztec/stdlib/tx';
+import {Tx,TxHash} from '@aztec-labs/stdlib/tx';
 import {IDBFactory} from 'fake-indexeddb';
 import {createL2Journal} from '../shared/l2-journal.mjs';
 import {createBrowserJournalStorage} from '../shared/journal-indexeddb.mjs';

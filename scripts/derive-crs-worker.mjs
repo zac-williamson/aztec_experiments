@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { BarretenbergSync, BackendType } from '@aztec/bb.js';
+import { BarretenbergSync, BackendType } from '@aztec-foundation/bb.js';
 import { ROOT, assertNodeVersion, assertAztecPackages } from './toolchain.mjs';
 import { validateCrsManifest, verifyCrsBytes, verifyDerivationWasm, verifiedFile } from './build-crs.mjs';
 

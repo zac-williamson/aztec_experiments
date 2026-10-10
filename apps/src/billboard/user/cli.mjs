@@ -493,7 +493,7 @@ async function main() {
   let cacheReady = false;
   try {
     const sk = a.Fr.fromHexString(aztecWallet.secretKey);
-    const signingKey = a.deriveSigningKey(sk);
+    const signingKey = aztecWallet.signingKey === undefined ? a.deriveSigningKey(sk) : a.GrumpkinScalar.fromString(aztecWallet.signingKey);
     const accountContract = new a.SchnorrInitializerlessAccountContract(signingKey);
     const { publicKeys } = await a.deriveKeys(sk);
     const accountArtifact = await accountContract.getContractArtifact();

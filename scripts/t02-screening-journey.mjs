@@ -1,14 +1,15 @@
 // TEST ONLY: real application post/screening proofs on the parent's disposable fixture.
 import assert from 'node:assert/strict';
+import {describeFailure} from './testing/supervisor.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {Contract} from '@aztec/aztec.js/contracts';
-import {Barretenberg,BackendType} from '@aztec/bb.js';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {loadContractArtifact} from '@aztec/stdlib/abi';
-import {NoteStatus} from '@aztec/stdlib/note';
-import {EmbeddedWallet} from '@aztec/wallets/embedded';
+import {Contract} from '@aztec-labs/aztec.js/contracts';
+import {Barretenberg,BackendType} from '@aztec-foundation/bb.js';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
+import {NoteStatus} from '@aztec-labs/stdlib/note';
+import {EmbeddedWallet} from '@aztec-labs/wallets/embedded';
 import {contractInputs} from './artifact-provenance.mjs';
 import {ROOT,assertNodeVersion,assertAztecPackages} from './toolchain.mjs';
 const BOARD='apps/src/billboard/billboard_artifact.json';
@@ -59,7 +60,7 @@ export async function proveAndIncludeT02Screening({node,preparation,instance,cla
   const base=integer(await query('get_base_cooldown')),minimum=integer(await query('get_min_deposit'));
   const cooldown=(base*minimum+claim.amount-1n)/claim.amount,maxSave=integer(await query('get_max_save_up')),k=integer(await query('get_k_multiplier'));
   assert(cooldown>0n&&cooldown<=60n&&k>1n);
-  const eligible=timestamp=>eligibleApplicationAnchor({node,wallet,mineL1,timestamp});
+  const eligible=timestamp=>eligibleApplicationAnchor({node,wallet,l1Client,mineL1,timestamp});
   async function include(result,label,oldNote){
    const included=await includeApplicationAction({node,wallet,mineL1,...result,spentNullifier:oldNote?oldNote.siloedNullifier:null});
    observation.transactions.push({stage:label,...included.summary});return included.tx;
@@ -81,13 +82,13 @@ export async function proveAndIncludeT02Screening({node,preparation,instance,cla
   }
   const pack=(text,size)=>{const bytes=Buffer.alloc(31);Buffer.from(text).copy(bytes);return [new Fr(BigInt('0x'+bytes.toString('hex'))),...Array.from({length:size-1},()=>Fr.ZERO)];};
   mark('prove-post');
-  const post=await postUnflaggedApplicationMessage({node,wallet,mineL1,artifact:boardArtifact,instance,owner:account.address,chain:claim.depositChainId,state:{fields,txHash:currentHash},text:'x'.repeat(992),privateFeeAction});
+  const post=await postUnflaggedApplicationMessage({node,wallet,l1Client,mineL1,artifact:boardArtifact,instance,owner:account.address,chain:claim.depositChainId,state:{fields,txHash:currentHash},text:'x'.repeat(992),privateFeeAction});
   observation.transactions.push({stage:'post',messageBytes:992,...post.summary});
   fields=post.state.fields;currentHash=post.state.txHash;currentNote=post.depositNote;
   const posts=[post],initialCount=integer(await query('get_post_count'))-1n;
   if(flagged){
    mark('prove-second-post');
-   const second=await postUnflaggedApplicationMessage({node,wallet,mineL1,artifact:boardArtifact,instance,owner:account.address,chain:claim.depositChainId,state:{fields,txHash:currentHash},text:'Second pending post',privateFeeAction});
+   const second=await postUnflaggedApplicationMessage({node,wallet,l1Client,mineL1,artifact:boardArtifact,instance,owner:account.address,chain:claim.depositChainId,state:{fields,txHash:currentHash},text:'Second pending post',privateFeeAction});
    observation.transactions.push({stage:'post',messageBytes:19,...second.summary});posts.push(second);
    fields=second.state.fields;currentHash=second.state.txHash;currentNote=second.depositNote;
    assert.deepEqual([fields[5],fields[7],fields[8]],[2n,0n,2n]);
@@ -142,6 +143,6 @@ export async function proveAndIncludeT02Screening({node,preparation,instance,cla
   else observation.timeRejection={applicable:false,reason:'Unflagged screened deposit already time-eligible at canonical anchor'};
   await artifact(preparation);Object.assign(observation,{passed:true,exactReplacementNotes:true,publicPostChecked:true,screenedSequence:String(count),lastRealSequence:String(count),penaltyMultiplier:String(1n+(flagged?count:0n)*(k-1n)),withdrawalDue:String(fields[9]),authorFees:String(observation.transactions.filter(tx=>tx.stage!=='flag').reduce((sum,tx)=>sum+BigInt(tx.fee),0n))});
   Object.defineProperty(observation,'exitState',{value:{logicalFields:fields,txHash:currentHash.toString()},enumerable:false});return observation;
- }catch(error){const failure=new Error('T02_SCREENING_FAILED:'+stage+':'+(error?.name??'Error'));failure.journeyObservation={...observation,passed:false,stage,errorClass:error?.name??'Error',location:error?.stack?.split('\n').filter(line=>line.trimStart().startsWith('at ')&&!line.includes('://')).slice(0,3).join('\n')};throw failure;}
+ }catch(error){const failure=new Error('T02_SCREENING_FAILED:'+stage+':'+(error?.name??'Error'));failure.journeyObservation={...observation,passed:false,stage,...describeFailure(error)};throw failure;}
  finally{if(wallet){await wallet.stop();observation.walletStopped=true;}}
 }

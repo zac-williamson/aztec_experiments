@@ -64,15 +64,15 @@ export async function runFixture(directory, scenario, browserControl, operatorPa
     }
     mark('prepare-genesis');
     const [{getGenesisValues},{getConfigEnvVars},{deployC01ApplicationProtocol}]=await Promise.all([
-      import('@aztec/world-state/testing'),import('@aztec/aztec-node/config'),import('../c01-application-deployment.mjs')]);
+      import('@aztec-labs/world-state/testing'),import('@aztec-labs/aztec-node/config'),import('../c01-application-deployment.mjs')]);
     let preparation;
     if(scenario.fixture !== 'node'){const {prepareC01BoardFlow}=await import('../c01-board-flow.mjs');preparation=await prepareC01BoardFlow({bbBinaryPath:applicationNativeProfile(directory).bbPath,directory,authorCount:scenario.authors,boardTiming:scenario.boardTiming});}
     if(scenario.name === 'censor-commands'){const {restoreApplicationAuthor}=await import('../w02-wallet-restore.mjs');const restored=await restoreApplicationAuthor(preparation.account);preparation.account=restored.author;preparation.authorAccounts[0]=restored.author;preparation.fundingAddresses=preparation.authorAccounts.map(account=>account.address);output.censorIdentity=restored.observation;}
     const {genesisArchiveRoot,fundingNeeded,genesis}=await getGenesisValues(preparation?.fundingAddresses??[]);
-    const {SecretValue}=await import('@aztec/foundation/config');
-    const {EthAddress}=await import('@aztec/foundation/eth-address');
+    const {SecretValue}=await import('@aztec-labs/foundation/config');
+    const {EthAddress}=await import('@aztec-labs/foundation/eth-address');
     const validatorAddress=EthAddress.fromString(identity.address);
-    const {Fr}=await import('@aztec/foundation/curves/bn254');
+    const {Fr}=await import('@aztec-labs/foundation/curves/bn254');
     let bn254Key;do{bn254Key=Fr.random().toBigInt();}while(bn254Key===0n);
     const config={...getConfigEnvVars(),l1RpcUrls:[rpcUrl],l1ChainId:31337,
       realProofs:applicationProofsEnabled(),useAutomineSequencer:false,automineEnableProveEpoch:false,
@@ -84,7 +84,7 @@ export async function runFixture(directory, scenario, browserControl, operatorPa
     output.deployment=result.observation;
     if(scenario.fixture !== 'node'){
       mark('wait-for-local-validator-activation');
-      const {RollupContract}=await import('@aztec/ethereum/contracts/rollup');
+      const {RollupContract}=await import('@aztec-labs/ethereum/contracts/rollup');
       const rollup=new RollupContract(result.deployment.l1Client,result.deployment.l1ContractAddresses.rollupAddress.toString());
       const adjustments=[];let committee;output.validatorActivation={observations:adjustments};
       for(let attempt=0;attempt<8;attempt++){
@@ -110,7 +110,7 @@ export async function runFixture(directory, scenario, browserControl, operatorPa
   }catch(error){if(error.nodeObservation)output.node=error.nodeObservation;if(error.contentionObservation)output.contention=error.contentionObservation;if(error.censorCommandObservation)output.censorCommands=error.censorCommandObservation;if(error.registrationObservation)output.registration=error.registrationObservation;if(error.deploymentObservation)output.deployment=error.deploymentObservation;if(error.boardObservation)output.board=error.boardObservation;if(error.readyObservation)output.ready=error.readyObservation;if(error.settlementObservation)output.settlement=error.settlementObservation;if(error.bridgeObservation)output.bridge=error.bridgeObservation;output.failure={stage,...describeFailure(error)};}
   finally{
     if(anvil){anvil.kill('SIGKILL');output.anvilExit=await anvilClosed;}
-    try{const {Barretenberg,BarretenbergSync}=await import('@aztec/bb.js');await Barretenberg.destroySingleton();BarretenbergSync.destroySingleton();output.singletonsStopped=true;}catch(error){output.passed=false;output.cleanupFailure=describeFailure(error);}
+    try{const {Barretenberg,BarretenbergSync}=await import('@aztec-foundation/bb.js');await Barretenberg.destroySingleton();BarretenbergSync.destroySingleton();output.singletonsStopped=true;}catch(error){output.passed=false;output.cleanupFailure=describeFailure(error);}
     process.stdout.write=originalStdout;process.stderr.write=originalStderr;
     await fs.writeFile(path.join(directory,'worker-result.json'),JSON.stringify(output,null,2)+'\n');process.exitCode=output.passed?0:1;
   }

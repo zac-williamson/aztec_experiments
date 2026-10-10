@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { validateScope, scopeKey, validateFeedEvent, validateModerationJob,
   moderationJobKey, receiptDisposition } from '../shared/protocol-schema.mjs';
-import { MinedTxReceipt, PendingTxReceipt, DroppedTxReceipt, TxHash } from '@aztec/stdlib/tx';
-import { BlockHash } from '@aztec/stdlib/block';
-import { LogCursor } from '@aztec/stdlib/logs';
+import { MinedTxReceipt, PendingTxReceipt, DroppedTxReceipt, TxHash } from '@aztec-labs/stdlib/tx';
+import { BlockHash } from '@aztec-labs/stdlib/block';
+import { LogCursor } from '@aztec-labs/stdlib/logs';
 
 const fixtures = JSON.parse(fs.readFileSync(new URL('../scripts/fixtures/protocol/service-v1.json', import.meta.url)));
 const clone = value => structuredClone(value);

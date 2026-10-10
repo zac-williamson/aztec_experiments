@@ -1,7 +1,7 @@
 // TEST-ONLY, read-only diagnostics for the pinned in-process 5.2 prover. Never claims jobs.
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {ProvingRequestType} from '@aztec/stdlib/proofs';
+import {ProvingRequestType} from '@aztec-labs/stdlib/proofs';
 
 const jobKey=id=>{
   assert(typeof id==='string'&&id.length<=4096);

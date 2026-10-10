@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import 'fake-indexeddb/auto';
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb';
-import { AztecIndexedDBStore } from '@aztec/kv-store/deprecated/indexeddb';
+import { AztecIndexedDBStore } from '@aztec-labs/kv-store/deprecated/indexeddb';
 import { openPXEStore, getPXEStoreIdentity, PXE_DATA_SCHEMA_VERSION } from '../shared/sdk-store.mjs';
 import { assertNodeVersion, assertAztecPackages } from './toolchain.mjs';
 

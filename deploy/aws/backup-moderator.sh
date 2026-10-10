@@ -2,11 +2,14 @@
 # Run as root on the deployed host; never run wallet commands during this backup.
 set -euo pipefail
 umask 077
-[[ $# == 2 && $(id -u) == 0 ]] || { echo 'Usage: backup-moderator.sh RELEASE_DIRECTORY PRIVATE_BUCKET' >&2; exit 64; }
+[[ $# == 3 && $(id -u) == 0 ]] || { echo 'Usage: backup-moderator.sh RELEASE_DIRECTORY PRIVATE_BUCKET PRIVATE_STATE_DIRECTORY' >&2; exit 64; }
 release=$(realpath "$1")
 [[ $release == /srv/board/operator-* && ${release#/srv/board/} != */* ]]
 bucket=$2
 [[ $bucket =~ ^[a-z0-9][a-z0-9.-]+[a-z0-9]$ ]]
+state=$(realpath "$3")
+[[ $state == /srv/board/state/* && ${state#/srv/board/state/} != */* ]]
+state_relative=${state#/srv/board/}
 exec 9>/run/lock/board-moderator-backup.lock
 flock -n 9
 work=$(mktemp -d /srv/board/state/backup.XXXXXX)
@@ -62,13 +65,13 @@ systemctl stop board-moderator.service
 [[ $(systemctl show --property=Result --value board-moderator.service) == success ]]
 [[ $(systemctl show --property=MainPID --value board-moderator.service) == 0 ]]
 cd /srv/board
-inputs=(state/moderator.json state/private-fee-retroactive.json state/deployment-direct-deposit-20260928.json
-  state/transaction-journal-v1 state/moderation-direct-deposit-20260928
+inputs=("$state_relative/moderator.json" "$state_relative/private-fee-config.json" "$state_relative/deployment.json"
+  "$state_relative/transaction-journal-v1" "$state_relative/moderation"
   "${release#/srv/board/}/.pxe-cache-v2" "${release#/srv/board/}/operator-package.json"
   model-manifest.json runtime.json)
 for item in "${inputs[@]}"; do [[ -e $item ]]; done
 [[ -z $(find "${inputs[@]}" -type l -print -quit) ]]
-[[ -z $(find state/transaction-journal-v1 "$release/.pxe-cache-v2" -name '*.lock' -print -quit) ]]
+[[ -z $(find "$state_relative/transaction-journal-v1" "$release/.pxe-cache-v2" -name '*.lock' -print -quit) ]]
 mkdir "$work/metadata" "$work/restored"
 cp /etc/systemd/system/board-moderator.service "$work/metadata/board-moderator.service"
 find "${inputs[@]}" -type f -print0 | sort -z | xargs -0 sha256sum > "$work/metadata/files.sha256"
@@ -79,7 +82,7 @@ aws s3 cp "s3://$bucket/$key" "$work/download.tar.gz" --only-show-errors
 cmp "$work/state.tar.gz" "$work/download.tar.gz"
 tar -xzf "$work/download.tar.gz" -C "$work/restored" --no-same-owner
 (cd "$work/restored" && sha256sum --check --quiet metadata/files.sha256)
-python3 - "$work/restored/state/moderation-direct-deposit-20260928" <<'PY'
+python3 - "$work/restored/$state_relative/moderation" <<'PY'
 import pathlib, sqlite3, sys
 databases = list(pathlib.Path(sys.argv[1]).glob('*.sqlite'))
 assert databases, 'Moderation database missing'

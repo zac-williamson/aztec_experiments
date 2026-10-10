@@ -1,15 +1,16 @@
 // TEST ONLY: constrained Inbox boundary probes on a genuine disposable fixture.
 import assert from 'node:assert/strict';
+import {describeFailure} from './testing/supervisor.mjs';
 import fs from 'node:fs/promises';
-import {DomainSeparator,L1_TO_L2_MSG_TREE_HEIGHT} from '@aztec/constants';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {EthAddress} from '@aztec/foundation/eth-address';
-import {SiblingPath} from '@aztec/foundation/trees';
-import {poseidon2HashWithSeparator} from '@aztec/foundation/crypto/poseidon';
-import {sha256ToField} from '@aztec/foundation/crypto/sha256';
-import {computeSecretHash,siloNullifier} from '@aztec/stdlib/hash';
-import {L1Actor,L2Actor,L1ToL2Message} from '@aztec/stdlib/messaging';
-import {NoteStatus} from '@aztec/stdlib/note';
+import {DomainSeparator,L1_TO_L2_MSG_TREE_HEIGHT} from '@aztec-labs/constants';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {EthAddress} from '@aztec-labs/foundation/eth-address';
+import {SiblingPath} from '@aztec-labs/foundation/trees';
+import {poseidon2HashWithSeparator} from '@aztec-labs/foundation/crypto/poseidon';
+import {sha256ToField} from '@aztec-labs/foundation/crypto/sha256';
+import {computeSecretHash,siloNullifier} from '@aztec-labs/stdlib/hash';
+import {L1Actor,L2Actor,L1ToL2Message} from '@aztec-labs/stdlib/messaging';
+import {NoteStatus} from '@aztec-labs/stdlib/note';
 import {encodeEscrowCommitment} from '../shared/protocol-commitments.mjs';
 const word=x=>x.toString();
 
@@ -19,7 +20,7 @@ export function createT02InboxProbeNode(realNode){
   if(key==='getL1ToL2MessageMembershipWitness')return async(anchor,messageHash)=>{
    membershipReads++;
    const actual=await target.getL1ToL2MessageMembershipWitness(anchor,messageHash);
-   if(!active||word(anchor)!==active.anchorHash||word(messageHash)!==active.messageHash)return actual;
+   if(!active||anchor?.number!==active.referenceBlock.number||anchor?.hash?.toString()!==active.referenceBlock.hash||word(messageHash)!==active.messageHash)return actual;
    assert.equal(active.substitutions,0,'Probe may substitute only one exact oracle call');
    assert(actual);assert.equal(actual[0],active.witness[0]);assert.deepEqual(actual[1].toBuffer(),active.witness[1].toBuffer());
    active.substitutions++;
@@ -29,20 +30,20 @@ export function createT02InboxProbeNode(realNode){
   };
   const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;
  }});
- return {node,arm({anchorHash,messageHash,witness,kind='sibling'}){assert.equal(active,null);assert.equal(kind,'sibling');assert(witness?.[1]?.pathSize>0);active={anchorHash:word(anchorHash),messageHash:word(messageHash),witness,kind,substitutions:0};},clear(){const count=active?.substitutions??0;active=null;return count;},get substitutions(){return active?.substitutions??0;},get membershipReads(){return membershipReads;},get armed(){return active!==null;}};
+ return {node,arm({referenceBlock,messageHash,witness,kind='sibling'}){assert.equal(active,null);assert.equal(kind,'sibling');assert(witness?.[1]?.pathSize>0);assert(Number.isSafeInteger(referenceBlock?.number)&&referenceBlock.number>=0);assert(/^0x[0-9a-f]{64}$/.test(referenceBlock?.hash?.toString()));active={referenceBlock:{number:referenceBlock.number,hash:referenceBlock.hash.toString()},messageHash:word(messageHash),witness,kind,substitutions:0};},clear(){const count=active?.substitutions??0;active=null;return count;},get substitutions(){return active?.substitutions??0;},get membershipReads(){return membershipReads;},get armed(){return active!==null;}};
 }
 
-// TEST ONLY, pinned Aztec 5.2.0: PXE caches fulfilled hash-pinned witness reads even
+// TEST ONLY, pinned Aztec 6.0.0-rc.1: PXE caches fulfilled hash-pinned witness reads even
 // when a later circuit rejects the witness. Disarming our source proxy cannot
 // invalidate that cache. Access the SDK-private runtime node only to remove the
 // deliberately injected test answer, then verify an authentic read through PXE.
-export async function restoreT02InboxWitness({wallet,probe,anchorHash,messageHash,witness}){
+export async function restoreT02InboxWitness({wallet,probe,referenceBlock,messageHash,witness}){
  assert.equal(probe.armed,false,'Disarm the corruption probe before cache restoration');
  const cachedNode=wallet.pxe.node;
  assert.equal(typeof cachedNode?.wipeCache,'function','Pinned PXE cache-reset seam unavailable');
  const readsBefore=probe.membershipReads;
  cachedNode.wipeCache();
- const restored=await cachedNode.getL1ToL2MessageMembershipWitness(anchorHash,messageHash);
+ const restored=await cachedNode.getL1ToL2MessageMembershipWitness(referenceBlock,messageHash);
  assert.equal(probe.membershipReads,readsBefore+1,'Restoration must fetch through the real node');
  assert(restored);assert.equal(restored[0],witness[0]);
  assert.deepEqual(restored[1].toBuffer(),witness[1].toBuffer(),'Restored PXE witness must equal canonical membership');
@@ -91,11 +92,11 @@ export async function qualifyT02ClaimBoundary({wallet,board,node,probe,owner,cla
   for(const [name,args,altered] of cases){mark('reject-'+name);assert(!altered.hash().equals(message.hash()));assert.equal(await node.getL1ToL2MessageMembershipWitness(anchorHash,altered.hash()),undefined);
    await reject(args,`No L1 to L2 message found for message hash ${altered.hash().toString()}`);await unchanged();observations.push({case:name,rejected:true,stage:'PXE missing-message witness rejection; no completed proof or submission'});
   }
-  mark('reject-malformed-authentic-sibling');probe.arm({anchorHash,messageHash:message.hash(),witness,kind:'sibling'});
+  mark('reject-malformed-authentic-sibling');const referenceBlock=await anchor.toBlockParameter();probe.arm({referenceBlock,messageHash:message.hash(),witness,kind:'sibling'});
   try{await reject(claimArgs,'Message not in state');assert.equal(probe.substitutions,1);}finally{assert.equal(probe.clear(),1);}
-  const restoration=await restoreT02InboxWitness({wallet,probe,anchorHash,messageHash:message.hash(),witness});
+  const restoration=await restoreT02InboxWitness({wallet,probe,referenceBlock,messageHash:message.hash(),witness});
   await unchanged();observations.push({case:'authentic-message-malformed-sibling',rejected:true,substitutions:1,restoration,stage:'Noir constrained Merkle root rejection; no completed proof or submission'});
   return {passed:true,probes:observations,authenticMessageUnconsumed:true,canonicalMembershipVerified:true,depositNoteAbsent:true,escrowUnchanged:true,positiveControl:'Parent must prove and include legitimate claim after all probes',oracleIndexScope:'Pinned Noir ignores oracle-returned index and constrains caller-supplied index; only sibling-path mutation is qualified here'};
- }catch(error){const failure=new Error('T02_CLAIM_BOUNDARY_FAILED:'+stage+':'+(error?.name??'Error'));failure.boundaryObservation={passed:false,stage,probes:observations,errorClass:error?.name??'Error'};throw failure;}
+ }catch(error){const failure=new Error('T02_CLAIM_BOUNDARY_FAILED:'+stage+':'+(error?.name??'Error'));failure.boundaryObservation={passed:false,stage,probes:observations,...describeFailure(error)};throw failure;}
  finally{probe.clear();}
 }

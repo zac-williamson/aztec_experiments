@@ -55,7 +55,7 @@ export function buildContracts() {
     throw new Error(`Expected Foundry ${pins.foundry}`);
   }
   const portalDir = path.join(billboard, 'portal');
-  const portalDependency = JSON.parse(fs.readFileSync(path.join(portalDir, 'node_modules/@aztec/l1-artifacts/package.json'), 'utf8'));
+  const portalDependency = JSON.parse(fs.readFileSync(path.join(portalDir, 'node_modules/@aztec-foundation/l1-artifacts/package.json'), 'utf8'));
   if (portalDependency.version !== pins.aztec) throw new Error('Portal L1 dependency version mismatch');
   execFileSync(forge, ['build','--force'], { cwd: portalDir, stdio: 'inherit' });
   const portal = JSON.parse(fs.readFileSync(path.join(portalDir, 'out/BillboardPortal.sol/BillboardPortal.json'), 'utf8'));

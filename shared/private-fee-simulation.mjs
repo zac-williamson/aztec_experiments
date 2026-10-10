@@ -1,4 +1,4 @@
-import {TxSimulationResult} from '@aztec/stdlib/tx';
+import {TxSimulationResult} from '@aztec-labs/stdlib/tx';
 // Adapter for the pinned SDK. Measurement needs public revert results because
 // PXE's combined simulation throws them away; final validation uses that strict path.
 export function createPrivateFeeSimulator(wallet, node) {

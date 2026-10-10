@@ -1,3 +1,7 @@
+> The V5 implementation and deployment history below is superseded for the current
+> live application by the [V6 testnet handover](../deploy/V6-TESTNET.md).
+> Preserve V5 recovery configuration for any older deposits.
+
 # Deploying a plugin
 
 Use the built plugin-enabled board and escrow artifacts from the same commit.

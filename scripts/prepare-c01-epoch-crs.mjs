@@ -17,7 +17,7 @@ await fs.mkdir(path.dirname(evidence),{recursive:true});
 const report = { schemaVersion:1, startedAt:new Date().toISOString(), sourceUrl, bytes, passed:false };
 let handle, created=false;
 try {
-  const binary = await fs.readFile(path.join(ROOT,'node_modules/@aztec/bb.js/build/arm64-macos/bb'));
+  const binary = await fs.readFile(path.join(ROOT,'node_modules/@aztec-foundation/bb.js/build/arm64-macos/bb'));
   assert.equal(sha(binary),bbSha256);
   const header = await fs.readFile(headerPath); assert.equal(sha(header),headerSha256);
   const rows = [...header.toString().matchAll(/\{([^{}]+)\}/g)]

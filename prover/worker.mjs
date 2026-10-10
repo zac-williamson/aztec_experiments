@@ -2,9 +2,9 @@
 import {pluginSelectors,validatePluginPayload} from './plugin-policy.mjs';
 import fs from 'node:fs/promises';
 import {gunzipSync} from 'node:zlib';
-import {decompressWitness} from '@aztec/noir-acvm_js';
-import {abiDecode} from '@aztec/noir-noirc_abi';
-import {Barretenberg,BackendType,AztecClientBackend} from '@aztec/bb.js';
+import {decompressWitness} from '@aztec-foundation/noir-acvm_js';
+import {abiDecode} from '@aztec-foundation/noir-noirc_abi';
+import {Barretenberg,BackendType,AztecClientBackend} from '@aztec-foundation/bb.js';
 import {loadCircuitCatalog} from './catalog.mjs';
 import {decodeJob} from '../shared/remote-prover-wire.mjs';
 // Native BB unrefs its process/socket between requests. Keep the job owner
@@ -54,7 +54,7 @@ try{
   // rejected calls so one invalid job cannot crash before the final error handler.
   let firstFailure;
   for(const name of ['chonkStart','chonkLoad','chonkAccumulate']){const call=api[name].bind(api);api[name]=(...args)=>{const result=call(...args);result.catch(error=>{firstFailure??=error;});return result;};}
-  const backend=new AztecClientBackend(circuits.map(c=>gunzipSync(c.bytecode)),api,circuits.map(c=>c.functionName));
+  const backend=new AztecClientBackend(circuits.map(c=>gunzipSync(c.bytecode)),api,circuits.map(c=>c.functionName),circuits.map(c=>c.kind));
   setStage("native-prove");
   let result;try{result=await backend.prove(raw,circuits.map(c=>c.vk),{compress:true});}catch(error){throw firstFailure??error;}
   await send({mode:'real',compressedProof:Buffer.from(result.compressedProof).toString('base64')});

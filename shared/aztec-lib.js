@@ -458,7 +458,7 @@ async function preflightL1ToL2Message(aztecNode, recipientAddress, claimAmount, 
   const chainId = BigInt(nodeInfo.l1ChainId);
   const version = BigInt(nodeInfo.rollupVersion);
 
-  // Constants (from @aztec/constants and Inbox.sol)
+  // Constants (from @aztec-labs/constants and Inbox.sol)
   const FEE_JUICE = 3n;                   // ProtocolContractAddress.FeeJuice
   const SECRET_HASH_DOMAIN = 4199652938n; // DomainSeparator.SECRET_HASH
   // keccak256("claim(bytes32,uint256)")[0:4]

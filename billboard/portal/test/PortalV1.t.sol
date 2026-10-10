@@ -3,7 +3,7 @@ pragma solidity 0.8.27;
 import {BillboardPortal} from "../src/BillboardPortal.sol";
 import {PortalMessages} from "../src/PortalMessages.sol";
 import {PortalFixtures, VmPortalRegression} from "./PortalArtifactRegression.t.sol";
-import {Inbox} from "@aztec/core/messagebridge/Inbox.sol";
+import {Inbox, INBOX_BUCKET_RING_SIZE} from "@aztec/core/messagebridge/Inbox.sol";
 import {Outbox} from "@aztec/core/messagebridge/Outbox.sol";
 import {IInbox} from "@aztec/core/interfaces/messagebridge/IInbox.sol";
 import {IOutbox} from "@aztec/core/interfaces/messagebridge/IOutbox.sol";
@@ -24,7 +24,7 @@ contract RootPublisher {
     IInbox public inbox;
     Outbox public outbox;
     constructor(uint256 version) {
-        inbox = new Inbox(address(this), IERC20(address(0x1234)), version, 10, 1);
+        inbox = new Inbox(address(this), IERC20(address(0x1234)), version, INBOX_BUCKET_RING_SIZE);
         outbox = new Outbox(address(this), version);
     }
     function getInbox() external view returns (IInbox) { return inbox; }

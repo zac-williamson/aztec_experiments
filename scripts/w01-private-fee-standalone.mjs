@@ -1,7 +1,7 @@
 // TEST ONLY: one genuine standalone private-fee funding transaction; parent owns proof/resource limits.
 import assert from 'node:assert/strict';
-import {BatchCall} from '@aztec/aztec.js/contracts';
-import {TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
+import {BatchCall} from '@aztec-labs/aztec.js/contracts';
+import {TxStatus,TxExecutionResult} from '@aztec-labs/stdlib/tx';
 import {proveApplicationAction} from './prove-application-action.mjs';
 const included=receipt=>[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(receipt?.status)
   &&receipt.executionResult===TxExecutionResult.SUCCESS&&receipt.blockNumber!=null&&receipt.blockHash!=null;

@@ -320,7 +320,7 @@ function generateUUID() {
   return new Array(4).fill(0).map(() => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(16)).join("-");
 }
 
-// node_modules/@aztec/bb.js/dest/browser/barretenberg_wasm/helpers/browser/index.js
+// node_modules/@aztec-foundation/bb.js/dest/browser/barretenberg_wasm/helpers/browser/index.js
 function threadLogger(useCustomLogger) {
   if (useCustomLogger) {
     return (msg) => {
@@ -334,13 +334,15 @@ function killSelf() {
 }
 var Ready = { ready: true };
 
-// node_modules/@aztec/bb.js/dest/browser/random/browser/index.js
+// node_modules/@aztec-foundation/bb.js/dest/browser/random/browser/index.js
 var randomBytes = (len) => {
   const getWebCrypto = () => {
-    if (typeof window !== "undefined" && window.crypto)
+    if (typeof window !== "undefined" && window.crypto) {
       return window.crypto;
-    if (typeof globalThis !== "undefined" && globalThis.crypto)
+    }
+    if (typeof globalThis !== "undefined" && globalThis.crypto) {
       return globalThis.crypto;
+    }
     return void 0;
   };
   const crypto = getWebCrypto();
@@ -359,7 +361,7 @@ var randomBytes = (len) => {
   return buf;
 };
 
-// node_modules/@aztec/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_base/index.js
+// node_modules/@aztec-foundation/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_base/index.js
 var BarretenbergWasmBase = class {
   memory;
   instance;
@@ -451,14 +453,15 @@ var BarretenbergWasmBase = class {
     addr = addr >>> 0;
     const m = this.getMemory();
     let i = addr;
-    for (; m[i] !== 0; ++i)
-      ;
+    while (m[i] !== 0) {
+      ++i;
+    }
     const textDecoder = new TextDecoder("ascii");
     return textDecoder.decode(m.slice(addr, i));
   }
 };
 
-// node_modules/@aztec/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_thread/index.js
+// node_modules/@aztec-foundation/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_thread/index.js
 var BarretenbergWasmThread = class extends BarretenbergWasmBase {
   /**
    * Init as worker thread.
@@ -495,7 +498,7 @@ var BarretenbergWasmThread = class extends BarretenbergWasmBase {
   }
 };
 
-// node_modules/@aztec/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_thread/factory/browser/thread.worker.js
+// node_modules/@aztec-foundation/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_thread/factory/browser/thread.worker.js
 expose(new BarretenbergWasmThread());
 postMessage(Ready);
 /*! Bundled license information:

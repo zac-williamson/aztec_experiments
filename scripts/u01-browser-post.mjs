@@ -14,6 +14,25 @@ import {generateHosting} from '../deploy/hosting-config.mjs';
 import {readJourneyUiDiagnostic,safeJourneyDriverFailure} from './t04-browser-journey.mjs';
 import {runT04BrowserPostRecovery} from './t04-browser-post-recovery.mjs';
 import {ROOT,assertNodeVersion} from './toolchain.mjs';
+import {describeFailure} from './testing/supervisor.mjs';
+
+export async function restoreU01Account(page,{file,password,timeoutMs}){
+ await page.locator('#wbAccountMenu > summary').click();
+ await page.getByText('Restore account',{exact:true}).click();
+ await page.locator('#wbRestorePassword').fill(password);
+ await page.locator('#wbAztecFile').setInputFiles(file);
+ await page.waitForFunction(()=>!!globalThis.BillboardAccount?.snapshot().address||!!document.querySelector('#wbAccountStatus.error'),{},{timeout:timeoutMs});
+ if(!await page.evaluate(()=>!!BillboardAccount.snapshot().address))throw Error('Disposable account restoration failed');
+ await page.locator('#wbAccountMenu > summary').click();
+}
+
+export async function readU01CompletedPost(page,timeoutMs){
+ await page.waitForFunction(()=>{const op=application.operation();return op.action==='post'&&['complete','failed','cancelled','paused'].includes(op.status)||!!document.getElementById('messageError')?.textContent;},{},{timeout:timeoutMs});
+ const op=await page.evaluate(()=>application.operation());
+ if(op.action!=='post'||op.status!=='complete'||!/^0x[0-9a-fA-F]{64}$/.test(op.result?.lastL2TxHash))throw Error('Disposable browser post did not complete');
+ await page.locator('#postResult').filter({hasText:'Message posted.'}).waitFor({state:'visible',timeout:timeoutMs});
+ return op.result.lastL2TxHash.toLowerCase();
+}
 
 export const browserRpcProxy=(name,upstream,token)=>`  handle /rpc/${name} {\n   rewrite * /\n   reverse_proxy ${upstream.host} {\n    header_up x-u01-test-token ${token}\n    transport http {\n     keepalive 500ms\n    }\n   }\n  }\n`;
 
@@ -152,9 +171,7 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
    if(extensionWallet){await discoverTestMetaMask(page);await observeMetaMaskTransactions(page);}
    mark('hosted-board-loaded');if(remoteTarget){requireValue(await page.getByRole('checkbox',{name:'Remote proving',exact:true}).isChecked());requireValue(await page.getByRole('checkbox',{name:'Remote proving',exact:true}).isEnabled());observation.remoteProver=true;}requireValue(await page.getByLabel('Public configuration JSON',{exact:true}).count()===0);requireValue(await page.evaluate(address=>billboardConfigStore.snapshot().config?.board.contractAddress===address,config.board.contractAddress));
    await page.waitForFunction(()=>globalThis.billboardConfigStore?.snapshot().config!==null);
-   mark('encrypted-wallet-restore');await page.locator('#wbAccountMenu > summary').click();await page.locator('#wbPassword').fill(backupPassword);await page.locator('#wbAztecFile').setInputFiles(backupPath);
-   await page.waitForFunction(()=>!!globalThis.walletState?.aztec?.address||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});requireValue(await page.evaluate(()=>!!globalThis.walletState?.aztec?.address));
-   await page.locator('#wbAccountMenu > summary').click();
+   mark('encrypted-wallet-restore');await restoreU01Account(page,{file:backupPath,password:backupPassword,timeoutMs:remaining()});
    mark('wallet-connect-and-status');const setupStarted=Date.now();await page.locator('#wbEthBrowserBtn').click();if(extensionWallet){requireValue(await page.getByRole('dialog').getByRole('button',{name:'Conflicting test wallet',exact:true}).count()===1);}await page.getByRole('dialog').getByRole('button',{name:extensionWallet?'MetaMask':'Browser wallet (legacy)',exact:true}).click();
    if(extensionWallet){await walletPage.getByTestId('confirm-btn').waitFor();requireValue((await walletPage.getByTestId('confirm-btn').innerText()).trim()==='Connect');await walletPage.getByTestId('confirm-btn').click();await page.waitForFunction(()=>!!window.walletState?.ethAccount);requireValue(await page.evaluate(()=>window.walletState.ethTransport===globalThis.__testMetaMask));requireValue((await page.evaluate(()=>window.walletState.ethAccount)).toLowerCase()===ethereumAccount.toLowerCase());}
    if(diagnostic){
@@ -184,10 +201,10 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
    if(journeyDriver){
     requireValue(typeof journeyDriver==='function'&&!observeProofStages);
     if(browserMode==='performance'){
-     await page.waitForFunction(()=>document.getElementById('postBtn')?.getClientRects().length>0||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});requireValue(await page.locator('#postBtn').isVisible());
+     await page.waitForFunction(()=>document.getElementById('postBtn')?.getClientRects().length>0||!!document.querySelector('#setupStatus.error'),{},{timeout:remaining()});requireValue(await page.locator('#postBtn').isVisible());
     }else{
      requireValue(['lifecycle','funding'].includes(browserMode));
-     await page.waitForFunction(()=>document.getElementById('page-1')?.classList.contains('active')||!!document.querySelector('#setupStatus .error'),{},{timeout:remaining()});
+     await page.waitForFunction(()=>document.getElementById('page-1')?.classList.contains('active')||!!document.querySelector('#setupStatus.error'),{},{timeout:remaining()});
      requireValue(await page.locator('#page-1').isVisible());
     }
     observation.walletSetupMs=Date.now()-setupStarted;
@@ -207,7 +224,7 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
     if(extensionWallet){requireValue(confirmations.join(',')===expectedConfirmations.join(','));requireValue(!await walletPage.getByTestId('confirm-footer-button').isVisible());observation.walletConfirmations=confirmations;}
     requireValue(observation.journey.passed===true&&external.size===0&&csp.size===0);if(browserMode==='performance')observation.publicTransactionHashes=observation.journey.samples.map(sample=>sample.transactionHash);observation.passed=true;return;
    }
-   await page.waitForFunction(()=>{const button=document.getElementById('postBtn');return (button&&button.getClientRects().length>0)||!!document.querySelector('#setupStatus .error');},{},{timeout:remaining()});requireValue(await page.locator('#postBtn').isVisible());observation.walletSetupMs=Date.now()-setupStarted;
+   await page.waitForFunction(()=>{const button=document.getElementById('postBtn');return (button&&button.getClientRects().length>0)||!!document.querySelector('#setupStatus.error');},{},{timeout:remaining()});requireValue(await page.locator('#postBtn').isVisible());observation.walletSetupMs=Date.now()-setupStarted;
    if(browserRecovery){
     mark(browserMode==='withdraw-recovery'?'actual-gui-withdraw':'actual-gui-post');
     const persistedConfig=await page.evaluate(()=>JSON.stringify(globalThis.billboardConfigStore.snapshot().config));
@@ -241,25 +258,21 @@ export async function runU01BrowserPost({directory,browserEngine,ethereumWallet,
     });
    }
    mark('actual-gui-post');await page.locator('#msgText').fill(message);const postStarted=Date.now();await page.locator('#postBtn').click();
-   await page.waitForFunction(()=>{const text=document.getElementById('postStatus')?.textContent||'';return text.includes('Message included. Public content and transaction timing remain observable.')||!!document.querySelector('#postStatus .error');},{},{timeout:remaining()});
+   observation.publicTransactionHashes=[await readU01CompletedPost(page,remaining())];
    observation.guiPostElapsedMs=Date.now()-postStarted;
-   const text=await page.locator('#postStatus').textContent();requireValue(text.includes('Message included. Public content and transaction timing remain observable.'));observation.publicTransactionHashes=[...new Set([...text.matchAll(/Transaction hash:\s*(0x[0-9a-fA-F]{64})/g)].map(x=>x[1].toLowerCase()))];
    observation.proofTimingMs=null;observation.proofTimingScope=observeProofStages?'GUI elapsed includes preparation and submission; fixed prover method-entry phases observed without changing arguments or returned promises.':'GUI elapsed includes preparation, proving and submission; no prover method observation.';
    requireValue(external.size===0&&csp.size===0);observation.passed=true;
   };
   await Promise.race([workflow(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Browser test deadline')),remaining());})]);
- }catch(error) {if(journeyDriver)observation.driverFailure=safeJourneyDriverFailure(error,observation.driverSubstage);observation.passed=false;observation.failure='Browser post failed or timed out; raw provider/browser errors intentionally omitted.';}
+ }catch(error) {observation.driverFailure={...describeFailure(error),...(journeyDriver?safeJourneyDriverFailure(error,observation.driverSubstage):{})};observation.passed=false;observation.failure='Browser post failed or timed out; raw provider/browser errors intentionally omitted.';}
  finally {
   lifecycleAbort.abort();
   if(page&&!page.isClosed()){
    if(journeyDriver)try{observation.journeyUiDiagnostic=await Promise.race([page.evaluate(readJourneyUiDiagnostic),new Promise(resolve=>{const timer=setTimeout(()=>resolve({unavailable:true}),1000);timer.unref();})]);}catch{observation.journeyUiDiagnostic={unavailable:true};}
    try{observation.uiDiagnostic=await Promise.race([page.evaluate(()=>{
-    const texts=['setupStatus','postStatus','depositBalanceCheck'].map(id=>document.getElementById(id)?.textContent||'').join(' ');
-    // Fixed UI strings only; no provider message, wallet value or RPC payload leaves the page.
-    const markers={walletFailure:'Wallet operation did not complete.',setupFailure:'Setup did not complete.',operationFailure:'ERROR: operation did not complete',configurationFailure:'configuration changed',provingStarted:'Proving tx (can take minutes)',provingComplete:'Proving complete. Submitting to node',messageIncluded:'Message included. Public content and transaction timing remain observable.'};
-    const postText=document.getElementById('postStatus')?.textContent||'';
-    const progress=['Reusing cached PXE/wallet setup.','Posting message (','Time lock check passed.','Fetching screening hints...','Pre-flight passed.'];
-    return {postProgress:progress.map(text=>postText.includes(text)),formatterDiagnostics:globalThis.__u01FormatterDiagnostics??[],walletRestored:!!globalThis.walletState?.aztec?.address,ethereumConnected:!!globalThis.walletState?.ethSigner,postVisible:!!document.getElementById('postBtn')?.getClientRects().length,postBusy:document.getElementById('postBtn')?.disabled===true,setupHasError:!!document.querySelector('#setupStatus .error'),postHasError:!!document.querySelector('#postStatus .error'),markers:Object.fromEntries(Object.entries(markers).map(([name,text])=>[name,texts.toLowerCase().includes(text.toLowerCase())]))};
+    const op=application.operation(),status=['idle','working','complete','failed','cancelled','paused'].includes(op.status)?op.status:'unknown';
+    const stages=['preparing','proving','submitting','confirming','complete','failed','paused'];
+    return {operationStatus:status,operationStage:stages.includes(op.stage)?op.stage:'other',formatterDiagnostics:globalThis.__u01FormatterDiagnostics??[],walletRestored:!!globalThis.BillboardAccount?.snapshot().address,ethereumConnected:!!globalThis.BillboardAccount?.snapshot().ethereumConnected,postVisible:!!document.getElementById('postBtn')?.getClientRects().length,postBusy:document.getElementById('postBtn')?.disabled===true,setupHasError:!!document.querySelector('#setupStatus.error'),postHasError:!!document.getElementById('messageError')?.textContent,postCompleted:document.getElementById('postResult')?.textContent.includes('Message posted.')===true};
    }),new Promise(resolve=>{const t=setTimeout(()=>resolve({unavailable:true}),1000);t.unref();})]);}catch{observation.uiDiagnostic={unavailable:true};}
   }
   if(extensionWallet&&page&&!page.isClosed())try{observation.walletFailure=await page.evaluate(()=>globalThis.__walletTestFailure);observation.blockedExtensionRequests=blockedExtensionRequests;}catch{observation.walletDiagnosticUnavailable=true;}

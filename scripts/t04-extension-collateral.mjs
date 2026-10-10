@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomBytes} from 'node:crypto';
 import {Contract,ContractFactory,getBytes,solidityPacked} from 'ethers';
-import {OutboxAbi} from '@aztec/l1-artifacts/OutboxAbi';
+import {OutboxAbi} from '@aztec-foundation/l1-artifacts/OutboxAbi';
 import {encodeReadyCommitment,encodeEscrowCommitment,sha256Field} from '../shared/protocol-commitments.mjs';
 import {ROOT} from './toolchain.mjs';
 

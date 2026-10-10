@@ -69,7 +69,7 @@ export async function verifiedFile(filename, asset) {
 
 export const DERIVED_G1_BYTES = 75497472;
 export function validateCrsManifest(manifest) {
-  if (manifest.schemaVersion !== 2 || manifest.aztecVersion !== pins.aztec || pins.aztec !== '5.2.0') throw new Error('CRS manifest version mismatch');
+  if (manifest.schemaVersion !== 2 || manifest.aztecVersion !== pins.aztec || pins.aztec !== '6.0.0-rc.1') throw new Error('CRS manifest version mismatch');
   const expectedNames = ['g1.dat', 'g2.dat', 'grumpkin_g1.dat'];
   if (!Array.isArray(manifest.files) || manifest.files.length !== 3 ||
       manifest.files.some((asset, index) => asset.name !== expectedNames[index])) throw new Error('Invalid CRS source inventory');
@@ -97,8 +97,8 @@ export function validateCrsManifest(manifest) {
   const expectedDerivation = {
     method: 'bb-srs-init-v1', packageVersion: pins.aztec, inputName: 'g1.dat',
     inputSha256: manifest.files[0].sha256, g2Sha256: manifest.files[1].sha256,
-    wasmSource: 'node_modules/@aztec/bb.js/dest/node/barretenberg_wasm/barretenberg-threads.wasm.gz',
-    wasmSha256: '9106f6164e4714a87ce1cf13ceac4d22109767a16e6fb997f1af7e7fcc81ae45',
+    wasmSource: 'node_modules/@aztec-foundation/bb.js/dest/node/barretenberg_wasm/barretenberg-threads.wasm.gz',
+    wasmSha256: 'd2f89b18d869cdac2ebfd27d33710e16fb10a9a8066f8dc957bac478b3725ea2',
   };
   if (!derived.derivation || Object.keys(derived.derivation).sort().join() !== Object.keys(expectedDerivation).sort().join() ||
       Object.entries(expectedDerivation).some(([key, value]) => derived.derivation[key] !== value) ||

@@ -2,12 +2,13 @@
 // wallets, fixture/mining lifetime and the aggregate proof/resource budget.
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {Contract} from '@aztec/aztec.js/contracts';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {poseidon2HashWithSeparator} from '@aztec/foundation/crypto/poseidon';
-import {NoteStatus} from '@aztec/stdlib/note';
-import {TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
+import {Contract} from '@aztec-labs/aztec.js/contracts';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {poseidon2HashWithSeparator} from '@aztec-labs/foundation/crypto/poseidon';
+import {NoteStatus} from '@aztec-labs/stdlib/note';
+import {TxStatus,TxExecutionResult} from '@aztec-labs/stdlib/tx';
 import {proveApplicationAction,measureApplicationGas} from './prove-application-action.mjs';
+import {drainT04Checkpoints} from './u01-browser-flow.mjs';
 const n=value=>BigInt(value.toString());
 const accepted=[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED];
 
@@ -23,7 +24,7 @@ export async function exactApplicationDeposit({wallet,artifact,instance,owner,ch
  assert(!note.siloedNullifier.isZero());return note;
 }
 
-export async function eligibleApplicationAnchor({node,wallet,mineL1,timestamp}){
+export async function eligibleApplicationAnchor({node,wallet,l1Client,mineL1,timestamp}){
  const sequencer=node.getSequencer(),config=sequencer.getSequencer().getConfig();
  const previous={minTxsPerBlock:config.minTxsPerBlock,buildCheckpointIfEmpty:config.buildCheckpointIfEmpty};
  sequencer.updateConfig({minTxsPerBlock:0,buildCheckpointIfEmpty:true});
@@ -32,8 +33,13 @@ export async function eligibleApplicationAnchor({node,wallet,mineL1,timestamp}){
   do{
    await wallet.pxe.sync();const anchor=await wallet.pxe.getSyncedBlockHeader();
    if(n(anchor.globalVariables.timestamp)>=timestamp){
-    assert.equal((await node.getBlock(anchor.getBlockNumber())).hash.toString(),(await anchor.hash()).toString());
-    return anchor;
+    const info=await node.getNodeInfo();
+    await drainT04Checkpoints({node,l1Client,rollupAddress:info.l1ContractAddresses.rollupAddress.toString(),
+     checkpoints:{restore:()=>sequencer.updateConfig(previous)},deadline});
+    await wallet.pxe.sync();const settled=await wallet.pxe.getSyncedBlockHeader();
+    assert(n(settled.globalVariables.timestamp)>=timestamp);
+    assert.equal((await node.getBlock(settled.getBlockNumber())).hash.toString(),(await settled.hash()).toString());
+    return settled;
    }
    await mineL1();
   }while(Date.now()<deadline);
@@ -68,7 +74,7 @@ export async function includeApplicationAction({node,wallet,mineL1,proven,tx,spe
 
 // One ordinary post with zero or one preceding unflagged post. A repeated post
 // supplies the authenticated child even when its screening deadline is not due.
-export async function postUnflaggedApplicationMessage({node,wallet,mineL1,artifact,instance,owner,chain,state,text,privateFeeAction}){
+export async function postUnflaggedApplicationMessage({node,wallet,l1Client,mineL1,artifact,instance,owner,chain,state,text,privateFeeAction}){
  const board=Contract.at(instance.address,artifact,wallet);
  const query=async(name,...args)=>(await board.methods[name](...args).simulate({from:owner})).result;
  await wallet.pxe.sync();const before=(await query('get_deposit_info',owner,chain)).map(n);
@@ -78,7 +84,7 @@ export async function postUnflaggedApplicationMessage({node,wallet,mineL1,artifa
  const base=n(await query('get_base_cooldown')),minimum=n(await query('get_min_deposit'));
  const cooldown=(base*minimum+before[2]-1n)/before[2],maxSave=n(await query('get_max_save_up'));
  assert(cooldown>0n&&maxSave>0n);
- const anchor=await eligibleApplicationAnchor({node,wallet,mineL1,timestamp:before[9]});
+ const anchor=await eligibleApplicationAnchor({node,wallet,l1Client,mineL1,timestamp:before[9]});
  const now=n(anchor.globalVariables.timestamp),count=n(await query('get_post_count'));
  const [child,grandchild]=await query('get_screen_hints',owner,chain);
  assert.equal(grandchild,undefined);assert.equal(Boolean(child),pending===1n);

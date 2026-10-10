@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {synchronizeC01MinedClock} from './c01-client-mining.mjs';
 import {createPublicClient,http} from 'viem';
 import {foundry} from 'viem/chains';
-import {TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
+import {TxStatus,TxExecutionResult} from '@aztec-labs/stdlib/tx';
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 export async function includeC01Board({node,tx,rpcUrl,dateProvider,startSequencer=true}){
   const rpc=new URL(rpcUrl);assert.equal(rpc.hostname,'127.0.0.1');

@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {GrumpkinScalar} from '@aztec/foundation/curves/grumpkin';
-import {getSchnorrInitializerlessAccountContractAddress} from '@aztec/accounts/schnorr';
-import {Barretenberg,BarretenbergSync} from '@aztec/bb.js';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {GrumpkinScalar} from '@aztec-labs/foundation/curves/grumpkin';
+import {getSchnorrInitializerlessAccountContractAddress} from '@aztec-labs/accounts/schnorr';
+import {Barretenberg,BarretenbergSync} from '@aztec-foundation/bb.js';
 const [file]=process.argv.slice(2);
 if(!file)throw Error('Provide a new private actor JSON path');
 try{

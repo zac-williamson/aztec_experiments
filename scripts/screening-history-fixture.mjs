@@ -1,13 +1,13 @@
 // Synthetic storage/query workload. Authentication is qualified separately by Noir and real transactions.
 import assert from 'node:assert/strict';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {AztecAddress} from '@aztec/stdlib/aztec-address';
-import {Note,NoteDao,NoteStatus,Comparator} from '@aztec/stdlib/note';
-import {TxHash} from '@aztec/stdlib/tx';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
+import {Note,NoteDao,NoteStatus,Comparator} from '@aztec-labs/stdlib/note';
+import {TxHash} from '@aztec-labs/stdlib/tx';
 // Exact installed internal APIs, pinned by the lockfile.
-import {NoteStore} from '../node_modules/@aztec/pxe/dest/storage/note_store/note_store.js';
-import {NoteService} from '../node_modules/@aztec/pxe/dest/notes/note_service.js';
-import {pickNotes} from '../node_modules/@aztec/pxe/dest/contract_function_simulator/pick_notes.js';
+import {NoteStore} from '../node_modules/@aztec-labs/pxe/dest/storage/note_store/note_store.js';
+import {NoteService} from '../node_modules/@aztec-labs/pxe/dest/notes/note_service.js';
+import {pickNotes} from '../node_modules/@aztec-labs/pxe/dest/contract_function_simulator/pick_notes.js';
 export async function checkScreeningHistory(openStore){
 assert.equal(typeof openStore,'function');
 const started = performance.now();
@@ -89,7 +89,7 @@ try {
   await add([makeNote(chain, target)]);
   assert.equal((await query(chain, target)).length, 2);
   return { passed:true, status: 'passed', fixture: 'synthetic persisted NoteDao history; no proofs',
-    pxeVersion: '5.2.0', historyNotes: 1100, checks: ['beyond old cap', 'two successors', 'deposit isolation',
+    pxeVersion: '6.0.0-rc.1', historyNotes: 1100, checks: ['beyond old cap', 'two successors', 'deposit isolation',
       'owner/slot/contract isolation', 'missing match', 'reverse insertion', 'persistent reopen',
       'scope deduplication', 'duplicate detection', 'pagination after selectors', 'bounded duplicates'],
     elapsedMs: Math.round(performance.now() - started) };

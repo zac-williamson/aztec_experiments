@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {randomBytes} from 'node:crypto';
 import {IDBFactory} from 'fake-indexeddb';
-import {Tx} from '@aztec/stdlib/tx';
+import {Tx} from '@aztec-labs/stdlib/tx';
 import {createL2Journal} from '../shared/l2-journal.mjs';
 import {createJournalBackup} from '../shared/journal-backup.mjs';
 import {createBrowserJournalStorage} from '../shared/journal-indexeddb.mjs';
@@ -59,8 +59,8 @@ test('export filters other wallets but refuses legacy records lacking ownership 
 
 import {createClaimSecretStore} from '../apps/src/billboard/user/claim-secret-store.mjs';
 import {createRecoveryFile} from '../apps/src/billboard/user/recovery-file.mjs';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {computeSecretHash} from '@aztec/stdlib/hash';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {computeSecretHash} from '@aztec-labs/stdlib/hash';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 test('actual offline CLI restores fresh wallet plus claims/journals, exports portable file, rejects overwrite and wrong password',()=>fixture(async f=>{

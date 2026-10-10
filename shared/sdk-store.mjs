@@ -1,8 +1,8 @@
-import { AztecIndexedDBStore } from '@aztec/kv-store/deprecated/indexeddb';
-import { createLogger } from '@aztec/foundation/log';
+import { AztecIndexedDBStore } from '@aztec-labs/kv-store/deprecated/indexeddb';
+import { createLogger } from '@aztec-labs/foundation/log';
 // The pinned PXE package does not expose its storage schema as a public export.
 // Import the exact installed metadata, included in the SDK provenance manifest.
-import { PXE_DATA_SCHEMA_VERSION } from '../node_modules/@aztec/pxe/dest/storage/metadata.js';
+import { PXE_DATA_SCHEMA_VERSION } from '../node_modules/@aztec-labs/pxe/dest/storage/metadata.js';
 
 export { PXE_DATA_SCHEMA_VERSION };
 

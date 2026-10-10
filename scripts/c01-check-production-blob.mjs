@@ -5,7 +5,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { keccak256 } from 'viem';
 import { ROOT, assertNodeVersion, assertAztecPackages } from './toolchain.mjs';
-const BASE = path.join(ROOT, 'node_modules/@aztec/l1-artifacts/l1-contracts');
+const BASE = path.join(ROOT, 'node_modules/@aztec-foundation/l1-artifacts/l1-contracts');
 const PRODUCTION_BLOB = 'src/core/libraries/rollup/BlobLib.sol';
 const OPERATIONS = 'src/core/libraries/rollup/RollupOperationsExtLib.sol';
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');

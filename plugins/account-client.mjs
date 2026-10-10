@@ -1,9 +1,10 @@
+import {readPluginFundingReceipt} from './funding-receipt.mjs';
 import {readCanonicalReceipt} from '../shared/transaction-outcomes.mjs';
 import {Contract as EthContract,parseUnits,formatUnits} from 'ethers';
 import {requestStatus} from './request-status.mjs';
 import artifact from './adapter_artifact.json' with {type:'json'};
 const tokenAbi=['function approve(address,uint256) returns(bool)','function balanceOf(address) view returns(uint256)','function decimals() view returns(uint8)'];
-export const portalAbi=['function token() view returns(address)','function escrow() view returns(bytes32)','function active() view returns(bool)','function deposit(bytes32,uint128,bytes32) returns(bytes32,uint256)','event Deposited(bytes32 indexed account,uint128 amount,bytes32 key,uint256 index)','function withdraw(address,uint128,bytes32,uint256,uint256,uint256,bytes32[])'];
+export const portalAbi=['function token() view returns(address)','function inbox() view returns(address)','function escrow() view returns(bytes32)','function active() view returns(bool)','function deposit(bytes32,uint128,bytes32) returns(bytes32,uint256)','event Deposited(bytes32 indexed account,uint128 amount,bytes32 key,uint256 index)','function withdraw(address,uint128,bytes32,uint256,uint256,uint256,bytes32[])','event Withdrawn(address indexed recipient,uint128 amount,bytes32 nonce)'];
 /** Generic escrow protocol client. UI receives strings and progress only. */
 export async function pluginAccountAction({action,input,descriptor,sdk:a,handles:h,signer,send,store,onProgress=()=>{}}){
  const {funding,scope}=descriptor;
@@ -16,6 +17,8 @@ export async function pluginAccountAction({action,input,descriptor,sdk:a,handles
  const escrow=await a.Contract.at(address,loaded,h.wallet);
  const read=async(name,...args)=>(await escrow.methods[name](...args).simulate({from:a.NO_FROM})).result;
  const state=()=>store.read()??{};
+ const depositReceipt=async(record,txHash=record.txHash)=>readPluginFundingReceipt({provider:signer.provider,scope,portalAddress:funding.portalAddress,inboxAddress:await portal.inbox(),intent:record,txHash,expected:{kind:'deposit',account:h.address.toString(),amount:record.amount,secretHash:(await a.computeSecretHash(a.Fr.fromString(record.secret))).toString()}});
+ const redemptionReceipt=(record,txHash=record.redemption.txHash)=>readPluginFundingReceipt({provider:signer.provider,scope,portalAddress:funding.portalAddress,intent:record.redemption,txHash,expected:{kind:'withdraw',recipient:record.recipient,amount:record.amount,nonce:record.nonce}});
  if(action==='requests'){
   const count=Number(await read('request_count'));
   const cursor=input.cursor===undefined?count:Number(input.cursor);
@@ -45,43 +48,40 @@ export async function pluginAccountAction({action,input,descriptor,sdk:a,handles
   onProgress('Deposit USDC into the plugin portal.');
   // The Inbox marker is public: the message binds the authenticated Aztec recipient.
   // Capture the Ethereum nonce before submission so a lost wallet response is discoverable.
-  const gasLimit=await portal.deposit.estimateGas(h.address.toString(),amount,secretHash.toString());
+  // Match the V6 SDK allowance for shared Inbox state changing before mining.
+  const gasLimit=2n*await portal.deposit.estimateGas(h.address.toString(),amount,secretHash.toString());
   const record={amount:String(amount),secret:String(secret),sender:await signer.getAddress(),nonce:await signer.getNonce('pending'),startBlock:await signer.provider.getBlockNumber()};store.write({...state(),deposit:record});
   let tx;try{tx=await portal.deposit(h.address.toString(),amount,secretHash.toString(),{nonce:record.nonce,gasLimit});}catch(error){if(error.code===4001||error.code==='ACTION_REJECTED')store.write({...state(),deposit:null});throw error;}
   record.txHash=tx.hash;store.write({...state(),deposit:record});
-  const receipt=await tx.wait();const event=receipt.logs.map(l=>{try{return portal.interface.parseLog(l);}catch{return null;}}).find(e=>e?.name==='Deposited');
+  await tx.wait();const verified=await depositReceipt(record);if(verified?.outcome!=='success')throw Error('Deposit is not confirmed');const {event}=verified;
   record.leafIndex=String(event.args.index);record.key=event.args.key;store.write({...state(),deposit:record});
   return {deposited:input.amount};
  }
  if(action==='claim'){
   const record=state().deposit;if(!record)throw Error('No saved deposit to claim');
-  if(!record.leafIndex){
-   // Reconcile by exact sender/nonce and calldata; never broadcast a second deposit.
-   if(!record.txHash){
-    const tip=await signer.provider.getBlockNumber();
-    for(let number=record.startBlock;number<=tip;number++){
-     const block=await signer.provider.getBlock(number,true);
-     for(const transaction of block.prefetchedTransactions){
-      if(transaction.from.toLowerCase()!==record.sender.toLowerCase()||transaction.nonce!==record.nonce)continue;
-      const expected=portal.interface.encodeFunctionData('deposit',[h.address.toString(),BigInt(record.amount),(await a.computeSecretHash(a.Fr.fromString(record.secret))).toString()]);
-      if(transaction.to?.toLowerCase()!==funding.portalAddress.toLowerCase()||transaction.data!==expected)throw Error('Deposit nonce was used for a different transaction');
-      record.txHash=transaction.hash;store.write({...state(),deposit:record});
-     }
-    }
-   }
-   if(!record.txHash)throw Error('Deposit has not been confirmed. Check your wallet before trying again.');
-   const receipt=await signer.provider.getTransactionReceipt(record.txHash);
-   if(!receipt)throw Error('Deposit is still pending');
-   if(receipt.status!==1){store.write({...state(),deposit:null});throw Error('Deposit reverted. You can deposit again.');}
-   const event=receipt.logs.filter(l=>l.address.toLowerCase()===funding.portalAddress.toLowerCase()).map(l=>{try{return portal.interface.parseLog(l);}catch{return null;}}).find(e=>e?.name==='Deposited');
-   if(!event)throw Error('Deposit receipt has no credit message');
-   record.leafIndex=String(event.args.index);record.key=event.args.key;store.write({...state(),deposit:record});
-  }
   if(record.claimTxHash){
    const receipt=await readCanonicalReceipt(h.aztecNode,a.TxHash.fromString(record.claimTxHash));
    if(receipt?.executionResult==='success'){store.write({...state(),deposit:null});return {balance:formatUnits(await read('balance',h.address),6),lastL2TxHash:record.claimTxHash};}
    if(receipt?.executionResult!=='reverted')throw Object.assign(Error('Saved claim is pending. Resume the interrupted operation before retrying.'),{code:'BB_RECOVERY_REQUIRED'});
   }
+  // Reconcile the saved payment by canonical effects, including wallet wrappers.
+  // A cached message index is not a substitute for a canonical funding receipt.
+  if(!record.txHash){
+   const tip=await signer.provider.getBlockNumber();
+   for(let number=record.startBlock;number<=tip;number++){
+    const block=await signer.provider.getBlock(number,true);
+    for(const transaction of block.prefetchedTransactions){
+     if(transaction.from.toLowerCase()!==record.sender.toLowerCase()||transaction.nonce!==record.nonce)continue;
+     const verified=await depositReceipt(record,transaction.hash);if(!verified)throw Error('Deposit is still pending');
+     record.txHash=transaction.hash;store.write({...state(),deposit:record});break;
+    }
+    if(record.txHash)break;
+   }
+  }
+  if(!record.txHash)throw Error('Deposit has not been confirmed. Check your wallet before trying again.');
+  const verified=await depositReceipt(record);if(!verified)throw Error('Deposit is still pending');
+  if(verified.outcome==='reverted'){store.write({...state(),deposit:null});throw Error('Deposit reverted. You can deposit again.');}
+  record.leafIndex=String(verified.event.args.index);record.key=verified.event.args.key;store.write({...state(),deposit:record});
   onProgress('Claiming funded plugin balance on Aztec.');
   await send(escrow.methods.claim(BigInt(record.amount),a.Fr.fromString(record.secret),new a.Fr(BigInt(record.leafIndex))),txHash=>{record.claimTxHash=txHash;store.write({...state(),deposit:record});});
   store.write({...state(),deposit:null});return {balance:formatUnits(await read('balance',h.address),6)};
@@ -110,15 +110,16 @@ export async function pluginAccountAction({action,input,descriptor,sdk:a,handles
      const block=await signer.provider.getBlock(number,true);
      for(const tx of block.prefetchedTransactions){
       if(tx.from.toLowerCase()!==intent.sender.toLowerCase()||tx.nonce!==intent.nonce)continue;
-      if(tx.to?.toLowerCase()!==funding.portalAddress.toLowerCase()||tx.data!==intent.data)throw Error('Redemption nonce used for a different transaction');
-      intent.txHash=tx.hash;store.write({...state(),withdrawal:record});
+      const verified=await redemptionReceipt(record,tx.hash);if(!verified)throw Error('Redemption is still pending');
+      intent.txHash=tx.hash;store.write({...state(),withdrawal:record});break;
      }
+     if(intent.txHash)break;
     }
    }
    if(!intent.txHash)throw Error('Redemption has not been confirmed. Check your wallet.');
-   const receipt=await signer.provider.getTransactionReceipt(intent.txHash);
-   if(!receipt)throw Error('Redemption is still pending');
-   if(receipt.status===1){store.write({...state(),withdrawal:null});return {transactionHash:receipt.hash};}
+   const verified=await redemptionReceipt(record);
+   if(!verified)throw Error('Redemption is still pending');
+   if(verified.outcome==='success'){store.write({...state(),withdrawal:null});return {transactionHash:verified.receipt.hash};}
    delete record.redemption;store.write({...state(),withdrawal:record});
   }
   if(scope.chainId!=='31337'&&(l2Receipt.status!=='finalized'||l2Receipt.executionResult!=='success'))throw Error('Withdrawal awaits network finality. Try claiming later.');
@@ -134,8 +135,8 @@ export async function pluginAccountAction({action,input,descriptor,sdk:a,handles
   store.write({...state(),withdrawal:record});
   let tx;try{tx=await portal.withdraw(...args,{nonce:record.redemption.nonce,gasLimit});}catch(error){if(error.code===4001||error.code==='ACTION_REJECTED'){delete record.redemption;store.write({...state(),withdrawal:record});}throw error;}
   record.redemption.txHash=tx.hash;store.write({...state(),withdrawal:record});
-  const receipt=await tx.wait();
-  store.write({...state(),withdrawal:null});return {transactionHash:receipt.hash};
+  await tx.wait();const verified=await redemptionReceipt(record);if(verified?.outcome!=='success')throw Error('Redemption is not confirmed');
+  store.write({...state(),withdrawal:null});return {transactionHash:verified.receipt.hash};
  }
  throw Error('Unknown plugin account action');
 }

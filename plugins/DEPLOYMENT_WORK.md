@@ -1,3 +1,8 @@
+> Current deployment: the complete V6 testnet migration is recorded in
+> [the V6 handover](../deploy/V6-TESTNET.md) and
+> [live deployment record](../deploy/prover/live-deployment.json).
+> The September V5 qualifications below are historical evidence.
+
 # AI plugin deployment work
 
 ## Active deployment execution
@@ -249,7 +254,7 @@ unchanged post count. Static test server now streams CRS and honors byte ranges
 (exact range regression passed), and unlocked MetaMask UI closes when not needed.
 Both changes reviewed. Current post phase reached real Aztec plugin-credit claim.
 
-Release CI investigation: fork PR #6 build failed because the locked @aztec/bb.js
+Release CI investigation: fork PR #6 build failed because the locked @aztec-foundation/bb.js
 5.2.0 package's Linux x64 executable reports 5.2.0-nightly.20260807. Downloaded the
 exact lockfile tarball, verified its SHA-512 integrity, and matched all four native
 binaries against that package. Toolchain now pins each binary's exact SHA-256 and

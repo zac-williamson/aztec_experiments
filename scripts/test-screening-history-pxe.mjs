@@ -2,7 +2,7 @@
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {AztecLMDBStoreV2} from '@aztec/kv-store/lmdb-v2';
+import {AztecLMDBStoreV2} from '@aztec-labs/kv-store/lmdb-v2';
 import {checkScreeningHistory} from './screening-history-fixture.mjs';
 const directory=await mkdtemp(join(tmpdir(),'billboard-c04-note-store-'));
 try{

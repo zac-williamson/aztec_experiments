@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { sha256ToField } from '@aztec/foundation/crypto/sha256';
+import { sha256ToField } from '@aztec-labs/foundation/crypto/sha256';
 import { solidityPacked, encodeBytes32String } from 'ethers';
 import { encodePolicyCommitment, encodeEscrowCommitment, encodeReadyCommitment,
   encodeConfigCommitment, sha256Field } from '../shared/protocol-commitments.mjs';

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import {test} from 'node:test';
-import {Fr} from '@aztec/foundation/curves/bn254';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
 const context=vm.createContext({performance,console,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});
 vm.runInContext(await readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8'),context);
 const codec={...context.BillboardPostCodec,...transactionOutcomes};

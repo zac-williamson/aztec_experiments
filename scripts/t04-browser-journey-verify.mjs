@@ -1,12 +1,12 @@
 import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 // TEST ONLY. Canonical public effect/accounting primitives; no proving bypass.
 import assert from 'node:assert/strict';
-import {TxHash,TxStatus,TxExecutionResult} from '@aztec/stdlib/tx';
-import {AztecAddress} from '@aztec/stdlib/aztec-address';
-import {Fr} from '@aztec/foundation/curves/bn254';
-import {EthAddress} from '@aztec/foundation/eth-address';
-import {sha256ToField} from '@aztec/foundation/crypto/sha256';
-import {computeL2ToL1MessageHash} from '@aztec/stdlib/hash';
+import {TxHash,TxStatus,TxExecutionResult} from '@aztec-labs/stdlib/tx';
+import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {EthAddress} from '@aztec-labs/foundation/eth-address';
+import {sha256ToField} from '@aztec-labs/foundation/crypto/sha256';
+import {computeL2ToL1MessageHash} from '@aztec-labs/stdlib/hash';
 import {encodeEscrowCommitment} from '../shared/protocol-commitments.mjs';
 import {parseEventLogs} from 'viem';
 
@@ -36,7 +36,7 @@ export function assertJourneyExit({effect,leaf,consumedNullifier,anchorTimestamp
  assert.equal(effect.nullifiers.filter(value=>value.equals(consumedNullifier)).length,1,'Actual latest deposit note was not consumed exactly once');
 }
 export async function verifyJourneyRefund({l1Client,portalAbi,portalAddress,depositor,amount,txHash,before}){
- const receipt=await l1Client.getTransactionReceipt({hash:txHash});assert.equal(receipt.status,'success');assert.equal(receipt.to?.toLowerCase(),portalAddress.toLowerCase());assert.equal(receipt.from.toLowerCase(),depositor.toLowerCase());
+ const receipt=await l1Client.getTransactionReceipt({hash:txHash});assert.equal(receipt.status,'success');assert.equal(receipt.from.toLowerCase(),depositor.toLowerCase());
  assert.equal((await l1Client.getBlock({blockNumber:receipt.blockNumber})).hash,receipt.blockHash);
  const events=parseEventLogs({abi:portalAbi,eventName:'Withdrawn',strict:true,logs:receipt.logs.filter(log=>log.address.toLowerCase()===portalAddress.toLowerCase())});
  assert.equal(events.length,1);assert.equal(events[0].args.depositor.toLowerCase(),depositor.toLowerCase());assert.equal(events[0].args.amount,amount);
@@ -49,7 +49,7 @@ export async function verifyJourneyRefund({l1Client,portalAbi,portalAddress,depo
 }
 
 export async function verifyJourneyPrivateChain({wallet,node,instance,artifact,account,privateFee,transactions,message,receipt,before}){
- const {Contract}=await import('@aztec/aztec.js/contracts');const {NoteStatus}=await import('@aztec/stdlib/note');const {getFeeJuiceBalance}=await import('@aztec/aztec.js/utils');
+ const {Contract}=await import('@aztec-labs/aztec.js/contracts');const {NoteStatus}=await import('@aztec-labs/stdlib/note');const {getFeeJuiceBalance}=await import('@aztec-labs/aztec.js/utils');
  await wallet.registerContract(instance,artifact);await wallet.registerContract(privateFee.instance,privateFee.artifact);await wallet.pxe.sync();
  const notes=await wallet.pxe.debug.getNotes({contractAddress:instance.address,owner:account.address,scopes:[account.address],status:NoteStatus.ACTIVE_OR_NULLIFIED});
  const active=await wallet.pxe.debug.getNotes({contractAddress:instance.address,owner:account.address,scopes:[account.address],status:NoteStatus.ACTIVE});

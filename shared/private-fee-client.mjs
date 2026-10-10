@@ -1,11 +1,11 @@
-import { Contract } from '@aztec/aztec.js/contracts';
-import { Fr } from '@aztec/foundation/curves/bn254';
-import { poseidon2HashWithSeparator } from '@aztec/foundation/crypto/poseidon';
-import { AztecAddress } from '@aztec/stdlib/aztec-address';
-import { loadContractArtifact, getAllFunctionAbis, FunctionSelector } from '@aztec/stdlib/abi';
-import { getContractInstanceFromInstantiationParams, computeContractAddressFromInstance } from '@aztec/stdlib/contract';
-import { Gas, GasFees, GasSettings } from '@aztec/stdlib/gas';
-import { computeSecretHash } from '@aztec/stdlib/hash';
+import { Contract } from '@aztec-labs/aztec.js/contracts';
+import { Fr } from '@aztec-labs/foundation/curves/bn254';
+import { poseidon2HashWithSeparator } from '@aztec-labs/foundation/crypto/poseidon';
+import { AztecAddress } from '@aztec-labs/stdlib/aztec-address';
+import { loadContractArtifact, getAllFunctionAbis, FunctionSelector } from '@aztec-labs/stdlib/abi';
+import { getContractInstanceFromInstantiationParams, computeContractAddressFromInstance } from '@aztec-labs/stdlib/contract';
+import { Gas, GasFees, GasSettings } from '@aztec-labs/stdlib/gas';
+import { computeSecretHash } from '@aztec-labs/stdlib/hash';
 import { PrivateFeePaymentMethod, PrivateMintAndPayFeePaymentMethod } from './private-fee-payment.mjs';
 export { PrivateFeePaymentMethod, PrivateMintAndPayFeePaymentMethod } from './private-fee-payment.mjs';
 

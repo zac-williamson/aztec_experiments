@@ -1,7 +1,7 @@
 // Real escrow and queue, with an explicit interruption instead of paid inference.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import {loadContractArtifact} from '@aztec/stdlib/abi';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
 import {aztecBoardPort} from '../aztec.mjs';
 import {aztecEscrowPort} from '../escrow.mjs';
 import {startEscrowService} from '../escrow-service.mjs';

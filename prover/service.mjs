@@ -4,6 +4,7 @@ import {prepareNativeRuntime} from './runtime.mjs';
 import {createProofQueue} from './queue.mjs';
 import {createProcessWorker} from './process-worker.mjs';
 import {createProverServer} from './server.mjs';
+import {loadCircuitCatalog} from './catalog.mjs';
 
 // Composition root: owns only the resources it creates. Tests and the host use
 // this same entry point; HTTP, queue and worker communicate through interfaces.
@@ -15,6 +16,7 @@ export async function startProverService(config){
  const host=config.host??'127.0.0.1',proofsEnabled=config.proofs==='real';
  if(!proofsEnabled&&(!['127.0.0.1','::1','localhost'].includes(host)||String(config.chainId)!=='31337'))throw Error('Disabled proofs require loopback local devnet');
  const runtime=proofsEnabled?await prepareNativeRuntime(config):{};
+ await loadCircuitCatalog();
  const directory=await fs.mkdtemp(path.join(config.queueDirectory??'/tmp','board-prover-'));
  const worker=createProcessWorker({proofsEnabled,threads:config.threads??1,privateFeeAddress:config.privateFeeAddress,pluginAddresses:config.pluginAddresses,...runtime});
  let queue,server,closing;
