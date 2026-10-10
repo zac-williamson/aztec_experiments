@@ -31,6 +31,14 @@ test('exit helper binds receipt and domain inputs and rejects malformed/out-of-r
  for(const changed of [{...input,amount:'0'},{...input,scope:{...input.scope,boardAddress:'0x02'}}])assert.throws(()=>journeyExitLeaf(changed));
 });
 
+test('exit commitment requires the complete network scope and canonical depositor casing',()=>{
+ const {rollupAddress,...incomplete}=input.scope;
+ assert.throws(()=>journeyExitLeaf({...input,scope:incomplete}),/Invalid network scope fields/);
+ const depositor='0x374f2eEB49A9Cc4a8BB732BB45b3C1fd751fdFC7';
+ assert.throws(()=>journeyExitLeaf({...input,depositor}),/Invalid depositor/);
+ assert.doesNotThrow(()=>journeyExitLeaf({...input,depositor:depositor.toLowerCase()}));
+});
+
 test('actual exit assertion rejects duplicate/missing leaves, wrong spent note and premature anchor',()=>{
  const {leaf}=journeyExitLeaf(input),spent=new Fr(9);
  const args={effect:{l2ToL1Msgs:[leaf],nullifiers:[spent]},leaf,consumedNullifier:spent,anchorTimestamp:10n,nextAllowedTime:10n};

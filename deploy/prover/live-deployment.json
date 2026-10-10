@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "verifiedAt": "2026-10-10T13:51:13.054861+00:00",
+  "verifiedAt": "2026-10-10T15:39:58.005539+00:00",
   "website": "https://d30njln0kead8n.cloudfront.net",
   "endpoint": "https://d30njln0kead8n.cloudfront.net/prover",
   "aztecVersion": "6.0.0-rc.1",
@@ -30,7 +30,7 @@
   "subnet": "subnet-a705ce88",
   "runtimeRelease": "v6-20261010",
   "runtimeBaseCommit": "0baa9c3426bfc348c1873e61e5f9a54ebd0431d0",
-  "sourceIdentity": "The release file inventory identifies uncommitted migration source; the base commit alone does not.",
+  "sourceIdentity": "Runtime release inventories bind exact deployed file contents; integration commit b986d943432343d6bbcf642ffb00267364f49e78 includes the migration. Final qualification changes are recorded in the local V06 evidence.",
   "publicBoardConfig": {
     "schemaVersion": 1,
     "network": {
@@ -116,7 +116,7 @@
   },
   "previousDeployment": "history/v5-20260928.json",
   "qualification": {
-    "health": "replacement public ready; real proofs; one accepted browser proof",
+    "health": "replacement public ready; real proofs; four completed and zero failed",
     "realRemoteProof": {
       "status": "passed",
       "txHash": "0x09e809e7b8c77fb34bdf7a7ca903969890a6368a235d452f7dbe5471327a3cb6",
@@ -124,14 +124,11 @@
       "blockNumber": 15343
     },
     "browser": {
-      "status": "passed onboarding",
+      "status": "passed hosted funding, claim, posting, plugin credit exit/redemption, and board exit/refund",
       "receipt": ".build/hosted-v6-onboarding-20261010/result.json",
       "claim": "0x0476506cce9f69ab264c49c5ccff2b81f1cecbe0836492124805948d952ec81f",
       "post": "0x0d70066e95f5953d193dacd5e2a0c4eaed342ebf2197ca33ba85a47e8ee7e20d",
-      "remaining": [
-        "plugin reply and refund",
-        "board withdrawal/refund"
-      ],
+      "remaining": [],
       "latestModerationDeadline": "2026-10-10T14:48:12Z"
     },
     "moderator": {
@@ -141,10 +138,11 @@
       "policyAndCensorVerified": true,
       "insidePenaltyWindow": true,
       "backupVerified": true,
-      "blockNumber": 15402
+      "blockNumber": 15402,
+      "finalServiceCheck": "active; backup timer active; zero feed lag/errors; four allowed and one confirmed flag"
     },
     "plugin": {
-      "status": "new request checkpointed; paid reply pending normal finality",
+      "status": "passed paid reply, unused-credit exit and exact Sepolia redemption with replay rejection",
       "originalRequest": {
         "state": 6,
         "charged": "0",
@@ -156,8 +154,132 @@
         "blockNumber": 15484
       },
       "lazyCheckoutFixInstalled": true,
-      "KeepAlive": true
-    }
+      "KeepAlive": true,
+      "reply": {
+        "postId": "0x2f9a33c88d1641147f80f5bc29a996c1ef72fad984737d1d5465deaaeb0cf203",
+        "parentId": "0x05576a599da430db1c5c11a46eac3fa5cd8e4707abe9f0c625a0dd9a551adc2c",
+        "transaction": {
+          "hash": "0x107f91ed4466ccb8fe62eeb0e2b1f6b5d3e96510289fa0570e2f89edec3e0674",
+          "status": "checkpointed",
+          "blockNumber": 15538,
+          "blockHash": "0x12d74ba268e543c8f96313988a0a00d881b30e78bc88c96f4cfb99d6c04da36a",
+          "transactionFee": "4081355653016800000"
+        },
+        "text": " V6 testnet plugin works",
+        "chargedMicroUSDC": "348",
+        "unusedMicroUSDC": "999652",
+        "storageEventBytesEqual": true
+      },
+      "filteredCheckoutFixInstalled": true,
+      "installedManifestSha256": "ef35253a76950828f451f404f2a5f95c79b8c601af6023295c78c25fa29167b2",
+      "withdrawal": {
+        "receipt": {
+          "hash": "0x11fd9f0d422af2e5891a349727dba787181994db8e287617499aaf3f6a77a3f4",
+          "status": "finalized",
+          "blockNumber": 15545,
+          "blockHash": "0x06f9320865b6d4bb97237dcaa65a4c805214219f7fc7996ce9969002bbc66ff5",
+          "transactionFee": "1519565243130400000"
+        },
+        "amountMicroUSDC": "999652"
+      },
+      "redemption": {
+        "amountMicroUSDC": "999652",
+        "transaction": {
+          "hash": "0xbf32ef99658d9e4109d6156cecde8997b616cd2415f8527bc7ae5a23670e97ed",
+          "nonce": 7,
+          "requestedTo": "0x62126e7be3695809b1f9f40df3b1ab2a99f10ed8",
+          "minedTo": "0xdb9B1e94B5b69Df7e401DDbedE43491141047dB3",
+          "wrapped": true,
+          "gasLimit": "725520",
+          "uiGasLimit": "725770",
+          "maxFeePerGas": "50000000",
+          "maxPriorityFeePerGas": "10000000",
+          "gasUsed": "518397",
+          "blockNumber": 11885461,
+          "blockHash": "0xd9f97895e1f171556ccd614f7baa8a3e3161650adda1b6242d3b163d5443800f",
+          "status": 1,
+          "exactContractEffect": true
+        },
+        "replayRejected": true
+      }
+    },
+    "boardWithdrawal": {
+      "status": "passed canonical exit and exact Sepolia refund with replay rejection",
+      "receipt": {
+        "hash": "0x195cf29c310c001b4479aebe727f661c1f72dd0b59d7e2b4d7e2856a57b1f3d6",
+        "status": "finalized",
+        "blockNumber": 15548,
+        "blockHash": "0x1a4904ac511e54520299d253fa8c01e220865593ad260faa6064e7183ee59113",
+        "transactionFee": "903720144595200000"
+      },
+      "amountWei": "10000000000000",
+      "exactExitLeaf": "0x000cc2070e7f43c1b5b48ff1a2c2c21be1f530ba7bb51eaa8d29a1f5a1b1a458",
+      "originalBrowserRunPassed": false,
+      "qualification": "Browser submitted and paused the valid exit; post-exit harness input defect corrected and existing canonical effect independently reconciled without resubmission.",
+      "refund": {
+        "passed": true,
+        "txHash": "0xf562b397d431b56e2ea45564ccdf8a114df69d7765c534ea463699d77d517df2",
+        "amount": "10000000000000",
+        "gasWei": "2596484414016"
+      },
+      "replayRejected": true
+    },
+    "status": "passed V6 testnet application qualification",
+    "finalHealth": {
+      "at": "2026-10-10T15:37:59.057Z",
+      "tips": {
+        "proposed": 15575,
+        "checkpointed": 15575,
+        "proven": 15552,
+        "finalized": 15552
+      },
+      "receipts": {
+        "pluginRequest": {
+          "hash": "0x1d837c1f390cc8dabc545b2cc4e59a0109a92370f64ca22502ecbed5bb5e42d1",
+          "status": "finalized",
+          "executionResult": "success",
+          "blockNumber": 15397
+        },
+        "newPluginRequest": {
+          "hash": "0x227f0ec9c66a908f5c0337c6b0d1f58456a9968fdae468589dcac8ee79caffdb",
+          "status": "finalized",
+          "executionResult": "success",
+          "blockNumber": 15484
+        },
+        "boardExit": {
+          "hash": "0x195cf29c310c001b4479aebe727f661c1f72dd0b59d7e2b4d7e2856a57b1f3d6",
+          "status": "finalized",
+          "executionResult": "success",
+          "blockNumber": 15548
+        },
+        "pluginExit": {
+          "hash": "0x11fd9f0d422af2e5891a349727dba787181994db8e287617499aaf3f6a77a3f4",
+          "status": "finalized",
+          "executionResult": "success",
+          "blockNumber": 15545
+        }
+      },
+      "plugin": {
+        "status": "ready",
+        "active": 0,
+        "lastFailure": null,
+        "lastSuccess": null
+      },
+      "prover": {
+        "ready": true,
+        "proofs": "real",
+        "queue": {
+          "jobs": 0,
+          "bytes": 0,
+          "running": false,
+          "submitted": 4,
+          "completed": 4,
+          "failed": 0
+        }
+      }
+    },
+    "evidence": "execution/evidence/V06/live-qualification.json",
+    "productionReadiness": "Separate R04 audit, network clearance and 14-day soak gates remain unwaived."
   },
   "releaseArchives": {
     "archives": [
@@ -195,20 +317,20 @@
       },
       {
         "archive": ".build/v6/plugin-runtime-mac-current.tar.gz",
-        "bytes": 532187865,
-        "sha256": "8392453ded043d9f4762fd5285c79b17247b4bdedc33a1d3a94130d548ce275b",
+        "bytes": 532188418,
+        "sha256": "1e67166dff825bf68e520c9a7d4608539eaa332d597c758982e4ec5584f5c569",
         "manifest": ".build/v6/plugin-runtime-mac/plugin-release.json",
-        "manifestSha256": "31fbc2490c1b1c22e4fb46d12b758507eb7dbfe5cce75413f11562c9608719d4",
+        "manifestSha256": "ef35253a76950828f451f404f2a5f95c79b8c601af6023295c78c25fa29167b2",
         "verifiedFiles": 166649,
-        "verifiedAt": "2026-10-10T13:39:33.574791+00:00",
+        "verifiedAt": "2026-10-10T14:19:20.581330+00:00",
         "s3": {
           "bucket": "anonymous-message-board-testnet-backups-nvdhcyurtoga",
           "key": "releases/v6-20261010/plugin-runtime-mac-current.tar.gz",
-          "versionId": "hKvOj52SBqjvEvNJko.gO.XR4xS0MurR",
+          "versionId": "2D7CKT9l20NQMthpKY5UNaHumQMCeZOe",
           "expiration": "2026-11-10T00:00:00Z",
           "serverSideEncryption": "AES256",
           "checksumType": "FULL_OBJECT",
-          "checksumSHA256": "g5JFPe0EPZ9HYv1ShcebFyR7S97cM6HTqUEw1UjOJ1s="
+          "checksumSHA256": "HmcWbf+CW/aOUgyafUYIU56qMy1ZfHWJguTsVYT1xWk="
         }
       },
       {
@@ -284,15 +406,15 @@
   },
   "releaseArchiveIndex": {
     "bytes": 4777,
-    "sha256": "b6acacef9a4eeece58bc052e06fb4d18992adcbf322b9ac2e4271b4f8202ca2d",
+    "sha256": "26f4cf28c122eb7c8d1d6babde91f798e6d34e5c67d61314a274946e9d6b02dd",
     "s3": {
       "bucket": "anonymous-message-board-testnet-backups-nvdhcyurtoga",
       "key": "releases/v6-20261010/current-release-archives.json",
-      "versionId": "O1ybXqCAE88P8zUekflgqZLYmmzKGqr5",
+      "versionId": "Ej5TJfuplGrLOVFurtpdn3SM4qfAEuG8",
       "expiration": "2026-11-10T00:00:00Z",
       "serverSideEncryption": "AES256",
       "checksumType": "FULL_OBJECT",
-      "checksumSHA256": "tqys75pO7s5YvAUuBvtNGJkq3L8yK5rC5CcbT4ICyi0="
+      "checksumSHA256": "JvTPKMEi63yNHWur3pH3mObTTlxn1hMUonSUbp1rAt0="
     }
   }
 }

@@ -2,6 +2,10 @@
 
 The public application is <https://d30njln0kead8n.cloudfront.net>. The current
 network is Aztec **6.0.0-rc.1** testnet, backed by Ethereum Sepolia (11155111).
+This matches [Aztec's current network table](https://docs.aztec.network/networks),
+which prescribes matching SDK and Aztec.nr versions. npm also publishes newer
+prereleases; the deployed testnet remains the version used here.
+
 This is a fresh deployment: V5 accounts, collateral and recovery records remain
 associated with the V5 contracts. Keep their original configuration when recovering
 old funds. Testnet operation does not satisfy the independent audit and soak gates
@@ -66,12 +70,12 @@ The deployment record also contains each S3 object version. These objects expire
 on **10 November 2026** under the existing backup retention rule; preserve a
 verified copy before that date if longer recovery retention is required. Use
 these current archives, which include the V6 CLI identity and plugin checkout
-corrections. The host archive contains the verified Caddy2.11.4 binary archive,
+corrections. The host archive contains the verified Caddy 2.11.4 binary archive,
 service units, exact public prover configuration and budget bootstrap. Its
-bootstrap also schedules a30minute commissioning shutdown: cancel that only after
+bootstrap also schedules a 30-minute commissioning shutdown: cancel that only after
 verifying the persistent absolute budget timer. A restore does not extend the budget.
 
-AWS reclaimed the first V6 Spot instance at12:20:20UTC on10October. The current
+AWS reclaimed the first V6 Spot instance at 12:20:20 UTC on 10 October. The current
 replacement restored every runtime file from the verified archive. CloudFront
 was switched to a new private origin; all website/security fields outside that
 route remained unchanged. Spot capacity can be reclaimed again; repeat this
@@ -101,17 +105,35 @@ upload gzip bytes without their content-encoding metadata. See
 
 ## Live acceptance
 
-The deployment record tracks completed tests and remaining checks. Hosted
-onboarding has completed real Ethereum funding, private claim and public posting
-through the remote prover. The live moderator evaluated that post as allowed and correctly flagged a
-credible-threat test fixture within its one-hour window. The allowed decision
-was verified in moderator state; the associated post and flag were independently
-verified against canonical on-chain data. One test USDC has been deposited and
-claimed for the plugin, and its request is confirmed. Paid reply and refund
-results are recorded only after their canonical receipts are verified.
+The fresh V6 deployment passed real-proof Ethereum funding, private claim,
+anonymous posting, automatic moderation, paid plugin reply, screening and exit,
+and both Sepolia refund paths. The allowed posts and the credible-threat flag
+were verified against canonical events and moderator state. The plugin request
+and reply were also correctly allowed by the moderator.
+
+The plugin charged **0.000348 test USDC**. Its remaining **0.999652 test USDC**
+returned to the test wallet in transaction
+`0xbf32ef99658d9e4109d6156cecde8997b616cd2415f8527bc7ae5a23670e97ed`.
+The full board deposit, **0.00001 test ETH**, returned in transaction
+`0xf562b397d431b56e2ea45564ccdf8a114df69d7765c534ea463699d77d517df2`.
+Both exits reached normal V6 finality before redemption. Exact canonical effects,
+board principal/liability, wallet balances and gas costs were checked; repeat
+redemption attempts were rejected. The test wallet used normal MetaMask
+confirmation with its transaction protection enabled.
+
+The board exit succeeded in the browser and paused for settlement. A test-only
+commitment-input error then interrupted its final assertion; that error was
+corrected and the already completed exit was independently verified without
+submitting another withdrawal. The original failed run remains in the evidence.
+The later live browser refund passed in full.
+
+The final prover check reported four completed real proofs and no failures;
+the plugin was ready and idle, and the moderator had no feed lag or outstanding
+errors. Detailed results are in `execution/evidence/V06/live-qualification.json`.
 
 For repeat qualification, use the explicit phases described in
 [the public plugin guide](../plugins/public/README.md). Each browser run is
 bounded to 540 seconds and 4 GiB. Wait for moderation eligibility, Inbox readiness
-and normal network finality between runs; do not extend proof deadlines or
-manufacture settlement.
+and normal network finality between runs. Plugin credit exit must precede the
+board exit; then redeem plugin credit before resuming the board refund so its
+saved withdrawal record remains available.
