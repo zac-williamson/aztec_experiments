@@ -25,12 +25,13 @@ jobs:
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
           npm ci --prefix billboard/portal --ignore-scripts --no-audit --no-fund
+          npm run bootstrap:dependencies
           npm run bootstrap:noir
           node scripts/bootstrap-anvil.mjs
           npx --no-install playwright install --with-deps chromium
       - name: Build from clean generated directories
         run: |
-          node -e "const fs = require('node:fs'); for (const p of ['billboard/target', 'billboard/portal/out', 'billboard/portal/cache', '.build/sdk', '.build/contracts-manifest.json']) fs.rmSync(p, {recursive:true, force:true}); fs.rmSync('apps/dist', {recursive:true, force:true});"
+          node -e "const fs = require('node:fs'); for (const p of ['billboard/target', 'experiments/private-bok/target', 'billboard/portal/out', 'billboard/portal/cache', '.build/sdk', '.build/contracts-manifest.json']) fs.rmSync(p, {recursive:true, force:true}); fs.rmSync('apps/dist', {recursive:true, force:true});"
           npm run build
           node scripts/check-reproducibility.mjs snapshot "$RUNNER_TEMP/build-first.json"
       - name: Reject drift from committed generated consumers
@@ -39,7 +40,7 @@ jobs:
           test -z "$(git ls-files --others --exclude-standard -- apps/dist apps/src/billboard/billboard_artifact.json apps/src/billboard/private_fee_artifact.json apps/src/billboard/deploy/billboard_artifact.json apps/src/billboard/censor/billboard_artifact.json apps/src/billboard/portal_bytecode.txt apps/src/billboard/deploy/portal_bytecode.txt billboard/portal/out/BillboardPortal.sol/BillboardPortal.json shared/aztec_bundle.js plugins/adapter_artifact.json billboard/portal/out/PluginPortal.sol/PluginPortal.json)"
       - name: Rebuild and compare every recorded byte
         run: |
-          node -e "const fs = require('node:fs'); for (const p of ['billboard/target', 'billboard/portal/out', 'billboard/portal/cache', '.build/sdk', '.build/contracts-manifest.json']) fs.rmSync(p, {recursive:true, force:true}); fs.rmSync('apps/dist', {recursive:true, force:true});"
+          node -e "const fs = require('node:fs'); for (const p of ['billboard/target', 'experiments/private-bok/target', 'billboard/portal/out', 'billboard/portal/cache', '.build/sdk', '.build/contracts-manifest.json']) fs.rmSync(p, {recursive:true, force:true}); fs.rmSync('apps/dist', {recursive:true, force:true});"
           npm run build
           node scripts/check-reproducibility.mjs snapshot "$RUNNER_TEMP/build-second.json"
           node scripts/check-reproducibility.mjs compare "$RUNNER_TEMP/build-first.json" "$RUNNER_TEMP/build-second.json"

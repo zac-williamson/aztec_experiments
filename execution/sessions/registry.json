@@ -1,0 +1,1660 @@
+{
+  "schema_version": 1,
+  "sessions": [
+    {
+      "logical_id": "lead-20261011",
+      "runtime_id": "01a12a75-1b50-7871-a73b-4253a1010194",
+      "parent_id": null,
+      "task": [
+        "G05",
+        "G07",
+        "G14"
+      ],
+      "branch": "codex/rolling-private-bok-candidate",
+      "history_locator": "Codex runtime thread 01a12a75-1b50-7871-a73b-4253a1010194",
+      "role": "lead",
+      "state": "running final integration carry-map194application paths verified; 6d0 candidate frozen,2707 paid diagnostic slot reserved",
+      "working_branch": "codex/rolling-runtime-composition",
+      "active_edit_paths": [
+        "execution/",
+        "apps/rolling/wallet-session.mjs",
+        "apps/rolling/wallet-session.test.mjs",
+        "apps/rolling/wallet-panel.mjs",
+        "apps/rolling/wallet-panel.browser.test.mjs"
+      ],
+      "additional_worktree": "../rolling-lead-runtime",
+      "trusted_sender_claim": {
+        "chainId": 11155111,
+        "address": "0x374f2eeb49a9cc4a8bb732bb45b3c1fd751fdfc7",
+        "owner": "lead-20261011",
+        "runtime": "01a12a75-1b50-7871-a73b-4253a1010194",
+        "scope": "Single testnet fee mint only; no other agent may sign/send from this sender",
+        "state": "Mint daed763 finalized and fully accounted; permanent lease retained, no further send authorization assumed for this journal",
+        "evidence": "evidence/G04/fee-mint-1791758790202.json"
+      },
+      "frozen_candidate": "520db5c5f075b80cc4c060a3f5d5448f56d5d60a",
+      "allowed_paths": [
+        "execution/",
+        "scripts/testing/rolling-notification-fixture.mjs",
+        "scripts/testing/rolling-notification-fixture.test.mjs",
+        "scripts/testing/rolling-application-fixture.mjs",
+        "scripts/testing/rolling-application-fixture.test.mjs",
+        "scripts/testing/scenarios.mjs",
+        "scripts/testing/scenario-flows.mjs",
+        "scripts/testing/browser-worker.mjs",
+        "scripts/testing/run-application.mjs",
+        "scripts/testing/assets.mjs",
+        "scripts/testing/rolling-public-acceptance.mjs",
+        "scripts/testing/rolling-public-acceptance.test.mjs",
+        "scripts/testing/rolling-notification-browser.mjs",
+        "scripts/testing/rolling-notification-browser.test.mjs",
+        "apps/rolling/wallet-panel.browser.test.mjs"
+      ],
+      "browser_repair_claim": {
+        "base": "842683a17e8e9b670a87148422f0c5c0dd2d6bfc",
+        "paths": [
+          "scripts/testing/rolling-preference-browser.mjs",
+          "scripts/testing/rolling-preference-browser.test.mjs",
+          "apps/rolling/wallet-panel.browser.test.mjs"
+        ],
+        "status": "source approved and genuine passed; writer released"
+      },
+      "root_candidate_claim": {
+        "task": "G07",
+        "base": "f52aa61a4bb815d9d043970e4cabd9e667416020",
+        "paths": [
+          "scripts/w01-private-fee-flow.mjs",
+          "scripts/testing/private-fee-verification.mjs",
+          "scripts/testing/private-fee-verification.test.mjs",
+          "scripts/testing/assets.mjs",
+          "scripts/testing/rolling-application-fixture.mjs",
+          "BUILDING.md",
+          "package.json",
+          "scripts/build-sdk.mjs",
+          "scripts/check-sdk.mjs",
+          "scripts/patch-pxe-reorg-anchor.mjs",
+          "scripts/patch-pxe-reorg-anchor.test.mjs",
+          "scripts/test-sdk-manifest.mjs",
+          "scripts/testing/fixtures/pxe-reorg-anchor/README.md",
+          "scripts/testing/fixtures/pxe-reorg-anchor/block_synchronizer.js",
+          "scripts/testing/fixtures/pxe-reorg-anchor/block_synchronizer.ts"
+        ],
+        "purpose": "Compose reviewed207+7867; explicit stopped-consumer PXE patch and normal SDK/walletbuild before realinitialreorg"
+      },
+      "last_reconciled_at": "2026-10-13T02:21:39.680498+00:00",
+      "browser_native_claim": {
+        "task": "G07-cold-browser-native-composition",
+        "state": "component verified254/76246; realbrowser pending",
+        "owner": "lead-20261011",
+        "branch": "codex/rolling-runtime-composition",
+        "base": "57c0a642acac1c8b79835c6540bf9c82bcbf569e",
+        "paths": [
+          "scripts/testing/rolling-application-fixture.mjs",
+          "scripts/testing/rolling-application-fixture.test.mjs"
+        ],
+        "requirements": [
+          "G07-A01",
+          "G07-A06",
+          "G07-A10"
+        ],
+        "acceptance": "Explicit preference+notification scenario native/gateway compact enablement; exact final observer POST vs native accepted reconciliation, zero failures/pending; expected completed cold windows, tagged discovery0. Preserve all existing genuineproof/accounting checks.",
+        "dependencies": [
+          "eec4159 reviewed browser4files",
+          "Current57c genuine run fullyterminates before application"
+        ],
+        "verification": "Source review plus fixture+driver components, then real browser journey; preparing patch only during current frozen run"
+      },
+      "deployment_composition_claim": {
+        "task": "G02-rc3-deployment-tests",
+        "state": "verified component54bootstrap8package atf954",
+        "owner": "lead-20261011",
+        "base": "74f5ca21217162bd8951d413a8184133f4956fb7",
+        "paths": [
+          "deploy/prover/bootstrap.py",
+          "deploy/prover/package.py",
+          "deploy/prover/BOOTSTRAP.md",
+          "deploy/prover/README.md",
+          "scripts/test-prover-bootstrap.py",
+          "scripts/test-prover-package.py"
+        ],
+        "workerRevision": "fe89343ba031a87c7d7806e8923015a43ed7f9ce",
+        "sourceReview": "evidence/G02/rc3-deployment-fe893-source-review.json",
+        "requirements": [
+          "G02",
+          "G14"
+        ],
+        "acceptance": "Exact6reviewedfiles plus5same-SDK sourcehelpers, allboundedbootstrap/package regressions, actualcurrentLinuxpinmissing rejects package; no packagepayload/paidactions or pinpromotion",
+        "verification": "Existing Python unittest suites <=60s2GiB withpinnedNode subprocess and1160protectedinputs",
+        "candidate": "f9540922873322f0b3df1d76ebfaec97c7906096",
+        "review": "evidence/G02/deployment-f954-package-runtime-review.json"
+      },
+      "cold_failure_observation_claim": {
+        "task": "G07-genuine-cold-failure-observation",
+        "owner": "lead-20261011",
+        "state": "verified component only",
+        "branch": "codex/rolling-runtime-composition",
+        "base": "9bcab84fe4ccff9e577c5f60d58471697bdcd54f",
+        "paths": [
+          "scripts/testing/rolling-application-fixture.mjs",
+          "scripts/testing/rolling-application-fixture.test.mjs"
+        ],
+        "requirements": [
+          "G07-A02",
+          "G07-A08"
+        ],
+        "acceptance": "Retain finite progress/counts/timing plus nativecompact snapshot on success and failure before evidence save; no new request/retry/guard weakening; preserve original read value/error identity and pending ownership; meaningful observer negative fixtures then independentreview.",
+        "candidate": "635f28c8854d1b2ce43791879a79e22ce16cbd1e",
+        "evidence": "../rolling-lead-runtime/execution/evidence/G07/cold-failure-635f28c/postcheck.json",
+        "review": "evidence/G07/cold-failure-635f28c-review.json"
+      },
+      "http_diagnostic_transfer": {
+        "task": "G07",
+        "state": "verified exacttransfer13b40f2",
+        "paths": [
+          "scripts/test-pxe-preference-page.mjs"
+        ],
+        "worker": "design-20261011",
+        "worker_revision": "23f8a24fe7501be605c5210271f8ae3f60691b01",
+        "review": "evidence/G07/cold-http-23f8-runtime-review.json",
+        "acceptance": "Exact source bytes and dependency preservation; separate finitechain diagnostic only"
+      },
+      "batching_install_claim": {
+        "task": "G07-batching-composition",
+        "owner": "lead-20261011",
+        "state": "genuine06e9 coldpass17blocks31.314s; overallfailpublicbudgetassert; independentreviewpending",
+        "base": "f9540922873322f0b3df1d76ebfaec97c7906096",
+        "worker_revision": "b3bffca8626f47f841215b8ec01bcaa167855bc2",
+        "paths": [
+          "shared/trusted-private-node.mjs",
+          "shared/trusted-private-node.test.mjs",
+          "scripts/patch-pxe-preference-page.mjs",
+          "scripts/test-pxe-preference-page.mjs",
+          "node_modules/@aztec-labs/pxe/",
+          "apps/dist/aztec_bundle.js",
+          "apps/dist/sdk-manifest.json"
+        ],
+        "acceptance": "Exactreviewed4filetransfer; stopallconsumers; all10predecessorhashes+physicalsingleinodes; preserveold10andverifyoriginal8backup beforeexplicitrestore/apply. No mixedstate acceptance. Actualcomponentsandbaselinecomparisondiagnostic before normalSDK/frontend/wallet builds andfreshclosure. No newgenuineuntilqualified.",
+        "candidate": "56c22089d0aef06048d34b0f07be0fb4185d2ab9",
+        "review": "evidence/G07/readiness-batching-b3b-source-review.json",
+        "evidence": "../rolling-lead-runtime/execution/evidence/G07/batching-install-preparation/postcheck.json"
+      },
+      "native_closed_composition_claim": {
+        "task": "G02-native-version-closed-composition",
+        "owner": "lead-20261011",
+        "state": "running exact5b reviewed3filetransfer; no runtime untilDesignrelease",
+        "base": "4dd95ef27e66369b8c95c8cc5a488d487743548f",
+        "worker_revision": "5b0f4f67578b11ef1b31951a666585aa97a74af7",
+        "paths": [
+          "deploy/prover/bootstrap.py",
+          "scripts/test-prover-bootstrap.py",
+          "deploy/prover/BOOTSTRAP.md"
+        ],
+        "requirements": [
+          "G02",
+          "G14"
+        ],
+        "acceptance": "Exactreviewed3fileswithsame5helperclosure; newdiagnosticunits thenfullunittests onlyafterheavygrant; no native/cloud/package/paid qualification inferred.",
+        "candidate": "86750a4ee3da320fcaafdaf881aeb22e9de26621"
+      },
+      "monotonic_composition_claim": {
+        "task": "G07-monotonic-combined-composition",
+        "owner": "lead-20261011",
+        "state": "d16a exact4transferred; e71 exact2ordering transfer andstoppedowninstall preparation",
+        "branch": "codex/rolling-runtime-composition",
+        "base": "14b0cfcbf8e26d1a0dbb9e7102184f00fc7b2c12",
+        "worker_revision": "d22f64f52a6a9a031697d2c27fac54c88e33a883",
+        "paths": [
+          "scripts/patch-pxe-preference-page.mjs",
+          "scripts/test-pxe-preference-page.mjs",
+          "shared/rolling/cold-preference-reader.mjs",
+          "shared/rolling/cold-preference-reader.test.mjs",
+          "scripts/testing/rolling-application-fixture.mjs",
+          "scripts/testing/rolling-application-fixture.test.mjs",
+          "node_modules/@aztec-labs/pxe/",
+          "apps/dist/aztec_bundle.js",
+          "apps/dist/sdk-manifest.json"
+        ],
+        "requirements": [
+          "G07-A02",
+          "G07-A06",
+          "G07-A08"
+        ],
+        "acceptance": "Exact4blobs source7f8/runtime1693e899; fullmatchedHTTPreviewpending. Explicitstoppedown8originalrestore+8/2candidateapply onlyafterhashbackupcheck; normalbuilds regenerated+combinedclosure reviewed before genuine. No currentintegration advance."
+      },
+      "native_permission_transfer_claim": {
+        "base": "520db5c5f075b80cc4c060a3f5d5448f56d5d60a",
+        "source": "a2820c290e1cb265757f08be7e263a99085368c7",
+        "paths": [
+          "deploy/prover/bootstrap.py",
+          "deploy/prover/BOOTSTRAP.md",
+          "scripts/test-prover-bootstrap.py"
+        ],
+        "owner": "lead-20261011",
+        "state": "claimed exact3 transfer aftergenuinecleanup; workerreleased",
+        "review": "execution/evidence/G02/native-version-public-directory-source-review.json",
+        "method": "Exact three Git blobs only; source-frozen real journey completed and3157 pretransfer hashes stored; focused15/full69 Python3.14 thenreview."
+      }
+    },
+    {
+      "logical_id": "recovery-probe-20261011",
+      "runtime_id": "/root/recovery_probe",
+      "parent_id": "lead-20261011",
+      "task": [
+        "G01"
+      ],
+      "branch": "none (read-only)",
+      "history_locator": "collaboration runtime /root/recovery_probe, parent 01a12a75-1b50-7871-a73b-4253a1010194",
+      "role": "disposable worker",
+      "state": "completed",
+      "last_reconciled_at": "2026-10-13T01:33:33.863289+00:00"
+    },
+    {
+      "logical_id": "controls-20261011",
+      "runtime_id": "/root/controls",
+      "parent_id": "lead-20261011",
+      "task": [
+        "G02",
+        "G14"
+      ],
+      "branch": "codex/rolling-native-public-directory",
+      "history_locator": "collaboration runtime /root/controls, parent 01a12a75-1b50-7871-a73b-4253a1010194",
+      "role": "implementation worker",
+      "state": "2707 once-launchEXIT0 cloudexpiryverified; actualreceipt/hostcontrols andownedcleanup pending, soleheavy/service slot",
+      "worktree": "../rolling-controls",
+      "allowed_paths": [
+        "scripts/testing/rolling-native-artifacts.mjs",
+        "scripts/testing/rolling-native-artifacts.test.mjs",
+        "crs-manifest.json",
+        "scripts/build-crs.mjs",
+        "shared/crs-client.js",
+        "scripts/test-crs-build.mjs",
+        "scripts/test-crs-consumers.mjs",
+        "execution/evidence/G02/"
+      ],
+      "commit_trailer_aliases": {
+        "Agent-Session": "controls",
+        "Parent-Session": "lead"
+      },
+      "base": "d7f186a2dca8d5c7fd7fc0ab39ace8b0483a56a1",
+      "active_edit_paths": [
+        ".build/native-version-operator-*",
+        "execution/evidence/G02/native-version-operator/",
+        "/Users/zac/Library/Application Support/AnonymousMessageBoard/V6/private/native-version-20261013-d73c2bc3015b"
+      ],
+      "writer_released": true,
+      "last_reconciled_at": "2026-10-13T02:24:09.655035+00:00",
+      "parser_repair_claim": {
+        "task": "G02-linux-version-absence-repair",
+        "state": "failed actual15s; cleanup verified; independent5601; no retry",
+        "owner": "controls-20261011",
+        "branch": "codex/rolling-rc3-deployment-composition",
+        "paths": [
+          "execution/evidence/G02/rc3-linux-version-state-repair/"
+        ],
+        "acceptance": "Exact measured daemon-container absence form accepted only for exactname/stdoutempty/exit1; allunknowns/collisions/errors remainfailclosed; originalfailedrecordsimmutable; same workload/limits; sourceonly pendingreviewandgrant"
+      },
+      "native_amd64_claim": {
+        "task": "G02-native-amd64-version-feasibility",
+        "state": "running",
+        "owner": "controls-20261011",
+        "branch": "codex/rolling-rc3-deployment-composition",
+        "paths": [
+          "execution/evidence/G02/native-amd64-diagnostic-proposal/"
+        ],
+        "scope": "Read INFRA; readonlyAWS identity/knownresources/currentpricing+officialminimum/version-onlyhardware; prepare small native diagnostic usingexistingFleetdualshutdown controls. No launch/upload/configchanges untillead budgetreconciliation and reviewedconcreteproposal. No activeLinuxpinpromotion.",
+        "budget": "USD300cumulative; currentconservative205.28 remaining94.72, mustfreshreconcile; preliminarydiagnostic10boundnotgrantedspendyet"
+      },
+      "deployment_repair_claim": {
+        "task": "G02-deployment-test-repair",
+        "state": "review4052735; no tests yet",
+        "owner": "controls-20261011",
+        "base": "fe89343ba031a87c7d7806e8923015a43ed7f9ce",
+        "paths": [
+          "deploy/prover/bootstrap.py",
+          "scripts/test-prover-bootstrap.py",
+          "deploy/prover/BOOTSTRAP.md",
+          "execution/evidence/G02/"
+        ],
+        "dependencies": [
+          "9bc actual65068 failed",
+          "independent source diagnosis pending"
+        ],
+        "acceptance": "Repair stale CLI fixture under normalLinuxgate; distinguish Pythonrequirements and slow/hangingtests before bounded rerun. Preserve existing gates/allassertions; no runtime or paidactions before review and leadslot."
+      },
+      "native_amd64_source_claim": {
+        "task": "G02-native-amd64-closed-mode",
+        "owner": "controls-20261011",
+        "state": "review repairs plus finiteactualguestpreflight",
+        "base": "40527355c2a2654b1fbe2a85cf80a90c12c45831",
+        "paths": [
+          "deploy/prover/bootstrap.py",
+          "scripts/test-prover-bootstrap.py",
+          "deploy/prover/BOOTSTRAP.md"
+        ],
+        "dependencies": [
+          "proposal924b",
+          "indreview7d0448"
+        ],
+        "acceptance": "Closed fixednativebinaryversionmode only,reuse existingdualshutdown/receipt/oneattempt; no ordinaryLinuxgatebypass; no rawStatefailureloss; no paid/upload/run until reviewedexactsource and leadledgerreservation.",
+        "candidate": "5b0f4f67578b11ef1b31951a666585aa97a74af7",
+        "source_writer_released": true
+      },
+      "native_operator_claim": {
+        "task": "G02-native-version-operator-preparation",
+        "state": "reserved10 prepgrant oneexactimmutableupload/privatepayload only",
+        "owner": "controls-20261011",
+        "base": "d449fafafeaf7436456d9a6273732d3872a76719",
+        "paths": [
+          ".build/native-version-operator-*",
+          "execution/evidence/G02/native-version-operator/"
+        ],
+        "acceptance": "Derive smallest successors from existing09 once-onlyoperator helpers; exactclosedmode contract, currentbudget10proposal unallocated; source preparation only,no upload/resource/archive/payload/native actions; preserve uncertainreceipt reconciliation andindependent shutdownreadback.",
+        "campaign": "native-version-20261013-d73c2bc3015b"
+      },
+      "public_budget_claim": {
+        "task": "G07-public-reader-remaining-budget",
+        "owner": "controls-20261011",
+        "state": "running source-only narrowboundedColdordering per independentreview",
+        "base": "4dd95ef27e66369b8c95c8cc5a488d487743548f",
+        "branch": "codex/rolling-public-budget",
+        "paths": [
+          "scripts/testing/rolling-application-fixture.mjs",
+          "scripts/testing/rolling-application-fixture.test.mjs"
+        ],
+        "requirements": [
+          "G07-A02",
+          "G07-A08"
+        ],
+        "acceptance": "Move ONLYboundedCold recovery afterpublicfresh/reopen; ordinarynonbounded/browser/reorg/saved ordering unchanged. Explicitrecovery-awirephase, originaloldclose/freshidentity/zeroeffects/metrics/privatecheckpoint unchanged, finalaccounting remainsmandatory. Original540/525/30deadline/reserves unchanged. No productionpublic-index ortransport edits; meaningfulphaseorder/failurepropagation tests andindependentreview."
+      },
+      "native_permission_claim": {
+        "owner": "controls-20261011",
+        "base": "5b0f4f67578b11ef1b31951a666585aa97a74af7",
+        "at": "2026-10-13T01:36:32.542326+00:00",
+        "state": "running local permission reproduction/source repair; no new cloud grant",
+        "allowed_paths": [
+          "deploy/prover/bootstrap.py",
+          "deploy/prover/BOOTSTRAP.md",
+          "scripts/test-prover-bootstrap.py"
+        ],
+        "acceptance": "Explicit public runtime directory traversal under umask077/DynamicUser-equivalent; failold passfixed regression; keep privateconfig/caps/journals0700 and allshutdown/resourcebounds. Historical cause remains unproven; no newpaidaction. Fulltests serialized after genuine."
+      },
+      "corrected_native_operator_claim": {
+        "at": "2026-10-13T01:54:02.470464+00:00",
+        "allowed_paths": [
+          ".build/native-version-operator-2707-core.py",
+          ".build/native-version-operator-2707-launch.py",
+          ".build/native-version-operator-2707-observe.py",
+          ".build/native-version-operator-2707-cleanup.py",
+          ".build/native-version-operator-2707-test.py",
+          "execution/evidence/G02/native-version-operator/corrected-next-operators"
+        ],
+        "acceptance": "FixedimmutableVersionIdHEADexactbytes/hash/SSE/ownerregionbeforeLTintent; preserve12priorcases/addnegativechecks nofinancialaction; oldoperators/journalsunchanged. Newauthorityfieldsunset; source/runtime reviewbeforeleadnewreserve+grant."
+      }
+    },
+    {
+      "logical_id": "reviewer-20261011",
+      "runtime_id": "/root/reviewer",
+      "parent_id": "lead-20261011",
+      "task": [
+        "G05",
+        "G07"
+      ],
+      "branch": "read-only candidate refs",
+      "history_locator": "collaboration runtime /root/reviewer, parent 01a12a75-1b50-7871-a73b-4253a1010194",
+      "role": "independent reviewer",
+      "state": "running2707 finalbindingreview thenintegration/design review",
+      "active_edit_paths": [
+        "execution/evidence/G07/*independent*",
+        "execution/evidence/G07/*review*",
+        "execution/evidence/G07/*diagnosis*",
+        "execution/evidence/G02/*review*"
+      ],
+      "last_reconciled_at": "2026-10-13T02:21:39.680498+00:00"
+    },
+    {
+      "logical_id": "design-20261011",
+      "runtime_id": "/root/design",
+      "parent_id": "lead-20261011",
+      "task": [
+        "G07"
+      ],
+      "branch": "codex/rolling-genuine-cold-reorg",
+      "history_locator": "collaboration runtime /root/design, parent01a12a75-1b50-7871-a73b-4253a1010194",
+      "role": "implementation worker",
+      "state": "running bounded read-only feasibility redesign;282148tests accepted; genuine hold timing",
+      "worktree": "../rolling-design",
+      "allowed_paths": [
+        "billboard/rolling_contract/src/main.nr",
+        "billboard/rolling_contract/src/preference_recovery.nr",
+        "billboard/rolling_contract/src/lib.nr",
+        "scripts/patch-pxe-preference-page.mjs",
+        "scripts/test-pxe-preference-page.mjs"
+      ],
+      "base": "74f5ca21217162bd8951d413a8184133f4956fb7",
+      "reference_candidate": "1351ea1b180b11475250463c9c40fdd2e342ab13",
+      "writer_released": false,
+      "active_edit_paths": [
+        "scripts/testing/rolling-application-fixture.mjs",
+        "scripts/testing/rolling-application-fixture.test.mjs",
+        "scripts/testing/rolling-preference-recovery.mjs",
+        "scripts/testing/rolling-preference-recovery.test.mjs"
+      ],
+      "last_reconciled_at": "2026-10-13T02:21:39.680498+00:00",
+      "secondary_claim": {
+        "task": "G07-incremental-cold-gap-assessment",
+        "state": "running",
+        "owner": "design-20261011",
+        "base": "7c6de5b2b87a7f2c7f7d08ec1b2765653bd9f7a4",
+        "paths": [
+          "execution/evidence/G07/incremental-cold-assessment.json"
+        ],
+        "acceptance": "Read-only source-backed assessment of remaining G07-A02/A06/A08 incremental/reorg/capacity requirements; concrete smallest subsequent code task and thresholds before measurement. No source changes, tests, provider calls or capacity usage.",
+        "dependencies": [
+          "Frozen coldSDK79f",
+          "Frozen coldreaderce0",
+          "Nativecompactadapter",
+          "Current d877 genuine journey prepared"
+        ]
+      },
+      "monotonic_claim": {
+        "task": "G07-monotonic-cold-extension",
+        "state": "componentsverified; installed/genuinepending",
+        "owner": "design-20261011",
+        "base": "b3bffca8626f47f841215b8ec01bcaa167855bc2",
+        "branch": "codex/rolling-monotonic-batching",
+        "paths": [
+          "scripts/patch-pxe-preference-page.mjs",
+          "scripts/test-pxe-preference-page.mjs",
+          "shared/rolling/cold-preference-reader.mjs",
+          "shared/rolling/cold-preference-reader.test.mjs"
+        ],
+        "requirements": [
+          "G07-A02",
+          "G07-A06",
+          "G07-A08"
+        ],
+        "acceptance": [
+          "Authenticated completed cursor extension scans suffix without full prefix replay",
+          "Original bounded SDK validators reauthenticate former head against new anchor; no custom nullifier authority",
+          "Atomic checkpoint plus authenticated reader prefix, crash/CAS/response loss safe",
+          "Actual reorg invalidates retained completion and requires honest rebuild",
+          "All existing rollback/authenticity tests retained, new negative regressions",
+          "No lifetime cap, privacy regression or partial state publication"
+        ],
+        "dependencies": [
+          "Reviewed ce0/79f coldSDK foundation",
+          "Completed small genuinejourney separately stillrunning57c0",
+          "Distribution manifest12pins lead-owned after source approval"
+        ],
+        "verification": "Source and independent review first; component real ACIR original validators only after explicit serialized grant; genuine append and fork acceptance remains required",
+        "scopeLimits": [
+          "No installed dependency edits",
+          "No normalbuild/generated artifacts",
+          "No backend/protocol/generatedhelper external edits",
+          "No heavy runs beforeleadgrant"
+        ],
+        "candidate": "d22f64f52a6a9a031697d2c27fac54c88e33a883"
+      },
+      "http_diagnostic_claim": {
+        "task": "G07-cold-http-progress-diagnostic",
+        "state": "verified component pending independent runtime review; actual98741 PASS",
+        "owner": "design-20261011",
+        "base": "74f5ca21217162bd8951d413a8184133f4956fb7",
+        "branch": "codex/rolling-cold-http-diagnostic",
+        "paths": [
+          "scripts/test-pxe-preference-page.mjs",
+          "execution/evidence/G07/cold-http-progress/"
+        ],
+        "requirements": [
+          "G07-A01",
+          "G07-A02",
+          "G07-A06",
+          "G07-A08"
+        ],
+        "dependencies": [
+          "b7db061 failurediagnosis",
+          "frozen57c/74 coldSDK baseline",
+          "Existing actual encrypted ACIR finitechain fixture"
+        ],
+        "acceptance": "Productionreader/real HTTPgateway+nativeadapter+original installedSDK validators measurement on labelledfinitechain, no proving; finite perstep sequence/nextBlock/nextLog/timing and nativecounts onfail, tag0, allauth/CAS guards; distinguish nonprogress from workcost/readinessamplification",
+        "verification": "Source review before one <=60s2GiB isolated diagnostic (existing real ACIR opt-ins); no unreviewed repeated actualgenuine",
+        "candidate": "23f8a24fe7501be605c5210271f8ae3f60691b01"
+      },
+      "batching_claim": {
+        "task": "G07-readiness-batching",
+        "owner": "design-20261011",
+        "state": "135 components independently accepted; HTTP targets pass runtime review pending",
+        "base": "23f8a24fe7501be605c5210271f8ae3f60691b01",
+        "paths": [
+          "shared/trusted-private-node.mjs",
+          "shared/trusted-private-node.test.mjs",
+          "scripts/patch-pxe-preference-page.mjs",
+          "scripts/test-pxe-preference-page.mjs"
+        ],
+        "requirements": [
+          "G07-A02",
+          "G07-A08"
+        ],
+        "dependencies": [
+          "actual23f8b4cc reviewed diagnostic",
+          "design0d54f2"
+        ],
+        "acceptance": "Preserve every identity-first/readiness/canonical/context/CAS guard; only concurrent independent publicreads, allstartedpromisesdrain inclfalsy errors; exactsame6steps17SDK4compacttag0; <=400gateway calls and reader<=8500ms engineeringtargets. No installeddeps/generateddistribution mutations. a9ef staysseparate.",
+        "candidate": "b3bffca8626f47f841215b8ec01bcaa167855bc2",
+        "source_writer_released": true
+      },
+      "genuine_extension_claim": {
+        "task": "G07-genuine-cold-extension-reorg",
+        "owner": "design-20261011",
+        "state": "running sourceonly no runtime",
+        "branch": "codex/rolling-genuine-cold-reorg",
+        "base": "6054711b7fe958e0a02f9e0126429a68640bb377",
+        "paths": [
+          "scripts/testing/rolling-application-fixture.mjs",
+          "scripts/testing/rolling-application-fixture.test.mjs",
+          "scripts/testing/rolling-preference-recovery.mjs",
+          "scripts/testing/rolling-preference-recovery.test.mjs"
+        ],
+        "requirements": [
+          "G07-A02",
+          "G07-A06",
+          "G07-A08"
+        ],
+        "dependencies": [
+          "d22 source/components/HTTP accepted",
+          "e71 publicorderingreviewed",
+          "plan e47e3036"
+        ],
+        "acceptance": "Existing3proofinitial/4proofmarker exactfork/journal/fee/digest/publicfootprint retained; switchsnapshotcapability toactuald22cold withnativecompact route; observedsuffix-only vsfullrebuild distinguish honesttrace; fixed540/525limits unchanged, noextraProofs orstubqualification. Sourcefirst meaningfultests; actualgrantrequiresmeasuredphaseadmission."
+      }
+    }
+  ],
+  "integrations": [
+    {
+      "task": "G15",
+      "worker_revision": "0ddbeb71c7f0c86446385b4d0f283c4df315d953",
+      "candidate": "f9911f0fe3021275242211d4ddfcc64f40bf990b",
+      "worker_session": "design-20261011",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "evidence": "evidence/G05/foundation-integration.json"
+    },
+    {
+      "task": "G14 bounded development",
+      "candidate": "a9ea6c1d738d3bfd944eadbc006443d998201b25",
+      "base": "f9911f0fe3021275242211d4ddfcc64f40bf990b",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "evidence": "evidence/G14/development-integration.json"
+    },
+    {
+      "task": "G06 boundedprotocolfoundation",
+      "candidate": "daa59d284779b2c0348064ec125d0d53b5a6a8db",
+      "base": "a9ea6c1d738d3bfd944eadbc006443d998201b25",
+      "worker_revision": "caebabfb2282ece459879810ba4016493b634cae",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "evidence": "evidence/G06/development-integration.json"
+    },
+    {
+      "task": "G05/G06/G14 bounded development",
+      "candidate": "5235f497a80f52b5e1a9a797d2c92824618ca7c4",
+      "base": "daa59d284779b2c0348064ec125d0d53b5a6a8db",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "policy_sha256": "bf8aa294b051ad099d90e42b5879ce0e764dcf2d66263337b6104b3c36316b60",
+      "evidence": "evidence/G14/integration-5235-evidence.json",
+      "gate_result": "evidence/G14/integration-5235-result.json",
+      "limits": "Full product/privacy/Linux/provider/release gates remain open; no push."
+    },
+    {
+      "task": "G14 bounded development",
+      "candidate": "bfbbf4c7b3d669714efe99a03c07cc7d6394335f",
+      "base": "5235f497a80f52b5e1a9a797d2c92824618ca7c4",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "policy_sha256": "ca2adb14c95a81bb341a6faeeaa51b2941abe59df5de7759a6c82d809258c185",
+      "evidence": "evidence/G14/integration-bfbb-evidence.json",
+      "gate_result": "evidence/G14/integration-bfbb-result.json",
+      "limits": "Linux/provider/fullproduct/privacy/release open"
+    },
+    {
+      "task": "G06/G14 bounded genuine reply and actual provider recovery",
+      "candidate": "3c802500ba787c49baa79f205e1aee6f34e2175d",
+      "base": "bfbbf4c7b3d669714efe99a03c07cc7d6394335f",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "policy_sha256": "71f61942cf2e985df63886863156bc4bcfa0d8189b61a39157882dcc2ca86fb3",
+      "evidence": "evidence/G14/integration-3c802-evidence.json",
+      "gate_result": "evidence/G14/integration-3c802-result.json",
+      "limits": "Fullproduct/privacy/Linux/releaseopen; no push"
+    },
+    {
+      "task": "G05/G06/G14 bounded wallet application and canonical reader",
+      "candidate": "43f9e424e0f1c69962ad55b7c97edd1513c7baf0",
+      "base": "3c802500ba787c49baa79f205e1aee6f34e2175d",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "policy_sha256": "6e6c20b9eb45fd2b59a84a44dfded767e7fd149921d85badb69723c94882f020",
+      "evidence": "evidence/G05/integration-43f9-evidence.json",
+      "gate_result": "evidence/G05/integration-43f9-result.json",
+      "limits": "Full product/profile/browser/privacy/remote qualification/release open"
+    },
+    {
+      "task": "G05/G06 bounded genuine profiles",
+      "candidate": "f30a8e3f44092d3452db836969b65861d40efb4b",
+      "base": "43f9e424e0f1c69962ad55b7c97edd1513c7baf0",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "policy_sha256": "09e15342af3c211b340a0af14cafba6931b0a7b47c021f0d9a27ed1d6e1b7e7a",
+      "evidence": "evidence/G05/integration-f30-evidence.json",
+      "gate_result": "evidence/G05/integration-f30-result.json",
+      "limits": "Full product and release gates remain open."
+    },
+    {
+      "task": "G06 bounded genuine anonymous thread and repost reactions",
+      "candidate": "d1e4897c21241ad02ddde0069ca638feee2fe389",
+      "base": "f30a8e3f44092d3452db836969b65861d40efb4b",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "policy_sha256": "5d548c363b642fbb11fe1761c6b08282a7063963d2470a321aaf55e4a2143abb",
+      "evidence": "evidence/G06/integration-d1-evidence.json",
+      "gate_result": "evidence/G06/integration-d1-result.json",
+      "limits": "Full product and release gates remain open."
+    },
+    {
+      "task": "G06 bounded genuine two-account reactions",
+      "candidate": "24934789146be25e5e32bef42b51ae87e644d3c3",
+      "base": "d1e4897c21241ad02ddde0069ca638feee2fe389",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "policy_sha256": "d629ac4a00bb122a45005338291a6fac809fcb11a064eb0101e170f1d8ed7c17",
+      "evidence": "evidence/G06/integration-249-evidence.json",
+      "gate_result": "evidence/G06/integration-249-result.json",
+      "limits": "Full product and release gates remain open."
+    },
+    {
+      "task": "G05 names/recovery/request-capture and G14 bootstrap development",
+      "candidate": "e3c9ebfe1f6a216baa2d3312833e6a40af12ace6",
+      "base": "24934789146be25e5e32bef42b51ae87e644d3c3",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "evidence": "evidence/G05/integration-e3-evidence.json",
+      "gate_result": "evidence/G05/integration-e3-result.json",
+      "limits": "Not fullprivacy or remotequalification; externalreleasegates retained"
+    },
+    {
+      "task": "G05/G06 genuine browser composer development",
+      "candidate": "7328b60ece6422b1ee33e21c0398fac7e75decaa",
+      "base": "e3c9ebfe1f6a216baa2d3312833e6a40af12ace6",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "evidence": "evidence/G06/integration-7328-evidence.json",
+      "gate_result": "evidence/G06/integration-7328-result.json",
+      "limits": "Preparation/cancel notbrowserpublication;fullproduct/releaseopen"
+    },
+    {
+      "task": "G06 bounded social/reaction wire development",
+      "candidate": "ef533d9973b44363e4932c1900f69df61c0d7a3a",
+      "base": "7328b60ece6422b1ee33e21c0398fac7e75decaa",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "evidence": "evidence/G06/integration-ef533-evidence.json",
+      "gate_result": "evidence/G06/integration-ef533-result.json",
+      "limits": "Outage/staleness/fullproduct/deployment/specialist/soak/network stillopen"
+    },
+    {
+      "task": "G06 trustedrecovery and scopedcomponentclosure",
+      "candidate": "4c76d253378f2706d8dc3d946e687c0c05f19a6e",
+      "base": "ef533d9973b44363e4932c1900f69df61c0d7a3a",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "evidence": "evidence/G06/integration-4c76-evidence.json",
+      "gate_result": "evidence/G06/integration-4c76-result.json",
+      "component_evidence": "evidence/G06.json",
+      "limits": "Fullproduct/deployment/specialist/soak/network remainopen"
+    },
+    {
+      "task": "G14 startup diagnostic development",
+      "candidate": "04f41a280ff7eb8d64c9f0333bf0e6924b6b536f",
+      "base": "4c76d253378f2706d8dc3d946e687c0c05f19a6e",
+      "worker_revision": "c06235f83603e904dbc86cb9cad59dc2b8981584",
+      "integrator_session": "lead-20261011",
+      "reviewer": "reviewer-20261011",
+      "evidence": "evidence/G02/integration-04f41-evidence.json",
+      "gate_result": "evidence/G02/integration-04f41-result.json",
+      "limits": "Linuxqualification/freshprivatepayload/shutdowncontrols/remoteproofs notpassed"
+    },
+    {
+      "task": "G05-normalized-name-race",
+      "candidate": "8d8dc0fa3103c010f1756ada15f65b166cc5dd65",
+      "base": "04f41a280ff7eb8d64c9f0333bf0e6924b6b536f",
+      "review": "evidence/G05/name-race-8d8-integration-review.json",
+      "gate": "evidence/G05/integration-8d8-result.json",
+      "status": "integrated",
+      "recorded_at": "2026-10-12T03:38:05.112970+00:00"
+    },
+    {
+      "task_id": "G05-subboard-withdrawal-components",
+      "candidate": "09a8470b31db0736ecac2a084da5a4c3e7c29296",
+      "base": "8d8dc0fa3103c010f1756ada15f65b166cc5dd65",
+      "at": "2026-10-12T04:17:56.896087+00:00",
+      "gate_result": "evidence/G05/integration-09a-result.json",
+      "review": "evidence/G05/subboard-withdrawal-09a-integration-review.json",
+      "scope": "Bounded components only; fullG05/product/privacy/release remainopen"
+    },
+    {
+      "task_id": "G07-preference-and-G14-bootstrap-components",
+      "candidate": "50ff963e26877a94bf8379e97b90e52863e3ab6f",
+      "base": "09a8470b31db0736ecac2a084da5a4c3e7c29296",
+      "at": "2026-10-12T07:12:30.931971+00:00",
+      "gate_result": "evidence/G07/integration-50ff-result.json",
+      "review": "evidence/G07/combined-50ff-integration-review.json",
+      "scope": "Bounded components only; full G07/G14, private recovery after reorg, cold scale, reply delivery and production gates remain open."
+    },
+    {
+      "task": "G07-explicit-saved-and-reorg-recovery-components",
+      "candidate": "3b259e1422bddfd8d4a8121d1780be18e53b618c",
+      "base": "50ff963e26877a94bf8379e97b90e52863e3ab6f",
+      "branch": "codex/rolling-chat-draft3",
+      "owner": "lead-20261011",
+      "at": "2026-10-12T11:02:08.297370+00:00",
+      "gate": "evidence/G07/integration-3b259-result.json",
+      "review": "evidence/G07/integration-3b259-final-review.json",
+      "status": "integrated scoped development components; wholeG07 open",
+      "history": "Original source commits and cherry-pick -x mappings retained in branch history; no squash."
+    },
+    {
+      "candidate": "b44010c38da83d04b123382d92ed522b13b6979f",
+      "base": "3b259e1422bddfd8d4a8121d1780be18e53b618c",
+      "task": "G07-notification-storage-components",
+      "agent_session": "lead-20261011",
+      "at": "2026-10-12T21:07:16.721567+00:00",
+      "reviewer": "reviewer-20261011",
+      "source_sessions": [
+        "lead-20261011",
+        "controls-20261011",
+        "design-20261011"
+      ],
+      "policy": "evidence/G07/integration-b440-policy.json",
+      "evidence": "evidence/G07/integration-b440-evidence.json",
+      "result": "evidence/G07/integration-b440-result.json",
+      "negative": "evidence/G07/integration-b440-negative-gate.json",
+      "scope": "Development components only; fullG07/rc3/remote/testnet/audit/soak/network gates remain. Source commits retained withoutsquash."
+    }
+  ],
+  "candidate_transfers": [
+    {
+      "task": "G14",
+      "worker": "controls-20261011",
+      "worker_revisions": [
+        "9c1108cb805aedf952bfb270b264433d0adcca3f",
+        "772ec5f8ede094474bdf603d82b3561342ddb952"
+      ],
+      "candidate_revisions": [
+        "6195edd",
+        "a70175140faa7ad97bce08d8f4526fbcdaddd9b9"
+      ],
+      "reviewer": "reviewer-20261011",
+      "review": "evidence/G14/adapter-observer-source-review.json",
+      "status": "reviewed source oncandidate; sharedintegration andactualruntimepending"
+    },
+    {
+      "task": "G06",
+      "worker": "controls-20261011",
+      "worker_revision": "8db5c9fb5de1b6d95dbc95385759630f46ddeb88",
+      "candidate_revision": "25e2297",
+      "review": "evidence/G06/public-projection-8db5-review.json",
+      "status": "approved source; actual app acceptance pending"
+    },
+    {
+      "task": "G05",
+      "worker": "design-20261011",
+      "worker_revision": "0d05cc2910780a26f561d208d24bf012a2d40933",
+      "candidate_revision": "b92be57",
+      "review": "evidence/G05/application-0d05-review.json",
+      "status": "approved source; actual app acceptance pending"
+    },
+    {
+      "task": "G06",
+      "worker": "design-20261011",
+      "worker_revisions": [
+        "53dcb61699bf319d532b27a1d1c256a9e523a6b9",
+        "10201287fd4c104b322af3d7d9613d0821e73a3c"
+      ],
+      "candidate_revisions": [
+        "f7c7d9a",
+        "fb80d47"
+      ],
+      "review": "evidence/G06/public-index-102-review.json",
+      "status": "approved source and16checks; actual index acceptance pending"
+    },
+    {
+      "task": "G05",
+      "worker": "design-20261011",
+      "worker_revisions": [
+        "1b21614533b57708fafb52d8c21accff79b7c46d",
+        "0d051db5412b1bb95aaa616d5193a1b61224e016",
+        "e410b2df5b09cba29619b6830136371b58fea072"
+      ],
+      "candidate_revisions": [
+        "7fc4c34",
+        "afebef9",
+        "13ac43a"
+      ],
+      "reviews": [
+        "evidence/G05/workflow-backup-1b216-review.json",
+        "evidence/G05/deployment-e410-review.json"
+      ],
+      "status": "reviewed source; real browser acceptance pending"
+    },
+    {
+      "task": "G05",
+      "worker": "controls-20261011",
+      "worker_revision": "2b416da60234b308615488d09ff1a8246487a577",
+      "candidate_revision": "ba7fe8f",
+      "review": "evidence/G05/real-wall-2b416-review.json",
+      "status": "clock repair source approved and actualtrustedHTTPready infailedc551; fulljourneystillpending"
+    },
+    {
+      "task": "G05",
+      "worker": "design-20261011",
+      "worker_revisions": [
+        "cf3144c1acc4386b8508e16d9bdf60c42af747bb",
+        "307ae91777b421c0951c325794abfdea57c03436",
+        "956b453e4be6b83c3d03e10c936d2db745f8ce39"
+      ],
+      "candidate_revisions": [
+        "141f915",
+        "a09b1d3",
+        "cf62df7"
+      ],
+      "review": "evidence/G05/wallet-session-956-review.json",
+      "status": "source approved;20combinedtests; actualbrowserpending"
+    },
+    {
+      "task": "G05",
+      "worker": "controls-20261011",
+      "worker_revision": "527abbea8923b0d81b78792960b815b3d3f1ffed",
+      "candidate_revision": "582652f",
+      "review": "evidence/G05/native-artifacts-527-review.json",
+      "status": "source approved; actualcampaign pending; outer directory inventory includes helper"
+    },
+    {
+      "task": "G05",
+      "worker": "design-20261011",
+      "worker_revision": "1186d297be4a4ef09c2d635d02ed0ca2b6fe607c",
+      "candidate_revision": "cddb3f0",
+      "review": "evidence/G05/wallet-panel-1186-review.json",
+      "status": "source approved and7browserUIchecks; actualwalletchainpending"
+    },
+    {
+      "task": "G14",
+      "worker": "controls-20261011",
+      "worker_revision": "e51fa6896fc35f3884c160c58ad913e815a6602f",
+      "candidate_revision": "3ce246d",
+      "review": "evidence/G14/bootstrap-receipt-e51-review.json",
+      "status": "36independentPythonchecks; actualLinuxreceiptpending"
+    },
+    {
+      "task": "G05/G14",
+      "worker": "design-20261011",
+      "worker_revisions": [
+        "fce70cbeb23d7010eaf2fa59c65d3cf015752dcd",
+        "be936e1aeebb2db5ee8370ac1e9c87599df1b486"
+      ],
+      "candidate_revisions": [
+        "a108e56",
+        "8a1e585"
+      ],
+      "review": "evidence/G05/funding-receipts-be936-review.json",
+      "status": "approvedsource30rootchecks; actualclaimintegrationpending"
+    },
+    {
+      "task": "G05 profiles",
+      "worker_revisions": [
+        "b9e0ea518b5f9150a9a82ec8a60b16cb40b73325",
+        "e4fc06a8a037d9943d62aa7308760145be270207",
+        "f92e5a0aabc3cc692f47f43cf9ca0921259cd3d3",
+        "1bb94d11e3ea3c1efa30ebbb59535878e403fd54",
+        "d3cd85f9c5a31d5df5c2deef2bb243ffdbbbf8ba",
+        "51c60fb9d15213c73c0289956754a2ff5050ca75"
+      ],
+      "candidate_revisions": [
+        "b9c9bd5",
+        "a4f5e2e",
+        "e138017",
+        "f5bb869",
+        "c4a5dcf",
+        "739c998"
+      ],
+      "reviews": [
+        "evidence/G05/profile-b9e-review.json",
+        "evidence/G05/profile-projection-f92-review.json",
+        "evidence/G05/profile-application-1bb94d-review.json",
+        "evidence/G05/avatar-upload-d3cd-review.json",
+        "evidence/G05/avatar-moderation-51c-review.json"
+      ],
+      "status": "source approved; normal combined build and acceptance pending"
+    },
+    {
+      "task": "G05",
+      "worker": "design-20261011",
+      "worker_revisions": [
+        "9f70d7299753ea31799c17d8126dde0a6847a83b",
+        "fa0cef01a9798d9e61ec4fd5fe76964b21cb6a07"
+      ],
+      "candidate_revisions": [
+        "892b3e6",
+        "4bd642e"
+      ],
+      "review": "evidence/G05/profile-editor-fa0-browser-review.json",
+      "status": "17independenteditor browserchecks plus10publicreader/start checks; sourceapproved, realbrowserfunding remainsopen"
+    },
+    {
+      "task": "G05",
+      "worker": "controls-20261011",
+      "worker_revision": "f6a9f8fb07297859f0d353f722a38839cd5bd967",
+      "candidate_revision": "b5a71cd",
+      "review": "evidence/G05/exact-raster-f6a-review.json",
+      "status": "valid8192PNG fixture approved6independentchecks; actualpublicationpending"
+    },
+    {
+      "task": "G05",
+      "lead_revision": "55e07721498cd87c781c05ea9508794bdc8da79c",
+      "review": "evidence/G05/profile-campaign-55e0772-review.json",
+      "status": "26independentchecks andnormalwalletassetsverified; actualprofilecampaignrunning"
+    },
+    {
+      "task": "G06-social-wire",
+      "owner": "lead-20261011",
+      "status": "claimed transfer to currentroot, combinedreview then actual",
+      "source_revisions": [
+        "e0d7679c663b02b51dd3cf5dc28b9994f4c02e02",
+        "83ed41bb55e7489a74f3498e593fde047cd950ce"
+      ],
+      "allowed_paths": [
+        "scripts/testing/rolling-social-wire.mjs",
+        "scripts/testing/rolling-social-wire.test.mjs",
+        "scripts/testing/rolling-application-fixture.mjs",
+        "scripts/testing/rolling-public-acceptance.mjs",
+        "scripts/testing/rolling-public-acceptance.test.mjs",
+        "scripts/testing/scenario-flows.mjs",
+        "scripts/testing/scenarios.mjs"
+      ]
+    },
+    {
+      "task": "G05-name-race-composition",
+      "owner": "lead-20261011",
+      "base": "2397d2e1e318450e44953acb06f443d1a80abdcf",
+      "worker_revisions": [
+        "57349a8",
+        "c54820e",
+        "1bfd2f6",
+        "b3ea42b",
+        "75dfae6",
+        "604f978",
+        "10dee787"
+      ],
+      "candidate_revisions": [
+        "013a1ea",
+        "28b6587",
+        "d9f7d32",
+        "e0911f4",
+        "c3abe51",
+        "fa01cac",
+        "af9d930"
+      ],
+      "status": "source composition frozen;228checks passed;independentreviewpending;actualnotrun",
+      "conflict_resolution": "Preserved social second collateral and optional standalone accounting, composer branch/await/assets, e3 observer; union scenario/source inventories and race-specific twojobs/profile oracle. No production contract/assets changes."
+    },
+    {
+      "task": "G06-trusted-recovery",
+      "owner": "lead-20261011",
+      "source_revisions": [
+        "b7c9f8a9f00c2ecad79825230a298f549c490e75",
+        "ef533d9973b44363e4932c1900f69df61c0d7a3a"
+      ],
+      "candidate_revisions": [
+        "ec14364",
+        "c8cd427",
+        "22fc523",
+        "5a62b5213aefc6e6ae398488ced38d235b1b5f22"
+      ],
+      "status": "exact5a62sourceapproved105;roottransfer/actualpending",
+      "review": "evidence/G06/trusted-recovery-parent-5a62-review.json"
+    },
+    {
+      "task": "G05-name-race-recovery-composition",
+      "owner": "lead-20261011",
+      "base": "68e7c326f1ca946463ebc8cfd04848e62ff7cfb8",
+      "source_revision": "af9d930d8af3e16b3e8924fff88ffb6a8a8f3199",
+      "candidate_revisions": [
+        "595190b",
+        "bd949de",
+        "57e9211",
+        "8fe8a05",
+        "dfbe48b",
+        "2f26d99",
+        "c7df4b191d7f9c71d75318a12ec1c25327e3f8aa"
+      ],
+      "status": "exactsourceapproved;actualpending",
+      "review": "evidence/G05/name-race-combined-c7df-review.json",
+      "conflicts": "Union sourceinventory/scenarios and exclusive flags;2racejobs vs1recoveryjob; profileoracle either; both lifecycleclosures; retain allregressiontests. Racebody sixfiles identicalaf9; recoverybody/consumer/reader identical68e."
+    },
+    {
+      "candidate": "83406aa2c70022cc48035619ce595bdab1491ec4",
+      "base": "09a8470b31db0736ecac2a084da5a4c3e7c29296",
+      "task": "G07",
+      "agent_session": "lead-20261011",
+      "transfers": [
+        {
+          "root": "11c8639e9472618fe4d12b04847591f01d1c9711",
+          "reviewedSource": "d530a69fbe017298974b091f55bf7d9e1474d4ee",
+          "stablePatchId": "28e6287474b1c229a92d297899758b80c78ddf2f"
+        },
+        {
+          "root": "ac15a07211be4cfd04c6529dea89ce50f980bbd3",
+          "reviewedSource": "2f31b43b6596aa5ec6b3d6da9d6c1b956e142038",
+          "stablePatchId": "7fa3f86765f604adf8c0f5049661147842ad2983"
+        },
+        {
+          "root": "42d130b176645321244fa44ac68b430c28b279b5",
+          "reviewedSource": "1ac830b30910a0bf099c19c2f830ede2065bea45",
+          "stablePatchId": "a6b3cdf99f17582a83c6cab30e5b0f98d6a3769c"
+        },
+        {
+          "root": "b61d808eb231ba12570024c8b94c69b0f89e3f63",
+          "reviewedSource": "a00a0187047df11db71482f669ae17e33954e1ff",
+          "stablePatchId": "09fe9df6306d098274399dac682eca46a67e46f7"
+        },
+        {
+          "root": "d662e18e08e039dfc39d8cbf6d33100949d6ddcf",
+          "reviewedSource": "fea5af6ba153ab0336efdd914970d989b9ec011e",
+          "stablePatchId": "2f9fe59c2c221d46b7bdc5826f15424d094fb09b"
+        },
+        {
+          "root": "7fdf1f28b94a3c284cd2c1518a9d537e07897d41",
+          "reviewedSource": "093af599c1bd5f5bd5a3e05f1c3c73f69373f0d0",
+          "stablePatchId": "fbad358f9babc58c144b9b4193b65455d5a01b99"
+        },
+        {
+          "root": "65b5f7b6a1160ce338cae292696f160434eb112a",
+          "reviewedSource": "dffbf8dc74a3ffb03b96f3dacd5cd00fa5b249f2",
+          "stablePatchId": "bf29395e235e330951cea0348b901875d49870ea"
+        },
+        {
+          "root": "130d0b8a3e541a6170931150f9f7ca43bf5e0d5c",
+          "reviewedSource": "d933036442fac747bcd0bb50155b393fe171db73",
+          "stablePatchId": "da044249a7d8626246c496ac337e10334c4bc79a"
+        },
+        {
+          "root": "896b3865cc8931d0b770778b2113d486890fd508",
+          "reviewedSource": "0d6b5f9f0c099f3f2219832b8289ad24908c987a",
+          "stablePatchId": "bfd03c5fee2dfa9465ab5435c8544a4dd12c1969"
+        },
+        {
+          "root": "d0b65dc96b53e6f612a3d3dbf4d0cfebcd15feb5",
+          "reviewedSource": "c99d79a86764f5839b8d2abc7b2e87bc6df61682",
+          "stablePatchId": "38a98bf5cde5a48dbe9dfec313ec58edff25a81b"
+        },
+        {
+          "root": "decf7ac33cb6f35b4190abfcdd407d7ff241476a",
+          "reviewedSource": "355ad39b559374402e74cd281a43b776449ba67d",
+          "stablePatchId": "2db75e32937935315909705d914ef4dc9883996e"
+        },
+        {
+          "root": "8b10b5e30d337ecd2c026bde918a2345255e9b72",
+          "reviewedSource": "51e65efd234c5c77e011f6542d8a0a3872a9d6c9",
+          "stablePatchId": "cec222c2532a8d79dfc0819c88c2b97c894f8e24"
+        },
+        {
+          "root": "0419aa2201838a0b38b911b2d59527fe06f787e4",
+          "reviewedSource": "1cf4f3f976606149c9d2c55b1b8f1f6633fa27d6",
+          "stablePatchId": "9fe4854b275596e9f4ea79dfedcf54cb2cd70fd2"
+        },
+        {
+          "root": "83406aa2c70022cc48035619ce595bdab1491ec4",
+          "reviewedSource": "ed6177ba602604598ca6fbf6013e884859f6dfa5",
+          "stablePatchId": "e733862fdaff6957dca13b946a0670167fb256c3"
+        }
+      ],
+      "review": "evidence/G07/combined-834-source-review.json",
+      "status": "source-reviewed; runtime/build acceptance pending"
+    },
+    {
+      "task": "G14-split-bootstrap-and-G07-preflight",
+      "owner": "lead-20261011",
+      "base": "11dcb37d374f6a505802c3cbf85c483b0ce56051",
+      "status": "claimed reviewedsource transfer, genuine11d2aafe complete",
+      "source_revisions": [
+        "f32a1037bd8e95b2994795e1cfe3053f72fd2930",
+        "a65f56e1b75ca5b73f2d0551aada84a1587c3ddb",
+        "7142ca398954be3316ca3bbd54db0c4c74217a67",
+        "8503d7a7ae1bc8508bb6a0d25517b89edb9d17db",
+        "72e4f6dffb9f779de4b9951f0392e8202b95eebd",
+        "28ca0e100e1afce7d0a437eeab2bb235cb34610a",
+        "d941042545eea332b31329e3cc50e387566624bf"
+      ],
+      "allowed_paths": [
+        "deploy/prover/archiver-prerequisites.mjs",
+        "deploy/prover/archiver-prerequisites.test.mjs",
+        "deploy/prover/bootstrap.py",
+        "scripts/test-prover-bootstrap.py",
+        "deploy/prover/BOOTSTRAP.md",
+        "scripts/testing/private-bok-build-preflight.mjs",
+        "scripts/testing/private-bok-build-preflight.test.mjs",
+        "scripts/testing/run-application.mjs",
+        "BUILDING.md"
+      ]
+    },
+    {
+      "task": "G07-browser-preference-composition",
+      "owner": "lead-20261011",
+      "base": "96825e16271baf7d81442415565fe51b1533737e",
+      "source": "436f253809a0b83d815b2c9ca90238aaa0a4381c",
+      "review": "evidence/G07/preference-browser-436f-source-review.json",
+      "status": "claimed exact6sourcecommits transfer; source/assetverification andgenuinebrowser pending",
+      "source_revisions": [
+        "a3f7e200b4b4806842d52863c2807e84646a8610",
+        "8d79f0d",
+        "58280d05ef7dfcaa7450812cc0575f069ec82a53",
+        "0088e1440299a12fbcc92ce8a953985515b24dbc",
+        "00e334d21aa27d2ca1c0b1fb7ae52b46b0c388c4",
+        "b5e6899ec9b93b449ce2bd8a946705886da1eb18"
+      ]
+    },
+    {
+      "task": "G14-config-adapter-composition",
+      "owner": "lead-20261011",
+      "base": "a699a5493e7cca99577845846cd4d7be4ac8559d",
+      "branch": "codex/rolling-config-adapter-combined",
+      "worktree": "../rolling-lead-social",
+      "status": "exact7files composed; normal package08 completeverified, independent package review pending; no paid action",
+      "source_revisions": [
+        "bd4da0bbc0c98e98ef29df46eba47f83a00d084c",
+        "499c42a9074872451b3c66bbb497c32cdb0099fb",
+        "9a3e590c5b4fbe5a9bb854bc277641c55d14b6cf"
+      ],
+      "allowed_paths": [
+        "deploy/prover/l1-config-diagnostic.mjs",
+        "deploy/prover/l1-config-diagnostic.test.mjs",
+        "deploy/prover/startup-stages.mjs",
+        "deploy/prover/startup-stages.test.mjs",
+        "deploy/prover/bootstrap.py",
+        "scripts/test-prover-bootstrap.py",
+        "deploy/prover/BOOTSTRAP.md"
+      ],
+      "candidate": "5ce91bced6f6c5d02b5de333e6ee73d112de07f8"
+    },
+    {
+      "task": "G07-saved-recovery-and-context-repair",
+      "owner": "lead-20261011",
+      "base": "a699a5493e7cca99577845846cd4d7be4ac8559d",
+      "status": "claimed exact reviewed863+936+c6 transfer; build/combinedsource/genuine next",
+      "source_revisions": [
+        "863beaa18cf1ef0fcaf6e8b7bb9b18a36622fcdc",
+        "936b55400f6d1edaf0ab47781c35d90721d41316",
+        "c6fc1848d86e34ba5ce673435aab0a9307598bcb"
+      ],
+      "allowed_paths": [
+        "shared/l2-journal.mjs",
+        "scripts/test-w03-proof-replacement.mjs",
+        "shared/rolling/application.mjs",
+        "shared/rolling/application.test.mjs",
+        "shared/rolling/synchronized-application.mjs",
+        "shared/rolling/synchronized-application.test.mjs"
+      ],
+      "review": "evidence/G07/replacement-order-c6fc184-review.json"
+    },
+    {
+      "task": "G07-saved-byte-genuine-parent",
+      "owner": "design-20261011",
+      "status": "verified source; root composition andgenuinepending",
+      "worktree": "../rolling-lead-social",
+      "branch": "codex/rolling-preference-saved-parent",
+      "base": "6d0b67f",
+      "requirements": [
+        "RC26",
+        "RC46",
+        "G07-A01",
+        "G07-A07"
+      ],
+      "acceptance": "Actual genuine proven Tx saved before failed transport; exact persisted byte/hash resume after close/reopen same stores; zero reproof/estimate/payment, canonical fee once and native public effects; realchain required later",
+      "allowed_paths": [
+        "scripts/testing/rolling-application-fixture.mjs",
+        "scripts/testing/rolling-application-fixture.test.mjs",
+        "scripts/testing/rolling-preference-saved.mjs",
+        "scripts/testing/rolling-preference-saved.test.mjs",
+        "scripts/testing/scenarios.mjs",
+        "scripts/testing/scenario-flows.mjs",
+        "scripts/testing/rolling-public-acceptance.mjs",
+        "scripts/testing/rolling-public-acceptance.test.mjs"
+      ],
+      "candidate": "b77bfd2c419117731a0ec65d7c8901fd1c1a3a1a",
+      "review": "evidence/G07/saved-parent-b77bfd2-review.json"
+    },
+    {
+      "task": "G07-reorg-interval-compatibility",
+      "owner": "lead-20261011",
+      "base": "a5522a07e3478009dc1212bfd8949a7b8f65173c",
+      "branch": "codex/rolling-private-bok-candidate",
+      "status": "verified source; actualinitial3 running28713",
+      "allowed_paths": [
+        "scripts/testing/rolling-preference-reorg.mjs",
+        "scripts/testing/rolling-preference-reorg.test.mjs"
+      ],
+      "requirements": [
+        "G07-A02",
+        "RC26"
+      ],
+      "acceptance": "Use official nullable disabled interval representation; independently verify paused and restored controls; retain mutation intent/uncertain no replay and allboundarychecks.",
+      "candidate": "bd90d8fced55e330577df6070d83e230dafeeeed",
+      "tests": "30pass actualAnvil3modes3745ms",
+      "preservedFailures": [
+        "reorg-interval-before.log",
+        "reorg-interval-after.log",
+        "reorg-interval-after-2.log",
+        "reorg-interval-after-3.log"
+      ],
+      "review": "evidence/G07/reorg-interval-bd90-source-review.json"
+    },
+    {
+      "task": "G07-reply-notification-feasibility",
+      "owner": "design-20261011",
+      "status": "running read-only source investigation",
+      "base": "b77bfd2c419117731a0ec65d7c8901fd1c1a3a1a",
+      "requirements": [
+        "G07-A03",
+        "G07-A10",
+        "RC26"
+      ],
+      "allowed_paths": [
+        "execution/evidence/G07/reply-notification-investigation.json"
+      ],
+      "acceptance": "Identify smallest genuine real reply arrival/read-marker filtering through production UI scenario within540s4GiB, existing proofcount/cost evidence and exactsource gaps. No proof/browser or sourceedit in investigation."
+    },
+    {
+      "task": "G07-cold-sync-feasibility-review",
+      "owner": "reviewer-20261011",
+      "status": "running read-only source review",
+      "base": "bd90d8fced55e330577df6070d83e230dafeeeed",
+      "requirements": [
+        "G07-A02",
+        "G07-A08"
+      ],
+      "allowed_paths": [
+        "execution/evidence/G07/cold-sync-feasibility-review.json"
+      ],
+      "acceptance": "Reconcile retained source diagnosis and current actual SDK/API; bounded minimal measurement/implementation route preserving validation, complete recovery, canonical rollback and no partial synced status; no heavy or edits."
+    },
+    {
+      "task": "G07-saved-composition",
+      "owner": "lead-20261011",
+      "status": "running",
+      "base": "bd90d8fced55e330577df6070d83e230dafeeeed",
+      "branch": "codex/rolling-private-bok-candidate",
+      "source_revisions": [
+        "3e1aec931d92d557b4630a8d09febe921e5f8ec2",
+        "b77bfd2c419117731a0ec65d7c8901fd1c1a3a1a",
+        "3bead1adc9d9ffbd0274f784cd3138c67af2a0e4"
+      ],
+      "allowed_paths": [
+        "apps/rolling/wallet-panel.mjs",
+        "apps/rolling/wallet-panel.browser.test.mjs",
+        "scripts/testing/rolling-application-fixture.mjs",
+        "scripts/testing/rolling-application-fixture.test.mjs",
+        "scripts/testing/rolling-preference-saved.mjs",
+        "scripts/testing/rolling-preference-saved.test.mjs",
+        "scripts/testing/scenarios.mjs",
+        "scripts/testing/scenario-flows.mjs",
+        "scripts/testing/rolling-public-acceptance.mjs",
+        "scripts/testing/rolling-public-acceptance.test.mjs"
+      ],
+      "requirements": [
+        "G07-A01",
+        "G07-A07",
+        "RC26",
+        "RC46"
+      ],
+      "acceptance": "Exact reviewed10file transfer with no overlappingworker; normalwallet build/affectedsource+DOM checks; real2proof savedbyte canonicalfee/effect exactresume aftereligibilityreview. No reorgqualification inferred."
+    },
+    {
+      "task": "G07-notification-driver",
+      "owner": "design-20261011",
+      "branch": "codex/rolling-notification-browser",
+      "base": "f52aa61a4bb815d9d043970e4cabd9e667416020",
+      "status": "running",
+      "allowed_paths": [
+        "scripts/testing/rolling-notification-browser.mjs",
+        "scripts/testing/rolling-notification-browser.test.mjs",
+        "scripts/testing/rolling-notification-acceptance.mjs",
+        "scripts/testing/rolling-notification-acceptance.test.mjs"
+      ],
+      "requirements": [
+        "G07-A03",
+        "G07-A10"
+      ],
+      "dependencies": [
+        "savedUI3be currentf52 composition",
+        "reply-notification-investigation.json"
+      ],
+      "acceptance": "ActualUI subscribe, unreadreply, markread, suppression andfreshkeys-onlyrestore; strict bounded control/traffic/phase and sanitized evidence; real parent proofs remain lead wiring task. No alternatebackend/truncatedassertions."
+    },
+    {
+      "task": "G07-fee-reorg-measurement",
+      "owner": "lead-20261011",
+      "status": "running source-only separatecheckout",
+      "branch": "codex/rolling-fee-reorg-observation",
+      "worktree": "../rolling-design",
+      "base": "f52aa61a4bb815d9d043970e4cabd9e667416020",
+      "allowed_paths": [
+        "scripts/w01-private-fee-flow.mjs",
+        "scripts/testing/private-fee-verification.mjs",
+        "scripts/testing/private-fee-verification.test.mjs",
+        "scripts/testing/assets.mjs",
+        "scripts/testing/rolling-application-fixture.mjs"
+      ],
+      "requirements": [
+        "G07-A02",
+        "G07-A07"
+      ],
+      "dependencies": [
+        "reorg-1b908-fee-diagnosis-review.json"
+      ],
+      "acceptance": "Retain expected/actual numeric balances and fullcanonicalanchors before existing equality assertions; failclosed if SDK sync returns staleorphan anchor. Preserve every fee assertion; no extra sync/cacheclear/reopen. Meaningful labelledtest controls and realSDK diagnostic beforeanynewforkattempt.",
+      "note": "Add new accounting dependency to both existing source fingerprint inventories; lead sole owner, no notification worker assignment overlaps."
+    },
+    {
+      "task": "G14-archiver-startup-observation",
+      "owner": "controls-20261011",
+      "status": "running",
+      "base": "9a3e590c5b4fbe5a9bb854bc277641c55d14b6cf",
+      "branch": "codex/rolling-archiver-startup-observation",
+      "allowed_paths": [
+        "deploy/prover/startup-stages.mjs",
+        "deploy/prover/startup-stages.test.mjs",
+        "deploy/prover/bootstrap.py",
+        "scripts/test-prover-bootstrap.py",
+        "deploy/prover/BOOTSTRAP.md"
+      ],
+      "requirements": [
+        "G14",
+        "G07-A08"
+      ],
+      "acceptance": "Distinguish actual archiver initialization subphase/progress/typed failures with fixed bounded sanitized counters; pinnedsource-gated instrumentation; do not log URLs/capabilities/messages/secrets or change sync/retry semantics. Source/cheaptests only, independentreview before package/paidoperation.",
+      "dependencies": [
+        "operator08-archiver-delay-diagnosis.json"
+      ]
+    },
+    {
+      "task": "G07",
+      "worker": "lead-20261011",
+      "worker_revision": "207bc89359da15885e79513f1f426070b95dc84f",
+      "candidate_revision": "bf080d07a2653dd14e4557f1c017f9face0a6360",
+      "review": "evidence/G07/private-fee-207bc89-review.json",
+      "status": "source composed on candidate only; genuine reorg pending"
+    },
+    {
+      "task": "G07-SDK-sparse-reorg-composition",
+      "owner": "lead-20261011",
+      "branch": "codex/rolling-private-bok-candidate",
+      "base": "bf080d0",
+      "candidate": "3b259e1422bddfd8d4a8121d1780be18e53b618c",
+      "source_revisions": [
+        "7867f511a8a5c318da1c70d3b49c89df870ef63e"
+      ],
+      "status": "review",
+      "requirements": [
+        "G07-A02",
+        "G07-A07"
+      ],
+      "acceptance": "Exact reviewed pinned SDK sparse checkpoint repair; normal SDK/wallet builds and157affectedchecks passed; independent combined eligibility then one genuine initial reorg attempt4 unchanged540s4GiB.",
+      "evidence": "evidence/G07/pxe-3b259-composition-checks.json",
+      "at": "2026-10-12T10:35:47.562299+00:00"
+    },
+    {
+      "task": "G07-cold-sync-step-design",
+      "owner": "design-20261011",
+      "status": "running read-only investigation",
+      "branch": "codex/rolling-cold-recovery-metrics",
+      "base": "cf46b92af58279b1e7111afc8be2f9adffc0279f",
+      "allowed_paths": [
+        "execution/evidence/G07/cold-sync-step-design.json"
+      ],
+      "requirements": [
+        "G07-A02",
+        "G07-A08"
+      ],
+      "dependencies": [
+        "cold-sync-feasibility-review.json"
+      ],
+      "acceptance": "Source-backed smallest safe scoped incremental sync API design preserving operation queue, all authentication/nullifier paths, atomic continuation, no partial-complete state; exact edit-path proposal and meaningful tests. No source/shareddependency mutation or heavy operations.",
+      "at": "2026-10-12T10:36:36.701241+00:00"
+    },
+    {
+      "task": "G07-cold-actor-observation",
+      "owner": "design-20261011",
+      "status": "ready after current read-only design report",
+      "branch": "codex/rolling-cold-recovery-metrics",
+      "base": "cf46b92af58279b1e7111afc8be2f9adffc0279f",
+      "allowed_paths": [
+        "scripts/testing/rolling-application-actor.mjs",
+        "scripts/testing/rolling-application-actor.test.mjs"
+      ],
+      "requirements": [
+        "G07-A02",
+        "G07-A08"
+      ],
+      "dependencies": [
+        "private-recovery-metrics-cf46-review.json"
+      ],
+      "acceptance": "Optional trusted test-only metrics on actual public createPXE/sync/getPrivateEvents/raw preference-head callbacks; preserve exact receivers/promises/error identity and branded node/PXE; no privateSDK fields or productionAPI changes. No retries or lifecycle changes. Existing default actor behavior and meaningful labelled observer checks.",
+      "at": "2026-10-12T10:41:12.390041+00:00"
+    },
+    {
+      "task": "G14-package09-offline-preparation",
+      "owner": "controls-20261011",
+      "status": "running source only; execution withheld",
+      "branch": "codex/rolling-archiver-startup-observation",
+      "base": "1070a8fad6cb2b1b0068fe6b9f73267475b55b90",
+      "allowed_paths": [
+        ".build/run-package-startup09.py",
+        ".build/verify-package-startup09.py"
+      ],
+      "requirements": [
+        "G14",
+        "G07-A08"
+      ],
+      "acceptance": "Adapt existing bounded07packager/verifier to fresh09 output without touching historicalruns; explicit future combinedsource expected, complete inventory/native/catalog/bootstrap checks and both installed+packaged PXEpatch exactverify. No execution until heavy-slot andsource grant, no upload/cloud/paidoperation.",
+      "at": "2026-10-12T10:47:28.981754+00:00"
+    },
+    {
+      "task": "G07-self-preference-cold-sync-design",
+      "owner": "design-20261011",
+      "status": "running read-only",
+      "branch": "codex/rolling-cold-actor-observation",
+      "base": "1427ff118a947f8e73262b1e9e4c6b68a2af5039",
+      "allowed_paths": [
+        "execution/evidence/G07/self-preference-cold-sync-design.json"
+      ],
+      "requirements": [
+        "G07-A02",
+        "G07-A08"
+      ],
+      "acceptance": "Trace actual own-account RollingBoard preference event/head tagging and all required note/nullifier contributors; establish smallest bounded authenticated step utility route with honest class/artifact effects. No omission of necessaryhandshakes or canonicalidentityspoofing. Sourcehashes/exactpaths/tests; no source/native/heavy mutation.",
+      "at": "2026-10-12T10:48:25.077720+00:00"
+    },
+    {
+      "task": "G07-notification-cold-metrics-composition",
+      "owner": "lead-20261011",
+      "status": "source reviewed;297affectedchecks PASS; exact root transfer/build andgenuine next",
+      "worktree": "../rolling-lead-social",
+      "branch": "codex/rolling-cold-recovery-parent",
+      "base": "3b259e1422bddfd8d4a8121d1780be18e53b618c",
+      "source_revisions": [
+        "497b74866bea07b9924b90332ab7c7baeb3ad3eb",
+        "56a8de98c18c95b16eb8e7354af3231f0c561a02",
+        "9ee08df5bd530fc55f8e50a5d20d975c7c588ecb",
+        "4fde250c2f3581af48861287625a1c45407f5600",
+        "cf46b92af58279b1e7111afc8be2f9adffc0279f",
+        "1427ff118a947f8e73262b1e9e4c6b68a2af5039"
+      ],
+      "allowed_paths": [
+        "apps/rolling/wallet-panel.browser.test.mjs",
+        "scripts/testing/assets.mjs",
+        "scripts/testing/browser-worker.mjs",
+        "scripts/testing/rolling-application-fixture.mjs",
+        "scripts/testing/rolling-application-fixture.test.mjs",
+        "scripts/testing/rolling-notification-acceptance.mjs",
+        "scripts/testing/rolling-notification-acceptance.test.mjs",
+        "scripts/testing/rolling-notification-browser.mjs",
+        "scripts/testing/rolling-notification-browser.test.mjs",
+        "scripts/testing/rolling-notification-fixture.mjs",
+        "scripts/testing/rolling-notification-fixture.test.mjs",
+        "scripts/testing/rolling-private-recovery-metrics.mjs",
+        "scripts/testing/rolling-private-recovery-metrics.test.mjs",
+        "scripts/testing/rolling-public-acceptance.mjs",
+        "scripts/testing/run-application.mjs",
+        "scripts/testing/scenario-flows.mjs",
+        "scripts/testing/scenarios.mjs",
+        "scripts/testing/rolling-application-actor.mjs",
+        "scripts/testing/rolling-application-actor.test.mjs"
+      ],
+      "requirements": [
+        "G07-A02",
+        "G07-A03",
+        "G07-A08",
+        "G07-A10"
+      ],
+      "acceptance": "Exact reviewed notification4commits and cf46metrics, lead owns fixture coldwindow + NodeRPC publicmethod observation and sourceinventories. Brandednode unchanged, byte/discovery/fold remainunobserved, realexistingkeys-onlyrecovery withsameproofcount. No source/root/deps/generated edits duringmarker. Native/browser checks afterserializedgrant.",
+      "at": "2026-10-12T10:50:05.077116+00:00",
+      "actor_transfer": "Exact reviewed28f715 source transfer after worker released; no independent source edits to actor.",
+      "candidate": "482e88778042f819f3c008ba5b5449b4f9805533",
+      "target_branch": "codex/rolling-private-bok-candidate",
+      "target_worktree": ".",
+      "review": "evidence/G07/cold-parent-1107499-review.json",
+      "test_repair_review": "evidence/G07/cold-parent-482e-test-repair-review.json",
+      "checks": "evidence/G07/notification-cold-repaired-combined-tests.log"
+    },
+    {
+      "task": "G07-canonical-block-enumeration-bounds",
+      "owner": "design-20261011",
+      "status": "running read-only feasibility",
+      "branch": "codex/rolling-cold-actor-observation",
+      "base": "1427ff118a947f8e73262b1e9e4c6b68a2af5039",
+      "allowed_paths": [
+        "execution/evidence/G07/canonical-block-enumeration-bounds.json"
+      ],
+      "requirements": [
+        "G07-A02",
+        "G07-A08"
+      ],
+      "acceptance": "Derive protocol and installed API maxima for block transaction/private-log enumeration and serialized transport, identify existing pagination/effect roots. Determine whether bounded full-body decode is legitimately sufficient or node extension mandatory; exact field/byte bounds, malicious oversize rejection beforeallocation and completehistorybehavior. No source/tests/heavy/cloud.",
+      "at": "2026-10-12T10:55:35.205787+00:00"
+    },
+    {
+      "task": "G14-archiver09-source-composition",
+      "owner": "lead-20261011",
+      "branch": "codex/rolling-archiver09-candidate",
+      "worktree": "../rolling-lead-social",
+      "base": "f898c7f3eab81443ac4251863ef703408dbd5ef2",
+      "source_revisions": [
+        "bd4da0bbc0c98e98ef29df46eba47f83a00d084c",
+        "499c42a9074872451b3c66bbb497c32cdb0099fb",
+        "9a3e590c5b4fbe5a9bb854bc277641c55d14b6cf",
+        "1070a8fad6cb2b1b0068fe6b9f73267475b55b90"
+      ],
+      "status": "running isolated source-only exactreviewed transfer",
+      "allowed_paths": [
+        "deploy/prover/BOOTSTRAP.md",
+        "deploy/prover/bootstrap.py",
+        "deploy/prover/l1-config-diagnostic.mjs",
+        "deploy/prover/l1-config-diagnostic.test.mjs",
+        "deploy/prover/startup-stages.mjs",
+        "deploy/prover/startup-stages.test.mjs",
+        "scripts/test-prover-bootstrap.py"
+      ],
+      "requirements": [
+        "G14",
+        "G07-A08"
+      ],
+      "acceptance": "Exact reviewedarchiver/config diagnostic composition withcurrentSDKrepair; no root/deps/generated mutation orpackagingduringgenuine48003. Sourcecheapchecks thenpackagewhenheavyslotfree andbindingsindependentlyreviewed. No newpaidgrant.",
+      "at": "2026-10-12T11:06:17.556247+00:00"
+    },
+    {
+      "task": "G07-compact-block-authentication-prototype",
+      "owner": "design-20261011",
+      "status": "running source-only prototype; nativechecks withheld",
+      "branch": "codex/rolling-compact-block-prototype",
+      "worktree": "../rolling-design",
+      "base": "1427ff118a947f8e73262b1e9e4c6b68a2af5039",
+      "allowed_paths": [
+        "shared/rolling/compact-block.mjs",
+        "shared/rolling/compact-block.test.mjs"
+      ],
+      "requirements": [
+        "G07-A02",
+        "G07-A08"
+      ],
+      "dependencies": [
+        "canonical-block-enumeration-bounds.json",
+        "self-preference-cold-sync-design.json"
+      ],
+      "acceptance": "Protocol-bounded compactblock decode oneeffect atatime with exactordered effectsroot authentication, strictfields/category/count/trailingdata bounds, no wholeBody expansion. Only authenticatedcomplete block mayyield usablemessage descriptors; labelprototype not integratedAPI/coldqualification. ActualSDKdifferentialmalformed/reorg/oversize checks; native afterleadslotgrant. No endpoint/Noir/generated/sourceoutside2paths.",
+      "at": "2026-10-12T11:08:25.301148+00:00"
+    },
+    {
+      "task": "G14-live-prelaunch-reconciliation",
+      "owner": "controls-20261011",
+      "status": "running read-only",
+      "branch": "codex/rolling-archiver-startup-observation",
+      "allowed_paths": [
+        "execution/evidence/G02/archiver09-prelaunch-readonly.json"
+      ],
+      "requirements": [
+        "G14",
+        "G07-A08"
+      ],
+      "acceptance": "Both existingAWSprofile identities, allcampaigncompute/disks/Fleets andpluginhealth fromactualMac; sanitizedcounts/IDs/status only, no secrets. No refresh requiringinteraction withoutexplicitblock, no cloudmutations orpaidactions.",
+      "at": "2026-10-12T11:10:33.556544+00:00"
+    },
+    {
+      "candidate": "8eea1f52acfa4fb9bd26200fffd181538613e08b",
+      "base": "c8fdb2e1184184b025304fbfc5eec0261c7354e2",
+      "sourceCandidates": [
+        "72072ea69c20b4066402a70dd9518600f4d2a3ca",
+        "4f70cbeb06f8346855d938e408b8048785e1eb6d"
+      ],
+      "transferredCommits": [
+        "36ed856",
+        "d279116",
+        "ce02de0",
+        "8eea1f5"
+      ],
+      "sourceReviews": [
+        "evidence/G07/notification-funding-order-720-review.json",
+        "evidence/G02/archiver-4f70-source-composition-review.json"
+      ],
+      "status": "candidate only; no new integration advance",
+      "recordedAt": "2026-10-12T11:40:28.638450+00:00"
+    },
+    {
+      "candidate": "b5eb2a1",
+      "base": "b82f40f",
+      "source_commits": [
+        "0cbcc1b8b7b3158ebf7ec83c9293b6ff7310635c",
+        "8f891977986304b13d68231a40ffe94cbfb185c6"
+      ],
+      "transferred_commits": [
+        "e65a478",
+        "b5eb2a1"
+      ],
+      "owner": "lead-20261011",
+      "source_session": "controls-20261011",
+      "review": "evidence/G07/cold-wallet-dbb8e62-source-review.json",
+      "scope": "Exact eight blobs/two stable patch transfers; runtime13768 component carry only. Integrationb440 unchanged."
+    }
+  ]
+}

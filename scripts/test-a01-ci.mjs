@@ -80,3 +80,22 @@ test('workflow guard rejects newly generated uncommitted application outputs', (
   write('apps/dist/new-worker.js', 'new output\n');
   assert.notEqual(check().status, 0, 'New generated worker omitted from commit');
 }));
+
+
+// The installed-SDK constructor check needs the separate PrivateBok workspace.
+// Keep its real build in the normal pipeline and both clean/reproducibility passes.
+test('clean CI builds and compares the separate PrivateBok workspace before plugin checks', () => {
+  const scripts = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url))).scripts;
+  const steps = scripts.build.split(' && ');
+  assert.equal(scripts['build:private-bok'], 'node experiments/private-bok/build.mjs');
+  assert(steps.indexOf('npm run build:contracts') >= 0);
+  assert(steps.indexOf('npm run build:private-bok') > steps.indexOf('npm run build:contracts'));
+  assert(steps.indexOf('npm run build:private-bok') < steps.indexOf('npm run build:sdk'));
+  const cleans = [...workflow.matchAll(/for \(const p of (\[[^\n]+?\])/g)];
+  assert.equal(cleans.length, 2);
+  for (const [, paths] of cleans) assert(paths.includes("'experiments/private-bok/target'"), 'Each clean pass must discard cached PrivateBok artifacts');
+  const snapshot = fs.readFileSync(new URL('./check-reproducibility.mjs', import.meta.url), 'utf8');
+  for (const name of ['private_bok-PrivateBok.json', 'invocation_probe_board-InvocationProbeBoard.json', 'private-bok-build.json']) {
+    assert(snapshot.includes("'experiments/private-bok/target/" + name + "'"), 'Compare every PrivateBok output byte');
+  }
+});

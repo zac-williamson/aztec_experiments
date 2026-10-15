@@ -1,0 +1,51 @@
+{
+  "applicationProfile": "rolling",
+  "development": false,
+  "nodeUrl": "https://YOUR_AUTHENTICATED_QUERY_HOST/v1/node",
+  "ethereumUrl": "https://YOUR_SEPOLIA_RPC/",
+  "operatorAddress": "REPLACE_WITH_PUBLIC_BOK_OPERATOR_ADDRESS",
+  "operatorFile": "/absolute/private/path/operator.json",
+  "stateDirectory": "/absolute/private/path/bok-state",
+  "repository": "zac-williamson/YOUR_AUTHORIZED_REFERENCE_REPOSITORY",
+  "pluginId": "REPLACE_WITH_CANONICAL_REGISTERED_BOK_PLUGIN_ID",
+  "summaryModelId": "REPLACE_WITH_VERIFIED_CHEAPER_MODEL_ID",
+  "descriptor": {
+    "protocol": "billboard-plugin/v2",
+    "applicationProfile": "rolling",
+    "description": "Bok development assistant",
+    "scope": {
+      "chainId": "11155111",
+      "rollupVersion": "REPLACE_WITH_VERIFIED_ROLLUP_VERSION",
+      "rollupAddress": "REPLACE_WITH_VERIFIED_ROLLUP_ADDRESS",
+      "boardAddress": "REPLACE_WITH_ROLLING_BOARD_ADDRESS",
+      "receiver": "REPLACE_WITH_PRIVATE_BOK_ADDRESS"
+    },
+    "funding": {
+      "protocol": "private-bok-usdc/v1",
+      "portalAddress": "REPLACE_WITH_BOUND_PRIVATE_BOK_PORTAL_ADDRESS",
+      "tokenAddress": "REPLACE_WITH_VERIFIED_TOKEN_ADDRESS"
+    }
+  },
+  "deployment": {
+    "blockNumber": "REPLACE_WITH_INTEGER_BOARD_DEPLOYMENT_BLOCK",
+    "blockHash": "REPLACE_WITH_CANONICAL_DEPLOYMENT_BLOCK_HASH",
+    "txHash": "REPLACE_WITH_BOARD_DEPLOYMENT_TRANSACTION_HASH"
+  },
+  "host": "127.0.0.1",
+  "port": 8787,
+  "staticPublication": {
+    "origin": "https://YOUR_ARTIFACT_ORIGIN",
+    "boardOrigin": "https://YOUR_BOARD_ORIGIN",
+    "host": "127.0.0.1",
+    "port": 8788
+  },
+  "connectedRepositories": [],
+  "githubApp": {
+    "enabled": false,
+    "owner": "zac-williamson",
+    "ownerId": 1476668,
+    "appId": "REPLACE_WITH_INTEGER_APP_ID",
+    "installationId": "REPLACE_WITH_INTEGER_INSTALLATION_ID",
+    "privateKeyFile": "/absolute/private/path/github-app.pem"
+  }
+}

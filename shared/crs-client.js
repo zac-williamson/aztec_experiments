@@ -5,14 +5,20 @@
   const expected = {
     'g1.dat': { bytes: 37748736, numPoints: 1179648, remote: 'g1_compressed.dat', format: 'bn254-g1-compressed-32-byte' },
     'g2.dat': { bytes: 128, numPoints: 1, remote: 'g2.dat', format: 'bn254-g2-uncompressed-128-byte' },
-    'grumpkin_g1.dat': { bytes: 4194368, numPoints: 65537, remote: 'grumpkin_g1_v2.dat', format: 'grumpkin-g1-v2-uncompressed-64-byte' },
+    'grumpkin_g1.dat': { bytes: 8388608, numPoints: 131072, remote: 'grumpkin_g1_v2.dat', format: 'grumpkin-g1-v2-uncompressed-64-byte' },
   };
   const hasKeys = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
     && Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
 
   function validateManifest(manifest) {
-    if (manifest?.schemaVersion !== 2 || manifest.aztecVersion !== '6.0.0-rc.1' || !Array.isArray(manifest.files) || manifest.files.length !== 3) {
+    if (manifest?.schemaVersion !== 2 || manifest.aztecVersion !== '6.0.0-rc.3' || !Array.isArray(manifest.files) || manifest.files.length !== 3) {
       throw new Error('Missing or incompatible build-pinned CRS manifest');
+    }
+    // This manifest binds SDK rc3 to its independently versioned foundation rc6.
+    if (manifest.provenance?.package !== '@aztec-foundation/bb.js' || manifest.provenance.version !== '6.0.0-rc.6'
+        || manifest.provenance.source !== 'node_modules/@aztec-foundation/bb.js/dest/node/crs/net_crs.js'
+        || manifest.provenance.sourceSha256 !== 'd73da83a2b35584632dc8a70abaaeaa1c762e6f24bd0c778e47fe85919f5a98d') {
+      throw new Error('Invalid pinned CRS entry: downloader provenance');
     }
     const files = new Map();
     for (const file of manifest.files) {
@@ -33,11 +39,11 @@
       || derived.numPoints !== files.get('g1.dat').numPoints || derived.format !== 'bn254-g1-uncompressed-64-byte'
       || !/^[a-f0-9]{64}$/.test(derived.sha256)
       || !hasKeys(provenance, ['method', 'packageVersion', 'inputName', 'inputSha256', 'g2Sha256', 'wasmSource', 'wasmSha256'])
-      || provenance.method !== 'bb-srs-init-v1' || provenance.packageVersion !== manifest.aztecVersion
+      || provenance.method !== 'bb-srs-init-v1' || provenance.packageVersion !== '6.0.0-rc.6'
       || provenance.inputName !== 'g1.dat' || provenance.inputSha256 !== files.get('g1.dat').sha256
       || provenance.g2Sha256 !== files.get('g2.dat').sha256
       || provenance.wasmSource !== 'node_modules/@aztec-foundation/bb.js/dest/node/barretenberg_wasm/barretenberg-threads.wasm.gz'
-      || provenance.wasmSha256 !== 'd2f89b18d869cdac2ebfd27d33710e16fb10a9a8066f8dc957bac478b3725ea2') {
+      || provenance.wasmSha256 !== 'e607fbe6c12815c080d66025878e7a8772cc23633cfe0864112720f55ee8497d') {
       throw new Error('Invalid pinned CRS entry: derivedG1');
     }
     return { files, derivedG1: Object.freeze({ ...derived, derivation: Object.freeze({ ...provenance }) }) };
@@ -109,6 +115,8 @@
     if (!ArrayBuffer.isView(bn254?.pointsBuf) || bn254.pointsBuf.BYTES_PER_ELEMENT !== 1 || bn254.pointsBuf.byteLength !== responseBytes) {
       throw new Error('Unexpected BN254 SRS initialization response');
     }
+    // BB authenticates complete 65536-point chunks. Keep the full verified
+    // two-chunk buffer and count; a 65537-point partial chunk is rejected.
     const grumpkin = await bb.srsInitGrumpkinSrs({ pointsBuf: data['grumpkin_g1.dat'], numPoints: files.get('grumpkin_g1.dat').numPoints });
     if (grumpkin?.dummy !== 0) throw new Error('Unexpected Grumpkin SRS initialization response');
     return { g1Format: selectedG1.format, sourceBn254NumPoints: selectedG1.numPoints, initializedBn254NumPoints: numPoints, grumpkinNumPoints: files.get('grumpkin_g1.dat').numPoints };

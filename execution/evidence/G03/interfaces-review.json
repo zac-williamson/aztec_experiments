@@ -1,0 +1,14 @@
+{
+  "candidate": "0e9bdb38e558574627bb4375c7bcb7c3eb86074f",
+  "base": "5f4e6e2f59656cedc37a7d591facc4d856ebcdcb",
+  "reviewer": "/root/reviewer",
+  "verdict": "approve",
+  "checks": [
+    "Full Draft3, clarification, G02/G03 acceptance and9file diff read",
+    "Independent3 name-policy tests plus controls/Unicode and1/30/31/32byte packing probes pass",
+    "Prototype/avatar/baseline linked evidence inspected"
+  ],
+  "findings": [],
+  "scope": "G03 design-stage criteria and G02 baseline-recording criteria accepted; no full product/privacy/real-proof/operated-archive qualification",
+  "handoff": "G07 must define read-marker persistence/restoration explicitly."
+}

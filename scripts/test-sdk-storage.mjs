@@ -28,6 +28,32 @@ test('actual SDK store closes and reopens without losing sentinel data', async t
   assert.deepEqual(await indexedDB.databases(), []);
 });
 
+for (const pause of [false, true]) test(`labelled fake IndexedDB: late failure rolls back every write, pause=${pause}`, async t => {
+  fresh(t);
+  let store = await open();
+  let live, reopened, nextResult;
+  try {
+    const left = store.openMap('atomic-left'), right = store.openMap('atomic-right');
+    await left.set('prior', 'retained');
+    await assert.rejects(store.transactionAsync(async () => {
+      await left.set('prior', 'must-rollback');
+      await right.set('inserted', 'must-rollback');
+      if (pause) await new Promise(resolve => setTimeout(resolve, 20));
+      throw new Error('DISPOSABLE_LATE_STORE_FAILURE');
+    }), /DISPOSABLE_LATE_STORE_FAILURE/);
+    live = { prior: await left.getAsync('prior'), inserted: await right.getAsync('inserted') };
+    await store.close();
+    store = await open();
+    const reopenedLeft = store.openMap('atomic-left'), reopenedRight = store.openMap('atomic-right');
+    reopened = { prior: await reopenedLeft.getAsync('prior'), inserted: await reopenedRight.getAsync('inserted') };
+    nextResult = await store.transactionAsync(async () => { await reopenedLeft.set('after', 'queue-usable'); return 'complete'; });
+    assert.equal(await reopenedLeft.getAsync('after'), 'queue-usable');
+  } finally { await store.delete(); }
+  assert.deepEqual(live, { prior: 'retained', inserted: undefined });
+  assert.deepEqual(reopened, { prior: 'retained', inserted: undefined });
+  assert.equal(nextResult, 'complete');
+});
+
 for (const [label, changes, schema] of [
   ['L1 chain', { l1ChainId: 11155111 }],
   ['rollup', { rollupAddress: '0x' + '56'.repeat(20) }],
@@ -101,4 +127,71 @@ test('missing database enumeration fails safely before opening', async t => {
   fresh(t);
   indexedDB.databases = undefined;
   await assert.rejects(open(), /cannot inspect existing PXE stores safely/);
+});
+
+for (const error of [undefined, null, false, 0, '']) test(`labelled fake IndexedDB preserves a falsy thrown ${String(error)} and queue`, async t => {
+  fresh(t); const store = await open(), map = store.openMap('falsy');
+  let caught = false;
+  try { await store.transactionAsync(() => { throw error; }); }
+  catch (observed) { caught = true; assert.equal(observed, error); }
+  assert.equal(caught, true);
+  await store.transactionAsync(async () => { await map.set('after', true); });
+  assert.equal(await map.getAsync('after'), true); await store.delete();
+});
+
+test('labelled fake IndexedDB late new containers and clear share rollback, then queued delayed success commits', async t => {
+  fresh(t); const store = await open(), existing = store.openMap('before');
+  await existing.set('kept', 42);
+  await assert.rejects(store.transactionAsync(async () => {
+    await store.clear();
+    const freshMap = store.openMap('during');
+    await freshMap.set('key', 'rollback');
+    await new Promise(resolve => setTimeout(resolve, 20));
+    await store.openSingleton('late-singleton').set('rollback');
+    throw new Error('late');
+  }), /late/);
+  assert.equal(await existing.getAsync('kept'), 42);
+  assert.equal(await store.openMap('during').getAsync('key'), undefined);
+  assert.equal(await store.openSingleton('late-singleton').getAsync(), undefined);
+  const order = [];
+  const first = store.transactionAsync(async () => {
+    order.push('first-start'); await new Promise(resolve => setTimeout(resolve, 20));
+    await store.openMap('during').set('success', 1); order.push('first-end'); return 7;
+  });
+  const second = store.transactionAsync(async () => {
+    order.push('second'); assert.equal(await store.openMap('during').getAsync('success'), 1);
+  });
+  assert.deepEqual(await Promise.all([first, second]), [7, undefined]);
+  assert.deepEqual(order, ['first-start', 'first-end', 'second']); await store.delete();
+});
+
+test('labelled fake IndexedDB real constraint error aborts prior writes and permits next transaction', async t => {
+  fresh(t); const store = await open(), map = store.openMap('request-failure');
+  await map.set('original', 'kept');
+  await assert.rejects(store.transactionAsync(async () => {
+    await map.set('original', 'rollback');
+    const row = await map.db.get('map:request-failure:slot:original:0');
+    await map.db.add(row);
+  }), { name: 'ConstraintError' });
+  assert.equal(await map.getAsync('original'), 'kept');
+  await store.transactionAsync(async () => { await map.set('after', true); });
+  assert.equal(await map.getAsync('after'), true); await store.delete();
+});
+
+test('labelled fake IndexedDB keepalive request failure aborts before releasing the queue', async t => {
+  fresh(t); const store = await open(), map = store.openMap('keepalive-failure');
+  await map.set('prior', 'retained');
+  const originalGet = IDBObjectStore.prototype.get;
+  const failure = new Error('DISPOSABLE_KEEPALIVE_FAILURE');
+  let failed = false;
+  IDBObjectStore.prototype.get = function (key) {
+    if (key === '' && !failed) { failed = true; throw failure; }
+    return originalGet.call(this, key);
+  };
+  try { await assert.rejects(store.transactionAsync(async () => 7), error => error === failure); }
+  finally { IDBObjectStore.prototype.get = originalGet; }
+  assert.equal(failed, true);
+  assert.equal(await map.getAsync('prior'), 'retained');
+  await store.transactionAsync(async () => { await map.set('after', true); });
+  assert.equal(await map.getAsync('after'), true); await store.delete();
 });

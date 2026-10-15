@@ -137,3 +137,25 @@ export async function moderatePost(postText, policy, llamaPort = 5090, { fetch: 
     controller.abort();
   }
 }
+
+/** Rolling rules are a deterministic union, never a combined instruction prompt.
+ * Local text cannot reach the authoritative main-rule evaluation. An uncertain
+ * main result stops; local evaluation is required only after main permits. */
+export async function moderateRollingPost(postText, policy, evaluate) {
+  validateInput(postText, 'Post', LIMITS.postBytes);
+  validateInput(policy, 'Policy', LIMITS.policyBytes);
+  let rules;
+  try { rules = JSON.parse(policy); } catch { invalid('INVALID_INPUT', 'Invalid Rolling policy'); }
+  if (!rules || Array.isArray(rules) || Object.keys(rules).sort().join() !== 'localRules,mainRules'
+      || typeof rules.mainRules !== 'string' || !rules.mainRules.trim() || typeof rules.localRules !== 'string'
+      || typeof evaluate !== 'function') invalid('INVALID_INPUT', 'Invalid Rolling policy');
+  for (const rule of [rules.mainRules, rules.localRules]) validateInput(rule, 'Rule', LIMITS.policyBytes);
+  const verdict = async rule => {
+    const result = await evaluate(postText, rule);
+    if (!result || typeof result.isViolation !== 'boolean') invalid('INVALID_VERDICT', 'Unresolved Rolling verdict');
+    return {isViolation: result.isViolation, reason: result.isViolation ? validateReason(result.reason) : 'No violation'};
+  };
+  const main = await verdict(rules.mainRules);
+  if (main.isViolation || !rules.localRules.trim()) return main;
+  return verdict(rules.localRules);
+}

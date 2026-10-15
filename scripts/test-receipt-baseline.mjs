@@ -9,17 +9,17 @@ import {BlockHash} from '@aztec-labs/stdlib/block';
 import * as outcomes from '../shared/transaction-outcomes.mjs';
 const hash=TxHash.zero();
 const mined=(executionResult='success',status='checkpointed')=>MinedTxReceipt.from({txHash:hash,status,executionResult,transactionFee:0n,blockHash:BlockHash.ZERO,blockNumber:1,slotNumber:1,txIndexInBlock:0,epochNumber:0});
-function fixture(consumer,{receipts=[mined()],submitError,proofError,simulationError,blockHash=BlockHash.ZERO,validation={result:'valid'},preProveHook,transactionJournal}={}) {
+function fixture(consumer,{receipts=[mined()],submitError,proofError,simulationError,blockHash=BlockHash.ZERO,validation={result:'valid'},preProveHook,transactionJournal,progress}={}) {
  let now=0;const logs=[],calls={simulation:0,proof:0,submit:0,receipt:0};
  const gas={l2Gas:100,daGas:10,mul(){return this;},computeFee(){return{toBigInt:()=>1n};}};
  class BaseWallet {
-  constructor(pxe){this.pxe=pxe;}
+  constructor(pxe,node){this.pxe=pxe;this.aztecNode=node;}
   completeFeeOptions=async()=>({gasSettings:{maxFeesPerGas:{},maxPriorityFeesPerGas:{}}});
   simulateViaEntrypoint=async()=>{calls.simulation++;if(simulationError)throw simulationError;return {publicInputs:{forPublic:false},gasUsed:{totalGas:gas,teardownGas:gas}};};
   createTxExecutionRequestFromPayloadAndFee=async()=>({});
   scopesFrom=()=>[];senderForTagsFrom=()=>undefined;
  }
- const sdk={...outcomes,BaseWallet,GasSettings:{from:value=>({...value,getFeeLimit:()=>({toBigInt:()=>1n})})}};
+ const sdk={...outcomes,isPrivatePXEForNode:()=>true,BaseWallet,GasSettings:{from:value=>({...value,getFeeLimit:()=>({toBigInt:()=>1n})})}};
  const pxe={proveTx:async()=>{calls.proof++;if(proofError)throw proofError;return{toTx:async()=>({getTxHash:()=>hash})};}};
  const node={sendTx:async()=>{calls.submit++;if(submitError)throw submitError;},
   getTxReceipt:async()=>{const value=receipts[Math.min(calls.receipt++,receipts.length-1)];if(value instanceof Error)throw value;return value;},
@@ -35,10 +35,10 @@ function fixture(consumer,{receipts=[mined()],submitError,proofError,simulationE
   const source=fs.readFileSync(new URL(`../apps/src/billboard/${consumer}/engine.js`,import.meta.url),'utf8');
   vm.runInContext(source.replace(/\}\)\(\);\s*$/,'g.testWalletFactory=createAztecWallet;})();'),c);
   wallet=consumer==='user'
-   ? c.testWalletFactory(sdk,pxe,node,node,log,null,{preProveHook,transactionJournal})
-   : c.testWalletFactory(sdk,pxe,node,node,log,{preProveHook,transactionJournal});
+   ? c.testWalletFactory(sdk,pxe,node,node,log,null,{preProveHook,transactionJournal,progress})
+   : c.testWalletFactory(sdk,pxe,node,node,log,{preProveHook,transactionJournal,progress});
  }
- return{calls,logs,send:()=>wallet.sendTx({},{from:'fixture',wait:{timeout:0.03,interval:0.01}}),confirmed:()=>logs.some(x=>x.level==='success'&&x.message.includes('Tx confirmed!'))};
+ return{wallet,node,routing:c.BillboardPrivateFeeRouting,calls,logs,send:()=>wallet.sendTx({},{from:'fixture',wait:{timeout:0.03,interval:0.01}}),confirmed:()=>logs.some(x=>x.level==='success'&&x.message.includes('Tx confirmed!'))};
 }
 for(const consumer of ['shared','deploy','user']) {
  test(`${consumer}: proposed success waits for canonical checkpoint`,async()=>{const f=fixture(consumer,{receipts:[mined('success','proposed'),mined()]});await f.send();assert.equal(f.calls.receipt,2);assert(f.confirmed());});
@@ -80,4 +80,33 @@ test('shared timestamp reads the canonical header, including zero',async()=>{
   assert.equal(await c.getL2Timestamp(node),Number(timestamp));
  }
  for(const timestamp of [undefined,-1n,2n**60n,'100'])await assert.rejects(c.getL2Timestamp({getBlockNumber:async()=>1,getBlock:async()=>({header:{globalVariables:{timestamp}}})}));
+});
+
+for(const failure of ['none','before-prepare','signed-callback','before-broadcast','progress-revocation'])test(`user positive pre-proof lifecycle: ${failure}`,async()=>{
+ const events=[];let f,phase='pre-proof',guardCalls=0,revoked=false;
+ const journal={assertCanStart:async()=>({encoded:null}),setOperation:()=>{},prepare:async()=>{events.push('persisted');assert.equal(f.calls.submit,0);},confirmed:()=>{events.push('confirmed');}};
+ f=fixture('user',{transactionJournal:journal,progress:stage=>{if(stage==='submitting'&&failure==='progress-revocation')revoked=true;}});
+ const capability=f.routing.createPreproofRecovery(f.wallet,f.node,journal);
+ const lifecycle={guard:async stage=>{events.push(stage);assert.equal(stage,phase);guardCalls++;if(revoked)throw Error('observer revoked attempt');if(failure==='before-prepare'&&guardCalls===2||failure==='before-broadcast'&&stage==='signed')throw Error('revoked');},signed:async hash=>{events.push('signed-checkpoint');assert.equal(hash,TxHash.zero().toString());assert.equal(f.calls.submit,0);if(failure==='signed-callback')throw Error('checkpoint failed');phase='signed';}};
+ const run=()=>capability.send({},{from:'fixture',transactionJournal:journal,journalOperation:'test',wait:{timeout:0.03,interval:0.01}},lifecycle);
+ if(failure==='none'){await run();assert.equal(f.calls.submit,1);assert.deepEqual(events,['pre-proof','pre-proof','persisted','signed-checkpoint','signed','confirmed']);}
+ else {await assert.rejects(run());assert.equal(f.calls.submit,0);assert.equal(events.includes('persisted'),failure!=='before-prepare');}
+});
+test('user positive pre-proof capability rejects forged wallet, replaced send, and another journal',async()=>{
+ const journal={assertCanStart:async()=>({encoded:null}),prepare:async()=>{},confirmed:()=>{}},f=fixture('user',{transactionJournal:journal});
+ assert.throws(()=>f.routing.createPreproofRecovery({...f.wallet},f.node,journal),{code:'BB_JOURNAL_INVALID'});
+ assert.throws(()=>f.routing.createPreproofRecovery(f.wallet,f.node,undefined),{code:'BB_JOURNAL_INVALID'});
+ const cap=f.routing.createPreproofRecovery(f.wallet,f.node,journal);assert.deepEqual(JSON.parse(JSON.stringify(await cap.checkpoint())),{encoded:null});
+ await assert.rejects(cap.send({},{transactionJournal:{}},{guard:async()=>{},signed:async()=>{}}),{code:'BB_JOURNAL_INVALID'});
+ f.wallet.sendTx=async()=>{};await assert.rejects(cap.checkpoint(),{code:'BB_JOURNAL_INVALID'});assert.equal(f.calls.submit,0);
+});
+
+test('user positive pre-proof captures lifecycle functions before asynchronous proof work',async()=>{
+ let release,entered;const started=new Promise(resolve=>entered=resolve),gate=new Promise(resolve=>release=resolve);let checkpoints=0;
+ const journal={assertCanStart:async()=>({encoded:null}),setOperation:()=>{},prepare:async()=>{},confirmed:()=>{}};
+ const f=fixture('user',{transactionJournal:journal,preProveHook:async()=>{entered();await gate;}}),cap=f.routing.createPreproofRecovery(f.wallet,f.node,journal);
+ const lifecycle={guard:async()=>{},signed:async()=>{checkpoints++;assert.equal(f.calls.submit,0);}};
+ const pending=cap.send({},{from:'fixture',transactionJournal:journal,journalOperation:'test',wait:{timeout:0.03,interval:0.01}},lifecycle);
+ await started;lifecycle.guard=()=>assert.fail('replaced guard');lifecycle.signed=()=>assert.fail('replaced checkpoint');release();await pending;
+ assert.equal(checkpoints,1);assert.equal(f.calls.submit,1);
 });

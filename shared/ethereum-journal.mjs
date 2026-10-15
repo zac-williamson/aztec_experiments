@@ -1,3 +1,4 @@
+import {validateAggregateFundingIntent,verifyAggregateFundingEffects} from './rolling/aggregate-recovery.mjs';
 import {Interface,getCreateAddress,getCreate2Address,keccak256} from 'ethers';
 const CREATE2_PROXY='0x4e59b44847b379578588920ca78fbf26c0b4956c';
 import {createEncryptedJournalSlot} from './journal-record.mjs';
@@ -14,6 +15,13 @@ const iface=new Interface([
   'event Deposited(address indexed depositor,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)',
   'event Withdrawn(address indexed depositor,uint128 amount)',
 ]);
+const bokInterface=new Interface([
+  'function withdraw(address recipient,uint128 amount,bytes32 nonce,uint256 epoch,uint256 checkpoints,uint256 index,bytes32[] path)',
+  'event Withdrawn(address indexed recipient,uint128 amount,bytes32 nonce)',
+  'function deposit(bytes32 account,uint128 amount,bytes32 secretHash)',
+  'event Deposited(bytes32 indexed account,uint128 amount,bytes32 key,uint256 index)',
+]);
+const field=value=>hash(value)&&BigInt(value)>0n&&BigInt(value)<21888242871839275222246405745257275088548364400416034343698204186575808495617n;
 const unknown=()=>transactionError('BB_ETH_RECOVERY_REQUIRED','Recover the saved Ethereum request before starting another payment.');
 const invalid=()=>transactionError('BB_JOURNAL_INVALID','Ethereum recovery storage is invalid. Preserve it before continuing.');
 const address=v=>typeof v==='string'&&/^0x[0-9a-f]{40}$/.test(v);
@@ -56,17 +64,21 @@ function validateIntent(record,scope) {
     }
     return record;
   }
+  if(['aggregate-funding','aggregate-usdc-funding'].includes(expected?.kind)){if(scope.token!==undefined)throw invalid();try{validateAggregateFundingIntent(record);}catch{throw invalid();}return record;}
   const fee=scope.token!==undefined;
-  if(!expected||!(fee?['approve','fee-deposit']:['deposit','withdraw']).includes(expected.kind)||!positive(expected.amount)||BigInt(expected.amount)>=(1n<<(fee?128n:96n)))throw invalid();
-  let parsed;try{parsed=iface.parseTransaction({data:record.data,value:record.value});}catch{throw invalid();}
-  const method=expected.kind==='fee-deposit'?'depositToAztecPublic':expected.kind;
-  if(!parsed||parsed.name!==method||iface.encodeFunctionData(parsed.fragment,parsed.args).toLowerCase()!==record.data)throw invalid();
+  if(!expected||!(fee?['approve','fee-deposit','bok-deposit','bok-withdraw']:['deposit','withdraw']).includes(expected.kind)||!positive(expected.amount)||BigInt(expected.amount)>=(1n<<(fee?128n:96n)))throw invalid();
+  const abi=['bok-deposit','bok-withdraw'].includes(expected.kind)?bokInterface:iface;
+  let parsed;try{parsed=abi.parseTransaction({data:record.data,value:record.value});}catch{throw invalid();}
+  const method=expected.kind==='fee-deposit'?'depositToAztecPublic':expected.kind==='bok-deposit'?'deposit':expected.kind==='bok-withdraw'?'withdraw':expected.kind;
+  if(!parsed||parsed.name!==method||abi.encodeFunctionData(parsed.fragment,parsed.args).toLowerCase()!==record.data)throw invalid();
   if(expected.kind==='deposit') {
     if(!hash(expected.secretHash)||lower(parsed.args[0])!==expected.secretHash||record.value!==expected.amount)throw invalid();
   }else {
     if(record.value!=='0')throw invalid();
     if(expected.kind==='approve'&&(expected.spender!==scope.portal||lower(parsed.args[0])!==scope.portal||String(parsed.args[1])!==expected.amount))throw invalid();
     if(expected.kind==='fee-deposit'&&(expected.recipient!==scope.board||!hash(expected.secretHash)||lower(parsed.args[0])!==scope.board||String(parsed.args[1])!==expected.amount||lower(parsed.args[2])!==expected.secretHash))throw invalid();
+    if(expected.kind==='bok-deposit'&&(!field(expected.recipient)||!field(expected.secretHash)||lower(parsed.args[0])!==expected.recipient||String(parsed.args[1])!==expected.amount||lower(parsed.args[2])!==expected.secretHash))throw invalid();
+    if(expected.kind==='bok-withdraw'&&(!address(expected.recipient)||BigInt(expected.recipient)===0n||!field(expected.exitNonce)||lower(parsed.args[0])!==expected.recipient||String(parsed.args[1])!==expected.amount||lower(parsed.args[2])!==expected.exitNonce))throw invalid();
   }
   return record;
 }
@@ -90,6 +102,34 @@ export async function verifyEthereumIntentReceipt(provider,record,txHash,read=fn
   if(receipt.status===0)return {outcome:'reverted',txHash,receipt,event:null};
   if(!Array.isArray(receipt.logs))throw unknown();
   const expected=record.expected;
+  if(['aggregate-funding','aggregate-usdc-funding'].includes(expected.kind)) {
+    const event=await verifyAggregateFundingEffects(provider,record,receipt,read);
+    const current=await read(()=>provider.getBlock(receipt.blockNumber));if(lower(current?.hash)!==lower(receipt.blockHash))throw unknown();
+    return {outcome:'success',txHash,receipt,event};
+  }
+  if(expected.kind==='bok-withdraw') {
+    // Exact calldata authenticates nonce/recipient; a portal event is not a
+    // substitute for the saved original request or a wallet envelope.
+    const topic=bokInterface.getEvent('Withdrawn').topicHash.toLowerCase(),events=[];
+    for(const log of receipt.logs){if(lower(log.address)!==record.to||lower(log.topics?.[0])!==topic)continue;
+      let parsed;try{parsed=bokInterface.parseLog(log);}catch{throw unknown();}
+      if(!parsed||lower(parsed.args.recipient)!==expected.recipient||String(parsed.args.amount)!==expected.amount||lower(parsed.args.nonce)!==expected.exitNonce)throw unknown();events.push(parsed.args);
+    }
+    if(events.length!==1)throw unknown();return {outcome:'success',txHash,receipt,event:events[0]};
+  }
+  if(expected.kind==='bok-deposit') {
+    // This portal's event omits secretHash. Only the exact saved calldata can
+    // authenticate it; event-only wallet envelopes need a separate binding.
+    const topic=bokInterface.getEvent('Deposited').topicHash.toLowerCase(),events=[];
+    for(const log of receipt.logs) {
+      if(lower(log.address)!==record.to||lower(log.topics?.[0])!==topic)continue;
+      let parsed;try{parsed=bokInterface.parseLog(log);}catch{throw unknown();}
+      if(!parsed||lower(parsed.args.account)!==expected.recipient||String(parsed.args.amount)!==expected.amount||!field(lower(parsed.args.key)))throw unknown();
+      events.push(parsed.args);
+    }
+    if(events.length!==1)throw unknown();
+    return {outcome:'success',txHash,receipt,event:events[0]};
+  }
   if(['create-portal','create2-portal'].includes(expected.kind)) {
     if(expected.kind==='create-portal'&&lower(receipt.contractAddress)!==expected.portal)throw unknown();
     const code=await read(()=>provider.getCode(expected.portal,receipt.blockNumber));
@@ -194,7 +234,7 @@ export async function createEthereumJournal({storage,walletSecret,walletSalt,sco
     let response;
     const request={from:record.from,to:record.to,data:record.data,value:BigInt(record.value),nonce:record.nonce,chainId:BigInt(record.chainId)};
     try{
-      if(['deposit','fee-deposit'].includes(record.expected.kind)) {
+      if(['deposit','fee-deposit','bok-deposit','aggregate-funding','aggregate-usdc-funding'].includes(record.expected.kind)) {
         // Match the V6 SDK deposit allowance for changing shared Inbox state.
         const estimate=await reader({preserveInsufficientFunds:true})(()=>provider.estimateGas(request));
         if(typeof estimate!=='bigint'||estimate<=0n)throw unknown();
@@ -257,7 +297,7 @@ export async function createEthereumJournal({storage,walletSecret,walletSalt,sco
       const read=reader();await network(read);
       const found=await locate(saved,read);saved=found.saved;
       if(found.result)return confirmed(found.result,saved.value);
-      if(!retry)throw unknown();
+      if(!retry||['aggregate-funding','aggregate-usdc-funding'].includes(saved.value.expected.kind))throw unknown();
       // Explicit retry retains the same sender nonce, destination, calldata and
       // value. Even if an earlier broadcast is hidden by RPC, at most one request
       // with this nonce can execute on the canonical Ethereum chain.

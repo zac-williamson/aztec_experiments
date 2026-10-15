@@ -1,0 +1,166 @@
+{
+  "schema": 1,
+  "task": "G05",
+  "agentSession": "design-20261011",
+  "baseRevision": "0e9bdb38e558574627bb4375c7bcb7c3eb86074f",
+  "scope": "undeployed protocol foundation, partial G05 development evidence",
+  "testedSourceSha256": {
+    "billboard/Nargo.toml": "c2ebd5861978eb15cf7f0f7501c1a849d1db8907ad17f9c8e2082128046b3973",
+    "noir-dependencies.json": "7d5c643179b8f773a972ed9fa5a131b8f73ef46e76cde0772b2d7b3803622129",
+    "billboard/rolling_contract/Nargo.toml": "183cf8c25aee848ff0d8074abe2f6af28e37f412daa902b7a8442ebe4ee7747a",
+    "billboard/rolling_contract/src/main.nr": "535c927599a837033687d2934aaa2a4fb68f08dfc167a0db1a56b333366be62d",
+    "billboard/rolling_contract/src/encoding.nr": "32d1ddbca7c6cdf607a24ad1ecdf7ab4be6667877cf7c34b3cf370a02efcfd07",
+    "billboard/rolling_contract/src/tests.nr": "98d9e7a0987af54f1cb152c728585c62248e659a66b1fa7082d936a805fc70d9",
+    "billboard/rolling_contract/build.mjs": "15d1e661f625f9acc5fc11f36024d5bc83e960f9f75d334fb99c292ca24222ea",
+    "billboard/rolling_contract/test.mjs": "7704ef3fd49b7c56c6ad62b32babf3cea261262f3b1f404aea454d8b707b51b8",
+    "billboard/rolling_contract/diagnostic-service.mjs": "660322f1058f53572f66ac017101807a780e7014eebf060e0bf1f5863a2c736f"
+  },
+  "artifact": {
+    "path": "billboard/target/rolling_contract-RollingBoard.json",
+    "sha256": "b6971407c2eb54dca34ccd5b6cbf9927fb68b59dc1ae56c2e3c22a125d3e1020",
+    "transpiled": true,
+    "privateFunctionsWithVerificationKeys": [
+      "authenticate_name",
+      "create_subboard",
+      "register_name"
+    ]
+  },
+  "compilerSha256": "e1e5a7534b4ad7659fdc0f14d5877e24b7c4831a057aa38259556518583b1a96",
+  "toolchain": {
+    "node": "24.21.0",
+    "aztec": "6.0.0-rc.1",
+    "solidity": "0.8.27",
+    "foundry": "1.4.1",
+    "noir": {
+      "version": "1.0.0-rc.3",
+      "commit": "5a7ee9bf5ed8973076df7bb0d2b723024db09ae7",
+      "assets": {
+        "darwin-arm64": {
+          "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-rc.3/noir-aarch64-apple-darwin.tar.gz",
+          "sha256": "44157443519c8ede9a2df7e6a4ee513b3d49ef9fdd5774c43311fe6f32887a59"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-rc.3/noir-aarch64-unknown-linux-gnu.tar.gz",
+          "sha256": "98be47cd6b2a81f3857c029acd8298fd590eebeb153ef51e1dc6f10c973e00e9"
+        },
+        "darwin-x64": {
+          "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-rc.3/noir-x86_64-apple-darwin.tar.gz",
+          "sha256": "9014ea4b7e88ab2441a949454f2b3dbc2920a82a9353a7a3649a444afed78910"
+        },
+        "linux-x64": {
+          "url": "https://github.com/noir-lang/noir/releases/download/v1.0.0-rc.3/noir-x86_64-unknown-linux-gnu.tar.gz",
+          "sha256": "5792dd962afce1eed834570f95d9f72cc4a09d45cd846d3b80b7a57392732973"
+        }
+      }
+    },
+    "sources": [
+      "https://install.aztec.network/6.0.0-rc.1/versions",
+      "https://api.github.com/repos/noir-lang/noir/releases/tags/v1.0.0-rc.3",
+      "https://nodejs.org/en/blog/release/v24.21.0"
+    ],
+    "anvil": {
+      "release": "1.7.0",
+      "version": "1.6.0-v1.7.0",
+      "commit": "f83bad912a9dba7bf0371def1e70bb1896048356",
+      "assets": {
+        "darwin-arm64": {
+          "url": "https://github.com/foundry-rs/foundry/releases/download/v1.7.0/foundry_v1.7.0_darwin_arm64.tar.gz",
+          "sha256": "5883d247ea14d2fff8f70393aef68762bc79e608604c48a3940d8e33ef4daab6"
+        },
+        "darwin-x64": {
+          "url": "https://github.com/foundry-rs/foundry/releases/download/v1.7.0/foundry_v1.7.0_darwin_amd64.tar.gz",
+          "sha256": "ab04da5a40131df6235f14c963a91c97b7c4bba275571e508490950fef5c8211"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/foundry-rs/foundry/releases/download/v1.7.0/foundry_v1.7.0_linux_arm64.tar.gz",
+          "sha256": "4be51b29d81f46f5f8913caf9b458db4b6f04f51565fbd59a0d11f69a4be2f77"
+        },
+        "linux-x64": {
+          "url": "https://github.com/foundry-rs/foundry/releases/download/v1.7.0/foundry_v1.7.0_linux_amd64.tar.gz",
+          "sha256": "88501301c43e2cb3231009e68bd76af17cc0f7e9981f9d37ceabc6b857febb2f"
+        }
+      }
+    },
+    "nativeProver": {
+      "linux-x64": {
+        "version": "6.0.0-rc.1",
+        "sha256": "ba8bbb2b82c573153511e638c97100791f0186ef40ee5dd41e911bb5286b29d9"
+      },
+      "linux-arm64": {
+        "version": "6.0.0-rc.1",
+        "sha256": "a208718a80691d8c6dec69d134e21a04f5e2fea5816aad686c5015efaa3f56fb"
+      },
+      "darwin-x64": {
+        "version": "6.0.0-rc.1",
+        "sha256": "9fb05bb1f1e7bfdc99c899a59ae15eff99abd55b6ffd18d1895d83d006d8e091"
+      },
+      "darwin-arm64": {
+        "version": "6.0.0-rc.1",
+        "sha256": "0c0661547b0e8a856090627c51673bb72db0f34da88166281c5fb080d508b953"
+      }
+    }
+  },
+  "checks": {
+    "build": {
+      "exit": 0,
+      "command": "node billboard/rolling_contract/build.mjs",
+      "diagnosticCount": 19,
+      "diagnostic": "Brillig function call is not properly covered by a manual constraint",
+      "disposition": "All19 mapped by independent reviewer to frozen upstream dependency source; NOT declared benign. External constraint/privacy review still required."
+    },
+    "test": {
+      "exit": 0,
+      "command": "node billboard/rolling_contract/test.mjs",
+      "passed": 40,
+      "failed": 0,
+      "realProofs": false,
+      "instrumented": false,
+      "threads": 1,
+      "txeWorkers": 1,
+      "port": 49901,
+      "ownedServicePid": 8212,
+      "ownedTestPid": 8219,
+      "cleanup": "runWithService completed; process absence independently checked"
+    },
+    "dependencies": {
+      "outcome": "pass",
+      "packages": 8,
+      "checkedFiles": 418,
+      "embeddedSources": 112
+    }
+  },
+  "diagnosticHistory": [
+    "Raw package compile initially rejected missing workspace membership; assigned workspace addition fixed it.",
+    "Raw compile exits0 with19 retained dependency constraint-coverage diagnostics.",
+    "First TXE run:22 actual pure passes,13 deployment cases blocked by missing public transpilation;2 broad should_fail false-passes repaired to exact assertion messages.",
+    "Normal processArtifact prepares public bytecode/all3 private VKs. Next suite38/39 passes; owned-name enumeration failed.",
+    "Counts diagnostic initially obstructed by unsupported print oracle; retained failure.",
+    "Corrected count observation: requested offset0 arrived as1, db2/picked1. Independent source diagnosis found pinned multi-argument serializer shadowed parameter offset.",
+    "Rename page_offset with generated args0/1/2 regression fixes caller encoding without SDK changes or selector change. Final uninstrumented40/40pass."
+  ],
+  "remaining": [
+    "Real concurrent registration and reverted mint, real wallets/proofs and account recovery",
+    "Public log/index replay and reorg acceptance",
+    "Posting admission/rejection enforcement, fees/collateral/withdrawal integration",
+    "Profiles/avatar, random suggestions, browser name selection and exact Anonymous label",
+    "Node/backend request trace privacy and independent specialist/constraint review",
+    "Deployment provenance integration and release/network/soak gates"
+  ],
+  "rawLogsRelativeToPackageTargetSha256": {
+    "build-attempt-1.log": "eb69168a827ea6434feebb8a33c2e9633d9812fd55ff51eea112c94e66bf0f85",
+    "build-corrected-diagnostic.log": "d49dd8a3159188e4e9d8700d106ff5b52ec3acd7fcc9ce5275522b3c18045032",
+    "build-count-diagnostic.log": "c0ae4f812bec70672ea3fb67dca98926ae865ad5cdff0756705b71e81f1fe496",
+    "build-final.log": "3026008c3d15e143bbdf3bd0da021dd6d5836a3e9624c2b031563edf108e5f5f",
+    "compile-attempt-1.log": "d0bc699df2945aadd1957971727e0f658eb2e5a3cbcee0e8db99c995946c5559",
+    "compile-attempt-2.log": "a01982d12c70fa65d5947f288e55fad0f676ca5009ea8d0fe6f9dc89d3bb9f7a",
+    "compile-attempt-3.log": "546836de1eec314b4162410dd340e8377e5360eb8405a9dcee0066ff655ce433",
+    "test-attempt-1.log": "fcab490c6e9d1f52c7473dfe9bfb285cef1524707f49168a8f14417a5fe5f89c",
+    "test-attempt-2.log": "540bfc8389e59a5e6933dd9effed52bd39ee3ec7c6da09c02ab9e4fecf2fd342",
+    "test-corrected-diagnostic.log": "37f97e228a4b9f3193cfb5f13ed6b0cd2e67eae590d3e065293274724569ff0c",
+    "test-count-diagnostic.log": "e68b748bfd9f3a893a046800a981b003932e49d4a9bacf96f779b0b90aef407f",
+    "test-final.log": "9dcdba1f06ad0d2e7138082c49789f38b68ffc9a22b1aa50b39779332adb640d",
+    "test-list.log": "9f9e3fddfb212cb5ab45ff4491a2d9f657e469c8c4826a02685b9bea56180cda",
+    "test-ownership-diagnostic.log": "64496a0287803977372e065dbc0f919500d3448cd1b9049e5f1d03af8c177b1f",
+    "test-ownership-stages.log": "391a4c329635aacc60b4986837d6a67255296d9c5037d1ec52a394df07b3c7c1"
+  }
+}

@@ -106,3 +106,87 @@ Use `evaluate-model.mjs --corpus censor-daemon/evaluation-corpus.json --output <
 Each invocation performs at most480seconds of work and records results atomically, then verifies identity and cleans up owned Docker resources. Resume with the same inputs/output to evaluate remaining cases. Exit2 means incomplete or unmet quality/capacity criteria; it is not a successful qualification. Errors remain in the retained sample set. An orphaned output lock after a forced process kill requires checking its recorded PID and owned runtime resources before removing that exact lock; never run concurrent writers. The evaluator never receives a wallet or invokes the signer.
 
 See `docs/moderation-review.md` for corpus provenance and irreversible-flag/review limitations. Model-only analytical capacity does not replace measured flag submission latency or the required elapsed workload trial.
+
+## Rolling application profile (Draft 3 RC12 / RC13)
+
+Use the existing daemon with `--rolling-config /absolute/private/moderator.json`
+and a dedicated `--state-dir /absolute/private/rolling-moderation`. Keep the
+existing pinned model/runtime options. Do not combine this profile with legacy
+CLI, portal, censor-wallet, fee or RPC flags. The service creates no model endpoint
+bypass and does not use browser/test wallets. Only public post and policy text
+cross the existing isolated model boundary.
+
+The private configuration is a regular, owner-only mode0600 JSON file containing:
+
+```json
+{
+  "applicationProfile": "rolling",
+  "development": true,
+  "nodeUrl": "http://127.0.0.1:8080/",
+  "ethereumUrl": "http://127.0.0.1:8545/",
+  "chainId": "31337",
+  "rollupVersion": "<deployed version>",
+  "rollupAddress": "<20-byte lowercase hex>",
+  "boardAddress": "<32-byte lowercase hex>",
+  "operatorAddress": "<actual onchain moderator address>",
+  "operatorFile": "/absolute/private/moderator-actor.json",
+  "deployment": {"blockNumber": 1, "blockHash": "<actual deployment block hash>", "txHash": "<actual deployment transaction hash>"},
+  "maxTransactionFee": "<positive integer maximum Fee Juice per removal>"
+}
+```
+
+Use the deployment block/class evidence and exact endpoint from the current
+operator manifest; these example values are not a deployment. The actor file
+uses the existing native hosted actor format (`secret`, `salt`, `signingKey`,
+optional `address`), also mode0600. Never copy either private file into evidence.
+Fund the moderator's public Fee Juice account separately. The moderator is a
+public service identity; it receives no private user wallet or deposit secrets.
+The configuration cannot fund itself. Testnet uses `development:false`, chain
+`11155111`, approved HTTPS endpoints and the existing service query capability
+`PLUGIN_QUERY_API_KEY`. Native devnet must report `realProofs:false`; its native
+PXE is created with `proverEnabled:false`. Testnet requires both proof flags true.
+
+A mode0700 state directory has one existing hosted lease, the authenticated
+SQLite public index, the existing SQLite moderation queue, exact model identity
+files and `removals.json` durable operation journal. Use one writer and one
+configuration for each moderator account. Shutdown awaits model, wallet and
+index cleanup. After a crash, establish the recorded lease owner's actual
+liveness before removing its lock; do not infer death from elapsed time.
+
+Each bounded sweep reads up to64 new posts and64 retained queue targets.
+Human posts and Bok replies use the same current main/local rule union. Policy
+identity includes board, versions and rule content; hostile local text cannot
+authorize tools or override main rules. Publication rules and the actual stored
+collateral deadline remain separate. Policy changes trigger reevaluation;
+removal after the collateral deadline remains allowed. Existing manual avatar
+removal and subboard rejection remain available in the moderator UI.
+
+Before proving and again before sending, the adapter checks canonical target,
+policy, contract class, latest moderator authority, latest removed/rejected state,
+network and configured fee ceiling. Only `remove_post` with the exact approved
+arguments may be sent. It persists `preparing` before native wallet work and the
+exact hash before its single broadcast. An interrupted `preparing` operation or
+uncertain hash is fenced across restarts; the daemon only inspects it and never
+rebroadcasts, replaces or automatically retries a failed transaction. Preserve
+both queue and operation journal and reconcile original chain receipts before an
+operator recovery decision. Do not delete a journal to clear the fence.
+
+Completion requires the canonical `PostRemoved` event with matching post,
+policy, reason, transaction and block. `penalized:false` is still a removal.
+Development may qualify checkpointed events; testnet requires finality. Receipt
+or event reorgs reopen the original uncertainty fence. Full production acceptance
+still requires actual native-wallet/model runs, targeted real-proof testnet
+removal, current prompt evaluation, independent review and the elapsed workload
+trial. Unit fixtures explicitly do not satisfy these gates.
+
+
+Rolling automated moderation evaluates the authoritative main rules first, with
+no local-rule text in that model request. A main violation is sufficient for
+removal. Only when main rules permit does it evaluate nonempty local rules in a
+second request. Both must permit for the post to remain evaluated OK; either
+request failing or returning an invalid verdict leaves durable unresolved work
+and submits nothing. Local instructions therefore cannot override a parent
+prohibition by contaminating its prompt. This costs up to two sequential model
+calls and requires renewed latency/capacity evidence. The existing runtime
+identity binds the moderation implementation, invalidating earlier decisions
+after this change. Legacy moderation and qualification thresholds are unchanged.

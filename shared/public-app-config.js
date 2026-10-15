@@ -27,10 +27,20 @@
     return {contractAddress:address(value.contractAddress,32),gasSettings:out};
   }
   function remote(value){exact(value,['url']);const url=endpoint(value.url),u=new URL(url);check(u.protocol==='https:'||['localhost','127.0.0.1','[::1]'].includes(u.hostname),'Prover requires HTTPS');return {url};}
+  // This endpoint asserts the same disclosed prover trust boundary; chain identity
+  // checks cannot establish operator identity. It never replaces public feed RPC.
+  function trustedNode(value,network){
+    exact(value,['url'],['proofs']);const url=endpoint(value.url),u=new URL(url),proofs=value.proofs===undefined?'real':value.proofs;
+    const local=network.chainId==='31337'&&['localhost','127.0.0.1','[::1]'].includes(u.hostname);
+    check(proofs==='real'||proofs==='disabled','Invalid trusted node proof policy');
+    check(u.protocol==='https:'||local,'Trusted node requires HTTPS');
+    check(proofs!=='disabled'||local,'Disabled proofs require an explicit local development node');
+    return {url,proofs};
+  }
   function validate(value){
-    exact(value,['schemaVersion','network','board'],['privateFee','remoteProver']);check(value.schemaVersion===1,'Unsupported configuration version');
+    exact(value,['schemaVersion','network','board'],['privateFee','remoteProver','trustedProverNode']);check(value.schemaVersion===1,'Unsupported configuration version');
     const n=value.network,b=value.board;exact(n,['nodeUrl','ethRpcUrl','chainId','rollupVersion','rollupAddress']);exact(b,['portalAddress','contractAddress']);
-    return freeze({schemaVersion:1,network:{nodeUrl:endpoint(n.nodeUrl),ethRpcUrl:endpoint(n.ethRpcUrl),chainId:uint(n.chainId,64,true),rollupVersion:uint(n.rollupVersion,32,true),rollupAddress:address(n.rollupAddress,20)},board:{portalAddress:address(b.portalAddress,20),contractAddress:address(b.contractAddress,32)},privateFee:fee(value.privateFee),...(value.remoteProver===undefined?{}:{remoteProver:remote(value.remoteProver)})});
+    return freeze({schemaVersion:1,network:{nodeUrl:endpoint(n.nodeUrl),ethRpcUrl:endpoint(n.ethRpcUrl),chainId:uint(n.chainId,64,true),rollupVersion:uint(n.rollupVersion,32,true),rollupAddress:address(n.rollupAddress,20)},board:{portalAddress:address(b.portalAddress,20),contractAddress:address(b.contractAddress,32)},privateFee:fee(value.privateFee),...(value.remoteProver===undefined?{}:{remoteProver:remote(value.remoteProver)}),...(value.trustedProverNode===undefined?{}:{trustedProverNode:trustedNode(value.trustedProverNode,n)})});
   }
   function parse(text){check(typeof text==='string'&&new TextEncoder().encode(text).length<=MAX_BYTES,'Configuration exceeds size limit');let value;try{value=JSON.parse(text);}catch{throw new Error('Invalid configuration JSON');}return validate(value);}
   function maximumFee(config){const f=validate(config).privateFee;if(!f)return null;const g=f.gasSettings;return (BigInt(g.gasLimits.daGas)*BigInt(g.maxFeesPerGas.feePerDaGas)+BigInt(g.gasLimits.l2Gas)*BigInt(g.maxFeesPerGas.feePerL2Gas)).toString();}

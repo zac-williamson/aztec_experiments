@@ -1,3 +1,4 @@
+import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 // Shared activated-board lifetime. Scenarios own their explicit action sequence.
 import assert from 'node:assert/strict';
 import {withC01ClientMining} from './c01-client-mining.mjs';
@@ -5,7 +6,7 @@ import {withC01ClientMining} from './c01-client-mining.mjs';
 export async function withActivatedBoard(ctx, execute) {
   const observation = {
     passed: false, scope: ctx.scenario.description,
-    applicationProofs: true, controlledSettlement: true, networkProofs: false,
+    applicationProofs: applicationProofsEnabled(), controlledSettlement: true, networkProofs: false,
   };
   const state = {...ctx, observation, privateFee: null, browserJourney: null};
   let failure;

@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {performance} from 'node:perf_hooks';
 import {validateCorpus,buildEvaluationReport,evaluateModel,readFlagLatencyEvidence} from './evaluate-model.mjs';
 import {identifyModel,sha256Bytes} from './model-version.mjs';
 const hex=n=>'0x'+BigInt(n).toString(16).padStart(64,'0');
@@ -68,4 +69,47 @@ test('checked-in corpus separates input rejection from semantic labels',()=>{
 });
 test('runner durably records expected boundary rejection without counting model failure',async t=>{
  const f=setup(t);f.c.cases=[{id:'boundary',policyId:'p1',text:'Rejected \u202e marker',expected:'boundary-rejection',expectedErrorCode:'INVALID_INPUT',language:'en',tags:[]}];fs.writeFileSync(f.corpusPath,JSON.stringify(f.c));f.deps.evaluate=async()=>{throw Object.assign(Error('input rejected'),{code:'INVALID_INPUT'});};const state=await f.run();assert.equal(state.results[0].status,'error');assert.equal(state.report.boundary.passed,1);assert.equal(state.report.errors.total,0);assert.equal(state.report.complete,true);
+});
+
+
+test('remaining batch budget defers the next case without shortening its model timeout',async t=>{
+ const f=setup(t);let now=0;const time=t.mock.method(performance,'now',()=>now),timeouts=[];
+ f.deps.evaluate=async(text,policy,port,options)=>{f.calls++;timeouts.push(options.timeoutMs);now=475000;return {isViolation:false};};
+ const state=await f.run({maxCases:3});
+ assert.equal(f.calls,1,'Five seconds left must not admit another model request');
+ assert.deepEqual(timeouts,[120000]);assert.equal(state.results.length,1);
+ assert.equal(state.report.errors.total,0);assert.equal(state.report.complete,false);
+ assert.equal(f.stops,1);assert(!fs.existsSync(f.outputPath+'.lock'));
+ assert.deepEqual(state.sessions[0].deferredCase,{caseId:'case1',reason:'insufficient-request-budget',remainingMs:5000,requiredMs:120000});
+ const original=JSON.stringify(state.results[0]);now=0;const resumed=await f.run({maxCases:1});
+ assert.equal(f.calls,2);assert.equal(resumed.results[1].caseId,'case1');assert.equal(JSON.stringify(resumed.results[0]),original);
+ assert.equal(resumed.sessions[1].deferredCase,null);assert.equal(f.stops,2);
+ time.mock.restore();
+});
+
+
+test('runtime startup time cannot consume part of an admitted model deadline',async t=>{
+ const f=setup(t);let now=0;t.mock.method(performance,'now',()=>now);
+ f.deps.startRuntime=async()=>{now=360001;return f.runtime;};
+ const state=await f.run({maxCases:3});assert.equal(f.calls,0);assert.equal(f.stops,1);
+ assert.equal(state.results.length,0);assert.equal(state.report.errors.total,0);assert.equal(state.report.complete,false);
+ assert.deepEqual(state.sessions[0].deferredCase,{caseId:'case0',reason:'insufficient-request-budget',remainingMs:119999,requiredMs:120000});
+ assert.equal(state.report.runState,'stopped-cleanly');assert.equal(state.report.pass,false);
+});
+test('an admitted request retains the full timeout and its real error through resume',async t=>{
+ const f=setup(t);let now=0;t.mock.method(performance,'now',()=>now);
+ f.deps.startRuntime=async()=>{now+=360000;return f.runtime;};
+ f.deps.evaluate=async(text,policy,port,options)=>{assert.equal(options.timeoutMs,120000);f.calls++;now+=120000;throw Object.assign(Error('not retained'),{code:'MODEL_TIMEOUT'});};
+ const first=await f.run({maxCases:3});assert.equal(f.calls,1);assert.equal(first.results[0].durationMs,120000);assert.equal(first.results[0].errorCode,'MODEL_TIMEOUT');
+ const retained=JSON.stringify(first.results[0]);now=0;const second=await f.run({maxCases:3});
+ assert.equal(f.calls,2);assert.equal(second.results[1].caseId,'case1');assert.equal(JSON.stringify(second.results[0]),retained);
+ assert.equal(second.report.errors.total,2);assert.equal(second.report.qualityPass,false);assert.equal(second.report.latencyPass,false);assert.equal(f.stops,2);
+});
+
+test('a valid short work budget stops incomplete without inventing a successful evaluation',async t=>{
+ const f=setup(t);const state=await f.run({workBudgetMs:1000,maxCases:3});
+ assert.equal(f.calls,0);assert.equal(f.stops,1);assert.equal(state.results.length,0);
+ assert.equal(state.report.complete,false);assert.equal(state.report.qualityPass,false);assert.equal(state.report.latencyPass,false);assert.equal(state.report.pass,false);
+ assert.equal(state.sessions[0].deferredCase.caseId,'case0');assert.equal(state.sessions[0].deferredCase.requiredMs,120000);assert(state.sessions[0].deferredCase.remainingMs<=1000);
+ assert.equal(state.report.runState,'stopped-cleanly');assert(!fs.existsSync(f.outputPath+'.lock'));
 });

@@ -1,0 +1,9 @@
+{
+  "rolling_contract/src/admission.nr": "83868ff1dd7b5f7841fdff2f1252d76d96c68db9554d9bb93e65b6a6a7011b38",
+  "rolling_contract/src/encoding.nr": "32d1ddbca7c6cdf607a24ad1ecdf7ab4be6667877cf7c34b3cf370a02efcfd07",
+  "rolling_contract/src/main.nr": "9dc1196215a77b038eb99c3f0c238f5f8726224654319191148c5bf30968c785",
+  "rolling_contract/src/posting.nr": "fd6584906e2925bac633ed2e86d850e03c61bce54095221b5beba460d06a953c",
+  "rolling_contract/src/posting_tests.nr": "9cc28645b78fa4f781ed046b186b74f840804078eab8bb89773d68cb8b334f2d",
+  "rolling_contract/src/tests.nr": "a5a50346d645d4d90ffea0e3df2b6ceb311449176c63a48bec05d1f0b20f8002",
+  "rolling_contract/Nargo.toml": "19fde4c2b8a48f8fa59966f7803a573fb3b03b4705b619c43e2395ae23b4ecf3"
+}

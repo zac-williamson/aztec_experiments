@@ -7,6 +7,7 @@ import {abiEncode,serializeWitness} from '@aztec-foundation/noir-noirc_abi';
 import {loadCircuitCatalog} from '../prover/catalog.mjs';
 import {createProcessWorker} from '../prover/process-worker.mjs';
 import {encodeJob} from '../shared/remote-prover-wire.mjs';
+import {validateRollingJob} from '../prover/application-policy.mjs';
 function zero(type){switch(type.kind){case 'field':case 'integer':return '0';case 'boolean':return false;case 'array':return Array.from({length:type.length},()=>zero(type.type));case 'struct':return Object.fromEntries(type.fields.map(f=>[f.name,zero(f.type)]));default:throw Error('Unsupported fixture ABI '+type.kind);}}
 test('actual isolated worker accepts configured board and rejects forged board/network metadata',async()=>{
  const catalog=await loadCircuitCatalog();const [id,circuit]=[...catalog].find(([,c])=>c.functionName==='Billboard:post');
@@ -112,4 +113,28 @@ test('catalog pins V6 circuit kinds with both hiding variants and application ve
  const {AuthRegistryArtifact,HandshakeRegistryArtifact,MultiCallEntrypointArtifact,PublicChecksArtifact}=await import('@aztec-labs/standard-contracts');
  for(const artifact of [AuthRegistryArtifact,HandshakeRegistryArtifact,MultiCallEntrypointArtifact,PublicChecksArtifact])for(const fn of artifact.functions)if(fn.verificationKey)assert.equal(catalog.get(await circuitId(fn.bytecode,Buffer.from(fn.verificationKey,'base64')))?.kind,CircuitKind.App,artifact.name+':'+fn.name);
  for(const circuit of catalog.values())if(circuit.functionName.includes(':'))assert.equal(circuit.kind,CircuitKind.App,circuit.functionName);
+});
+
+test('rolling job checks every signed payload and private binding even in a mixed batch',async()=>{
+ // Real installed account ABI encode/decode; fabricated witness values are
+ // policy evidence only and are never claimed as valid cryptographic proofs.
+ const {abiDecode}=await import('@aztec-foundation/noir-noirc_abi');
+ const catalog=await loadCircuitCatalog(),account=[...catalog.values()].find(c=>c.functionName==='SchnorrInitializerlessAccount:entrypoint');
+ const selectors={RollingBoard:{private:new Set([11n]),public:new Set([12n])},PrivateBok:{private:new Set([21n]),public:new Set([22n])},fee:{fee:new Set([31n]),feeClaim:32n,paddingHash:99n}};
+ const options={metadata:{board:'1',chainId:'31337',rollupVersion:'1'},privateBokAddress:'2',privateFeeAddress:'3',selectors};
+ const input=Object.fromEntries(account.abi.parameters.map(p=>[p.name,zero(p.type)]));
+ input.inputs.tx_context.chain_id='31337';input.inputs.tx_context.version='1';
+ for(const call of input.app_payload.function_calls){call.is_public=true;call.args_hash='99';}
+ const set=(index,target,selector)=>{const call=input.app_payload.function_calls[index];call.target_address.inner=target;call.function_selector.inner=selector;call.is_public=false;};
+ set(0,'1','11');set(1,'2','21');set(2,'3','31');
+ const decodedAccount=()=>abiDecode(account.abi,abiEncode(account.abi,input,zero(account.abi.return_type.abi_type))).inputs;
+ const context=target=>({inputs:{tx_context:{chain_id:'31337',version:'1'},call_context:{contract_address:{inner:target}}}});
+ const circuits=['SchnorrInitializerlessAccount:entrypoint','RollingBoard:post','PrivateBok:claim','PrivateFPC:pay_fee'].map(functionName=>({functionName}));
+ const decoded=[decodedAccount(),context('1'),context('2'),context('3')];validateRollingJob(circuits,decoded,options);
+ assert.throws(()=>validateRollingJob(circuits.slice(1),decoded.slice(1),options),/Signed/);
+ assert.throws(()=>validateRollingJob(circuits.slice(0,-1),decoded.slice(0,-1),options),/fee circuit/);
+ assert.throws(()=>validateRollingJob(circuits,[decoded[0],decoded[1],context('99'),decoded[3]],options),/contract/);
+ set(1,'99','21');assert.throws(()=>validateRollingJob(circuits,[decodedAccount(),...decoded.slice(1)],options),/Unapproved/);
+ assert.throws(()=>validateRollingJob([...circuits,circuits[0]],[...decoded,decodedAccount()],options),/Unapproved/);
+ await assert.rejects(loadCircuitCatalog({applicationProfile:'unknown'}),/Invalid application/);
 });

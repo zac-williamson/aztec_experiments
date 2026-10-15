@@ -1,0 +1,15 @@
+✔ retained Bok UI confirms only two exact saved reviews and stops before any invalid confirmation (312.972208ms)
+✔ retained Bok reply uses the real thread Reply action and immutable conversation context (0.416125ms)
+✔ retained Bok reply saved review binds approved thread before any authorization (1.284625ms)
+✔ Bok authorize preparation error stops before confirmation without waiting the full deadline (0.475292ms)
+✔ Bok post preparation error stops before confirmation without waiting the full deadline (0.132ms)
+✔ Bok authorize confirmation error stops without replay or a full-deadline wait (0.188292ms)
+✔ Bok post confirmation error stops without replay or a full-deadline wait (0.106125ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 470.269625

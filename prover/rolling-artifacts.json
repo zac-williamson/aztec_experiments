@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "status": "ready",
+  "artifacts": [
+    {
+      "name": "RollingBoard",
+      "path": "billboard/target/rolling_contract-RollingBoard.json",
+      "sha256": "91b9a2fe0b2e886b26cc012a3edcbbcaae40724b3d596d56a5f1701028993c59"
+    },
+    {
+      "name": "PrivateBok",
+      "path": "experiments/private-bok/target/private_bok-PrivateBok.json",
+      "sha256": "0095bc9599401ef052436c1e6aec34903fad7745e3ff8bee2ea682d4586b65af"
+    }
+  ],
+  "inputs": {
+    "apps/src/billboard/private_fee_artifact.json": "0f1266bfe011c8ccac93f6ff00191e436ecda7c02f64fe9629fd6d7665660827",
+    "noir-dependencies.json": "bafc55482a422c076bb5a0622e5f14c4a3bb525fedc95dee884a3afbfce9e717",
+    "toolchain.json": "8a5ade97648d006124ee1a7f2e40c55375be90d116f3c4c90e2e56456f89d8a8",
+    "package-lock.json": "eeff963f7828637d0bf1368b36c9735959f1c1afd95a430bee4a46b6aacee99e",
+    "scripts/build-contracts.mjs": "1bd2d6ed0d608989180e08070b1ef46f45429c1b5855328e87fc818eec456cb8",
+    "scripts/check-noir-dependencies.mjs": "17be15dc0297b52fe959b9581067284c19e8426ecfc72463c1bd36c963123549",
+    "scripts/normalize-noir.mjs": "d1dc22ad5e50d016e9e1fce6d8c5d3cadc21db431b4eb94717a347f5c0c69a5d",
+    "billboard/Nargo.toml": "c2ebd5861978eb15cf7f0f7501c1a849d1db8907ad17f9c8e2082128046b3973",
+    "billboard/rolling_contract/Nargo.toml": "713c597eadf4b54bc6b037d738101e5983009a0e42c83d0bb3050a3f35f87f73",
+    "billboard/rolling_contract/build.mjs": "15d1e661f625f9acc5fc11f36024d5bc83e960f9f75d334fb99c292ca24222ea",
+    "experiments/private-bok/Nargo.toml": "fdfdce9b51ea0d14e2b84bb4b9be0f173a1bef1a01713889ec103b291b9d7f59",
+    "experiments/private-bok/escrow/Nargo.toml": "af34bbe690537ebb19a7d1985c9fdfb00f2622fa8983f2471879843c6eeefc29",
+    "experiments/private-bok/build.mjs": "813b1b41c66b0f6ff255d23a1ac45541a4d87042fe9521f135c203f4cfb89da0",
+    "billboard/rolling_contract/src/admission.nr": "83868ff1dd7b5f7841fdff2f1252d76d96c68db9554d9bb93e65b6a6a7011b38",
+    "billboard/rolling_contract/src/encoding.nr": "32d1ddbca7c6cdf607a24ad1ecdf7ab4be6667877cf7c34b3cf370a02efcfd07",
+    "billboard/rolling_contract/src/main.nr": "e467ed6e955043880eed2499314ee4a474716b059f62fbceb0ca02eb901e9938",
+    "billboard/rolling_contract/src/posting.nr": "1bac8187638522892d6389a6d4b34185c4bd46297dddcba6102b2a3b81098bda",
+    "billboard/rolling_contract/src/preference_recovery.nr": "f1e33e08eeb2d6110454235cf836bc865fca53e673454d78a1a67dd6577467fd",
+    "billboard/rolling_contract/src/preferences.nr": "7cdae41312403c4135f4ab621283c7a4bf52b0b6fb8c34d14a90e83386e4be30",
+    "billboard/rolling_contract/src/profiles.nr": "b12124ca50d181f9798c24e3373f9ba358697fdb433cc7d696c3a69ac9d53efd",
+    "experiments/private-bok/escrow/src/main.nr": "3139a83a22a7dc3a22dcd20aeb5e7cbe0f142693e166ab668a96ea51c3074260"
+  }
+}

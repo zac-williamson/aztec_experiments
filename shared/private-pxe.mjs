@@ -17,6 +17,13 @@ const privateLogger=Object.freeze({
   createChild:()=>privateLogger,getBindings:()=>({}),
 });
 const browserCrsInitializations=new WeakMap();
+// The SDK wraps its input node in an opaque cache. Remember construction here,
+// rather than inferring that cache's source from a public wallet property.
+const privatePXERoutes=new WeakMap();
+export function isPrivatePXEForNode(pxe,node) {
+  const route=privatePXERoutes.get(pxe);
+  return Boolean(route && route.source===node && route.cached && pxe.node===route.cached);
+}
 let cliProverInitialization;
 const cliFailure=()=>Object.assign(new Error('Local CLI proving setup could not be verified.'),{code:'BB_CLI_PROVER_CONFIGURATION'});
 const cliOptions=Object.freeze({backend:BackendType.Wasm,threads:1,skipSrsInit:true});
@@ -104,6 +111,7 @@ export async function createPXE(node,config,options={}) {
     selected={...options,simulator,proverOrOptions:new BrowserPrivateKernelProver(simulator,{...initialized.options,logger:privateLogger},{proofsEnabled:true,transport:null})};
   }
   const pxe=await createSdkPXE(node,config,{...selected,loggers:{store:privateLogger,pxe:privateLogger,prover:privateLogger}});
+  privatePXERoutes.set(pxe,{source:node,cached:pxe.node});
   if(readOnly)pxe.proveTx=async()=>{throw new Error('Read-only PXE cannot prove transactions');};
   if(selected.proverOrOptions instanceof RoutedKernelProver)pxe.setRemoteProver=async value=>{remote=value;selected.proverOrOptions.setTransport(transport());};
   return pxe;

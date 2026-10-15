@@ -14,7 +14,7 @@
     if(match&&match[1]!==networkId)throw Object.assign(Error('Unsupported network'),{code:'BB_BOARD_NETWORK_UNSUPPORTED'});
     const boardAddress=match?match[2]:hosted.board.contractAddress;
     const result=await root.BillboardPublic.connectPublicBoard({network:hosted.network,boardAddress,metadata:root.BillboardPublic.metadata,storage:root.BillboardPublic.browserPublicFeedStorage()});
-    return {...result,config:root.BillboardConfig.validate({...result.config,privateFee:hosted.privateFee,...(boardAddress===hosted.board.contractAddress&&hosted.remoteProver?{remoteProver:hosted.remoteProver}:{})}),fragment:'network='+networkId+'&board='+boardAddress};
+    return {...result,config:root.BillboardConfig.validate({...result.config,privateFee:hosted.privateFee,...(hosted.trustedProverNode?{trustedProverNode:hosted.trustedProverNode}:{}),...(boardAddress===hosted.board.contractAddress&&hosted.remoteProver?{remoteProver:hosted.remoteProver}:{})}),fragment:'network='+networkId+'&board='+boardAddress};
   };
   root.boardConnectionFailure=error=>({BB_BOARD_LINK_INVALID:{message:'This board link is incomplete or invalid. Choose a board from the directory.',retry:false},BB_BOARD_NETWORK_UNSUPPORTED:{message:'This site does not serve the network in that link. Open it on the board operator’s site.',retry:false},BB_BOARD_INCOMPATIBLE:{message:'This board uses a different contract version. Ask its operator for the matching app.',retry:false},BB_BOARD_NOT_FOUND:{message:'No board was found at this address. Check the link with its operator.',retry:false}}[error?.code]||{message:'The board could not be reached. Your account and messages are unchanged. Try again.',retry:true});
   if(document.body?.hasAttribute('data-public-board-reader'))return;

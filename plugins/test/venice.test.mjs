@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Wallet,verifyMessage,verifyTypedData} from 'ethers';
 import {veniceClient,veniceModel} from '../venice.mjs';
+import {getVeniceDiagnostic} from '../venice-diagnostics.mjs';
 
 const wallet=Wallet.createRandom();
 const payTo=Wallet.createRandom().address;
@@ -55,7 +56,8 @@ for(const [name,changes] of [['wrong chain',{network:'eip155:1'}],['wrong token'
 test('uncertain settlement cannot trigger another payment',async()=>{
   let calls=0;
   const client=veniceClient({privateKey:wallet.privateKey,fetchImpl:async()=>{if(++calls===1)return quote();throw Error('connection lost');}});
-  await assert.rejects(client.topUp(5),/connection lost/);
+  // Privacy requirement: raw transport text is replaced, while unknown payment stays fenced.
+  await assert.rejects(client.topUp(5),error=>getVeniceDiagnostic(error)?.category==='transport-unknown'&&!error.message.includes('connection lost'));
   await assert.rejects(client.topUp(5),/uncertain/);assert.equal(calls,2);
 });
 
@@ -92,4 +94,31 @@ test('a model failure is not retried or followed by additional funding',async()=
   const client={json:async path=>{if(path.endsWith('/models'))return catalog;completions++;throw Error('Venice request failed (402)');},balance:async()=>({canConsume:true}),topUp:async()=>{topups++;}};
   await assert.rejects(veniceModel({client,autoTopUp:true}).complete({messages:[],tools:[],maxTokens:20}),/402/);
   assert.equal(completions,1);assert.equal(topups,0);
+});
+
+test('mock HTTP400 records bounded documented code/param with one request and no response text',async()=>{
+ let calls=0,statusReads=0;
+ const client=veniceClient({signer:{address:wallet.address,signIn:async()=> 'fixture'},fetchImpl:async()=>{
+  calls++;const response=new Response(JSON.stringify({error:{code:'INVALID_REQUEST',param:'max_completion_tokens',message:'PRIVATE_SENTINEL'},details:'PRIVATE_SENTINEL',id:'PRIVATE_SENTINEL'}),{status:400});
+  Object.defineProperty(response,'status',{get(){statusReads++;return statusReads===1?400:'PRIVATE_SENTINEL';}});return response;
+ }});
+ await assert.rejects(client.json('/api/v1/chat/completions',{method:'POST',body:{}}),error=>{
+  assert.deepEqual(getVeniceDiagnostic(error),{category:'http-rejection',httpStatus:400,code:'INVALID_REQUEST',param:'max_completion_tokens',billingStage:null});assert(!error.stack.includes('PRIVATE_SENTINEL'));return true;
+ });assert.equal(calls,1);assert.equal(statusReads,1);
+});
+for(const [name,response,category,status] of [
+ ['network',()=>{throw Error('PRIVATE_SENTINEL');},'transport-unknown',null],
+ ['invalid JSON',()=>new Response('PRIVATE_SENTINEL'),'response-json-invalid',200],
+ ['unknown HTTP fields',()=>new Response(JSON.stringify({error:{code:'PRIVATE_SENTINEL',param:'PRIVATE_SENTINEL'}}),{status:400}),'http-rejection',400],
+ ['oversized HTTP body',()=>new Response(JSON.stringify({error:{code:'INVALID_REQUEST',param:'messages'},message:'PRIVATE_SENTINEL'.repeat(2000)}),{status:400}),'http-rejection',400]
+])test('mock transport: '+name+' retains only classification without retry',async()=>{
+ let calls=0;const client=veniceClient({signer:{address:wallet.address,signIn:async()=> 'fixture'},fetchImpl:async()=>{calls++;return response();}});
+ await assert.rejects(client.json('/api/v1/chat/completions',{method:'POST',body:{}}),error=>{assert.deepEqual(getVeniceDiagnostic(error),{category,httpStatus:status,code:null,param:null,billingStage:null});assert(!error.stack.includes('PRIVATE_SENTINEL'));return true;});assert.equal(calls,1);
+});
+
+for(const reason of ['stop','length','tool_calls','content_filter','function_call','PRIVATE_SENTINEL',null,undefined])test('legacy adapter propagates only closed completion metadata: '+String(reason),async()=>{
+ const client={balance:async()=>({canConsume:true}),json:async path=>path.endsWith('/models')?catalog:{...answer,choices:[{...answer.choices[0],finish_reason:reason}]}};
+ const result=await veniceModel({client}).complete({messages:[],tools:[],maxTokens:200});
+ assert.equal(result.cost,.00091);assert.equal(result.finishReason,reason==='PRIVATE_SENTINEL'||reason===null?'invalid':reason);
+ assert.equal(Object.hasOwn(result,'finishReason'),reason!==undefined);
 });

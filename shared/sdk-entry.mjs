@@ -1,4 +1,8 @@
+export {createEncryptedJournalSlot} from './journal-record.mjs';
+export {prepareAggregateFunding, aggregateFundingTransaction, prepareAggregateUsdcFunding, aggregateUsdcFundingTransaction} from './rolling/aggregate-funding.mjs';
+export {validateAggregateFundingIntent, verifyAggregateFundingEffects} from './rolling/aggregate-recovery.mjs';
 import './browser-runtime-policy.mjs';
+export {prepareFundingClaim} from './rolling/funding-receipts.mjs';
 
 // Legacy application consumers require the browser Buffer global.
 import { Buffer } from 'node:buffer';
@@ -6,7 +10,8 @@ globalThis.Buffer ??= Buffer;
 
 // Explicit browser/CLI compatibility surface for the pinned Aztec SDK.
 // Build this source; do not recover exports by editing a generated bundle.
-export { createPXE, initializeBrowserProver, initializeCliProver } from './private-pxe.mjs';
+export { createTrustedPrivateNode, inspectTrustedNode, isTrustedPrivateNode } from './trusted-private-node.mjs';
+export { createPXE, isPrivatePXEForNode, initializeBrowserProver, initializeCliProver } from './private-pxe.mjs';
 export { boundedTransactionRead, requireSuccessfulReceipt, submitOnceWithReconciliation, classifyDroppedTransaction, waitForSuccessfulReceipt } from './transaction-outcomes.mjs';
 export { openPXEStore, getPXEStoreIdentity, PXE_DATA_SCHEMA_VERSION } from './sdk-store.mjs';
 export { AztecSQLiteOPFSStore } from '@aztec-labs/kv-store/sqlite-opfs';
@@ -20,7 +25,8 @@ export { Contract, ContractFunctionInteraction, BatchCall, DeployMethod, NO_WAIT
 export { NO_FROM } from '@aztec-labs/aztec.js/account';
 export { createPrivateFeeDeployment, normalizePrivateFeeGasSettings, preparePrivateFeePayment, derivePrivateFeeInstance, derivePrivateFeeBridgeSecret, derivePrivateFeeAddress } from './private-fee-client.mjs';
 export { ensureOnboardingFees } from './fee-onboarding.mjs';
-export { fundPrivateFees, recoverPrivateFeeClaim, recoverPrivateFeeFunding, isPrivateFeeClaimConsumed } from './private-fee-funding.mjs';
+export { fundPrivateFees, recoverPrivateFeeClaim, recoverPrivateFeeFunding, isPrivateFeeClaimConsumed, claimSecrets } from './private-fee-funding.mjs';
+export { EventSelector, decodeFunctionSignature } from '@aztec-labs/stdlib/abi';
 export { FunctionCall, FunctionSelector, FunctionType, encodeArguments, loadContractArtifact } from '@aztec-labs/aztec.js/abi';
 export { Capsule, HashedValues, ExecutionPayload, TxExecutionRequest, TxHash } from '@aztec-labs/aztec.js/tx';
 export { createEthereumJournal, verifyEthereumIntentReceipt } from './ethereum-journal.mjs';
@@ -29,11 +35,11 @@ export { createBrowserJournalStorage } from './journal-indexeddb.mjs';
 export { Tx, TxContext } from '@aztec-labs/stdlib/tx';
 export { Gas, GasSettings } from '@aztec-labs/stdlib/gas';
 export { MerkleTreeId } from '@aztec-labs/stdlib/trees';
-export { computePartialAddress } from '@aztec-labs/stdlib/contract';
+export { computePartialAddress, computeContractAddressFromInstance, computeArtifactHash } from '@aztec-labs/stdlib/contract';
 export { deriveKeys, deriveKeysFromMasterSecretKeys, deriveMasterMessageSigningSecretKey,
   deriveMasterMessageSigningSecretKey as deriveSigningKey,
   deriveMasterMessageSigningSecretKey as deriveMasterMessageSigningSecretKeyAlias } from '@aztec-labs/stdlib/keys';
-export { computeSecretHash, deriveStorageSlotInMap, siloNullifier } from '@aztec-labs/stdlib/hash';
+export { computeL2ToL1MessageHash, computeSecretHash, deriveStorageSlotInMap, siloNullifier } from '@aztec-labs/stdlib/hash';
 export { computeFeeJuiceMessageNullifier,
   computeFeeJuiceMessageNullifier as computeL1ToL2MessageNullifier,
   getNonNullifiedL1ToL2MessageWitness } from '@aztec-labs/stdlib/messaging';

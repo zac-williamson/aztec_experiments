@@ -117,3 +117,14 @@ test('PR reads retain changed files inside the agent budget despite large GitHub
   assert.equal(clones,0);
  }finally{await session.close();}
 });
+
+// Controlled toolbox/model doubles exercise the application reply boundary; no provider calls.
+for (const published of [false,true]) test('app workspace step-limit summary keeps publication outcome '+published,async()=>{
+ let closed=0;
+ const base=githubToolbox({repository:'owner/project',api:async()=>assert.fail('No GitHub operation'),runCommand:async()=>assert.fail('No checkout needed'),repositories:{open:async()=>({work:'/unused-controlled-work',startEmpty:true,close:async()=>{closed++;}})}});
+ const toolbox={open:async args=>{const session=await base.open(args);return {...session,accept:async()=>published?{repositoryId:'a'.repeat(64),acceptedRevision:'b'.repeat(40),publication:{latestUrl:'https://artifacts.example/t/one/',latestSourceUrl:'https://artifacts.example/t/one/source.json'}}:null};}};
+ const agent=createAgent({toolbox,instructions:'Build an app',maxCalls:1,model:{complete:async()=>({message:{role:'assistant',content:null,tool_calls:[{id:'controlled',type:'function',function:{name:'unknown_controlled_tool',arguments:'{}'}}]}})}});
+ const result=await agent.run({id:'controlled',postId:'0x1',text:'Create a counter'});
+ assert.equal(result.replyText,published?'Execution step limit reached.\nApp: https://artifacts.example/t/one/\nSource: https://artifacts.example/t/one/source.json':'Execution step limit reached.');
+ assert.equal(closed,1);
+});

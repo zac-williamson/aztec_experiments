@@ -14,7 +14,45 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 // Explicit local timing, shared by protocol deployment and its node. Keep the
 // normal two-checkpoint Inbox delay within the application's readiness window.
 export const LOCAL_TIMING=Object.freeze({ethereumSlotDuration:1,aztecSlotDuration:5,blockDurationMs:1000,aztecEpochDuration:4,inboxLag:2});
-export async function runFixture(directory, scenario, browserControl, operatorPackage) {
+// Fixture-only past genesis: no production clock/epoch/readiness override.
+export function applicationInitialClock(scenario, now=Date.now) {
+  const own=key=>{const d=Object.getOwnPropertyDescriptor(scenario,key);assert(!d||Object.hasOwn(d,'value'),'Clock profile accessors are forbidden');return d;};
+  assert(scenario&&typeof scenario==='object'&&!Array.isArray(scenario));
+  const name=own('name')?.value,offset=own('initialClockOffsetSeconds');
+  const enabled=name==='rolling-bok-post';
+  if(!enabled){assert(!offset,'Initial clock offset requires an explicit local scenario');return null;}
+  assert(offset?.value===120,'Initial clock offset must be the fixed local profile');
+  assert.equal(own('boardProfile')?.value,'rolling');
+  assert.equal(own('fixture')?.value,'activated-board');
+  assert.equal(own('browser')?.value,'none');
+  assert.equal(typeof now,'function');const milliseconds=now();
+  assert(Number.isSafeInteger(milliseconds)&&milliseconds>=121000,'Invalid wall clock');
+  const capturedWallSeconds=Math.floor(milliseconds/1000);
+  return Object.freeze({offsetSeconds:120,capturedWallSeconds,genesisTimestamp:capturedWallSeconds-120});
+}
+// Actual-used numeric observation; controlled-fetch tests do not claim Anvil execution.
+export async function observeApplicationInitialClock(rpcUrl, clock, stage, now=Date.now) {
+  assert(['genesis','first-protocol','post-activation','node-handoff'].includes(stage));
+  const selector=stage==='genesis'?'0x0':stage==='first-protocol'?'0x1':'latest';
+  const response=await fetch(rpcUrl,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:3,method:'eth_getBlockByNumber',params:[selector,false]}),signal:AbortSignal.timeout(5000)});
+  assert(response.ok,'Clock block request failed');const body=await response.json();
+  assert(body?.jsonrpc==='2.0'&&body.id===3&&!Object.hasOwn(body,'error')&&body.result,'Clock block response failed');
+  const block=body.result,quantity=value=>{assert(typeof value==='string'&&/^0x(?:0|[1-9a-f][0-9a-f]*)$/.test(value),'Invalid clock quantity');const n=Number(BigInt(value));assert(Number.isSafeInteger(n));return n;};
+  const number=quantity(block.number),timestamp=quantity(block.timestamp),milliseconds=now();
+  assert(Number.isSafeInteger(milliseconds)&&milliseconds>=0);const wallSeconds=Math.floor(milliseconds/1000);
+  assert(wallSeconds>=clock.capturedWallSeconds,'Wall clock moved backwards');
+  if(stage==='genesis'){
+    assert.equal(number,0);assert.equal(timestamp,clock.genesisTimestamp);
+    assert(Array.isArray(block.transactions)&&block.transactions.length===0,'Genesis unexpectedly contains transactions');
+  }else if(stage==='first-protocol'){
+    assert.equal(number,1);assert(Array.isArray(block.transactions)&&block.transactions.length>0,'First protocol block has no transaction');
+    assert(timestamp>clock.genesisTimestamp,'First protocol timestamp did not advance');
+    // Pinned Anvil uses wall+offset, at least previous block+1; not genesis equality.
+    assert(timestamp<=Math.max(clock.genesisTimestamp+1,wallSeconds-clock.offsetSeconds),'First transaction did not retain the initial offset');
+  }
+  return Object.freeze({blockNumber:number,timestamp,wallSeconds,leadSeconds:timestamp-wallSeconds});
+}
+export async function runFixture(directory, scenario, browserControl, operatorPackage, providerDeadlineAt, applicationDeadlineAt) {
   let stage='startup', anvil, identity;
   const originalStdout=process.stdout.write.bind(process.stdout), originalStderr=process.stderr.write.bind(process.stderr);
   const capture=(chunk,encoding,callback)=>{if(typeof encoding==='function')encoding();else if(callback)callback();return true;};
@@ -45,7 +83,9 @@ export async function runFixture(directory, scenario, browserControl, operatorPa
     const port=reservation.address().port;await new Promise(resolve=>reservation.close(resolve));
     const rpcUrl='http://127.0.0.1:'+port;
     mark('start-disposable-l1');
-    anvil=spawn(anvilPath,['--host','127.0.0.1','--port',String(port),'--chain-id','31337','--mnemonic',identity.mnemonic.phrase,'--silent'],{cwd:directory,env:process.env,stdio:'ignore'});
+    const initialClock=applicationInitialClock(scenario);
+    if(initialClock)output.initialClock={...initialClock,genesis:null,firstProtocolBlock:null,postActivation:null,nodeHandoff:null};
+    anvil=spawn(anvilPath,['--host','127.0.0.1','--port',String(port),'--chain-id','31337','--mnemonic',identity.mnemonic.phrase,'--silent',...(initialClock?['--timestamp',String(initialClock.genesisTimestamp)]:[])],{cwd:directory,env:process.env,stdio:'ignore'});
     anvilClosed=new Promise(resolve=>{anvil.once('error',error=>resolve({errorClass:error.name}));anvil.once('close',(code,signal)=>resolve({code,signal}));});
     let ready=false;
     for(let i=0;i<60;i++){
@@ -56,6 +96,7 @@ export async function runFixture(directory, scenario, browserControl, operatorPa
       if(ready)break;await pause(100);
     }
     assert(ready,'Disposable L1 identity check failed');
+    if(initialClock)output.initialClock.genesis=await observeApplicationInitialClock(rpcUrl,initialClock,'genesis');
     if(browserControl?.ethereumWallet==='metamask'){
       const browserIdentity=Wallet.createRandom();assert.notEqual(browserIdentity.address,identity.address);
       const response=await fetch(rpcUrl,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:2,method:'anvil_setBalance',params:[browserIdentity.address,'0x3635c9adc5dea00000']})});
@@ -66,7 +107,7 @@ export async function runFixture(directory, scenario, browserControl, operatorPa
     const [{getGenesisValues},{getConfigEnvVars},{deployC01ApplicationProtocol}]=await Promise.all([
       import('@aztec-labs/world-state/testing'),import('@aztec-labs/aztec-node/config'),import('../c01-application-deployment.mjs')]);
     let preparation;
-    if(scenario.fixture !== 'node'){const {prepareC01BoardFlow}=await import('../c01-board-flow.mjs');preparation=await prepareC01BoardFlow({bbBinaryPath:applicationNativeProfile(directory).bbPath,directory,authorCount:scenario.authors,boardTiming:scenario.boardTiming});}
+    if(scenario.fixture !== 'node'){const {prepareC01BoardFlow}=await import('../c01-board-flow.mjs');preparation=await prepareC01BoardFlow({bbBinaryPath:applicationNativeProfile(directory).bbPath,directory,authorCount:scenario.authors,boardProfile:scenario.boardProfile,boardTiming:scenario.boardTiming});}
     if(scenario.name === 'censor-commands'){const {restoreApplicationAuthor}=await import('../w02-wallet-restore.mjs');const restored=await restoreApplicationAuthor(preparation.account);preparation.account=restored.author;preparation.authorAccounts[0]=restored.author;preparation.fundingAddresses=preparation.authorAccounts.map(account=>account.address);output.censorIdentity=restored.observation;}
     const {genesisArchiveRoot,fundingNeeded,genesis}=await getGenesisValues(preparation?.fundingAddresses??[]);
     const {SecretValue}=await import('@aztec-labs/foundation/config');
@@ -82,6 +123,7 @@ export async function runFixture(directory, scenario, browserControl, operatorPa
     mark('deploy-local-protocol-fixture');
     const result=await deployC01ApplicationProtocol({rpcUrl,privateKey:identity.privateKey,config,genesisArchiveRoot,fundingNeeded});
     output.deployment=result.observation;
+    if(initialClock)output.initialClock.firstProtocolBlock=await observeApplicationInitialClock(rpcUrl,initialClock,'first-protocol');
     if(scenario.fixture !== 'node'){
       mark('wait-for-local-validator-activation');
       const {RollupContract}=await import('@aztec-labs/ethereum/contracts/rollup');
@@ -99,11 +141,13 @@ export async function runFixture(directory, scenario, browserControl, operatorPa
       }
       assert(committee?.some(member=>member.toString().toLowerCase()===identity.address.toLowerCase()),'Fresh validator never became eligible');
       output.validatorActivation={committee:committee.map(member=>member.toString()),ordinaryTimeAdvancesSeconds:adjustments};
+      if(initialClock)output.initialClock.postActivation=await observeApplicationInitialClock(rpcUrl,initialClock,'post-activation');
     }
     {
       mark('start-application-node');
+      if(initialClock)output.initialClock.nodeHandoff=await observeApplicationInitialClock(rpcUrl,initialClock,'node-handoff');
       const {qualifyC01RealNode}=await import('../c01-real-node.mjs');
-      output.node=await qualifyC01RealNode({config,deployment:result.deployment,genesis,directory,privateKey:identity.privateKey,address:identity.address,preparation,mark,browserControl,scenario,operatorPackage});
+      output.node=await qualifyC01RealNode({config,deployment:result.deployment,genesis,directory,privateKey:identity.privateKey,address:identity.address,preparation,mark,browserControl,scenario,operatorPackage,providerDeadlineAt,applicationDeadlineAt});
       assert(output.node.passed);
     }
     output.passed=true;

@@ -21,7 +21,7 @@ import {Gas,GasFees,GasSettings} from '@aztec-labs/stdlib/gas';
 import {NO_FROM} from '@aztec-labs/aztec.js/account';
 const source=await readFile(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8');
 const policySource=await readFile(new URL('../shared/moderation-policy.js',import.meta.url),'utf8');
-function context(){const c=vm.createContext({performance,console,Buffer,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});vm.runInContext(policySource,c);vm.runInContext(source,c);return c;}
+function context(){const c=vm.createContext({URL,performance,console,Buffer,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout});vm.runInContext(policySource,c);vm.runInContext(source,c);return c;}
 const gas=()=>new GasSettings(new Gas(100,200),new Gas(1,2),new GasFees(3n,4n),new GasFees(0n,0n));
 function fixture(failure,pluginHandle){
  const c=context(),prepared=[],sends=[],owner={toString:()=> 'owner'};
@@ -39,7 +39,7 @@ test('normal author calls carry only private payment method and bootstrap claim 
  assert.equal(h.prepared[0].claim.salt,'secret-salt');assert.equal(h.prepared[1].claim,undefined);assert.equal(h.prepared[2].claim,undefined);
 });
 test('unknown submission is preserved without retry and private errors are redacted',async()=>{
- for(const code of ['BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID','BB_BROWSER_PROOF_FAILED','UNTRUSTED']){
+ for(const code of ['BB_SUBMISSION_UNKNOWN','BB_TRANSACTION_FAILED','BB_TRANSACTION_FINALITY_PENDING','BB_STATE_CONFLICT','BB_RECOVERY_REQUIRED','BB_JOURNAL_INVALID','BB_BROWSER_PROOF_FAILED','UNTRUSTED']){
   const failure=Object.assign(new Error('secret input details'),{code,stateReasons:['Block header not found']});const h=fixture(failure);
   await assert.rejects(h.sender('post',['message']),e=>e.code===(code==='UNTRUSTED'?'BB_PRIVATE_FEE_ACTION_FAILED':code)&&!e.message.includes('secret'));
   assert.equal(h.sends.length,1);assert.equal(h.prepared.length,1);
@@ -85,7 +85,7 @@ import {EthAddress} from '@aztec-labs/foundation/eth-address';
 import {NoteStatus} from '@aztec-labs/stdlib/note';
 import {sha256ToField} from '@aztec-labs/foundation/crypto/sha256';
 function mainHarness(action,isDummy=false) {
-  let c=context();const requests=[],logs=[],operations=[],readResults=new Map();let actionReceipt={status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)},sent=false,authorBalanceReads=0,postExists=!['post','recover'].includes(action),missingNote=false,noteOverrides={},actionHook=null,readHook=null,censorValue=null;
+  let c=context();const requests=[],logs=[],operations=[],trustedConnections=[],readResults=new Map();let actionReceipt={status:'checkpointed',executionResult:'success',blockNumber:1,txHash:new Fr(99)},sent=false,authorBalanceReads=0,postExists=!['post','recover'].includes(action),missingNote=false,noteOverrides={},actionHook=null,readHook=null,censorValue=null;
   // Timers only represent UI yields in this inert test; no network/proof work is performed.
   c.setTimeout=callback=>setTimeout(callback,0);
   const addr=AztecAddress.fromFieldUnsafe(new Fr(12));
@@ -111,14 +111,14 @@ function mainHarness(action,isDummy=false) {
     deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
     SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;getSigningPublicKey=async()=>({x:Fr.ONE,y:Fr.ONE});},
     getContractInstanceFromInstantiationParams:async()=>({address:addr}),computePartialAddress:async()=>Fr.ZERO,
-    createAztecNodeClient:()=>node,loadContractArtifact:x=>x,
+    createAztecNodeClient:()=>assert.fail('private engine must not create ordinary RPC'),createTrustedPrivateNode:async options=>{trustedConnections.push(options);return node;},isTrustedPrivateNode:value=>value===node,inspectTrustedNode:async value=>{assert.equal(value,node);},loadContractArtifact:x=>x,
     createPXE:async()=>({debug:{getNotes:async filter=>{assert.equal(filter.status,NoteStatus.ACTIVE);const n=note();return [{owner:addr,contractAddress:board,storageSlot:Fr.ONE,siloedNullifier:new Fr(7),note:{items:[1n,5n,amount,BigInt(depositor),0n,0n,n.headSequence+(n.lastScreenedIndex<<64n)+(n.lastRealPostIndex<<128n),n.nextAllowedTime].map(v=>new Fr(v))}}];}},registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{},getSyncedBlockHeader:async()=>({hash:async()=>new Fr(78)})}),AccountManager:{create:async()=>({address:addr})},Contract:{at:async()=>({methods})},
     computeSecretHash:async()=>secretHash,poseidon2HashWithSeparator:async()=>new Fr(5),
     sendPrivateFeeTransaction:async ({interaction,prepared,from})=>interaction.send({from,fee:{paymentMethod:prepared.paymentMethod,gasSettings:prepared.gasSettings}}),preparePrivateFeePayment:async input=>{requests.push(input);return {paymentMethod:'private-method',gasSettings:gas()};},
   };
   const env={createEthereumJournal:async()=>({assertCanStart:async()=>{},send:async()=>{throw Object.assign(new Error('Unknown Ethereum submission'),{code:'BB_ETH_SUBMISSION_UNKNOWN'});}}),createTransactionJournal:async()=>({inspectOutcome:async()=>null,assertCanStart:async()=>null,prepare:async()=>{},confirmed:()=>{},setOperation:value=>operations.push(value)}),aztec:a,ethers:{...ethers,Contract:Portal,JsonRpcProvider:class{constructor(){return provider;}}},artifact:{storageLayout:{deposits:{slot:Fr.ONE}}},privateFeeArtifact:{},
     initCRS:async()=>{},createStore:async()=>({}),log:text=>logs.push(text),getBrowserSigner:async()=>({getAddress:async()=>depositor,provider})};
-  const config={action,isDummy,message:'text',depositChainId:'5',portalAddress:portal,ethRpcUrl:'http://fixture.invalid',aztecNodeUrl:'http://fixture.invalid',aztecWallet:{secretKey:new Fr(1).toString(),salt:0},
+  const config={trustedProverNode:{url:'https://trusted.example/node'},expectedNetworkScope:{chainId:'31337',version:'1',rollup},action,isDummy,message:'text',depositChainId:'5',portalAddress:portal,ethRpcUrl:'http://fixture.invalid',aztecNodeUrl:'http://fixture.invalid',aztecWallet:{secretKey:new Fr(1).toString(),salt:0},
     reuseTxHash:new Fr(3).toString(),claimSecretStore:{save:async()=>{},load:async()=>({schemaVersion:1,secret:secret.toString(),secretHash:secretHash.toString()})},
     privateFee:{contractAddress:'private-fee',gasSettings:gas()}};
   config.censorWalletJson={...config.aztecWallet};config.newCensor=new Fr(44).toString();config.postId=new Fr(55).toString();config.moderationPolicy='No threats';
@@ -128,7 +128,7 @@ function mainHarness(action,isDummy=false) {
     node.getBlocks=async()=>[{number:1,hash:'block',body:{txEffects:[{txHash,l2ToL1Msgs:[leaf]}]}}];
     node.getTxReceipt=async()=>({txHash,status:'checkpointed',executionResult,blockNumber:1,blockHash:'block'});
   }
-  return {setReadResult:(name,value)=>readResults.set(name,value),restartEngine:()=>{c=context();c.setTimeout=callback=>setTimeout(callback,0);c.readBillboardDepositInfo=async()=>note();},setActionReceipt:value=>actionReceipt=value,setTimer:fn=>{c.setTimeout=fn;},run:()=>c.runBillboardUser(env,config),setWithdrawalHistory,env,config,node,provider,Portal,requests,logs,operations,setCensor:value=>censorValue=value,setMissingNote:value=>missingNote=value,setNoteState:value=>noteOverrides=value,onAction:value=>actionHook=value,onRead:value=>readHook=value,setPostExists:value=>postExists=value,authorBalanceReads:()=>authorBalanceReads,secret};
+  return {setReadResult:(name,value)=>readResults.set(name,value),restartEngine:()=>{c=context();c.setTimeout=callback=>setTimeout(callback,0);c.readBillboardDepositInfo=async()=>note();},setActionReceipt:value=>actionReceipt=value,setTimer:fn=>{c.setTimeout=fn;},run:()=>c.runBillboardUser(env,config),setWithdrawalHistory,env,config,node,provider,Portal,requests,logs,operations,trustedConnections,setCensor:value=>censorValue=value,setMissingNote:value=>missingNote=value,setNoteState:value=>noteOverrides=value,onAction:value=>actionHook=value,onRead:value=>readHook=value,setPostExists:value=>postExists=value,authorBalanceReads:()=>authorBalanceReads,secret};
 }
 for(const [action,dummy] of [['claim',false],['post',false],['post',true],['withdraw',false]]) {
   test(`actual main ${action}${dummy?' dummy':''} uses standard author call with private fee payment`,async()=>{
@@ -792,4 +792,35 @@ test('plugin metadata persists after the proof journal and context changes stop 
  const opts={from:owner,fee:{gasSettings:gas()},transactionJournal:journal,journalOperation:JSON.stringify({kind:'extension'}),beforeSubmit:async()=>calls.push('plugin-saved')};
  await wallet.sendTx({},opts);assert.deepEqual(calls,['intent','proof-saved','plugin-saved','send','confirmed']);
  calls.length=0;opts.beforeSubmit=async()=>{calls.push('plugin-saved');changed=true;};await assert.rejects(wallet.sendTx({},opts),{code:'BB_WALLET_NOT_READY'});assert.deepEqual(calls,['intent','proof-saved','plugin-saved']);
+});
+
+test('development doubles: private actions require trusted configuration and never ordinary RPC',async()=>{
+ for(const action of ['post','status','recover','claim','withdraw']){const h=mainHarness(action);delete h.config.trustedProverNode;await assert.rejects(h.run(),{code:'BB_TRUSTED_NODE_CONFIG'});assert.equal(h.requests.length,0);assert.equal(h.trustedConnections.length,0);}
+});
+test('development doubles: cached node is re-inspected across proof toggle and rejected on outage',async()=>{
+ const h=mainHarness('post');let inspections=0,pxes=0,offline=false;const create=h.env.aztec.createPXE,journal=h.env.createTransactionJournal;h.env.createTransactionJournal=async input=>{assert.equal(input.node,h.node);return journal(input);};
+ h.env.aztec.createPXE=async(node,...args)=>{assert.equal(node,h.node);pxes++;return {...await create(node,...args),setRemoteProver:async value=>{h.logs.push(value?'remote-proof':'local-proof');}};};
+ h.env.aztec.inspectTrustedNode=async(node,options)=>{assert.equal(node,h.node);assert.equal(options.url,'https://trusted.example/node');inspections++;if(offline)throw Object.assign(Error('Trusted unavailable'),{code:'BB_TRUSTED_NODE_UNAVAILABLE'});};
+ await h.run();h.config.remoteProver={url:'https://proof.example'};await h.run();h.config.remoteProver=undefined;await h.run();
+ assert(h.requests.every(input=>input.node===h.node));assert.equal(h.trustedConnections.length,1);assert.equal(pxes,1);assert.equal(inspections,2);assert(h.logs.includes('remote-proof'));assert(h.logs.includes('local-proof'));
+ const before=h.requests.length;offline=true;await assert.rejects(h.run(),{code:'BB_TRUSTED_NODE_UNAVAILABLE'});assert.equal(h.requests.length,before);
+ h.config.trustedProverNode={url:'https://second-trusted.example/node'};offline=false;await h.run();assert.equal(pxes,2);assert.equal(h.trustedConnections.length,2);assert.equal(h.trustedConnections[1].url,'https://second-trusted.example/node');
+});
+test('development doubles: new private connection outage never creates journal or prepares fees',async()=>{
+ const h=mainHarness('post');h.env.createTransactionJournal=()=>assert.fail('journal must not start');let calls=0;h.env.aztec.createTrustedPrivateNode=async()=>{calls++;throw Object.assign(Error('Unavailable'),{code:'BB_TRUSTED_NODE_UNAVAILABLE'});};
+ await assert.rejects(h.run(),{code:'BB_TRUSTED_NODE_UNAVAILABLE'});assert.equal(calls,1);assert.equal(h.requests.length,0);
+});
+
+for(const action of ['post','claim','withdraw','auto']) test(`pending reverted finality blocks ${action} before wallet or payment work`,async()=>{
+ const h=mainHarness(action),code='BB_TRANSACTION_FINALITY_PENDING';
+ for(const name of ['initCRS','createStore','getBrowserSigner'])h.env[name]=async()=>assert.fail(name+' must not run before finality');
+ h.env.createTransactionJournal=async()=>({assertCanStart:async()=>{throw Object.assign(Error('Awaiting finality'),{code});},prepare:async()=>{throw Error('must not prepare');},confirmed(){}});
+ await assert.rejects(h.run(),{code});assert.equal(h.requests.length,0);assert.equal(h.operations.length,0);
+});
+test('wallet rechecks pending reverted finality before simulation, proof or submission',async()=>{
+ const c=context(),calls=[];class BaseWallet{constructor(pxe){this.pxe=pxe;}async completeFeeOptions(){calls.push('fees');}async simulateViaEntrypoint(){calls.push('simulate');}}
+ const journal={assertCanStart:async()=>{throw Object.assign(Error('Awaiting finality'),{code:'BB_TRANSACTION_FINALITY_PENDING'});}};
+ const node={sendTx:async()=>calls.push('send')},pxe={proveTx:async()=>calls.push('prove')};
+ const wallet=c.BillboardPrivateFeeRouting.createAztecWallet({BaseWallet,GasSettings},pxe,node,node,()=>{},Fr.ONE,{transactionJournal:journal});
+ await assert.rejects(wallet.sendTx({}, {from:owner,fee:{gasSettings:gas()}}),{code:'BB_TRANSACTION_FINALITY_PENDING'});assert.deepEqual(calls,[]);
 });

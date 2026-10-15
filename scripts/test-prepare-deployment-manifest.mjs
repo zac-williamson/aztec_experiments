@@ -28,3 +28,12 @@ test('offline CLI refuses to replace an existing manifest',()=>{
   assert.equal(result.status,1);assert.match(result.stderr,/EEXIST/);assert.equal(fs.readFileSync(output,'utf8'),'preserve-existing');
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+test('offline explicit Rolling preparation binds the actual processed class',async()=>{
+ const i=intent();i.schemaVersion=2;delete i.board.censor;i.board.kind='rolling';const m=await prepareDeploymentManifest(i);
+ const artifact=JSON.parse(fs.readFileSync(path.join(ROOT,'billboard/target/rolling_contract-RollingBoard.json')));
+ assert.equal(artifact.name,'RollingBoard');assert.equal(m.artifacts.boardJsonSha256,ethers.sha256(ethers.toUtf8Bytes(JSON.stringify(artifact))));
+ const runtimeMetadata=JSON.parse(fs.readFileSync(path.join(ROOT,'shared/portal-runtime.json'))),portalBytecode=fs.readFileSync(path.join(ROOT,'apps/src/billboard/deploy/portal_bytecode.txt'),'utf8').trim();
+ assert.ok(verifyDeploymentInputs(m,{artifact,runtimeMetadata,portalBytecode,config:deploymentManifestConfig(m),ethers}).intentDigest);
+ i.board.kind='billboard';await assert.rejects(prepareDeploymentManifest(i));
+});

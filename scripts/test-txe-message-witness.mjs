@@ -5,8 +5,8 @@ const original=fs.readFileSync(new URL('../node_modules/@aztec-labs/stdlib/dest/
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 const deferred=()=>{let resolve;const promise=new Promise(r=>{resolve=r;});return {promise,resolve};};
 function witness(source,siloNullifier){
- const body=source.slice(source.indexOf('export async function getL1ToL2MessageWitness('),source.indexOf('// This functionality is not on the node'));
- return vm.runInNewContext(body.replace('export ','')+';getL1ToL2MessageWitness',{allToCompletion,siloNullifier,MerkleTreeId:{NULLIFIER_TREE:0}});
+ const body=source.slice(source.indexOf('export async function lookUpL1ToL2MessageWitness('),source.indexOf('// This functionality is not on the node'));
+ return vm.runInNewContext(body.replaceAll('export ','')+';getL1ToL2MessageWitness',{allToCompletion,siloNullifier,MerkleTreeId:{NULLIFIER_TREE:0}});
 }
 const nullifier={contractAddress:'contract',nullifier:'nullifier'};
 test('missing witness drains even a nullifier query whose hashing has not finished',async()=>{
@@ -29,9 +29,9 @@ test('existing and already-nullified witness behavior stays intact',async()=>{
  assert.equal(await fn({getL1ToL2MessageMembershipWitness:async()=>value},'message'),value);
  await assert.rejects(fn({getL1ToL2MessageMembershipWitness:async()=>value,findLeavesIndexes:async()=>[1]},'message',nullifier),/No non-nullified/);
 });
-test('unmodified SDK reproduces the abandoned query before this repair',async()=>{
- const hashing=deferred();let queried=false;
- await assert.rejects(witness(original,()=>hashing.promise)({getL1ToL2MessageMembershipWitness:async()=>undefined,findLeavesIndexes:async()=>{queried=true;return [];}},'message',nullifier),/No L1 to L2/);
+test('unmodified current SDK rejects a failed witness before its nullifier sibling drains',async()=>{
+ const hashing=deferred();let queried=false;const failure=Error('controlled witness RPC failure');
+ await assert.rejects(witness(original,()=>hashing.promise)({getL1ToL2MessageMembershipWitness:async()=>{throw failure;},findLeavesIndexes:async()=>{queried=true;return [];}},'message',nullifier),error=>error===failure);
  assert.equal(queried,false);hashing.resolve('siloed');await tick();assert.equal(queried,true);
 });
 test('dependency drift rejects instead of silently applying a stale patch',()=>{assert.throws(()=>drainMessageWitnessReads(original+'\n'),/source changed/);});

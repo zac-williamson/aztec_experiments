@@ -1,0 +1,13 @@
+{
+  "candidate": "a23b106ac2291acce9ebea650d4fe9ec28987136",
+  "base": "94b5107ab3a384dd39d6d2082d76d20d7607f30c",
+  "reviewer": "/root/reviewer",
+  "verdict": "approve",
+  "checks": "Complete source review; independent10 model/navigation tests; repair diff inspected",
+  "resolved_findings": [
+    "P2 skip navigation",
+    "#P2 fresh reply target",
+    "P2 selectable identity missing public profile"
+  ],
+  "scope": "labelled design prototype only; lead browser checks separately"
+}

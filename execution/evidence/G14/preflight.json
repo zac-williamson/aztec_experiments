@@ -1,0 +1,11 @@
+{
+  "purpose": "Read-only prover recovery preparation; no paid launch",
+  "date": "2026-10-11",
+  "profile": "message-board-deploy",
+  "region": "us-east-1",
+  "fleets": [],
+  "historical_vpc_origin": "vo_1ni7Gt8asXQDAMJVsKkcPg",
+  "route_status": "Deployed but still points to absent i-0025eb05db3c2491c; not healthy",
+  "spot_observations_usd_hour": {"us-east-1b":0.3253,"us-east-1c":0.3405,"us-east-1f":0.3149},
+  "hold": "Recheck archives, complete new operating-period forecast, independent shutdown, workload and exact source package before paid launch. Current price is not a guaranteed rate."
+}

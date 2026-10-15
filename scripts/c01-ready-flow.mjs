@@ -10,13 +10,12 @@ import { Barretenberg, BackendType } from '@aztec-foundation/bb.js';
 import { Fr } from '@aztec-labs/foundation/curves/bn254';
 import { EthAddress } from '@aztec-labs/foundation/eth-address';
 import { sha256ToField } from '@aztec-labs/foundation/crypto/sha256';
-import { loadContractArtifact } from '@aztec-labs/stdlib/abi';
 import { TxHash, TxStatus, TxExecutionResult } from '@aztec-labs/stdlib/tx';
 import { EmbeddedWallet } from '@aztec-labs/wallets/embedded';
 import { encodeReadyCommitment } from '../shared/protocol-commitments.mjs';
 import { contractInputs } from './artifact-provenance.mjs';
 import { ROOT, assertNodeVersion, assertAztecPackages } from './toolchain.mjs';
-const BOARD = 'apps/src/billboard/billboard_artifact.json';
+import {checkedC01BoardArtifact, c01BoardEconomics, c01BoardConfigHash} from './c01-board-flow.mjs';
 const PORTAL = 'billboard/portal/out/BillboardPortal.sol/BillboardPortal.json';
 const sha = value => createHash('sha256').update(value).digest('hex');
 const included = receipt => [TxStatus.CHECKPOINTED, TxStatus.PROVEN, TxStatus.FINALIZED].includes(receipt.status)
@@ -25,16 +24,16 @@ async function checkedArtifacts(preparation) {
   const manifestBytes = await fs.readFile(path.join(ROOT, '.build/contracts-manifest.json'));
   const manifest = JSON.parse(manifestBytes);
   assert.deepEqual(contractInputs(ROOT), manifest.inputs, 'Contract build input drift');
-  const boardBytes = await fs.readFile(path.join(ROOT, BOARD));
-  assert.equal(sha(boardBytes), manifest.noir); assert.equal(manifest.noir, preparation.artifactHashes[BOARD]);
+  const checked = await checkedC01BoardArtifact(preparation.boardProfile);
+  assert.deepEqual(checked.artifactHashes, preparation.artifactHashes);
   assert.equal(sha(manifestBytes), preparation.artifactHashes['.build/contracts-manifest.json']);
   const portalBytes = await fs.readFile(path.join(ROOT, PORTAL)); const portal = JSON.parse(portalBytes);
   assert.equal(sha(portal.bytecode.object), manifest.portal, 'Portal creation artifact drift');
   assert.equal(portal.abi.find(item => item.type === 'constructor').inputs.length, 6);
   assert.deepEqual(portal.bytecode.linkReferences ?? {}, {});
   assert(/^0x(?:[0-9a-fA-F]{2})+$/.test(portal.bytecode.object));
-  return { board: loadContractArtifact(JSON.parse(boardBytes)), portal,
-    artifactHashes: { [BOARD]: sha(boardBytes), [PORTAL]: sha(portalBytes), '.build/contracts-manifest.json': sha(manifestBytes) } };
+  return { board: checked.artifact, portal,
+    artifactHashes: { ...checked.artifactHashes, [PORTAL]: sha(portalBytes) } };
 }
 
 /** Parent supplies its existing disposable signing client; no keys are read from disk.
@@ -43,7 +42,8 @@ async function checkedArtifacts(preparation) {
 export async function prepareAndProveC01Ready({ node, preparation, instance, deploymentReceipt,
   l1Client, directory, rollupAddress, rollupVersion, mark:reportStage=()=>{} }) {
   let stage = 'preflight', wallet, result;
-  const observation = { passed: false, scope: 'disabled portal deployment and genuine update_portal client proof',
+  const observation = { passed: false, scope: 'disabled portal deployment and update_portal client execution',
+    applicationProofs: applicationProofsEnabled(), proofMode: applicationProofsEnabled() ? 'real' : 'proofs-disabled', networkProofs: false,
     bindingSubmitted: false, readyEmitted: false, epochProofAccepted: false, portalActivated: false };
   const mark = name => { stage = name; reportStage('ready-'+name); };
   try {
@@ -61,16 +61,30 @@ export async function prepareAndProveC01Ready({ node, preparation, instance, dep
     const singleton = Barretenberg.getSingleton();
     for (const key of ['backend','bbPath','threads']) assert.equal(singleton.options[key], nativeOptions[key], 'Native singleton mismatch');
     mark('reopen-wallet');
-    wallet = await EmbeddedWallet.create(node, { ephemeral: true, pxe: { proverEnabled: true, proverOrOptions:applicationProver(nativeOptions) } });
+    wallet = await EmbeddedWallet.create(node, { ephemeral: true, pxe: { proverEnabled: applicationProofsEnabled(), proverOrOptions:applicationProver(nativeOptions) } });
     const account = preparation.account;
     const manager = await wallet.createSchnorrInitializerlessAccount(account.secret, account.salt, account.signingKey, 'c01-disposable');
     assert(manager.address.equals(account.address));
     await wallet.registerContract(instance, artifacts.board); await wallet.pxe.sync();
     const board = Contract.at(instance.address, artifacts.board, wallet);
     const view = async name => (await board.methods[name]().simulate({ from: account.address })).result;
-    assert.equal(await view('is_portal_set'), false, 'Board already bound');
+    const assertPortalUnset = async () => {
+      if (preparation.boardProfile !== 'rolling') return assert.equal(await view('is_portal_set'), false, 'Board already bound');
+      // Pinned PublicImmutable<EthAddress> stores its one value then WithHash hash.
+      // Read the generated slot, not a historical layout constant or a new contract getter.
+      const slot = artifacts.board.storageLayout.portal_address?.slot;
+      assert(slot instanceof Fr, 'Generated portal storage slot missing');
+      for (const index of [slot, new Fr(slot.toBigInt() + 1n)]) {
+        assert((await node.getPublicStorageAt('latest', instance.address, index)).isZero(), 'Board already bound');
+      }
+    };
+    await assertPortalUnset();
     const configHash = new Fr(BigInt(await view('get_config_hash'))); assert(!configHash.isZero());
-    const minDeposit = BigInt(await view('get_min_deposit')), maxDeposit = BigInt(await view('get_max_deposit'));
+    const economics = c01BoardEconomics(preparation);
+    const minDeposit = preparation.boardProfile === 'rolling' ? BigInt(economics.minDeposit) : BigInt(await view('get_min_deposit'));
+    const maxDeposit = preparation.boardProfile === 'rolling' ? BigInt(economics.maxDeposit) : BigInt(await view('get_max_deposit'));
+    assert.equal(minDeposit, BigInt(economics.minDeposit)); assert.equal(maxDeposit, BigInt(economics.maxDeposit));
+    assert(configHash.equals(c01BoardConfigHash(preparation, {rollupAddress, rollupVersion, boardAddress: instance.address})), 'Board configuration differs from deployment');
     assert(minDeposit > 0n && maxDeposit >= minDeposit && maxDeposit < (1n << 96n));
     const rollup = EthAddress.fromString(rollupAddress.toString()); assert(!rollup.isZero());
     const args = [rollup.toString(), instance.address.toString(), BigInt(rollupVersion), minDeposit, maxDeposit, configHash.toString()];
@@ -100,7 +114,7 @@ export async function prepareAndProveC01Ready({ node, preparation, instance, dep
     assert(!proven.chonkProof.isEmpty());mark('serialize-proof'); const tx = await proven.toTx();
     mark('validate-update-portal');
     const validation = await node.isValidTx(tx); assert.equal(validation.result, 'valid');
-    assert.equal(await read('depositsEnabled'), false); assert.equal(await view('is_portal_set'), false);
+    assert.equal(await read('depositsEnabled'), false); await assertPortalUnset();
     const scope = { l1ChainId: '31337', rollupAddress: rollup.toString().toLowerCase(), rollupVersion: String(rollupVersion),
       boardAddress: instance.address.toString(), portalAddress };
     const content = sha256ToField([Buffer.from(encodeReadyCommitment(scope, configHash.toString()))]);

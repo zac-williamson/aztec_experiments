@@ -10,6 +10,9 @@ const [mode, first, second] = process.argv.slice(2);
 
 function snapshot() {
   const files = new Set([
+    'experiments/private-bok/target/private_bok-PrivateBok.json',
+    'experiments/private-bok/target/invocation_probe_board-InvocationProbeBoard.json',
+    'experiments/private-bok/target/private-bok-build.json',
     'plugins/adapter_artifact.json', 'billboard/portal/out/PluginPortal.sol/PluginPortal.json', 'apps/dist/plugins.js',
     '.build/contracts-manifest.json', '.build/sdk/sdk-manifest.json', '.build/apps-manifest.json',
     'apps/dist/sdk-manifest.json', 'apps/dist/crs/crs-manifest.json',

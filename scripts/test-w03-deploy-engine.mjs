@@ -6,6 +6,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import * as ethers from 'ethers';
+import {loadContractArtifact,encodeArguments,getInitializer} from '@aztec-labs/stdlib/abi';
+import {poseidon2HashWithSeparator} from '@aztec-labs/foundation/crypto/poseidon';
 import {Fr} from '@aztec-labs/foundation/curves/bn254';
 import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
 import {EthAddress} from '@aztec-labs/foundation/eth-address';
@@ -27,17 +29,22 @@ class FixtureTx {
  getTxHash(){return ethers.sha256(this.toBuffer());}
  static fromBuffer(bytes){return new FixtureTx(...JSON.parse(bytes.toString()));}
 }
-function fixture({lostBinding=false,lostDeploy=false,existing=true,staleDeploy=false,staleBinding=false}={}) {
+const rollingRaw=JSON.parse(await readFile(new URL('../billboard/target/rolling_contract-RollingBoard.json',import.meta.url),'utf8'));
+const rollingArtifact=loadContractArtifact(rollingRaw);
+function packPolicy(text){const bytes=Buffer.alloc(48*31);Buffer.from(text).copy(bytes);return {fields:Array.from({length:48},(_,i)=>BigInt('0x'+bytes.subarray(i*31,(i+1)*31).toString('hex'))),len:Buffer.byteLength(text)};}
+function fixture({rolling=false,lostBinding=false,lostDeploy=false,existing=true,staleDeploy=false,staleBinding=false}={}) {
  const actor=AztecAddress.fromFieldUnsafe(new Fr(1)),board=AztecAddress.fromFieldUnsafe(new Fr(2));
  const inbox='0x'+'6'.repeat(40),outbox='0x'+'7'.repeat(40);
  const rollup='0x'+'3'.repeat(40),sender='0x'+'4'.repeat(40),blockHash=field(5);
  const instance={address:actor,currentContractClassId:field(12),originalContractClassId:field(12)};
+ const boardInstance={...instance,address:board,deployer:actor},deploymentCalls=[];
+ const policy=packPolicy('Be kind.'),policyDigest=rolling?poseidon2HashWithSeparator([BigInt(policy.len),...policy.fields.slice(0,32)],0x52435431):null;
  const storage=createBrowserJournalStorage(new IDBFactory()),receipts=new Map(),invalids=new Set();let proofId=0;
  let bound=null,stops=0,deploys=0,bindings=0,finalized=0;
  const wordHash=(label,words)=>'0x'+(BigInt(ethers.sha256(ethers.AbiCoder.defaultAbiCoder().encode(['bytes32',...words.map(()=> 'uint256')],[ethers.encodeBytes32String(label),...words])))>>8n).toString(16).padStart(64,'0');
  const configHash=wordHash('AZTEC_BB_CONFIG_V1',[1n,31337n,BigInt(rollup),2n,5n,1n,100n,10n,64n,10n,16n]);
- const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5}),getL1ContractAddresses:async()=>({rollupAddress:rollup,inboxAddress:inbox,outboxAddress:outbox}),
-  getBlockNumber:async()=>1,getPublicStorageAt:async()=>new Fr(0),getContract:async()=>existing?instance:undefined,
+ const node={getNodeInfo:async()=>({realProofs:false,l1ChainId:31337,rollupVersion:5}),getL1ContractAddresses:async()=>({rollupAddress:rollup,inboxAddress:inbox,outboxAddress:outbox}),
+  getBlockNumber:async()=>1,getPublicStorageAt:async()=>new Fr(0),getContract:async()=>existing?(rolling?boardInstance:instance):undefined,
   getTxReceipt:async hash=>receipts.get(String(hash)),getBlock:async()=>({hash:blockHash}),getChainTips:async()=>({finalized:{block:{number:finalized}}}),
   sendTx:async tx=>{if(tx.kind==='deploy'){existing=true;}else {bound=tx.kind.slice(5);}
    receipts.set(tx.getTxHash(),{txHash:tx.getTxHash(),status:'checkpointed',executionResult:'success',blockNumber:1,blockHash});},
@@ -54,12 +61,13 @@ function fixture({lostBinding=false,lostDeploy=false,existing=true,staleDeploy=f
  // These journal cases start with a published class; publication itself is covered
  // by test-c01-deploy-activation.mjs.
  const a={provingEnabledForNode,verifyDeploymentInputs,preflightDeploymentNetwork,deploymentPolicyVersion,verifyPortalRuntime,portalRuntimeMetadata:runtimeMetadata,boundedTransactionRead,Fr,AztecAddress,EthAddress,Tx:FixtureTx,TxHash:{fromString:x=>x},BaseWallet:class{async getContractClassMetadata(){return {isContractClassPubliclyRegistered:true};}},
+  poseidon2HashWithSeparator,computeContractAddressFromInstance:async()=>board,
   deriveSigningKey:()=>({}),deriveKeys:async()=>({publicKeys:{}}),computePartialAddress:async()=>new Fr(1),
   getContractClassFromArtifact:async()=>({id:field(12)}),getContractInstanceFromInstantiationParams:async()=>instance,deriveStorageSlotInMap:async()=>new Fr(1),
   SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>field(0);getSigningPublicKey=async()=>({});},
-  createAztecNodeClient:()=>node,createPXE:async()=>pxe,AccountManager:{create:async()=>({})},loadContractArtifact:x=>x,createEthereumJournal,
+  createAztecNodeClient:()=>node,createPXE:async()=>pxe,AccountManager:{create:async()=>({})},loadContractArtifact:x=>x===rollingRaw?rollingArtifact:x,createEthereumJournal,
   sha256ToField:()=>new Fr(7),Contract:{
-   deploy:wallet=>({getAddress:async()=>board,getInstance:async()=>instance,send:async()=>{deploys++;return submit(wallet,'deploy',lostDeploy);}}),
+   deploy:(wallet,artifact,args,initializer,options)=>{deploymentCalls.push({artifact,args,initializer,options});return {getAddress:async()=>board,getInstance:async()=>rolling?boardInstance:instance,send:async()=>{deploys++;return submit(wallet,'deploy',lostDeploy);}};},
    at:async(_address,_artifact,wallet)=>({methods:{
     get_censor:()=>({simulate:async()=>BigInt(actor.toString())}),get_policy_version:()=>({simulate:async()=>BigInt(await deploymentPolicyVersion(board.toString(),'Be kind.'))}),
     get_portal:()=>({simulate:async()=>BigInt(bound||0)}),is_portal_set:()=>({simulate:async()=>bound!==null}),get_config_hash:()=>({simulate:async()=>BigInt(configHash)}),
@@ -69,14 +77,25 @@ function fixture({lostBinding=false,lostDeploy=false,existing=true,staleDeploy=f
  const runtimeValues={L2_CONTRACT:board.toString(),ROLLUP:rollup,VERSION:5n,L1_CHAIN_ID:31337n,MIN_DEPOSIT:1n,MAX_DEPOSIT:100n,CONFIG_HASH:configHash,INBOX:inbox,OUTBOX:outbox};
  let destroyed=0;const provider={destroy(){destroyed++;},getNetwork:async()=>({chainId:31337n}),getCode:async address=>address.toLowerCase()===create2Proxy?create2Runtime:[rollup,inbox,outbox].includes(address.toLowerCase())?'0x6000':expectedPortalRuntime(runtimeMetadata,runtimeValues)};
  const portal={getInbox:async()=>inbox,getOutbox:async()=>outbox,INBOX:async()=>inbox,OUTBOX:async()=>outbox,L2_CONTRACT:async()=>board.toString(),ROLLUP:async()=>rollup,VERSION:async()=>5n,L1_CHAIN_ID:async()=>31337n,MIN_DEPOSIT:async()=>1n,MAX_DEPOSIT:async()=>100n,CONFIG_HASH:async()=>configHash,depositsEnabled:async()=>false};
- const env={aztec:a,ethers:{...ethers,JsonRpcProvider:class{constructor(){return provider;}},Contract:class{constructor(){return portal;}}},log(){},pause(){throw new Error('unexpected pause');},initCRS:async()=>{},createStore:async()=>({}),artifact:{},portalBytecode:'0x6000',
+ const env={aztec:a,ethers:{...ethers,JsonRpcProvider:class{constructor(){return provider;}},Contract:class{constructor(){return portal;}}},log(){},pause(){throw new Error('unexpected pause');},initCRS:async()=>{},createStore:async()=>({}),artifact:rolling?rollingRaw:{},portalBytecode:'0x6000',
   getBrowserSigner:async()=>({provider,getAddress:async()=>sender}),createJournalStorage:()=>storage,
   createTransactionJournal:options=>createL2Journal({...options,storage,waitOptions:{timeoutMs:20,intervalMs:1}})};
  const hash=o=>ethers.sha256(ethers.toUtf8Bytes(JSON.stringify(o)));
  const manifest={schemaVersion:1,profile:'local-test',network:{nodeUrl:'http://localhost:8080/',ethRpcUrl:'http://localhost:8545/',chainId:'31337',rollupVersion:'5',rollup,inbox,outbox},actors:{aztecDeployer:actor.toString(),ethereumDeployer:sender},board:{salt:'1',minDeposit:'1',maxDeposit:'100',baseCooldown:'10',kMultiplier:'64',censorWindow:'10',maxSaveUp:'16',censor:actor.toString(),policy:'Be kind.'},artifacts:{boardJsonSha256:hash(env.artifact),boardClassId:field(12),portalCreationSha256:ethers.sha256(env.portalBytecode),portalRuntimeMetadataSha256:hash(runtimeMetadata)}};
+ if(rolling){manifest.schemaVersion=2;delete manifest.board.censor;manifest.board.kind='rolling';
+  node.getBlockData=async()=>({blockHash,header:{globalVariables:{blockNumber:1}}});
+  node.getPublicStorageAt=async(reference,_board,slot)=>{if(reference==='latest')return Fr.ZERO;assert.equal(reference.hash,blockHash);const n=BigInt(slot.toString()),layout=rollingArtifact.storageLayout;
+   if(n===BigInt(layout.portal_address.slot))return new Fr(BigInt(bound||0));
+   const cfg=[31337n,BigInt(rollup),5n,1n,100n,10n,64n,10n,16n,BigInt(actor.toString())],base=BigInt(layout.config.slot);
+   if(n>=base&&n<base+10n)return new Fr(cfg[Number(n-base)]);
+   if(n===BigInt(layout.moderator.slot))return new Fr(BigInt(actor.toString()));
+   if(n===BigInt(layout.main_version.slot))return new Fr(1);
+   if(n===BigInt(layout.main_rules.slot))return await policyDigest;throw Error('Unexpected storage read');};
+  const previous=a.Contract.at;a.Contract.at=async(...args)=>{const c=await previous(...args);for(const key of Object.keys(c.methods))if(key!=='update_portal')delete c.methods[key];return c;};
+ }
  const config={...deploymentManifestConfig(manifest),aztecWallet:{secretKey:field(8),salt:field(9)}};
- function run(extra={}){const context=vm.createContext({setTimeout,clearTimeout,Buffer,packStringToFields:()=>({fields:Array(48).fill(0n),len:0})});vm.runInContext(source,context);return context.runDeploy(env,{...config,...extra});}
- return {run,env,node,provider,portal,manifest,config,runtimeValues,receipts,get destroyed(){return destroyed;},setBound:value=>bound=value,get stops(){return stops;},get deploys(){return deploys;},get bindings(){return bindings;},clearLoss(){lostBinding=false;lostDeploy=false;staleDeploy=false;staleBinding=false;}};
+ function run(extra={}){const context=vm.createContext({setTimeout,clearTimeout,Buffer,packStringToFields:()=>rolling?packPolicy('Be kind.'):{fields:Array(48).fill(0n),len:0}});vm.runInContext(source,context);return context.runDeploy(env,{...config,...extra});}
+ return {run,env,node,provider,portal,manifest,config,runtimeValues,receipts,deploymentCalls,get destroyed(){return destroyed;},setBound:value=>bound=value,get stops(){return stops;},get deploys(){return deploys;},get bindings(){return bindings;},clearLoss(){lostBinding=false;lostDeploy=false;staleDeploy=false;staleBinding=false;}};
 }
 test('lost binding response resumes from encrypted transaction without supplied hash or another binding',async()=>{
  const f=fixture({lostBinding:true});await assert.rejects(f.run(),/synthetic lost/);assert.equal(f.stops,1);f.clearLoss();
@@ -156,4 +175,74 @@ test('preactivation deposit state is bounded and malformed value fails',async()=
 
 test('deployment initialization exposes typed preparation and synchronization progress',async()=>{
  const f=fixture(),stages=[];f.env.progress=stage=>stages.push(stage);await f.run();assert.deepEqual(stages,['preparing','syncing']);
+});
+
+for(const loss of ['none','binding','deployment'])test('Rolling actual ABI profile and encrypted recovery: '+loss,async()=>{
+ const f=fixture({rolling:true,existing:loss!=='deployment',lostBinding:loss==='binding',lostDeploy:loss==='deployment'});
+ if(loss!=='none'){await assert.rejects(f.run(),/synthetic lost/);f.clearLoss();}
+ const r=await f.run();assert.equal(r.status,'pending-settlement');assert.equal(f.bindings,1);assert.equal(f.deploys,loss==='deployment'?1:0);
+ const call=f.deploymentCalls[0];assert.equal(call.initializer,'init');assert.equal(call.args.length,11);assert.equal(call.args[0].length,32);assert.equal(call.options.deployer.toString(),f.manifest.actors.aztecDeployer);assert.equal(call.options.universalDeploy,undefined);
+ const abi=getInitializer(rollingArtifact,'init');assert.equal(encodeArguments(abi,call.args).length,42);
+ const again=await f.run();assert.equal(again.readyTxHash,r.readyTxHash);assert.equal(f.bindings,1);
+});
+for(const fieldName of ['moderator','main_rules','main_version','config','portal_address'])test('Rolling canonical '+fieldName+' mismatch blocks portal binding',async()=>{
+ const f=fixture({rolling:true}),before=f.node.getPublicStorageAt,target=BigInt(rollingArtifact.storageLayout[fieldName].slot);
+ f.node.getPublicStorageAt=async(reference,board,slot)=>reference!=='latest'&&BigInt(slot.toString())===target?new Fr(fieldName==='portal_address'?1n<<160n:99n):before(reference,board,slot);
+ await assert.rejects(f.run(),/Rolling deployment state differs/);assert.equal(f.bindings,0);
+});
+for(const kind of ['deployer','address','canonical-hash','checkpoint-height'])test('Rolling '+kind+' mismatch cannot authorize portal binding',async()=>{
+ const f=fixture({rolling:true}),original=f.node.getContract;
+ if(kind==='deployer'||kind==='address')f.node.getContract=async(...args)=>({...await original(...args),[kind]:AztecAddress.fromFieldUnsafe(new Fr(99))});
+ else if(kind==='canonical-hash')f.node.getBlockData=async reference=>({blockHash:field(reference==='checkpointed'?5:6),header:{globalVariables:{blockNumber:1}}});
+ else f.node.getBlockData=async()=>({blockHash:field(5),header:{globalVariables:{blockNumber:0}}});
+ await assert.rejects(f.run(),/Rolling deployment state differs/);assert.equal(f.bindings,0);
+});
+
+test('Rolling raw NodeInfo without alias uses nativefalse PXE and never prepares CRS',async()=>{const f=fixture({rolling:true});let created=0;f.env.initCRS=async()=>assert.fail('Disabled development must not prepare CRS');const original=f.env.aztec.createPXE;f.env.aztec.createPXE=async(node,config,...rest)=>{created++;assert.equal(config.proverEnabled,false);return original(node,config,...rest);};await f.run();assert.equal(created,1);});
+test('Rolling local native real proofs fail before PXE or deployment',async()=>{const f=fixture({rolling:true});f.node.getNodeInfo=async()=>({realProofs:true,l1ChainId:31337,rollupVersion:5});f.env.aztec.createPXE=async()=>assert.fail('No PXE');await assert.rejects(f.run(),{code:'BB_DEPLOYMENT_MANIFEST'});assert.equal(f.deploymentCalls.length,0);});
+test('Rolling restart never resends dropped valid original deployment',async()=>{const f=fixture({rolling:true,existing:false,lostDeploy:true});await assert.rejects(f.run(),/synthetic lost/);f.clearLoss();for(const [hash,r]of f.receipts)f.receipts.set(hash,{...r,status:'dropped'});let sends=0;f.node.sendTx=async()=>{sends++;assert.fail('Reconciliation cannot send');};await assert.rejects(f.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(sends,0);assert.equal(f.deploys,1);assert.equal(f.bindings,0);});
+test('Rolling restart does not silently replace a stale rejected deployment',async()=>{const f=fixture({rolling:true,existing:false,staleDeploy:true});await assert.rejects(f.run(),/synthetic stale/);f.clearLoss();await assert.rejects(f.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(f.deploys,1);assert.equal(f.bindings,0);});
+
+test('old SDK preflight without explicit native proof mode fails before wallet or PXE',async()=>{const f=fixture({rolling:true}),original=f.env.aztec.preflightDeploymentNetwork;f.env.aztec.preflightDeploymentNetwork=async(...args)=>{const result=await original(...args);delete result.proofsEnabled;return result;};f.env.aztec.createPXE=async()=>assert.fail('No PXE');await assert.rejects(f.run(),/Verified native proof configuration/);assert.equal(f.deploymentCalls.length,0);});
+
+test('Rolling creation anchor survives distinct portal journal and repeat deployment command',async()=>{
+ const f=fixture({rolling:true,existing:false});const first=await f.run();assert.equal(first.status,'pending-settlement');
+ const creation=[...f.receipts].find(([hash])=>hash!==first.readyTxHash);assert(creation);
+ assert.deepEqual(JSON.parse(JSON.stringify(first.boardDeployment)),{txHash:creation[0],blockNumber:creation[1].blockNumber,blockHash:creation[1].blockHash});
+ const second=await f.run();assert.deepEqual(JSON.parse(JSON.stringify(second.boardDeployment)),JSON.parse(JSON.stringify(first.boardDeployment)));assert.equal(second.readyTxHash,first.readyTxHash);assert.equal(f.deploys,1);assert.equal(f.bindings,1);
+});
+test('Rolling missing historical creation receipt remains explicit and never inferred from binding',async()=>{
+ const f=fixture({rolling:true});const first=await f.run();assert.equal(first.boardDeployment,null);const second=await f.run();assert.equal(second.boardDeployment,null);assert.equal(f.deploys,0);assert.equal(f.bindings,1);
+});
+test('Rolling recovered original creation reorg refuses before another binding',async()=>{
+ const f=fixture({rolling:true,existing:false});const first=await f.run();const r=f.receipts.get(first.boardDeployment.txHash);f.receipts.set(first.boardDeployment.txHash,{...r,blockHash:field(900)});
+ await assert.rejects(f.run());assert.equal(f.deploys,1);assert.equal(f.bindings,1);
+});
+test('Rolling anchor reader guards original receipt twice and rejects terminal failure',async()=>{
+ const context=vm.createContext({});vm.runInContext(source,context);const readAnchor=context.BillboardDeployRolling.readBoardDeploymentAnchor;
+ const receipt={txHash:field(1),blockNumber:1,blockHash:field(2),status:'checkpointed',executionResult:'success'};let guards=0,reads=0;
+ const node={getTxReceipt:async()=>{reads++;return receipt;},getBlock:async()=>({hash:field(2)})};
+ await readAnchor({node,receipt,read:fn=>fn(),contextGuard:async()=>{guards++;}});assert.equal(guards,2);assert.equal(reads,2);
+ node.getTxReceipt=async()=>({...receipt,executionResult:'reverted'});await assert.rejects(readAnchor({node,receipt,read:fn=>fn()}),/unavailable/);
+});
+
+test('deployment provider observes changed code immediately without weakening runtime verification',async()=>{
+ const f=fixture();let options;
+ f.env.ethers.JsonRpcProvider=class{constructor(_url,_network,value){options=value;return f.provider;}};
+ const stop=Error('focused provider construction');f.env.aztec.preflightDeploymentNetwork=async()=>{throw stop;};
+ await assert.rejects(f.run(),error=>error===stop);assert.equal(options.cacheTimeout,-1);
+ // Actual installed Ethers cache; only its transport result is a labelled fixture.
+ class CodeProvider extends ethers.JsonRpcProvider {
+  code='0x';reads=0;
+  async _perform(request){assert.equal(request.method,'getCode');this.reads++;return this.code;}
+ }
+ const address='0x'+'1'.repeat(40),runtime=expectedPortalRuntime(runtimeMetadata,f.runtimeValues);
+ for(const [cacheTimeout,expectedReads]of [[250,1],[options.cacheTimeout,2]]){
+  const provider=new CodeProvider('http://127.0.0.1:1',31337,{staticNetwork:true,cacheTimeout});
+  try{assert.equal(await provider.getCode(address),'0x');provider.code=runtime;const observed=await provider.getCode(address);
+   assert.equal(provider.reads,expectedReads);
+   if(cacheTimeout===250)assert.throws(()=>verifyPortalRuntime(observed,runtimeMetadata,f.runtimeValues),/does not match/);
+   else assert.equal(verifyPortalRuntime(observed,runtimeMetadata,f.runtimeValues),true);
+  }finally{provider.destroy();}
+ }
 });

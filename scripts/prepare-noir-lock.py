@@ -1,97 +1,204 @@
 #!/usr/bin/env python3
-"""Prepare, but do not authenticate, a candidate Noir content lock.
+"""Prepare a schema-2 candidate from fresh compiler artifacts, never authenticate it.
 
-Run the pinned compiler in an isolated workspace first. Explicitly review the
-candidate and verify it with verify-noir-origins.py before using it for a build.
-This tool never changes the active lock unless its path is explicitly selected.
+Default graph: billboard workspace, avatar experiment, private-Bok workspace.
+Supply all seven contract artifacts with repeated --artifact. Additional manifests
+and required contract names can only extend that default CLI scope. Verify the
+candidate with verify-noir-origins.py before explicitly promoting the lock.
 """
 import argparse
 import hashlib
 import json
+import os
 import pathlib
 import re
 import tomllib
+
+DEFAULT_MANIFESTS = ('billboard/Nargo.toml', 'experiments/avatar/Nargo.toml', 'experiments/private-bok/Nargo.toml')
+DEFAULT_CONTRACTS = ('Billboard', 'PrivateFPC', 'PluginAdapter', 'AvatarLogProbe', 'RollingBoard', 'PrivateBok', 'InvocationProbeBoard')
 
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--artifact', required=True)
-    parser.add_argument('--output', required=True)
-    parser.add_argument('--cache-root', default=str(pathlib.Path.home() / 'nargo'))
-    args = parser.parse_args()
-    root = pathlib.Path(__file__).resolve().parent.parent
-    cache = pathlib.Path(args.cache_root).resolve()
-    packages, manifests, visited = {}, {}, set()
+def checked(base, value):
+    """Confine reads and reject symlinks, including a link before a '..' segment."""
+    candidate = pathlib.Path(value)
+    if not candidate.is_absolute():
+        candidate = base / candidate
+    try:
+        relative = candidate.relative_to(base)
+    except ValueError:
+        raise ValueError('Path outside allowed root') from None
+    current = base
+    for part in relative.parts:
+        current = current / part
+        if current.is_symlink():
+            raise ValueError('Symlink in source path')
+    normalized = pathlib.Path(os.path.abspath(candidate))
+    if not normalized.is_relative_to(base):
+        raise ValueError('Path escapes allowed root')
+    return normalized
 
-    def visit(directory):
-        directory = directory.resolve()
+
+def strict_json(data):
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Duplicate JSON key')
+            result[key] = value
+        return result
+    return json.loads(data, object_pairs_hook=unique)
+
+
+def prepare(root, cache, artifact_paths, manifests=DEFAULT_MANIFESTS, required_contracts=DEFAULT_CONTRACTS):
+    root, cache = pathlib.Path(root), pathlib.Path(cache)
+    if root.is_symlink() or cache.is_symlink():
+        raise ValueError('Symlink root')
+    root, cache = root.resolve(strict=True), cache.resolve(strict=True)
+    if root == cache or root.is_relative_to(cache) or cache.is_relative_to(root):
+        raise ValueError('Ambiguous repository/cache roots')
+    required = set(required_contracts)
+    if not required or len(required) != len(required_contracts) or any(not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]{0,127}', name) for name in required):
+        raise ValueError('Invalid or duplicate required contract')
+    if not manifests or len(set(manifests)) != len(manifests):
+        raise ValueError('Empty or duplicate manifest scope')
+    packages, local, local_sources, visited = {}, {}, {}, set()
+
+    def visit(directory, external=False):
+        base = cache if external else root
+        directory = checked(base, directory)
         if directory in visited:
             return
         visited.add(directory)
-        manifest = directory / 'Nargo.toml'
+        manifest = checked(base, directory / 'Nargo.toml')
         content = manifest.read_bytes()
-        if directory.is_relative_to(cache):
-            name = 'dependencies/' + directory.relative_to(cache).as_posix()
-            files = {'Nargo.toml': sha(content)}
-            for filename in sorted((directory / 'src').rglob('*')):
-                if filename.is_symlink():
-                    raise ValueError(f'Symlink in source tree: {filename}')
-                if filename.is_file():
-                    files[filename.relative_to(directory).as_posix()] = sha(filename.read_bytes())
-            packages[name] = {'files': files}
-        elif directory.is_relative_to(root / 'billboard'):
-            manifests[manifest.relative_to(root).as_posix()] = sha(content)
-        else:
-            raise ValueError(f'Unexpected dependency directory: {directory}')
         parsed = tomllib.loads(content.decode())
-        for member in parsed.get('workspace', {}).get('members', []):
-            visit(directory / member)
-        for dependency in parsed.get('dependencies', {}).values():
-            if set(dependency) == {'path'}:
-                visit(directory / dependency['path'])
-            elif 'git' in dependency and 'tag' in dependency and set(dependency) <= {'git', 'tag', 'directory'}:
-                match = re.fullmatch(r'https://github.com/([\w-]+)/([\w.-]+)', dependency['git'])
-                if not match or not re.fullmatch(r'[\w.-]+', dependency['tag']):
-                    raise ValueError(f'Unsupported dependency: {dependency}')
-                visit(cache / 'github.com' / match[1] / match[2] / dependency['tag'] / dependency.get('directory', ''))
-            else:
-                raise ValueError(f'Unsupported dependency declaration: {dependency}')
-
-    visit(root / 'billboard')
-    embedded = {}
-    artifact = json.loads(pathlib.Path(args.artifact).read_text())
-    for entry in artifact['file_map'].values():
-        filename = pathlib.Path(entry['path'])
-        if filename.is_absolute() and filename.is_relative_to(cache):
-            name = 'dependencies/' + filename.relative_to(cache).as_posix()
-        elif entry['path'].startswith('dependencies/github.com/'):
-            name = entry['path']
+        files = {'Nargo.toml': sha(content)}
+        if 'package' in parsed:
+            source = checked(base, directory / 'src')
+            if not source.is_dir():
+                raise ValueError('Missing package source directory')
+            def scan(folder):
+                for entry in sorted(folder.iterdir()):
+                    entry = checked(base, entry)
+                    if entry.is_dir():
+                        scan(entry)
+                    elif entry.is_file():
+                        files[entry.relative_to(directory).as_posix()] = sha(entry.read_bytes())
+                    else:
+                        raise ValueError('Unexpected source type')
+            scan(source)
+            if len(files) == 1:
+                raise ValueError('Empty package source tree')
+        if external:
+            name = 'dependencies/' + directory.relative_to(cache).as_posix()
+            if not name.startswith('dependencies/github.com/') or 'package' not in parsed:
+                raise ValueError('Invalid external package path')
+            packages[name] = {'files': files}
         else:
-            continue
-        digest = sha(entry['source'].encode())
-        if name in embedded and embedded[name] != digest:
-            raise ValueError(f'Conflicting embedded source: {name}')
-        matches = [name == package + '/' + relative and digest == value
-                   for package, inventory in packages.items()
-                   for relative, value in inventory['files'].items()]
-        if not any(matches):
-            raise ValueError(f'Embedded source absent from resolved package inventory: {name}')
-        embedded[name] = digest
-    if not embedded or not packages:
-        raise ValueError('Empty dependency inventory')
-    result = {'schema': 1, 'algorithm': 'sha256',
-              'description': 'Content inventory resolved recursively from local Nargo manifests and pinned compiler output. Every external manifest and source-directory file is locked. Updates require independent official archive verification with verify-noir-origins.py; generating this candidate is not origin authentication.',
-              'localManifests': dict(sorted(manifests.items())),
-              'packages': dict(sorted(packages.items())),
-              'embeddedSources': dict(sorted(embedded.items()))}
-    pathlib.Path(args.output).write_text(json.dumps(result, indent=2) + '\n')
-    print(json.dumps({'outcome': 'candidate_requires_origin_verification', 'packages': len(packages),
-                      'files': sum(len(p['files']) for p in packages.values()),
-                      'embeddedSources': len(embedded), 'output': args.output}))
+            local[manifest.relative_to(root).as_posix()] = sha(content)
+            local_sources.update({(directory / name).relative_to(root).as_posix(): digest for name, digest in files.items() if name != 'Nargo.toml'})
+        for member in parsed.get('workspace', {}).get('members', []):
+            if not isinstance(member, str) or pathlib.Path(member).is_absolute() or '\\' in member:
+                raise ValueError('Invalid workspace member')
+            visit(directory / member, external)
+        for dependency in parsed.get('dependencies', {}).values():
+            if not isinstance(dependency, dict):
+                raise ValueError('Invalid dependency declaration')
+            if set(dependency) == {'path'}:
+                value = dependency['path']
+                if not isinstance(value, str) or pathlib.Path(value).is_absolute() or '\\' in value:
+                    raise ValueError('Invalid local dependency path')
+                visit(directory / value, external)
+            elif 'git' in dependency and 'tag' in dependency and set(dependency) <= {'git', 'tag', 'directory'}:
+                match = re.fullmatch(r'https://github.com/([\w-]+)/([A-Za-z0-9_][\w.-]*)', dependency['git'])
+                tag, subdir = dependency['tag'], dependency.get('directory', '')
+                if not match or not isinstance(tag, str) or not re.fullmatch(r'[\w.-]+', tag) or tag in ('.', '..') or not isinstance(subdir, str) or '\\' in subdir or pathlib.Path(subdir).is_absolute() or '..' in pathlib.Path(subdir).parts:
+                    raise ValueError('Unsupported dependency origin')
+                visit(cache / 'github.com' / match[1] / match[2] / tag / subdir, True)
+            else:
+                raise ValueError('Unsupported dependency declaration')
+
+    for name in manifests:
+        manifest = checked(root, name)
+        if manifest.name != 'Nargo.toml':
+            raise ValueError('Expected Nargo manifest')
+        visit(manifest.parent)
+    external_sources = {package + '/' + filename: digest for package, record in packages.items() for filename, digest in record['files'].items()}
+    embedded, origins, seen_paths = {}, {}, set()
+    for value in artifact_paths:
+        filename = checked(root, value)
+        if filename in seen_paths:
+            raise ValueError('Duplicate artifact path')
+        seen_paths.add(filename)
+        raw = filename.read_bytes()
+        artifact = strict_json(raw)
+        if not isinstance(artifact, dict):
+            raise ValueError('Malformed compiler artifact')
+        name = artifact.get('name')
+        if not isinstance(name, str) or name not in required or name in embedded:
+            raise ValueError('Unexpected or duplicate contract inventory')
+        if not isinstance(artifact.get('file_map'), dict) or not artifact['file_map']:
+            raise ValueError('Empty compiler file map')
+        inventory, seen_source_paths = {}, set()
+        for entry in artifact['file_map'].values():
+            if not isinstance(entry, dict) or not isinstance(entry.get('path'), str) or not isinstance(entry.get('source'), str):
+                raise ValueError('Malformed compiler source entry')
+            original = entry['path']
+            if '\\' in original or '..' in pathlib.Path(original).parts:
+                raise ValueError('Invalid compiler source path')
+            path = pathlib.Path(original)
+            if path.is_absolute():
+                if path.is_relative_to(cache):
+                    relative = 'dependencies/' + checked(cache, path).relative_to(cache).as_posix()
+                elif path.is_relative_to(root):
+                    relative = checked(root, path).relative_to(root).as_posix()
+                else:
+                    raise ValueError('Unknown absolute compiler source')
+            else:
+                relative = original
+            if relative in seen_source_paths:
+                raise ValueError('Duplicate or conflicting compiler source path')
+            seen_source_paths.add(relative)
+            digest = sha(entry['source'].encode())
+            if relative.startswith('dependencies/'):
+                if external_sources.get(relative) != digest:
+                    raise ValueError('Embedded source absent from exact dependency inventory')
+                inventory[relative] = digest
+            elif relative.startswith('std/'):
+                continue  # Compiler stdlib provenance is a separate pinned-compiler gate.
+            elif local_sources.get(relative) != digest:
+                raise ValueError('Compiler local source differs from declared graph')
+        if not inventory:
+            raise ValueError('Empty contract dependency inventory')
+        embedded[name] = dict(sorted(inventory.items()))
+        origins[name] = {'path': filename.relative_to(root).as_posix(), 'sha256': sha(raw)}
+    if set(embedded) != required or not packages:
+        raise ValueError('Missing required contract artifacts or dependency packages')
+    return {'schema': 2, 'algorithm': 'sha256',
+            'description': 'Candidate inventory from actual supplied compiler artifacts and complete declared local graphs. Not origin authentication. Independently verify every external tree against official commit archives before promotion.',
+            'localManifests': dict(sorted(local.items())), 'packages': dict(sorted(packages.items())),
+            'embeddedSourcesByContract': dict(sorted(embedded.items())), 'artifactSources': dict(sorted(origins.items()))}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--artifact', required=True, action='append')
+    parser.add_argument('--output', required=True)
+    parser.add_argument('--cache-root', default=str(pathlib.Path.home() / 'nargo'))
+    parser.add_argument('--manifest', action='append', default=[], help='Additional local graph; defaults cannot be omitted')
+    parser.add_argument('--required-contract', action='append', default=[], help='Additional expected contract; defaults cannot be omitted')
+    args = parser.parse_args()
+    root = pathlib.Path(__file__).resolve().parent.parent
+    result = prepare(root, args.cache_root, args.artifact,
+                     DEFAULT_MANIFESTS + tuple(args.manifest), DEFAULT_CONTRACTS + tuple(args.required_contract))
+    output = checked(root, args.output)
+    output.write_text(json.dumps(result, indent=2) + '\n')
+    print(json.dumps({'outcome': 'candidate_requires_origin_verification', 'packages': len(result['packages']),
+                      'contracts': sorted(result['embeddedSourcesByContract']), 'output': str(output)}))
 
 
 if __name__ == '__main__':

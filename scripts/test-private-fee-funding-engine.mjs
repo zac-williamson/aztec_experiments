@@ -13,10 +13,10 @@ function harness(){
  const calls=[],owner={toString:()=> 'owner'},payer={toString:()=> 'shared'},wallet={},claim={amount:'100',salt:'private-salt',secret:'private-secret',leafIndex:Fr.ONE,messageKey:Fr.ONE};
  const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:5}),getL1ContractAddresses:async()=>({rollupAddress:'rollup',feeJuicePortalAddress:'fee-portal'})};
  const pxe={registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{},stop:async()=>calls.push('stop')};
- const context=vm.createContext({BillboardDepositReadiness:{waitForDepositMessage:async input=>{assert.equal(input.index,1n);calls.push('bridge-ready');}},BillboardPrivateFeeRouting:{createAztecWallet:(...args)=>{wallet.journal=args.at(-1).transactionJournal;return wallet;}}});vm.runInContext(source,context);
+ const context=vm.createContext({URL,BillboardDepositReadiness:{waitForDepositMessage:async input=>{assert.equal(input.index,1n);calls.push('bridge-ready');}},BillboardPrivateFeeRouting:{createAztecWallet:(...args)=>{assert.equal(args[2],node);assert.equal(args[3],node);wallet.journal=args.at(-1).transactionJournal;return wallet;}}});const fakeWallet=context.BillboardPrivateFeeRouting.createAztecWallet,fakeReadiness=context.BillboardDepositReadiness;vm.runInContext(fs.readFileSync(new URL('../apps/src/billboard/user/engine.js',import.meta.url),'utf8'),context);context.BillboardPrivateFeeRouting={...context.BillboardPrivateFeeRouting,createAztecWallet:fakeWallet};context.BillboardDepositReadiness=fakeReadiness;vm.runInContext(source,context);
  const a={provingEnabledForNode,Fr,boundedTransactionRead,isPrivateFeeClaimConsumed:async()=>false,normalizePrivateFeeGasSettings,deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
   SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;},
-  getContractInstanceFromInstantiationParams:async()=>({address:owner}),derivePrivateFeeAddress:async()=>payer,createAztecNodeClient:()=>node,
+  getContractInstanceFromInstantiationParams:async()=>({address:owner}),derivePrivateFeeAddress:async()=>payer,createAztecNodeClient:()=>assert.fail('private fee flow must not create ordinary RPC'),createTrustedPrivateNode:async options=>{calls.push(['trusted-node',options]);return node;},isTrustedPrivateNode:value=>value===node,
   computePartialAddress:async()=>Fr.ONE,createPXE:async()=>pxe,AccountManager:{create:async()=>({address:owner})},
   recoverPrivateFeeClaim:async input=>{calls.push(['recover',input]);return claim;},
   sendPrivateFeeTransaction:async ({interaction,prepared,from})=>interaction.send({from,fee:{paymentMethod:prepared.paymentMethod,gasSettings:prepared.gasSettings}}),preparePrivateFeePayment:async input=>{calls.push(['prepare',input]);return {paymentMethod:'private',gasSettings:{}};},
@@ -25,8 +25,8 @@ function harness(){
  const journal={assertCanStart:async()=>calls.push('journal-preflight'),setOperation:operation=>calls.push(['operation',operation]),lastTxHash:'saved-hash'};
  const env={createJournalStorage:()=>({}),createTransactionJournal:async input=>{calls.push(['journal',input]);return journal;},aztec:a,privateFeeArtifact:{},log:message=>calls.push(['log',message]),initCRS:async()=>{},createStore:async()=>({}),getBrowserSigner:async()=>({provider:{}}),ethers:{parseUnits:()=>100n,JsonRpcProvider:class {destroy(){calls.push('provider-destroy');}}},
  fundPrivateFees:async input=>{calls.push(['fund',input]);const record={nonce:'1'};await input.saveRecovery(record);return record;}};
- const config={aztecWallet:{secretKey:Fr.ONE.toString(),salt:0},privateFee:{contractAddress:'shared',gasSettings:{gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'1',l2Gas:'2'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}},fundingRecord:{schema:'private-fee-funding-v1',chainId:'31337',version:'5',rollupAddress:'rollup',portalAddress:'fee-portal',tokenAddress:'token',privateFeeAddress:'shared',sender:'sender',nonce:'1',amount:'100',txHash:Fr.ONE.toString()},saveRecovery:async record=>calls.push(['save',record]),depositAmount:'0.1'};
- return {calls,owner,claim,a,env,config,wallet,journal,readiness:context.BillboardDepositReadiness,run:action=>context.runFeeJuiceFlow(env,{...config,action})};
+ const config={trustedProverNode:{url:'https://trusted.example/node'},expectedNetworkScope:{chainId:'31337',version:'5',rollup:'rollup'},aztecWallet:{secretKey:Fr.ONE.toString(),salt:0},privateFee:{contractAddress:'shared',gasSettings:{gasLimits:{daGas:'10',l2Gas:'20'},teardownGasLimits:{daGas:'1',l2Gas:'2'},maxFeesPerGas:{feePerDaGas:'2',feePerL2Gas:'3'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}},fundingRecord:{schema:'private-fee-funding-v1',chainId:'31337',version:'5',rollupAddress:'rollup',portalAddress:'fee-portal',tokenAddress:'token',privateFeeAddress:'shared',sender:'sender',nonce:'1',amount:'100',txHash:Fr.ONE.toString()},saveRecovery:async record=>calls.push(['save',record]),depositAmount:'0.1'};
+ return {calls,owner,claim,a,env,config,wallet,journal,node,readiness:context.BillboardDepositReadiness,run:action=>context.runFeeJuiceFlow(env,{...config,action})};
 }
 test('funding deposits to shared address and passes mandatory recovery callback',async()=>{
  const h=harness();const result=await h.run('deposit');assert.equal(result.record.nonce,'1');
@@ -169,3 +169,21 @@ for(const fails of [false,true])test('read-only fee balance owns and closes its 
 });
 
 test('a paused fee bridge wait prevents preparation and submission',async()=>{const h=harness();h.readiness.waitForDepositMessage=async()=>{throw {code:'BB_OPERATION_PAUSED'};};await assert.rejects(h.run('claim'),{code:'BB_OPERATION_PAUSED'});assert(!h.calls.some(c=>c[0]==='prepare'||c[0]==='send'));assert.equal(h.calls.filter(c=>c==='stop').length,1);});
+
+test('development doubles: fee balance read-only PXE and wallet use trusted node',async()=>{
+ const h=harness();let observed;const create=h.a.createPXE;h.a.createPXE=async(node,config,options)=>{observed={node,config,options};return create();};
+ h.a.loadContractArtifact=x=>x;h.a.derivePrivateFeeInstance=async()=>({});h.wallet.registerContract=async()=>{};h.a.Contract={at:async()=>({methods:{balance_of:()=>({simulate:async()=>123n})}})};
+ h.config.remoteProver=undefined;assert.equal((await h.run('balance')).feeBalance,'123');assert.equal(observed.node,h.node);assert.equal(observed.options.readOnly,true);assert.equal(observed.config.proverEnabled,false);
+ assert.equal(h.calls.filter(x=>x[0]==='trusted-node').length,1);assert.equal(h.calls.find(x=>x[0]==='trusted-node')[1].url,'https://trusted.example/node');
+});
+test('development doubles: missing trusted fee configuration blocks every private path before funding',async()=>{
+ for(const action of ['status','balance','deposit','claim','recover-l2','recover-eth']){const h=harness();delete h.config.trustedProverNode;await assert.rejects(h.run(action),{code:'BB_TRUSTED_NODE_CONFIG'});assert(!h.calls.some(x=>['trusted-node','fund','journal','prepare','recover'].includes(x[0])));}
+});
+
+test('pending reverted finality blocks fee claim before wallet, proof or payment',async()=>{
+ const h=harness(),code='BB_TRANSACTION_FINALITY_PENDING';
+ for(const name of ['initCRS','createStore','getBrowserSigner','fundPrivateFees'])h.env[name]=async()=>assert.fail(name+' must not run before finality');
+ h.a.createPXE=async()=>assert.fail('PXE must not start before finality');
+ h.env.createTransactionJournal=async()=>({assertCanStart:async()=>{throw Object.assign(Error('Awaiting finality'),{code});}});
+ await assert.rejects(h.run('claim'),{code});assert(!h.calls.some(c=>['recover','prepare','send','pxe','store'].includes(Array.isArray(c)?c[0]:c)));
+});

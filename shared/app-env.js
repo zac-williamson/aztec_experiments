@@ -24,7 +24,7 @@ function _connectionConfig() {
   return {aztecNodeUrl:config.network.nodeUrl,ethRpcUrl:config.network.ethRpcUrl,
     portalAddress:config.board.portalAddress,expectedBoardAddress:config.board.contractAddress,
     expectedNetworkScope:{chainId:config.network.chainId,version:config.network.rollupVersion,rollup:config.network.rollupAddress},
-    privateFee:config.privateFee,remoteProver:config.remoteProver?{url:config.remoteProver.url,board:config.board.contractAddress}:undefined};
+    privateFee:config.privateFee,trustedProverNode:config.trustedProverNode,remoteProver:config.remoteProver?{url:config.remoteProver.url,board:config.board.contractAddress}:undefined};
 }
 function _getEthRpcUrl() { return _connectionConfig().ethRpcUrl; }
 window.billboardConfigStore?.subscribe(()=>{
@@ -143,6 +143,12 @@ function buildConfig(action, extra, connection=_connectionConfig()) {
 // ============================================================
 function publicOperationFailure(error) {
   const messages={
+    BB_TRUSTED_NODE_CONFIG:'Configure the trusted prover node before using your wallet.',
+    BB_TRUSTED_NODE_IDENTITY:'The trusted node does not match this network or proof policy.',
+    BB_TRUSTED_NODE_UNAVAILABLE:'The trusted node is unavailable. Public browsing remains available.',
+    BB_TRUSTED_NODE_UNSYNCED:'The trusted node is synchronizing. Try the wallet again when it is ready.',
+    BB_TRUSTED_NODE_STALE:'The trusted node is behind the network. Try the wallet again when it is ready.',
+
     BB_PLUGIN_UNKNOWN:'This plugin is not registered on this board.',
     BB_SCREENING_NO_PROGRESS:'Withdrawal preparation paused because the network did not advance screening. No further preparation fees will be spent. Refresh your account before continuing.',
     BB_SCREENING_HISTORY_UNAVAILABLE:'Your message history could not be verified. Refresh your account before continuing withdrawal.',
@@ -216,6 +222,7 @@ function publicOperationFailure(error) {
     BB_SUBMISSION_UNKNOWN:'Submission outcome is unknown. Keep the transaction record and check its receipt before retrying.',
     PRIVATE_FEE_FUNDING_SUBMISSION_UNKNOWN:'Fee funding outcome is unknown. Keep its recovery file and check the transaction before retrying.',
     BB_PRIVATE_FEE_AMOUNT:'Deposit more than the configured maximum claim fee.',
+    BB_TRANSACTION_FINALITY_PENDING:'The previous transaction failed and is awaiting network finality. Keep its saved record and try again once it is finalized.',
     BB_TRANSACTION_FAILED:'The transaction did not execute successfully. Check its receipt before trying again.',
     BB_STATE_CONFLICT:'Transaction state changed. Refresh the account before creating a new proof.',
     BB_NO_SAVED_ETHEREUM_TRANSACTION:'No saved Ethereum request exists for this wallet and portal.',
@@ -253,6 +260,7 @@ function makeCallEngine(engineFn, envExtra, {deployment=false,connection=_connec
     const operationConnection=structuredClone(connection());
     operationConnection.remoteProver=(extra?.provingMode??window.BillboardProving.snapshot())==='remote' ? operationConnection.remoteProver : undefined;
     if(operationConnection.remoteProver)operationConnection.remoteProver=Object.freeze({...operationConnection.remoteProver,onStatus:state=>extra?.onStage?.(state==='queued'?'queued':'proving')});
+    if(operationConnection.trustedProverNode)Object.freeze(operationConnection.trustedProverNode);
     Object.freeze(operationConnection);
     async function guard() {
       if(extra?.pauseRequested?.())throw Object.assign(Error('Paused.'),{code:'BB_OPERATION_PAUSED'});

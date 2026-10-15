@@ -3,6 +3,22 @@ import {test} from 'node:test';
 import {TestDateProvider} from '@aztec-labs/foundation/timer';
 import {synchronizeC01MinedClock} from './c01-client-mining.mjs';
 
+test('restored devnet clock satisfies the actual SDK startup drift guard without disabling it',async t=>{
+  t.mock.timers.enable({apis:['Date'],now:1791933971000});
+  // Import the installed implementation, since the package's public index does
+  // not expose this class. Only its block read is a labelled local fixture.
+  const {ArchiverL1Synchronizer}=await import(new URL('./modules/l1_synchronizer.js',import.meta.resolve('@aztec-labs/archiver')));
+  const dateProvider=new TestDateProvider({warn(){}}),timestamp=1791932911;
+  const context={config:{maxAllowedEthClientDriftSeconds:60},dateProvider,
+    publicClient:{getBlock:async()=>({number:46n,timestamp:BigInt(timestamp)})}};
+  const check=()=>ArchiverL1Synchronizer.prototype.testEthereumNodeSynced.call(context);
+  await assert.rejects(check(),/Ethereum node is out of sync/);
+  synchronizeC01MinedClock(dateProvider,timestamp);
+  await check();
+  t.mock.timers.tick(61000);
+  await assert.rejects(check(),/Ethereum node is out of sync/);
+});
+
 test('mined-clock synchronization prevents accumulated drift across a long proof batch',t=>{
   t.mock.timers.enable({apis:['Date'],now:100000});
   const old=new TestDateProvider({warn(){}}),fixed=new TestDateProvider({warn(){}});

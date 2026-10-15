@@ -1,0 +1,116 @@
+{
+  "recordedAt": "2026-10-14T16:42:18.617565+00:00",
+  "sourceRevision": "e5cf527f973aa3547183b7d98c3ad5473acb1a8e",
+  "servedRuntimeSha256": "992b9bc0fac657b05f75670a6be2d7471fc83cd49826419e8dbdc6669426d378",
+  "originalRun": {
+    "path": "execution/evidence/T04/bok-c-after-storage-1.json",
+    "sha256": "e801d289d5f9ba0df1fb76bcdcff313a0ee18fad97dbbe13d017938bba53e3e7",
+    "passed": false,
+    "failure": {
+      "stage": "retained-bok-authorize",
+      "errorClass": "TimeoutError",
+      "browserLifecycle": {
+        "contextClosed": false,
+        "disconnected": false,
+        "pageCrashed": false
+      },
+      "location": "t04-metamask.mjs:984:198"
+    },
+    "l2Submissions": 0,
+    "proofRequests": 0,
+    "blockedRequests": 0,
+    "paidRecovery": {
+      "asset": "USDC",
+      "transactionHash": "0xc1a923d3a48f52431ffc950007fc55140eb3bd965d2a56aff3f9d9ea32d07f18",
+      "planHash": "0xb1fcd7f673687bfb79b80caee848fb70b6640377c67b13b82e9a092177d4ef1b",
+      "claimTransactionHash": "0x2c6e0d0173b5a56a082c96f58acc00cd81aeae91747008b8f6e02fed3a85ce68",
+      "originalCanonicalEffectsVerified": true,
+      "readyFromConfirmedPrivateClaim": true,
+      "userSends": 0,
+      "relayPosts": 0,
+      "signatures": 0,
+      "postQualified": false,
+      "readyExportSha256": "6b80ba4ff93cede365490f90d22918e24f39f2deb68570341dadb973fdf5b784",
+      "continuity": {
+        "sameCustody": true,
+        "originalFundingUnchanged": true,
+        "originalClaimConfirmed": true,
+        "claimTransactionHash": "0x2c6e0d0173b5a56a082c96f58acc00cd81aeae91747008b8f6e02fed3a85ce68",
+        "currentAccountStatus": "fee-ready"
+      },
+      "canonicalClaim": {
+        "transactionHash": "0x2c6e0d0173b5a56a082c96f58acc00cd81aeae91747008b8f6e02fed3a85ce68",
+        "blockNumber": 534,
+        "blockHash": "0x2c982cc6b9c16b01cd61ab35bd369e57cc772a0d4aed0fea64edaa9b33ea1d8e",
+        "canonical": true
+      }
+    },
+    "supervisorFailures": [
+      {
+        "stage": "resource-sampling",
+        "errorClass": "Error",
+        "code": "HARNESS_SAMPLING_GAP",
+        "frames": [
+          "supervisor.mjs:35:55",
+          "supervisor.mjs:29:52"
+        ]
+      }
+    ],
+    "elapsedMs": 1383716,
+    "ownedTreeAbsent": true
+  },
+  "savedWorkflow": {
+    "passed": true,
+    "request": "c",
+    "sourceRevision": "e5cf527f973aa3547183b7d98c3ad5473acb1a8e",
+    "runtimeSha256": "992b9bc0fac657b05f75670a6be2d7471fc83cd49826419e8dbdc6669426d378",
+    "noFinancialActions": true,
+    "deniedShapes": [],
+    "extraPublicReads": 1,
+    "unlockWait": "TimeoutError",
+    "workflow": {
+      "unlocked": true,
+      "present": true,
+      "type": "bok",
+      "phase": "authorize",
+      "status": "prepared",
+      "contentMatches": true,
+      "budget": "400000",
+      "txHash": null,
+      "authorizationTxHash": null,
+      "journalPresent": true,
+      "journalKeys": [
+        "version",
+        "txHash"
+      ],
+      "journalStatus": null,
+      "journalState": null,
+      "journalTxHash": "0x251fd25e4cfcb9d26d116fb24dab4541e4853650c3067157b15f24177e083e59"
+    },
+    "buttons": {
+      "Confirm and send": false,
+      "Recover saved action": false,
+      "Review saved Bok post": false,
+      "Check account recovery": false,
+      "Cancel unsent action": false
+    },
+    "alertPresent": true,
+    "contextClosed": true,
+    "traffic": {
+      "walletAssets": 14,
+      "privateRequests": 25,
+      "feedRequests": 0,
+      "boardRequests": 0,
+      "compactRequests": 0,
+      "compactPreflights": 0,
+      "tagDiscoveryRequests": 0,
+      "proofSubmits": 0,
+      "nodeSubmissions": 0,
+      "l1Submissions": 0,
+      "blockedRequests": 0,
+      "inspectionErrors": 0
+    }
+  },
+  "interpretation": "C authorization remains prepared, exact approved content/budget; original B L2 journal is retained. No C submission was observed. Preserve entered once-only reservation; do not replay. Failure occurred before workflow submitting fence. Original caught failure not retained; root cause remains under diagnosis. Sampling gap records execution interruption, not continuous latency.",
+  "next": "Root restarts reviewed compact repair; then bounded no-send current runtime/account/reconcile diagnostic. D and C reply untouched."
+}

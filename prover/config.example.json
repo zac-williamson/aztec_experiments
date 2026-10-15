@@ -11,5 +11,6 @@
   "threads": 1,
   "queueDirectory": "/tmp",
   "privateFeeAddress": "0x0000000000000000000000000000000000000000000000000000000000000002",
-  "pluginAddresses": []
+  "pluginAddresses": [],
+  "applicationProfile": "legacy"
 }

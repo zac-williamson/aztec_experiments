@@ -268,3 +268,60 @@ contract PortalV1Test is PortalFixtures {
         vm.deal(ALICE,2 ether); control.expectRevert(); vm.prank(ALICE); portal.deposit{value:2 ether}(bytes32(uint256(123)));
     }
 }
+
+interface VmDepositConsent {
+    function addr(uint256) external returns(address);
+    function sign(uint256,bytes32) external returns(uint8,bytes32,bytes32);
+    function expectRevert() external;
+    function warp(uint256) external;
+}
+contract PortalDepositConsentTest is PortalFixtures {
+    VmDepositConsent constant control=VmDepositConsent(address(uint160(uint256(keccak256("hevm cheat code")))));
+    BillboardPortal portal; address owner; bytes32 constant SECRET=bytes32(uint256(44));
+    function setUp() public {
+        owner=control.addr(123);portal=new BillboardPortal(address(new RootPublisher(VERSION)),L2,VERSION,1 ether,2 ether,bytes32(uint256(123)));
+        RootPublisher r=RootPublisher(address(portal.ROLLUP()));
+        bytes32 content=PortalMessages.ready(block.chainid,address(portal),L2,VERSION,bytes32(uint256(123)));
+        r.publish(1,1,Hash.sha256ToField(DataStructures.L2ToL1Msg(DataStructures.L2Actor(L2,VERSION),DataStructures.L1Actor(address(portal),block.chainid),content)));
+        portal.activate(1,1,0,new bytes32[](0));vm.deal(address(this),10 ether);vm.deal(BOB,10 ether);
+    }
+    function signature(address executor,uint256 amount,bytes32 secret,uint256 nonce,uint256 deadline) private returns(bytes memory) {
+        (uint8 v,bytes32 r,bytes32 s)=control.sign(123,portal.depositForDigest(owner,executor,amount,secret,nonce,deadline));return abi.encodePacked(r,s,v);
+    }
+    function testConsentBindsExecutorAmountSecretNonceAndDeadline() public {
+        uint256 deadline=block.timestamp+60;bytes memory sig=signature(address(this),1 ether,SECRET,0,deadline);
+        control.expectRevert();vm.prank(BOB);portal.depositFor{value:1 ether}(owner,SECRET,0,deadline,sig);
+        control.expectRevert();portal.depositFor{value:2 ether}(owner,SECRET,0,deadline,sig);
+        control.expectRevert();portal.depositFor{value:1 ether}(owner,bytes32(uint256(45)),0,deadline,sig);
+        control.expectRevert();portal.depositFor{value:1 ether}(owner,SECRET,1,deadline,sig);
+        control.expectRevert();portal.depositFor{value:1 ether}(owner,SECRET,0,deadline+1,sig);
+        require(portal.getDeposit(owner)==0 && portal.depositNonces(owner)==0,"Invalid consent preoccupied owner");
+        portal.depositFor{value:1 ether}(owner,SECRET,0,deadline,sig);
+        require(portal.getDeposit(owner)==1 ether && portal.getDeposit(address(this))==0 && portal.depositNonces(owner)==1);
+        control.expectRevert();portal.depositFor{value:1 ether}(owner,SECRET,0,deadline,sig);
+    }
+    function testRelayedCollateralCanOnlyWithdrawToBeneficiary() public {
+        uint256 deadline=block.timestamp+60;bytes memory sig=signature(address(this),1 ether,SECRET,0,deadline);
+        portal.depositFor{value:1 ether}(owner,SECRET,0,deadline,sig);
+        RootPublisher r=RootPublisher(address(portal.ROLLUP()));
+        bytes32 content=PortalMessages.receipt(true,block.chainid,address(portal),L2,VERSION,owner,uint128(1 ether));
+        r.publish(2,1,Hash.sha256ToField(DataStructures.L2ToL1Msg(DataStructures.L2Actor(L2,VERSION),DataStructures.L1Actor(address(portal),block.chainid),content)));
+        control.expectRevert();portal.withdraw(2,1,0,new bytes32[](0));
+        vm.prank(owner);portal.withdraw(2,1,0,new bytes32[](0));require(owner.balance==1 ether && portal.getDeposit(owner)==0);
+        control.expectRevert();portal.depositFor{value:1 ether}(owner,SECRET,0,deadline,sig);
+        require(portal.depositNonces(owner)==1 && portal.getDeposit(owner)==0,"Old authorization replayed after withdrawal");
+    }
+    function testDirectDepositUnchangedAndConsentCannotPreoccupyExistingOwner() public {
+        vm.deal(owner,2 ether);vm.prank(owner);portal.deposit{value:1 ether}(SECRET);
+        bytes memory sig=signature(address(this),1 ether,SECRET,0,block.timestamp+60);
+        control.expectRevert();portal.depositFor{value:1 ether}(owner,SECRET,0,block.timestamp+60,sig);
+        require(portal.depositNonces(owner)==0 && portal.getDeposit(owner)==1 ether);
+    }
+    function testExpiredOrOtherPortalSignatureRejected() public {
+        uint256 deadline=block.timestamp+60;bytes memory sig=signature(address(this),1 ether,SECRET,0,deadline);
+        control.warp(deadline+1);control.expectRevert();portal.depositFor{value:1 ether}(owner,SECRET,0,deadline,sig);
+        require(portal.depositNonces(owner)==0);
+        BillboardPortal other=new BillboardPortal(address(portal.ROLLUP()),L2,VERSION,1 ether,2 ether,bytes32(uint256(123)));
+        require(other.depositForDigest(owner,address(this),1 ether,SECRET,0,deadline)!=portal.depositForDigest(owner,address(this),1 ether,SECRET,0,deadline),"Portal domain collision");
+    }
+}

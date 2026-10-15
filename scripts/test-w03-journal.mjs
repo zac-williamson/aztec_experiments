@@ -5,10 +5,10 @@ import os from 'node:os';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {randomBytes} from 'node:crypto';
+import {randomBytes,createHash} from 'node:crypto';
 import {Tx,TxHash} from '@aztec-labs/stdlib/tx';
 import {IDBFactory} from 'fake-indexeddb';
-import {createL2Journal} from '../shared/l2-journal.mjs';
+import {createL2Journal,l2JournalScopeText} from '../shared/l2-journal.mjs';
 import {createBrowserJournalStorage} from '../shared/journal-indexeddb.mjs';
 import {createFileJournalStorage} from '../apps/src/billboard/user/transaction-journal-store.mjs';
 const field=()=> '0x'+randomBytes(31).toString('hex').padStart(64,'0');
@@ -25,6 +25,15 @@ for(const backend of ['file','indexeddb']) {
   const temp=fs.mkdtempSync(path.join(os.tmpdir(),'bb-journal-test-'));
   try {const idb=new IDBFactory(),storage=backend==='file'?createFileJournalStorage(temp):createBrowserJournalStorage(idb);await fn(fixture(storage),{temp,idb,storage});}finally{fs.rmSync(temp,{recursive:true,force:true});}
  }
+ test(`${backend}: G07 strict replacement inspection leaves exact authenticated ciphertext and acknowledgement untouched`,()=>withStorage(async (f,{storage})=>{
+  const j=await f.newSession();j.setOperation('ROLLING_WORKFLOW_V1:fixture');await j.prepare(f.tx,await j.assertCanStart());
+  f.node.isValidTx=async()=>({result:'invalid',reason:['Block header not found']});
+  const key=createHash('sha256').update(l2JournalScopeText(f.opts.scope)).digest('hex'),before=await storage.read(key);let writes=0;
+  storage.compareAndSwap=async()=>{writes++;throw Error('Read-only inspection must not write');};
+  const reopened=await f.newSession(),result=await reopened.inspectReplacement('ROLLING_WORKFLOW_V1:fixture',{requireMissingAnchor:true});
+  assert.equal(result.status,'available');assert.equal(result.attempts[0].txHash,String(f.tx.getTxHash()));assert.equal(await storage.read(key),before);
+  await assert.rejects(reopened.assertCanStart(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(writes,0);assert.equal(reopened.lastTxHash,null);assert.equal(f.sent.length,0);
+ }));
  test(`${backend}: read-only outcome never rebroadcasts or acknowledges`,()=>withStorage(async f=>{
   const journal=await f.newSession();journal.setOperation('post');await journal.prepare(f.tx,await journal.assertCanStart());
   const reopened=await f.newSession();assert.equal((await reopened.inspectOutcome()).outcome,'pending');assert.equal(f.sent.length,0);await assert.rejects(reopened.assertCanStart(),{code:'BB_RECOVERY_REQUIRED'});
@@ -37,6 +46,16 @@ for(const backend of ['file','indexeddb']) {
   f.setStatus('checkpointed');const restarted=await f.newSession(),recovered=await restarted.reconcilePrevious();
   assert.equal(recovered.operation,operation);assert.equal(recovered.receipt.executionResult,'success');assert.equal(f.sent.length,0);
   await restarted.assertCanStart();f.reorg();await assert.rejects(restarted.reconcilePrevious(),{code:'BB_SUBMISSION_UNKNOWN'});
+ }));
+ test(`${backend}: operator reconcile-only mode preserves dropped valid intent without any resend`,()=>withStorage(async (f,{storage})=>{
+  const first=await f.newSession();first.setOperation('deploy-rolling-board');await first.prepare(f.tx,await first.assertCanStart());
+  const key=createHash('sha256').update(l2JournalScopeText(f.opts.scope)).digest('hex'),before=await storage.read(key);
+  const reopened=await f.newSession({reconcileOnly:true});await assert.rejects(reopened.reconcilePrevious(),{code:'BB_RECOVERY_REQUIRED'});await assert.rejects(reopened.recover(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(f.sent.length,0);assert.equal(await storage.read(key),before);
+  f.setStatus('checkpointed');assert.equal((await reopened.reconcilePrevious()).receipt.executionResult,'success');assert.equal(f.sent.length,0);
+ }));
+ test(`${backend}: reconcile-only still blocks canonical-to-dropped race`,()=>withStorage(async f=>{
+  const j=await f.newSession();j.setOperation('deploy-rolling-board');await j.prepare(f.tx,await j.assertCanStart());f.setStatus('checkpointed');
+  const reopened=await f.newSession({reconcileOnly:true});assert.equal((await reopened.inspectSavedRecovery('deploy-rolling-board',String(f.tx.getTxHash()))).status,'canonical');f.setStatus('dropped');await assert.rejects(reopened.reconcilePrevious(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(f.sent.length,0);
  }));
  test(`${backend}: crash before broadcast recovers identical actual SDK transaction without a new proof`,()=>withStorage(async f=>{
   const first=await f.newSession();await first.prepare(f.tx,await first.assertCanStart());assert.equal(f.sent.length,0);
@@ -87,10 +106,27 @@ for(const backend of ['file','indexeddb']) {
   const j=await f.newSession();await j.prepare(f.tx,await j.assertCanStart());f.setStatus('checkpointed');f.setExecution('reverted');
   assert.equal((await (await f.newSession()).recover()).executionResult,'reverted');
   await assert.rejects((await f.newSession()).assertCanStart(),{code:'BB_RECOVERY_REQUIRED'});
-  await (await f.newSession({acknowledgeTx:f.tx.getTxHash().toString()})).assertCanStart();
+  await assert.rejects((await f.newSession({acknowledgeTx:f.tx.getTxHash().toString()})).assertCanStart(),{code:'BB_TRANSACTION_FINALITY_PENDING'});
   f.setStatus('dropped');f.node.isValidTx=async()=>({result:'invalid',reason:['Existing nullifier']});await assert.rejects((await f.newSession()).recover(),{code:'BB_RECOVERY_REQUIRED'});
   f.node.getTxReceipt=async()=>{throw new Error('private diagnostic');};await assert.rejects((await f.newSession()).recover(),e=>e.code==='BB_RECOVERY_REQUIRED'&&!e.message.includes('private diagnostic'));
   f.node.getTxReceipt=async()=>({txHash:TxHash.random(),status:'checkpointed'});await assert.rejects((await f.newSession()).recover(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(f.sent.length,0);
+ }));
+ test(`${backend}: reverted sender sequence waits for canonical finality without changing saved intent`,()=>withStorage(async (f,{storage})=>{
+  const journal=await f.newSession();journal.setOperation('post');await journal.prepare(f.tx,await journal.assertCanStart());
+  f.setExecution('reverted');f.setStatus('checkpointed');
+  const recovered=await f.newSession();assert.equal((await recovered.recover()).executionResult,'reverted');
+  const original=await recovered.inspect();
+  storage.compareAndSwap=async()=>{throw new Error('No journal writes permitted during finality reconciliation');};
+  for(const status of ['checkpointed','proven']) {
+   f.setStatus(status);
+   await assert.rejects(recovered.assertCanStart(),{code:'BB_TRANSACTION_FINALITY_PENDING'});
+   const restarted=await f.newSession({acknowledgeTx:f.tx.getTxHash().toString()});
+   await assert.rejects(restarted.assertCanStart(),{code:'BB_TRANSACTION_FINALITY_PENDING'});
+   assert.deepEqual(await restarted.inspect(),original);assert.equal(f.sent.length,0);
+  }
+  f.setStatus('finalized');await recovered.assertCanStart();assert.deepEqual(await recovered.inspect(),original);
+  f.setStatus('proven');await assert.rejects(recovered.assertCanStart(),{code:'BB_TRANSACTION_FINALITY_PENDING'});
+  f.setStatus('finalized');f.reorg();await assert.rejects(recovered.assertCanStart(),{code:'BB_SUBMISSION_UNKNOWN'});assert.equal(f.sent.length,0);
  }));
  test(`${backend}: wallet context change prevents recovery broadcast`,()=>withStorage(async f=>{
   const j=await f.newSession();await j.prepare(f.tx,await j.assertCanStart());

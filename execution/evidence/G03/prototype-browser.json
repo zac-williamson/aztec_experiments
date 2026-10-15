@@ -1,0 +1,20 @@
+{
+  "candidate": "a23b106ac2291acce9ebea650d4fe9ec28987136",
+  "environment": "Codex IAB local preview127.0.0.1:4317; desktop1280x900 and mobile390x844;11October2026",
+  "kind": "manual UI actions via CUA; fixture-only",
+  "observations": [
+    "Home readable original three-column desktop layout; wallet-free fixture browsing",
+    "249 four-byte emoji rejected:4bytes over, submit disabled; safe HTTPS link renders, javascript link/script remain plain text",
+    "Escape closes composer and returns focus to invoking button",
+    "Rejected board shows reason and recoverable-funds link",
+    "FirstTabEnter focuses content without changing#/home",
+    "Freshload/reload#/thread/first-tools/r3 focuses post-r3 at scrollY570.5",
+    "Mobile390px document width390, navigation Escape returns Open navigation focus",
+    "Compose Ellis Moss local preview then authorlink renders individual profile and its post; no other owned names",
+    "Continuous feed expanded6to12posts; visible post/thread/back restored scrollY935.5exactly and retained12posts"
+  ],
+  "limits": [
+    "No chain/wallet/proof/model acceptance",
+    "No screen-reader hardware or performance qualification from these checks"
+  ]
+}

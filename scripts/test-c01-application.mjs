@@ -10,8 +10,8 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
     const {getScenario}=await import('./testing/scenarios.mjs');
     const {readControl}=await import('./testing/browser-worker.mjs');
     const {runFixture}=await import('./testing/fixture-worker.mjs');
-    const {browserControl,operatorPackage}=await readControl();
-    await runFixture(path.resolve(args[1]),getScenario(args[0]),browserControl,operatorPackage);
+    const {browserControl,operatorPackage,providerDeadlineAt,applicationDeadlineAt}=await readControl();
+    await runFixture(path.resolve(args[1]),getScenario(args[0]),browserControl,operatorPackage,providerDeadlineAt,applicationDeadlineAt);
   }else if(name==='browser-worker'){
     assert.equal(args.length,1);
     const {runBrowser,readControl}=await import('./testing/browser-worker.mjs');

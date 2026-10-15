@@ -56,3 +56,8 @@ test('unrelated provider failures remain visible',async()=>{
   const runner=bokRunner({runner:{run:async()=>{throw Error('connection lost');}}});
   await assert.rejects(runner.run({text:'@bok help'}),/connection lost/);
 });
+
+for(const code of ['MODEL_OUTPUT_LIMIT','MODEL_TOOL_RESPONSE_INVALID','MODEL_CONTENT_FILTER'])test(code+' produces only a fixed incomplete board result',async()=>{
+ const runner=bokRunner({runner:{run:async()=>{throw Object.assign(Error('PRIVATE_SENTINEL'),{code});}}});
+ const result=await runner.run({text:'@bok build'});assert.deepEqual(Object.keys(result),['replyText']);assert.doesNotMatch(result.replyText,/PRIVATE_SENTINEL|App:|Source:/);assert.match(result.replyText,/incomplete|did not complete/);
+});

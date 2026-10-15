@@ -9,7 +9,8 @@ import {publicNode} from '../shared/public-feed-rpc.mjs';
 import {observeFeedLag} from './feed-health.mjs';
 import {summarizeModerationHealth, moderationFailure, safeModerationDiagnostic} from './health.mjs';
 import {openJobStore} from './job-store.mjs';
-import {processModerationCycle} from './worker.mjs';
+import {processModerationCycle,processRollingModerationCycle} from './worker.mjs';
+import {createRollingModerationService} from './rolling-adapter.mjs';
 import {identifyModel} from './model-version.mjs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -24,7 +25,7 @@ const root = path.resolve(directory, '..');
 const flags = new Set(['dry-run', 'once']);
 const values = new Set(['portal-address', 'censor-wallet', 'policy', 'llama-port',
   'poll-interval', 'from', 'ctx-size', 'threads', 'node-url', 'model', 'cli',
-  'model-image', 'model-manifest', 'model-memory-mib', 'model-sha256', 'private-fee-config', 'eth-rpc', 'state-dir']);
+  'model-image', 'model-manifest', 'model-memory-mib', 'model-sha256', 'private-fee-config', 'eth-rpc', 'state-dir', 'rolling-config']);
 function parseArgs(argv) {
   const args = Object.create(null);
   for (let i = 0; i < argv.length; i++) {
@@ -54,13 +55,16 @@ function configuration(argv) {
   const args = parseArgs(argv);
   if(args.from!==undefined&&args.from!=='0')throw new Error('--from cannot skip durable jobs; use a separate explicitly scoped state directory.');
   if (args.policy) throw new Error('--policy is unsupported: moderation requires the exact contract policy');
-  if (!args['portal-address']) throw new Error('--portal-address is required');
-  if (!args['eth-rpc']) throw new Error('--eth-rpc is required');
-  if (!args['private-fee-config']) throw new Error('--private-fee-config is required');
+  if (args['rolling-config']&&!args['state-dir'])throw new Error('Rolling moderation requires a dedicated --state-dir');
+  if (args['rolling-config']&&['portal-address','censor-wallet','private-fee-config','eth-rpc','node-url','cli'].some(k=>args[k]))throw new Error('Rolling configuration cannot be mixed with legacy signer options');
+  if (!args['rolling-config']&&!args['portal-address']) throw new Error('--portal-address is required');
+  if (!args['rolling-config']&&!args['eth-rpc']) throw new Error('--eth-rpc is required');
+  if (!args['rolling-config']&&!args['private-fee-config']) throw new Error('--private-fee-config is required');
   return Object.freeze({
     stateDir:path.resolve(args['state-dir']||path.join(root,'.moderation-state')),
+    rollingConfig:args['rolling-config']?path.resolve(args['rolling-config']):null,
     portalAddress: args['portal-address'],
-    privateFeeConfig: path.resolve(args['private-fee-config']),
+    privateFeeConfig: args['private-fee-config']?path.resolve(args['private-fee-config']):null,
     ethRpcUrl: args['eth-rpc'],
     censorWallet: path.resolve(args['censor-wallet'] || path.join(root, 'wallets/censor_aztec_wallet.json')),
     cliPath: path.resolve(args.cli || path.join(root, 'apps/src/billboard/user/cli.mjs')),
@@ -101,7 +105,8 @@ function persistModelIdentity(directory,runtime){
 }
 export async function runDaemon(argv = process.argv.slice(2), { startRuntime = startModelRuntime,createNode=publicNode } = {}) {
   assertNodeVersion();
-  const config=configuration(argv),signer=createSigner({cliPath:config.cliPath,censorWallet:config.censorWallet,portalAddress:config.portalAddress,aztecNodeUrl:config.aztecNodeUrl,privateFeeConfig:config.privateFeeConfig,ethRpcUrl:config.ethRpcUrl});
+  const config=configuration(argv);let rolling;
+  const signer=config.rollingConfig?(rolling=await createRollingModerationService({configFile:config.rollingConfig,stateDirectory:config.stateDir})).signer:createSigner({cliPath:config.cliPath,censorWallet:config.censorWallet,portalAddress:config.portalAddress,aztecNodeUrl:config.aztecNodeUrl,privateFeeConfig:config.privateFeeConfig,ethRpcUrl:config.ethRpcUrl});
   let runtime,store,storeScope,stopping=false;const wait=new AbortController(),worker=randomUUID();
   const shutdown=()=>{stopping=true;wait.abort();};process.on('SIGINT',shutdown);process.on('SIGTERM',shutdown);
   try{
@@ -109,19 +114,19 @@ export async function runDaemon(argv = process.argv.slice(2), { startRuntime = s
     const startup=new AbortController(),startupTimer=setTimeout(()=>startup.abort(Error('Model startup deadline')),120000);
     try{runtime=await startRuntime({image:config.modelImage,memoryMiB:config.modelMemoryMiB,imageManifestPath:config.modelManifest,modelPath:config.modelPath,modelSha256:config.modelSha256,port:config.llamaPort,threads:config.threads,ctxSize:config.ctxSize,signal:AbortSignal.any([wait.signal,startup.signal])});}
     finally{clearTimeout(startupTimer);}
-    const identity=persistModelIdentity(config.stateDir,runtime),node=createNode(config.aztecNodeUrl),healthNode=createNode(config.aztecNodeUrl,{timeoutMs:5000});
+    const identity=persistModelIdentity(config.stateDir,runtime),node=rolling?.node??createNode(config.aztecNodeUrl),healthNode=rolling?null:createNode(config.aztecNodeUrl,{timeoutMs:5000});
     do {
       let complete=false;
       try{
-        if(!store){const data=signer.list(),id=createHash('sha256').update(scopeKey(data.scope)).digest('hex');store=openJobStore({filename:path.join(config.stateDir,id+'.sqlite'),scope:data.scope,modelVersion:identity.modelVersion});storeScope=data.scope;}
-        const result=await processModerationCycle({store,signer,node,scope:storeScope,worker,log,dryRun:config.dryRun,stopping:()=>stopping,evaluate:(post,policy)=>moderatePost(post,policy,runtime.port)});
+        if(!store){const data=rolling?{scope:rolling.scope}:await signer.list(),id=createHash('sha256').update(scopeKey(data.scope)).digest('hex');store=openJobStore({filename:path.join(config.stateDir,id+'.sqlite'),scope:data.scope,modelVersion:identity.modelVersion,...(rolling?{profile:'rolling',development:rolling.development}:{})});storeScope=data.scope;}
+        const result=await (rolling?processRollingModerationCycle:processModerationCycle)({store,signer,node,scope:storeScope,worker,log,dryRun:config.dryRun,stopping:()=>stopping,evaluate:(post,policy)=>moderatePost(post,policy,runtime.port)});
         complete=result.complete;log(JSON.stringify(summarizeModerationHealth({status:result.status,staleAfterMs:Math.max(config.pollInterval*3000,60000)})));
-        if(!stopping)log(JSON.stringify(await observeFeedLag({node:healthNode,scope:storeScope,checkpoint:result.status.checkpoint})));
+        if(!stopping&&!rolling)log(JSON.stringify(await observeFeedLag({node:healthNode,scope:storeScope,checkpoint:result.status.checkpoint})));
       }catch(error){let status;try{status=store?.status();}catch{}log(JSON.stringify({...summarizeModerationHealth({status,cycleFailed:true,staleAfterMs:Math.max(config.pollInterval*3000,60000)}),diagnostic:safeModerationDiagnostic(error)}),'error');}
       if(config.once){if(!complete)throw new Error('Moderation jobs remain unresolved or require attention; saved work will resume next run');log('All posts processed (--once mode).');break;}
       if(!stopping)await delay(config.pollInterval*1000,undefined,{signal:wait.signal}).catch(error=>{if(error.name!=='AbortError')throw error;});
     }while(!stopping);
-  }finally{process.off('SIGINT',shutdown);process.off('SIGTERM',shutdown);try{store?.close();}finally{if(runtime)await runtime.stop();}}
+  }finally{process.off('SIGINT',shutdown);process.off('SIGTERM',shutdown);try{store?.close();}finally{try{if(runtime)await runtime.stop();}finally{await rolling?.close();}}}
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

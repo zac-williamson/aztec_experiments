@@ -83,3 +83,44 @@ test('malformed process snapshot retains bounded field-only diagnostics',async()
   assert.equal(diagnostic.code,'BB_PROCESS_SNAPSHOT_FORMAT');assert.equal(diagnostic.snapshotRow,row);assert.equal(diagnostic.snapshotFieldCount,6);return true;
  });
 });
+
+
+test('replacement handoff requires exited role and verifies its real descendant tree',{timeout:10000},async()=>{
+ const report={},owner=new Supervisor({report,deadlineMs:7000});
+ try{
+  const running=owner.start('initial',process.execPath,['-e',
+   `const {spawn}=require('node:child_process');spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{stdio:'ignore'});setTimeout(()=>process.exit(0),250);`],options);
+  await assert.rejects(owner.cleanupRole('initial'),/must exit/);
+  await running;
+  assert.deepEqual(await owner.cleanupRole('initial'),{cleanupComplete:true});
+  assert.equal((await owner.children[0].tree.sample()).members.length,0);
+  assert.deepEqual(await owner.cleanupRole('initial'),{cleanupComplete:true});
+  await owner.start('replacement',process.execPath,['-e','process.exit(0)'],options);
+  assert.equal(report.children[1].code,0);
+ }finally{await owner.close();}
+ assert.equal(report.ownedTreeAbsent,true);assert.deepEqual(report.failures,[]);
+});
+
+test('failed handoff cleanup prevents any replacement and preserves failure',{timeout:10000},async()=>{
+ const report={},owner=new Supervisor({report,deadlineMs:5000});
+ try{
+  await owner.start('initial',process.execPath,['-e','process.exit(0)'],options);
+  owner.children[0].tree.cleanup=async()=>{throw Error('PRIVATE');};
+  await assert.rejects(owner.cleanupRole('initial'),/replacement forbidden/);
+  assert.throws(()=>owner.start('replacement',process.execPath,['-e','process.exit(0)'],options),/failed or closed/);
+  assert.equal(report.children[0].cleanupComplete,false);
+  assert.equal(report.failures[0].stage,'initial-cleanup');assert(!JSON.stringify(report).includes('PRIVATE'));
+ }finally{await owner.close();}
+ assert.equal(report.ownedTreeAbsent,false);
+});
+
+
+test('close cannot retry or overwrite a failed handoff cleanup',{timeout:10000},async()=>{
+ const report={},owner=new Supervisor({report,deadlineMs:5000});let attempts=0;
+ await owner.start('initial',process.execPath,['-e','process.exit(0)'],options);
+ owner.children[0].tree.cleanup=async()=>{if(++attempts===1)throw Error('snapshot unavailable');};
+ await assert.rejects(owner.cleanupRole('initial'),/replacement forbidden/);
+ await owner.close();
+ assert.equal(attempts,1);assert.equal(report.children[0].cleanupComplete,false);
+ assert.equal(report.ownedTreeAbsent,false);assert.equal(report.failures.filter(item=>item.stage==='initial-cleanup').length,1);
+});

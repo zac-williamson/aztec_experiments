@@ -5,9 +5,26 @@ import os from 'node:os';
 import path from 'node:path';
 import {IDBFactory} from 'fake-indexeddb';
 import {publicFeedFileStorage} from '../shared/public-feed-file-storage.mjs';
+import {DatabaseSync} from 'node:sqlite';
 import {browserPublicFeedStorage} from '../shared/public-feed-connection.mjs';
 globalThis.indexedDB=new IDBFactory();
 const first='00000000-0000-4000-8000-000000000001',second='00000000-0000-4000-8000-000000000002';
+test('SQLite checks UTF8 record and total snapshot bytes before parsing hostile cached text',async t=>{
+ const directory=await fs.mkdtemp(path.join(os.tmpdir(),'bb-feed-limits-'));t.after(()=>fs.rm(directory,{recursive:true,force:true}));
+ const storage=publicFeedFileStorage(directory,{maxRecordBytes:128,maxSnapshotBytes:150}),key='bounded';
+ const head=JSON.stringify({latest:second}),a={id:first,value:JSON.stringify({previous:null,padding:'a'.repeat(40)})},b={id:second,value:JSON.stringify({previous:first})};
+ await storage.commit(key,null,head,a,[]);await storage.commit(key,head,head,b,[]);
+ await assert.rejects(storage.load(key,10),{code:'PUBLIC_FEED_CAPACITY'});
+ await storage.commit(key,head,JSON.stringify({latest:first}),null,[second]);
+ assert.equal((await storage.load(key,10)).ranges.length,1);
+ const db=new DatabaseSync(path.join(directory,'public-feed-v2.sqlite'));t.after(()=>db.close());
+ db.prepare('UPDATE records SET value=? WHERE key=?').run('☃'.repeat(50),`${key}:range:${first}`);
+ await assert.rejects(storage.load(key,10),{code:'PUBLIC_FEED_CAPACITY'}); // Invalid JSON must not be parsed first.
+ await assert.rejects(storage.commit(key,JSON.stringify({latest:first}),'☃'.repeat(50),null,[]),{code:'PUBLIC_FEED_CAPACITY'});
+ db.prepare('UPDATE records SET value=? WHERE key=?').run('x'.repeat(129),key);
+ await assert.rejects(storage.commit(key,null,'{}',null,[]),{code:'PUBLIC_FEED_CAPACITY'});
+ for(const limits of [{maxRecordBytes:0},{maxRecordBytes:129,maxSnapshotBytes:128},{maxSnapshotBytes:Infinity}])assert.throws(()=>publicFeedFileStorage(directory,limits));
+});
 for(const backend of ['sqlite','indexeddb'])test(`${backend} atomic ranges, competing writers and snapshot rollback`,async t=>{
  const directory=await fs.mkdtemp(path.join(os.tmpdir(),'bb-feed-storage-'));t.after(()=>fs.rm(directory,{recursive:true,force:true}));
  const storage=backend==='sqlite'?publicFeedFileStorage(directory):browserPublicFeedStorage(),key='test-'+backend;

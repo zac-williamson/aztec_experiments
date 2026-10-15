@@ -1,0 +1,22 @@
+{
+  "candidate": "6f0445dfbdd56cea9960d1ba9f0602f564eb80c7",
+  "base": "a23b106ac2291acce9ebea650d4fe9ec28987136",
+  "reviewer": "/root/reviewer",
+  "verdict": "approve",
+  "scope": "bounded G03-A03 experiment source and measured localchain evidence",
+  "checks": [
+    "Independent source reviews99f97db,809cb84,6f0445d",
+    "64new dependencyinventory entries equal alreadylocked externalpackagehashes; priorentriesunchanged",
+    "PinnedNode24.21.0 codec/fixture exactbytes5checks",
+    "Independent decode/recompute both retained logs,emitter,version,digests,pixels and intentions",
+    "Actual driver/buildhashes match6f;3transactions included,outercleanupverified"
+  ],
+  "findings_resolved": [
+    "CurrentABIField is bigint, strictnumericcomparison",
+    "ReferencePNG regenerated/enforced pinnedNode/zlib"
+  ],
+  "limits": [
+    "Proofsdisabled explicitly; actualchainexecution and canonicalretrieval only",
+    "Private nameownership,useruploadpipeline,moderation,realproofs,testnet,longtermretention remain"
+  ]
+}

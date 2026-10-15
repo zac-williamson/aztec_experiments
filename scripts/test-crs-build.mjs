@@ -55,8 +55,14 @@ test('schema2 separates the72MiB derived asset from bounded network assets', () 
   assert.equal(manifest.files.length, 3);
   assert.ok(manifest.files.every(file => file.bytes <= 64 * 1024 * 1024));
   assert.equal(manifest.derivedG1.bytes, 72 * 1024 * 1024);
+  assert.equal(manifest.aztecVersion, '6.0.0-rc.3');
+  assert.equal(manifest.provenance.version, '6.0.0-rc.6');
+  assert.equal(manifest.derivedG1.derivation.packageVersion, '6.0.0-rc.6');
 });
 for (const [label, mutate] of [
+  ['old partial Grumpkin chunk', m => { Object.assign(m.files[2], {numPoints:65537,bytes:4194368}); m.files[2].range.end=4194367; }],
+  ['single Grumpkin chunk reduces capacity', m => { Object.assign(m.files[2], {numPoints:65536,bytes:4194304}); m.files[2].range.end=4194303; }],
+  ['nonchunk Grumpkin size', m => { Object.assign(m.files[2], {numPoints:65538,bytes:4194432}); m.files[2].range.end=4194431; }],
   ['wrong Grumpkin format', m => { m.files[2].format = 'grumpkin-compressed'; }],
   ['wrong Grumpkin point count', m => { m.files[2].numPoints--; }],
   ['wrong Grumpkin byte length', m => { m.files[2].bytes--; m.files[2].range.end--; }],
@@ -69,6 +75,12 @@ for (const [label, mutate] of [
   ['wrong points', m => { m.derivedG1.numPoints--; }],
   ['unreviewed method', m => { m.derivedG1.derivation.method = 'other'; }],
   ['package mismatch', m => { m.derivedG1.derivation.packageVersion = '5.0.0'; }],
+  ['SDK version used as foundation version', m => { m.derivedG1.derivation.packageVersion = m.aztecVersion; }],
+  ['old SDK', m => { m.aztecVersion = '6.0.0-rc.1'; }],
+  ['wrong downloader package', m => { m.provenance.package = '@aztec-labs/pxe'; }],
+  ['wrong downloader version', m => { m.provenance.version = m.aztecVersion; }],
+  ['wrong downloader source', m => { m.provenance.source = 'other.js'; }],
+  ['wrong downloader hash', m => { m.provenance.sourceSha256 = '0'.repeat(64); }],
   ['input checksum mismatch', m => { m.derivedG1.derivation.inputSha256 = '0'.repeat(64); }],
   ['G2 checksum mismatch', m => { m.derivedG1.derivation.g2Sha256 = '0'.repeat(64); }],
   ['untrusted WASM path', m => { m.derivedG1.derivation.wasmSource = '/tmp/other.wasm.gz'; }],
@@ -81,6 +93,15 @@ for (const [label, mutate] of [
     assert.throws(() => validateCrsManifest(changed), /CRS|derived G1/);
   });
 }
+
+test('declared rc6 derivation WASM and downloader match installed package bytes without running WASM', async () => {
+  const installed = JSON.parse(await fs.readFile(new URL('../node_modules/@aztec-foundation/bb.js/package.json', import.meta.url)));
+  assert.equal(installed.version, '6.0.0-rc.6');
+  const wasm = await fs.readFile(new URL('../' + manifest.derivedG1.derivation.wasmSource, import.meta.url));
+  verifyDerivationWasm(manifest, wasm);
+  const downloader = await fs.readFile(new URL('../' + manifest.provenance.source, import.meta.url));
+  assert.equal(createHash('sha256').update(downloader).digest('hex'), manifest.provenance.sourceSha256);
+});
 
 test('rejects actual WASM bytes that do not match the declared gzip pin', () => {
   assert.throws(() => verifyDerivationWasm(manifest, Buffer.from('corrupt WASM')), /WASM provenance mismatch/);
@@ -149,4 +170,12 @@ test('derivation interruption kills and closes its actual child', async () => {
     timeoutMs: 10000, signalSource: signals, onSpawn(child) { pid = child.pid; queueMicrotask(() => signals.emit('SIGTERM')); },
   }), /interrupted by SIGTERM/);
   assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
+});
+
+test('Grumpkin manifest pins two complete chunks without reducing prior capacity',()=>{
+  const file=manifest.files.find(file=>file.name==='grumpkin_g1.dat');
+  assert.equal(file.numPoints,131072);assert(file.numPoints>=65537);
+  assert.equal(file.bytes,8388608);assert.equal(file.bytes,2*65536*64);
+  assert.deepEqual(file.range,{start:0,end:8388607});
+  assert.equal(file.sha256,'e703e36cfe4262d71180d9b8d0ae09ac154ff70bbba3d50d4d640356d01a9daf');
 });

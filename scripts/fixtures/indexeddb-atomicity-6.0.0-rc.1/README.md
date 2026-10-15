@@ -1,0 +1,1 @@
+Exact unmodified `@aztec-labs/kv-store@6.0.0-rc.1` IndexedDB store source and distributed JavaScript from the locked npm installation. The patch pins both complete input and output hashes. These fixtures preserve the reproduced baseline for installer tests after bootstrap; they are not a substitute for real Chromium regression tests.

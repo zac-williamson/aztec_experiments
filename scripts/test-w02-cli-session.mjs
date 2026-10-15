@@ -11,7 +11,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { getPXEStoreIdentity } from '../shared/sdk-store.mjs';
 const {createPxeCacheSession}=createRequire(import.meta.url)('../apps/src/billboard/user/pxe-cache.cjs');
 const source=fs.readFileSync(new URL('../apps/src/billboard/user/cli.mjs',import.meta.url),'utf8');
-const start=source.indexOf('  let cache;'),end=source.indexOf('\n }\n\n// Secrets stay',start);
+const start=source.indexOf('  // Public identity preflight also binds the journal-inspection path.'),end=source.indexOf('\n }\n\n// Secrets stay',start);
 assert(start>0&&end>start);
 const body=source.slice(start,end);
 const key='0x'+'07'.padStart(64,'0'),account='0x'+'08'.padStart(64,'0'),rollup='0x'+'12'.repeat(20);

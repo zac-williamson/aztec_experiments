@@ -85,7 +85,7 @@ test('browser save observes transaction abort and never reports durable success'
   try {await assert.rejects(store.save(scope,record),/did not commit/);} finally {proto.transaction=original;db.close();}
   assert.equal(await store.load(scope,record.secretHash),null);
 });
-function engineContext(){const context={performance,console,Buffer,TextEncoder,setTimeout,clearTimeout,readBillboardDepositInfo:async()=>({amount:0n,depositChainId:0n})};vm.createContext(context);vm.runInContext(engineSource,context,{filename:'user/engine.js'});return context;}
+function engineContext(){const context={performance,console,Buffer,TextEncoder,URL,setTimeout,clearTimeout,readBillboardDepositInfo:async()=>({amount:0n,depositChainId:0n})};vm.createContext(context);vm.runInContext(engineSource,context,{filename:'user/engine.js'});return context;}
 test('actual engine codec matches frozen claim, boundary and exit commitments',async()=>{
   const c=engineContext();const vectors=JSON.parse(await fs.readFile(new URL('../scripts/fixtures/protocol/commitments-v1.json',import.meta.url)));
   for(const vector of vectors.cases.filter(x=>['claim','claim-boundary','exit'].includes(x.name))){
@@ -94,7 +94,7 @@ test('actual engine codec matches frozen claim, boundary and exit commitments',a
     assert.equal(actual.toString(),vector.commitment);
   }
 });
-function depositHarness({store,enabled=true,activeAmount=0n,refunded=false,reuse=false,recoveryHash=new Fr(2).toString()}={}) {
+function depositHarness({store,enabled=true,activeAmount=0n,refunded=false,reuse=false,recoveryHash=new Fr(2).toString(),trustedConfig=true,brandedNode=true}={}) {
   const c=engineContext(),logs=[],sequence=[];let saved, sent=0;
   const address=AztecAddress.fromFieldUnsafe(Fr.fromHexString(scope.boardAddress));
   const iface=new ethers.Interface(['event Deposited(address indexed depositor,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
@@ -115,10 +115,18 @@ function depositHarness({store,enabled=true,activeAmount=0n,refunded=false,reuse
   }
   const node={getNodeInfo:async()=>({l1ChainId:31337,rollupVersion:1}),getL1ContractAddresses:async()=>({rollupAddress:scope.rollupAddress}),
     getBlockNumber:async()=>1,getPublicStorageAt:async()=>Fr.ZERO,getContract:async()=>({address})};
-  const a={provingEnabledForNode,GasSettings,preparePrivateFeePayment:async()=>({paymentMethod:{},gasSettings:GasSettings.from({gasLimits:{daGas:1000,l2Gas:1000000},teardownGasLimits:{daGas:100,l2Gas:10000},maxFeesPerGas:{feePerDaGas:1n,feePerL2Gas:1n},maxPriorityFeesPerGas:{feePerDaGas:0n,feePerL2Gas:0n}})}),deriveBoardDepositSecret:async()=>({secret:new Fr(1).toString(),secretHash:new Fr(2).toString()}),recoverBoardDepositSecret:async()=>{throw Object.assign(Error('The matching saved claim secret is missing or invalid.'),{code:'BB_CLAIM_SECRET_MISSING'});},BaseWallet:class{constructor(pxe){this.pxe=pxe;}},AccountManager:{create:async()=>({})},Contract:{at:async()=>({methods:{get_config:()=>({simulate:async()=>({})})}})},createPXE:async()=>({registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{}}),boundedTransactionRead:fn=>fn(),Fr,AztecAddress,EthAddress,deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
+  // Labelled node double: this suite qualifies custody, not network authentication.
+  const trustedNodes=new WeakSet(brandedNode?[node]:[]),privatePXEs=new WeakMap(),trustedCalls=[];
+  const trustedOptions={url:'http://127.0.0.1:43219',expectedNetworkScope:{chainId:'31337',version:'1',rollup:scope.rollupAddress},proofsEnabled:true,allowLocalDev:true};
+  const checkTrustedOptions=options=>assert.deepEqual(JSON.parse(JSON.stringify(options)),trustedOptions);
+  const a={createTrustedPrivateNode:async options=>{checkTrustedOptions(options);trustedCalls.push('connect');return node;},
+    isTrustedPrivateNode:value=>trustedNodes.has(value),
+    isPrivatePXEForNode:(pxe,value)=>trustedNodes.has(value)&&privatePXEs.get(pxe)===value,
+    inspectTrustedNode:async(value,options)=>{assert.equal(value,node);assert(trustedNodes.has(value));checkTrustedOptions(options);trustedCalls.push('inspect');},
+    provingEnabledForNode,GasSettings,preparePrivateFeePayment:async()=>({paymentMethod:{},gasSettings:GasSettings.from({gasLimits:{daGas:1000,l2Gas:1000000},teardownGasLimits:{daGas:100,l2Gas:10000},maxFeesPerGas:{feePerDaGas:1n,feePerL2Gas:1n},maxPriorityFeesPerGas:{feePerDaGas:0n,feePerL2Gas:0n}})}),deriveBoardDepositSecret:async()=>({secret:new Fr(1).toString(),secretHash:new Fr(2).toString()}),recoverBoardDepositSecret:async()=>{throw Object.assign(Error('The matching saved claim secret is missing or invalid.'),{code:'BB_CLAIM_SECRET_MISSING'});},BaseWallet:class{constructor(pxe,aztecNode){this.pxe=pxe;this.aztecNode=aztecNode;}},AccountManager:{create:async()=>({})},Contract:{at:async()=>({methods:{get_config:()=>({simulate:async()=>({})})}})},createPXE:async value=>{assert.equal(value,node);assert(trustedNodes.has(value));const pxe={registerAccount:async()=>{},registerContractClass:async()=>{},registerContract:async()=>{},sync:async()=>{}};privatePXEs.set(pxe,value);return pxe;},boundedTransactionRead:fn=>fn(),Fr,AztecAddress,EthAddress,deriveSigningKey:()=>Fr.ONE,deriveKeys:async()=>({publicKeys:{}}),
     SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>Fr.ZERO;getSigningPublicKey=async()=>({});},
     getContractInstanceFromInstantiationParams:async()=>({address}),computePartialAddress:async()=>Fr.ZERO,
-    createAztecNodeClient:()=>node,deriveStorageSlotInMap:async()=>Fr.ZERO,loadContractArtifact:x=>x,
+    createAztecNodeClient:()=>{throw Error('Public-node fallback forbidden');},deriveStorageSlotInMap:async()=>Fr.ZERO,loadContractArtifact:x=>x,
     // Deterministic hash stub isolates custody/ordering; cryptographic SDK compatibility is separately qualified.
     computeSecretHash:async secret=>new Fr(secret.toBigInt() % 1000000n + 1n)};
   const defaultStore={save:async(s,r)=>{sequence.push('save');assert.deepEqual(JSON.parse(JSON.stringify(s)),scope);saved=JSON.parse(JSON.stringify(r));},load:async()=>{sequence.push('readback');return saved;}};
@@ -139,12 +147,21 @@ function depositHarness({store,enabled=true,activeAmount=0n,refunded=false,reuse
     log:message=>logs.push(message),getBrowserSigner:async()=>signer};
   const config={privateFee:{contractAddress:'fee',gasSettings:GasSettings.from({gasLimits:{daGas:1000,l2Gas:1000000},teardownGasLimits:{daGas:100,l2Gas:10000},maxFeesPerGas:{feePerDaGas:1n,feePerL2Gas:1n},maxPriorityFeesPerGas:{feePerDaGas:0n,feePerL2Gas:0n}})},action:'deposit',portalAddress:scope.portalAddress,ethRpcUrl:'http://fixture.invalid',aztecNodeUrl:'http://fixture.invalid',
     aztecWallet:{secretKey:walletSecret,salt:'0x00'},depositAmount:'0.001',reuseTxHash:reuse?'0x'+'b'.repeat(64):undefined,claimSecretStore:store===undefined?defaultStore:store};
-  return {run:()=>c.runBillboardUser(env,config),sent:()=>sent,logs,sequence,secret:()=>saved?.secret};
+  if(trustedConfig)Object.assign(config,{trustedProverNode:{url:trustedOptions.url,proofs:'real'},expectedNetworkScope:trustedOptions.expectedNetworkScope});
+  return {run:()=>c.runBillboardUser(env,config),sent:()=>sent,logs,sequence,trustedCalls,secret:()=>saved?.secret};
 }
 test('actual public deposit flow saves and reads back before send; returns bridge message index without secret',async()=>{
   const h=depositHarness();const result=await h.run();assert.equal(h.sent(),1);
-  assert.deepEqual(h.sequence,['save','readback','send']);assert.equal(result.depositInfo.leafIndex,32n);
+  assert.deepEqual(h.sequence,['save','readback','send']);assert.deepEqual(h.trustedCalls,['connect']);assert.equal(result.depositInfo.leafIndex,32n);
   assert(!('secret' in result.depositInfo));assert(!h.logs.join('\n').includes(h.secret()));
+});
+test('actual deposit rejects missing trusted config and an unbranded node before custody or payment',async()=>{
+  for(const options of [{trustedConfig:false},{brandedNode:false}]){
+    const h=depositHarness(options);
+    await assert.rejects(h.run(),{code:'BB_TRUSTED_NODE_CONFIG'});
+    assert.equal(h.sent(),0);assert.deepEqual(h.sequence,[]);
+    assert.deepEqual(h.trustedCalls,options.trustedConfig===false?[]:['connect']);
+  }
 });
 test('actual deposit flow fails closed for missing store, failed durability and disabled portal',async()=>{
   for(const options of [{store:null},{store:{save:async()=>{throw new Error('disk failed');},load:async()=>null}},{enabled:false}]){

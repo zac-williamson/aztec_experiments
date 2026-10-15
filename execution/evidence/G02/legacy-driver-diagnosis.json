@@ -1,0 +1,9 @@
+{
+  "candidate": "5f4e6e2f59656cedc37a7d591facc4d856ebcdcb",
+  "diagnostician": "/root/design",
+  "report": "evidence/T04/application-7359a4ca-c985-4037-b118-abb2023c3618.json",
+  "finding": "u01-browser-post.mjs:207 waits obsolete #page-1.active. Current template has #depositPanel/#depositBtn; setup completed, lifecycle never started. Later t04 driver obsolete #navNext/#dummyPostBtn/#page-3/#page-4 also require replacement.",
+  "secondary": "u01-browser-flow:230 assertion is browser-result failure, not node failure; postBusy is disabled hidden button, not active operation.",
+  "evidence_gap": "c01-bridge-flow copies observation before cleanup adds RPC footprint; temporary file deleted. Capture after cleanup in replacement G08/G13 harness.",
+  "disposition": "No old-driver repair prerequisite; preserve failed baseline and enforce new integrated real-wallet canonical accounting journey. No more baseline attempts."
+}

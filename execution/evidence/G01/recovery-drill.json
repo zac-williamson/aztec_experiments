@@ -1,0 +1,13 @@
+{
+  "worker": "/root/recovery_probe",
+  "base": "458724c59ce4656f4c311a07d6651d9f8c33ec1b",
+  "checkpoint": "Package Aztec SDK 6.0.0-rc.1; Node >=24.21.0 <25. No owned process, edits, services or credentials.",
+  "next_action": "Lead uses existing verified .build/A02-node/node-v24.21.0-darwin-arm64/bin/node",
+  "state": "passed ended-turn resumption",
+  "observed_node": "v25.8.1",
+  "expected_node": ">=24.21.0 <25",
+  "limits": [
+    "Does not prove app shutdown, network failure or machine sleep survival",
+    "No duplicate writer: worker was read-only and runtime finished before followup"
+  ]
+}

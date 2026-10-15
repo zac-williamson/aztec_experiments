@@ -1,0 +1,35 @@
+{
+  "candidate": "6f0445dfbdd56cea9960d1ba9f0602f564eb80c7",
+  "mode": "actual localdevnet transactions with application proofs disabled",
+  "images_bytes": [
+    416,
+    8188
+  ],
+  "publication": {
+    "tx_bytes": 130560,
+    "effect_bytes": 9071,
+    "log_bytes": 8772,
+    "log_fields": 275,
+    "blob_fields": 285,
+    "public_writes": 3,
+    "da_gas": [
+      9056,
+      9056
+    ],
+    "l2_gas": [
+      5551562,
+      4036022
+    ],
+    "inclusion_ms": [
+      8299,
+      8376
+    ]
+  },
+  "observed": "Canonical authenticated event bytes and currentstatehash/version verified; lossless reconstructed pixels. Artificialsmile inspected at100x100: recognizable eyes/mouth, clean flat-color edges. Not photoquality qualification.",
+  "cleanup": "67.076seconds; peak1332752KiB; wallet/mining/node/singletons stopped; ownedtreeabsent,tempremoved",
+  "history_mapping": {
+    "controls160a4dc": "integrated8fb75af",
+    "controls3dbd396": "integrated6f0445d"
+  },
+  "unmet": "Realproofacceptance missing; durablearchive retention and actualuploadquality unmeasured"
+}

@@ -69,14 +69,22 @@ export async function verifiedFile(filename, asset) {
 
 export const DERIVED_G1_BYTES = 75497472;
 export function validateCrsManifest(manifest) {
-  if (manifest.schemaVersion !== 2 || manifest.aztecVersion !== pins.aztec || pins.aztec !== '6.0.0-rc.1') throw new Error('CRS manifest version mismatch');
+  // SDK and foundation packages intentionally have different release versions.
+  const foundationVersion = pins.aztecPackages?.['@aztec-foundation/bb.js'];
+  if (manifest.schemaVersion !== 2 || manifest.aztecVersion !== pins.aztec || pins.aztec !== '6.0.0-rc.3' ||
+      foundationVersion !== '6.0.0-rc.6') throw new Error('CRS manifest version mismatch');
+  if (manifest.provenance?.package !== '@aztec-foundation/bb.js' || manifest.provenance.version !== foundationVersion ||
+      manifest.provenance.source !== 'node_modules/@aztec-foundation/bb.js/dest/node/crs/net_crs.js' ||
+      manifest.provenance.sourceSha256 !== 'd73da83a2b35584632dc8a70abaaeaa1c762e6f24bd0c778e47fe85919f5a98d') {
+    throw new Error('Invalid CRS downloader provenance');
+  }
   const expectedNames = ['g1.dat', 'g2.dat', 'grumpkin_g1.dat'];
   if (!Array.isArray(manifest.files) || manifest.files.length !== 3 ||
       manifest.files.some((asset, index) => asset.name !== expectedNames[index])) throw new Error('Invalid CRS source inventory');
   const sourceShapes = {
     'g1.dat': { bytes: 37748736, numPoints: 1179648, format: 'bn254-g1-compressed-32-byte', remote: 'g1_compressed.dat' },
     'g2.dat': { bytes: 128, numPoints: 1, format: 'bn254-g2-uncompressed-128-byte', remote: 'g2.dat' },
-    'grumpkin_g1.dat': { bytes: 4194368, numPoints: 65537, format: 'grumpkin-g1-v2-uncompressed-64-byte', remote: 'grumpkin_g1_v2.dat' },
+    'grumpkin_g1.dat': { bytes: 8388608, numPoints: 131072, format: 'grumpkin-g1-v2-uncompressed-64-byte', remote: 'grumpkin_g1_v2.dat' },
   };
   for (const asset of manifest.files) {
     const shape = sourceShapes[asset.name];
@@ -95,10 +103,10 @@ export function validateCrsManifest(manifest) {
   if (!derived || Object.keys(derived).sort().join() !== [...Object.keys(expected), 'derivation'].sort().join() ||
       Object.entries(expected).some(([key, value]) => derived[key] !== value)) throw new Error('Invalid pinned derived G1 asset');
   const expectedDerivation = {
-    method: 'bb-srs-init-v1', packageVersion: pins.aztec, inputName: 'g1.dat',
+    method: 'bb-srs-init-v1', packageVersion: foundationVersion, inputName: 'g1.dat',
     inputSha256: manifest.files[0].sha256, g2Sha256: manifest.files[1].sha256,
     wasmSource: 'node_modules/@aztec-foundation/bb.js/dest/node/barretenberg_wasm/barretenberg-threads.wasm.gz',
-    wasmSha256: 'd2f89b18d869cdac2ebfd27d33710e16fb10a9a8066f8dc957bac478b3725ea2',
+    wasmSha256: 'e607fbe6c12815c080d66025878e7a8772cc23633cfe0864112720f55ee8497d',
   };
   if (!derived.derivation || Object.keys(derived.derivation).sort().join() !== Object.keys(expectedDerivation).sort().join() ||
       Object.entries(expectedDerivation).some(([key, value]) => derived.derivation[key] !== value) ||

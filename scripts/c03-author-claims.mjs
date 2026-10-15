@@ -1,3 +1,4 @@
+import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 import { applicationNativeProfile } from './c01-native-profile.mjs';
 // TEST ONLY: genuine batched L1 deposits and private claims; parent owns the deadline.
 import assert from 'node:assert/strict';
@@ -26,7 +27,7 @@ const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const integer=value=>BigInt(value.toString());
 const included=r=>[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZED].includes(r.status)&&r.executionResult===TxExecutionResult.SUCCESS&&r.blockNumber!=null;
 export async function prepareC03AuthorClaims({node,preparation,instance,ready,settlement,l1Client,rpcUrl,directory,mineL1,reportStage}){
-  const observation={passed:false,applicationProofs:true,networkProofs:false,authors:[]};
+  const observation={passed:false,applicationProofs:applicationProofsEnabled(),networkProofs:false,authors:[]};
   let wallet,sequencer,previousConfig,stage='preflight';const mark=s=>{stage=s;reportStage?.('authors:'+s);};
   try{
     assert(settlement.passed&&settlement.activation?.depositsEnabled);
@@ -58,7 +59,7 @@ export async function prepareC03AuthorClaims({node,preparation,instance,ready,se
     const scope={l1ChainId:'31337',rollupAddress,rollupVersion:String(info.rollupVersion),boardAddress:instance.address.toString(),portalAddress};
     const native={backend:BackendType.NativeUnixSocket,...applicationNativeProfile(directory)};
     for(const key of ['backend','bbPath','threads'])assert.equal(Barretenberg.getSingleton().options[key],native[key]);
-    wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
+    wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:applicationProofsEnabled(),proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
     for(const account of accounts){const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'contention-author');assert(manager.address.equals(account.address));}
     await wallet.registerContract(instance,artifact);const board=Contract.at(instance.address,artifact,wallet);
     const records=[];mark('deposit-'+count+'-local-receipts');

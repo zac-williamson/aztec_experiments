@@ -30,9 +30,11 @@ export function validateDescriptor(value, expected) {
   if(value?.protocol!==API_VERSION)throw Error('Unsupported plugin protocol');
   const {scope,funding}=value;
   if(scopeHash(scope)!==scopeHash(expected))throw Error('Plugin scope mismatch');
-  if(funding?.protocol!=='aztec-escrow-usdc/v1'||!/^0x[0-9a-fA-F]{40}$/.test(funding.portalAddress)||!/^0x[0-9a-fA-F]{40}$/.test(funding.tokenAddress))throw Error('Invalid plugin funding');
+  const rolling=value.applicationProfile==='rolling';
+  if(value.applicationProfile!==undefined&&!rolling)throw Error('Unsupported plugin profile');
+  if(funding?.protocol!==(rolling?'private-bok-usdc/v1':'aztec-escrow-usdc/v1')||!/^0x[0-9a-fA-F]{40}$/.test(funding.portalAddress)||!/^0x[0-9a-fA-F]{40}$/.test(funding.tokenAddress))throw Error('Invalid plugin funding');
   if(typeof value.description!=='string'||value.description.length>1000)throw Error('Invalid plugin description');
-  return Object.freeze({protocol:API_VERSION,scope:Object.freeze({...scope}),description:value.description,funding:Object.freeze({...funding})});
+  return Object.freeze({protocol:API_VERSION,...(rolling?{applicationProfile:'rolling'}:{}),scope:Object.freeze({...scope}),description:value.description,funding:Object.freeze({...funding})});
 }
 export async function fetchDescriptor(url, expected, {fetchImpl=fetch,cache}={}) {
   if(cache===undefined){try{cache=typeof window==='undefined'?null:window.localStorage;}catch{cache=null;}}

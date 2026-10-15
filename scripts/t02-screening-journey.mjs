@@ -1,3 +1,4 @@
+import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 // TEST ONLY: real application post/screening proofs on the parent's disposable fixture.
 import assert from 'node:assert/strict';
 import {describeFailure} from './testing/supervisor.mjs';
@@ -30,7 +31,7 @@ import {exactApplicationDeposit,eligibleApplicationAnchor,includeApplicationActi
 export async function proveAndIncludeT02Screening({node,preparation,instance,claimResult,l1Client,
  directory,rpcUrl,mineL1,reportStage,authorAccount,privateFeeAction,discardUnsubmittedFee,flagged=true}) {
  let wallet,stage='preflight';
- const observation={passed:false,flagged,applicationProofs:true,networkProofs:false,transactions:[]};
+ const observation={passed:false,flagged,applicationProofs:applicationProofsEnabled(),networkProofs:false,transactions:[]};
  const mark=name=>{stage=name;reportStage?.('journey:'+name);};
  try {
   assertNodeVersion();assertAztecPackages();assert(claimResult.passed&&claimResult.exactDeliveredNoteChecked);
@@ -46,7 +47,7 @@ export async function proveAndIncludeT02Screening({node,preparation,instance,cla
   const boardArtifact=await artifact(preparation);
   const native={backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1};
   for(const key of ['backend','bbPath','threads'])assert.equal(Barretenberg.getSingleton().options[key],native[key]);
-  wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
+  wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:applicationProofsEnabled(),proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
   for(const identity of [account,moderator]){const manager=await wallet.createSchnorrInitializerlessAccount(identity.secret,identity.salt,identity.signingKey,'t02-disposable');assert(manager.address.equals(identity.address));}
   await wallet.registerContract(instance,boardArtifact);await wallet.pxe.sync();
   const board=Contract.at(instance.address,boardArtifact,wallet);

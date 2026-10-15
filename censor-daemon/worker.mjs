@@ -1,3 +1,4 @@
+import {moderateRollingPost} from './moderation.mjs';
 import {safeModerationDiagnostic} from './health.mjs';
 import {scopeKey} from '../shared/protocol-schema.mjs';
 import {reconcileFlag} from './flag-outcome.mjs';
@@ -97,4 +98,61 @@ export async function processModerationCycle({store,signer,node,scope,evaluate,w
  const records=store.list(),pending=records.filter(r=>!superseded(r)&&!['evaluated-ok','confirmed-flag'].includes(r.job.state)&&!(r.job.state==='manual-review'&&['FLAG_ALREADY_PRESENT',...(dryRun?['DRY_RUN_VIOLATION']:[])].includes(r.errorCode)));
  for(const record of records.filter(r=>!superseded(r)&&['expired','manual-review'].includes(r.job.state)&&r.errorCode!=='FLAG_ALREADY_PRESENT'))log('Moderation work requires operator attention; inspect durable state.','warn');
  return {complete:pending.length===0,status:store.status()};
+}
+
+/** Same durable queue and inference boundary; explicit Rolling public semantics.
+ * Bounded index and existing-job sweeps revisit completed observations on reorgs.
+ * Once intent exists, this worker ONLY inspects it; an uncertain send is never
+ * interpreted as permission to make another public removal transaction. */
+export async function processRollingModerationCycle({store,signer,evaluate,worker,log=()=>{},dryRun=false,maxJobs=10,stopping=()=>false}){
+ const ingest=async ids=>{
+  const snapshot=await signer.list({postIds:ids});
+  if(scopeKey(snapshot.scope)!==scopeKey(signer.scope))throw Error('Rolling snapshot scope changed');
+  for(const post of snapshot.posts)if(post.flagged){const previous=store.list().find(r=>r.job.postId===post.postId&&JSON.stringify(r.post.context)===JSON.stringify(post.context));if(previous)post.text=previous.post.text;}
+  store.ingestSnapshot(snapshot);return snapshot;
+ };
+ const old=store.list(),offset=signer.reconcileOffset??0;
+ const sweep=old.slice(offset,offset+64);
+ for(const record of sweep)if(record.job.state==='confirmed-flag'&&(await signer.reconcileRemoval(record)).state!=='confirmed')store.invalidateRollingCompletion(record.key);
+ const initial=await ingest(sweep.map(r=>r.job.postId));
+ signer.reconcileOffset=offset+64>=old.length?0:offset+64;
+ for(let count=0;count<maxJobs&&!stopping();count++){
+  let record=store.leaseNext({worker});if(!record)break;
+  const {key}=record,token=record.lease.token;
+  const release=()=>{if(store.get(key)?.lease?.token===token)store.release(key,token);};
+  try{
+   if(record.job.state==='leased'){
+    await ingest([record.job.postId]);record=store.get(key);
+    if(record?.lease?.token!==token)continue;
+    // A canonical empty repost has no authored message; retain its explicit
+    // visible link context for rules such as no reposts. The original post is
+    // separately queued; do not invent referenced message text or skip this job.
+    const modelText=record.post.text===''?JSON.stringify({kind:'repost',reference:record.post.context.record.reference,content:''}):record.post.text;
+    const verdict=await moderateRollingPost(modelText,record.policy.text,evaluate);store.renew(key,token);
+    await ingest([record.job.postId]);record=store.get(key);
+    if(record?.lease?.token!==token)continue;
+    if(!verdict.isViolation){store.transition(key,token,{state:'evaluated-ok',decision:verdict});continue;}
+    if(dryRun){store.transition(key,token,{state:'manual-review',errorCode:'DRY_RUN_VIOLATION'});continue;}
+    record=store.transition(key,token,{state:'submit-intent',decision:verdict});
+    // Adapter persists its own preparing fence before any wallet work, then the
+    // exact signed hash before broadcast. A thrown response is never retried.
+    const result=await signer.submitRemoval(record);
+    if(result.txHash)record=store.transition(key,token,{state:'submitted',transactionHash:result.txHash});
+    else {store.transition(key,token,{state:'reconciling',errorCode:'REMOVAL_UNRESOLVED'});release();continue;}
+   }else{
+    const saved=await signer.inspectRemoval(record);
+    if(saved.txHash&&!record.job.transactionHash)record=store.transition(key,token,{state:'submitted',transactionHash:saved.txHash});
+   }
+   const outcome=await signer.reconcileRemoval(record);
+   if(outcome.state==='confirmed')store.transition(key,token,{state:'confirmed-flag',receipt:outcome.receipt,flagEvent:outcome.flagEvent});
+   else if(outcome.state==='submitted'&&outcome.receipt){store.transition(key,token,{state:'submitted',transactionHash:record.job.transactionHash,receipt:outcome.receipt});release();}
+   else {store.transition(key,token,{state:'reconciling',errorCode:'REMOVAL_UNRESOLVED'});release();}
+  }catch{
+   const fresh=store.get(key);
+   if(fresh?.lease?.token===token){try{store.transition(key,token,{state:fresh.job.state==='leased'?'retryable-error':'reconciling',errorCode:'ROLLING_MODERATION_UNRESOLVED'});release();}catch{}}
+   log('Rolling moderation remains unresolved; preserve its original journal.','error');
+  }
+ }
+ const status=store.status(),pending=store.list().filter(r=>!superseded(r)&&!['evaluated-ok','confirmed-flag'].includes(r.job.state)&&!(r.job.state==='manual-review'&&!r.intent&&['FLAG_ALREADY_PRESENT',...(dryRun?['DRY_RUN_VIOLATION']:[])].includes(r.errorCode)));
+ return {status,complete:initial.scanComplete!==false&&pending.length===0};
 }

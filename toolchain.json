@@ -1,6 +1,6 @@
 {
   "node": "24.21.0",
-  "aztec": "6.0.0-rc.1",
+  "aztec": "6.0.0-rc.3",
   "solidity": "0.8.27",
   "foundry": "1.4.1",
   "noir": {
@@ -26,9 +26,24 @@
     }
   },
   "sources": [
-    "https://install.aztec.network/6.0.0-rc.1/versions",
+    "https://install.aztec.network/6.0.0-rc.3/versions",
     "https://api.github.com/repos/noir-lang/noir/releases/tags/v1.0.0-rc.3",
-    "https://nodejs.org/en/blog/release/v24.21.0"
+    "https://nodejs.org/en/blog/release/v24.21.0",
+    "https://registry.npmjs.org/@aztec-foundation/bb.js/6.0.0-rc.6",
+    "https://registry.npmjs.org/@aztec-labs/accounts/6.0.0-rc.3",
+    "https://registry.npmjs.org/@aztec-labs/aztec/6.0.0-rc.3",
+    "https://registry.npmjs.org/@aztec-labs/aztec.js/6.0.0-rc.3",
+    "https://registry.npmjs.org/@aztec-labs/cli/6.0.0-rc.3",
+    "https://registry.npmjs.org/@aztec-labs/cli-wallet/6.0.0-rc.3",
+    "https://registry.npmjs.org/@aztec-labs/entrypoints/6.0.0-rc.3",
+    "https://registry.npmjs.org/@aztec-labs/foundation/6.0.0-rc.3",
+    "https://registry.npmjs.org/@aztec-labs/kv-store/6.0.0-rc.3",
+    "https://registry.npmjs.org/@aztec-labs/protocol-contracts/6.0.0-rc.3",
+    "https://registry.npmjs.org/@aztec-labs/pxe/6.0.0-rc.3",
+    "https://registry.npmjs.org/@aztec-labs/standard-contracts/6.0.0-rc.3",
+    "https://registry.npmjs.org/@aztec-labs/stdlib/6.0.0-rc.3",
+    "https://registry.npmjs.org/@aztec-labs/txe/6.0.0-rc.3",
+    "https://registry.npmjs.org/@aztec-labs/wallet-sdk/6.0.0-rc.3"
   ],
   "anvil": {
     "release": "1.7.0",
@@ -54,21 +69,123 @@
     }
   },
   "nativeProver": {
-    "linux-x64": {
-      "version": "6.0.0-rc.1",
-      "sha256": "ba8bbb2b82c573153511e638c97100791f0186ef40ee5dd41e911bb5286b29d9"
-    },
-    "linux-arm64": {
-      "version": "6.0.0-rc.1",
-      "sha256": "a208718a80691d8c6dec69d134e21a04f5e2fea5816aad686c5015efaa3f56fb"
-    },
-    "darwin-x64": {
-      "version": "6.0.0-rc.1",
-      "sha256": "9fb05bb1f1e7bfdc99c899a59ae15eff99abd55b6ffd18d1895d83d006d8e091"
-    },
     "darwin-arm64": {
-      "version": "6.0.0-rc.1",
-      "sha256": "0c0661547b0e8a856090627c51673bb72db0f34da88166281c5fb080d508b953"
+      "version": "6.0.0-rc.6",
+      "sha256": "8acdba0ecf928087e60bdca0206a508f109e7b62ca621b08fa62263509090217"
+    },
+    "linux-x64": {
+      "version": "6.0.0-rc.6",
+      "sha256": "fa4b12adaefd5684b53b802346b9fe839ab3d6a4a829a5ea4efd6bd200e0829f"
+    }
+  },
+  "nativeProverEvidence": {
+    "linux-x64": {
+      "scope": "version-only",
+      "campaign": "native-version-20261013-56d9f2189226",
+      "receiptSha256": "b5c70e2421737afb8f1e767dc6a52778acf515e4f158cea2504de84495965f2f",
+      "review": "execution/evidence/G02/native-retained-successor-56d9f2189226/actual/reviewer-runtime-review.json",
+      "reviewSha256": "45f528840c5bd23d6c7fa15374bfd7b935984dd843cf8535d3f05f122d03fe59"
+    }
+  },
+  "aztecPackages": {
+    "@aztec-foundation/bb.js": "6.0.0-rc.6",
+    "@aztec-labs/accounts": "6.0.0-rc.3",
+    "@aztec-labs/aztec": "6.0.0-rc.3",
+    "@aztec-labs/aztec.js": "6.0.0-rc.3",
+    "@aztec-labs/cli": "6.0.0-rc.3",
+    "@aztec-labs/cli-wallet": "6.0.0-rc.3",
+    "@aztec-labs/entrypoints": "6.0.0-rc.3",
+    "@aztec-labs/foundation": "6.0.0-rc.3",
+    "@aztec-labs/kv-store": "6.0.0-rc.3",
+    "@aztec-labs/protocol-contracts": "6.0.0-rc.3",
+    "@aztec-labs/pxe": "6.0.0-rc.3",
+    "@aztec-labs/standard-contracts": "6.0.0-rc.3",
+    "@aztec-labs/stdlib": "6.0.0-rc.3",
+    "@aztec-labs/txe": "6.0.0-rc.3",
+    "@aztec-labs/wallet-sdk": "6.0.0-rc.3"
+  },
+  "nativeProverPackage": "6.0.0-rc.6",
+  "aztecLockPackages": {
+    "@aztec-foundation/bb-avm-sim": "6.0.0-rc.6",
+    "@aztec-foundation/bb-avm-sim-darwin-arm64": "6.0.0-rc.6",
+    "@aztec-foundation/bb-avm-sim-darwin-x64": "6.0.0-rc.6",
+    "@aztec-foundation/bb-avm-sim-linux-arm64": "6.0.0-rc.6",
+    "@aztec-foundation/bb-avm-sim-linux-x64": "6.0.0-rc.6",
+    "@aztec-foundation/bb.js": "6.0.0-rc.6",
+    "@aztec-foundation/cdb": "6.0.0-rc.6",
+    "@aztec-foundation/ipc-runtime": "6.0.0-rc.6",
+    "@aztec-foundation/l1-artifacts": "6.0.0-rc.6",
+    "@aztec-foundation/noir-acvm_js": "6.0.0-rc.6",
+    "@aztec-foundation/noir-noir_codegen": "6.0.0-rc.6",
+    "@aztec-foundation/noir-noirc_abi": "6.0.0-rc.6",
+    "@aztec-foundation/noir-types": "6.0.0-rc.6",
+    "@aztec-foundation/wsdb": "6.0.0-rc.6",
+    "@aztec-foundation/wsdb-darwin-arm64": "6.0.0-rc.6",
+    "@aztec-foundation/wsdb-darwin-x64": "6.0.0-rc.6",
+    "@aztec-foundation/wsdb-linux-arm64": "6.0.0-rc.6",
+    "@aztec-foundation/wsdb-linux-x64": "6.0.0-rc.6",
+    "@aztec-labs/accounts": "6.0.0-rc.3",
+    "@aztec-labs/archiver": "6.0.0-rc.3",
+    "@aztec-labs/aztec": "6.0.0-rc.3",
+    "@aztec-labs/aztec-node": "6.0.0-rc.3",
+    "@aztec-labs/aztec.js": "6.0.0-rc.3",
+    "@aztec-labs/bb-prover": "6.0.0-rc.3",
+    "@aztec-labs/blob-client": "6.0.0-rc.3",
+    "@aztec-labs/blob-lib": "6.0.0-rc.3",
+    "@aztec-labs/bot": "6.0.0-rc.3",
+    "@aztec-labs/builder": "6.0.0-rc.3",
+    "@aztec-labs/cli": "6.0.0-rc.3",
+    "@aztec-labs/cli-wallet": "6.0.0-rc.3",
+    "@aztec-labs/constants": "6.0.0-rc.3",
+    "@aztec-labs/entrypoints": "6.0.0-rc.3",
+    "@aztec-labs/epoch-cache": "6.0.0-rc.3",
+    "@aztec-labs/ethereum": "6.0.0-rc.3",
+    "@aztec-labs/foundation": "6.0.0-rc.3",
+    "@aztec-labs/key-store": "6.0.0-rc.3",
+    "@aztec-labs/kv-store": "6.0.0-rc.3",
+    "@aztec-labs/native": "6.0.0-rc.3",
+    "@aztec-labs/node-keystore": "6.0.0-rc.3",
+    "@aztec-labs/node-lib": "6.0.0-rc.3",
+    "@aztec-labs/noir-contracts.js": "6.0.0-rc.3",
+    "@aztec-labs/noir-protocol-circuits-types": "6.0.0-rc.3",
+    "@aztec-labs/noir-test-contracts.js": "6.0.0-rc.3",
+    "@aztec-labs/p2p": "6.0.0-rc.3",
+    "@aztec-labs/protocol-contracts": "6.0.0-rc.3",
+    "@aztec-labs/prover-client": "6.0.0-rc.3",
+    "@aztec-labs/prover-node": "6.0.0-rc.3",
+    "@aztec-labs/pxe": "6.0.0-rc.3",
+    "@aztec-labs/sequencer-client": "6.0.0-rc.3",
+    "@aztec-labs/simulator": "6.0.0-rc.3",
+    "@aztec-labs/slasher": "6.0.0-rc.3",
+    "@aztec-labs/sqlite3mc-wasm": "6.0.0-rc.3",
+    "@aztec-labs/standard-contracts": "6.0.0-rc.3",
+    "@aztec-labs/stdlib": "6.0.0-rc.3",
+    "@aztec-labs/telemetry-client": "6.0.0-rc.3",
+    "@aztec-labs/txe": "6.0.0-rc.3",
+    "@aztec-labs/validator-client": "6.0.0-rc.3",
+    "@aztec-labs/validator-ha-signer": "6.0.0-rc.3",
+    "@aztec-labs/wallet-sdk": "6.0.0-rc.3",
+    "@aztec-labs/wallets": "6.0.0-rc.3",
+    "@aztec-labs/world-state": "6.0.0-rc.3"
+  },
+  "nativeProverHistory": {
+    "6.0.0-rc.1": {
+      "linux-x64": {
+        "version": "6.0.0-rc.1",
+        "sha256": "ba8bbb2b82c573153511e638c97100791f0186ef40ee5dd41e911bb5286b29d9"
+      },
+      "linux-arm64": {
+        "version": "6.0.0-rc.1",
+        "sha256": "a208718a80691d8c6dec69d134e21a04f5e2fea5816aad686c5015efaa3f56fb"
+      },
+      "darwin-x64": {
+        "version": "6.0.0-rc.1",
+        "sha256": "9fb05bb1f1e7bfdc99c899a59ae15eff99abd55b6ffd18d1895d83d006d8e091"
+      },
+      "darwin-arm64": {
+        "version": "6.0.0-rc.1",
+        "sha256": "0c0661547b0e8a856090627c51673bb72db0f34da88166281c5fb080d508b953"
+      }
     }
   }
 }

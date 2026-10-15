@@ -1,3 +1,4 @@
+import {createPrivateFeeRecoveryEvidence} from './private-fee-evidence.mjs';
 import {createFileJournalStorage} from '../apps/src/billboard/user/transaction-journal-store.mjs';
 // TEST ONLY: independent disposable L1 identity uses the production funding/recovery helpers.
 import assert from 'node:assert/strict';
@@ -15,6 +16,7 @@ export async function bridgePrivateFeeCredit({node,l1Client,wallet,owner,walletS
   const info=await node.getNodeInfo(),portal=info.l1ContractAddresses.feeJuicePortalAddress.toString();
   const endpoint=new URL(rpcUrl);assert(['127.0.0.1','localhost','[::1]'].includes(endpoint.hostname),'Disposable local L1 only');
   const provider=new JsonRpcProvider(endpoint.toString());provider.pollingInterval=250;
+  const recovery=createPrivateFeeRecoveryEvidence();
   try{
     const signer=Wallet.createRandom().connect(provider),sender=await signer.getAddress();
     assert.notEqual(sender.toLowerCase(),l1Client.account.address.toLowerCase(),'Fee user must differ from deployment operator');
@@ -24,26 +26,28 @@ export async function bridgePrivateFeeCredit({node,l1Client,wallet,owner,walletS
     const manager=await L1FeeJuicePortalManager.new(node,l1Client,silent),token=manager.getTokenManager();
     const amount=await token.getMintAmount();await token.mint(sender);
     const recoveryPath=path.join(directory,'private-fee-public-recovery.json');
-    let saves=0,depositSends=0;
-    const saveRecovery=async record=>{
-      const serialized=JSON.stringify(record);
+    const saveRecovery=record=>{
       assert(!Object.hasOwn(record,'salt')&&!Object.hasOwn(record,'secret')&&!Object.hasOwn(record,'walletSecret'));
+      return recovery.save(record,async publicRecord=>{
+      const serialized=JSON.stringify(publicRecord);
       assert(!serialized.includes(walletSecret.toString())&&!serialized.includes(owner.toString()));
-      await fs.writeFile(recoveryPath+'.tmp',serialized+'\n',{mode:0o600});await fs.rename(recoveryPath+'.tmp',recoveryPath);saves++;
+      await fs.writeFile(recoveryPath+'.tmp',serialized+'\n',{mode:0o600});await fs.rename(recoveryPath+'.tmp',recoveryPath);
+      });
     };
     const abi=new Interface(FeeJuicePortalAbi);
     const checkedSigner={provider,getAddress:()=>signer.getAddress(),sendTransaction:async request=>{
       if(request.to.toLowerCase()===portal.toLowerCase()){
-        assert.equal(abi.parseTransaction(request).name,'depositToAztecPublic');depositSends++;
+        assert.equal(abi.parseTransaction(request).name,'depositToAztecPublic');
         const persisted=JSON.parse(await fs.readFile(recoveryPath,'utf8'));
         assert.equal(persisted.nonce,String(request.nonce));assert.equal(persisted.amount,String(amount));assert.equal(persisted.sender,sender);
+        recovery.attemptDeposit();
       }
       return signer.sendTransaction(request);
     }};
     mark('private-fee:bridge-user-funds');
     const record=await fundPrivateFees({journalStorage:createFileJournalStorage(path.join(directory,'fee-journal')),walletSalt:walletSalt.toString(),node,ethProvider:provider,ethSigner:checkedSigner,owner,walletSecret,privateFeeAddress:payer,privateFeeArtifact,amount,
       saveRecovery,expectedChainId:31337,expectedVersion:info.rollupVersion});
-    assert.equal(depositSends,1);assert.equal(saves,3);
+    assert.equal(recovery.snapshot().depositSends,1);assert.equal(recovery.snapshot().recoverySaves,3);
     const recoveredRecord=JSON.parse(await fs.readFile(recoveryPath,'utf8'));assert.deepEqual(recoveredRecord,record);
     const claim=await recoverPrivateFeeClaim({node,ethProvider:provider,owner,walletSecret,privateFeeArtifact,record:recoveredRecord,
       expectedChainId:31337,expectedVersion:info.rollupVersion});
@@ -58,12 +62,12 @@ export async function bridgePrivateFeeCredit({node,l1Client,wallet,owner,walletS
       do{await wallet.pxe.sync();const anchor=await wallet.pxe.getSyncedBlockHeader();witness=await node.getL1ToL2MessageMembershipWitness(anchor.getBlockNumber(),Fr.fromString(event.key));if(witness)break;await mineL1();}while(Date.now()<deadline);
       assert(witness,'Private fee Inbox membership timeout');assert.equal(witness[0],event.index);
     }finally{sequencer.updateConfig(saved);}
-    const result={claim,observation:{passed:true,realL1Deposit:true,amount:String(amount),l1TxHash:record.txHash,recipient:payer.toString(),
+    const result={claim,observation:{...recovery.snapshot(),passed:true,outcome:'complete',realL1Deposit:true,amount:String(amount),l1TxHash:record.txHash,recipient:payer.toString(),
       independentL1Sender:true,testFaucetFunding:true,productionFundingHelper:true,productionRecoveryHelper:true,
-      publicRecoveryPersistedBeforeDeposit:true,depositSends,privateSecretsStored:false}};
+      publicRecoveryPersistedBeforeDeposit:true,depositSends:1,privateSecretsStored:false}};
     Object.defineProperty(result,'sender',{value:sender});return result;
   }catch(error){
-    error.privateFeeFundingObservation={passed:false,diagnostic:error.diagnostic??null,recoveryHasTxHash:!!error.recoveryRecord?.txHash};
+    error.privateFeeFundingObservation=recovery.snapshot();
     throw error;
   }finally{provider.destroy();}
 }

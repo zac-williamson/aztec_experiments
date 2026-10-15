@@ -1,0 +1,87 @@
+{
+  "task": "G14",
+  "baseSourceRevision": "b44462450512de408cf6c2bf76c236da97f0b85b",
+  "compiler": "1.0.0-rc.3+5a7ee9bf5ed8973076df7bb0d2b723024db09ae7",
+  "command": "<primary-checkout>/.build/toolchain/nargo compile --force",
+  "cwd": "experiments/private-bok",
+  "compilerExitCode": 0,
+  "assessment": "raw artifacts emitted; 49 pinned SDK Brillig manual-constraint diagnostics require independent disposition; no clean assurance claim",
+  "attempts": [
+    {
+      "log": "raw-compile.log",
+      "exitCode": 1,
+      "diagnosis": "top-level macro name shadows subsequent aztec crate import",
+      "repair": "combine imports"
+    },
+    {
+      "log": "raw-compile-2.log",
+      "exitCode": 1,
+      "diagnosis": "Packages are limited to a single contract",
+      "repair": "isolated escrow, probe-board and test packages in local workspace"
+    },
+    {
+      "log": "raw-compile-3.log",
+      "exitCode": 1,
+      "diagnosis": "operator cwd was repository root with no Nargo.toml; compiler not invoked on source",
+      "repair": "run from experiments/private-bok"
+    },
+    {
+      "log": "raw-compile-4.log",
+      "exitCode": 0,
+      "diagnosis": "49 SDK constraint diagnostics; artifacts emitted",
+      "repair": "none; preserve for independent assessment"
+    }
+  ],
+  "diagnosticCount": 49,
+  "diagnosticSites": {
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/messages/encryption/aes128.nr:260:25": 3,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/utils/remove_constraints.nr:19:13": 1,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/uint-note/src/uint_note.nr:110:35": 1,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/context/private_context.nr:829:36": 4,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/messages/delivery/tag.nr:52:37": 1,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/messages/encryption/aes128.nr:356:38": 3,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/oracle/get_contract_instance.nr:18:29": 4,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/nullifier/utils.nr:18:52": 4,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/note/note_getter.nr:173:39": 4,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/context/private_context.nr:561:38": 4,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/keys/getters/mod.nr:27:51": 4,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/messages/delivery/tag_derivation.nr:88:18": 3,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/state_vars/public_immutable.nr:327:41": 8,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/history/storage.nr:26:28": 2,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/messaging.nr:35:9": 1,
+    "/Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/context/private_context.nr:1188:13": 2
+  },
+  "sourceSha256": {
+    "experiments/private-bok/Nargo.toml": "fdfdce9b51ea0d14e2b84bb4b9be0f173a1bef1a01713889ec103b291b9d7f59",
+    "experiments/private-bok/escrow/Nargo.toml": "8a83e1f7dc7e5043fa2332b698a1e6dde6ddd9c79e32b2c6bfc2ece05fac6e4c",
+    "experiments/private-bok/escrow/src/main.nr": "e4cc533c8c8f3e0ef69e488fa04bb5914629e9454c0b6327c2e82a2bddd006d0",
+    "experiments/private-bok/probe-board/Nargo.toml": "8415a5b8d1b4c699802e33f6616034f1dba0e14dc95b85feefff6f4891339e6d",
+    "experiments/private-bok/probe-board/src/main.nr": "79e5744879232e6202da2240abb37cf64733dfa76ed34e61b07e5d72701df771",
+    "experiments/private-bok/tests/Nargo.toml": "d2d23aa424ec7535e3ff2565e3bf06685f6ff695de4139c253d14009b6b8b33e",
+    "experiments/private-bok/tests/src/lib.nr": "d5c9a882fe354625a4b2406b40c057dec788b57c4e46a272db7e68b5a5a0c0de"
+  },
+  "rawArtifactSha256": {
+    "invocation_probe_board-InvocationProbeBoard.json": "0884fd5e35816d9672495ca47c6a2935a2d342d25c5d0d553f99e9e9d1b578b7",
+    "private_bok-PrivateBok.json": "c809f18fd9c06fdf2134467f849bca4a3e05c4f25675fa5421b5434a66571540"
+  },
+  "notRun": [
+    "VK generation",
+    "TXE",
+    "actual-chain driver",
+    "real proofs",
+    "privacy traces"
+  ],
+  "originalLogSha256": {
+    "raw-compile-2.log": "0cc9f8a504817acdfd892086c26e00b9d4aed12977e2ab5d3f8c920956c9f7db",
+    "raw-compile-3.log": "88e28ca829c40d12b97ad945dbfb0324e0af974c253cfe127bd3cfc29f9fc1f8",
+    "raw-compile-4.log": "7bde2913296bf37b2c86f86f1c390c9e87e55ad5772353f8e67b877810c46b53",
+    "raw-compile.log": "0dbeb4b05f509922ebc1eade28ec684a2c5c99b8f43a2803a620aab20933c62c"
+  },
+  "logNormalization": "Trailing whitespace and blank terminal lines removed for repository text hygiene; diagnostic content unchanged. Original raw byte hashes retained.",
+  "logSha256": {
+    "raw-compile-2.log": "0cc9f8a504817acdfd892086c26e00b9d4aed12977e2ab5d3f8c920956c9f7db",
+    "raw-compile-3.log": "88e28ca829c40d12b97ad945dbfb0324e0af974c253cfe127bd3cfc29f9fc1f8",
+    "raw-compile-4.log": "3df0813f524ee0a6f933b4fcb50268e0e14dd4bc4f5da4712672336ccbdec272",
+    "raw-compile.log": "0dbeb4b05f509922ebc1eade28ec684a2c5c99b8f43a2803a620aab20933c62c"
+  }
+}

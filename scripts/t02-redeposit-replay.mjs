@@ -1,3 +1,4 @@
+import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 // TEST ONLY: consumed claims/exits cannot affect a fresh receipt. No submission.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -47,7 +48,7 @@ export async function qualifyT02RedepositReplay({node,preparation,instance,l1Cli
   const boardArtifact=loadContractArtifact(JSON.parse(boardBytes)),portal=JSON.parse(portalBytes);assert.equal(sha(portal.bytecode.object),manifest.portal);
   const native={backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1};
   for(const key of ['backend','bbPath','threads'])assert.equal(Barretenberg.getSingleton().options[key],native[key]);
-  wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
+  wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:applicationProofsEnabled(),proverOrOptions:native,autoSync:false,syncChainTip:'checkpointed'}});
   const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'t02-redeposit');assert(manager.address.equals(account.address));
   await wallet.registerContract(instance,boardArtifact);await wallet.pxe.sync();
   const board=Contract.at(instance.address,boardArtifact,wallet),filter={contractAddress:instance.address,owner:account.address,storageSlot:boardArtifact.storageLayout.deposits.slot,status:NoteStatus.ACTIVE,scopes:[account.address]};

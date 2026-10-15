@@ -12,11 +12,13 @@ import {createBrowserJournalStorage} from '../shared/journal-indexeddb.mjs';
 const field=()=> '0x'+randomBytes(31).toString('hex').padStart(64,'0'),addr=()=> '0x'+randomBytes(20).toString('hex');
 const blockHash=n=>'0x'+BigInt(n+1).toString(16).padStart(64,'0');
 const iface=new Interface(['function deposit(bytes32 secretHash) payable','function withdraw(uint256,uint256,uint256,bytes32[])','event Deposited(address indexed depositor,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)','event Withdrawn(address indexed depositor,uint128 amount)']);
+const bokInterface=new Interface(['function withdraw(address recipient,uint128 amount,bytes32 nonce,uint256,uint256,uint256,bytes32[])','event Withdrawn(address indexed recipient,uint128 amount,bytes32 nonce)','function deposit(bytes32 account,uint128 amount,bytes32 secretHash)','event Deposited(bytes32 indexed account,uint128 amount,bytes32 key,uint256 index)']);
 function fixture(storage,kind='deposit') {
  const scope={account:field(),chainId:'31337',rollup:addr(),version:'5',board:field(),portal:addr(),depositor:addr()};
+ if(['bok-deposit','bok-withdraw'].includes(kind))scope.token=addr();
  const requests=[],transactions=new Map(),receipts=new Map(),blocks=new Map();let head=10,nonce=4,mode='normal',fork=false;
- const expected={kind,amount:'100',...(kind==='deposit'?{secretHash:field()}:{})};
- const data=kind==='deposit'?iface.encodeFunctionData('deposit',[expected.secretHash]):iface.encodeFunctionData('withdraw',[1,1,0,[]]);
+ const expected={kind,amount:'100',...(kind==='bok-withdraw'?{recipient:addr(),exitNonce:field()}:{}),...(['deposit','bok-deposit'].includes(kind)?{secretHash:field()}:{}),...(kind==='bok-deposit'?{recipient:field()}:{})};
+ const data=kind==='bok-withdraw'?bokInterface.encodeFunctionData('withdraw',[expected.recipient,100,expected.exitNonce,1,1,0,[]]):kind==='bok-deposit'?bokInterface.encodeFunctionData('deposit',[expected.recipient,expected.amount,expected.secretHash]):kind==='deposit'?iface.encodeFunctionData('deposit',[expected.secretHash]):iface.encodeFunctionData('withdraw',[1,1,0,[]]);
  const intent={data,value:kind==='deposit'?'100':'0',expected};
  const provider={getNetwork:async()=>({chainId:31337n}),getBlockNumber:async()=>head,getTransactionCount:async()=>nonce,
   estimateGas:async()=>100000n,
@@ -27,7 +29,7 @@ function fixture(storage,kind='deposit') {
   requests.push(request);if([4001,'ACTION_REJECTED','INSUFFICIENT_FUNDS'].includes(mode))throw Object.assign(new Error('private wallet detail'),{code:mode});if(mode==='reject')throw new Error('private wallet response');
   if(request.nonce!==nonce)throw new Error('nonce already used');
   const hash=field(),body={...request,hash};transactions.set(hash,body);head++;nonce++;blocks.set(head,[body]);
-  const event=kind==='deposit'?iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,100,expected.secretHash,field(),2]):iface.encodeEventLog(iface.getEvent('Withdrawn'),[scope.depositor,100]);
+  const event=kind==='bok-withdraw'?bokInterface.encodeEventLog(bokInterface.getEvent('Withdrawn'),[expected.recipient,100,expected.exitNonce]):kind==='bok-deposit'?bokInterface.encodeEventLog(bokInterface.getEvent('Deposited'),[expected.recipient,100,field(),2]):kind==='deposit'?iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,100,expected.secretHash,field(),2]):iface.encodeEventLog(iface.getEvent('Withdrawn'),[scope.depositor,100]);
   receipts.set(hash,{hash,from:scope.depositor,to:scope.portal,blockNumber:head,blockHash:blockHash(head),status:1,logs:[{address:scope.portal,...event}]});
   if(mode==='lost')throw new Error('lost response PRIVATE_SENTINEL');return body;
  }};
@@ -40,6 +42,51 @@ for(const backend of ['file','indexeddb']) {
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bb-eth-journal-'));
   try{const storage=backend==='file'?createFileJournalStorage(dir):createBrowserJournalStorage(new IDBFactory());await fn(fixture(storage,kind),{storage,dir});}finally{fs.rmSync(dir,{recursive:true,force:true});}
  }
+ test(`${backend}: Bok withdrawal exact receipt survives lost response and reopen without resend`,()=>use(async f=>{
+  f.mode('lost');await assert.rejects((await f.newSession()).send(f.intent),{code:'BB_ETH_SUBMISSION_UNKNOWN'});
+  const result=await (await f.newSession({signer:null})).recover({retry:false});assert.equal(result.outcome,'success');assert.equal(result.event.recipient.toLowerCase(),f.intent.expected.recipient);assert.equal(f.requests.length,1);
+ },'bok-withdraw'));
+ for(const mutation of ['recipient','amount','exitNonce','duplicate','missing','reorg','calldata'])test(`${backend}: Bok withdrawal rejects changed ${mutation}`,()=>use(async f=>{
+  const r=await (await f.newSession()).send(f.intent),receipt=f.receipts.get(r.txHash);
+  if(mutation==='reorg')f.fork();else if(mutation==='duplicate')receipt.logs.push(receipt.logs[0]);else if(mutation==='missing')receipt.logs=[];
+  else if(mutation==='calldata'){f.transactions.get(r.txHash).data='0x12345678';assert.equal((await (await f.newSession()).recover()).outcome,'replaced');return;}
+  else receipt.logs=[{address:f.scope.portal,...bokInterface.encodeEventLog(bokInterface.getEvent('Withdrawn'),[mutation==='recipient'?addr():f.intent.expected.recipient,mutation==='amount'?101:100,mutation==='exitNonce'?field():f.intent.expected.exitNonce])}];
+  await assert.rejects((await f.newSession({signer:null})).recover(),{code:'BB_ETH_RECOVERY_REQUIRED'});assert.equal(f.requests.length,1);
+ },'bok-withdraw'));
+ for(const mutation of ['recipient','amount','exitNonce','token'])test(`${backend}: Bok withdrawal rejects invalid ${mutation} before send`,()=>use(async f=>{
+  const intent=structuredClone(f.intent);if(mutation==='token')delete f.scope.token;else intent.expected[mutation]=mutation==='recipient'?addr():mutation==='amount'?'101':field();
+  await assert.rejects((await f.newSession()).send(intent),{code:'BB_JOURNAL_INVALID'});assert.equal(f.requests.length,0);
+ },'bok-withdraw'));
+ test(`${backend}: Bok deposit uses the existing encrypted journal and recovers a lost response without sending`,()=>use(async(f,{storage})=>{
+  f.mode('lost');await assert.rejects((await f.newSession()).send(f.intent),{code:'BB_ETH_SUBMISSION_UNKNOWN'});
+  assert.equal(f.requests.length,1);assert.equal(f.requests[0].gasLimit,200000n);
+  const recovered=await (await f.newSession({signer:null})).recover({retry:false});
+  assert.equal(recovered.outcome,'success');assert.equal(recovered.event.account,f.intent.expected.recipient);assert.equal(String(recovered.event.amount),'100');
+  assert.equal((await (await f.newSession({signer:null})).recover()).txHash,recovered.txHash);assert.equal(f.requests.length,1);
+ },'bok-deposit'));
+ for(const mutation of ['recipient','secret','amount','value','token'])test(`${backend}: Bok deposit rejects invalid ${mutation} before signing`,()=>use(async f=>{
+  const intent=structuredClone(f.intent);
+  if(mutation==='recipient')intent.expected.recipient=field();
+  if(mutation==='secret')intent.expected.secretHash=field();
+  if(mutation==='amount')intent.expected.amount='101';
+  if(mutation==='value')intent.value='1';
+  if(mutation==='token')delete f.scope.token;
+  await assert.rejects((await f.newSession()).send(intent),{code:'BB_JOURNAL_INVALID'});assert.equal(f.requests.length,0);
+ },'bok-deposit'));
+ for(const mutation of ['recipient','amount','duplicate','missing','key','reorg'])test(`${backend}: Bok deposit requires canonical exact ${mutation} effect`,()=>use(async f=>{
+  const result=await (await f.newSession()).send(f.intent),receipt=f.receipts.get(result.txHash);
+  if(mutation==='duplicate')receipt.logs.push(receipt.logs[0]);
+  else if(mutation==='missing')receipt.logs=[];
+  else if(mutation==='reorg')f.fork();
+  else receipt.logs=[{address:f.scope.portal,...bokInterface.encodeEventLog(bokInterface.getEvent('Deposited'),[mutation==='recipient'?field():f.intent.expected.recipient,mutation==='amount'?101:100,mutation==='key'?blockHash(-1):field(),2])}];
+  await assert.rejects((await f.newSession({signer:null})).recover(),{code:'BB_ETH_RECOVERY_REQUIRED'});assert.equal(f.requests.length,1);
+ },'bok-deposit'));
+ test(`${backend}: Bok event alone never authenticates a changed secret or wallet envelope`,()=>use(async f=>{
+  const result=await (await f.newSession()).send(f.intent),tx=f.transactions.get(result.txHash);
+  tx.data=bokInterface.encodeFunctionData('deposit',[f.intent.expected.recipient,'100',field()]);
+  assert.equal((await (await f.newSession({signer:null})).recover()).outcome,'replaced');
+  tx.data='0x12345678';assert.equal((await (await f.newSession({signer:null})).recover()).outcome,'replaced');assert.equal(f.requests.length,1);
+ },'bok-deposit'));
  test(`${backend}: deposit estimates exact intent with V6 Inbox allowance`,()=>use(async f=>{
   let estimated;f.provider.estimateGas=async request=>{estimated={...request};return 100000n;};
   await (await f.newSession()).send(f.intent);

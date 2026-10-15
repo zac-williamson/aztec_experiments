@@ -1,0 +1,89 @@
+warning: Unused expression result of type fn(Field, Field, AztecAddress, Field, Field) -> Field
+    ┌─ rolling_contract/src/posting_tests.nr:280:9
+    │
+280 │     use crate::posting::like_tag;
+    │         ------------------------
+    │
+
+error: Expected a statement but found 'use'
+    ┌─ rolling_contract/src/posting_tests.nr:280:5
+    │
+280 │     use crate::posting::like_tag;
+    │     ---
+    │
+
+error: cannot find `like_tag` in this scope
+    ┌─ rolling_contract/src/posting_tests.nr:282:15
+    │
+282 │     let tag = like_tag(1, 1, board, 10, 100);
+    │               -------- not found in this scope
+    │
+
+error: cannot find `like_tag` in this scope
+    ┌─ rolling_contract/src/posting_tests.nr:283:20
+    │
+283 │     assert_eq(tag, like_tag(1, 1, board, 10, 100));
+    │                    -------- not found in this scope
+    │
+
+error: cannot find `like_tag` in this scope
+    ┌─ rolling_contract/src/posting_tests.nr:284:19
+    │
+284 │     assert(tag != like_tag(1, 1, board, 11, 100));
+    │                   -------- not found in this scope
+    │
+
+error: cannot find `like_tag` in this scope
+    ┌─ rolling_contract/src/posting_tests.nr:285:19
+    │
+285 │     assert(tag != like_tag(1, 1, board, 10, 101));
+    │                   -------- not found in this scope
+    │
+
+error: cannot find `like_tag` in this scope
+    ┌─ rolling_contract/src/posting_tests.nr:286:19
+    │
+286 │     assert(tag != like_tag(2, 1, board, 10, 100));
+    │                   -------- not found in this scope
+    │
+
+error: cannot find `like_tag` in this scope
+    ┌─ rolling_contract/src/posting_tests.nr:287:19
+    │
+287 │     assert(tag != like_tag(1, 2, board, 10, 100));
+    │                   -------- not found in this scope
+    │
+
+error: cannot find `like_tag` in this scope
+    ┌─ rolling_contract/src/posting_tests.nr:288:19
+    │
+288 │     assert(tag != like_tag(1, 1, AztecAddress::from_field(4), 10, 100));
+    │                   -------- not found in this scope
+    │
+
+error: Cannot mutate immutable variable `env`
+    ┌─ rolling_contract/src/posting_tests.nr:365:15
+    │
+365 │     let bok = env.deploy("@private_bok/PrivateBok").with_public_initializer(moderator, PrivateBok::interface().init(board, moderator, 1, 1));
+    │               ---
+    │
+
+Aborting due to 9 previous errors
+        4.52 real         4.45 user         0.16 sys
+           424722432  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               29877  page reclaims
+                 651  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                 488  voluntary context switches
+                2466  involuntary context switches
+         49594235926  instructions retired
+         12026912564  cycles elapsed
+           411681608  peak memory footprint

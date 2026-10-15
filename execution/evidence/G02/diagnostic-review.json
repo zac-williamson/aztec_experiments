@@ -1,0 +1,10 @@
+{
+  "candidate": "5f4e6e2f59656cedc37a7d591facc4d856ebcdcb",
+  "base": "6f0445dfbdd56cea9960d1ba9f0602f564eb80c7",
+  "reviewer": "/root/reviewer",
+  "verdict": "approve",
+  "scope": "Ten diagnostic/proof-policy metadata files; source matches reviewed fd81d1c. Browser acceptance separate.",
+  "checks": "Six RPC tests independently passed; no hidden retry/error suppression; fixed method/class/code/frame allowlists and immutable bounded snapshots; changing-getter and hostile-stack cases included.",
+  "blocking_findings": [],
+  "history_locator": "collaboration /root/reviewer latest completed verdict"
+}

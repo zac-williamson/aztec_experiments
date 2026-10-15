@@ -1,0 +1,874 @@
+{
+  "source": {
+    "title": "Rolling Chat Contractor Specification Draft 3",
+    "sha256": "af9c151b8605fdad7053b8eb25da1f9e96d8d36f33fc43f2cd0bf8b16e16b402",
+    "source_path": "/Users/zac/Rolling Chat Contractor Specification Draft 3.pdf",
+    "pages": 11,
+    "baseline_commit": "458724c59ce4656f4c311a07d6651d9f8c33ec1b",
+    "authority": "2026-10-11 implementation mandate; Draft 3 supersedes earlier product drafts; production gates retained"
+  },
+  "requirements": [
+    {
+      "id": "RC01",
+      "pdf_page": 1,
+      "authority": "mandatory",
+      "requirement": "Aztec V6 matching local devnet flow; proofs disabled only for development, real-wallet testnet acceptance",
+      "tasks": [
+        "G02",
+        "G08"
+      ],
+      "acceptance_criteria": [
+        "G02-A03",
+        "G08-A03"
+      ],
+      "evidence": [
+        "evidence/G02.json",
+        "evidence/G08.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC02",
+      "pdf_page": 1,
+      "authority": "mandatory",
+      "requirement": "Clear API boundaries among contracts, frontend, backend, prover and plugin; no migration compatibility obligation",
+      "tasks": [
+        "G03"
+      ],
+      "acceptance_criteria": [
+        "G03-A04"
+      ],
+      "evidence": [
+        "evidence/G03.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC03",
+      "pdf_page": 2,
+      "authority": "mandatory",
+      "requirement": "Original design system and clickable desktop-first prototype before complete UI; usable mobile core flows",
+      "tasks": [
+        "G03",
+        "G09"
+      ],
+      "acceptance_criteria": [
+        "G03-A05",
+        "G09-A03"
+      ],
+      "evidence": [
+        "evidence/G03.json",
+        "evidence/G09.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC04",
+      "pdf_page": 2,
+      "authority": "mandatory",
+      "requirement": "All required feed, board, directory/search, thread, composer, profile/name, social, onboarding/balance/recovery/moderator screens",
+      "tasks": [
+        "G03",
+        "G09"
+      ],
+      "acceptance_criteria": [
+        "G03-A06",
+        "G09-A04"
+      ],
+      "evidence": [
+        "evidence/G03.json",
+        "evidence/G09.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC05",
+      "pdf_page": 2,
+      "authority": "mandatory",
+      "requirement": "Continuous feed, stable links, return scroll, no duplicates/jumps; accessible loading/empty/pending/removed/error states",
+      "tasks": [
+        "G09"
+      ],
+      "acceptance_criteria": [
+        "G09-A05"
+      ],
+      "evidence": [
+        "evidence/G09.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC06",
+      "pdf_page": 2,
+      "authority": "mandatory",
+      "requirement": "Canonical reply parent/root; immutable author posts; moderation tombstones preserve navigation without text",
+      "tasks": [
+        "G06",
+        "G09"
+      ],
+      "acceptance_criteria": [
+        "G06-A03",
+        "G09-A06"
+      ],
+      "evidence": [
+        "evidence/G06.json",
+        "evidence/G09.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC07",
+      "pdf_page": 2,
+      "authority": "mandatory",
+      "requirement": "992-byte UTF8 limit, character-oriented allowance, no silent truncation; safe URLs/labelled links and markup",
+      "tasks": [
+        "G06",
+        "G09"
+      ],
+      "acceptance_criteria": [
+        "G06-A04",
+        "G09-A07"
+      ],
+      "evidence": [
+        "evidence/G06.json",
+        "evidence/G09.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC08",
+      "pdf_page": 2,
+      "authority": "mandatory",
+      "requirement": "Onchain likes, quotes and reposts; bookmarks/follows/reply notifications; derived ranking and delivery only",
+      "tasks": [
+        "G06",
+        "G07",
+        "G09"
+      ],
+      "acceptance_criteria": [
+        "G06-A05",
+        "G07-A03",
+        "G09-A08"
+      ],
+      "evidence": [
+        "evidence/G06.json",
+        "evidence/G07.json",
+        "evidence/G09.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC09",
+      "pdf_page": 3,
+      "authority": "mandatory",
+      "requirement": "One curated top board, independent operator boards use own hosting; no automatic inclusion",
+      "tasks": [
+        "G05",
+        "G12"
+      ],
+      "acceptance_criteria": [
+        "G05-A03",
+        "G12-A03"
+      ],
+      "evidence": [
+        "evidence/G05.json",
+        "evidence/G12.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC10",
+      "pdf_page": 3,
+      "authority": "mandatory",
+      "requirement": "Any account creates immediate authentic subboard for fees without collateral; no nesting/rename/archive/transfer; directory/search no Home promotion",
+      "tasks": [
+        "G05",
+        "G07"
+      ],
+      "acceptance_criteria": [
+        "G05-A04",
+        "G07-A04"
+      ],
+      "evidence": [
+        "evidence/G05.json",
+        "evidence/G07.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC11",
+      "pdf_page": 3,
+      "authority": "mandatory",
+      "requirement": "Chain-reconstructible names/descriptions/immutable IDs/links/status; reject contradictory local rules after publication",
+      "tasks": [
+        "G05",
+        "G07"
+      ],
+      "acceptance_criteria": [
+        "G05-A05",
+        "G07-A05"
+      ],
+      "evidence": [
+        "evidence/G05.json",
+        "evidence/G07.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC12",
+      "pdf_page": 3,
+      "authority": "mandatory",
+      "requirement": "Effective policy is parent/local union, parent changes propagate; hostile rules are data; decision policy versions inspectable",
+      "tasks": [
+        "G05",
+        "G09"
+      ],
+      "acceptance_criteria": [
+        "G05-A06",
+        "G09-A09"
+      ],
+      "evidence": [
+        "evidence/G05.json",
+        "evidence/G09.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC13",
+      "pdf_page": 3,
+      "authority": "mandatory",
+      "requirement": "Authorized onchain rejection/removal for humans and Bok, reason visible, private ownership hidden and withdrawals preserved",
+      "tasks": [
+        "G05",
+        "G09"
+      ],
+      "acceptance_criteria": [
+        "G05-A07",
+        "G09-A10"
+      ],
+      "evidence": [
+        "evidence/G05.json",
+        "evidence/G09.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC14",
+      "pdf_page": 4,
+      "authority": "mandatory",
+      "requirement": "Multiple global first+last unique names, random suggestion and availability, atomic concurrent uniqueness, no retirement",
+      "tasks": [
+        "G05"
+      ],
+      "acceptance_criteria": [
+        "G05-A08"
+      ],
+      "evidence": [
+        "evidence/G05.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC15",
+      "pdf_page": 4,
+      "authority": "mandatory",
+      "requirement": "Composer lists own names plus exactly Anonymous; authenticate names without public owner grouping or reusable anonymous ID",
+      "tasks": [
+        "G05",
+        "G06",
+        "G09"
+      ],
+      "acceptance_criteria": [
+        "G05-A09",
+        "G06-A06",
+        "G09-A11"
+      ],
+      "evidence": [
+        "evidence/G05.json",
+        "evidence/G06.json",
+        "evidence/G09.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC16",
+      "pdf_page": 4,
+      "authority": "mandatory",
+      "requirement": "Recovery restores ownership; profiles show bio/history/current avatar and distinguish authentic bot identity",
+      "tasks": [
+        "G05",
+        "G09"
+      ],
+      "acceptance_criteria": [
+        "G05-A10",
+        "G09-A12"
+      ],
+      "evidence": [
+        "evidence/G05.json",
+        "evidence/G09.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC17",
+      "pdf_page": 4,
+      "authority": "mandatory",
+      "requirement": "Compressed safe raster avatar 100x100 preview <=8192 bytes; authenticated onchain bytes/hash/version, metadata stripped, moderation and archive retrieval Measured prototype covers gas, latency, image quality and archival retrieval.",
+      "tasks": [
+        "G03",
+        "G09"
+      ],
+      "acceptance_criteria": [
+        "G03-A07",
+        "G09-A13"
+      ],
+      "evidence": [
+        "evidence/G03.json",
+        "evidence/G09.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC18",
+      "pdf_page": 5,
+      "authority": "mandatory",
+      "requirement": "No sponsorship; noncustodial ETH/USDC origins, one initial funding transaction where wallet route permits, simple cost breakdown",
+      "tasks": [
+        "G04"
+      ],
+      "acceptance_criteria": [
+        "G04-A03"
+      ],
+      "evidence": [
+        "evidence/G04.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC19",
+      "pdf_page": 5,
+      "authority": "mandatory",
+      "requirement": "Automatic asynchronous bridge/setup, one progress view, interruption/reload recovery without duplicate payments; Ready means post+Bok usable",
+      "tasks": [
+        "G04",
+        "G08"
+      ],
+      "acceptance_criteria": [
+        "G04-A04",
+        "G08-A04"
+      ],
+      "evidence": [
+        "evidence/G04.json",
+        "evidence/G08.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC20",
+      "pdf_page": 5,
+      "authority": "mandatory",
+      "requirement": "MetaMask and Phantom Ethereum compatibility matrix, chain selection, prompts/transaction counts, USDC gas resolution before funds",
+      "tasks": [
+        "G04"
+      ],
+      "acceptance_criteria": [
+        "G04-A05"
+      ],
+      "evidence": [
+        "evidence/G04.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC21",
+      "pdf_page": 5,
+      "authority": "owner-reserved",
+      "requirement": "Impossible or unsupported one-transaction route requires measured alternative for owner decision; no silent requirement dilution",
+      "tasks": [
+        "G04"
+      ],
+      "acceptance_criteria": [
+        "G04-A06"
+      ],
+      "evidence": [
+        "evidence/G04.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC22",
+      "pdf_page": 5,
+      "authority": "mandatory",
+      "requirement": "Separate refundable collateral/fees/conversion/Bok credit, available/reserved balances, exact withdrawals/additional funding and encrypted recovery",
+      "tasks": [
+        "G04",
+        "G08"
+      ],
+      "acceptance_criteria": [
+        "G04-A07",
+        "G08-A05"
+      ],
+      "evidence": [
+        "evidence/G04.json",
+        "evidence/G08.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC23",
+      "pdf_page": 6,
+      "authority": "mandatory",
+      "requirement": "Cryptographic unlinkability of humans across anonymous posts/names/account; analyze backend/node observers, prover witness trust allowed",
+      "tasks": [
+        "G03",
+        "G05",
+        "G06",
+        "G10",
+        "G13",
+        "G14"
+      ],
+      "acceptance_criteria": [
+        "G03-A08",
+        "G05-A11",
+        "G06-A07",
+        "G10-A03",
+        "G13-A03",
+        "G14-A03"
+      ],
+      "evidence": [
+        "evidence/G03.json",
+        "evidence/G05.json",
+        "evidence/G06.json",
+        "evidence/G10.json",
+        "evidence/G13.json",
+        "evidence/G14.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC24",
+      "pdf_page": 6,
+      "authority": "mandatory",
+      "requirement": "Replace human account-to-Bok-request disclosure; public authenticated Bok identity allowed per owner clarification",
+      "tasks": [
+        "G10",
+        "G14"
+      ],
+      "acceptance_criteria": [
+        "G10-A04",
+        "G14-A04"
+      ],
+      "evidence": [
+        "evidence/G10.json",
+        "evidence/G14.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC25",
+      "pdf_page": 6,
+      "authority": "mandatory",
+      "requirement": "No account/name-list cache API disclosure or linkable subscriptions; inspect traces plus protocol reasoning and residual timing/content limits",
+      "tasks": [
+        "G07",
+        "G13"
+      ],
+      "acceptance_criteria": [
+        "G07-A06",
+        "G13-A04"
+      ],
+      "evidence": [
+        "evidence/G07.json",
+        "evidence/G13.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC26",
+      "pdf_page": 6,
+      "authority": "mandatory",
+      "requirement": "All core state authenticated-chain/archive reconstructible including encrypted bookmarks/follows/preferences with keys; derived cache not authority",
+      "tasks": [
+        "G07"
+      ],
+      "acceptance_criteria": [
+        "G07-A07"
+      ],
+      "evidence": [
+        "evidence/G07.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC27",
+      "pdf_page": 6,
+      "authority": "mandatory",
+      "requirement": "Operated-node/archiver capacity and costs measured; bounded incremental paginated shared/reorg-safe ingestion and complete retention",
+      "tasks": [
+        "G02",
+        "G07",
+        "G12"
+      ],
+      "acceptance_criteria": [
+        "G02-A04",
+        "G07-A08",
+        "G12-A04"
+      ],
+      "evidence": [
+        "evidence/G02.json",
+        "evidence/G07.json",
+        "evidence/G12.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC28",
+      "pdf_page": 6,
+      "authority": "mandatory",
+      "requirement": "Bok workspace/source/summaries excluded from core recovery; authenticated board replies core; reading/posting/rebuild survive Bok outage",
+      "tasks": [
+        "G07",
+        "G10",
+        "G13"
+      ],
+      "acceptance_criteria": [
+        "G07-A09",
+        "G10-A05",
+        "G13-A05"
+      ],
+      "evidence": [
+        "evidence/G07.json",
+        "evidence/G10.json",
+        "evidence/G13.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC29",
+      "pdf_page": 7,
+      "authority": "mandatory",
+      "requirement": "Plugin owns model/budget/summarization strategy; persistent repo/workspace per thread, serialization within, concurrency across, revision records",
+      "tasks": [
+        "G10"
+      ],
+      "acceptance_criteria": [
+        "G10-A06"
+      ],
+      "evidence": [
+        "evidence/G10.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC30",
+      "pdf_page": 7,
+      "authority": "mandatory",
+      "requirement": "Entire conversation retrievable; cheaper paid summary excludes latest message, main gets summary+latest; measured quality/cost/latency Summary quality covers instructions, decisions, unresolved issues and repository references; full history includes earlier Bok calls/replies.",
+      "tasks": [
+        "G10"
+      ],
+      "acceptance_criteria": [
+        "G10-A07"
+      ],
+      "evidence": [
+        "evidence/G10.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC31",
+      "pdf_page": 7,
+      "authority": "mandatory",
+      "requirement": "Open Bok participation, untrusted content, automatic thread commits/publish; existing repo permission boundaries persist First participant gets no formal owner permission; implicit thread rules are not product copy.",
+      "tasks": [
+        "G10",
+        "G11"
+      ],
+      "acceptance_criteria": [
+        "G10-A08",
+        "G11-A03"
+      ],
+      "evidence": [
+        "evidence/G10.json",
+        "evidence/G11.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC32",
+      "pdf_page": 7,
+      "authority": "mandatory",
+      "requirement": "Dedicated organization GitHub App plus operator broker; isolated generated-code execution without chain/provider/GitHub/hosting credentials",
+      "tasks": [
+        "G11"
+      ],
+      "acceptance_criteria": [
+        "G11-A04"
+      ],
+      "evidence": [
+        "evidence/G11.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC33",
+      "pdf_page": 7,
+      "authority": "mandatory",
+      "requirement": "Per-plugin available/reserved/charge/release exact accounting; execution/request/storage limits; uncertain paid calls never silently replay",
+      "tasks": [
+        "G10",
+        "G11",
+        "G14"
+      ],
+      "acceptance_criteria": [
+        "G10-A09",
+        "G11-A05",
+        "G14-A05"
+      ],
+      "evidence": [
+        "evidence/G10.json",
+        "evidence/G11.json",
+        "evidence/G14.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC34",
+      "pdf_page": 8,
+      "authority": "mandatory",
+      "requirement": "Stable latest static link, atomic revision publish, matching source download, internal history; latest hosted indefinitely",
+      "tasks": [
+        "G11"
+      ],
+      "acceptance_criteria": [
+        "G11-A06"
+      ],
+      "evidence": [
+        "evidence/G11.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC35",
+      "pdf_page": 8,
+      "authority": "mandatory",
+      "requirement": "Separate artifact origin no wallet/cookies/credentials, public APIs/assets allowed, scoped secret APIs; abuse/storage/backups/moderation policy",
+      "tasks": [
+        "G11"
+      ],
+      "acceptance_criteria": [
+        "G11-A07"
+      ],
+      "evidence": [
+        "evidence/G11.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC36",
+      "pdf_page": 8,
+      "authority": "mandatory",
+      "requirement": "Independent deployment AI skill with own credentials, prerequisites/costs/versions/domains/roles/funding/build/deploy/fee/moderator/node/indexer/optional prover+Bok",
+      "tasks": [
+        "G12"
+      ],
+      "acceptance_criteria": [
+        "G12-A05"
+      ],
+      "evidence": [
+        "evidence/G12.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC37",
+      "pdf_page": 8,
+      "authority": "mandatory",
+      "requirement": "Exact transaction recovery/pre-fund verification/monitoring/rotation/rollback, secrets outside source, explicit operator spending approval, no audit claim",
+      "tasks": [
+        "G12"
+      ],
+      "acceptance_criteria": [
+        "G12-A06"
+      ],
+      "evidence": [
+        "evidence/G12.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC38",
+      "pdf_page": 8,
+      "authority": "mandatory",
+      "requirement": "Clean independent deployment fresh identities/origin without hidden contractor state; schemas/service defs/locks/runbooks/core+Bok backups",
+      "tasks": [
+        "G12"
+      ],
+      "acceptance_criteria": [
+        "G12-A07"
+      ],
+      "evidence": [
+        "evidence/G12.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC39",
+      "pdf_page": 9,
+      "authority": "mandatory",
+      "requirement": "Executable source-bound social/moderation/funding/privacy/reorg/outage acceptance; actual proofs, wallets, exact funds",
+      "tasks": [
+        "G08",
+        "G13"
+      ],
+      "acceptance_criteria": [
+        "G08-A06",
+        "G13-A06"
+      ],
+      "evidence": [
+        "evidence/G08.json",
+        "evidence/G13.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC40",
+      "pdf_page": 9,
+      "authority": "mandatory",
+      "requirement": "Predeclare feed/thread/scroll/search/index/rebuild/request/proof/cost targets; cold/warm measurements with dataset/hardware; keyboard/focus/contrast/status",
+      "tasks": [
+        "G03",
+        "G13"
+      ],
+      "acceptance_criteria": [
+        "G03-A09",
+        "G13-A07"
+      ],
+      "evidence": [
+        "evidence/G03.json",
+        "evidence/G13.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC41",
+      "pdf_page": 10,
+      "authority": "mandatory",
+      "requirement": "Bok two users same repo ordered, two threads concurrent, summary/code/tests/static update, restart accepted commit and uncertain call, real charge match/isolation",
+      "tasks": [
+        "G10",
+        "G11",
+        "G13"
+      ],
+      "acceptance_criteria": [
+        "G10-A10",
+        "G11-A08",
+        "G13-A08"
+      ],
+      "evidence": [
+        "evidence/G10.json",
+        "evidence/G11.json",
+        "evidence/G13.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC42",
+      "pdf_page": 10,
+      "authority": "release-gate",
+      "requirement": "Independent expert audit, target-network clearance, 14-day soak; mainnet needs separate authorization",
+      "tasks": [
+        "G13"
+      ],
+      "acceptance_criteria": [
+        "G13-A09"
+      ],
+      "evidence": [
+        "evidence/G13.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC43",
+      "pdf_page": 10,
+      "authority": "commercial",
+      "requirement": "Eight-week milestones, two-engineer staffing and USD15000 bid target are commercial context, not purchase or hiring authority",
+      "tasks": [
+        "G01"
+      ],
+      "acceptance_criteria": [
+        "G01-A03"
+      ],
+      "evidence": [
+        "evidence/G01.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC44",
+      "pdf_page": 11,
+      "authority": "proposed-default",
+      "requirement": "Deterministic Home rank and chronological Following; immutable unique slug, rejection tombstone/stop posting Week-one design resolves rule tightening/rejection reversal/local moderators/appeals; no implicit creator authority.",
+      "tasks": [
+        "G03",
+        "G05",
+        "G09"
+      ],
+      "acceptance_criteria": [
+        "G03-A10",
+        "G05-A12",
+        "G09-A14"
+      ],
+      "evidence": [
+        "evidence/G03.json",
+        "evidence/G05.json",
+        "evidence/G09.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC45",
+      "pdf_page": 11,
+      "authority": "proposed-default",
+      "requirement": "One active like/account/post across names, unlike; normalized case-insensitive full names immutable/reserved bots with specified Unicode bounds Supported characters, normalization, reserved bot handles and maximum lengths are mandatory predeployment definitions; particular case/whitespace choices remain defaults.",
+      "tasks": [
+        "G03",
+        "G05",
+        "G06"
+      ],
+      "acceptance_criteria": [
+        "G03-A11",
+        "G05-A13",
+        "G06-A08"
+      ],
+      "evidence": [
+        "evidence/G03.json",
+        "evidence/G05.json",
+        "evidence/G06.json"
+      ],
+      "status": "unverified"
+    },
+    {
+      "id": "RC46",
+      "pdf_page": 11,
+      "authority": "proposed-default",
+      "requirement": "In-app replies, private recovery/read markers; automatic thread commits/publishing; only latest publicly hosted",
+      "tasks": [
+        "G03",
+        "G07",
+        "G11"
+      ],
+      "acceptance_criteria": [
+        "G03-A12",
+        "G07-A10",
+        "G11-A09"
+      ],
+      "evidence": [
+        "evidence/G03.json",
+        "evidence/G07.json",
+        "evidence/G11.json"
+      ],
+      "status": "unverified"
+    }
+  ]
+}

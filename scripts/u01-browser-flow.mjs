@@ -81,11 +81,11 @@ export async function runT04Cleanup(steps){
  if(failures.length)throw new AggregateError(failures,'T04_CLEANUP_FAILED');
 }
 
-// Only the observer's bounded, sanitized schema crosses this failure rendezvous.
+// Only bounded, sanitized observer and node-failure schemas cross this rendezvous.
 // Persist before potentially slow wallet/RPC cleanup so the supervisor can retain it.
-async function preserveBrowserRpcFootprint(directory,observer,observation){
- if(!observer)return;
- const summary=observer.snapshot();observation.rpcFootprint=summary;
+async function preserveBrowserRpcFootprint(directory,observer,observation,rpc){
+ if(!observer&&!rpc)return;
+ const summary={...observer?.snapshot(),nodeFailures:rpc?.failureSnapshot()??observation.rpcFootprint?.nodeFailures??[]};observation.rpcFootprint=summary;
  const target=path.join(directory,'browser-rpc-footprint.json'),temporary=target+'.'+randomUUID()+'.tmp';
  try{await fs.writeFile(temporary,JSON.stringify(summary),{mode:0o600,flag:'wx'});await fs.rename(temporary,target);}
  finally{await fs.rm(temporary,{force:true});}
@@ -193,14 +193,14 @@ export async function completeU01BrowserPost({node,preparation,instance,l1Client
       observation.recovery={...result.recovery,acceptedSendCalls:loss.sendCalls,acceptedTransactionHash:loss.transactionHash,scope:'Actual accepted-transaction response loss and full browser restart; canonical effects and private debit checked below. Captured submissions do not count discarded proofs.'};
       await responseLoss.close();responseLoss=undefined;
     }
-    await rpc.close();observation.rpcFootprint=rpcObserver.snapshot();rpc=undefined;capture.close();capture=undefined;
+    await rpc.close();observation.rpcFootprint={...rpcObserver.snapshot(),nodeFailures:rpc.failureSnapshot()};rpc=undefined;capture.close();capture=undefined;
     mark(withdrawal?'browser-verify-canonical-withdrawal':'browser-verify-canonical-post');
     if(performanceMode){assert.deepEqual(result.publicTransactionHashes,observation.verification.posts.map(post=>post.txHash));assert.equal(result.journey.samples.length,2);}
     else {verificationWallet=await openVerificationWallet();
     observation.verification=await (withdrawal?verifyU01BrowserWithdrawal:verifyU01BrowserPost)({node,preparation,instance,claimResult,privateFee,
       txHash:result.publicTransactionHashes?.at(-1),message,evidence:{...evidence,wallet:verificationWallet},l1Client,portalAbi,escrowBefore});}
     assert(observation.verification.passed);Object.assign(privateFee,{passed:true,scope:'native cold-start claim and independently verified browser private-fee action'});observation.browserApplicationProof=applicationProofsEnabled();observation.remoteJobs=assertRemoteJobs(remoteFixture);observation.passed=true;return observation;
-  }catch(error){await preserveBrowserRpcFootprint(directory,rpcObserver,observation).catch(()=>{observation.rpcFootprintPreservationFailed=true;});error.browserPostObservation=observation;throw error;}
+  }catch(error){await preserveBrowserRpcFootprint(directory,rpcObserver,observation,rpc).catch(()=>{observation.rpcFootprintPreservationFailed=true;});error.browserPostObservation=observation;throw error;}
   finally{await runT04Cleanup([()=>remoteFixture?.close(),()=>responseLoss?.close(),()=>capture?.close(),()=>rpc?.close(),()=>verificationWallet?.stop(),()=>fs.rm(backupPath,{force:true})]);}
 }
 
@@ -231,7 +231,7 @@ export async function prepareT04BrowserJourney({node,preparation,instance,l1Clie
  const release=async stage=>{const target=path.join(directory,'browser-journey-'+stage+'-verified.json'),tmp=target+'.tmp';await fs.writeFile(tmp,JSON.stringify({stage,verified:true}),{mode:0o600,flag:'wx'});await fs.rename(tmp,target);};
  const stageTx=async stage=>{observation.stage=stage;const signal=validateJourneySignal(await waitFile('browser-journey-'+stage+'.json'));assert.equal(signal.stage,stage);const used=new Set(Object.values(transactions).map(t=>t.tx.getTxHash().toString()));const fresh=signal.transactionHashes.filter(hash=>captures.has(hash)&&!used.has(hash));assert.equal(fresh.length,1,'Exactly one new actual Aztec submission for '+stage);const result=await verifyJourneyIncludedTransaction({node,captures,txHash:fresh[0],expectedPayer:privateFee.payer});assert(!result.tx.chonkProof.isEmpty());transactions[stage]=result;(observation.verifiedStages??=[]).push({stage,txHash:fresh[0],blockNumber:String(result.receipt.blockNumber),blockHash:result.receipt.blockHash.toString(),normalNodeVerification:applicationProofsEnabled(),canonicalReceipt:true});const progress=validateVerifiedBrowserStages({schemaVersion:1,stages:observation.verifiedStages}),target=path.join(directory,'browser-verified-stages.json'),temporary=target+'.tmp';await fs.writeFile(temporary,JSON.stringify(progress),{mode:0o600,flag:'wx'});await fs.rename(temporary,target);mark('browser-'+stage+'-verified');return result;};
  const eligible=async timestamp=>{const seq=node.getSequencer(),current=seq.getSequencer().getConfig(),previous={minTxsPerBlock:current.minTxsPerBlock,buildCheckpointIfEmpty:current.buildCheckpointIfEmpty};seq.updateConfig({minTxsPerBlock:0,buildCheckpointIfEmpty:true});try{while(Date.now()<deadline){const b=await node.getBlock('checkpointed');if(b&&BigInt(b.header.globalVariables.timestamp.toString())>=timestamp)return;await pause(500);}throw Error('T04_ELIGIBILITY_DEADLINE');}finally{seq.updateConfig(previous);}};
- const cleanup=()=>runT04Cleanup([()=>remoteFixture?.close(),()=>claimCheckpoints.restore(),()=>preserveBrowserRpcFootprint(directory,observer,observation).catch(()=>{observation.rpcFootprintPreservationFailed=true;}),()=>capture?.close(),()=>rpc?.close(),()=>wallet?.stop(),()=>fs.rm(backupPath,{force:true})]);
+ const cleanup=()=>runT04Cleanup([()=>preserveBrowserRpcFootprint(directory,observer,observation,rpc).catch(()=>{observation.rpcFootprintPreservationFailed=true;}),()=>remoteFixture?.close(),()=>claimCheckpoints.restore(),()=>capture?.close(),()=>rpc?.close(),()=>wallet?.stop(),()=>fs.rm(backupPath,{force:true})]);
  try{
   const context=vm.createContext({crypto:webcrypto,TextEncoder,TextDecoder,Uint8Array});vm.runInContext(await fs.readFile(path.join(ROOT,'shared/wallet-backup.js'),'utf8'),context);
   const encrypted=await context.BillboardWalletBackup.encrypt({schemaVersion:1,wallet:{secretKey:account.secret.toString(),salt:account.salt.toString()},claims:[]},browserControl.backupPassword);await fs.writeFile(backupPath,JSON.stringify(encrypted),{mode:0o600});
@@ -266,9 +266,9 @@ export async function prepareT04BrowserJourney({node,preparation,instance,l1Clie
    assert(settlement.passed);observation.stage='refund';refundBefore={liability:await read('totalDeposited'),portalBalance:await l1Client.getBalance({address:scope.portalAddress}),depositorBalance:await l1Client.getBalance({address:depositor})};await release('exit');
    const signal=validateJourneySignal(await waitFile('browser-journey-refund.json'));assert.equal(signal.stage,'refund');assert.equal(signal.transactionHashes.length,1);
    observation.refund=await verifyJourneyRefund({l1Client,portalAbi:portal.abi,portalAddress:scope.portalAddress,...receipt,txHash:signal.transactionHashes[0],before:refundBefore});const {OutboxContract}=await import('@aztec-labs/ethereum/contracts');const outbox=new OutboxContract(l1Client,scopeInfo.l1ContractAddresses.outboxAddress.toString());const witness=await node.getL2ToL1MembershipWitness(transactions.exit.tx.getTxHash(),receipt.leaf);assert(witness);const leafId=(1n<<BigInt(witness.siblingPath.pathSize))+witness.leafIndex;assert(await outbox.hasMessageBeenConsumedAtEpoch(witness.epochNumber,leafId));const refunded=await l1Client.getTransactionReceipt({hash:signal.transactionHashes[0]});const consumed=await outbox.getMessageConsumedEvents(refunded.blockHash);assert.equal(consumed.filter(e=>e.messageHash.toLowerCase()===receipt.leaf.toString().toLowerCase()&&e.leafId===leafId&&BigInt(e.epoch)===BigInt(witness.epochNumber)&&BigInt(e.numCheckpointsInEpoch)===BigInt(witness.numCheckpointsInEpoch)).length,1);observation.refund.exactOutboxConsumption=true;await release('refund');
-   const result=await waitFile('browser-result.json');assert(result.passed&&result.browserClosed&&result.ownedServerStopped);observation.browser=result;observation.rpcFootprint=observer.snapshot();await rpc.close();rpc=undefined;capture.close();capture=undefined;
+   const result=await waitFile('browser-result.json');assert(result.passed&&result.browserClosed&&result.ownedServerStopped);observation.browser=result;observation.rpcFootprint={...observer.snapshot(),nodeFailures:rpc.failureSnapshot()};await rpc.close();rpc=undefined;capture.close();capture=undefined;
    observation.stage='final-verification';wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:false,proverOrOptions:{backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1},autoSync:false,syncChainTip:'checkpointed'}});await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'t04-read-only');
    observation.verification=await verifyJourneyPrivateChain({wallet,node,instance,artifact:preparation.artifact,account,privateFee:fixture,transactions,message,receipt,before});observation.remoteJobs=assertRemoteJobs(remoteFixture,4);observation.passed=true;observation.stage='complete';return observation;
   }};
- }catch(error){error.browserJourneyObservation={passed:false,stage:observation.stage,warmNativePrivateFees:true,networkProofs:false};await cleanup();throw error;}
+ }catch(error){error.browserJourneyObservation={passed:false,stage:observation.stage,warmNativePrivateFees:true,networkProofs:false};await cleanup();error.browserJourneyObservation.rpcFootprint=observation.rpcFootprint;throw error;}
 }

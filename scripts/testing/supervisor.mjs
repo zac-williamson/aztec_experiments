@@ -71,20 +71,40 @@ export class Supervisor {
     return new Promise(resolve=>{
       child.once('error',error=>{outcome.failure=describeFailure(error);this.fail(role+'-spawn',error);resolve(outcome);});
       child.once('close',(code,signal)=>{
-        Object.assign(outcome,{code,signal});
+        Object.assign(outcome,{code,signal,closed:true});
         if(text.trim())this.fail(role+'-incomplete-output');
         if(code!==0)this.fail(role+'-exit');
         resolve(outcome);
       });
     });
   }
+  async cleanupRole(role) {
+    const matches=this.children.filter(child=>child.role===role);
+    assert.equal(matches.length,1,'Exactly one owned role required');
+    const child=matches[0];
+    assert.equal(child.outcome.closed,true,'Worker must exit before replacement handoff');
+    assert(!this.closed,'Supervisor already closed');
+    return this.cleanupChild(child);
+  }
+  cleanupChild(child) {
+    if(!child.cleanupPromise)child.cleanupPromise=(async()=>{
+      try {
+        await child.tree.cleanup();child.outcome.cleanupComplete=true;
+        return {cleanupComplete:true};
+      }catch(error){
+        child.outcome.cleanupComplete=false;const stage=child.role+'-cleanup';this.fail(stage,error);
+        if(!this.report.failures.some(item=>item.stage===stage))this.report.failures.push({stage,...describeFailure(error)});
+        throw Error('Owned worker cleanup failed; replacement forbidden');
+      }
+    })();
+    return child.cleanupPromise;
+  }
   async close() {
     this.closed=true;clearTimeout(this.timer);clearTimeout(this.sampler);await this.pending;
     for(const [signal,fn]of this.signals)process.removeListener(signal,fn);
     // Preserve command outcomes even if cleanup fails. Never turn cleanup failure into success.
     for(const child of this.children){
-      try {await child.tree.cleanup();child.outcome.cleanupComplete=true;}
-      catch(error){child.outcome.cleanupComplete=false;this.report.failures.push({stage:child.role+'-cleanup',...describeFailure(error)});}
+      try {await this.cleanupChild(child);}catch{} // The single attempt already retained its failure.
     }
     this.report.elapsedMs=Math.round(performance.now()-this.started);
     this.report.ownedTreeAbsent=this.children.every(child=>child.outcome.cleanupComplete===true);

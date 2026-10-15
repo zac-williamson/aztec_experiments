@@ -143,6 +143,27 @@
   // ============================================================
   // Aztec Wallet (gas estimation + prove/submit split, with retry)
   // ============================================================
+  const privateWalletRoutes = new WeakMap();
+  const preproofToken = Symbol('built-in-preproof'), preproofLifecycles = new WeakMap();
+  function isPrivateWalletForNode(wallet, node) {
+    const route = privateWalletRoutes.get(wallet);
+    return Boolean(route && route.node === node && route.rawNode === node &&
+      wallet.aztecNode === node && wallet.pxe === route.pxe &&
+      route.sdk.isPrivatePXEForNode?.(route.pxe, node));
+  }
+  function createPreproofRecovery(wallet,node,journal) {
+    const route=privateWalletRoutes.get(wallet);
+    const check=()=>{if(!journal||typeof journal.assertCanStart!=='function'||typeof journal.prepare!=='function'||!route||!isPrivateWalletForNode(wallet,node)||wallet.sendTx!==route.sendTx||route.journal!==journal||wallet._transactionJournal!==journal)throw Object.assign(new Error('Built-in recovery capability changed.'),{code:'BB_JOURNAL_INVALID'});};
+    check();
+    return Object.freeze({
+      checkpoint:async()=>{check();const saved=await journal.assertCanStart();check();return {encoded:saved.encoded};},
+      send:async(payload,options,lifecycle)=>{
+        check();if(options.transactionJournal!==journal||typeof lifecycle?.guard!=='function'||typeof lifecycle?.signed!=='function')throw Object.assign(new Error('Invalid pre-proof lifecycle.'),{code:'BB_JOURNAL_INVALID'});
+        const token={},bound=Object.freeze({guard:lifecycle.guard,signed:lifecycle.signed,check,journal});preproofLifecycles.set(token,bound);
+        try{return await route.sendTx.call(wallet,payload,{...options,[preproofToken]:token});}finally{preproofLifecycles.delete(token);}
+      }
+    });
+  }
   function createAztecWallet(a, pxe, aztecNode, rawNode, log, secretKey, opts = {}) {
     class AztecWallet extends a.BaseWallet {
       constructor(pxe, aztecNode) {
@@ -165,6 +186,9 @@
         const log = this._log;
         this._progress('preparing');
         const journal = opts.transactionJournal ?? this._transactionJournal;
+        const lifecycle=opts[preproofToken]?preproofLifecycles.get(opts[preproofToken]):null;
+        if(opts[preproofToken]&&!lifecycle)throw Object.assign(new Error('Invalid pre-proof lifecycle.'),{code:'BB_JOURNAL_INVALID'});
+        if(lifecycle){lifecycle.check();if(lifecycle.journal!==journal)throw Object.assign(new Error('Invalid pre-proof journal.'),{code:'BB_JOURNAL_INVALID'});await lifecycle.guard('pre-proof');}
         if (opts.journalOperation && !journal) throw Object.assign(new Error('Durable transaction journal is required.'), {code:'BB_JOURNAL_INVALID'});
         if (opts.journalOperation && journal) journal.setOperation(opts.journalOperation);
         const previousJournal = journal ? await journal.assertCanStart() : null;
@@ -240,11 +264,15 @@
         if (this._contextGuard) await this._contextGuard();
         const applicationNullifier = !opts.journalOperation && this._applicationNullifierBoard
           ? (await a.extractApplicationNullifier(provenTx, tx, this._applicationNullifierBoard, this._applicationNoteNullifier)).toString() : undefined;
+        // A suspended proof cannot cross a revoked attempt's durable boundary.
+        if(lifecycle){lifecycle.check();await lifecycle.guard('pre-proof');}
         if (journal) await journal.prepare(tx, previousJournal, {applicationNullifier});
+        if(lifecycle){lifecycle.check();await lifecycle.signed(txHash.toString());}
         if (this._contextGuard) await this._contextGuard();
         if (opts.beforeSubmit) await opts.beforeSubmit(txHash.toString());
         if (this._contextGuard) await this._contextGuard();
         this._progress('submitting');
+        if(lifecycle){lifecycle.check();await lifecycle.guard('signed');}
         await a.submitOnceWithReconciliation(rawNode,tx);
         this._progress('confirming');
         const waitOpts=typeof opts.wait==='object'?opts.wait:{};
@@ -260,6 +288,7 @@
     }
 
     const wallet = new AztecWallet(pxe, aztecNode);
+    privateWalletRoutes.set(wallet, {sdk:a, pxe, node:aztecNode, rawNode,sendTx:wallet.sendTx,journal:opts.transactionJournal});
     wallet._progress = opts.progress || (()=>{});
     wallet._preProveHook = opts.preProveHook || null;
     wallet._contextGuard = opts.contextGuard || null;
@@ -500,7 +529,7 @@
         claim = undefined;
         return result;
       } catch (error) {
-        if (['PRIVATE_FEE_BALANCE_INSUFFICIENT','BB_FEE_ESTIMATION_UNSTABLE','BB_GAS_LIMIT_EXCEEDED','BB_SIMULATION_FAILED','BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID', 'BB_BROWSER_PROOF_FAILED', 'BB_REMOTE_PROVER_TIMEOUT','BB_REMOTE_PROVER_OFFLINE','BB_REMOTE_PROVER_BUSY','BB_REMOTE_PROVER_REJECTED','BB_REMOTE_PROVER_RESPONSE','BB_REMOTE_PROVER_FAILED'].includes(error?.code)) {const failure=privateFeeFailure(error.code);if(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(error.stage))failure.stage=error.stage;throw failure;}
+        if (['PRIVATE_FEE_BALANCE_INSUFFICIENT','BB_FEE_ESTIMATION_UNSTABLE','BB_GAS_LIMIT_EXCEEDED','BB_SIMULATION_FAILED','BB_SUBMISSION_UNKNOWN', 'BB_TRANSACTION_FAILED', 'BB_TRANSACTION_FINALITY_PENDING', 'BB_RECOVERY_REQUIRED', 'BB_JOURNAL_INVALID', 'BB_BROWSER_PROOF_FAILED', 'BB_REMOTE_PROVER_TIMEOUT','BB_REMOTE_PROVER_OFFLINE','BB_REMOTE_PROVER_BUSY','BB_REMOTE_PROVER_REJECTED','BB_REMOTE_PROVER_RESPONSE','BB_REMOTE_PROVER_FAILED'].includes(error?.code)) {const failure=privateFeeFailure(error.code);if(['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process','worker'].includes(error.stage))failure.stage=error.stage;throw failure;}
         if (error?.code === 'BB_STATE_CONFLICT') {
           const allowed = ['Existing nullifier', 'Block header not found'];
           if (Array.isArray(error.stateReasons) && error.stateReasons.length > 0 && error.stateReasons.every(reason => allowed.includes(reason))) {
@@ -514,7 +543,25 @@
       }
     };
   }
-  g.BillboardPrivateFeeRouting = Object.freeze({ requirePrivateFeeConfiguration, createPrivateFeeSender, createAztecWallet });
+  // One connection for all personalized operations, independent of proof location.
+  // A cache hit is re-inspected, never silently replaced with the public feed node.
+  async function connectTrustedPrivateNode(a,config,existing) {
+    const invalid=()=>Object.assign(new Error('Trusted private node configuration is required.'),{code:'BB_TRUSTED_NODE_CONFIG'});
+    const selected=config.trustedProverNode,scope=config.expectedNetworkScope;
+    if(!selected||!scope||typeof a.createTrustedPrivateNode!=='function'||typeof a.isTrustedPrivateNode!=='function')throw invalid();
+    const proofs=selected.proofs===undefined?'real':selected.proofs;let endpoint;
+    try {endpoint=new URL(selected.url);}catch{throw invalid();}
+    const local=String(scope.chainId)==='31337'&&['localhost','127.0.0.1','[::1]'].includes(endpoint.hostname);
+    if(!['real','disabled'].includes(proofs)||(proofs==='disabled'&&!local))throw invalid();
+    const options={url:selected.url,expectedNetworkScope:scope,proofsEnabled:proofs==='real',allowLocalDev:local};
+    if(existing) {
+      if(!a.isTrustedPrivateNode(existing)||typeof a.inspectTrustedNode!=='function')throw invalid();
+      await a.inspectTrustedNode(existing,options);return existing;
+    }
+    const node=await a.createTrustedPrivateNode(options);
+    if(!a.isTrustedPrivateNode(node))throw invalid();return node;
+  }
+  g.BillboardPrivateFeeRouting = Object.freeze({ requirePrivateFeeConfiguration, createPrivateFeeSender, createAztecWallet, isPrivateWalletForNode, createPreproofRecovery, connectTrustedPrivateNode });
 
   // Read-only readiness check at a refreshed current PXE anchor. Proving may refresh it again.
   // Missing messages never allocate fees, prove, submit, or repeat an L1 deposit.
@@ -595,8 +642,12 @@
   // repeated calls with the same config (used by web app pages)
   // ============================================================
   const _setupCache = new Map();
+  function _connectionKey(config,address) {
+    return JSON.stringify([config.trustedProverNode?.url,config.trustedProverNode?.proofs??'real',config.expectedNetworkScope,
+      config.ethRpcUrl,address.toString(),config.portalAddress,config.dataDirPrefix||'pxe_bb_']);
+  }
   function _setupKey(config, address, nodeInfo, rollup, board) {
-    return JSON.stringify([config.aztecNodeUrl, config.ethRpcUrl, address.toString(),
+    return JSON.stringify([_connectionKey(config,address), config.ethRpcUrl, address.toString(),
       String(nodeInfo.l1ChainId), String(nodeInfo.rollupVersion), rollup.toLowerCase(),
       board.toLowerCase(), config.portalAddress.toLowerCase(), config.dataDirPrefix || 'pxe_bb_']);
   }
@@ -651,8 +702,9 @@
     // Step 2: Connect to Aztec node
     // ============================================================
     log('Step 2: Connecting to Aztec node...', 'info');
-    const nodeUrl = config.aztecNodeUrl;
-    const rawNode = a.createAztecNodeClient(nodeUrl);
+    const connectionKey=_connectionKey(config,address);
+    const priorSetup=[..._setupCache.values()].find(entry=>entry.connectionKey===connectionKey);
+    const rawNode = await connectTrustedPrivateNode(a,config,priorSetup?.rawNode);
     const aztecNode = rawNode;
     const nodeInfo = await aztecNode.getNodeInfo();
     log('  Chain ID: ' + nodeInfo.l1ChainId, 'info');
@@ -1012,7 +1064,7 @@
         }
 
         // Cache the setup for reuse by subsequent engine calls
-        _setupCache.set(sKey, { pxe, wallet, contract, aztecNode, rawNode });
+        _setupCache.set(sKey, { pxe, wallet, contract, aztecNode, rawNode, connectionKey });
       }
 
       // Now check the L2 deposit note (always re-check, state may have changed)

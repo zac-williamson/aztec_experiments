@@ -51,7 +51,7 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
   const started=performance.now();
   const listeners=[];
   const observation={passed:false,scope:payerMode==='private'?'one author genuine private-fee posting; not concurrency qualification':'ten real distinct-author post proofs prepared at one canonical anchor',
-    applicationProofs:true,networkProofs:false,authorCount:count,contentionQualified:false,posts:[],allPreparedBeforeSubmission:false};
+    applicationProofs:applicationProofsEnabled(),networkProofs:false,authorCount:count,contentionQualified:false,posts:[],allPreparedBeforeSubmission:false};
   // Atomically replace only sanitized observations; no accounts, note preimages or transaction bytes.
   const persist=async()=>{if(!progressPath)return;
     const bytes=JSON.stringify({...observation,stage,elapsedMs:Math.round(performance.now()-started)},null,2)+'\n';
@@ -77,7 +77,7 @@ export async function proveAndIncludeC03Contention({node,preparation,instance,au
     const native={backend:BackendType.NativeUnixSocket,...applicationNativeProfile(directory)};
     for(const key of ['backend','bbPath','threads'])assert.equal(Barretenberg.getSingleton().options[key],native[key]);
     if(process.env.BOARD_TEST_REMOTE==='1')remoteFixture=await startRemoteProverFixture({directory,board:instance.address.toString(),info,bbPath:native.bbPath});
-    wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:applicationProver(native,remoteFixture?.config),autoSync:false,syncChainTip:'checkpointed'}});
+    wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:applicationProofsEnabled(),proverOrOptions:applicationProver(native,remoteFixture?.config),autoSync:false,syncChainTip:'checkpointed'}});
     await mark('register-'+count+'-accounts');
     for(const {account,claimResult} of authorClaims){
       assert(claimResult.passed&&claimResult.exactDeliveredNoteChecked);

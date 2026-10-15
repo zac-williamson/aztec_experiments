@@ -1,11 +1,31 @@
 // TEST ONLY. Never expose this fixture as a production RPC proxy.
 import http from 'node:http';
+import {describeFailure} from './testing/supervisor.mjs';
 import {timingSafeEqual} from 'node:crypto';
 import {Transaction} from 'ethers';
 import {createNamespacedSafeJsonRpcServer} from '@aztec-labs/foundation/json-rpc/server';
 import {AztecNodeApiSchema} from '@aztec-labs/stdlib/interfaces/client';
 const LIMIT=4*1024*1024;
 const METHODS=new Set(['eth_chainId','net_version','eth_blockNumber','eth_getBlockByNumber','eth_getBlockByHash','eth_getBalance','eth_getCode','eth_getStorageAt','eth_call','eth_estimateGas','eth_gasPrice','eth_maxPriorityFeePerGas','eth_feeHistory','eth_getTransactionCount','eth_getTransactionByHash','eth_getTransactionReceipt','eth_getLogs','eth_sendTransaction','eth_sendRawTransaction']);
+// Fixed diagnostic vocabulary, checked against this repository and pinned installed
+// Aztec/viem modules. Never admit an arbitrary basename from an error stack.
+const FAILURE_MODULES=new Set([
+ 'u01-browser-rpc.mjs','u01-browser-flow.mjs','test-u01-browser-rpc.mjs',
+ 'node_public_calls_simulator.js','server.js','public_data_overrides.js',
+ 'avm_simulator.js','avm_simulator_pool.js','cdb_ipc_server.js',
+ 'public_errors.js','side_effect_errors.js','public_db_sources.js',
+ 'public_processor.js','public_tx_simulator.js','public_tx_simulator_base.js',
+ 'dumping_public_tx_simulator.js','contracts_db_checkpoint.js',
+ 'call.js','readContract.js','simulateContract.js','multicall.js',
+ 'encodeAbiParameters.js','encodeFunctionData.js','encodeFunctionResult.js',
+ 'decodeAbiParameters.js','decodeFunctionData.js','decodeFunctionResult.js',
+ 'decodeErrorResult.js','decodeEventLog.js','safe_json_rpc_server.js',
+]);
+function boundedFailureFrames(frames){return frames.filter(frame=>{
+ if(typeof frame!=='string'||frame.length>96)return false;
+ const match=/^([A-Za-z0-9_-]+\.m?js):([1-9]\d{0,5}):([1-9]\d{0,5})$/.exec(frame);
+ return !!match&&FAILURE_MODULES.has(match[1]);
+}).slice(0,4);}
 const silent=Object.assign(()=>{},{trace(){},debug(){},verbose(){},info(){},warn(){},error(){},fatal(){}});
 async function boundedBody(stream){let size=0;const parts=[];for await(const part of stream){const data=Buffer.from(part);size+=data.length;if(size>LIMIT)throw Error('Body exceeds fixture bound');parts.push(data);}return Buffer.concat(parts).toString('utf8');}
 function respond(res,status,value){res.writeHead(status,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(value));}
@@ -25,10 +45,31 @@ export async function startU01BrowserRpc({node,anvilUrl,ethereumAccount,origin,t
  // Observation is optional and must never change transport or application outcomes.
  function begin(channel,method,args){try{return observer?.begin(channel,method,args)??(()=>{});}catch{return ()=>{};}}
  function finish(done,success){try{done(success);}catch{}}
- const observedNode=(observer||beforeNodeCall)?new Proxy(node,{get(target,key){const value=Reflect.get(target,key,target);if(typeof value!=='function')return value;
+ const failures=[];
+ // Keep only the existing sanitizer's class/code/frame projection. Its optional
+ // process-snapshot details, messages, arguments and error data are not RPC evidence.
+ function safeFailure(error){
+  try{const {errorClass,code,frames}=describeFailure(error);
+   // The shared sanitizer may read accessor properties more than once. Validate
+   // captured values again so a changing getter cannot inject text or objects.
+   return {errorClass:['Error','AssertionError','TypeError','RangeError','SyntaxError'].includes(errorClass)?errorClass:'Error',
+    code:['HARNESS_SAMPLING_GAP','HARNESS_CLEANUP_TIMEOUT','BB_PROCESS_SNAPSHOT_FORMAT','ENOENT','EACCES','EPIPE'].includes(code)?code:null,
+    frames:boundedFailureFrames(frames)};
+  }
+  catch{return {errorClass:'Error',code:null,frames:[]};}
+ }
+ function recordFailure(method,phase,error){
+  if(failures.length>=8)return;
+  const entry={method,phase,...safeFailure(error)};failures.push(entry);
+  try{const causes=[],seen=new Set([error]);let cause=error?.cause;
+   while(cause&&causes.length<3&&!seen.has(cause)){seen.add(cause);causes.push(safeFailure(cause));cause=cause.cause;}
+   if(causes.length)entry.causes=causes;
+  }catch{} // Diagnostic getters must not change the original failure.
+ }
+ const observedNode=new Proxy(node,{get(target,key){const value=Reflect.get(target,key,target);if(typeof value!=='function')return value;
   if(!Object.hasOwn(AztecNodeApiSchema,key))return value.bind(target);
-  return async(...args)=>{const done=begin('aztec',key,args);try{await beforeNodeCall?.(key);const result=await value.apply(target,args);finish(done,true);return result;}catch(error){finish(done,false);throw error;}};
- }}):node;
+  return async(...args)=>{const done=begin('aztec',key,args);let phase='before-node-call';try{await beforeNodeCall?.(key);phase='node-call';const result=await value.apply(target,args);finish(done,true);return result;}catch(error){recordFailure(key,phase,error);finish(done,false);throw error;}};
+ }});
  const rpc=createNamespacedSafeJsonRpcServer({node:[observedNode,AztecNodeApiSchema],aztec:[observedNode,AztecNodeApiSchema]},{maxBatchSize:100,maxBodySizeBytes:10*1024*1024,corsAllowedOrigins:[origin],corsAllowedHeaders:['content-type','x-u01-test-token'],log:silent});
  const callback=rpc.getApp().callback();let nodeServer,ethereumServer;
  try{
@@ -53,5 +94,5 @@ export async function startU01BrowserRpc({node,anvilUrl,ethereumAccount,origin,t
    else {const result=await execute(payload);respond(res,result.error?.message==='Fixture request rejected'?400:200,result);}
   }catch{if(!res.headersSent)respond(res,400,{jsonrpc:'2.0',id:null,error:{code:-32600,message:'Fixture request rejected'}});else res.destroy();}});
  }catch(error){if(nodeServer)await stop(nodeServer);throw error;}
- return {nodeUrl:`http://127.0.0.1:${nodeServer.address().port}/`,ethereumUrl:`http://127.0.0.1:${ethereumServer.address().port}/`,async close(){if(closed)return;closed=true;for(const controller of controllers)controller.abort();await Promise.all([stop(nodeServer),stop(ethereumServer)]);}};
+ return {failureSnapshot:()=>structuredClone(failures),nodeUrl:`http://127.0.0.1:${nodeServer.address().port}/`,ethereumUrl:`http://127.0.0.1:${ethereumServer.address().port}/`,async close(){if(closed)return;closed=true;for(const controller of controllers)controller.abort();await Promise.all([stop(nodeServer),stop(ethereumServer)]);}};
 }

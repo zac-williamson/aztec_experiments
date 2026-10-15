@@ -1,0 +1,1300 @@
+{
+  "schema_version": 1,
+  "budget_usd": 300,
+  "scope": "Cumulative prover campaign plus at most one additional rolling.chat server; existing moderator costs remain separate.",
+  "as_of": "2026-10-13T02:24:09.655035+00:00",
+  "billing_evidence": "evidence/G02/aws-costs.json",
+  "historical_campaign_bound_usd": 83.27,
+  "historical_bound_method": "Retain the full earlier conservative bound including unused planned compute through13Oct, rather than subtracting unverified savings. Includes49.47 prior allowance,28.80 revival maximum and5 ancillary.",
+  "account_wide_observed_usd": 179.7900902808,
+  "account_wide_period": "2026-09-25 through2026-10-11; includes unrelated Lightsail/moderator and tax; not added wholesale as campaign spend",
+  "new_spend_usd": 0.01,
+  "new_spend_description": "One Cost Explorer query; include in reconciliation.",
+  "billing_delay_cleanup_reserve_usd": 20,
+  "retained_storage_network_forecast_usd": 5,
+  "conservative_committed_and_reserved_usd": 225.28,
+  "remaining_before_new_launch_usd": 74.72,
+  "resources": [
+    {
+      "id": "i-0025eb05db3c2491c",
+      "region": "us-east-1",
+      "purpose": "historical prover",
+      "observed_state": "absent from all-region-instance query for us-east-1",
+      "historical_rate_cap_usd_hour": 0.4,
+      "historical_deadline": "2026-10-13T08:42:31Z",
+      "live_check": "evidence/G02/aws-prover-instances.json",
+      "public_health": "504; unavailable",
+      "retained_volumes": [],
+      "elastic_addresses": []
+    },
+    {
+      "id": "anonymous-message-board-testnet-backups-nvdhcyurtoga/releases/v6-20261010/",
+      "purpose": "recovery archives",
+      "retention_deadline": "2026-11-10",
+      "state": "Worker verified current pinned versions/hash and10November retention at15:00UTC",
+      "forecast_included_usd": 5
+    },
+    {
+      "id": "local.aztec.bok",
+      "purpose": "Mac plugin",
+      "observed_state": "ready, active0",
+      "paid_compute_usd": 0,
+      "limitation": "Mac awake and logged in; no remote replacement verified"
+    },
+    {
+      "id": "rolling-node-commissioning-20261011",
+      "purpose": "One additional private testnet fullnode and isolated Linux runtime qualification; public prover masked",
+      "state": "Terminated at package download; delayedconsole confirms controlsVerified, independent exactURL HTTP301 duewrongbucketregion; Fleetdeleted volumesabsent",
+      "reservation_usd": 1,
+      "reservation_includes": "8h m7a4xl plus0.5hcleanup,40+1024GiB encryptedgp3 deletion plus24horphancontingency,250GBegressforecast,backup/upload/request/tax/delayedcleanup buffers",
+      "runtime_archive_key": "releases/rolling-5235-20261011/runtime.tar.gz",
+      "archive_retention_deadline": "2026-11-10",
+      "independent_shutdown": "EC2 requestFleet ValidUntil termination plus persistent hostbudget and commissioning timers required",
+      "no_overlap_observed": true,
+      "upload_receipt": "evidence/G14/runtime-upload-receipt-5235.json",
+      "fleet_id": "fleet-671ac9df-17d2-473d-b961-4a530a4e455f",
+      "launch_template_id": "lt-0a919a65c02a7a84a",
+      "compute_deadline": "2026-10-12T02:20:37Z",
+      "commissioning_deadline": "2026-10-11T18:50:37Z",
+      "cloud_termination_verified": true,
+      "host_termination_verified": true,
+      "instance_id": "i-0b898476b2a8f5f7f",
+      "volume_ids": [
+        "vol-0e76826daf7e40da8",
+        "vol-08b18efdb31a113ca"
+      ],
+      "launch_time": "2026-10-11T18:21:47Z",
+      "delete_on_termination_verified": true,
+      "instance_shutdown_terminate_verified": true,
+      "compute_shutdown_reason": "Client.InstanceInitiatedShutdown",
+      "termination_observed_at": "2026-10-11T18:24:08Z",
+      "paid_attempts": 1,
+      "prior_attempt_conservative_accrual_usd": 1,
+      "reservation_disposition": "Retain1USD conservative terminatedattempt accrual; originalfull105 reservation superseded by newreplacement105 plus this1; S3archive retention countednewcampaign.",
+      "diagnosis_evidence": "evidence/G02/package-region-diagnosis.json"
+    },
+    {
+      "id": "rolling-node-commissioning-20261011-02",
+      "purpose": "Diagnostic replacement for unknownbootstrapshutdown; historical5235 Linuxquery runtime only, notcurrentRollingprotocol acceptance",
+      "state": "selfterminated stagependingdelayedconsole; regionmismatch independentlyreproduced; Fleetdeleted volumesabsent",
+      "reservation_usd": 1,
+      "prior_attempts_reserved_separately_usd": 1,
+      "reservation_includes": "Same complete8h+.5hcompute/40+1024GiBstorage/250GBegress/backups/requests/taxcleanup forecast in fullnode_recovery_proposal",
+      "runtime_archive_key": "releases/rolling-5235-20261011/runtime.tar.gz",
+      "runtime_archive_version": "5sJL2qArC3lcnmSCR8OPK5O.u09Nao95",
+      "archive_retention_deadline": "2026-11-10",
+      "source_bootstrap": "47cb0a0 equivalent reviewed6128c140",
+      "runtime_source": "5235f497a80f52b5e1a9a797d2c92824618ca7c4",
+      "no_overlap_observed": true,
+      "fleet_id": "fleet-4c70ab63-5372-49d9-8428-6ec8935309a4",
+      "launch_template_id": "lt-0ce9903bb068fd974",
+      "compute_deadline": "2026-10-12T02:34:35+00:00",
+      "commissioning_deadline": "2026-10-11T19:04:35Z",
+      "cloud_termination_verified": true,
+      "instance_ids": [
+        "i-04a91ddf4b8f834b3"
+      ],
+      "termination_observed_at": "2026-10-11T18:35:30Z",
+      "compute_shutdown_reason": "Client.InstanceInitiatedShutdown",
+      "actual_bucket_region": "eu-west-2",
+      "reservation_disposition": "Reserve1USD for second terminatedattempt; thirdreplacement separatelyforecast105. No overlap."
+    },
+    {
+      "id": "rolling-node-commissioning-20261011-03",
+      "purpose": "VerifiedS3regionrepair; historical5235Linuxqueryqualification only",
+      "state": "terminated; volumes absent; request fleet deletion acknowledged; final qualification unknown",
+      "reservation_usd": 10,
+      "reservation_includes": "Fullsame8h+.5hcompute/40+1024GiBstorage/250GBegress/backups/requests/taxcleanup forecast, pluspriorattemptsseparately2USD",
+      "runtime_archive_key": "releases/rolling-5235-20261011/runtime.tar.gz",
+      "runtime_archive_version": "5sJL2qArC3lcnmSCR8OPK5O.u09Nao95",
+      "runtime_source": "5235f497a80f52b5e1a9a797d2c92824618ca7c4",
+      "bootstrap_source": "9362834 equivalentreviewede2d4",
+      "archive_retention_deadline": "2026-11-10",
+      "no_overlap_observed": true,
+      "fleet_id": "fleet-9cfd409b-3ca9-4061-a9aa-1cd6b648cf7c",
+      "launch_template_id": "lt-02bde80c40c9f7003",
+      "compute_deadline": "2026-10-12T02:41:10+00:00",
+      "commissioning_deadline": "2026-10-11T19:11:10Z",
+      "cloud_termination_verified": true,
+      "instance_ids": [
+        "i-09258d7eef0311a2c"
+      ],
+      "host_termination_verified": true,
+      "host_controls_verified_at": "2026-10-11T18:42:37Z",
+      "delete_on_termination_verified": true,
+      "volume_ids": [
+        "vol-05d0db668f3b93045",
+        "vol-0e6826325aa884889"
+      ],
+      "evidence_reference": "evidence/G02/rolling-node-03-installation-observations.json",
+      "last_observed_at": "2026-10-11T20:12:11.187680+00:00",
+      "latest_safe_observation": {
+        "stage": "installed",
+        "controlsVerified": true,
+        "budgetStop": "2026-10-12T02:41:10Z",
+        "egressBytes": 3151041,
+        "linuxQueryQualified": false
+      },
+      "latest_live_state": "terminated",
+      "termination_evidence": "evidence/G02/rolling-node-03-termination.json",
+      "remaining_volumes": [],
+      "qualification_status": "Not qualified; final qualification receipt unavailable in console. No replay authorized by missing receipt.",
+      "termination_observed_at": "2026-10-11T20:11:39Z",
+      "network_out_observed_bytes": 1593617,
+      "network_evidence": "evidence/G02/rolling-node-03-network-out.json",
+      "accrual_bound": {
+        "compute_hours": 1.6,
+        "compute_rate_usd_hour": 0.92736,
+        "compute_usd": 1.484,
+        "storage_gib": 1064,
+        "storage_rate_usd_gib_month": 0.08,
+        "storage_hours": 1.6,
+        "storage_usd": 0.187,
+        "network_upper_gb": 36,
+        "network_usd_gb": 0.09,
+        "network_usd": 3.24,
+        "public_ipv4_usd": 0.008,
+        "requests_backups_tax_delay_cleanup_buffer_usd": 5.081,
+        "total_usd": 10
+      },
+      "reservation_disposition": "Replace105 planned8hreservation with10 conservative terminated-hostbound; 19 CloudWatch datapoints total1.59MB corroborate lowactualegress but budgetuses50Mbps whole1.6h bound36GB. No retained disks observed. Global20delayedbilling and5archive retention remain; no forecast treats billing delay aszero."
+    },
+    {
+      "id": "rolling-node-commissioning-20261011-04",
+      "purpose": "Diagnose prior unknown Linux node readiness through reviewed safe final receipt; historical5235 runtime only",
+      "state": "terminated after authenticated readiness failure",
+      "reservation_usd": 10,
+      "reservation_includes": {
+        "compute": 7.89,
+        "ebs": 3.85,
+        "ipv4": 0.05,
+        "outbound_conservative_multiple_path_charges": 48.75,
+        "cloudfront_upload": 0.43,
+        "https_requests": 0.24,
+        "backups": 0.5,
+        "operator_s3_downloads": 3.87,
+        "s3_requests": 0.1,
+        "tax20percent_and_extra_cleanup_buffer": 28.14
+      },
+      "bootstrap_revision": "3ce246dfbd02579f64884ad79246154136d309dc",
+      "payload_sha256": "a487604f332e56c0f8128eed1f3ce50907ece84c026fbc24701c4c118869f325",
+      "payload_bytes": 15961,
+      "runtime_source": "5235f497a80f52b5e1a9a797d2c92824618ca7c4",
+      "archive_retention_deadline": "2026-11-10",
+      "deadlines": {
+        "createdAt": "2026-10-11T20:42:35Z",
+        "budgetStop": "2026-10-12T04:42:35Z",
+        "commissioningStop": "2026-10-11T21:12:35Z",
+        "credentialExpiration": "2026-10-12T04:42:34.000Z"
+      },
+      "independent_shutdown": "requestFleet ValidUntil terminate plus host budget and commissioning timers; mandatory actual readback",
+      "no_overlap_observed": true,
+      "paid_action_intent": "Private04 launch-intent must be exclusive before launch; missing receipt never licenses replay",
+      "fleet_id": "fleet-fb355b06-10a4-4688-9ed5-36bb68ef7945",
+      "launch_template_id": "lt-0206e70712a49165d",
+      "instance_id": "i-0dc273607f11cedb7",
+      "volume_ids": [
+        "vol-0d52c339556efda66",
+        "vol-048a9b54f9cf32848"
+      ],
+      "launch_time": "2026-10-11T20:48:36Z",
+      "cloud_termination_verified": true,
+      "delete_on_termination_verified": true,
+      "instance_shutdown_terminate_verified": true,
+      "host_termination_verified": true,
+      "host_controls_verified_at": "2026-10-11T20:52:03Z",
+      "qualification_status": "failed: node/container exited1, OOMfalse,314readinessattempts UNAVAILABLE",
+      "qualification_readiness_deadline": "2026-10-11T22:12:35Z",
+      "qualification_deadline": "2026-10-11T22:27:35Z",
+      "evidence_reference": "evidence/G02/rolling-node-04-launch-controls.json",
+      "last_observed_at": "2026-10-11T22:16:21Z",
+      "latest_live_state": "terminated",
+      "latest_safe_observation": {
+        "marker": "ROLLING_BOOTSTRAP",
+        "schemaVersion": 1,
+        "stage": "installed",
+        "controlsVerified": true,
+        "budgetStop": "2026-10-12T04:42:35Z",
+        "egressBytes": 3532997,
+        "runtimeArchiveSha256": "7cc015042e19de67cf442c35aef401faed0604f5a924d94165798b9ed2a71dfc",
+        "manifestSha256": "7ec9ba5d35cefcf998ac002ed4bed247b36c777f3595dd50c75ff6e87952e9ed",
+        "proverPolicy": "masked-pending-qualification",
+        "linuxQueryQualified": false
+      },
+      "latest_observation_evidence": "evidence/G02/rolling-node-04-readonly-221621.json",
+      "termination_observed_at": "2026-10-11T22:16:21Z",
+      "remaining_volumes": [],
+      "termination_evidence": "evidence/G02/rolling-node-04-cleanup-result.json",
+      "accrual_bound": {
+        "hours": 1.6,
+        "compute_rate_usd_hour": 0.92736,
+        "compute_usd": 1.483776,
+        "ebs_gib": 1064,
+        "ebs_usd_bound": 0.2,
+        "public_ipv4_usd_bound": 0.01,
+        "shaped_egress_gb_bound": 36,
+        "network_usd_bound": 3.24,
+        "rounded_total_with_cleanup_buffer_usd": 10
+      },
+      "reservation_disposition": "Replace105 planned8hreservation with10 conservative terminated-hostbound only after EC2 termination and both EBS volumes absent. Global20 delayedbilling and5 retainedarchive reserves remain. No new server launch; independent startup diagnosis required.",
+      "final_receipt": {
+        "evidence": "evidence/G02/rolling-node-04-readonly-221236.json",
+        "sha256": "d0159859bf0025dd3d86f1f763cc024ec30083ee5840fe54cf77343172da367e",
+        "version": "xkHk2Laj0kL7XmUUap5d5Fs.zVPN4tP5",
+        "manifestBinding": true,
+        "bootstrapBinding": true
+      }
+    },
+    {
+      "id": "rolling-node-diagnostic-20261012-05",
+      "purpose": "Single changed-observability nativeAMD64 diagnostic; actualstartup causeunknown, publicprovermasked",
+      "state": "Terminated after readiness failure; fleet deleted and both volumes absent",
+      "reservation_usd": 15,
+      "operating_hours": 2,
+      "termination_allowance_hours": 0.5,
+      "instance": "m7a.4xlarge",
+      "compute_rate_usd_hour": 0.92736,
+      "root_gp3_gib": 40,
+      "node_gp3_gib": 1024,
+      "orphan_volume_contingency_hours": 24,
+      "egress_forecast_gb": 75,
+      "aggregate_egress_mbps": 50,
+      "forecast_usd": {
+        "compute": 2.3184,
+        "ebs": 3.13289,
+        "ipv4": 0.0125,
+        "network_multiple_path_charges": 14.625,
+        "archive": 0.5,
+        "downloads": 0.5,
+        "requests": 0.25,
+        "tax": 4.26776,
+        "extra_cleanup_billing_buffer": 9.39345
+      },
+      "proposal": "evidence/G02/native-linux-diagnostic-proposal-20261012.json",
+      "review": "evidence/G14/startup-combined-7db-review.json",
+      "shutdown_controls_required": [
+        "immutable requestFleet ValidUntil terminate2h",
+        "persistenthostbudget UTC timer2h",
+        "30mincommissioning timer"
+      ],
+      "no_overlap_observed": true,
+      "archive_retention_deadline": "2026-11-10",
+      "bootstrap_source": "0502b168214669977eddcf4320e52c7f3cd437f5",
+      "archive": {
+        "bucket": "anonymous-message-board-testnet-backups-nvdhcyurtoga",
+        "key": "releases/rolling-0502-20261012-05/runtime.tar.gz",
+        "versionId": "aIICW0WL.4.hu8QYe4XGoXlIU9aPLU72",
+        "bytes": 383489689,
+        "sha256": "6d4813b4d9cf0f5826639ac616673eea5fd62bdcc5d17670aa4f07c5ea9485fd",
+        "checksumSHA256": "bUgTtNnPD1gmY5rGFmc+6l/WK9zF0XZwqk8HxeqUhf0=",
+        "headVerified": true
+      },
+      "preparation_evidence": "evidence/G02/operator05b-preparation-handoff.json",
+      "prior_archive": {
+        "key": "releases/rolling-7db-20261012-05/runtime.tar.gz",
+        "version": "D0VltcNnM87IQaex19DYPZaKpzmuggjQ",
+        "bytes": 383489549,
+        "sha256": "217f69920a971c7c45bb08f686380f187f2e2e37b6798ce3f12f796752efb608",
+        "retention": "30day current,7day noncurrent; included within35USD forecast; retain aftercompute stops"
+      },
+      "payload": {
+        "bytes": 16332,
+        "sha256": "ae1fa87d4282c0933cd063486369969decb8acfb3198b1311c89681fcc277e77",
+        "headroomBytes": 52
+      },
+      "deadlines": {
+        "createdAt": "2026-10-12T00:09:37Z",
+        "budgetStop": "2026-10-12T02:09:37Z",
+        "commissioningStop": "2026-10-12T00:39:37Z"
+      },
+      "instance_id": "i-02281bf3f22119f45",
+      "fleet_id": "fleet-df127a8c-551b-488c-903d-aa8f1c3a709a",
+      "launch_template_id": "lt-0c91eae17cc765d87",
+      "volume_ids": [
+        "vol-0dfd3646600a78799",
+        "vol-0236621a2c6bd0c2e"
+      ],
+      "cloud_termination_verified": true,
+      "host_termination_verified": true,
+      "delete_on_termination_verified": true,
+      "remaining_volumes": [],
+      "termination_evidence": "evidence/G02/operator05b-cleanup-confirmation.json",
+      "termination_observed_at": "2026-10-12T01:53:35.044547+00:00",
+      "qualification_status": "Failed: 325 UNAVAILABLE probes, node/container exit1, OOM false; no startup qualification.",
+      "accrual_bound": {
+        "schemaVersion": 1,
+        "at": "2026-10-12T01:43:32.967218+00:00",
+        "recommendationOnly": true,
+        "leadLedgerUnchanged": true,
+        "computeAndVolumesGone": true,
+        "fleetFinalStatePending": true,
+        "billingIsEstimateNotInvoice": true,
+        "boundHours": 1.6,
+        "boundEgressGB": 36,
+        "method": "Retain full 50Mbps egress bound through1.6h despite low public attested bytecount; no CostExplorer call. Include both archive copies and receipts retention, regional transfer, requests, tax and delayed cleanup buffer.",
+        "usdBreakdown": {
+          "compute": 1.483776,
+          "gp3": 0.18656438356164384,
+          "publicIPv4": 0.008,
+          "networkWorstCase50Mbps": 7.0200000000000005,
+          "retainedArchiveAndReceipt30Days": 0.5,
+          "crossRegionAndOperatorReads": 0.5,
+          "requests": 0.25,
+          "taxBuffer20Percent": 1.989668076712329,
+          "additionalBuffer": 3.0619915397260264
+        },
+        "recommendedCampaignBoundUsd": 15,
+        "previousReservedUsd": 35,
+        "possibleReleaseOnlyAfterLeadReconciliationUsd": 20,
+        "historicalBoundBefore05Usd": 130.28,
+        "proposedCumulativeBoundUsd": 145.28,
+        "remainingIfAcceptedUsd": 154.72
+      },
+      "reservation_disposition": "Reduce 35 USD operating reservation to 15 USD conservative accrued/retained bound after confirmed compute, fleet and disk cleanup. Includes full 50Mbps egress through 1.6h, both retained archives, tax and delay buffer. Estimate, not invoice."
+    },
+    {
+      "id": "rolling-node-20261012-06-preparation",
+      "purpose": "One exact-source startup-stage diagnostic for failed05b, no public routing or proof jobs",
+      "state": "Readiness failed inside factory-archiver; instance terminated, both owned volumes absent, Fleet deleted verified.",
+      "reservation_usd": 15,
+      "proposal_evidence": "evidence/G02/startup-stage-operator06-proposal.json",
+      "review_evidence": "evidence/G02/startup-stages-c062-review.json",
+      "forecast": {
+        "usdComponents": {
+          "compute_1h_plus30min": 1.3910399999999998,
+          "gp3_1064GiB_1_5h_plus24h_orphan": 2.9733698630136987,
+          "publicIPv4_1_5h": 0.0075,
+          "egress45GB_bound_0_195": 8.775,
+          "newArchiveReceipt30dayRetention": 0.5,
+          "crossRegionAndOperatorReads": 0.5,
+          "requestAllowance": 0.25,
+          "newSnapshots": 0
+        },
+        "subtotalUsd": 14.396909863013699,
+        "taxBuffer20PercentUsd": 2.87938197260274,
+        "additionalBillingCleanupBufferUsd": 7.723708164383561,
+        "proposedReservationUsd": 25,
+        "proposedCumulativeUsd": 170.28,
+        "remainingAfterReservationUsd": 129.72,
+        "computeOverrunMinutes": 30,
+        "orphanVolumeAllowanceHours": 24,
+        "fullRateEgressPhysical1_5hGb": 33.75,
+        "reservedEgressGb": 45,
+        "networkRateMethod": "Conservative0.195USD/GB allowance retained from prior multi-path forecast, above ordinary internet-out rate; not claimed a new measured invoice rate. No free-tier credit assumed.",
+        "retention": "New archive/receipt30days allowance0.50; older retained archives covered by existing145.28 bound and global reserve. No snapshots or new persistent backup capacity. Both volumes must be confirmed absent after cleanup; delayed cleanup/charges not treated aszero.",
+        "noOverlap": "No live instance, volume or active fleet observed. All prior costs remain in145.28; proposed25 is new reservation, not reset."
+      },
+      "operating_minutes": 60,
+      "configuration": {
+        "instanceType": "m7a.4xlarge",
+        "architecture": "x86_64/native AMD64",
+        "vCPU": 16,
+        "physicalCores": 16,
+        "memoryGiB": 64,
+        "nodeMemoryLimitGiB": 24,
+        "region": "us-east-1",
+        "hourlyUsd": 0.92736,
+        "pricingSKU": "TTPYSE2GSHDGSMTX",
+        "pricingEffective": "2026-10-01",
+        "ami": "ami-0fa5967347d08d2df",
+        "amiOwner": "099720109477",
+        "amiState": "available",
+        "image": "azteclabs/aztec@sha256:e5bc218e326b4f3b1cd06b0309cb98e87fef5dfda3330157ce1e393d89416c32",
+        "rootGiB": 40,
+        "dataGiB": 1024,
+        "volumeType": "encrypted gp3, baseline3000IOPS125MiBs, DeleteOnTermination",
+        "gp3GbMonthUsd": 0.08,
+        "operatingMinutes": 60,
+        "why60": "Smallest practical diagnostic window preserving existing30min commissioning and15min qualification allocation plus startup/sync observation. Existing code computes deadline=min(budgetStop-60s,createdAt+105min), readiness=min(deadline-900s,createdAt+90min); with60min budget this gives44min readiness and59min qualification cutoff, then60min absolute stop. No source clock/gate change. Shorter budget risks leaving little readiness time if30min commissioning is consumed.",
+        "deadlineMinutesFromFreshCreatedAt": {
+          "commissioning": 30,
+          "readiness": 44,
+          "qualification": 59,
+          "hostBudget": 60,
+          "fleetExpiry": 60
+        },
+        "earlyFailure": "Once exact receipt/service observation confirms terminal node failure, preserve sanitized stage receipt and stop owned instance/retire fleet through a separately authorized once-only cleanup. Do not spend whole hour polling a known-dead process. Dedicated record is not remotely readable before a finalizer receipt unless an actual existing safe observation exposes terminal status; no assumption of early visibility.",
+        "syncLimitation": "A healthy node needing longer initial sync may miss44min; record prerequisite blocker, no automatic extension or waived readiness. This proposal does not guarantee sync or qualification.",
+        "ioLimitation": "Current official hardware page targets50000+random IOPS; baseline gp3 and m7a4xl are deliberately retained for bounded startup diagnosis, not sustained-throughput acceptance. Root cause has not been attributed to I/O; any production sizing qualification remains separate.",
+        "egressMbps": 50,
+        "ports": "Existing SG unchanged; P2P40400TCP/UDP. Node8082/admin8882 loopback. No SSH/keypair/instance IAM profile/Docker API. Prover/proxy remain masked.",
+        "independentControls": "requestFleet Type=request, ValidUntil=createdAt+60min, TerminateInstancesWithExpiration=true; persistent absolute host budget timer installed before downloads;30min commissioning,50Mbps shaper; verify actual deadlines/DOT/termination behavior and receipt source bindings.",
+        "readinessQualification": "Exact actual node identity/proofmode/canonical sync/freshness plus existing isolated Linux query qualifier; no proofs/jobs/routing. Historical legacy addresses only for query qualification, current Rolling catalog separately verified."
+      },
+      "gates_remaining": [
+        "Independent archiver diagnosis and changed-source readiness/query qualification; no replay",
+        "Retained S3 archive/receipt cleanup by retention deadline"
+      ],
+      "retention_deadline": "2026-11-11",
+      "no_paid_action_yet": false,
+      "instance_id": "i-01b6bdaf005878edf",
+      "fleet_id": "fleet-2d6a2f57-89ab-41d0-9279-bd30bddcd800",
+      "launch_template_id": "lt-09a3ebfc479bfdf57",
+      "launch_template_version": 1,
+      "volume_ids": [
+        "vol-002e66a7b25e4d23d",
+        "vol-0b3786b2c42eed3b8"
+      ],
+      "launch_time": "2026-10-12T03:15:16Z",
+      "compute_deadline": "2026-10-12T04:09:27Z",
+      "commissioning_deadline": "2026-10-12T03:39:27Z",
+      "readiness_deadline": "2026-10-12T03:53:27Z",
+      "cloud_termination_verified": true,
+      "host_termination_verified": true,
+      "delete_on_termination_verified": true,
+      "instance_shutdown_terminate_verified": true,
+      "launch_evidence": "evidence/G02/operator06-launch.json",
+      "actual_controls_evidence": "evidence/G02/rolling-node-06-readonly-031622.json",
+      "cleanup_evidence": "evidence/G02/operator06-cleanup-confirmation.json",
+      "retained_cost_bound_evidence": "evidence/G02/operator06-cost-bound.json",
+      "reservation_disposition": "25USD original reservation reduced to15USD conservative accrued and retained bound after verified resource absence; original launch forecast preserved."
+    },
+    {
+      "id": "rolling-node-20261012-07-preparation",
+      "purpose": "One changed nativeLinux node diagnostic using reviewed split ordinary/archive and debug RPC providers; archiver prerequisite for Rolling/PrivateBok",
+      "state": "terminated; both volumes absent; Fleet deleted verified",
+      "reservation_usd": 25,
+      "prior_bound_usd": 160.28,
+      "complete_forecast_usd": 185.28,
+      "remaining_usd": 114.72,
+      "proposal_evidence": "evidence/G02/operator07-split-bootstrap-proposal.json",
+      "proposal_sha256": "96ca5a908b704281b04129653daabb489e0a7c400ac1b294e0998cdc6ca3dc1c",
+      "review_evidence": "evidence/G02/bootstrap-split-28ca-review.json",
+      "static_and_mac_review": "evidence/G02/archiver-image-split-72e-review.json",
+      "source_candidate": "96825e16271baf7d81442415565fe51b1533737e",
+      "forecast": {
+        "compute_1_5_hours": 1.3910399999999998,
+        "ebs_1064GiB_25_5_hours": 2.9733698630136987,
+        "ipv4_1_5_hours": 0.0075,
+        "egress_45GB_conservative_multiple_path_rate": 8.775,
+        "new_archive_receipt_30_days": 0.5,
+        "cross_region_operator_reads": 0.5,
+        "requests": 0.25,
+        "tax_buffer_20_percent": 2.87938197260274,
+        "additional_delayed_billing_cleanup_buffer": 7.7237081643835594,
+        "total": 25
+      },
+      "configuration": {
+        "type": "m7a.4xlarge",
+        "region": "us-east-1",
+        "memoryGiB": 64,
+        "architecture": "x86_64",
+        "rateUsdHour": 0.92736,
+        "priceSku": "TTPYSE2GSHDGSMTX",
+        "rateEffectiveDate": "2026-10-01",
+        "rootGp3GiB": 40,
+        "dataGp3GiB": 1024,
+        "encrypted": true,
+        "deleteOnTermination": true,
+        "iamInstanceProfile": false,
+        "sshIngress": false,
+        "egressMbps": 50
+      },
+      "operating_minutes": 60,
+      "deadlines_required_minutes": {
+        "commissioning": 30,
+        "readiness": 44,
+        "qualification": 59,
+        "hostBudget": 60,
+        "fleetExpiry": 60
+      },
+      "timing_note": "Actual existing bootstrap computes readiness=min(created+90min,budgetStop-60s-900s), hence44min for60min budget; proposal45min is rounded and is not the enforced deadline. Verify absolute generated timestamps.",
+      "shutdown_controls_required": [
+        "Independent request Fleet ValidUntil=createdAt+60min and TerminateInstancesWithExpiration=true, actual readback",
+        "Persistent host budget+commissioning timers and shaper verified before download/node, automatic safe final receipt before shutdown",
+        "No extension/replacement/restart on failure, owned-resource cleanup and volume/fleet final readback"
+      ],
+      "retention_deadline": "2026-11-11",
+      "approved_by": "lead-20261011",
+      "recorded_at": "2026-10-12T05:38:10.362932+00:00",
+      "authorization": "User cumulative USD300 development infrastructure mandate",
+      "no_paid_action_yet": false,
+      "archive": {
+        "bucket": "anonymous-message-board-testnet-backups-nvdhcyurtoga",
+        "key": "releases/rolling-96825e-20261012-07/runtime.tar.gz",
+        "versionId": "zLQK6Z2B3ktf4mY7OtB_U9UcJCkI_K3d",
+        "bytes": 383879773,
+        "sha256": "fc290658514a36c88bf194c9cfc156f75a402fe42f1d5e493476e6ff2fb10ee4",
+        "headVerified": true,
+        "range206Verified": true
+      },
+      "payload": {
+        "bytes": 16356,
+        "sha256": "f1023f506cc78df0cc7a739fdd9561fac1efd3bf7e92cb72065aed506a08ce8f",
+        "headroomBytes": 28
+      },
+      "deadlines": {
+        "createdAt": "2026-10-12T06:06:50Z",
+        "commissioningStop": "2026-10-12T06:36:50Z",
+        "readiness": "2026-10-12T06:50:50Z",
+        "qualification": "2026-10-12T07:05:50Z",
+        "budgetStop": "2026-10-12T07:06:50Z",
+        "launchPreflightBefore": "2026-10-12T06:16:50Z"
+      },
+      "preparation_evidence": "evidence/G02/operator07-payload-verification.json",
+      "archiveChargesIncludedInReservation": true,
+      "launch_template_id": "lt-0176e5dc4520b77ab",
+      "fleet_id": "fleet-bed1edff-094b-46cf-831b-31d3065cd04c",
+      "launch_evidence": "evidence/G02/operator07-launch.json",
+      "payload_review": "evidence/G02/operator07-payload-independent-review.json",
+      "cloud_termination_verified": true,
+      "host_termination_verified": true,
+      "instance_id": "i-04979326aaeb3506d",
+      "volume_ids": [
+        "vol-0e83a11eddee065c9",
+        "vol-078beb192cd3ed16c"
+      ],
+      "delete_on_termination_verified": true,
+      "control_evidence": "evidence/G02/rolling-node-07-readonly-061237.json",
+      "status": "terminated; both volumes absent; Fleet deleted verified",
+      "terminal_evidence": "evidence/G02/rolling-node-07-readonly-065149.json",
+      "cleanup_evidence": "evidence/G02/operator07-cleanup-reconciliation.json",
+      "terminal_reason": "UNAVAILABLE142; nodeexit1 OOMfalse, l1-config stage began but did not complete. Cause unclassified; no automatic retry.",
+      "reservation_retained_usd": 15,
+      "final_fleet_evidence": "evidence/G02/operator07-fleet-final-authorized-readback.json",
+      "campaign_accrual_bound_usd": 15
+    },
+    {
+      "id": "rolling-node-commissioning-20261012-08",
+      "purpose": "One additional private testnet fullnode diagnostic: reviewed explicit PublicNode complete-configuration adapter; sustained startup/query capacity unqualified",
+      "state": "terminated; bothdisks absent; Fleetdeleted. Actual configuration andfactorythroughworldstate passed; archiverinitialsync unfinished, readinessunqualified",
+      "reservation_usd": 15,
+      "source": "5ce91bced6f6c5d02b5de333e6ee73d112de07f8",
+      "forecast": {
+        "ledgerPath": "/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/execution/infrastructure-ledger.json",
+        "ledgerSha256": "69b1b2ff2e74c186c135ccecc571a71569b9ee5c39dad5865ffba20d982880a8",
+        "priorConservativeCumulativeUsd": 175.28,
+        "remainingBeforeProposalUsd": 124.72,
+        "newProposedReservationUsd": 25,
+        "proposedTotalUsd": 200.28,
+        "proposedRemainingUsd": 99.72,
+        "allocated": true,
+        "forecastComponentsUsd": {
+          "compute1_25h": 1.1592,
+          "gp3_1064GiB1_25h": 0.14575342,
+          "orphanDisk24hContingency": 2.79846575,
+          "publicIPv4_1_25h": 0.00625,
+          "egress35GB_at0_195": 6.825,
+          "newArchiveAndReceipts30days": 0.5,
+          "crossRegionReadAllowance": 0.5,
+          "requestsAndLogs": 0.25,
+          "taxAllowance": 3,
+          "additionalBillingCleanupBuffer": 9.81533083
+        },
+        "priceScope": "Reuse source-backed prior07 rates as planning inputs only; recheck applicable published prices and current live resources before allocating/launching. No network/price query in this offline task.",
+        "operatingPeriodSeconds": 3600,
+        "cleanupOverrunSeconds": 900,
+        "networkBasis": "50Mbps *1.25h =28.125GB; reserve35GB including shaping burst/headroom. Neither forecast nor software shaper is a proof of a hard faulty-host cost bound.",
+        "overlap": "07 instance terminated, volumes absent and Fleet deleted verified historical evidence. No overlap planned; no fresh resource query permitted in this offline task. Any unexpected live overlap blocks prelaunch and requires complete reforecast.",
+        "retention": "Previous campaign archive retention already counted175.28; new .5 provision covers one new archive/receipts30days. No retainedcompute/snapshot planned; orphandisk24h reserve included. If old archives extend beyond already budgeted retention, reconcile separately before launch.",
+        "durationRationale": "60-minute diagnostic ceiling retains30min commissioning,44min readiness,59min qualifier cutoff. Prior07 failed at44min after l1-config earlyexit; the reviewed configuration-provider change addresses measuredMac429 but actualLinuxstartup and subsequentsync duration remain unknown. This is a bounded diagnostic window, not a prediction that sync qualifies within44min. No automatic extension."
+      },
+      "operating_minutes": 60,
+      "compute_rate_usd_hour": 0.92736,
+      "rate_live_evidence": "evidence/G02/operator08-lead-live-preallocation.json",
+      "no_overlap_observed": true,
+      "runtime_archive_sha256": "98083c1d015660d647cadc88fe56a555f979cdea9dafa202528f8b68230b04aa",
+      "runtime_manifest_sha256": "1988f7390765f02302804463588ea1a90f8c4493ac087c59e1cb273d77884a5e",
+      "independent_shutdown": "Require request Fleet ValidUntil termination and persistent host timer, both createdAt+60min; commissioning30/readiness44/qualification59, verify before service qualification",
+      "storage": "40+1024GiB encrypted gp3 DOT;24h orphan contingency; no snapshots; prior retained storage reservations preserved",
+      "retention_deadline": "2026-11-11",
+      "paid_compute_started": true,
+      "package_review": "evidence/G02/startup08-5ce-package-review.json",
+      "gates_remaining": [
+        "actualcomplete archive startup",
+        "qualified Linuxnode/querybehavior",
+        "remote proof servicequalification"
+      ],
+      "runtime_archive_key": "releases/rolling-5ce91b-20261012-08/runtime.tar.gz",
+      "runtime_archive_version": "p6gnZX0YLvtOviWqUi_WyYL2QfNFe5IY",
+      "payload_sha256": "5989e05b2c69ec5224538237328c0381526f7fc905137f0de14879562e14fdf4",
+      "payload_bytes": 16349,
+      "compute_deadline": "2026-10-12T09:54:55Z",
+      "commissioning_deadline": "2026-10-12T09:24:55Z",
+      "readiness_deadline": "2026-10-12T09:38:55Z",
+      "qualification_deadline": "2026-10-12T09:53:55Z",
+      "latest_launch_before": "2026-10-12T09:04:55+00:00",
+      "upload_and_payload_evidence": "evidence/G02/operator08-actual-payload-verification.json",
+      "instance_id": "i-0613e5a3dca106101",
+      "fleet_id": "fleet-558fc172-30e9-4dcc-a49d-45a04a6ef47e",
+      "launch_template_id": "lt-057cd5d25c629d872",
+      "volume_ids": [
+        "vol-0b25fb2d7fcca982c",
+        "vol-077ac66d0b2e6ca26"
+      ],
+      "launch_time": "2026-10-12T09:02:09Z",
+      "cloud_termination_verified": true,
+      "host_termination_verified": true,
+      "host_controls_verified_at": "2026-10-12T09:02:56Z",
+      "delete_on_termination_verified": true,
+      "instance_shutdown_terminate_verified": true,
+      "latest_live_evidence": "evidence/G02/operator08-fleet-readback-0947.json",
+      "operator": "controls-20261011",
+      "prior_reservation_usd": 25,
+      "reservation_disposition": "Retain15USD fullhour compute/storage/network +30dayarchive +8.3135 delayedbilling/tax/cleanupbuffer; release10unused afterverifiedcompute/disks/Fleet cleanup. Not actualinvoice.",
+      "cleanup_evidence": "evidence/G02/operator08-cleanup-reconciliation.json",
+      "terminal_evidence": "evidence/G02/operator08-terminal-handoff.json"
+    },
+    {
+      "id": "rolling-node-commissioning-20261012-09",
+      "purpose": "One changed instrumented nativeAMD64 archiver-startup/query-only qualification campaign09 using reviewed schema2 progress and preserved config-provider adapter; measure08unknown wait, not blind capacity retry. No proofjobs/publicrouting/release.",
+      "state": "terminated; both volumes absent; Fleet deleted verified; readiness failed at rollup compatibility",
+      "reservation_usd": 15,
+      "source": "1ec67f406645442965ced41e56b4e93c7097a050",
+      "forecast": {
+        "schemaVersion": 1,
+        "createdAt": "2026-10-12T11:53:41.339959+00:00",
+        "status": "PROPOSED_ONLY_NOT_ALLOCATED",
+        "priorCumulativeBoundUsd": "190.28",
+        "proposedReservationUsd": "25.00",
+        "cumulativeIfLeadReservesUsd": "215.28",
+        "authorizedTotalCeilingUsd": "300.00",
+        "remainingIfReservedUsd": "84.72",
+        "remainingBeforeReservationUsd": "109.72",
+        "purpose": "One changed instrumented nativeAMD64 archiver-startup/query-only qualification campaign09 using reviewed schema2 progress and preserved config-provider adapter; measure08unknown wait, not blind capacity retry. No proofjobs/publicrouting/release.",
+        "resourceProposal": {
+          "instances": 1,
+          "instanceType": "m7a.4xlarge",
+          "region": "us-east-1",
+          "vCpu": 16,
+          "memoryGiB": 64,
+          "rootGp3GiB": 40,
+          "dataGp3GiB": 1024,
+          "ioBaselineOnly": true,
+          "encrypted": true,
+          "deleteOnTermination": true,
+          "egressMbps": 50,
+          "overlapInstances": 0,
+          "newSnapshots": 0,
+          "newBackupServices": 0,
+          "walletOrAwsCredentialsOnHost": false,
+          "sshOrNewIngress": false
+        },
+        "freshReadOnlyEvidence": {
+          "path": "execution/evidence/G02/operator09-forecast-readonly.json",
+          "sha256": "84595197f391b7de5567eeab0320473baf5dd190e41c7096b018820850479879"
+        },
+        "pricing": {
+          "compute": {
+            "sku": "TTPYSE2GSHDGSMTX",
+            "unit": "Hrs",
+            "usd": "0.9273600000",
+            "effectiveDate": "2026-10-01T00:00:00Z"
+          },
+          "observedAt": "2026-10-12T11:53:41.339959+00:00",
+          "source": "AWS Price List Query API GetProducts exact filters",
+          "ebsUsdPerGiBMonth": ".08",
+          "monthHours": 720,
+          "ipv4UsdPerHour": ".005",
+          "egressPlanningCeilingUsdPerGB": ".195",
+          "ancillaryRateStatus": "Retained conservative same-day planning rates/ceilings; not a new account invoice query",
+          "references": [
+            "https://aws.amazon.com/ec2/pricing/on-demand/",
+            "https://aws.amazon.com/ebs/pricing/",
+            "https://aws.amazon.com/vpc/pricing/"
+          ]
+        },
+        "costItems": [
+          {
+            "item": "compute_75min",
+            "usd": "1.15920000",
+            "basis": "One m7a.4xlarge Linux On-Demand us-east-1; 60min budget plus15min shutdown/billing margin. No Spot savings assumed."
+          },
+          {
+            "item": "gp3_1064GiB_75min",
+            "usd": "0.14777778",
+            "basis": "40GiB root+1024GiB data; baseline3000IOPS/125MiBps, encrypted DOT, no paid performance addons."
+          },
+          {
+            "item": "public_ipv4_75min",
+            "usd": "0.00625000",
+            "basis": "One public IPv4, no elastic-IP retention planned."
+          },
+          {
+            "item": "network_35GB",
+            "usd": "6.82500000",
+            "basis": "Conservative per-GB ceiling, not invoice rate;50Mbps*75min=28.125decimalGB, rounded up35GB; no free allowance assumed."
+          },
+          {
+            "item": "orphan_disk_24h",
+            "usd": "2.83733334",
+            "basis": "Separate24h full-disk retention cleanup allowance beyond compute; not authority to leave disks indefinitely."
+          },
+          {
+            "item": "new_archive_receipt_storage_30days",
+            "usd": "0.50000000",
+            "basis": "One fresh immutable runtime archive+receipts retained30days; prior retained archives already included in190.28."
+          },
+          {
+            "item": "archive_cross_region_transfer",
+            "usd": "0.50000000",
+            "basis": "Existing private eu-west-2 artifact bucket to us-east-1 host; conservative allowance."
+          },
+          {
+            "item": "requests_and_monitoring",
+            "usd": "0.25000000",
+            "basis": "S3 requests/control/readbacks/log metadata; no extra log ingestion service."
+          },
+          {
+            "item": "tax_and_unpriced_related_charges",
+            "usd": "3.00000000",
+            "basis": "Conservative planning provision, not an assertion about account tax treatment."
+          },
+          {
+            "item": "additional_delayed_billing_and_cleanup_buffer",
+            "usd": "9.77443888",
+            "basis": "Residual reserve; includes rate rounding, delayed usage and extra cleanup reads. Stop/replan before full forecast exceeds reserved25."
+          }
+        ],
+        "costItemsTotalUsd": "25.00000000",
+        "controls": {
+          "createdAt": "Fresh timestamp after authorized archive upload and immediately before actualpayload generation; not assigned now",
+          "latestLaunch": "createdAt+10min; reject stale payload, no silent redate",
+          "commissioning": "createdAt+30min, persistent commissioning timer; verified install controls required",
+          "readiness": "createdAt+44min",
+          "qualification": "createdAt+59min",
+          "absoluteBudgetStop": "createdAt+60min",
+          "independentCloudControl": "Request Fleet ValidUntil=absoluteBudgetStop and TerminateInstancesWithExpiration=true; actual AWS readback required",
+          "independentHostControl": "Persistent absolute systemd budget poweroff/terminate timer plus commissioning and qualification deadline controls; actual attestation required",
+          "financialReplay": "Exclusive fsynced intent/token before each single mutation. Unknown receipt reconciles only; no upload/fleet/replacement replay.",
+          "terminalCleanup": "Once-only owned cleanup on terminal failure/control failure/deadline; verify instance termination, bothvolumes absent and Fleetdeleted. Preserve receipt/source/intent evidence.",
+          "retention": "No new snapshot; DeleteOnTermination required. Archive/receipt30day allowance; retained storage remains charged after compute stops."
+        },
+        "packageEvidence": {
+          "path": "execution/evidence/G02/runtime-package-startup09-20261012.json",
+          "sha256": "15fc6511efd0c5cb5027b17b2a69ede513880a756951c275d6f2aa973092d920",
+          "source": "1ec67f406645442965ced41e56b4e93c7097a050",
+          "archivePassed": true
+        },
+        "limits": [
+          "Five localL1 preflight reads passed; they do not prove EC2 sustained upstream capacity/blob/trace/backlog or node readiness.",
+          "Plugin remains separately degraded with zeroactive jobs; publicL2 API compatibility prerequisite unresolved, no readiness inference from HTTP200.",
+          "Paid launch requires independent archive approval, explicit preparation grant, actualpayload<=16384/pins/capabilityexpiry review and separate launch grant; this forecast grants none.",
+          "Lead alone updates shared ledger; no reservation made by this worker."
+        ],
+        "allocationPerformed": false,
+        "uploadPerformed": false,
+        "launchPerformed": false,
+        "ledgerChanged": false
+      },
+      "forecast_evidence": "execution/evidence/G02/operator09-forecast.json",
+      "forecast_sha256": "499a648c1a932369f7299544a8a4677383de1b4eba938d9ae00672de35ed3aad",
+      "runtime_archive_sha256": "c41a55908c9a40f50c700c2d70286c16bb285f897ee9b32d5019a2d7ee88ef3e",
+      "runtime_manifest_sha256": "d20ad9e3eb9498a6963b0fb517ba9c3403e53f84fbae1770bf9731e8c1db1d41",
+      "package_review": "evidence/G02/startup09-package-runtime-review.json",
+      "operating_minutes": 60,
+      "paid_compute_started": true,
+      "approved_by": "lead-20261011",
+      "recorded_at": "2026-10-12T12:00:49.798770+00:00",
+      "authorization": "User cumulativeUSD300 mandate; lead reserves25 before upload. Separate actualpayload review and launch grant required.",
+      "retention_deadline": "2026-11-11",
+      "runtime_archive_key": "releases/rolling-1ec67f-20261012-09/runtime.tar.gz",
+      "runtime_archive_version": "w2oOS5NNWwfI.V_pziYODw9mTlRhKhE6",
+      "payload_sha256": "5cd99b535107063b597194c6310aa213e6fb8a304041c81284fec1346d720ff9",
+      "payload_bytes": 16367,
+      "deadlines": {
+        "createdAt": "2026-10-12T12:03:58Z",
+        "budgetStop": "2026-10-12T13:03:58Z",
+        "commissioningStop": "2026-10-12T12:33:58Z",
+        "readinessStop": "2026-10-12T12:47:58Z",
+        "qualificationStop": "2026-10-12T13:02:58Z",
+        "credentialExpiration": "2026-10-12T20:03:57.000Z",
+        "capabilityLifetimeSeconds": 7200
+      },
+      "latest_launch_before": "2026-10-12T12:13:58+00:00",
+      "upload_and_payload_evidence": "evidence/G02/operator09-actual-payload-verification.json",
+      "archiveChargesIncludedInReservation": true,
+      "launch_template_id": "lt-0f105c842ae8ab7b1",
+      "fleet_id": "fleet-8022692d-f2e7-40ac-9dcc-38934a84fc35",
+      "launch_evidence": "evidence/G02/operator09-launch.json",
+      "cloud_termination_verified": true,
+      "host_termination_verified": true,
+      "cloud_controls": {
+        "type": "request",
+        "validUntil": "2026-10-12T13:03:58+00:00",
+        "terminateWithExpiration": true,
+        "state": "submitted",
+        "activity": "pending_fulfillment"
+      },
+      "payload_review": "evidence/G02/operator09-actual-payload-review.json",
+      "launch_helper_review": "evidence/G02/operator09-launch-helper-review.json",
+      "instance_id": "i-0f0ba078e3ff50444",
+      "volume_ids": [
+        "vol-0ff2bbf64e8bd943d",
+        "vol-0d960a6aa947389fc"
+      ],
+      "launch_time": "2026-10-12T12:14:00Z",
+      "fleet_submission_finished_at": "2026-10-12T12:13:49Z",
+      "delete_on_termination_verified": true,
+      "instance_shutdown_terminate_verified": true,
+      "latest_live_evidence": "evidence/G02/operator09-fleet-final-readback-130614.json",
+      "compute_rate_usd_hour": 0.92736,
+      "host_controls_verified_at": "2026-10-12T12:18:47.696767+00:00",
+      "control_evidence": "evidence/G02/operator09-readonly-121847.json",
+      "remaining_volumes": [],
+      "termination_observed_at": "2026-10-12T12:49:21Z",
+      "qualification_status": "failed: rollup compatibility wait before archiver; no remote proof acceptance"
+    }
+  ],
+  "launch_hold": "Nativeversion10 reserved10; no launch until exactpayload/bindingreview andfreshliveprerequisites. No otherpaidcapacity/retry/extension underthisreservation.",
+  "node_requirement_sources": [
+    "https://docs.aztec.network/operate/testnet/operators/full-node/overview",
+    "https://docs.aztec.network/operate/testnet/operators/setup/running_a_node"
+  ],
+  "node_requirements": "Fullnode documented8cores/16vCPU,8GB or16GB RAM,1TBstorage25Mbps; existingproverMemoryMax24G makes32GiB insufficient for cohostOSheadroom. Proposedm7a.4xlarge16physicalcores64GiB, nodebounded separately. Actualsync/load unverified.",
+  "latest_live_check": {
+    "observedAt": "2026-10-12T11:53:41.339959+00:00",
+    "evidence": "evidence/G02/operator09-forecast-readonly.json",
+    "sha256": "84595197f391b7de5567eeab0320473baf5dd190e41c7096b018820850479879",
+    "state": "Bothprofiles expected identity, zero livecompute/volumes,8Fleetsdeleted; plugin degradedactive0. No overlap observed."
+  },
+  "recovery_proposal": {
+    "checked_by": "design-20261011",
+    "checked_at": "2026-10-11T15:00:00Z",
+    "observations": {
+      "instances_volumes_snapshots_addresses_fleets_us_east_1": 0,
+      "health": 504,
+      "distribution": "E3BMCK3MOVYK1K",
+      "stale_origin": "vo_1ni7Gt8asXQDAMJVsKkcPg",
+      "archived_runtime_version": "uX8HjolM50hiDUiEWtxbeuFMeGXT4gCz",
+      "archived_host_version": ".NeGYl7ejSh6p6FnQulsTzY.1EOhaRRy",
+      "archives_current_and_hash_verified": true,
+      "subnet_correction": "subnet-a705ce88 is us-east-1c; subnet-aa91f4ce is us-east-1b"
+    },
+    "proposed_instance": "c7a.4xlarge on-demand 16physicalcores32GiB",
+    "compute_rate_usd_hour": 0.82112,
+    "hours": 4,
+    "shutdown_overrun_hours": 0.5,
+    "incremental_forecast_usd": {
+      "compute": 3.28448,
+      "overrun_compute": 0.41056,
+      "ipv4": 0.0225,
+      "ebs_including_24h_retention": 0.06333,
+      "archive_retention": 0.05,
+      "network_requests": 1.02,
+      "additional_buffer": 2
+    },
+    "rounded_reservation_if_launched_usd": 7,
+    "projected_total_if_launched_usd": 115.28,
+    "remaining_if_launched_usd": 184.72,
+    "status": "proposal only; no paid action",
+    "prerequisites": [
+      "Installation channel prepared without new ingress",
+      "AWS-side absolute expiration verified",
+      "Host independent shutdown timer verified",
+      "Reviewed rolling catalog replaces obsolete archivedcatalog"
+    ]
+  },
+  "shutdown_prerequisite_evidence": "evidence/G02/fleet-shutdown-prerequisites.json",
+  "fullnode_recovery_proposal": {
+    "status": "Historical105 full-run proposal;04terminated, current cumulativebound130.28. New forecast required before another paidlaunch.",
+    "checked_by": "design-20261011",
+    "checked_at": "2026-10-11T17:50:56.331671+00:00",
+    "live_instances_volumes_fleets_us_east_1": {
+      "instances": 1,
+      "volumes": 2,
+      "fleets": 1
+    },
+    "instance": "m7a.4xlarge",
+    "vcpus": 16,
+    "physical_cores": 16,
+    "ram_gib": 64,
+    "rate_usd_hour": 0.92736,
+    "operating_hours": 8,
+    "termination_allowance_hours": 0.5,
+    "root_gp3_gib": 40,
+    "node_gp3_gib": 1024,
+    "gp3_usd_gib_month": 0.08,
+    "delete_on_termination": true,
+    "orphan_volume_cleanup_contingency_hours": 24,
+    "aggregate_egress_mbps": 50,
+    "campaign_max_upload_gib": 20,
+    "campaign_max_https_requests": 100000,
+    "new_backups_max_gib": 20,
+    "backup_retention_days": 30,
+    "operator_s3_download_max_gib": 40,
+    "forecast_usd": {
+      "compute": 7.89,
+      "ebs": 3.85,
+      "ipv4": 0.05,
+      "outbound_conservative_multiple_path_charges": 48.75,
+      "cloudfront_upload": 0.43,
+      "https_requests": 0.24,
+      "backups": 0.5,
+      "operator_s3_downloads": 3.87,
+      "s3_requests": 0.1,
+      "tax20percent_and_extra_cleanup_buffer": 28.14
+    },
+    "round_up_reservation_usd": 105,
+    "projected_total_usd": 225.28,
+    "projected_remaining_usd": 74.72,
+    "controls": [
+      "AWSrequestFleet absoluteValidUntil withTerminateInstancesWithExpiration",
+      "IndependentpersistenthostUTCtimer installedbeforedownloads",
+      "30mincommissioningshutdown withdeadlinepersistedonce",
+      "WholeENI50Mbpsshaping beforeDocker/services; verifycounters",
+      "Campaignrequest/uploadlimits enforced beforeexternalproxytraffic"
+    ],
+    "prerequisites": [
+      "Reviewedimmutablebootstrap andlaunchargs",
+      "Actualcloudandhostcontrols verified",
+      "ActualLinuxpackageacceptance",
+      "Nodecanonicalreadiness/storage/recovery",
+      "ExactRollingdeploymentaddressesbeforeRollingproverjobs"
+    ],
+    "not_claimed": [
+      "Linuxcontaineracceptance",
+      "Fullnodesyncperformance",
+      "Publicendpointavailability",
+      "Independentprivacyqualification"
+    ],
+    "egress_forecast_gb": 250,
+    "egress_forecast_reason": "50Mbps over8.5h is191.25GB;250GB reserves58.75GB for rate formatting tolerance, bursts and non-realtime loss detection/termination. This is a conservative forecast, not proof of a hard fault-time network bound. Commissioning must verify shaping and counters; no external prover proxy before request/upload controls."
+  },
+  "reconciliation_20261011_2033": {
+    "prior_total_usd": 215.28,
+    "released_unused_reservation_usd": 95,
+    "new_total_usd": 120.28,
+    "receipt": "evidence/G02/rolling-node-03-termination.json",
+    "spending_limit_usd": 300,
+    "no_new_launch": true,
+    "forecast_note": "Future105reservation would total225.28; requires exactreviewedbootstrap/preflight andindependentshutdowncontrols before paidaction."
+  },
+  "reconciliation_20261011_2216": {
+    "prior_bound_usd": 225.28,
+    "released_unused_reservation_usd": 95,
+    "current_bound_usd": 130.28,
+    "remaining_usd": 169.72,
+    "compute": "No live04 compute or volumes; priorresources retained historical dispositions",
+    "evidence": [
+      "evidence/G02/rolling-node-04-cleanup-result.json",
+      "evidence/G02/rolling-node-04-readonly-221621.json",
+      "evidence/G02/rolling-node-04-volumes-after-cleanup.json"
+    ]
+  },
+  "reconciliation_20261012_05": {
+    "evidence": "evidence/G02/operator05b-cleanup-confirmation.json",
+    "cost_evidence": "evidence/G02/operator05b-cost-recommendation.json",
+    "prior_bound": 165.28,
+    "revised_bound": 145.28,
+    "reduction": 20,
+    "new_paid_action": false,
+    "billing_limit": "Conservative forecast; delayed billing not treated as zero",
+    "retention_deadline": "2026-11-10"
+  },
+  "operator06_reservation": {
+    "prior_bound": 145.28,
+    "additional_reservation": 25,
+    "complete_forecast": 170.28,
+    "remaining": 129.72,
+    "approved_by": "lead-20261011",
+    "authorization": "User cumulativeUSD300 existinginfrastructure mandate",
+    "recorded_at": "2026-10-12T02:44:04.901806+00:00",
+    "limits": "One60-minute diagnostic, no replacement/extension automatically; exactproposalincludingcleanupbuffer. Existingresource/accrual history preserved."
+  },
+  "operator06_cleanup_reconciliation": {
+    "at": "2026-10-12T04:02:01.106992+00:00",
+    "retained_bound_usd": 15,
+    "previous_reserved_usd": 25,
+    "evidence": "evidence/G02/operator06-cleanup-confirmation.json",
+    "cost_evidence": "evidence/G02/operator06-cost-bound.json",
+    "reason": "Instance terminated, both disks absent, Fleet deleted verified. No repeated delete.15USD retained estimate includes full network/archive/tax/billing buffer.",
+    "final_fleet_state": "deleted",
+    "final_fleet_evidence": "evidence/G02/operator06-fleet-final-readback.json"
+  },
+  "operator07_cleanup_reconciliation": {
+    "at": "2026-10-12T07:04:59.624511+00:00",
+    "prior_bound_usd": 185.28,
+    "revised_bound_usd": 175.28,
+    "released_unused_reservation_usd": 10,
+    "retained_campaign_bound_usd": 15,
+    "cost_evidence": "evidence/G02/operator07-cost-reconciliation-proposal.json",
+    "cleanup_evidence": "evidence/G02/operator07-cleanup-reconciliation.json",
+    "final_fleet_evidence": "evidence/G02/operator07-fleet-final-authorized-readback.json",
+    "basis": "Lead accepts conservative fullhour compute/storage/network plus30dayarchive and8.31USD tax/delayedbillingbuffer after finaldeletedFleetreadback. No newpaidaction or zero-costassumption."
+  },
+  "operator08_cleanup_reconciliation": {
+    "at": "2026-10-12T09:49:27.047129+00:00",
+    "prior_bound_usd": 200.28,
+    "revised_bound_usd": 190.28,
+    "released_unused_reservation_usd": 10,
+    "retained_campaign_bound_usd": 15,
+    "cost_evidence": "evidence/G02/operator08-cost-reconciliation-proposal.json",
+    "cleanup_evidence": "evidence/G02/operator08-cleanup-reconciliation.json",
+    "final_fleet_evidence": "evidence/G02/operator08-fleet-readback-0947.json",
+    "basis": "Leadaccepts conservative fullhour andall retainedarchive/network/buffers after finaldeleted readback; no newpaidaction or zero-costassumption."
+  },
+  "operator09_cleanup_reconciliation": {
+    "at": "2026-10-12T13:11:06.612203+00:00",
+    "prior_bound_usd": 215.28,
+    "revised_bound_usd": 205.28,
+    "released_unused_reservation_usd": 10,
+    "retained_campaign_bound_usd": 15,
+    "cost_evidence": "evidence/G02/operator09-cost-reconciliation-proposal.json",
+    "cleanup_evidence": "evidence/G02/operator09-cleanup-readback.json",
+    "final_fleet_evidence": "evidence/G02/operator09-fleet-final-readback-130614.json",
+    "basis": "Full-hour compute/storage/network plus 30-day archive, tax, delayed billing and cleanup buffer retained after final deleted readback; no paid action."
+  },
+  "reconciliation_20261012_late": {
+    "at": "2026-10-12T20:40:28.272438+00:00",
+    "evidence": "evidence/G02/lead-readonly-reconciliation-20261012-late.json",
+    "evidence_sha256": "3a57f95036224e53a5657443fd4698de36ea3c775012c16f8da35e30cd7f9c16",
+    "confirmed": "Both existingAWSprofiles authenticated; all ledgercampaigninstances andvolumes absent; latestFleetdeleted. Plugin degraded/active0; remoteproverhealth timedout, not available.",
+    "bound_usd": 205.28,
+    "remaining_usd": 94.72,
+    "new_paid_action": false,
+    "cost_note": "Retained conservative archive/storage/network/delayedbilling/cleanup estimates unchanged; no zero-cost or currentinvoice claim."
+  },
+  "reconciliation_20261012_2144": {
+    "at": "2026-10-12T21:44:10.124128+00:00",
+    "evidence": "evidence/G02/lead-readonly-reconciliation-20261012-2143.json",
+    "evidence_sha256": "f30015b036e60139ba0e22890c389bae09b43ca987cbb36ef15b1a35f135370e",
+    "confirmed": "Both existing AWS profiles authenticated; all 11 ledger campaign instances and 16 ledger volume IDs absent in us-east-1. Local plugin HTTP200 degraded/active0; remote prover health timed out.",
+    "bound_usd": 205.28,
+    "remaining_usd": 94.72,
+    "new_paid_action": false,
+    "cost_note": "Prior retained storage, archive, network, billing and cleanup reserves unchanged; no zero-cost or final bill claim."
+  },
+  "reconciliation_20261012_2330": {
+    "at": "2026-10-12T23:27:56.716970+00:00",
+    "evidence": "evidence/G02/lead-readonly-reconciliation-20261012-2330.json",
+    "evidence_sha256": "36f208febe866f2cb03c0a9b268763bc8a56d5f811c25010db64a0ff1102c5b7",
+    "bound_usd": 205.28,
+    "remaining_usd": 94.72,
+    "new_paid_action": false,
+    "cost_note": "Retained archive/storage/network/delayed billing/cleanup reserves unchanged; no final invoice claim."
+  },
+  "reconciliation_20261013_0053": {
+    "at": "2026-10-13T00:56:11.435623+00:00",
+    "evidence": "../rolling-controls/execution/evidence/G02/native-version-operator/launch-prerequisites-readonly.json",
+    "evidence_sha256": "8ded3747eae7cde4c779491b890ccbe63649ebe2ba82ca077ede99cafb300ea7",
+    "bound_usd": 205.28,
+    "remaining_usd": 94.72,
+    "new_paid_action": false,
+    "confirmed": "BothAWSprofiles expectedacct; no instances/volumes,9deletedFleets; existingzeroingressSG+subnets/offering/AMI checked. Plugin degradedactive0. Native diagnostic10USD proposed not allocated. Existing storage/network/delayedbilling/cleanup reserves retained."
+  },
+  "native_version10_reservation": {
+    "at": "2026-10-13T01:17:12.290395+00:00",
+    "owner": "lead-20261011",
+    "state": "diagnostic failed; all paid compute and disk resources cleaned; archive/billing reserve retained",
+    "purpose": "One native AMD64 fixedpublicbb6rc6 --version diagnostic aftertwoMacemulationtimeouts; no Node/proof/CRS workload",
+    "prior_bound_usd": 205.28,
+    "reserve_usd": 10,
+    "combined_bound_usd": 215.28,
+    "remaining_usd": 84.72,
+    "budget_cap_usd": 300,
+    "source_proposal": "../rolling-controls/execution/evidence/G02/native-amd64-diagnostic-proposal/proposal.json",
+    "source_proposal_sha256": "924b4a1599a745e7e8bd922c36a99759af41ca64dae24b7054e4e8bbe99256a2",
+    "pricing_and_resource_evidence": "../rolling-controls/execution/evidence/G02/native-version-operator/launch-prerequisites-readonly.json",
+    "pricing_and_resource_sha256": "8ded3747eae7cde4c779491b890ccbe63649ebe2ba82ca077ede99cafb300ea7",
+    "rates_and_forecast": [
+      {
+        "item": "compute_one_hour",
+        "usd": ".116",
+        "basis": "Measured m7a.large $0.11592/hour rounded up;45min absolute cap plus15min shutdown/billing allowance."
+      },
+      {
+        "item": "root_gp3_40GiB_25hours",
+        "usd": ".112",
+        "basis": "40GiB baseline gp3 at$0.08/GiB-month/720hours;1h+24h orphan cleanup contingency rounded up."
+      },
+      {
+        "item": "ipv4_one_hour",
+        "usd": ".005",
+        "basis": "One ephemeral public address, no Elastic IP retention or NAT Gateway."
+      },
+      {
+        "item": "egress_25GB_conservative_ceiling",
+        "usd": "4.875",
+        "basis": "50Mbps*1h=22.5decimalGB; round25GB, $0.195/GB planning ceiling includes conservative path charges, no free tier credit."
+      },
+      {
+        "item": "new_public_capsule_and_receipt_30days",
+        "usd": ".250",
+        "basis": "Only44.7MBbinary+smallmanifest/runner/receipts; cap100MB, existing retained archives remain inside205.28."
+      },
+      {
+        "item": "cross_region_download_and_verification",
+        "usd": ".250",
+        "basis": "Private eu-west-2 artifact to us-east-1, bounded checks/download, no full runtime or image transfer."
+      },
+      {
+        "item": "requests_and_monitoring",
+        "usd": ".250",
+        "basis": "Bounded S3 and control-plane reads; no new CloudWatch log ingestion."
+      },
+      {
+        "item": "tax_unpriced_related_charges",
+        "usd": "1.250",
+        "basis": "Planning provision, no claim about actual account tax treatment."
+      },
+      {
+        "item": "additional_billing_cleanup_buffer",
+        "usd": "2.892",
+        "basis": "Residual reserve covers rounding/delayed usage/extra cleanup. This does not authorize extension or replacement."
+      }
+    ],
+    "resource": {
+      "region": "us-east-1",
+      "instanceType": "m7a.large",
+      "computeUsdPerHour": "0.11592",
+      "rootGiB": 40,
+      "storageType": "encrypted gp3",
+      "deleteOnTermination": true,
+      "instanceId": "i-0d023f41f8a8e4f8a",
+      "fleetId": "fleet-87719d54-e165-4f5b-86e1-ffd26f39228b",
+      "volumeId": null,
+      "newSnapshots": false
+    },
+    "controls": {
+      "createdAt": "2026-10-13T01:22:30Z",
+      "latestLaunch": "2026-10-13T01:32:30Z",
+      "commissioningStop": "2026-10-13T01:52:30Z",
+      "cloudBudgetStop": "2026-10-13T02:07:30Z",
+      "hostBudgetStop": "2026-10-13T02:07:30Z",
+      "billingAndCleanupAllowance": "Additional15min cost forecast only, not runtime authorization.",
+      "workload": "Fixedbb--version15s;512MiB;CPUQuota200%;TasksMax64;boundedkill/reap<=2s.",
+      "finalization": "Bounded fixedreceipt persistence+onceupload<=10s, overallfinalization<45s; immediate poweroff regardlessPASS/FAIL/uploadunknown.",
+      "noExtensionReplacementOrRetry": true
+    },
+    "conditions": [
+      "Fresh identities/nooverlap/SG/subnet/AMIoffering beforelaunch",
+      "Exact source/runtime/payload and launchbinding reviews",
+      "One externalupload/launch; unknownoutcome reconcileonly",
+      "Verify cloud45mFleettermination andguest30m/45mtimers beforeworkload; immediatefinalshutdown",
+      "Retain prior205.28 reserves and new30dayarchive/25hourstorage contingency after compute termination"
+    ],
+    "new_paid_action": true,
+    "upload": {
+      "versionId": "GODU5XvItcwYTvFkDmb9sRJA50HHLSqL",
+      "binarySha256": "fa4b12adaefd5684b53b802346b9fe839ab3d6a4a829a5ea4efd6bd200e0829f",
+      "bytes": 44698432,
+      "replay": "forbidden"
+    },
+    "launchReview": "execution/evidence/G02/native-version-d73-final-bindings-review.json",
+    "slot_release_at": "2026-10-13T01:31Z",
+    "actual_launch_report": "Controls reported once launch exit0; exact runtime packet pending",
+    "actual_outcome": {
+      "packet": "execution/evidence/G02/native-version-d73-actual/review-packet.json",
+      "packetSha256": "74e0aeef8c5eab45bb264184c0885efa7ed5a2c7c36edec7bd6528bcbc61e641",
+      "passed": false,
+      "hostControlsVerified": true,
+      "cloudExpiryVerified": true,
+      "guestPreflightPassed": true,
+      "systemdExecMainStatus": 2,
+      "workerResult": "absent",
+      "binaryExecuted": "not established",
+      "instanceState": "terminated",
+      "volumes": "absent",
+      "fleetState": "deleted",
+      "repeat": "forbidden",
+      "reserveReleased": false,
+      "finalCleanupEvidence": "execution/evidence/G02/native-version-d73-actual/final-cleanup.json",
+      "finalCleanupSha256": "8032d28a97a9ce6553dc0dfe2757835f13a19f9df17a783a07779798f8d53683"
+    }
+  },
+  "native_version11_reservation": {
+    "at": "2026-10-13T02:11:05.694684+00:00",
+    "owner": "lead-20261011",
+    "state": "once-launch-exit0-cloud-expiry-verified-host-receipt-pending",
+    "purpose": "Correctedpublic-directory native AMD64 version-only diagnostic; distinctcampaign2707, reuse existing immutablebinary and no binaryupload",
+    "prior_bound_usd": 215.28,
+    "reserve_usd": 10,
+    "combined_bound_usd": 225.28,
+    "remaining_usd": 74.72,
+    "budget_cap_usd": 300,
+    "source_proposal": "execution/evidence/G02/native-version-corrected-next-plan/plan.json",
+    "source_proposal_sha256": "0d56417ae81309950ec542035539c099ccf22e423f465b825b129cc1691cd5da",
+    "pricing_and_resource_evidence": "../rolling-controls/execution/evidence/G02/native-version-operator/launch-prerequisites-readonly.json",
+    "pricing_and_resource_sha256": "8ded3747eae7cde4c779491b890ccbe63649ebe2ba82ca077ede99cafb300ea7",
+    "rates_and_forecast": [
+      {
+        "item": "compute_one_hour",
+        "usd": ".116",
+        "basis": "Measured m7a.large $0.11592/hour rounded up;45min absolute cap plus15min shutdown/billing allowance."
+      },
+      {
+        "item": "root_gp3_40GiB_25hours",
+        "usd": ".112",
+        "basis": "40GiB baseline gp3 at$0.08/GiB-month/720hours;1h+24h orphan cleanup contingency rounded up."
+      },
+      {
+        "item": "ipv4_one_hour",
+        "usd": ".005",
+        "basis": "One ephemeral public address, no Elastic IP retention or NAT Gateway."
+      },
+      {
+        "item": "egress_25GB_conservative_ceiling",
+        "usd": "4.875",
+        "basis": "50Mbps*1h=22.5decimalGB; round25GB, $0.195/GB planning ceiling includes conservative path charges, no free tier credit."
+      },
+      {
+        "item": "new_public_capsule_and_receipt_30days",
+        "usd": ".250",
+        "basis": "Only44.7MBbinary+smallmanifest/runner/receipts; cap100MB, existing retained archives remain inside205.28."
+      },
+      {
+        "item": "cross_region_download_and_verification",
+        "usd": ".250",
+        "basis": "Private eu-west-2 artifact to us-east-1, bounded checks/download, no full runtime or image transfer."
+      },
+      {
+        "item": "requests_and_monitoring",
+        "usd": ".250",
+        "basis": "Bounded S3 and control-plane reads; no new CloudWatch log ingestion."
+      },
+      {
+        "item": "tax_unpriced_related_charges",
+        "usd": "1.250",
+        "basis": "Planning provision, no claim about actual account tax treatment."
+      },
+      {
+        "item": "additional_billing_cleanup_buffer",
+        "usd": "2.892",
+        "basis": "Residual reserve covers rounding/delayed usage/extra cleanup. This does not authorize extension or replacement."
+      }
+    ],
+    "resource": {
+      "region": "us-east-1",
+      "instanceType": "m7a.large",
+      "computeUsdPerHour": "0.11592",
+      "rootGiB": 40,
+      "storageType": "encrypted gp3",
+      "deleteOnTermination": true,
+      "instanceId": null,
+      "fleetId": "fleet-0f0ed1d1-d909-4944-99af-64226f195617",
+      "volumeId": null,
+      "newSnapshots": false
+    },
+    "controls": {
+      "createdAt": "2026-10-13T02:14:59Z",
+      "latestLaunch": "2026-10-13T02:24:59Z",
+      "commissioningStop": "2026-10-13T02:44:59Z",
+      "cloudBudgetStop": "2026-10-13T02:59:59Z",
+      "hostBudgetStop": "2026-10-13T02:59:59Z",
+      "billingAndCleanupAllowance": "Additional15min cost forecast only, not runtime authorization.",
+      "workload": "Fixedbb--version15s;512MiB;CPUQuota200%;TasksMax64;boundedkill/reap<=2s.",
+      "finalization": "Bounded fixedreceipt persistence+onceupload<=10s, overallfinalization<45s; immediate poweroff regardlessPASS/FAIL/uploadunknown.",
+      "noExtensionReplacementOrRetry": true,
+      "actualCloudExpiryVerified": true,
+      "actualHostControlsVerified": false
+    },
+    "conditions": [
+      "Fresh identities/nooverlap/SG/subnet/AMIoffering beforelaunch",
+      "Exact source/runtime/payload and launchbinding reviews",
+      "One externalupload/launch; unknownoutcome reconcileonly",
+      "Verify cloud45mFleettermination andguest30m/45mtimers beforeworkload; immediatefinalshutdown",
+      "Retain prior205.28 reserves and new30dayarchive/25hourstorage contingency after compute termination"
+    ],
+    "new_paid_action": true,
+    "binaryReuse": {
+      "versionId": "GODU5XvItcwYTvFkDmb9sRJA50HHLSqL",
+      "sha256": "fa4b12adaefd5684b53b802346b9fe839ab3d6a4a829a5ea4efd6bd200e0829f",
+      "bytes": 44698432,
+      "newUpload": false
+    },
+    "priorReserveRetained": true,
+    "operatorSourceReview": "execution/evidence/G02/native-version-2707-operator-source-review.json",
+    "operatorRuntimeReview": "execution/evidence/G02/native-version-2707-operator-runtime-review.json"
+  }
+}

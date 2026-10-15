@@ -1,10 +1,13 @@
 // Single disposable worker: never log witnesses or SDK exceptions.
+import {loadRollingArtifacts} from './rolling-artifacts.mjs';
+import {rollingSelectors,validateRollingJob} from './application-policy.mjs';
 import {pluginSelectors,validatePluginPayload} from './plugin-policy.mjs';
 import fs from 'node:fs/promises';
 import {gunzipSync} from 'node:zlib';
 import {decompressWitness} from '@aztec-foundation/noir-acvm_js';
 import {abiDecode} from '@aztec-foundation/noir-noirc_abi';
-import {Barretenberg,BackendType,AztecClientBackend} from '@aztec-foundation/bb.js';
+import {Barretenberg,AztecClientBackend} from '@aztec-foundation/bb.js';
+import {workerNativeProfile,initializeWorkerNative,assertWorkerNativeProfile} from './worker-native-profile.mjs';
 import {loadCircuitCatalog} from './catalog.mjs';
 import {decodeJob} from '../shared/remote-prover-wire.mjs';
 // Native BB unrefs its process/socket between requests. Keep the job owner
@@ -15,11 +18,22 @@ let stage="read";
 const setStage=value=>{stage=value;process.send?.({progress:stage});};
 try{
  const {metadata,witnesses}=decodeJob(await fs.readFile(process.argv[2]));
+ if(metadata.mode!==process.env.PROVER_PROOFS)throw Error('Mode mismatch');
+ setStage('native-init');
+ const nativeProfile=workerNativeProfile();
+ await initializeWorkerNative(nativeProfile);
  setStage("catalog");
- const catalog=await loadCircuitCatalog(),circuits=metadata.circuits.map(id=>{const c=catalog.get(id);if(!c)throw Error('Unknown circuit');return c;});
+ const applicationProfile=process.env.PROVER_APPLICATION_PROFILE??'legacy';
+ const catalog=await loadCircuitCatalog({applicationProfile}),circuits=metadata.circuits.map(id=>{const c=catalog.get(id);if(!c)throw Error('Unknown circuit');return c;});
  setStage("decompress");
  let total=0;const raw=witnesses.map(w=>{const r=gunzipSync(w,{maxOutputLength:16*1024*1024});total+=r.length;if(total>64*1024*1024)throw Error('Witness limit');return r;});
  setStage("board-binding");
+ if(applicationProfile==='rolling'){
+  const options={metadata,privateBokAddress:process.env.PROVER_PRIVATE_BOK,privateFeeAddress:process.env.PROVER_PRIVATE_FEE};
+  const decoded=circuits.map((c,i)=>/^(RollingBoard|PrivateBok|PrivateFPC|SchnorrInitializerlessAccount):/.test(c.functionName)?abiDecode(c.abi,decompressWitness(witnesses[i])).inputs:undefined);
+  const selectors=await rollingSelectors(loadRollingArtifacts());
+  validateRollingJob(circuits,decoded,{...options,selectors});
+ }else{
  let boardCalls=0,feeClaims=0;
  for(let i=0;i<circuits.length;i++)if(circuits[i].functionName.startsWith('Billboard:')){
   const inputs=abiDecode(circuits[i].abi,decompressWitness(witnesses[i])).inputs;
@@ -42,14 +56,14 @@ try{
   for(let i=0;i<circuits.length;i++)if(circuits[i].functionName==='SchnorrInitializerlessAccount:entrypoint')authorized+=validatePluginPayload(abiDecode(circuits[i].abi,decompressWitness(witnesses[i])).inputs,{metadata,pluginAddresses,privateFeeAddress:process.env.PROVER_PRIVATE_FEE,selectors,allowFeeOnly:feeClaims>0});
   if(!authorized&&!feeClaims)throw Error('Board operation or authorized plugin/fee claim required');
  }
+ }
  setStage('prove');
  if(metadata.mode==='disabled'){
   if(process.env.PROVER_PROOFS!=='disabled')throw Error('Mode mismatch');
   await send({mode:'disabled'});
  }else{
   if(process.env.PROVER_PROOFS!=='real')throw Error('Mode mismatch');
-  setStage("native-init");
-  const api=await Barretenberg.initSingleton({backend:BackendType.NativeUnixSocket,bbPath:process.env.PROVER_BB,threads:Number(process.env.PROVER_THREADS),logger:()=>{}});
+  const api=assertWorkerNativeProfile(nativeProfile);
   // The SDK pipelines these calls without awaiting their promises. Observe
   // rejected calls so one invalid job cannot crash before the final error handler.
   let firstFailure;

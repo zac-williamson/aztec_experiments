@@ -1,5 +1,6 @@
 import {VeniceSigner} from 'venice-x402-client';
 import {isAddress} from 'ethers';
+import {veniceDiagnosticError,recordVeniceResponse,veniceFinishReason} from './venice-diagnostics.mjs';
 
 const ORIGIN='https://api.venice.ai';
 const USDC='0x833589fcd6edb6e08f4c7c32d4f71b54bda02913';
@@ -17,18 +18,30 @@ export function veniceClient({privateKey,fetchImpl=fetch,signer}={}) {
   let paymentUncertain=false;
   async function request(resource,{method='GET',body,headers={},auth=true}={}) {
     const url=ORIGIN+resource;
+    try {
     if(auth)headers={...headers,'X-Sign-In-With-X':await signer.signIn(url)};
-    return fetchImpl(url,{method,headers:{'Content-Type':'application/json',...headers},
+    return await fetchImpl(url,{method,headers:{'Content-Type':'application/json',...headers},
       ...(body===undefined?{}:{body:JSON.stringify(body)}),redirect:'error',signal:AbortSignal.timeout(120000)});
+    }catch{throw veniceDiagnosticError('transport-unknown');}
+  }
+  async function rejectionBody(response){
+    // Error bodies may include prompts, user identifiers and arbitrary details.
+    // Bound bytes before parsing; only the fixed projection can escape this call.
+    let reader;
+    try {
+      reader=response.body?.getReader();if(!reader)return null;
+      const chunks=[];let length=0;
+      for(;;){const {done,value}=await reader.read();if(done)break;length+=value.byteLength;if(length>16384)return null;chunks.push(value);}
+      const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+      return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
+    }catch{return null;}finally{if(reader){try{await reader.cancel();}catch{}try{reader.releaseLock();}catch{}}}
   }
   async function json(resource,options){
-    const response=await request(resource,options);
-    if(!response.ok){
-      const failure=await response.json().catch(()=>null);
-      const detail=failure?.error?.message??failure?.message??failure?.error;
-      throw Error(`Venice request failed (${response.status})${typeof detail==='string'?': '+detail.slice(0,500):''}`);
-    }
-    return response.json();
+    const response=await request(resource,options);let status;
+    try{status=response.status;}catch{throw veniceDiagnosticError('transport-unknown');}
+    if(!Number.isInteger(status)||status<100||status>599)throw veniceDiagnosticError('transport-unknown');
+    if(status<200||status>=300)throw veniceDiagnosticError('http-rejection',{httpStatus:status,body:await rejectionBody(response)});
+    try{return recordVeniceResponse(await response.json(),status);}catch{throw veniceDiagnosticError('response-json-invalid',{httpStatus:status});}
   }
   return {
     address:signer.address,json,
@@ -94,7 +107,8 @@ export function veniceModel({client,model='kimi-k2-5',autoTopUp=false,maxTopUpUs
     // to the action allowance; this is not a claim about the final provider debit.
     const cost=(usage.prompt_tokens*input+usage.completion_tokens*output)/1e6;
     if(!money(cost))throw Error('Venice returned an invalid cost');
-    return {message,cost};
+    const finishReason=veniceFinishReason(result.choices[0].finish_reason);
+    return {message,cost,...(finishReason?{finishReason}:{})};
   }
   return {complete(input){const operation=pending.then(()=>complete(input));pending=operation.then(()=>{},()=>{});return operation;}};
 }

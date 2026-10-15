@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "budget_usd": 300,
+  "scope": "Cumulative prover campaign plus at most one additional rolling.chat server; existing moderator costs remain separate.",
+  "as_of": "2026-10-11T10:25:59.974114+00:00",
+  "billing_evidence": "evidence/G02/aws-costs.json",
+  "historical_campaign_bound_usd": 83.27,
+  "historical_bound_method": "Retain the full earlier conservative bound including unused planned compute through13Oct, rather than subtracting unverified savings. Includes49.47 prior allowance,28.80 revival maximum and5 ancillary.",
+  "account_wide_observed_usd": 179.7900902808,
+  "account_wide_period": "2026-09-25 through2026-10-11; includes unrelated Lightsail/moderator and tax; not added wholesale as campaign spend",
+  "new_spend_usd": 0.01,
+  "new_spend_description": "One Cost Explorer query; include in reconciliation.",
+  "billing_delay_cleanup_reserve_usd": 20,
+  "retained_storage_network_forecast_usd": 5,
+  "conservative_committed_and_reserved_usd": 108.28,
+  "remaining_before_new_launch_usd": 191.72,
+  "resources": [
+    {
+      "id": "i-0025eb05db3c2491c",
+      "region": "us-east-1",
+      "purpose": "historical prover",
+      "observed_state": "absent from all-region-instance query for us-east-1",
+      "historical_rate_cap_usd_hour": 0.4,
+      "historical_deadline": "2026-10-13T08:42:31Z",
+      "live_check": "evidence/G02/aws-prover-instances.json",
+      "public_health": "504; unavailable",
+      "retained_volumes": [],
+      "elastic_addresses": []
+    },
+    {
+      "id": "anonymous-message-board-testnet-backups-nvdhcyurtoga/releases/v6-20261010/",
+      "purpose": "recovery archives",
+      "retention_deadline": "2026-11-10",
+      "state": "historical deployment records; reverify object versions before restore",
+      "forecast_included_usd": 5
+    },
+    {
+      "id": "local.aztec.bok",
+      "purpose": "Mac plugin",
+      "observed_state": "ready, active0",
+      "paid_compute_usd": 0,
+      "limitation": "Mac awake and logged in; no remote replacement verified"
+    }
+  ],
+  "launch_hold": "No launch yet. Reconcile live routing, current archived recovery assets, instance pricing and complete forecast/independent shutdown before provisioning.",
+  "node_requirement_sources": [
+    "https://docs.aztec.network/operate/testnet/operators/full-node/overview",
+    "https://docs.aztec.network/operate/testnet/operators/setup/running_a_node"
+  ],
+  "node_requirements": "Current official V6 testnet overview:8cores/16vCPU,8GB RAM,1TB NVMe,25Mbps. The older running_a_node URL redirected to legacy mainnetV5 guidance (16GB), not a conflicting current requirement. Provisioning remains held pending workload measurements and a complete forecast."
+}

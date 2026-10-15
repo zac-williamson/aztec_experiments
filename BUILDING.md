@@ -32,16 +32,70 @@ Then install the repository dependencies and compiler:
 ```sh
 npm ci --ignore-scripts --no-audit --no-fund
 npm ci --prefix billboard/portal --ignore-scripts --no-audit --no-fund
+npm run bootstrap:dependencies
 npm run bootstrap:noir
 ```
+
+The explicit dependency bootstrap applies the reviewed block-indexed private-event
+query patch to the exact pinned PXE source and emitted JavaScript. It checks both
+input hashes before writing, is idempotent, and rejects changed or partially
+patched packages. After interruption, reinstall with `npm ci --ignore-scripts`
+and run the bootstrap again. Do not run this operation while wallets or tests
+use the same dependency directory. The SDK build and manifest reject an
+unpatched or mismatched store. This bounds store queries; cold PXE synchronization
+and application recovery capacity require separate qualification.
+
+The same explicit bootstrap installs the bounded preference recovery page/cursor
+implementation into the pinned rc3 PXE. Its installer supports two separate modes:
+
+```sh
+node scripts/patch-pxe-preference-page.mjs --apply-installed node_modules/@aztec-labs/pxe
+node scripts/patch-pxe-preference-page.mjs --apply-isolated /absolute/owned/copied-pxe
+node scripts/patch-pxe-preference-page.mjs --verify node_modules/@aztec-labs/pxe
+```
+
+Installed mode accepts only the physical `node_modules/@aztec-labs/pxe` beneath
+that installer's repository. Borrowed or symlinked dependency trees, alternate
+destinations and symlinked or hard-linked target files are rejected. Stop every wallet, test,
+build and other checkout borrowing these dependencies before bootstrap; the
+filesystem guard cannot detect live consumers. Isolated mode still rejects
+`node_modules` targets and changes only an explicitly owned standalone copy.
+
+Installed mode requires the pinned Node and rc3 PXE package versions; the normal
+SDK build retains its complete lockfile/package-closure checks.
+All eight source/emitted-file hashes and both generated helpers must be in one
+complete pinned state. The installer validates every input and generated output
+before writing and rejects mixed, unknown, missing or tampered states. The ten
+writes are not an atomic filesystem transaction: interruption requires a fresh
+locked dependency installation while all consumers remain stopped. A complete
+patched state is verified without rewriting. No force or partial-resume mode exists.
+The generated `rolling-preference-compact.mjs` is an exact copy of the reviewed
+`shared/rolling/compact-block.mjs`; `rolling-preference-recovery.mjs` has its own
+literal output pin. Neither helper changes normal synchronization behavior.
+
+The SDK build only verifies this patch; it never applies it. The SDK manifest
+must include the installer, canonical compact source, all eight patched files,
+and both helpers. The checker requires their literal reviewed hashes as well as
+matching actual files; changing a manifest hash cannot admit other patch bytes.
+The SDK exposes the upstream `computeArtifactHash`: its field result authenticates
+the contract artifact in the recovery scope, and is distinct from the artifact
+JSON file's SHA-256. No new artifact or contract class is produced by this bootstrap.
+
+The eight original rc3 files under
+`scripts/testing/fixtures/pxe-preference-page-6.0.0-rc.3/` are immutable test inputs.
+Differential tests copy these originals into temporary owned packages, preserving
+pristine-versus-patched comparisons after installation; they never reverse a
+shared installed patch. Component/ACIR checks remain separate from genuine cold
+wallet/browser recovery and capacity qualification. Installation alone does not
+establish either, and no service route is registered by this installer.
 
 Both npm lockfiles are required. Do not substitute `npm install` in release or CI
 builds. The compiler bootstrap verifies the archive's SHA-256 and the executable's
 version and commit before use. `toolchain.json` records the pins and official
-download sources. The native Aztec **6.0.0-rc.1** prover and test service come from the
+download sources. The native Aztec **6.0.0-rc.6** prover and **6.0.0-rc.3** test service come from the
 locked npm dependencies; a globally installed Aztec CLI is unnecessary. Native
 provers are checked against platform-specific SHA-256 and exact version pins
-before use. All pinned platforms report `6.0.0-rc.1`. An initial
+before use. The platform-specific native binary pins require `6.0.0-rc.6`. An initial
 build needs network access for npm, official compiler downloads, Noir Git
 dependencies, the Solidity compiler, and content-pinned CRS assets. A preexisting developer cache is not a
 prerequisite, although compilers may populate and reuse their own caches.
@@ -122,6 +176,50 @@ to a local development endpoint. To build for a specific environment, set
 a browser build is public; never put a private credential there. Use identical
 configuration for reproducibility comparisons. The default does not deploy or
 start a local chain.
+
+## Rolling Chat development assets
+
+The normal build includes RollingBoard and its separate PrivateBok workspace.
+After installing the pinned tools and dependencies above, run these in order,
+with no application test or wallet using the generated assets concurrently:
+
+```sh
+npm run build
+node scripts/rolling-wallet-assets.mjs
+```
+
+The canonical contract build compiles and processes RollingBoard before the
+separate PrivateBok build; both generate every private verification key. The two
+clean CI passes remove both targets and compare PrivateBok’s build manifest and
+both processed artifacts byte for byte. PrivateBok has its own manifest; changes
+to the shared Noir dependency
+inventory require its normal rebuild even when the escrow source is unchanged.
+The wallet build checks the canonical contract and SDK input manifests before
+assembling its own assets. Never refresh a manifest by hand to accept stale files.
+
+Application tests reject stale PrivateBok inputs and either stale output before
+starting the chain, and repeat the fixture's checks at use. Development uses
+native proofs-disabled devnet/PXE configuration. This existing fixture checks
+board deployment and ordinary inclusion with disposable identities:
+
+```sh
+NODE_BACKEND=js node scripts/test-c01-application.mjs included-board
+```
+
+The runner defaults to `BOARD_TEST_PROOFS=disabled`. The existing preference
+acceptance campaigns additionally require observed real proof jobs; their
+proof-job assertions remain mandatory and cannot pass in this development mode.
+Reserve that evidence for testnet acceptance. Do not enable real local proofs to
+work around an acceptance-only assertion.
+
+Run development scenarios serially under their existing supervisor limits
+(`included-board`: 120 seconds / 4 GiB; full journeys: 540 seconds / 4 GiB).
+On macOS, prefix the command with `caffeinate -i` (after the environment
+assignments) to prevent idle sleep during the foreground run; this does not
+protect against lid closure, manual sleep, session termination or a disconnected
+host. The example's results and cleanup are recorded under `execution/evidence/C01`.
+A successful local run does not establish testnet service availability, browser
+key recovery, independent privacy review or production qualification.
 
 ## Compare clean builds
 
@@ -236,3 +334,37 @@ before extracting. The release executable identifies itself as
 `1.6.0-v1.7.0`, commit `f83bad912a9dba7bf0371def1e70bb1896048356`;
 the resolver checks both. Other platforms must use the matching official asset
 and its published checksum. Test evidence records the actual executable hash.
+
+### PXE sparse reorg anchor patch
+
+The same explicit dependency bootstrap also installs the hash-pinned V6 RC1
+`BlockSynchronizer` repair in `scripts/patch-pxe-reorg-anchor.mjs`. Run it only
+after stopping every process using this dependency tree. Both TypeScript and
+compiled JavaScript must be the exact upstream pair or the exact patched pair;
+unknown or interrupted mixed installations fail closed. Reinstall locked
+dependencies to repair mixed state, then bootstrap. SDK build/check binds the
+patch script and both patched dependency hashes in its normal manifest. No
+application runtime installs the patch. Linux packaging must include these
+normal patched SDK bytes and requalify its manifest; Mac tests are not Linux
+qualification.
+
+The repair preserves conservative all-store rollback. With sparse local history,
+a common ancestor at block 10 may require deleting private records from block 12
+even though the configured canonical tip is 12. The patch resolves the canonical
+typed-hash header before mutation, rolls back every store atomically, delivers
+that canonical anchor, clears the normal contract synchronization cache, and
+acknowledges prune tips last, after the transaction (the SDK tips store owns a
+separate transaction; IndexedDB does not support nested transactions). Genuine SDK synchronization
+must then rediscover private state from authenticated encrypted logs. It never
+retains orphan records or fabricates note balances. Missing, stale or changing
+headers reject synchronization; the underlying stream's swallowed failure cannot
+be mistaken for successful anchor delivery. An orphan current anchor cannot be
+replaced without the preceding conservative rollback; this also fails closed on
+a contradictory finalized source. No retry or alternate node is added.
+
+Run `node --test scripts/patch-pxe-reorg-anchor.test.mjs` using the pinned Node.
+Tests copy pristine pinned fixtures to temporary packages, never patch the shared
+installation, and use actual SDK stores/LMDB with labelled synthetic chain and
+note data. These demonstrate rollback/anchor semantics, not genuine encrypted
+FPC recovery, historical failure attribution, or full reorg acceptance. Those
+remain separate real-wallet qualification gates.

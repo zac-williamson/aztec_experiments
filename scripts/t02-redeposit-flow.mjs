@@ -1,3 +1,4 @@
+import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 // TEST ONLY: a second genuine lifecycle on the same disposable user and board.
 import assert from 'node:assert/strict';
 import {withC01ClientMining} from './c01-client-mining.mjs';
@@ -9,7 +10,7 @@ import {qualifyT02RedepositReplay} from './t02-redeposit-replay.mjs';
 
 export async function completeT02Redeposit({node,config,dateProvider,l1Client,directory,rollupAddress,
   preparation,instance,ready,settlement,mark,privateFee,priorClaimResult,priorExitResult,priorRefund}) {
-  const observation={passed:false,applicationProofs:true,networkProofs:false,controlledSettlement:true};
+  const observation={passed:false,applicationProofs:applicationProofsEnabled(),networkProofs:false,controlledSettlement:true};
   let stage='preflight';
   const reportStage=name=>{stage=name;mark('redeposit:'+name);};
   try {

@@ -8,11 +8,15 @@ import {Constants} from "@aztec/core/libraries/ConstantsGen.sol";
 import {DataStructures} from "@aztec/core/libraries/DataStructures.sol";
 import {Epoch} from "@aztec/core/libraries/TimeLib.sol";
 import {ReentrancyGuard} from "@oz/utils/ReentrancyGuard.sol";
+import {MessageHashUtils} from "@oz/utils/cryptography/MessageHashUtils.sol";
+import {SignatureChecker} from "@oz/utils/cryptography/SignatureChecker.sol";
 import {PortalMessages} from "./PortalMessages.sol";
 
 /// @notice Fresh V1 ETH escrow. Deposits require an authenticated Ready message.
 /// @dev No administrator refund/sweep or legacy receipt path. Forced ETH is surplus.
 contract BillboardPortal is ReentrancyGuard {
+    bytes32 public constant DEPOSIT_FOR_TYPEHASH = keccak256("DepositFor(address beneficiary,address executor,uint256 amount,bytes32 secretHash,uint256 nonce,uint256 deadline)");
+    mapping(address => uint256) public depositNonces;
     uint256 public immutable MIN_DEPOSIT;
     uint256 public immutable MAX_DEPOSIT;
     bytes32 public immutable L2_CONTRACT;
@@ -68,19 +72,46 @@ contract BillboardPortal is ReentrancyGuard {
     }
 
     function deposit(bytes32 secretHash) external payable nonReentrant returns (bytes32 key, uint256 index) {
+        return _deposit(msg.sender, secretHash);
+    }
+
+    /// @notice A beneficiary authorizes a specific executor, amount and claim commitment.
+    /// The beneficiary remains the sole collateral owner and withdrawal recipient.
+    function depositFor(address beneficiary, bytes32 secretHash, uint256 nonce, uint256 deadline, bytes calldata signature)
+        external payable nonReentrant returns (bytes32 key, uint256 index)
+    {
+        require(beneficiary != address(0) && block.timestamp <= deadline, "Invalid deposit consent");
+        require(nonce == depositNonces[beneficiary], "Invalid deposit nonce");
+        bytes32 digest = depositForDigest(beneficiary, msg.sender, msg.value, secretHash, nonce, deadline);
+        require(SignatureChecker.isValidSignatureNow(beneficiary, digest, signature), "Invalid deposit signature");
+        depositNonces[beneficiary] = nonce + 1;
+        return _deposit(beneficiary, secretHash);
+    }
+
+    function depositForDigest(address beneficiary, address executor, uint256 amount, bytes32 secretHash, uint256 nonce, uint256 deadline)
+        public view returns (bytes32)
+    {
+        // Compute the standard domain rather than adding inherited cached immutable
+        // words to the portal's exact runtime verifier/deployment manifest.
+        bytes32 domain=keccak256(abi.encode(keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+            keccak256("RollingCollateral"),keccak256("1"),block.chainid,address(this)));
+        return MessageHashUtils.toTypedDataHash(domain,keccak256(abi.encode(DEPOSIT_FOR_TYPEHASH, beneficiary, executor, amount, secretHash, nonce, deadline)));
+    }
+
+    function _deposit(address beneficiary, bytes32 secretHash) private returns (bytes32 key, uint256 index) {
         require(block.chainid == L1_CHAIN_ID, "Chain changed");
         require(depositsEnabled, "Deposits disabled");
         require(msg.value >= MIN_DEPOSIT, "Below min deposit");
         require(msg.value <= MAX_DEPOSIT, "Above max deposit");
         require(uint256(secretHash) > 0 && uint256(secretHash) < Constants.P, "Invalid secret hash");
-        require(deposits[msg.sender].amount == 0, "Already have an active deposit");
+        require(deposits[beneficiary].amount == 0, "Already have an active deposit");
         uint128 amount = uint128(msg.value); // Constructor caps MAX_DEPOSIT at u96.
-        deposits[msg.sender].amount = amount;
+        deposits[beneficiary].amount = amount;
         totalDeposited += amount;
         (key, index) = INBOX.sendL2Message(DataStructures.L2Actor(L2_CONTRACT, VERSION),
-            PortalMessages.receipt(false, L1_CHAIN_ID, address(this), L2_CONTRACT, VERSION, msg.sender, amount), secretHash);
-        deposits[msg.sender] = Deposit(amount, secretHash, key, index);
-        emit Deposited(msg.sender, amount, secretHash, key, index);
+            PortalMessages.receipt(false, L1_CHAIN_ID, address(this), L2_CONTRACT, VERSION, beneficiary, amount), secretHash);
+        deposits[beneficiary] = Deposit(amount, secretHash, key, index);
+        emit Deposited(beneficiary, amount, secretHash, key, index);
     }
 
     /// @dev All effects and Outbox consumption revert if bridge verification or payment fails.

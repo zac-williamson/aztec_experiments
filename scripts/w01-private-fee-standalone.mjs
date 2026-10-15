@@ -1,3 +1,4 @@
+import {applicationProofsEnabled} from './testing/proof-policy.mjs';
 // TEST ONLY: one genuine standalone private-fee funding transaction; parent owns proof/resource limits.
 import assert from 'node:assert/strict';
 import {BatchCall} from '@aztec-labs/aztec.js/contracts';
@@ -7,7 +8,7 @@ const included=receipt=>[TxStatus.CHECKPOINTED,TxStatus.PROVEN,TxStatus.FINALIZE
   &&receipt.executionResult===TxExecutionResult.SUCCESS&&receipt.blockNumber!=null&&receipt.blockHash!=null;
 
 export async function proveAndIncludePrivateFeeStandalone({wallet,owner,privateFeeAction,node,mineL1,mark}){
-  const observation={passed:false,applicationProof:true,networkProof:false,standaloneFunding:true};
+  const observation={passed:false,applicationProof:applicationProofsEnabled(),networkProof:false,standaloneFunding:true};
   try{
     assert.equal(typeof privateFeeAction,'function');assert.equal(typeof mineL1,'function');
     await wallet.pxe.sync();

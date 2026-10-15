@@ -68,3 +68,56 @@ See [deployment and operator commands](DEPLOYMENT.md) for independent plugin set
 
 Use pinned Node 24.21.x and toolchains. Historical fixed-fee evidence under
 `evidence/` does not qualify the replacement; current status is in IMPLEMENTATION.md.
+
+### Rolling USDC funding relay
+
+The core reader can accept a fourth command-line argument containing a **private
+operator configuration**:
+
+```sh
+node apps/rolling/start.mjs public-index.json wallet-deployment.json /private/relay.json
+```
+
+This reuses the reader's request ownership and shutdown handling. It does not need
+Bok, GitHub or a model provider to be available. Keep the relay file and its state
+outside the served asset roots and generated-program workspaces. The file has
+exactly `ethereumUrl`, `signerFile`, `stateDirectory`, and `policy`. The signer file
+is mode0600 JSON containing only `ethereumKey`; the canonical, nonsymlink state
+directory must be mode0700 and owned by the operator. Use a dedicated Ethereum
+signer which no other process or manual sender uses. Its existing exclusive
+service lease is retained after a crash; inspect process liveness and receipts
+before an operator removes an abandoned lock.
+
+`policy` pins `chainId`, `development`, `router`, `routerCodeHash`,
+`collateralPortal`, `feePortal`, `bokPortal`, `privateFpc`, `usdc`, `usdcCodeHash`,
+`usdcImplementation`, `usdcImplementationCodeHash`, `weth`, `quoter`,
+`quoterCodeHash`, `gasPoolFee`, and `relayer`. It also sets positive decimal-string
+`feeUsdc`, `maxGasWei`, and `totalGasBudgetWei`. These must match the actual
+verified deployment and client configuration. Development is chain31337;
+acceptance is Sepolia11155111. This is not a mainnet deployment path.
+
+The user's exact signed allocation reimburses the fixed relayer in USDC. Before
+signing its one L1 transaction, the relay simulates all signatures, swaps and
+bridges, checks pinned runtimes and implementation, and checks that reimbursement
+covers the full gas ceiling using the pinned USDC/WETH quote plus5%. A failed
+transaction may leave its relayer gas unreimbursed; the private durable budget
+therefore conservatively consumes a full `maxGasWei` reservation for every
+admitted plan, even a successful plan. The service stops admitting plans at the
+configured cumulative ceiling. Do not delete its records or start a second state
+directory to bypass the budget. The complete policy is bound to those records;
+changing it requires explicit operator reconciliation, not an automatic reset.
+
+The only browser surface is same-origin GET `/api/funding/usdc/terms`, POST
+`/api/funding/usdc` with exactly `{ "data": "<signed fundUsdc calldata>" }`, and
+GET `/api/funding/usdc/status?planHash=<original plan hash>`. There is no generic
+RPC, signer, destination or retry API. The browser saves private custody before
+its one POST, then only reads status and independently verifies the canonical
+transaction and all three bridge receipts. An unknown operation, including a
+crash after a budget reservation but before a transaction hash, remains
+unresolved and blocks new plans. Missing acknowledgement is never permission to
+repay. Retain these records for operator diagnosis; do not infer non-submission
+from an absent receipt.
+
+The source and controlled tests do not establish live conversion liquidity,
+MetaMask/Phantom acceptance, testnet proof success or production qualification.
+Those requirements retain their own acceptance evidence and release gates.

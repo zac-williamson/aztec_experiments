@@ -74,7 +74,9 @@ try {
   const again=await (await createEthereumJournal({...options,signer:lostResponseSigner})).recover({retry:true});assert.equal(again.txHash,refund.txHash);assert.equal(sends,2);
   stage='deploy-real-fee-inbox-and-token';
   const token=await new ContractFactory(TestERC20Abi,TestERC20Bytecode,operator).deploy('Disposable fee token','FEE',operator.address);await token.waitForDeployment();
-  const inbox=await new ContractFactory(InboxAbi,InboxBytecode,operator).deploy(await publisher.getAddress(),await token.getAddress(),5,10,1);await inbox.waitForDeployment();
+  // Reuse the installed protocol's production ring size from the controlled publisher.
+  const inboxRingSize=await new Contract(await publisher.getInbox(),InboxAbi,provider).BUCKET_RING_SIZE();
+  const inbox=await new ContractFactory(InboxAbi,InboxBytecode,operator).deploy(await publisher.getAddress(),await token.getAddress(),5,inboxRingSize);await inbox.waitForDeployment();
   await (await publisher.setInbox(await inbox.getAddress())).wait();
   const feePortal=new Contract(await inbox.getFeeAssetPortal(),FeeJuicePortalAbi,provider);
   await (await token.mint(user.address,1000n)).wait();

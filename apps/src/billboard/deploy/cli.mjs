@@ -325,7 +325,8 @@ async function main() {
 
   // Load resources
   const portalBytecode = fs.readFileSync(path.join(__dirname, 'portal_bytecode.txt'), 'utf8').trim();
-  const artifact = JSON.parse(fs.readFileSync(path.join(__dirname, 'billboard_artifact.json'), 'utf8'));
+  const artifactPath=manifestConfig.boardProfile==='rolling'?path.join(PROJECT_ROOT,'billboard/target/rolling_contract-RollingBoard.json'):path.join(__dirname,'billboard_artifact.json');
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
 
   const env = {
     aztec: a, ethers, log,

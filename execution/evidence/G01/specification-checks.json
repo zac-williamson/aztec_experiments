@@ -1,0 +1,42 @@
+{
+  "positive": "pass",
+  "negative_probes": {
+    "missing_requirement": [
+      "Draft3 RC01-RC46 catalog missing, changed or duplicated"
+    ],
+    "unknown_task": [
+      "RC01: graph/catalog mismatch",
+      "RC01: unknown task G99",
+      "RC01: dangling acceptance/evidence mapping"
+    ],
+    "missing_criterion": [
+      "RC43: G01 needs one explicit acceptance criterion",
+      "RC43: dangling acceptance/evidence mapping"
+    ],
+    "missing_owner": [
+      "G01: missing owner"
+    ],
+    "wrong_hash": [
+      "specification source hash mismatch"
+    ],
+    "dangling_evidence": [
+      "RC01: dangling acceptance/evidence mapping"
+    ],
+    "missing_graph_catalog": [
+      "graph product catalog differs from Draft3",
+      "RC46: graph/catalog mismatch"
+    ],
+    "both_hashes_None": [
+      "missing/invalid specification source hash"
+    ],
+    "both_hashes_": [
+      "missing/invalid specification source hash"
+    ],
+    "both_hashes_nonsense": [
+      "missing/invalid specification source hash"
+    ],
+    "both_hashes_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA": [
+      "missing/invalid specification source hash"
+    ]
+  }
+}

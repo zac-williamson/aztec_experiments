@@ -274,3 +274,130 @@ export function browserFunding(ctx){
   assert(s.observation.browserFunding.passed);return complete;
  });
 }
+
+// Reuses the ordinary fixture's genesis identity and single service supervisor.
+export async function avatarLog(ctx){
+  const {EmbeddedWallet}=await import('@aztec-labs/wallets/embedded');
+  const {BackendType}=await import('@aztec-foundation/bb.js');
+  const {applicationNativeProfile}=await import('../c01-native-profile.mjs');
+  const {applicationProofsEnabled,applicationProver}=await import('./proof-policy.mjs');
+  const {withC01ClientMining}=await import('../c01-client-mining.mjs');
+  const {runAvatarLogExperiment}=await import('../../experiments/avatar/measure.mjs');
+  const {ROOT}=await import('../toolchain.mjs');
+  const {randomUUID}=await import('node:crypto');
+  const observation={passed:false,applicationProofs:applicationProofsEnabled(),networkProofs:false};
+  let wallet;
+  try{
+    wallet=await EmbeddedWallet.create(ctx.node,{ephemeral:true,pxe:{proverEnabled:applicationProofsEnabled(),autoSync:false,syncChainTip:'checkpointed',
+      proverOrOptions:applicationProver({backend:BackendType.NativeUnixSocket,...applicationNativeProfile(ctx.directory)})}});
+    const account=ctx.preparation.account;
+    const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'avatar-disposable');
+    assert(manager.address.equals(account.address));
+    await withC01ClientMining({rpcUrl:ctx.config.l1RpcUrls[0],dateProvider:ctx.dateProvider,observation},async mineL1=>{
+      observation.avatar=await runAvatarLogExperiment({node:ctx.node,wallet,owner:account.address,mineL1,
+        outputDirectory:path.join(ROOT,'execution/evidence/G03','avatar-'+randomUUID()),realProofs:applicationProofsEnabled(),mark:ctx.mark});
+    });
+    assert(observation.avatar.passed);observation.passed=true;return observation;
+  }finally{
+    if(wallet){await wallet.stop();observation.walletStopped=true;}
+  }
+}
+
+export async function privateBok(ctx) {
+  return (await import('./private-bok-fixture.mjs')).runPrivateBokFixture(ctx);
+}
+
+export async function privateBokNormal(ctx) {
+  return (await import('./private-bok-fixture.mjs')).runPrivateBokFixture(ctx, 'normal');
+}
+export async function privateBokUncertain(ctx) {
+  return (await import('./private-bok-fixture.mjs')).runPrivateBokFixture(ctx, 'uncertain');
+}
+
+export async function privateBokPrivateNormal(ctx) {
+  return (await import('./private-bok-fixture.mjs')).runPrivateBokFixture(ctx, 'normal', 'private');
+}
+export async function privateBokPrivateUncertain(ctx) {
+  return (await import('./private-bok-fixture.mjs')).runPrivateBokFixture(ctx, 'uncertain', 'private');
+}
+
+export async function rollingBokPost(ctx) {
+  return (await import('./rolling-bok-fixture.mjs')).runRollingBokFixture(ctx);
+}
+
+export async function rollingApplicationPort(ctx) {
+  return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx);
+}
+
+export async function privateBokProvider(ctx) {
+  return (await import('./private-bok-fixture.mjs')).runPrivateBokFixture(ctx, 'provider', 'private');
+}
+
+export async function trustedQueryPolicy(ctx) {
+  const {runTrustedQueryFixture}=await import('./trusted-query-fixture.mjs');
+  const {setTimeout:wait}=await import('node:timers/promises');
+  const started=Date.now(),clock={sequencerPaused:false,elapsedMs:0};
+  try {
+    // The existing fixture owns the sequencer. Stop its ordinary L1 submissions
+    // after canonical inclusion, then let real wall time catch up with setup's
+    // accelerated validator epochs. Product clocks and freshness stay unchanged.
+    ctx.mark('trusted-query-pause-sequencer');
+    await ctx.node.getSequencer().pause();clock.sequencerPaused=true;
+    ctx.mark('trusted-query-real-clock-wait');
+    const stamp=await ctx.node.getSyncedL1Timestamp();
+    assert(typeof stamp==='bigint'&&stamp>=0n&&stamp<=BigInt(Number.MAX_SAFE_INTEGER));
+    clock.initialSyncedL1Timestamp=String(stamp);clock.initialWallSeconds=Math.floor(Date.now()/1000);
+    while(BigInt(Math.floor(Date.now()/1000))<await ctx.node.getSyncedL1Timestamp()){
+      assert(Date.now()-started<110000,'Disposable setup clock did not catch up within110seconds');
+      await wait(250);
+    }
+    clock.finalSyncedL1Timestamp=String(await ctx.node.getSyncedL1Timestamp());
+    clock.finalWallSeconds=Math.floor(Date.now()/1000);clock.elapsedMs=Date.now()-started;
+    const result=await runTrustedQueryFixture(ctx);result.fixtureClock=clock;return result;
+  } catch(error) {
+    clock.elapsedMs=Date.now()-started;
+    error.trustedQueryObservation={...(error.trustedQueryObservation??{passed:false,stage:'fixture-clock'}),fixtureClock:clock};
+    throw error;
+  }
+}
+
+export async function rollingProfilePort(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'profiles');}
+export async function rollingAnonymousThread(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'anonymous-thread');}
+export async function rollingRepostReactions(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'repost-reactions');}
+
+export async function rollingAccountReactions(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'account-reactions');}
+
+export async function rollingOwnedNames(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'owned-names');}
+
+export async function rollingOwnedNamesWire(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'owned-names-wire');}
+
+export async function rollingComposer(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'composer');}
+
+export async function rollingSocialWire(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'social-wire');}
+export async function rollingReactionWire(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'reaction-wire');}
+
+export async function rollingTrustedRecovery(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'trusted-recovery');}
+export async function rollingNameRace(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'name-race');}
+export async function rollingSubboardPolicy(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'subboard-policy');}
+
+export async function rollingRejectedWithdrawal(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'rejected-subboard-withdrawal');}
+
+export async function rollingPreferenceRelationships(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'preference-relationships');}
+export async function rollingPreferenceNotifications(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'preference-notifications');}
+
+export async function rollingPreferenceBrowser(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'preference-browser');}
+
+export async function rollingPreferenceReorgInitial(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'preference-reorg-initial');}
+export async function rollingPreferenceReorgMarker(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'preference-reorg-marker');}
+
+export async function rollingPreferenceSaved(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'preference-saved');}
+
+export async function rollingNotificationBrowser(ctx){return (await import('./rolling-application-fixture.mjs')).runRollingApplicationFixture(ctx,'notification-browser');}
+
+// Existing included-board owner supplies node, genesis actor and cleanup budget.
+export async function rollingOperatorWallet(ctx) {
+  return (await import('./private-bok-fixture.mjs')).runRollingOperatorDevnet(ctx,'wallet');
+}
+export async function rollingOperatorConstructor(ctx) {
+  return (await import('./private-bok-fixture.mjs')).runRollingOperatorDevnet(ctx,'constructor');
+}

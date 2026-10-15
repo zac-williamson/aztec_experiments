@@ -1,0 +1,142 @@
+warning: variable does not need to be mutable
+    ┌─ rolling_contract/src/posting_tests.nr:184:21
+    │
+184 │     let mut quote = draft(); quote.kind = 2; quote.reference = root;
+    │                     -----
+    │
+
+warning: unused import FromField
+   ┌─ rolling_contract/src/main.nr:18:179
+   │
+18 │         protocol::{address::{AztecAddress, EthAddress}, abis::block_header::BlockHeader, hash::poseidon2_hash_with_separator, traits::{Deserialize, Packable, Serialize, ToField, FromField}},
+   │                                                                                                                                                                                   --------- unused import
+   │
+
+error: Invalid quote delimiter `=`
+    ┌─ rolling_contract/src/posting_tests.nr:184:19
+    │
+184 │     let mut quote = draft(); quote.kind = 2; quote.reference = root;
+    │                   - Valid delimiters are `{`, `[`, and `(`
+    │
+
+error: Invalid quote delimiter `.`
+    ┌─ rolling_contract/src/posting_tests.nr:184:35
+    │
+184 │     let mut quote = draft(); quote.kind = 2; quote.reference = root;
+    │                                   - Valid delimiters are `{`, `[`, and `(`
+    │
+
+error: Expected a `:` between the variable name and its type
+    ┌─ rolling_contract/src/posting_tests.nr:184:9
+    │
+184 │     let mut quote = draft(); quote.kind = 2; quote.reference = root;
+    │         -------------------
+    │
+
+error: Expected a '=' but found ';'
+    ┌─ rolling_contract/src/posting_tests.nr:184:28
+    │
+184 │     let mut quote = draft(); quote.kind = 2; quote.reference = root;
+    │                            -
+    │
+
+error: Invalid quote delimiter `.`
+    ┌─ rolling_contract/src/posting_tests.nr:184:51
+    │
+184 │     let mut quote = draft(); quote.kind = 2; quote.reference = root;
+    │                                                   - Valid delimiters are `{`, `[`, and `(`
+    │
+
+error: Invalid quote delimiter `)`
+    ┌─ rolling_contract/src/posting_tests.nr:185:60
+    │
+185 │     let quoted = publish(env, board, bob, other, 202, quote);
+    │                                                            - Valid delimiters are `{`, `[`, and `(`
+    │
+
+error: Expected an expression but found ';'
+    ┌─ rolling_contract/src/posting_tests.nr:185:61
+    │
+185 │     let quoted = publish(env, board, bob, other, 202, quote);
+    │                                                             -
+    │
+
+error: cannot find `kind` in this scope
+    ┌─ rolling_contract/src/posting_tests.nr:184:36
+    │
+184 │     let mut quote = draft(); quote.kind = 2; quote.reference = root;
+    │                                    ---- not found in this scope
+    │
+
+error: cannot find `reference` in this scope
+    ┌─ rolling_contract/src/posting_tests.nr:184:52
+    │
+184 │     let mut quote = draft(); quote.kind = 2; quote.reference = root;
+    │                                                    --------- not found in this scope
+    │
+
+error: Function expects 6 parameters but 5 were given
+    ┌─ rolling_contract/src/posting_tests.nr:185:18
+    │
+185 │     let quoted = publish(env, board, bob, other, 202, quote);
+    │                  ------------------------------------
+    │
+
+error: Expected a function, but found a(n) ()
+    ┌─ rolling_contract/src/posting_tests.nr:188:22
+    │
+188 │     let mut repost = draft(); repost.kind = 3; repost.reference = root; repost.message = [0; 32]; repost.length = 0;
+    │                      -------
+    │
+
+error: Object type is unknown in field access
+    ┌─ rolling_contract/src/posting_tests.nr:188:38
+    │
+188 │     let mut repost = draft(); repost.kind = 3; repost.reference = root; repost.message = [0; 32]; repost.length = 0;
+    │                                      ---- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ rolling_contract/src/posting_tests.nr:188:55
+    │
+188 │     let mut repost = draft(); repost.kind = 3; repost.reference = root; repost.message = [0; 32]; repost.length = 0;
+    │                                                       --------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ rolling_contract/src/posting_tests.nr:188:80
+    │
+188 │     let mut repost = draft(); repost.kind = 3; repost.reference = root; repost.message = [0; 32]; repost.length = 0;
+    │                                                                                ------- Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+error: Object type is unknown in field access
+    ┌─ rolling_contract/src/posting_tests.nr:188:106
+    │
+188 │     let mut repost = draft(); repost.kind = 3; repost.reference = root; repost.message = [0; 32]; repost.length = 0;
+    │                                                                                                          ------ Type must be known by this point
+    │
+    = Try adding a type annotation for the object type before this expression
+
+Aborting due to 15 previous errors
+        4.12 real         4.10 user         0.12 sys
+           402096128  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               28316  page reclaims
+                 653  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                 481  voluntary context switches
+                1369  involuntary context switches
+         46371586576  instructions retired
+         11045354191  cycles elapsed
+           389038920  peak memory footprint

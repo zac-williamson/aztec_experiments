@@ -48,3 +48,18 @@ test('the removed implicit-key override reproduces the actual BaseWallet address
  await assert.rejects(f.wallet.registerContract(instance,artifact),/does not match contract instance address/);
  assert.equal(f.calls.filter(c=>c[0]==='account').length,1);
 });
+
+test('actual wallet factory binds private PXE and hidden submission node, rejecting forged properties',()=>{
+ const c=vm.createContext({performance});vm.runInContext(source,c);
+ const routing=c.BillboardPrivateFeeRouting,node={},other={},pxe={},foreignPXE={};
+ // Labelled PXE provenance double; the separate wrapper test checks its real map.
+ const sdk={BaseWallet,isPrivatePXEForNode:(value,input)=>value===pxe&&input===node};
+ const make=(p=pxe,n=node,raw=node)=>routing.createAztecWallet(sdk,p,n,raw,()=>{},Fr.ONE);
+ const wallet=make();assert.equal(routing.isPrivateWalletForNode(wallet,node),true);
+ assert.equal(routing.isPrivateWalletForNode(make(pxe,node,other),node),false);
+ assert.equal(routing.isPrivateWalletForNode(make(foreignPXE),node),false);
+ assert.equal(routing.isPrivateWalletForNode({pxe,aztecNode:node},node),false);
+ assert.equal(routing.isPrivateWalletForNode(wallet,other),false);
+ wallet.pxe=foreignPXE;assert.equal(routing.isPrivateWalletForNode(wallet,node),false);
+ wallet.pxe=pxe;wallet.aztecNode=other;assert.equal(routing.isPrivateWalletForNode(wallet,node),false);
+});

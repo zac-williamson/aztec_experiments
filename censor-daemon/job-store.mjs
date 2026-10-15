@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
+import {validateRollingRemoval} from './flag-outcome.mjs';
 import {validateScope,scopeKey,validateModerationJob,moderationJobKey,validateFeedEvent} from '../shared/protocol-schema.mjs';
 
 const hex=value=>typeof value==='string'&&/^0x[0-9a-f]{64}$/.test(value);
@@ -13,7 +14,7 @@ const terminal=new Set(['evaluated-ok','confirmed-flag','expired','manual-review
 const signing=new Set(['submit-intent','submitted','reconciling']);
 const includedSuccess=record=>record.receipt?.executionResult==='success'&&['checkpointed','proven','finalized'].includes(record.receipt.status);
 const plain=value=>value&&typeof value==='object'&&!Array.isArray(value);
-function text(value,max){if(typeof value!=='string'||!value.isWellFormed()||value.includes('\0')||Buffer.byteLength(value)>max||!value.length)throw fail('Invalid public job text');return value;}
+function text(value,max,allowEmpty=false){if(typeof value!=='string'||!value.isWellFormed()||value.includes('\0')||Buffer.byteLength(value)>max||(!allowEmpty&&!value.length))throw fail('Invalid public job text');return value;}
 function decimal(value,bits){if(typeof value!=='string'||! /^(0|[1-9][0-9]*)$/.test(value)||value.length>78||BigInt(value)>=1n<<BigInt(bits))throw fail('Invalid job integer');return value;}
 function receipt(value,{finalized=true}={}){
  if(!plain(value)||!hex(value.txHash)||!hex(value.blockHash)||!integer(Number(value.blockNumber))||Number(value.blockNumber)<1||
@@ -21,8 +22,9 @@ function receipt(value,{finalized=true}={}){
  return {txHash:value.txHash,blockHash:value.blockHash,blockNumber:String(value.blockNumber),status:value.status,executionResult:value.executionResult};
 }
 
-export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=360000,maxReconcileAttempts=20,retryDelayMs=30000,maxJobs=100000,now=Date.now}){
+export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=360000,maxReconcileAttempts=20,retryDelayMs=30000,maxJobs=100000,now=Date.now,profile='legacy',development=false}){
  scope=validateScope(scope);
+ if(!['legacy','rolling'].includes(profile)||typeof development!=='boolean'||(profile==='rolling'&&scope.l1ChainId!==(development?'31337':'11155111')))throw fail('Invalid moderation profile');
  if(typeof filename!=='string'||!path.isAbsolute(filename)||!hex(modelVersion)||![maxAttempts,leaseMs,maxReconcileAttempts,retryDelayMs,maxJobs].every(integer)||
   maxAttempts<1||maxAttempts>100||leaseMs<1||leaseMs>900000||maxReconcileAttempts<1||maxReconcileAttempts>1000||retryDelayMs>3600000||maxJobs<1||maxJobs>100000||typeof now!=='function')throw fail('Invalid job store configuration');
  fs.mkdirSync(path.dirname(filename),{recursive:true,mode:0o700});
@@ -34,7 +36,7 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
  const settingGet=db.prepare('SELECT value FROM settings WHERE key=?'),settingSet=db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value');
  const clock=()=>{const value=now();if(!integer(value))throw fail('Invalid worker clock');return value;};
  function transaction(fn){db.exec('BEGIN IMMEDIATE');try{const value=fn();db.exec('COMMIT');return value;}catch(error){db.exec('ROLLBACK');throw error;}}
- try{transaction(()=>{const schema=settingGet.get('schema');if(schema&&schema.value!=='1')throw fail('Unsupported job database schema');const old=settingGet.get('scope');if(old&&old.value!==bound)throw fail('Job database scope mismatch');settingSet.run('scope',bound);settingSet.run('schema','1');});}catch(error){db.close();throw error;}
+ try{transaction(()=>{const schema=settingGet.get('schema');if(schema&&schema.value!=='1')throw fail('Unsupported job database schema');const old=settingGet.get('scope');if(old&&old.value!==bound)throw fail('Job database scope mismatch');const oldProfile=settingGet.get('profile');if((oldProfile?.value??'legacy')!==profile&&schema)throw fail('Job database profile mismatch');settingSet.run('profile',profile);settingSet.run('scope',bound);settingSet.run('schema','1');});}catch(error){db.close();throw error;}
  function validate(record){
   if(!plain(record)||Object.keys(record).sort().join()!=='decision,errorCode,flagEvent,history,intent,job,key,lease,orphaned,policy,post,receipt,reconcileAttempts,replacementInput,retryAt')throw fail('Invalid persisted job envelope');
   validateModerationJob(record.job,scope);
@@ -59,22 +61,27 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
  function snapshotPost(post,policies){
   if(!plain(post)||!hex(post.postId)||!hex(post.policyVersion)||typeof post.flagged!=='boolean')throw fail('Invalid public post snapshot');
   const publishedAt=decimal(post.publishedAt,63),deadline=decimal(post.flagDeadline,64),orderIndex=decimal(post.orderIndex,64);
+  if(profile==='rolling'){
+   if(!hex(post.currentPolicyVersion)||!policies.has(post.currentPolicyVersion)||!plain(post.context))throw fail('Rolling post context unavailable');
+   return {postId:post.postId,policyVersion:post.policyVersion,text:text(post.text,992,post.context.record?.kind==='3'&&typeof post.context.record.reference==='string'&&/^[1-9][0-9]{0,76}$/.test(post.context.record.reference)),publishedAt,flagDeadline:deadline,orderIndex,flagged:post.flagged,context:copy(post.context),currentPolicyVersion:post.currentPolicyVersion};
+  }
   const policy=policies.get(post.policyVersion);
   if(!policy)throw fail('Historical policy unavailable');
   if(BigInt(deadline)!==BigInt(publishedAt)+BigInt(policy.censorWindow))throw fail('Post deadline does not match its historical policy window');
   return {postId:post.postId,policyVersion:post.policyVersion,text:text(post.text,992),publishedAt,flagDeadline:deadline,orderIndex,flagged:post.flagged};
  }
- function ingestSnapshot({checkpoint,posts,policies,currentPolicyVersion}){
+ function ingestSnapshot({checkpoint,posts,policies,currentPolicyVersion,missingPostIds=[],complete=true}){
   if(!plain(checkpoint)||!integer(checkpoint.number)||checkpoint.number<1||!hex(checkpoint.hash)||!Array.isArray(posts)||posts.length>10000||!Array.isArray(policies)||policies.length>10000)throw fail('Invalid public snapshot');
   const known=new Map();
-  for(const policy of policies){if(!plain(policy)||!hex(policy.policyVersion)||known.has(policy.policyVersion))throw fail('Invalid historical policy');const censorWindow=decimal(String(policy.censorWindow),32);if(censorWindow==='0')throw fail('Invalid policy window');known.set(policy.policyVersion,{policyVersion:policy.policyVersion,text:text(policy.text,1488),censorWindow});}
-  if(!hex(currentPolicyVersion)||!known.has(currentPolicyVersion))throw fail('Current policy unavailable');
+  for(const policy of policies){if(!plain(policy)||!hex(policy.policyVersion)||known.has(policy.policyVersion))throw fail('Invalid historical policy');const censorWindow=decimal(String(policy.censorWindow),32);if(censorWindow==='0')throw fail('Invalid policy window');known.set(policy.policyVersion,{policyVersion:policy.policyVersion,text:text(policy.text,profile==='rolling'?8192:1488),censorWindow,...(profile==='rolling'?{context:copy(policy.context)}:{})});}
+  if(profile==='rolling'&&(!Array.isArray(missingPostIds)||missingPostIds.length>128||!missingPostIds.every(hex)||complete!==false))throw fail('Rolling ingestion requires bounded explicit observations');
+  if(profile==='legacy'&&(!hex(currentPolicyVersion)||!known.has(currentPolicyVersion)))throw fail('Current policy unavailable');
   const incoming=posts.map(post=>snapshotPost(post,known)),ids=new Set(incoming.map(post=>post.postId));if(ids.size!==incoming.length)throw fail('Duplicate snapshot post');
   return transaction(()=>{
    const time=clock();expiredLeases(time);
    for(const post of incoming){
-    const job={schemaVersion:1,scope,postId:post.postId,policyVersion:currentPolicyVersion,modelVersion,publishedAt:post.publishedAt,deadline:post.flagDeadline,state:'queued',attempt:'0',transactionHash:null};
-    const key=moderationJobKey(job);const old=getRecord(key),policy=known.get(currentPolicyVersion);
+    const job={schemaVersion:1,scope,postId:post.postId,policyVersion:profile==='rolling'?post.currentPolicyVersion:currentPolicyVersion,modelVersion,publishedAt:post.publishedAt,deadline:post.flagDeadline,state:'queued',attempt:'0',transactionHash:null};
+    const key=moderationJobKey(job);const old=getRecord(key),policy=known.get(job.policyVersion);
     if(old){
      if(JSON.stringify(old.policy)!==JSON.stringify(policy))throw fail('Policy content changed under the same version');
      if(JSON.stringify({...old.post,flagged:post.flagged})!==JSON.stringify(post)){
@@ -85,18 +92,19 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
      } else if(!old.intent&&(['MODEL_SUPERSEDED','POLICY_SUPERSEDED'].includes(old.errorCode)||(old.orphaned&&old.errorCode==='POST_ORPHANED'))){
       old.job=job;old.decision=null;old.errorCode=null;old.retryAt=0;old.lease=null;
      }
+     if(profile==='rolling'&&old.job.state==='confirmed-flag'&&!post.flagged){old.job.state='reconciling';old.receipt=null;old.flagEvent=null;old.lease=null;old.errorCode='REMOVAL_REORGED';old.retryAt=0;}
      old.post=post;old.orphaned=false;old.replacementInput=null;
      if(post.flagged&&!terminal.has(old.job.state)&&!(old.job.state==='submitted'&&includedSuccess(old))){old.job.state=signing.has(old.job.state)?'reconciling':'manual-review';old.errorCode='FLAG_ALREADY_PRESENT';old.lease=null;}
      put(old);
     }else put({key,job:{...job,state:post.flagged?'manual-review':'queued'},post,policy,lease:null,decision:null,intent:null,receipt:null,flagEvent:null,errorCode:post.flagged?'FLAG_ALREADY_PRESENT':null,retryAt:0,reconcileAttempts:0,orphaned:false,history:[],replacementInput:null});
    }
-   for(const record of rows())if(record.job.modelVersion===modelVersion&&!ids.has(record.job.postId)&&!record.orphaned){
+   for(const record of rows())if(record.job.modelVersion===modelVersion&&(complete?!ids.has(record.job.postId):missingPostIds.includes(record.job.postId))&&!record.orphaned){
     record.orphaned=true;record.receipt=null;record.job.state=signing.has(record.job.state)?'reconciling':'manual-review';record.lease=null;record.errorCode='POST_ORPHANED';put(record);
    }
    // Retire only unsigned unfinished work from the previous model. Keep its
    // public evidence, but do not leave an unleaseable obligation forever pending.
    // Revoking an evaluation lease is safe: its worker must renew before intent.
-   for(const record of rows())if((record.job.modelVersion!==modelVersion||record.job.policyVersion!==currentPolicyVersion)&&!record.intent&&!record.job.transactionHash&&!terminal.has(record.job.state)){
+   for(const record of rows())if((record.job.modelVersion!==modelVersion||(profile==='rolling'?incoming.some(p=>p.postId===record.job.postId&&p.currentPolicyVersion!==record.job.policyVersion):record.job.policyVersion!==currentPolicyVersion))&&!record.intent&&!record.job.transactionHash&&!terminal.has(record.job.state)){
     record.job.state='manual-review';record.errorCode=record.job.modelVersion!==modelVersion?'MODEL_SUPERSEDED':'POLICY_SUPERSEDED';record.lease=null;put(record);
    }
    settingSet.run('checkpoint',JSON.stringify({number:checkpoint.number,hash:checkpoint.hash}));settingSet.run('lastSuccessfulIngestAt',String(time));return {jobs:incoming.length,checkpoint:copy(checkpoint)};
@@ -166,8 +174,8 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
     if(included)record.receipt=included;
    }
    if(change.state==='confirmed-flag'){
-    const proof=receipt(change.receipt),event=validateFeedEvent(change.flagEvent,scope);
-    if(proof.executionResult!=='success'||!record.job.transactionHash||proof.txHash!==record.job.transactionHash||event.type!=='PostFlagged'||event.position.txHash!==proof.txHash||event.position.blockHash!==proof.blockHash||event.position.blockNumber!==proof.blockNumber||event.payload.postId!==record.job.postId||event.payload.policyVersion!==record.job.policyVersion||event.payload.reason!==record.intent?.reason)throw fail('Canonical successful flag evidence mismatch');
+    const proof=receipt(change.receipt,{finalized:!(profile==='rolling'&&development)}),event=profile==='rolling'?validateRollingRemoval(change.flagEvent,scope,record):validateFeedEvent(change.flagEvent,scope);
+    if(proof.executionResult!=='success'||!record.job.transactionHash||proof.txHash!==record.job.transactionHash||event.type!==(profile==='rolling'?'PostRemoved':'PostFlagged')||event.position.txHash!==proof.txHash||event.position.blockHash!==proof.blockHash||event.position.blockNumber!==proof.blockNumber||event.payload.postId!==record.job.postId||event.payload.policyVersion!==(profile==='rolling'?record.policy.context.policyIdentity:record.job.policyVersion)||event.payload.reason!==record.intent?.reason)throw fail('Canonical successful flag evidence mismatch');
     record.receipt=proof;record.flagEvent=event;
    }
    if(change.state==='retryable-error'&&signing.has(previous)){
@@ -181,6 +189,10 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
    if(terminal.has(change.state)||change.state==='retryable-error')record.lease=null;
    put(record);return copy(record);
   });
+ }
+ function invalidateRollingCompletion(key){
+  if(profile!=='rolling')throw fail('Rolling completion invalidation only');
+  return transaction(()=>{const record=getRecord(key);if(record?.job.state!=='confirmed-flag'||record.lease)throw fail('Invalid completion invalidation');record.job.state='reconciling';record.errorCode='REMOVAL_REORGED';record.retryAt=0;put(record);return copy(record);});
  }
  function status(){
   const all=rows(),counts={};
@@ -207,5 +219,5 @@ export function openJobStore({filename,scope,modelVersion,maxAttempts=3,leaseMs=
    oldestDeadline:all.filter(r=>!terminal.has(r.job.state)).map(r=>r.job.deadline).sort((a,b)=>BigInt(a)<BigInt(b)?-1:1)[0]??null};
  }
 
- return Object.freeze({ingestSnapshot,leaseNext,renew,release,transition,get:key=>{const r=getRecord(key);return r?copy(r):null;},list:()=>copy(rows()),status,close:()=>db.close()});
+ return Object.freeze({ingestSnapshot,invalidateRollingCompletion,leaseNext,renew,release,transition,get:key=>{const r=getRecord(key);return r?copy(r):null;},list:()=>copy(rows()),status,close:()=>db.close()});
 }

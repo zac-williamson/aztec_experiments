@@ -1,0 +1,45 @@
+error: Could not resolve 'protocol' in path
+  ┌─ src/main.nr:2:12
+  │
+2 │ use aztec::protocol::{address::{AztecAddress, EthAddress}, hash::poseidon2_hash_with_separator, traits::ToField};
+  │            --------
+  │
+
+error: Could not resolve 'EthAddress' in path
+   ┌─ src/main.nr:18:51
+   │
+18 │ pub fn recipient_commitment(chain: Field, portal: EthAddress, escrow: AztecAddress,
+   │                                                   ----------
+   ·
+23 │ #[aztec]
+   │ -------- While running this function attribute
+   │
+
+error: Could not resolve 'AztecAddress' in path
+   ┌─ src/main.nr:18:71
+   │
+18 │ pub fn recipient_commitment(chain: Field, portal: EthAddress, escrow: AztecAddress,
+   │                                                                       ------------
+   ·
+23 │ #[aztec]
+   │ -------- While running this function attribute
+   │
+
+error: Could not resolve 'AztecAddress' in path
+   ┌─ src/main.nr:19:28
+   │
+19 │     version: Field, owner: AztecAddress, salt: Field) -> Field {
+   │                            ------------
+   ·
+23 │ #[aztec]
+   │ -------- While running this function attribute
+   │
+
+error: cannot find `poseidon2_hash_with_separator` in this scope
+   ┌─ src/main.nr:20:5
+   │
+20 │     poseidon2_hash_with_separator([chain, portal.to_field(), escrow.to_field(), version, owner.to_field(), salt], 0x424b4301)
+   │     ----------------------------- not found in this scope
+   │
+
+Aborting due to 5 previous errors

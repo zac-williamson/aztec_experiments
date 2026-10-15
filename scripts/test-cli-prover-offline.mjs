@@ -58,7 +58,8 @@ try{
  const node=sdk.createAztecNodeClient(rpc.url);node.wipeCache=()=>{};
  store=await sdk.openPXEStore({l1ChainId:31337,rollupAddress:'0x'+'01'.repeat(20),accountAddress:'0x'+'01'.repeat(32),dataDirectory:'offline-sync-regression'});
  const anchor=new c.AnchorBlockStore(store),tips=new c.L2TipsKVStore(store,'probe',gh);
- synchronizer=new c.BlockSynchronizer(node,store,anchor,{},{},{},tips,{wipe(){}},{});
+ // V6 groups rollback stores in one array before the tips and contract-sync services.
+ synchronizer=new c.BlockSynchronizer(node,store,anchor,[],tips,{wipe(){}},{});
  let syncErrors=0;synchronizer.blockStream.log.error=()=>{syncErrors++;};
  await synchronizer.sync();
  assert.equal(Number((await anchor.getBlockHeader()).getBlockNumber()),1);

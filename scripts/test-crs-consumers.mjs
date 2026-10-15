@@ -51,13 +51,17 @@ function stubProver() {
 }
 
 test('required local derived G1, G2 and Grumpkin initialize the pinned point counts', async () => {
+  assert.equal(pinned.aztecVersion, '6.0.0-rc.3');
+  assert.equal(pinned.provenance.version, '6.0.0-rc.6');
+  assert.equal(pinned.derivedG1.derivation.packageVersion, '6.0.0-rc.6');
   const bb = stubProver();
   const result = await CRS.initialize(bb, options());
   assert.equal(result.g1Format, 'bn254-g1-uncompressed-64-byte');
   assert.equal(bb.calls.length, 2);
   assert.equal(bb.calls[0][1].numPoints, 1179648);
   assert.equal(bb.calls[0][1].pointsBuf.byteLength, 1179648 * 64);
-  assert.equal(bb.calls[1][1].numPoints, 65537);
+  assert.equal(bb.calls[1][1].numPoints, 131072);
+  assert.equal(bb.calls[1][1].pointsBuf.byteLength, 8388608);
 });
 
 for (const name of ['g1_uncompressed.dat', 'g2.dat', 'grumpkin_g1.dat']) {
@@ -90,6 +94,8 @@ for (const [label, mutation] of [
   ['wrong G2 format', m => { m.files[1].format = 'compressed'; return m; }],
   ['wrong Grumpkin format', m => { m.files[2].format = 'bn254-g1-uncompressed-64-byte'; return m; }],
   ['old point count', m => { m.files[0].numPoints = 1048577; return m; }],
+  ['old partial Grumpkin chunk', m => { Object.assign(m.files[2], {numPoints:65537,bytes:4194368}); m.files[2].range.end=4194367; return m; }],
+  ['single Grumpkin chunk reduces capacity', m => { Object.assign(m.files[2], {numPoints:65536,bytes:4194304}); m.files[2].range.end=4194303; return m; }],
   ['old Grumpkin filename', m => { m.files[2].url = 'https://crs.aztec-cdn.foundation/grumpkin_g1.dat'; return m; }],
   ['unexpected network destination', m => { m.files[0].url = 'https://example.com/g1_compressed.dat'; return m; }],
   ['duplicate file', m => { m.files[2] = m.files[0]; return m; }],
@@ -103,7 +109,12 @@ for (const [label, mutation] of [
   ['derived remote URL', m => { m.derivedG1.url = m.files[0].url; return m; }],
   ['missing provenance', m => { delete m.derivedG1.derivation; return m; }],
   ['wrong derivation method', m => { m.derivedG1.derivation.method = 'generic-cache'; return m; }],
-  ['wrong derivation SDK', m => { m.derivedG1.derivation.packageVersion = '5.0.0'; return m; }],
+  ['wrong derivation foundation', m => { m.derivedG1.derivation.packageVersion = '5.0.0'; return m; }],
+  ['SDK version used as foundation version', m => { m.derivedG1.derivation.packageVersion = m.aztecVersion; return m; }],
+  ['wrong downloader package', m => { m.provenance.package = '@aztec-labs/pxe'; return m; }],
+  ['wrong downloader version', m => { m.provenance.version = m.aztecVersion; return m; }],
+  ['wrong downloader source', m => { m.provenance.source = 'other.js'; return m; }],
+  ['wrong downloader hash', m => { m.provenance.sourceSha256 = '0'.repeat(64); return m; }],
   ['wrong derivation input name', m => { m.derivedG1.derivation.inputName = 'other.dat'; return m; }],
   ['mismatched derivation input pin', m => { m.derivedG1.derivation.inputSha256 = '0'.repeat(64); return m; }],
   ['mismatched derivation G2 pin', m => { m.derivedG1.derivation.g2Sha256 = '0'.repeat(64); return m; }],
@@ -204,7 +215,7 @@ test('verified local derived bytes skip compressed reads and use the documented 
   assert.equal(bb.calls[0][1].numPoints, 1179648);
   assert.equal(bb.calls[0][1].g2Point, payloads['g2.dat']);
   assert.equal(bb.calls[1][1].pointsBuf, payloads['grumpkin_g1.dat']);
-  assert.equal(bb.calls[1][1].numPoints, 65537);
+  assert.equal(bb.calls[1][1].numPoints, 131072);
 });
 
 for (const [label, data] of [
@@ -278,7 +289,7 @@ test('explicit BN254 prefix verifies the complete derived source before selectin
   assert.equal(bb.calls[0][1].pointsBuf.buffer, derivedPayload.buffer);
   assert.equal(bb.calls[0][1].g2Point, payloads['g2.dat']);
   assert.equal(bb.calls[1][1].pointsBuf, payloads['grumpkin_g1.dat']);
-  assert.deepEqual(result, {g1Format:'bn254-g1-uncompressed-64-byte',sourceBn254NumPoints:1179648,initializedBn254NumPoints:524288,grumpkinNumPoints:65537});
+  assert.deepEqual(result, {g1Format:'bn254-g1-uncompressed-64-byte',sourceBn254NumPoints:1179648,initializedBn254NumPoints:524288,grumpkinNumPoints:131072});
 });
 test('corruption beyond the retained prefix fails before any prover call', async () => {
   const bb = stubProver(), last = derivedPayload.length - 1;
@@ -293,3 +304,26 @@ test('prefix budget rejects invalid and excessive values, and snapshots caller s
 test('derived prefix rejects an unexpected nonempty initialization response',async()=>{
  const bb=stubProver();bb.srsInitSrs=async args=>{bb.calls.push(['bn254',args]);return {pointsBuf:new Uint8Array(1179648*64)};};await assert.rejects(CRS.initialize(bb,options({bn254NumPoints:524288})),/Unexpected BN254/);assert.equal(bb.calls.length,1);
 });
+
+// Synthetic full-sized bytes and a labelled prover stub: these exercise the
+// application whole-file gate, not BB's curve/chunk validation.
+for (const [label, change, expected] of [
+  ['old partial chunk', data => data.subarray(0,4194368), /CRS size mismatch/],
+  ['nonchunk point suffix', data => data.subarray(0,4194432), /CRS size mismatch/],
+  ['truncated second chunk', data => data.subarray(0,-1), /CRS size mismatch/],
+  ['overlong chunk buffer', data => {const out=new Uint8Array(data.length+64);out.set(data);return out;}, /CRS size mismatch/],
+  ['second chunk corruption', data => {const out=data.slice();out[4194304+64]^=1;return out;}, /CRS SHA-256 mismatch/],
+]) {
+  test(`Grumpkin ${label} rejects before either SRS call or alternate source`,async()=>{
+    const bb=stubProver(),reads=[],requests=[],hashSizes=[];
+    const bad=change(payloads['grumpkin_g1.dat']);
+    await assert.rejects(CRS.initialize(bb,options({
+      loadLocal:async file=>{reads.push(file.name);return file.name==='g1_uncompressed.dat'?derivedPayload:file.name==='grumpkin_g1.dat'?bad:payloads[file.name];},
+      sha256:data=>{hashSizes.push(data.byteLength);return hash(data);},
+      fetch:async url=>{requests.push(url);throw Error('Unexpected network request');},
+    })),expected);
+    assert.deepEqual(reads,['g1_uncompressed.dat','g2.dat','grumpkin_g1.dat']);
+    assert.deepEqual(requests,[]);assert.deepEqual(bb.calls,[]);
+    assert.deepEqual(hashSizes,label==='second chunk corruption'?[75497472,128,8388608]:[75497472,128]);
+  });
+}

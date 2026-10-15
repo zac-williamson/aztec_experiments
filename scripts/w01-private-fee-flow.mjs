@@ -1,3 +1,4 @@
+import {failPrivateFeeSetup} from './private-fee-evidence.mjs';
 import {prepareW01UnfundedWallet} from './w01-unfunded-wallet.mjs';
 // TEST ONLY: user-funded ownerless FPC, canonical instance, cold start then private-balance fees.
 import assert from 'node:assert/strict';
@@ -8,10 +9,12 @@ import {GasFees} from '@aztec-labs/stdlib/gas';
 import {estimatePrivateFeeTransaction} from '../shared/private-fee-estimation.mjs';
 import {preparePrivateFeePayment} from '../shared/private-fee-client.mjs';
 import {bridgePrivateFeeCredit} from './w01-private-funding.mjs';
-export async function prepareW01PrivateFees({node,preparation,l1Client,directory,fundingDirectory,rpcUrl,mineL1,standalone=false,persistentDirectory,gasSettings,reportStage:mark}){
+import {verifyPrivateFeeAccounting} from './testing/private-fee-verification.mjs';
+export async function prepareW01PrivateFees({node,preparation,l1Client,directory,fundingDirectory,rpcUrl,mineL1,standalone=false,persistentDirectory,gasSettings,reportStage:mark,observeNode}){
   const observation={passed:false,ownerless:true,offchainIssuer:false,operatorFunding:false,chargesMaximumFee:false};let setup;
   try{
-    setup=await prepareW01UnfundedWallet({node,preparation,directory,persistentDirectory});
+    setup=await prepareW01UnfundedWallet({node,preparation,directory,persistentDirectory,observeNode});
+    node=setup.node;
     const {raw,artifact,instance,info,author}=setup;observation.walletRestore=setup.walletRestore;
     assert(path.isAbsolute(fundingDirectory));
     const poolBefore=await getFeeJuiceBalance(instance.address,node);
@@ -32,13 +35,13 @@ export async function prepareW01PrivateFees({node,preparation,l1Client,directory
     const verify=async(fees,netOtherPoolChange=0n)=>{
       assert.equal(typeof netOtherPoolChange,'bigint');
       const wallet=setup.wallet;
-      await wallet.pxe.sync();const {result}=await Contract.at(instance.address,artifact,wallet).methods.balance_of(author.address).simulate({from:author.address});
-      assert.equal(BigInt(result.toString()),BigInt(funded.claim.amount)-fees-BigInt(observation.standalone?.transactionFee??0));
-      assert.equal(await getFeeJuiceBalance(author.address,node),0n);
-      assert.equal(await getFeeJuiceBalance(instance.address,node),poolBefore+BigInt(funded.claim.amount)-fees-BigInt(observation.standalone?.transactionFee??0)+netOtherPoolChange);
-      Object.assign(observation,{passed:true,coldStart:true,poolBefore:String(poolBefore),netOtherPoolChange:String(netOtherPoolChange),privateDebit:String(fees+BigInt(observation.standalone?.transactionFee??0)),privateBalance:String(result),actualProtocolFees:String(fees+BigInt(observation.standalone?.transactionFee??0)),authorPublicBalanceZero:true,payer:instance.address.toString()});
+      const expectedPrivateBalance=BigInt(funded.claim.amount)-fees-BigInt(observation.standalone?.transactionFee??0);
+      const {privateBalance}=await verifyPrivateFeeAccounting({pxe:wallet.pxe,node,observation,expectedPrivateBalance,expectedPoolBalance:poolBefore+expectedPrivateBalance+netOtherPoolChange,
+        readPrivateBalance:async()=>{const {result}=await Contract.at(instance.address,artifact,wallet).methods.balance_of(author.address).simulate({from:author.address});return BigInt(result.toString());},
+        readAuthorPublicBalance:()=>getFeeJuiceBalance(author.address,node),readPoolBalance:()=>getFeeJuiceBalance(instance.address,node)});
+      Object.assign(observation,{passed:true,coldStart:true,poolBefore:String(poolBefore),netOtherPoolChange:String(netOtherPoolChange),privateDebit:String(fees+BigInt(observation.standalone?.transactionFee??0)),privateBalance:String(privateBalance),actualProtocolFees:String(fees+BigInt(observation.standalone?.transactionFee??0)),authorPublicBalanceZero:true,payer:instance.address.toString()});
     };
     Object.defineProperties(observation,{fundingSender:{value:funded.sender},browserFixture:{value:{instance,artifact,gas,fundedAmount:BigInt(funded.claim.amount),get allocated(){return allocated;},get wallet(){return setup.wallet;}}},discardUnsubmittedFee:{value:maximum=>{assert(BigInt(maximum)>0n&&allocated>=BigInt(maximum));allocated-=BigInt(maximum);}},authorAccount:{value:author},privateFeeAction:{value:privateFeeAction},verify:{value:verify},reopen:{value:setup.reopen},close:{value:setup.close}});
     return observation;
-  }catch(error){if(error.privateFeeFundingObservation)observation.funding=error.privateFeeFundingObservation;if(error.privateFeeStandaloneObservation)observation.standalone=error.privateFeeStandaloneObservation;if(setup)await setup.close();error.privateFeeObservation=observation;throw error;}
+  }catch(error){return failPrivateFeeSetup(error,observation,setup?()=>setup.close():undefined);}
 }

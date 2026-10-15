@@ -30,7 +30,7 @@ async function readyUser(page) {
 try {
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const origin='http://localhost:'+server.address().port;
-  browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
+  browser=await chromium.launch({headless:true,...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{})});
   async function open(pageName='user.html') {
     const context=await browser.newContext({acceptDownloads:true});
     await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){externalRequests++;return route.abort();}return route.continue();});
@@ -139,11 +139,13 @@ try {
   const ethereumHash=await first.page.evaluate(async()=>{
     const a=window.__aztec,w=window.walletState.aztec,secretHash=a.Fr.random().toString();
     const scope={account:w.address.toString(),chainId:'31337',rollup:'0x'+'11'.repeat(20),version:'5',board:'0x'+'0'.repeat(63)+'2',portal:'0x'+'22'.repeat(20),depositor:'0x'+'33'.repeat(20)};
-    const blockHash='0x'+'01'.repeat(32),provider={getNetwork:async()=>({chainId:31337n}),getBlock:async()=>({number:1,hash:blockHash}),getTransactionCount:async()=>5};
-    const signer={getAddress:async()=>scope.depositor,sendTransaction:async()=>{throw new Error('synthetic lost signing response');}};
+    const blockHash='0x'+'01'.repeat(32),provider={getNetwork:async()=>({chainId:31337n}),getBlock:async()=>({number:1,hash:blockHash}),getTransactionCount:async()=>5,estimateGas:async()=>100000n};
+    let signingAttempts=0;
+    const signer={getAddress:async()=>scope.depositor,sendTransaction:async request=>{signingAttempts++;if(request.gasLimit!==200000n)throw Error('deposit gas allowance');throw new Error('synthetic lost signing response');}};
     const journal=await a.createEthereumJournal({storage:a.createBrowserJournalStorage(),walletSecret:w.secretKey,walletSalt:w.salt,scope,provider,signer});
     const iface=new ethers.Interface(['function deposit(bytes32) payable']);
     try{await journal.send({data:iface.encodeFunctionData('deposit',[secretHash]),value:'100',expected:{kind:'deposit',amount:'100',secretHash}});}catch(e){if(e.code!=='BB_ETH_SUBMISSION_UNKNOWN')throw e;}
+    if(signingAttempts!==1)throw Error('Signing was not reached');
     return secretHash;
   });
   stage='ethereum-intent-reload';await first.page.reload();await readyUser(first.page);
@@ -152,9 +154,9 @@ try {
     const a=window.__aztec,w=window.walletState.aztec,scope={account:w.address.toString(),chainId:'31337',rollup:'0x'+'11'.repeat(20),version:'5',board:'0x'+'0'.repeat(63)+'2',portal:'0x'+'22'.repeat(20),depositor:'0x'+'33'.repeat(20)};
     const blockHash='0x'+'01'.repeat(32),txHash='0x'+'04'.repeat(32);let tx=null,receipt=null,nonce=null,submissions=0;
     const iface=new ethers.Interface(['function deposit(bytes32) payable','event Deposited(address indexed depositor,uint128 amount,bytes32 secretHash,bytes32 key,uint256 index)']);
-    const provider={getNetwork:async()=>({chainId:31337n}),getBlockNumber:async()=>1,getTransactionCount:async()=>tx?6:5,getBlock:async()=>({number:1,hash:blockHash}),getTransaction:async()=>tx,getTransactionReceipt:async()=>receipt};
+    const provider={getNetwork:async()=>({chainId:31337n}),getBlockNumber:async()=>1,getTransactionCount:async()=>tx?6:5,getBlock:async()=>({number:1,hash:blockHash}),getTransaction:async()=>tx,getTransactionReceipt:async()=>receipt,estimateGas:async()=>100000n};
     const signer={getAddress:async()=>scope.depositor,sendTransaction:async request=>{
-      if(request.data!==iface.encodeFunctionData('deposit',[secretHash])||request.value!==100n)throw new Error('payment changed');
+      if(request.data!==iface.encodeFunctionData('deposit',[secretHash])||request.value!==100n||request.gasLimit!==200000n)throw new Error('payment changed');
       submissions++;nonce=request.nonce;tx={...request,hash:txHash};receipt={hash:txHash,from:scope.depositor,to:scope.portal,status:1,blockNumber:1,blockHash,logs:[{address:scope.portal,...iface.encodeEventLog(iface.getEvent('Deposited'),[scope.depositor,100,secretHash,secretHash,0])}]};return tx;
     }};
     const journal=await a.createEthereumJournal({storage:a.createBrowserJournalStorage(),walletSecret:w.secretKey,walletSalt:w.salt,scope,provider,signer});

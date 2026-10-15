@@ -7,6 +7,7 @@ import {pathToFileURL} from 'node:url';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {githubToolbox} from '../github-tools.mjs';
+import {repositoryGit} from '../thread-repositories.mjs';
 const exec=promisify(execFile);
 
 test('real filtered checkout excludes unreadable blobs and preserves edits and PR base tree',async()=>{
@@ -63,4 +64,14 @@ test('real filtered checkout excludes unreadable blobs and preserves edits and P
   assert.equal(clones,1);await assertLargeAbsent();
  }finally{await session?.close();await fs.rm(fixture,{recursive:true,force:true});}
  if(work)await assert.rejects(fs.stat(work),{code:'ENOENT'});
+});
+
+test('connected snapshot initialization uses no credentialed clone and preserves executable source mode',async t=>{
+ const {threadRepositories}=await import('../thread-repositories.mjs');
+ const root=await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(),'bok-connected-checkout-')));t.after(()=>fs.rm(root,{recursive:true,force:true}));
+ const field=n=>'0x'+String(n).repeat(64),mapping={threadId:field(1),fullName:'owner/connected'},calls=[];
+ const repositories=threadRepositories({directory:path.join(root,'threads'),namespace:'connected test',lease:{assertHeld:async()=>{}},startEmpty:true,connections:{connectionFor:()=>mapping,readConnected:async()=>({mapping,files:[{path:'run.sh',data:Buffer.from('#!/bin/sh\nexit 0\n').toString('base64'),mode:'100755'}]})}});
+ const toolbox=githubToolbox({repository:'owner/reference',repositories,api:async()=>assert.fail('No broad token'),runCommand:async(command,args,options)=>{calls.push(args);assert(!args.some(a=>typeof a==='string'&&/^https?:/.test(a)));return repositoryGit(args,options);}});
+ const session=await toolbox.open({threadId:field(1),id:field(2),postId:field(3)});t.after(()=>session.close());
+ assert.match((await session.call('read_file',{path:'run.sh'})).text,/exit 0/);assert(!calls.some(a=>a[0]==='clone'));assert.equal(session.summary('private source'), 'Connected repository work did not publish a pull request.');
 });

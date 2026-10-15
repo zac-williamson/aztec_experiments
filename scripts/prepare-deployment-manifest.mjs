@@ -11,7 +11,10 @@ import {assertNodeVersion,ROOT} from './toolchain.mjs';
 export async function prepareDeploymentManifest(intent){
  checkSdk();
  if(!intent||Object.keys(intent).sort().join()!=='actors,board,network,profile,schemaVersion')throw Error('Intent must contain only schemaVersion, profile, network, actors and board');
- const artifact=JSON.parse(fs.readFileSync(path.join(ROOT,'apps/src/billboard/deploy/billboard_artifact.json'),'utf8'));
+ const rolling=intent.schemaVersion===2;
+ if(rolling&&intent.board?.kind!=='rolling')throw Error('Explicit Rolling board kind required');
+ const artifact=JSON.parse(fs.readFileSync(path.join(ROOT,rolling?'billboard/target/rolling_contract-RollingBoard.json':'apps/src/billboard/deploy/billboard_artifact.json'),'utf8'));
+ if(rolling&&(artifact.name!=='RollingBoard'||artifact.transpiled!==true))throw Error('Processed Rolling artifact required');
  const metadata=JSON.parse(fs.readFileSync(path.join(ROOT,'shared/portal-runtime.json'),'utf8'));
  let creation=fs.readFileSync(path.join(ROOT,'apps/src/billboard/deploy/portal_bytecode.txt'),'utf8').trim();if(!creation.startsWith('0x'))creation='0x'+creation;
  const cls=await getContractClassFromArtifact(loadContractArtifact(artifact));

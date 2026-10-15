@@ -1,9 +1,8 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {execFile} from 'node:child_process';
-import {promisify} from 'node:util';
-const exec=promisify(execFile);
+import {repositoryGit} from './thread-repositories.mjs';
+const trustedCommand=(command,args,options)=>{if(command!=='git')throw Error('Unsupported repository command');return repositoryGit(args,options);};
 const definition=(name,description,properties,required=Object.keys(properties))=>({type:'function',function:{name,description,parameters:{type:'object',properties,required,additionalProperties:false}}});
 const string={type:'string'};
 const pathKey=name=>name.normalize('NFC').toLowerCase();
@@ -11,14 +10,31 @@ const pathKey=name=>name.normalize('NFC').toLowerCase();
 /** GitHub implementation of the agent tool API. Writes stay in a fresh branch.
  * API transport is supplied by the host; no token enters the working directory.
  */
-export function githubToolbox({repository,api,allowWrites=false,draftPr=false,runCommand=exec}) {
+export function githubToolbox({repository,api,allowWrites=false,draftPr=false,runCommand=trustedCommand,repositories}) {
   if(!/^[\w.-]+\/[\w.-]+$/.test(repository))throw Error('Invalid repository');
-  return {async open({postId}) {
-    const dir=await fs.mkdtemp(path.join(os.tmpdir(),'bok-')),work=path.join(dir,'repository');
+  return {async open({postId,threadId,id}) {
+    const workspace=repositories?await repositories.open({threadId,invocationId:id,repository}):null;
+    const dir=workspace?null:await fs.mkdtemp(path.join(os.tmpdir(),'bok-')),work=workspace?.work??path.join(dir,'repository');
     let prUrl=null,checkout,files;
     // Plain replies and PR reads do not need a checkout. Retain a rejected
     // initialization promise too: one invocation never silently retries cloning.
     const ensureCheckout=()=>checkout??=(async()=>{
+      if(workspace?.readRevision){
+        await runCommand('git',['clone','--no-hardlinks','--no-checkout','--branch','accepted',workspace.repositoryPath,work],{timeout:60000,maxBuffer:1024*1024});
+        const baseSha=(await runCommand('git',['rev-parse','HEAD'],{cwd:work})).stdout.trim();
+        if(baseSha!==workspace.readRevision)throw Error('Accepted repository revision changed');
+        return {base:null,baseSha};
+      }
+      if(workspace?.connection){
+        const source=await workspace.initialSource();await runCommand('git',['init',work]);
+        for(const file of source){const target=await safe(file.path);await fs.mkdir(path.dirname(target),{recursive:true});await fs.writeFile(target,Buffer.from(file.data,'base64'),{flag:'wx',mode:file.mode==='100755'?0o700:0o600});}
+        await runCommand('git',['add','--all','--','.'],{cwd:work});await runCommand('git',['commit','--allow-empty','-m','Initialize operator-connected source'],{cwd:work});
+        return {base:null,baseSha:(await runCommand('git',['rev-parse','HEAD'],{cwd:work})).stdout.trim()};
+      }
+      if(workspace?.startEmpty){
+        await runCommand('git',['init',work]);await runCommand('git',['commit','--allow-empty','-m','Initialize isolated Bok thread'],{cwd:work});
+        return {base:null,baseSha:(await runCommand('git',['rev-parse','HEAD'],{cwd:work})).stdout.trim()};
+      }
       await runCommand('git',['clone','--depth','1','--filter=blob:none','--no-checkout','https://github.com/'+repository+'.git',work],{timeout:60000,maxBuffer:1024*1024});
       const info=await api('GET','/repos/'+repository);
       const baseSha=(await runCommand('git',['rev-parse','HEAD'],{cwd:work})).stdout.trim();
@@ -27,8 +43,18 @@ export function githubToolbox({repository,api,allowWrites=false,draftPr=false,ru
     // Download only files the tools can read. Keep omitted files in the Git
     // index so publishing a small edit never treats large artifacts as deleted.
     const ensureFiles=()=>files??=(async()=>{
-      const {baseSha}=await ensureCheckout(),commit=await api('GET',`/repos/${repository}/git/commits/${baseSha}`);
-      const tree=await api('GET',`/repos/${repository}/git/trees/${commit.tree.sha}?recursive=1`);
+      const {baseSha}=await ensureCheckout();let commit,tree;
+      if(workspace?.readRevision||workspace?.startEmpty||workspace?.connection){
+        const listed=await runCommand('git',['ls-tree','-r','-l','-z',baseSha],{cwd:work,maxBuffer:4*1024*1024});
+        commit={tree:{sha:baseSha}};tree={sha:baseSha,truncated:false,tree:listed.stdout.split('\0').filter(Boolean).map(row=>{
+          const match=/^([0-7]+) (blob|commit) ([0-9a-f]{40}) +([0-9]+|-)\t(.+)$/s.exec(row);
+          if(!match||match[2]!=='blob')throw Error('Unsupported repository entry');
+          return {path:match[5],type:'blob',size:Number(match[4])};
+        })};
+      }else{
+        commit=await api('GET',`/repos/${repository}/git/commits/${baseSha}`);
+        tree=await api('GET',`/repos/${repository}/git/trees/${commit.tree.sha}?recursive=1`);
+      }
       if(tree.truncated!==false||tree.sha!==commit.tree.sha||!Array.isArray(tree.tree))throw Error('Incomplete repository tree');
       const oversized=new Set();
       for(const entry of tree.tree){
@@ -45,6 +71,7 @@ export function githubToolbox({repository,api,allowWrites=false,draftPr=false,ru
     })();
     const safe=async name=>{
       if(typeof name!=='string'||name.includes('\0')||name.split(/[\\/]/).some(p=>pathKey(p)==='.git'))throw Error('Invalid file path');
+      if(workspace?.connection&&(!/^[A-Za-z0-9._/-]{1,240}$/.test(name)||name.split('/').some(p=>['.github','.aws','.ssh','.npmrc','node_modules','credentials','secrets'].includes(p.toLowerCase())||/^\.(?:env|yarnrc)(?:[.-]|$)/i.test(p))))throw Error('Connected source path rejected');
       const target=path.resolve(work,name);if(!target.startsWith(work+path.sep))throw Error('Path outside repository');
       // Reject symlinks at every existing path component, including parent dirs.
       let current=work;for(const part of path.relative(work,target).split(path.sep)){current=path.join(current,part);try{if((await fs.lstat(current)).isSymbolicLink())throw Error('Symlink access rejected');}catch(e){if(e.code!=='ENOENT')throw e;}}
@@ -58,13 +85,19 @@ export function githubToolbox({repository,api,allowWrites=false,draftPr=false,ru
       definition('create_pr','Publish current edits as a new pull request; never merge',{title:string,body:string}),
     ];
     return {
-      definitions,
-      summary:reason=>(reason+(prUrl?' PR: '+prUrl:' No PR was published.')).slice(0,900),
+      privateSource:!!workspace?.connection,
+      definitions:workspace?[...definitions.filter(x=>x.function.name!=='create_pr'&&(!workspace.connection||x.function.name!=='read_pr')),definition('check_workspace','Run isolated tests and static build for current source; repair failures before finishing',{})]:definitions,
+      summary:reason=>workspace?.connection?'Connected repository work did not publish a pull request.':(workspace?reason:reason+(prUrl?' PR: '+prUrl:' No PR was published.')).slice(0,900),
       async call(name,args){
+        if(name==='check_workspace'&&workspace){
+          await ensureFiles();let result;try{result=await workspace.check();}catch(error){if(error.code!=='STATIC_FAILED'||!error.result)throw error;result=error.result;}
+          return {passed:result.passed,revision:result.revision,sourceDigest:result.sourceDigest,phase:result.phase,log:result.log?.slice(-12000),logTruncated:(result.log?.length??0)>12000};
+        }
         if(name==='list_files'){if(typeof args.prefix!=='string')throw Error('Prefix required');await ensureCheckout();const listed=await runCommand('git',['ls-tree','-r','--name-only','-z','HEAD'],{cwd:work,maxBuffer:4*1024*1024});const files=listed.stdout.split('\0').filter(x=>x&&x.startsWith(args.prefix));return {files:files.slice(0,500),truncated:files.length>500};}
         if(name==='read_file'){const oversized=await ensureFiles(),file=await safe(args.path);if(oversized.has(pathKey(path.relative(work,file)))||(await fs.stat(file)).size>100000)throw Error('File too large');return {text:await fs.readFile(file,'utf8')};}
         if(name==='write_file'){if(typeof args.content!=='string'||Buffer.byteLength(args.content)>100000)throw Error('File too large');const oversized=await ensureFiles(),file=await safe(args.path);if(oversized.has(pathKey(path.relative(work,file))))throw Error('File too large');await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,args.content);return {written:args.path};}
         if(name==='read_pr'){
+          if(workspace?.connection)throw Error('Connected repository PR reads are not exposed');
           if(!Number.isSafeInteger(args.number)||args.number<1)throw Error('Invalid PR');
           const [pr,changes]=await Promise.all([api('GET',`/repos/${repository}/pulls/${args.number}`),api('GET',`/repos/${repository}/pulls/${args.number}/files?per_page=100`)]);
           // GitHub embeds entire repository/user objects in a PR response. Returning
@@ -89,6 +122,7 @@ export function githubToolbox({repository,api,allowWrites=false,draftPr=false,ru
           return result;
         }
         if(name==='create_pr'){
+          if(workspace)throw Error('Thread publication requires the scoped revision publisher');
           if(!allowWrites)throw Error('GitHub writes are disabled');
           if(prUrl)throw Error('One PR per invocation');
           if(typeof args.title!=='string'||args.title.length>200||typeof args.body!=='string'||args.body.length>20000)throw Error('Invalid PR text');
@@ -109,7 +143,8 @@ export function githubToolbox({repository,api,allowWrites=false,draftPr=false,ru
         }
         throw Error('Unknown tool');
       },
-      close:()=>fs.rm(dir,{recursive:true,force:true}),
+      ...(workspace?{accept:async()=>{if(!checkout)return null;await ensureFiles();return workspace.accept();}}:{}),
+      close:()=>workspace?workspace.close():fs.rm(dir,{recursive:true,force:true}),
     };
   }};
 }

@@ -1,0 +1,89 @@
+error: Type is too complex (complexity: 100019, max: 100000)
+   ┌─ /Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/macros/internals_functions_generation/external/private.nr:61:13
+   │
+61 │             aztec::contract_self::ContractSelfPrivate::new(&mut context, storage, call_self, enqueue_self, call_self_static, enqueue_self_static, internal, utility)
+   │             ---------------------------------------------- This usually happens with exponentially growing types. Consider simplifying the type structure.
+   │
+
+error: Type is too complex (complexity: 100019, max: 100000)
+   ┌─ /Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/macros/internals_functions_generation/external/private.nr:61:13
+   │
+61 │             aztec::contract_self::ContractSelfPrivate::new(&mut context, storage, call_self, enqueue_self, call_self_static, enqueue_self_static, internal, utility)
+   │             ---------------------------------------------- This usually happens with exponentially growing types. Consider simplifying the type structure.
+   │
+
+error: Type is too complex (complexity: 100019, max: 100000)
+   ┌─ /Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/macros/internals_functions_generation/external/private.nr:61:13
+   │
+61 │             aztec::contract_self::ContractSelfPrivate::new(&mut context, storage, call_self, enqueue_self, call_self_static, enqueue_self_static, internal, utility)
+   │             ---------------------------------------------- This usually happens with exponentially growing types. Consider simplifying the type structure.
+   │
+
+error: Type is too complex (complexity: 100019, max: 100000)
+   ┌─ /Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/macros/internals_functions_generation/external/private.nr:61:13
+   │
+61 │             aztec::contract_self::ContractSelfPrivate::new(&mut context, storage, call_self, enqueue_self, call_self_static, enqueue_self_static, internal, utility)
+   │             ---------------------------------------------- This usually happens with exponentially growing types. Consider simplifying the type structure.
+   │
+
+error: Type is too complex (complexity: 100019, max: 100000)
+   ┌─ /Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/macros/internals_functions_generation/external/private.nr:61:13
+   │
+61 │             aztec::contract_self::ContractSelfPrivate::new(&mut context, storage, call_self, enqueue_self, call_self_static, enqueue_self_static, internal, utility)
+   │             ---------------------------------------------- This usually happens with exponentially growing types. Consider simplifying the type structure.
+   │
+
+error: Type is too complex (complexity: 100019, max: 100000)
+   ┌─ /Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/macros/internals_functions_generation/external/private.nr:61:13
+   │
+61 │             aztec::contract_self::ContractSelfPrivate::new(&mut context, storage, call_self, enqueue_self, call_self_static, enqueue_self_static, internal, utility)
+   │             ---------------------------------------------- This usually happens with exponentially growing types. Consider simplifying the type structure.
+   │
+
+error: Type is too complex (complexity: 100019, max: 100000)
+   ┌─ /Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/macros/internals_functions_generation/external/private.nr:61:13
+   │
+61 │             aztec::contract_self::ContractSelfPrivate::new(&mut context, storage, call_self, enqueue_self, call_self_static, enqueue_self_static, internal, utility)
+   │             ---------------------------------------------- This usually happens with exponentially growing types. Consider simplifying the type structure.
+   │
+
+error: Type is too complex (complexity: 100019, max: 100000)
+   ┌─ /Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/macros/internals_functions_generation/external/private.nr:61:13
+   │
+61 │             aztec::contract_self::ContractSelfPrivate::new(&mut context, storage, call_self, enqueue_self, call_self_static, enqueue_self_static, internal, utility)
+   │             ---------------------------------------------- This usually happens with exponentially growing types. Consider simplifying the type structure.
+   │
+
+error: Type is too complex (complexity: 100019, max: 100000)
+   ┌─ /Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/macros/internals_functions_generation/external/private.nr:61:13
+   │
+61 │             aztec::contract_self::ContractSelfPrivate::new(&mut context, storage, call_self, enqueue_self, call_self_static, enqueue_self_static, internal, utility)
+   │             ---------------------------------------------- This usually happens with exponentially growing types. Consider simplifying the type structure.
+   │
+
+error: Type is too complex (complexity: 100019, max: 100000)
+   ┌─ /Users/zac/nargo/github.com/aztec-labs-eng/aztec-nr/v6.0.0-rc.1/aztec/src/macros/internals_functions_generation/external/private.nr:61:13
+   │
+61 │             aztec::contract_self::ContractSelfPrivate::new(&mut context, storage, call_self, enqueue_self, call_self_static, enqueue_self_static, internal, utility)
+   │             ---------------------------------------------- This usually happens with exponentially growing types. Consider simplifying the type structure.
+   │
+
+Aborting due to 10 previous errors
+        7.75 real         7.69 user         0.32 sys
+           471875584  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               33650  page reclaims
+                 868  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                 420  voluntary context switches
+               14359  involuntary context switches
+         89966884828  instructions retired
+         20918962780  cycles elapsed
+           417907552  peak memory footprint

@@ -1,0 +1,26 @@
+error: Cannot mutate immutable variable `env`
+    ┌─ rolling_contract/src/posting_tests.nr:364:15
+    │
+364 │     let bok = env.deploy("@private_bok/PrivateBok").with_public_initializer(moderator, PrivateBok::interface().init(board, moderator, 1, 1));
+    │               ---
+    │
+
+Aborting due to 1 previous error
+        4.53 real         4.46 user         0.16 sys
+           422871040  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               29796  page reclaims
+                 651  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                 420  voluntary context switches
+                2419  involuntary context switches
+         49507369532  instructions retired
+         12044716919  cycles elapsed
+           409830216  peak memory footprint

@@ -1,0 +1,8 @@
+{
+  "rolling_contract/src/admission.nr": "83868ff1dd7b5f7841fdff2f1252d76d96c68db9554d9bb93e65b6a6a7011b38",
+  "rolling_contract/src/encoding.nr": "32d1ddbca7c6cdf607a24ad1ecdf7ab4be6667877cf7c34b3cf370a02efcfd07",
+  "rolling_contract/src/main.nr": "e328e13a91f4b959164c22d5f523732ef48a5baa47ed401e72185208d35e7d08",
+  "rolling_contract/src/posting.nr": "25e1f491d36d9c1499b79fba2b2740489ac95b272b742e66b841bcf6e9c2e40b",
+  "rolling_contract/src/posting_tests.nr": "7e8c271834aa6c228eb4aafb970667836171c9ec407c0a4758d92694afdf35af",
+  "rolling_contract/src/tests.nr": "a5a50346d645d4d90ffea0e3df2b6ceb311449176c63a48bec05d1f0b20f8002"
+}

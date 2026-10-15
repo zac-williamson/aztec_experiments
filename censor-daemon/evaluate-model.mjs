@@ -5,7 +5,7 @@ import path from 'node:path';
 import {performance} from 'node:perf_hooks';
 import {pathToFileURL,fileURLToPath} from 'node:url';
 import {startModelRuntime} from './model-runtime.mjs';
-import {moderatePost,buildUserPrompt} from './moderation.mjs';
+import {moderatePost,buildUserPrompt,LIMITS} from './moderation.mjs';
 import {identifyModel,sha256Bytes} from './model-version.mjs';
 
 export const THRESHOLDS=Object.freeze({minLabeled:300,minMultilingual:50,minInjection:50,maxFalsePositiveRate:0.02,maxFalseNegativeRate:0.05,maxP95Ms:10000});
@@ -114,7 +114,7 @@ export async function evaluateModel({corpusPath,outputPath,runtimeOptions,maxCas
  const filename=path.resolve(outputPath);fs.mkdirSync(path.dirname(filename),{recursive:true,mode:0o700});
  const lock=filename+'.lock',lockFd=fs.openSync(lock,'wx',0o600),started=performance.now(),startedAt=new Date().toISOString();
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(Error('Evaluation work deadline')),workBudgetMs);
- let runtime,state,failure,cleanup='not-started',verification={status:'not-started'};
+ let runtime,state,failure,deferredCase=null,cleanup='not-started',verification={status:'not-started'};
  const shutdown=()=>{controller.abort(Error('Evaluation interrupted'));runtime?.stop().catch(()=>{});};
  process.on('SIGINT',shutdown);process.on('SIGTERM',shutdown);
  const evidenceKind=startRuntime===startModelRuntime&&evaluate===moderatePost?'actual-isolated-model':'fixture';
@@ -133,9 +133,12 @@ export async function evaluateModel({corpusPath,outputPath,runtimeOptions,maxCas
   for(const item of corpus.cases){
    if(completed.has(item.id))continue;
    const remaining=Math.floor(workBudgetMs-(performance.now()-started));
-   if(controller.signal.aborted||remaining<1000||attempted>=maxCases)break;
+   if(controller.signal.aborted||attempted>=maxCases)break;
+   // Admit only a complete production request budget. A short batch tail is
+   // unattempted work, not a shorter model deadline or a model-quality error.
+   if(remaining<LIMITS.timeoutMs){deferredCase={caseId:item.id,reason:'insufficient-request-budget',remainingMs:Math.max(0,remaining),requiredMs:LIMITS.timeoutMs};break;}
    const begin=performance.now(),result={caseId:item.id,inputDigest:digest({case:item,policy:policies.get(item.policyId)})};
-   try{const verdict=await evaluate(item.text,policies.get(item.policyId).text,runtime.port,{timeoutMs:Math.min(120000,remaining)});
+   try{const verdict=await evaluate(item.text,policies.get(item.policyId).text,runtime.port,{timeoutMs:LIMITS.timeoutMs});
     if(typeof verdict.isViolation!=='boolean')throw Error('Invalid evaluation verdict');
     Object.assign(result,{status:'decision',isViolation:verdict.isViolation,...(typeof verdict.reason==='string'?{reason:verdict.reason}:{})});
    }catch(error){Object.assign(result,{status:'error',errorCode:typeof error.code==='string'&&/^[A-Z0-9_]{1,80}$/.test(error.code)?error.code:'MODEL_EVALUATION_FAILED'});}
@@ -155,7 +158,7 @@ export async function evaluateModel({corpusPath,outputPath,runtimeOptions,maxCas
     else verification={status:'fixture-not-qualified'};
    }catch(error){verification={status:'failed'};failure??=error;}
    try{await runtime.stop();cleanup='complete';}catch(error){cleanup='failed';failure??=error;}}
-  try{if(state){state.sessions.push({startedAt,finishedAt:new Date().toISOString(),durationMs:performance.now()-started,cleanup,verification,interrupted:controller.signal.aborted,error:failure?'EVALUATION_RUN_FAILED':null});state.report=buildEvaluationReport(corpus,state.results,{flagSubmissionP95Ms,flagSubmissionEvidence,evidenceKind});state.report.runState=cleanup==='complete'&&!failure?'stopped-cleanly':'failed';state.report.runtimeVerified=state.sessions.every(session=>session.verification?.status==='verified');state.report.pass&&=state.report.runtimeVerified&&state.sessions.every(session=>session.cleanup==='complete'&&!session.error);saveAtomic(filename,state);}}
+  try{if(state){state.sessions.push({startedAt,finishedAt:new Date().toISOString(),durationMs:performance.now()-started,cleanup,verification,deferredCase,interrupted:controller.signal.aborted,error:failure?'EVALUATION_RUN_FAILED':null});state.report=buildEvaluationReport(corpus,state.results,{flagSubmissionP95Ms,flagSubmissionEvidence,evidenceKind});state.report.runState=cleanup==='complete'&&!failure?'stopped-cleanly':'failed';state.report.runtimeVerified=state.sessions.every(session=>session.verification?.status==='verified');state.report.pass&&=state.report.runtimeVerified&&state.sessions.every(session=>session.cleanup==='complete'&&!session.error);saveAtomic(filename,state);}}
   finally{fs.closeSync(lockFd);fs.unlinkSync(lock);}
  }
  if(failure)throw failure;

@@ -1,16 +1,16 @@
 {
-  "nodeUrl": "https://aztec-testnet.drpc.org",
-  "ethereumUrl": "https://ethereum-sepolia-rpc.publicnode.com",
+  "applicationProfile": "rolling",
+  "nodeUrl": "https://YOUR_AUTHENTICATED_QUERY_HOST/v1/node",
+  "ethereumUrl": "https://ethereum-sepolia-rpc.publicnode.com/",
   "chainId": "11155111",
-  "rollupVersion": "2914217885",
-  "rollupAddress": "0x8c2fb2a68a3d362ab1de99e06f83f8903160bbd9",
-  "boardAddress": "REPLACE_WITH_NEW_PLUGIN_ENABLED_BOARD",
-  "operatorAddress": "REPLACE_WITH_OPERATOR_AZTEC_ADDRESS",
+  "rollupVersion": "REPLACE_WITH_VERIFIED_CURRENT_ROLLUP_VERSION",
+  "rollupAddress": "REPLACE_WITH_VERIFIED_CURRENT_ROLLUP_ADDRESS",
+  "boardAddress": "REPLACE_WITH_CURRENT_ROLLING_BOARD",
+  "operatorAddress": "REPLACE_WITH_PUBLIC_BOK_OPERATOR_ADDRESS",
   "operatorFile": "/absolute/private/path/operator.json",
-  "tokenAddress": "REPLACE_WITH_VERIFIED_NETWORK_USDC",
-  "descriptorUrl": "https://YOUR_SERVICE/v1/descriptor",
-  "handle": "bok",
-  "description": "Development assistant",
-  "repository": "zac-williamson/aztec_experiments",
-  "development": false
+  "development": false,
+  "lifecycle": {
+    "tokenAddress": "REPLACE_WITH_VERIFIED_SIX_DECIMAL_TOKEN",
+    "pluginId": "0x0000000000000000000000000000000000000000000000000000000000000001"
+  }
 }

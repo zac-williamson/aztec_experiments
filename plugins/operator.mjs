@@ -1,11 +1,11 @@
 import {prepareNativeRuntime} from '../prover/runtime.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {pathToFileURL} from 'node:url';
+import {pathToFileURL,fileURLToPath} from 'node:url';
 import {BackendType,Barretenberg,BarretenbergSync} from '@aztec-foundation/bb.js';
 import {createAztecNodeClient} from '../shared/aztec-node-client.mjs';
 import {waitForTx} from '@aztec-labs/aztec.js/node';
-import {BatchCall,Contract,Contract as AztecContract} from '@aztec-labs/aztec.js/contracts';
+import {BatchCall,Contract,Contract as AztecContract,NO_WAIT} from '@aztec-labs/aztec.js/contracts';
 import {getFeeJuiceBalance} from '@aztec-labs/aztec.js/utils';
 import {FeeJuicePaymentMethodWithClaim} from '@aztec-labs/aztec.js/fee';
 import {NO_FROM} from '@aztec-labs/aztec.js/account';
@@ -15,18 +15,24 @@ import {Fr} from '@aztec-labs/foundation/curves/bn254';
 import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
 import {EthAddress} from '@aztec-labs/foundation/eth-address';
 import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
-import {getContractClassFromArtifact} from '@aztec-labs/stdlib/contract';
+import {getContractClassFromArtifact,getContractInstanceFromInstantiationParams,computeContractAddressFromInstance} from '@aztec-labs/stdlib/contract';
 import {Tx,TxHash,TxStatus} from '@aztec-labs/stdlib/tx';
-import {JsonRpcProvider,Wallet,Contract as EthereumContract,ContractFactory,getCreateAddress,keccak256,parseUnits,formatUnits,sha256,toUtf8Bytes} from 'ethers';
+import {JsonRpcProvider,FetchRequest,Wallet,Transaction,Contract as EthereumContract,ContractFactory,getCreateAddress,keccak256,parseUnits,formatUnits,sha256,toUtf8Bytes,Interface} from 'ethers';
 import {API_VERSION,packText,handleField,validateDescriptor} from './protocol.mjs';
 import {provingEnabledForNode} from '../shared/proving-policy.mjs';
-import {fileState,recordedTransaction,outboxArguments} from './operations.mjs';
+import {fileState,recordedTransaction,outboxArguments,operatorApplicationProfile,rollingOperatorConfig,operatorNodeFetch,onceAztecOperation,reconcileRollingOperation,rollingPxeOptions,bindRollingJournal,readOperatorActor,projectRollingReceipt,rollingLifecycleConfig,rollingOperatorCommandScope,verifyPluginPortalRuntime,reconcileRollingEthereum,operatorEthereumRequest,matchRollingEthereumSigned,requireRollingReadyEffect,readHostedPrivateFile,captureSepoliaLiquidityPlan,sepoliaLiquidityContracts,sepoliaLiquidityTransactions,sepoliaLiquidityDeadline,runSepoliaLiquidityStage,captureSepoliaSeedResolution,captureSepoliaSeedSuccessor,runSepoliaLiquiditySuccessor,runSepoliaLiquidityCancellation,runSepoliaLiquidityContinuation,resolveSepoliaSeedNonce,captureSepoliaSeedContinuationPlan,captureSepoliaExactDispatch,exactCancellationFiles,requireAuthorizedExactCancellation,runSepoliaExactCancellation,broadcastExactSepoliaCancellation} from './operations.mjs';
+import {deriveStorageSlotInMap,computeL2ToL1MessageHash} from '@aztec-labs/stdlib/hash';
+import {sha256ToField} from '@aztec-labs/foundation/crypto/sha256';
+import {contractInputs,sha as artifactSha} from '../scripts/artifact-provenance.mjs';
+import {loadRollingArtifacts} from '../prover/rolling-artifacts.mjs';
+import {jsonStringify} from '@aztec-labs/foundation/json-rpc';
 const read=async p=>JSON.parse(await fs.readFile(p,'utf8'));
 
 /** Each command performs one reviewable operation; state contains exact tx hashes.
  * Keys are read from a separate mode-0600 actor file, never deployment output.
  */
-export async function operatorCommand({command,config,statePath,actor,ethereumKey,amount,recipient,claim,onProgress=()=>{}}){
+export async function operatorCommand({command,config,statePath,actor,ethereumKey,amount,recipient,claim,queryApiKey,onProgress=()=>{}}){
+ if(operatorApplicationProfile(config)==='rolling'){try{return await rollingOperatorCommand({command,config,statePath,actor,ethereumKey,claim,queryApiKey,onProgress});}catch{throw Error('Rolling operator unavailable; preserve the journal and reconcile retained operations');}}
  const [adapterJson,portalJson,boardJson]=await Promise.all([read(new URL('./adapter_artifact.json',import.meta.url)),read(new URL('../billboard/portal/out/PluginPortal.sol/PluginPortal.json',import.meta.url)),read(new URL('../apps/src/billboard/billboard_artifact.json',import.meta.url))]);
  const fingerprints=[adapterJson,portalJson,boardJson].map(x=>sha256(toUtf8Bytes(JSON.stringify(x))));
  const node=createAztecNodeClient(config.nodeUrl);onProgress('network-identity');const info=await node.getNodeInfo();
@@ -133,14 +139,412 @@ export async function operatorCommand({command,config,statePath,actor,ethereumKe
   throw Error('Unknown operator command');
  }finally{try{await wallet?.stop();}finally{provider.destroy();await lock?.close();await fs.unlink(statePath+'.lock');}}
 }
+// Current Rolling lifecycle uses the same durable constructor campaign and exact
+// once-only operations. Native development is proof-disabled. Public Bok identity
+// never identifies its private human callers; runtime authentication stays out of state.
+async function rollingOperatorCommand({command,config:input,statePath,actor,ethereumKey,claim,queryApiKey,onProgress}){
+ let wallet,provider,lock;
+ const lockPath=statePath+'.lock';
+ try{
+  const config=rollingOperatorConfig(input);
+  const commandScope=rollingOperatorCommandScope(command,input);
+  if(!config.development&&queryApiKey===undefined)throw Error('Operator authentication required');
+  if(typeof actor?.address!=='string'||!/^0x[0-9a-f]{64}$/.test(actor.address)||BigInt(actor.address)===0n)throw Error('Invalid deployer');
+  const from=AztecAddress.fromStringUnsafe(actor.address);
+  const node=createAztecNodeClient(config.nodeUrl,{fetch:operatorNodeFetch({endpoint:config.nodeUrl,key:queryApiKey,serialize:jsonStringify})});
+  provider=new JsonRpcProvider(operatorEthereumRequest(FetchRequest,config.ethereumUrl),undefined,{cacheTimeout:-1,batchMaxCount:1});
+  const checkNetwork=async()=>{
+   const info=await node.getNodeInfo();
+   if(String((await provider.getNetwork()).chainId)!==config.chainId||String(info.l1ChainId)!==config.chainId||String(info.rollupVersion)!==config.rollupVersion||String(info.l1ContractAddresses.rollupAddress).toLowerCase()!==config.rollupAddress||info.realProofs!==!config.development)throw Error('Network scope mismatch');
+   return info;
+  };
+  await checkNetwork();
+  if(command==='fees')return {publicFeeJuice:String(await getFeeJuiceBalance(from,node)),account:from.toString()};
+  const [boardRaw,bokRaw]=loadRollingArtifacts(),artifact=loadContractArtifact(bokRaw),boardArtifact=loadContractArtifact(boardRaw);
+  const classId=(await getContractClassFromArtifact(artifact)).id.toString();
+  const boardClass=(await getContractClassFromArtifact(boardArtifact)).id.toString();
+  const constructorArgs=[AztecAddress.fromStringUnsafe(config.boardAddress),AztecAddress.fromStringUnsafe(config.operatorAddress),BigInt(config.chainId),BigInt(config.rollupVersion)];
+  const binding={profile:'rolling-private-bok-constructor/v1',config,actor:from.toString(),artifactSha256:sha256(toUtf8Bytes(JSON.stringify(bokRaw))),classId,boardClass,constructor:constructorArgs.map(String)};
+  await fs.mkdir(path.dirname(path.resolve(statePath)),{recursive:true,mode:0o700});
+  lock=await fs.open(lockPath,'wx',0o600);await lock.writeFile(String(process.pid));await lock.sync();
+  const store=await fileState(statePath),identity=JSON.stringify(binding);
+  await bindRollingJournal(store,identity,()=>Fr.random().toString());
+  const salt=Fr.fromString(store.read().salt);
+  const instance=await getContractInstanceFromInstantiationParams(artifact,{constructorArgs,constructorArtifact:'init',deployer:from,salt});
+  const expected={version:instance.version,...Object.fromEntries(['address','deployer','originalContractClassId','currentContractClassId','salt','initializationHash','immutablesHash'].map(k=>[k,String(instance[k])])),storage:{board:config.boardAddress,operator:config.operatorAddress,owner:from.toString(),l1_chain:new Fr(BigInt(config.chainId)).toString(),version:new Fr(BigInt(config.rollupVersion)).toString()}};
+  const reconcile=async(record,constructor=command==='deploy-escrow')=>{
+   await checkNetwork();
+   return reconcileRollingOperation({record,development:config.development,expected:constructor?expected:undefined,reads:{
+    signed:async(raw,hash)=>{const tx=Tx.fromBuffer(Buffer.from(raw,'hex'));return tx.getTxHash().toString()===hash&&String(tx.data.constants.txContext.chainId)===new Fr(BigInt(config.chainId)).toString()&&String(tx.data.constants.txContext.version)===new Fr(BigInt(config.rollupVersion)).toString();},
+    receipt:async hash=>projectRollingReceipt(await node.getTxReceipt(TxHash.fromString(hash))),block:number=>node.getBlock(number),effect:hash=>node.getTxEffect(TxHash.fromString(hash)),
+    instance:(address,anchor)=>node.getContract(AztecAddress.fromStringUnsafe(address),anchor),address:async value=>(await computeContractAddressFromInstance(value)).toString(),
+    storage:async(address,field,anchor)=>String(await node.getPublicStorageAt(anchor,AztecAddress.fromStringUnsafe(address),artifact.storageLayout[field].slot)),
+   }});
+  };
+  if(commandScope==='portal-registration'){
+   const lifecycle=rollingLifecycleConfig(input),scope='portal-registration';
+   const requireSuccess=result=>{if(result?.status!=='succeeded'||!result.canonical)throw Error('Original prerequisite awaits canonical reconciliation');return result;};
+   requireSuccess(await reconcile(store.read().operations['deploy-escrow']??{},true));
+   const root=new URL('../',import.meta.url),portalBytes=await fs.readFile(new URL('billboard/portal/out/PluginPortal.sol/PluginPortal.json',root));
+   const portalArtifact=JSON.parse(portalBytes),manifest=await read(new URL('.build/contracts-manifest.json',root));
+   if(manifest.pluginPortal!==artifactSha(portalBytes)||JSON.stringify(manifest.inputs)!==JSON.stringify(contractInputs(fileURLToPath(root))))throw Error('Normal portal build provenance required');
+   const factory=new ContractFactory(portalArtifact.abi,portalArtifact.bytecode.object);
+   const creation=(await factory.getDeployTransaction(config.rollupAddress,expected.address,BigInt(config.rollupVersion),lifecycle.tokenAddress)).data.toLowerCase();
+   const lifecycleIdentity=JSON.stringify({constructorIdentity:identity,lifecycle,portalArtifactSha256:artifactSha(portalBytes)});
+   const addressOf=record=>{
+    const d=record?.deployment;
+    if(typeof d?.from!=='string'||!/^0x[0-9a-f]{40}$/.test(d.from)||!Number.isSafeInteger(d.nonce)||d.nonce<0||d.address!==getCreateAddress({from:d.from,nonce:d.nonce}).toLowerCase())throw Error('Portal intent missing');
+    return d.address;
+   };
+   const lifecycleRecord=name=>{const r=store.read().operations[name];if(r&&(r.identity!==lifecycleIdentity||r.journalIdentity!==identity))throw Error('Lifecycle scope mismatch');return r;};
+   const portalRecord=()=>lifecycleRecord('deploy-portal');
+   const portalAddress=()=>addressOf(portalRecord());
+   const verifyPortal=async(address,blockNumber,active)=>{
+    const contract=new EthereumContract(address,portalArtifact.abi,provider),tag={blockTag:blockNumber};
+    verifyPluginPortalRuntime((await provider.getCode(address,blockNumber)).toLowerCase(),portalArtifact.deployedBytecode);
+    const rollup=new EthereumContract(config.rollupAddress,['function getInbox() view returns(address)','function getOutbox() view returns(address)'],provider);
+    const [token,escrow,version,chain,inbox,outbox,actualActive,expectedInbox,expectedOutbox]=await Promise.all([
+     contract.token(tag),contract.escrow(tag),contract.version(tag),contract.chainId(tag),contract.inbox(tag),contract.outbox(tag),contract.active(tag),rollup.getInbox(tag),rollup.getOutbox(tag)]);
+    if(token.toLowerCase()!==lifecycle.tokenAddress||escrow!==expected.address||String(version)!==config.rollupVersion||String(chain)!==config.chainId||inbox.toLowerCase()!==expectedInbox.toLowerCase()||outbox.toLowerCase()!==expectedOutbox.toLowerCase()||(active!==undefined&&actualActive!==active))throw Error('Portal scope mismatch');
+    const tokenContract=new EthereumContract(token,['function decimals() view returns(uint8)'],provider);
+    if(Number(await tokenContract.decimals(tag))!==6)throw Error('Six decimal token required');
+    return true;
+   };
+   const canonicalHead=async()=>{const h=await provider.getBlock(config.development?'latest':'finalized');if(!h||!Number.isSafeInteger(h.number)||!h.hash)throw Error('L1 anchor unavailable');return h;};
+   const verifyCurrentPortal=async(active)=>{const h=await canonicalHead();await verifyPortal(portalAddress(),h.number,active);if((await provider.getBlock(h.number))?.hash!==h.hash)throw Error('L1 anchor changed');await checkNetwork();};
+   const checkBok=async({portal,registered=false,unbound=false}={})=>{
+    await checkNetwork();const h=await node.getBlock(config.development?'checkpointed':'finalized');
+    if(!h||!Number.isSafeInteger(h.number)||!h.hash)throw Error('L2 anchor unavailable');
+    const anchor={number:h.number,hash:h.hash},current=await node.getContract(instance.address,anchor);
+    for(const name of ['address','deployer','originalContractClassId','currentContractClassId','salt','initializationHash','immutablesHash'])if(String(current?.[name])!==expected[name])throw Error('Bok instance changed');
+    if(current?.version!==expected.version||String(await computeContractAddressFromInstance(current))!==expected.address)throw Error('Bok address mismatch');
+    const storage=async(address,slot)=>node.getPublicStorageAt(anchor,address,slot);
+    for(const [name,value]of Object.entries(expected.storage))if(String(await storage(instance.address,artifact.storageLayout[name].slot))!==value)throw Error('Bok constructor changed');
+    const portalValue=(await storage(instance.address,artifact.storageLayout.portal.slot)).toBigInt();
+    if(unbound?portalValue!==0n:portal!==undefined&&portalValue!==BigInt(portal))throw Error('Bok portal binding mismatch');
+    const boardAddress=AztecAddress.fromStringUnsafe(config.boardAddress),board=await node.getContract(boardAddress,anchor);
+    if(String(board?.originalContractClassId)!==boardClass||String(board?.currentContractClassId)!==boardClass||String(await computeContractAddressFromInstance(board))!==config.boardAddress)throw Error('Rolling class mismatch');
+    if(registered){
+     const slot=await deriveStorageSlotInMap(boardArtifact.storageLayout.plugins.slot,Fr.fromString(lifecycle.pluginId));
+     if((await storage(boardAddress,slot)).toBigInt()!==BigInt(expected.address)||(await storage(boardAddress,new Fr(slot.toBigInt()+1n))).toBigInt()!==1n)throw Error('Rolling registration unavailable');
+    }
+    if(command==='register'&&(await storage(boardAddress,boardArtifact.storageLayout.moderator.slot)).toBigInt()!==BigInt(from.toString()))throw Error('Deployment actor must be current moderator');
+    if(String((await node.getBlock(h.number))?.hash)!==String(h.hash))throw Error('L2 anchor changed');
+    return {anchor,board,current};
+   };
+   const checkReady=async()=>{
+    const bound=requireSuccess(await reconcile(lifecycleRecord('bind')??{},false));
+    await checkBok({portal:portalAddress()});
+    const raw=Buffer.alloc(160);raw.write('PLUGIN_READY_V1','ascii');
+    [BigInt(config.chainId),BigInt(portalAddress()),BigInt(expected.address),BigInt(config.rollupVersion)].forEach((v,i)=>Buffer.from(v.toString(16).padStart(64,'0'),'hex').copy(raw,32*(i+1)));
+    const leaf=computeL2ToL1MessageHash({l2Sender:instance.address,l1Recipient:EthAddress.fromString(portalAddress()),content:sha256ToField([raw]),rollupVersion:new Fr(BigInt(config.rollupVersion)),chainId:new Fr(BigInt(config.chainId))});
+    const effect=await node.getTxEffect(TxHash.fromString(lifecycleRecord('bind').hash));
+    requireRollingReadyEffect(effect,bound,leaf);
+    if(String((await node.getBlock(bound.blockNumber))?.hash)!==bound.blockHash)throw Error('Ready anchor changed');
+   };
+   const ethereumReconcile=async(record,name)=>reconcileRollingEthereum({record,development:config.development,reads:{
+    signed:async r=>{
+     const expectedTo=name==='deploy-portal'?null:portalAddress(),data=name==='deploy-portal'?creation:r.deployment?.data;
+     if(!matchRollingEthereumSigned({parse:raw=>Transaction.from(raw),record:r,chainId:config.chainId,to:expectedTo,data,from:r.deployment?.from,nonce:r.deployment?.nonce}))return false;
+     if(name==='deploy-portal')return !!addressOf(r);
+     return factory.interface.parseTransaction({data})?.name==='activate';
+    },receipt:h=>provider.getTransactionReceipt(h),block:n=>provider.getBlock(n),head:tag=>provider.getBlock(tag),
+    effect:async(r,anchor,receipt)=>{
+     if(name==='deploy-portal')return receipt.contractAddress?.toLowerCase()===addressOf(r)&&await verifyPortal(addressOf(r),anchor.number);
+     await checkReady();return verifyPortal(portalAddress(),anchor.number,true);
+    },
+   }});
+   const ethereumSend=async(name,prepare)=>{
+    let signer,populated,metadata;
+    if(!lifecycleRecord(name)){
+     // Missing funds/config fail before durable intent. Retained intents never
+     // reconstruct a signer, populate another transaction or use a new nonce.
+     if(typeof ethereumKey!=='string')throw Error('Local Ethereum signer required');signer=new Wallet(ethereumKey,provider);
+     await checkNetwork();const prepared=await prepare(signer);metadata=prepared.metadata;
+     populated=await signer.populateTransaction(prepared.transaction);metadata={...metadata,nonce:populated.nonce};
+     if(populated.chainId!==BigInt(config.chainId)||BigInt(populated.value??0)!==0n||BigInt(populated.gasLimit)*BigInt(populated.maxFeePerGas??populated.gasPrice)>await provider.getBalance(signer.address))throw Error('Fund L1 transaction fees first');
+    }
+    return onceAztecOperation({store,observeBroadcast:true,name,identity:lifecycleIdentity,journalIdentity:identity,scope,reconcile:r=>ethereumReconcile(r,name),execute:async({submit,bindDeployment})=>{
+     await bindDeployment(metadata);const raw=await signer.signTransaction(populated),hash=keccak256(raw);
+     await checkNetwork();if(name==='activate'){await verifyCurrentPortal(false);await checkReady();}
+     await submit({hash,raw:raw.slice(2)},()=>provider.broadcastTransaction(raw));
+    }});
+   };
+   if(command==='deploy-portal'){
+    const result=await ethereumSend(command,async signer=>{
+     await checkBok({unbound:true});const h=await canonicalHead();
+     const token=new EthereumContract(lifecycle.tokenAddress,['function decimals() view returns(uint8)'],provider);
+     if((await provider.getCode(lifecycle.tokenAddress,h.number))==='0x'||Number(await token.decimals({blockTag:h.number}))!==6)throw Error('Token prerequisite unavailable');
+     const nonce=await signer.getNonce('pending'),from=signer.address.toLowerCase(),address=getCreateAddress({from,nonce}).toLowerCase();
+     return {transaction:{data:creation,nonce,value:0n},metadata:{from,nonce,address}};
+    });return {...result,...(result.status==='succeeded'?{portal:portalAddress()}:{}),hostedServiceReady:false};
+   }
+   requireSuccess(await ethereumReconcile(portalRecord()??{},'deploy-portal'));
+   if(command==='activate'){
+    const result=await ethereumSend(command,async signer=>{
+     await verifyCurrentPortal(false);await checkReady();
+     const args=await outboxArguments(node,TxHash.fromString(lifecycleRecord('bind').hash),{requireFinalized:!config.development});
+     const data=factory.interface.encodeFunctionData('activate',args);return {transaction:{to:portalAddress(),data,value:0n},metadata:{from:signer.address.toLowerCase(),data:data.toLowerCase()}};
+    });return {...result,portalReady:result.status==='succeeded',hostedServiceReady:false};
+   }
+   if(command==='status'){
+    await checkReady();requireSuccess(await ethereumReconcile(lifecycleRecord('activate')??{},'activate'));await verifyCurrentPortal(true);
+    requireSuccess(await reconcile(lifecycleRecord('register')??{},false));await checkBok({portal:portalAddress(),registered:true});
+    return {status:'succeeded',scope,canonical:true,escrow:expected.address,portal:portalAddress(),pluginId:lifecycle.pluginId,portalReady:true,registrationReady:true,hostedServiceReady:false};
+   }
+   const preflightL2=async()=>{
+    if(command==='bind')await verifyCurrentPortal(false);
+    else{await checkReady();requireSuccess(await ethereumReconcile(lifecycleRecord('activate')??{},'activate'));await verifyCurrentPortal(true);}
+    const checked=await checkBok(command==='bind'?{unbound:true}:{portal:portalAddress()});
+    if(await getFeeJuiceBalance(from,node)===0n)throw Error('Public Fee Juice required');
+    if(command==='register'){
+     const slot=await deriveStorageSlotInMap(boardArtifact.storageLayout.plugins.slot,Fr.fromString(lifecycle.pluginId));
+     const old=(await node.getPublicStorageAt(checked.anchor,checked.board.address,slot)).toBigInt();
+     if(old!==0n&&old!==BigInt(expected.address))throw Error('Plugin ID belongs to another adapter');
+    }
+    return checked;
+   };
+   if(!lifecycleRecord(command))await preflightL2();
+   const result=await onceAztecOperation({store,observeBroadcast:true,name:command,identity:lifecycleIdentity,journalIdentity:identity,scope,reconcile:async record=>{
+    const r=await reconcile(record,false);if(r.status==='succeeded'){
+     try{await checkBok({portal:portalAddress(),registered:command==='register'});if(command==='bind')await checkReady();else await verifyCurrentPortal(true);}catch{return {status:'unresolved',scope,canonical:false};}
+    }return {...r,scope,hostedServiceReady:false};
+   },execute:async({submit})=>{
+    const {board,current}=await preflightL2();
+    const recordedNode=new Proxy(node,{get(target,key){if(key!=='sendTx')return Reflect.get(target,key);return async tx=>{
+     if(String(tx.data.constants.txContext.chainId)!==new Fr(BigInt(config.chainId)).toString()||String(tx.data.constants.txContext.version)!==new Fr(BigInt(config.rollupVersion)).toString())throw Error('Transaction scope mismatch');
+     await checkNetwork();await checkBok(command==='bind'?{unbound:true}:{portal:portalAddress()});await verifyCurrentPortal(command==='register');
+     return submit({hash:tx.getTxHash().toString(),raw:tx.toBuffer().toString('hex')},()=>node.sendTx(tx));
+    };}});
+    const pxe=await rollingPxeOptions(config.development,async()=>({backend:BackendType.NativeUnixSocket,...await prepareNativeRuntime({}),threads:1}));
+    wallet=await EmbeddedWallet.create(recordedNode,{ephemeral:true,pxe});
+    const account=await wallet.createSchnorrInitializerlessAccount(Fr.fromString(actor.secret),Fr.fromString(actor.salt),GrumpkinScalar.fromString(actor.signingKey),'public Bok lifecycle operator');
+    if(!account.address.equals(from))throw Error('Actor mismatch');
+    await wallet.registerContract(current,artifact);await wallet.registerContract(board,boardArtifact);
+    const call=command==='bind'?Contract.at(instance.address,artifact,wallet).methods.set_portal(EthAddress.fromString(portalAddress())):Contract.at(board.address,boardArtifact,wallet).methods.configure_plugin(Fr.fromString(lifecycle.pluginId),instance.address,true);
+    await call.send({from,wait:NO_WAIT});
+   }});
+   return {...result,scope,portalReady:command==='register'&&result.status==='succeeded',registrationReady:command==='register'&&result.status==='succeeded',hostedServiceReady:false};
+  }
+  const result=await onceAztecOperation({store,observeBroadcast:true,name:command,identity, reconcile,execute:async({submit,bindDeployment})=>{
+   // This branch cannot be reached for any retained operation, even without a hash.
+   await checkNetwork();
+   const board=await node.getContract(AztecAddress.fromStringUnsafe(config.boardAddress),'latest');
+   if(String(board?.address)!==config.boardAddress||String(board?.originalContractClassId)!==boardClass||String(board?.currentContractClassId)!==boardClass)throw Error('Current Rolling board required');
+   const recordedNode=new Proxy(node,{get(target,key){if(key!=='sendTx')return Reflect.get(target,key);return async tx=>{
+    if(String(tx.data.constants.txContext.chainId)!==new Fr(BigInt(config.chainId)).toString()||String(tx.data.constants.txContext.version)!==new Fr(BigInt(config.rollupVersion)).toString())throw Error('Transaction scope mismatch');
+    await checkNetwork();
+    return submit({hash:tx.getTxHash().toString(),raw:tx.toBuffer().toString('hex')},()=>node.sendTx(tx));
+   };}});
+   const pxe=await rollingPxeOptions(config.development,async()=>({backend:BackendType.NativeUnixSocket,...await prepareNativeRuntime({}),threads:1}));
+   onProgress('initialize-private-wallet');wallet=await EmbeddedWallet.create(recordedNode,{ephemeral:true,pxe});
+   const account=await wallet.createSchnorrInitializerlessAccount(Fr.fromString(actor.secret),Fr.fromString(actor.salt),GrumpkinScalar.fromString(actor.signingKey),'public Bok deployment operator');
+   if(!account.address.equals(from))throw Error('Actor mismatch');
+   if(command==='claim-fees'){
+    // One fee claim per explicit state campaign. Resuming never opens the secret file.
+    if(typeof claim!=='string')throw Error('Fee claim required');
+    const c=await read(claim),paymentMethod=new FeeJuicePaymentMethodWithClaim(from,{claimAmount:BigInt(c.claimAmount),claimSecret:Fr.fromString(c.claimSecret),messageLeafIndex:BigInt(c.messageLeafIndex)});
+    await new BatchCall(wallet,[]).send({from,wait:NO_WAIT,fee:{paymentMethod}});
+   }else{
+    if(await getFeeJuiceBalance(from,node)===0n)throw Error('Public Fee Juice required');
+    const deployment=Contract.deploy(wallet,artifact,constructorArgs,'init',{deployer:from,salt});
+    if(String((await deployment.getInstance()).address)!==expected.address)throw Error('Computed deployment mismatch');
+    await bindDeployment(expected);await deployment.send({from,wait:NO_WAIT});
+   }
+  }});
+  return {...result,profile:'rolling-private-bok-constructor/v1'};
+ }catch{throw Error('Rolling operator unavailable; preserve the journal and reconcile retained operations');}
+ finally{
+  try{await wallet?.stop();}finally{provider?.destroy();if(lock){await lock.close();await fs.unlink(lockPath);}}
+ }
+}
+
+
+// Permanent initialization marker is intentionally not removed on failure.
+// A missing attempted state file can never become authority for a second send.
+export async function openSepoliaSeedJournal(statePath,binding,campaign,{existingOnly=false}={}){
+ const markerPath=statePath+'.initialized.json';let marker;
+ try{marker=JSON.parse((await readHostedPrivateFile(markerPath,16384)).toString('utf8'));}catch(error){try{await fs.lstat(markerPath);throw error;}catch(e){if(e.code!=='ENOENT')throw e;}}
+ if(marker){if(marker.schemaVersion!==1||marker.binding!==binding||marker.campaign!==campaign)throw Error('Seed journal marker changed');await readHostedPrivateFile(statePath);}
+ else{
+  if(existingOnly)throw Error('Original seed initialization marker missing');
+  try{await fs.lstat(statePath);throw Error('Original seed initialization marker missing');}catch(e){if(e.code!=='ENOENT')throw e;}
+  const f=await fs.open(markerPath,'wx',0o600);try{await f.writeFile(JSON.stringify({schemaVersion:1,binding,campaign}));await f.sync();}finally{await f.close();}
+  const d=await fs.open(path.dirname(statePath),'r');try{await d.sync();}finally{await d.close();}
+ }
+ if(existingOnly){const saved=JSON.parse((await readHostedPrivateFile(statePath)).toString('utf8'));return {read:()=>saved};}
+ const store=await fileState(statePath);if(!marker)await store.write({operations:{}});return store;
+}
+
+// Permanent one-use dispatch entry; caller owns the original seed state lock.
+// A missing entry beside an observation is corruption, never fresh authority.
+export async function openExactCancellationDispatchStore(statePath,hash){
+ if(!path.isAbsolute(statePath)||!/^0x[0-9a-f]{64}$/.test(hash))throw Error('Invalid exact cancellation state');
+ const directory=path.dirname(statePath),st=await fs.lstat(directory);
+ if(st.isSymbolicLink()||await fs.realpath(directory)!==directory||st.uid!==process.getuid()||(st.mode&0o777)!==0o700)throw Error('Invalid exact cancellation directory');
+ const file=statePath+'.exact-cancel-'+hash.slice(2)+'.entered.json',observed=file+'.observation.json';let value=null;
+ try{await fs.lstat(file);value=JSON.parse((await readHostedPrivateFile(file,16384)).toString('utf8'));}
+ catch(error){try{await fs.lstat(file);throw error;}catch(e){if(e.code!=='ENOENT')throw e;}}
+ if(value===null){try{await fs.lstat(observed);throw Error('Original exact dispatch entry missing');}catch(e){if(e.code!=='ENOENT')throw e;}}
+ const exclusive=async(target,record)=>{const f=await fs.open(target,'wx',0o600);try{await f.writeFile(JSON.stringify(record)+'\n');await f.sync();}finally{await f.close();}const d=await fs.open(directory,'r');try{await d.sync();}finally{await d.close();}};
+ return {read:()=>value,enter:async record=>{await exclusive(file,record);value=structuredClone(record);},observe:record=>exclusive(observed,record)};
+}
+// This one-off authorization belongs to this original private campaign. A copy
+// must not create another dispatch slot, even with identical signed bytes.
+const authorizedExactCancellationStatePath='/Users/zac/Documents/ChatGPT/Anonymous Message Board/aztec_experiments/.build/sepolia-liquidity-20261014/state.json';
+/** The only public dispatch entrypoint binds the original project's exact target
+ * and six immutable source files. It has no key or signing argument. */
+export async function recoverExactSepoliaCancellation({planPath,statePath,intentPath}){
+ if(statePath!==authorizedExactCancellationStatePath)throw Error('Original exact cancellation state path required');
+ const directory=path.dirname(path.resolve(statePath));
+ if(path.resolve(statePath)!==path.join(directory,'state.json')||path.resolve(planPath)!==path.join(directory,'plan.json'))throw Error('Original exact cancellation paths required');
+ const readSources=async()=>{const bytes={},hashes={};for(const name of exactCancellationFiles){bytes[name]=await readHostedPrivateFile(path.join(directory,name));hashes[name]=sha256(bytes[name]).slice(2);}return {bytes,hashes};};
+ const source=await readSources(),parse=name=>JSON.parse(source.bytes[name].toString('utf8'));
+ const plan=parse('plan.json'),resolution=parse('nonce15-resolution.json'),successor=parse('nonce15-successor.json'),record=parse('state.json.successor-cancel-approve-usdc.json').operations?.['relay-funding'];
+ requireAuthorizedExactCancellation({from:plan.owner,nonce:record?.deployment?.nonce,hash:record?.hash});
+ const dispatchIntent=captureSepoliaExactDispatch(JSON.parse((await readHostedPrivateFile(path.resolve(intentPath),16384)).toString('utf8')));
+ const assertSourceFiles=async()=>{const current=await readSources();for(const name of exactCancellationFiles)if(current.hashes[name]!==source.hashes[name])throw Error('Original exact cancellation files changed');};
+ return seedTestnetLiquidity({plan,statePath:path.resolve(statePath),stage:'approve-usdc',recovery:{kind:'exact-dispatch',resolution,successor,dispatchIntent,sourceHashes:source.hashes,assertSourceFiles}});
+}
+/** Trusted local CLI only; no provider, model or generated-code capability. */
+export async function seedTestnetLiquidity({plan:input,statePath,stage,keyFile,recovery}){
+ if(recovery?.kind==='exact-dispatch'&&statePath!==authorizedExactCancellationStatePath)throw Error('Original exact cancellation state path required');
+ const originalPlan=captureSepoliaLiquidityPlan(input),c=sepoliaLiquidityContracts;
+ if(recovery){const keys=recovery.kind==='cancel'?['kind','resolution']:recovery.kind==='successor'?['kind','resolution','successor']:recovery.kind==='continue'?['kind','remainingPlan','resolution',...(Object.hasOwn(recovery,'successor')?['successor']:[])]:recovery.kind==='exact-dispatch'?['kind','resolution','successor','dispatchIntent','sourceHashes','assertSourceFiles']:[];if(!keys.length||Object.keys(recovery).sort().join()!==keys.sort().join())throw Error('Invalid seed recovery');}
+ const resolution=recovery?captureSepoliaSeedResolution(recovery.resolution,originalPlan):null;
+ const successor=recovery&&Object.hasOwn(recovery,'successor')?captureSepoliaSeedSuccessor(recovery.successor,originalPlan,resolution):undefined;
+ const plan=recovery?.kind==='continue'?captureSepoliaSeedContinuationPlan(recovery.remainingPlan,originalPlan):originalPlan;
+ if(['cancel','successor'].includes(recovery?.kind)&&stage!=='approve-usdc'||!(await sepoliaLiquidityTransactions(plan)).some(s=>s.name===stage))throw Error('Invalid fixed seed stage');
+ const dispatchIntent=recovery?.kind==='exact-dispatch'?captureSepoliaExactDispatch(recovery.dispatchIntent):null;
+ if(dispatchIntent)requireAuthorizedExactCancellation({from:originalPlan.owner,nonce:originalPlan.ownerNonce+1,hash:dispatchIntent.transactionHash});
+ const deadline=()=>dispatchIntent?dispatchIntent.expiresAt:recovery?.kind==='successor'?successor.expiresAt:recovery?.kind==='cancel'?resolution.expiresAt:sepoliaLiquidityDeadline(plan,stage);
+ let lock,provider;const lockPath=statePath+'.lock';let lockIdentity;
+ try{
+  const directory=path.dirname(path.resolve(statePath)),st=await fs.lstat(directory);
+  if(!path.isAbsolute(statePath)||st.isSymbolicLink()||await fs.realpath(directory)!==directory||st.uid!==process.getuid()||(st.mode&0o777)!==0o700)throw Error();
+  // Only this command's own inode may be removed. The lead also holds exclusive
+  // sender leases across all Ethereum operators for this finite campaign.
+  lock=await fs.open(lockPath,'wx',0o600);lockIdentity=await lock.stat();await lock.writeFile(JSON.stringify({pid:process.pid,campaign:plan.campaign}));await lock.sync();
+  const binding=sha256(toUtf8Bytes(JSON.stringify(originalPlan)));
+  const originalStore=await openSepoliaSeedJournal(statePath,binding,originalPlan.campaign,{existingOnly:!!recovery});
+  let store=originalStore,cancellationStore,successorStore;
+  if(recovery){
+   if(originalStore.read().operations?.['approve-usdc']?.hash!==resolution.originalTransactionHash)throw Error('Original seed transaction changed');
+   const cancellationBinding=sha256(toUtf8Bytes(JSON.stringify(['SEPOLIA_SEED_CANCELLATION_V1',originalPlan,resolution])));
+   if(recovery.kind==='cancel')try{await fs.lstat(statePath+'.cancel-approve-usdc.json.initialized.json');}catch(e){if(e.code!=='ENOENT')throw e;const now=Date.now();if(now>=resolution.expiresAt*1000||resolution.expiresAt*1000-now>86400000)throw Error('Cancellation signing window unavailable');}
+   cancellationStore=await openSepoliaSeedJournal(statePath+'.cancel-approve-usdc.json',cancellationBinding,originalPlan.campaign,{existingOnly:recovery.kind!=='cancel'});
+   if(recovery.kind==='cancel')store=cancellationStore;
+   if(successor){
+    const successorPath=statePath+'.successor-cancel-approve-usdc.json',successorBinding=sha256(toUtf8Bytes(JSON.stringify(['SEPOLIA_SEED_SUCCESSOR_V1',originalPlan,resolution,successor])));
+    if(recovery.kind==='successor')try{await fs.lstat(successorPath+'.initialized.json');}catch(e){if(e.code!=='ENOENT')throw e;const now=Date.now();if(now>=successor.expiresAt*1000||successor.expiresAt*1000-now>86400000)throw Error('Successor signing window unavailable');}
+    successorStore=await openSepoliaSeedJournal(successorPath,successorBinding,originalPlan.campaign,{existingOnly:recovery.kind!=='successor'});
+    if(recovery.kind==='successor')store=successorStore;
+   }
+  }
+  provider=new JsonRpcProvider(operatorEthereumRequest(FetchRequest,plan.ethereumUrl,{spacingMs:200}),undefined,{batchMaxCount:1});
+  const tokenAbi=['function balanceOf(address) view returns(uint256)','function allowance(address,address) view returns(uint256)','event Transfer(address indexed from,address indexed to,uint256 value)'];
+  const tokenInterface=new Interface(tokenAbi),factory=new EthereumContract(c.factory,['function getPool(address,address,uint24) view returns(address)','function feeAmountTickSpacing(uint24) view returns(int24)'],provider);
+  const manager=new EthereumContract(c.positions,['function ownerOf(uint256) view returns(address)','function positions(uint256) view returns(uint96,address,address,address,uint24,int24,int24,uint128,uint256,uint256,uint128,uint128)','event Transfer(address indexed from,address indexed to,uint256 indexed tokenId)','event IncreaseLiquidity(uint256 indexed tokenId,uint128 liquidity,uint256 amount0,uint256 amount1)'],provider);
+  const token=address=>new EthereumContract(address,tokenAbi,provider);
+  const transaction=step=>({type:2,chainId:11155111n,from:step.from,to:step.to,data:step.data,value:BigInt(step.value),nonce:step.nonce,gasLimit:BigInt(step.gasLimit),maxFeePerGas:BigInt(step.maxFeePerGas),maxPriorityFeePerGas:BigInt(step.maxPriorityFeePerGas),accessList:[]});
+  async function scope(blockTag){
+   if((await provider.getNetwork()).chainId!==11155111n)throw Error();
+   for(const [name,address]of Object.entries(c))if(keccak256(await provider.getCode(address,blockTag))!==plan.codeHashes[name])throw Error();
+   const circle=new EthereumContract(c.usdc,['function implementation() view returns(address)','function decimals() view returns(uint8)'],provider);
+   if((await circle.implementation({blockTag})).toLowerCase()!==plan.usdcImplementation||keccak256(await provider.getCode(plan.usdcImplementation,blockTag))!==plan.usdcImplementationCodeHash||await circle.decimals({blockTag})!==6n)throw Error();
+   if(await provider.getCode(plan.owner,blockTag)!=='0x'||await factory.feeAmountTickSpacing(3000,{blockTag})!==60n)throw Error();
+  }
+  const ports={
+   receipt:h=>provider.getTransactionReceipt(h),block:n=>provider.getBlock(n),head:tag=>provider.getBlock(tag),
+   assertAbsent:async hashes=>{for(const h of hashes)if(await provider.getTransactionReceipt(h)!==null||await provider.getTransaction(h)!==null)throw Error('Original nonce candidate is visible; reconcile only');},
+   broadcastExact:async(raw,hash)=>{if(Date.now()>=deadline()*1000)throw Error();return broadcastExactSepoliaCancellation(FetchRequest,plan.ethereumUrl,raw,hash);},
+   preflight:async(_p,step,steps)=>{
+    const head=await provider.getBlock('latest');await scope(head.number);
+    if(Date.now()>=deadline()*1000||head.baseFeePerGas+BigInt(step.maxPriorityFeePerGas)>BigInt(step.maxFeePerGas)||await provider.getTransactionCount(step.from,'pending')!==step.nonce)throw Error();
+    const remaining=steps.slice(steps.findIndex(s=>s.name===step.name));
+    const gas=remaining.reduce((v,s)=>v+BigInt(s.gasLimit)*BigInt(s.maxFeePerGas),0n),seed=remaining.filter(s=>s.pool).reduce((v,s)=>v+BigInt(s.value),0n);
+    const ownerBalance=await provider.getBalance(plan.owner,head.number),inventoryBalance=await provider.getBalance(plan.inventoryOwner,head.number);
+    if((recovery?.kind==='continue'?ownerBalance:ownerBalance+inventoryBalance)<gas+seed+BigInt(plan.futureReserveWei)||(step.from===plan.owner?ownerBalance:inventoryBalance)<BigInt(step.value)+BigInt(step.gasLimit)*BigInt(step.maxFeePerGas))throw Error();
+    if(step.name==='inventory-usdc'&&await token(c.usdc).balanceOf(plan.inventoryOwner,{blockTag:head.number})<BigInt(plan.usdcAmount))throw Error();
+    if(step.name==='approve-fee'&&await token(c.fee).balanceOf(plan.owner,{blockTag:head.number})<BigInt(plan.feeAmount)*(BigInt(plan.includeUsdcPool)+BigInt(plan.includeWethPool)))throw Error();
+    if(step.pool&&(await factory.getPool(step.pool.token0,step.pool.token1,3000,{blockTag:head.number}))!=='0x0000000000000000000000000000000000000000')throw Error('Pool appeared before original seed; require new reviewed plan');
+    const tx=transaction(step);await provider.call({...tx,blockTag:head.number});const estimated=await provider.estimateGas(tx);if(estimated>tx.gasLimit||(await provider.getBlock(head.number))?.hash!==head.hash)throw Error();
+   },
+   preflightCancellation:async(_plan,step)=>{
+    const head=await provider.getBlock('latest');await scope(head.number);
+    if(Date.now()>=deadline()*1000||head.baseFeePerGas===null||head.baseFeePerGas+BigInt(step.maxPriorityFeePerGas)>BigInt(step.maxFeePerGas)||await provider.getTransactionCount(step.from,'latest')!==step.nonce||await provider.getTransactionCount(step.from,'pending')!==step.nonce)throw Error();
+    if(await provider.getBalance(step.from,head.number)<BigInt(step.gasLimit)*BigInt(step.maxFeePerGas)+BigInt(plan.futureReserveWei))throw Error();
+    const tx=transaction(step);await provider.call({...tx,blockTag:head.number});if(await provider.estimateGas(tx)>21000n||(await provider.getBlock(head.number))?.hash!==head.hash)throw Error();
+   },
+   cancellationEffect:async(step,anchor,receipt)=>{
+    await scope(anchor.number);
+    return receipt.to?.toLowerCase()===plan.owner&&receipt.from?.toLowerCase()===plan.owner&&await provider.getTransactionCount(plan.owner,anchor.number)===step.nonce+1&&await token(c.usdc).allowance(plan.owner,c.positions,{blockTag:anchor.number})===0n;
+   },
+   preflightContinuation:async(_plan,winner)=>{
+    const head=await provider.getBlock('latest');await scope(head.number);
+    const feeAmount=BigInt(plan.feeAmount)*(BigInt(plan.includeUsdcPool)+BigInt(plan.includeWethPool));
+    if(await token(c.fee).balanceOf(plan.owner,{blockTag:head.number})<feeAmount||await token(c.usdc).balanceOf(plan.owner,{blockTag:head.number})<BigInt(plan.usdcAmount)||await token(c.fee).allowance(plan.owner,c.positions,{blockTag:head.number})!==feeAmount||await token(c.usdc).allowance(plan.owner,c.positions,{blockTag:head.number})!==(winner==='original'?BigInt(plan.usdcAmount):0n)||(await provider.getBlock(head.number))?.hash!==head.hash)throw Error();
+   },
+   sign:async step=>{
+    if(Date.now()>=deadline()*1000||await provider.getTransactionCount(step.from,'pending')!==step.nonce)throw Error();
+    const key=JSON.parse((await readHostedPrivateFile(keyFile,16384)).toString('utf8'));
+    const signer=typeof key.privateKey==='string'?new Wallet(key.privateKey):typeof key.mnemonic==='string'?Wallet.fromPhrase(key.mnemonic):null;
+    if(signer?.address.toLowerCase()!==step.from)throw Error();const {from,...tx}=transaction(step);return signer.signTransaction(tx);
+   },
+   broadcast:async raw=>{if(Date.now()>=deadline()*1000)throw Error();return provider.broadcastTransaction(raw);},
+   effect:async(step,anchor,receipt)=>{
+    await scope(anchor.number);const blockTag=anchor.number;
+    if(receipt.to?.toLowerCase()!==step.to||receipt.from?.toLowerCase()!==step.from)return false;
+    if(step.name==='inventory-eth')return true; // Exact signed value/recipient, successful canonical receipt and plain EOA recipient.
+    if(step.name==='inventory-usdc')return receipt.logs.filter(l=>l.address.toLowerCase()===c.usdc).some(l=>{try{const e=tokenInterface.parseLog(l);return e.name==='Transfer'&&e.args.from.toLowerCase()===plan.inventoryOwner&&e.args.to.toLowerCase()===plan.owner&&e.args.value===BigInt(plan.usdcAmount);}catch{return false;}});
+    if(!step.pool){const expected=step.name==='approve-fee'?BigInt(plan.feeAmount)*(BigInt(plan.includeUsdcPool)+BigInt(plan.includeWethPool)):step.name==='approve-usdc'?BigInt(plan.usdcAmount):0n;return await token(step.to).allowance(plan.owner,c.positions,{blockTag})===expected;}
+    const events=receipt.logs.filter(l=>l.address.toLowerCase()===c.positions).flatMap(l=>{try{return [manager.interface.parseLog(l)];}catch{return [];}}),increases=events.filter(e=>e?.name==='IncreaseLiquidity'),nfts=events.filter(e=>e?.name==='Transfer'&&e.args.from==='0x0000000000000000000000000000000000000000'&&e.args.to.toLowerCase()===plan.owner);
+    if(increases.length!==1||nfts.length!==1)return false;const e=increases[0].args,p=step.pool;
+    if(e.tokenId!==nfts[0].args.tokenId||e.liquidity<=0n||e.amount0<BigInt(p.minimum0)||e.amount0>BigInt(p.amount0)||e.amount1<BigInt(p.minimum1)||e.amount1>BigInt(p.amount1)||(await manager.ownerOf(e.tokenId,{blockTag})).toLowerCase()!==plan.owner)return false;
+    const position=await manager.positions(e.tokenId,{blockTag}),poolAddress=await factory.getPool(p.token0,p.token1,3000,{blockTag}),pool=new EthereumContract(poolAddress,['function token0() view returns(address)','function token1() view returns(address)','function fee() view returns(uint24)','function liquidity() view returns(uint128)'],provider);
+    return position[2].toLowerCase()===p.token0&&position[3].toLowerCase()===p.token1&&position[4]===3000n&&position[5]===-887220n&&position[6]===887220n&&position[7]===e.liquidity&&(await pool.token0({blockTag})).toLowerCase()===p.token0&&(await pool.token1({blockTag})).toLowerCase()===p.token1&&await pool.fee({blockTag})===3000n&&await pool.liquidity({blockTag})>=e.liquidity&&await provider.getBalance(c.positions,blockTag)===0n;
+   },
+  };
+  if(recovery?.kind==='continue'){
+   const winner=await resolveSepoliaSeedNonce({plan:originalPlan,resolution,originalStore,store:cancellationStore,successor,successorStore,ports});
+   if(winner.status!=='succeeded'||!winner.canonical)throw Error('Finalized original nonce winner required');
+   const first=winner.winner==='original'?'seed-usdc-fee':'approve-usdc';
+   if(['inventory-usdc','inventory-eth','approve-fee'].includes(stage)||winner.winner==='original'&&stage==='approve-usdc')throw Error('Completed seed prefix cannot repeat');
+   try{await fs.lstat(statePath+'.remaining.json.initialized.json');}catch(e){if(e.code!=='ENOENT')throw e;if(stage!==first)throw Error('Remaining seed must start at first unfinished stage');const now=Date.now();if(now>=plan.expiresAt*1000||plan.expiresAt*1000-now>86400000)throw Error('Remaining seed signing window unavailable');}
+   store=await openSepoliaSeedJournal(statePath+'.remaining.json',sha256(toUtf8Bytes(JSON.stringify(['SEPOLIA_SEED_REMAINING_V1',originalPlan,resolution,plan,...(successor===undefined?[]:[successor])]))),plan.campaign);
+  }
+  const result=dispatchIntent?await runSepoliaExactCancellation({plan:originalPlan,resolution,originalStore,cancellationStore,successor,store:successorStore,ports,dispatchIntent,sourceHashes:recovery.sourceHashes,assertSourceFiles:recovery.assertSourceFiles,recoveryStore:await openExactCancellationDispatchStore(statePath,dispatchIntent.transactionHash)}):recovery?.kind==='successor'?await runSepoliaLiquiditySuccessor({plan:originalPlan,resolution,originalStore,cancellationStore,successor,store,ports}):recovery?.kind==='cancel'?await runSepoliaLiquidityCancellation({plan:originalPlan,resolution,originalStore,store,ports}):recovery?.kind==='continue'?await runSepoliaLiquidityContinuation({plan:originalPlan,resolution,originalStore,cancellationStore,successor,successorStore,remainingPlan:plan,stage,store,ports}):await runSepoliaLiquidityStage({plan,stage,store,ports});
+  return {...result,campaign:plan.campaign,stage};
+ }catch{throw Error('Sepolia seed unavailable; preserve original plan and journals, reconcile before another operation');}
+ finally{provider?.destroy();if(lock){await lock.close();const current=await fs.lstat(lockPath);if(current.dev!==lockIdentity.dev||current.ino!==lockIdentity.ino)throw Error('Original seed owner lock changed');await fs.unlink(lockPath);}}
+}
+
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  const [command,configPath,statePath,...args]=process.argv.slice(2);
  try{
   if(!command||!configPath||!statePath)throw Error('Usage: operator.mjs COMMAND CONFIG STATE [--amount VALUE --recipient ADDRESS]');
-  const config=await read(configPath),actor=await read(process.env.PLUGIN_ACTOR_FILE||config.operatorFile);
+  if(command==='recover-exact-seed-cancellation'){
+   if(args.length!==2||args[0]!=='--dispatch-intent')throw Error();
+   console.log(JSON.stringify(await recoverExactSepoliaCancellation({planPath:configPath,statePath,intentPath:args[1]})));
+  }else if(['seed-testnet-liquidity','cancel-seed-testnet-liquidity','successor-seed-testnet-cancellation','continue-seed-testnet-liquidity'].includes(command)){
+   const load=async file=>JSON.parse((await readHostedPrivateFile(path.resolve(file),65536)).toString('utf8'));
+   const plan=await load(configPath);let stage,keyFile,recovery;
+   if(command==='seed-testnet-liquidity'){
+    if(args.length!==4||args[0]!=='--stage'||args[2]!=='--key-file')throw Error();[stage,keyFile]=[args[1],args[3]];
+   }else if(command==='cancel-seed-testnet-liquidity'){
+    if(args.length!==4||args[0]!=='--resolution'||args[2]!=='--key-file')throw Error();stage='approve-usdc';keyFile=args[3];recovery={kind:'cancel',resolution:await load(args[1])};
+   }else if(command==='successor-seed-testnet-cancellation'){
+    if(args.length!==6||args[0]!=='--resolution'||args[2]!=='--successor'||args[4]!=='--key-file')throw Error();stage='approve-usdc';keyFile=args[5];recovery={kind:'successor',resolution:await load(args[1]),successor:await load(args[3])};
+   }else{
+    if(![8,10].includes(args.length)||args[0]!=='--resolution'||args[2]!=='--remaining-plan'||args[4]!=='--stage'||args[6]!=='--key-file'||args.length===10&&args[8]!=='--successor')throw Error();stage=args[5];keyFile=args[7];recovery={kind:'continue',resolution:await load(args[1]),remainingPlan:await load(args[3]),...(args.length===10?{successor:await load(args[9])}:{})};
+   }
+   const result=await seedTestnetLiquidity({plan,statePath:path.resolve(statePath),stage,keyFile:path.resolve(keyFile),recovery});console.log(JSON.stringify(result));
+  }else{
+  const config=await read(configPath),actor=await readOperatorActor({command,config,actorPath:process.env.PLUGIN_ACTOR_FILE,read});
   const options=Object.fromEntries(Array.from({length:args.length/2},(_,i)=>[args[i*2].replace(/^--/,''),args[i*2+1]]));
-  const result=await operatorCommand({command,config,statePath,actor,ethereumKey:process.env.PLUGIN_ETHEREUM_PRIVATE_KEY,...options});console.log(JSON.stringify(result,null,2));
- }catch(error){console.error(error.shortMessage||error.message);process.exitCode=1;}
+  const result=await operatorCommand({command,config,statePath,actor,ethereumKey:process.env.PLUGIN_ETHEREUM_PRIVATE_KEY,queryApiKey:process.env.PLUGIN_QUERY_API_KEY,...options});console.log(JSON.stringify(result,null,2));
+  }
+ }catch(error){console.error('Operator command failed; retain local state and reconcile before any new attempt');process.exitCode=1;}
  finally{await Barretenberg.destroySingleton();BarretenbergSync.destroySingleton();}
  process.exit(process.exitCode||0);
 }

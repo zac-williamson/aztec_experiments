@@ -28,3 +28,23 @@ for(const [label,changeEvent] of [
 for(const block of [null,{blockHash:id(11),header:{globalVariables:{blockNumber:10}}},{blockHash:id(10),header:{globalVariables:{blockNumber:11}}}])test('reorg or missing canonical block remains unknown',async()=>assert.equal((await reconcileFlag(fixture({node:{getBlockData:async()=>block}}))).state,'unknown'));
 for(const method of ['getTxReceipt','getBlockData'])test(method+' RPC failure stays unknown',async()=>assert.equal((await reconcileFlag(fixture({node:{[method]:async()=>{throw new Error('offline');}}}))).state,'unknown'));
 test('malformed transaction hash does not call RPC',async()=>{let calls=0;assert.equal((await reconcileFlag({...fixture({node:{getTxReceipt:async()=>{calls++;}}}),transactionHash:'bad'})).state,'unknown');assert.equal(calls,0);});
+
+import {reconcileRollingRemoval,validateRollingRemoval} from './flag-outcome.mjs';
+const rollingRecord={job:{postId:id(2),transactionHash:id(20)},policy:{context:{policyIdentity:id(3)}},intent:{reason:'Spam'}};
+const removal={schemaVersion:1,scope,type:'PostRemoved',position:event.position,payload:{postId:id(2),policyVersion:id(3),reason:'Spam',penalized:false}};
+const rollingInput=()=>({node:fixture().node,scope,record:rollingRecord,event:removal});
+test('Rolling testnet completion waits for real finalized canonical PostRemoved',async()=>{
+ const input=rollingInput();input.node.getTxReceipt=async()=>({...receipt,status:'checkpointed'});
+ assert.equal((await reconcileRollingRemoval(input)).state,'submitted');
+ assert.equal((await reconcileRollingRemoval({...input,development:true})).state,'confirmed');
+ input.node.getTxReceipt=async()=>receipt;assert.equal((await reconcileRollingRemoval(input)).state,'confirmed');
+});
+for(const field of ['reason','postId','policyVersion'])test('Rolling removal rejects changed '+field,async()=>{
+ const input=rollingInput();input.event={...removal,payload:{...removal.payload,[field]:field==='reason'?'Different':id(99)}};
+ assert.equal((await reconcileRollingRemoval(input)).state,'unknown');
+});
+test('Rolling does not accept a legacy flag as removal evidence',()=>assert.throws(()=>validateRollingRemoval(event,scope,rollingRecord)));
+test('Rolling finality recheck rejects a reorg during receipt observation',async()=>{
+ const input=rollingInput();let calls=0;input.node.getBlockData=async()=>({blockHash:++calls===1?id(10):id(11),header:{globalVariables:{blockNumber:10}}});
+ assert.equal((await reconcileRollingRemoval(input)).state,'unknown');
+});

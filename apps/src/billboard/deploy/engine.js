@@ -250,16 +250,60 @@
   }
   g.BillboardDeployPublication={publishBoardClass};
 
+  // Pre-activation Rolling reads use one canonical checkpoint. The final wallet
+  // verifier requires an active portal, so it cannot authorize this setup phase.
+  async function readRollingDeploymentState({a,node,address,artifact,manifest,policyDigest}) {
+    const fail=()=>{throw new Error('Rolling deployment state differs from manifest');};
+    const read=fn=>a.boundedTransactionRead(fn,20000);
+    const num=v=>BigInt(v.toString());
+    const head=await read(()=>node.getBlockData('checkpointed'));
+    const height=Number(head?.header?.globalVariables?.blockNumber),hash=head?.blockHash?.toString();
+    if(!Number.isSafeInteger(height)||height<=0||!/^0x[0-9a-f]{64}$/.test(hash??''))fail();
+    const reference={hash};
+    const instance=await read(()=>node.getContract(address,reference));
+    if(!instance||['currentContractClassId','originalContractClassId'].some(k=>instance[k]?.toString().toLowerCase()!==manifest.artifacts.boardClassId)||
+      num(instance.address)!==num(address)||num(instance.deployer)!==BigInt(manifest.actors.aztecDeployer)||
+      num(await a.computeContractAddressFromInstance(instance))!==num(address))fail();
+    const slot=name=>num(artifact.storageLayout[name].slot);
+    const base=slot('config'),portalSlot=slot('portal_address');
+    if(artifact.name!=='RollingBoard'||portalSlot!==1n||base!==3n||slot('deposits')!==base+11n)fail();
+    const slots=[portalSlot,...Array.from({length:10},(_,i)=>base+BigInt(i)),slot('moderator'),slot('main_version'),slot('main_rules')];
+    const values=(await read(()=>Promise.all(slots.map(s=>node.getPublicStorageAt(reference,address,new a.Fr(s)))))).map(num);
+    const b=manifest.board,n=manifest.network;
+    const expected=[n.chainId,n.rollup,n.rollupVersion,b.minDeposit,b.maxDeposit,b.baseCooldown,b.kMultiplier,b.censorWindow,b.maxSaveUp,manifest.actors.aztecDeployer,manifest.actors.aztecDeployer,'1',policyDigest].map(BigInt);
+    if(values.length!==14||values[0]<0n||values[0]>=1n<<160n||values.slice(1).some((v,i)=>v!==expected[i]))fail();
+    const again=await read(()=>node.getBlockData(height));
+    if(again?.blockHash?.toString()!==hash||Number(again?.header?.globalVariables?.blockNumber)!==height)fail();
+    return {portal:'0x'+values[0].toString(16).padStart(40,'0'),checkpoint:{height,hash}};
+  }
+  async function readBoardDeploymentAnchor({node,receipt,read,contextGuard}) {
+    if(contextGuard)await contextGuard();
+    const hash=receipt?.txHash?.toString();
+    if(!/^0x[0-9a-f]{64}$/.test(hash??''))throw Error('Original board deployment receipt unavailable');
+    const current=await read(()=>node.getTxReceipt(receipt.txHash));
+    if(current?.txHash?.toString()!==hash||!['checkpointed','proven','finalized'].includes(current.status)||current.executionResult!=='success'||
+      !Number.isSafeInteger(current.blockNumber)||current.blockNumber<1||!/^0x[0-9a-f]{64}$/.test(current.blockHash?.toString()??''))throw Error('Original board deployment receipt unavailable');
+    const result={txHash:hash,blockNumber:current.blockNumber,blockHash:current.blockHash.toString()};
+    if((await read(()=>node.getBlock(result.blockNumber)))?.hash?.toString()!==result.blockHash)throw Error('Original board deployment anchor changed');
+    const again=await read(()=>node.getTxReceipt(receipt.txHash));
+    if(again?.txHash?.toString()!==hash||!['checkpointed','proven','finalized'].includes(again.status)||again.blockNumber!==result.blockNumber||again.blockHash?.toString()!==result.blockHash||again.executionResult!=='success')throw Error('Original board deployment anchor changed');
+    if(contextGuard)await contextGuard();return result;
+  }
+  g.BillboardDeployRolling={readRollingDeploymentState,readBoardDeploymentAnchor};
+
   g.runDeploy = async function(env, config) {
     const { aztec: a, ethers, log, pause, initCRS, createStore, portalBytecode, artifact } = env;
     const verified=a.verifyDeploymentInputs(config.deploymentManifest,{artifact,portalBytecode,runtimeMetadata:a.portalRuntimeMetadata,config,ethers});
-    const manifest=verified.manifest;
+    const manifest=verified.manifest,rolling=manifest.schemaVersion===2;
     const rawNode=a.createAztecNodeClient(config.aztecNodeUrl);
     const ownedProviders=new Set();
     try {
-    const preflightProvider=new ethers.JsonRpcProvider(config.ethRpcUrl);
+    // Deployment changes code between consecutive reads of the same address.
+    // Ethers' default short cache can otherwise return the pre-deployment 0x.
+    const preflightProvider=new ethers.JsonRpcProvider(config.ethRpcUrl,undefined,{cacheTimeout:-1});
     ownedProviders.add(preflightProvider);
-    const {nodeInfo,l1Contracts}=await a.preflightDeploymentNetwork(manifest,{node:rawNode,provider:preflightProvider,ethers});
+    const {nodeInfo,l1Contracts,proofsEnabled}=await a.preflightDeploymentNetwork(manifest,{node:rawNode,provider:preflightProvider,ethers});
+    if(typeof proofsEnabled!=='boolean')throw new Error('Verified native proof configuration is required');
     const proxyCode=await a.boundedTransactionRead(()=>preflightProvider.getCode(CREATE2_PROXY),20000);
     if(typeof proxyCode!=='string'||proxyCode.toLowerCase()!=='0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3')throw new Error('Required CREATE2 proxy runtime is missing or unsupported');
     const expectedClass=await a.getContractClassFromArtifact(a.loadContractArtifact(artifact));
@@ -365,7 +409,7 @@
     // ============================================================
     env.progress?.('preparing');
     log('Step 3: Initializing CRS...', 'info');
-    if(a.provingEnabledForNode(nodeInfo))await initCRS();
+    if(proofsEnabled)await initCRS();
     log('  CRS ready.', 'success');
 
     // ============================================================
@@ -376,7 +420,7 @@
     const storeConfig = { ...l1Contracts, l1ChainId: nodeInfo.l1ChainId, accountAddress: address.toString(), dataDirectory: dataDirPrefix + l1Contracts.rollupAddress };
     const store = await createStore(storeConfig);
     const pxe = await a.createPXE(aztecNode, {
-      proverEnabled: a.provingEnabledForNode(nodeInfo), autoSync: true,
+      proverEnabled: proofsEnabled, autoSync: true,
       dataDirectory: dataDirPrefix + l1Contracts.rollupAddress,
     }, { store });
     log('  PXE created.', 'success');
@@ -433,8 +477,8 @@
     if (config.maxDepositWei == null) throw new Error('Maximum deposit must be configured for this fresh deployment');
     const maxDepositWei = BigInt(config.maxDepositWei);
     const baseCooldown = config.baseCooldown;
-    if (!config.censor || BigInt(config.censor) === 0n) throw new Error('A nonzero censor must be configured');
-    const censorAddr = a.AztecAddress.fromFieldUnsafe(a.Fr.fromHexString(config.censor));
+    if (!rolling&&(!config.censor || BigInt(config.censor) === 0n)) throw new Error('A nonzero censor must be configured');
+    const censorAddr = rolling?address:a.AztecAddress.fromFieldUnsafe(a.Fr.fromHexString(config.censor));
     const kMultiplier = config.kMultiplier;
     const censorWindow = config.censorWindow;
     const maxSaveUp = config.maxSaveUp;
@@ -442,7 +486,9 @@
     const policyText = config.moderationPolicy;
     const packFn = g.packStringToFields;
     if (!packFn) throw new Error('packStringToFields not available (load moderation-policy.js)');
-    const { fields: policyFields, len: policyLen } = packFn(policyText);
+    const packedPolicy = packFn(policyText);
+    const policyLen=packedPolicy.len,policyFields=rolling?packedPolicy.fields.slice(0,32):packedPolicy.fields;
+    if(rolling&&(policyFields.length!==32||policyLen<1||policyLen>992||packedPolicy.fields.slice(32).some(f=>BigInt(f)!==0n)))throw new Error('Invalid Rolling policy packing');
     log('  Min deposit:    ' + ethers.formatEther(minDepositWei) + ' ETH', 'info');
     log('  Base cooldown:  ' + baseCooldown + 's (' + Math.floor(baseCooldown/60) + ' min)', 'info');
     log('  Censor:         ' + censorAddr.toString(), 'info');
@@ -450,7 +496,7 @@
     log('  Censor window:  ' + censorWindow + 's', 'info');
     log('  Max save up:    ' + maxSaveUp, 'info');
     log('  Policy:         ' + policyLen + ' bytes', 'info');
-    const initArgs = [
+    const initArgs = rolling ? [policyFields.map(f=>new a.Fr(f)),new a.Fr(BigInt(policyLen)),BigInt(nodeInfo.l1ChainId),a.EthAddress.fromString(rollupAddr),BigInt(version),BigInt(minDepositWei),maxDepositWei,BigInt(baseCooldown),BigInt(kMultiplier),BigInt(censorWindow),BigInt(maxSaveUp)] : [
       BigInt(nodeInfo.l1ChainId), a.EthAddress.fromString(rollupAddr), BigInt(version),
       new a.Fr(BigInt(minDepositWei)), new a.Fr(maxDepositWei),
       new a.Fr(BigInt(baseCooldown)),
@@ -463,35 +509,35 @@
     ];
     // Use universalDeploy + fixed public keys (derived from zero secret key)
     const universalPublicKeys = (await a.deriveKeys(a.Fr.ZERO)).publicKeys;
-    const deployMethod = a.Contract.deploy(wallet, contractArtifact, initArgs, undefined, {
-      salt: new a.Fr(contractSalt),
-      publicKeys: universalPublicKeys,
-      universalDeploy: true,
+    const deployMethod = a.Contract.deploy(wallet, contractArtifact, initArgs, rolling?'init':undefined, rolling?{salt:new a.Fr(contractSalt),deployer:address}:{
+      salt: new a.Fr(contractSalt),publicKeys: universalPublicKeys,universalDeploy: true,
     });
 
     const l2Addr = await deployMethod.getAddress();
     log('  Predicted L2 address: ' + l2Addr.toString(), 'info');
 
     if (typeof env.createTransactionJournal !== 'function') throw Object.assign(new Error('Deployment recovery storage is required.'), { code: 'BB_JOURNAL_INVALID' });
-    const deploymentJournal = await env.createTransactionJournal({ walletSecret: secretKeyHex, walletSalt: saltVal,
+    const deploymentJournal = await env.createTransactionJournal({ reconcileOnly:rolling, walletSecret: secretKeyHex, walletSalt: saltVal,
       scope: { account: address.toString().toLowerCase(), chainId: String(nodeInfo.l1ChainId), rollup: rollupAddr.toLowerCase(),
         version: String(version), board: l2Addr.toString().toLowerCase(), portal: '0x' + '0'.repeat(40) },
       Tx: a.Tx, node: rawNode, contextGuard: config.contextGuard });
     const publicationOperation='publish-board-class:'+manifest.artifacts.boardClassId;
-    let recoveredDeployment=null, staleDeployment=null;
+    const deploymentOperation=rolling?'deploy-rolling-board':'deploy-board';
+    let recoveredDeployment=null, staleDeployment=null, boardDeployment=null;
     const unresolved=()=>Object.assign(new Error('The original deployment transaction requires reconciliation. Preserve its recovery records.'),{code:'BB_RECOVERY_REQUIRED'});
     try { recoveredDeployment = await deploymentJournal.reconcilePrevious(); }
     catch(error) {
-      if(error?.code!=='BB_RECOVERY_REQUIRED'||typeof deploymentJournal.inspect!=='function'||typeof deploymentJournal.allowReplacement!=='function')throw error;
+      if(rolling||error?.code!=='BB_RECOVERY_REQUIRED'||typeof deploymentJournal.inspect!=='function'||typeof deploymentJournal.allowReplacement!=='function')throw error;
       const saved=await deploymentJournal.inspect();
-      if(saved?.operation!==publicationOperation&&saved?.operation!=='deploy-board'&&!/^bind-portal:0x[0-9a-f]{40}$/.test(saved?.operation??''))throw error;
+      if(saved?.operation!==publicationOperation&&saved?.operation!==deploymentOperation&&!/^bind-portal:0x[0-9a-f]{40}$/.test(saved?.operation??''))throw error;
       await deploymentJournal.allowReplacement(saved.operation);
       staleDeployment=saved.operation;
     }
+    if(rolling&&recoveredDeployment?.operation===deploymentOperation)boardDeployment=await readBoardDeploymentAnchor({node:rawNode,receipt:recoveredDeployment.receipt,read:fn=>a.boundedTransactionRead(fn,20000),contextGuard:config.contextGuard});
     await deploymentJournal.assertCanStart();
     wallet._transactionJournal = deploymentJournal;
     let existingInstance = await a.boundedTransactionRead(()=>rawNode.getContract(l2Addr),20000);
-    if(staleDeployment==='deploy-board'&&existingInstance)throw unresolved();
+    if(staleDeployment===deploymentOperation&&existingInstance)throw unresolved();
     if(staleDeployment?.startsWith('bind-portal:')&&!existingInstance)throw unresolved();
     if(staleDeployment===publicationOperation&&existingInstance)throw unresolved();
 
@@ -515,8 +561,9 @@
       await publishBoardClass({deployMethod,wallet,address,journal:deploymentJournal,
         read:fn=>a.boundedTransactionRead(fn,20000),operation:publicationOperation,stale:staleDeployment===publicationOperation});
       log('  Not yet deployed. Sending deploy tx...', 'info');
-      deploymentJournal.setOperation('deploy-board');
+      deploymentJournal.setOperation(deploymentOperation);
       const result = await deployMethod.send({ from: address, skipClassPublication:true });
+      if(rolling)boardDeployment=await readBoardDeploymentAnchor({node:rawNode,receipt:result.receipt,read:fn=>a.boundedTransactionRead(fn,20000),contextGuard:config.contextGuard});
       log('  TX confirmed! Block: ' + result.receipt.blockNumber, 'success');
       log('  L2 contract address: ' + l2Addr.toString(), 'success');
       const finalInstance = existingInstance || await deployMethod.getInstance();
@@ -530,8 +577,9 @@
     log('  Contract registered with PXE.', 'success');
 
     const scalar = result => { const value = result?.result ?? result?.value ?? result; return BigInt((value?.inner ?? value).toString()); };
-    const readPortal = async () => ethers.getAddress('0x' + scalar(await a.boundedTransactionRead(()=>l2Contract.methods.get_portal().simulate({ from: address }),20000)).toString(16).padStart(40, '0'));
-    const portalState = await a.boundedTransactionRead(()=>l2Contract.methods.is_portal_set().simulate({ from: address }),20000);
+    const readPortal = async () => rolling?ethers.getAddress((await readRollingDeploymentState({a,node:rawNode,address:l2Addr,artifact:contractArtifact,manifest,policyDigest:expectedPolicyVersion})).portal):ethers.getAddress('0x' + scalar(await a.boundedTransactionRead(()=>l2Contract.methods.get_portal().simulate({ from: address }),20000)).toString(16).padStart(40, '0'));
+    const expectedPolicyVersion=rolling?(await a.poseidon2HashWithSeparator([BigInt(policyLen),...policyFields.map(BigInt)],0x52435431)).toString():await a.deploymentPolicyVersion(l2Addr.toString().toLowerCase(),policyText);
+    const portalState = rolling?BigInt(await readPortal())!==0n:await a.boundedTransactionRead(()=>l2Contract.methods.is_portal_set().simulate({ from: address }),20000);
     const portalAlreadySet = portalState?.result ?? portalState?.value ?? portalState;
     if(typeof portalAlreadySet!=='boolean')throw new Error('Malformed portal binding state');
     if(staleDeployment?.startsWith('bind-portal:')&&portalAlreadySet)throw unresolved();
@@ -543,13 +591,13 @@
     const configHash = wordHash('AZTEC_BB_CONFIG_V1', [1n, BigInt(nodeInfo.l1ChainId), BigInt(rollupAddr),
       BigInt(l2Addr.toString()), BigInt(version), BigInt(minDepositWei), maxDepositWei,
       BigInt(baseCooldown), BigInt(kMultiplier), BigInt(censorWindow), BigInt(maxSaveUp)]);
-    const expectedPolicyVersion=await a.deploymentPolicyVersion(l2Addr.toString().toLowerCase(),policyText);
     const verifyBoardPolicy=async()=>{
+      if(rolling){await readRollingDeploymentState({a,node:rawNode,address:l2Addr,artifact:contractArtifact,manifest,policyDigest:expectedPolicyVersion});return;}
       const [censor,policy]=await a.boundedTransactionRead(()=>Promise.all([l2Contract.methods.get_censor().simulate({from:address}),l2Contract.methods.get_policy_version().simulate({from:address})]),20000);
       if(scalar(censor)!==BigInt(manifest.board.censor)||scalar(policy)!==BigInt(expectedPolicyVersion))throw new Error('Board censor or policy differs from manifest');
     };
     await verifyBoardPolicy();
-    if (scalar(await a.boundedTransactionRead(()=>l2Contract.methods.get_config_hash().simulate({ from: address }),20000)) !== BigInt(configHash)) {
+    if (!rolling&&scalar(await a.boundedTransactionRead(()=>l2Contract.methods.get_config_hash().simulate({ from: address }),20000)) !== BigInt(configHash)) {
       throw new Error('Deployed board configuration differs from requested configuration');
     }
 
@@ -598,14 +646,24 @@
       BigInt(minDepositWei), maxDepositWei, BigInt(configHash),BigInt(manifest.network.inbox),BigInt(manifest.network.outbox)];
     if (values.some((value, index) => BigInt(value) !== expected[index])) throw new Error('Portal configuration mismatch');
 
-    const recoveredBindingHash = recoveredDeployment?.operation === 'bind-portal:' + predicted.toLowerCase() &&
-      recoveredDeployment.receipt.executionResult === 'success' ? recoveredDeployment.receipt.txHash.toString() : null;
+    // Preserve the original creation transaction in the zero-portal journal.
+    // New bindings use their actual portal scope. Historical binding records
+    // remain readable but cannot invent a missing original creation anchor.
+    let bindingJournal=deploymentJournal,recoveredBinding=recoveredDeployment;
+    if(rolling&&(!recoveredDeployment?.operation?.startsWith('bind-portal:'))){
+      bindingJournal=await env.createTransactionJournal({reconcileOnly:true,walletSecret:secretKeyHex,walletSalt:saltVal,
+        scope:{account:address.toString().toLowerCase(),chainId:String(nodeInfo.l1ChainId),rollup:rollupAddr.toLowerCase(),version:String(version),board:l2Addr.toString().toLowerCase(),portal:predicted.toLowerCase()},
+        Tx:a.Tx,node:rawNode,contextGuard:config.contextGuard});
+      recoveredBinding=await bindingJournal.reconcilePrevious();await bindingJournal.assertCanStart();wallet._transactionJournal=bindingJournal;
+    }
+    const recoveredBindingHash = recoveredBinding?.operation === 'bind-portal:' + predicted.toLowerCase() &&
+      recoveredBinding.receipt.executionResult === 'success' ? recoveredBinding.receipt.txHash.toString() : null;
     if (config.readyTxHash && recoveredBindingHash && config.readyTxHash !== recoveredBindingHash) throw new Error('Supplied binding hash differs from the saved transaction');
     let readyTxHash = recoveredBindingHash || config.readyTxHash || null;
     if (portalAlreadySet) {
       if ((await readPortal()).toLowerCase() !== predicted.toLowerCase()) throw new Error('Board is bound to another portal');
     } else {
-      deploymentJournal.setOperation('bind-portal:' + predicted.toLowerCase());
+      bindingJournal.setOperation('bind-portal:' + predicted.toLowerCase());
       const result = await l2Contract.methods.update_portal(a.EthAddress.fromString(predicted)).send({ from: address });
       readyTxHash = result.receipt.txHash.toString();
       log('Portal binding transaction: ' + readyTxHash, 'info');
@@ -630,12 +688,14 @@
       const activation = await activateReady({ node: rawNode, portal, hash, leaf, ethers, log,
         activate: async args => (await ethereumActivation.send({ data: new ethers.Interface(PORTAL_ABI).encodeFunctionData('activate', args),
           value: '0', expected: { kind: 'activate-portal', portal: predicted.toLowerCase(), configHash: configHash.toLowerCase() } })).receipt });
-      if (activation.status !== 'active') return { l2Addr: l2Addr.toString(), portalAddr: predicted, readyTxHash, configHash, intentDigest:verified.intentDigest, policyVersion:expectedPolicyVersion, status: activation.status };
+      if(rolling&&boardDeployment)boardDeployment=await readBoardDeploymentAnchor({node:rawNode,receipt:{txHash:a.TxHash.fromString(boardDeployment.txHash)},read:fn=>a.boundedTransactionRead(fn,20000),contextGuard:config.contextGuard});
+      if (activation.status !== 'active') return { ...(rolling?{boardDeployment}:{}), l2Addr: l2Addr.toString(), portalAddr: predicted, readyTxHash, configHash, intentDigest:verified.intentDigest, policyVersion:expectedPolicyVersion, status: activation.status };
     }
     await verifyBoardPolicy();
+    if(rolling&&boardDeployment)boardDeployment=await readBoardDeploymentAnchor({node:rawNode,receipt:{txHash:a.TxHash.fromString(boardDeployment.txHash)},read:fn=>a.boundedTransactionRead(fn,20000),contextGuard:config.contextGuard});
     log('Board and portal are linked; authenticated Ready enabled deposits.', 'success');
 
-    return { l2Addr: l2Addr.toString(), portalAddr: predicted, readyTxHash, configHash, intentDigest:verified.intentDigest, policyVersion:expectedPolicyVersion, status: 'active' };
+    return { ...(rolling?{boardDeployment}:{}), l2Addr: l2Addr.toString(), portalAddr: predicted, readyTxHash, configHash, intentDigest:verified.intentDigest, policyVersion:expectedPolicyVersion, status: 'active' };
     } finally { await pxe.stop(); }
     } finally { for(const provider of ownedProviders)provider.destroy(); }
   };

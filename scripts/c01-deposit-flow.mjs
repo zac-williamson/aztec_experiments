@@ -1,3 +1,4 @@
+import {applicationNativeProfile} from './c01-native-profile.mjs';
 import {applicationProofsEnabled,applicationProver} from './testing/proof-policy.mjs';
 // TEST ONLY: disposable local L1 deposit and genuine private claim. Parent owns all process/resource limits.
 import assert from 'node:assert/strict';
@@ -12,7 +13,6 @@ import {Fr} from '@aztec-labs/foundation/curves/bn254';
 import {EthAddress} from '@aztec-labs/foundation/eth-address';
 import {poseidon2HashWithSeparator} from '@aztec-labs/foundation/crypto/poseidon';
 import {sha256ToField} from '@aztec-labs/foundation/crypto/sha256';
-import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
 import {computeSecretHash,siloNullifier} from '@aztec-labs/stdlib/hash';
 import {NoteStatus} from '@aztec-labs/stdlib/note';
 import {L1Actor,L2Actor,L1ToL2Message} from '@aztec-labs/stdlib/messaging';
@@ -23,7 +23,7 @@ import {contractInputs} from './artifact-provenance.mjs';
 import {ROOT,assertNodeVersion,assertAztecPackages} from './toolchain.mjs';
 import {proveApplicationAction,measureApplicationGas} from './prove-application-action.mjs';
 import {drainT04Checkpoints} from './u01-browser-flow.mjs';
-const BOARD='apps/src/billboard/billboard_artifact.json';
+import {checkedC01BoardArtifact,c01BoardEconomics,c01BoardConfigHash} from './c01-board-flow.mjs';
 const PORTAL='billboard/portal/out/BillboardPortal.sol/BillboardPortal.json';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const integer=value=>BigInt(value.toString());
@@ -34,32 +34,50 @@ async function artifacts(preparation,ready){
   const bytes=await fs.readFile(path.join(ROOT,'.build/contracts-manifest.json')),manifest=JSON.parse(bytes);
   assert.equal(sha(bytes),preparation.artifactHashes['.build/contracts-manifest.json']);
   assert.deepEqual(contractInputs(ROOT),manifest.inputs);
-  const boardBytes=await fs.readFile(path.join(ROOT,BOARD)),portalBytes=await fs.readFile(path.join(ROOT,PORTAL));
-  assert.equal(sha(boardBytes),manifest.noir);assert.equal(sha(boardBytes),preparation.artifactHashes[BOARD]);
+  const checked=await checkedC01BoardArtifact(preparation.boardProfile);
+  assert.deepEqual(checked.artifactHashes,preparation.artifactHashes);
+  const portalBytes=await fs.readFile(path.join(ROOT,PORTAL));
   assert.equal(sha(portalBytes),ready.artifactHashes[PORTAL]);
   const portal=JSON.parse(portalBytes);assert.equal(sha(portal.bytecode.object),manifest.portal);
-  const board=loadContractArtifact(JSON.parse(boardBytes));
+  const board=checked.artifact;
   assert(board.storageLayout.deposits?.slot instanceof Fr,'Generated deposit storage slot missing');
-  return {board,portal,hashes:{[BOARD]:sha(boardBytes),[PORTAL]:sha(portalBytes),'.build/contracts-manifest.json':sha(bytes)}};
+  return {board,portal,hashes:{...checked.artifactHashes,[PORTAL]:sha(portalBytes)}};
+}
+
+// Pinned EmbeddedWallet keeps its actual AztecNode on BaseWallet.aztecNode.
+// A borrowed wallet cannot be retargeted to the owned boundary-test oracle proxy.
+export async function assertC01BorrowedClaimWallet({claimWallet, node, authorAccount, qualifyWrongOrigin = false}) {
+  assert(claimWallet && authorAccount?.address, 'Borrowed claim wallet and author required');
+  assert.equal(qualifyWrongOrigin, false, 'Inbox boundary probes require a helper-owned wallet');
+  assert(claimWallet.aztecNode === node, 'Borrowed claim wallet must use this exact node');
+  assert.equal(typeof claimWallet.getAccounts, 'function', 'Registered wallet accounts required');
+  const accounts = await claimWallet.getAccounts();
+  assert(accounts.some(account => account.item.equals(authorAccount.address)), 'Claim author is not registered in borrowed wallet');
 }
 
 /** Result's enumerable fields are evidence-safe. `claim` is nonenumerable, in-memory only,
  * and includes private note/identity/secret material for a later no-post withdrawal.
- * Owns one ephemeral PXE wallet; caller owns sequencer/node/prover shutdown.
+ * By default owns one ephemeral PXE wallet. An explicit claimWallet remains parent-owned;
+ * only its already registered author address is required. Caller owns node/prover shutdown.
  */
-export async function depositAndClaimC01({node,preparation,instance,l1Client,ready,settlement,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,privateFeeAction,payerMode,qualifyWrongOrigin=false}){
+export async function depositAndClaimC01({node,preparation,instance,l1Client,ready,settlement,directory,rpcUrl,dateProvider,mineL1,reportStage,authorAccount,claimWallet,privateFeeAction,payerMode,qualifyWrongOrigin=false}){
   assert(['private','genesis'].includes(payerMode),'Explicit fixture payer mode required');
   if(payerMode==='private')assert.equal(typeof privateFeeAction,'function');
   else assert.equal(privateFeeAction,undefined,'Genesis fixture must not receive private fee route');
+  const ownsWallet=claimWallet===undefined;
   let stage='preflight',wallet,sequencer,previousSequencerConfig;
-  const observation={passed:false,scope:'local real deposit and genuine private claim with ordinary checkpoint inclusion',
-    syntheticMessages:false,syntheticProofs:false,claimEpochProofAccepted:false};
+  const observation={passed:false,scope:'local real deposit and private claim with ordinary checkpoint inclusion',
+    applicationProofs:applicationProofsEnabled(),proofMode:applicationProofsEnabled()?'real':'proofs-disabled',networkProofs:false,
+    syntheticMessages:false,syntheticProofs:!applicationProofsEnabled(),claimEpochProofAccepted:false,
+    walletOwnership:ownsWallet?'claim-helper':'parent',walletCleanup:ownsWallet?'not-created':'retained-by-parent'};
   const mark=name=>{stage=name;reportStage?.('claim:'+name);process.stdout.write(`C01_DEPOSIT_STAGE ${name}\n`);};
   assert.equal(typeof mineL1,'function','Explicit fixture miner required');
   assert(authorAccount?.address,'Explicit fixture author required');
   const mine=mineL1;
   try{
-    assertNodeVersion();assertAztecPackages();assert(settlement.passed&&settlement.activation?.depositsEnabled);
+    assertNodeVersion();assertAztecPackages();
+    if(!ownsWallet)await assertC01BorrowedClaimWallet({claimWallet,node,authorAccount,qualifyWrongOrigin});
+    assert(settlement.passed&&settlement.activation?.depositsEnabled);
     assert(ready.passed&&ready.readyEmitted);assert(path.isAbsolute(directory));
     const url=new URL(rpcUrl);assert.equal(url.protocol,'http:');assert.equal(url.hostname,'127.0.0.1');
     assert(!url.username&&!url.password);assert.equal(await l1Client.getChainId(),31337);assert(l1Client.account);
@@ -76,16 +94,29 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     assert.equal((await read('CONFIG_HASH')).toLowerCase(),ready.configHash.toLowerCase());
     const rollupAddress=(await read('ROLLUP')).toLowerCase();
     assert.equal(rollupAddress,info.l1ContractAddresses.rollupAddress.toString().toLowerCase());
-    const native={backend:BackendType.NativeUnixSocket,bbPath:path.join(directory,'bb-one-thread'),threads:1};
+    const native={backend:BackendType.NativeUnixSocket,...applicationNativeProfile(directory)};
     for(const key of ['backend','bbPath','threads'])assert.equal(Barretenberg.getSingleton().options[key],native[key]);
-    mark('reopen-claim-wallet');
+    mark(ownsWallet?'reopen-claim-wallet':'reuse-parent-claim-wallet');
     const boundaryModule=qualifyWrongOrigin?await import('./t02-claim-boundary.mjs'):undefined;
     const probe=boundaryModule?.createT02InboxProbeNode(node);
-    wallet=await EmbeddedWallet.create(probe?.node??node,{ephemeral:true,pxe:{proverEnabled:true,proverOrOptions:applicationProver(native),autoSync:false,syncChainTip:'checkpointed'}});
     const account=authorAccount;
-    const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'c01-disposable');
-    assert(manager.address.equals(account.address));await wallet.registerContract(instance,checked.board);await wallet.pxe.sync();
+    if(ownsWallet){
+      wallet=await EmbeddedWallet.create(probe?.node??node,{ephemeral:true,pxe:{proverEnabled:applicationProofsEnabled(),proverOrOptions:applicationProver(native),autoSync:false,syncChainTip:'checkpointed'}});
+      observation.walletCleanup='pending';
+      const manager=await wallet.createSchnorrInitializerlessAccount(account.secret,account.salt,account.signingKey,'c01-disposable');
+      assert(manager.address.equals(account.address));
+    }else wallet=claimWallet;
+    await wallet.registerContract(instance,checked.board);await wallet.pxe.sync();
     const board=Contract.at(instance.address,checked.board,wallet);
+    const economics=c01BoardEconomics(preparation);
+    const expectedConfig=c01BoardConfigHash(preparation,{rollupAddress,rollupVersion:info.rollupVersion,boardAddress:instance.address});
+    const assertConfig=async()=>{
+      assert.equal(integer((await board.methods.get_config_hash().simulate({from:account.address})).result),expectedConfig.toBigInt(),'Board configuration differs from deployment');
+      assert.equal((await read('CONFIG_HASH')).toLowerCase(),expectedConfig.toString());
+      assert.equal(integer(await read('MIN_DEPOSIT')),BigInt(economics.minDeposit));
+      assert.equal(integer(await read('MAX_DEPOSIT')),BigInt(economics.maxDeposit));
+    };
+    await assertConfig();
     const amount=integer(await read('MIN_DEPOSIT'));assert(amount>0n&&amount<=integer(await read('MAX_DEPOSIT')));
     const depositor=l1Client.account.address.toLowerCase();
     const before=await read('getDeposit',[depositor]);assert.equal(integer(before),0n);
@@ -190,7 +221,9 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     await canonicalDeposit();await wallet.pxe.sync();mark('check-delivered-deposit-note');
     const logical=(await board.methods.get_deposit_info(account.address,chain).simulate({from:account.address})).result;
     assert(Array.isArray(logical)&&logical.length===10);const fields=logical.map(integer);
-    const base=integer((await board.methods.get_base_cooldown().simulate({from:account.address})).result);
+    await assertConfig();
+    const base=preparation.boardProfile==='rolling'?BigInt(economics.baseCooldown):integer((await board.methods.get_base_cooldown().simulate({from:account.address})).result);
+    assert.equal(base,BigInt(economics.baseCooldown));
     const nextAllowed=integer(anchor.globalVariables.timestamp)+base; // Deposited exactly MIN_DEPOSIT.
     assert.deepEqual(fields,[1n,chain.toBigInt(),amount,BigInt(depositor),0n,0n,0n,0n,0n,nextAllowed]);
     // This is a test-only diagnostic read. The application continues to use its typed logical utility.
@@ -288,11 +321,12 @@ export async function depositAndClaimC01({node,preparation,instance,l1Client,rea
     if(error.originObservation)observation.origin=error.originObservation;
     if(error.boundaryObservation)observation.boundary=error.boundaryObservation;
     const failure=new Error(`C01_DEPOSIT_FAILED:${stage}:${error?.name??'Error'}`);
-    failure.depositObservation={...observation,passed:false,stage,errorClass:error?.name??'Error',location:error?.stack?.split('\n').filter(line=>line.trimStart().startsWith('at ')).slice(0,3).join('\n')};throw failure;
+    Object.assign(observation,{passed:false,stage,errorClass:error?.name??'Error',location:error?.stack?.split('\n').filter(line=>line.trimStart().startsWith('at ')).slice(0,3).join('\n')});
+    failure.depositObservation=observation;throw failure;
   }finally{
     try{if(sequencer&&previousSequencerConfig)sequencer.updateConfig(previousSequencerConfig);}
-    finally{if(wallet){try{await wallet.stop();observation.walletStopped=true;}
-      catch{observation.passed=false;const failure=new Error('C01_DEPOSIT_WALLET_CLEANUP_FAILED');
+    finally{if(wallet&&ownsWallet){try{await wallet.stop();observation.walletStopped=true;observation.walletCleanup='stopped';}
+      catch{observation.passed=false;observation.walletCleanup='stop-failed';const failure=new Error('C01_DEPOSIT_WALLET_CLEANUP_FAILED');
         failure.depositObservation={...observation,walletStopped:false};throw failure;}}}
   }
 }

@@ -11,10 +11,12 @@ import {initTelemetryClient} from '@aztec-labs/telemetry-client';
 import {RollupContract} from '@aztec-labs/ethereum/contracts/rollup';
 import {RunningPromise} from '@aztec-labs/foundation/running-promise';
 import {withC01ClientMining} from './c01-client-mining.mjs';
-export async function qualifyC01RealNode({config,deployment,genesis,directory,privateKey,address,preparation,mark,browserControl,scenario,operatorPackage}){
+import {localApplicationInboxProfile} from './c01-native-profile.mjs';
+import {MIN_BLOCKS_FOR_INBOX_CATCHUP} from '@aztec-labs/stdlib/messaging';
+export async function qualifyC01RealNode({config,deployment,genesis,directory,privateKey,address,preparation,mark,browserControl,scenario,operatorPackage,providerDeadlineAt,applicationDeadlineAt}){
   assert(scenario&&typeof scenario.run==='function');
   assert(['node','included-board','activated-board'].includes(scenario.fixture));
-  const nodeConfig={...config,...deployment.l1ContractAddresses,rollupVersion:deployment.rollupVersion,
+  const nodeConfig={...config,...localApplicationInboxProfile(config),...deployment.l1ContractAddresses,rollupVersion:deployment.rollupVersion,
     dataDirectory:path.join(directory,'node'),bootstrapNodes:[],p2pEnabled:false,
     txPublicSetupAllowListExtend:[],sequencerPublisherPrivateKeys:[new SecretValue(privateKey)],
     validatorPrivateKeys:new SecretValue([privateKey]),coinbase:EthAddress.fromString(address),
@@ -45,17 +47,24 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
     for(const key of ['useAutomineSequencer','automineEnableProveEpoch'])assert.equal(actual[key],false);
     assert(!node.getProverNode(),'Application tests must not create a network prover');
     assert(node.getSequencer(),'Ordinary sequencer absent');assert(!node.getAutomineSequencer());
+    assert.equal(actual.allowUnsafeInboxCatchupCapacity,true);
+    const opportunities=node.getSequencer().getSequencer().timetable.getMaxBlocksPerCheckpoint();
+    const effective=Math.min(actual.maxBlocksPerCheckpoint,opportunities);
+    assert(Number.isSafeInteger(effective)&&effective>0);
+    observation.inboxCapacity={profile:'disposable local application fixture',
+      allowUnsafeInboxCatchupCapacity:true,minimumRequired:MIN_BLOCKS_FOR_INBOX_CATCHUP,
+      timetableOpportunities:opportunities,effective,backlogCapacityQualified:false};
     const info=await node.getNodeInfo();assert.equal(Number(info.l1ChainId),31337);
     observation.realProofs=applicationProofsEnabled();observation.proverSubsystemCreated=false;
     observation.ordinarySequencerConstructed=true;observation.sequencerStarted=false;
     observation.rollupVersion=Number(info.rollupVersion);
-    const ctx={node,config:nodeConfig,deployment,preparation,directory,dateProvider,browserControl,scenario,mark,l1Client:deployment.l1Client,rollupAddress:deployment.l1ContractAddresses.rollupAddress,packageRoot:operatorPackage?.root};
+    const ctx={node,config:nodeConfig,deployment,preparation,directory,dateProvider,browserControl,scenario,mark,providerDeadlineAt,applicationDeadlineAt,l1Client:deployment.l1Client,rollupAddress:deployment.l1ContractAddresses.rollupAddress,packageRoot:operatorPackage?.root};
     if(include){
       assert(preparation);mark('prove-board-deployment');
       const {proveC01BoardDeployment}=await import('./c01-board-flow.mjs');
       observation.board=await proveC01BoardDeployment(node,preparation,{rollupAddress:ctx.rollupAddress,rollupVersion:deployment.rollupVersion,directory,reportStage:mark});assert(observation.board.passed);
       const {includeC01Board}=await import('./c01-board-inclusion.mjs');
-      mark('board-inclusion');observation.inclusion=await includeC01Board({node,tx:observation.board.tx,rpcUrl:config.l1RpcUrls[0],dateProvider});assert(observation.inclusion.passed);
+      mark('board-inclusion');observation.inclusion=await includeC01Board({node,tx:observation.board.tx,rpcUrl:config.l1RpcUrls[0],dateProvider,diagnostic:scenario.name==='sequencer-inclusion-diagnostic',...(scenario.name==='rolling-bok-post'?{miningMode:'real-wall',deadlineAt:applicationDeadlineAt}:{})});assert(observation.inclusion.passed);
       Object.assign(ctx,{instance:observation.board.instance,inclusion:observation.inclusion});observation.sequencerStarted=true;
       if(scenario.fixture==='activated-board'){
         const {prepareAndProveC01Ready}=await import('./c01-ready-flow.mjs');
@@ -63,7 +72,7 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
         observation.ready=await withC01ClientMining({rpcUrl:config.l1RpcUrls[0],dateProvider,observation:observation.readyMining},
           ()=>prepareAndProveC01Ready({...ctx,deploymentReceipt:ctx.inclusion,rollupVersion:deployment.rollupVersion}));
         assert(observation.ready.passed);
-        mark('ready-inclusion');observation.readyInclusion=await includeC01Board({node,tx:observation.ready.tx,rpcUrl:config.l1RpcUrls[0],dateProvider,startSequencer:false});assert(observation.readyInclusion.passed);
+        mark('ready-inclusion');observation.readyInclusion=await includeC01Board({node,tx:observation.ready.tx,rpcUrl:config.l1RpcUrls[0],dateProvider,startSequencer:false,...(scenario.name==='rolling-bok-post'?{miningMode:'real-wall',deadlineAt:applicationDeadlineAt}:{})});assert(observation.readyInclusion.passed);
         const effect=await node.getTxEffect(observation.ready.tx.getTxHash());assert(effect?.data);assert(effect.data.l2ToL1Msgs.some(message=>message.toString()===observation.ready.expectedReadyLeaf));
         Object.assign(observation.ready,{readyEmitted:true,bindingSubmitted:true});
         const {settleC01Ready}=await import('./c01-settle-ready.mjs');
@@ -82,6 +91,8 @@ export async function qualifyC01RealNode({config,deployment,genesis,directory,pr
       if(observation.ready)observation.readyInclusion=error.inclusionObservation;
       else observation.inclusion=error.inclusionObservation;
     }
+    if(error.trustedQueryObservation)observation.scenario=error.trustedQueryObservation;
+    if(error.rollingApplicationObservation)observation.bridge=error.rollingApplicationObservation;
     error.nodeObservation=observation;throw error;
   }finally{
     try{if(node){await node.stop();observation.nodeStopped=true;}}
