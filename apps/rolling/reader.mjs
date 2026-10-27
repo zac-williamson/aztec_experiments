@@ -113,7 +113,7 @@ function confirmTip(){
   document.body.append(dialog);dialog.showModal();
  });
 }
-function updatePreferenceControl(node,blocked=false){const state=preferenceControl(node.dataset.privateSetting,Number(node.dataset.kind),node.dataset.target);labelled(node,state.label);node.disabled=blocked||state.disabled;if(state.busy)node.setAttribute('aria-busy','true');else node.removeAttribute('aria-busy');}
+function updatePreferenceControl(node,blocked=false){const state=preferenceControl(node.dataset.privateSetting,Number(node.dataset.kind),node.dataset.target);const active=state.enabled===false;node.dataset.active=String(active);if(node.dataset.iconOn)node.dataset.icon=active?node.dataset.iconOn:node.dataset.iconOff;labelled(node,state.label);node.disabled=blocked||state.disabled;if(state.busy)node.setAttribute('aria-busy','true');else node.removeAttribute('aria-busy');}
 function welcomeFirstVisit(){
  const key='rolling.welcome.seen';
  try{if(localStorage.getItem(key))return;}catch{/* Storage may be unavailable. */}
@@ -172,8 +172,10 @@ function socialButton(label,action,attrs={}){
  const retained=inlineActions.snapshot(key);if(retained)node.renderInlineAction(retained);
  return node;
 }
+// `icon` is one name for both states, or {off,on} to swap it once the preference is set.
 function preferenceButton(label,kind,target,savedLabel,icon){
- const node=socialButton(preferenceControl(label,kind,target).label,()=>({type:'preference',kind,target,enabled:preferenceControl(label,kind,target).enabled,...(savedLabel?{label:savedLabel}:{})}),{'data-private-setting':label,'data-kind':kind,'data-target':target,...(icon?{'data-icon':icon}:{})});
+ const icons=typeof icon==='string'?{'data-icon':icon}:icon?{'data-icon':icon.off,'data-icon-off':icon.off,'data-icon-on':icon.on}:{};
+ const node=socialButton(preferenceControl(label,kind,target).label,()=>({type:'preference',kind,target,enabled:preferenceControl(label,kind,target).enabled,...(savedLabel?{label:savedLabel}:{})}),{'data-private-setting':label,'data-kind':kind,'data-target':target,...icons});
  if(!inlineActions.snapshot(node.dataset.inlineAction))updatePreferenceControl(node);return node;
 }
 function showModeratorButton(node){node.hidden=privatePanel?.moderatorAuthorized?.()!==true;node.style.display=node.hidden?'none':'';}
@@ -225,7 +227,7 @@ function updateAccountButton(){
  const node=app.querySelector('[data-account-button]');if(!node)return;
  const signedIn=privatePanel?.privateStatus?.()&&privatePanel.privateStatus()!=='locked',label=signedIn?'Your account':'Connect wallet';node.querySelector('.label').textContent=label;node.setAttribute('aria-label',label);node.classList.toggle('primary',!signedIn);
 }
-function shell(title,{boardId=null}={}){
+function shell(title,{boardId=null,directory=false}={}){
  document.title=title+' · rollingchat';
  const nav=(label,to,icon)=>link([el('span',{class:'nav-icon','aria-hidden':'true'},createIcon(icon)),label],to);
  const rail=el('aside',{class:'rail',id:'community-navigation'},link(createBrand(),'/home',{class:'brand'}),el('p',{class:'rail-label'},'Browse'),el('nav',{class:'nav-group','aria-label':'Community'},nav('Home','/home','home'),nav('Main board','/board/0','message'),nav('Explore boards','/directory','compass'),nav('Following','/following','users'),nav('Bookmarks','/bookmarks','bookmark')),el('div',{class:'rail-foot'},'Say it in public. Stay private.'));
@@ -242,7 +244,9 @@ function shell(title,{boardId=null}={}){
   const heading=main.querySelector('.page-head>div');heading.classList.add('conversation-heading');
   heading.prepend(button(createIcon('arrow-left'),()=>conversationNavigation.back(),{class:'conversation-back','aria-label':'Back',title:'Back'}));
  }
+ // One primary action per page head: compose on feeds, create on the directory, follow on a profile (added once the name loads).
  if(boardId!==null||route==='/home')main.querySelector('.page-head').append(button([createIcon('pen'),'Write a post'],()=>openWallet({type:'post',subboard:boardId??'0'}),{class:'button primary',...(boardId!==null?{'data-board-compose':'',disabled:''}:{})}));
+ else if(directory)main.querySelector('.page-head').append(button([createIcon('plus'),'Create a board'],()=>openWallet({type:'subboard'}),{class:'button primary'}));
  const bokBalance=el('section',{class:'bok-balance','aria-label':'Bok balance',hidden:''});
  const postingName=el('div',{class:'posting-name','data-posting-name':''});main.insertBefore(postingName,main.querySelector('.page-head').nextSibling);
  void accountPanel().then(panel=>{if(postingName.isConnected){panel.attachIdentityControls(postingName);panel.attachBokControls(bokBalance);}}).catch(()=>{walletPanel=null;postingName.append(button('Load posting names',()=>render()));});
@@ -310,7 +314,7 @@ async function render({live=false,publicationRevision}={}){
   if(api==='thread'&&parts[2]){expectedRoot=parts[1];api='post';parameters={id:parts[2]};title='Linked post';}
  }
  else if(parts[0]!=='home'){shell('Page not found');return;}
- if(!live)shell(title,{boardId:api==='board'?parameters.id:null});
+ if(!live)shell(title,{boardId:api==='board'?parameters.id:null,directory:api==='directory'});
  if(privateView){
   main.querySelector('.intro').textContent={following:'Posts from the people and boards you follow.',bookmarks:'Posts you saved for later.'}[privateView];
   if(privatePanel?.privateStatus?.()!=='complete'){
@@ -347,7 +351,7 @@ async function render({live=false,publicationRevision}={}){
  }
  const loading=el('div',{class:'feed-loading',role:'status','aria-busy':'true'},createSkeletonFeed(3),el('p',{},'Loading conversations…'));contentHost.append(loading);
  if(api==='directory'){
-  main.querySelector('.intro').textContent='Find a community around something you care about.';contentHost.append(button([createIcon('plus'),'Create a board'],()=>openWallet({type:'subboard'})));
+  main.querySelector('.intro').textContent='Find a community around something you care about.';
   const input=el('input',{type:'search',value:parameters.query,placeholder:'Find a topic or board','aria-label':'Search boards',maxlength:120});
   const form=el('form',{class:'directory-search',onSubmit:event=>{event.preventDefault();location.hash='/directory/'+encodeURIComponent(input.value.trim());}},input,el('button',{class:'button',type:'submit'},'Search'));contentHost.insertBefore(form,loading);
  }
@@ -430,7 +434,11 @@ async function render({live=false,publicationRevision}={}){
    const overview=boardOverview(data);overview.querySelector('.board-head-body').append(preferenceButton('Follow board',2,parameters.id,data.board?.name??'Main board'));contentHost.append(overview);
    const compose=document.querySelector('[data-board-compose]');if(compose)compose.disabled=Boolean(data.board?.rejected);
   }
-  if(api==='profile'&&data.identity){main.querySelector('h1').textContent=text(data.identity.first)+' '+text(data.identity.last);contentHost.append(createPublicProfile(data.identity,{signal}),preferenceButton('Follow name',3,parameters.nameId,text(data.identity.first)+' '+text(data.identity.last)),moderatorButton('Remove this avatar',{type:'moderate-avatar',name:parameters.nameId}));}
+  if(api==='profile'&&data.identity){
+   const name=text(data.identity.first)+' '+text(data.identity.last),head=main.querySelector('.page-head');main.querySelector('h1').textContent=name;
+   head.querySelector('[data-private-setting="Follow name"]')?.remove();head.append(preferenceButton('Follow name',3,parameters.nameId,name,{off:'plus',on:'check'}));
+   contentHost.append(createPublicProfile(data.identity,{signal}),moderatorButton('Remove this avatar',{type:'moderate-avatar',name:parameters.nameId}));
+  }
   document.title=main.querySelector('h1').textContent+' · rollingchat';
   if(!container.childElementCount){
    const copy=privateView?{following:['No posts from your follows yet','The people and boards above have no available posts.'],bookmarks:['Saved posts unavailable','Your saved posts are not available in the current public feed.']}[privateView]:api==='directory'?['Find a board',cursor?'No matches on this page. Check the next page or try another search.':'No boards match. Try another topic or create a board.']:api==='home'&&cursor?['More conversations to explore','Continue to the next page.']:['Start the conversation','There are no posts here yet.'];

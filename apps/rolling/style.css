@@ -111,8 +111,10 @@ main{min-width:0;animation:rise var(--t) var(--ease) both}
 .button:hover{background:var(--surface-2);text-decoration:none;transform:translateY(-1px);box-shadow:var(--shadow-sm)}
 .button:active{transform:scale(.97)}
 .button:disabled{transform:none;box-shadow:none}
-.button.primary{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 6px 18px -8px rgb(91 77 240/.6)}
-.button.primary:hover{background:var(--brand-strong);border-color:var(--brand-strong)}
+.button.primary,.page-head>.button[data-private-setting]:not([data-active=true]),.page-head>.button[aria-pressed=false]{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 6px 18px -8px rgb(91 77 240/.6)}
+.button.primary:hover,.page-head>.button[data-private-setting]:not([data-active=true]):hover,.page-head>.button[aria-pressed=false]:hover{background:var(--brand-strong);border-color:var(--brand-strong)}
+/* A preference already set from the page head (Following) relaxes to a soft tint, so the filled button always means "do this". */
+.page-head>.button[data-private-setting][data-active=true],.page-head>.button[aria-pressed=true]{color:var(--brand-ink);border-color:var(--brand-soft);background:var(--brand-soft)}
 .button.ghost{background:transparent;border-color:transparent}
 .button.ghost:hover{background:var(--surface-2);box-shadow:none}
 .button.small{min-height:34px;padding:0 12px;font-size:13px}

@@ -1743,6 +1743,9 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   postingCreditControls.append(el('strong',{},'Posting credit'),amount);
   if(session.topup?.['private-fee']){const add=button('Add credit',addPostingCredit);add.setAttribute('aria-label','Add posting credit');add.dataset.unavailable=String(initializing||blocked||!!intent);add.disabled=busy||initializing||blocked||!!intent;postingCreditControls.append(add);}
  }
+ // The inline name form stays only while an operation runs or a prepared name awaits review.
+ function inlineCreationLocked(){return busy||!!intent||!!setupMode||fundingAutomatic||(!initializing&&!!session?.busy);}
+ function dismissInlineCreation(){inlineCreation=false;restoreDialogContent();clearOperationFeedback();}
  function renderIdentityControls(){
   if(!identityHost)return;
   const signedIn=unlocked();
@@ -1757,20 +1760,24 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
 
   select.addEventListener('change',()=>{
    if(busy||intent)return;
+   // Choosing any other identity leaves the inline name form, like Cancel.
+   const leaving=inlineCreation&&select.value!=='create';if(leaving)dismissInlineCreation();
    if(select.value==='load'){void work(()=>loadView({loadIdentity:true}));return;}
    if(select.value==='create'){
     inlineCreation=true;clearProfileDraft();clearOperationFeedback();view='action';draft={type:'name',first:'',last:''};
     if(dialog.open)dialog.close();inlineName.hidden=false;inlineName.append(description,live,content);render();
     if(!runtime||initializing)void initialize();else if(session&&unlocked())void work(loadView);
-   }else{selectedName=select.value;selectedLabel=ownedLabel(selectedName);if(['post','reply','quote','repost','bok'].includes(draft.type))draft.name=selectedName;}
+   }else{selectedName=select.value;selectedLabel=ownedLabel(selectedName);if(['post','reply','quote','repost','bok'].includes(draft.type))draft.name=selectedName;if(leaving)renderIdentityControls();}
   });
   identityControls.replaceChildren(label('Post as',select),postingCreditControls,actionFeedback);renderPostingCreditControls();requestPostingCredit();
 
   if(inlineCreation){
-   const cancel=button('Cancel',()=>{if(busy||intent)return;inlineCreation=false;restoreDialogContent();clearOperationFeedback();renderIdentityControls();});cancel.disabled=busy||!!intent;identityControls.append(cancel);
+   const cancel=button('Cancel',()=>{if(busy||intent)return;dismissInlineCreation();renderIdentityControls();});cancel.disabled=busy||!!intent;identityControls.append(cancel);
   }else if(notice.startsWith('Name created.')||notice.startsWith('Your previous posting name'))identityControls.append(el('span',{class:'quiet',role:'status'},notice));
  }
  function attachIdentityControls(host){
+  // A new page drops an idle inline name form instead of carrying it along.
+  if(inlineCreation&&!inlineCreationLocked())dismissInlineCreation();
   identityHost=host;host.append(identityControls,inlineName);renderIdentityControls();
   // Existing names load when this selector is used, without opening a dialog.
  }
