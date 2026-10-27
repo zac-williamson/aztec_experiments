@@ -1,4 +1,7 @@
-# Rolling Chat application and design preview
+# rollingchat application and design preview
+
+The interface is documented in [DESIGN.md](DESIGN.md): the rollingchat wordmark,
+DM Sans (self-hosted in `fonts/`), colour tokens, layout, motion and metadata.
 
 The connected application uses `live.html`, `reader.mjs` and the wallet modules.
 Start it with the [native development runner](../../docs/rolling-deployment.md#native-local-rolling-development)
@@ -12,6 +15,10 @@ for hosted access and outstanding acceptance work.
 A Draft 3 design-stage deliverable, intentionally disconnected from wallets and
 production services. It is not the delivered chain application. All fixtures and
 local actions are labelled in the interface; refresh resets local changes.
+
+For design review away from a checkout, [netlify-preview/](netlify-preview/README.md)
+deploys both the design preview and the connected app against a mock API and mock
+wallet runtime to https://rollingchat-preview.netlify.app.
 
 ## Run
 
@@ -27,9 +34,10 @@ Open http://127.0.0.1:4317. To isolate another instance:
 ROLLING_PREVIEW_PORT=4318 node apps/rolling/serve.mjs
 ```
 
-No install, build, external fonts, third-party images or backend credentials are
+No install, build, network fonts, third-party images or backend credentials are
 needed. Stop the process with Ctrl-C. The server binds to loopback, serves only its
-six public assets, and blocks browser connections with a content security policy.
+allow-listed public assets (pages, modules, the self-hosted DM Sans font and brand
+icons), and blocks browser connections with a content security policy.
 No mutable files or data need cleanup.
 
 ## Verification

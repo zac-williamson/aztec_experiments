@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — Owner performance goal remains paused. Funded functional pass completed on UI f9d42ce4: fresh USDC signup and first included/rendered post passed without retry; ETH signup, funding/payouts, social/profile flows and real Bok app creation/edit verified. Native-anchor posting eligibility and relay predecessor reconciliation repaired/published. All required services active; app PID311339 uses ui-f9d42ce4616e. Sepolia test relay allowance extended to0.01ETH preserving consumed reservations. Explicit unverified MetaMask/empty-browser/live-admin/terminal boundaries in docs/FUNCTIONAL_CHECK_20261026.md. Await owner direction; do not resume optimization.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — Owner authorized PR9 UI facelift merge and live redeployment on27October2026. Active lane: UI integration, focused renderer/wallet checks and production asset publication. Independent review completion_evidence_review. Existing contracts/services retained; performance goal remains paused.
 
 ## Ready internal work
 

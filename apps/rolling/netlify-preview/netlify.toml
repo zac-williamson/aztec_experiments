@@ -1,0 +1,4 @@
+# Shareable review preview for apps/rolling. See README.md in this directory.
+[build]
+  publish = "site"
+  functions = "functions"

@@ -1,0 +1,16 @@
+{
+  "name": "rollingchat-netlify-preview",
+  "private": true,
+  "type": "module",
+  "description": "Shareable Netlify preview of the rollingchat design preview and the live app against a mock API.",
+  "scripts": {
+    "build": "node build.mjs",
+    "deploy": "node build.mjs && netlify deploy --prod --site 3f9a8e94-c5b6-47ab-b792-80d8b6e1d7e9 --dir site --functions functions"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.6"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^6.0.3"
+  }
+}

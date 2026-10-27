@@ -1,8 +1,9 @@
 // Public-only presentation. Never reads an account, wallet, owned-name API or URL.
 // Static header checks precede native raster decode. These admission/time/concurrency
 // limits are not a hard native memory sandbox; late bitmaps are always closed.
-// Design: existing slate/navy and Avenir typography, one100px identity image beside
-// left-aligned prose. No new cards/badges; keep feed names and authentic Bok distinct.
+// Design: rollingchat tokens and DM Sans (style.css), one 100px identity image beside
+// left-aligned prose. Empty avatars show the name's initials; keep feed names and
+// authentic Bok distinct.
 const fail=()=>new Error('PUBLIC_AVATAR_INVALID');
 const check=value=>{if(!value)throw fail();};
 const text=(bytes,start,length)=>String.fromCharCode(...bytes.subarray(start,start+length));
@@ -96,7 +97,8 @@ export function createPublicAvatar(identity,{signal,large=false}={}){
  const name=[boundedText(identity?.first,32),boundedText(identity?.last,32)].filter(Boolean).join(' ')||'Registered name';
  const outer=node('span','public-avatar'+(large?' public-avatar-large':''));outer.setAttribute('role','img');
  let stopped=false,timer;const stop=()=>{stopped=true;clearTimeout(timer);signal?.removeEventListener('abort',abort);};
- const placeholder=(state,label)=>{outer.dataset.state=state;outer.setAttribute('aria-label',name+': '+label);outer.replaceChildren(node('span','public-avatar-glyph','◌'));};
+ const initials=[identity?.first,identity?.last].map(part=>boundedText(part,32)).filter(Boolean).map(part=>[...part][0].toUpperCase()).join('');
+ const placeholder=(state,label)=>{outer.dataset.state=state;outer.setAttribute('aria-label',name+': '+label);outer.replaceChildren(node('span','public-avatar-glyph',['empty','cleared'].includes(state)&&initials?initials:'◌'));};
  const abort=()=>{stop();placeholder('unavailable','avatar unavailable');};
  const avatar=identity?.profile?.avatar;
  if(avatar?.removal){placeholder('removed','avatar removed by moderation');return outer;}

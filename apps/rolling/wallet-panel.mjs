@@ -1,6 +1,6 @@
 import {beginRollingMeasure,measureRollingStage,rollingStageObserver} from './performance.mjs';
 // Presentation only. Account restoration is delegated to the runtime; wallet prompts require a click.
-import {allowance,createMessageContent} from './model.mjs';
+import {allowance,createMessageContent,createIcon,mentionsBok} from './model.mjs';
 import {createPublicReader} from './reader-client.mjs';
 import {prepareAvatarUpload} from './avatar-upload.mjs';
 // Presentation-only diagnostic projection. Keep this vocabulary closed even if
@@ -30,9 +30,10 @@ export function projectRollingInitialization(value){
   return Object.freeze(out);
  }catch{return null;}
 }
-// A mention is a local composition choice. Reading credit never belongs to the
-// input event; the account-scoped query below is shared by the page and composer.
-export const mentionsBok=text=>typeof text==='string'&&/(^|[^\p{L}\p{N}_@])@bok(?![\p{L}\p{N}_])/iu.test(text);
+// A mention is a local composition choice (one pattern, shared with message
+// rendering in model.mjs). Reading credit never belongs to the input event; the
+// account-scoped query below is shared by the page and composer.
+export {mentionsBok};
 export function createBokBalanceQuery({identity,read,onChange=()=>{}}){
  let generation=0,key=null,pending=null,state={phase:'idle',value:null};
  function current(){const next=identity();if(next!==key){generation++;key=next;state={phase:'idle',value:null};}return next;}
@@ -241,11 +242,13 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  let fundingQuote=null,fundingQuoteRequested=false,fundingAutomatic=false,fundingActiveCapability=null,fundingInputs={asset:'ETH'};
  let profileSnapshot=null,avatarDraft=null,renderEpoch=0,accountEpoch=0,view='overview',namesLoaded=false,actionsLoaded=false;const previewURLs=new Set();
  const dialog=el('dialog',{class:'account-dialog','aria-labelledby':'rolling-wallet-title','aria-describedby':'rolling-wallet-description'});
- const title=el('h2',{id:'rolling-wallet-title'},'Join Rolling Chat');
- const closeButton=button('Close account panel',()=>close());closeButton.setAttribute('aria-label','Close account panel');
+ const title=el('h2',{id:'rolling-wallet-title'},'Join rollingchat');
+ const closeButton=button('Close account panel',()=>close());closeButton.setAttribute('aria-label','Close account panel');closeButton.replaceChildren(createIcon('close'));
  const content=el('div'),live=el('p',{role:'status','aria-live':'polite',class:'quiet'});
  const description=el('p',{id:'rolling-wallet-description',class:'quiet'});
- dialog.append(el('div',{class:'dialog-top'},title,closeButton),description,live,content);
+ // Signup funnel: connect, fund, talk. Shown only while an account is being set up.
+ const steps=el('ol',{class:'setup-steps','aria-label':'Account setup steps',hidden:''});
+ dialog.append(el('div',{class:'dialog-top'},title,closeButton),steps,description,live,content);
  document.body.append(dialog);
  const bokBalance=createBokBalanceQuery({identity:()=>unlocked()?session:null,read:()=>session.application.readBokStatus(),onChange:()=>{
   bokStatus=bokBalance.snapshot().value;renderBokControls();updateBokForm();updateTopupQuote();if(bokRefreshNeeded&&!bokBalance.pending)requestBokBalance();requestComposerPreparation();
@@ -929,7 +932,9 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  function conversationContext(action){
   const reply=replyContext(action),link=el('a',{href:reply?'#/thread/'+action.root+'/'+action.parent:'#/board/'+action.subboard},reply?'View conversation':BigInt(action.subboard)===0n?'Main board':'View board');
   link.addEventListener('click',event=>{if(!close())event.preventDefault();});
-  content.append(paragraph(reply?'Replying in this conversation':'New conversation'),link);
+  content.append(paragraph(reply?'Replying to '+(action.context?.author||'this post'):'New conversation'));
+  if(reply&&action.context)content.append(el('blockquote',{class:'reply-context'},el('strong',{},action.context.author),el('p',{},action.context.excerpt)));
+  content.append(el('p',{class:'quiet'},link));
  }
  function actionLabel(action){
   return ({post:'Post',reply:'Reply',quote:'Post quote',repost:'Repost',like:'Like post',unlike:'Remove like',name:'Create name',subboard:'Create board',bio:'Save bio',avatar:'Save avatar','cancel-deposit':'Continue refund',bok:'Ask Bok'})[action?.type]??TYPES[action?.type]??'Confirm';
@@ -1167,7 +1172,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  }
  function form(){
   if(MODERATOR_TYPES.has(draft.type)&&moderatorStatus?.authorized!==true)draft={type:'post',subboard:'0',content:''};
-  const fields=new Map();let updateInvitation=()=>{},transferConsent;
+  const fields=new Map();let updateInvitation=()=>{},transferConsent,bokChip;
   function input(name,text,{area=false,initial='',required=true}={}){
    const node=el(area?'textarea':'input',area?{rows:'5'}:{type:'text'});node.value=draft[name]??initial;if(required)node.required=true;
    node.addEventListener('input',()=>{draft[name]=node.value;if(name==='content')updateInvitation();if(name==='subboard')updateRules();validate();});fields.set(name,node);content.append(label(text,node));return node;
@@ -1226,7 +1231,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     if(kind==='bok'&&draft.parent===undefined&&draft.root===undefined)Object.assign(draft,{parent:'0',root:'0'});
     if(replyContext(draft)||kind==='bok'&&field(draft.subboard)&&draft.parent==='0'&&draft.root==='0')conversationContext(draft);
     else content.append(paragraph('Choose a post in the reader and select Reply to join its conversation.'),button('Choose a post',()=>close()));
-    if(replyContext(draft)||kind==='reply')content.append(button('Start new conversation',()=>{draft={...draft,type:kind==='reply'?'post':'bok',parent:'0',root:'0'};render();}));
+    if(replyContext(draft)||kind==='reply')content.append(button('Start new conversation',()=>{draft={...draft,type:kind==='reply'?'post':'bok',parent:'0',root:'0',context:undefined};render();}));
    }else{target('subboard');conversationContext(draft);}
    if(kind==='quote'||kind==='repost'){target('reference');const original=el('a',{href:'#/post/'+draft.reference},'View original post');original.addEventListener('click',event=>{if(!close())event.preventDefault();});content.append(original);}
    input('content',kind==='repost'?'Optional repost comment':'Message',{area:true,required:kind!=='repost'});
@@ -1239,13 +1244,23 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     updateInvitation=()=>{
      kind=draft.type=mentionsBok(draft.content)?'bok':replyContext(draft)?'reply':'post';if(kind==='bok'&&draft.parent===undefined)Object.assign(draft,{parent:'0',root:'0'});invitation.hidden=kind!=='bok';
      if(kind==='bok')fields.set('budget',budget);else fields.delete('budget');
+     bokChip?.setAttribute('aria-pressed',String(kind==='bok'));
      title.textContent=replyContext(draft)?'Reply':'Write a post';paint();
     };
     updateBokForm=()=>{paint();validate();};updateInvitation();
    }
   }
   const counter=el('p',{class:'counter','aria-live':'polite'}),preview=el('div',{class:'preview-body','aria-label':'Message preview'});
-  if(fields.has('content'))content.append(counter,el('details',{},el('summary',{},'Preview message'),preview));
+  if(fields.has('content')){
+   const tools=el('div',{class:'composer-tools'});
+   if(canInvite){
+    // X-style tagging: insert the mention at the caret and let the input listener derive the Bok action.
+    const area=fields.get('content');
+    bokChip=button('@bok',()=>{if(mentionsBok(area.value)){area.focus();return;}const at=area.selectionStart??area.value.length,before=area.value.slice(0,at),after=area.value.slice(at);area.setRangeText((before&&!/\s$/.test(before)?' ':'')+'@bok'+(after&&!/^\s/.test(after)?' ':''),at,at,'end');area.dispatchEvent(new Event('input',{bubbles:true}));area.focus();});
+    bokChip.className='button bok-chip';bokChip.setAttribute('aria-label','Mention Bok');bokChip.setAttribute('aria-pressed',String(kind==='bok'));tools.append(bokChip);
+   }
+   tools.append(el('details',{},el('summary',{},'Preview message'),preview),counter);content.append(tools);
+  }
   const prepareReview=()=>{
    if(busy||!validate())return;
    const action={type:kind};for(const [key,node]of fields)action[key]=node.value;
@@ -1570,6 +1585,9 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   if(signedIn&&intent&&['prepared','replacement-prepared'].includes(intent.status))title.textContent=intent.status==='replacement-prepared'?'Review replacement':reviewLabel(intent.action);
   description.textContent=!signedIn?'Join the conversation without sharing your identity.':'';
   description.hidden=!!setupMode||!description.textContent;
+  const onboardingFunding=signedIn&&['fee-needed','collateral-pending'].includes(status?.status);
+  steps.hidden=!!intent||invalidated||reloadRequired||!(!signedIn||!!setupMode||view==='funding'||onboardingFunding&&view==='topup');
+  if(!steps.hidden){const stage=!signedIn?0:onboardingFunding||view==='funding'?1:2;steps.replaceChildren(...['Connect wallet','Set up posting','Start talking'].map((step,index)=>el('li',{'data-state':index<stage?'done':index===stage?'current':'todo'},step)));}
   content.hidden=!!setupMode;
   if(setupMode||initializing)title.textContent='Opening your account…';
   if(error)content.append(el('p',{role:'alert',tabindex:'-1',class:'notice error','data-operation-feedback':''},error));
@@ -1640,7 +1658,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
  });
  render();
- return panelApi=Object.freeze({initialize,act,open(defaults={}){
+ return panelApi=Object.freeze({initialize,act,open(defaults={},extras={}){
   if(defaults.type==='preference'||defaults.type==='read-marker')return false;
   if(busy){if(!dialog.open){returnFocus=document.activeElement;dialog.showModal();closeButton.focus();}return;}
   if(inlineCreation){inlineCreation=false;restoreDialogContent();}
@@ -1648,7 +1666,10 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   if(!intent){clearOperationFeedback();view=defaults.view==='preferences'?'preferences':Object.hasOwn(TYPES,defaults.type)?'action':'overview';clearProfileDraft();const next={type:Object.hasOwn(TYPES,defaults.type)?defaults.type:'post',subboard:'0',content:'',name:defaults.type==='subboard'?'':selectedName};
    for(const key of IDS)if(field(defaults[key]))next[key]=defaults[key];
    if(['moderate-avatar','bio','avatar'].includes(next.type)&&field(defaults.name))next.name=defaults.name;
-   if(typeof defaults.content==='string'&&defaults.content.length<=10000)next.content=defaults.content;draft=next;}
+   if(typeof defaults.content==='string'&&defaults.content.length<=10000)next.content=defaults.content;
+   // Display-only reply context for the composer; never copied into the action.
+   const context=extras?.context;if(context&&field(next.parent)&&typeof context.author==='string'&&typeof context.excerpt==='string')next.context={author:context.author.slice(0,64),excerpt:context.excerpt.slice(0,200)};
+   draft=next;}
   // Refunds can arrive while the composer is closed. Refresh this optional
   // snapshot in the background; typing and the unlocked session remain intact.
   if(!dialog.open&&view==='action'&&COMPOSER_TYPES.has(draft.type))requestBokBalance(true);

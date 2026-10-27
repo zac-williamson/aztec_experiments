@@ -8,7 +8,10 @@ import {startRollingPublicServer,createRollingPublicIndexFromConfig} from '../..
 import {loadRollingWalletAssets} from '../../scripts/rolling-wallet-assets.mjs';
 const root=fileURLToPath(new URL('.',import.meta.url));
 const files=new Map([['/archive/','archive.html'],['/archive/snapshot.json','archive.json'],['/','live.html'],['/reader.mjs','reader.mjs'],['/reader-client.mjs','reader-client.mjs'],['/profile-view.mjs','profile-view.mjs'],['/avatar-upload.mjs','avatar-upload.mjs'],
- ['/performance.mjs','performance.mjs'],['/reader-updates.mjs','reader-updates.mjs'],['/wallet-action.mjs','wallet-action.mjs'],['/model.mjs','model.mjs'],['/navigation.mjs','navigation.mjs'],['/style.css','style.css'],['/wallet-panel.mjs','wallet-panel.mjs'],['/wallet-cache-worker.mjs','wallet-cache-worker.mjs']]);
+ ['/performance.mjs','performance.mjs'],['/reader-updates.mjs','reader-updates.mjs'],['/wallet-action.mjs','wallet-action.mjs'],['/model.mjs','model.mjs'],['/navigation.mjs','navigation.mjs'],['/style.css','style.css'],['/wallet-panel.mjs','wallet-panel.mjs'],['/wallet-cache-worker.mjs','wallet-cache-worker.mjs'],
+ // Brand assets: self-hosted font, icons, social card and manifest. No network fonts under the CSP.
+ ['/fonts/DMSans-latin.woff2','fonts/DMSans-latin.woff2'],['/fonts/DMSans-latin-ext.woff2','fonts/DMSans-latin-ext.woff2'],['/fonts/OFL.txt','fonts/OFL.txt'],['/favicon.svg','favicon.svg'],['/favicon-32.png','favicon-32.png'],['/apple-touch-icon.png','apple-touch-icon.png'],['/icon-192.png','icon-192.png'],['/icon-512.png','icon-512.png'],['/og.png','og.png'],['/site.webmanifest','site.webmanifest']]);
+const staticTypes={'.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.woff2':'font/woff2','.txt':'text/plain; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.webmanifest':'application/manifest+json'};
 const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer',
  'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' blob: data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"};
 const compress=promisify(gzip),MAX_ASSET_BYTES=128*1024*1024,MAX_CACHE_BYTES=64*1024*1024,MAX_RESPONSE_BYTES=128*1024*1024;
@@ -96,7 +99,7 @@ export function createRollingReaderAssetHandler(wallet){
  }
  if(!file||url.search){reply(404);return;}
  const body=await fs.readFile(path.join(root,file));
- res.writeHead(200,{...selectedHeaders,'Content-Type':file.endsWith('.mjs')?'text/javascript; charset=utf-8':file.endsWith('.css')?'text/css; charset=utf-8':file.endsWith('.json')?'application/json; charset=utf-8':'text/html; charset=utf-8'});
+ res.writeHead(200,{...selectedHeaders,'Content-Type':staticTypes[path.extname(file)]??'text/html; charset=utf-8'});
  res.end(req.method==='HEAD'?undefined:body);
  };
 }

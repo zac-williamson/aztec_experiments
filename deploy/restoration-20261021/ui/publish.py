@@ -180,6 +180,9 @@ def export_assets(source,description,destination=None):
 
 PUBLIC={'/':'live.html','/archive/':'archive.html','/archive/snapshot.json':'archive.json','/reader.mjs':'reader.mjs','/reader-client.mjs':'reader-client.mjs','/profile-view.mjs':'profile-view.mjs','/avatar-upload.mjs':'avatar-upload.mjs','/performance.mjs':'performance.mjs','/reader-updates.mjs':'reader-updates.mjs','/wallet-action.mjs':'wallet-action.mjs','/model.mjs':'model.mjs','/navigation.mjs':'navigation.mjs','/style.css':'style.css','/wallet-panel.mjs':'wallet-panel.mjs','/wallet-cache-worker.mjs':'wallet-cache-worker.mjs'}
 
+# Explicit production assets; never export the mock review site.
+PUBLIC.update({('/'+name):name for name in ('fonts/DMSans-latin.woff2','fonts/DMSans-latin-ext.woff2','fonts/OFL.txt','favicon.svg','favicon-32.png','apple-touch-icon.png','icon-192.png','icon-512.png','og.png','site.webmanifest')})
+
 def packet_archive_hash():
  archive=P/'payload.tgz'
  if not archive.exists() and not archive.is_symlink():return None

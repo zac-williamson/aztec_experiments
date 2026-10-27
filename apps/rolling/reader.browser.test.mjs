@@ -48,11 +48,11 @@ test('public reader: navigation, unsafe content, failure recovery and narrow key
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'Valid long board labels must wrap on mobile');
  assert.equal(await page.getByRole('heading',{name:'W'.repeat(90),exact:true}).evaluate(n=>n.scrollWidth<=n.clientWidth),true,'Long board name must remain readable, not clipped');
  assert.equal(await page.locator('nav [aria-current="page"]').textContent(),'Explore subboards');
- assert.equal(await page.title(),'Explore subboards · Rolling Chat');
+ assert.equal(await page.title(),'Explore subboards · rollingchat');
  assert((await page.getByRole('searchbox',{name:'Search subboards'}).boundingBox()).height>=42);
  longLabels=false;await page.evaluate(()=>location.hash='/profile/999');await page.getByRole('heading',{name:'Profile not found',exact:true}).waitFor();
  assert.equal(await page.evaluate(()=>document.activeElement.tagName),'H1');
- assert.equal(await page.title(),'Profile · Rolling Chat');
+ assert.equal(await page.title(),'Profile · rollingchat');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  unavailable=true;await page.evaluate(()=>location.hash='/home');await page.getByRole('heading',{name:'Conversations are being checked'}).waitFor();
  unavailable=false;await page.getByRole('button',{name:'Try again',exact:true}).click();await page.locator('#post-20').waitFor();assert.equal(await page.getByRole('article').count(),2);

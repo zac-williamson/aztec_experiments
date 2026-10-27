@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {allowance,safeURL,rankPosts,searchBoards,createInlineAction,createInlineActionRegistry} from './model.mjs';
+import {allowance,safeURL,rankPosts,searchBoards,createInlineAction,createInlineActionRegistry,threadTree,threadFolds} from './model.mjs';
 import {boards,posts,ownNames,profiles} from './fixtures.mjs';
 test('992-byte boundary rejects oversized input without truncating',()=>{
  assert.equal(allowance('a'.repeat(992)).valid,true);
@@ -27,6 +27,37 @@ test('Following includes only subscribed boards or identities in time order',()=
  const a=rankPosts(posts,'following',new Set(['building']),new Set(['Jules Reed']),new Set());
  assert(a.every(p=>p.board==='building'||p.author==='Jules Reed'));
  assert(a.every((p,i)=>!i||a[i-1].time>=p.time));
+});
+test('thread tree nests replies under their parent in chain order and keeps orphans at root level',()=>{
+ const record=(id,parent)=>({id,record:{root:'1',parent}});
+ const tree=threadTree([record('1','0'),record('2','1'),record('3','2'),record('4','1'),record('5','9'),record('6','7'),record('7','6')],'1');
+ assert.deepEqual(tree.root.children.map(n=>n.id),['2','4','5','6']);assert.equal(tree.nodes.get('7').parent.id,'6');
+ assert.equal(tree.nodes.get('3').depth,2);assert.equal(tree.nodes.get('2').descendants,1);assert.equal(tree.root.descendants,6);
+ assert.equal(tree.nodes.get('5').orphan,true);assert.equal(tree.nodes.get('4').orphan,false);
+ assert.equal(tree.nodes.get('6').orphan,true,'a parent that only appears later cannot be linked');
+ const preview=threadTree([{id:'a',parent:null},{id:'b',parent:'a'}],'a',p=>p.parent);assert.equal(preview.nodes.get('b').depth,1);
+ const virtual=threadTree([record('2','1')],'1');assert.equal(virtual.root.virtual,true);assert.equal(virtual.nodes.get('2').depth,1);
+ const foreign=threadTree([record('1','0'),record('2','1'),record('3','2')],'9');
+ assert(['1','2','3'].every(id=>foreign.nodes.get(id).depth===1&&foreign.nodes.get(id).orphan),'posts of another conversation stay flat');
+});
+test('fold policy keeps direct and liked replies open, folds quiet, deep, busy and removed branches, and defers to the reader',()=>{
+ const chain=[['1','0'],['2','1'],['3','2'],['4','3'],['5','3'],['6','4'],['7','6'],['8','7'],['9','1'],...Array.from({length:7},(_,i)=>[String(10+i),'9']),['17','1'],['18','17']];
+ const posts=chain.map(([id,parent])=>({id,record:{root:'1',parent},likes:id==='4'?'2':'0',text:id==='17'?null:'t'}));
+ const tree=threadTree(posts,'1'),signals=p=>({likes:Number(p.likes),bot:p.id==='8',removed:p.text===null,pending:p.id==='99'});
+ const state={collapsed:new Set(),expanded:new Set()};
+ let {folds,groups}=threadFolds(tree,signals,state);
+ assert.equal(folds.get('2').collapsed,false,'direct reply open');assert.equal(folds.get('3').collapsed,false,'only reply stays open');
+ assert.equal(folds.get('4').collapsed,false,'liked deep reply open');assert.equal(folds.get('5').collapsed,true,'quiet deep sibling folds');
+ assert.equal(folds.get('6').collapsed,false,'bot further down keeps the branch open');
+ assert.equal(folds.get('7').hidden,'deep');assert.equal(folds.get('8').hidden,null,'only the boundary row is hidden; its subtree hides with it');
+ assert.deepEqual(groups.get('6'),{kind:'deep',hidden:['7'],count:2});
+ assert.deepEqual(groups.get('9').hidden,['15','16']);assert.equal(groups.get('9').kind,'more');
+ assert.equal(folds.get('17').collapsed,true,'removed reply folds');assert.equal(folds.get('18').collapsed,false);
+ state.expanded.add('more:9');state.expanded.add('5');state.collapsed.add('2');
+ ({folds,groups}=threadFolds(tree,signals,state));
+ assert.equal(groups.has('9'),false);assert.equal(folds.get('5').collapsed,false);assert.equal(folds.get('2').collapsed,true);
+ const pending=threadFolds(threadTree([...posts,{id:'99',record:{root:'1',parent:'8'},likes:'0',text:'mine'}],'1'),signals,{collapsed:new Set(),expanded:new Set()});
+ assert.equal(pending.folds.get('7').hidden,null,'a pending reply opens the fold on its path');assert.equal(pending.folds.get('5').collapsed,true);
 });
 test('directory includes rejected tombstones and searches case insensitively',()=>{
  assert.equal(searchBoards(boards,'  BUILDING  ')[0].id,'building');

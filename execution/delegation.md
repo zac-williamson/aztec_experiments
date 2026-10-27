@@ -348,3 +348,7 @@ Previousgoalturn wasprogress:636published,2realprooflikesand2warmopeningtracesca
 
 ## 26 October funded functional closure
 Root integrated and published the reviewed posting-readiness and relay reconciliation changes. completion_evidence_review approved readiness; withdrawal_plan approved relay and bounded test-budget updater. Functional inventory proposal integrated; no agent remains active. Performance goal remains paused. Temporary diagnostics removed. See docs/FUNCTIONAL_CHECK_20261026.md for live/native-only boundaries.
+
+
+## 27 October PR9 UI integration
+Root reviews deployment, integrates and runs focused checks. completion_evidence_review independently reviews origin/master...origin/pr-9 read-only. Performance work remains paused.
