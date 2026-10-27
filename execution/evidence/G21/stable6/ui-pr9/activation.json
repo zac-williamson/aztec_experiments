@@ -1,0 +1,14 @@
+[
+  {
+    "reviewed": true,
+    "files": 186,
+    "source": "/opt/rolling-app/releases/ui-238d76e252e2"
+  },
+  {
+    "activated": true,
+    "appRestarted": false,
+    "proxyRestarted": false,
+    "payloadCleaned": true,
+    "sdkRetentionCleaned": true
+  }
+]

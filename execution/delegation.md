@@ -352,3 +352,5 @@ Root integrated and published the reviewed posting-readiness and relay reconcili
 
 ## 27 October PR9 UI integration
 Root reviews deployment, integrates and runs focused checks. completion_evidence_review independently reviews origin/master...origin/pr-9 read-only. Performance work remains paused.
+
+PR9 completed: completion_evidence_review approved renderer/expander, publisher assets, exact Caddy asset allowance and final two CSS fixes. Root published2305be59 and verified two real included replies, pointer folding and desktop/mobile navigation. No additional build/dependency tree or agent checkout created. Performance remains paused.

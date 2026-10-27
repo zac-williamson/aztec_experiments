@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — Owner authorized PR9 UI facelift merge and live redeployment on27October2026. Active lane: UI integration, focused renderer/wallet checks and production asset publication. Independent review completion_evidence_review. Existing contracts/services retained; performance goal remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 27October PR9 merged and UI2305be59 live. Real reply/nested reply included and rendered; pointer folding, mobile drawer and home navigation verified. 60 UI/model checks and30 publisher checks pass; core services active. Evidence execution/evidence/G21/stable6/ui-pr9/. Performance remains paused.
 
 ## Ready internal work
 

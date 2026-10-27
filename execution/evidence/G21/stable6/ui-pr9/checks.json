@@ -1,0 +1,40 @@
+{
+  "pr": 9,
+  "mergeCommit": "238d76e252e2bf8c4c64cfc493e6f4d35e14db3a",
+  "focusedTests": {
+    "passed": 60,
+    "failed": 0
+  },
+  "publisherTests": {
+    "passed": 30,
+    "failed": 0
+  },
+  "domRegression": {
+    "passed": true,
+    "visibleDepthFiveChildren": [
+      0,
+      5,
+      7
+    ]
+  },
+  "independentReview": "completion_evidence_review approved UI action contracts, expander fix and static publisher assets",
+  "finalUiCommit": "2305be593a7494f5f69085129fdeaba9e078f357",
+  "finalBrowserChecks": {
+    "realReplyAndNestedReplyIncluded": true,
+    "pointerCollapseAndSummaryExpandAfterReload": true,
+    "desktop": {
+      "width": 1440,
+      "height": 1000
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "drawerOpens": true,
+      "homeNavigationClosesDrawer": true,
+      "feedLoads": true
+    },
+    "consoleWarningsAndErrors": [],
+    "viewportReset": true
+  },
+  "cssIndependentReview": "completion_evidence_review approved collapse-toggle stacking and disabling repeated live-comment entrance animations"
+}

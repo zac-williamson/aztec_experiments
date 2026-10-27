@@ -1,0 +1,26 @@
+[
+  {
+    "assets": [
+      "/fonts/DMSans-latin.woff2",
+      "/fonts/DMSans-latin-ext.woff2",
+      "/fonts/OFL.txt",
+      "/favicon.svg",
+      "/favicon-32.png",
+      "/apple-touch-icon.png",
+      "/icon-192.png",
+      "/icon-512.png",
+      "/og.png",
+      "/site.webmanifest"
+    ],
+    "caddySha256": "e94395742c852f3fe07b5486d480ec4f80cccbb071d824d0142852100aad4785",
+    "proxyPid": 427800,
+    "protectedPids": {
+      "rolling-application.service": "311339",
+      "rolling-node.service": "1522",
+      "rolling-query.service": "1524",
+      "rolling-moderator.service": "191841",
+      "board-prover.service": "270182",
+      "board-prover-proxy.service": "739"
+    }
+  }
+]

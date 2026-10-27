@@ -1,0 +1,23 @@
+[
+  {
+    "path": "/api/status",
+    "status": 200,
+    "state": "ready"
+  },
+  {
+    "path": "/prover/healthz",
+    "status": 200,
+    "state": null
+  },
+  {
+    "path": "/api/funding/usdc/terms",
+    "status": 200,
+    "state": null
+  },
+  {
+    "path": "/wallet/runtime.json",
+    "status": 200,
+    "state": null,
+    "workerSha256": "fc3bde044fb51c8fad80fe19080012f46ac938674c291fee15da53012a2a18de"
+  }
+]

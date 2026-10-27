@@ -1,0 +1,100 @@
+[
+  {
+    "path": "/style.css",
+    "status": 200,
+    "contentType": "text/css; charset=utf-8",
+    "bytes": 46005,
+    "sha256": "65850472a8e4e49f9d6dbc1d33111b10cf1f9f4c34b659087dcaa7f22940f4a8"
+  },
+  {
+    "path": "/reader.mjs",
+    "status": 200,
+    "contentType": "text/javascript; charset=utf-8",
+    "bytes": 41889,
+    "sha256": "ae6f82c5cfec58aa3fafe41a4d5e3859b8c8b72309fbf8c3ec5a5d481288cd9a"
+  },
+  {
+    "path": "/model.mjs",
+    "status": 200,
+    "contentType": "text/javascript; charset=utf-8",
+    "bytes": 22757,
+    "sha256": "e06916673cdc938022da5d33de149e753c2c3cfe8610b8ed170c4731b26c8d8e"
+  },
+  {
+    "path": "/wallet-panel.mjs",
+    "status": 200,
+    "contentType": "text/javascript; charset=utf-8",
+    "bytes": 168607,
+    "sha256": "2682609ac003379d140a08362978b398730242de68a0632ff250f935b3dd15fe"
+  },
+  {
+    "path": "/fonts/DMSans-latin.woff2",
+    "status": 200,
+    "contentType": "font/woff2",
+    "bytes": 62556,
+    "sha256": "aa530716b0d351866af7dbfa3eee4120fb36f2d071baff8c234185141865c7ff"
+  },
+  {
+    "path": "/fonts/DMSans-latin-ext.woff2",
+    "status": 200,
+    "contentType": "font/woff2",
+    "bytes": 31312,
+    "sha256": "0d0609aee778d21b40bda1d27b7e6b5b3cb1a3e96b90b8831c681aca097c2219"
+  },
+  {
+    "path": "/fonts/OFL.txt",
+    "status": 200,
+    "contentType": "text/plain; charset=utf-8",
+    "bytes": 4482,
+    "sha256": "9af36190332437f5ecd09974de43c1f7c77a310a996cdd8ceb25628b458840e1"
+  },
+  {
+    "path": "/favicon.svg",
+    "status": 200,
+    "contentType": "image/svg+xml",
+    "bytes": 585,
+    "sha256": "32588291149a36d17931e3109d59794fe1cc93a388ba77e7e619f111cb1870da"
+  },
+  {
+    "path": "/favicon-32.png",
+    "status": 200,
+    "contentType": "image/png",
+    "bytes": 1511,
+    "sha256": "0116f3cdccec8cd7658e7c408230a1e4839a33dc06ec4875289d38ac32337762"
+  },
+  {
+    "path": "/apple-touch-icon.png",
+    "status": 200,
+    "contentType": "image/png",
+    "bytes": 12120,
+    "sha256": "146ba86cd6fc64b8235e1729f9be25cde9c71123f67a6aae847ba58d1589aaf9"
+  },
+  {
+    "path": "/icon-192.png",
+    "status": 200,
+    "contentType": "image/png",
+    "bytes": 13131,
+    "sha256": "8633c627a3040fce2886d60ee1f3b89155a5d59fe57888075e77e769909a14b5"
+  },
+  {
+    "path": "/icon-512.png",
+    "status": 200,
+    "contentType": "image/png",
+    "bytes": 99101,
+    "sha256": "5f22631da2e552ac0f58f40910091065a5625fae234d3cb5b93b57540e27cd9f"
+  },
+  {
+    "path": "/og.png",
+    "status": 200,
+    "contentType": "image/png",
+    "bytes": 220161,
+    "sha256": "8407d5da4f9ab1d9e27b51bedb742e0a965015bb0ebeab52845fb3fa5ffd3159"
+  },
+  {
+    "path": "/site.webmanifest",
+    "status": 200,
+    "contentType": null,
+    "bytes": 469,
+    "sha256": "50f422f2cc79fdebb11a2cc5f0e43a12b6b5abe15ef22add073c00ff82683258"
+  }
+]

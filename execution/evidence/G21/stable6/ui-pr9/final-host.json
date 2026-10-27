@@ -1,0 +1,61 @@
+{
+  "live": "2305be593a7494f5f69085129fdeaba9e078f357",
+  "nativeInputCount": 1950,
+  "plan": {
+    "appPid": 311339,
+    "appStartTime": "15122404",
+    "appUnit": "/etc/systemd/system/rolling-application.service",
+    "caddySha256": "e94395742c852f3fe07b5486d480ec4f80cccbb071d824d0142852100aad4785",
+    "configHashes": {
+      "/etc/board-prover/config.json": "3e5609991b20a22c9ed488197a302d419ffafaa5ae6f2c382c2089e634a9177a",
+      "/etc/rolling-app/public.json": "60ab826cd2cfbc18be22a730b154b46b5b79c1c380711b0d2280298bfb179b41",
+      "/etc/rolling-app/relay.json": "de452552fa52be82a21108691f50da1831403f7db67ca3390c5f19ab9ce4d135",
+      "/etc/rolling-app/wallet.json": "3e4be32bc5cb9d992d452d290fbc2bf7b782065bf9efe3b0bcd8115d7647860b"
+    },
+    "configuredSource": "/opt/rolling-app/releases/ui-2305be593a74",
+    "expectedCurrentUi": "/opt/rolling-ui/releases/2305be593a7494f5f69085129fdeaba9e078f357",
+    "node": "/opt/board-prover/releases/rolling-8fed2c764e5b62fc/node/bin/node",
+    "nodeSha256": "7fde7b8afa198da66257f42ee2001d874c7355631e6d1579a5fb5ef1f246df4c",
+    "notifySha256": "aa8f21c2b5ff13c58983a4b1cbf6482cfb303db74566198102f8b051d46a53ae",
+    "protectedPids": {
+      "board-prover-proxy.service": 739,
+      "board-prover.service": 270182,
+      "rolling-application-proxy.service": 427800,
+      "rolling-application.service": 311339,
+      "rolling-moderator.service": 191841,
+      "rolling-node.service": 1522,
+      "rolling-query.service": 1524
+    },
+    "runningSource": "/opt/rolling-app/releases/ui-f9d42ce4616e",
+    "unitFiles": {
+      "/etc/systemd/system/board-prover-proxy.service": "9e69b17c9ad3a87d6e0d4dd787f9b538b1d2de1b0f25f8fb5b19ec93346aafe9",
+      "/etc/systemd/system/board-prover-proxy.service.d/availability.conf": "bcecbd3c3c00bf188863be060d42893ac51595e14c517a32867e14d69e6b9078",
+      "/etc/systemd/system/board-prover.service": "340d19baa4b764e5198fafb261f74001ffefa4c2d9dde111ef0ba07ca7e61cef",
+      "/etc/systemd/system/board-prover.service.d/availability.conf": "bcecbd3c3c00bf188863be060d42893ac51595e14c517a32867e14d69e6b9078",
+      "/etc/systemd/system/rolling-application-proxy.service": "f42dfe7f66c20c71cd7e68566819227d365bf084621fb3eaa6871bf249760ddc",
+      "/etc/systemd/system/rolling-application-proxy.service.d/90-ui-ready.conf": "aa8f21c2b5ff13c58983a4b1cbf6482cfb303db74566198102f8b051d46a53ae",
+      "/etc/systemd/system/rolling-application-proxy.service.d/availability.conf": "14277afacaec5898a2a7b32938a0e125445a61b4f1ae4e5770aa5784df8e1bcb",
+      "/etc/systemd/system/rolling-application.service": "ce5e2b83c7d7822d16cd1dc1bfd7bf1c54205fbf04c1eb89d9588e015fb888ad",
+      "/etc/systemd/system/rolling-application.service.d/availability.conf": "0247d3d1a274a668a00d5d0b4a53eff9e280cddc9cd280a2ad8a051b02c94d7f",
+      "/etc/systemd/system/rolling-moderator.service": "2a3bad39dc575a81028cb754fd2a0f0ca394af658a7306525d1cb940df117770",
+      "/etc/systemd/system/rolling-moderator.service.d/availability.conf": "b06928040417c22fe0dd56302f95d98fc2de2ae4bee6ab68cc7182eec2676fc3",
+      "/etc/systemd/system/rolling-node.service": "1c07b7e99f249f3f3c77f07ed25cdff050529da440bec6c0c36ad9014a98f74a",
+      "/etc/systemd/system/rolling-node.service.d/availability.conf": "01715c8bfc929395622247a61930cd49fe24a7c53012b1f8a5ed556e921ac509",
+      "/etc/systemd/system/rolling-query.service": "ec70d2b5332eea12f67922da856325a4bf29c73664afdb2e892f0d295c00eb4b",
+      "/etc/systemd/system/rolling-query.service.d/availability.conf": "0247d3d1a274a668a00d5d0b4a53eff9e280cddc9cd280a2ad8a051b02c94d7f"
+    }
+  },
+  "readOnly": true,
+  "sdkManifestSha256": "fcce716c145be5f3e64d0cbfd8bf6672cd57b52a653c51a9830032214f9a1a9e",
+  "staticRouting": [
+    "@api path /api /api/*",
+    "path /wallet/* /crs/*",
+    "not path /wallet/runtime.json",
+    "file_server {",
+    "@public path / /archive/ /archive/snapshot.json /reader.mjs /reader-client.mjs /profile-view.mjs /avatar-upload.mjs /model.mjs /navigation.mjs /style.css /wallet-panel.mjs /wallet-cache-worker.mjs /wallet/* /crs/* /performance.mjs /reader-updates.mjs /wallet-action.mjs /fonts/DMSans-latin.woff2 /fonts/DMSans-latin-ext.woff2 /fonts/OFL.txt /favicon.svg /favicon-32.png /apple-touch-icon.png /icon-192.png /icon-512.png /og.png /site.webmanifest",
+    "file_server {"
+  ],
+  "uiFileCount": 3,
+  "uiInventorySha256": "c59eb5e6f29a1bc3ab5921a0661e094726d48c3216a2367cf602686589c071e3",
+  "walletManifestSha256": "671cb96d44872d8519f1bb575f53ef0006eb5f16a99389013187b6965efa0665"
+}

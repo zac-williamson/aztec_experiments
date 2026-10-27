@@ -1,0 +1,47 @@
+{
+  "commit": "2305be593a7494f5f69085129fdeaba9e078f357",
+  "styleSha256": "dc8e60f47a5dc9de631b760f87f642d37a3604be6668ec4eab926ce1b7200db0",
+  "status": {
+    "schemaVersion": 1,
+    "state": "ready",
+    "scope": {
+      "chainId": "11155111",
+      "rollupVersion": "679261766",
+      "rollupAddress": "0x1f435a7f2da358caf887a470faeee7d5d5f4efba",
+      "boardAddress": "0x20283bc7ab7d5bd5dd325a5aab82d8f9b3c62b79328c2e8417e119b66e789028",
+      "classId": "0x07a75800e5daa13c5a7727ae529af69fb9b242ca15acb187615a2b556654f217",
+      "bok": {
+        "address": "0x0319568b28b770c8ae772be9ba0f40eaaf21fdc9b5910d6284cce317ab000428",
+        "classId": "0x0736b5e15cdb39de37ec3be6b9ff83609f848c10aff802a1a19cb636f80dc8c8",
+        "operatorAddress": "0x119fa1d976f386eb0b3577a9661c923ce02ca500fbc1e68096718aa7f24948e5",
+        "deployer": "0x0233a0ebe93af15f273c200ce05a893ae2c7e87c0b24196eec705c1d09f6ceaa",
+        "salt": "0x2125b826bf9d19484d646d5748ee81cb05a8add1d3e67d35156b685f14c8628f",
+        "deployment": {
+          "txHash": "0x2d962fa37ca8bf403e5a7e71b8a8c228ae186db3d83b18455a27a45e263cf566",
+          "blockNumber": 3904,
+          "blockHash": "0x178be98635517a968b91082dedf1340677e49379b1e7b7b3bff10988373c7dee"
+        }
+      }
+    },
+    "complete": true,
+    "authenticationEpoch": "9326cea1-3e0d-441b-a7b8-6ae181df44d8",
+    "contentRevision": "9326cea1-3e0d-441b-a7b8-6ae181df44d8:933",
+    "revision": "9326cea1-3e0d-441b-a7b8-6ae181df44d8:1:18458",
+    "confirmationTier": "proposed",
+    "confirmationCheckpoint": {
+      "number": "7941",
+      "hash": "0x2fce5e80bb543d75655236021acb7fc024a78d1e68bf95392e2d741ae4d267d8"
+    },
+    "checkpoint": {
+      "number": 7942,
+      "hash": "0x1d71fd66bfb6fd25b53de6c83ed0920cb70424fe0456affa1bdef907069172ae"
+    },
+    "cursor": {
+      "blockNumber": "7943",
+      "nextTxIndex": "0",
+      "block": null
+    },
+    "cacheComparison": "canonical-prefix"
+  },
+  "activation": "Success\n{\"reviewed\": true, \"files\": 186, \"source\": \"/opt/rolling-app/releases/ui-2305be593a74\"}\n{\"activated\": true, \"appRestarted\": false, \"proxyRestarted\": false, \"payloadCleaned\": true, \"sdkRetentionCleaned\": true}\n\n\n"
+}

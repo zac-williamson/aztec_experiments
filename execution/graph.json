@@ -9402,13 +9402,13 @@
       "evidence": "evidence/G21.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Owner authorized PR9 UI facelift merge and live redeployment on27October2026. Active lane: UI integration, focused renderer/wallet checks and production asset publication. Independent review completion_evidence_review. Existing contracts/services retained; performance goal remains paused.",
+      "checkpoint": "27October PR9 merged and UI2305be59 live. Real reply/nested reply included and rendered; pointer folding, mobile drawer and home navigation verified. 60 UI/model checks and30 publisher checks pass; core services active. Evidence execution/evidence/G21/stable6/ui-pr9/. Performance remains paused.",
       "execution_lane": "application performance",
       "owner": "root",
       "branch": "codex/rolling-chat-draft3",
       "verification_method": "Native claim/cancel exclusion, Solidity custody/refund proofs, client and browser checks, coherent artifact verification, independent review, then fresh testnet signup and publication.",
       "priority": 0,
-      "next_action": "Publish reviewed Like/Unlike native snapshot ancestry change and measure actual inclusion/visible result. Keep isolated registration serialization draft unpublished until mutation/parity checks and independent approval. Test wallet callbacks bind ID+method; no app gas-multiplier change. Need adequate authorized testETH for fresh signup; do not substitute funded reopening."
+      "next_action": "Await owner direction. Do not resume the paused performance goal automatically."
     }
   ],
   "specification": {
