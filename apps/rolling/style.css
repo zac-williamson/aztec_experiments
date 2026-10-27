@@ -84,7 +84,7 @@ details[open]>summary::before{transform:rotate(45deg)}
 .workspace{flex:1;min-width:0}
 .layout{max-width:1080px;margin:0 auto;padding:24px 24px 72px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start}
 main{min-width:0;animation:rise var(--t) var(--ease) both}
-.feed.live>.post{animation:none}
+.feed.live>.post,.feed.live .comment{animation:none}
 
 /* Page head and tabs */
 .page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
@@ -202,7 +202,7 @@ a.author:hover{text-decoration:underline}
 .thread-line:hover::before,.thread-line:focus-visible::before{background:var(--brand);transform:scaleX(1.6)}
 .thread-line:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
 .comment.bot>.thread-line::before{background:var(--bok)}
-.collapse-toggle{position:absolute;top:10px;right:6px;width:28px;height:28px;padding:0;border:0;border-radius:999px;background:transparent;color:var(--faint);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background var(--t-fast),color var(--t-fast)}
+.collapse-toggle{position:absolute;z-index:1;top:10px;right:6px;width:28px;height:28px;padding:0;border:0;border-radius:999px;background:transparent;color:var(--faint);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background var(--t-fast),color var(--t-fast)}
 .collapse-toggle:hover,.collapse-toggle:focus-visible{background:var(--surface-2);color:var(--ink)}
 .collapse-toggle .icon{width:16px;height:16px}
 .comment-collapsed{display:none;flex-wrap:wrap;align-items:center;gap:4px 8px;text-align:left;min-height:36px;margin:2px 0;padding:0 12px 0 8px;border:0;border-radius:999px;background:transparent;font:inherit;font-size:13px;color:var(--muted);cursor:pointer;transition:background var(--t-fast),color var(--t-fast)}
