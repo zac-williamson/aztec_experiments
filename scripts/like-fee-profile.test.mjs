@@ -13,7 +13,7 @@ import {poseidon2HashWithSeparator} from '@aztec-labs/foundation/crypto/poseidon
 import {LIKE_GAS_PROFILE as profile} from '../shared/like-fees.mjs';
 import {BarretenbergSync} from '@aztec-foundation/bb.js';
 
-const classId='0x13d9206337142962dd9b067c9eaa758bf8e5ea9876857a9073bc6396a9836f29';
+const classId='0x03c9bf685f78a9b8731b010884f7728f552cd3c59fe169c2e3e7ee302cc17088';
 test('native exact set_like public branches have a finite qualified bound',async t=>{
  const raw=JSON.parse(await fs.readFile(process.env.ROLLING_TEST_ARTIFACT??new URL('../billboard/target/rolling_contract-RollingBoard.json',import.meta.url)));
  const artifact=loadContractArtifact(raw);assert.equal((await getContractClassFromArtifact(artifact)).id.toString(),classId);

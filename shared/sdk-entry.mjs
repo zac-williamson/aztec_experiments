@@ -44,7 +44,7 @@ export { Tx, TxContext } from '@aztec-labs/stdlib/tx';
 export { Gas, GasSettings } from '@aztec-labs/stdlib/gas';
 export { MerkleTreeId } from '@aztec-labs/stdlib/trees';
 export { computePartialAddress, computeContractAddressFromInstance, computeArtifactHash, SerializableContractInstance } from '@aztec-labs/stdlib/contract';
-export { deriveKeys, deriveKeysFromMasterSecretKeys, deriveMasterMessageSigningSecretKey,
+export { deriveKeys, deriveKeysFromMasterSecretKeys, deriveMasterNullifierHidingSecretKey, computeAppNullifierHidingKey, deriveMasterMessageSigningSecretKey,
   deriveMasterMessageSigningSecretKey as deriveSigningKey,
   deriveMasterMessageSigningSecretKey as deriveMasterMessageSigningSecretKeyAlias } from '@aztec-labs/stdlib/keys';
 export { computeL2ToL1MessageHash, computeSecretHash, deriveStorageSlotInMap, siloNullifier } from '@aztec-labs/stdlib/hash';

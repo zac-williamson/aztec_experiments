@@ -9402,13 +9402,13 @@
       "evidence": "evidence/G21.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "27October PR9 merged and UI2305be59 live. Real reply/nested reply included and rendered; pointer folding, mobile drawer and home navigation verified. 60 UI/model checks and30 publisher checks pass; core services active. Evidence execution/evidence/G21/stable6/ui-pr9/. Performance remains paused.",
+      "checkpoint": "Queued composer/identity/funding release integrated locally; atomic thread contract and native boundary checks passed, final combined contract build running. One-router ETH/USDC credit and name+avatar implemented. Likes count is idempotent one per account/post; first proposed hydration patch rejected by independent review for RPC linkage and stale/retry cache issues. Agents implementing public post-tag pages, wallet-local matching and nonblocking UI hydration. No new release published; performance goal remains paused.",
       "execution_lane": "application performance",
       "owner": "root",
       "branch": "codex/rolling-chat-draft3",
       "verification_method": "Native claim/cancel exclusion, Solidity custody/refund proofs, client and browser checks, coherent artifact verification, independent review, then fresh testnet signup and publication.",
       "priority": 0,
-      "next_action": "Await owner direction. Do not resume the paused performance goal automatically."
+      "next_action": "Complete native compile/inclusion and payment integration, integrate agent patches, publish coherent release and verify real affected flows."
     }
   ],
   "specification": {

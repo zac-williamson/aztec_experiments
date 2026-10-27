@@ -53,6 +53,12 @@ contract RollingFundingRouterTest {
  function submit(RollingFundingRouter.Plan memory p) private {bytes memory signature=sign(p);vm.prank(alice);router.fund{value:1 ether+10000}(p,signature);}
  function reject(RollingFundingRouter.Plan memory p) private {bytes memory signature=sign(p);vm.expectRevert();vm.prank(alice);router.fund{value:1 ether+10000}(p,signature);}
  function empty() private view {require(portal.getDeposit(alice)==0 && portal.depositNonces(alice)==0,"Collateral not reverted");require(fee.amount()==0 && usdc.balanceOf(address(bok))==0,"Token legs not reverted");require(address(router).balance==0 && weth.balanceOf(address(router))==0,"Principal retained");require(feeToken.balanceOf(address(dex))==10000 && usdc.balanceOf(address(dex))==10000,"Swap not reverted");}
+ function testFeeOnlyEthUsesNoCollateralConsentAndRefundsUnusedEth() public {
+ RollingFundingRouter.Plan memory p=plan(alice);p.collateral=0;p.collateralSecretHash=bytes32(0);p.bok=RollingFundingRouter.Swap(0,0,0);p.bokCommitment=bytes32(0);p.bokSecretHash=bytes32(0);
+ vm.prank(alice);router.fund{value:5000}(p,hex"");require(fee.amount()==100 && alice.balance==10 ether-1000,"Fee-only exact cost");
+ require(portal.getDeposit(alice)==0 && portal.depositNonces(alice)==0 && usdc.balanceOf(address(bok))==0,"Unrequested deposit");
+ require(address(router).balance==0 && weth.balanceOf(address(router))==0 && feeToken.allowance(address(router),address(fee))==0,"Retained payment");
+ }
  function testZeroBokFundsRequiredLegsWhilePluginInactive() public {
  PluginPortal inactive=new PluginPortal(address(rollup),bytes32(uint256(4)),1,address(usdc));
  router=new RollingFundingRouter(address(portal),address(fee),address(inactive),address(weth),address(dex),bytes32(uint256(3)));
@@ -126,6 +132,23 @@ contract RollingUsdcFundingRouterTest {
  require(usdc.balanceOf(alice)==100 ether && usdc.balanceOf(relayer)==0 && !usdc.authorizationState(alice,router.usdcAuthorizationNonce(p)),"Auth/payment not atomic");
  require(portal.getDeposit(alice)==0 && portal.depositNonces(alice)==0 && fee.amount()==0 && usdc.balanceOf(address(bok))==0,"Deposits not atomic");
  require(address(router).balance==0 && weth.balanceOf(address(router))==0 && feeToken.balanceOf(address(router))==0 && usdc.balanceOf(address(router))==0,"Retained principal"); }
+ function feeOnlyPlan() private view returns(RollingFundingRouter.UsdcPlan memory p) {
+ p=plan();p.collateral=RollingFundingRouter.UsdcSwap(0,0,0);p.collateralSecretHash=bytes32(0);p.bokAmount=0;p.bokCommitment=bytes32(0);p.bokSecretHash=bytes32(0);
+ }
+ function testFeeOnlyUsdcUsesOneAuthorizationNoEthAndNoCollateralConsent() public {
+ RollingFundingRouter.UsdcPlan memory p=feeOnlyPlan();(,bytes memory auth)=signatures(p);vm.prank(relayer);router.fundUsdc(p,hex"",auth);
+ require(alice.balance==0 && usdc.balanceOf(alice)==100 ether-1050 && usdc.balanceOf(relayer)==50 && fee.amount()==100,"Fee-only exact cost");
+ require(portal.getDeposit(alice)==0 && portal.depositNonces(alice)==0 && usdc.balanceOf(address(bok))==0,"Unrequested deposit");
+ require(usdc.authorizationState(alice,router.usdcAuthorizationNonce(p)) && usdc.allowance(alice,address(router))==0,"Authorization or approval");
+ require(usdc.balanceOf(address(router))==0 && address(router).balance==0 && feeToken.balanceOf(address(router))==0 && usdc.allowance(address(router),address(dex))==0,"Retained payment");
+ vm.expectRevert();vm.prank(relayer);router.fundUsdc(p,hex"",auth);
+ }
+ function testFeeOnlyFailureReturnsUsdcAndDoesNotReimburseRelay() public {
+ RollingFundingRouter.UsdcPlan memory p=feeOnlyPlan();fee.setFail(true);(,bytes memory auth)=signatures(p);vm.expectRevert();vm.prank(relayer);router.fundUsdc(p,hex"",auth);unchanged(p);
+ }
+ function testFeeOnlyRejectsHiddenCollateralAndConsent() public {
+ for(uint256 i=0;i<4;i++){RollingFundingRouter.UsdcPlan memory p=feeOnlyPlan();if(i==0)p.collateral.maxUsdc=1;if(i==1)p.collateral.poolFee=500;if(i==2)p.collateralSecretHash=bytes32(uint256(1));(,bytes memory auth)=signatures(p);vm.expectRevert();vm.prank(relayer);router.fundUsdc(p,i==3?bytes(hex"01"):bytes(hex""),auth);unchanged(p);}
+ }
  function testZeroBokUsdcFundsCoreWithInactivePluginAndBoundReimbursement() public {
  PluginPortal inactive=new PluginPortal(address(portal.ROLLUP()),bytes32(uint256(4)),1,address(usdc));
  router=new RollingFundingRouter(address(portal),address(fee),address(inactive),address(weth),address(dex),bytes32(uint256(3)));

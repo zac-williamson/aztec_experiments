@@ -23,7 +23,7 @@ interface FundingSwapRouter {
     struct ExactOutputSingleParams { address tokenIn; address tokenOut; uint24 fee; address recipient; uint256 amountOut; uint256 amountInMaximum; uint160 sqrtPriceLimitX96; }
     function exactOutputSingle(ExactOutputSingleParams calldata) external payable returns (uint256);
 }
-/// @notice One ETH-funded or user-authorized USDC transaction, two required L1 deposits and optional Bok credit. Cross-chain claims remain asynchronous.
+/// @notice One router for signup, posting credit, and exact-output Bok credit purchases. Cross-chain claims remain asynchronous.
 /// @dev Fresh fixed-scope deployments only. No custody/sweep/admin, arbitrary calls, token mint or gas subsidy.
 contract RollingFundingRouter is ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -36,6 +36,7 @@ contract RollingFundingRouter is ReentrancyGuard {
     IERC20 public immutable bokToken;
     bytes32 public immutable privateFpc;
     uint256 public immutable chainId;
+    struct Purchase { bytes32 commitment; uint128 amount; bytes32 secretHash; uint24 poolFee; uint256 deadline; }
     struct Swap { uint256 amount; uint256 maxEth; uint24 poolFee; }
     struct Plan {
         address beneficiary; uint256 collateral; bytes32 collateralSecretHash;
@@ -52,6 +53,8 @@ contract RollingFundingRouter is ReentrancyGuard {
         uint256 bokAmount; bytes32 bokCommitment; bytes32 bokSecretHash;
         uint256 nonce; uint256 validAfter; uint256 deadline; uint256 relayFeeUsdc; bytes32 authorizationSalt;
     }
+    event CreditPurchased(address indexed payer, bytes32 indexed commitment, uint128 amount, bytes32 secretHash,
+        bytes32 key, uint256 index, uint256 spentWei, uint256 refundWei);
     event UsdcFunded(address indexed beneficiary, bytes32 indexed planHash, address indexed relayer,
         uint256 collateral, uint256 feeAmount, uint256 bokAmount, uint256 collateralUsdc, uint256 feeUsdc, uint256 relayFeeUsdc, uint256 refund);
     event Funded(address indexed beneficiary, bytes32 indexed planHash, uint256 collateral, uint256 feeAmount, uint256 bokAmount,
@@ -79,25 +82,32 @@ contract RollingFundingRouter is ReentrancyGuard {
         weth.deposit{value:p.fee.maxEth+p.bok.maxEth}();
         uint256 feeEth=_buy(feeToken,p.fee);
         uint256 bokEth=p.bok.amount==0 ? 0 : _buy(bokToken,p.bok);
-        collateralPortal.depositFor{value:p.collateral}(p.beneficiary,p.collateralSecretHash,p.nonce,p.deadline,consent);
+        if(p.collateral>0)collateralPortal.depositFor{value:p.collateral}(p.beneficiary,p.collateralSecretHash,p.nonce,p.deadline,consent);
+        else require(p.collateralSecretHash==bytes32(0) && p.nonce==0 && consent.length==0 && p.bok.amount==0,"Invalid fee-only funding");
         uint256 beforeFee=feeToken.balanceOf(address(this));
         uint256 portalFeeBefore=feeToken.balanceOf(address(feePortal));
         feeToken.forceApprove(address(feePortal),p.fee.amount);
         feePortal.depositToAztecPublic(privateFpc,p.fee.amount,p.feeSecretHash);
         feeToken.forceApprove(address(feePortal),0);
         require(feeToken.balanceOf(address(this))==beforeFee-p.fee.amount && feeToken.balanceOf(address(feePortal))==portalFeeBefore+p.fee.amount,"Fee debit mismatch");
-        if(p.bok.amount>0) {
-            uint256 beforeBok=bokToken.balanceOf(address(this));
-            bokToken.forceApprove(address(bokPortal),p.bok.amount);
-            bokPortal.deposit(p.bokCommitment,uint128(p.bok.amount),p.bokSecretHash);
-            bokToken.forceApprove(address(bokPortal),0);
-            require(bokToken.balanceOf(address(this))==beforeBok-p.bok.amount,"Bok debit mismatch");
-        }
+        if(p.bok.amount>0)_depositBok(p.bokCommitment,uint128(p.bok.amount),p.bokSecretHash);
         uint256 refund=p.fee.maxEth+p.bok.maxEth-feeEth-bokEth;
-        require(weth.balanceOf(address(this))==wrappedBefore+refund,"Wrapped balance mismatch");
-        if(refund>0) { weth.withdraw(refund); (bool ok,)=msg.sender.call{value:refund}(""); require(ok,"Refund rejected"); }
-        require(address(this).balance==baseline,"Retained ETH");
+        _refundEth(refund,baseline,wrappedBefore);
         emit Funded(msg.sender,keccak256(abi.encode(p)),p.collateral,p.fee.amount,p.bok.amount,feeEth,bokEth,refund);
+    }
+    /// @notice One ETH payment swaps only the requested Bok amount and bridges it.
+    /// Signup and top-ups use the same immutable portal/token/router scope.
+    function buyCredit(Purchase calldata p) external payable nonReentrant returns(bytes32 key,uint256 index) {
+        require(block.chainid==chainId && block.timestamp<=p.deadline,"Invalid purchase chain/deadline");
+        require(msg.value>0 && p.amount>0,"Invalid purchase value");
+        uint256 baseline=address(this).balance-msg.value;
+        uint256 wrappedBefore=weth.balanceOf(address(this));
+        weth.deposit{value:msg.value}();
+        uint256 spent=_swap(IERC20(address(weth)),bokToken,p.amount,msg.value,p.poolFee);
+        (key,index)=_depositBok(p.commitment,p.amount,p.secretHash);
+        uint256 refund=msg.value-spent;
+        _refundEth(refund,baseline,wrappedBefore);
+        emit CreditPurchased(msg.sender,p.commitment,p.amount,p.secretHash,key,index,spent,refund);
     }
     /// @notice The EIP3009 nonce commits every allocation, bound, beneficiary, executor,
     /// reimbursement and fresh salt to this chain/router. Token debit alone is insufficient.
@@ -111,26 +121,26 @@ contract RollingFundingRouter is ReentrancyGuard {
             && p.beneficiary!=address(this) && p.relayer!=address(this),"Invalid USDC owner/executor");
         require(block.timestamp>p.validAfter && block.timestamp<p.deadline && p.authorizationSalt!=bytes32(0),"Invalid USDC validity");
         require(p.fee.amount>0 && p.fee.amount<=type(uint128).max && p.bokAmount<=type(uint128).max
-            && p.collateral.amount>0 && p.relayFeeUsdc>0,"Invalid USDC allocation");
+            && p.relayFeeUsdc>0,"Invalid USDC allocation");
         if(p.bokAmount==0)require(p.bokCommitment==bytes32(0) && p.bokSecretHash==bytes32(0),"Nonempty disabled Bok leg");
         UsdcAccounting memory state;
         state.usdcBefore=bokToken.balanceOf(address(this)); state.ethBefore=address(this).balance;
         state.wethBefore=weth.balanceOf(address(this)); state.feeBefore=feeToken.balanceOf(address(this));
         _receiveUsdc(p,authorization,state.usdcBefore);
-        state.collateralSpent=_swap(bokToken,IERC20(address(weth)),p.collateral.amount,p.collateral.maxUsdc,p.collateral.poolFee);
+        if(p.collateral.amount>0)state.collateralSpent=_swap(bokToken,IERC20(address(weth)),p.collateral.amount,p.collateral.maxUsdc,p.collateral.poolFee);
+        else require(p.collateral.maxUsdc==0 && p.collateral.poolFee==0 && p.collateralSecretHash==bytes32(0)
+            && p.nonce==0 && collateralConsent.length==0 && p.bokAmount==0,"Invalid fee-only USDC funding");
         state.feeSpent=_swap(bokToken,feeToken,p.fee.amount,p.fee.maxUsdc,p.fee.poolFee);
-        weth.withdraw(p.collateral.amount);
-        collateralPortal.depositFor{value:p.collateral.amount}(p.beneficiary,p.collateralSecretHash,p.nonce,p.deadline,collateralConsent);
+        if(p.collateral.amount>0){
+            weth.withdraw(p.collateral.amount);
+            collateralPortal.depositFor{value:p.collateral.amount}(p.beneficiary,p.collateralSecretHash,p.nonce,p.deadline,collateralConsent);
+        }
         uint256 portalFeeBefore=feeToken.balanceOf(address(feePortal));
         feeToken.forceApprove(address(feePortal),p.fee.amount);
         feePortal.depositToAztecPublic(privateFpc,p.fee.amount,p.feeSecretHash);
         feeToken.forceApprove(address(feePortal),0);
         require(feeToken.balanceOf(address(this))==state.feeBefore && feeToken.balanceOf(address(feePortal))==portalFeeBefore+p.fee.amount,"Fee debit mismatch");
-        if(p.bokAmount>0) {
-            bokToken.forceApprove(address(bokPortal),p.bokAmount);
-            bokPortal.deposit(p.bokCommitment,uint128(p.bokAmount),p.bokSecretHash);
-            bokToken.forceApprove(address(bokPortal),0);
-        }
+        if(p.bokAmount>0)_depositBok(p.bokCommitment,uint128(p.bokAmount),p.bokSecretHash);
         state.refund=p.collateral.maxUsdc+p.fee.maxUsdc-state.collateralSpent-state.feeSpent;
         _payUsdc(p.relayer,p.relayFeeUsdc);
         if(state.refund>0)_payUsdc(p.beneficiary,state.refund);
@@ -148,6 +158,18 @@ contract RollingFundingRouter is ReentrancyGuard {
     function _payUsdc(address recipient,uint256 amount) private {
         uint256 beforeBalance=bokToken.balanceOf(recipient);bokToken.safeTransfer(recipient,amount);
         require(bokToken.balanceOf(recipient)==beforeBalance+amount,"USDC payment mismatch");
+    }
+    function _depositBok(bytes32 commitment,uint128 amount,bytes32 secretHash) private returns(bytes32 key,uint256 index) {
+        uint256 beforeBok=bokToken.balanceOf(address(this));
+        bokToken.forceApprove(address(bokPortal),amount);
+        (key,index)=bokPortal.deposit(commitment,amount,secretHash);
+        bokToken.forceApprove(address(bokPortal),0);
+        require(bokToken.balanceOf(address(this))==beforeBok-amount,"Bok debit mismatch");
+    }
+    function _refundEth(uint256 refund,uint256 baseline,uint256 wrappedBefore) private {
+        require(weth.balanceOf(address(this))==wrappedBefore+refund,"Wrapped balance mismatch");
+        if(refund>0) { weth.withdraw(refund); (bool ok,)=msg.sender.call{value:refund}(""); require(ok,"Refund rejected"); }
+        require(address(this).balance==baseline && weth.balanceOf(address(this))==wrappedBefore,"Retained ETH");
     }
     function _buy(IERC20 token, Swap calldata leg) private returns(uint256) {
         return _swap(IERC20(address(weth)),token,leg.amount,leg.maxEth,leg.poolFee);

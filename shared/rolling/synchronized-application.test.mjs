@@ -354,3 +354,21 @@ test('posting readiness cannot request a fresh pass without invalidating its hel
  const app=createSynchronizedRollingApplication({application:raw,operationScope:()=>scope,contextGuard:()=>{},synchronize:async()=>{},prepareContractState:async()=>{},beforePostingPrepare:async()=>false});
  await assert.rejects(app.prepare({type:'post',deposit:'9'},{immediate:true}),{code:'ROLLING_CONTEXT_CHANGED'});assert.equal(calls,0);
 });
+
+test('atomic thread uses generic discovery and posting readiness before one preparation',async()=>{
+ const seen=[],scope={},raw=Object.fromEntries(names.map(name=>[name,()=>seen.push('action')]));
+ const app=createSynchronizedRollingApplication({application:raw,operationScope:()=>scope,contextGuard:()=>{},
+  synchronize:options=>{assert.equal(options.ordinaryPost,false);assert.equal(options.ordinaryPolicy,false);seen.push('sync');},
+  prepareContext:options=>{assert.equal(options.ordinaryPayment,undefined);assert.equal(options.likePayment,undefined);},
+  prepareContractState:({method})=>{assert.equal(method,'post_thread');seen.push('discovery');},
+  beforePostingPrepare:action=>{assert.equal(action.contents.length,2);seen.push('readiness');return true;}});
+ await app.prepare({type:'thread',deposit:'1',contents:['first','second']},{immediate:true});
+ assert.deepEqual(seen,['sync','discovery','readiness','action']);
+});
+
+test('thread content and Bok budgets are captured before synchronization yields',async()=>{
+ const gate=Promise.withResolvers(),input={type:'thread',deposit:'1',contents:['first','second'],budgets:['0','250000']};
+ const app=createSynchronizedRollingApplication({application:Object.fromEntries(names.map(name=>[name,value=>value])),contextGuard:()=>gate.promise,synchronize:()=>{}});
+ const pending=app.prepare(input);input.contents[0]='changed';input.budgets[1]='0';gate.resolve();
+ assert.deepEqual(await pending,{type:'thread',deposit:'1',contents:['first','second'],budgets:['0','250000']});
+});

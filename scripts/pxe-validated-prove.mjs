@@ -267,7 +267,7 @@ export function validatedPxeProve(source){
  source=replace(source,'    // Public API\n',`    prepareBoardActionState({owner,board,privateFee,method,collateralOnly=false}) {
         // No posting gas/history assumptions. Resolve the actual named ABI from
         // the registered, class-pinned Board; these are state preparation only.
-        const allowed=['get_deposit_ids','set_like','register_name','set_bio','set_avatar','create_subboard','remove_post','remove_avatar','reject_subboard','set_main_policy','transfer_moderator','screen','withdraw'];
+        const allowed=['post_thread','get_deposit_ids','set_like','register_name','set_bio','set_avatar','create_subboard','remove_post','remove_avatar','reject_subboard','set_main_policy','transfer_moderator','screen','withdraw'];
         if(!allowed.includes(method)||typeof collateralOnly!=='boolean'||collateralOnly&&method!=='get_deposit_ids')throw new Error('Invalid Board state method');
         const profile=${JSON.stringify(ORDINARY_POST_GAS_PROFILE)};
         const targets=[{address:SyncAddress.fromStringUnsafe(owner.toString()),classId:profile.accountClassId},

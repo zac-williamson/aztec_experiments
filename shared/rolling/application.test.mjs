@@ -1,3 +1,4 @@
+import {deriveMasterNullifierHidingSecretKey,computeAppNullifierHidingKey} from '@aztec-labs/stdlib/keys';
 // Development fakes: no proving, network, funding or real transaction acceptance.
 // Real pinned ABI encoding and encrypted CAS journal are exercised below.
 import test from 'node:test';
@@ -75,7 +76,7 @@ function fixture(){
     state.outcome={operation:opts.journalOperation,outcome:'success',txHash:hex(77),receipt:{txHash:hex(77),status:'checkpointed',blockNumber:1,blockHash:hex(42),transactionFee:2n}};return {receipt:{}};
   }};
   const node={getTxReceipt:async()=>({...state.outcome?.receipt,executionResult:state.outcome?.outcome==='success'?'success':'reverted'}),getBlockData:async height=>({header:{globalVariables:{blockNumber:['checkpointed','proposed'].includes(height)?1:height}},blockHash:hex(42)}),getPublicStorageAt:async(reference,address,slot)=>{const pluginId=state.pluginId??deployment.bok?.pluginId,pluginSlot=pluginId===undefined?null:await deriveStorageSlotInMap(new Fr(BigInt(artifact.storageLayout.plugins.slot)),new Fr(BigInt(pluginId)));if(pluginSlot!==null&&[0n,1n].some(offset=>BigInt(slot.toString())===BigInt(pluginSlot.toString())+offset)){(state.pluginReads??=[]).push({reference,address:String(address),slot:String(slot)});if(state.beforePluginRead)await state.beforePluginRead(slot);return new Fr(BigInt(slot.toString())===BigInt(pluginSlot.toString())?BigInt(state.bokAdapter??5):BigInt(state.pluginEnabledValue??(state.bokEnabled!==false?1:0)));}if(BigInt(slot.toString())===BigInt(artifact.storageLayout.main_version.slot)){(state.policyReads??=[]).push({reference,address:String(address)});if(state.beforePolicyRead)await state.beforePolicyRead();return new Fr(state.policy);}(state.nameReads??=[]).push({reference,address:address.toString(),slot:slot.toString()});if(state.nameReadError)throw state.nameReadError;if(state.beforeNameRead)await state.beforeNameRead();return new Fr(state.nameRegistered??0n);}};wallet.aztecNode=node;wallet.pxe={prepareBoardActionState:async input=>{(state.readinessPreparations??=[]).push(input);},node:{getL1ToL2MessageMembershipWitness:async()=>{throw Error('Unexpected fixture membership read');}},getSyncedBlockHeader:async()=>({globalVariables:{blockNumber:1,timestamp:100n},hash:async()=>hex(42)})};let random=100n;
-  const sdk={TxHash,poseidon2HashWithSeparator,deriveStorageSlotInMap,Fr:class extends Fr {static random(){return new Fr(random++);}},AztecAddress,encodeArguments,Contract:{at:address=>String(address)===hex(2)?feeContract:board},isTrustedPrivateNode:n=>n===node,isPrivateWalletForNode:(w,n)=>w===wallet&&n===node,isPrivatePXEForNode:(p,n)=>p===wallet.pxe&&n===node,
+  const sdk={deriveMasterNullifierHidingSecretKey,computeAppNullifierHidingKey,TxHash,poseidon2HashWithSeparator,deriveStorageSlotInMap,Fr:class extends Fr {static random(){return new Fr(random++);}},AztecAddress,encodeArguments,Contract:{at:address=>String(address)===hex(2)?feeContract:board},isTrustedPrivateNode:n=>n===node,isPrivateWalletForNode:(w,n)=>w===wallet&&n===node,isPrivatePXEForNode:(p,n)=>p===wallet.pxe&&n===node,
     inspectTrustedNode:async()=>{if(!state.guard)throw Error('stale trusted node');},
     prefetchBokClaimWitnesses:async input=>{(state.bokClaimWitnessPrefetches??=[]).push(input);},prefetchBoardClaimWitnesses:async input=>{(state.claimWitnessPrefetches??=[]).push(input);},prefetchOrdinaryPostWitnesses:async input=>{(state.witnessPrefetches??=[]).push(input);},likeFeeBudget:()=>({maximumFee:100n}),ordinaryPostFeeBudget:()=>({maximumFee:100n}),normalizePrivateFeeGasSettings:()=>({maximumFee:100n}),preparePrivateFeePayment:async()=>({availableCredit:100n}),estimatePrivateFeeTransaction:async input=>{
       await input.guard();state.estimates++;state.calls.push(input.interaction);
@@ -87,7 +88,7 @@ function fixture(){
   const deployment={board:{address:hex(1),artifact,instance:{address:hex(1),currentContractClassId:hex(12),originalContractClassId:hex(12)}},network:{chainId:'31337',version:'1',rollup:'0x'+'11'.repeat(20)},
     portal:'0x'+'22'.repeat(20),privateFee:{address:hex(2),artifact:feeArtifact,gasSettings:{}}};
   const accountSession={owner,wallet,node,journal,walletSecret:hex(8),walletSalt:'0'};
-  const options={sdk,deployment,accountSession,privateStore,publicReader:new Proxy({},{get(){throw Error('Private access to public reader');}}),contextGuard:async()=>{assert.ok(state.guard);}};
+  const options={sdk,deployment,accountSession,privateStore,readPublicLikePage:async({posts})=>({schemaVersion:1,complete:true,scope:{chainId:deployment.network.chainId,rollupVersion:deployment.network.version,rollupAddress:deployment.network.rollup,boardAddress:hex(1)},checkpoint:{number:1,hash:hex(42)},confirmationCheckpoint:{number:1,hash:hex(42)},revision:"1",postIds:posts,items:[],nextCursor:null}),publicReader:new Proxy({},{get(){throw Error('Private access to public reader');}}),contextGuard:async()=>{assert.ok(state.guard);}};
   return {state,values,options,app:createRollingApplication(options),restart:()=>createRollingApplication(options)};
 }
 test('locked construction does not load or query a wallet',async()=>{
@@ -238,7 +239,7 @@ test('all first-slice actions encode against the installed RollingBoard ABI',asy
   const actions=[{type:'subboard',slug:'tiny-board',name:'Tiny',description:'Description',rules:''},
     {type:'post',deposit:'9',content:'héllo'}, {type:'reply',deposit:'9',content:'Reply',parent:'10',root:'11'},
     {type:'quote',deposit:'9',content:'Quote',reference:'10'}, {type:'repost',deposit:'9',content:'',reference:'10'},
-    {type:'like',post:'10'},{type:'unlike',post:'10'},{type:'withdraw',deposit:'9'},{type:'screen',deposit:'9'}];
+    {type:'like',post:'10'},{type:'withdraw',deposit:'9'},{type:'screen',deposit:'9'}];
   for(const action of actions){const f=fixture(),p=await f.app.prepare(action);assert.equal(p.status,'prepared');
     assert.equal((await f.app.submitPrepared(p.intentId)).status,'confirmed');}
 });
@@ -247,7 +248,7 @@ test('unknown send stays fenced across replacement instances; absent receipt nev
   await assert.rejects(f.app.submitPrepared(p.intentId));assert.equal(f.state.sends,1);
   const replacement=f.restart();assert.equal((await replacement.reconcile(p.intentId)).status,'unknown');
   await assert.rejects(replacement.submitPrepared(p.intentId),{code:'ROLLING_RECOVERY_REQUIRED'});
-  await assert.rejects(replacement.prepare({type:'unlike',post:'5'}),{code:'ROLLING_RECOVERY_REQUIRED'});
+  await assert.rejects(replacement.prepare({type:'like',post:'5'}),{code:'ROLLING_RECOVERY_REQUIRED'});
   assert.equal(f.state.sends,1);assert.equal((await replacement.readAccountStatus()).status,'recovering');
 });
 test('durable fence failure prevents send; successfully saved pre-send fence cannot be retried',async()=>{
@@ -315,7 +316,7 @@ test('cancellation only before send, including cancellation/submission CAS race'
   const f=fixture(),p=await f.app.prepare({type:'like',post:'5'});
   assert.equal((await f.app.cancelPrepared(p.intentId)).status,'cancelled');
   await assert.rejects(f.app.submitPrepared(p.intentId),{code:'ROLLING_RECOVERY_REQUIRED'});
-  const next=await f.app.prepare({type:'unlike',post:'5'});
+  const next=await f.app.prepare({type:'like',post:'5'});
   const results=await Promise.allSettled([f.app.cancelPrepared(next.intentId),f.restart().submitPrepared(next.intentId)]);
   assert.equal(results.filter(x=>x.status==='fulfilled').length,1);assert.ok(f.state.sends<=1);
   if(f.state.sends)await assert.rejects(f.app.cancelPrepared(next.intentId),{code:'ROLLING_RECOVERY_REQUIRED'});
@@ -334,7 +335,7 @@ test('live private screening hint round-trips through encrypted store and actual
 test('canonical receipt lost after a reported success returns recovering; changed deployment fails closed',async()=>{
   const f=fixture(),p=await f.app.prepare({type:'like',post:'5'});await f.app.submitPrepared(p.intentId);
   f.state.outcome=null;assert.equal((await f.app.readAccountStatus()).status,'recovering');
-  await assert.rejects(f.app.prepare({type:'unlike',post:'5'}),{code:'ROLLING_RECOVERY_REQUIRED'});
+  await assert.rejects(f.app.prepare({type:'like',post:'5'}),{code:'ROLLING_RECOVERY_REQUIRED'});
   f.options.deployment.network.version='2';await assert.rejects(f.app.ownedIdentities(),{code:'ROLLING_CONTEXT_CHANGED'});
 });
 
@@ -379,7 +380,7 @@ test('actual encrypted L2 journal and workflow coexist; restart acknowledges onl
   await f.app.submitPrepared(first.intentId);assert.equal(f.values.size,2,'distinct authenticated ciphertext slots');
   let replacement=await f.restartJournal();
   assert.equal((await replacement.reconcile(first.intentId)).status,'confirmed');
-  const second=await replacement.prepare({type:'unlike',post:'5'});
+  const second=await replacement.prepare({type:'like',post:'5'});
   replacement=await f.restartJournal(); // prepared next action survives another loss of in-memory acknowledgement
   assert.equal((await replacement.submitPrepared(second.intentId)).status,'confirmed');assert.equal(f.state.sends,2);
 });
@@ -394,7 +395,7 @@ test('actual restarted checkpointed revert permits the next action, and reorg pr
   f.options.accountSession.wallet.sendTx=async(_,opts)=>{await f.install(opts.journalOperation,'checkpointed','reverted');throw Error('reverted');};
   await assert.rejects(f.app.submitPrepared(p.intentId));let replacement=await f.restartJournal();
   assert.equal((await replacement.reconcile(p.intentId)).status,'reverted');
-  assert.equal((await replacement.prepare({type:'unlike',post:'5'})).status,'prepared');
+  assert.equal((await replacement.prepare({type:'like',post:'5'})).status,'prepared');
   assert.equal([...f.receipts.values()][0].status,'checkpointed');
   const g=await realJournalFixture(),q=await g.app.prepare({type:'like',post:'5'});await g.app.submitPrepared(q.intentId);
   g.options.accountSession.node.getBlock=async()=>({hash:{toString:()=>hex(999)}});
@@ -1489,7 +1490,7 @@ for(const loss of ['missing','restored','unsupported'])test(`positive pre-proof 
 });
 for(const loss of ['missing','restored','unsupported'])test(`positive pre-proof ${loss} provenance with a completed predecessor remains inspectable and closed`,async()=>{
  const f=await preproofFixture(),first=await f.app.prepare({type:'like',post:'5'});await f.app.submitPrepared(first.intentId);
- const p=await f.app.prepare({type:'unlike',post:'5'});f.state.interrupt='proof';await assert.rejects(f.app.submitPrepared(p.intentId));
+ const p=await f.app.prepare({type:'like',post:'5'});f.state.interrupt='proof';await assert.rejects(f.app.submitPrepared(p.intentId));
  if(loss==='missing')f.setEpoch(null);if(loss==='restored')await f.options.privateStore.rotateRecoveryEpoch();if(loss==='unsupported')delete f.options.accountSession.preproofRecovery;
  const before=[...f.values],app=await f.restartJournal(),view=await app.inspectRecovery(p.intentId);
  assert.equal(view.status,'unknown');assert.equal(view.currentTxHash,null);assert.deepEqual(view.attempts,[]);assert.equal(view.exactResume.status,'empty');
@@ -1543,7 +1544,7 @@ test('restored aggregate pre-proof renewed review retains bridge identity throug
 });
 test('positive pre-proof predecessor stays exact and canonically acknowledged after reload',async()=>{
  const f=await preproofFixture(),first=await f.app.prepare({type:'like',post:'5'});await f.app.submitPrepared(first.intentId);
- const p=await f.app.prepare({type:'unlike',post:'5'});f.state.interrupt='proof';await assert.rejects(f.app.submitPrepared(p.intentId));
+ const p=await f.app.prepare({type:'like',post:'5'});f.state.interrupt='proof';await assert.rejects(f.app.submitPrepared(p.intentId));
  const resumed=await f.restartJournal();assert.equal((await resumed.inspectRecovery(p.intentId)).status,'pre-proof-review');
  f.receipts.clear();await assert.rejects(resumed.prepareInterrupted(p.intentId),{code:'BB_SUBMISSION_UNKNOWN'});assert.equal(f.state.sends,1);
 });
@@ -1794,7 +1795,7 @@ test('Bok claim receives a detached authenticated purchase router scope only on 
  assert.equal((await app.submitPrepared(prepared.intentId)).status,'confirmed');assert.equal(f.state.sends,1);
 });
 
-for(const action of [{type:'like',post:'42'},{type:'unlike',post:'42'},{type:'name',first:'River',last:'Moss'},{type:'bio',name:'5',expectedVersion:'0',content:'Exact bio'},{type:'avatar',name:'5',expectedVersion:'0',width:0,height:0,data:''}])test(`immediate ${action.type} retains exact action and one submission estimate`,async()=>{
+for(const action of [{type:'like',post:'42'},{type:'name',first:'River',last:'Moss'},{type:'bio',name:'5',expectedVersion:'0',content:'Exact bio'},{type:'avatar',name:'5',expectedVersion:'0',width:0,height:0,data:''}])test(`immediate ${action.type} retains exact action and one submission estimate`,async()=>{
  const f=fixture(),prepared=await f.app.prepare(action,{immediate:true});assert.equal(f.state.estimates,0);assert.equal(f.state.sends,0);assert.equal(prepared.maximumFee,'100');
  assert.equal((await f.app.submitPrepared(prepared.intentId)).status,'confirmed');assert.equal(f.state.estimates,1);assert.equal(f.state.sends,1);assert.deepEqual(prepared.action,action);
 });
@@ -1831,14 +1832,14 @@ for(const separate of [false,true])test(`real application canonical predecessor 
  const f=await preproofFixture(base),first=await f.app.prepare({type:'like',post:'5'});await f.app.submitPrepared(first.intentId);
  const predecessor=(await f.options.accountSession.journal.inspect()).txHash,node=f.options.accountSession.node,originalReceipt=node.getTxReceipt,originalBlock=node.getBlock;let receiptReads=0,blockReads=0;
  node.getTxReceipt=async hash=>{if(String(hash)===predecessor)receiptReads++;return originalReceipt(hash);};node.getBlock=async(...args)=>{blockReads++;return originalBlock(...args);};
- owner={};const action={type:'unlike',post:'5'};
+ owner={};const action={type:'like',post:'5'};
  if(separate){const prepared=await f.app.prepare(action,{immediate:true});owner={};await f.app.submitPrepared(prepared.intentId);}else await executeRollingAction(f.app,action);
  assert.equal(receiptReads,separate?2:1,'One canonical observation per owned flow, exact journal checks at both proof boundaries');assert.equal(blockReads,separate?3:2,'Predecessor blocks plus the new outcome block');assert.equal(f.state.sends,2);
 });
 
 for(const reorg of [false,true])test(`cancelled unsent draft then reload acknowledges only its canonical predecessor: ${reorg}`,async()=>{
  const f=await realJournalFixture(),first=await f.app.prepare({type:'like',post:'5'});await f.app.submitPrepared(first.intentId);
- const draft=await f.app.prepare({type:'unlike',post:'5'},{immediate:true});await f.app.cancelPrepared(draft.intentId);
+ const draft=await f.app.prepare({type:'like',post:'5'},{immediate:true});await f.app.cancelPrepared(draft.intentId);
  const reopened=await f.restartJournal();
  if(reorg){f.options.accountSession.node.getBlock=async()=>({hash:{toString:()=>hex(999)}});await assert.rejects(reopened.prepare({type:'like',post:'6'},{immediate:true}),{code:'BB_SUBMISSION_UNKNOWN'});}
  else assert.equal((await reopened.prepare({type:'like',post:'6'},{immediate:true})).status,'prepared');
@@ -2087,7 +2088,7 @@ for(const replaceScope of [false,true])test(`predecessor read overlaps owned rea
  f.app=f.restart();const pending=f.app.prefetchContext({predecessor:true});await entered.promise;
  assert.equal(receiptReads,1);gate.resolve();await pending;
  f.options.sdk.inspectTrustedNode=inspect;if(replaceScope)owner={};
- await f.app.prepare({type:'unlike',post:'5'},{immediate:true});
+ await f.app.prepare({type:'like',post:'5'},{immediate:true});
  assert.equal(receiptReads,replaceScope?2:1);
 });
 test('owned prefetch drains a pending predecessor when readiness fails',async()=>{
@@ -2115,7 +2116,7 @@ test('predecessor reuse rejects a replacement authenticated journal in the same 
  const owner={},base=fixture();base.options.accountSession.operationScope=()=>owner;const f=await realJournalFixture(base);
  const first=await f.app.prepare({type:'like',post:'5'});await f.app.submitPrepared(first.intentId);
  await f.app.prefetchContext({predecessor:true});await f.install('OTHER_OPERATION','pending');
- const sends=f.state.sends;await assert.rejects(f.app.prepare({type:'unlike',post:'5'},{immediate:true}),{code:'ROLLING_RECOVERY_REQUIRED'});assert.equal(f.state.sends,sends);
+ const sends=f.state.sends;await assert.rejects(f.app.prepare({type:'like',post:'5'},{immediate:true}),{code:'ROLLING_RECOVERY_REQUIRED'});assert.equal(f.state.sends,sends);
 });
 
 for(const grouped of [false,true])test(`history prefetch ${grouped?'overlaps owned execution':'is awaited by standalone preparation'}`,async()=>{
@@ -2346,7 +2347,7 @@ for(const change of ['receipt','owner'])test(`same-operation claim payment reuse
  await assert.rejects(app.submitPrepared(prepared.intentId));assert.equal(f.state.sends,0);assert.equal(f.state.estimates,0);
 });
 
-for(const action of [{type:'like',post:'8'},{type:'unlike',post:'8'},{type:'subboard',slug:'new-board',name:'New',description:'Exact',rules:''},{type:'screen',deposit:'9'},{type:'withdraw',deposit:'9'},...moderatorActions])test('generic action '+action.type+' reuses exactly owned generic payment once',async()=>{
+for(const action of [{type:'like',post:'8'},{type:'subboard',slug:'new-board',name:'New',description:'Exact',rules:''},{type:'screen',deposit:'9'},{type:'withdraw',deposit:'9'},...moderatorActions])test('generic action '+action.type+' reuses exactly owned generic payment once',async()=>{
  const f=moderatorActions.includes(action)?moderatorFixture():fixture(),scope={synchronized:true};let payments=0;
  f.options.accountSession.operationScope=()=>scope;f.options.sdk.preparePrivateFeePayment=async input=>{payments++;assert.equal(input.creditCheck,['like','unlike'].includes(action.type)?'qualified-like-proof':undefined,'Only separately qualified likes omit the balance read');return {availableCredit:100n};};f.app=f.restart();
  const prepared=await f.app.prepare(action,{immediate:true});assert.equal(payments,1);assert.equal(f.state.estimates,0);assert.equal(prepared.maximumFee,'100');
@@ -2418,7 +2419,7 @@ for(const change of ['cached-node','route'])test(`claim refuses native membershi
 
 
 test('immediate like uses only its exact class bound; reviewed and other actions retain generic estimation',async()=>{
- for(const [type,immediate]of [['like',true],['unlike',true],['like',false],['bio',true]]){
+ for(const [type,immediate]of [['like',true],['like',false],['bio',true]]){
   const f=fixture(),scope={synchronized:true},seen=[];f.options.accountSession.operationScope=()=>scope;
   f.options.sdk.preparePrivateFeePayment=async input=>{seen.push(input.creditCheck);return input.creditCheck?{creditCheck:input.creditCheck}:{availableCredit:100n};};
   const estimate=f.options.sdk.estimatePrivateFeeTransaction;let requested;
@@ -2966,7 +2967,7 @@ test('empty funding probe retains the encrypted-slot lease and rejects owner rep
 test('empty funding readiness does not authorize overwriting a subsequently saved workflow',async()=>{
  const f=synchronizedFundingFixture();assert.deepEqual(await f.wrapped.readFundingState(),{status:'ready'});
  const prior=await f.app.prepare({type:'like',post:'5'}),saved=[...f.values];
- await assert.rejects(f.wrapped.prepare({type:'unlike',post:'6'}),{code:'ROLLING_RECOVERY_REQUIRED'});
+ await assert.rejects(f.wrapped.prepare({type:'like',post:'6'}),{code:'ROLLING_RECOVERY_REQUIRED'});
  assert.deepEqual(f.counts(),{syncs:1,contexts:1});assert.deepEqual([...f.values],saved);assert.equal(f.state.sends,0);
  assert.equal((await f.app.readFundingState()).intent.intentId,prior.intentId);
 });
@@ -3181,7 +3182,7 @@ for(const failure of [false,true])test('ordinary arguments wait for owned discov
  assert.equal(f.state.sends,0);if(failure)assert.equal(f.values.size,0);else assert(f.state.privateReads.length>0);
 });
 
-for(const action of [{type:'like',post:'42'},{type:'unlike',post:'42'},{type:'name',first:'Fresh',last:'Willow'},{type:'bio',name:'5',expectedVersion:'0',content:'Exact bio'},{type:'avatar',name:'5',expectedVersion:'0',width:100,height:100,data:'AA=='},{type:'subboard',slug:'new-board',name:'New',description:'Description',rules:''}])test(action.type+' predecessor cannot enter arguments or write an intent before native discovery',async()=>{
+for(const action of [{type:'like',post:'42'},{type:'name',first:'Fresh',last:'Willow'},{type:'bio',name:'5',expectedVersion:'0',content:'Exact bio'},{type:'avatar',name:'5',expectedVersion:'0',width:100,height:100,data:'AA=='},{type:'subboard',slug:'new-board',name:'New',description:'Description',rules:''}])test(action.type+' predecessor cannot enter arguments or write an intent before native discovery',async()=>{
  const f=fixture(),gate=Promise.withResolvers(),entered=Promise.withResolvers(),scope={synchronized:true,contractStateReady:gate.promise};
  f.options.accountSession.operationScope=()=>scope;f.options.accountSession.journal.assertCanStart=async()=>{entered.resolve();};f.app=f.restart();
  let settled=false;const work=f.app.prepare(action,{immediate:true});work.then(()=>settled=true,()=>settled=true);const result=assert.rejects(work,/native discovery failed/);
@@ -3189,7 +3190,7 @@ for(const action of [{type:'like',post:'42'},{type:'unlike',post:'42'},{type:'na
  gate.reject(Error('native discovery failed'));await result;assert.equal(f.state.sends,0);assert.equal(f.values.size,0);
 });
 
-for(const action of [{type:'like',post:'42'},{type:'unlike',post:'42'},{type:'name',first:'Fresh',last:'Willow'},{type:'bio',name:'5',expectedVersion:'0',content:'Exact bio'},{type:'avatar',name:'5',expectedVersion:'0',width:100,height:100,data:'AA=='},{type:'subboard',slug:'new-board',name:'New',description:'Description',rules:''}])for(const change of ['scope','barrier'])test(action.type+' captures discovery owner before held predecessor: '+change,async()=>{
+for(const action of [{type:'like',post:'42'},{type:'name',first:'Fresh',last:'Willow'},{type:'bio',name:'5',expectedVersion:'0',content:'Exact bio'},{type:'avatar',name:'5',expectedVersion:'0',width:100,height:100,data:'AA=='},{type:'subboard',slug:'new-board',name:'New',description:'Description',rules:''}])for(const change of ['scope','barrier'])test(action.type+' captures discovery owner before held predecessor: '+change,async()=>{
  const f=fixture(),predecessor=Promise.withResolvers(),entered=Promise.withResolvers(),discovery=Promise.withResolvers();
  let scope={synchronized:true,contractStateReady:discovery.promise};const owner=scope;
  f.options.accountSession.operationScope=()=>scope;f.options.accountSession.journal.assertCanStart=async()=>{entered.resolve();await predecessor.promise;};f.app=f.restart();
@@ -3271,7 +3272,7 @@ for(const included of [false,true])test('canonical ordinary funding workflow avo
  f.options.accountSession.journal.inspectOutcome=async(...args)=>{inspections++;return inspect(...args);};
  const beforeReads=f.state.privateReads.length;assert.deepEqual(await f.wrapped.readFundingState(),{status:'ready'});
  assert.equal(inspections,1);assert.deepEqual(f.counts(),{syncs:0,contexts:0});assert.equal(f.scope.synchronized,undefined);assert.equal(f.state.privateReads.length,beforeReads);
- await f.wrapped.prepare({type:'unlike',post:'5'});assert.deepEqual(f.counts(),{syncs:1,contexts:1});assert.equal(f.state.sends,1);
+ await f.wrapped.prepare({type:'like',post:'5'});assert.deepEqual(f.counts(),{syncs:1,contexts:1});assert.equal(f.state.sends,1);
 });
 test('pre-sync funding workflow holds receipt authority and rejects changed owner',async()=>{
  const f=synchronizedFundingFixture(),prepared=await f.app.prepare({type:'like',post:'5'});await f.app.submitPrepared(prepared.intentId);
@@ -3597,4 +3598,106 @@ test('posting readiness uses selected native timestamp independently of exit scr
 test('posting readiness rejects a noncanonical anchor without preparing an intent',async()=>{
  const f=collateralFixture();f.options.accountSession.node.getBlockData=async()=>({header:{globalVariables:{blockNumber:1}},blockHash:hex(99)});
  await assert.rejects(f.app.readPostingReadiness('9'),{code:'ROLLING_CONTEXT_CHANGED'});assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
+});
+
+
+test('name avatar publishes both ordered calls in one SDK batch and retains exact bytes across restart',async()=>{
+ const f=fixture();f.options.sdk.BatchCall=BatchCall;
+ const image={width:100,height:100,data:btoa('avatar bytes')},action={type:'name',first:'River',last:'Lane',avatar:{...image}};
+ const prepared=await f.app.prepare(action),batch=f.state.calls[0];
+ assert(batch instanceof BatchCall);assert.deepEqual(batch.interactions.map(call=>call.name),['register_name','set_avatar']);
+ assert.equal(batch.interactions[1].args[0],prepared.nameAvailability.id);
+ assert.deepEqual(batch.interactions[1].args.slice(1,5),[0,100,100,12]);
+ const savedArgs=structuredClone(batch.interactions[1].args);action.avatar.data=btoa('changed');
+ assert.equal(f.state.estimates,1);assert.equal(f.state.sends,0);
+ const result=await f.restart().submitPrepared(prepared.intentId);
+ assert.equal(result.status,'confirmed');assert.equal(f.state.sends,1);
+ assert(f.state.sent.payload instanceof BatchCall);
+ assert.deepEqual(f.state.sent.payload.interactions.map(call=>call.name),['register_name','set_avatar']);
+ assert.deepEqual(f.state.sent.payload.interactions[1].args,savedArgs);
+ assert.deepEqual(result.action.avatar,image);
+});
+test('name avatar validates the optional image before fee estimation or journal writes',async()=>{
+ for(const image of [null,{},[],{width:100,height:100,data:''},{width:99,height:100,data:'YQ=='},{width:100,height:100,data:'@@@'},
+  {width:100,height:100,data:btoa('a'.repeat(8193))},{width:100,height:100,data:'YQ==',expectedVersion:'1'},{width:100,height:100,data:'YQ==',name:'7'}]){
+  const f=fixture();f.options.sdk.BatchCall=BatchCall;
+  await assert.rejects(f.app.prepare({type:'name',first:'River',last:'Lane',avatar:image}),{code:'ROLLING_INVALID_ACTION'});
+  assert.equal(f.state.estimates,0);assert.equal(f.state.sends,0);assert.equal(f.values.size,0);
+ }
+});
+test('name avatar collision rejects the complete operation before estimation or sending',async()=>{
+ const f=fixture();f.options.sdk.BatchCall=BatchCall;f.state.nameRegistered=1n;
+ await assert.rejects(f.app.prepare({type:'name',first:'River',last:'Lane',avatar:{width:100,height:100,data:'YQ=='}}),{code:'ROLLING_NAME_TAKEN'});
+ assert.equal(f.state.estimates,0);assert.equal(f.state.sends,0);assert.equal(f.values.size,0);
+});
+
+// Requires the normally built post_thread artifact; never patch an ABI fixture.
+function threadFixture({bok=false}={}){
+ const f=bok?bokFixture():fixture();
+ f.state.responses={get_thread_screen_hints:Array(8).fill(undefined),get_thread_ready_time:120n};
+ f.options.sdk.ordinaryPostFeeBudget=()=>assert.fail('Thread is not the single-post gas profile');
+ f.options.sdk.BatchCall=class {constructor(wallet,interactions){assert.equal(wallet,f.options.accountSession.wallet);this.name='batch';this.interactions=interactions;}};
+ f.app=f.restart();return f;
+}
+const threadAction=()=>({type:'thread',deposit:'9',contents:['Private Sentinel first','Second','Third'],name:'0',subboard:'0'});
+for(const reply of [false,true])test(`atomic thread real ABI and one generic send, reply=${reply}`,async()=>{
+ const f=threadFixture(),action={...threadAction(),...(reply?{parent:'88',root:'77'}:{})};
+ const estimate=f.options.sdk.estimatePrivateFeeTransaction;f.options.sdk.estimatePrivateFeeTransaction=async input=>{assert.equal(input.ordinaryPost,undefined);return estimate(input);};f.app=f.restart();
+ const prepared=await f.app.prepare(action,{immediate:true,postingRules:displayedRules()});assert.equal(f.state.estimates,0);
+ const result=await f.app.submitPrepared(prepared.intentId);assert.equal(result.status,'confirmed');assert.equal(f.state.estimates,1);assert.equal(f.state.sends,1);
+ const call=f.state.sent.payload;assert.equal(call.name,'post_thread');const [deposit,nonces,drafts,count,hints,plugins,requests]=call.args;
+ assert.equal(deposit,hex(9));assert.equal(count,3);assert.equal(hints.length,8);assert(hints.every(hint=>hint===null));assert(plugins.every(value=>value===hex(0)));assert(requests.every(value=>value===hex(0)));
+ const ids=await Promise.all(nonces.slice(0,count).map(nonce=>poseidon2HashWithSeparator([new Fr(1),new Fr(1),new Fr(BigInt(nonce))],0x42420102)));
+ assert.equal(drafts[0].parent,hex(reply?88:0));assert.equal(drafts[0].root_reference,hex(reply?77:0));
+ for(let i=1;i<count;i++){assert.equal(drafts[i].parent,ids[i-1].toString());assert.equal(drafts[i].root_reference,reply?hex(77):ids[0].toString());}
+ assert.equal(nonces[3],hex(0));assert.equal(drafts[3].length,0);assert.equal((await f.app.reconcile(prepared.intentId)).status,'confirmed');assert.equal(f.state.sends,1);
+ assert([...f.values.values()].every(value=>!value.includes('Private Sentinel')));
+});
+test('atomic thread Bok authorization binds the linked draft and shares one send',async()=>{
+ const f=threadFixture({bok:true}),action={...threadAction(),budgets:['0','400','0']};
+ const prepared=await f.app.prepare(action,{immediate:true});await f.app.submitPrepared(prepared.intentId);
+ assert.equal(f.state.sends,1);assert.equal(f.state.estimates,1);const [authorization,thread]=f.state.sent.payload.interactions;
+ assert.equal(authorization.name,'authorize_request');assert.equal(thread.name,'post_thread');assert.equal(authorization.args[0],thread.args[6][1]);assert.equal(authorization.args[2],'400');assert.equal(thread.args[5][1],hex(7));
+ const draft=thread.args[2][1],nonce=thread.args[1][1],preimage=[1n,31337n,1n,1n,5n,BigInt(draft.subboard),BigInt(draft.parent),BigInt(draft.root_reference),1n,0n,0n,BigInt(nonce),BigInt(draft.length),...draft.message.map(BigInt)];
+ assert.equal(authorization.args[1],String(await poseidon2HashWithSeparator(preimage.map(n=>new Fr(n)),0x52434931)));
+});
+test('atomic thread readiness passes the authenticated chain timestamp and required count',async()=>{
+ const f=threadFixture(),result=await f.app.readPostingReadiness('9',{count:3});
+ assert.equal(result.ready,false);assert.equal(result.nextAllowedTime,'120');
+ const call=f.state.privateReads.find(value=>value.name==='get_thread_ready_time');assert.deepEqual(call.args.slice(1),[hex(9),3,'100']);assert.equal(f.state.sends,0);
+});
+test('atomic thread displayed rules and malformed actions fail without saving or sending',async()=>{
+ const f=threadFixture();await assert.rejects(f.app.prepare(threadAction(),{immediate:true,postingRules:displayedRules('0',{parentVersion:'99'})}),{code:'ROLLING_POSTING_RULES_CHANGED'});assert.equal(f.values.size,0);
+ for(const input of [{...threadAction(),parent:'3'},{...threadAction(),contents:['only']},{...threadAction(),budgets:['1','1','0']}])await assert.rejects(f.app.prepare(input,{immediate:true}));
+ assert.equal(f.state.sends,0);assert.equal(f.values.size,0);
+});
+test('atomic thread simulation failure leaves the unsent action without a partial publication',async()=>{
+ const f=threadFixture({bok:true}),prepared=await f.app.prepare({...threadAction(),budgets:['400','0','0']},{immediate:true});
+ f.options.sdk.estimatePrivateFeeTransaction=async()=>{throw Error('thread rejected by contract');};const app=f.restart();
+ await assert.rejects(app.submitPrepared(prepared.intentId),/thread rejected by contract/);assert.equal(f.state.sends,0);
+ const saved=await app.readAccountStatus();assert.deepEqual(saved.intent.action.contents,threadAction().contents);
+});
+
+test('public Like guard rejects duplicate before estimation or saved intent without private storage reads',async()=>{
+ const f=fixture(),nhk=await computeAppNullifierHidingKey(deriveMasterNullifierHidingSecretKey(new Fr(8)),AztecAddress.fromBigIntUnsafe(1n));
+ const tag=String(await poseidon2HashWithSeparator([1n,31337n,1n,1n,9n,nhk.toBigInt()].map(v=>new Fr(v)),0x52434c31));
+ const read=f.options.readPublicLikePage;f.options.readPublicLikePage=async input=>({...await read(input),items:[{post:'9',tag:BigInt(tag).toString()}]});f.options.accountSession.node.getPublicStorageAt=()=>assert.fail('No personalized storage RPC');
+ await assert.rejects(f.restart().prepare({type:'like',post:'9'},{immediate:true}),{code:'ROLLING_ALREADY_LIKED'});assert.equal(f.state.estimates,0);assert.equal(f.state.sends,0);assert.equal(f.values.size,0);
+});
+test('public Like read runs independently of a held private action and does no sync',async()=>{
+ const f=fixture(),gate=Promise.withResolvers(),entered=Promise.withResolvers();f.state.beforeDepositIds=()=>{entered.resolve();return gate.promise;};
+ const held=f.app.readAccountStatus();await entered.promise;f.options.sdk.inspectTrustedNode=()=>assert.fail('No background native readiness');
+ const value=await f.app.readLikes(['9']);assert.deepEqual(value.posts,[{post:'9',liked:false}]);gate.resolve();await held;
+});
+test('public Like guard requires canonical publication and rejects Unlike',async()=>{
+ const f=fixture(),read=f.options.readPublicLikePage;f.options.readPublicLikePage=async input=>({...await read(input),checkpoint:{number:1,hash:hex(43)}});const app=f.restart();
+ await assert.rejects(app.prepare({type:'like',post:'9'},{immediate:true}),{code:'ROLLING_LIKES_UNAVAILABLE'});await assert.rejects(app.prepare({type:'unlike',post:'9'},{immediate:true}),{code:'ROLLING_ACTION_UNAVAILABLE'});assert.equal(f.state.sends,0);
+});
+
+test('public Like guard shares one operation result and accepts a canonical index block behind the tip',async()=>{
+ const f=fixture(),read=f.options.readPublicLikePage,scope={};let pages=0;
+ f.options.readPublicLikePage=async input=>{pages++;return read(input);};f.options.accountSession.operationScope=()=>scope;
+ const old=f.options.accountSession.node.getBlockData;f.options.accountSession.node.getBlockData=async height=>height==='proposed'?{header:{globalVariables:{blockNumber:2}},blockHash:hex(43)}:old(height);
+ const app=f.restart(),prepared=await app.prepare({type:'like',post:'9'},{immediate:true});await app.submitPrepared(prepared.intentId);
+ assert.equal(pages,1);assert.equal(f.state.sends,1);
 });

@@ -456,3 +456,13 @@ test('saved selection reads retain moderation redaction and reject malformed or 
  for(const ids of ['01','1,1','-1','1,',Array.from({length:101},(_,i)=>String(i+1)).join(',')])assert.throws(()=>f.read('bookmarks',{ids}));
  assert.throws(()=>f.read('following',{boards:Array.from({length:100},(_,i)=>String(i)).join(','),names:name}));
 });
+
+test('SQLite public like tags charge bounded identifier rows before materialization',async t=>{
+ const f=await queryFixture(t,{maxRowBytes:65536,maxReadBytes:65536});await f.post('10');await f.add([['LikeChanged',{post:'10',tag:'77',active:true,count:'1'}]]);
+ const empty=f.read('likes',{posts:'999'}),liked=f.read('likes',{posts:'10'});
+ assert.equal(liked.work.materializedBytes-empty.work.materializedBytes,Buffer.byteLength('10:77')+64+4);assert.equal(liked.work.materializedRows,1);
+ // An untrusted cache can contain an oversized identifier. Its byte metadata
+ // must reject it before the SELECT can return that string into JavaScript.
+ const db=f.own(new DatabaseSync(f.store.filename));db.prepare("UPDATE projection SET k=? WHERE kind='likes'").run('x'.repeat(65536));
+ const reopened=f.open();assert.throws(()=>reopened.readPublicPage({expectedControl:f.control,view:'likes',params:{posts:'10'}}),{code:'ROLLING_PUBLIC_STORAGE_CAPACITY'});
+});

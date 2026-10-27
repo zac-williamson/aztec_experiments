@@ -200,20 +200,6 @@ class RepeatPublication(unittest.TestCase):
         self.assertEqual(self.unit.read_bytes(), self.original_unit)
         self.assert_unchanged_controls()
 
-    def test_wallet_update_is_release_local_and_preserves_existing_config(self):
-        config = self.old_source / 'deploy/runtime-wallet.json'
-        config.parent.mkdir(parents=True)
-        old = {'config': {'bok': {'contract': 'unchanged'}, 'aggregateFunding': {'router': 'unchanged'}}}
-        config.write_text(json.dumps(old))
-        update = {'router': '0x' + '1' * 40, 'routerCodeHash': '0x' + '2' * 64}
-        self.ns['install_wallet_update'](self.old_source, self.new_source, update)
-        self.assertEqual(json.loads(config.read_text()), old)
-        new = json.loads((self.new_source / 'deploy/runtime-wallet.json').read_text())
-        self.assertEqual(new, {'config': {**old['config'], 'bokTopup': update}})
-        self.assertEqual(self.ns['wallet_file'](self.new_source), self.new_source / 'deploy/runtime-wallet.json')
-        with self.assertRaises(AssertionError):
-            self.ns['install_wallet_update'](self.old_source, self.new_source, {**update, 'privateKey': 'invalid'})
-
     def test_tampered_staged_wallet_config_refuses_before_activation(self):
         config = self.new_source / 'deploy/runtime-wallet.json'
         config.parent.mkdir(parents=True)

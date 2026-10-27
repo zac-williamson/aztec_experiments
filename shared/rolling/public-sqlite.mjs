@@ -7,7 +7,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {randomBytes} from 'node:crypto';
 import {FLAT_PUBLIC_LOGS_PAYLOAD_LENGTH} from '@aztec-labs/constants';
 import {isRollingEvent,validateRollingScope} from './public-events.mjs';
-import {ROLLING_PROJECTION_TABLES,stageRollingPublicReduction,normalizeHomeSubboards} from './public-projection.mjs';
+import {ROLLING_PROJECTION_TABLES,stageRollingPublicReduction,normalizeHomeSubboards,normalizeLikePosts} from './public-projection.mjs';
 
 const error=code=>Object.assign(Error('Rolling public storage is unavailable.'),{code});
 const requireThat=(v,code='ROLLING_PUBLIC_STORAGE_INVALID')=>{if(!v)throw error(code);};
@@ -15,7 +15,7 @@ const conflict=()=>error('ROLLING_PUBLIC_STORAGE_CONFLICT');
 const capacity=()=>error('ROLLING_PUBLIC_STORAGE_CAPACITY');
 const tables=new Set(ROLLING_PROJECTION_TABLES);
 // Bump when decoder/reducer semantics or the durable projection format change.
-const OWNED_RESUME_VERSION=1;
+const OWNED_RESUME_VERSION=2;
 const hash=v=>typeof v==='string'&&/^0x[0-9a-f]{64}$/.test(v);
 const uint=(v,bits=256)=>typeof v==='string'&&/^(0|[1-9][0-9]*)$/.test(v)&&v.length<=78&&BigInt(v)<(1n<<BigInt(bits));
 const key=v=>{requireThat(uint(v));return BigInt(v).toString(16).padStart(64,'0');};
@@ -83,6 +83,7 @@ export function createRollingPublicSqliteStore(directory,{scope,serviceOwned=fal
  CREATE TABLE IF NOT EXISTS owned_resume(id INTEGER PRIMARY KEY CHECK(id=1),value TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS projection(g TEXT NOT NULL,kind TEXT NOT NULL,k TEXT NOT NULL,value TEXT NOT NULL,
  ord TEXT,board TEXT,name TEXT,root TEXT,likes TEXT,stamp TEXT,slug TEXT,idnum TEXT,PRIMARY KEY(g,kind,k)) WITHOUT ROWID;
+ CREATE INDEX IF NOT EXISTS projection_active_likes ON projection(g,kind,board,idnum) WHERE kind='likes' AND value='true';
  CREATE INDEX IF NOT EXISTS projection_accounting ON projection(g,kind,idnum,k);
  CREATE INDEX IF NOT EXISTS projection_order ON projection(g,kind,ord,k);
  CREATE INDEX IF NOT EXISTS projection_pending ON projection(g,kind,ord,k) WHERE kind='posts' AND json_extract(value,'$.invocation') IS NOT NULL AND json_extract(value,'$.invocation.reply') IS NULL;
@@ -137,10 +138,11 @@ export function createRollingPublicSqliteStore(directory,{scope,serviceOwned=fal
  const projectionRead=(g,kind,k,b)=>readSized('SELECT value FROM projection WHERE g=? AND kind=? AND k=?',[g,kind,k],b);
  const projectionWrite=(g,kind,k,value)=>{
   requireThat(tables.has(kind)&&typeof k==='string'&&k.length<=160);
-  const p=kind==='posts'?value:null;
+  const p=kind==='posts'?value:null,like=kind==='likes'?k.split(':'):null;
+  if(like)requireThat(like.length===2&&like.every(v=>uint(v))&&typeof value==='boolean');
   prepare(`INSERT INTO projection VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(g,kind,k) DO UPDATE SET
    value=excluded.value,ord=excluded.ord,board=excluded.board,name=excluded.name,root=excluded.root,likes=excluded.likes,stamp=excluded.stamp,slug=excluded.slug,idnum=excluded.idnum`)
-   .run(g,kind,k,encode(value),p?key(p.order):null,p?key(p.record.subboard):null,p?key(p.record.name_id):null,p?key(p.record.root):null,p?key(p.likes):null,p?key(p.timestamp):null,kind==='boards'?value.slug:null,p?key(p.id):kind==='bok'?key(k):null);
+   .run(g,kind,k,encode(value),p?key(p.order):null,p?key(p.record.subboard):like?key(like[0]):null,p?key(p.record.name_id):null,p?key(p.record.root):null,p?key(p.likes):null,p?key(p.timestamp):null,kind==='boards'?value.slug:null,p?key(p.id):like?key(like[1]):kind==='bok'?key(k):null);
  };
  const writeSegment=(c,next,changes,events,blockCompleted,b)=>{
   const seq=key(next.segmentCount),g=c.generation;
@@ -258,7 +260,7 @@ export function createRollingPublicSqliteStore(directory,{scope,serviceOwned=fal
  // alone earns canonical publication and authenticates opaque external cursors.
  function readPublicPage({expectedControl,view,params={},after=null,homeSubboards=[],throughBlock=null,throughHash=null}){
   const expected=captureExpected(expectedControl),input=captureExpected(params),curated=['0',...normalizeHomeSubboards(captureExpected(homeSubboards))];
-  const allowed={'bok-accounting':[],home:[],feed:[],following:['boards','names'],bookmarks:['ids'],chronological:[],pending:[],board:['id'],directory:['query'],thread:['root'],profile:['nameId'],post:['id']};
+  const allowed={likes:['posts'],'bok-accounting':[],home:[],feed:[],following:['boards','names'],bookmarks:['ids'],chronological:[],pending:[],board:['id'],directory:['query'],thread:['root'],profile:['nameId'],post:['id']};
   requireThat(typeof view==='string'&&Object.hasOwn(allowed,view));requireThat(Object.keys(input).every(k=>k==='limit'||allowed[view].includes(k)));
   const limit=input.limit??50;requireThat(bounded(limit,1,100));
   requireThat(throughBlock===null?throughHash===null:view==='bok-accounting'&&uint(throughBlock,53)&&(throughHash===null||hash(throughHash)));
@@ -269,7 +271,8 @@ export function createRollingPublicSqliteStore(directory,{scope,serviceOwned=fal
   }
   requireThat(selectionCount<=100);
   const idKey={board:'id',thread:'root',profile:'nameId',post:'id'}[view];if(idKey)requireThat(field(input[idKey]));
-  requireThat(after===null||field(after));requireThat(view!=='post'||after===null);
+  const likePosts=view==='likes'?normalizeLikePosts(input.posts):null;
+  requireThat(after===null||(view==='likes'?typeof after==='string'&&/^[0-9a-f]{128}$/.test(after)&&likePosts.some(id=>key(id)===after.slice(0,64)):field(after)));requireThat(view!=='post'||after===null);
   const query=input.query??'';requireThat(typeof query==='string'&&query.length<=120&&!query.includes('\0'));const q=query.trim().toLowerCase();
   return transaction(false,()=>{
    const b=budget(limits.maxReadBytes),c=current(expected,b);requireThat(c);const g=c.generation;
@@ -315,7 +318,30 @@ export function createRollingPublicSqliteStore(directory,{scope,serviceOwned=fal
    // envelope. Count all materialized row bytes separately, before JSON reads.
    const fits=value=>Buffer.byteLength(JSON.stringify(value))<=1048576-4096;
    let value,nextAfter=null;
-   if(view==='bok-accounting'){
+   if(view==='likes'){
+    value={postIds:likePosts,items:[]};let last=after,more=false;
+    for(const post of likePosts){
+     const postKey=key(post);if(after!==null&&postKey<after.slice(0,64))continue;
+     const lower=after!==null&&postKey===after.slice(0,64)?after.slice(64):'';
+     work.seeks++;
+     const selected="SELECT CASE WHEN length(k)<=160 THEN k END AS k,CASE WHEN length(idnum)=64 THEN idnum END AS idnum,length(CAST(k AS BLOB))+length(CAST(idnum AS BLOB))+length(CAST(value AS BLOB)) AS bytes FROM projection INDEXED BY projection_active_likes WHERE g=? AND kind='likes' AND value='true' AND board=? AND idnum>? ORDER BY idnum LIMIT ?";
+     const args=[g,postKey,lower,limit-value.items.length+1];
+     // Charge bounded row bytes before materializing identifiers in JavaScript.
+     // Both seeks share the same guarded SQLite read transaction.
+     const size=prepare(`SELECT COALESCE(sum(bytes),0) AS bytes FROM (${selected})`).get(...args).bytes;
+     if(!bounded(size,0,limits.maxReadBytes)||b.bytes+size>b.max)throw capacity();b.bytes+=size;
+     work.seeks++;const found=prepare(selected).all(...args);
+     work.candidateRows+=found.length;work.materializedRows+=found.length;
+     for(const row of found){
+      requireThat(typeof row.idnum==='string'&&/^[0-9a-f]{64}$/.test(row.idnum));const tag=String(BigInt('0x'+row.idnum));
+      requireThat(field(tag)&&tag!=='0'&&row.k===post+':'+tag);
+      if(value.items.length===limit){more=true;break;}
+      value.items.push({post,tag});last=postKey+row.idnum;
+     }
+     if(more)break;
+    }
+    if(more)nextAfter=last;
+   }else if(view==='bok-accounting'){
     requireThat(capturedScope.bok,'ROLLING_PUBLIC_ACCOUNTING_UNSUPPORTED');value={requests:[]};
     let examined=0,last=after;
     for(const row of rows('accounting',[after===null?'':key(after)],limit+1)){

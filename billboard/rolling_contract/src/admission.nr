@@ -192,3 +192,50 @@ use aztec::protocol::constants::MAX_TX_LIFETIME;
         }
     }
 
+
+/// Earliest candidate anchor for this thread, based on concrete historical
+/// deadlines/penalties. Only the first count-1 admission costs affect when the
+/// final item may start; that final item still pays its own complete penalty.
+/// The caller must authenticate the returned utility observation; post_thread
+/// independently repeats all actual history proofs and admission checks.
+pub fn thread_ready_time(timestamp: u64, previous: u64, cooldown: u64, k: u64,
+    max_save_up: u64, count: u32, history_length: u32,
+    deadlines: [u64; 8], penalized: [bool; 8]) -> u64 {
+    assert((count >= 2) & (count <= 4), "Thread must contain 2 to 4 posts");
+    assert(history_length <= 8, "Thread history exhausted");
+    assert((cooldown > 0) & (cooldown <= 0xffffffff), "Invalid cooldown");
+    assert((k > 0) & (k <= 0xffff), "Invalid penalty multiplier");
+    assert((max_save_up > 0) & (max_save_up <= 0xffff), "Invalid save-up cap");
+    assert((timestamp <= 0x7fffffffffffffff) & (previous <= 0x7fffffffffffffff), "Timestamp out of range");
+    let saved = cooldown * (max_save_up - 1);
+    let mut candidate = if timestamp > previous { timestamp } else { previous };
+    let mut stable = false;
+    // At most eight history entries can newly mature as the candidate rises.
+    // A final pass verifies the fixed point rather than accepting an iteration cap.
+    for _ in 0..9 {
+        let mut cursor: u32 = 0;
+        let mut cost: u64 = 0;
+        for i in 0..3 {
+            if i + 1 < count {
+                let mut flags: u64 = 0;
+                for _ in 0..2 {
+                    if cursor < history_length {
+                        if candidate >= deadlines[cursor] {
+                            if penalized[cursor] { flags += 1; }
+                            cursor += 1;
+                        }
+                    }
+                }
+                cost = checked_time_add(cost, cooldown * (1 + (k - 1) * flags));
+            }
+        }
+        assert(cost <= saved, "Thread exceeds available posting capacity");
+        let next = checked_time_add(previous, cost);
+        stable = next <= candidate;
+        candidate = if next > candidate { next } else { candidate };
+    }
+    // Future maturity cannot decrease penalty or move this candidate backwards.
+    // Nine passes cover all eight possible maturity transitions and stability.
+    assert(stable, "Thread readiness did not stabilize");
+    candidate
+}

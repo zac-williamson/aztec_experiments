@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 27October PR9 merged and UI2305be59 live. Real reply/nested reply included and rendered; pointer folding, mobile drawer and home navigation verified. 60 UI/model checks and30 publisher checks pass; core services active. Evidence execution/evidence/G21/stable6/ui-pr9/. Performance remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — Queued composer/identity/funding release integrated locally; atomic thread contract and native boundary checks passed, final combined contract build running. One-router ETH/USDC credit and name+avatar implemented. Likes count is idempotent one per account/post; first proposed hydration patch rejected by independent review for RPC linkage and stale/retry cache issues. Agents implementing public post-tag pages, wallet-local matching and nonblocking UI hydration. No new release published; performance goal remains paused.
 
 ## Ready internal work
 

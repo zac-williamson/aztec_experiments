@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.27;
-import {BokCreditRouter} from "../src/BokCreditRouter.sol";
+import {RollingFundingRouter} from "../src/RollingFundingRouter.sol";
+import {BillboardPortal} from "../src/BillboardPortal.sol";
 import {PluginPortal} from "../src/PluginPortal.sol";
 import {AccountingRollup,AccountingOutbox} from "./PortalArtifactRegression.t.sol";
-import {FundingToken,FundingWrapped,FundingDex,FundingVm,FundingForce} from "./RollingFundingRouter.t.sol";
+import {FundingToken,FundingWrapped,FundingDex,FundingVm,FundingForce,FundingFeeBridge} from "./RollingFundingRouter.t.sol";
 import {Inbox} from "@aztec/core/messagebridge/Inbox.sol";
 import {IERC20} from "@oz/token/ERC20/IERC20.sol";
 import {IInbox} from "@aztec/core/interfaces/messagebridge/IInbox.sol";
@@ -22,28 +23,33 @@ interface BokLogVm {
     function getRecordedLogs() external returns(Log[] memory);
 }
 contract BokCreditBuyer {
-    bool public rejectRefund; bool public reenter; bool public blocked; BokCreditRouter private router;
-    function buy(BokCreditRouter r,BokCreditRouter.Purchase calldata p,bool reject,bool attack) external payable {
+    bool public rejectRefund; bool public reenter; bool public blocked; RollingFundingRouter private router;
+    function buy(RollingFundingRouter r,RollingFundingRouter.Purchase calldata p,bool reject,bool attack) external payable {
         router=r;rejectRefund=reject;reenter=attack;r.buyCredit{value:msg.value}(p);
     }
     receive() external payable {
         require(!rejectRefund,"Rejected");
-        if(reenter) { BokCreditRouter.Purchase memory p=BokCreditRouter.Purchase(bytes32(uint256(11)),1,bytes32(uint256(12)),3000,block.timestamp);
+        if(reenter) { RollingFundingRouter.Purchase memory p=RollingFundingRouter.Purchase(bytes32(uint256(11)),1,bytes32(uint256(12)),3000,block.timestamp);
             try router.buyCredit{value:10}(p) {revert("Reentered");} catch {blocked=true;}
         }
     }
 }
-contract BokCreditRouterTest {
+contract RollingFundingRouterCreditTest {
     FundingVm constant vm=FundingVm(address(uint160(uint256(keccak256("hevm cheat code")))));
-    FundingToken token; FundingWrapped weth; FundingDex dex; PluginPortal portal; BokCreditRouter router; address alice;
+    FundingToken token; FundingWrapped weth; FundingDex dex; PluginPortal portal; RollingFundingRouter router; address alice;
     function setUp() public {
         token=new FundingToken();weth=new FundingWrapped();dex=new FundingDex();AccountingRollup rollup=new AccountingRollup();
         portal=new PluginPortal(address(rollup),bytes32(uint256(4)),1,address(token));portal.activate(0,0,0,new bytes32[](0));
-        router=new BokCreditRouter(address(portal),address(weth),address(dex));token.seed(address(dex),10000);
+        router=creditRouter(rollup);token.seed(address(dex),10000);
         alice=vm.addr(123);vm.deal(alice,1 ether);vm.deal(address(this),1 ether);
     }
-    function purchase() private view returns(BokCreditRouter.Purchase memory) {return BokCreditRouter.Purchase(bytes32(uint256(11)),200,bytes32(uint256(12)),3000,block.timestamp+900);}
-    function buy(BokCreditRouter.Purchase memory p,uint256 value) private {vm.prank(alice);router.buyCredit{value:value}(p);}
+    function creditRouter(AccountingRollup rollup) private returns(RollingFundingRouter) {
+        BillboardPortal collateral=new BillboardPortal(address(rollup),bytes32(uint256(4)),1,1 ether,2 ether,bytes32(uint256(2)));
+        FundingToken fee=new FundingToken();FundingFeeBridge feeBridge=new FundingFeeBridge(address(fee),address(rollup));
+        return new RollingFundingRouter(address(collateral),address(feeBridge),address(portal),address(weth),address(dex),bytes32(uint256(3)));
+    }
+    function purchase() private view returns(RollingFundingRouter.Purchase memory) {return RollingFundingRouter.Purchase(bytes32(uint256(11)),200,bytes32(uint256(12)),3000,block.timestamp+900);}
+    function buy(RollingFundingRouter.Purchase memory p,uint256 value) private {vm.prank(alice);router.buyCredit{value:value}(p);}
     function empty() private view {require(token.balanceOf(address(portal))==0 && token.balanceOf(address(dex))==10000 && weth.balanceOf(address(dex))==0,"Payment not atomic");require(address(router).balance==0 && weth.balanceOf(address(router))==0 && token.balanceOf(address(router))==0,"Retained payment");}
     function testOnePaymentBuysExactCreditRefundsAndClearsAllowances() public {
         buy(purchase(),3000);require(alice.balance==1 ether-2000 && token.balanceOf(address(portal))==200,"Wrong debit/credit");
@@ -65,13 +71,13 @@ contract BokCreditRouterTest {
         require(portalEvents==1&&purchaseEvents==1);
     }
     function testInvalidSecretAndInactivePortalRollback() public {
-        BokCreditRouter.Purchase memory p=purchase();p.secretHash=bytes32(0);vm.expectRevert();buy(p,3000);empty();
+        RollingFundingRouter.Purchase memory p=purchase();p.secretHash=bytes32(0);vm.expectRevert();buy(p,3000);empty();
         AccountingRollup rollup=new AccountingRollup();portal=new PluginPortal(address(rollup),bytes32(uint256(4)),1,address(token));
-        router=new BokCreditRouter(address(portal),address(weth),address(dex));vm.expectRevert();buy(purchase(),3000);empty();
+        router=creditRouter(rollup);vm.expectRevert();buy(purchase(),3000);empty();
     }
     function testExactBudgetNeedsNoRefund() public {buy(purchase(),2000);require(alice.balance==1 ether-2000 && token.balanceOf(address(portal))==200);}
     function testSlippageFailureRollsBackEntirePurchase() public {vm.expectRevert();buy(purchase(),1999);empty();}
-    function testPortalRejectionRollsBackSwap() public {BokCreditRouter.Purchase memory p=purchase();p.commitment=bytes32(0);vm.expectRevert();buy(p,3000);empty();}
+    function testPortalRejectionRollsBackSwap() public {RollingFundingRouter.Purchase memory p=purchase();p.commitment=bytes32(0);vm.expectRevert();buy(p,3000);empty();}
     function testNoLiquidityCannotLeavePartialExchange() public {dex.configure(true,false);vm.expectRevert();buy(purchase(),3000);empty();}
     function testIncorrectExchangeOutputCannotSpendDonations() public {
         token.seed(address(router),17);dex.configure(false,true);vm.expectRevert();buy(purchase(),3000);
@@ -82,7 +88,7 @@ contract BokCreditRouterTest {
         buy(purchase(),3000);require(alice.balance==1 ether-2000 && token.balanceOf(address(router))==17 && weth.balanceOf(address(router))==23 && address(router).balance==31);
     }
     function testExpiredQuoteAndChangedChainReject() public {
-        BokCreditRouter.Purchase memory p=purchase();vm.warp(p.deadline+1);vm.expectRevert();buy(p,3000);empty();
+        RollingFundingRouter.Purchase memory p=purchase();vm.warp(p.deadline+1);vm.expectRevert();buy(p,3000);empty();
         p=purchase();vm.chainId(block.chainid+1);vm.expectRevert();buy(p,3000);empty();
     }
     function testRefundRejectionRollsBackPurchase() public {BokCreditBuyer buyer=new BokCreditBuyer();vm.expectRevert();buyer.buy{value:3000}(router,purchase(),true,false);empty();}

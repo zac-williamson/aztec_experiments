@@ -16,7 +16,8 @@ async function fixture(t,options={}){
  const signer=new Wallet(h(1)),relayer=signer.address.toLowerCase(),codeHash=keccak256('0x6001');
  const config={chainId:'31337',development:true,router:a(2),routerCodeHash:codeHash,collateralPortal:a(3),feePortal:a(4),bokPortal:a(5),privateFpc:h(6),usdc:a(7),usdcCodeHash:codeHash,usdcImplementation:a(8),usdcImplementationCodeHash:codeHash,weth:a(9),quoter:a(10),quoterCodeHash:codeHash,gasPoolFee:500,relayer,feeUsdc:'500',maxGasWei:'1000',totalGasBudgetWei:options.budget??'2000'};
  const plan={beneficiary:a(11),relayer,collateral:{amount:'100',maxUsdc:'200',poolFee:500},collateralSecretHash:h(12),fee:{amount:'100',maxUsdc:'200',poolFee:500},feeSecretHash:h(13),bokAmount:'300',bokCommitment:h(14),bokSecretHash:h(15),nonce:'0',validAfter:'0',deadline:String(Math.floor(Date.now()/1000)+120),relayFeeUsdc:'500',authorizationSalt:h(16)};
- const input={data:abi.encodeFunctionData('fundUsdc',[plan,'0x01','0x02'])};
+ if(options.feeOnly)Object.assign(plan,{collateral:{amount:'0',maxUsdc:'0',poolFee:0},collateralSecretHash:h(0),bokAmount:'0',bokCommitment:h(0),bokSecretHash:h(0)});
+ const input={data:abi.encodeFunctionData('fundUsdc',[plan,options.feeOnly?'0x':'0x01','0x02'])};
  const state={sends:0,signs:0,calls:0,canonical:!options.unknown,receipt:null,nonce:0};
  const event=(address,iface,name,values)=>({address,...iface.encodeEventLog(iface.getEvent(name),values)});
  const provider={getNetwork:async()=>({chainId:options.wrongChain?1n:31337n}),getBlock:async tag=>({number:10,timestamp:Math.floor(Date.now()/1000),hash:h(options.reorg&&typeof tag==='number'?99:20)}),getCode:async()=>options.wrongCode?'0x6002':'0x6001',getBalance:async()=>999999n,
@@ -26,7 +27,7 @@ async function fixture(t,options={}){
   broadcastTransaction:async raw=>{state.sends++;const tx=Transaction.from(raw),parsed=abi.parseTransaction(tx),p=parsed.args[0];
    const files=await fs.readdir(directory),records=await Promise.all(files.filter(x=>x!=='funding-budget.json').map(async file=>JSON.parse(await fs.readFile(path.join(directory,file),'utf8'))));
    const record=records.find(r=>r.operations?.['relay-funding']?.hash===tx.hash)?.operations['relay-funding'];assert(record,'Signed hash persisted before broadcast');assert.equal(record.raw,raw.slice(2));
-   state.receipt={hash:tx.hash,blockNumber:10,blockHash:h(20),status:1,logs:[event(config.router,abi,'UsdcFunded',[p.beneficiary,record.identity,relayer,100,100,300,150,150,500,100]),event(config.collateralPortal,board,'Deposited',[p.beneficiary,100,h(12),h(21),1]),event(config.feePortal,fee,'DepositToAztecPublic',[h(6),100,h(13),h(22),2]),event(config.bokPortal,bok,'Deposited',[h(14),300,h(23),3])]};
+   state.receipt={hash:tx.hash,blockNumber:10,blockHash:h(20),status:1,logs:[event(config.router,abi,'UsdcFunded',[p.beneficiary,record.identity,relayer,p.collateral.amount,p.fee.amount,p.bokAmount,options.feeOnly?0:150,150,500,options.feeOnly?50:100]),...(options.feeOnly?[]:[event(config.collateralPortal,board,'Deposited',[p.beneficiary,100,h(12),h(21),1])]),event(config.feePortal,fee,'DepositToAztecPublic',[h(6),100,h(13),h(22),2]),...(options.feeOnly?[]:[event(config.bokPortal,bok,'Deposited',[h(14),300,h(23),3])])]};
    if(options.lostAck)throw Error('LOST_ACK_PRIVATE_SENTINEL');return {hash:tx.hash};},
  };
  const trustedSigner={getAddress:()=>signer.getAddress(),signTransaction:async tx=>{state.signs++;return signer.signTransaction(tx);}};
@@ -171,3 +172,5 @@ test('status awaits the owned in-flight original submission without allocating a
  await Promise.resolve();assert.equal(settled,false);release();
  const [sent,status]=await Promise.all([submitted,observed]);assert.equal(status.transactionHash,sent.transactionHash);assert.equal(status.canonical,true);assert.equal(f.state.sends,1);assert.equal(f.state.signs,1);
 });
+
+test('existing relay accepts fee-only USDC authorization and returns one conserved fee purchase',async t=>{const f=await fixture(t,{feeOnly:true}),r=await f.relay.submit(f.input);assert.equal(r.status,'succeeded');assert.equal(r.canonical,true);assert.equal(f.state.sends,1);assert.equal(f.state.signs,1);assert.deepEqual(await f.relay.submit(f.input),r);assert.equal(f.state.sends,1);});

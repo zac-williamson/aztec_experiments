@@ -486,7 +486,7 @@ fn human_draft_cannot_impersonate_bot_kind() { let mut d = draft(); d.kind = 4; 
 #[test]
 unconstrained fn authenticated_bok_reply_preserves_thread_moderation_and_accounting() {
     let (env, board, op, user, bok, subboard) = reply_setup(true);
-    env.call_public(op, PrivateBok::at(bok).reserve(401, 0, 100));
+    // Activation already reserves the authorized budget; settle that reservation.
     env.call_public(op, PrivateBok::at(bok).settle(401, 0, 40, 999));
     let before = env.view_public(PrivateBok::at(bok).request(401));
     env.call_public(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 1));
@@ -598,6 +598,7 @@ unconstrained fn bot_reply_to_nested_invocation_keeps_original_thread_root() {
     env.call_private(bob, PrivateBok::at(bok).authorize_request(401, invocation_target(1, 1, board, bok, 201, d), 600));
     env.mine_block_at(env.last_block_timestamp() + 11);
     env.call_private(bob, RollingBoard::at(board).post_with_bok(bob_chain, 201, d, Option::none(), Option::none(), 77, 401));
+    env.call_public(op, PrivateBok::at(bok).settle(401, 0, 0, 999));
     env.call_public(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
     let (exists, record, _, _, _) = env.view_public(RollingBoard::at(board).get_post(crate::posting::bot_reply_id(board, bok, 401)));
     assert(exists); assert_eq(record.parent, post_id(board, 201)); assert_eq(record.root, root);
@@ -703,4 +704,185 @@ unconstrained fn history_seeded_1002_tail_authentication_and_exit() {
     env.mine_block_at(env.last_block_timestamp() + 201);
     env.call_private(owner, RollingBoard::at(board).withdraw(chain));
     assert_eq(env.execute_utility(RollingBoard::at(board).get_deposit_info(owner, chain)), [0; 11]);
+}
+
+fn thread_drafts(board: AztecAddress, nonces: [Field; 4], count: u32, first: PostDraft) -> [PostDraft; 4] {
+    let mut drafts = [first; 4];
+    let root = if first.parent == 0 { post_id(board, nonces[0]) } else { first.root_reference };
+    for i in 1..4 {
+        if i < count {
+            drafts[i].parent = post_id(board, nonces[i - 1]);
+            drafts[i].root_reference = root;
+            drafts[i].kind = 1; drafts[i].reference = 0;
+        }
+    }
+    drafts
+}
+#[test]
+fn thread_identity_is_derived_and_links_are_canonical() {
+    let board = AztecAddress::from_field(42); let nonces = [201, 202, 203, 204];
+    let drafts = thread_drafts(board, nonces, 4, draft());
+    let ids = crate::posting::validate_thread(board, nonces, drafts, 4, [0; 4], [0; 4]);
+    for i in 0..4 { assert_eq(ids[i], post_id(board, nonces[i])); }
+}
+#[test(should_fail_with="Invalid thread link")]
+fn thread_cannot_link_to_an_unrelated_previous_post() {
+    let board = AztecAddress::from_field(42); let nonces = [201, 202, 0, 0];
+    let mut drafts = thread_drafts(board, nonces, 2, draft()); drafts[1].parent = 99;
+    let _ = crate::posting::validate_thread(board, nonces, drafts, 2, [0; 4], [0; 4]);
+}
+#[test(should_fail_with="Duplicate thread post")]
+fn thread_cannot_reuse_a_nonce() {
+    let board = AztecAddress::from_field(42); let nonces = [201, 201, 0, 0];
+    let drafts = thread_drafts(board, nonces, 2, draft());
+    let _ = crate::posting::validate_thread(board, nonces, drafts, 2, [0; 4], [0; 4]);
+}
+#[test(should_fail_with="Thread Bok capacity exceeded")]
+fn thread_rejects_bok_mix_above_supported_public_write_budget() {
+    let board = AztecAddress::from_field(42); let nonces = [201, 202, 203, 204];
+    let drafts = thread_drafts(board, nonces, 4, draft());
+    let _ = crate::posting::validate_thread(board, nonces, drafts, 4, [77, 0, 0, 0], [401, 0, 0, 0]);
+}
+#[test]
+fn thread_readiness_includes_penalties_that_mature_while_waiting() {
+    let mut deadlines = [0; 8]; deadlines[0] = 115;
+    let mut flags = [false; 8]; flags[0] = true;
+    assert_eq(crate::admission::thread_ready_time(100, 100, 10, 3, 10, 3, 1, deadlines, flags), 140);
+}
+#[test(should_fail_with="Thread exceeds available posting capacity")]
+fn thread_readiness_rejects_a_count_that_cannot_fit_saved_capacity() {
+    let _ = crate::admission::thread_ready_time(100, 0, 10, 3, 2, 3, 0, [0; 8], [false; 8]);
+}
+
+#[test]
+unconstrained fn atomic_thread_from_fresh_deposit_preserves_every_history_link() {
+    let (env, board, _, owner, _) = setup(); let chain = fund(env, board, owner, 101);
+    env.mine_block_at(env.last_block_timestamp() + 101);
+    let nonces = [201, 202, 203, 204]; let drafts = thread_drafts(board, nonces, 4, draft());
+    let history = env.execute_utility(RollingBoard::at(board).get_thread_screen_hints(owner, chain, 4));
+    for i in 0..8 { assert(history[i].is_none()); }
+    let now = env.last_block_timestamp();
+    assert_eq(env.execute_utility(RollingBoard::at(board).get_thread_ready_time(owner, chain, 4, now)), now);
+    env.call_private(owner, RollingBoard::at(board).post_thread(chain, nonces, drafts, 4, history, [0; 4], [0; 4]));
+    assert_eq(env.view_public(RollingBoard::at(board).get_post_count()), 4);
+    let deposit = env.execute_utility(RollingBoard::at(board).get_deposit_info(owner, chain));
+    assert_eq(deposit[5], 4); assert_eq(deposit[7], 0); assert_eq(deposit[8], 4);
+    for i in 0..4 {
+        let (exists, record, _, _, _) = env.view_public(RollingBoard::at(board).get_post(post_id(board, nonces[i])));
+        assert(exists); assert_eq(record.parent, drafts[i].parent); assert_eq(record.root, post_id(board, 201));
+    }
+    env.mine_block_at(env.last_block_timestamp() + 201);
+    let _ = publish(env, board, owner, chain, 205, draft());
+    let after = env.execute_utility(RollingBoard::at(board).get_deposit_info(owner, chain));
+    assert_eq(after[5], 5); assert_eq(after[7], 2); assert_eq(after[8], 5);
+}
+#[test]
+unconstrained fn thread_screens_two_old_successors_per_post_and_stops_at_original_head() {
+    let (env, board, _, owner, _) = setup(); let chain = fund(env, board, owner, 101);
+    for i in 0..5 { let _ = publish(env, board, owner, chain, 201 + i as Field, draft()); }
+    env.mine_block_at(env.last_block_timestamp() + 201);
+    let nonces = [301, 302, 303, 304]; let drafts = thread_drafts(board, nonces, 4, draft());
+    let history = env.execute_utility(RollingBoard::at(board).get_thread_screen_hints(owner, chain, 4));
+    for i in 0..5 { assert(history[i].is_some()); }
+    for i in 5..8 { assert(history[i].is_none()); }
+    env.call_private(owner, RollingBoard::at(board).post_thread(chain, nonces, drafts, 4, history, [0; 4], [0; 4]));
+    let after = env.execute_utility(RollingBoard::at(board).get_deposit_info(owner, chain));
+    assert_eq(after[5], 9); assert_eq(after[7], 5); assert_eq(after[8], 9);
+    let (child, grandchild) = env.execute_utility(RollingBoard::at(board).get_screen_hints(owner, chain));
+    assert_eq(child.unwrap_unchecked().note.sequence, 6); assert_eq(grandchild.unwrap_unchecked().note.sequence, 7);
+}
+#[test]
+unconstrained fn thread_does_not_rescreen_immature_or_fresh_notes_as_mature() {
+    let (env, board, _, owner, _) = setup(); let chain = fund(env, board, owner, 101);
+    let _ = publish(env, board, owner, chain, 201, draft());
+    let ready = env.execute_utility(RollingBoard::at(board).get_thread_ready_time(owner, chain, 3, env.last_block_timestamp()));
+    env.mine_block_at(ready);
+    let nonces = [301, 302, 303, 0]; let drafts = thread_drafts(board, nonces, 3, draft());
+    let history = env.execute_utility(RollingBoard::at(board).get_thread_screen_hints(owner, chain, 3));
+    env.call_private(owner, RollingBoard::at(board).post_thread(chain, nonces, drafts, 3, history, [0; 4], [0; 4]));
+    let after = env.execute_utility(RollingBoard::at(board).get_deposit_info(owner, chain));
+    assert_eq(after[5], 4); assert_eq(after[7], 0); assert_eq(after[8], 4);
+}
+
+#[test(should_fail_with="Child note required for screening")]
+unconstrained fn thread_cannot_skip_authenticated_historical_screening() {
+    let (env, board, _, owner, _) = setup(); let chain = fund(env, board, owner, 101);
+    let _ = publish(env, board, owner, chain, 201, draft());
+    env.mine_block_at(env.last_block_timestamp() + 101);
+    let nonces = [301, 302, 0, 0]; let drafts = thread_drafts(board, nonces, 2, draft());
+    env.call_private(owner, RollingBoard::at(board).post_thread(chain, nonces, drafts, 2, [Option::none(); 8], [0; 4], [0; 4]));
+}
+#[test(should_fail_with="C02 wrong owner")]
+unconstrained fn thread_rejects_another_owners_historical_note() {
+    let (env, board, _, alice, bob) = setup(); let ac = fund(env, board, alice, 101); let bc = fund(env, board, bob, 102);
+    let _ = publish(env, board, alice, ac, 201, draft()); let _ = publish(env, board, bob, bc, 202, draft());
+    env.mine_block_at(env.last_block_timestamp() + 101);
+    let nonces = [301, 302, 0, 0]; let drafts = thread_drafts(board, nonces, 2, draft());
+    let wrong = env.execute_utility(RollingBoard::at(board).get_thread_screen_hints(bob, bc, 2));
+    env.call_private(alice, RollingBoard::at(board).post_thread(ac, nonces, drafts, 2, wrong, [0; 4], [0; 4]));
+}
+#[test(should_fail_with="Too early to post -- time lock not yet expired")]
+unconstrained fn thread_each_post_consumes_a_saved_cooldown_slot() {
+    let (env, board, _, owner, _) = setup_saved(2); let chain = fund(env, board, owner, 101);
+    env.mine_block_at(env.last_block_timestamp() + 101);
+    let nonces = [201, 202, 203, 0]; let drafts = thread_drafts(board, nonces, 3, draft());
+    env.call_private(owner, RollingBoard::at(board).post_thread(chain, nonces, drafts, 3, [Option::none(); 8], [0; 4], [0; 4]));
+}
+
+#[test]
+unconstrained fn thread_charges_historical_flag_penalty_once_and_every_new_post() {
+    let (env, board, moderator, owner, _) = setup(); let chain = fund(env, board, owner, 101);
+    let id = publish(env, board, owner, chain, 201, draft());
+    env.call_public(moderator, RollingBoard::at(board).remove_post(id, 1, 0, text("Unsafe"), 6));
+    env.mine_block_at(env.last_block_timestamp() + 201);
+    let before = env.execute_utility(RollingBoard::at(board).get_deposit_info(owner, chain));
+    let now = env.last_block_timestamp();
+    let first = crate::admission::compute_next_allowed(now, before[9] as u64, 10, 3, 10, 1);
+    let second = crate::admission::compute_next_allowed(now, first, 10, 3, 10, 0);
+    let last = crate::admission::compute_next_allowed(now, second, 10, 3, 10, 0);
+    let nonces = [301, 302, 303, 0]; let drafts = thread_drafts(board, nonces, 3, draft());
+    let history = env.execute_utility(RollingBoard::at(board).get_thread_screen_hints(owner, chain, 3));
+    env.call_private(owner, RollingBoard::at(board).post_thread(chain, nonces, drafts, 3, history, [0; 4], [0; 4]));
+    let after = env.execute_utility(RollingBoard::at(board).get_deposit_info(owner, chain));
+    assert_eq(after[9], last as Field); assert_eq(after[7], 1);
+}
+#[test(should_fail_with="Main policy changed")]
+unconstrained fn thread_stale_public_policy_rejects_whole_transaction() {
+    let (env, board, _, owner, _) = setup(); let chain = fund(env, board, owner, 101);
+    env.mine_block_at(env.last_block_timestamp() + 101);
+    let nonces = [201, 202, 0, 0]; let mut first = draft(); first.expected_main_policy_version = 99;
+    let drafts = thread_drafts(board, nonces, 2, first);
+    env.call_private(owner, RollingBoard::at(board).post_thread(chain, nonces, drafts, 2, [Option::none(); 8], [0; 4], [0; 4]));
+}
+
+// The first queued publication is valid; the second collides with an existing
+// public ID. TXE proves rejection, while live SDK integration must additionally
+// inspect unchanged state because Noir TestEnvironment cannot catch failures.
+#[test(should_fail_with="Post already exists")]
+unconstrained fn thread_later_public_failure_rejects_transaction() {
+    let (env, board, _, owner, _) = setup(); let chain = fund(env, board, owner, 101);
+    let _ = publish(env, board, owner, chain, 202, draft());
+    env.mine_block_at(env.last_block_timestamp() + 101);
+    let nonces = [301, 202, 0, 0]; let drafts = thread_drafts(board, nonces, 2, draft());
+    let history = env.execute_utility(RollingBoard::at(board).get_thread_screen_hints(owner, chain, 2));
+    env.call_private(owner, RollingBoard::at(board).post_thread(chain, nonces, drafts, 2, history, [0; 4], [0; 4]));
+}
+
+#[test]
+unconstrained fn thread_three_posts_activate_exact_bok_request() {
+    let (env, board, moderator, owner, _) = setup(); let chain = fund(env, board, owner, 101);
+    let bok = configure_funded_bok(env, board, moderator, owner);
+    let nonces = [301, 302, 303, 0]; let drafts = thread_drafts(board, nonces, 3, draft());
+    let target = invocation_target(1, 1, board, bok, 302, drafts[1]);
+    env.call_private(owner, PrivateBok::at(bok).authorize_request(401, target, 600));
+    let ready = env.execute_utility(RollingBoard::at(board).get_thread_ready_time(owner, chain, 3, env.last_block_timestamp()));
+    env.mine_block_at(ready);
+    let history = env.execute_utility(RollingBoard::at(board).get_thread_screen_hints(owner, chain, 3));
+    env.call_private(owner, RollingBoard::at(board).post_thread(chain, nonces, drafts, 3, history, [0, 77, 0, 0], [0, 401, 0, 0]));
+    let request = env.view_public(PrivateBok::at(bok).request(401));
+    assert_eq(request.state, 2); assert_eq(request.invocation_hash, target);
+    assert_eq(request.reserved, 600); assert_eq(request.available, 0);
+    assert_eq(env.view_public(RollingBoard::at(board).get_post_count()), 3);
+    let (_, record, _, _, _) = env.view_public(RollingBoard::at(board).get_post(post_id(board, 302)));
+    assert_eq(record.parent, post_id(board, 301)); assert_eq(record.root, post_id(board, 301));
 }

@@ -70,9 +70,9 @@ test('refund-only publication requires explicit public endpoint and does not rel
  v.config.refundOnly='true';assert.throws(()=>validateRollingWalletConfig(v));
 });
 
-test('Bok ETH purchase metadata requires pinned router code and existing funding bindings',()=>{
+test('Bok ETH purchase uses the sole aggregate router configuration',()=>{
  const v=fixture();v.config.bok={contractAddress:address(5),operatorAddress:address(6),pluginId:address(7)};
- v.config.aggregateFunding={chainId:'31337',router:eth(8),routerCodeHash:address(9),collateralPortal:v.config.board.portalAddress,feePortal:eth(10),bokPortal:eth(11),weth:eth(12),swapRouter:eth(13),feeToken:eth(14),bokToken:eth(15),privateFpc:v.config.privateFee.contractAddress,quoter:eth(16),quoterCodeHash:address(17)};v.config.bokTopup={router:eth(18),routerCodeHash:address(19)};
- const result=validateRollingWalletConfig(v);assert.deepEqual(result.value.config.bokTopup,v.config.bokTopup);
- for(const alter of [x=>delete x.config.bok,x=>delete x.config.aggregateFunding,x=>delete x.config.bokTopup.routerCodeHash,x=>x.config.bokTopup.router=eth(0),x=>x.config.bokTopup.secret='PRIVATE_SENTINEL']){const bad=structuredClone(v);alter(bad);assert.throws(()=>validateRollingWalletConfig(bad));}
+ v.config.aggregateFunding={chainId:'31337',router:eth(8),routerCodeHash:address(9),collateralPortal:v.config.board.portalAddress,feePortal:eth(10),bokPortal:eth(11),weth:eth(12),swapRouter:eth(13),feeToken:eth(14),bokToken:eth(15),privateFpc:v.config.privateFee.contractAddress,quoter:eth(16),quoterCodeHash:address(17)};
+ assert.deepEqual(validateRollingWalletConfig(v).value.config.aggregateFunding,v.config.aggregateFunding);
+ v.config.bokTopup={router:eth(18),routerCodeHash:address(19)};assert.throws(()=>validateRollingWalletConfig(v));
 });

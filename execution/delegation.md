@@ -354,3 +354,7 @@ Root integrated and published the reviewed posting-readiness and relay reconcili
 Root reviews deployment, integrates and runs focused checks. completion_evidence_review independently reviews origin/master...origin/pr-9 read-only. Performance work remains paused.
 
 PR9 completed: completion_evidence_review approved renderer/expander, publisher assets, exact Caddy asset allowance and final two CSS fixes. Root published2305be59 and verified two real included replies, pointer folding and desktop/mobile navigation. No additional build/dependency tree or agent checkout created. Performance remains paused.
+
+27 October composer/identity/funding release: root sole shared-checkout writer; thread_composer_review isolated contract patch integrated and now owns retained native build/TXE; thread_application isolated native patch integrated and independently reviewed contract, now owns like count/pending/privacy investigation; posting_credit_ui name/avatar patch integrated and now owns isolated consolidated-router ETH/USDC fee-only topups. Root budget-ring/thread DOM checks pass. Performance remains paused.
+
+27 October like review correction: first patch NOT integrated. thread_composer_review implements owner-independent public tag pages; thread_application wallet-local tag matching/duplicate guard; posting_credit_ui UI hydration without private operation queue waits, reorg invalidation and revision-based retries. Root final contract build and release integration.

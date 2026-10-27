@@ -519,6 +519,7 @@ export async function deployTestnetFundingRouter({plan:input,statePath,keyFile,q
   const node=createAztecNodeClient(plan.nodeUrl,{fetch:operatorNodeFetch({endpoint:plan.nodeUrl,key:queryApiKey,serialize:jsonStringify})});
   const root=new URL('../',import.meta.url),bytes=await fs.readFile(new URL('billboard/portal/out/RollingFundingRouter.sol/RollingFundingRouter.json',root)),artifact=JSON.parse(bytes),manifest=await read(new URL('.build/contracts-manifest.json',root));
   if(manifest.fundingRouter!==artifactSha(bytes)||JSON.stringify(manifest.inputs)!==JSON.stringify(contractInputs(fileURLToPath(root))))throw Error('Normal funding router build provenance required');
+  if (!artifact.abi.some(x=>x.type==='function'&&x.name==='buyCredit') || !artifact.abi.some(x=>x.type==='event'&&x.name==='CreditPurchased')) throw Error('Combined funding router required');
   const [boardRaw,bokRaw]=loadRollingArtifacts(),boardClass=String((await getContractClassFromArtifact(loadContractArtifact(boardRaw))).id),bokClass=String((await getContractClassFromArtifact(loadContractArtifact(bokRaw))).id);
   const feeInstance=await derivePrivateFeeInstance(await read(new URL('apps/src/billboard/private_fee_artifact.json',root)));
   if(String(feeInstance.address)!==plan.privateFpc)throw Error('Canonical FPC mismatch');

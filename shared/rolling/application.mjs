@@ -1,3 +1,5 @@
+import {likePostIds,readPublicLikeState} from './like-state.mjs';
+import {captureThreadAction,linkThreadDrafts,MAX_THREAD_POSTS} from './thread-action.mjs';
 import {createEncryptedJournalSlot} from '../journal-record.mjs';
 import {l2JournalScopeText} from '../l2-journal.mjs';
 import {nameRegistration,NAME_DOMAIN} from './name-policy.mjs';
@@ -62,6 +64,12 @@ function avatar(action){
   check(binary.length===0?action.width===0&&action.height===0:action.width===100&&action.height===100);
   return [field(action.name,true),version(action.expectedVersion),action.width,action.height,binary.length,pack(Uint8Array.from(binary,c=>c.charCodeAt(0)),265)];
 }
+function nameAvatar(action,name){
+  const value=action.avatar;
+  check(value&&Object.getPrototypeOf(value)===Object.prototype&&Object.keys(value).sort().join()==='data,height,width');
+  check(value.width===100&&value.height===100&&typeof value.data==='string'&&value.data.length>0);
+  return avatar({...value,name,expectedVersion:'0'});
+}
 function component(fields,length){
   check(Array.isArray(fields)&&fields.length===2&&Number.isInteger(length)&&length>=1&&length<=32,'ROLLING_INVALID_RESPONSE');
   const words=fields.map(value=>{check(typeof value==='string'&&/^0x[0-9a-f]{64}$/.test(value)&&BigInt(value)<(1n<<248n),'ROLLING_INVALID_RESPONSE');return BigInt(value);});
@@ -70,10 +78,10 @@ function component(fields,length){
   check(bytes.slice(length).every(n=>n===0),'ROLLING_INVALID_RESPONSE');return String.fromCharCode(...bytes.slice(0,length));
 }
 const moderationTypes=new Set(['moderate-post','moderate-avatar','reject-subboard','set-main-policy','transfer-moderator']);
-const keys={'transfer-moderator':['successor'],'moderate-post':['post','reason'],'moderate-avatar':['name','reason'],'reject-subboard':['subboard','reason'],'set-main-policy':['rules'],'cancel-deposit':['receipt'],'claim-deposit':['receipt','feeReceipt','bokReceipt'],'claim-private-fee':['receipt'],'claim-bok':['receipt','feeReceipt'],bio:['name','expectedVersion','content'],avatar:['name','expectedVersion','width','height','data'],name:['first','last'],subboard:['slug','name','description','rules'],like:['post'],unlike:['post'],'withdraw-bok':['amount','recipient'],'cancel-bok-request':['requestId'],'expire-bok-request':['requestId'],withdraw:['deposit'],screen:['deposit'],
-  bok:['deposit','content','name','subboard','budget','parent','root'],post:['deposit','content','name','subboard'],reply:['deposit','content','name','subboard','parent','root'],
+const keys={'transfer-moderator':['successor'],'moderate-post':['post','reason'],'moderate-avatar':['name','reason'],'reject-subboard':['subboard','reason'],'set-main-policy':['rules'],'cancel-deposit':['receipt'],'claim-deposit':['receipt','feeReceipt','bokReceipt'],'claim-private-fee':['receipt'],'claim-bok':['receipt','feeReceipt'],bio:['name','expectedVersion','content'],avatar:['name','expectedVersion','width','height','data'],name:['first','last','avatar'],subboard:['slug','name','description','rules'],like:['post'],unlike:['post'],'withdraw-bok':['amount','recipient'],'cancel-bok-request':['requestId'],'expire-bok-request':['requestId'],withdraw:['deposit'],screen:['deposit'],
+  thread:['deposit','contents','name','subboard','parent','root','budgets'],bok:['deposit','content','name','subboard','budget','parent','root'],post:['deposit','content','name','subboard'],reply:['deposit','content','name','subboard','parent','root'],
   quote:['deposit','content','name','subboard','reference'],repost:['deposit','content','name','subboard','reference']};
-const methods={'transfer-moderator':'transfer_moderator','moderate-post':'remove_post','moderate-avatar':'remove_avatar','reject-subboard':'reject_subboard','set-main-policy':'set_main_policy',bok:'authorize_request','cancel-deposit':'cancel_deposit','claim-deposit':'claim_deposit','claim-private-fee':'claim-private-fee','claim-bok':'claim',bio:'set_bio',avatar:'set_avatar',name:'register_name',subboard:'create_subboard',like:'set_like',unlike:'set_like','withdraw-bok':'withdraw','cancel-bok-request':'cancel','expire-bok-request':'expire',withdraw:'withdraw',screen:'screen',post:'post',reply:'post',quote:'post',repost:'post'};
+const methods={thread:'post_thread','transfer-moderator':'transfer_moderator','moderate-post':'remove_post','moderate-avatar':'remove_avatar','reject-subboard':'reject_subboard','set-main-policy':'set_main_policy',bok:'authorize_request','cancel-deposit':'cancel_deposit','claim-deposit':'claim_deposit','claim-private-fee':'claim-private-fee','claim-bok':'claim',bio:'set_bio',avatar:'set_avatar',name:'register_name',subboard:'create_subboard',like:'set_like',unlike:'set_like','withdraw-bok':'withdraw','cancel-bok-request':'cancel','expire-bok-request':'expire',withdraw:'withdraw',screen:'screen',post:'post',reply:'post',quote:'post',repost:'post'};
 
 /** Wallet-only port; import after unlock. No SDK, network or public-reader work at import.
  * deployment: {board:{address,artifact}, network:{chainId,version,rollup},portal,
@@ -141,7 +149,7 @@ export function createPendingWithdrawalSlot({storage,walletSecret,walletSalt,sco
   return createEncryptedJournalSlot({storage,walletSecret,walletSalt,
     scopeText:JSON.stringify(['ROLLING_PENDING_EXIT_V1',l2JournalScopeText(scope)]),keyDomain:'ROLLING_PENDING_EXIT_V1'});
 }
-export function createRollingApplication({sdk,deployment,accountSession,privateStore,publicReader,readBokAccountingPage,resolveBok,funding,onProgress=()=>{},contextGuard,measure=(_stage,operation)=>operation()}){
+export function createRollingApplication({sdk,deployment,accountSession,privateStore,publicReader,readPublicLikePage,readBokAccountingPage,resolveBok,funding,onProgress=()=>{},contextGuard,measure=(_stage,operation)=>operation()}){
   void publicReader; // Never route personalized requests through public readers.
   const readAccountingPage=typeof readBokAccountingPage==='function'?readBokAccountingPage:null;
   let busy=false,callScope=null,slotPromise,pendingExitPromise,balanceContinuation=null,accountingScan=null,completedAccounting=null;
@@ -152,7 +160,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
   const proposedTransactions=session?.proposedTransactions===true;
   const atomicBok=record=>record.action?.type==='bok'&&record.bok?.phase==='atomic'&&record.method==='post_with_bok';
   const includedAction=record=>proposedTransactions&&!record.bokReleaseSource&&
-    (atomicBok(record)||!record.bok&&['withdraw','withdraw-bok','cancel-deposit','cancel-bok-request','expire-bok-request','screen','claim-deposit','claim-private-fee','claim-bok','post','reply','quote','repost','like','unlike','name','bio','avatar','subboard','moderate-post','moderate-avatar','reject-subboard','set-main-policy','transfer-moderator'].includes(record.action?.type));
+    (atomicBok(record)||!record.bok&&['withdraw','withdraw-bok','cancel-deposit','cancel-bok-request','expire-bok-request','screen','claim-deposit','claim-private-fee','claim-bok','post','reply','quote','repost','thread','like','unlike','name','bio','avatar','subboard','moderate-post','moderate-avatar','reject-subboard','set-main-policy','transfer-moderator'].includes(record.action?.type));
   const usableStatus=status=>['included','confirmed','reverted'].includes(status);
   const getOperationScope=typeof session?.operationScope==='function'?session.operationScope.bind(session):()=>callScope;
   const chainInfoMethod=session?.wallet?.getChainInfo,accountsMethod=session?.wallet?.getAccounts;
@@ -392,7 +400,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
   function summary(record){return {intentId:record.id,action:clone(record.action),status:record.status,maximumFee:record.maximumFee,
     nonce:record.nonce,txHash:record.txHash??null,...(record.withdrawal?{withdrawal:clone(record.withdrawal),actualNetworkFee:record.actualNetworkFee??null}:{}),...(record.moderation?{moderation:clone(record.moderation)}:{}),stage:record.bok?`bok-${record.bok.phase}`:'single-transaction',...(record.bok?{bok:{phase:record.bok.phase,budget:record.bok.budget,availableCredit:record.bok.availableCredit,authorizationTxHash:record.bok.authorizationTxHash??null,...(['post','atomic'].includes(record.bok.phase)?{mainPolicyVersion:record.args[2].expected_main_policy_version,localPolicyVersion:record.args[2].expected_local_policy_version}:{})}}:{}),...(record.bokReleaseSource?{bokRelease:{sourceIntentId:record.bokReleaseSource.id}}:{}),...(record.replacementReview?{replacementReview:clone(record.replacementReview)}:{}),
     ...(record.inclusion?{inclusion:clone(record.inclusion)}:{}),...(record.nameAvailability?{nameAvailability:clone(record.nameAvailability)}:{})};}
-  async function checkBokRecord(record){const scopes=[record?.bok?.scope,record?.fundingBok?.scope,record?.bokRequestScope,record?.bokReleaseSource?.bok?.scope];if(scopes.some(Boolean)||record?.withdrawal?.kind==='bok')await ensureBok({bind:record.bok?.phase==='atomic'});for(const savedScope of scopes)if(savedScope)check(bok&&JSON.stringify(savedScope)===JSON.stringify(bok),'ROLLING_CONTEXT_CHANGED');}
+  async function checkBokRecord(record){const scopes=[record?.bok?.scope,record?.threadBok?.scope,record?.fundingBok?.scope,record?.bokRequestScope,record?.bokReleaseSource?.bok?.scope];if(scopes.some(Boolean)||record?.withdrawal?.kind==='bok')await ensureBok({bind:record.bok?.phase==='atomic'||!!record.threadBok});for(const savedScope of scopes)if(savedScope)check(bok&&JSON.stringify(savedScope)===JSON.stringify(bok),'ROLLING_CONTEXT_CHANGED');}
   async function savedIntent(id){const saved=await (await slot()).read();check(saved.value&&saved.value.id===id,'ROLLING_INTENT_NOT_FOUND');await checkBokRecord(saved.value);return saved;}
   async function acknowledge(found,expected){
     check(found&&found.operation===expected.operation&&found.txHash===expected.txHash&&
@@ -431,7 +439,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
     if(beforeSync&&saved.value!==null){
       const record=saved.value;
       if(!['included','confirmed'].includes(record.status)||
-        !['post','reply','quote','repost','like','unlike','name','bio','avatar','subboard','claim-deposit','claim-private-fee','claim-bok'].includes(record.action?.type)||
+        !['post','reply','quote','repost','thread','like','unlike','name','bio','avatar','subboard','claim-deposit','claim-private-fee','claim-bok'].includes(record.action?.type)||
         record.fundingBok&&!['claim-deposit','claim-bok'].includes(record.action.type)||
         record.fundingFee&&!['claim-deposit','claim-private-fee','claim-bok'].includes(record.action.type)||
         record.bok||record.bokReleaseSource||record.bokRequestScope||record.withdrawal||record.replacementReview||
@@ -444,7 +452,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
     const record=saved.value,owner=statusView?getOperationScope():null;
     const nativeClaimStatus=['claim-deposit','claim-private-fee','claim-bok'].includes(record?.action?.type)&&['included','confirmed'].includes(record.status);
     if(owner?.synchronized===true&&(nativeClaimStatus||['included','confirmed'].includes(record?.status)&&
-      ['post','reply','quote','repost','like','unlike','name','bio','avatar','subboard'].includes(record.action?.type))&&
+      ['post','reply','quote','repost','thread','like','unlike','name','bio','avatar','subboard'].includes(record.action?.type))&&
       !record.bok&&(!record.fundingBok||nativeClaimStatus&&['claim-deposit','claim-bok'].includes(record.action.type))&&!record.bokReleaseSource&&!record.bokRequestScope&&!record.withdrawal&&!record.replacementReview&&
       !await pendingExitSummary()){
       await localGuard();check(getOperationScope()===owner&&owner.synchronized===true,'ROLLING_CONTEXT_CHANGED');return {status:'ready'};
@@ -551,6 +559,8 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
   // Reuse the original submission checks at recovery boundaries; none of these
   // checks grants permission to resend without the exact authenticated journal.
   async function checkActionSubmission(record,{moderationReviewed=false}={}){
+      if(record.action.type==='unlike')throw fail('ROLLING_ACTION_UNAVAILABLE');
+      if(record.action.type==='like')check(!(await nativeLikes([record.action.post],true)).posts[0].liked,'ROLLING_ALREADY_LIKED');
       shareAggregateClaim(record.action);
       if(record.withdrawal?.kind==='bok'){
         const anchor=await balanceAnchor();
@@ -576,6 +586,11 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
     await guard();await checkBokRecord(record);await checkActionSubmission(record);
     // A fresh proof may renew its anchor and fees, never the saved action's
     // screening hints, policy versions, profile version or funded Bok target.
+    if(record.action.type==='thread'){
+      const args=plain(await argumentsFor(record.action,await contract(),record.nonce,{threadNonces:record.args[1]}));
+      check(same(args.slice(0,5),record.args.slice(0,5)),'ROLLING_RECOVERY_CONTEXT_CHANGED');
+      if(record.threadBok)for(const request of record.threadBok.requests)check(await bokInvocationTarget(args[2][request.index],args[1][request.index],record.action.contents[request.index])===request.target,'ROLLING_INTENT_CHANGED');
+    }
     if(['post','reply','quote','repost','screen'].includes(record.action.type)){
       check(same(plain(await argumentsFor(record.action,await contract(),record.nonce)),record.args),'ROLLING_RECOVERY_CONTEXT_CHANGED');
     }
@@ -669,7 +684,18 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
     check(policy[4]!==true,'ROLLING_SUBBOARD_REJECTED');
     return {mainVersion:Number(BigInt(policy[0])),localVersion:Number(BigInt(policy[2]))};
   }
-  async function argumentsFor(action,board,nonce,{atomicBok=false,postingAnchor,preparedPolicy,withdrawalObservation}={}){
+  const likeChecks=new WeakMap();
+  function nativeLikes(posts,fresh=false){
+    const ids=likePostIds(posts),operation=fresh?(getOperationScope()??callScope):null,key=JSON.stringify(ids);
+    let checks=operation?likeChecks.get(operation):undefined;if(checks?.has(key))return checks.get(key);
+    const result=readPublicLikeState({sdk,readPage:readPublicLikePage,network:scope,board:fixed.board,walletSecret:session.walletSecret,guard:localGuard,...(fresh?{authenticateAnchor:async anchor=>{
+      const block=await session.node.getBlockData(anchor.number);await localGuard();
+      check(Number(block?.header?.globalVariables?.blockNumber)===anchor.number&&block?.blockHash?.toString()===anchor.hash,'ROLLING_LIKES_UNAVAILABLE');
+    }}:{})},ids);
+    if(operation){if(!checks){checks=new Map();likeChecks.set(operation,checks);}checks.set(key,result);}
+    return result;
+  }
+  async function argumentsFor(action,board,nonce,{atomicBok=false,postingAnchor,preparedPolicy,withdrawalObservation,threadNonces}={}){
     const allowed=keys[action?.type];check(allowed&&Object.keys(action).every(k=>k==='type'||allowed.includes(k)));
     switch(action.type){
       case 'cancel-deposit':return cancellationArguments(action);
@@ -681,6 +707,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
       case 'name':{
         // This is input validation before fee estimation or a new journal write.
         // Keep it distinct from an unknown preparation/submission outcome.
+        if(action.avatar!==undefined)nameAvatar(action,'1');
         try{return nameRegistration(action.first,action.last).arguments;}
         catch(error){if(error instanceof TypeError||error instanceof RangeError)throw fail('ROLLING_NAME_INVALID');throw error;}
       }
@@ -689,11 +716,28 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
         return [[...new TextEncoder().encode(action.slug),...Array(40-action.slug.length).fill(0)],action.slug.length,
           ...text(action.name,3),...text(action.description,16),...text(action.rules,32,false)];
       }
-      case 'like':case 'unlike':return [field(action.post,true),action.type==='like'];
+      case 'unlike':throw fail('ROLLING_ACTION_UNAVAILABLE');
+      case 'like':{const post=field(action.post,true);check(!(await nativeLikes([post],true)).posts[0].liked,'ROLLING_ALREADY_LIKED');return [post,true];}
       case 'withdraw-bok':check(bok&&uint128(action.amount)>0n&&typeof action.recipient==='string'&&/^0x[0-9a-f]{40}$/.test(action.recipient)&&BigInt(action.recipient)>0n);return [action.amount,{inner:field(BigInt(action.recipient).toString())},nonce];
       case 'expire-bok-request':
       case 'cancel-bok-request':check(bok&&completedAccounting&&completedAccounting.requests.some(r=>r.requestId===field(action.requestId,true)&&['1','2'].includes(r.state)&&(action.type==='expire-bok-request'||r.reserved==='0')),'ROLLING_BOK_ACCOUNTING_INCOMPLETE');await checkBalanceAnchor(completedAccounting.anchor);return [field(action.requestId,true)];
       case 'withdraw':return [field(action.deposit,true)];
+      case 'thread':{
+        captureThreadAction(action);
+        const subboard=field(action.subboard??'0'),parent=field(action.parent??'0'),root=field(action.root??'0');
+        check((parent===zero)===(root===zero));
+        const count=action.contents.length,deposit=field(action.deposit,true);
+        const reads=await Promise.allSettled([postingPolicy(board,subboard,postingAnchor),utility(board,'get_thread_screen_hints',[session.owner,deposit,count])]);
+        const failed=reads.find(value=>value.status==='rejected');if(failed)throw failed.reason;
+        const [policy,hints]=reads.map(value=>value.value);
+        check(Array.isArray(hints)&&hints.length===MAX_THREAD_POSTS*2,'ROLLING_HISTORY_UNAVAILABLE');
+        let empty=false;for(const hint of hints){if(!hint)empty=true;else check(!empty,'ROLLING_HISTORY_UNAVAILABLE');}
+        const nonces=threadNonces??Array.from({length:MAX_THREAD_POSTS},(_,i)=>i<count?(i===0?nonce:field(sdk.Fr.random().toString(),true)):zero);
+        const baseDraft={subboard,parent,root_reference:root,kind:1,name_id:field(action.name??'0'),reference:zero,expected_main_policy_version:policy.mainVersion,expected_local_policy_version:policy.localVersion};
+        const drafts=await linkThreadDrafts({contents:action.contents,nonces,baseDraft,encodeContent:content=>text(content,32),postId:async value=>field((await sdk.poseidon2HashWithSeparator([1n,BigInt(fixed.board),BigInt(value)].map(n=>new sdk.Fr(n)),0x42420102)).toString(),true)});
+        while(drafts.length<MAX_THREAD_POSTS)drafts.push({...baseDraft,parent:zero,root_reference:zero,message:Array(32).fill(zero),length:0});
+        return [deposit,nonces,drafts,count,hints,Array(MAX_THREAD_POSTS).fill(zero),Array(MAX_THREAD_POSTS).fill(zero)];
+      }
       case 'screen':return withdrawalObservation?.screening??screeningArguments(board,field(action.deposit,true));
       default:{
         // Atomic authorization + publication is validated once by the actual
@@ -856,6 +900,26 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
     const selectedArtifact=record.bok?.phase==='authorize'||['claim-bok','withdraw-bok','cancel-bok-request','expire-bok-request'].includes(record.action.type)?deployment.bok.artifact:deployment.board.artifact;
     const abi=[...selectedArtifact.functions,...(selectedArtifact.nonDispatchPublicFunctions??[])].find(f=>f.name===record.method);check(abi,'ROLLING_ABI_MISMATCH');
     let encoded=sdk.encodeArguments(abi,record.args).map(f=>f.toString());
+    if(record.action.type==='name'&&record.action.avatar!==undefined){
+      check(typeof sdk.BatchCall==='function','ROLLING_ABI_MISMATCH');
+      const registration=nameRegistration(record.action.first,record.action.last);
+      const name=field((await sdk.poseidon2HashWithSeparator(registration.preimage.map(n=>new sdk.Fr(n)),NAME_DOMAIN)).toString(),true);
+      const avatarArgs=nameAvatar(record.action,name),avatarAbi=deployment.board.artifact.functions.find(f=>f.name==='set_avatar');
+      check(avatarAbi,'ROLLING_ABI_MISMATCH');
+      encoded=[encoded,sdk.encodeArguments(avatarAbi,avatarArgs).map(f=>f.toString())];
+      // Native ownership created by registration is consumed/reissued by the
+      // avatar call. Ordered public calls succeed or revert together.
+      call=new sdk.BatchCall(session.wallet,[call,board.methods.set_avatar(...avatarArgs)]);
+    }
+    if(record.threadBok){
+      check(record.action.type==='thread'&&typeof sdk.BatchCall==='function','ROLLING_BOK_UNAVAILABLE');
+      await checkBokRecord(record);
+      const authorizationAbi=deployment.bok.artifact.functions.find(f=>f.name==='authorize_request');check(authorizationAbi,'ROLLING_ABI_MISMATCH');
+      const authorizations=record.threadBok.requests.map(({requestId,target,budget})=>[requestId,target,budget]);
+      const current=await bokContract();
+      encoded=[...authorizations.map(args=>sdk.encodeArguments(authorizationAbi,args).map(value=>value.toString())),encoded];
+      call=new sdk.BatchCall(session.wallet,[...authorizations.map(args=>current.methods.authorize_request(...args)),call]);
+    }
     if(record.bok?.phase==='atomic'){
       check(typeof sdk.BatchCall==='function','ROLLING_BOK_UNAVAILABLE');
       const authorization=[record.bok.requestId,record.bok.target,record.bok.budget];
@@ -1005,8 +1069,14 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
       }catch(error){accountingScan=null;completedAccounting=null;throw error;}
     });},
     // Internal preparation read: posting eligibility is independent of exit screening.
-    async readPostingReadiness(deposit){return exclusive(async()=>{
+    async readPostingReadiness(deposit,{count=1}={}){return exclusive(async()=>{
+      check(Number.isInteger(count)&&count>=1&&count<=MAX_THREAD_POSTS);
       const id=field(deposit,true),anchor=await balanceAnchor();
+      if(count>1){
+        const value=chainValue(await utility(await contract(),'get_thread_ready_time',[session.owner,id,count,anchor.timestamp]));
+        check(value<(1n<<64n),'ROLLING_INVALID_RESPONSE');await checkBalanceAnchor(anchor);
+        return {anchor,nextAllowedTime:String(value),ready:BigInt(anchor.timestamp)>=value};
+      }
       const info=await collateralInfo(id,await contract(),BigInt(anchor.timestamp));
       await checkBalanceAnchor(anchor);
       return {anchor,nextAllowedTime:info.nextAllowedTime,ready:BigInt(anchor.timestamp)>=BigInt(info.nextAllowedTime)};
@@ -1058,6 +1128,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
       await checkBalanceAnchor(anchor);balanceContinuation=empty?null:{token:crypto.randomUUID(),offset:offset+10,anchor:clone(anchor)};return {anchor,fee:{available:String(fee),token:'FEE',complete:true,availableMeaning:proposedTransactions?'included-private-credit':'settled-private-credit',pendingReservation:reservation,withdrawal:'not-supported'},bok:credit,
         collateral:{deposits,complete:empty,nextCursor:balanceContinuation?.token??null}};
     });},
+    readLikes(input){const ids=likePostIds(input);return nativeLikes(ids);},
     async readModeratorStatus(){return exclusive(moderatorStatus);},
     // Display only: the next action still verifies payment readiness itself.
     async readPrivateFeeCredit(){return exclusive(async()=>{
@@ -1155,15 +1226,16 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
       const immediate=options!==undefined;let postingRules;
       if(immediate){
         const values=exactData(options,Object.hasOwn(options??{},'postingRules')?['immediate','postingRules']:['immediate']);
-        check(values.immediate===true&&['post','reply','quote','repost','bok','like','unlike','name','bio','avatar','claim-deposit','claim-private-fee','claim-bok','screen','withdraw','subboard','moderate-post','moderate-avatar','reject-subboard','set-main-policy','transfer-moderator','withdraw-bok','cancel-deposit','cancel-bok-request','expire-bok-request'].includes(input?.type));
+        check(values.immediate===true&&['post','reply','quote','repost','thread','bok','like','unlike','name','bio','avatar','claim-deposit','claim-private-fee','claim-bok','screen','withdraw','subboard','moderate-post','moderate-avatar','reject-subboard','set-main-policy','transfer-moderator','withdraw-bok','cancel-deposit','cancel-bok-request','expire-bok-request'].includes(input?.type));
         if(Object.hasOwn(values,'postingRules')){
-          check(['post','reply','quote','repost','bok'].includes(input?.type));
+          check(['post','reply','quote','repost','thread','bok'].includes(input?.type));
           postingRules=exactData(values.postingRules,['chainId','rollupVersion','boardAddress','subboard','parentVersion','localVersion']);
           for(const key of ['parentVersion','localVersion'])check(typeof postingRules[key]==='string'&&/^(0|[1-9][0-9]{0,9})$/.test(postingRules[key])&&BigInt(postingRules[key])<=0xffffffffn);
           check(postingRules.chainId===scope.chainId&&postingRules.rollupVersion===scope.version&&postingRules.boardAddress===fixed.board&&field(postingRules.subboard)===field(input.subboard??'0'),'ROLLING_POSTING_RULES_CHANGED');
         }
       }
-      await guard();const action=clone(input),withdrawalObservation=await takeWithdrawalObservation(action,immediate);
+      const captured=input?.type==='thread'?captureThreadAction(input):input;
+      await guard();const action=clone(captured),withdrawalObservation=await takeWithdrawalObservation(action,immediate);
       const earlyScope=immediate&&['post','reply','quote','repost'].includes(action.type)&&field(action.subboard??'0')===zero
         ?getOperationScope():null;
       const policyOwner=earlyScope?.synchronized===true?{scope:earlyScope,wallet:session.wallet,pxe:session.wallet.pxe,node:session.node}:null;
@@ -1194,7 +1266,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
         const failure=reads.find(value=>value.status==='rejected');if(failure)throw failure.reason;
         checkPolicyOwner();[history,earlyPolicy]=reads.map(value=>value.value);
       }else history=await measure('action.predecessor',readPredecessor);
-      if(immediate&&['post','reply','quote','repost','like','unlike','name','bio','avatar','subboard'].includes(action.type)){
+      if(immediate&&['post','reply','quote','repost','thread','like','unlike','name','bio','avatar','subboard'].includes(action.type)){
         if(stateReady)await stateReady;
         await localGuard();check(getOperationScope()===stateOwner&&stateOwner?.contractStateReady===stateReady,'ROLLING_CONTEXT_CHANGED');
       }
@@ -1204,7 +1276,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
       if(['bok','claim-bok','withdraw-bok','cancel-bok-request','expire-bok-request'].includes(action.type)||action.type==='claim-deposit'&&action.bokReceipt!==undefined){await ensureBok({bind:immediate&&action.type==='bok'});check(bok,'ROLLING_BOK_UNAVAILABLE');}
       let moderation=null;
       const ordinaryPreparation=['post','reply','quote','repost'].includes(action.type);
-      const genericPreparation=['like','unlike','name','bio','avatar','subboard','screen','withdraw','withdraw-bok','cancel-bok-request','expire-bok-request',...moderationTypes].includes(action.type);
+      const genericPreparation=['thread','like','unlike','name','bio','avatar','subboard','screen','withdraw','withdraw-bok','cancel-bok-request','expire-bok-request',...moderationTypes].includes(action.type);
       // Start independent fee metadata alongside posting reads. Both private
       // utilities still run through the native PXE queue at this flow's anchor.
       const paymentScope=immediate&&(ordinaryPreparation||genericPreparation||action.type==='bok')
@@ -1239,7 +1311,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
         // Capture this operation's local anchor before either private utility
         // enters the native PXE queue. The public policy read can then overlap
         // screening and fee-note work; its final canonical/local fences remain.
-        const postingAnchor=(ordinaryPreparation||action.type==='bok')?(earlyPolicy?.anchor??(field(action.subboard??'0')===zero?await balanceAnchor():undefined)):undefined;
+        const postingAnchor=(ordinaryPreparation||action.type==='thread'||action.type==='bok')?(earlyPolicy?.anchor??(field(action.subboard??'0')===zero?await balanceAnchor():undefined)):undefined;
         checkPaymentOwner();
         const earlier=preparedPayments.get(paymentScope);preparedPayments.delete(paymentScope);
         const deferredBalance=['name','bio','avatar','subboard'].includes(action.type);
@@ -1264,7 +1336,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
       }else {moderation=moderationTypes.has(action.type)?await moderationArguments(action,board):null;args=moderation?moderation.args:plain(await measure('action.arguments',()=>argumentsFor(action,board,nonce,{atomicBok:immediate&&action.type==='bok'})));}
       // Match the rules actually displayed to this exact canonical preparation.
       // A mismatch must fail before creating an unsigned intent or estimating.
-      if(postingRules)check(String(args[2].expected_main_policy_version)===postingRules.parentVersion&&String(args[2].expected_local_policy_version)===postingRules.localVersion,'ROLLING_POSTING_RULES_CHANGED');
+      if(postingRules){const drafts=action.type==='thread'?args[2].slice(0,args[3]):[args[2]];check(drafts.every(draft=>String(draft.expected_main_policy_version)===postingRules.parentVersion&&String(draft.expected_local_policy_version)===postingRules.localVersion),'ROLLING_POSTING_RULES_CHANGED');}
       const record={version:1,id,action,args,method:methods[action.type],nonce,predecessor,status:'prepared',...(immediate&&['like','unlike'].includes(action.type)?{feeProfile:'like-v1'}:{}),...(moderation?{moderation:moderation.review}:{})};
       if(claimFields.fundingFee)record.fundingFee=claimFields.fundingFee;
       if(action.type==='name')record.nameAvailability=preparedNameAvailability??await nameAvailability(action);
@@ -1292,6 +1364,17 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
       // Expiry selection is private and owned; the contract simulation, not the
       // public accounting snapshot or browser clock, decides deadline eligibility.
       if(['cancel-bok-request','expire-bok-request'].includes(action.type))record.bokRequestScope=clone(bok);
+      if(action.type==='thread'&&action.budgets?.some(value=>value!=='0')){
+        await ensureBok({bind:true});check(bok,'ROLLING_BOK_UNAVAILABLE');
+        const requests=[];
+        for(let i=0;i<action.contents.length;i++){
+          const budget=action.budgets[i];if(budget==='0')continue;
+          const requestId=field(sdk.Fr.random().toString(),true),target=await bokInvocationTarget(args[2][i],args[1][i],action.contents[i]);
+          requests.push({index:i,requestId,target,budget});args[5][i]=bok.pluginId;args[6][i]=requestId;
+        }
+        if(!immediate)check(await bokCredit()>=requests.reduce((sum,request)=>sum+BigInt(request.budget),0n),'ROLLING_BOK_CREDIT_INSUFFICIENT');
+        record.threadBok={scope:clone(bok),requests};
+      }
       if(action.type==='bok'){
         const budget=uint128(action.budget);check(budget>0n);
         const available=immediate?null:await bokCredit();if(available!==null)check(available>=budget,'ROLLING_BOK_CREDIT_INSUFFICIENT');

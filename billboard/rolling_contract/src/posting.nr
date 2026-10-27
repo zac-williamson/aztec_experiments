@@ -85,3 +85,37 @@ pub fn bot_reply_id(board: AztecAddress, adapter: AztecAddress, request: Field) 
     assert(board.to_field() != 0, "Board identity required");
     poseidon2_hash_with_separator([board.to_field(), invocation_key(adapter, request)], 0x52434252)
 }
+
+/// Bounded thread shape. A single owned name and board are shared by every row;
+/// the first row may reply/quote/repost, and each later row replies to its predecessor.
+/// Four ordinary posts fit the protocol public-write budget. Bok adds escrow and
+/// invocation records, so its supported atomic mix is one invocation in 2–3 posts.
+pub fn validate_thread(board: AztecAddress, nonces: [Field; 4], drafts: [PostDraft; 4],
+    count: u32, plugin_ids: [Field; 4], request_ids: [Field; 4]) -> [Field; 4] {
+    assert((count >= 2) & (count <= 4), "Thread must contain 2 to 4 posts");
+    let mut ids = [0; 4];
+    let mut invocations: u32 = 0;
+    let root = if drafts[0].parent == 0 { crate::admission::post_id(board, nonces[0]) } else { drafts[0].root_reference };
+    for i in 0..4 {
+        if i < count {
+            let d = drafts[i];
+            validate_draft(d, nonces[i]);
+            assert((plugin_ids[i] == 0) == (request_ids[i] == 0), "Invalid invocation identity");
+            if plugin_ids[i] != 0 { invocations += 1; }
+            ids[i] = crate::admission::post_id(board, nonces[i]);
+            assert(ids[i] != 0, "Zero post identity");
+            assert((d.subboard == drafts[0].subboard) & (d.name_id == drafts[0].name_id), "Thread identity changed");
+            assert((d.expected_main_policy_version == drafts[0].expected_main_policy_version)
+                & (d.expected_local_policy_version == drafts[0].expected_local_policy_version), "Thread policy changed");
+            if i > 0 {
+                assert((d.parent == ids[i - 1]) & (d.root_reference == root), "Invalid thread link");
+                assert((d.kind == 1) & (d.reference == 0), "Invalid thread continuation");
+            }
+            for j in 0..4 { if j < i { assert(ids[i] != ids[j], "Duplicate thread post"); } }
+        } else {
+            assert((nonces[i] == 0) & (plugin_ids[i] == 0) & (request_ids[i] == 0), "Unexpected thread suffix");
+        }
+    }
+    assert((invocations <= 1) & ((invocations == 0) | (count <= 3)), "Thread Bok capacity exceeded");
+    ids
+}

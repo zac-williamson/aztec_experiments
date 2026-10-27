@@ -89,7 +89,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
   const base={txHash:result.txHash,blockHash:result.receipt.blockHash.toLowerCase(),blockNumber:result.receipt.blockNumber,
    sender:result.request.from,nonce:String(result.request.nonce)};
   const leg=name=>{const {amount,secretHash,messageKey,leafIndex}=result.event[name];return {...base,amount:String(amount),secretHash,messageKey,leafIndex:String(leafIndex)};};
-  return freeze({receipt:leg('collateral'),feeReceipt:leg('privateFee'),...(result.event.bok?{bokReceipt:leg('bok')}:{})});
+  return result.event.collateral?freeze({receipt:leg('collateral'),feeReceipt:leg('privateFee'),...(result.event.bok?{bokReceipt:leg('bok')}:{})}):freeze({receipt:leg('privateFee')});
  }
  async function reconcile(txHash,allowReverted=false){
   const saved=await stored();if(saved.value?.kind==='usdc')return reconcileUsdc(saved,txHash,undefined,allowReverted);check(saved.value?.intent,'RECOVERY_REQUIRED');
@@ -115,7 +115,8 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
   await read(()=>verifyClaim(confirmed.txHash));
  }
  function sameReceipts(action,original){
-  return action?.type==='claim-deposit'&&['receipt','feeReceipt','bokReceipt'].every(key=>{
+  const feeOnly=original.feeReceipt===undefined;
+  return action?.type===(feeOnly?'claim-private-fee':'claim-deposit')&&(feeOnly?['receipt']:['receipt','feeReceipt','bokReceipt']).every(key=>{
    const a=action[key],b=original[key];if(a===undefined||b===undefined)return key==='bokReceipt'&&a===b;return a&&Object.keys(a).sort().join()===Object.keys(b).sort().join()&&Object.keys(b).every(field=>a[field]===b[field]);
   });
  }
@@ -161,7 +162,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
   check(terms&&Object.keys(terms).sort().join()==='feeUsdc,gasBudgetWei,relayer'&&terms.relayer===captured.usdcRelayAddress,'RELAY_SCOPE');
   for(const key of ['feeUsdc','gasBudgetWei'])check(typeof terms[key]==='string'&&/^[1-9][0-9]{0,77}$/.test(terms[key]),'RELAY_SCOPE');
   const collateralSecret=sdk.Fr.random(),privateFeeSalt=sdk.Fr.random();
-  const collateralSecretHash=(await read(()=>sdk.computeSecretHash(collateralSecret))).toString();
+  const collateralSecretHash=values.collateralWei==='0'?'0x'+'0'.repeat(64):(await read(()=>sdk.computeSecretHash(collateralSecret))).toString();
   const feeSecret=await read(()=>sdk.derivePrivateFeeBridgeSecret({salt:privateFeeSalt,owner}));
   const feeSecretHash=(await read(()=>sdk.computeSecretHash(feeSecret))).toString();
   const {recipientSalt,bridgeSecret,bokScope,bokSecretHash,bokCommitment}=await bokCustody(values.bokAmount);
@@ -171,15 +172,15 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
   await read(wallet.guard);
   // Random collateral custody is persisted using the original beneficiary
   // scope. No relayer or collateral-consent nonce derives any user secret.
-  await read(()=>claimStore.save({l1ChainId:n.chainId,rollupVersion:n.version,rollupAddress:n.rollup,boardAddress:board,portalAddress:s.collateralPortal,depositor:wallet.address},{schemaVersion:1,secret:collateralSecret.toString(),secretHash:collateralSecretHash}));
-  const saved=await read(()=>slot.write(previous,{schemaVersion:1,kind:'usdc',depositor:wallet.address,recipientSalt,bridgeSecret,bokScope,privateFeeCap,claim:null,intent:null,previousTxHash:priorPayment?.txHash??null,
+  if(values.collateralWei!=='0')await read(()=>claimStore.save({l1ChainId:n.chainId,rollupVersion:n.version,rollupAddress:n.rollup,boardAddress:board,portalAddress:s.collateralPortal,depositor:wallet.address},{schemaVersion:1,secret:collateralSecret.toString(),secretHash:collateralSecretHash}));
+  const saved=await read(()=>slot.write(previous,{schemaVersion:1,kind:'usdc',...(values.collateralWei==='0'?{feeOnly:true,amount:values.feeAmount,asset:values.asset}:{}),depositor:wallet.address,recipientSalt,bridgeSecret,bokScope,privateFeeCap,claim:null,intent:null,previousTxHash:priorPayment?.txHash??null,
    aggregateCustody:{kind:'aggregate-usdc-custody-v1',planHash:quote.planHash,beneficiary:wallet.address,privateFeeSalt:privateFeeSalt.toString()},relay:{planHash:quote.planHash,submitted:false,request:null}}));
   prepared={kind:'usdc',wallet,quote,saved,recheckScope,feeAmount:values.feeAmount};
   return freeze({kind:quote.kind,breakdown:clone(quote.breakdown),deadline:quote.plan.deadline,beneficiary:wallet.address,router:s.router,walletName:wallet.name,privateFeeCap,slippageBps:values.slippageBps,relayer:terms.relayer,relayGasBudgetWei:terms.gasBudgetWei});
  }
  async function confirmUsdc({wallet,quote,saved,recheckScope,feeAmount},onSubmitted){
   await read(wallet.guard);await read(()=>verifyFeeCredit(feeAmount));await read(()=>sdk.validateAggregateFundingQuote(quote));
-  const consent=await signConsent(wallet,quote.consent);
+  const consent=(quote.plan.collateral?.amount??quote.plan.collateral)==='0'?'0x':await signConsent(wallet,quote.consent);
   await read(()=>sdk.validateAggregateFundingQuote(quote));
   const authorization=await signConsent(wallet,quote.authorization);
   await read(recheckScope);
@@ -281,7 +282,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
     check(await read(async()=> (await journal(previous.value.depositor)).inspectSummary())===null,'RECOVERY_REQUIRED');
    let nonce=capturedInputs?.nonce??await timeFundingPreparation(onProgress,'nonce',()=>read(()=>provider.getTransactionCount(depositor,'pending')));if(priorPayment?.request.from===depositor)nonce=Math.max(nonce,priorPayment.request.nonce+1);check(Number.isSafeInteger(nonce)&&nonce>=0);
    const {collateral,fee,recipientSalt,bridgeSecret,bokScope,bokSecretHash,bokCommitment}=await timeFundingPreparation(onProgress,'secrets',async()=>{
-   const collateral=await read(()=>sdk.deriveBoardDepositSecret({walletSecret,walletSalt,owner,
+   const collateral=values.collateralWei==='0'?{secretHash:'0x'+'0'.repeat(64)}:await read(()=>sdk.deriveBoardDepositSecret({walletSecret,walletSalt,owner,
     scope:{l1ChainId:n.chainId,rollupVersion:n.version,rollupAddress:n.rollup,boardAddress:board,portalAddress:s.collateralPortal,depositor},nonce}));
    const fee=await read(()=>sdk.claimSecrets({walletSecret,owner,record:{chainId:n.chainId,version:n.version,privateFeeAddress:s.privateFpc,sender:depositor,nonce}}));
    const bok=await bokCustody(values.bokAmount);return {collateral,fee,...bok};
@@ -296,7 +297,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
  }
  async function installEth(candidate){
    const {values,recheckScope,previous,wallet,depositor,existing,nonce,recipientSalt,bridgeSecret,bokScope,privateFeeCap,quote}=candidate;
-   const saved=await timeFundingPreparation(onProgress,'save',()=>read(()=>slot.write(previous,{schemaVersion:1,depositor,nonce,recipientSalt,bridgeSecret,bokScope,intent:null,privateFeeCap,claim:null,previousTxHash:existing?.txHash??null})));
+   const saved=await timeFundingPreparation(onProgress,'save',()=>read(()=>slot.write(previous,{schemaVersion:1,...(values.collateralWei==='0'?{feeOnly:true,amount:values.feeAmount,asset:values.asset}:{}),depositor,nonce,recipientSalt,bridgeSecret,bokScope,intent:null,privateFeeCap,claim:null,previousTxHash:existing?.txHash??null})));
    prepared={wallet,quote,saved,nonce,recheckScope,feeAmount:values.feeAmount};
    // Never return the original secrets or calldata to the renderer.
    return freeze({kind:quote.kind,breakdown:clone(quote.breakdown),deadline:quote.plan.deadline,beneficiary:depositor,router:s.router,
@@ -354,7 +355,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
    const {wallet,quote,nonce}=current;await read(wallet.guard);await read(()=>verifyFeeCredit(current.feeAmount));await read(()=>sdk.validateAggregateFundingQuote(quote));
    // Signature is requested only after explicit review. It is narrowly bound to
    // the captured portal consent nonce, which is NOT the derivation nonce.
-   const consent=await signConsent(wallet,quote.consent);
+   const consent=(quote.plan.collateral?.amount??quote.plan.collateral)==='0'?'0x':await signConsent(wallet,quote.consent);
    // The reviewed quote already authenticated the deployment. Recheck mutable
    // scope after consent, before any payment intent, rather than consuming the
    // short quote lifetime with native reads before the wallet even opens.
@@ -397,7 +398,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
    }
    pendingJournal=j;original(await stored(),result.request);return result.outcome==='submitted'?{pending:true,txHash:result.txHash}:receipts(result);
   },
-  async inspect(){const saved=await stored();return saved.value?freeze({paymentSaved:!!(saved.value.intent||saved.value.relay?.submitted),privateFeeCap:saved.value.privateFeeCap,claim:clone(saved.value.claim),explicitClaimReview:saved.value.explicitClaimReview===true}):null;},
+  async inspect(){const saved=await stored();return saved.value?freeze({paymentSaved:!!(saved.value.intent||saved.value.relay?.submitted),privateFeeCap:saved.value.privateFeeCap,claim:clone(saved.value.claim),explicitClaimReview:saved.value.explicitClaimReview===true,...(saved.value.feeOnly?{claimAction:'claim-private-fee',amount:saved.value.amount,asset:saved.value.asset,completed:!!saved.value.confirmedClaim,phase:'deposit'}:{})}):null;},
   async reviewRevertedClaim(){
    const saved=await stored();check(saved.value?.intent&&saved.value.claim&&typeof reconcileClaim==='function','RECOVERY_REQUIRED');
    const previous=await read(()=>reconcileClaim(saved.value.claim.intentId));check(previous.status==='reverted'&&saved.value.claim.attempted||previous.status==='cancelled','RECOVERY_REQUIRED');
@@ -415,7 +416,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
    await read(()=>slot.write(saved,{...saved.value,claim:{intentId,attempted:true}}));
   },
   async recordClaimCompletion(result){
-   if(!['included','confirmed'].includes(result?.status)||result.action?.type!=='claim-deposit')return;
+   if(!['included','confirmed'].includes(result?.status)||!['claim-deposit','claim-private-fee'].includes(result.action?.type))return;
    const reported=freeze(clone(result));
    const saved=await stored();if(saved.value?.claim?.intentId!==reported.intentId)return;
    check(saved.value.claim.attempted&&typeof reconcileClaim==='function'&&typeof verifyClaim==='function','RECOVERY_REQUIRED');

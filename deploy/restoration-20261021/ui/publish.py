@@ -59,7 +59,7 @@ def safe_relative(name):
  p=pathlib.PurePosixPath(name);assert not p.is_absolute() and '..' not in p.parts and str(p)==name
  native=name=='node_modules/@aztec-labs/pxe/dest/contract_function_simulator/oracle/utility_execution_oracle.js'
  assert 'node_modules' not in p.parts or native
- assert native or name.startswith(('apps/','shared/','scripts/','.build/sdk/','.build/rolling-wallet/')) or name in {'.build/contracts-manifest.json','billboard/portal/src/BokCreditRouter.sol','billboard/portal/test/BokCreditRouter.t.sol','billboard/portal/out/BokCreditRouter.sol/BokCreditRouter.json'}
+ assert native or name.startswith(('apps/','shared/','scripts/','.build/sdk/','.build/rolling-wallet/')) or name in {'.build/contracts-manifest.json'}
  return p
 
 
@@ -84,14 +84,6 @@ process.stdout.write(JSON.stringify({runtime:wallet.runtime,files:manifest.files
 def wallet_file(source):
  local=source/'deploy/runtime-wallet.json'
  return local if local.is_file() else pathlib.Path('/etc/rolling-app/wallet.json')
-
-def install_wallet_update(source,target,update):
- assert isinstance(update,dict) and set(update)=={'router','routerCodeHash'}
- assert re.fullmatch('0x[0-9a-f]{40}',update['router']) and re.fullmatch('0x[0-9a-f]{64}',update['routerCodeHash'])
- original=wallet_file(source);assert not original.is_symlink();value=json.loads(original.read_text())
- assert value['config'].get('bok') and value['config'].get('aggregateFunding')
- value['config']['bokTopup']=update
- info=original.stat();atomic(target/'deploy/runtime-wallet.json',json.dumps(value,separators=(',',':')).encode(),stat.S_IMODE(info.st_mode),info.st_uid,info.st_gid)
 
 def wallet(source,node):
  return json.loads(run([node,'--input-type=module','-e',EXPORT,str(source),str(wallet_file(source)),'/etc/rolling-app/public.json']))
@@ -336,7 +328,7 @@ if mode=='stage':
   target=confined_payload_file(NEXT,name);reference=target if target.exists() else NEXT/'apps/rolling/wallet-panel.mjs';info=reference.stat();atomic(target,confined_payload_file(P/'files',name).read_bytes(),stat.S_IMODE(info.st_mode),info.st_uid,info.st_gid)
   assert digest(target)==entry['sha256'];assert not (SOURCE/name).exists() or target.stat().st_ino!=(SOURCE/name).stat().st_ino
  node=m['node'];assert re.fullmatch(r'/opt/board-prover/releases/rolling-[a-f0-9]+/node/bin/node',node) and digest(pathlib.Path(node))==m['nodeSha256']
- if 'bokTopup' in m:install_wallet_update(SOURCE,NEXT,m['bokTopup'])
+ assert 'bokTopup' not in m, 'Funding scope changes require the full deployment cutover'
  old,new=wallet(RUNNING,node),wallet(NEXT,node)
  unit=pathlib.Path(m['appUnit']);assert digest(unit)==m['unitFiles'][str(unit)]
  original=unit.read_text();rows=original.splitlines(keepends=True)

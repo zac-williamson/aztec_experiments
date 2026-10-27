@@ -112,3 +112,22 @@ for(const usdc of [false,true]){
 test('zero Bok ETH rejects charged plugin cost despite correct core deposits',async()=>{
  const f=zeroBokFixture();f.receipt.logs[0]=f.event(a(2),abi,'Funded',[a(1),f.record.expected.planHash,100,200,0,15,1,4]);await assert.rejects(verifyEthereumIntentReceipt(f.provider,f.record,h(20)));
 });
+
+function feeOnlyFixture(usdc){
+ const f=zeroBokFixture(usdc);Object.assign(f.p,{collateral:usdc?{amount:'0',maxUsdc:'0',poolFee:0}:'0',collateralSecretHash:h(0)});
+ const method=usdc?'fundUsdc':'fund';f.record.expected.planHash=keccak256(AbiCoder.defaultAbiCoder().encode([abi.getFunction(method).inputs[0]],[f.p]));
+ f.record.data=abi.encodeFunctionData(method,[f.p,...(usdc?['0x','0x34']:['0x'])]);f.record.value=usdc?'0':'20';Object.assign(f.tx,f.record);
+ f.receipt.logs.splice(1,1);f.receipt.logs[0]=usdc?f.event(a(2),abi,'UsdcFunded',[a(1),f.record.expected.planHash,a(7),0,200,0,0,25,5,5]):f.event(a(2),abi,'Funded',[a(1),f.record.expected.planHash,0,200,0,15,0,5]);return f;
+}
+for(const usdc of [false,true]){
+ test(`${usdc?'USDC':'ETH'} posting credit authenticates exactly the fee receipt and conserved refund`,async()=>{
+  const f=feeOnlyFixture(usdc),result=await verifyEthereumIntentReceipt(f.provider,f.record,h(20));assert.equal(result.outcome,'success');assert.equal(result.event.privateFee.amount,'200');assert.equal(result.event.refund,'5');assert.equal(result.event.collateral,undefined);assert.equal(result.event.bok,undefined);
+ });
+ for(const bad of ['collateral-event','missing-fee','duplicate-fee','hidden-collateral'])test(`${usdc?'USDC':'ETH'} posting credit rejects ${bad}`,async()=>{
+  const f=feeOnlyFixture(usdc);
+  if(bad==='collateral-event')f.receipt.logs.push(f.event(a(3),board,'Deposited',[a(1),100,h(8),h(12),1]));
+  if(bad==='missing-fee')f.receipt.logs.pop();if(bad==='duplicate-fee')f.receipt.logs.push(f.receipt.logs[1]);
+  if(bad==='hidden-collateral'){f.p.collateralSecretHash=h(1);const method=usdc?'fundUsdc':'fund';f.record.data=abi.encodeFunctionData(method,[f.p,...(usdc?['0x','0x34']:['0x'])]);assert.throws(()=>validateAggregateFundingIntent(f.record));return;}
+  await assert.rejects(verifyEthereumIntentReceipt(f.provider,f.record,h(20)));
+ });
+}

@@ -1,6 +1,6 @@
 // The worker owns private SDK state. Only these application capabilities cross
 // the channel; no arbitrary object traversal, eval, provider RPC or key logging.
-export const APPLICATION_METHODS=Object.freeze(['readFundingState','readWithdrawalReadiness','readBokAccounting','readBalances','readWithdrawal','readModeratorStatus','readBokStatus','readPrivateFeeCredit','prepareBokPost','prepareBokRelease','readAccountStatus','readProfile','ownedIdentities','prepare','submitPrepared','cancelPrepared','reconcile','inspectRecovery','prepareReplacement','prepareInterrupted','resumeSaved','executeAction','executeWithdrawal']);
+export const APPLICATION_METHODS=Object.freeze(['readLikes','readFundingState','readWithdrawalReadiness','readBokAccounting','readBalances','readWithdrawal','readModeratorStatus','readBokStatus','readPrivateFeeCredit','prepareBokPost','prepareBokRelease','readAccountStatus','readProfile','ownedIdentities','prepare','submitPrepared','cancelPrepared','reconcile','inspectRecovery','prepareReplacement','prepareInterrupted','resumeSaved','executeAction','executeWithdrawal']);
 export const FUNDING_METHODS=Object.freeze(['prepareStarter','prepare','confirm','recover','inspect','checkpointClaim','reviewRevertedClaim','advanceClaim','pauseClaim']);
 export const TOPUP_METHODS=Object.freeze(['prepare','confirm','recover','inspect','checkpointClaim','reviewRevertedClaim','advanceClaim','pauseClaim']);
 export const WITHDRAWAL_METHODS=Object.freeze(['inspect','observe','waitUntilReady','prepare','prepareSaved','confirm','recover','cancel']);

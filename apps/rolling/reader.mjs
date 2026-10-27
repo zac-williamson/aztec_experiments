@@ -47,6 +47,7 @@ function privateChanged(){
  const revision=JSON.stringify([privatePanel?.privateStatus?.(),privatePanel?.savedItemsSnapshot?.()??null]),changed=revision!==savedItemsRevision;savedItemsRevision=revision;
  if(changed&&privateViews.has(route.split('/')[1])){controller?.abort();main?.replaceChildren();void render();}
  else updatePreferenceControls();
+ updateLikeControls();
 }
 async function accountPanel(){
  return walletPanel??=import('./wallet-panel.mjs').then(({mountRollingWalletPanel})=>mountRollingWalletPanel({
@@ -94,6 +95,17 @@ const inlineActions=createInlineActionRegistry({perform:async(captured,onInclude
 },onState(key,snapshot){
  for(const node of app.querySelectorAll('[data-inline-action]'))if(node.dataset.inlineAction===key)node.renderInlineAction(snapshot,true);
 }});
+let currentLikeSnapshot=null;
+function updateLikeControls(){
+ const posts=[];
+ for(const node of app.querySelectorAll('[data-like-post]')){
+  posts.push(node.dataset.likePost);
+  const retained=inlineActions.snapshot(node.dataset.inlineAction);if(retained){node.renderInlineAction(retained);continue;}
+  const liked=privatePanel?.likeState?.(node.dataset.likePost)===true;
+  node.disabled=liked;labelled(node,liked?'Liked':'Like');node.setAttribute('aria-pressed',String(liked));
+ }
+ privatePanel?.loadLikes?.([...new Set(posts)],currentLikeSnapshot);
+}
 function socialButton(label,action,attrs={}){
  let feedback;
  // The target identity excludes the toggle value: a rerender must not offer
@@ -103,11 +115,14 @@ function socialButton(label,action,attrs={}){
  if(attrs['data-icon'])labelled(node,label);
  node.renderInlineAction=({state,captured,result},notify=false)=>{
   feedback?.remove();feedback=null;
-  node.disabled=['pending','unknown'].includes(state)||state==='included'&&!result;
+  const knownLike=privatePanel?.likeState?.(captured.post);
+  const liked=captured.type==='like'&&(knownLike===true||knownLike!==false&&['included','confirmed'].includes(state));
+  node.disabled=liked||['pending','unknown'].includes(state)||state==='included'&&!result;
   if(state==='pending'){node.setAttribute('aria-busy','true');labelled(node,({like:'Liking…',unlike:'Removing like…'})[captured.type]??'Saving…');return;}
   if(state==='included'&&!result){node.setAttribute('aria-busy','true');labelled(node,'Confirmation pending');if(notify)announce('Change included. Confirmation pending.');return;}
   node.removeAttribute('aria-busy');
-  if(attrs['data-private-setting'])updatePreferenceControl(node,node.disabled);else labelled(node,label);
+  if(attrs['data-private-setting'])updatePreferenceControl(node,node.disabled);else labelled(node,liked?'Liked':label);
+  if(captured.type==='like')node.setAttribute('aria-pressed',String(liked));
   const message=state==='included'?'Saved. Confirmation pending.':state==='confirmed'?'Saved.':state==='unknown'?'Still waiting for confirmation.':state==='reverted'?'This change did not go through.':state==='failed'?(result.message||'This change could not be saved. Try again.'):state==='blocked'&&result.reason==='busy'?'Another action is still finishing.':'';
   if(message&&notify)announce(message);
   if(['unknown','reverted','failed'].includes(state)&&node.isConnected){
@@ -116,6 +131,7 @@ function socialButton(label,action,attrs={}){
    node.after(feedback);
   }
  };
+ if(target.type==='like'){node.dataset.likePost=target.post;if(privatePanel?.likeState?.(target.post)===true){node.disabled=true;labelled(node,'Liked');node.setAttribute('aria-pressed','true');}}
  const retained=inlineActions.snapshot(key);if(retained)node.renderInlineAction(retained);
  return node;
 }
@@ -143,7 +159,6 @@ function postCard(post,data){
  if(Array.isArray(data.policies)){const policy=data.policies.find(p=>p.version===post.mainVersion);if(policy&&policyVersion(policy.version))provenance.append(el('details',{},el('summary',{},'Parent rules at publication · v'+policy.version),richText(policy.text)));}
  if(field(r.parent)&&r.parent!=='0')article.append(el('p',{class:'reply-line','data-parent-line':''},'In reply to ',link('an earlier post','/thread/'+r.root+'/'+r.parent)));
  if(field(r.reference)&&r.reference!=='0')article.append(el('p',{class:'reply-line'},r.kind==='3'?'Reposted from ':'Quoted from ',link('the original post','/post/'+r.reference)));
- const unlike=()=>socialButton('Unlike',()=>({type:'unlike',post:post.id}),{'data-icon':'heart'});
  const more=(...actions)=>el('details',{class:'post-more'},el('summary',{class:'action'},createIcon('more'),'More'),el('div',{class:'post-secondary-actions'},actions));
  if(post.text===null||post.removal||board?.rejected===true){
   article.append(el('p',{class:'removed'},'This post is unavailable under the board’s moderation policy.'));
@@ -156,12 +171,12 @@ function postCard(post,data){
    if(text(board.rejection?.reason))article.append(el('p',{class:'removed'},'Subboard rejection reason: '+text(board.rejection.reason)));
    if(policyVersion(board.rejection?.mainVersion))article.append(el('p',{class:'quiet'},'Subboard rejected under parent policy v'+board.rejection.mainVersion));
   }
-  article.append(el('div',{class:'post-actions'},preferenceButton('Bookmark',1,post.id,undefined,'bookmark'),more(unlike(),provenance),link([createIcon('message'),'View thread'],'/thread/'+r.root,{class:'post-link'})));return article;
+  article.append(el('div',{class:'post-actions'},preferenceButton('Bookmark',1,post.id,undefined,'bookmark'),more(provenance),link([createIcon('message'),'View thread'],'/thread/'+r.root,{class:'post-link'})));return article;
  }
  article.append(richText(post.text),el('div',{class:'post-actions'},
   button([createIcon('reply'),'Reply'],()=>openWallet({type:'reply',parent:post.id,root:r.root,subboard:r.subboard},{context:{author,excerpt:text(post.text).slice(0,200)}})),
   socialButton('Like',()=>({type:'like',post:post.id}),{'data-icon':'heart'}),el('span',{class:'action likes'},`${text(post.likes)} ${post.likes==='1'?'like':'likes'}`),preferenceButton('Bookmark',1,post.id,undefined,'bookmark'),
-  more(unlike(),button([createIcon('quote'),'Quote'],()=>openWallet({type:'quote',reference:post.id,subboard:r.subboard})),
+  more(button([createIcon('quote'),'Quote'],()=>openWallet({type:'quote',reference:post.id,subboard:r.subboard})),
    button([createIcon('repeat'),'Repost'],()=>openWallet({type:'repost',reference:post.id,subboard:r.subboard})),provenance),
   link([createIcon('message'),'View conversation'],'/thread/'+r.root,{class:'post-link'})));
  article.append(afterConfirmation(moderatorButton('Remove this post',{type:'moderate-post',post:post.id})));
@@ -286,8 +301,8 @@ async function render({live=false,publicationRevision}={}){
  const pendingPublicPages=[];
  function notifyRenderedPosts(){
   if(!container.isConnected||!pendingPublicPages.length)return;
-  const pages=pendingPublicPages.splice(0);
-  void walletPanel?.then(panel=>{if(current===sequence&&!signal.aborted&&container.isConnected)for(const page of pages)panel.observePublicPosts?.(page.items,page.snapshot);}).catch(()=>{});
+  const pages=pendingPublicPages.splice(0);currentLikeSnapshot=pages.at(-1).snapshot;
+  void walletPanel?.then(panel=>{if(current===sequence&&!signal.aborted&&container.isConnected){updateLikeControls();for(const page of pages)panel.observePublicPosts?.(page.items,page.snapshot);}}).catch(()=>{});
  }
  const position=p=>['blockNumber','txIndexWithinBlock','logIndexWithinTx'].map(key=>{const v=p?.position?.[key];if(typeof v!=='string'||!/^(0|[1-9][0-9]*)$/.test(v))throw Error('Invalid position');return BigInt(v);});
  const descending=(a,b)=>{for(let i=0;i<3;i++){if(a[i]!==b[i])return a[i]>b[i];}return false;};
@@ -319,7 +334,7 @@ async function render({live=false,publicationRevision}={}){
   if(nodes.length)container.querySelector('.empty')?.remove();lastPosition=nextPosition;lastPositionHash=nextPositionHash;
   if(thread){visible.forEach((item,index)=>thread.add(item,nodes[index]));thread.commit();}else container.append(...nodes);
   for(const id of ids)seenIds.add(id);if(next)seenCursors.add(next);
-  if(api!=='directory'){pendingPublicPages.push({items,snapshot:{checkpoint:response.checkpoint,confirmationCheckpoint:response.confirmationCheckpoint,renderedPosts:visible}});notifyRenderedPosts();}
+  if(api!=='directory'){pendingPublicPages.push({items,snapshot:{checkpoint:response.checkpoint,confirmationCheckpoint:response.confirmationCheckpoint,revision:response.revision,renderedPosts:visible}});notifyRenderedPosts();}
   return nodes;
  }
 

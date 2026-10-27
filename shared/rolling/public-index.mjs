@@ -4,7 +4,7 @@ import {NUM_BLOCK_END_BLOB_FIELDS,NUM_CHECKPOINT_END_MARKER_FIELDS,MIN_TX_BLOB_F
 import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
 import {createHash,createHmac,randomBytes,randomUUID,timingSafeEqual} from 'node:crypto';
 import {createRollingEventDecoder,isRollingEvent,validateRollingScope} from './public-events.mjs';
-import {createRollingProjection,normalizeHomeSubboards} from './public-projection.mjs';
+import {createRollingProjection,normalizeHomeSubboards,normalizeLikePosts} from './public-projection.mjs';
 const fail=code=>Object.assign(Error('Rolling public history is unavailable.'),{code});
 const check=(v,code='ROLLING_PUBLIC_INVALID')=>{if(!v)throw fail(code);};
 const hash=v=>typeof v==='string'&&/^0x[0-9a-f]{64}$/.test(v);
@@ -138,15 +138,20 @@ export async function createRollingPublicIndex({node,artifact,scope,deployment,s
   }
   function query(view,params={}){
     check(ready&&!busy&&!unavailable,'ROLLING_PUBLIC_NOT_READY');
+    const likePosts=view==='likes'?normalizeLikePosts(params.posts).join(','):null;
+    if(view==='likes')check(Object.keys(params).every(k=>['posts','limit','cursor'].includes(k)));
+    const likeBinding=view==='likes'?createHash('sha256').update(JSON.stringify([likePosts,params.limit??50])).digest('hex').slice(0,16):null;
     let cursor=params.cursor??null;if(cursor!==null){
-      check(typeof cursor==='string'&&cursor.startsWith(epoch+':')&&cursor.length<=(view==='board'?200:120),'ROLLING_PUBLIC_CURSOR_STALE');cursor=cursor.slice(epoch.length+1);
+      check(typeof cursor==='string'&&cursor.startsWith(epoch+':')&&cursor.length<=200,'ROLLING_PUBLIC_CURSOR_STALE');cursor=cursor.slice(epoch.length+1);
+      if(view==='likes'){check(cursor.startsWith(likeBinding+':'),'ROLLING_PUBLIC_CURSOR_STALE');cursor=cursor.slice(likeBinding.length+1);}
       if(view==='board')check(field(params.id)&&cursor.startsWith(params.id+':')&&/^[0-9]+:[0-9]+:[0-9]+$/.test(cursor)&&Number(cursor.split(':')[1])===projectionRevision,'ROLLING_PUBLIC_CURSOR_STALE');
       else check(/^[0-9]+:[0-9]+$/.test(cursor)&&Number(cursor.split(':')[0])===projectionRevision,'ROLLING_PUBLIC_CURSOR_STALE');
     }
     const requested=params.limit??50;check(Number.isSafeInteger(requested)&&requested>=1&&requested<=100);
     function envelopeFor(limit){
       const options={limit,cursor};let result;
-      if(view==='home')result=projection.home(options);
+      if(view==='likes')result=projection.likeTags(likePosts,options);
+      else if(view==='home')result=projection.home(options);
       else if(view==='feed')result=projection.feed(options);
       else if(view==='board'){check(field(params.id));check(params.id==='0'||projection.board(params.id),'ROLLING_PUBLIC_NOT_FOUND');result=projection.boardFeed(params.id,options);}
       else if(view==='directory')result=projection.directory({...options,query:params.query??''});
@@ -154,9 +159,9 @@ export async function createRollingPublicIndex({node,artifact,scope,deployment,s
       else if(view==='profile'){check(field(params.nameId));check(projection.identity(params.nameId),'ROLLING_PUBLIC_NOT_FOUND');result=projection.profile(params.nameId,options);}
       else if(view==='post'){check(field(params.id));result={post:projection.post(params.id)};}
       else throw fail('ROLLING_PUBLIC_INVALID');
-      if(result.nextCursor)result.nextCursor=epoch+':'+result.nextCursor;
+      if(result.nextCursor)result.nextCursor=epoch+':'+(view==='likes'?likeBinding+':':'')+result.nextCursor;
       const envelope={schemaVersion:1,scope,checkpoint:checkpoint(),complete:true,...result,revision:`${epoch}:${revision}`};
-      if(view!=='directory'){
+      if(!['directory','likes'].includes(view)){
         const names={},boards={};for(const post of result.posts??(result.post?[result.post]:[])){
           // Current profile content is resolved once per distinct name at query
           // time, not embedded again in every historical post.
@@ -226,11 +231,11 @@ export async function createRollingPersistentPublicIndex({node,artifact,bokArtif
   function publication(){check(ready&&!busy&&!unavailable,'ROLLING_PUBLIC_NOT_READY');assertOwned();return state();}
   function query(view,params={}){
     check(ready&&!busy&&!unavailable,'ROLLING_PUBLIC_NOT_READY');
-    const allowed={'bok-accounting':['blockNumber','blockHash'],home:[],feed:[],following:['boards','names'],bookmarks:['ids'],board:['id'],directory:['query'],thread:['root'],profile:['nameId'],post:['id']};
+    const allowed={likes:['posts'],'bok-accounting':['blockNumber','blockHash'],home:[],feed:[],following:['boards','names'],bookmarks:['ids'],board:['id'],directory:['query'],thread:['root'],profile:['nameId'],post:['id']};
     check(typeof view==='string'&&Object.hasOwn(allowed,view)&&params&&Object.getPrototypeOf(params)===Object.prototype);
     const input={};for(const [k,d] of Object.entries(Object.getOwnPropertyDescriptors(params))){
       check((k==='cursor'||k==='limit'||allowed[view].includes(k))&&Object.hasOwn(d,'value'));
-      check(d.value===null||typeof d.value==='string'&&d.value.length<=((view==='following'||view==='bookmarks')&&['boards','names','ids'].includes(k)?7800:120)||typeof d.value==='number'&&Number.isSafeInteger(d.value));input[k]=d.value;
+      check(d.value===null||typeof d.value==='string'&&d.value.length<=(view==='likes'?(k==='posts'?2495:200):(view==='following'||view==='bookmarks')&&['boards','names','ids'].includes(k)?7800:120)||typeof d.value==='number'&&Number.isSafeInteger(d.value));input[k]=d.value;
     }
     if(view==='bok-accounting')check(scope.bok,'ROLLING_PUBLIC_ACCOUNTING_UNSUPPORTED');
     let accountingCheckpoint=confirmationCheckpoint;
@@ -242,6 +247,7 @@ export async function createRollingPersistentPublicIndex({node,artifact,bokArtif
     if(view==='following'||view==='bookmarks'){
       let count=0;for(const k of view==='following'?['boards','names']:['ids']){input[k]??='';check(typeof input[k]==='string');const ids=input[k]===''?[]:input[k].split(',');check(ids.every(id=>field(id)&&(k==='boards'||id!=='0'))&&new Set(ids).size===ids.length);count+=ids.length;input[k]=ids.sort((a,b)=>BigInt(a)<BigInt(b)?-1:BigInt(a)>BigInt(b)?1:0).join(',');}check(count<=100);
     }
+    if(view==='likes')input.posts=normalizeLikePosts(input.posts).join(',');
     const cursor=input.cursor??null;delete input.cursor;input.limit??=50;
     check(Number.isSafeInteger(input.limit)&&input.limit>=1&&input.limit<=100);
     if(view==='directory'){input.query??='';check(typeof input.query==='string'&&input.query.length<=120&&!input.query.includes('\0'));input.query=input.query.trim().toLowerCase();}
@@ -253,12 +259,12 @@ export async function createRollingPersistentPublicIndex({node,artifact,bokArtif
     const binding=JSON.stringify([scope,deployment,control.generation,control.revision,control.checkpoint,confirmationCheckpoint,view,allowed[view].map(k=>[k,input[k]]),input.limit,curated]);
     const mac=last=>createHmac('sha256',cursorSecret).update(binding).update(':').update(last).digest('hex').slice(0,16);
     let after=null;
-    if(cursor!==null){check(view!=='post'&&typeof cursor==='string'&&/^[0-9a-f]{32}:[0-9a-f]{64}:[0-9a-f]{16}$/.test(cursor),'ROLLING_PUBLIC_CURSOR_STALE');
-      const [e,last,signature]=cursor.split(':');check(e===tokenEpoch&&timingSafeEqual(Buffer.from(signature,'hex'),Buffer.from(mac(last),'hex')),'ROLLING_PUBLIC_CURSOR_STALE');after=String(BigInt('0x'+last));}
+    if(cursor!==null){check(view!=='post'&&typeof cursor==='string'&&new RegExp(`^[0-9a-f]{32}:[0-9a-f]{${view==='likes'?128:64}}:[0-9a-f]{16}$`).test(cursor),'ROLLING_PUBLIC_CURSOR_STALE');
+      const [e,last,signature]=cursor.split(':');check(e===tokenEpoch&&timingSafeEqual(Buffer.from(signature,'hex'),Buffer.from(mac(last),'hex')),'ROLLING_PUBLIC_CURSOR_STALE');after=view==='likes'?last:String(BigInt('0x'+last));}
     try{
       assertOwned();const page=storage.readPublicPage({expectedControl:control,view,params:view==='bok-accounting'?{limit:input.limit}:input,after,homeSubboards:curated,...(view==='bok-accounting'?{throughBlock:accountingCheckpoint.number,...(Object.hasOwn(input,'blockNumber')?{throughHash:accountingCheckpoint.hash}:{})}:{})});
       check(page.trusted===false&&page.generation===control.generation&&page.revision===control.revision);
-      const nextCursor=page.nextAfter===null?null:(()=>{const last=key(page.nextAfter);return `${tokenEpoch}:${last}:${mac(last)}`;})();
+      const nextCursor=page.nextAfter===null?null:(()=>{const last=view==='likes'?page.nextAfter:key(page.nextAfter);return `${tokenEpoch}:${last}:${mac(last)}`;})();
       const selectedCheckpoint=view==='bok-accounting'?accountingCheckpoint:control.checkpoint;
       const annotate=post=>post?{...post,confirmation:BigInt(post.position.blockNumber)<=BigInt(confirmationCheckpoint.number)?'confirmed':'pending'}:post;
       const value={...page.value,...(page.value.posts?{posts:page.value.posts.map(annotate)}:{}),...(Object.hasOwn(page.value,'post')?{post:annotate(page.value.post)}:{})};

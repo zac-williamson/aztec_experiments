@@ -10,6 +10,13 @@ export function normalizeHomeSubboards(value=[]){
  const ids=Array.from(value);check(ids.every(id=>typeof id==='string'&&/^[1-9][0-9]{0,76}$/.test(id)&&BigInt(id)<0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001n));
  check(new Set(ids).size===ids.length);return Object.freeze(ids);
 }
+// Public post selection only: no account, local tag or membership predicate.
+export function normalizeLikePosts(value){
+ check(typeof value==='string'&&value.length<=2495);
+ const ids=value.split(',');check(ids.length>=1&&ids.length<=32&&new Set(ids).size===ids.length);
+ check(ids.every(id=>/^[1-9][0-9]{0,76}$/.test(id)&&BigInt(id)<0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001n));
+ return ids.sort((a,b)=>BigInt(a)<BigInt(b)?-1:1);
+}
 const pos=e=>[e.position.blockNumber,e.position.txIndexWithinBlock,e.position.logIndexWithinTx].map(BigInt);
 const compare=(a,b)=>{for(let i=0;i<3;i++)if(a[i]!==b[i])return a[i]<b[i]?-1:1;return 0;};
 const text=(p,field,length)=>{const bytes=new Uint8Array(p[field].length*31);p[field].forEach((word,i)=>{let n=BigInt(word);for(let j=30;j>=0;j--){bytes[i*31+j]=Number(n&255n);n>>=8n;}});return new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes.slice(0,Number(p[length])));};
@@ -98,7 +105,7 @@ export function stageRollingPublicReduction(events,{isValidatedEvent,read,scalar
  return {scalars:Object.fromEntries(['version','last','scope','eventCount','postCount'].map(key=>[key,next[key]])),changes:[...changes.values()]};
 }
 // stage changes nothing; apply and reverse-order undo are single-use and reject
-// stale candidates. Private ownership and like-tag membership are never returned.
+// stale candidates. Ordinary views omit like tags; likeTags returns public tags for local matching.
 export function createRollingProjection({isValidatedEvent,maxEvents=50000,homeSubboards}={}) {
  check(typeof isValidatedEvent==='function'&&Number.isSafeInteger(maxEvents)&&maxEvents>0&&maxEvents<=1000000);
  const curated=new Set(['0',...normalizeHomeSubboards(homeSubboards)]);
@@ -142,6 +149,14 @@ export function createRollingProjection({isValidatedEvent,maxEvents=50000,homeSu
   page(limit=50,upper=null,before=null){check(Number.isSafeInteger(limit)&&limit>=1&&limit<=100);const bound=v=>{check(typeof v==='string'&&/^(0|[1-9][0-9]*)$/.test(v));return BigInt(v);};
    let ids=[...state.order].reverse().filter(id=>(upper===null||BigInt(state.posts.get(id).order)<=bound(upper))&&(before===null||BigInt(state.posts.get(id).order)<bound(before)));
    const posts=ids.slice(0,limit).map(id=>visible(state.posts.get(id))),needed=new Set([state.version,...posts.map(p=>p.mainVersion),...posts.filter(p=>p.removal).map(p=>String(BigInt(p.removal.policy)&0xffffffffn))]);return {posts,policies:[...needed].filter(v=>state.policies.has(v)).map(v=>copy(state.policies.get(v))),hasMore:ids.length>limit};},
+  likeTags(posts,{limit=50,cursor=null}={}){
+   const postIds=normalizeLikePosts(posts),selected=new Set(postIds);
+   check(Number.isSafeInteger(limit)&&limit>=1&&limit<=100);let offset=0;
+   if(cursor!==null){check(typeof cursor==='string'&&/^[0-9]+:[0-9]+$/.test(cursor));const [r,n]=cursor.split(':').map(Number);check(r===revision&&Number.isSafeInteger(n));offset=n;}
+   const entries=[...state.likes].filter(([key,active])=>active&&selected.has(key.split(':')[0])).map(([key])=>{const [post,tag]=key.split(':');return {post,tag};}).sort((a,b)=>a.post!==b.post?(BigInt(a.post)<BigInt(b.post)?-1:1):BigInt(a.tag)<BigInt(b.tag)?-1:1);
+   check(offset<=entries.length);const items=entries.slice(offset,offset+limit),next=offset+items.length;
+   return {postIds,items,nextCursor:next<entries.length?`${revision}:${next}`:null,revision};
+  },
   feed:options=>select([...state.order].reverse(),options),
   boardFeed(id,{limit=50,cursor=null}={}){
    check(id==='0'||state.boards.has(id));

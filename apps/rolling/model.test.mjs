@@ -11,6 +11,14 @@ test('992-byte boundary rejects oversized input without truncating',()=>{
  assert.equal(allowance('e\u0301').bytes,3);
  assert.equal(allowance('').valid,false);
 });
+test('overflow counts whole visible characters beyond the fitting prefix',()=>{
+ for(const [text,count] of [['a'.repeat(1000),8],['🙂'.repeat(249),1],['a'.repeat(991)+'🙂',1],['a'.repeat(991)+'e\u0301x',2],['a'.repeat(992)+'👨‍👩‍👧‍👦',1],['a'.repeat(992),0],['',0]]){
+  const result=allowance(text);assert.equal(result.overCharacters,count);
+  const chars=[...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(text)].map(s=>s.segment);
+  assert(new TextEncoder().encode(chars.slice(0,chars.length-count).join('')).length<=992);
+  if(count)assert(new TextEncoder().encode(chars.slice(0,chars.length-count+1).join('')).length>992);
+ }
+});
 test('posted links only accept http and https',()=>{
  for(const unsafe of ['javascript:alert(1)','data:text/html,test','file:///etc/passwd','//example.com','mailto:a@b.com'])assert.equal(safeURL(unsafe),null);
  assert.equal(safeURL('https://example.org/a'),'https://example.org/a');

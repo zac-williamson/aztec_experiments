@@ -58,7 +58,7 @@ function address(value,bytes){if(typeof value!=='string'||!new RegExp('^0x[0-9a-
 export function validateRollingWalletConfig(value,scope){
  keys(value,['config','trustedQuery','remoteProver','proofsEnabled']);
  const copy=structuredClone(value),{config:c,trustedQuery:q,remoteProver:r,proofsEnabled}=copy;
- keys(c,['network','board','privateFee',...(c.bok===undefined?[]:['bok']),...(c.bokTopup===undefined?[]:['bokTopup']),...(c.aggregateFunding===undefined?[]:['aggregateFunding']),...(c.publicRefundRpcUrl===undefined?[]:['publicRefundRpcUrl']),...(c.refundOnly===undefined?[]:['refundOnly'])]);
+ keys(c,['network','board','privateFee',...(c.bok===undefined?[]:['bok']),...(c.aggregateFunding===undefined?[]:['aggregateFunding']),...(c.publicRefundRpcUrl===undefined?[]:['publicRefundRpcUrl']),...(c.refundOnly===undefined?[]:['refundOnly'])]);
  if(c.refundOnly!==undefined&&(c.refundOnly!==true||c.publicRefundRpcUrl===undefined))throw invalid();
  if(c.aggregateFunding!==undefined){
   const a=c.aggregateFunding;keys(a,['chainId','router','routerCodeHash','collateralPortal','feePortal','bokPortal','weth','swapRouter','feeToken','bokToken','privateFpc','quoter','quoterCodeHash',...(a.usdcRelayAddress===undefined?[]:['usdcRelayAddress','usdcCodeHash','usdcImplementation','usdcImplementationCodeHash','usdcDomain'])]);
@@ -70,7 +70,6 @@ export function validateRollingWalletConfig(value,scope){
   for(const name of ['router','collateralPortal','feePortal','bokPortal','weth','swapRouter','feeToken','bokToken','quoter'])address(a[name],20);
   for(const name of ['routerCodeHash','quoterCodeHash','privateFpc'])address(a[name],32);
  }
- if(c.bokTopup!==undefined){if(!c.bok||!c.aggregateFunding)throw invalid();keys(c.bokTopup,['router','routerCodeHash']);address(c.bokTopup.router,20);address(c.bokTopup.routerCodeHash,32);}
  if(c.bok!==undefined){keys(c.bok,['contractAddress','operatorAddress','pluginId']);for(const v of Object.values(c.bok))address(v,32);}keys(c.network,['chainId','rollupVersion','rollupAddress','ethRpcUrl']);
  keys(c.board,['contractAddress','portalAddress']);keys(c.privateFee,['contractAddress','gasSettings']);
  if(typeof c.network.chainId!=='string'||!/^[1-9][0-9]{0,19}$/.test(c.network.chainId)||typeof c.network.rollupVersion!=='string'||!/^[1-9][0-9]{0,9}$/.test(c.network.rollupVersion))throw invalid();

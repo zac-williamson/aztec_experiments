@@ -16,10 +16,13 @@ test('actual EVM: one Ethereum wallet transaction purchases and bridges Bok cred
  const provider=new JsonRpcProvider(url,undefined,{cacheTimeout:-1});t.after(()=>provider.destroy());const signer=await provider.getSigner(0),payer=(await signer.getAddress()).toLowerCase();
  const deploy=async(file,name,args=[])=>{const a=artifact(file,name),contract=await new ContractFactory(a.abi,a.bytecode.object,signer).deploy(...args);await contract.waitForDeployment();return contract;};
  const token=await deploy('RollingFundingRouter.t.sol','FundingToken'),weth=await deploy('RollingFundingRouter.t.sol','FundingWrapped'),dex=await deploy('RollingFundingRouter.t.sol','FundingDex');
- const rollup=await deploy('BokCreditRouter.t.sol','BokIntegrationRollup',[await token.getAddress()]);
+ const rollup=await deploy('RollingFundingRouterCredit.t.sol','BokIntegrationRollup',[await token.getAddress()]);
  const portal=await deploy('PluginPortal.sol','PluginPortal',[await rollup.getAddress(),h(4),1,await token.getAddress()]);
  await (await portal.activate(0,0,0,[])).wait();await (await token.seed(await dex.getAddress(),10000)).wait();
- const router=await deploy('BokCreditRouter.sol','BokCreditRouter',[await portal.getAddress(),await weth.getAddress(),await dex.getAddress()]);
+ const collateral=await deploy('BillboardPortal.sol','BillboardPortal',[await rollup.getAddress(),h(4),1,'1000000000000000000','2000000000000000000',h(2)]);
+ const fee=await deploy('RollingFundingRouter.t.sol','FundingToken');
+ const feePortal=await deploy('RollingFundingRouter.t.sol','FundingFeeBridge',[await fee.getAddress(),await rollup.getAddress()]);
+ const router=await deploy('RollingFundingRouter.sol','RollingFundingRouter',[await collateral.getAddress(),await feePortal.getAddress(),await portal.getAddress(),await weth.getAddress(),await dex.getAddress(),h(3)]);
  const routerAddress=(await router.getAddress()).toLowerCase(),tokenAddress=(await token.getAddress()).toLowerCase(),portalAddress=(await portal.getAddress()).toLowerCase();
  const records=new Map(),storage={read:async key=>records.get(key)??null,compareAndSwap:async(key,before,after)=>{assert.equal(records.get(key)??null,before);records.set(key,after);}};
  let sends=0;const journal=await createEthereumJournal({storage,walletSecret:h(11),walletSalt:h(12),scope:{account:h(13),board:h(4),chainId:'31337',version:'1',rollup:(await rollup.getAddress()).toLowerCase(),portal:routerAddress,token:tokenAddress,depositor:payer},provider,signer:{getAddress:()=>signer.getAddress(),sendTransaction:async request=>{sends++;return signer.sendTransaction(request);}}});

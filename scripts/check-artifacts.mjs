@@ -49,6 +49,7 @@ export function checkArtifacts(root = ROOT) {
   }
   const fundingRouterBytes = fs.readFileSync(path.join(root, 'billboard/portal/out/RollingFundingRouter.sol/RollingFundingRouter.json'));
   const fundingRouter = JSON.parse(fundingRouterBytes);
+  if (!fundingRouter.abi.some(x=>x.type==='function'&&x.name==='buyCredit') || !fundingRouter.abi.some(x=>x.type==='event'&&x.name==='CreditPurchased')) throw Error('Combined funding router required');
   const fundingMetadata = typeof fundingRouter.metadata === 'string' ? JSON.parse(fundingRouter.metadata) : fundingRouter.metadata;
   if (!fundingRouter.bytecode?.object || !fundingRouter.deployedBytecode?.object ||
       fundingMetadata?.sources?.['src/RollingFundingRouter.sol']?.keccak256 !== keccak256(fs.readFileSync(path.join(root, 'billboard/portal/src/RollingFundingRouter.sol')))) {

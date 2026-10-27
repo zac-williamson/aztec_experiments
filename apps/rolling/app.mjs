@@ -1,5 +1,5 @@
 import {boards, profiles, ownNames, posts as fixtures, mainRules} from './fixtures.mjs';
-import {allowance, rankPosts, searchBoards, createMessageContent, createIcon, createBrand, createSkeletonFeed, createThreadView, mentionsBok} from './model.mjs';
+import {allowance, createMessageBudget, rankPosts, searchBoards, createMessageContent, createIcon, createBrand, createSkeletonFeed, createThreadView, mentionsBok} from './model.mjs';
 import {focusRoute, skipToContent} from './navigation.mjs';
 
 const posts = structuredClone(fixtures);
@@ -70,7 +70,7 @@ function composer(mode='post',parent=null) {
   if(topic.rejected){explain('Posting unavailable',topic.reason);return;}
   const input=el('textarea',{placeholder:mode==='reply'?`Reply to ${parent.author}…`:'What is on your mind?','aria-describedby':'allowance','aria-label':'Post text'});
   const identity=el('select',{'aria-label':'Posting identity'},['Anonymous',...ownNames].map(n=>el('option',{value:n},n)));
-  const counter=el('div',{class:'counter',id:'allowance','aria-live':'polite'});
+  const budgetMeter=createMessageBudget(),counter=budgetMeter.node;counter.id='allowance';
   const preview=el('div',{class:'preview-body',hidden:true});
   const bokHint=el('div',{class:'bok-invitation',hidden:true},el('p',{},'Bok will reply to this message. In the live product you set a spending limit and only pay for the work it does.'));
   // X-style tagging: the chip inserts the mention at the caret and lets the input listener react.
@@ -81,7 +81,7 @@ function composer(mode='post',parent=null) {
     posts.unshift({id,root:mode==='reply'?parent.root:id,parent:mode==='reply'?parent.id:null,quote:mode==='quote'?parent.id:null,board:topic.id,author:identity.value,text:input.value,likes:0,time:1000+sequence,age:'just now',pending:true});
     dialog.close(); location.hash=`/thread/${mode==='reply'?parent.root:id}/${id}`;announce('Added a local preview. Nothing has been published.');
   },'button primary');
-  function update(){const a=allowance(input.value);counter.textContent=`${a.characters} characters · ${a.remaining>=0?`${a.remaining} of 992 UTF-8 bytes remaining`:`${-a.remaining} bytes over the 992-byte limit`}. Emoji and accented letters may use more than one byte.`;counter.classList.toggle('invalid',a.remaining<0);submit.disabled=!a.valid;preview.replaceChildren(richText(input.value||'Your formatted preview will appear here.'));const bok=mentionsBok(input.value);bokHint.hidden=!bok;chip.setAttribute('aria-pressed',String(bok));}
+  function update(){const a=allowance(input.value);budgetMeter.update(a);submit.disabled=!a.valid;preview.replaceChildren(richText(input.value||'Your formatted preview will appear here.'));const bok=mentionsBok(input.value);bokHint.hidden=!bok;chip.setAttribute('aria-pressed',String(bok));}
   input.addEventListener('input',update);
   modal(mode==='reply'?'Reply to this post':mode==='quote'?'Quote this post':'Start a conversation',el('div',{},notice('Local design preview. No proof, payment or publication.'),field('Post as',identity),el('p',{class:'quiet'},'Only you see your available names. Anonymous displays no reusable author identity.'),el('p',{class:'quiet'},`Posting in ${topic.name}`),rules(topic),parent?[el('p',{class:'quiet'},`${mode==='quote'?'Quoting':'Replying to'} ${parent.author}`),el('blockquote',{class:'reply-context'},el('strong',{},parent.author),el('p',{},parent.removed?'Removed post':parent.text.slice(0,200)))]:null,field('Your message',input),el('div',{class:'composer-tools'},chip,button([createIcon('eye'),'Toggle formatting preview'],()=>{preview.hidden=!preview.hidden;},'action'),counter),preview,bokHint,el('div',{class:'dialog-actions'},button('Cancel',()=>dialog.close()),submit)));
   update();input.focus();

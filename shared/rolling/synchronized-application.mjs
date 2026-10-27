@@ -1,3 +1,4 @@
+import {captureThreadAction} from './thread-action.mjs';
 // The caller owns the account lock, PXE lifetime and trusted-route guard.
 // autoSync:false synchronizes once per account flow, and again after chain state changes.
 const methods=['readFundingState','readWithdrawalReadiness','readBokAccounting','readBalances','readWithdrawal','readModeratorStatus','readBokStatus','readPrivateFeeCredit','prepareBokPost','prepareBokRelease','readAccountStatus','readProfile','ownedIdentities','prepare','submitPrepared','cancelPrepared','reconcile','inspectRecovery','prepareReplacement','prepareInterrupted','resumeSaved'];
@@ -39,7 +40,7 @@ function accountStatusArguments(args){
   return [{opening:true}];
  }catch{throw Object.assign(Error('Invalid Rolling action'),{code:'ROLLING_INVALID_ACTION'});}
 }
-const boardStateMethods=Object.freeze({like:'set_like',unlike:'set_like',name:'register_name',bio:'set_bio',avatar:'set_avatar',subboard:'create_subboard','moderate-post':'remove_post','moderate-avatar':'remove_avatar','reject-subboard':'reject_subboard','set-main-policy':'set_main_policy','transfer-moderator':'transfer_moderator',screen:'screen',withdraw:'withdraw'});
+const boardStateMethods=Object.freeze({thread:'post_thread',like:'set_like',unlike:'set_like',name:'register_name',bio:'set_bio',avatar:'set_avatar',subboard:'create_subboard','moderate-post':'remove_post','moderate-avatar':'remove_avatar','reject-subboard':'reject_subboard','set-main-policy':'set_main_policy','transfer-moderator':'transfer_moderator',screen:'screen',withdraw:'withdraw'});
 export function createSynchronizedRollingApplication({application,synchronize,contextGuard,operationScope=()=>null,prepareContext,prepareContractState,preparePredecessorAnchor,beforePostingPrepare}){
  if(typeof synchronize!=='function'||typeof contextGuard!=='function'||prepareContext!==undefined&&typeof prepareContext!=='function'||prepareContractState!==undefined&&typeof prepareContractState!=='function'||preparePredecessorAnchor!==undefined&&typeof preparePredecessorAnchor!=='function'||beforePostingPrepare!==undefined&&typeof beforePostingPrepare!=='function')throw Error('Rolling synchronization unavailable');
  const refreshPostingAnchor=Symbol('refresh-posting-anchor');
@@ -48,7 +49,7 @@ export function createSynchronizedRollingApplication({application,synchronize,co
   const call=application[name].bind(application);
   return [name,async(...args)=>{
    if(name==='readFundingState'&&args.length!==0)throw Object.assign(Error('Invalid Rolling action'),{code:'ROLLING_INVALID_ACTION'});
-   const captured=name==='readAccountStatus'?accountStatusArguments(args):name==='resumeSaved'?savedResumeArguments(args):name==='prepareBokRelease'?bokReleaseArguments(args):['readBalances','readBokAccounting'].includes(name)?balanceArguments(args,name==='readBalances'):args;
+   const captured=name==='prepare'&&args[0]?.type==='thread'?[captureThreadAction(args[0]),...args.slice(1)]:name==='readAccountStatus'?accountStatusArguments(args):name==='resumeSaved'?savedResumeArguments(args):name==='prepareBokRelease'?bokReleaseArguments(args):['readBalances','readBokAccounting'].includes(name)?balanceArguments(args,name==='readBalances'):args;
    for(;;){
    const stateMethod=name==='prepare'&&Object.hasOwn(boardStateMethods,captured[0]?.type)?boardStateMethods[captured[0].type]:undefined;
    await contextGuard();
@@ -92,7 +93,7 @@ export function createSynchronizedRollingApplication({application,synchronize,co
     await contextGuard();
    }
    const invoke=async()=>{
-    if(beforePostingPrepare&&name==='prepare'&&captured[1]?.immediate===true&&['post','reply','quote','repost','bok'].includes(captured[0]?.type)){
+    if(beforePostingPrepare&&name==='prepare'&&captured[1]?.immediate===true&&['post','reply','quote','repost','thread','bok'].includes(captured[0]?.type)){
      // The existing native discovery barrier owns this exact synchronized scope.
      // No workflow intent exists while readiness is inspected or chain time waits.
      if(scope?.contractStateReady)await scope.contractStateReady;

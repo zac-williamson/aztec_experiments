@@ -1,8 +1,46 @@
 export const MAX_BYTES = 992;
+export const MAX_THREAD_POSTS = 4;
+const messageEncoder = new TextEncoder();
+const messageSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 export function allowance(text) {
-  const bytes = new TextEncoder().encode(text).length;
-  const characters = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text)].length;
-  return { bytes, characters, remaining: MAX_BYTES - bytes, valid: bytes > 0 && bytes <= MAX_BYTES };
+  const bytes = messageEncoder.encode(text).length;
+  const segments = [...messageSegmenter.segment(text)];
+  // Count whole visible characters beyond the longest prefix that fits. Never
+  // split emoji or combining characters, or describe UTF-8 bytes as characters.
+  let excess = bytes - MAX_BYTES, overCharacters = 0;
+  for (let i = segments.length - 1; excess > 0 && i >= 0; i--) {
+    excess -= messageEncoder.encode(segments[i].segment).length;
+    overCharacters++;
+  }
+  return { bytes, characters: segments.length, overCharacters, remaining: MAX_BYTES - bytes, valid: bytes > 0 && bytes <= MAX_BYTES };
+}
+export function splitMessage(text) {
+  let bytes = 0, end = text.length;
+  for (const part of messageSegmenter.segment(text)) {
+    bytes += messageEncoder.encode(part.segment).length;
+    if (bytes > MAX_BYTES) { end = part.index; break; }
+  }
+  return [text.slice(0, end), text.slice(end)];
+}
+export function createMessageBudget() {
+  const node = document.createElement('span');
+  node.className = 'message-budget';
+  node.setAttribute('role', 'status');
+  node.setAttribute('aria-live', 'polite');
+  const ring = document.createElement('span'), number = document.createElement('span'), description = document.createElement('span');
+  ring.className = 'message-budget-ring';
+  ring.setAttribute('aria-hidden', 'true');
+  description.className = 'sr-only';
+  ring.append(number);node.append(ring, description);
+  return { node, update(a) {
+    const over = a.remaining < 0;
+    node.dataset.state = over ? 'over' : a.remaining <= 99 ? 'near' : 'normal';
+    ring.style.setProperty('--budget-used', `${Math.min(100, a.bytes / MAX_BYTES * 100)}%`);
+    number.textContent = over ? `−${a.overCharacters}` : a.remaining === 0 ? '0' : '';
+    const label = over ? `${a.overCharacters} ${a.overCharacters === 1 ? 'character' : 'characters'} over the limit` : a.remaining === 0 ? 'Message limit reached' : `${Math.floor(a.bytes / MAX_BYTES * 100)}% of message budget used`;
+    description.textContent = label;
+    node.title = over ? `${label}. Remove ${a.overCharacters} from the end to fit.` : `${label}. Emoji and some letters use more space.`;
+  }};
 }
 export function safeURL(value) {
   try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url.href : null; }

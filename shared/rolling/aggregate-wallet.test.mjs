@@ -48,7 +48,7 @@ function fixture({chainId='31337'}={}){
    const log=(address,iface,name,args)=>({address,...iface.encodeEventLog(iface.getEvent(name),args)});
    receipt={hash:h(20),from:address,to:scope.router,blockNumber:17,blockHash:h(17),status:1,logs:[
     log(scope.router,router,'Funded',[address,expectedHash,p.collateral,p.fee.amount,p.bok.amount,p.fee.maxEth,p.bok.maxEth,0]),
-    log(scope.collateralPortal,portal,'Deposited',[address,p.collateral,p.collateralSecretHash,h(30),1]),
+    ...(p.collateral>0n?[log(scope.collateralPortal,portal,'Deposited',[address,p.collateral,p.collateralSecretHash,h(30),1])]:[]),
     log(scope.feePortal,fee,'DepositToAztecPublic',[scope.privateFpc,p.fee.amount,p.feeSecretHash,h(31),2]),
     ...(p.bok.amount>0n?[log(scope.bokPortal,bok,'Deposited',[p.bokCommitment,p.bok.amount,h(32),3])]:[])
    ]};if(state.unknown)throw Error('Lost acknowledgement');state.landed=true;return {hash:h(20)};
@@ -246,16 +246,16 @@ function usdcWalletFixture(){
  f.options.provider.getTransactionCount=async()=>{throw Error('USDC custody must not derive an Ethereum nonce');};
  f.options.provider.getTransaction=async()=>f.state.usdcTx;f.options.provider.getTransactionReceipt=async()=>f.state.usdcReceipt;
  f.options.relay={terms:async()=>({relayer,feeUsdc:'50',gasBudgetWei:'10000'}),submit:async data=>{
-  f.state.posts++;assert.equal(f.state.signatures,2);assert.equal(claims.size,1);assert(f.records.size>0);
+  f.state.posts++;assert.equal(f.state.signatures,f.allocation.collateralWei==='0'?1:2);assert.equal(claims.size,f.allocation.collateralWei==='0'?0:1);assert(f.records.size>0);
   if(f.state.lost)throw Error('labelled lost relay reply');
   const p=router.parseTransaction({data}).args.p,hash=ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode([router.getFunction('fundUsdc').inputs[0]],[p]));
   f.state.usdcTx={hash:h(200),from:relayer,to:s.router,nonce:42,chainId:31337n,value:0n,data};
   const log=(address,iface,name,args)=>({address,...iface.encodeEventLog(iface.getEvent(name),args)});
   f.state.usdcReceipt={hash:h(200),from:relayer,to:s.router,blockNumber:17,blockHash:h(17),status:1,logs:[
    log(s.router,router,'UsdcFunded',[p.beneficiary,hash,p.relayer,p.collateral.amount,p.fee.amount,p.bokAmount,p.collateral.maxUsdc,p.fee.maxUsdc,p.relayFeeUsdc,0]),
-   log(s.collateralPortal,portal,'Deposited',[p.beneficiary,p.collateral.amount,p.collateralSecretHash,h(30),1]),
+   ...(p.collateral.amount>0n?[log(s.collateralPortal,portal,'Deposited',[p.beneficiary,p.collateral.amount,p.collateralSecretHash,h(30),1])]:[]),
    log(s.feePortal,fee,'DepositToAztecPublic',[s.privateFpc,p.fee.amount,p.feeSecretHash,h(31),2]),
-   log(s.bokPortal,bok,'Deposited',[p.bokCommitment,p.bokAmount,h(32),3])
+   ...(p.bokAmount>0n?[log(s.bokPortal,bok,'Deposited',[p.bokCommitment,p.bokAmount,h(32),3])]:[])
   ]};return {status:'unresolved',scope:'aggregate-funding',canonical:false,planHash:hash,transactionHash:h(200)};
  },status:async planHash=>{f.state.statusReads++;return {status:f.state.usdcTx&&!f.state.withhold?'succeeded':'absent',scope:'aggregate-funding',canonical:!!f.state.usdcTx,planHash,...(f.state.usdcTx&&!f.state.withhold?{transactionHash:h(200)}:{})};}};
  f.wallet.signer.sendTransaction=async()=>{throw Error('USDC user must never send an Ethereum transaction');};
@@ -1528,4 +1528,13 @@ for(const mode of ['saved-claim','approval','private-fee','aggregate'])test(`Bok
  f.input.funding.recover=async()=>{entered.resolve();await gate.promise;return mode==='approval'?{approved:true}:{receipt:{}};};f.input.application.readFundingState=async()=>{statusReads++;return {status:'ready'};};
  const result=advanceAggregateClaim(f.input);await entered.promise;await new Promise(setImmediate);assert.equal(statusReads,0);gate.resolve();await result;
  assert.equal(statusReads,['saved-claim','approval'].includes(mode)?0:1);
+});
+
+for(const [asset,make] of [['ETH',fixture],['USDC',usdcWalletFixture]])test(`${asset} posting credit has one payment, no collateral signature, durable private fee claim`,async()=>{
+ const f=make();Object.assign(f.allocation,{collateralWei:'0',bokAmount:'0',...(asset==='ETH'?{bokPoolFee:0}:{collateralPoolFee:0})});
+ const funding=await f.open();await funding.prepare(f.allocation);await funding.confirm();const receipts=await funding.recover();
+ assert.deepEqual(Object.keys(receipts),['receipt']);assert.equal(receipts.receipt.amount,'200');assert.equal(f.state.signatures,asset==='ETH'?0:1);assert.equal(f.state.sends,asset==='ETH'?1:0);if(asset==='USDC')assert.equal(f.state.posts,1);
+ const saved=await funding.inspect();assert.equal(saved.claimAction,'claim-private-fee');assert.equal(saved.asset,asset);assert.equal(saved.completed,false);
+ const workflow=durableClaimApplication(f,funding),result=await advanceAggregateClaim({application:workflow.open(),funding:await f.open()});assert.equal(result.state,'complete');assert.equal(result.intent.action.type,'claim-private-fee');assert.equal(workflow.state.sends,1);assert.equal((await funding.inspect()).completed,true);
+ await (await f.open()).prepare(f.allocation);assert.equal(f.state.sends,asset==='ETH'?1:0);
 });

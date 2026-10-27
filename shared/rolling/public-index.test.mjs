@@ -849,3 +849,31 @@ test('targeted HTTP routes preserve ordinary fresh-read admission and validate s
  const hundred=Array.from({length:100},(_,i)=>String(10n**75n+BigInt(i))).join(',');const complete=await fetch(base+'/api/bookmarks?ids='+encodeURIComponent(hundred));assert.equal(complete.status,200);assert.equal(calls.at(-1)[1].ids,hundred);
  for(const query of ['ids=1,1','ids=01','ids='+Array.from({length:101},(_,i)=>i+1).join(',')])assert.equal((await fetch(base+'/api/bookmarks?'+query)).status,400);
 });
+
+for(const persistent of [false,true])test(`public like tags are complete bounded public pages with no account lookup, persistent=${persistent}`,async t=>{
+ const f=persistent?await persistentFixture(t):await fixture(t);
+ f.put(4,[await f.post(20,4),await log('LikeChanged',{schema:1,post:10,tag:77,active:true,count:1}),await log('LikeChanged',{schema:1,post:10,tag:78,active:true,count:2}),await log('LikeChanged',{schema:1,post:20,tag:79,active:true,count:1}),await log('LikeChanged',{schema:1,post:10,tag:77,active:false,count:1})]);f.setHead(4);
+ const opened=persistent?await f.open():null,index=opened?.index??await f.create();if(persistent)await f.drain(index);else await index.sync();
+ const reads=f.calls.length,first=index.query('likes',{posts:'20,10',limit:1});
+ assert.deepEqual(first.postIds,['10','20']);assert.deepEqual(first.items,[{post:'10',tag:'78'}]);assert.equal(first.complete,true);assert(first.nextCursor);
+ const second=index.query('likes',{posts:'10,20',limit:1,cursor:first.nextCursor});assert.deepEqual(second.items,[{post:'20',tag:'79'}]);assert.equal(second.nextCursor,null);assert.equal(first.revision,second.revision);assert.deepEqual(first.checkpoint,second.checkpoint);
+ assert.equal(f.calls.length,reads,'Local projection queries must not invoke the node');
+ for(const input of [{posts:'10',limit:1,cursor:first.nextCursor},{posts:'10,20',limit:2,cursor:first.nextCursor}])assert.throws(()=>index.query('likes',input),{code:'ROLLING_PUBLIC_CURSOR_STALE'});
+ for(const posts of ['', '0', '10,10', '01',Array.from({length:33},(_,i)=>String(i+1)).join(','),'21888242871839275222246405745257275088548364400416034343698204186575808495617'])assert.throws(()=>index.query('likes',{posts}));
+ for(const extra of ['owner','tag','slot','account'])assert.throws(()=>index.query('likes',{posts:'10',[extra]:'77'}));
+ assert.deepEqual(index.query('likes',{posts:'999'}).items,[]);
+ const wide=Array.from({length:32},(_,i)=>String(10n**76n+BigInt(i)));assert.deepEqual(index.query('likes',{posts:wide.join(',')}).postIds,wide);
+ if(persistent){const db=new DatabaseSync(opened.storage.filename);try{const plan=db.prepare("EXPLAIN QUERY PLAN SELECT k,idnum FROM projection INDEXED BY projection_active_likes WHERE g=? AND kind='likes' AND value='true' AND board=? AND idnum>? ORDER BY idnum LIMIT ?").all(opened.storage.inspect().control.generation,BigInt(10).toString(16).padStart(64,'0'),'',101);assert(plan.some(r=>r.detail.includes('projection_active_likes')));assert(!plan.some(r=>/SCAN |TEMP B-TREE/.test(r.detail)));}finally{db.close();}}
+ f.put(4,[await f.post(20,4),await log('LikeChanged',{schema:1,post:20,tag:80,active:true,count:1})],50);
+ if(persistent)await index.step();else await index.sync();if(persistent)await f.drain(index);
+ assert.throws(()=>index.query('likes',{posts:'10,20',limit:1,cursor:first.nextCursor}),{code:'ROLLING_PUBLIC_CURSOR_STALE'});
+ assert.deepEqual(index.query('likes',{posts:'10,20'}).items,[{post:'20',tag:'80'}]);
+});
+
+test('public like tag HTTP accepts only post selection and bounded pagination',async t=>{
+ const f=await persistentFixture(t);f.put(4,[await log('LikeChanged',{schema:1,post:10,tag:77,active:true,count:1})]);f.setHead(4);
+ const {index}=await f.open();await f.drain(index);
+ const server=await startRollingPublicServer({index,pollMs:30000});t.after(()=>server.close());const base=server.url;
+ const response=await fetch(base+'/api/likes?posts=10&limit=1');assert.equal(response.status,200);const value=await response.json();assert.deepEqual(value.items,[{post:'10',tag:'77'}]);assert.deepEqual(value.postIds,['10']);assert.equal(value.nextCursor,null);assert.equal(value.scope.boardAddress,scope.boardAddress);
+ for(const query of ['posts=10&owner=77','posts=10&tag=77','posts=10&slot=77','posts=10&account=77','posts=10&posts=20','posts=0','posts=10&limit=101'])assert.equal((await fetch(base+'/api/likes?'+query)).status,400,query);
+});

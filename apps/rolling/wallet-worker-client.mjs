@@ -55,7 +55,7 @@ export function createRollingWorkerClient({worker,contextGuard=()=>{},captureFun
   });
   // Structured clone now, before a guard can yield to a mutable caller.
   const payload=structuredClone(captured),id=++next;
-  const ownsBusy=!['initialize','deriveAccount','openAccount','ensureSession','ensureRefundSession','observeIncluded','withdrawal.observe','withdrawal.waitUntilReady'].includes(method);
+  const ownsBusy=!['initialize','deriveAccount','openAccount','ensureSession','ensureRefundSession','observeIncluded','application.readLikes','withdrawal.observe','withdrawal.waitUntilReady'].includes(method);
   return new Promise((resolve,reject)=>{
    const abort=()=>{if(!closed)worker.postMessage({type:'abort',id});};
    const cleanup=()=>signals.forEach(signal=>signal.removeEventListener('abort',abort));
@@ -64,7 +64,7 @@ export function createRollingWorkerClient({worker,contextGuard=()=>{},captureFun
   });
  }
  const group=(prefix,names)=>Object.freeze(Object.fromEntries(names.map(name=>[name,(...args)=>invoke(prefix+'.'+name,args)])));
- const topup=kind=>Object.freeze({...group('topup.'+kind,TOPUP_METHODS),get ethAvailable(){return kind==='bok'&&metadata.bokEthAvailable===true;},get defaultPrivateFeeCap(){return metadata.privateFeeCap;}});
+ const topup=kind=>Object.freeze({...group('topup.'+kind,TOPUP_METHODS),get ethAvailable(){return metadata.fundingEthAvailable===true;},get usdcAvailable(){return kind==='bok'||metadata.usdcAvailable===true;},get defaultPrivateFeeCap(){return metadata.privateFeeCap;}});
  const client={initialize:options=>invoke('initialize',[options]).then(value=>(metadata=value,value)),deriveAccount:options=>invoke('deriveAccount',[options]),openAccount:account=>invoke('openAccount',[account]).then(value=>(metadata={...metadata,...value},value)),ensureSession:()=>invoke('ensureSession').then(value=>(metadata={...metadata,...value},client)),
   application:group('application',APPLICATION_METHODS),funding:{...group('funding',FUNDING_METHODS),get usdcAvailable(){return metadata.usdcAvailable===true;},get defaultPrivateFeeCap(){return metadata.privateFeeCap;}},
   topup:{'private-fee':topup('private-fee'),bok:topup('bok')},withdrawal:group('withdrawal',WITHDRAWAL_METHODS),depositRefunds:group('depositRefunds',DEPOSIT_METHODS),

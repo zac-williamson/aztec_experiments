@@ -136,7 +136,7 @@ const preparationQueues=[];test.after(async()=>{await Promise.all(preparationQue
 
 const {loadContractArtifact,getAllFunctionAbis}=await import('@aztec-labs/stdlib/abi');
 const actualBoardArtifact=loadContractArtifact(JSON.parse(await fs.readFile(process.env.ROLLING_TEST_ARTIFACT??new URL('../billboard/target/rolling_contract-RollingBoard.json',import.meta.url),'utf8')));
-const qualifiedBoardMethods=['set_like','register_name','set_bio','set_avatar','create_subboard','remove_post','remove_avatar','reject_subboard','set_main_policy','transfer_moderator','screen','withdraw'];
+const qualifiedBoardMethods=['post_thread','set_like','register_name','set_bio','set_avatar','create_subboard','remove_post','remove_avatar','reject_subboard','set_main_policy','transfer_moderator','screen','withdraw'];
 
 async function ordinarySyncFixture({written=false,initializationFailure=false}={}){
  const owner=AztecAddress.fromFieldUnsafe(new Fr(100)),fee=AztecAddress.fromFieldUnsafe(new Fr(200)),board=AztecAddress.fromFieldUnsafe(new Fr(300));

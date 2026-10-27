@@ -271,3 +271,12 @@ for(const [asset,make]of [['ETH',fixture],['USDC',usdcFixture]])for(const mode o
  await assert.rejects(f.prepare(),error=>{assert.equal(error.code,mode==='revert'?'AGGREGATE_LIQUIDITY_UNAVAILABLE':'AGGREGATE_PUBLIC_READ_FAILED');assert(!error.message.includes('private provider detail'));return true;});
  assert.equal(getters,0);assert(!f.calls.some(call=>/send|sign/.test(call.method)));
 });
+
+for(const [asset,make] of [['ETH',fixture],['USDC',usdcFixture]])test(`${asset} posting credit quotes only fee swap, requires no collateral consent`,async()=>{
+ const f=make({disabled:true});Object.assign(f.input.allocation,{collateralWei:'0',collateralSecretHash:field(0),bokAmount:'0',bokCommitment:field(0),bokSecretHash:field(0),...(asset==='ETH'?{bokPoolFee:0}:{collateralPoolFee:0})});
+ const quote=await f.prepare();assert.deepEqual(quote.requiredClaims,['private-fee']);assert.equal(quote.plan.nonce,'0');
+ assert(!f.calls.some(c=>c.method==='eth_call'&&c.params[0].to===f.input.scope.collateralPortal));
+ assert.equal(f.calls.filter(c=>c.method==='eth_call'&&c.params[0].to===f.input.scope.quoter).length,1);
+ const tx=asset==='ETH'?await aggregateFundingTransaction(quote,'0x'):await aggregateUsdcFundingTransaction(quote,'0x','0x12');
+ assert.equal(r.parseTransaction(tx).args[1],'0x');assert.equal(tx.value,asset==='ETH'?quote.plan.fee.maxEth:'0');
+});

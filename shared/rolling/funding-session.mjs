@@ -1,5 +1,5 @@
 import {assertRollingDeploymentPreparation,prepareRollingDeployment,readRollingDeploymentRegistration} from './deployment.mjs';
-import {createAggregateWallet,starterFundingAllocation,timeFundingPreparation} from './aggregate-wallet.mjs';
+import {createAggregateWallet,starterFundingAllocation,automaticFundingGasBudget,timeFundingPreparation} from './aggregate-wallet.mjs';
 const fail=code=>Object.assign(Error('Funding is unavailable.'),{code});
 
 // Admission for a new payment, never a gate on recovery of an existing one.
@@ -224,6 +224,16 @@ export async function createRollingFundingSession({sdk,ethers,config,account,dep
   reconcileClaim:id=>requirePrivate().reconcileClaim(id),
  });
  const aggregate=withRollingFundingLease(rawAggregate,{owner:captured.address,locks,contextGuard:guard});
+ const postingCredit=Object.freeze({...aggregate,async inspect(){const saved=await aggregate.inspect();return saved?.claimAction==='claim-private-fee'?saved:null;},async prepare(input){
+  await guard();
+  if(!input||Object.keys(input).sort().join()!=='amount,asset,privateFeeCap'||!['ETH','USDC'].includes(input.asset))throw fail('ROLLING_FUNDING_INVALID');
+  const {amount,asset,privateFeeCap}=structuredClone(input);
+  const allocation={asset,collateralWei:'0',feeAmount:amount,bokAmount:'0',feePoolFee:3000,slippageBps:100,privateFeeCap,
+   ...(asset==='USDC'?{collateralPoolFee:0}:{bokPoolFee:0,gasBudgetWei:await automaticFundingGasBudget(fundingProvider)})};
+  const quote=await aggregate.prepare(allocation);await guard();
+  return Object.freeze({kind:'private-fee',phase:'deposit',asset,amount,privateFeeCap,walletName:quote.walletName,
+   ...(asset==='ETH'?{maximumSwapWei:quote.breakdown.fee.maxEth}:{maximumUsdc:quote.breakdown.maximumUsdc,relayFeeUsdc:quote.breakdown.relayFeeUsdc})});
+ }});
  await guard();
  const assertContext=async({config,account,node:currentNode,proofsEnabled:currentProofs})=>{
   await guard();if(JSON.stringify(config)!==JSON.stringify(selected)||account.secretKey!==captured.secretKey||String(account.salt)!==captured.salt||String(account.address)!==captured.address||currentNode!==node||currentProofs!==proofsEnabled)throw fail('ROLLING_CONTEXT_CHANGED');
@@ -234,7 +244,7 @@ export async function createRollingFundingSession({sdk,ethers,config,account,dep
    readRate:()=>asset==='USDC'?null:fundingUsdRate({ethers,provider:fundingProvider,chainId:network.chainId}),
    prepareQuote:allocation=>aggregate.prepare(allocation)});
  }
- return Object.freeze({aggregate,node,defaultPrivateFeeCap,usdcAvailable:scope.usdcRelayAddress!==undefined,assertContext,
+ return Object.freeze({aggregate,postingCredit,node,defaultPrivateFeeCap,usdcAvailable:scope.usdcRelayAddress!==undefined,assertContext,
   async registrationDeployment(options){await guard();const result=await readRollingDeploymentRegistration(deploymentPreparation,options);await guard();return result;},
   async bindPrivateContext(context){await guard();if(privateContext||!context||['readExistingCredit','ensureBok','reconcileClaim'].some(key=>typeof context[key]!=='function')||(context.readFunding!==undefined&&typeof context.readFunding!=='function'))throw fail('ROLLING_SESSION_CONFIG');privateContext=Object.freeze({...context});},
   // Internal one-use opening work, never a renderer capability or cached quote.

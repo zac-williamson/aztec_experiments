@@ -105,6 +105,40 @@ pub contract RollingBoard {
             hinted
         }
 
+        unconstrained fn thread_history(self, deposit: DepositNote, count: u32) -> [Option<HintedNote<PostNote>>; 8] {
+            assert((count >= 2) & (count <= 4), "Thread must contain 2 to 4 posts");
+            let head = deposit.sequences.head_sequence;
+            let screened = deposit.sequences.screened_sequence;
+            assert((deposit.deposit_chain_id == self.chain) & (self.chain != 0), "BB_HISTORY_DEPOSIT_INVALID");
+            assert(screened <= head, "BB_HISTORY_STALE");
+            assert(deposit.sequences.last_real_sequence <= head, "BB_HISTORY_STALE");
+            assert((head == 0) == (deposit.head_link == SENTINEL), "BB_HISTORY_STALE");
+            assert((screened == 0) == (deposit.screened_link == SENTINEL), "BB_HISTORY_STALE");
+            assert((screened == head) == (deposit.screened_link == deposit.head_link), "BB_HISTORY_STALE");
+            let mut result = [Option::none(); 8];
+            if screened < head {
+                let maybe_pk = try_get_public_keys(self.owner);
+                assert(maybe_pk.is_some(), "BB_HISTORY_KEYS_MISSING");
+                let secret = get_nhk_app(maybe_pk.unwrap_unchecked().npk_m_hash);
+                let mut previous = deposit.screened_link;
+                let mut previous_timestamp: u64 = 0;
+                for i in 0..8 {
+                    if (i < 2 * count) & (i as u64 < head - screened) {
+                        let hint = self.get_screen_successor(previous, i == 0);
+                        let note = hint.note;
+                        assert(note.sequence == screened + 1 + i as u64, "BB_HISTORY_STALE");
+                        assert(note.anchor_timestamp >= previous_timestamp, "BB_HISTORY_STALE");
+                        let hash = note.compute_note_hash(hint.owner, hint.storage_slot, hint.randomness);
+                        previous = post_link(self.board, self.owner, self.chain, note.sequence, hash, secret);
+                        assert((previous == deposit.head_link) == (note.sequence == head), "BB_HISTORY_STALE");
+                        previous_timestamp = note.anchor_timestamp;
+                        result[i] = Option::some(hint);
+                    }
+                }
+            }
+            result
+        }
+
         fn authenticate(self, header: BlockHeader, hinted: HintedNote<PostNote>) -> ConfirmedNote<PostNote> {
             self.assert_identity(hinted.contract_address, hinted.owner, hinted.storage_slot, hinted.note);
             let confirmed = assert_note_existed_by(header, hinted);
@@ -622,23 +656,48 @@ pub contract RollingBoard {
     // internal helper. There is no public caller-selected eligibility certificate.
     struct Admission {}
     impl Admission {
+        fn pop(context: &mut aztec::context::PrivateContext, storage: Storage<&mut aztec::context::PrivateContext>,
+            deposit_chain_id: Field) -> DepositNote {
+            let sender = context.maybe_msg_sender().unwrap();
+            let options = NoteGetterOptions::<DepositNote, 8, Field, Field>::new()
+                .select(DepositNote::properties().deposit_chain_id, Comparator.EQ, deposit_chain_id).set_limit(1);
+            let notes = storage.deposits.at(sender).pop_notes(options);
+            assert(notes.len() > 0, "No deposit note found -- claim a deposit first");
+            let deposit = notes.get_unchecked(0);
+            assert((deposit.deposit_chain_id == deposit_chain_id) & (deposit_chain_id != 0), "Invalid deposit identity");
+            deposit
+        }
+
+        fn save(context: &mut aztec::context::PrivateContext, storage: Storage<&mut aztec::context::PrivateContext>,
+            deposit: DepositNote) {
+            let sender = context.maybe_msg_sender().unwrap();
+            let created = storage.deposits.at(sender).insert(deposit).get_new_note();
+            deliver_note(context, created);
+        }
+
         fn consume(context: &mut aztec::context::PrivateContext, storage: Storage<&mut aztec::context::PrivateContext>,
             deposit_chain_id: Field, public_post_id: Field, is_dummy: bool,
             child: Option<HintedNote<PostNote>>, grandchild: Option<HintedNote<PostNote>>) {
+            let deposit = Self::pop(context, storage, deposit_chain_id);
+            let next = Self::advance(context, storage, deposit, deposit.sequences.head_sequence,
+                deposit.head_link, public_post_id, is_dummy, child, grandchild);
+            Self::save(context, storage, next);
+        }
+
+        // The historical boundary comes only from the deposit popped in this
+        // entrypoint. Appended notes are constructed here, never caller-supplied
+        // replacements for historical membership proofs. Each post still screens
+        // up to two historical entries and pays its own cooldown/flag penalty.
+        fn advance(context: &mut aztec::context::PrivateContext, storage: Storage<&mut aztec::context::PrivateContext>,
+            dep_note: DepositNote, historical_head_sequence: u64, historical_head_link: Field,
+            public_post_id: Field, is_dummy: bool,
+            child: Option<HintedNote<PostNote>>, grandchild: Option<HintedNote<PostNote>>) -> DepositNote {
         let sender = context.maybe_msg_sender().unwrap();
         let now = context.get_anchor_block_header().timestamp();
         let header = context.get_anchor_block_header();
         let addr = context.this_address();
+        let deposit_chain_id = dep_note.deposit_chain_id;
         assert((public_post_id == 0) == is_dummy, "Invalid admission post identity");
-
-        // --- Pop the deposit note ---
-        let options = NoteGetterOptions::<DepositNote, 8, Field, Field>::new()
-            .select(DepositNote::properties().deposit_chain_id, Comparator.EQ, deposit_chain_id).set_limit(1);
-        let notes = storage.deposits.at(sender).pop_notes(options);
-        assert(notes.len() > 0, "No deposit note found -- claim a deposit first");
-        let dep_note = notes.get_unchecked(0);
-        assert((dep_note.deposit_chain_id == deposit_chain_id) & (deposit_chain_id != 0), "Invalid deposit identity");
-
         let config = storage.config.read();
         config.validate(context.chain_id(), context.version());
         let cooldown = compute_cooldown(dep_note.amount, config.base_cooldown as u64, config.min_deposit);
@@ -662,7 +721,9 @@ pub contract RollingBoard {
         assert((head_sequence == 0) == (dep_note.head_link == SENTINEL), "C02 deposit head");
         assert((screened_sequence == 0) == (dep_note.screened_link == SENTINEL), "C02 deposit screened link");
         assert((screened_sequence == head_sequence) == (dep_note.screened_link == dep_note.head_link), "C02 deposit progress");
-        let need_screening = screened_sequence < head_sequence;
+        assert(historical_head_sequence <= head_sequence, "C02 historical head");
+        assert(screened_sequence <= historical_head_sequence, "C02 historical progress");
+        let need_screening = screened_sequence < historical_head_sequence;
         let scope = ScreeningScope { board: addr, owner: sender,
             slot: storage.posts.at(sender).storage_slot, chain: deposit_chain_id };
 
@@ -670,13 +731,13 @@ pub contract RollingBoard {
             assert(child.is_some(), "Child note required for screening");
             let child_confirmed = scope.authenticate(header, child.unwrap_unchecked());
             let cn = child_confirmed.note;
-            assert((cn.sequence == screened_sequence + 1) & (cn.sequence <= head_sequence), "C02 child sequence");
+            assert((cn.sequence == screened_sequence + 1) & (cn.sequence <= historical_head_sequence), "C02 child sequence");
             assert(cn.previous_link == dep_note.screened_link, "C02 child previous link");
             let child_inner_hash = cn.compute_note_hash(child_confirmed.owner,
                 child_confirmed.storage_slot, child_confirmed.randomness);
             let child_link = post_link(addr, sender, deposit_chain_id, cn.sequence, child_inner_hash, link_secret);
-            let child_is_head = cn.sequence == head_sequence;
-            assert((child_link == dep_note.head_link) == child_is_head, "C02 child head");
+            let child_is_head = cn.sequence == historical_head_sequence;
+            assert((child_link == historical_head_link) == child_is_head, "C02 child head");
             let child_mature = if cn.is_dummy { true } else {
                 let exists_slot = storage.post_exists.at(cn.post_id).get_storage_slot();
                 assert(public_storage_historical_read(header, exists_slot, addr) == 1, "Post not publicly included");
@@ -709,13 +770,13 @@ pub contract RollingBoard {
             if grandchild.is_some() {
                 let gc_confirmed = scope.authenticate(header, grandchild.unwrap_unchecked());
                 let gn = gc_confirmed.note;
-                assert((gn.sequence == cn.sequence + 1) & (gn.sequence <= head_sequence), "C02 grandchild sequence");
+                assert((gn.sequence == cn.sequence + 1) & (gn.sequence <= historical_head_sequence), "C02 grandchild sequence");
                 assert(gn.previous_link == child_link, "C02 grandchild previous link");
                 assert(gn.anchor_timestamp >= cn.anchor_timestamp, "C02 reversed timestamps");
                 let gc_inner_hash = gn.compute_note_hash(gc_confirmed.owner,
                     gc_confirmed.storage_slot, gc_confirmed.randomness);
                 let gc_link = post_link(addr, sender, deposit_chain_id, gn.sequence, gc_inner_hash, link_secret);
-                assert((gc_link == dep_note.head_link) == (gn.sequence == head_sequence), "C02 grandchild head");
+                assert((gc_link == historical_head_link) == (gn.sequence == historical_head_sequence), "C02 grandchild head");
                 let gc_mature = if gn.is_dummy { true } else {
                     let exists_slot = storage.post_exists.at(gn.post_id).get_storage_slot();
                     assert(public_storage_historical_read(header, exists_slot, addr) == 1, "Post not publicly included");
@@ -790,8 +851,7 @@ pub contract RollingBoard {
             screened_link: new_screened_link,
             next_allowed_time: new_next_allowed,
         };
-        let created = storage.deposits.at(sender).insert(new_deposit).get_new_note();
-        deliver_note(context, created);
+        new_deposit
         }
     }
     #[external("private")]
@@ -836,6 +896,58 @@ pub contract RollingBoard {
             .select(DepositNote::properties().deposit_chain_id, Comparator.EQ, deposit_chain_id).set_limit(1);
         let notes = self.storage.deposits.at(owner).view_notes(options);
         if notes.len() == 0 { [0; 11] } else { notes.get_unchecked(0).logical_fields() }
+    }
+
+    /// Private-wallet discovery for a bounded thread. No public query receives
+    /// the owner/deposit. All returned hints remain untrusted proof inputs.
+    #[external("utility")]
+    unconstrained fn get_thread_screen_hints(owner: AztecAddress, deposit_chain_id: Field,
+        count: u32) -> pub [Option<HintedNote<PostNote>>; 8] {
+        let options = NoteViewerOptions::<DepositNote, 8>::new()
+            .select(DepositNote::properties().deposit_chain_id, Comparator.EQ, deposit_chain_id).set_limit(2);
+        let notes = self.storage.deposits.at(owner).view_notes(options);
+        assert(notes.len() > 0, "BB_HISTORY_DEPOSIT_MISSING");
+        assert(notes.len() == 1, "BB_HISTORY_DEPOSIT_AMBIGUOUS");
+        let scope = ScreeningScope { board: self.address, owner,
+            slot: self.storage.posts.at(owner).storage_slot, chain: deposit_chain_id };
+        scope.thread_history(notes.get_unchecked(0), count)
+    }
+
+    /// timestamp is the caller's authenticated native anchor, not browser time.
+    /// This predicts readiness only; the private entrypoint authenticates history
+    /// and applies the original cooldown, penalties and recovery bounds again.
+    #[external("utility")]
+    unconstrained fn get_thread_ready_time(owner: AztecAddress, deposit_chain_id: Field,
+        count: u32, timestamp: u64) -> pub u64 {
+        let options = NoteViewerOptions::<DepositNote, 8>::new()
+            .select(DepositNote::properties().deposit_chain_id, Comparator.EQ, deposit_chain_id).set_limit(2);
+        let notes = self.storage.deposits.at(owner).view_notes(options);
+        assert(notes.len() > 0, "BB_HISTORY_DEPOSIT_MISSING");
+        assert(notes.len() == 1, "BB_HISTORY_DEPOSIT_AMBIGUOUS");
+        let deposit = notes.get_unchecked(0);
+        let scope = ScreeningScope { board: self.address, owner,
+            slot: self.storage.posts.at(owner).storage_slot, chain: deposit_chain_id };
+        let history = scope.thread_history(deposit, count);
+        let config = self.storage.config.read();
+        let cooldown = compute_cooldown(deposit.amount, config.base_cooldown as u64, config.min_deposit);
+        let mut deadlines: [u64; 8] = [0; 8];
+        let mut penalized = [false; 8];
+        let mut length: u32 = 0;
+        for i in 0..8 {
+            if history[i].is_some() {
+                let note = history[i].unwrap_unchecked().note;
+                if !note.is_dummy {
+                    assert(self.storage.post_exists.at(note.post_id).read(), "Post not publicly included");
+                    let published = self.storage.post_time.at(note.post_id).read();
+                    deadlines[i] = self.storage.post_flag_deadline.at(note.post_id).read();
+                    assert(deadlines[i] == checked_time_add(published, config.censor_window as u64), "Invalid post deadline");
+                    penalized[i] = self.storage.post_flagged.at(note.post_id).read() == 3;
+                }
+                length += 1;
+            }
+        }
+        crate::admission::thread_ready_time(timestamp, deposit.next_allowed_time, cooldown,
+            config.k_multiplier as u64, config.max_save_up as u64, count, length, deadlines, penalized)
     }
 
     /// Returns exact child/grandchild hints for the selected live deposit.
@@ -916,6 +1028,38 @@ pub contract RollingBoard {
         let id = post_id(self.address, nonce);
         Admission::consume(self.context, self.storage, deposit_chain_id, id, false, child, grandchild);
         self.enqueue_self._publish(nonce, draft, 0, 0);
+    }
+
+    /// One fee, one deposit spend, and one atomic ordered publication. The
+    /// prefix contains only pre-transaction history; private proofs authenticate
+    /// every consumed hint exactly as ordinary posting does.
+    #[external("private")]
+    fn post_thread(deposit_chain_id: Field, nonces: [Field; 4], drafts: [PostDraft; 4],
+        count: u32, history: [Option<HintedNote<PostNote>>; 8],
+        plugin_ids: [Field; 4], request_ids: [Field; 4]) {
+        let ids = crate::posting::validate_thread(self.address, nonces, drafts, count, plugin_ids, request_ids);
+        if drafts[0].name_id != 0 { self.internal._assert_name_owner(drafts[0].name_id); }
+        let original = Admission::pop(self.context, self.storage, deposit_chain_id);
+        let mut deposit = original;
+        for i in 0..4 {
+            if i < count {
+                let mut child = Option::none();
+                let mut grandchild = Option::none();
+                if deposit.sequences.screened_sequence < original.sequences.head_sequence {
+                    let cursor = (deposit.sequences.screened_sequence - original.sequences.screened_sequence) as u32;
+                    assert(cursor < 8, "Thread history exhausted");
+                    child = history[cursor];
+                    if deposit.sequences.screened_sequence + 1 < original.sequences.head_sequence {
+                        assert(cursor + 1 < 8, "Thread history exhausted");
+                        grandchild = history[cursor + 1];
+                    }
+                }
+                deposit = Admission::advance(self.context, self.storage, deposit,
+                    original.sequences.head_sequence, original.head_link, ids[i], false, child, grandchild);
+                self.enqueue_self._publish(nonces[i], drafts[i], plugin_ids[i], request_ids[i]);
+            }
+        }
+        Admission::save(self.context, self.storage, deposit);
     }
 
     #[external("private")]

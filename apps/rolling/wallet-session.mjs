@@ -1,3 +1,4 @@
+import {createPublicLikeReader} from '../../shared/rolling/like-state.mjs';
 import {consumeRollingAccountPreparation} from '../../shared/rolling/account-preparation.mjs';
 import {createRollingFundingSession,verifyRollingTopupClaim,readRollingFundingOperation,invalidateRollingFundingNativeSnapshot} from '../../shared/rolling/funding-session.mjs';
 export {createRollingFundingSession,verifyRollingFundingCredit,verifyRollingAggregateScope,verifyRollingTopupClaim,fundingUsdEstimate} from '../../shared/rolling/funding-session.mjs';
@@ -535,11 +536,10 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
     funding.loadAggregate=txHash=>aggregate.loadAggregate(txHash);
    }
    if(typeof captureFundingWallet==='function'){
-    const bokTopupScope=selected.bokTopup&&selected.aggregateFunding?{...selected.aggregateFunding,...selected.bokTopup}:undefined;
-    if(selected.bokTopup&&!bokTopupScope)throw fail('ROLLING_SESSION_CONFIG');
+    const bokTopupScope=selected.bok?selected.aggregateFunding:undefined;
     funding.bokTopupScope=bokTopupScope;
     const provider=Object.fromEntries(['getNetwork','getTransactionReceipt','getTransaction','getBlock','getLogs','getCode','call','getTransactionCount','getBlockNumber','estimateGas','getFeeData','waitForTransaction'].map(name=>[name,async(...args)=>{await guardRoute();fundingProvider??=new ethers.JsonRpcProvider(selected.network.ethRpcUrl);const value=await fundingRead(name,args);await guardRoute();return value;}]));
-    topups={};for(const kind of ['private-fee',...(selected.bok?['bok']:[])])topups[kind]=await createStandaloneTopupWallet({sdk,ethers,kind,network,board:deployment.board.address.toString(),owner:captured.address,walletSecret:captured.secretKey,walletSalt:captured.salt,storage:privateStore,provider,captureWallet:captureFundingWallet,contextGuard:guardRoute,operationScope:()=>operationScope,topupScope:kind==='bok'?bokTopupScope:undefined,
+    topups=fundingContext?{'private-fee':fundingContext.postingCredit}:{};for(const kind of selected.bok?['bok']:[])topups[kind]=await createStandaloneTopupWallet({sdk,ethers,kind,network,board:deployment.board.address.toString(),owner:captured.address,walletSecret:captured.secretKey,walletSalt:captured.salt,storage:privateStore,provider,captureWallet:captureFundingWallet,contextGuard:guardRoute,operationScope:()=>operationScope,topupScope:kind==='bok'?bokTopupScope:undefined,
      resolveScope:async()=>verifyRollingTopupScope({sdk,ethers,node,provider,network,privateFee:deployment.privateFee.address.toString(),bok:kind==='bok'?await ensureBok():undefined,kind,contextGuard:guardRoute}),verifyClaim:txHash=>verifyRollingTopupClaim({sdk,node,txHash,contextGuard:guardRoute,confirmationTier:'proposed'}),reconcileClaim:id=>app.reconcile(id)});
     if(topups.bok)funding.readBokClaimCustody=receipt=>topups.bok.readClaimCustody(receipt);
     const aggregateLookup=funding.loadAggregate;
@@ -548,7 +548,7 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
    // Funding completion reconciliation uses this raw application's fresh
    // signed-journal receipt check. It needs neither note synchronization nor the signing capsule; the later
    // native credit read still enters the ordinary synchronized application.
-   await guard();app=createRollingApplication({sdk:{...sdk,isPrivateWalletForNode:routing.isPrivateWalletForNode},deployment,resolveBok:ensureBok,contextGuard:guard,privateStore,funding,onProgress,measure:measureRollingStage,readBokAccountingPage:createUniformBokAccountingReader(),
+   await guard();app=createRollingApplication({sdk:{...sdk,isPrivateWalletForNode:routing.isPrivateWalletForNode},deployment,resolveBok:ensureBok,contextGuard:guard,privateStore,funding,onProgress,measure:measureRollingStage,readBokAccountingPage:createUniformBokAccountingReader(),readPublicLikePage:createPublicLikeReader(),
     accountSession:{proposedTransactions:true,operationScope:()=>operationScope,owner:instance.address,wallet,node,journal,walletSecret:captured.secretKey,walletSalt:captured.salt,
      ...(typeof routing.createPreproofRecovery==='function'?{preproofRecovery:routing.createPreproofRecovery(wallet,node,journal)}:{})}});
    withdrawal=createCollateralWithdrawal({sdk,ethers,provider:funding.provider,node,application:app,scope:{account:captured.address,...network,board:selected.board.contractAddress,portal:selected.board.portalAddress},storage:privateStore,walletSecret:captured.secretKey,walletSalt:captured.salt,captureWallet:captureFundingWallet??(async()=>{throw fail('ROLLING_FUNDING_UNAVAILABLE');}),contextGuard:guardRoute,resolveBokScope:funding.resolveBokWithdrawal});
@@ -572,7 +572,7 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
   // Only the single user-authorized executeAction flow waits automatically.
   if(!gate)return true;
   const postingGuard=async()=>{gate.signal?.throwIfAborted();await guardRoute();gate.signal?.throwIfAborted();if(operationScope!==owner)throw fail('ROLLING_CONTEXT_CHANGED');};
-  await postingGuard();const state=await app.readPostingReadiness(action.deposit);await postingGuard();
+  await postingGuard();const state=await app.readPostingReadiness(action.deposit,action.type==='thread'?{count:action.contents.length}:undefined);await postingGuard();
   if(state.ready){try{onProgress({stage:'preparing'});}catch{}return true;}
   try{onProgress({stage:'posting-waiting'});}catch{}
   // Observe actual chain time. Each wakeup repeats the existing native sync,
@@ -599,11 +599,11 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
   });emit('complete');return result;}catch(error){emit('failed',error);throw error;}
  }
 
- const application=Object.freeze({...Object.fromEntries(Object.entries(synchronized).map(([name,call])=>[name,(...args)=>refreshMethods[name]?observedRead(name,call,args):locked(async()=>{const result=name==='submitPrepared'&&(topups||aggregate)?await submitWithFundingCheckpoint({application:synchronized,topups,aggregate,intentId:args[0]}):await call(...args);if(name==='reconcile'&&['included','confirmed'].includes(result?.status)){const kind=result.action?.type==='claim-bok'?'bok':result.action?.type==='claim-private-fee'?'private-fee':null;if(kind&&topups?.[kind])await topups[kind].recordClaimCompletion(result);else if(result.action?.type==='claim-deposit'&&aggregate)await aggregate.recordClaimCompletion(result);}return result;})])),
+ const application=Object.freeze({readLikes:posts=>app.readLikes(posts),...Object.fromEntries(Object.entries(synchronized).map(([name,call])=>[name,(...args)=>refreshMethods[name]?observedRead(name,call,args):locked(async()=>{const result=name==='submitPrepared'&&(topups||aggregate)?await submitWithFundingCheckpoint({application:synchronized,topups,aggregate,intentId:args[0]}):await call(...args);if(name==='reconcile'&&['included','confirmed'].includes(result?.status)){const kind=result.action?.type==='claim-bok'?'bok':result.action?.type==='claim-private-fee'?'private-fee':null;if(kind&&topups?.[kind])await topups[kind].recordClaimCompletion(result);else if(result.action?.type==='claim-deposit'&&aggregate)await aggregate.recordClaimCompletion(result);}return result;})])),
   executeAction(input,options={}){const action=structuredClone(input),onPrepared=options.onPrepared,postingRules=options.postingRules===undefined?undefined:structuredClone(options.postingRules),signal=options.signal;
    if(signal!==undefined&&!(signal instanceof AbortSignal))throw fail('ROLLING_INVALID_ACTION');
    return locked(()=>{
-   if(['post','reply','quote','repost','bok'].includes(action.type))operationScope.postingReadiness={signal};
+   if(['post','reply','quote','repost','thread','bok'].includes(action.type))operationScope.postingReadiness={signal};
    // Only one-click prepare+send owns the lock for the entire lifetime of these
    // independent hash-pinned reads. Standalone preparation still awaits them.
    operationScope.preparationReads=[];
@@ -626,7 +626,7 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
 });
  const privateFeeCap=sdk.normalizePrivateFeeGasSettings(selected.privateFee.gasSettings).gasSettings.getFeeLimit().toBigInt().toString();
  const continuation=funding=>createFundingContinuation({application:synchronized,funding,sdk,node:privateNode,contextGuard:guardRoute,locked,onProgress,confirmationTier:'proposed',bridgeChainTip:nativeChainTip,invalidateSnapshot:()=>{operationScope=invalidateRollingFundingNativeSnapshot(operationScope);}});
- const topup=topups?Object.freeze(Object.fromEntries(Object.entries(topups).map(([kind,cap])=>[kind,Object.freeze({ethAvailable:kind==='bok'&&selected.bokTopup!==undefined,defaultPrivateFeeCap:privateFeeCap,...continuation(cap),...Object.fromEntries(['prepare','confirm','recover','inspect','checkpointClaim','reviewRevertedClaim'].map(name=>[name,(...args)=>locked(()=>cap[name](...args))]))})]))):null;
+ const topup=topups?Object.freeze(Object.fromEntries(Object.entries(topups).map(([kind,cap])=>[kind,Object.freeze({ethAvailable:selected.aggregateFunding!==undefined,usdcAvailable:kind==='bok'||selected.aggregateFunding?.usdcRelayAddress!==undefined,defaultPrivateFeeCap:privateFeeCap,...continuation(cap),...Object.fromEntries(['prepare','confirm','recover','inspect','checkpointClaim','reviewRevertedClaim'].map(name=>[name,(...args)=>locked(()=>cap[name](...args))]))})]))):null;
  const refunds = Object.freeze({
   list: options => locked(() => depositRefunds.list(options)),
   request: id => locked(() => depositRefunds.request(id)),

@@ -10,7 +10,6 @@ const fixture=`import {executeRollingAction} from '/wallet-action.mjs';
 import {executeAutomaticWithdrawal} from '/automatic-withdrawal.mjs';
 import {advanceAggregateClaim} from '/aggregate-wallet.mjs';
 import {mountRollingWalletPanel} from '/wallet-panel.mjs';
-import {selectPrivateViews} from '/private-views.mjs';
 const state={loads:0,sessions:0,prepares:0,sends:0,reconciles:0,cancels:0,closes:0,signIns:0,restores:0,effects:0,ended:0,owned:0,unlocked:true,options:null,failure:null,hold:null,release:null,fee:'fee-ready',profileCalls:0,bioVersion:'3',avatarVersion:'4'};
 window.test=state;state.rawAccount={secretKey:'PRIVATE_SENTINEL',address:'HUMAN_IDENTITY_SENTINEL'};state.privateChanges=0;state.preferenceReads=0;state.statusReads=0;state.headReads=0;state.revision='4';state.recoveryChecks=0;state.replacementPrepares=0;state.resumes=0;state.submitCalls=0;state.preferences={scope:{chainId:'31337',version:'1',board:'1'},head:{schema:1,initialized:true,revision:'4',digest:'42'},bookmarks:['10'],followedBoards:['0'],followedNames:[],subscriptions:['10'],replyNotifications:true,readMarkers:[]};
 state.previewBlobs=new Map();state.revoked=[];const createURL=URL.createObjectURL.bind(URL),revokeURL=URL.revokeObjectURL.bind(URL);
@@ -30,7 +29,7 @@ const application={
  async inspectRecovery(id){state.recoveryChecks++;await boundary('recovery-options');return {...state.recoverySnapshot,intent:read()};},
  async prepareInterrupted(id){state.interruptedReviews=(state.interruptedReviews??0)+1;await boundary('interrupted-review');if(read().intentId!==id)error();const next={...read(),status:'prepared',maximumFee:'456'};write(next);return next;},
  async prepareReplacement(id,input){state.replacementPrepares++;state.replacementInput=input;await boundary('replacement-prepare');const current=read();const next={...current,status:'replacement-prepared',replacementReview:{sourceTxHash:input.expectedTxHash,head:input.expectedHead,marker:current.action.type==='read-marker'?state.recoverySnapshot.marker:null,maximumFee:'456'}};write(next);return next;},
- async readAccountStatus(){state.statusReads++;await boundary('status');const intent=read();return intent&&(!['confirmed','reverted','cancelled'].includes(intent.status)||['withdraw','withdraw-bok','cancel-deposit'].includes(intent.action.type)&&intent.status==='confirmed'&&!state.refunded)?{status:'recovering',intent}:{status:state.fee,privateFeeCredit:'1000',depositIds:state.depositIds??(state.fee==='fee-ready'?['9']:[])};},
+ async readAccountStatus(){state.statusReads++;await boundary('status');const intent=read();return intent&&(!['confirmed','reverted','cancelled'].includes(intent.status)||['withdraw','withdraw-bok','cancel-deposit'].includes(intent.action.type)&&intent.status==='confirmed'&&!state.refunded)?{status:'recovering',intent}:{status:state.fee,privateFeeCredit:state.privateFeeCredit??'1000',depositIds:state.depositIds??(state.fee==='fee-ready'?['9']:[])};},
  async ownedIdentities({cursor}){state.owned++;if(state.ownedFailureCursor===cursor)error();const page=state.namesPages?.[cursor]??(cursor===0?{identities:['7'],records:[{id:'7',first:'River',last:'Lane'}],nextCursor:8}:{identities:['8'],records:[{id:'8',first:'Ellis',last:'Moss'}],nextCursor:null});await boundary('owned');return page;},
  async readPreferenceHead(){state.headReads++;await boundary('head');return {schema:1,initialized:true,revision:state.revision,digest:'42'};},
  async readPreferences(){state.preferenceReads++;if(state.preferenceResults?.length)return state.preferenceResults.shift();await boundary('preferences');return {status:'complete',complete:true,preferences:state.preferences};},
@@ -48,8 +47,8 @@ const funding={async prepareStarter({asset}){return this.prepare({asset,collater
  async reviewRevertedClaim(){if(!['reverted','cancelled'].includes(read()?.status))error();state.fundingClaim=null;state.explicitClaimReview=true;},
  async recover(){state.fundingRecovers=(state.fundingRecovers??0)+1;return {receipt:{txHash:'0x'+'1'.repeat(64)},feeReceipt:{txHash:'0x'+'1'.repeat(64)},...(state.fundingAllocation?.bokAmount==='0'?{}:{bokReceipt:{txHash:'0x'+'1'.repeat(64)}})};}
 };
-const topup=Object.fromEntries(['private-fee','bok'].map(kind=>{const local={};const cap={defaultPrivateFeeCap:'1000',pauseClaim:()=>{local.paused=true;},advanceClaim:()=>{local.paused=false;return advanceAggregateClaim({application,funding:cap,onProgress:row=>state.sessionProgress(row),paused:()=>local.paused});},
- async prepare(input){input={gasBudgetWei:'3000000000000000',...input};state.topupReview={kind,...input};await boundary('topup-review');local.phase=local.approved?'deposit':'approval';return {kind,phase:local.phase,...input,walletName:'MetaMask'};},
+const topup=Object.fromEntries(['private-fee','bok'].map(kind=>{const local={};const cap={defaultPrivateFeeCap:'1000',get ethAvailable(){return state.ethTopup===true;},usdcAvailable:true,pauseClaim:()=>{local.paused=true;},advanceClaim:()=>{local.paused=false;return advanceAggregateClaim({application,funding:cap,onProgress:row=>state.sessionProgress(row),paused:()=>local.paused});},
+ async prepare(input){input={gasBudgetWei:'3000000000000000',...input};state.topupReview={kind,...input};await boundary('topup-review');local.phase=local.approved?'deposit':'approval';return {kind,phase:local.phase,...input,...(state.ethTopup?{maximumSwapWei:'250000000000000',maximumUsdc:'750000'}:{}),walletName:'MetaMask'};},
  async confirm(){state.topupPayments=(state.topupPayments??0)+1;await boundary('topup-payment');if(local.phase==='approval'){local.approved=true;return {approved:true};}local.paid=true;return cap.recover();},
  async inspect(){return {paymentSaved:local.paid,claim:local.claim??null,privateFeeCap:'1000',claimAction:kind==='bok'?'claim-bok':'claim-private-fee'};},
  async checkpointClaim(value){local.claim=value;},async recover(){return {receipt:{txHash:'0x'+'1'.repeat(64),amount:'300'}};},async reviewRevertedClaim(){local.claim=null;}
@@ -58,7 +57,7 @@ application.executeAction=(action,options)=>executeRollingAction(application,str
 application.readWithdrawalReadiness=async()=>state.withdrawalStates.shift();
 application.executeWithdrawal=(deposit,options)=>executeAutomaticWithdrawal({application,deposit,...options,
  guard:async()=>options.signal?.throwIfAborted(),waitUntil:async()=>{await boundary('withdrawal-wait');options.signal?.throwIfAborted();}});
-const runtime={selectPrivateViews,
+const runtime={
  fundingWallets:()=>state.walletChoices??[{id:'metamask',name:'MetaMask'}],fundingWalletStatus:()=>state.fundingWallet??(state.walletChoices?{connected:false}:{connected:true,name:'MetaMask',address:'0x'+'1'.repeat(40)}),
  async connectFundingWallet(id){state.walletConnects=(state.walletConnects??0)+1;state.walletSelected=id;await boundary('funding-wallet');state.fundingWallet={connected:true,name:'MetaMask',address:'0x'+'1'.repeat(40)};},
  getAccount:()=>state.unlocked?state.rawAccount:null,
@@ -89,10 +88,9 @@ async function browserFixture(t){
   if(req.url==='/'){res.writeHead(200,{'content-type':'text/html','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src blob: data:; base-uri 'none'; form-action 'none'"});res.end('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/style.css"><button id="open">Open account</button><div id="reader">Public reader</div><script type="module" src="/fixture.mjs"></script>');return;}
   if(req.url==='/fixture.mjs'){res.writeHead(200,{'content-type':'text/javascript'});res.end(fixture);return;}
   if(req.url==='/aggregate-wallet.mjs'){res.writeHead(200,{'content-type':'text/javascript'});res.end(await fs.readFile(new URL('../../shared/rolling/aggregate-wallet.mjs',import.meta.url)));return;}
-  const diagnosticModules={'/deployment.mjs':'../../shared/rolling/deployment.mjs','/protocol-commitments.mjs':'../../shared/protocol-commitments.mjs','/protocol-schema.mjs':'../../shared/protocol-schema.mjs'};
+  const diagnosticModules={'/deployment-registration.mjs':'../../shared/rolling/deployment-registration.mjs','/deployment.mjs':'../../shared/rolling/deployment.mjs','/protocol-commitments.mjs':'../../shared/protocol-commitments.mjs','/protocol-schema.mjs':'../../shared/protocol-schema.mjs'};
   if(Object.hasOwn(diagnosticModules,req.url)){res.writeHead(200,{'content-type':'text/javascript'});res.end(await fs.readFile(new URL(diagnosticModules[req.url],import.meta.url)));return;}
   if(req.url==='/invocation.mjs'){res.writeHead(200,{'content-type':'text/javascript'});res.end(await fs.readFile(new URL('../../shared/rolling/invocation.mjs',import.meta.url)));return;}
-  if(req.url==='/private-views.mjs'){res.writeHead(200,{'content-type':'text/javascript'});res.end(await fs.readFile(new URL('../../shared/rolling/private-views.mjs',import.meta.url)));return;}
   if(!['/wallet-panel.mjs','/automatic-withdrawal.mjs','/performance.mjs','/wallet-action.mjs','/reader-client.mjs','/avatar-upload.mjs','/model.mjs','/style.css'].includes(req.url)){res.writeHead(404);res.end();return;}
   res.writeHead(200,{'content-type':req.url.endsWith('.css')?'text/css':'text/javascript'});res.end(await fs.readFile(new URL('.'+req.url,import.meta.url)));
  });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>{server.closeAllConnections();return new Promise(resolve=>server.close(resolve));});
@@ -1715,4 +1713,88 @@ test('public checkpoint while composing does not queue a balance scan ahead of P
  assert.equal(await page.evaluate(()=>test.prepares),1);
  // Confirmed-account refresh is still allowed after submission completes.
  await page.evaluate(()=>{test.hold=null;test.release?.();});
+});
+
+
+test('name avatar optional upload is published in the single create-name action',async t=>{
+ const {page}=await browserFixture(t);await open(page,{type:'name'});
+ await page.getByLabel('First name',{exact:true}).fill('River');await page.getByLabel('Last name',{exact:true}).fill('Lane');
+ await page.getByLabel('Avatar image',{exact:true}).setInputFiles(await imageFile(page));
+ await page.waitForFunction(()=>document.querySelector('dialog img')?.naturalWidth===100&&!document.querySelector('dialog').matches('[aria-busy="true"]'));
+ const preview=await previewData(page);assert.equal((await counts(page)).sends,0);
+ await page.getByRole('button',{name:'Create name',exact:true}).click();await page.waitForFunction(()=>test.sends===1&&!document.querySelector('dialog').matches('[aria-busy="true"]'));
+ const saved=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('labelled-ui-intent')).action);
+ assert.deepEqual(saved,{type:'name',first:'River',last:'Lane',avatar:{width:100,height:100,data:preview.data}});
+ assert.equal((await counts(page)).prepares,1);assert.equal((await counts(page)).sends,1);assert.equal(await page.evaluate(()=>test.profileCalls),0);
+});
+test('composer ring counts emoji overflow and plus moves it into one atomic thread action',async t=>{
+ const {page}=await browserFixture(t);await open(page,{type:'post',subboard:'0'});
+ await page.getByLabel('Message',{exact:true}).fill('🙂'.repeat(249));
+ assert.equal(await page.locator('.message-budget-ring').innerText(),'−1');
+ assert(await page.getByRole('button',{name:'Post',exact:true}).isDisabled());
+ await page.getByRole('button',{name:'Add another post',exact:true}).click();
+ assert.equal(await page.getByRole('textbox',{name:'Post 1',exact:true}).inputValue(),'🙂'.repeat(248));
+ assert.equal(await page.getByRole('textbox',{name:'Post 2',exact:true}).inputValue(),'🙂');
+ await page.getByRole('button',{name:'Post all',exact:true}).click();
+ await page.waitForFunction(()=>test.sends===1&&!document.querySelector('dialog').matches('[aria-busy="true"]'));
+ const saved=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('labelled-ui-intent')).action);
+ assert.deepEqual(saved,{type:'thread',deposit:'9',name:'0',subboard:'0',parent:'0',root:'0',contents:['🙂'.repeat(248),'🙂'],budgets:['0','0']});
+ assert.equal((await counts(page)).prepares,1);assert.equal((await counts(page)).sends,1);assert.equal(await page.locator('dialog').isVisible(),false);
+});
+test('thread composer validates every post and removing a row preserves the others',async t=>{
+ const {page}=await browserFixture(t);await open(page,{type:'reply',subboard:'0',parent:'11',root:'10'});
+ await page.getByLabel('Message',{exact:true}).fill('First');await page.getByRole('button',{name:'Add another post',exact:true}).click();
+ assert(await page.getByRole('button',{name:'Post all',exact:true}).isDisabled());
+ await page.getByRole('textbox',{name:'Post 2',exact:true}).fill('x'.repeat(1000));assert.equal(await page.locator('.thread-draft .message-budget-ring').innerText(),'−8');
+ assert(await page.getByRole('button',{name:'Post all',exact:true}).isDisabled());
+ await page.getByRole('button',{name:'Add another post',exact:true}).click();
+ assert.equal(await page.getByRole('textbox',{name:'Post 3',exact:true}).inputValue(),'xxxxxxxx');
+ await page.getByRole('button',{name:'Remove post 2',exact:true}).click();
+ assert.equal(await page.getByRole('textbox',{name:'Post 1',exact:true}).inputValue(),'First');assert.equal(await page.getByRole('textbox',{name:'Post 2',exact:true}).inputValue(),'xxxxxxxx');
+ await page.getByRole('button',{name:'Post all',exact:true}).click();await page.waitForFunction(()=>test.sends===1);
+ const action=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('labelled-ui-intent')).action);assert.equal(action.parent,'11');assert.equal(action.root,'10');assert.deepEqual(action.contents,['First','xxxxxxxx']);
+});
+test('name avatar can be removed before creating the name without an image',async t=>{
+ const {page}=await browserFixture(t);await open(page,{type:'name'});
+ await page.getByLabel('First name',{exact:true}).fill('River');await page.getByLabel('Last name',{exact:true}).fill('Lane');
+ await page.getByLabel('Avatar image',{exact:true}).setInputFiles(await imageFile(page));
+ await page.getByRole('button',{name:'Remove selected avatar',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Remove selected avatar',exact:true}).click();assert.equal(await page.locator('dialog img').count(),0);
+ await page.getByRole('button',{name:'Create name',exact:true}).click();await page.waitForFunction(()=>test.sends===1);
+ assert.deepEqual(await page.evaluate(()=>JSON.parse(sessionStorage.getItem('labelled-ui-intent')).action),{type:'name',first:'River',last:'Lane'});
+});
+test('name avatar saved preview blocks invalid bytes and restores a valid image for editing',async t=>{
+ const {page}=await browserFixture(t),file=await imageFile(page);await open(page,{type:'name'});
+ await page.getByLabel('Avatar image',{exact:true}).setInputFiles(file);
+ await page.waitForFunction(()=>document.querySelector('dialog img')?.naturalWidth===100&&!document.querySelector('dialog').matches('[aria-busy="true"]'));
+ const preview=await previewData(page);await page.getByRole('button',{name:'Close account panel',exact:true}).click();
+ await page.evaluate(data=>sessionStorage.setItem('labelled-ui-intent',JSON.stringify({intentId:'42',status:'prepared',maximumFee:'123',action:{type:'name',first:'River',last:'Lane',avatar:{width:100,height:100,data}}})),preview.data);
+ await page.reload();await page.waitForFunction(()=>window.ready);await open(page);
+ await page.waitForFunction(()=>document.querySelector('[data-action-confirm]')?.disabled===false);
+ assert.equal((await previewData(page)).data,preview.data);
+ await page.getByRole('button',{name:'Back to editing',exact:true}).click();await page.getByRole('button',{name:'Remove selected avatar',exact:true}).waitFor();
+ assert.equal((await previewData(page)).data,preview.data);assert.equal((await counts(page)).sends,0);
+ await page.getByRole('button',{name:'Close account panel',exact:true}).click();
+ await page.evaluate(()=>sessionStorage.setItem('labelled-ui-intent',JSON.stringify({intentId:'43',status:'prepared',maximumFee:'123',action:{type:'name',first:'River',last:'Lane',avatar:{width:100,height:100,data:btoa('<svg/>')}}})));
+ await page.reload();await page.waitForFunction(()=>window.ready);await open(page);await page.getByText(/saved avatar cannot be previewed safely/).waitFor();
+ assert(await page.locator('[data-action-confirm]').isDisabled());assert.equal((await counts(page)).sends,0);
+});
+
+
+test('main-page posting credit opens ETH or USDC payment directly without pause checks',async t=>{
+ const {page}=await browserFixture(t);
+ await page.evaluate(()=>{test.topupEnabled=true;test.ethTopup=true;test.privateFeeCredit='12500000000000000000';const host=document.createElement('section');host.id='posting-credit-host';document.body.append(host);panel.attachIdentityControls(host);});
+ await open(page);await page.locator('#posting-credit-host [data-posting-credit]').getByText('12.5',{exact:true}).waitFor();
+ await page.evaluate(()=>panel.close());
+ await page.locator('#posting-credit-host').getByRole('button',{name:'Add posting credit',exact:true}).click();
+ await page.getByLabel('Posting credit amount',{exact:true}).fill('5');
+ await page.getByLabel('Pay with',{exact:true}).selectOption('ETH');
+ await page.getByRole('button',{name:'Pay',exact:true}).waitFor();
+ await page.waitForFunction(()=>test.topupReview?.asset==='ETH'&&!document.querySelector('.credit-total strong:last-child')?.textContent.includes('—'));
+ assert.equal(await page.getByRole('button',{name:'Pay',exact:true}).isEnabled(),true);
+ assert.match(await page.locator('.credit-total').innerText(),/0.00025 ETH/);
+ await page.getByLabel('Pay with',{exact:true}).selectOption('USDC');
+ await page.waitForFunction(()=>test.topupReview?.asset==='USDC'&&document.querySelector('.credit-total')?.textContent.includes('0.75 USDC'));
+ assert.equal(await page.getByRole('button',{name:'Pause checks',exact:true}).count(),0);
+ assert.equal(await page.evaluate(()=>test.topupPayments??0),0);
 });

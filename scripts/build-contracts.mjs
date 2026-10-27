@@ -92,6 +92,7 @@ export function buildContracts() {
     fundingRouter: sha(fs.readFileSync(path.join(portalDir, 'out/RollingFundingRouter.sol/RollingFundingRouter.json'))),
     portal: sha(portal.bytecode.object),
   }, null, 2) + '\n');
+  fs.rmSync(path.join(portalDir, 'out/BokCreditRouter.sol'), {recursive:true,force:true});
   console.log('Built canonical Noir/VK and Solidity artifacts; synchronized all consumers.');
 }
 
