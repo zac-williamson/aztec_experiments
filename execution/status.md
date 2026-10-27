@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — Live core/Bok051a530c, UIa54874c3 and prover63e4c1d3. Operator portal activated16seconds after canonical checkpoint, no epoch proof. Fresh signup, name+avatar, atomic two-post thread (same actual Aztec tx), Like/reload and ETH posting-credit topup accepted in owned test browser. USDC quote failure traced to direct USDC/FeeJuice pool inventory198.3below default248; replenish bounded test fixture then finish acceptance. All9services healthy. Performance remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — Published core/Bok051a530c, UI1e83d0df, prover63e4c1d3. Portal activated16seconds after checkpoint without epochproof. Actual freshsignup, name+avatar, atomic2postthread(sameAztectx), Like/reload, nestedreplies, ETH andUSDCpostingcredit accepted. USDCpool replenished; postclaim transientdisplayfailure fixed,195composerchecks andindependentreviewpassed, secondUSDCpurchasecompleteduninterrupted. Sourcepushedall3branches;9servicesactive. Performancepaused. ActualMetaMaskextension/currentBokE2Enotrerun; privatepaidtipsunpublished. Reportdocs/COMPOSER_RELEASE_20261027.md.
 
 ## Ready internal work
 

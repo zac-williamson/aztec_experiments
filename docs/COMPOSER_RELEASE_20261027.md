@@ -1,6 +1,6 @@
 # Composer, credit and likes release — 27 October 2026
 
-Status: core/Bok051a530c, UIa54874c3 and prover63e4c1d3 are published. All nine services are active; Bok reports ready. Real-network feature acceptance is in progress. The performance goal remains paused.
+Status: core/Bok051a530c, UI1e83d0df and prover63e4c1d3 are published. All nine services are active; Bok reports ready. Real-network results are recorded below. The performance goal remains paused.
 
 ## Changes
 
@@ -27,9 +27,9 @@ Final Board class is `0x03c9bf685f78a9b8731b010884f7728f552cd3c59fe169c2e3e7ee30
 
 The public LikeChanged event exposes the post, a per-post secret-derived tag, active state and count. Repeated reactions on the same post are linkable; different posts use different tags. There is no direct Ethereum address or common account identifier in this event. Timing and network/provider metadata can still correlate activity. This is not a claim of complete untraceability.
 
-## Remaining acceptance
+## Acceptance scope
 
-The coherent Board/Bok/portal/router and browser/backend release is published. Exercise the owned test fixture: fresh posting setup, ETH and USDC credit top-ups, name+avatar, atomic thread and Like/repeat/reload. Record actual receipts, rendered results and service health. Local test results are not substituted for these checks.
+Fresh signup, name plus avatar, character meter, atomic two-post thread, Like/reload, nested replies, ETH topup and USDC topup were exercised in the real browser against Sepolia and native Aztec proofs. The latest USDC repeat completed without a reload or manual continuation. Actual MetaMask-extension prompts and a new-release Bok request have not been rerun; private paid tips remain unpublished. Performance work remains paused.
 
 ## Deployment activation correction
 
@@ -65,10 +65,18 @@ Atomic thread transaction: `0x136493529594e2bfd3f980ac5f1327e3b1bd48cd20d2d1ee52
 
 ETH posting-credit payment: `0xbde822da142e6c7feb2f27c2862ac497b3c4ca2971f60069edf8f091602453f0`, Sepolia block12006697, receiptstatus1. The visible balance includes the Aztec claim fee.
 
-USDC default248.280751104-credit quote failed before signing: direct USDC/FeeJuice pool held only198.304983454435289231FeeJuice. The WETH/FeeJuice route was independently replenished; that did not replenish the direct USDC route. Existing direct-pool replenishment and actual USDC acceptance remain in progress. No claim of complete payment coverage yet.
+USDC default248.280751104-credit quote failed before signing: direct USDC/FeeJuice pool held only198.304983454435289231FeeJuice. The WETH/FeeJuice route was independently replenished; that did not replenish the direct USDC route. The existing pool was subsequently replenished with600testFeeJuice; actual USDC results follow.
 
 Deployment lessons: qualify each advertised payment route with its actual default amount; rebuilding source cannot establish swap inventory. Keep the remote prover action policy in sync with the actual contract entrypoints. Coordinated deployment must publish the same receipt-qualified current-prover monitor record as source-only deployment and restore it on rollback. The monitor mismatch was corrected against actual activation receipts, with full file qualification, without weakening supervision.
 
 Final health check: all9services active, Bokready/active0/lastFailure null. Old transfer versions under the completed051a campaign S3prefix are absent. Current-release Bok request and actual MetaMask prompts have not been rerun in this acceptance pass.
 
-USDC payment transaction `0xab2f2b94cffbeaaa4f91b4a149fb35394e9a8ce19298c11aaa88be4a4c9b13c3` succeeded in Sepolia block12006752. The100-credit purchase used one EIP712 signature and a relay-paid Ethereum transaction; the owned wallet did not send an Ethereum transaction. Its Aztec claim completed, but the subsequent balance refresh failed with nested `BB_TRUSTED_NODE_UNAVAILABLE`. UI incorrectly promoted that read failure into a payment failure. Reload independently showed529.2636credit, up from439.375. A narrow completion-display correction is being prepared; do not report this run as uninterrupted UI success.
+USDC payment transaction `0xab2f2b94cffbeaaa4f91b4a149fb35394e9a8ce19298c11aaa88be4a4c9b13c3` succeeded in Sepolia block12006752. The100-credit purchase used one EIP712 signature and a relay-paid Ethereum transaction; the owned wallet did not send an Ethereum transaction. Its Aztec claim completed, but the subsequent balance refresh failed with nested `BB_TRUSTED_NODE_UNAVAILABLE`. UI incorrectly promoted that read failure into a payment failure. Reload independently showed529.2636credit, up from439.375. This initial run was not uninterrupted UI success; the correction and repeat below are separate evidence.
+
+UI1e83d0df was published with only wallet-panel changed (62.6KB transfer; no SDK rebuild or service restart). All195composer checks passed, including confirmed claim→unavailable display read→automatic successful refresh with exactly one payment and one claim. Independent review approved context guards and bounded read retries; retries cannot resubmit financial operations. Live asset SHA256 matches9a57a783c9cfeae2b9d0dd6b19adef83a8dbc3490f9f82a804f56bc532d245b0. Stage90cffb5e-4d1a-4d5c-8d3d-8e2433b5b3a3 and activationdd1ba214-99dc-442f-8315-ad96b4584737 succeeded.
+
+### Final published USDC repeat
+
+On published UI1e83d0df, a30-credit purchase quoted at most4.13087USDC, including relay fee, required one EIP712 signature. Ethereum transaction `0x9578fc71f93fba2950825f36d321c35f5c035378ab7a43d9526aee0bbe671115` succeeded in block12006808. Automatic Aztec claim completed; the dialog showed “Posting credit added”, the main balance changed529.2636→550.7869after fees, and final confirmation updated automatically. No reload, second payment or manual claim was needed. Native current balance—not an optimistic sum—was displayed.
+
+Screenshots and detailed public receipts are retained in `/private/tmp/rolling-composer-operator-20261027/`; committed receipt summaries are under `execution/evidence/G21/stable6/composer-release-20261027/`. All source is pushed to master and both application branches. Completed transfer archives were removed from S3. Service processes were not restarted for the final UI fix.

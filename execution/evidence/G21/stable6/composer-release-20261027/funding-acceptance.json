@@ -1,0 +1,28 @@
+{
+  "network": "Sepolia11155111 / Aztecstable6",
+  "ui": "1e83d0dfc1e019e3f1de853b29420e9cda0fca28",
+  "wallet": "owned EIP1193 test adapter; MetaMask extension not tested",
+  "ethTopup": {
+    "transaction": "0xbde822da142e6c7feb2f27c2862ac497b3c4ca2971f60069edf8f091602453f0",
+    "block": 12006697,
+    "status": 1,
+    "balanceBefore": "197.0188",
+    "balanceAfter": "439.375"
+  },
+  "usdcFinal": {
+    "transaction": "0x9578fc71f93fba2950825f36d321c35f5c035378ab7a43d9526aee0bbe671115",
+    "block": 12006808,
+    "signatures": 1,
+    "amount": "30",
+    "maxUsdc": "4.13087",
+    "balanceBefore": "529.2636",
+    "balanceAfter": "550.7869",
+    "uiCompletion": "automatic, no reload",
+    "confirmation": "automatically updated"
+  },
+  "checks": {
+    "composerTests": 195,
+    "failed": 0,
+    "independentReview": true
+  }
+}
