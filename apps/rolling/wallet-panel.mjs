@@ -214,7 +214,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  const actionFeedback=el('span',{class:'inline-action-feedback',role:'status','aria-live':'polite',hidden:''});
  const identityControls=el('div',{class:'posting-name-controls'}),inlineName=el('section',{class:'inline-name',hidden:''});
  const postingCreditControls=el('div',{class:'posting-credit',hidden:''});
- let postingCreditPending=null,postingCreditAttempt=null;
+ let postingCreditPending=null,postingCreditAttempt=null,postingCreditRetry=null;
  const likes=new Map(),likeWanted=new Set(),likeAttempted=new Map(),pendingLikes=new Map();let likesPending=null,likeFeedKey=null;
  let runtime,session,busy=false,blocked=false,invalidated=false,reloadRequired=false,returnFocus;
  let depositRefundPage=null;
@@ -349,7 +349,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  function releasePreviews(){updateBokForm=()=>{};renderEpoch++;updateRules=()=>{};for(const url of previewURLs)URL.revokeObjectURL(url);previewURLs.clear();}
  function clearProfileDraft(){profileSnapshot=null;avatarDraft=null;}
  function clearSavedItems(){savedUnsubscribe?.();savedUnsubscribe=null;savedClient?.close();savedClient=null;savedLoading=null;onPrivateChange();}
- function clearPrivateView(){likes.clear();likeWanted.clear();likeAttempted.clear();pendingLikes.clear();likesPending=null;likeFeedKey=null;pendingPostReveal=null;stopRefundWatch();pendingWithdrawal=null;refundReadiness=null;includedObservation=null;includedRevision=null;actionFeedback.textContent='';actionFeedback.hidden=true;composerAttempt=null;composerAbort?.abort();ownBokPosts.clear();bokRefreshNeeded=false;selectedName='0';selectedLabel='Anonymous';stopFunding();depositRefundPage=null;balances=null;bokAccounting=null;bokExitAmount='';refundQuote=null;topupQuote=null;topupQuoteKey=null;topupQuoteError='';topupSaved=null;topupInputs={amount:''};fundingQuote=null;fundingQuoteRequested=false;fundingAttempt=null;fundingFailureStep=null;dialog.removeAttribute('data-rolling-funding');fundingInputs={asset:'ETH'};initializationAttempt++;dialog.removeAttribute('data-rolling-initialization');recoveryInspection=null;accountEpoch++;accountIdentity=null;bokBalance.invalidate();content.replaceChildren();moderatorStatus=null;clearSavedItems();status=null;bokStatus=null;intent=null;identities=[];identityRecords=[];cursor=0;namesLoaded=false;actionsLoaded=false;view='overview';draft={type:'post',subboard:'0',content:''};releasePreviews();clearProfileDraft();}
+ function clearPrivateView(){clearPostingCreditRetry();likes.clear();likeWanted.clear();likeAttempted.clear();pendingLikes.clear();likesPending=null;likeFeedKey=null;pendingPostReveal=null;stopRefundWatch();pendingWithdrawal=null;refundReadiness=null;includedObservation=null;includedRevision=null;actionFeedback.textContent='';actionFeedback.hidden=true;composerAttempt=null;composerAbort?.abort();ownBokPosts.clear();bokRefreshNeeded=false;selectedName='0';selectedLabel='Anonymous';stopFunding();depositRefundPage=null;balances=null;bokAccounting=null;bokExitAmount='';refundQuote=null;topupQuote=null;topupQuoteKey=null;topupQuoteError='';topupSaved=null;topupInputs={amount:''};fundingQuote=null;fundingQuoteRequested=false;fundingAttempt=null;fundingFailureStep=null;dialog.removeAttribute('data-rolling-funding');fundingInputs={asset:'ETH'};initializationAttempt++;dialog.removeAttribute('data-rolling-initialization');recoveryInspection=null;accountEpoch++;accountIdentity=null;bokBalance.invalidate();content.replaceChildren();moderatorStatus=null;clearSavedItems();status=null;bokStatus=null;intent=null;identities=[];identityRecords=[];cursor=0;namesLoaded=false;actionsLoaded=false;view='overview';draft={type:'post',subboard:'0',content:''};releasePreviews();clearProfileDraft();}
  function checkAccount(epoch){if(epoch!==accountEpoch||!unlocked())throw connectionFailure;}
  function privateStatus(){if(!unlocked())return 'locked';return savedClient?.snapshot()?'complete':'recovering';}
  function savedItemsSnapshot(){return unlocked()?savedClient?.snapshot()??null:null;}
@@ -1453,11 +1453,18 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    }else if(view==='topup'&&topupKind==='private-fee'){
     // Only fee credit changes. Combine its fresh native value with the
     // existing collateral classification; actual actions validate afresh.
-    const credit=await measureRollingStage('action.required-account-refresh',()=>session.application.readPrivateFeeCredit());checkAccount(epoch);
-    if(typeof credit?.availableCredit!=='string'||!/^(0|[1-9][0-9]*)$/.test(credit.availableCredit)||BigInt(credit.availableCredit)>=(1n<<128n))throw connectionFailure;
-    status={...status,privateFeeCredit:credit.availableCredit};
-    if(['fee-needed','fee-ready','collateral-pending'].includes(status.status)&&Array.isArray(status.depositIds))
-     status={...status,status:BigInt(credit.availableCredit)===0n?'fee-needed':status.depositIds.length?'fee-ready':'collateral-pending'};
+    const active=session;let credit,refreshUnavailable=false;
+    try{credit=await measureRollingStage('action.required-account-refresh',()=>active.application.readPrivateFeeCredit());}
+    catch(failure){
+     checkAccount(epoch);if(active!==session||!postingCreditUnavailable(failure))throw failure;
+     // The claim already succeeded. An unavailable display read cannot turn it
+     // into a failed payment or authorize another claim. Hide the stale amount.
+     status={...status};delete status.privateFeeCredit;refreshUnavailable=true;
+     clearPostingCreditRetry();postingCreditAttempt=status;
+     postingCreditRetry={epoch,active,attempt:0,timer:null};schedulePostingCreditRetry();
+    }
+    checkAccount(epoch);if(active!==session)throw connectionFailure;
+    if(!refreshUnavailable){acceptPostingCredit(credit);clearPostingCreditRetry();}
     intent=null;blocked=false;balances=null;
    }else{await refresh();checkAccount(epoch);}
    if(view==='topup'){notice=(bokTopup?'Bok credit added.':'Posting credit added.')+(provisional?' Confirmation pending.':'');topupSaved=null;resetTopupQuote();view=draft.content?'action':'overview';}
@@ -1647,17 +1654,53 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   inlineCreation=false;restoreDialogContent();topupKind='private-fee';topupInputs={amount:''};resetTopupQuote();topupSaved=null;view='topup';clearOperationFeedback();
   if(!dialog.open){returnFocus=document.activeElement;dialog.showModal();}render();
  }
+ function postingCreditUnavailable(failure){
+  let unavailable=false,unsafe=false;
+  const visit=(value,depth)=>{
+   if(depth>4){unsafe=true;return;}
+   const code=Object.getOwnPropertyDescriptor(value??{},'code')?.value;
+   if(code==='BB_TRUSTED_NODE_UNAVAILABLE')unavailable=true;
+   else if(typeof code==='string'&&code!=='ROLLING_WORKER_UNAVAILABLE')unsafe=true;
+   const errors=Object.getOwnPropertyDescriptor(value??{},'errors')?.value;
+   if(Array.isArray(errors)){if(errors.length>8){unsafe=true;return;}for(const error of errors)visit(error,depth+1);}
+  };
+  try{visit(failure,0);}catch{return false;}return unavailable&&!unsafe;
+ }
+ function acceptPostingCredit(credit){
+  if(typeof credit?.availableCredit!=='string'||!/^(0|[1-9][0-9]*)$/.test(credit.availableCredit)||BigInt(credit.availableCredit)>=(1n<<128n))throw connectionFailure;
+  status={...status,privateFeeCredit:credit.availableCredit};
+  if(['fee-needed','fee-ready','collateral-pending'].includes(status.status)&&Array.isArray(status.depositIds))
+   status={...status,status:BigInt(credit.availableCredit)===0n?'fee-needed':status.depositIds.length?'fee-ready':'collateral-pending'};
+ }
+ function clearPostingCreditRetry(){if(postingCreditRetry?.timer!==null&&postingCreditRetry?.timer!==undefined)clearTimeout(postingCreditRetry.timer);postingCreditRetry=null;}
+ function schedulePostingCreditRetry(){
+  const retry=postingCreditRetry;if(!retry||retry.timer!==null)return;
+  if(retry.epoch!==accountEpoch||retry.active!==session||!unlocked()||!dialog.isConnected||typeof status?.privateFeeCredit==='string'||retry.attempt>=3){clearPostingCreditRetry();return;}
+  retry.timer=setTimeout(()=>{
+   if(postingCreditRetry!==retry)return;retry.timer=null;
+   if(retry.epoch!==accountEpoch||retry.active!==session||!unlocked()||!dialog.isConnected){clearPostingCreditRetry();return;}
+   postingCreditAttempt=null;requestPostingCredit();
+   if(!postingCreditPending)schedulePostingCreditRetry();
+  },[500,1500,4000][retry.attempt]);
+ }
  function requestPostingCredit(){
-  if(!identityHost||busy||initializing||blocked||intent||!session||!unlocked()||session.busy||bokBalance.pending||topupQuotePending||postingCreditPending||accountRefreshPending||accountRefreshNeeded||composerPreparation||typeof status?.privateFeeCredit==='string'||postingCreditAttempt===status||typeof session.application.readPrivateFeeCredit!=='function')return;
+  if((!identityHost&&!postingCreditRetry)||postingCreditRetry?.timer!==null&&postingCreditRetry?.timer!==undefined||busy||initializing||blocked||intent||!session||!unlocked()||session.busy||bokBalance.pending||topupQuotePending||postingCreditPending||accountRefreshPending||accountRefreshNeeded||composerPreparation||typeof status?.privateFeeCredit==='string'||postingCreditAttempt===status||typeof session.application.readPrivateFeeCredit!=='function')return;
   const epoch=accountEpoch,active=session,previous=status;postingCreditAttempt=previous;
-  postingCreditPending=Promise.resolve().then(()=>active.application.readPrivateFeeCredit()).then(credit=>{
-   if(epoch===accountEpoch&&active===session&&status===previous&&unlocked()&&typeof credit?.availableCredit==='string'&&/^(0|[1-9][0-9]*)$/.test(credit.availableCredit))status={...status,privateFeeCredit:credit.availableCredit};
-  }).catch(()=>{}).finally(()=>{postingCreditPending=null;renderPostingCreditControls();updatePostingBalance();requestAccountRefresh();requestBokBalance();requestComposerPreparation();});
-  renderPostingCreditControls();
+  if(postingCreditRetry)postingCreditRetry.attempt++;
+  const pending=Promise.resolve().then(()=>active.application.readPrivateFeeCredit()).then(credit=>{
+   if(epoch!==accountEpoch||active!==session||status!==previous||!unlocked()||!dialog.isConnected)return;
+   acceptPostingCredit(credit);const refreshed=!!postingCreditRetry;clearPostingCreditRetry();
+   if(refreshed&&!busy&&dialog.open&&view==='overview')render();
+  }).catch(failure=>{if(epoch===accountEpoch&&active===session&&postingCreditRetry&&!postingCreditUnavailable(failure))clearPostingCreditRetry();}).finally(()=>{
+   if(postingCreditPending===pending)postingCreditPending=null;
+   if(epoch!==accountEpoch||active!==session||!unlocked()||!dialog.isConnected)return;
+   schedulePostingCreditRetry();renderPostingCreditControls();updatePostingBalance();requestAccountRefresh();requestBokBalance();requestComposerPreparation();
+  });
+  postingCreditPending=pending;renderPostingCreditControls();
  }
  function renderPostingCreditControls(){
   postingCreditControls.replaceChildren();postingCreditControls.hidden=!session||!unlocked();if(postingCreditControls.hidden)return;
-  const credit=status?.privateFeeCredit,known=typeof credit==='string'&&/^(0|[1-9][0-9]*)$/.test(credit),updating=!!postingCreditPending||!!accountRefreshPending||accountRefreshNeeded||postingCreditAttempt!==status&&!known;
+  const credit=status?.privateFeeCredit,known=typeof credit==='string'&&/^(0|[1-9][0-9]*)$/.test(credit),updating=!!postingCreditRetry||!!postingCreditPending||!!accountRefreshPending||accountRefreshNeeded||postingCreditAttempt!==status&&!known;
   const amount=el('span',{'data-posting-credit':'','aria-live':'polite'},known?compactAmount(credit,18,4)+(updating?' · updating':''):updating?'Updating…':'Unavailable');
   if(known)amount.title=decimal(credit,18)+' posting credits';
   postingCreditControls.append(el('strong',{},'Posting credit'),amount);

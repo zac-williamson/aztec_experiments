@@ -369,3 +369,7 @@ PR9 completed: completion_evidence_review approved renderer/expander, publisher 
 27 October live acceptance: thread_application traced PRIVATE_FEE_CAP_TOO_LOW to copied stale unit-price ceilings; thread_composer_review reviewed exact runtime-wallet override through existing static publisher. Root fixes/publication only; no contract redeployment or performance campaign.
 
 27 October thread acceptance: root found missing post_thread remote prover admission. thread_application approved conditional optional-Bok circuit/payload coverage; thread_composer_review approved exact-file extension of existing source-only prover publisher. Fifteen actual-artifact policy tests passed.
+
+27 October final funding acceptance: thread_application investigates and drafts a bounded refill of the existing direct USDC/FeeJuice test pool; root executes and verifies through the actual UI. ETH topup already accepted. No contract or route changes.
+
+27 October post-claim display fix: thread_application drafted transient-read handling and regression; thread_composer_review approved after retry count moved to actual read admission and oversized aggregate rejection. Root integrates, runs195composer checks and publishes onlywallet-panel through existing reviewed UI publisher. posting_credit_ui prepared exactone-file packet from fresh read-only host inspection; no SDK rebuild.

@@ -1,0 +1,44 @@
+{
+  "chainId": 11155111,
+  "owner": "0x8d83fed116a7542934ca2e968055555317f91ca4",
+  "pool": "0xe7505a537cff2742059c0e6c06cd3939d3e73c85",
+  "manager": "0x1238536071e1c677a632429e3655c799b22cda52",
+  "plan": {
+    "token0": "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
+    "token1": "0x762c132040fda6183066fa3b14d985ee55aa3c18",
+    "fee": 3000,
+    "tickLower": 298800,
+    "tickUpper": 310800,
+    "amount0Desired": "0",
+    "amount1Desired": "600000000000000000000",
+    "amount0Min": "0",
+    "amount1Min": "594000000000000000000",
+    "expectedLiquidity": "237252273363531",
+    "expectedAmount1": "599999999999999565691",
+    "ethGasBudgetCap": "10000000000000000",
+    "maxFeePerGasCap": "5000000000"
+  },
+  "transactions": [
+    {
+      "stage": "approve-exact-fee-inventory",
+      "state": "confirmed",
+      "hash": "0x4d8be3769c97f56094a34c28848c952efc14b2271703edbc14b3f95bd7560598",
+      "block": 12006733
+    },
+    {
+      "stage": "add-direct-usdc-fee-liquidity",
+      "state": "confirmed",
+      "hash": "0xb0deca02c400cb163dca1a405d0dc627e8882a6cbf46967dc34798738d4c4f90",
+      "block": 12006734
+    },
+    {
+      "stage": "clear-unused-approval",
+      "state": "confirmed",
+      "hash": "0x3549a1cb139914ef7fa6e7be7e2fc06a139515b9cd3a0c1135a4f2549e902d9f",
+      "block": 12006735
+    }
+  ],
+  "quote248Usdc": "9447594",
+  "poolFeeBalance": "798304983454434854922",
+  "complete": true
+}

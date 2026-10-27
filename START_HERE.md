@@ -6,13 +6,13 @@ Current handover: 27 October 2026. The owner's current request takes precedence 
 
 **Performance work remains paused by the owner.** Current work is the queued composer, name/avatar, funding and Like UX release, followed by real browser acceptance. [Release report](docs/COMPOSER_RELEASE_20261027.md).
 
-27 October current publication: core/prover/Bok051a530c; static UIa54874c36a7a86944559733351383d443d657533. The new Board and optional Bok use one consolidated funding router. Atomic Post all, name+avatar, character ring, main posting-credit controls, ETH/USDC top-ups and one-like-per-account UI are published. PR9 branding and nested messaging remain integrated. Private paid tips remain a separate unpublished draft.
+27 October current publication: core/Bok051a530c; prover63e4c1d3; static UIa54874c36a7a86944559733351383d443d657533. The new Board and optional Bok use one consolidated funding router. Atomic Post all, name+avatar, character ring, main posting-credit controls, ETH/USDC top-ups and one-like-per-account UI are published. PR9 branding and nested messaging remain integrated. Private paid tips remain a separate unpublished draft.
 
 Portal activation **does not require an epoch proof**. The explicit immutable testnet deployment operator activates after checking the canonical checkpoint binding. Actual activation was observed16seconds after that checkpoint on27October. User withdrawals/refunds retain their ordinary protocol proofs.
 
-Nine services checked active; Bokready/active0. First live acceptance found stale published Aztec L2 fee-price ceilings (2.129e12 below observed9.491e12). The static wallet update set the ceiling to18.9817e12 and regenerated matching registration/manifest. Registration capture now rejects stale fee prices. Published UI updates only those ceilings; unchanged contracts, gas limits, credentials, provider settings and running services. Live signup quote now succeeds (0.00100951ETH / approximately$2.37 testnet reference). Actual setup and subsequent feature flows are still being verified; do not claim full acceptance yet.
+Nine services checked active; Bokready/active0. First live acceptance found stale published Aztec L2 fee-price ceilings (2.129e12 below observed9.491e12). The static wallet update set the ceiling to18.9817e12 and regenerated matching registration/manifest. Registration capture now rejects stale fee prices. Published UI updates only those ceilings; unchanged contracts, gas limits, credentials, provider settings and running services. Live signup quote now succeeds (0.00100951ETH / approximately$2.37 testnet reference). Fresh signup, name+avatar, atomic two-post thread, Like/reload and ETH posting-credit topup succeeded. Both posts have actual native inclusion positions in one transaction; nested replies render and collapse. USDC default purchase exposed insufficient direct swap-pool inventory and remains under acceptance.
 
-Current browser test uses owned test EIP1193 wallet, not the MetaMask extension. One retained build: `/private/tmp/rolling-browser-proof-spans-build`. New source commits live on integration branch; default-branch synchronization remains after acceptance. Prior performance reports are historical and do not establish current release timings. No optimization agent is active.
+Current browser test uses owned test EIP1193 wallet, not the MetaMask extension. One retained build: `/private/tmp/rolling-browser-proof-spans-build`. Reviewed source63e4c1d3 is pushed to master and both application branches. Prior performance reports are historical and do not establish current release timings. No optimization agent is active.
 
 ## Performance targets and evidence
 
@@ -53,7 +53,7 @@ Network: Aztec stable6.0.0, rollup `0x1f435a7f2da358caf887a470faeee7d5d5f4efba`,
 | Browser UI | `/opt/rolling-ui/releases/a54874c36a7a86944559733351383d443d657533` |
 | Running application and moderator | `/opt/rolling-app/releases/051a530c16086f099365487adf2a46368d4fe8ac` |
 | Configured next application source | `/opt/rolling-app/releases/ui-a54874c36a7a` |
-| Prover | `/opt/board-prover/releases/fresh-board-051a530c16086f099365487adf2a46368d4fe8ac` |
+| Prover | `/opt/board-prover/releases/prover-gzip-63e4c1d3a11a5689c6400ce9e55fe13bff02d33a` |
 | Bok | `/opt/rolling-bok/releases/051a530c16086f099365487adf2a46368d4fe8ac` |
 
 | Contract | Current address |

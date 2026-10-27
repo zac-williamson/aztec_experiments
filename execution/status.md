@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 051a530c live coherent UI/core/prover/Bok scope. Operator portal activation observed16seconds after checkpoint; no epoch proof required. Nine services healthy. Browser fresh-signup quote exposed stale published Aztec L2 gas-price ceiling2.129e12 below current9.491e12; no payment sent. Root narrow fee-config/registration/UI publication and actual-flow acceptance; independent publisher review complete. Performance remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — Live core/Bok051a530c, UIa54874c3 and prover63e4c1d3. Operator portal activated16seconds after canonical checkpoint, no epoch proof. Fresh signup, name+avatar, atomic two-post thread (same actual Aztec tx), Like/reload and ETH posting-credit topup accepted in owned test browser. USDC quote failure traced to direct USDC/FeeJuice pool inventory198.3below default248; replenish bounded test fixture then finish acceptance. All9services healthy. Performance remains paused.
 
 ## Ready internal work
 

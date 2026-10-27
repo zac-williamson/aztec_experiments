@@ -1371,3 +1371,21 @@ for(const completion of ['confirmed','receipt-promoted'])test(`older public hydr
  hydration.resolve(likeRows(['9'],likeFeed(),false));await new Promise(setImmediate);
  assert.equal(f.panel.likeState('9'),true);assert.deepEqual(await f.panel.act({type:'like',post:'9'}),{status:'confirmed',alreadyLiked:true});assert.equal(f.submissions.length,1);
 });
+
+
+test('successful posting-credit claim survives unavailable display read and refreshes once without another payment',{timeout:3000},async t=>{
+ let payments=0,claims=0,reads=0;const refreshed=Promise.withResolvers(),entered=Promise.withResolvers();
+ const cap={ethAvailable:true,defaultPrivateFeeCap:'100',async prepare(input){return {...input,phase:'deposit',maximumSwapWei:'1000'};},async confirm(){payments++;return {};},async inspect(){return null;},async advanceClaim(){claims++;return {state:'complete',intent:{intentId:'claim',action:{type:'claim-private-fee'}}};}};
+ const f=await fixture(t,{balanceRead:async()=>({available:true,availableCredit:'0'}),posting:{balanceRefresh:async()=>assert.fail('unrelated account refresh')}});
+ f.session.topup['private-fee']=cap;f.session.application.readPrivateFeeCredit=async()=>{reads++;if(reads===1)throw new AggregateError([new AggregateError([Error('transport')]),Object.assign(Error('unavailable'),{code:'BB_TRUSTED_NODE_UNAVAILABLE'})]);entered.resolve();return refreshed.promise;};
+ f.panel.close();f.panel.open({});f.document.querySelectorAll('button').find(b=>b.textContent==='Add posting credit').fire('click');
+ const pay=await f.document.until(()=>f.document.querySelectorAll('button').find(b=>b.textContent==='Pay'&&!b.disabled));pay.fire('click');
+ await f.document.until(()=>f.document.querySelector('dialog').getAttribute('aria-busy')==='false');
+ assert.match(f.document.body.textContent,/Posting credit added/);assert(!f.document.body.textContent.includes('Account setup could not finish'));
+ const identity=f.document.createElement('section');f.document.body.append(identity);f.panel.attachIdentityControls(identity);
+ assert.match(identity.textContent,/Updating/);assert.equal(identity.querySelector('[data-posting-credit]').title,undefined);
+ await entered.promise;assert.equal(payments,1);assert.equal(claims,1);assert.equal(reads,2);
+ refreshed.resolve({availableCredit:'539000000000000000000'});
+ await f.document.until(()=>identity.querySelector('[data-posting-credit]')?.textContent==='539');
+ assert.equal(payments,1);assert.equal(claims,1);assert.equal(reads,2);assert.equal(f.core().status,1);
+});
