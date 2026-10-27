@@ -3,7 +3,7 @@
   "compiler": "0.8.27+commit.40a35a09",
   "creationBytecodeSha256": "a25c37894583a0d9c022d823c702da6ee35e735537a2eca3c4e82056252ad00b",
   "runtimeTemplateSha256": "26957754b1f56ae6104a5b8842fffde13668822e29ef1e73fd91114bad3d7541",
-  "astSha256": "045a5c6c1947149e72d12af2f8e182dd908e8e9fd3241b82bdd2b5c12b8eab79",
+  "astSha256": "a4f7cecbb1c7286a81ff0fbf30caba9d072dbac40504b00badf9797052195fa5",
   "sources": {
     "node_modules/@aztec-foundation/l1-artifacts/l1-contracts/lib/openzeppelin-contracts/contracts/access/Ownable.sol": "38578bd71c0a909840e67202db527cc6b4e6b437e0f39f0c909da32c1e30cb81",
     "node_modules/@aztec-foundation/l1-artifacts/l1-contracts/lib/openzeppelin-contracts/contracts/interfaces/IERC1271.sol": "599887e85d375f463f30e3c4cf139ea541e73c7b3535eb040da5e8d8145a4f14",
