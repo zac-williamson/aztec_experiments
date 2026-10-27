@@ -2280,7 +2280,7 @@ class ProverActivation(unittest.TestCase):
         source=b.ACTIVATION_CHECK
         for token in ('loadRollingArtifacts()','originalContractClassId','currentContractClassId','computeContractAddressFromInstance',
                       'AztecAddress.fromStringUnsafe(x)','getPublicStorageAt','depositsEnabled()','verifyPortalRuntime','getContractInstanceFromInstantiationParams','await anchor();const ready=',
-                      "bokScope:'constructor-allowlist-only'","redirect:'error'",'calls<=7'):
+                      "bokScope:'constructor-allowlist-only'","redirect:'error'",'calls<=8','DEPLOYMENT_OPERATOR()', 'DEPLOYMENT_OPERATOR:deploymentOperator'):
             self.assertIn(token,source)
         self.assertNotIn('AztecAddress.fromString(',source)
         self.assertNotIn('process.env',source);self.assertNotIn('sendTx',source);self.assertNotIn('wallet',source)

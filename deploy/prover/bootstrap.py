@@ -1737,7 +1737,7 @@ const hash=await sha256ToField({toBuffer:()=>encodeConfigCommitment({l1ChainId:s
 const contracts=await node.getL1ContractAddresses();check(same(contracts.rollupAddress,s.rollupAddress));
 let calls=0,last=0;
 async function rpc(method,params){
- check(++calls<=7);await new Promise(r=>setTimeout(r,Math.max(0,1250-(Date.now()-last))));last=Date.now();
+ check(++calls<=8);await new Promise(r=>setTimeout(r,Math.max(0,1250-(Date.now()-last))));last=Date.now();
  const r=await fetch('https://sepolia.gateway.tenderly.co',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:calls,method,params}),redirect:'error',signal:AbortSignal.timeout(8000)});
  check(r.ok&&r.body);const reader=r.body.getReader(),parts=[];let size=0;
  try{for(;;){const x=await reader.read();if(x.done)break;size+=x.value.length;check(size<=65536);parts.push(x.value);}}finally{await reader.cancel();reader.releaseLock();}
@@ -1752,7 +1752,9 @@ for(const [functionName,args] of [['getCanonicalRollup',[]],['getRollup',[BigInt
 }
 const code=await rpc('eth_getCode',[s.portalAddress,l1.number]);
 const metadata=JSON.parse(fs.readFileSync('shared/portal-runtime.json','utf8'));
-verifyPortalRuntime(code,metadata,{MIN_DEPOSIT:min,MAX_DEPOSIT:max,L2_CONTRACT:BigInt(s.board),ROLLUP:rollup,INBOX:num(contracts.inboxAddress),OUTBOX:num(contracts.outboxAddress),VERSION:version,L1_CHAIN_ID:chain,CONFIG_HASH:num(hash)});
+const deploymentOperator=BigInt(await rpc('eth_call',[{to:s.portalAddress,data:keccak256(toBytes('DEPLOYMENT_OPERATOR()')).slice(0,10)},l1.number]));
+check(deploymentOperator>0n&&deploymentOperator<(1n<<160n));
+verifyPortalRuntime(code,metadata,{MIN_DEPOSIT:min,MAX_DEPOSIT:max,L2_CONTRACT:BigInt(s.board),ROLLUP:rollup,INBOX:num(contracts.inboxAddress),OUTBOX:num(contracts.outboxAddress),VERSION:version,L1_CHAIN_ID:chain,CONFIG_HASH:num(hash),DEPLOYMENT_OPERATOR:deploymentOperator});
 // depositsEnabled() selector, derived by the pinned keccak implementation below.
 const selector=keccak256(toBytes('depositsEnabled()')).slice(0,10);
 check(await rpc('eth_call',[{to:s.portalAddress,data:selector},l1.number])==='0x'+('0'.repeat(63))+'1');
