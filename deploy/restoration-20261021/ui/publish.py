@@ -59,7 +59,7 @@ def safe_relative(name):
  p=pathlib.PurePosixPath(name);assert not p.is_absolute() and '..' not in p.parts and str(p)==name
  native=name=='node_modules/@aztec-labs/pxe/dest/contract_function_simulator/oracle/utility_execution_oracle.js'
  assert 'node_modules' not in p.parts or native
- assert native or name.startswith(('apps/','shared/','scripts/','.build/sdk/','.build/rolling-wallet/')) or name in {'.build/contracts-manifest.json'}
+ assert native or name.startswith(('apps/','shared/','scripts/','.build/sdk/','.build/rolling-wallet/')) or name in {'.build/contracts-manifest.json','deploy/runtime-wallet.json'}
  return p
 
 
@@ -84,6 +84,17 @@ process.stdout.write(JSON.stringify({runtime:wallet.runtime,files:manifest.files
 def wallet_file(source):
  local=source/'deploy/runtime-wallet.json'
  return local if local.is_file() else pathlib.Path('/etc/rolling-app/wallet.json')
+
+def validate_fee_override():
+ if 'deploy/runtime-wallet.json' not in m['files']:return
+ old=json.loads(wallet_file(SOURCE).read_text())
+ new=json.loads(confined_payload_file(P/'files','deploy/runtime-wallet.json').read_text())
+ prices=new['config']['privateFee']['gasSettings']['maxFeesPerGas']
+ assert set(prices)=={'feePerDaGas','feePerL2Gas'}
+ assert all(isinstance(value,str) and re.fullmatch(r'0|[1-9][0-9]*',value) and int(value)<2**128 for value in prices.values())
+ # A static fee update cannot change custody, network, contracts or providers.
+ old['config']['privateFee']['gasSettings']['maxFeesPerGas']=prices
+ assert new==old, 'Static wallet override may change only the fee-price ceilings'
 
 def wallet(source,node):
  return json.loads(run([node,'--input-type=module','-e',EXPORT,str(source),str(wallet_file(source)),'/etc/rolling-app/public.json']))
@@ -321,6 +332,7 @@ if mode=='stage':
  for name,entry in m['files'].items():
   old=confined_payload_file(SOURCE,name);payload=confined_payload_file(P/'files',name);assert digest(payload)==entry['sha256']
   assert (not old.exists() and not old.is_symlink()) if entry['previousSha256'] is None else (not old.is_symlink() and digest(old)==entry['previousSha256'])
+ validate_fee_override()
  capacity_preflight()
  archive_hash=packet_archive_hash()
  clone_source()

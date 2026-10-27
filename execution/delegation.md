@@ -365,3 +365,5 @@ PR9 completed: completion_evidence_review approved renderer/expander, publisher 
 - thread_application: isolated BillboardPortal operator-only testnet activation, runtime verifier and focused Solidity checks.
 - thread_composer_review: isolated deployment engine and runtime-consumer wiring, using existing reviewed Ethereum deployment actor.
 - Remove the Outbox/epoch prerequisite for deployment activation; preserve user withdrawal/refund proof checks. No new Noir changes or performance campaign.
+
+27 October live acceptance: thread_application traced PRIVATE_FEE_CAP_TOO_LOW to copied stale unit-price ceilings; thread_composer_review reviewed exact runtime-wallet override through existing static publisher. Root fixes/publication only; no contract redeployment or performance campaign.

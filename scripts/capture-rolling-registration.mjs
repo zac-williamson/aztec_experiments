@@ -34,7 +34,11 @@ const sdk={Fr,AztecAddress,SerializableContractInstance,getContractClassFromArti
 try{
  await BarretenbergSync.initSingleton({backend:BackendType.Wasm});
  const preparation=createRollingDeploymentPreparation({sdk,ethers,...value,boardArtifact,privateFeeArtifact});
- await prepareRollingDeployment(preparation,{contextGuard:async()=>{}});
+ const deployment=await prepareRollingDeployment(preparation,{contextGuard:async()=>{}});
+ const minimum=await deployment.node.getCurrentMinFees();
+ const configured=normalizePrivateFeeGasSettings(value.config.privateFee.gasSettings).gasSettings.maxFeesPerGas;
+ for(const key of ['feePerDaGas','feePerL2Gas'])if(configured[key]<BigInt(minimum[key]))
+  throw Error('Configured '+key+' is below the current network minimum. Refresh the release fee settings before registration.');
  const record=exportRollingDeploymentRegistration(preparation,artifactHashes);
  await fs.mkdir(path.dirname(path.resolve(outputPath)),{recursive:true});
  await fs.writeFile(outputPath,JSON.stringify(record,null,2)+'\n',{flag:'wx',mode:0o644});

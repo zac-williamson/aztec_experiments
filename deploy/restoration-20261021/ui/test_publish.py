@@ -211,6 +211,25 @@ class RepeatPublication(unittest.TestCase):
         self.assertEqual(os.readlink(self.base / 'current'), str(self.old_ui))
         self.assertNotIn(['systemctl', 'daemon-reload'], self.calls)
 
+    def test_static_fee_override_cannot_change_contracts_or_providers(self):
+        name='deploy/runtime-wallet.json'
+        self.assertEqual(str(self.ns['safe_relative'](name)),name)
+        with self.assertRaises(AssertionError):self.ns['safe_relative']('deploy/credentials.json')
+        old={'config':{'board':{'contractAddress':'board'},'privateFee':{'gasSettings':{'maxFeesPerGas':{'feePerDaGas':'0','feePerL2Gas':'2'},'gasLimits':{'l2Gas':'100'}}}},'trustedQuery':{'url':'original'}}
+        for root in (self.old_source,self.packet/'files'):(root/'deploy').mkdir(parents=True,exist_ok=True)
+        (self.old_source/name).write_text(json.dumps(old))
+        new=json.loads(json.dumps(old));new['config']['privateFee']['gasSettings']['maxFeesPerGas']['feePerL2Gas']='20'
+        self.ns['m']['files']={name:{}}
+        target=self.packet/'files'/name;target.write_text(json.dumps(new))
+        self.ns['validate_fee_override']()
+        for mutate in ('provider','contract','gas-limit'):
+            bad=json.loads(json.dumps(new))
+            if mutate=='provider':bad['trustedQuery']['url']='changed'
+            elif mutate=='contract':bad['config']['board']['contractAddress']='changed'
+            else:bad['config']['privateFee']['gasSettings']['gasLimits']['l2Gas']='200'
+            target.write_text(json.dumps(bad))
+            with self.assertRaises(AssertionError):self.ns['validate_fee_override']()
+
     def test_changed_proxy_pid_refuses_before_mutation(self):
         self.pids['rolling-application-proxy.service'] = 999
         with self.assertRaises(AssertionError):

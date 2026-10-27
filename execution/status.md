@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — Queued UX release implemented; site remains2305. Removed Board portal epoch/Outbox activation gate: immutable testnet operator activates after canonical checkpoint binding. Independent review,64 Solidity and208 integrated checks passed; contracts/SDK/Bok/apps rebuilt, Board class unchanged. Next: publish corrected source, deploy coherent scope with one router, switch services/UI and verify real feature flows. Performance remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 051a530c live coherent UI/core/prover/Bok scope. Operator portal activation observed16seconds after checkpoint; no epoch proof required. Nine services healthy. Browser fresh-signup quote exposed stale published Aztec L2 gas-price ceiling2.129e12 below current9.491e12; no payment sent. Root narrow fee-config/registration/UI publication and actual-flow acceptance; independent publisher review complete. Performance remains paused.
 
 ## Ready internal work
 

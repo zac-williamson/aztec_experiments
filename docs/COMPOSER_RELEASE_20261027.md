@@ -1,6 +1,6 @@
 # Composer, credit and likes release — 27 October 2026
 
-Status: implemented and locally checked; deployment and real-network acceptance are pending. The published site remains UI2305be59 until the coordinated release completes. The performance goal remains paused.
+Status: source051a530c is published across UI, core, prover and Bok. All nine services are active; Bok reports ready. Real-network feature acceptance is in progress. The performance goal remains paused.
 
 ## Changes
 
@@ -29,10 +29,16 @@ The public LikeChanged event exposes the post, a per-post secret-derived tag, ac
 
 ## Remaining acceptance
 
-Publish one coherent Board/Bok/portal/router and browser/backend release. Exercise the owned test fixture: fresh posting setup, ETH and USDC credit top-ups, name+avatar, atomic thread and Like/repeat/reload. Record actual receipts, rendered results and service health. Local test results are not substituted for these checks.
+The coherent Board/Bok/portal/router and browser/backend release is published. Exercise the owned test fixture: fresh posting setup, ETH and USDC credit top-ups, name+avatar, atomic thread and Like/repeat/reload. Record actual receipts, rendered results and service health. Local test results are not substituted for these checks.
 
 ## Deployment activation correction
 
 The earlier portal unnecessarily required an epoch-proven Ready message. On this testnet release, the immutable deployment operator activates the portal after verifying the Board binding at a canonical checkpoint. The Solidity entrypoint is `activate()`; it has no epoch or membership-path arguments. Activation is restricted to the original chain and Sepolia/local test networks. User withdrawals and refunds still require their normal Outbox proofs.
 
-The correction passed64 focused Solidity checks and208 integrated activation, deployment-journal, runtime, browser-connection and monitor checks. Canonical contracts, SDK, PrivateBok and application builds succeeded. The Board artifact and class are unchanged. The earlier f419 contract deployment was never published and is superseded; fresh coherent deployment and live acceptance remain pending.
+The correction passed64 focused Solidity checks and208 integrated activation, deployment-journal, runtime, browser-connection and monitor checks. Canonical contracts, SDK, PrivateBok and application builds succeeded. The Board artifact and class are unchanged. The earlier f419 contract deployment was never published and is superseded; the corrected coherent deployment is now live. Live feature acceptance remains in progress.
+
+## Actual activation and first browser result
+
+Board `0x0a7f5a7759e057b620ddaa331f38db3e9a80ac2e57620f38504ded2ba0e8e351` bound portal `0xb3244958333e5c4eaa8a8de3ae1e9f04c748f266` in transaction `0x15fcddd64cc0946ee2d217190faaba8d3dbbfbc84b46b0e896eb7619fdd4ae35`, block8262. The canonical checkpoint was observed at2026-10-27T21:40:03+05:30; operator activation was observed at21:40:19:16seconds later. No epoch proof was requested. The single funding router is `0x0d19f70fe4d309b84907ef3b2d875f9ff3fc61df`.
+
+Fresh browser signup exposed copied release fee-price ceilings: L2 cap2129014393943 was below observed network minimum9490854400000. This is a per-gas price mismatch, not excess signup gas or a contract activation failure. No payment was sent. Registration capture now rejects underpriced releases; the static publisher permits an exact wallet override changing only fee-price ceilings, with matching regenerated registration and manifest. All contracts, credential/provider fields and gas limits remain unchanged. The revised L2 ceiling18981708800000 is twice that observed minimum. It is a maximum reservation price, not the amount actually charged. Live quote validation is still pending this narrow publication.30 publisher checks and194 composer checks pass.
