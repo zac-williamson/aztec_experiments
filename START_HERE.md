@@ -1,25 +1,18 @@
 # Rolling Chat: start here
 
-Current handover: 26 October 2026. The owner's current request takes precedence over historical task records. Credentials and private account material stay outside Git.
+Current handover: 27 October 2026. The owner's current request takes precedence over historical task records. Credentials and private account material stay outside Git.
 
 ## Live work and next action
 
-**Owner paused the performance goal on26October2026. Do not resume optimization automatically.** Funded functional verification is complete with explicit remaining limits in [the report](docs/FUNCTIONAL_CHECK_20261026.md). Fresh ETH and USDC signup, first post, funding/withdrawals, names/profile/avatar, boards/follows/bookmarks, quote/repost and real Bok generated-app creation/edit were exercised. Final fresh USDC signup→first included/rendered post succeeded without retry on UI f9d42ce4. Fixed the native-anchor cooldown readiness failure and completed relay-payment reconciliation. All required services running. Actual MetaMask extension, independent empty-browser restoration and live moderator/terminal edge paths remain unverified; native checks are labelled separately.
+**Performance work remains paused by the owner.** Current work is the queued composer, name/avatar, funding and Like UX release, followed by real browser acceptance. [Release report](docs/COMPOSER_RELEASE_20261027.md).
 
-27 October: PR [#9](https://github.com/zac-williamson/aztec_experiments/pull/9) merged and published. Current UI `2305be593a7494f5f69085129fdeaba9e078f357`; baseline `/private/tmp/ui-2305be593a74/next-baseline.json`, SHA35629f4f96705383170ba1e187bf73935ee5eb088b583b984e95ee45d4e4a215. Configured next app source `/opt/rolling-app/releases/ui-2305be593a74`; running process remains `/opt/rolling-app/releases/ui-f9d42ce4616e`, PID311339. Proxy PID427800; all seven core services active. SDK, wallet, contracts and application process unchanged. New brand assets served by reviewed exact-path allowlist. Real reply and nested reply included in Aztec; final pointer folding, home navigation and desktop/mobile checks passed. See [UI release report](docs/UI_PR9_RELEASE_20261027.md). Performance remains paused.
+27 October current publication: core/prover/Bok051a530c; static UIa54874c36a7a86944559733351383d443d657533. The new Board and optional Bok use one consolidated funding router. Atomic Post all, name+avatar, character ring, main posting-credit controls, ETH/USDC top-ups and one-like-per-account UI are published. PR9 branding and nested messaging remain integrated. Private paid tips remain a separate unpublished draft.
 
-UI baseline `/private/tmp/ui-99dcfe60fec9/next-baseline.json` SHA511a428c071d888b5a0bb87b421499cf34c811dd5b1381d5b2013e67040fc32e. Latest99 Like10.657020s (24.60% below comparable14.134775s baseline), Unlike11.604790s (no goal-start baseline). c993 funded warm opening2.166935s;58-byte bio16.215390s; name24.028000s. Targets remain unachieved and paused.
+Portal activation **does not require an epoch proof**. The explicit immutable testnet deployment operator activates after checking the canonical checkpoint binding. Actual activation was observed16seconds after that checkpoint on27October. User withdrawals/refunds retain their ordinary protocol proofs.
 
+Nine services checked active; Bokready/active0. First live acceptance found stale published Aztec L2 fee-price ceilings (2.129e12 below observed9.491e12). The static wallet update set the ceiling to18.9817e12 and regenerated matching registration/manifest. Registration capture now rejects stale fee prices. Published UI updates only those ceilings; unchanged contracts, gas limits, credentials, provider settings and running services. Live signup quote now succeeds (0.00100951ETH / approximately$2.37 testnet reference). Actual setup and subsequent feature flows are still being verified; do not claim full acceptance yet.
 
-26October measurement update: browser access is restored without changing settings. On live e291, funded warm reopen measured2.255125s and1.914850s; name creation20.912730s;58-byte bio18.548505s; repeated like visible-count14.691035s. No application edits were made for these measurements. The fresh signup2s and all-flow50% targets remain open. Saved traces are under execution/evidence/G21/stable6/other-transaction-latency/*e291*.json. The historical browser-blocked notes below are superseded by this update.
-
-Static `e291136f04155604e8414e0da0f3d97275a8ff67` is live and pushed. Standalone topups no longer queue a second full account scan; Bok receipt/workflow reads overlap, and fresh ETH qualification overlaps wallet nonce lookup.1199 affected checks across the final UI/aggregate/application suites passed; exact public worker/panel hashes verified. Generic profile/name/subboard fee metadata now overlaps synchronization; immediate moderation removes one duplicate review while retaining final fresh authority.863 affected checks and actual browser builds passed; public worker/SDK bytes verified. Fresh opening prepares its quote once under one funding lease; browser owner discovery skips writes only for an identical staged fact/origin set. Funded opening skips all unused signup pricing; Bok claim discovery overlaps immutable reads, and required message-nullifier reads are prefetched through the existing native anchored cache. New end-to-end timing is pending because CUA began denying access after restart. Early contract artifact preload and public JSON compression are deployed; CloudFront Brotli forwarding was corrected and exact decoded hashes verified. Same-invocation Bok claims reuse authenticated custody and Ethereum evidence while retaining native membership and nullifier authorization. Browser compiler metadata projection removes 7.71MB without changing contract identities. Cached funded opening measured **1.766840s**, but first changed-SDK opening measured **8.560355s**: cold opening remains outside the two-second target. Actual repeat ETH-to-usable Bok credit measured **37.178030s**, with 6 USDC visible; claim preparation was 1.882s. A prior f20 payment includes 15.628s test-handler dwell and is functional evidence only. The all-flow 50% target remains unachieved. Browser access worked for the recorded f20 measurements, but now CUA denies access after restart. No settings were changed or services restarted.
-
-Bok runs the three-file `bff92b32` operator overlay with the existing bbf76 native dependencies. Public observations from different requests can proceed independently of the shared signing queue; same-request journal ordering and signing serialization remain. Moderator received the corresponding public-read overlap.235 integrated checks passed. BokPID96885 was ready/active0. Moderator now runs `a0c2c10c` on PID191841, with healthy current ingestion and zero manual-attention or unresolved-signing items. It corrects the false critical classification of two strictly unsigned canonical orphan posts. It preserves signed/uncertain work and requeues reobserved posts.158 affected checks passed.
-
-Both operator publishers retain the existing dependencies, credentials, security settings and attestor/control bytes. Failed drains restore normal restart policy without force-killing or duplicating work. The reviewed implementation and20 failure subcases are in `deploy/updates/20261026-operator/`. Other app/node/query/prover/proxy services were unchanged. Temporary transfer versions, archives and completed source-only agent drafts are removed; keep one retained build at `/private/tmp/rolling-browser-proof-spans-build`.
-
-**Next:** Await owner direction. Performance work is paused; no optimization agent remains active. Unintegrated drafts are not live.
+Current browser test uses owned test EIP1193 wallet, not the MetaMask extension. One retained build: `/private/tmp/rolling-browser-proof-spans-build`. New source commits live on integration branch; default-branch synchronization remains after acceptance. Prior performance reports are historical and do not establish current release timings. No optimization agent is active.
 
 ## Performance targets and evidence
 
@@ -38,7 +31,7 @@ All old test application data is disposable. No migration, old-account recovery 
 
 Follows, bookmarks and read state are off-chain; obsolete contract paths are removed. The public server has a persistent SQLite index, but ordinary reads still gate on fresh synchronization. The owner requested diagnosis only: do not change that request-gating architecture without a later instruction.
 
-The next contract deployment must merge signup funding and Bok top-ups into one router and remove standalone BokCreditRouter paths. The reviewed single-router draft and private paid-tip implementation remain separate and are not live. Do not redeploy contracts for UI changes.
+Signup funding, posting-credit top-ups and Bok top-ups now share one router; standalone BokCreditRouter paths are removed. Private paid tips remain a separate unpublished draft. Do not redeploy contracts for UI changes.
 
 ## Hosting and ownership
 
@@ -57,21 +50,20 @@ Network: Aztec stable6.0.0, rollup `0x1f435a7f2da358caf887a470faeee7d5d5f4efba`,
 
 | Component | Installed source |
 | --- | --- |
-| Browser UI | `/opt/rolling-ui/releases/f9d42ce4616e74094c165f846d54aed264a71f17` |
-| Running application | `/opt/rolling-app/releases/ui-f9d42ce4616e` |
-| Prover | `/opt/board-prover/releases/prover-gzip-636d0a581fe81108f09bfc04731e45c46ce35abf` |
-| Bok | `/opt/rolling-bok/releases/operator-be6f9f724e69faef3f64802ccbe4782fb7dce082` |
-| Moderator | `/opt/rolling-app/releases/operator-a0c2c10c199c3057b99da9b7941f54b2951f1cc1` |
+| Browser UI | `/opt/rolling-ui/releases/a54874c36a7a86944559733351383d443d657533` |
+| Running application and moderator | `/opt/rolling-app/releases/051a530c16086f099365487adf2a46368d4fe8ac` |
+| Configured next application source | `/opt/rolling-app/releases/ui-a54874c36a7a` |
+| Prover | `/opt/board-prover/releases/fresh-board-051a530c16086f099365487adf2a46368d4fe8ac` |
+| Bok | `/opt/rolling-bok/releases/051a530c16086f099365487adf2a46368d4fe8ac` |
 
 | Contract | Current address |
 | --- | --- |
-| Board | `0x20283bc7ab7d5bd5dd325a5aab82d8f9b3c62b79328c2e8417e119b66e789028` |
+| Board | `0x0a7f5a7759e057b620ddaa331f38db3e9a80ac2e57620f38504ded2ba0e8e351` |
 | Private fee contract | `0x2fff4f1bed0f240982804499d6693530343bd3f9236fe82851fb7d46be990b3c` |
-| Bok | `0x0319568b28b770c8ae772be9ba0f40eaaf21fdc9b5910d6284cce317ab000428` |
-| Posting deposit portal | `0xa50c167ddd8f87f2e20a7f3206cf2077db0a4d0d` |
-| Signup payment router | `0x5d51072ce94eb0eaba3e1f2c4516fc0ad8b33a68` |
-| Bok portal | `0x5055956c605555c348cf4bdbd978bbed34eac95a` |
-| Bok credit router | `0x97a013a22c4472a16d6a8693e3883ac09a6d1ffa` |
+| Bok | `0x2064c2256f9fa155665a0c2dec7e3268092a4fc7117fd83876879e328712f813` |
+| Posting deposit portal | `0xb3244958333e5c4eaa8a8de3ae1e9f04c748f266` |
+| Single funding router | `0x0d19f70fe4d309b84907ef3b2d875f9ff3fc61df` |
+| Bok portal | `0x5357586a6f902493c6b3193d7d2acd7cf813dfef` |
 
 Canonical Bok plugin ID is `0x0000000000000000000000000000000000000000000000000000000000626f6b`. This fresh contract scope has replaced the old test board; previous performance results are historical until repeated on the current scope.
 

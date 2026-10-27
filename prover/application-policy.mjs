@@ -3,7 +3,7 @@ import {ProtocolContractAddress} from '@aztec-labs/protocol-contracts';
 import {pluginSelectors} from './plugin-policy.mjs';
 import feeArtifact from '../apps/src/billboard/private_fee_artifact.json' with {type:'json'};
 
-const boardPrivate = ['register_name', 'authenticate_name', 'create_subboard', 'claim_deposit', 'cancel_deposit', 'withdraw', 'post', 'post_with_bok', 'screen', 'set_like', 'set_bio', 'set_avatar', 'set_preference', 'mark_thread_read'];
+const boardPrivate = ['register_name', 'authenticate_name', 'create_subboard', 'claim_deposit', 'cancel_deposit', 'withdraw', 'post', 'post_thread', 'post_with_bok', 'screen', 'set_like', 'set_bio', 'set_avatar'];
 const boardPublic = ['set_main_policy', 'reject_subboard', 'configure_plugin', 'remove_post', 'remove_avatar'];
 const bokBoard = new Set(['post_with_bok', 'configure_plugin']);
 const bokPrivate = ['claim', 'authorize_request', 'cancel', 'expire', 'withdraw'];
@@ -45,6 +45,11 @@ function network(input, metadata) {
 export function bindRollingCircuit(functionName, decoded, {metadata, privateBokAddress, privateFeeAddress, allowFundedFeeClaim = false}) {
   const [contract, name] = functionName.split(':');
   if(privateBokAddress===undefined&&(contract==='PrivateBok'||(contract==='RollingBoard'&&bokBoard.has(name))))throw Error('Bok capability disabled');
+  // Plain and Bok threads share one entrypoint. Authenticate its decoded
+  // invocation fields rather than disabling every thread with the Bok service.
+  if(privateBokAddress===undefined&&contract==='RollingBoard'&&name==='post_thread'){
+    for(const key of ['plugin_ids','request_ids'])if(!Array.isArray(decoded?.[key])||decoded[key].length!==4||decoded[key].some(value=>BigInt(value)!==0n))throw Error('Bok capability disabled');
+  }
   if (contract === 'RollingBoard' || contract === 'PrivateBok' || contract === 'PrivateFPC') {
     const input = decoded.inputs;
     network(input, metadata);

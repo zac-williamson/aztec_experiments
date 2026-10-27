@@ -367,3 +367,5 @@ PR9 completed: completion_evidence_review approved renderer/expander, publisher 
 - Remove the Outbox/epoch prerequisite for deployment activation; preserve user withdrawal/refund proof checks. No new Noir changes or performance campaign.
 
 27 October live acceptance: thread_application traced PRIVATE_FEE_CAP_TOO_LOW to copied stale unit-price ceilings; thread_composer_review reviewed exact runtime-wallet override through existing static publisher. Root fixes/publication only; no contract redeployment or performance campaign.
+
+27 October thread acceptance: root found missing post_thread remote prover admission. thread_application approved conditional optional-Bok circuit/payload coverage; thread_composer_review approved exact-file extension of existing source-only prover publisher. Fifteen actual-artifact policy tests passed.

@@ -177,25 +177,15 @@ test('normal profile entrypoints are narrowly allowed, with private fees and no 
 });
 
 
-test('private preference entrypoints require exact board/network/private flags and fees',async()=>{
- const raw=loadRollingArtifacts(),selected=await rollingSelectors(raw),a=loadContractArtifact(raw.find(a=>a.name==='RollingBoard'));
- const policy={...options,selectors:selected},fee=call(3,[...selected.fee.fee][0]);
- for(const name of ['set_preference','mark_thread_read']){
-  const fn=a.functions.find(f=>f.name===name);assert(fn?.verificationKey,'Normal processed preference VK required');
-  const id=BigInt((await FunctionSelector.fromNameAndParameters(fn)).toString());
-  const valid={inputs:context('4'),app_payload:{function_calls:[call(1,id),fee]}};
-  assert.deepEqual(validateRollingPayload(valid,policy),{applications:1,fees:1});
-  bindRollingCircuit('RollingBoard:'+name,{inputs:context('1')},policy);
-  for(const calls of [[call(99,id),fee],[call(1,id,true),fee],[call(1,id)]])assert.throws(()=>validateRollingPayload({...valid,app_payload:{function_calls:calls}},policy),/Unapproved|Private fee/);
-  for(const flag of ['hide_msg_sender','is_static']){const bad=structuredClone(valid);bad.app_payload.function_calls[0][flag]=true;assert.throws(()=>validateRollingPayload(bad,policy),/flags/);}
-  for(const key of ['chain_id','version']){const bad=structuredClone(valid);bad.inputs.tx_context[key]='999';assert.throws(()=>validateRollingPayload(bad,policy),/network/);const circuit=context('1');circuit.tx_context[key]='999';assert.throws(()=>bindRollingCircuit('RollingBoard:'+name,{inputs:circuit},policy),/network/);}
-  assert.throws(()=>bindRollingCircuit('RollingBoard:'+name,{inputs:context('9')},policy),/contract/);
+test('retired on-chain preferences are absent and rejected',()=>{
+ const board=loadContractArtifact(loadRollingArtifacts().find(a=>a.name==='RollingBoard'));
+ for(const name of ['set_preference','mark_thread_read','preference_head','_set_preference','_mark_thread_read']){
+  assert(!board.functions.some(fn=>fn.name===name));
+  assert.throws(()=>bindRollingCircuit('RollingBoard:'+name,{inputs:context('1')},options),/Unapproved/);
  }
- // Utility heads and internal public dispatch never become paid account actions.
- for(const name of ['preference_head','preference_head_initialized','_set_preference','_mark_thread_read'])assert.throws(()=>bindRollingCircuit('RollingBoard:'+name,{inputs:context('1')},policy),/Unapproved/);
 });
 
-test('actual artifact selectors: absent Bok admits regular board preferences/post but denies every Bok capability',async()=>{
+test('actual artifact selectors: absent Bok admits regular board post but denies every Bok capability',async()=>{
  // Real normal ABI selectors, fabricated decoded witnesses: no proof acceptance.
  const raw=loadRollingArtifacts(),selected=await rollingSelectors(raw),policy={...options,privateBokAddress:undefined,selectors:selected};
  const artifact=name=>loadContractArtifact(raw.find(a=>a.name===name));
@@ -203,7 +193,7 @@ test('actual artifact selectors: absent Bok admits regular board preferences/pos
  const selector=async fn=>BigInt((await FunctionSelector.fromNameAndParameters(fn)).toString());
  const fn=(a,name)=>[...a.functions,...a.nonDispatchPublicFunctions].find(f=>f.name===name);
  const fee=call(3,[...selected.fee.fee][0]);
- for(const name of ['post','cancel_deposit','set_preference','mark_thread_read']){
+ for(const name of ['post','cancel_deposit']){
   const id=await selector(fn(board,name)),p={inputs:context('4'),app_payload:{function_calls:[call(1,id),fee]}};
   assert.deepEqual(validateRollingPayload(p,policy),{applications:1,fees:1});bindRollingCircuit('RollingBoard:'+name,{inputs:context('1')},policy);
   for(const change of [p=>p.app_payload.function_calls.pop(),p=>p.inputs.tx_context.chain_id='2',p=>p.inputs.tx_context.version='2',p=>p.app_payload.function_calls[0].target_address.inner='99',p=>p.app_payload.function_calls[0].hide_msg_sender=true]){
@@ -286,4 +276,36 @@ test('cancelled deposit proof uses the actual board ABI, signed account and priv
  assert.throws(()=>validateRollingJob(circuits.slice(0,2),decoded.slice(0,2),policy),/Signed/);
  assert.throws(()=>validateRollingJob([circuits[0],circuits[2]],[decoded[0],decoded[2]],policy),/Private fee/);
  const publicCall=structuredClone(signed);publicCall.app_payload.function_calls[0].is_public=true;assert.throws(()=>validateRollingPayload(publicCall,policy),/Unapproved/);
+});
+
+// Uses the actual published ABI and policy boundary; decoded fields are fixtures,
+// not proof acceptance. The browser release check supplies the real proof.
+test('atomic thread is admitted with exact scope and optional Bok capability',async()=>{
+ const raw=loadRollingArtifacts(),selected=await rollingSelectors(raw),policy={...options,selectors:selected};
+ const board=loadContractArtifact(raw.find(a=>a.name==='RollingBoard'));
+ const fn=board.functions.find(f=>f.name==='post_thread');assert(fn?.verificationKey);
+ const id=BigInt((await FunctionSelector.fromNameAndParameters(fn)).toString());
+ const account={inputs:context('4'),app_payload:{function_calls:[call(1,id),call(3,[...selected.fee.fee][0])]}};
+ const thread={inputs:context('1'),plugin_ids:['0','0','0','0'],request_ids:['0','0','0','0']};
+ const circuits=[{functionName:'RollingBoard:post_thread'},{functionName:'PrivateFPC:pay_fee'},{functionName:'SchnorrInitializerlessAccount:entrypoint'}];
+ const decoded=[thread,{inputs:context('3')},account];
+ for(const configured of [policy,{...policy,privateBokAddress:undefined}]){
+  validateRollingJob(circuits,decoded,configured);
+  assert.throws(()=>validateRollingJob(circuits.slice(0,2),decoded.slice(0,2),configured),/Signed/);
+  assert.throws(()=>validateRollingJob([circuits[0],circuits[2]],[thread,account],configured),/Private fee circuit/);
+  assert.throws(()=>bindRollingCircuit('RollingBoard:post_thread',{...thread,inputs:context('99')},configured),/contract/);
+  const bad=structuredClone(thread);bad.inputs.tx_context.version='2';assert.throws(()=>bindRollingCircuit('RollingBoard:post_thread',bad,configured),/network/);
+  const publicCall=structuredClone(account);publicCall.app_payload.function_calls[0].is_public=true;assert.throws(()=>validateRollingPayload(publicCall,configured),/Unapproved/);
+ }
+ for(const key of ['plugin_ids','request_ids'])for(const value of [undefined,[],['0','0','0','1']]){
+  assert.throws(()=>bindRollingCircuit('RollingBoard:post_thread',{...thread,[key]:value},{...policy,privateBokAddress:undefined}));
+ }
+ const bok=loadContractArtifact(raw.find(a=>a.name==='PrivateBok'));
+ const authorization=BigInt((await FunctionSelector.fromNameAndParameters(bok.functions.find(f=>f.name==='authorize_request'))).toString());
+ const invoked={...thread,plugin_ids:['7','0','0','0'],request_ids:['8','0','0','0']};
+ const signed=structuredClone(account);signed.app_payload.function_calls.splice(1,0,call(2,authorization));
+ const combined=[circuits[0],{functionName:'PrivateBok:authorize_request'},...circuits.slice(1)];
+ validateRollingJob(combined,[invoked,{inputs:context('2')},decoded[1],signed],policy);
+ assert.throws(()=>validateRollingJob(combined,[invoked,{inputs:context('99')},decoded[1],signed],policy),/contract/);
+ assert.throws(()=>validateRollingJob(combined,[invoked,{inputs:context('2')},decoded[1],signed],{...policy,privateBokAddress:undefined}),/disabled/);
 });

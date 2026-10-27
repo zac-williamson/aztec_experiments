@@ -1,7 +1,8 @@
-"""Reviewed source-only prover response publication.
+"""Reviewed source-only prover publication.
 
 python3 publish.py ROOT_OWNED_PACKET stage|activate
-Packet: plan.json and prover/server.mjs. No dependency install or native rebuild.
+Packet: plan.json and the selected sourceFile (server.mjs by default, or
+application-policy.mjs). No dependency install or native rebuild.
 
 Required plan fields (all SHA values are full lowercase SHA256):
  commit, base, target, receiptDirectory, serverSha256, previousServerSha256,
@@ -190,7 +191,9 @@ def main(packet_name, operation):
     required = {'commit', 'base', 'target', 'receiptDirectory', 'serverSha256', 'previousServerSha256',
                 'currentRecordSha256', 'configSha256', 'unitSha256', 'attestorSha256',
                 'controlSha256', 'supervisionSha256'}
-    require(set(plan) == required and all(isinstance(value, str) for value in plan.values()), 'Plan schema')
+    require(set(plan) in (required, required | {'sourceFile'}) and all(isinstance(value, str) for value in plan.values()), 'Plan schema')
+    source_file=plan.get('sourceFile','prover/server.mjs')
+    require(source_file in ('prover/server.mjs','prover/application-policy.mjs'), 'Approved source file')
     require(bool(re.fullmatch('[a-f0-9]{40}', plan['commit'])), 'Commit')
     for name in required - {'commit', 'base', 'target', 'receiptDirectory'}:
         require(bool(re.fullmatch('[a-f0-9]{64}', plan[name])), 'Plan digest')
@@ -206,7 +209,7 @@ def main(packet_name, operation):
     h, control = monitor.load_control()
     require(sha(h['control_source']()) == plan['controlSha256'], 'Control source pin')
     plan_sha = sha(packet / 'plan.json')
-    require(sha(packet / 'prover/server.mjs') == plan['serverSha256'], 'Packet source pin')
+    require(sha(packet / source_file) == plan['serverSha256'], 'Packet source pin')
     require(sha(RECORD) == plan['currentRecordSha256'], 'Current deployment changed')
     previous_record_bytes = RECORD.read_bytes()
     previous_record = read(RECORD)
@@ -214,7 +217,7 @@ def main(packet_name, operation):
     previous_stage = read(P(previous_record['stagePath']))
     require(sha(P(previous_record['stagePath'])) == previous_record['stageSha256']
             and sha(P(previous_record['activationPath'])) == previous_record['activationSha256'], 'Prior receipts changed')
-    require(previous_stage['files']['prover/server.mjs'] == plan['previousServerSha256'], 'Previous source binding')
+    require(previous_stage['files'][source_file] == plan['previousServerSha256'], 'Previous source binding')
     old_observation = monitor.observe_current_prover(h, control, qualify_files=True)
     require(old_observation['proverAvailability'] == 'ready', 'Current prover not ready')
     require(sha(CONFIG) == plan['configSha256'] == previous_stage['configSha256']
@@ -230,7 +233,7 @@ def main(packet_name, operation):
     candidate_record_path = receipts / 'candidate-current-prover.json'
     stage = copy.deepcopy(previous_stage)
     stage.update(target=str(target), planSha256=plan_sha)
-    stage['files']['prover/server.mjs'] = plan['serverSha256']
+    stage['files'][source_file] = plan['serverSha256']
 
     def native_files(source):
         for relative, key in [('node/bin/node', 'node'),
@@ -246,8 +249,8 @@ def main(packet_name, operation):
         receipts.mkdir(parents=True, mode=0o700)
         os.chmod(receipts.parent, 0o700)
         run(['cp', '-al', str(base), str(target)])
-        info = regular(target / 'prover/server.mjs')
-        atomic(target / 'prover/server.mjs', (packet / 'prover/server.mjs').read_bytes(),
+        info = regular(target / source_file)
+        atomic(target / source_file, (packet / source_file).read_bytes(),
                stat.S_IMODE(info.st_mode), info.st_uid, info.st_gid)
         source_files(target, stage['files'])
         native_files(target)
