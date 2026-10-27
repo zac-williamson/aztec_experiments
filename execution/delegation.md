@@ -358,3 +358,10 @@ PR9 completed: completion_evidence_review approved renderer/expander, publisher 
 27 October composer/identity/funding release: root sole shared-checkout writer; thread_composer_review isolated contract patch integrated and now owns retained native build/TXE; thread_application isolated native patch integrated and independently reviewed contract, now owns like count/pending/privacy investigation; posting_credit_ui name/avatar patch integrated and now owns isolated consolidated-router ETH/USDC fee-only topups. Root budget-ring/thread DOM checks pass. Performance remains paused.
 
 27 October like review correction: first patch NOT integrated. thread_composer_review implements owner-independent public tag pages; thread_application wallet-local tag matching/duplicate guard; posting_credit_ui UI hydration without private operation queue waits, reorg invalidation and revision-based retries. Root final contract build and release integration.
+
+## 27 October — portal activation correction
+
+- Root integrates the queued release and owns all service changes. Candidate f4190925 has not been activated on the site.
+- thread_application: isolated BillboardPortal operator-only testnet activation, runtime verifier and focused Solidity checks.
+- thread_composer_review: isolated deployment engine and runtime-consumer wiring, using existing reviewed Ethereum deployment actor.
+- Remove the Outbox/epoch prerequisite for deployment activation; preserve user withdrawal/refund proof checks. No new Noir changes or performance campaign.

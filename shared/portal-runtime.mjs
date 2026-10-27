@@ -1,6 +1,6 @@
 // Pure browser/Node verifier. Metadata must come from the authenticated application
 // build, never the RPC or deployment manifest being checked.
-export const PORTAL_IMMUTABLES = Object.freeze(['MIN_DEPOSIT','MAX_DEPOSIT','L2_CONTRACT','ROLLUP','INBOX','OUTBOX','VERSION','L1_CHAIN_ID','CONFIG_HASH']);
+export const PORTAL_IMMUTABLES = Object.freeze(['MIN_DEPOSIT','MAX_DEPOSIT','L2_CONTRACT','ROLLUP','INBOX','OUTBOX','VERSION','L1_CHAIN_ID','CONFIG_HASH','DEPLOYMENT_OPERATOR']);
 const hex = value => typeof value === 'string' && /^0x(?:[0-9a-fA-F]{2})+$/.test(value);
 const fail = () => { throw new Error('Invalid portal runtime metadata or immutable values'); };
 export function expectedPortalRuntime(metadata, values) {
@@ -11,7 +11,7 @@ export function expectedPortalRuntime(metadata, values) {
   for (const name of names) {
     const raw = values[name];
     if (!(typeof raw === 'bigint' || (typeof raw === 'string' && /^(?:0|[1-9][0-9]*|0x[0-9a-fA-F]+)$/.test(raw)))) fail();
-    const value = BigInt(raw), width = ['ROLLUP','INBOX','OUTBOX'].includes(name) ? 160n : 256n;
+    const value = BigInt(raw), width = ['ROLLUP','INBOX','OUTBOX','DEPLOYMENT_OPERATOR'].includes(name) ? 160n : 256n;
     if (value < 0n || value >= 1n << width) fail();
     const word = value.toString(16).padStart(64,'0').match(/../g), refs = metadata.immutables[name];
     if (!Array.isArray(refs) || !refs.length) fail();

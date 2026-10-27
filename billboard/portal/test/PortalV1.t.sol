@@ -66,6 +66,13 @@ contract RefundReceiver {
 }
 contract ForceSurplus { constructor(address payable destination) payable { selfdestruct(destination); } }
 
+contract PortalActivationFactory {
+    function deploy(address rollup,bytes32 board,uint256 version,bytes32 config,address operator) external returns(BillboardPortal) {
+        return new BillboardPortal{salt:bytes32(uint256(1))}(rollup,board,version,1 ether,3 ether,config,operator);
+    }
+    function activate(BillboardPortal portal) external {portal.activate();}
+}
+
 contract PortalV1Test is PortalFixtures {
     using Hash for DataStructures.L2ToL1Msg;
     VmV1 private constant control = VmV1(address(uint160(uint256(keccak256("hevm cheat code")))));
@@ -74,18 +81,14 @@ contract PortalV1Test is PortalFixtures {
     bytes32 private constant CONFIG = bytes32(uint256(123));
     function setUp() public {
         rollup = new RootPublisher(VERSION);
-        portal = new BillboardPortal(address(rollup),L2,VERSION,2 ether,3 ether,CONFIG);
+        portal = new BillboardPortal(address(rollup),L2,VERSION,2 ether,3 ether,CONFIG, address(this));
     }
     function message(BillboardPortal p,bytes32 content) private view returns(DataStructures.L2ToL1Msg memory) {
         return DataStructures.L2ToL1Msg(DataStructures.L2Actor(p.L2_CONTRACT(),p.VERSION()),
             DataStructures.L1Actor(address(p),block.chainid),content);
     }
-    function ready(BillboardPortal p) private view returns(bytes32) {
-        return PortalMessages.ready(block.chainid,address(p),p.L2_CONTRACT(),p.VERSION(),p.CONFIG_HASH());
-    }
-    function activate(BillboardPortal p,RootPublisher r) private {
-        r.publish(1,1,message(p,ready(p)).sha256ToField());
-        p.activate(1,1,0,new bytes32[](0));
+    function activate(BillboardPortal p,RootPublisher) private {
+        p.activate();
     }
     function exitRoot(BillboardPortal p,address owner,uint128 amount) private view returns(bytes32) {
         return message(p,PortalMessages.depositExit("AZTEC_BB_EXIT_V2",block.chainid,address(p),p.L2_CONTRACT(),p.VERSION(),owner,amount,p.latestDeposit(owner))).sha256ToField();
@@ -94,47 +97,58 @@ contract PortalV1Test is PortalFixtures {
         uint128 amount = portal.getDeposit(owner);
         require(amount==expectedAmount,"Wrong active receipt");
     }
-    function testDisabledUntilCanonicalReadyAndActivationCannotRepeat() public {
+    function testDisabledUntilOperatorAttestationAndActivationCannotRepeat() public {
         vm.deal(ALICE,2 ether);
         vm.expectRevert(abi.encodeWithSignature("Error(string)","Deposits disabled"));
         vm.prank(ALICE); portal.deposit{value:2 ether}(bytes32(uint256(123)));
-        control.expectRevert(); portal.activate(1,1,0,new bytes32[](0));
-        require(!portal.depositsEnabled(),"Failed proof activated deposits");
+        vm.expectRevert(abi.encodeWithSignature("Error(string)","Not deployment operator"));
+        vm.prank(BOB); portal.activate();
+        require(!portal.depositsEnabled(),"Unauthorized activation changed state");
         activate(portal,rollup);
-        require(portal.depositsEnabled(),"Valid Ready failed");
-        require(rollup.outbox().hasMessageBeenConsumedAtEpoch(Epoch.wrap(1),1),"Ready not nullified");
-        control.expectRevert(); portal.activate(1,1,0,new bytes32[](0));
+        require(portal.depositsEnabled(),"Operator attestation failed");
+        require(!rollup.outbox().hasMessageBeenConsumedAtEpoch(Epoch.wrap(1),1),"Activation consumed Outbox message");
+        vm.expectRevert(abi.encodeWithSignature("Error(string)","Already activated"));
+        portal.activate();
         depositAs(portal,ALICE,2 ether); expectReceipt(ALICE,2 ether);
     }
-    function testEveryReadyWordIsAuthenticatedByCanonicalOutbox() public {
-        bytes32[7] memory words = [bytes32("AZTEC_BB_READY_V1"),bytes32(uint256(1)),bytes32(block.chainid),
-            bytes32(uint256(uint160(address(portal)))),L2,bytes32(VERSION),CONFIG];
-        for(uint256 i; i<words.length; ++i) {
-            bytes32 previous=words[i]; words[i]=bytes32(uint256(previous)^1);
-            rollup.publish(1,1,message(portal,Hash.sha256ToField(abi.encode(words))).sha256ToField());
-            control.expectRevert(); portal.activate(1,1,0,new bytes32[](0));
-            require(!portal.depositsEnabled(),"Mutated Ready activated");
-            require(!rollup.outbox().hasMessageBeenConsumedAtEpoch(Epoch.wrap(1),1),"Failed Ready consumed");
-            words[i]=previous;
-        }
-        activate(portal,rollup);
+    function testSepoliaOperatorActivationDoesNotRequirePublishedRoot() public {
+        control.chainId(11155111);
+        BillboardPortal p=new BillboardPortal(address(rollup),L2,VERSION,2 ether,3 ether,CONFIG,ALICE);
+        require(p.DEPLOYMENT_OPERATOR()==ALICE,"Explicit operator lost");
+        vm.expectRevert(abi.encodeWithSignature("Error(string)","Not deployment operator"));
+        p.activate();
+        vm.prank(ALICE); p.activate();
+        require(p.depositsEnabled(),"Sepolia activation failed");
     }
-    function testWrongReadyEnvelopeAndMerkleProofReject() public {
-        for(uint256 i; i<4; ++i) {
-            DataStructures.L2ToL1Msg memory m=message(portal,ready(portal));
-            if(i==0) m.sender.actor=bytes32(uint256(2));
-            if(i==1) m.sender.version=VERSION+1;
-            if(i==2) m.recipient.actor=ALICE;
-            if(i==3) m.recipient.chainId=block.chainid+1;
-            rollup.publish(1,1,m.sha256ToField());
-            control.expectRevert(); portal.activate(1,1,0,new bytes32[](0));
+    function testActivationRejectsMainnetAndOtherNetworksEvenForOperator() public {
+        uint256[3] memory chains=[uint256(1),uint256(17000),uint256(10)];
+        for(uint256 i;i<chains.length;++i){
+            control.chainId(chains[i]);
+            BillboardPortal p=new BillboardPortal(address(rollup),L2,VERSION,2 ether,3 ether,CONFIG,address(this));
+            vm.expectRevert(abi.encodeWithSignature("Error(string)","Test network only"));
+            p.activate();
+            require(!p.depositsEnabled(),"Other network activated");
         }
-        rollup.publish(1,1,message(portal,ready(portal)).sha256ToField());
-        control.expectRevert(); portal.activate(1,1,1,new bytes32[](0));
-        control.expectRevert(); portal.activate(1,2,0,new bytes32[](0));
-        bytes32[] memory wrongPath=new bytes32[](1);
-        control.expectRevert(); portal.activate(1,1,0,wrongPath);
-        portal.activate(1,1,0,new bytes32[](0));
+    }
+    function testActivationRejectsChangedChainEvenWhenBothChainsAreAllowed() public {
+        control.chainId(11155111);
+        vm.expectRevert(abi.encodeWithSignature("Error(string)","Test network only"));
+        portal.activate();
+    }
+    function testCreate2FactoryIsNotDeploymentOperator() public {
+        PortalActivationFactory factory=new PortalActivationFactory();
+        BillboardPortal p=factory.deploy(address(rollup),L2,VERSION,CONFIG,ALICE);
+        require(p.DEPLOYMENT_OPERATOR()==ALICE,"Factory replaced explicit operator");
+        vm.expectRevert(abi.encodeWithSignature("Error(string)","Not deployment operator"));
+        factory.activate(p);
+        vm.prank(ALICE);p.activate();
+        require(p.depositsEnabled(),"Bound operator failed");
+    }
+    function testDeploymentOperatorCannotBypassWithdrawalProofOrOwner() public {
+        activate(portal,rollup);depositAs(portal,ALICE,2 ether);
+        control.expectRevert();portal.withdraw(bytes32(uint256(123)),0,0,0,new bytes32[](0));
+        control.expectRevert();vm.prank(ALICE);portal.withdraw(bytes32(uint256(123)),0,0,0,new bytes32[](0));
+        require(portal.getDeposit(ALICE)==2 ether && portal.totalDeposited()==2 ether,"Failed exit changed funds");
     }
     function testCanonicalInboxMessageMatchesScopedReceiptAndEnvelope() public {
         activate(portal,rollup);
@@ -165,7 +179,7 @@ contract PortalV1Test is PortalFixtures {
     }
     function testInboxFailureRollsBackReceiptValueAndTotal() public {
         FailingInbox failing=new FailingInbox(); rollup.setInbox(IInbox(address(failing)));
-        portal=new BillboardPortal(address(rollup),L2,VERSION,2 ether,3 ether,CONFIG); activate(portal,rollup);
+        portal=new BillboardPortal(address(rollup),L2,VERSION,2 ether,3 ether,CONFIG, address(this)); activate(portal,rollup);
         vm.deal(ALICE,2 ether); control.expectRevert(); vm.prank(ALICE); portal.deposit{value:2 ether}(bytes32(uint256(123)));
         expectReceipt(ALICE,0);
         require(portal.totalDeposited()==0 && address(portal).balance==0,"Inbox failure retained effects");
@@ -231,25 +245,26 @@ contract PortalV1Test is PortalFixtures {
         require(address(portal).balance==1 ether && portal.totalDeposited()==0,"Refund spent forced surplus");
     }
     function testConstructorRejectsInvalidScopeAndEconomicBounds() public {
-        control.expectRevert(); new BillboardPortal(ALICE,L2,VERSION,1,2,CONFIG);
-        control.expectRevert(); new BillboardPortal(address(rollup),bytes32(0),VERSION,1,2,CONFIG);
-        control.expectRevert(); new BillboardPortal(address(rollup),bytes32(Constants.P),VERSION,1,2,CONFIG);
-        control.expectRevert(); new BillboardPortal(address(rollup),L2,0,1,2,CONFIG);
-        control.expectRevert(); new BillboardPortal(address(rollup),L2,uint256(type(uint32).max)+1,1,2,CONFIG);
-        control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,0,2,CONFIG);
-        control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,3,2,CONFIG);
-        control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,1,uint256(type(uint96).max)+1,CONFIG);
-        control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,1,2,bytes32(0));
-        control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,1,2,bytes32(Constants.P));
+        control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,1,2,CONFIG,address(0));
+        control.expectRevert(); new BillboardPortal(ALICE,L2,VERSION,1,2,CONFIG, address(this));
+        control.expectRevert(); new BillboardPortal(address(rollup),bytes32(0),VERSION,1,2,CONFIG, address(this));
+        control.expectRevert(); new BillboardPortal(address(rollup),bytes32(Constants.P),VERSION,1,2,CONFIG, address(this));
+        control.expectRevert(); new BillboardPortal(address(rollup),L2,0,1,2,CONFIG, address(this));
+        control.expectRevert(); new BillboardPortal(address(rollup),L2,uint256(type(uint32).max)+1,1,2,CONFIG, address(this));
+        control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,0,2,CONFIG, address(this));
+        control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,3,2,CONFIG, address(this));
+        control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,1,uint256(type(uint96).max)+1,CONFIG, address(this));
+        control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,1,2,bytes32(0), address(this));
+        control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,1,2,bytes32(Constants.P), address(this));
         // Pinned Forge refuses vm.chainId >= 2^64; that unavailable boundary is recorded in evidence.
         control.chainId(0);
-        control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,1,2,CONFIG);
+        control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,1,2,CONFIG, address(this));
     }
     function testConstructorAcceptsMaximumSupportedScalarBounds() public {
         control.chainId(type(uint64).max);
-        BillboardPortal p=new BillboardPortal(address(rollup),bytes32(Constants.P-1),type(uint32).max,1,type(uint96).max,bytes32(Constants.P-1));
+        BillboardPortal p=new BillboardPortal(address(rollup),bytes32(Constants.P-1),type(uint32).max,1,type(uint96).max,bytes32(Constants.P-1), address(this));
         require(p.L1_CHAIN_ID()==type(uint64).max && p.MAX_DEPOSIT()==type(uint96).max && !p.depositsEnabled(),"Valid upper bounds rejected");
-        // This is a constructor range control; mismatched protocol versions cannot activate.
+        // This is a constructor range control; deployment readiness is the test operator assertion.
     }
     function testBridgeActorsArePinnedDespiteRollupGetterChanges() public {
         Outbox original=rollup.outbox(); IInbox originalInbox=rollup.inbox();
@@ -262,9 +277,9 @@ contract PortalV1Test is PortalFixtures {
     }
     function testInvalidBridgeAndChangedChainReject() public {
         IInbox originalInbox=rollup.inbox();
-        rollup.setInbox(IInbox(ALICE)); control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,1,2,CONFIG);
+        rollup.setInbox(IInbox(ALICE)); control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,1,2,CONFIG, address(this));
         rollup.setInbox(originalInbox); Outbox original=rollup.outbox();
-        rollup.setOutbox(Outbox(BOB)); control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,1,2,CONFIG);
+        rollup.setOutbox(Outbox(BOB)); control.expectRevert(); new BillboardPortal(address(rollup),L2,VERSION,1,2,CONFIG, address(this));
         rollup.setOutbox(original); activate(portal,rollup); control.chainId(block.chainid+1);
         vm.deal(ALICE,2 ether); control.expectRevert(); vm.prank(ALICE); portal.deposit{value:2 ether}(bytes32(uint256(123)));
     }
@@ -280,11 +295,8 @@ contract PortalDepositConsentTest is PortalFixtures {
     VmDepositConsent constant control=VmDepositConsent(address(uint160(uint256(keccak256("hevm cheat code")))));
     BillboardPortal portal; address owner; bytes32 constant SECRET=bytes32(uint256(44));
     function setUp() public {
-        owner=control.addr(123);portal=new BillboardPortal(address(new RootPublisher(VERSION)),L2,VERSION,1 ether,2 ether,bytes32(uint256(123)));
-        RootPublisher r=RootPublisher(address(portal.ROLLUP()));
-        bytes32 content=PortalMessages.ready(block.chainid,address(portal),L2,VERSION,bytes32(uint256(123)));
-        r.publish(1,1,Hash.sha256ToField(DataStructures.L2ToL1Msg(DataStructures.L2Actor(L2,VERSION),DataStructures.L1Actor(address(portal),block.chainid),content)));
-        portal.activate(1,1,0,new bytes32[](0));vm.deal(address(this),10 ether);vm.deal(BOB,10 ether);
+        owner=control.addr(123);portal=new BillboardPortal(address(new RootPublisher(VERSION)),L2,VERSION,1 ether,2 ether,bytes32(uint256(123)), address(this));
+        portal.activate();vm.deal(address(this),10 ether);vm.deal(BOB,10 ether);
     }
     function signature(address executor,uint256 amount,bytes32 secret,uint256 nonce,uint256 deadline) private returns(bytes memory) {
         (uint8 v,bytes32 r,bytes32 s)=control.sign(123,portal.depositForDigest(owner,executor,amount,secret,nonce,deadline));return abi.encodePacked(r,s,v);
@@ -326,7 +338,7 @@ contract PortalDepositConsentTest is PortalFixtures {
         uint256 deadline=block.timestamp+60;bytes memory sig=signature(address(this),1 ether,SECRET,0,deadline);
         control.warp(deadline+1);control.expectRevert();portal.depositFor{value:1 ether}(owner,SECRET,0,deadline,sig);
         require(portal.depositNonces(owner)==0);
-        BillboardPortal other=new BillboardPortal(address(portal.ROLLUP()),L2,VERSION,1 ether,2 ether,bytes32(uint256(123)));
+        BillboardPortal other=new BillboardPortal(address(portal.ROLLUP()),L2,VERSION,1 ether,2 ether,bytes32(uint256(123)), address(this));
         require(other.depositForDigest(owner,address(this),1 ether,SECRET,0,deadline)!=portal.depositForDigest(owner,address(this),1 ether,SECRET,0,deadline),"Portal domain collision");
     }
 }

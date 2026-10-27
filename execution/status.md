@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — Queued composer/identity/funding release integrated locally; atomic thread contract and native boundary checks passed, final combined contract build running. One-router ETH/USDC credit and name+avatar implemented. Likes count is idempotent one per account/post; first proposed hydration patch rejected by independent review for RPC linkage and stale/retry cache issues. Agents implementing public post-tag pages, wallet-local matching and nonblocking UI hydration. No new release published; performance goal remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — Queued UX release implemented; site remains2305. Removed Board portal epoch/Outbox activation gate: immutable testnet operator activates after canonical checkpoint binding. Independent review,64 Solidity and208 integrated checks passed; contracts/SDK/Bok/apps rebuilt, Board class unchanged. Next: publish corrected source, deploy coherent scope with one router, switch services/UI and verify real feature flows. Performance remains paused.
 
 ## Ready internal work
 

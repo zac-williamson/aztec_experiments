@@ -17,8 +17,8 @@ const number=value=>BigInt(value.toString());
 const same=(a,b)=>number(a)===number(b);
 const canonical=(value,length)=>typeof value==='string'&&new RegExp(`^0x[0-9a-f]{${length}}$`).test(value)&&BigInt(value)>0n;
 const hash=value=>typeof value==='string'&&/^0x[0-9a-f]{64}$/.test(value);
-const immutableNames=['MIN_DEPOSIT','MAX_DEPOSIT','L2_CONTRACT','ROLLUP','INBOX','OUTBOX','VERSION','L1_CHAIN_ID','CONFIG_HASH'];
-const abi=[...immutableNames.map(name=>`function ${name}() view returns (${['ROLLUP','INBOX','OUTBOX'].includes(name)?'address':name==='L2_CONTRACT'||name==='CONFIG_HASH'?'bytes32':'uint256'})`),'function depositsEnabled() view returns (bool)'];
+const immutableNames=['MIN_DEPOSIT','MAX_DEPOSIT','L2_CONTRACT','ROLLUP','INBOX','OUTBOX','VERSION','L1_CHAIN_ID','CONFIG_HASH','DEPLOYMENT_OPERATOR'];
+const abi=[...immutableNames.map(name=>`function ${name}() view returns (${['ROLLUP','INBOX','OUTBOX','DEPLOYMENT_OPERATOR'].includes(name)?'address':name==='L2_CONTRACT'||name==='CONFIG_HASH'?'bytes32':'uint256'})`),'function depositsEnabled() view returns (bool)'];
 // Detached SDK values retain their prototype methods. Freeze plain containers;
 // typed byte arrays and SDK value objects are copied, not shared with inputs.
 function detach(value){
@@ -287,8 +287,8 @@ async function verifyDeployment({sdk,node,ethers,config,boardArtifact,privateFee
    ]);
    check(same(contracts.rollupAddress,network.rollup)&&depositsEnabled===true);
    const {min,max,rollup,version,chain}=values;
-   const expected={MIN_DEPOSIT:min,MAX_DEPOSIT:max,L2_CONTRACT:BigInt(b.contractAddress),ROLLUP:rollup,INBOX:number(contracts.inboxAddress),OUTBOX:number(contracts.outboxAddress),VERSION:version,L1_CHAIN_ID:chain,CONFIG_HASH:number(configHash)};
-   check(expected.INBOX>0n&&expected.OUTBOX>0n&&immutableValues.every((value,index)=>same(value,expected[immutableNames[index]])));
+   const expected={MIN_DEPOSIT:min,MAX_DEPOSIT:max,L2_CONTRACT:BigInt(b.contractAddress),ROLLUP:rollup,INBOX:number(contracts.inboxAddress),OUTBOX:number(contracts.outboxAddress),VERSION:version,L1_CHAIN_ID:chain,CONFIG_HASH:number(configHash),DEPLOYMENT_OPERATOR:number(immutableValues[immutableNames.indexOf('DEPLOYMENT_OPERATOR')])};
+   check(expected.DEPLOYMENT_OPERATOR>0n&&expected.DEPLOYMENT_OPERATOR<(1n<<160n)&&expected.INBOX>0n&&expected.OUTBOX>0n&&immutableValues.every((value,index)=>same(value,expected[immutableNames[index]])));
    check(sdk.verifyPortalRuntime(code,sdk.portalRuntimeMetadata,expected)===true);
   });
   const [,anchor,published,values,configHash,privateFee,l1Head]=await together([

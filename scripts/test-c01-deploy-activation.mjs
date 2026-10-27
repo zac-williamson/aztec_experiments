@@ -3,7 +3,6 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-import * as ethers from 'ethers';
 import {TxStatus,TxExecutionResult,BlockHeader} from '@aztec-labs/stdlib/tx';
 import {BlockHash,L2Block} from '@aztec-labs/stdlib/block';
 import {BlockResponseSchema} from '@aztec-labs/stdlib/interfaces/client';
@@ -36,29 +35,20 @@ test('a returned publication submission is insufficient without observed class r
     journal:{setOperation(){}},read:fn=>fn(),stale:false,
   }),/publication was not observed/);
 });
-const hash='0x'+'1'.repeat(64),leaf='0x'+'2'.repeat(64),blockA='0x'+'a'.padStart(64,'0'),blockB='0x'+'b'.padStart(64,'0');
+const hash='0x'+'1'.repeat(64),blockA='0x'+'a'.padStart(64,'0'),blockB='0x'+'b'.padStart(64,'0');
+const operator='0x'+'3'.repeat(40),expectedPortal='0x'+'4'.repeat(40);
 const included=(extra={})=>({txHash:hash,status:TxStatus.CHECKPOINTED,executionResult:TxExecutionResult.SUCCESS,blockNumber:5,blockHash:blockA,...extra});
 const wireBlock=(number,hash)=>JSON.parse(jsonStringify({header:BlockHeader.empty(),archive:AppendOnlyTreeSnapshot.empty(),
   hash:BlockHash.fromString(hash),number,checkpointNumber:1,indexWithinCheckpoint:0}));
-function harness({receipts=[included()],tips=[5],blocks=[blockA],witness=true,portalReady=true,activationStatus=1,enabled=true}={}){
-  const context=vm.createContext({setTimeout,clearTimeout});vm.runInContext(source,context,{filename:'deploy/engine.js'});
-  let time=0,receiptCount=0,tipCount=0,blockCount=0;
-  const calls={witness:[],activate:[],staticCall:[],wait:0,receipt:[]};
-  const pick=(list,index)=>list[Math.min(index,list.length-1)];
-  const node={
-    async getTxReceipt(value){assert.equal(value,hash);const result=pick(receipts,receiptCount++);calls.receipt.push(result);return result;},
-    async getChainTips(){assert.fail('No finalized tip prerequisite');},
-    async getBlock(number){
-      assert(Number.isSafeInteger(number));
-      return BlockResponseSchema.parse(wireBlock(number,pick(blocks,blockCount++)));
-    },
-    async getL2ToL1MembershipWitness(tx,message){calls.witness.push([tx,message]);return witness?{epochNumber:3,numCheckpointsInEpoch:2,leafIndex:7n,siblingPath:{toBufferArray:()=>[Buffer.alloc(32,4)]}}:undefined;},
-  }; // Deliberately no getL2Tips: only the actual public node method exists.
-  const portal={async activate(...args){calls.activate.push(args);return {wait:async()=>({status:activationStatus})};},async depositsEnabled(){return enabled;}};
-  portal.activate.staticCall=async(...args)=>{calls.staticCall.push(args);if(!portalReady)throw Object.assign(Error('Outbox root unavailable'),{code:'CALL_EXCEPTION'});};
-  const run=()=>context.BillboardDeployActivation.activateReady({node,portal,hash,leaf,ethers,log(){},
-    now:()=>time,wait:async ms=>{calls.wait++;time+=ms;},timeoutMs:30,intervalMs:10});
-  return {run,calls,setWitness:value=>witness=value};
+function harness({receipt=included(),canonical=blockA,binding={portal:expectedPortal,checkpoint:{height:5,hash:blockA}},portalOperator=operator,activationStatus=1,enabled=true,staticFailure=false}={}){
+ const context=vm.createContext({setTimeout,clearTimeout});vm.runInContext(source,context,{filename:'deploy/engine.js'});
+ const calls={activate:[],staticCall:[],binding:0,receipt:0,order:[]};
+ const node={getTxReceipt:async value=>{assert.equal(value,hash);calls.receipt++;calls.order.push('receipt');return receipt;},getBlock:async number=>{assert.equal(number,5);return BlockResponseSchema.parse(wireBlock(number,canonical));},getL2ToL1MembershipWitness:()=>assert.fail('Deployment must not request a proven witness'),getChainTips:()=>assert.fail('No epoch/finalized prerequisite')};
+ const portal={DEPLOYMENT_OPERATOR:async()=>portalOperator,activate:async(...args)=>{calls.activate.push(args);calls.order.push('activate');return {wait:async()=>({status:activationStatus})};},depositsEnabled:async()=>enabled};
+ portal.activate.staticCall=async(...args)=>{calls.staticCall.push(args);calls.order.push('static');if(staticFailure)throw Object.assign(Error('Operator rejected'),{code:'CALL_EXCEPTION'});};
+ const verifyBinding=async()=>{calls.binding++;calls.order.push('binding');return binding;};
+ const run=extra=>context.BillboardDeployActivation.activateReady({node,portal,hash,operator,expectedPortal,verifyBinding,log(){},timeoutMs:30,...extra});
+ return {run,calls,node,portal,context};
 }
 test('pinned internal L2Block hash method differs from public node BlockResponse hash value',()=>{
   assert.equal(typeof L2Block.prototype.hash,'function');
@@ -68,65 +58,26 @@ test('pinned internal L2Block hash method differs from public node BlockResponse
   assert.equal(response.checkpointNumber,1);
   assert.equal(BlockResponseSchema.safeParse({...wire,hash:L2Block.prototype.hash}).success,false);
 });
-test('deployment returns pending until native witness exists then verifies usable portal root',async()=>{
-  const f=harness({witness:false,tips:[0]});assert.equal((await f.run()).status,'pending-settlement');f.setWitness(true);
-  assert.equal(f.calls.activate.length,0);assert.equal((await f.run()).status,'active');
-  assert.equal(f.calls.wait,0);assert.equal(f.calls.receipt.length,3);
-  assert.deepEqual(f.calls.witness,[[hash,leaf],[hash,leaf]]);assert.equal(f.calls.staticCall.length,1);
-  assert.deepEqual(Array.from(f.calls.activate[0],value=>Array.isArray(value)?Array.from(value):value),[3n,2n,7n,['0x'+'04'.repeat(32)]]);
-});
-test('checkpointed receipt and actual portal root can activate while finalized head lags',async()=>{
- const f=harness({tips:[0]});assert.equal((await f.run()).status,'active');assert.equal(f.calls.staticCall.length,1);assert.equal(f.calls.activate.length,1);
-});
-test('missing native witness never activates a checkpointed transaction',async()=>{
-  const f=harness({witness:false});assert.equal((await f.run()).status,'pending-settlement');
-  assert.equal(f.calls.witness.length,1);assert.equal(f.calls.activate.length,0);
+test('checkpoint binding enables operator activation without Outbox or proven witness',async()=>{
+ const f=harness();assert.equal((await f.run()).status,'active');assert.equal(f.calls.receipt,1);assert.equal(f.calls.binding,1);
+ assert.deepEqual(f.calls.order,['receipt','static','binding','activate']);
+ assert.deepEqual(Array.from(f.calls.activate[0],v=>Array.isArray(v)?Array.from(v):v),[]);
+ assert.equal(f.calls.staticCall[0].at(-1).from,operator);
 });
 for(const [name,receipt,message] of [
-  ['reverted',included({executionResult:TxExecutionResult.REVERTED}),/did not execute successfully/],
-  ['missing success',included({executionResult:undefined}),/did not execute successfully/],
-  ['dropped',{txHash:hash,status:TxStatus.DROPPED},/dropped/],
-  ['unknown',included({status:'new-unknown-state'}),/unknown receipt status/],
-  ['wrong transaction',included({txHash:'another'}),/hash mismatch/],
-  ['missing block hash',included({blockHash:undefined}),/incomplete inclusion/],
-])test(`${name} receipt fails closed before witness lookup`,async()=>{
-  const f=harness({receipts:[receipt]});await assert.rejects(f.run(),message);
-  assert.equal(f.calls.witness.length,0);assert.equal(f.calls.activate.length,0);
-});
-test('pending and proposed receipts do not qualify even with a high finalized tip',async()=>{
-  const f=harness({receipts:[{status:TxStatus.PENDING},included({status:TxStatus.PROPOSED})],tips:[100]});
-  assert.equal((await f.run()).status,'pending-settlement');assert.equal(f.calls.witness.length,0);assert.equal(f.calls.activate.length,0);
-});
-test('receipt block must still match canonical block at its height',async()=>{
-  const f=harness({blocks:[blockB]});assert.equal((await f.run()).status,'pending-settlement');
-  assert.equal(f.calls.witness.length,0);assert.equal(f.calls.activate.length,0);
-});
-test('re-inclusion during witness resolution returns pending; resume checks the new block',async()=>{
-  const moved=included({blockNumber:8,blockHash:blockB});
-  const f=harness({receipts:[included(),moved,moved,moved],tips:[5,5,8,8],blocks:[blockA,blockB,blockB]});
-  assert.equal((await f.run()).status,'pending-settlement');assert.equal(f.calls.activate.length,0);
-  assert.equal((await f.run()).status,'active');assert.equal(f.calls.wait,0);assert.equal(f.calls.receipt.length,4);
-  assert.equal(f.calls.witness.length,2);assert.equal(f.calls.activate.length,1);
-});
-test('drop during witness resolution prevents activation',async()=>{
-  const f=harness({receipts:[included(),{txHash:hash,status:TxStatus.DROPPED}]});await assert.rejects(f.run(),/dropped/);
-  assert.equal(f.calls.witness.length,1);assert.equal(f.calls.activate.length,0);
-});
-test('native witness with unusable portal root remains pending without sending',async()=>{
- const f=harness({portalReady:false});assert.equal((await f.run()).status,'pending-settlement');assert.equal(f.calls.staticCall.length,1);assert.equal(f.calls.activate.length,0);
-});
-for(const options of [{activationStatus:0},{enabled:false}])test(`activation requires successful L1 receipt and enabled portal ${JSON.stringify(options)}`,async()=>{
-  const f=harness(options);await assert.rejects(f.run(),/Portal activation failed/);assert.equal(f.calls.activate.length,1);
-});
-
-test('a stalled Ready RPC has a bounded unknown outcome without activation',async()=>{
-  const context=vm.createContext({setTimeout,clearTimeout});vm.runInContext(source,context);
-  let sent=false;
-  await assert.rejects(context.BillboardDeployActivation.activateReady({
-    node:{getTxReceipt:()=>new Promise(()=>{})},portal:{activate(){sent=true;}},hash,leaf,ethers,log(){},timeoutMs:10,
-  }),{code:'BB_RECOVERY_UNKNOWN'});
-  assert.equal(sent,false);
-});
+ ['reverted',included({executionResult:TxExecutionResult.REVERTED}),/did not execute successfully/],
+ ['missing success',included({executionResult:undefined}),/did not execute successfully/],
+ ['dropped',{txHash:hash,status:TxStatus.DROPPED},/dropped/],
+ ['unknown',included({status:'new-unknown-state'}),/unknown receipt status/],
+ ['wrong transaction',included({txHash:'another'}),/hash mismatch/],
+ ['missing block hash',included({blockHash:undefined}),/incomplete inclusion/],
+])test(`${name} binding receipt fails closed`,async()=>{const f=harness({receipt});await assert.rejects(f.run(),message);assert.equal(f.calls.activate.length,0);});
+for(const receipt of [{status:TxStatus.PENDING},included({status:TxStatus.PROPOSED})])test(`binding ${receipt.status} remains resumable without sending`,async()=>{const f=harness({receipt});assert.equal((await f.run()).status,'pending-settlement');assert.equal(f.calls.activate.length,0);assert.equal(f.calls.binding,0);});
+test('noncanonical binding receipt cannot authorize activation',async()=>{const f=harness({canonical:blockB});assert.equal((await f.run()).status,'pending-settlement');assert.equal(f.calls.activate.length,0);});
+for(const binding of [{portal:operator,checkpoint:{height:5,hash:blockA}},{portal:expectedPortal,checkpoint:{height:4,hash:blockA}},{portal:expectedPortal,checkpoint:{height:5,hash:blockB}}])test('mismatched current Board binding cannot activate '+JSON.stringify(binding),async()=>{const f=harness({binding});await assert.rejects(f.run(),/checkpoint binding mismatch/);assert.equal(f.calls.activate.length,0);});
+test('operator mismatch and static rejection fail without pretending settlement is pending',async()=>{for(const options of [{portalOperator:expectedPortal},{staticFailure:true}]){const f=harness(options);await assert.rejects(f.run());assert.equal(f.calls.activate.length,0);}});
+for(const options of [{activationStatus:0},{enabled:false}])test('activation requires successful L1 receipt and enabled portal '+JSON.stringify(options),async()=>{const f=harness(options);await assert.rejects(f.run(),/Portal activation failed/);assert.equal(f.calls.activate.length,1);});
+test('original bounded receipt read preserves unknown outcome without sending',async()=>{const f=harness();f.node.getTxReceipt=()=>new Promise(()=>{});await assert.rejects(f.run({timeoutMs:10}),{code:'BB_RECOVERY_UNKNOWN'});assert.equal(f.calls.activate.length,0);});
 
 const pinnedCreate2Runtime='0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3';
 for (const [label, code, accepted] of [['missing','0x',false],['unrecognized','0x6000',false],['pinned',pinnedCreate2Runtime,true]]) {
@@ -151,7 +102,7 @@ for (const [label, code, accepted] of [['missing','0x',false],['unrecognized','0
 }
 
 // Installed ABI is the authority for the explicit Rolling branch; inert chain
-// controls above still do not qualify a genuine deployment or Ready proof.
+// controls above still do not qualify a genuine deployment or operator activation.
 test('Rolling deployment targets current ABI, not legacy policy/portal getters',async()=>{
  const {loadContractArtifact,encodeArguments,getInitializer,getAllFunctionAbis}=await import('@aztec-labs/stdlib/abi');
  const {Fr}=await import('@aztec-labs/foundation/curves/bn254');

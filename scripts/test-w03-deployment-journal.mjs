@@ -11,12 +11,12 @@ import {createJournalBackup} from '../shared/journal-backup.mjs';
 const field=()=> '0x'+randomBytes(31).toString('hex').padStart(64,'0');
 const addr=()=> '0x'+randomBytes(20).toString('hex');
 const proxy='0x4e59b44847b379578588920ca78fbf26c0b4956c';
-const abi=new Interface(['function activate(uint256,uint256,uint256,bytes32[])','event Activated(bytes32 indexed configHash)']);
+const abi=new Interface(['function activate()','event Activated(bytes32 indexed configHash)']);
 async function fixture(kind) {
  const creation='0x6001600055',walletSecret=field(),walletSalt=field(),configHash=field();
  const scope={account:field(),chainId:'31337',rollup:addr(),version:'5',board:field(),portal:addr(),depositor:addr(),deployment:keccak256(creation)};
  const portal=kind==='create-portal'?getCreateAddress({from:scope.depositor,nonce:3}).toLowerCase():kind==='create2-portal'?getCreate2Address(proxy,scope.board,scope.deployment).toLowerCase():scope.portal;
- const data=kind==='create-portal'?creation:kind==='create2-portal'?concat([scope.board,creation]):abi.encodeFunctionData('activate',[1,1,0,[]]);
+ const data=kind==='create-portal'?creation:kind==='create2-portal'?concat([scope.board,creation]):abi.encodeFunctionData('activate',[]);
  const intent={data,value:'0',expected:{kind,portal,...(kind==='activate-portal'?{configHash}:{})}};
  const txHash=field(),blockHash=field();let tx=null,receipt=null,code='0x6000',sends=0;
  const provider={getNetwork:async()=>({chainId:31337n}),getBlockNumber:async()=>10,getTransactionCount:async()=>3,

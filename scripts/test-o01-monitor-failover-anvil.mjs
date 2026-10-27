@@ -9,9 +9,8 @@ import net from 'node:net';
 import {spawn,execFileSync} from 'node:child_process';
 import {randomBytes,createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
-import {Wallet,ContractFactory,JsonRpcProvider,solidityPacked,getBytes} from 'ethers';
+import {Wallet,ContractFactory,JsonRpcProvider} from 'ethers';
 import {ROOT,assertNodeVersion,anvilBinary} from './toolchain.mjs';
-import {encodeReadyCommitment,sha256Field} from '../shared/protocol-commitments.mjs';
 import {verifyPortalRuntime} from '../shared/portal-runtime.mjs';
 import {createMonitorTransport,readEscrowSnapshot} from '../deploy/operations-monitor.mjs';
 import {startMonitorDrillTransport} from './o01-monitor-drill-transport.mjs';
@@ -69,12 +68,11 @@ export async function runMonitorFailoverDrill(packageRoot){
   stage='deployment';
   const publisher=await step(()=>new ContractFactory(publisherArtifact.abi,publisherArtifact.bytecode.object,operator).deploy(5));await step(()=>publisher.waitForDeployment());
   const board=field(),configHash=field(),amount=1000n,publisherAddress=await step(()=>publisher.getAddress());
-  const portal=await step(()=>new ContractFactory(portalArtifact.abi,portalArtifact.bytecode.object,operator).deploy(publisherAddress,board,5,1,1000000,configHash));await step(()=>portal.waitForDeployment());
+  const portal=await step(()=>new ContractFactory(portalArtifact.abi,portalArtifact.bytecode.object,operator).deploy(publisherAddress,board,5,1,1000000,configHash,operator.address));await step(()=>portal.waitForDeployment());
   const scope={l1ChainId:'31337',rollupAddress:(await publisher.getAddress()).toLowerCase(),rollupVersion:'5',boardAddress:board,portalAddress:(await portal.getAddress()).toLowerCase()};
-  assert(verifyPortalRuntime(await step(()=>provider.getCode(scope.portalAddress)),metadata,{MIN_DEPOSIT:1n,MAX_DEPOSIT:1000000n,L2_CONTRACT:board,ROLLUP:scope.rollupAddress,INBOX:await step(()=>publisher.getInbox()),OUTBOX:await step(()=>publisher.getOutbox()),VERSION:5n,L1_CHAIN_ID:31337n,CONFIG_HASH:configHash}));
+  assert(verifyPortalRuntime(await step(()=>provider.getCode(scope.portalAddress)),metadata,{MIN_DEPOSIT:1n,MAX_DEPOSIT:1000000n,L2_CONTRACT:board,ROLLUP:scope.rollupAddress,INBOX:await step(()=>publisher.getInbox()),OUTBOX:await step(()=>publisher.getOutbox()),VERSION:5n,L1_CHAIN_ID:31337n,CONFIG_HASH:configHash,DEPLOYMENT_OPERATOR:operator.address}));
   stage='activation-and-deposit';
-  const content=await sha256Field(encodeReadyCommitment(scope,configHash));const leaf=await sha256Field(getBytes(solidityPacked(['bytes32','uint256','address','uint256','bytes32'],[board,5,scope.portalAddress,31337,content])));
-  await step(()=>publisher.publish(1,1,leaf)).then(tx=>step(()=>tx.wait()));const activation=await step(()=>portal.activate(1,1,0,[])).then(tx=>step(()=>tx.wait()));const deposit=await step(()=>portal.deposit(field(),{value:amount})).then(tx=>step(()=>tx.wait()));assert.equal(activation.status,1);assert.equal(deposit.status,1);
+  const activation=await step(()=>portal.activate()).then(tx=>step(()=>tx.wait()));const deposit=await step(()=>portal.deposit(field(),{value:amount})).then(tx=>step(()=>tx.wait()));assert.equal(activation.status,1);assert.equal(deposit.status,1);
   assert.equal(await step(()=>portal.totalDeposited()),amount);assert.equal(await step(()=>provider.getBalance(scope.portalAddress)),amount);assert.equal(await step(()=>portal.depositsEnabled()),true);
   const block=await step(()=>provider.getBlock('latest')),nonce=await step(()=>provider.getTransactionCount(operator.address));assert(block.timestamp<=Math.floor(Date.now()/1000)+30&&block.timestamp>=Math.floor(Date.now()/1000)-180);
   for(const unavailable of [false,true,false]){active();const transport=await startMonitorDrillTransport({upstream:rpcUrl,unavailable,signal});transports.push(transport);active();}

@@ -28,8 +28,8 @@ try {
  stage='deploy-disposable-bridge-and-real-portal';
  const publisher=await new ContractFactory(publisherArtifact.abi,publisherArtifact.bytecode.object,operator).deploy(5);await publisher.waitForDeployment();
  const board=field(),configHash=field(),rollup=await publisher.getAddress();
- const expected={MIN_DEPOSIT:1n,MAX_DEPOSIT:1000000n,L2_CONTRACT:board,ROLLUP:rollup,INBOX:await publisher.getInbox(),OUTBOX:await publisher.getOutbox(),VERSION:5n,L1_CHAIN_ID:31337n,CONFIG_HASH:configHash};
- const portal=await new ContractFactory(artifact.abi,artifact.bytecode.object,operator).deploy(rollup,board,5,1,1000000,configHash);await portal.waitForDeployment();
+ const expected={MIN_DEPOSIT:1n,MAX_DEPOSIT:1000000n,L2_CONTRACT:board,ROLLUP:rollup,INBOX:await publisher.getInbox(),OUTBOX:await publisher.getOutbox(),VERSION:5n,L1_CHAIN_ID:31337n,CONFIG_HASH:configHash,DEPLOYMENT_OPERATOR:operator.address};
+ const portal=await new ContractFactory(artifact.abi,artifact.bytecode.object,operator).deploy(rollup,board,5,1,1000000,configHash,operator.address);await portal.waitForDeployment();
  const address=await portal.getAddress(),receipt=await portal.deploymentTransaction().wait();assert.equal(receipt.status,1);assert.equal(await portal.depositsEnabled(),false);
  stage='verify-real-runtime';
  const actual=await provider.getCode(address);assert.equal(verifyPortalRuntime(actual,metadata,expected),true);

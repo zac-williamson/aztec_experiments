@@ -361,7 +361,7 @@ async function main() {
     log('Deployment report: '+reportPath,'info');
     log('', 'info');
     log('========================================', 'success');
-    log(result.status === 'active' ? '  Deployment complete!' : '  Deployment saved; network settlement pending. Resume with the same settings.', result.status === 'active' ? 'success' : 'info');
+    log(result.status === 'active' ? '  Deployment complete!' : '  Deployment saved; binding checkpoint pending. Resume with the same settings.', result.status === 'active' ? 'success' : 'info');
     if (result.readyTxHash) log('  Binding transaction: ' + result.readyTxHash, 'info');
     log('  L2 contract: ' + result.l2Addr, 'success');
     log('  L1 portal:   ' + result.portalAddr, 'success');

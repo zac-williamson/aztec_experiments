@@ -30,3 +30,9 @@ The public LikeChanged event exposes the post, a per-post secret-derived tag, ac
 ## Remaining acceptance
 
 Publish one coherent Board/Bok/portal/router and browser/backend release. Exercise the owned test fixture: fresh posting setup, ETH and USDC credit top-ups, name+avatar, atomic thread and Like/repeat/reload. Record actual receipts, rendered results and service health. Local test results are not substituted for these checks.
+
+## Deployment activation correction
+
+The earlier portal unnecessarily required an epoch-proven Ready message. On this testnet release, the immutable deployment operator activates the portal after verifying the Board binding at a canonical checkpoint. The Solidity entrypoint is `activate()`; it has no epoch or membership-path arguments. Activation is restricted to the original chain and Sepolia/local test networks. User withdrawals and refunds still require their normal Outbox proofs.
+
+The correction passed64 focused Solidity checks and208 integrated activation, deployment-journal, runtime, browser-connection and monitor checks. Canonical contracts, SDK, PrivateBok and application builds succeeded. The Board artifact and class are unchanged. The earlier f419 contract deployment was never published and is superseded; fresh coherent deployment and live acceptance remain pending.

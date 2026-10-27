@@ -48,10 +48,10 @@ async function runCensorCommands({node,preparation,instance,deploymentReceipt,de
   stage('portal');const portalArtifact=JSON.parse(await fs.readFile(path.join(ROOT,'billboard/portal/out/BillboardPortal.sol/BillboardPortal.json'))),metadata=JSON.parse(await fs.readFile(path.join(ROOT,'shared/portal-runtime.json')));
   assert.equal(createHash('sha256').update(Buffer.from(portalArtifact.bytecode.object.replace(/^0x/,''),'hex')).digest('hex'),metadata.creationBytecodeSha256);
   const rollup=deployment.l1ContractAddresses.rollupAddress.toString(),version=BigInt(deployment.rollupVersion);
-  const deployed=await client.deployContract({abi:portalArtifact.abi,bytecode:portalArtifact.bytecode.object,args:[rollup,instance.address.toString(),version,minimum,maximum,configHash],account:client.account,chain:client.chain});
+  const deployed=await client.deployContract({abi:portalArtifact.abi,bytecode:portalArtifact.bytecode.object,args:[rollup,instance.address.toString(),version,minimum,maximum,configHash,client.account.address],account:client.account,chain:client.chain});
   const portalReceipt=await client.waitForTransactionReceipt({hash:deployed,timeout:60000});assert.equal(portalReceipt.status,'success');const portal=portalReceipt.contractAddress;assert(portal);
   const read=name=>client.readContract({address:portal,abi:portalArtifact.abi,functionName:name});
-  verifyPortalRuntime(await client.getCode({address:portal}),metadata,{MIN_DEPOSIT:minimum,MAX_DEPOSIT:maximum,L2_CONTRACT:instance.address.toString(),ROLLUP:rollup,INBOX:await read('INBOX'),OUTBOX:await read('OUTBOX'),VERSION:version,L1_CHAIN_ID:31337n,CONFIG_HASH:configHash});
+  verifyPortalRuntime(await client.getCode({address:portal}),metadata,{MIN_DEPOSIT:minimum,MAX_DEPOSIT:maximum,L2_CONTRACT:instance.address.toString(),ROLLUP:rollup,INBOX:await read('INBOX'),OUTBOX:await read('OUTBOX'),VERSION:version,L1_CHAIN_ID:31337n,CONFIG_HASH:configHash,DEPLOYMENT_OPERATOR:client.account.address});
   assert.equal(await read('depositsEnabled'),false);
   const raw=JSON.parse(await fs.readFile(path.join(ROOT,'apps/src/billboard/private_fee_artifact.json'))),feeArtifact=loadContractArtifact(raw),feeInstance=await derivePrivateFeeInstance(raw);
   const policy='O01 successor policy: review public content consistently.',expectedVersion=BigInt(await sha256Field(encodePolicyCommitment(instance.address.toString(),policy)));

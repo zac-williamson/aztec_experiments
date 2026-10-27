@@ -19,7 +19,7 @@ const actions = Object.freeze({
 const result=(code,details={})=>({schemaVersion:1,code,severity:code==='ESCROW_BALANCED'?'ok':code==='ESCROW_SURPLUS'?'warning':'critical',action:actions[code],...details});
 const fault=()=>{throw Object.assign(Error('Identity verification failed'),{monitorIdentity:true});};
 const eq=(a,b)=>BigInt(a)===BigInt(b);
-const abi=PORTAL_IMMUTABLES.map(n=>`function ${n}() view returns (${['ROLLUP','INBOX','OUTBOX'].includes(n)?'address':['L2_CONTRACT','CONFIG_HASH'].includes(n)?'bytes32':'uint256'})`).concat(['function totalDeposited() view returns (uint256)','function depositsEnabled() view returns (bool)','function getInbox() view returns (address)','function getOutbox() view returns (address)','function getVersion() view returns (uint256)']);
+const abi=PORTAL_IMMUTABLES.map(n=>`function ${n}() view returns (${['ROLLUP','INBOX','OUTBOX','DEPLOYMENT_OPERATOR'].includes(n)?'address':['L2_CONTRACT','CONFIG_HASH'].includes(n)?'bytes32':'uint256'})`).concat(['function totalDeposited() view returns (uint256)','function depositsEnabled() view returns (bool)','function getInbox() view returns (address)','function getOutbox() view returns (address)','function getVersion() view returns (uint256)']);
 const iface=new ethers.Interface(abi);
 
 export async function readEscrowSnapshot({provider,config,metadata}){

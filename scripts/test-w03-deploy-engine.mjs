@@ -42,12 +42,13 @@ function fixture({rolling=true,lostBinding=false,lostDeploy=false,existing=true,
  const boardInstance={...instance,address:board,deployer:actor},deploymentCalls=[];
  const policy=packPolicy('Be kind.'),policyDigest=rolling?poseidon2HashWithSeparator([BigInt(policy.len),...policy.fields.slice(0,32)],0x52435431):null;
  const storage=createBrowserJournalStorage(new IDBFactory()),receipts=new Map(),invalids=new Set();let proofId=0;
- let bound=null,stops=0,deploys=0,bindings=0;
+ let bound=null,stops=0,deploys=0,bindings=0,activations=0,enabled=false;
+ const ethereumTransactions=new Map(),ethereumReceipts=new Map();
  const wordHash=(label,words)=>'0x'+(BigInt(ethers.sha256(ethers.AbiCoder.defaultAbiCoder().encode(['bytes32',...words.map(()=> 'uint256')],[ethers.encodeBytes32String(label),...words])))>>8n).toString(16).padStart(64,'0');
  const configHash=wordHash('AZTEC_BB_CONFIG_V1',[1n,31337n,BigInt(rollup),2n,5n,1n,100n,10n,64n,10n,16n]);
  const node={getNodeInfo:async()=>({realProofs:false,l1ChainId:31337,rollupVersion:5}),getL1ContractAddresses:async()=>({rollupAddress:rollup,inboxAddress:inbox,outboxAddress:outbox}),
   getBlockNumber:async()=>1,getPublicStorageAt:async()=>new Fr(0),getContract:async()=>existing?(rolling?boardInstance:instance):undefined,
-  getTxReceipt:async hash=>{const value=receipts.get(String(hash));if(!value)return value;const txHash=TxHash.fromString(String(value.txHash));return value.status==='pending'?new PendingTxReceipt(txHash):value.status==='dropped'?new DroppedTxReceipt(txHash):new MinedTxReceipt(txHash,value.status,value.executionResult,0n,BlockHash.fromString(value.blockHash),value.blockNumber,1,0,1);},getBlock:async()=>({hash:blockHash}),getL2ToL1MembershipWitness:async(hash,leaf)=>{assert(receipts.has(String(hash)));assert.equal(leaf.toString(),new Fr(7).toString());return undefined;},
+  getTxReceipt:async hash=>{const value=receipts.get(String(hash));if(!value)return value;const txHash=TxHash.fromString(String(value.txHash));return value.status==='pending'?new PendingTxReceipt(txHash):value.status==='dropped'?new DroppedTxReceipt(txHash):new MinedTxReceipt(txHash,value.status,value.executionResult,0n,BlockHash.fromString(value.blockHash),value.blockNumber,1,0,1);},getBlock:async()=>({hash:blockHash}),getL2ToL1MembershipWitness:async()=>assert.fail('Testnet activation must not request an Outbox witness'),
   sendTx:async tx=>{if(tx.kind==='deploy'){existing=true;}else {bound=tx.kind.slice(5);}
    receipts.set(tx.getTxHash(),{txHash:tx.getTxHash(),status:'checkpointed',executionResult:'success',blockNumber:1,blockHash});},
   isValidTx:async tx=>invalids.has(tx.getTxHash())?{result:'invalid',reason:['Block header not found']}:{result:'valid'}};
@@ -76,11 +77,20 @@ function fixture({rolling=true,lostBinding=false,lostDeploy=false,existing=true,
     update_portal:address=>({send:async()=>{bindings++;return submit(wallet,'bind:'+address.toString().toLowerCase(),lostBinding);}}),
    }}),
   }};
- const runtimeValues={L2_CONTRACT:board.toString(),ROLLUP:rollup,VERSION:5n,L1_CHAIN_ID:31337n,MIN_DEPOSIT:1n,MAX_DEPOSIT:100n,CONFIG_HASH:configHash,INBOX:inbox,OUTBOX:outbox};
- let destroyed=0;const provider={destroy(){destroyed++;},getNetwork:async()=>({chainId:31337n}),getCode:async address=>address.toLowerCase()===create2Proxy?create2Runtime:[rollup,inbox,outbox].includes(address.toLowerCase())?'0x6000':expectedPortalRuntime(runtimeMetadata,runtimeValues)};
- const portal={getInbox:async()=>inbox,getOutbox:async()=>outbox,INBOX:async()=>inbox,OUTBOX:async()=>outbox,L2_CONTRACT:async()=>board.toString(),ROLLUP:async()=>rollup,VERSION:async()=>5n,L1_CHAIN_ID:async()=>31337n,MIN_DEPOSIT:async()=>1n,MAX_DEPOSIT:async()=>100n,CONFIG_HASH:async()=>configHash,depositsEnabled:async()=>false};
+ const runtimeValues={L2_CONTRACT:board.toString(),ROLLUP:rollup,VERSION:5n,L1_CHAIN_ID:31337n,MIN_DEPOSIT:1n,MAX_DEPOSIT:100n,CONFIG_HASH:configHash,INBOX:inbox,OUTBOX:outbox,DEPLOYMENT_OPERATOR:sender};
+ let destroyed=0;const provider={destroy(){destroyed++;},getBlock:async number=>({number:number==='latest'?1+activations:number,hash:blockHash}),getBlockNumber:async()=>1+activations,getTransactionCount:async()=>activations,getTransaction:async hash=>ethereumTransactions.get(hash)??null,getTransactionReceipt:async hash=>ethereumReceipts.get(hash)??null,getNetwork:async()=>({chainId:31337n}),getCode:async address=>address.toLowerCase()===create2Proxy?create2Runtime:[rollup,inbox,outbox].includes(address.toLowerCase())?'0x6000':expectedPortalRuntime(runtimeMetadata,runtimeValues)};
+ const portal={getInbox:async()=>inbox,getOutbox:async()=>outbox,INBOX:async()=>inbox,OUTBOX:async()=>outbox,L2_CONTRACT:async()=>board.toString(),ROLLUP:async()=>rollup,VERSION:async()=>5n,L1_CHAIN_ID:async()=>31337n,MIN_DEPOSIT:async()=>1n,MAX_DEPOSIT:async()=>100n,CONFIG_HASH:async()=>configHash,DEPLOYMENT_OPERATOR:async()=>sender,depositsEnabled:async()=>enabled};
+ const activationInterface=new ethers.Interface(['function activate()','event Activated(bytes32 indexed configHash)']);
+ portal.activate={staticCall:async(...args)=>{assert.equal(args.length,1);assert.equal(args[0].from,sender);assert.notEqual(bound,null);assert.equal(enabled,false);}};
+ const signer={provider,getAddress:async()=>sender,sendTransaction:async request=>{
+  assert.equal(request.to,bound);assert.equal(request.data,activationInterface.encodeFunctionData('activate'));assert.equal(BigInt(request.value),0n);assert.equal(request.nonce,activations);assert.equal(enabled,false);
+  const hash=field(1000+activations),event=activationInterface.encodeEventLog(activationInterface.getEvent('Activated'),[configHash]);
+  ethereumTransactions.set(hash,{...request,hash,from:sender,chainId:31337n});
+  ethereumReceipts.set(hash,{hash,from:sender,to:request.to,status:1,blockNumber:2+activations,blockHash,logs:[{address:request.to,topics:event.topics,data:event.data}]});
+  activations++;enabled=true;return {hash};
+ }};
  const env={aztec:a,ethers:{...ethers,JsonRpcProvider:class{constructor(){return provider;}},Contract:class{constructor(){return portal;}}},log(){},pause(){throw new Error('unexpected pause');},initCRS:async()=>{},createStore:async()=>({}),artifact:rolling?rollingRaw:{},portalBytecode:'0x6000',
-  getBrowserSigner:async()=>({provider,getAddress:async()=>sender}),createJournalStorage:()=>storage,
+  getBrowserSigner:async()=>signer,createJournalStorage:()=>storage,
   createTransactionJournal:options=>createL2Journal({...options,storage,waitOptions:{timeoutMs:20,intervalMs:1}})};
  const hash=o=>ethers.sha256(ethers.toUtf8Bytes(JSON.stringify(o)));
  const manifest={schemaVersion:1,profile:'local-test',network:{nodeUrl:'http://localhost:8080/',ethRpcUrl:'http://localhost:8545/',chainId:'31337',rollupVersion:'5',rollup,inbox,outbox},actors:{aztecDeployer:actor.toString(),ethereumDeployer:sender},board:{salt:'1',minDeposit:'1',maxDeposit:'100',baseCooldown:'10',kMultiplier:'64',censorWindow:'10',maxSaveUp:'16',censor:actor.toString(),policy:'Be kind.'},artifacts:{boardJsonSha256:hash(env.artifact),boardClassId:field(12),portalCreationSha256:ethers.sha256(env.portalBytecode),portalRuntimeMetadataSha256:hash(runtimeMetadata)}};
@@ -97,17 +107,17 @@ function fixture({rolling=true,lostBinding=false,lostDeploy=false,existing=true,
  }
  const config={...deploymentManifestConfig(manifest),aztecWallet:{secretKey:field(8),salt:field(9)}};
  function run(extra={}){const context=vm.createContext({setTimeout,clearTimeout,Buffer,packStringToFields:()=>rolling?packPolicy('Be kind.'):{fields:Array(48).fill(0n),len:0}});vm.runInContext(source,context);return context.runDeploy(env,{...config,...extra});}
- return {run,env,node,provider,portal,manifest,config,runtimeValues,receipts,deploymentCalls,get destroyed(){return destroyed;},setBound:value=>bound=value,get stops(){return stops;},get deploys(){return deploys;},get bindings(){return bindings;},clearLoss(){lostBinding=false;lostDeploy=false;staleDeploy=false;staleBinding=false;}};
+ return {run,env,node,provider,portal,manifest,config,runtimeValues,receipts,deploymentCalls,get destroyed(){return destroyed;},setBound:value=>bound=value,get stops(){return stops;},get deploys(){return deploys;},get bindings(){return bindings;},get activations(){return activations;},clearLoss(){lostBinding=false;lostDeploy=false;staleDeploy=false;staleBinding=false;}};
 }
 test('lost binding response resumes from encrypted transaction without supplied hash or another binding',async()=>{
  const f=fixture({lostBinding:true});await assert.rejects(f.run(),/synthetic lost/);assert.equal(f.stops,1);f.clearLoss();
- const result=await f.run();assert.equal(result.status,'pending-settlement');assert.match(result.readyTxHash,/^0x[0-9a-f]{64}$/);assert.equal(f.bindings,1);assert.equal(f.deploys,0);assert.equal(f.stops,2);
- assert.equal((await f.run()).readyTxHash,result.readyTxHash);assert.equal(f.bindings,1);
+ const result=await f.run();assert.equal(result.status,'active');assert.equal(f.activations,1);assert.match(result.readyTxHash,/^0x[0-9a-f]{64}$/);assert.equal(f.bindings,1);assert.equal(f.deploys,0);assert.equal(f.stops,2);
+ assert.equal((await f.run()).readyTxHash,result.readyTxHash);assert.equal(f.bindings,1);assert.equal(f.activations,1);
  await assert.rejects(f.run({readyTxHash:field(999)}),/differs from the saved/);assert.equal(f.bindings,1);
 });
 test('lost board deployment response resumes original transaction and deploys the board only once',async()=>{
  const f=fixture({existing:false,lostDeploy:true});await assert.rejects(f.run(),/synthetic lost/);assert.equal(f.deploys,1);f.clearLoss();
- const result=await f.run();assert.equal(result.status,'pending-settlement');assert.equal(f.deploys,1);assert.equal(f.bindings,1);assert.equal(f.stops,2);
+ const result=await f.run();assert.equal(result.status,'active');assert.equal(f.activations,1);assert.equal(f.deploys,1);assert.equal(f.bindings,1);assert.equal(f.stops,2);
 });
 test('unresolved saved binding cannot start another transaction or falsely complete setup',async()=>{
  const f=fixture({lostBinding:true});await assert.rejects(f.run(),/synthetic lost/);f.clearLoss();
@@ -128,7 +138,7 @@ for(const kind of ['deploy','binding'])test(`definitively stale ${kind} proof ca
 });
 test('stale binding cannot silently accept another binding that appeared meanwhile',async()=>{
  const f=fixture({staleBinding:true});await assert.rejects(f.run(),/synthetic stale proof/);f.clearLoss();f.setBound('0x'+'a'.repeat(40));
- await assert.rejects(f.run(),/Portal awaits Ready proof/);assert.equal(f.bindings,1);assert.equal(f.deploys,0);
+ await assert.rejects(f.run(),/Portal awaits checkpointed binding/);assert.equal(f.bindings,1);assert.equal(f.deploys,0);
 });
 test('stale binding cannot redeploy a missing original Ethereum portal',async()=>{
  const f=fixture({staleBinding:true});await assert.rejects(f.run(),/synthetic stale proof/);f.clearLoss();const previous=f.provider.getCode;f.provider.getCode=async address=>[create2Proxy,f.manifest.network.rollup,f.manifest.network.inbox,f.manifest.network.outbox].includes(address.toLowerCase())?previous(address):'0x';
@@ -155,11 +165,12 @@ for(const kind of ['missing manifest','Aztec actor','Ethereum actor','chain','br
  const expected={'missing manifest':{code:'BB_DEPLOYMENT_UNSUPPORTED'},'Aztec actor':/Aztec deployer differs/,'Ethereum actor':/Ethereum deployer differs/,chain:/network identity mismatch/,bridge:/bridge\/code mismatch/,artifact:/artifact identity mismatch/}[kind];
  await assert.rejects(f.run(extra),expected);assert.equal(f.deploys,0);assert.equal(f.bindings,0);assert.equal(f.stops,0);
 });
-for(const kind of ['runtime','inbox','outbox','policy','moderator'])test(`existing deployment rejects ${kind} mismatch before binding`,async()=>{
+for(const kind of ['runtime','inbox','outbox','deployment operator','policy','moderator'])test(`existing deployment rejects ${kind} mismatch before binding`,async()=>{
  const f=fixture();
  if(kind==='runtime'){const original=f.provider.getCode;f.provider.getCode=async address=>{const code=await original(address);return address.toLowerCase()===create2Proxy||code==='0x6000'?code:code+'00';};}
  if(kind==='inbox')f.portal.INBOX=async()=> '0x'+'a'.repeat(40);
  if(kind==='outbox')f.portal.OUTBOX=async()=> '0x'+'a'.repeat(40);
+ if(kind==='deployment operator')f.portal.DEPLOYMENT_OPERATOR=async()=> '0x'+'a'.repeat(40);
  if(kind==='policy'||kind==='moderator'){const original=f.node.getPublicStorageAt,target=BigInt(rollingArtifact.storageLayout[kind==='policy'?'main_rules':'moderator'].slot);f.node.getPublicStorageAt=async(reference,board,slot)=>reference!=='latest'&&BigInt(slot.toString())===target?new Fr(99):original(reference,board,slot);}
  await assert.rejects(f.run(),kind==='runtime'?/runtime does not match/:['policy','moderator'].includes(kind)?/Rolling deployment state differs/:/Portal configuration mismatch/);assert.equal(f.deploys,0);assert.equal(f.bindings,0);assert.equal(f.stops,1);
 });
@@ -188,7 +199,7 @@ test('deployment initialization exposes typed preparation and synchronization pr
 for(const loss of ['none','binding','deployment'])test('Rolling actual ABI profile and encrypted recovery: '+loss,async()=>{
  const f=fixture({rolling:true,existing:loss!=='deployment',lostBinding:loss==='binding',lostDeploy:loss==='deployment'});
  if(loss!=='none'){await assert.rejects(f.run(),/synthetic lost/);f.clearLoss();}
- const r=await f.run();assert.equal(r.status,'pending-settlement');assert.equal(f.bindings,1);assert.equal(f.deploys,loss==='deployment'?1:0);
+ const r=await f.run();assert.equal(r.status,'active');assert.equal(f.activations,1);assert.equal(f.bindings,1);assert.equal(f.deploys,loss==='deployment'?1:0);
  const call=f.deploymentCalls[0];assert.equal(call.initializer,'init');assert.equal(call.args.length,11);assert.equal(call.args[0].length,32);assert.equal(call.options.deployer.toString(),f.manifest.actors.aztecDeployer);assert.equal(call.options.universalDeploy,undefined);
  const abi=getInitializer(rollingArtifact,'init');assert.equal(encodeArguments(abi,call.args).length,42);
  const again=await f.run();assert.equal(again.readyTxHash,r.readyTxHash);assert.equal(f.bindings,1);
@@ -235,10 +246,10 @@ test('Rolling restart does not silently replace a stale rejected deployment',asy
 test('old SDK preflight without explicit native proof mode fails before wallet or PXE',async()=>{const f=fixture({rolling:true}),original=f.env.aztec.preflightDeploymentNetwork;f.env.aztec.preflightDeploymentNetwork=async(...args)=>{const result=await original(...args);delete result.proofsEnabled;return result;};f.env.aztec.createPXE=async()=>assert.fail('No PXE');await assert.rejects(f.run(),/Verified native proof configuration/);assert.equal(f.deploymentCalls.length,0);});
 
 test('Rolling creation anchor survives distinct portal journal and repeat deployment command',async()=>{
- const f=fixture({rolling:true,existing:false});const first=await f.run();assert.equal(first.status,'pending-settlement');
+ const f=fixture({rolling:true,existing:false});const first=await f.run();assert.equal(first.status,'active');assert.equal(f.activations,1);
  const creation=[...f.receipts].find(([hash])=>hash!==first.readyTxHash);assert(creation);
  assert.deepEqual(JSON.parse(JSON.stringify(first.boardDeployment)),{txHash:creation[0],blockNumber:creation[1].blockNumber,blockHash:creation[1].blockHash});
- const second=await f.run();assert.deepEqual(JSON.parse(JSON.stringify(second.boardDeployment)),JSON.parse(JSON.stringify(first.boardDeployment)));assert.equal(second.readyTxHash,first.readyTxHash);assert.equal(f.deploys,1);assert.equal(f.bindings,1);
+ const second=await f.run();assert.deepEqual(JSON.parse(JSON.stringify(second.boardDeployment)),JSON.parse(JSON.stringify(first.boardDeployment)));assert.equal(second.readyTxHash,first.readyTxHash);assert.equal(f.deploys,1);assert.equal(f.bindings,1);assert.equal(f.activations,1);
 });
 test('Rolling missing historical creation receipt remains explicit and never inferred from binding',async()=>{
  const f=fixture({rolling:true});const first=await f.run();assert.equal(first.boardDeployment,null);const second=await f.run();assert.equal(second.boardDeployment,null);assert.equal(f.deploys,0);assert.equal(f.bindings,1);

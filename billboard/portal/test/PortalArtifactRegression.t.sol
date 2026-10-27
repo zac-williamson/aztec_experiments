@@ -68,12 +68,12 @@ abstract contract PortalFixtures {
     }
 
     function deployCreationCode(bytes memory creationCode, uint256 minimum) internal returns (BillboardPortal) {
-        bytes memory initCode = abi.encodePacked(creationCode, abi.encode(address(new AccountingRollup()), L2, VERSION, minimum, uint256(type(uint96).max), bytes32(uint256(123))));
+        bytes memory initCode = abi.encodePacked(creationCode, abi.encode(address(new AccountingRollup()), L2, VERSION, minimum, uint256(type(uint96).max), bytes32(uint256(123)), address(this)));
         address deployed;
         assembly { deployed := create(0, add(initCode, 32), mload(initCode)) }
         require(deployed != address(0), "Creation bytecode deployment failed");
         BillboardPortal portal = BillboardPortal(payable(deployed));
-        portal.activate(0, 0, 0, new bytes32[](0)); // Permissive accounting fixture only.
+        portal.activate(); // Explicit fixture operator activation.
         return portal;
     }
 
@@ -139,8 +139,8 @@ abstract contract PortalAccountingProperties is PortalFixtures {
 
 contract PortalSourceControlTest is PortalAccountingProperties {
     function deploy(uint256 minimum) internal override returns (BillboardPortal) {
-        BillboardPortal portal = new BillboardPortal(address(new AccountingRollup()), L2, VERSION, minimum, type(uint96).max, bytes32(uint256(123)));
-        portal.activate(0, 0, 0, new bytes32[](0));
+        BillboardPortal portal = new BillboardPortal(address(new AccountingRollup()), L2, VERSION, minimum, type(uint96).max, bytes32(uint256(123)), address(this));
+        portal.activate();
         return portal;
     }
 }

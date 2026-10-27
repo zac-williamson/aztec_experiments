@@ -16,9 +16,8 @@ contract PortalV2RefundTest is PortalFixtures {
     bytes32 constant OLD=bytes32(uint256(123)); bytes32 constant FRESH=bytes32(uint256(124));
     function setUp() public {
         rollup=new RootPublisher(VERSION);
-        portal=new BillboardPortal(address(rollup),L2,VERSION,1 ether,3 ether,bytes32(uint256(7)));
-        rollup.publish(1,1,envelope(PortalMessages.ready(block.chainid,address(portal),L2,VERSION,portal.CONFIG_HASH())));
-        portal.activate(1,1,0,new bytes32[](0)); vm.deal(ALICE,20 ether); vm.deal(BOB,20 ether);
+        portal=new BillboardPortal(address(rollup),L2,VERSION,1 ether,3 ether,bytes32(uint256(7)), address(this));
+        portal.activate(); vm.deal(ALICE,20 ether); vm.deal(BOB,20 ether);
     }
     function envelope(bytes32 content) private view returns(bytes32) {
         return Hash.sha256ToField(DataStructures.L2ToL1Msg(DataStructures.L2Actor(L2,VERSION),DataStructures.L1Actor(address(portal),block.chainid),content));
@@ -32,6 +31,12 @@ contract PortalV2RefundTest is PortalFixtures {
         rollup.publish(epoch,1,envelope(content(domain,owner,amount,id)));
     }
     function finish(address owner,bytes32 id,uint256 epoch) private {portal.refund(owner,id,epoch,1,0,new bytes32[](0));}
+    function testDeploymentOperatorCannotRefundWithoutCanonicalAcknowledgement() public {
+        put(ALICE,OLD);request(ALICE,OLD);
+        control.expectRevert();finish(ALICE,OLD,2);
+        require(portal.getDeposit(ALICE,OLD).amount==2 ether && portal.totalDeposited()==2 ether,"Operator bypassed refund proof");
+        require(!rollup.outbox().hasMessageBeenConsumedAtEpoch(Epoch.wrap(2),1),"Failed refund consumed proof");
+    }
     function testFreshSignupWhileOldRefundPendingAndRefundPaysSameOwner() public {
         put(ALICE,OLD);request(ALICE,OLD);
         BillboardPortal.Deposit memory old=portal.getDeposit(ALICE,OLD);

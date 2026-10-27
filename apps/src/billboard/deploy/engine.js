@@ -21,7 +21,7 @@
   const CREATE2_PROXY = '0x4e59b44847b379578588920cA78FbF26c0B4956C';
 
   const PORTAL_ABI = [
-    "constructor(address rollup, bytes32 board, uint256 version, uint256 minDeposit, uint256 maxDeposit, bytes32 configHash)",
+    "constructor(address rollup, bytes32 board, uint256 version, uint256 minDeposit, uint256 maxDeposit, bytes32 configHash, address deploymentOperator)",
     "function L2_CONTRACT() view returns (bytes32)",
     "function ROLLUP() view returns (address)",
     "function INBOX() view returns (address)",
@@ -31,8 +31,9 @@
     "function MIN_DEPOSIT() view returns (uint256)",
     "function MAX_DEPOSIT() view returns (uint256)",
     "function CONFIG_HASH() view returns (bytes32)",
+    "function DEPLOYMENT_OPERATOR() view returns (address)",
     "function depositsEnabled() view returns (bool)",
-    "function activate(uint256 epoch, uint256 checkpointCount, uint256 leafIndex, bytes32[] path)",
+    "function activate()",
   ];
 
   // ============================================================
@@ -40,13 +41,14 @@
   // ============================================================
 
   // This is also the maintained behavioral test seam; runDeploy uses this exact path.
-  async function activateReady({ node, portal, hash, leaf, ethers, log,
+  async function activateReady({ node, portal, hash, operator, expectedPortal, verifyBinding, log,
     timeoutMs = 20000, activate }) {
-    // Settlement belongs to the network. Check once and leave a resumable state;
-    // do not hold an application run open waiting for an epoch to settle.
+    if(typeof verifyBinding!=='function'||!/^0x[0-9a-f]{40}$/i.test(operator??'')||BigInt(operator)===0n||!/^0x[0-9a-f]{40}$/i.test(expectedPortal??''))throw new Error('Deployment operator and binding verification required');
+    // Check checkpoint inclusion once. This testnet operator assertion does
+    // not wait for an epoch proof or read an Outbox membership witness.
     if (!Number.isFinite(timeoutMs) || timeoutMs <= 0 || timeoutMs > 20000) throw new Error('Invalid Ready check timeout');
     const pending = () => {
-      log('Portal binding is saved. Network settlement is pending; resume deployment later.', 'info');
+      log('Portal binding is saved. Checkpoint inclusion is pending; resume deployment later.', 'info');
       return { status: 'pending-settlement', readyTxHash: hash.toString() };
     };
     async function read(fn) {
@@ -77,18 +79,18 @@
     }
     const receipt = await includedReceipt();
     if (!receipt) return pending();
-    const witness = await read(() => node.getL2ToL1MembershipWitness(hash, leaf));
-    if (!witness) return pending();
-    const args = [BigInt(witness.epochNumber), BigInt(witness.numCheckpointsInEpoch),
-      BigInt(witness.leafIndex), witness.siblingPath.toBufferArray().map(bytes => ethers.hexlify(bytes))];
-    // Native witness availability alone does not establish that the L1 Outbox
-    // root is usable. Let the actual portal validate it before any wallet send.
-    try { await read(() => portal.activate.staticCall(...args)); }
-    catch(error) { if(error?.code==='CALL_EXCEPTION')return pending();throw error; }
-    // A witness obtained before a reorg cannot authorize activation.
-    const current = await includedReceipt();
-    if (!current || current.blockNumber !== receipt.blockNumber ||
-      current.blockHash.toString() !== receipt.blockHash.toString()) return pending();
+    if(BigInt(await read(()=>portal.DEPLOYMENT_OPERATOR()))!==BigInt(operator))throw new Error('Portal deployment operator mismatch');
+    const args=[];
+    // Activation is the authorized testnet operator's assertion.
+    // Static execution checks that exact sender first.
+    await read(()=>portal.activate.staticCall(...args,{from:operator}));
+    // This helper authenticates the current Board configuration and binding at
+    // one checkpoint, including its numbered canonical-anchor recheck.
+    const binding=await verifyBinding();
+    if(binding?.portal?.toLowerCase()!==expectedPortal.toLowerCase()||
+      !Number.isSafeInteger(binding.checkpoint?.height)||binding.checkpoint.height<receipt.blockNumber||
+      !/^0x[0-9a-f]{64}$/.test(binding.checkpoint?.hash??'')||
+      binding.checkpoint.height===receipt.blockNumber&&binding.checkpoint.hash!==receipt.blockHash.toString())throw new Error('Portal checkpoint binding mismatch');
     const activation = activate ? await activate(args) : await (await portal.activate(...args)).wait();
     if (activation.status !== 1 || !await read(() => portal.depositsEnabled())) throw new Error('Portal activation failed');
     return { status: 'active', receipt: activation };
@@ -119,14 +121,14 @@
   }
 
   // CREATE2 portal address computation
-  function portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, maxDeposit, configHash, ethers) {
+  function portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, maxDeposit, configHash, deploymentOperator, ethers) {
     const iface = new ethers.Interface(portalAbi);
-    const encodedArgs = iface.encodeDeploy([rollup, l2AddrHex, BigInt(version), BigInt(minDeposit), BigInt(maxDeposit), configHash]);
+    const encodedArgs = iface.encodeDeploy([rollup, l2AddrHex, BigInt(version), BigInt(minDeposit), BigInt(maxDeposit), configHash, deploymentOperator]);
     return ethers.concat([portalBytecode, encodedArgs]);
   }
 
-  function computePortalAddress(portalBytecode, portalAbi, l2AddrHex, rollup, version, minDeposit, maxDeposit, configHash, ethers) {
-    const creation = portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, maxDeposit, configHash, ethers);
+  function computePortalAddress(portalBytecode, portalAbi, l2AddrHex, rollup, version, minDeposit, maxDeposit, configHash, deploymentOperator, ethers) {
+    const creation = portalCreationBytecode(portalBytecode, portalAbi, rollup, l2AddrHex, version, minDeposit, maxDeposit, configHash, deploymentOperator, ethers);
     const salt = ethers.getBytes(l2AddrHex);
     const initCodeHash = ethers.keccak256(creation);
     return ethers.getCreate2Address(CREATE2_PROXY, salt, initCodeHash);
@@ -615,7 +617,7 @@
     const l2AddrHex = '0x' + BigInt(l2Addr.toString()).toString(16).padStart(64, '0');
 
     if (typeof env.createJournalStorage !== 'function' || typeof a.createEthereumJournal !== 'function') throw Object.assign(new Error('Ethereum deployment recovery storage is required.'), { code: 'BB_JOURNAL_INVALID' });
-    const creation = portalCreationBytecode(portalBytecode, PORTAL_ABI, rollupAddr, l2AddrHex, version, minDepositWei, maxDepositWei, configHash, ethers);
+    const creation = portalCreationBytecode(portalBytecode, PORTAL_ABI, rollupAddr, l2AddrHex, version, minDepositWei, maxDepositWei, configHash, manifest.actors.ethereumDeployer, ethers);
     const ethereumScope = { account: address.toString().toLowerCase(), chainId: String(nodeInfo.l1ChainId),
       rollup: rollupAddr.toLowerCase(), version: String(version), board: l2AddrHex.toLowerCase(),
       portal: '0x' + '0'.repeat(40), depositor: (await ethSigner.getAddress()).toLowerCase(), deployment: ethers.keccak256(creation) };
@@ -625,7 +627,7 @@
     let recoveredCreation = await ethereumDeployment.reconcilePrevious({ retry: config.retryEthereum === true });
     let predicted = portalAlreadySet ? await readPortal() : recoveredCreation?.outcome === 'success'
       ? recoveredCreation.request.expected.portal
-      : computePortalAddress(portalBytecode, PORTAL_ABI, l2AddrHex, rollupAddr, version, minDepositWei, maxDepositWei, configHash, ethers);
+      : computePortalAddress(portalBytecode, PORTAL_ABI, l2AddrHex, rollupAddr, version, minDepositWei, maxDepositWei, configHash, manifest.actors.ethereumDeployer, ethers);
     if(staleDeployment?.startsWith('bind-portal:')) {
       const originalPortal=staleDeployment.slice('bind-portal:'.length);
       if(recoveredCreation?.outcome==='success'&&recoveredCreation.request.expected.portal.toLowerCase()!==originalPortal)throw unresolved();
@@ -655,12 +657,12 @@
     }
 
     await a.preflightDeploymentNetwork(manifest,{node:rawNode,provider,ethers});
-    a.verifyPortalRuntime(await a.boundedTransactionRead(()=>provider.getCode(predicted),20000),a.portalRuntimeMetadata,{MIN_DEPOSIT:BigInt(minDepositWei),MAX_DEPOSIT:maxDepositWei,L2_CONTRACT:l2AddrHex,ROLLUP:manifest.network.rollup,INBOX:manifest.network.inbox,OUTBOX:manifest.network.outbox,VERSION:BigInt(version),L1_CHAIN_ID:BigInt(nodeInfo.l1ChainId),CONFIG_HASH:configHash});
+    a.verifyPortalRuntime(await a.boundedTransactionRead(()=>provider.getCode(predicted),20000),a.portalRuntimeMetadata,{MIN_DEPOSIT:BigInt(minDepositWei),MAX_DEPOSIT:maxDepositWei,L2_CONTRACT:l2AddrHex,ROLLUP:manifest.network.rollup,INBOX:manifest.network.inbox,OUTBOX:manifest.network.outbox,VERSION:BigInt(version),L1_CHAIN_ID:BigInt(nodeInfo.l1ChainId),CONFIG_HASH:configHash,DEPLOYMENT_OPERATOR:manifest.actors.ethereumDeployer});
     const portal = new ethers.Contract(predicted, PORTAL_ABI, provider);
     const values = await a.boundedTransactionRead(()=>Promise.all([portal.L2_CONTRACT(), portal.ROLLUP(), portal.VERSION(),
-      portal.L1_CHAIN_ID(), portal.MIN_DEPOSIT(), portal.MAX_DEPOSIT(), portal.CONFIG_HASH(),portal.INBOX(),portal.OUTBOX()]),20000);
+      portal.L1_CHAIN_ID(), portal.MIN_DEPOSIT(), portal.MAX_DEPOSIT(), portal.CONFIG_HASH(),portal.INBOX(),portal.OUTBOX(),portal.DEPLOYMENT_OPERATOR()]),20000);
     const expected = [BigInt(l2AddrHex), BigInt(rollupAddr), BigInt(version), BigInt(nodeInfo.l1ChainId),
-      BigInt(minDepositWei), maxDepositWei, BigInt(configHash),BigInt(manifest.network.inbox),BigInt(manifest.network.outbox)];
+      BigInt(minDepositWei), maxDepositWei, BigInt(configHash),BigInt(manifest.network.inbox),BigInt(manifest.network.outbox),BigInt(manifest.actors.ethereumDeployer)];
     if (values.some((value, index) => BigInt(value) !== expected[index])) throw new Error('Portal configuration mismatch');
 
     const recoveredBindingHash = recoveredBinding?.operation === 'bind-portal:' + predicted.toLowerCase() &&
@@ -677,22 +679,16 @@
       if ((await readPortal()).toLowerCase() !== predicted.toLowerCase()) throw new Error('Portal binding did not persist');
     }
 
-    await verifyBoardPolicy();
     const ethereumActivation = await a.createEthereumJournal({ ...ethereumOptions, scope: { ...ethereumScope, portal: predicted.toLowerCase() },
       minimumNonce: recoveredCreation ? recoveredCreation.request.nonce + 1 : 0 });
     await ethereumActivation.reconcilePrevious({ retry: config.retryEthereum === true });
     const depositsEnabled=await a.boundedTransactionRead(()=>portal.depositsEnabled(),20000);
     if(typeof depositsEnabled!=='boolean')throw new Error('Malformed portal deposit state');
     if (!depositsEnabled) {
-      if (!readyTxHash) throw new Error('Portal awaits Ready proof: provide the original readyTxHash to resume activation');
-      const ready = wordHash('AZTEC_BB_READY_V1', [1n, BigInt(nodeInfo.l1ChainId), BigInt(predicted),
-        BigInt(l2AddrHex), BigInt(version), BigInt(configHash)]);
-      // Canonical protocol envelope: 32-byte sender/version, 20-byte recipient, 32-byte chain/content.
-      const leaf = a.sha256ToField([l2Addr.toBuffer(), new a.Fr(BigInt(version)).toBuffer(),
-        a.EthAddress.fromString(predicted).toBuffer(), new a.Fr(BigInt(nodeInfo.l1ChainId)).toBuffer(),
-        new a.Fr(BigInt(ready)).toBuffer()]);
+      if (!readyTxHash) throw new Error('Portal awaits checkpointed binding: provide the original readyTxHash to resume activation');
       const hash = a.TxHash.fromString(readyTxHash);
-      const activation = await activateReady({ node: rawNode, portal, hash, leaf, ethers, log,
+      const activation = await activateReady({ node: rawNode, portal, hash, operator:manifest.actors.ethereumDeployer, expectedPortal:predicted, log,
+        verifyBinding:()=>readRollingDeploymentState({a,node:rawNode,address:l2Addr,artifact:contractArtifact,manifest,policyDigest:expectedPolicyVersion}),
         activate: async args => (await ethereumActivation.send({ data: new ethers.Interface(PORTAL_ABI).encodeFunctionData('activate', args),
           value: '0', expected: { kind: 'activate-portal', portal: predicted.toLowerCase(), configHash: configHash.toLowerCase() } })).receipt });
       if(rolling&&boardDeployment)boardDeployment=await readBoardDeploymentAnchor({node:rawNode,receipt:{txHash:a.TxHash.fromString(boardDeployment.txHash)},read:fn=>a.boundedTransactionRead(fn,20000),contextGuard:config.contextGuard});
@@ -700,7 +696,7 @@
     }
     await verifyBoardPolicy();
     if(rolling&&boardDeployment)boardDeployment=await readBoardDeploymentAnchor({node:rawNode,receipt:{txHash:a.TxHash.fromString(boardDeployment.txHash)},read:fn=>a.boundedTransactionRead(fn,20000),contextGuard:config.contextGuard});
-    log('Board and portal are linked; authenticated Ready enabled deposits.', 'success');
+    log('Board and portal are linked; the deployment operator enabled testnet deposits.', 'success');
 
     return { ...(rolling?{boardDeployment}:{}), l2Addr: l2Addr.toString(), portalAddr: predicted, readyTxHash, configHash, intentDigest:verified.intentDigest, policyVersion:expectedPolicyVersion, status: 'active' };
     } finally { await pxe.stop(); }

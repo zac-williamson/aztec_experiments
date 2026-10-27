@@ -42,8 +42,8 @@ contract RollingFundingRouterTest {
  AccountingRollup rollup; BillboardPortal portal;PluginPortal bok;FundingFeeBridge fee;FundingWrapped weth;FundingDex dex;
  FundingToken feeToken;FundingToken usdc;RollingFundingRouter router;address alice;uint256 constant KEY=123;
  function setUp() public {
- alice=vm.addr(KEY);rollup=new AccountingRollup();portal=new BillboardPortal(address(rollup),bytes32(uint256(1)),1,1 ether,2 ether,bytes32(uint256(2)));
- portal.activate(0,0,0,new bytes32[](0));feeToken=new FundingToken();usdc=new FundingToken();weth=new FundingWrapped();dex=new FundingDex();
+ alice=vm.addr(KEY);rollup=new AccountingRollup();portal=new BillboardPortal(address(rollup),bytes32(uint256(1)),1,1 ether,2 ether,bytes32(uint256(2)), address(this));
+ portal.activate();feeToken=new FundingToken();usdc=new FundingToken();weth=new FundingWrapped();dex=new FundingDex();
  fee=new FundingFeeBridge(address(feeToken),address(rollup));bok=new PluginPortal(address(rollup),bytes32(uint256(4)),1,address(usdc));bok.activate(0,0,0,new bytes32[](0));
  router=new RollingFundingRouter(address(portal),address(fee),address(bok),address(weth),address(dex),bytes32(uint256(3)));
  feeToken.seed(address(dex),10000);usdc.seed(address(dex),10000);vm.deal(alice,10 ether);vm.deal(address(this),10 ether);
@@ -116,7 +116,7 @@ contract RollingUsdcFundingRouterTest {
  BillboardPortal portal;PluginPortal bok;FundingFeeBridge fee;FundingWrapped weth;FundingDex dex;
  FundingToken feeToken;FundingAuthorizedUsdc usdc;RollingFundingRouter router;address alice;address relayer=address(0x222);uint256 constant KEY=123;
  function setUp() public {
- vm.warp(100);alice=vm.addr(KEY);AccountingRollup rollup=new AccountingRollup();portal=new BillboardPortal(address(rollup),bytes32(uint256(1)),1,1 ether,2 ether,bytes32(uint256(2)));portal.activate(0,0,0,new bytes32[](0));
+ vm.warp(100);alice=vm.addr(KEY);AccountingRollup rollup=new AccountingRollup();portal=new BillboardPortal(address(rollup),bytes32(uint256(1)),1,1 ether,2 ether,bytes32(uint256(2)), address(this));portal.activate();
  feeToken=new FundingToken();usdc=new FundingAuthorizedUsdc();weth=new FundingWrapped();dex=new FundingDex();fee=new FundingFeeBridge(address(feeToken),address(rollup));
  bok=new PluginPortal(address(rollup),bytes32(uint256(4)),1,address(usdc));bok.activate(0,0,0,new bytes32[](0));router=new RollingFundingRouter(address(portal),address(fee),address(bok),address(weth),address(dex),bytes32(uint256(3)));
  feeToken.seed(address(dex),10000);usdc.seed(alice,100 ether);vm.deal(address(this),10 ether);weth.deposit{value:5 ether}();weth.transfer(address(dex),5 ether);vm.deal(relayer,1 ether);require(alice.balance==0);

@@ -27,8 +27,8 @@ test('invalid configuration does not invoke RPC and errors omit original input',
   let called=false;const r=await run({}, {config:{secret:'credential'},read:async()=>{called=true;}});assert.equal(called,false);assert.equal(r.code,'MONITOR_CONFIG_INVALID');assert.ok(!JSON.stringify(r).includes('credential'));
 });
 const metadata=JSON.parse(await readFile(new URL('../shared/portal-runtime.json',import.meta.url)));
-const values={MIN_DEPOSIT:1n,MAX_DEPOSIT:1000n,L2_CONTRACT:config.board.contractAddress,ROLLUP:address(1),INBOX:address(4),OUTBOX:address(5),VERSION:1n,L1_CHAIN_ID:31337n,CONFIG_HASH:'0x'+'6'.padStart(64,'0')};
-const abi=PORTAL_IMMUTABLES.map(n=>`function ${n}() view returns (${['ROLLUP','INBOX','OUTBOX'].includes(n)?'address':['L2_CONTRACT','CONFIG_HASH'].includes(n)?'bytes32':'uint256'})`).concat(['function totalDeposited() view returns (uint256)','function depositsEnabled() view returns (bool)','function getInbox() view returns (address)','function getOutbox() view returns (address)','function getVersion() view returns (uint256)']);
+const values={MIN_DEPOSIT:1n,MAX_DEPOSIT:1000n,L2_CONTRACT:config.board.contractAddress,ROLLUP:address(1),INBOX:address(4),OUTBOX:address(5),VERSION:1n,L1_CHAIN_ID:31337n,CONFIG_HASH:'0x'+'6'.padStart(64,'0'),DEPLOYMENT_OPERATOR:address(7)};
+const abi=PORTAL_IMMUTABLES.map(n=>`function ${n}() view returns (${['ROLLUP','INBOX','OUTBOX','DEPLOYMENT_OPERATOR'].includes(n)?'address':['L2_CONTRACT','CONFIG_HASH'].includes(n)?'bytes32':'uint256'})`).concat(['function totalDeposited() view returns (uint256)','function depositsEnabled() view returns (bool)','function getInbox() view returns (address)','function getOutbox() view returns (address)','function getVersion() view returns (uint256)']);
 const iface=new ethers.Interface(abi),hash='0x'+'ab'.repeat(32);
 function providerFixture({wrongChain=false,wrongCode=false,wrongBoard=false}={}){
   const calls=[];const actual={...values,...(wrongBoard?{L2_CONTRACT:'0x'+'7'.padStart(64,'0')}:{})};

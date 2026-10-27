@@ -6,7 +6,7 @@ const CREATE2_PROXY='0x4e59b44847b379578588920ca78fbf26c0b4956c';
 import {createEncryptedJournalSlot} from './journal-record.mjs';
 import {transactionError} from './transaction-outcomes.mjs';
 const iface=new Interface([
-  'function activate(uint256 epoch,uint256 checkpointCount,uint256 leafIndex,bytes32[] path)',
+  'function activate()',
   'event Activated(bytes32 indexed configHash)',
   'function approve(address spender,uint256 amount) returns (bool)',
   'function depositToAztecPublic(bytes32 to,uint256 amount,bytes32 secretHash) returns(bytes32 key,uint256 index)',

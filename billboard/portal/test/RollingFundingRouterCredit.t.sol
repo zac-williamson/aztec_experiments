@@ -44,7 +44,7 @@ contract RollingFundingRouterCreditTest {
         alice=vm.addr(123);vm.deal(alice,1 ether);vm.deal(address(this),1 ether);
     }
     function creditRouter(AccountingRollup rollup) private returns(RollingFundingRouter) {
-        BillboardPortal collateral=new BillboardPortal(address(rollup),bytes32(uint256(4)),1,1 ether,2 ether,bytes32(uint256(2)));
+        BillboardPortal collateral=new BillboardPortal(address(rollup),bytes32(uint256(4)),1,1 ether,2 ether,bytes32(uint256(2)), address(this));
         FundingToken fee=new FundingToken();FundingFeeBridge feeBridge=new FundingFeeBridge(address(fee),address(rollup));
         return new RollingFundingRouter(address(collateral),address(feeBridge),address(portal),address(weth),address(dex),bytes32(uint256(3)));
     }

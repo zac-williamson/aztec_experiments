@@ -28,10 +28,10 @@ contract PortalConservationTest is PortalFixtures {
     function setUp() public {
         owners = [ALICE, BOB, address(0xCA401)];
         rollup = new RootPublisher(VERSION);
-        portal = new BillboardPortal(address(rollup), L2, VERSION, 1 ether, 3 ether, bytes32(uint256(123)));
+        portal = new BillboardPortal(address(rollup), L2, VERSION, 1 ether, 3 ether, bytes32(uint256(123)), address(this));
         bytes32 ready = PortalMessages.ready(block.chainid, address(portal), L2, VERSION, portal.CONFIG_HASH());
         rollup.publish(1, 1, envelope(ready));
-        portal.activate(1, 1, 0, new bytes32[](0));
+        portal.activate();
         nextEpoch = 2;
         for (uint256 i; i < 3; ++i) vm.deal(owners[i], 100 ether);
         vm.deal(address(this), 100 ether);

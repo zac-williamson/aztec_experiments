@@ -32,7 +32,7 @@ contract CallbackBridge {
         require(amount == expectedAmount, "Wrong receipt at dependency boundary");
         require(portal.totalDeposited() == expectedTotal, "Wrong liability at dependency boundary");
         if (attack) {
-            checkGuard(abi.encodeCall(portal.activate, (1, 1, 0, new bytes32[](0))), 0);
+            checkGuard(abi.encodeCall(portal.activate, ()), 0);
             checkGuard(abi.encodeCall(portal.deposit, (bytes32(uint256(123)))), 1 ether);
             checkGuard(abi.encodeCall(portal.withdraw, (bytes32(uint256(123)), 1, 1, 0, new bytes32[](0))), 0);
         }
@@ -71,14 +71,14 @@ contract PortalReentrancyTest is PortalFixtures {
     function setUp() public {
         CallbackRollup rollup = new CallbackRollup();
         inbox = rollup.inbox(); outbox = rollup.outbox();
-        portal = new BillboardPortal(address(rollup), L2, VERSION, 1 ether, 3 ether, bytes32(uint256(123)));
+        portal = new BillboardPortal(address(rollup), L2, VERSION, 1 ether, 3 ether, bytes32(uint256(123)), address(this));
         vm.deal(address(inbox), 10 ether); vm.deal(address(outbox), 10 ether);
         configure(outbox, false, false, 0, 0);
     }
     function configure(CallbackBridge bridge, bool attack, bool reject, uint128 amount, uint256 total) private {
         bridge.configure(portal, attack, reject, ALICE, amount, total);
     }
-    function activate() private { portal.activate(1, 1, 0, new bytes32[](0)); }
+    function activate() private { portal.activate(); }
     function prepareDeposit() private {
         activate(); configure(inbox, false, false, 0, 2 ether);
         depositAs(portal, ALICE, 2 ether);
@@ -92,12 +92,11 @@ contract PortalReentrancyTest is PortalFixtures {
         vm.expectRevert(abi.encodeWithSignature("Error(string)", "Dependency rejected after callbacks"));
     }
 
-    function testOutboxActivationRejectsAllReentrantEntrypoints() public {
-        configure(outbox, true, false, 0, 0); activate();
+    function testActivationNeverCallsRejectingOrReentrantOutbox() public {
+        configure(outbox, true, true, 0, 0); activate();
         require(portal.depositsEnabled(), "Activation failed");
-        require(outbox.calls() == 1 && outbox.guardedCallbacks() == 3, "Missing activation callbacks");
+        require(outbox.calls() == 0 && outbox.guardedCallbacks() == 0, "Activation reached Outbox");
         assertAccounting(0, 0, 0);
-        require(address(outbox).balance == 10 ether, "Callback payment retained");
     }
     function testInboxDepositRejectsAllReentrantEntrypointsAfterEffects() public {
         activate(); configure(inbox, true, false, 0, 2 ether);
@@ -109,20 +108,12 @@ contract PortalReentrancyTest is PortalFixtures {
     function testOutboxWithdrawalRejectsAllReentrantEntrypointsAfterReceiptCleared() public {
         prepareDeposit(); configure(outbox, true, false, 0, 0);
         withdrawAs(portal, ALICE);
-        require(outbox.calls() == 2 && outbox.guardedCallbacks() == 3, "Missing withdrawal callbacks");
+        require(outbox.calls() == 1 && outbox.guardedCallbacks() == 3, "Missing withdrawal callbacks");
         assertAccounting(0, 0, 0);
         require(ALICE.balance == 2 ether, "Refund incorrect");
         vm.expectRevert(abi.encodeWithSignature("Error(string)", "No active deposit"));
         withdrawAs(portal, ALICE);
-        require(outbox.calls() == 2, "Repeated withdrawal reached dependency");
-    }
-    function testRejectingOutboxRollsBackActivationAndCanRetry() public {
-        configure(outbox, true, true, 0, 0);
-        expectDependencyFailure(); activate();
-        require(!portal.depositsEnabled() && outbox.calls() == 0 && outbox.guardedCallbacks() == 0, "Activation effects retained");
-        assertAccounting(0, 0, 0);
-        configure(outbox, true, false, 0, 0); activate();
-        require(portal.depositsEnabled() && outbox.calls() == 1, "Activation retry failed");
+        require(outbox.calls() == 1, "Repeated withdrawal reached dependency");
     }
     function testRejectingInboxRollsBackReceiptValueAndCanRetry() public {
         activate(); configure(inbox, true, true, 0, 2 ether);
@@ -139,9 +130,9 @@ contract PortalReentrancyTest is PortalFixtures {
         expectDependencyFailure(); withdrawAs(portal, ALICE);
         assertAccounting(2 ether, 2 ether, 2 ether);
         require(ALICE.balance == 0, "Rejected withdrawal changed balance");
-        require(outbox.calls() == 1 && outbox.guardedCallbacks() == 0, "Rejected consume retained effects");
+        require(outbox.calls() == 0 && outbox.guardedCallbacks() == 0, "Rejected consume retained effects");
         configure(outbox, true, false, 0, 0); withdrawAs(portal, ALICE);
         assertAccounting(0, 0, 0);
-        require(ALICE.balance == 2 ether && outbox.calls() == 2, "Withdrawal retry failed");
+        require(ALICE.balance == 2 ether && outbox.calls() == 1, "Withdrawal retry failed");
     }
 }

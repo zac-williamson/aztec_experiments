@@ -26,7 +26,7 @@ async function fixture(){
   board:{contractAddress:String(board.address),portalAddress:portal},privateFee:{contractAddress:String(fee.address),gasSettings:{gasLimits:{daGas:'1000',l2Gas:'1000'},teardownGasLimits:{daGas:'1',l2Gas:'1'},maxFeesPerGas:{feePerDaGas:'1',feePerL2Gas:'1'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}}};
  const economics={minDeposit:'100',maxDeposit:'200',baseCooldown:'60',kMultiplier:'2',censorWindow:'120',maxSaveUp:'3'};
  const configHash=sha256ToField(Buffer.from(encodeConfigCommitment({l1ChainId:'31337',rollupVersion:'1',rollupAddress:rollup,boardAddress:String(board.address)},economics)));
- const immutables={MIN_DEPOSIT:100n,MAX_DEPOSIT:200n,L2_CONTRACT:BigInt(String(board.address)),ROLLUP:11n,INBOX:33n,OUTBOX:44n,VERSION:1n,L1_CHAIN_ID:31337n,CONFIG_HASH:configHash.toBigInt()};
+ const immutables={MIN_DEPOSIT:100n,MAX_DEPOSIT:200n,L2_CONTRACT:BigInt(String(board.address)),ROLLUP:11n,INBOX:33n,OUTBOX:44n,VERSION:1n,L1_CHAIN_ID:31337n,CONFIG_HASH:configHash.toBigInt(),DEPLOYMENT_OPERATOR:55n};
  const storage=new Map([[1n,22n],...[31337n,11n,1n,100n,200n,60n,2n,120n,3n,3n].map((value,i)=>[3n+BigInt(i),value])]);
  const node={getBlockData:async n=>({blockHash:Fr.fromString(hex(55)),header:{globalVariables:{blockNumber:10}}}),
   getContract:async(address,reference)=>{state.reads.push(['instance',reference]);return address.equals(board.address)?board:fee;},
@@ -52,7 +52,7 @@ test('actual artifact layout/hash/runtime yields detached deployment values, sta
 test('changed board class/address/storage/portal/config hash and FPC publication fail closed',async()=>{
  const mutations=[f=>{f.board.currentContractClassId=new Fr(99);},f=>{f.board.originalContractClassId=new Fr(99);},f=>{f.board.salt=new Fr(99);},
   f=>f.storage.set(1n,23n),f=>f.storage.set(3n,1n),f=>f.storage.set(4n,12n),f=>f.storage.set(5n,2n),f=>f.storage.set(12n,4n),
-  f=>{f.immutables.CONFIG_HASH++;},f=>{f.immutables.MIN_DEPOSIT++;},f=>{f.fee.currentContractClassId=new Fr(99);},f=>{f.fee.salt=new Fr(99);},
+  f=>{f.immutables.CONFIG_HASH++;},f=>{f.immutables.MIN_DEPOSIT++;},f=>{f.immutables.DEPLOYMENT_OPERATOR=0n;},f=>{f.fee.currentContractClassId=new Fr(99);},f=>{f.fee.salt=new Fr(99);},
   f=>{f.node.getContract=async(address)=>address.equals(f.board.address)?f.board:undefined;}];
  for(const mutate of mutations){const f=await fixture();mutate(f);await assert.rejects(verifyRollingDeployment(f.options),{code:'ROLLING_DEPLOYMENT_INVALID'});assert.ok(f.state.destroyed<=1);}
 });

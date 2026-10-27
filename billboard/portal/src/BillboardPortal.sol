@@ -30,6 +30,7 @@ contract BillboardPortal is ReentrancyGuard {
     uint256 public immutable VERSION;
     uint256 public immutable L1_CHAIN_ID;
     bytes32 public immutable CONFIG_HASH;
+    address public immutable DEPLOYMENT_OPERATOR;
 
     struct Deposit {
         uint128 amount;
@@ -53,7 +54,8 @@ contract BillboardPortal is ReentrancyGuard {
     event RefundRequested(address indexed depositor, bytes32 indexed depositId, uint128 amount, bytes32 key, uint256 index);
     event Refunded(address indexed depositor, bytes32 indexed depositId, uint128 amount);
 
-    constructor(address rollup, bytes32 board, uint256 version, uint256 minDeposit, uint256 maxDeposit, bytes32 configHash) {
+    constructor(address rollup, bytes32 board, uint256 version, uint256 minDeposit, uint256 maxDeposit, bytes32 configHash, address deploymentOperator) {
+        require(deploymentOperator != address(0), "Invalid deployment operator");
         require(rollup.code.length > 0, "Invalid rollup");
         require(uint256(board) > 0 && uint256(board) < Constants.P, "Invalid board");
         require(version > 0 && version <= type(uint32).max, "Invalid version");
@@ -72,13 +74,15 @@ contract BillboardPortal is ReentrancyGuard {
         MIN_DEPOSIT = minDeposit;
         MAX_DEPOSIT = maxDeposit;
         CONFIG_HASH = configHash;
+        DEPLOYMENT_OPERATOR = deploymentOperator;
     }
 
-    /// @notice Any relayer may present Ready; no permission can bypass Outbox verification.
-    function activate(uint256 epoch, uint256 checkpointCount, uint256 leafIndex, bytes32[] calldata path) external nonReentrant {
+    /// @notice The explicitly bound operator attests deployment readiness on test networks.
+    /// @dev User withdrawals and refunds still consume Outbox proofs.
+    function activate() external nonReentrant {
+        require(block.chainid == L1_CHAIN_ID && (block.chainid == 11155111 || block.chainid == 31337), "Test network only");
+        require(msg.sender == DEPLOYMENT_OPERATOR, "Not deployment operator");
         require(!depositsEnabled, "Already activated");
-        _consume(PortalMessages.ready(L1_CHAIN_ID, address(this), L2_CONTRACT, VERSION, CONFIG_HASH),
-            epoch, checkpointCount, leafIndex, path);
         depositsEnabled = true;
         emit Activated(CONFIG_HASH);
     }

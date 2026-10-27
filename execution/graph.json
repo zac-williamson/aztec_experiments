@@ -9402,13 +9402,13 @@
       "evidence": "evidence/G21.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Queued composer/identity/funding release integrated locally; atomic thread contract and native boundary checks passed, final combined contract build running. One-router ETH/USDC credit and name+avatar implemented. Likes count is idempotent one per account/post; first proposed hydration patch rejected by independent review for RPC linkage and stale/retry cache issues. Agents implementing public post-tag pages, wallet-local matching and nonblocking UI hydration. No new release published; performance goal remains paused.",
+      "checkpoint": "Queued UX release implemented; site remains2305. Removed Board portal epoch/Outbox activation gate: immutable testnet operator activates after canonical checkpoint binding. Independent review,64 Solidity and208 integrated checks passed; contracts/SDK/Bok/apps rebuilt, Board class unchanged. Next: publish corrected source, deploy coherent scope with one router, switch services/UI and verify real feature flows. Performance remains paused.",
       "execution_lane": "application performance",
       "owner": "root",
       "branch": "codex/rolling-chat-draft3",
       "verification_method": "Native claim/cancel exclusion, Solidity custody/refund proofs, client and browser checks, coherent artifact verification, independent review, then fresh testnet signup and publication.",
       "priority": 0,
-      "next_action": "Complete native compile/inclusion and payment integration, integrate agent patches, publish coherent release and verify real affected flows."
+      "next_action": "Integrate operator-only testnet portal activation, verify affected boundaries, publish coherent queued release, and exercise actual browser flows."
     }
   ],
   "specification": {
