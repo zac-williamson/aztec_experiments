@@ -29,6 +29,16 @@ Browser errors are counted without sending their message, stack or source URL.
 Delivery is best effort and never retried automatically. A missing network event
 must never affect an account or publishing action.
 
+`feed_impression` counts an available card at least half visible in a feed;
+`feed_open` counts that card's View conversation link being selected. Each is
+deduplicated per post in the current page session, across navigation and live
+refreshes, up to 1,000 cards. Clicking a card before its visibility callback also
+counts its impression. Temporary IDs stay inside the reader and never enter
+analytics. Conversation/post detail pages and removed cards are excluded. The
+ratio of these totals measures feed-to-conversation opens, not unique people or
+individual-post popularity. Browsers without IntersectionObserver provide only
+clicked-card impressions; analytics blocking and transport loss can bias ratios.
+
 Collection runs only on the explicit live origins in the module, and only on the
 root/index page. It is off on localhost, staging and automated browsers, and
 honours Do Not Track and Global Privacy Control. The footer offers opt-out. The

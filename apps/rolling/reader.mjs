@@ -3,12 +3,13 @@ import {createReaderUpdates} from './reader-updates.mjs';
 import {beginRollingMeasure} from './performance.mjs';
 import {createPublicReader} from './reader-client.mjs';
 import {createRankedHomeReader} from './home-reader.mjs';
-import {createFeedPreferences} from './feed-preferences.mjs';
+import {createFeedPreferences,createFeedObservation} from './feed-preferences.mjs';
 import {createPublicAvatar,createPublicProfile} from './profile-view.mjs';
 import {createMessageContent as richText,createInlineActionRegistry,savedPreferenceControl,savedReaderSelection,savedReaderRoute,createIcon,createBrand,createSkeletonFeed,createThreadView,boardTone,boardInitial} from './model.mjs';
 import {captureRoutePosition,focusRoute,skipToContent,revealIncludedPost} from './navigation.mjs';
 
 const analytics=createAnalytics();
+const feedObservation=createFeedObservation({report:name=>analytics.track(name)});
 const app=document.querySelector('#app'),positions=new Map(),feedPreferences=createFeedPreferences(),priorityTxs=new Set();
 const read=createRankedHomeReader({read:createPublicReader(),getPreferences:()=>feedPreferences.snapshot(privatePanel?.savedItemsSnapshot?.()),getPriorityTxs:()=>[...priorityTxs]});
 const currentRoute=()=>savedReaderRoute(location.hash==='#/new-account'?'/home':location.hash.slice(1)||'/home');
@@ -152,7 +153,7 @@ function moderatorButton(label,defaults){
  const node=button(label,()=>{if(privatePanel?.moderatorAuthorized?.()===true)void openWallet(defaults);},{'data-moderator-action':''});
  showModeratorButton(node);return node;
 }
-function postCard(post,data){
+function postCard(post,data,{feedMetrics=false}={}){
  if(!post||!field(post.id)||!post.record||!field(post.record.root))throw Error('Invalid public post');
  if(post.confirmation!==undefined&&!['pending','confirmed'].includes(post.confirmation)||data.confirmationCheckpoint&&post.confirmation===undefined)throw Error('Invalid post confirmation');
  const pending=post.confirmation==='pending';
@@ -187,7 +188,7 @@ function postCard(post,data){
   more(button([createIcon('quote'),'Quote'],()=>openWallet({type:'quote',reference:post.id,subboard:r.subboard})),
    button([createIcon('repeat'),'Repost'],()=>openWallet({type:'repost',reference:post.id,subboard:r.subboard})),provenance),
   link([createIcon('message'),'View conversation'],'/thread/'+r.root,{class:'post-link'})));
- article.addEventListener('click',event=>{const target=event.target.closest?.('a,button');if(!target)return;const to=target.getAttribute('href')??'';feedPreferences.engage(post,{readThread:to.startsWith('#/thread/'),weight:to.startsWith('#/thread/')?2:1});});
+ article.addEventListener('click',event=>{const target=event.target.closest?.('a,button');if(!target)return;const to=target.getAttribute('href')??'';if(feedMetrics&&analytics.enabled()&&target.classList.contains('post-link')&&to.startsWith('#/thread/'))feedObservation.open(post.id);feedPreferences.engage(post,{readThread:to.startsWith('#/thread/'),weight:to.startsWith('#/thread/')?2:1});});
  article.append(afterConfirmation(moderatorButton('Remove this post',{type:'moderate-post',post:post.id})));
  return article;
 }
@@ -312,8 +313,8 @@ async function render({live=false,publicationRevision}={}){
  const thread=api==='thread'?createThreadView({root:parameters.root,state:threadState(parameters.root),announce,signals:post=>({likes:Number(post.likes)||0,bot:Boolean(post.bot),removed:post.text===null||Boolean(post.removal),pending:post.confirmation==='pending'})}):null;
  if(thread)thread.mount(container);activeThread=thread;
  const seenIds=new Set(),seenCursors=new Set();let lastPosition=null,lastPositionHash=null;
- const pendingPublicPages=[],viewed=new Set();
- const viewObserver=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting&&entry.intersectionRatio>=.5){const id=entry.target.id.slice(5);if(!viewed.has(id)){viewed.add(id);feedPreferences.seen(id);}viewObserver.unobserve(entry.target);}},{threshold:.5}):null;
+ const pendingPublicPages=[],viewed=new Set(),feedMetrics=['home','board','profile','following','bookmarks'].includes(api);
+ const viewObserver=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting&&entry.intersectionRatio>=.5){const id=entry.target.id.slice(5);if(!viewed.has(id)){viewed.add(id);feedPreferences.seen(id);if(feedMetrics&&analytics.enabled()&&!document.hidden&&!entry.target.querySelector('.removed'))feedObservation.observe(id);}viewObserver.unobserve(entry.target);}},{threshold:.5}):null;
  signal.addEventListener('abort',()=>viewObserver?.disconnect(),{once:true});
  function notifyRenderedPosts(){
   if(!container.isConnected||!pendingPublicPages.length)return;
@@ -345,7 +346,7 @@ async function render({live=false,publicationRevision}={}){
    for(const item of items){const at=position(item);if(nextPosition&&(!descending(nextPosition,at)||nextPosition[0]===at[0]&&nextPositionHash!==item.position.blockHash))throw Error('Public order changed');nextPosition=at;nextPositionHash=item.position.blockHash;}
    if(items.some(item=>privateView==='bookmarks'?!savedSelection.bookmarks.includes(item.id):!savedSelection.boards.includes(item.record?.subboard)&&!savedSelection.names.includes(item.record?.name_id)))throw Error('Unrequested saved item');
   }
-  const nodes=visible.map(item=>api==='directory'?boardCard(item):postCard(item,response));
+  const nodes=visible.map(item=>api==='directory'?boardCard(item):postCard(item,response,{feedMetrics}));
   // Rows rise in sequence on a fresh page; a live refresh swaps content without replaying the motion.
   if(!live)nodes.forEach((node,index)=>node.style.setProperty('--i',String(Math.min(index,8))));
   if(nodes.length)container.querySelector('.empty')?.remove();lastPosition=nextPosition;lastPositionHash=nextPositionHash;
@@ -430,7 +431,7 @@ async function render({live=false,publicationRevision}={}){
 }
 const updates=createReaderUpdates({refresh:publicationRevision=>render({live:!!main?.querySelector('.public-content'),publicationRevision}),canRefresh:()=>!renderActive&&!document.hidden&&route.split('/')[1]!=='directory'&&!!main?.querySelector('.public-content')});
 addEventListener('pagehide',()=>{sequence++;controller?.abort();updates.stop();});
-addEventListener('pageshow',event=>{updates.start();if(event.persisted)render();});
+addEventListener('pageshow',event=>{updates.start();if(event.persisted){feedObservation.reset();render();}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void updates.flush();});
 document.querySelector('.skip').addEventListener('click',skipToContent);
 addEventListener('hashchange',()=>{positions.set(route,capturePosition());if(positions.size>40)positions.delete(positions.keys().next().value);route=currentRoute();render();});

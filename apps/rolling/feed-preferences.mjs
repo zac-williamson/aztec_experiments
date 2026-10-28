@@ -2,6 +2,18 @@
 // browsing history is transmitted or stored in shared unencrypted storage.
 const stop=new Set(['this','that','with','from','have','your','they','there','what','when','will','would','about','into','just','been','were','their','then','than','some','more']);
 const tokens=text=>[...new Set(String(text??'').toLowerCase().match(/[\p{L}]{4,24}/gu)??[])].filter(x=>!stop.has(x)).slice(0,24);
+// Dedupe visible feed cards in this tab only. The reporter receives fixed event
+// names, never the temporary post IDs used by the reader. Saturation stops new
+// measurements rather than evicting entries and recounting live refreshes.
+export function createFeedObservation({report=()=>{},limit=1000}={}){
+ const seen=new Set(),opened=new Set();
+ const emit=name=>{try{report(name);}catch{}};
+ function observe(id){
+  if(typeof id!=='string'||!id.length||id.length>100||seen.has(id)||seen.size>=limit)return false;
+  seen.add(id);emit('feed_impression');return true;
+ }
+ return Object.freeze({observe,open(id){if(!seen.has(id)&&!observe(id)||opened.has(id))return false;opened.add(id);emit('feed_open');return true;},reset(){seen.clear();opened.clear();}});
+}
 export function createFeedPreferences({now=()=>Math.floor(Date.now()/1000)}={}){
  let scope=null;const topics=new Map(),seen=new Map(),read=new Map();
  const trim=(map,max)=>{while(map.size>max)map.delete(map.keys().next().value);};

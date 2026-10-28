@@ -4,7 +4,7 @@ export const ANALYTICS_SOURCES=Object.freeze(['direct','search','x','reddit','te
 export const ANALYTICS_DEVICES=Object.freeze(['mobile','desktop']);
 export const ANALYTICS_CAMPAIGNS=Object.freeze(['none','launch','community','newsletter','other']);
 export const ANALYTICS_EVENTS=Object.freeze([
- 'visit','engaged','active_seconds','feed_loaded','feed_failed','conversation_opened','board_opened',
+ 'visit','engaged','active_seconds','feed_loaded','feed_failed','feed_impression','feed_open','conversation_opened','board_opened',
  'account_open','wallet_connected','account_usable','payment_started','payment_confirmed','credit_received',
  'post_attempt','post_included','post_visible','first_post','reply_included','like_attempt','like_included',
  'bok_requested','bok_completed','action_failed','action_cancelled','client_error'
