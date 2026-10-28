@@ -62,9 +62,9 @@
     "stageRelayEthWei": "3000000000000000"
   },
   "fixturePolicy": {
-    "ethPerEthAccountWei": "10000000000000000",
+    "ethPerEthAccountWei": "50000000000000000",
     "ethPerUsdcAccountWei": "0",
-    "usdcPerAccountBaseUnits": "100000000"
+    "usdcPerAccountBaseUnits": "75000000"
   },
   "reallocation": {
     "chainId": 11155111,
@@ -79,7 +79,7 @@
     "recipientBalanceWei": "33971239351380410",
     "fixtureBalanceWei": "12675112184446535"
   },
-  "fixtureReadiness": "Current route quote and dedicated balances recorded; automatic release remains disabled until actual journey passes.",
+  "fixtureReadiness": "Dedicated test fixture funded and revised allowances installed. Funding and host preflight do not establish a successful staged journey, enable automatic promotion, or deploy live analytics.",
   "faucet": {
     "provider": "Google Cloud Web3 Sepolia faucet",
     "hash": "0x916c6c16f83effc6cec2b811885a9497df2e1ad8418a595c9000c39ad2565e94",
@@ -88,7 +88,7 @@
     "block": 12013046,
     "recipient": "0xB100C6C628b598e5Fe30b047765C2dD16C8554bf"
   },
-  "latestReadOnlyQuote": {
+  "preRebalanceReadOnlyQuote": {
     "at": "2026-10-28T15:05:45.288Z",
     "block": 12013098,
     "chainId": "11155111",
@@ -139,5 +139,56 @@
         "usdc": "0.0"
       }
     }
-  }
+  },
+  "testUsdcToEthConversion": {
+    "chainId": 11155111,
+    "testOnly": true,
+    "amountUsdcBaseUnits": "10000000",
+    "status": "success",
+    "transactions": [
+      {
+        "purpose": "usdc-approval",
+        "hash": "0x5f15f2e13b14a5f8e5e499c94fd9f9b59b79cf1248d1a352e8e3da0f77ca8326",
+        "status": "success",
+        "block": 12013311,
+        "gasUsed": "137757",
+        "gasPriceWei": "17",
+        "gasPaidWei": "2341869"
+      },
+      {
+        "purpose": "ten-test-usdc-to-eth-swap-and-unwrap",
+        "hash": "0x8088a7d2f2018d8b6d4b37f3f16d42c600527be944bbba3255f865dc49a2002a",
+        "status": "success",
+        "block": 12013312,
+        "gasUsed": "310554",
+        "gasPriceWei": "17",
+        "gasPaidWei": "5279418"
+      }
+    ],
+    "result": {
+      "ethBalanceWei": "90045071134741686",
+      "usdcBalanceBaseUnits": "90000000",
+      "gasPaidWei": "7621287",
+      "approvalHash": "0x5f15f2e13b14a5f8e5e499c94fd9f9b59b79cf1248d1a352e8e3da0f77ca8326",
+      "swapHash": "0x8088a7d2f2018d8b6d4b37f3f16d42c600527be944bbba3255f865dc49a2002a"
+    },
+    "earlierFailedApproval": {
+      "purpose": "usdc-approval",
+      "hash": "0xfa4da5533381511c35238540071d1df24a4a0e29f311fc939613df5b89a39282",
+      "status": "reverted",
+      "block": 12013271,
+      "gasUsed": "98838",
+      "gasPriceWei": "17",
+      "gasPaidWei": "1680246"
+    },
+    "note": "Gas in result covers the successful V2 approval and swap/unwrap only; the earlier failed approval is recorded separately. Public receipt/result fields only."
+  },
+  "fixturePolicyInstallation": {
+    "status": "installed",
+    "location": "isolated release host fixture",
+    "verificationSource": "integrating operator report",
+    "temporarySsmParametersDeleted": 2,
+    "temporaryReadGrantRemoved": true
+  },
+  "recordUpdatedAt": "2026-10-28T16:15:10.141009+00:00"
 }
