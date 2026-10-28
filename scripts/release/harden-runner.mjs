@@ -35,6 +35,10 @@ export async function hardenRunner(configFile){
  const cfg=await readOperatorConfig(configFile),runnerRoot='/var/lib/rolling-runner';
  const uid=execFileSync('id',['-u','rolling-release'],{encoding:'utf8'}).trim(),groups=execFileSync('id',['-Gn','rolling-release'],{encoding:'utf8'}).trim().split(/\s+/);
  if(!/^[1-9][0-9]*$/.test(uid)||groups.some(g=>['sudo','wheel','admin','docker','lxd'].includes(g)))throw failure('RELEASE_RUNNER_ISOLATION');
+ for(const service of [cfg.stagingService,cfg.liveService]){
+  const user=execFileSync('/usr/bin/systemctl',['show',service,'--property=User','--value'],{encoding:'utf8'}).trim();
+  if(!user||user==='root'||user==='0'||user==='rolling-release')throw failure('RELEASE_APPLICATION_SERVICE_USER');
+ }
  const unit=(await fs.readFile(path.join(runnerRoot,'.service'),'utf8')).trim();if(!/^actions\.runner\.zac-williamson-aztec_experiments\.[A-Za-z0-9_.-]+\.service$/.test(unit))throw failure('RELEASE_RUNNER_SERVICE');
  // Use the official svc.sh-installed service/runsvc.sh entry point. Override its
  // user and restrictions; installation never starts or enables this runner.
