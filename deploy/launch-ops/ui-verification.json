@@ -1,0 +1,20 @@
+{
+  "verifiedAt": "2026-10-28T12:33:31.312370+00:00",
+  "publishedOrigin": "https://d30njln0kead8n.cloudfront.net",
+  "publishedChecks": [
+    "Dashboard landing renders",
+    "Sign-in reaches dedicated Cognito pool",
+    "No self-registration link"
+  ],
+  "localPreviewChecks": [
+    "Growth empty state and actual public aggregate projection",
+    "Reliability shows sanitized real host snapshot and unknown missing fields",
+    "Releases not-configured state is explicit",
+    "Team access links dedicated pool"
+  ],
+  "limitations": [
+    "User completes invitation, password and authenticator setup; authenticated production UI not yet exercised",
+    "No first release has passed the new pipeline yet"
+  ],
+  "localPreviewDoesNotAlterProductionAuth": true
+}

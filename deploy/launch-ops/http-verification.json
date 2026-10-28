@@ -1,0 +1,24 @@
+{
+  "verifiedAt": "2026-10-28T12:29:29.025787+00:00",
+  "origin": "https://d30njln0kead8n.cloudfront.net",
+  "results": [
+    {
+      "check": "excluded-test",
+      "status": 202,
+      "noCookie": true,
+      "expected": 202
+    },
+    {
+      "check": "identifying-field-rejected",
+      "status": 400,
+      "noCookie": true,
+      "expected": 400
+    },
+    {
+      "check": "cross-origin-rejected",
+      "status": 403,
+      "noCookie": true,
+      "expected": 403
+    }
+  ]
+}

@@ -37,9 +37,10 @@ unavailable sources and they remain unknown. CPU needs two successive `/proc/sta
 samples; the first is unknown. Process availability and work health are separate.
 
 Existing prover `jobs` includes completed results and is called `retainedJobs`,
-not queue length. The new queue projection adds distinct waiting/active counts,
-oldest waiting/active age, and latest worker/queue-wait duration. These measure
-existing progress only; they never cancel or advance work. Current Bok health exposes active jobs and readiness, not its
+not queue length. Optional queue projections accept distinct waiting/active counts, oldest
+waiting/active age, and latest worker/queue-wait duration when provided. The
+first operations release does not change the deployed prover, so unavailable
+queue measures stay unknown. These observations never cancel or advance work. Current Bok health exposes active jobs and readiness, not its
 full queue, cost or latency. Exact node/index lag, provider spending and funding
 liquidity need real aggregate sources; this patch does not invent their values.
 An optional loopback funding source accepts
@@ -112,6 +113,11 @@ continue. Delete this dedicated stack at the end of its authorized period unless
 renewed; empty the single snapshot key first if necessary. Never stop the app.
 
 ## Host installation
+
+`deploy/launch-ops/deploy-hosts.py` assembles committed source and orchestrates
+the two existing hosts. It prints a plan unless passed `--apply`; transient
+source-object read permissions are removed after installation. It records the
+installed revision and verifies existing application process IDs are unchanged.
 
 `deploy/launch-ops/install-host.py` defaults to packet validation only. Apply only
 after independent review. The packet contains a40hex revision, role, allowlisted
