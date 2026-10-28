@@ -3,7 +3,7 @@ import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 import {randomUUID} from 'node:crypto';
-import {sealBundle,sha256,assertCompatibleChanges,changedFiles,failure,verifyBundle,nestedSdkInput} from './bundle.mjs';
+import {sealBundle,sha256,assertCompatibleChanges,changedFiles,failure,verifyBundle,nestedSdkInput,baselineTestInputs,regular} from './bundle.mjs';
 
 const generated=['.build/contracts-manifest.json','.build/sdk','.build/owner-delivery','.build/rolling-wallet/deployment-registration.json','billboard/target/rolling_contract-RollingBoard.json','apps/src/billboard/private_fee_artifact.json','experiments/private-bok/target','apps/dist/crs'];
 const roots=['apps/','shared/','scripts/','plugins/','prover/','billboard/','experiments/'];
@@ -47,11 +47,52 @@ export async function makeRuntimeReadable(root,relative=''){
  else if(entry.isFile())await fs.chmod(filename,0o644);
  else throw failure('RELEASE_FILE');
 }
+export async function assertBaselineTestIsolation(root,manifest){
+ const reject=()=>{throw failure('RELEASE_TEST_INPUT_IS_NOT_ISOLATED');};
+ const read=async name=>fs.readFile(await regular(root,name),'utf8');
+ // The parser is already in the pinned package lock; no new dependency or
+ // compiler runs on the release host. All these inputs belong to a verified
+ // sealed baseline, and changing any Nargo/build file remains prohibited.
+ const {default:toml}=await import('@iarna/toml');
+ const testDirectory=path.join(root,'billboard/private_fee_test'),testManifest='billboard/private_fee_test/Nargo.toml';
+ const test=toml.parse(await read(testManifest));if(test.package?.name!=='private_fee_test'||test.package?.type!=='lib')reject();
+ for(const name of Object.keys(manifest.files).filter(n=>n.endsWith('/Nargo.toml'))){
+  const config=toml.parse(await read(name));if(name===testManifest)continue;
+  for(const section of ['dependencies','dev-dependencies'])for(const [alias,spec]of Object.entries(config[section]??{})){
+   if(alias==='private_fee_test')reject();
+   if(typeof spec?.path==='string'){
+    const target=path.resolve(root,path.dirname(name),spec.path);
+    if(target===testDirectory||target.startsWith(testDirectory+path.sep))reject();
+   }
+  }
+ }
+ const runtimeArtifacts=['billboard/target/rolling_contract-RollingBoard.json','apps/src/billboard/private_fee_artifact.json','plugins/adapter_artifact.json','experiments/private-bok/target/private_bok-PrivateBok.json'];
+ for(const name of runtimeArtifacts){
+  const artifact=JSON.parse(await read(name)),entries=Object.values(artifact.file_map??{});
+  if(!entries.length||entries.some(e=>typeof e.path!=='string'||e.path.split(/[\\/]/).includes('private_fee_test')))reject();
+ }
+ const sdk=JSON.parse(await read('.build/sdk/sdk-manifest.json'));
+ if(!sdk.inputs||Object.keys(sdk.inputs).some(n=>n.split('/').includes('private_fee_test')))reject();
+ const contracts=JSON.parse(await read('.build/contracts-manifest.json'));
+ for(const name of baselineTestInputs)if(contracts.inputs?.[name]!==sha256(await read(name)))reject();
+}
+export async function retainBaselineTestInputs(root,destination,manifest,names){
+ if(!names.length)return;
+ if(names.some(name=>!baselineTestInputs.includes(name)))throw failure('RELEASE_TEST_INPUT_IS_NOT_ISOLATED');
+ await assertBaselineTestIsolation(root,manifest);
+ for(const name of names){
+  // Do not relabel provenance: reuse the original input bytes with the original
+  // unchanged contract/SDK manifests. This file is not executed in the app.
+  await regular(destination,name);await fs.copyFile(await regular(root,name),path.join(destination,name));
+ }
+}
 export async function prepareCandidate(source,cfg){
  const revision=execFileSync('git',['rev-parse','HEAD'],{cwd:source,encoding:'utf8'}).trim();
  if(execFileSync('git',['status','--porcelain','--untracked-files=no'],{cwd:source,encoding:'utf8'}).trim())throw failure('RELEASE_DIRTY_SOURCE');
  const baselineRoot=await fs.realpath(cfg.liveLink),baseline=(await verifyBundle(baselineRoot)).manifest;
- assertCompatibleChanges(changedFiles(source,baseline.revision,revision));
+ const changes=changedFiles(source,baseline.revision,revision);assertCompatibleChanges(changes);
+ const retainedTests=baselineTestInputs.filter(name=>changes.includes(name));
+ if(retainedTests.length){await assertBaselineTestIsolation(baselineRoot,baseline);for(const name of retainedTests)await regular(source,name);}
  const finalDestination=path.join(cfg.releaseDirectory,revision);
  if(await reuseCandidate(finalDestination,{revision,baseline:baseline.revision,compatibility:baseline.compatibility}))return finalDestination;
  const disk=await fs.statfs(cfg.releaseDirectory),estimatedBytes=Object.values(baseline.files).reduce((sum,file)=>sum+file.bytes,0);
@@ -68,6 +109,7 @@ export async function prepareCandidate(source,cfg){
    await fs.mkdir(path.dirname(path.join(destination,name)),{recursive:true});await fs.copyFile(input,path.join(destination,name));
   }
   for(const name of generated){await fs.mkdir(path.dirname(path.join(destination,name)),{recursive:true});await fs.cp(path.join(baselineRoot,name),path.join(destination,name),{recursive:true,dereference:false});}
+  await retainBaselineTestInputs(baselineRoot,destination,baseline,retainedTests);
   const sdk=JSON.parse(await fs.readFile(path.join(baselineRoot,'.build/sdk/sdk-manifest.json'),'utf8'));
   for(const name of Object.keys(sdk.inputs??{}).filter(n=>nestedSdkInput.test(n))){
    const input=path.join(baselineRoot,name);if((await fs.lstat(input)).isSymbolicLink()||sha256(await fs.readFile(input))!==sdk.inputs[name])throw failure('RELEASE_DEPENDENCIES');

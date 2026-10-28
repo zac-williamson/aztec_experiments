@@ -17,7 +17,11 @@ export async function regular(root,name){
 // These change network/contract/dependency identity and require the separate
 // deployment qualification. Application JavaScript and presentation changes do not.
 export const protectedPaths=[/^billboard\//,/^experiments\/private-bok\/(escrow|Nargo|build)/,/^(package(-lock)?\.json|toolchain\.json|\.nvmrc|crs-manifest\.json|noir-dependencies\.json)$/,/^scripts\/(build-|patch-|bootstrap-|native-|toolchain|artifact-provenance|normalize-noir|prepare-owner-noir|owner-delivery-noir|check-noir|fixtures\/owner-noir)/,/^prover\//,/^shared\/(deployment-manifest|portal-runtime|protocol-)/];
-export function assertCompatibleChanges(names){if(names.some(name=>protectedPaths.some(pattern=>pattern.test(name))))throw failure('RELEASE_REQUIRES_CONTRACT_OR_RUNTIME_DEPLOYMENT');}
+// This one test input is deliberately retained from the sealed contract build,
+// after prepare.mjs proves that no deployed artifact or SDK consumes its crate.
+// Candidate CI still compiles and tests the updated source before any release.
+export const baselineTestInputs=Object.freeze(['billboard/private_fee_test/src/lib.nr']);
+export function assertCompatibleChanges(names){if(names.some(name=>!baselineTestInputs.includes(name)&&protectedPaths.some(pattern=>pattern.test(name))))throw failure('RELEASE_REQUIRES_CONTRACT_OR_RUNTIME_DEPLOYMENT');}
 export function changedFiles(root,baseline,revision){
  if(!/^[a-f0-9]{40}$/.test(baseline)||!/^[a-f0-9]{40}$/.test(revision))throw failure('RELEASE_REVISION');
  return execFileSync('git',['diff','--name-only','-z',baseline,revision],{cwd:root,encoding:'utf8'}).split('\0').filter(Boolean);

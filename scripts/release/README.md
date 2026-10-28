@@ -81,6 +81,15 @@ No real testnet journey or live promotion is inferred from preparation and smoke
 checks. The full build was not green at this checkpoint. Exact candidate build,
 browser journey and live-byte checks still need successful evidence before
 enabling automatic release; live service adoption remains pending.
+There is one source-test exception: `billboard/private_fee_test/src/lib.nr`.
+GitHub's full build compiles and tests the updated candidate file. The application
+package retains the original, unexecuted test input from its sealed contract
+baseline, together with the existing contract and SDK artifacts. The gate parses
+the sealed Nargo manifests, rejects any other crate's dependency on that test
+crate, and checks that no production artifact file map or SDK input includes it.
+The library manifest and every other `billboard/` path remain protected. This
+does not rewrite a provenance hash or claim an unperformed contract build: the
+original manifests and the source input they actually fingerprint stay intact.
 
 ## One-time host setup
 
