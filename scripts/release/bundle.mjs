@@ -6,6 +6,7 @@ import {pathToFileURL} from 'node:url';
 
 export const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
 export const failure=code=>Object.assign(new Error(code),{code});
+export const nestedSdkInput=/^billboard\/portal\/node_modules\/@aztec-foundation\/l1-artifacts\/l1-contracts\/[A-Za-z0-9_./-]+\.sol$/;
 const safeRelative=name=>typeof name==='string'&&name.length<512&&!name.startsWith('/')&&!name.includes('\\')&&name.split('/').every(x=>x!==''&&x!=='.'&&x!=='..');
 export async function regular(root,name){
  if(!safeRelative(name))throw failure('RELEASE_PATH');
@@ -37,11 +38,19 @@ export async function sealBundle(root,{revision,baseline,publicFiles,compatibili
  if(!publicFiles||typeof publicFiles!=='object'||!Object.hasOwn(publicFiles,'/'))throw failure('RELEASE_PUBLIC_INVENTORY');
  const dependency=await fs.realpath(path.join(root,'node_modules')).catch(()=>null);
  if(dependency!==null&&dependency!==compatibility.dependencies)throw failure('RELEASE_DEPENDENCIES');
- const files={};
+ const files={};let sdkInputs;
  for(const name of await enumerate(root)){
   if(name==='release.json')continue;
-  if(/(^|\/)(node_modules|\.git|private|state)(\/|$)|(^|\/)\.env(?:\.|$)|\.(pem|key)$/.test(name))throw failure('RELEASE_PRIVATE_PATH');
-  const bytes=await fs.readFile(await regular(root,name));files[name]={sha256:sha256(bytes),bytes:bytes.length};
+  if(/(^|\/)(\.git|private|state)(\/|$)|(^|\/)\.env(?:\.|$)|\.(pem|key)$/.test(name))throw failure('RELEASE_PRIVATE_PATH');
+  const bytes=await fs.readFile(await regular(root,name));
+  if(/(^|\/)node_modules\//.test(name)){
+   // The SDK manifest includes public Solidity dependency source. Admit only
+   // its exact sealed input closure; no executable nested package is allowed.
+   if(!nestedSdkInput.test(name))throw failure('RELEASE_PRIVATE_PATH');
+   sdkInputs??=JSON.parse(await fs.readFile(await regular(root,'.build/sdk/sdk-manifest.json'),'utf8')).inputs;
+   if(sdkInputs?.[name]!==sha256(bytes))throw failure('RELEASE_DEPENDENCIES');
+  }
+  files[name]={sha256:sha256(bytes),bytes:bytes.length};
  }
  for(const [url,name]of Object.entries(publicFiles)){
   if(!/^\/(?:[A-Za-z0-9_.@-]+\/)*[A-Za-z0-9_.@-]*$/.test(url)||!Object.hasOwn(files,name))throw failure('RELEASE_PUBLIC_INVENTORY');

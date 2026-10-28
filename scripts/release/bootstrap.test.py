@@ -30,6 +30,19 @@ class PayloadTests(unittest.TestCase):
    finally:os.umask(old)
    for name in ['', 'scripts', 'scripts/release']:self.assertEqual((target/name).stat().st_mode&0o777,0o755)
    self.assertEqual((target/'scripts/release/gate.mjs').stat().st_mode&0o777,0o644)
+ def test_prepared_baseline_binds_source_generated_bytes_and_host_dependencies(self):
+  with tempfile.TemporaryDirectory() as d:
+   p=pathlib.Path(d);source=p/'source';source.mkdir();(source/'app.mjs').write_bytes(b'source');(source/'generated.mjs').write_bytes(b'compiled');deps=p/'deps';deps.mkdir();(deps/'input.js').write_bytes(b'dependency')
+   files={name:{'bytes':len((source/name).read_bytes()),'sha256':b.sha((source/name).read_bytes())} for name in ['app.mjs','generated.mjs']}
+   proof={'schemaVersion':1,'kind':'prepared-public-baseline','sourceRevision':'1'*40,'deploymentVerified':False,'files':files,'sourceFiles':{'app.mjs':files['app.mjs']['sha256']},'dependencyInputs':{'node_modules/input.js':b.sha(b'dependency')}}
+   evidence=p/'proof.json';evidence.write_text(json.dumps(proof));digest=b.sha(evidence.read_bytes())
+   with patch.object(b,'owned_public'):
+    self.assertEqual(b.verify_prepared(source,evidence,digest,'1'*40,{'app.mjs':files['app.mjs']},deps),proof)
+    with self.assertRaises(ValueError):b.verify_prepared(source,evidence,digest,'1'*40,{'app.mjs':{'sha256':'0'*64,'bytes':6}},deps)
+    (deps/'input.js').write_bytes(b'changed')
+    with self.assertRaises(ValueError):b.verify_prepared(source,evidence,digest,'1'*40,{'app.mjs':files['app.mjs']},deps)
+    (deps/'input.js').write_bytes(b'dependency');(source/'generated.mjs').write_bytes(b'changed')
+    with self.assertRaises(ValueError):b.verify_prepared(source,evidence,digest,'1'*40,{'app.mjs':files['app.mjs']},deps)
  def test_configuration_never_silently_overwrites(self):
   with tempfile.TemporaryDirectory() as d:
    p=pathlib.Path(d)/'config.json';p.write_bytes(b'original')

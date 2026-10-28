@@ -253,3 +253,41 @@ blocks new candidate builds. The optional root prune timer only removes sealed
 releases predating the last successful promotion, under the deployment lock, and
 keeps actual live/stage targets and the previous successful release. Fresh
 candidates and partial preparations are retained for explicit inspection.
+
+
+## Preparing a coherent baseline across a split UI/backend publication
+
+When UI source and its SDK have advanced beyond the active backend directory,
+never label the older generated SDK with the newer revision. Use
+`materialize-baseline.py --repo REPO --revision FULL_SHA --build RETAINED_BUILD
+--output NEW_DIRECTORY`. It writes an exact Git source tree plus retained build
+outputs, a sibling tar archive and proof inventory. Every recorded build input
+must match the source revision or the pinned generated/dependency closure, and
+SDK, wallet, CRS and committed frontend outputs are hashed. It makes no network
+request, builds nothing and never claims deployment acceptance.
+
+The SDK manifest includes public Solidity dependency sources. Exactly those
+hash-pinned `.sol` files under the fixed L1-artifacts contracts directory are
+included in the baseline and copied for later application candidates. Executable
+nested npm packages remain rejected. Top-level installed dependencies are still
+root-owned and every recorded SDK dependency hash must match on the host.
+
+An operator may install the reviewed tree (without a node_modules link) as
+`/opt/rolling-prepared/FULL_SHA` and its proof as the sibling `.proof.json`, all
+root-owned and unwritable by other users. The application-source archive must
+name the same exact commit. Set `preparedBaseline` to that directory and
+`preparedBaselineProofSha256` to the reviewed proof hash in the bootstrap plan.
+Keep `baselineRuntime` naming the actual active backend directory and preserve
+its current configuration hashes. Bootstrap checks the active backend has not
+changed, then verifies the prepared tree against both the proof and exact source
+archive. It copies the prepared SDK/wallet outputs, never the old backend SDK.
+The normal deployed-source equality path remains unchanged when these explicit
+prepared inputs are absent.
+
+Before either release pointer is created, sealing still requires the actual
+public origin to serve every exact asset byte and a compatible real-proof
+runtime and ready reader. Until the newer UI is published, that check fails.
+This preparation never changes the live unit or Caddy. Adopting the coherent
+backend and enabling the release trigger remain separate operator actions after
+the current release's actual browser acceptance. A successful inventory check
+or materialization is not that acceptance.

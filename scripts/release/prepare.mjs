@@ -3,7 +3,7 @@ import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 import {randomUUID} from 'node:crypto';
-import {sealBundle,sha256,assertCompatibleChanges,changedFiles,failure,verifyBundle} from './bundle.mjs';
+import {sealBundle,sha256,assertCompatibleChanges,changedFiles,failure,verifyBundle,nestedSdkInput} from './bundle.mjs';
 
 const generated=['.build/contracts-manifest.json','.build/sdk','.build/owner-delivery','.build/rolling-wallet/deployment-registration.json','billboard/target/rolling_contract-RollingBoard.json','apps/src/billboard/private_fee_artifact.json','experiments/private-bok/target','apps/dist/crs'];
 const roots=['apps/','shared/','scripts/','plugins/','prover/','billboard/','experiments/'];
@@ -68,6 +68,11 @@ export async function prepareCandidate(source,cfg){
    await fs.mkdir(path.dirname(path.join(destination,name)),{recursive:true});await fs.copyFile(input,path.join(destination,name));
   }
   for(const name of generated){await fs.mkdir(path.dirname(path.join(destination,name)),{recursive:true});await fs.cp(path.join(baselineRoot,name),path.join(destination,name),{recursive:true,dereference:false});}
+  const sdk=JSON.parse(await fs.readFile(path.join(baselineRoot,'.build/sdk/sdk-manifest.json'),'utf8'));
+  for(const name of Object.keys(sdk.inputs??{}).filter(n=>nestedSdkInput.test(n))){
+   const input=path.join(baselineRoot,name);if((await fs.lstat(input)).isSymbolicLink()||sha256(await fs.readFile(input))!==sdk.inputs[name])throw failure('RELEASE_DEPENDENCIES');
+   await fs.mkdir(path.dirname(path.join(destination,name)),{recursive:true});await fs.copyFile(input,path.join(destination,name));
+  }
   const dependencies=await fs.realpath(path.join(baselineRoot,'node_modules'));if(baseline.compatibility.dependencies!==dependencies)throw failure('RELEASE_DEPENDENCIES');
   await fs.symlink(dependencies,path.join(destination,'node_modules'));
   if(sha256(await fs.readFile(path.join(destination,'package-lock.json')))!==baseline.compatibility.lockSha256)throw failure('RELEASE_DEPENDENCIES');

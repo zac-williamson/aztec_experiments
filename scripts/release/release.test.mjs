@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
-import {sealBundle,verifyBundle,checkPublicAssets,assertCompatibleChanges} from './bundle.mjs';
+import {sha256,sealBundle,verifyBundle,checkPublicAssets,assertCompatibleChanges} from './bundle.mjs';
 import {releaseCandidate,rollbackRelease,replaceLink} from './pipeline.mjs';
 import {validateJourneyConfig,createTestWalletBridge} from './journey.mjs';
 import {reuseCandidate} from './prepare.mjs';
@@ -171,4 +171,12 @@ test('public sealed manifest stays readable under restrictive root installation 
  const f=await setup(t),target=path.join(f.root,'umask-baseline');await fs.mkdir(target);await fs.writeFile(path.join(target,'index.html'),'public');const old=process.umask(0o077);
  try{await sealBundle(target,{revision,baseline:oldRevision,compatibility:{test:true},publicFiles:{'/':'index.html'}});}finally{process.umask(old);}
  assert.equal((await fs.stat(path.join(target,'release.json'))).mode&0o777,0o644);
+});
+
+test('sealing admits only hash-bound Solidity SDK inputs and rejects executable nested packages',async t=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'rolling-sdk-input-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
+ const name='billboard/portal/node_modules/@aztec-foundation/l1-artifacts/l1-contracts/lib/Public.sol';await fs.mkdir(path.dirname(path.join(root,name)),{recursive:true});await fs.writeFile(path.join(root,name),'public solidity');await fs.mkdir(path.join(root,'.build/sdk'),{recursive:true});await fs.writeFile(path.join(root,'.build/sdk/sdk-manifest.json'),JSON.stringify({inputs:{[name]:sha256('public solidity')}}));await fs.writeFile(path.join(root,'index.html'),'public');
+ await sealBundle(root,{revision,baseline:oldRevision,compatibility:{test:true},publicFiles:{'/':'index.html'}});await verifyBundle(root);await fs.unlink(path.join(root,'release.json'));
+ await fs.writeFile(path.join(root,name),'changed');await assert.rejects(sealBundle(root,{revision,baseline:oldRevision,compatibility:{test:true},publicFiles:{'/':'index.html'}}),{code:'RELEASE_DEPENDENCIES'});
+ await fs.writeFile(path.join(root,name),'public solidity');await fs.writeFile(path.join(path.dirname(path.join(root,name)),'execute.js'),'executable');await assert.rejects(sealBundle(root,{revision,baseline:oldRevision,compatibility:{test:true},publicFiles:{'/':'index.html'}}),{code:'RELEASE_PRIVATE_PATH'});
 });
