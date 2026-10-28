@@ -67,6 +67,14 @@ const releaseStates=new Set(['pending','running','passed','failed','blocked','re
 const revision=value=>{const r=typeof value==='string'?value:value?.revision;return typeof r==='string'&&/^[a-f0-9]{40}$/.test(r)?r:null;};
 const stageNames=new Set(['build','tests','prepare','staging','journey','promote','live','rollback','verify','stage','gate','smoke']);
 export function releaseSummary(state){
+ if(state?.schemaVersion===1&&Array.isArray(state.stages)&&state.stages.every(s=>typeof s==='string')){
+  const statuses={checking:'running',staging:'running','testnet-journey':'running',promoting:'running',live:'deployed','rolling-back':'running','rolled-back':'rolled_back','rollback-failed':'failed',blocked:'blocked'};
+  const names={checking:'verify',staging:'staging','testnet-journey':'journey',promoting:'promote',live:'live','rolling-back':'rollback','operator-rollback':'rollback'};
+  const steps=state.stages.filter(s=>Object.hasOwn(names,s));
+  const failed=['blocked','rollback-failed'].includes(state.status),finished=['live','rolled-back'].includes(state.status);
+  const current=state.status==='live'||state.status==='rolled-back'&&state.stages.includes('operator-rollback')?state.revision:['checking','staging','testnet-journey','blocked','rolled-back'].includes(state.status)?state.previousRevision:null;
+  state={status:statuses[state.status],current,previous:state.previousRevision,candidate:state.revision,updatedAt:state.updatedAt,stages:steps.map((s,i)=>({name:names[s],status:i<steps.length-1||finished?'passed':failed?'failed':'running'}))};
+ }
  const rows=Array.isArray(state?.stages)?state.stages:Object.entries(state?.stages||{}).map(([name,v])=>({name,...v}));
  return {status:releaseStates.has(state?.status)?state.status:'not_configured',current:revision(state?.current),previous:revision(state?.previous),candidate:revision(state?.candidate),stages:rows.filter(s=>stageNames.has(s?.name)&&releaseStates.has(s?.status)).map(s=>({name:s.name,status:s.status})),updatedAt:typeof state?.updatedAt==='string'&&Number.isFinite(Date.parse(state.updatedAt))?new Date(state.updatedAt).toISOString():null,workflow:'https://github.com/zac-williamson/aztec_experiments/actions/workflows/rolling-release.yml',message:state?'':'No release has run through this pipeline yet.'};
 }

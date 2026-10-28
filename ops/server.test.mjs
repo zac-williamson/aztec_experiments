@@ -24,6 +24,12 @@ test('release summary projects only fixed operational fields',()=>{
  const s=releaseSummary({status:'failed',current:{revision:'a'.repeat(40),privateKey:'secret'},stages:[{name:'tests',status:'failed',error:'private path'}],privateConfig:'secret'});
  assert.equal(s.current,'a'.repeat(40));assert.deepEqual(s.stages,[{name:'tests',status:'failed'}]);assert.ok(!JSON.stringify(s).includes('secret'));assert.ok(!JSON.stringify(s).includes('private'));
 });
+test('installed release pipeline states display verified revisions and stage results',()=>{
+ const state={schemaVersion:1,status:'live',revision:'a'.repeat(40),previousRevision:'b'.repeat(40),stages:['staging','testnet-journey','promoting','live']};
+ let s=releaseSummary(state);assert.equal(s.status,'deployed');assert.equal(s.current,state.revision);assert.deepEqual(s.stages.map(x=>x.status),['passed','passed','passed','passed']);
+ s=releaseSummary({...state,status:'blocked',stages:['staging','testnet-journey','blocked']});assert.equal(s.current,state.previousRevision);assert.equal(s.stages.at(-1).status,'failed');
+ s=releaseSummary({...state,status:'rolled-back',stages:['staging','testnet-journey','promoting','rolling-back','rolled-back']});assert.equal(s.current,state.previousRevision);assert.equal(s.status,'rolled_back');
+});
 test('cached host observations become unknown when the writer stops',async t=>{
  const dir=await mkdtemp(join(tmpdir(),'rolling-freshness-'));t.after(()=>rm(dir,{recursive:true,force:true}));let now=1793200000000;
  const file=join(dir,'inputs.json'),hosts=Object.fromEntries(['core','bok'].map(role=>[role,{schemaVersion:1,role,observedAt:new Date(now).toISOString(),services:Object.fromEntries(SERVICES[role].map(s=>[s,{active:true,running:true,restarts:0}]))}]));await writeFile(file,JSON.stringify({hosts}));
