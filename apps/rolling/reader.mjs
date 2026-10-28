@@ -45,13 +45,13 @@ function hydrateSavedItems(){
  savedItemsAttempted=true;void loadSavedItems().catch(()=>{});
 }
 function privateChanged(){
- const accountVersion=privatePanel?.privateAccountVersion?.()??null,accountChanged=feedAccountVersion!==accountVersion;feedAccountVersion=accountVersion;feedPreferences.scope(accountVersion);
+ const accountVersion=privatePanel?.privateAccountVersion?.()??null,accountChanged=feedAccountVersion!==accountVersion,hadAccountContext=feedAccountVersion!==null;feedAccountVersion=accountVersion;feedPreferences.scope(accountVersion);
  if(accountChanged)priorityTxs.clear();
  updateAccountButton();
  hydrateSavedItems();
  for(const node of app.querySelectorAll('[data-moderator-action]'))showModeratorButton(node);
  const revision=JSON.stringify([privatePanel?.privateStatus?.(),privatePanel?.savedItemsSnapshot?.()??null]),changed=revision!==savedItemsRevision;savedItemsRevision=revision;
- if(changed&&privateViews.has(route.split('/')[1])||accountChanged&&route==='/home'&&renderedRoute){controller?.abort();main?.replaceChildren();void render();}
+ if(changed&&privateViews.has(route.split('/')[1])||accountChanged&&hadAccountContext&&route==='/home'){controller?.abort();main?.replaceChildren();void render();}
  else updatePreferenceControls();
  updateLikeControls();
 }
