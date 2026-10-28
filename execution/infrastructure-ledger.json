@@ -3065,17 +3065,46 @@
       "CognitoSmallOperatorPool": 1,
       "externalMonitorLambdaScheduleLogs": 4,
       "alarmsAndMetrics": 5,
-      "S3EncryptedBackups": 2,
+      "S3EncryptedBackups": 3,
       "stagingTestTraffic": 8,
-      "contingency": 5
+      "contingency": 4
     },
-    "status": "reserved-before-provisioning",
+    "status": "provisioning-and-verification",
     "constraints": [
       "Reuse existing hosts; no new EC2",
       "No application-user identity tracking",
       "New-resource spend monitored separately; USD50 is not recurring allowance",
       "No change to existing USD1500/month hosting authorization"
     ],
-    "resources": []
+    "resources": [
+      {
+        "type": "CognitoUserPool",
+        "id": "us-east-1_0pjXFzeXS"
+      },
+      {
+        "type": "CloudFormation",
+        "id": "rolling-chat-launch-monitor",
+        "initialEndDate": "2026-11-28T11:12:00Z"
+      },
+      {
+        "type": "CloudFrontStaging",
+        "id": "E1Z561LRMM7RLW"
+      },
+      {
+        "type": "SlackAlerts",
+        "id": "rolling-chat-updates",
+        "commands": "denied"
+      },
+      {
+        "type": "Sidecars",
+        "newInstances": 0,
+        "hosts": [
+          "core",
+          "bok"
+        ]
+      }
+    ],
+    "backupReservationUsd": 3,
+    "recordedAt": "2026-10-28T11:42:17.232194+00:00"
   }
 }

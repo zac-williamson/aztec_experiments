@@ -1,0 +1,13 @@
+{
+  "ChatConfigurationArn": "arn:aws:chatbot::052665140763:chat-configuration/slack-channel/rolling-chat-updates",
+  "SlackTeamId": "T08JS6Q1LJC",
+  "SlackChannelId": "C0CCXR3MF0U",
+  "SlackChannelName": "rolling-chat-updates",
+  "SnsTopicArns": [
+    "arn:aws:sns:us-east-1:052665140763:rolling-chat-launch-monitor-Topic-Dlc9HT2pNi3T"
+  ],
+  "IamRoleArn": "arn:aws:iam::052665140763:role/RollingOpsSlackNotificationsOnly",
+  "State": "ENABLED",
+  "commands": "denied",
+  "logging": "NONE"
+}

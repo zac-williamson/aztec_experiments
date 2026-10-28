@@ -1,0 +1,23 @@
+{
+  "revision": "a77763cf4d49741ccfab45a918f7fb0701071f10",
+  "reports": {
+    "core": {
+      "schemaVersion": 1,
+      "role": "core",
+      "revision": "a77763cf4d49741ccfab45a918f7fb0701071f10",
+      "existingServicePidsUnchanged": true,
+      "filesInstalled": 15,
+      "opsReady": true,
+      "proxyHash": "e3650dac882a5dd4e1a0faaba7ab6e7f95ef48d8e04fa34de77a67230bdcd83c"
+    },
+    "bok": {
+      "schemaVersion": 1,
+      "role": "bok",
+      "revision": "a77763cf4d49741ccfab45a918f7fb0701071f10",
+      "existingServicePidsUnchanged": true,
+      "filesInstalled": 1,
+      "opsReady": false,
+      "proxyHash": null
+    }
+  }
+}
