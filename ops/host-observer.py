@@ -103,10 +103,10 @@ def observe(role, config, state_path=None):
  for name in ('prover','query','moderator','funding') if role=='core' else ('bok',):
   try:
    source=sources.get(name)
-   if name=='moderator' and source=='current-daemon-journal':out['health'][name]=moderator_health()
-   elif isinstance(source,str):out['health'][name]=project_health(name,local_json(source))
-   else:out['health'][name]={'status':'unknown'}
-  except (OSError,ValueError,TypeError,subprocess.SubprocessError):out['health'][name]={'status':'unknown'}
+   if name=='moderator' and source=='current-daemon-journal':out['health'][name]={**moderator_health(),'configured':True}
+   elif isinstance(source,str):out['health'][name]={**project_health(name,local_json(source)),'configured':True}
+   else:out['health'][name]={'status':'unknown','configured':False}
+  except (OSError,ValueError,TypeError,subprocess.SubprocessError):out['health'][name]={'status':'unknown','configured':isinstance(source,str)}
  return out
 
 if __name__=='__main__':

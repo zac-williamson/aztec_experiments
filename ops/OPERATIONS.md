@@ -7,10 +7,17 @@ proofs or invoke models. Root deploys them beside the authenticated dashboard.
 
 `buildReliability({hosts:{core,bok},external,spending,backup,now})` returns
 `{schemaVersion:1,observedAt,status,hosts,checks,spending,backup}`. Each check has
-`{id,label,status,value,unit,message,action}`. Timestamps are ISO8601; `now` is epoch
+`{id,label,status,value,unit,actionable,message,action}`. Timestamps are ISO8601; `now` is epoch
 milliseconds. Unknown and stale inputs never become healthy. Only fixed fields,
 service names and numeric counters survive projection. Source messages, logs,
 identities, hostnames and request data are discarded.
+
+Host freshness is180seconds; the external five-minute probe has a separate
+660second freshness limit. Missing hosts alert once per host rather than once
+per missing dependency. Optional unconfigured health/metrics remain unknown
+without notifying. Configured health sources include `configured:true`, so an
+unavailable configured source can alert. The initial CPU sample is quiet. Set
+`backup.configured:true` once scheduled backups are installed so absence alerts.
 
 `spending` input: `{observedAt,limitUsd,forecastUsd,incurredUsd}`. Forecasts older
 than48hours are unknown. `backup`: `{lastSuccessAt,lastVerifiedRestoreAt}`.

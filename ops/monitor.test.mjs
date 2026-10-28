@@ -57,3 +57,19 @@ test('external monitoring has bounded schedule and no restart/deploy capabilitie
  for(const name of ['WebsiteAlarm','ProverAlarm','HeartbeatAlarm']){assert.equal(r[name].Properties.TreatMissingData,'breaching');assert.equal(r[name].Properties.DatapointsToAlarm,2);}
  const policies=JSON.stringify(r.ProbeRole.Properties.Policies);assert(!policies.includes('ec2:'));assert(!policies.includes('ssm:'));assert(policies.includes('cloudwatch:namespace'));
 });
+test('unsupported optional measurements and initial CPU sample stay unknown without alerts',()=>{
+ const input=good();delete input.hosts.core.metrics.cpuPercent;delete input.hosts.core.health.funding;delete input.spending;delete input.backup;
+ const checks=buildReliability(input).checks;
+ for(const id of ['core.cpuPercent','core.funding.health','spending','backup.freshness','backup.restore']){const check=checks.find(x=>x.id===id);assert.equal(check.status,'unknown');assert.equal(check.actionable,false);}
+ let result=nextAlertState({},checks,{now});result=nextAlertState(result.state,checks,{now});assert.equal(result.notifications.length,0);
+});
+test('missing hosts alert once per host instead of every dependent measure',()=>{
+ const checks=buildReliability({now}).checks;let result=nextAlertState({},checks,{now});result=nextAlertState(result.state,checks,{now});
+ assert.deepEqual(result.notifications.map(x=>x.id),['core.observation','bok.observation','external.website','external.prover']);
+});
+test('configured unavailable optional health alerts, and five-minute probes do not stale between runs',()=>{
+ const input=good();input.hosts.core.health.funding={status:'unknown',configured:true};input.external.observedAt=new Date(now-600000).toISOString();
+ let view=buildReliability(input);assert.equal(view.checks.find(x=>x.id==='external.website').status,'healthy');
+ let result=nextAlertState({},view.checks,{now});result=nextAlertState(result.state,view.checks,{now});assert.deepEqual(result.notifications.map(x=>x.id),['core.funding.health']);
+ input.external.observedAt=new Date(now-660001).toISOString();view=buildReliability(input);assert.equal(view.checks.find(x=>x.id==='external.website').status,'unknown');
+});
