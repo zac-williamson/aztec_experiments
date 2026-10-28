@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-28T12:06:21.335079+00:00",
+  "sourceRevision": "37c2c1ba791d50eda242f0f59c3b89c9eeef959d",
+  "releaseDirectory": "/opt/rolling-ops-backup/releases/37c2c1ba791d50eda242f0f59c3b89c9eeef959d",
+  "nodeBinary": "/opt/rolling-ops-backup/runtime/node",
+  "nodeVersion": "v24.21.0",
+  "nodeSha256": "7fde7b8afa198da66257f42ee2001d874c7355631e6d1579a5fb5ef1f246df4c",
+  "pythonBoto3Version": "1.34.46",
+  "sharedInstanceRole": "anonymous-message-board-testnet-InstanceRole-ku6rzJWiVY4r",
+  "sourceTransfer": "Public committed source only via SSM; every installed source hash verified before running",
+  "hosts": {
+    "core": {
+      "instanceId": "i-0a9b5b9ba55815cda",
+      "configFile": "/etc/rolling-ops-backup/core.json",
+      "configuration": {
+        "schemaVersion": 1,
+        "role": "core",
+        "region": "us-east-1",
+        "bucket": "rolling-launch-backups-052665140763-20261028",
+        "prefix": "rolling-ops/core",
+        "keyParameter": "/rolling/operations/backup-key/core",
+        "stateFile": "/var/lib/rolling-ops-backup-core/status.json",
+        "workDirectory": "/run/rolling-ops-backup-core",
+        "files": [
+          {
+            "name": "configuration/application.json",
+            "path": "/etc/rolling-app/public.json",
+            "kind": "file"
+          },
+          {
+            "name": "configuration/funding-relay.json",
+            "path": "/etc/rolling-app/relay.json",
+            "kind": "file"
+          },
+          {
+            "name": "configuration/prover.json",
+            "path": "/etc/board-prover/config.json",
+            "kind": "file"
+          },
+          {
+            "name": "configuration/query.json",
+            "path": "/etc/rolling-query/config.json",
+            "kind": "file"
+          },
+          {
+            "name": "configuration/operations.json",
+            "path": "/etc/rolling-ops/server.json",
+            "kind": "file"
+          },
+          {
+            "name": "configuration/moderator.json",
+            "path": "/var/lib/rolling-bootstrap-private/moderator-current/config.json",
+            "kind": "file"
+          },
+          {
+            "name": "credentials/moderator.json",
+            "path": "/var/lib/rolling-bootstrap-private/moderator-current/operator.json",
+            "kind": "file"
+          },
+          {
+            "name": "credentials/query.env",
+            "path": "/var/lib/rolling-bootstrap-private/moderator-current/query.env",
+            "kind": "file"
+          },
+          {
+            "name": "credentials/funding-relayer.json",
+            "path": "/var/lib/rolling-bootstrap-private/app-publication/funding-relay-signer.json",
+            "kind": "file"
+          },
+          {
+            "name": "analytics.sqlite",
+            "path": "/var/lib/rolling-ops/analytics.sqlite",
+            "kind": "sqlite"
+          }
+        ]
+      },
+      "canonicalInputsVerified": true,
+      "policyName": "RollingLaunchBackupCore20261028",
+      "commands": {
+        "install": "254ca032-d819-4b1f-98ef-a0e2b950473f",
+        "firstRun": "a8e97105-7f0e-40b8-a354-f1ead62d502b",
+        "enableAndReadback": "b87a61fb-404e-4de0-bc39-023705251fa0"
+      },
+      "readback": {
+        "role": "core",
+        "sourceVerified": true,
+        "service": {
+          "ActiveState": "inactive",
+          "SubState": "dead",
+          "Result": "success",
+          "ExecMainStatus": "0"
+        },
+        "timer": {
+          "ActiveState": "active",
+          "UnitFileState": "enabled",
+          "NextElapseUSecRealtime": "Thu 2026-10-29 03:10:22 UTC"
+        },
+        "backup": {
+          "lastAttemptAt": "2026-10-28T12:03:00.748Z",
+          "lastSuccessAt": "2026-10-28T12:03:02.335Z",
+          "lastVerifiedRestoreAt": "2026-10-28T12:03:02.694Z",
+          "lastOutcome": "verified"
+        },
+        "runtimeDirectoryExists": false
+      },
+      "firstArchiveBytes": 20961,
+      "firstArchiveStorageEncryption": "AES256",
+      "archiveAuthenticatedEncryption": "AES-256-GCM",
+      "service": "rolling-ops-backup-core.service",
+      "timer": "rolling-ops-backup-core.timer",
+      "scheduleUtc": "03:10 plus up to 10 minutes jitter"
+    },
+    "bok": {
+      "instanceId": "i-0a7d9957f2b3d7f19",
+      "configFile": "/etc/rolling-ops-backup/bok.json",
+      "configuration": {
+        "schemaVersion": 1,
+        "role": "bok",
+        "region": "us-east-1",
+        "bucket": "rolling-launch-backups-052665140763-20261028",
+        "prefix": "rolling-ops/bok",
+        "keyParameter": "/rolling/operations/backup-key/bok",
+        "stateFile": "/var/lib/rolling-ops-backup-bok/status.json",
+        "workDirectory": "/run/rolling-ops-backup-bok",
+        "files": [
+          {
+            "name": "configuration/bok.json",
+            "path": "/etc/rolling-bok-testnet/config.json",
+            "kind": "file"
+          },
+          {
+            "name": "credentials/bok-operator.json",
+            "path": "/var/lib/rolling-bootstrap-private/bok-testnet/operator.json",
+            "kind": "file"
+          },
+          {
+            "name": "credentials/github-app.pem",
+            "path": "/var/lib/rolling-bootstrap-private/bok-testnet/github-app.pem",
+            "kind": "file"
+          },
+          {
+            "name": "credentials/model-provider.env",
+            "path": "/var/lib/rolling-bootstrap-private/bok-testnet/provider.env",
+            "kind": "file"
+          }
+        ]
+      },
+      "canonicalInputsVerified": true,
+      "policyName": "RollingLaunchBackupBok20261028",
+      "commands": {
+        "install": "1b110366-aa88-429f-9fe2-be2e1f86e0a1",
+        "firstRun": "2ea9ec0f-b32d-4a11-8b86-ed559b6566d4",
+        "enableAndReadback": "8ed364cb-6a6d-45e6-a5a5-b104a1ef62cd"
+      },
+      "readback": {
+        "role": "bok",
+        "sourceVerified": true,
+        "service": {
+          "ActiveState": "inactive",
+          "SubState": "dead",
+          "Result": "success",
+          "ExecMainStatus": "0"
+        },
+        "timer": {
+          "ActiveState": "active",
+          "UnitFileState": "enabled",
+          "NextElapseUSecRealtime": "Thu 2026-10-29 03:32:10 UTC"
+        },
+        "backup": {
+          "lastAttemptAt": "2026-10-28T12:03:01.720Z",
+          "lastSuccessAt": "2026-10-28T12:03:02.856Z",
+          "lastVerifiedRestoreAt": "2026-10-28T12:03:03.091Z",
+          "lastOutcome": "verified"
+        },
+        "runtimeDirectoryExists": false
+      },
+      "firstArchiveBytes": 8602,
+      "firstArchiveStorageEncryption": "AES256",
+      "archiveAuthenticatedEncryption": "AES-256-GCM",
+      "service": "rolling-ops-backup-bok.service",
+      "timer": "rolling-ops-backup-bok.timer",
+      "scheduleUtc": "03:25 plus up to 10 minutes jitter"
+    }
+  },
+  "sourceManifest": {
+    "revision": "37c2c1ba791d50eda242f0f59c3b89c9eeef959d",
+    "files": {
+      "ops/backup-job.mjs": "6c03fdb29451e2a60b5c645a4172a79490ed743b22f3772ea331b8a053ccefc6",
+      "ops/backup.mjs": "520f28457f38787a6c0191d0d7218dea8bf5e52e56475322faef5f52e4086ce6",
+      "ops/backup-cloud.py": "317c965c2562ab8f93270640696e04320c0ddc3757e7169e34ce3d1931bd61b3",
+      "ops/backup-deployment.mjs": "0d0e4cb1c80e1a870e66fd21feec6d4010cff48c1c0f6d6baac52966be7a2604",
+      "ops/prune-analytics.mjs": "ed915c22042201154ce29e42bb95106ff81b32b16b3f4c44eee84b854e0cab6c",
+      "ops/analytics.mjs": "795f0b43fd7ae6ddea4a9d33692f1cb99d7cad8ad4f73aab1fafacc367ff9b9f",
+      "apps/rolling/analytics-schema.mjs": "84031c34c648a95ba3fd649a09e8f6d29472cb96451310502b04b8668fce0184"
+    }
+  },
+  "acceptance": "Both installed jobs uploaded ciphertext, downloaded that exact object, restored into a new private directory, verified member hashes and core SQLite integrity, then removed temporary plaintext and key files. Both timers enabled. No app/prover/Caddy changes or signing were performed.",
+  "exclusions": [
+    "Public index/test-state databases",
+    "Transaction journals",
+    "Proof queues",
+    "Posts/content",
+    "Browser accounts",
+    "Release-specific reconstructable wallet files"
+  ]
+}

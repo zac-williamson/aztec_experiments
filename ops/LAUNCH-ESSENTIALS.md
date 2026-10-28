@@ -96,7 +96,7 @@ scan secret directories. `BACKUP_NAMES` defines the admitted small inventory:
 
 | Host | Stable inputs to select when used by its current services |
 |---|---|
-| Core | Application, wallet deployment, funding relay, prover, moderator, operations and release configs; moderator and funding-relayer credentials; analytics SQLite |
+| Core | Application, wallet deployment, funding relay, prover, query, moderator, operations and release configs; moderator, query and funding-relayer credentials; analytics SQLite |
 | Bok | Service config; operator credential; GitHub App private key; model-provider environment file |
 
 Do not include public index databases, archives of posts, proof queues, browser
@@ -143,3 +143,32 @@ cleanup. They do not establish that an AWS installation or timer is active.
 node --test ops/backup.test.mjs ops/backup-job.test.mjs ops/monitor.test.mjs ops/analytics.test.mjs scripts/rolling-public-capacity.test.mjs
 python3 -m unittest discover -s ops -p 'backup_cloud_test.py'
 ```
+
+## Installed acceptance — 28 October 2026
+
+The core and Bok hosts now run the separate `rolling-ops-backup-core.timer` and
+`rolling-ops-backup-bok.timer`. The immutable backup source is revision
+`37c2c1ba791d50eda242f0f59c3b89c9eeef959d`, under `/opt/rolling-ops-backup/releases/`;
+the copied existing Node runtime is 24.21.0. See
+[`backup-hosts.json`](../deploy/launch-ops/backup-hosts.json) for the explicit
+canonical file inventory, source hashes, unit/status paths and SSM evidence.
+
+At 12:03 UTC both jobs uploaded an encrypted archive to the dedicated bucket,
+downloaded it, restored its members and verified integrity. Core included ten
+small inputs including analytics SQLite; Bok included four. Temporary keys and
+plaintext were removed. The first archives were 20,961 and 8,602 bytes. Both
+oneshot services exited successfully and both daily timers were enabled after
+this drill. This is a first-run check; subsequent status must remain fresh.
+
+Read only `/var/lib/rolling-ops-backup-ROLE/status.json` for monitoring. To repeat
+the same safe drill, start the corresponding `rolling-ops-backup-ROLE.service`;
+it never installs recovered files or starts a signer. Changes to active secret
+or configuration locations require reviewing and updating that role's explicit
+private configuration. No application service was restarted by this installation.
+
+The two added IAM policy names are `RollingLaunchBackupCore20261028` and
+`RollingLaunchBackupBok20261028`; existing policies were retained. Both hosts
+share the same instance role and therefore have the union of these permissions.
+The $3 reservation covers the first 31 days within the shared launch budget;
+review by 28 November 2026. It is an allocation, not a billing cap. KMS and SSM
+keys must outlive all retained archives if backups are later retired.
