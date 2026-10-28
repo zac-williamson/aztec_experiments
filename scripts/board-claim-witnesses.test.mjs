@@ -34,17 +34,19 @@ import {validatedPxeProve} from './pxe-validated-prove.mjs';
 import {restoreNativePxe} from './patch-pxe-operation-guards.mjs';
 const transformed=validatedPxeProve(restoreNativePxe(fs.readFileSync(new URL('../node_modules/@aztec-labs/pxe/dest/pxe.js',import.meta.url),'utf8'),'dest/pxe.js'));
 const methodStart=transformed.indexOf('    prefetchBoardClaimWitnesses(board) {');
+const registeredMethod=transformed.slice(transformed.indexOf('    async #registeredSyncTarget('),transformed.indexOf('    async #syncOrdinaryPostTargets('));
 const syncMethod=transformed.slice(transformed.indexOf('    async #syncOrdinaryPostTargets('),transformed.indexOf('    prepareOrdinaryPostState(',transformed.indexOf('    async #syncOrdinaryPostTargets(')));
 const nativeMethod=transformed.slice(methodStart,transformed.indexOf('    prepareBoardActionState(',methodStart));
 const resources=[];
 after(async()=>{for(const {queue,db} of resources){await queue.stop();await db.close();}await BarretenbergSync.destroySingleton();});
 const raw=JSON.parse(fs.readFileSync(process.env.ROLLING_TEST_ARTIFACT??new URL('../billboard/target/rolling_contract-RollingBoard.json',import.meta.url),'utf8')),artifact=loadContractArtifact(raw),circuit=raw.functions.find(fn=>fn.name==='claim_deposit');
+const boardClass=(await getContractClassFromArtifact(artifact)).id;
 const bokRaw=JSON.parse(fs.readFileSync(process.env.ROLLING_TEST_BOK_ARTIFACT??new URL('../experiments/private-bok/target/private_bok-PrivateBok.json',import.meta.url),'utf8')),bokArtifact=loadContractArtifact(bokRaw),bokClass=(await getContractClassFromArtifact(bokArtifact)).id;
 const source=fs.readFileSync(new URL('../shared/board-claim-witnesses.mjs',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replaceAll('export async function','async function');
 const pair=(a,b)=>poseidon2HashWithSeparator([a,b],DomainSeparator.PUBLIC_DATA_MERKLE);
 async function fixture({bokClaim=false}={}){
  const owner=AztecAddress.fromFieldUnsafe(new Fr(8));
- const selectedArtifact=bokClaim?bokArtifact:artifact,selectedCircuit=bokClaim?bokRaw.functions.find(fn=>fn.name==='claim'):circuit,selectedClass=bokClaim?bokClass:Fr.fromString(ORDINARY_POST_GAS_PROFILE.boardClassId);
+ const selectedArtifact=bokClaim?bokArtifact:artifact,selectedCircuit=bokClaim?bokRaw.functions.find(fn=>fn.name==='claim'):circuit,selectedClass=bokClaim?bokClass:boardClass;
  const instance=new SerializableContractInstance({version:2,salt:Fr.ONE,deployer:AztecAddress.ZERO,currentContractClassId:selectedClass,originalContractClassId:selectedClass,initializationHash:new Fr(77),immutablesHash:Fr.ZERO,publicKeys:PublicKeys.default()});
  const board={address:await computeContractAddressFromInstance(instance),currentContractClassId:instance.currentContractClassId};
  let header=BlockHeader.empty();header.globalVariables.blockNumber=3;header.globalVariables.chainId=Fr.ONE;header.globalVariables.version=Fr.ONE;header.globalVariables.timestamp=100n;
@@ -68,7 +70,7 @@ async function fixture({bokClaim=false}={}){
  const discovery=[],classReads=[],syncGates=[];let holdSync=false,failSync=false,badOwner=false;
  const originalNodeGetContract=async(address,anchor)=>{classReads.push({address,anchor});return {currentContractClassId:address.equals(owner)?Fr.fromString(badOwner?'0x01':ORDINARY_POST_GAS_PROFILE.accountClassId):selectedClass};};
  node.getContract=originalNodeGetContract;
- const cachedNode=withCache(node),store={getContractArtifact:async()=>selectedArtifact,getFunctionCall:async(name,args,to)=>({name,args,to,selector:FunctionSelector.fromString('0x418ef5da')})};
+ const cachedNode=withCache(node),store={getContractInstance:async()=>instance,getContractArtifact:async()=>selectedArtifact,getFunctionCall:async(name,args,to)=>({name,args,to,selector:FunctionSelector.fromString('0x418ef5da')})};
  const classService=new ContractClassService(cachedNode,store);
  const service=new ContractSyncService(cachedNode,store,classService,{getNotes:async()=>[]},{debug(){},warn(){}},{concurrentContractSyncEnabled:false});
  const utility=async(_sim,call,auth,scopes,anchor,changeSetId)=>{
@@ -77,7 +79,7 @@ async function fixture({bokClaim=false}={}){
  };
  const db=await openTmpStore('board-claim-witnesses',true,8192),facts=new FactStore(db),writes=new StagedWriteCoordinator({kvStore:db,stagedStores:[facts]});
  const queue=new OperationQueue({autoSync:false,node:{startRecording:()=>({stop(){}})},synchronizer:{sync:()=>assert.fail('no extra global sync')},anchorBlockStore:{getBlockHeader:async()=>header},contributors:[service],stagedWriteCoordinator:writes,log:{debug(){},verbose(){},warn(){},error(){}}});queue.start();resources.push({queue,db});
- const Native=vm.runInNewContext('(class {#executeUtility=utility;#getSimulatorForTx=()=>({});'+syncMethod+nativeMethod+'})',{measureRollingProofPhase:(_name,work)=>work(),utility,SyncAddress:AztecAddress,SyncFr:Fr,SyncFactCollectionKey:FactCollectionKey,syncSha256ToField:sha256ToField,syncPublicDataLeaf:computePublicDataTreeLeafSlot,syncSiloNullifier:siloNullifier,syncPoseidon:poseidon2HashWithSeparator,SyncTreeId:MerkleTreeId,allToCompletion,Buffer});
+ const Native=vm.runInNewContext('(class {#executeUtility=utility;#getSimulatorForTx=()=>({});'+registeredMethod+syncMethod+nativeMethod+'})',{computeContractAddressFromInstance,measureRollingProofPhase:(_name,work)=>work(),utility,SyncAddress:AztecAddress,SyncFr:Fr,SyncFactCollectionKey:FactCollectionKey,syncSha256ToField:sha256ToField,syncPublicDataLeaf:computePublicDataTreeLeafSlot,syncSiloNullifier:siloNullifier,syncPoseidon:poseidon2HashWithSeparator,SyncTreeId:MerkleTreeId,allToCompletion,Buffer});
  const pxe=new Native();Object.assign(pxe,{node:cachedNode,contractSyncService:service,getSyncedBlockHeader:async()=>header,operationQueue:queue,factStore:facts,contractClassService:classService,contractStore:store});const wallet={pxe};
  const factService=new FactService(facts,[]);
  const context=vm.createContext({getContractClassFromArtifact,Fr,poseidon2HashWithSeparator,computePublicDataTreeLeafSlot,siloNullifier,MerkleTreeId,ORDINARY_POST_GAS_PROFILE,isPrivatePXEForNode:(p,n)=>p===pxe&&n===node});vm.runInContext(source,context);
@@ -98,8 +100,7 @@ async function fixture({bokClaim=false}={}){
  ensure:()=>queue.runSynced(async ctx=>{for(const contract of [owner,board.address])await service.ensureContractSynced({contract,utilityExecutor:(call,scopes)=>utility({},call,[],scopes,ctx.anchorBlockHeader,ctx.changeSetId),anchorBlockHeader:ctx.anchorBlockHeader,changeSetId:ctx.changeSetId,scopes:[owner],triggeredBy:undefined});}),
  warm:()=>bokClaim?context.prefetchBokClaimWitnesses(input):context.prefetchBoardClaimWitnesses(input),calls,get header(){return header;},advance:()=>{header=BlockHeader.fromBuffer(header.toBuffer());header.globalVariables.blockNumber++;service.wipe();},rewind:()=>{header=BlockHeader.fromBuffer(header.toBuffer());header.globalVariables.blockNumber--;},prune:()=>facts.rollbackToBlock(2),pxe,values,witnesses,get records(){return records;},seed:()=>queue.runSynced(async ctx=>{for(const s of slots){await facts.recordFact(new FactCollectionKey(board.address,{type:'public'},sha256ToField(Buffer.from('AZTEC_NR::PUBLIC_IMMUTABLE_CACHE_TYPE_ID')),new Fr(s.slot)),sha256ToField(Buffer.from('AZTEC_NR::PUBLIC_IMMUTABLE_VALUE_READ')),Array.from({length:s.length},(_,i)=>values.get(String(s.slot+BigInt(i)))),{blockNumber:header.getBlockNumber(),blockHash:await header.hash()},ctx.changeSetId);}}),hold:()=>held=Promise.withResolvers(),fail:type=>failure=type,absent:()=>exists=false};
 }
-test('qualified compiled claim reaches message consumption with unchanged native immutable checks and zero additional reads after prefetch',async()=>{
- assert.equal((await getContractClassFromArtifact(artifact)).id.toString(),ORDINARY_POST_GAS_PROFILE.boardClassId);
+test('current compiled Board class reaches message consumption independently of ordinary-post gas qualification',async()=>{
  const f=await fixture();await f.warm();assert.equal(f.records,0);assert.equal(f.calls.length,14);await f.run();assert.equal(f.records,2);assert.equal(f.calls.length,14);
 });
 
