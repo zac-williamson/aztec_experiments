@@ -356,7 +356,7 @@ test('inclusion notification reuses receipt reads, deduplicates blocks and leave
  let complete=false;
  const waiting=waitForCanonicalReceipt({getTxReceipt:async()=>{reads++;return sequence.length?sequence.shift():checkpoint;},getBlock:async n=>{blocks++;assert.equal(n,2);return {hash:b};}},tx,{intervalMs:1,onIncluded:value=>{events.push(value);if(events.length===2)seen();}}).then(value=>{complete=true;return value;});
  await included;assert.equal(complete,false);assert.equal(blocks,0);
- assert.deepEqual(events,[{txHash:String(tx.getTxHash()),blockNumber:1,blockHash:String(a)},{txHash:String(tx.getTxHash()),blockNumber:2,blockHash:String(b)}]);
+ assert.deepEqual(events,[{txHash:String(tx.getTxHash()),blockNumber:1,blockHash:String(a),status:'proposed'},{txHash:String(tx.getTxHash()),blockNumber:2,blockHash:String(b),status:'proposed'}]);
  assert(events.every(Object.isFrozen));release(receipt('checkpointed',b,2));await waiting;
  assert.equal(reads,6);assert.equal(blocks,1);assert.equal(events.length,2);
 });

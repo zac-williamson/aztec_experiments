@@ -31,7 +31,7 @@ for (const reason of ["Quotes ' and \" stay data", '`echo harmless`', '$(echo ha
   });
 }
 
-test('executable, operation, argv and execution limits are chosen by signer', t => {
+test('executable, operation, argv, output limit and environment are chosen by signer', t => {
   const calls = [];
   const { signer, config } = fixture(t, (...args) => { calls.push(args); return 'done'; });
   signer.flag({ policyVersion: id(9), postId: id(1), reason: '1 - Spam' });
@@ -40,8 +40,11 @@ test('executable, operation, argv and execution limits are chosen by signer', t 
   assert.equal(argv[0], fs.realpathSync(config.cliPath));
   assert.equal(argv[1], 'declare-immoral');
   assert.equal(options.shell, false);
-  assert.equal(options.timeout, 300000);
-  assert.equal(options.killSignal, 'SIGKILL');
+  // Outcome ownership was moved to the CLI; the signer does not kill a pending
+  // operation after an arbitrary wall-clock limit. Keep its remaining options exact.
+  assert.deepEqual(Object.keys(options).sort(), ['encoding', 'env', 'maxBuffer', 'shell', 'windowsHide']);
+  assert.equal(options.encoding, 'utf8');
+  assert.equal(options.windowsHide, true);
   assert.equal(options.maxBuffer, 10 * 1024 * 1024);
   assert.deepEqual(Object.keys(options.env).sort(), ['HOME', 'LANG', 'PATH', 'TMPDIR']);
   assert.ok(Object.isFrozen(argv));
@@ -149,7 +152,7 @@ for (const response of [null, new Uint8Array([1]), 'a'.repeat(10 * 1024 * 1024 +
     assert.throws(() => signer.flag({ policyVersion: id(9), postId: id(1), reason: '1 - Spam' }), /Invalid or oversized signer output/);
   });
 }
-test('process timeout is observable without reflecting child diagnostics', t => {
+test('process signal failure is observable without reflecting child diagnostics', t => {
   const { signer } = fixture(t, () => { const error = new Error('fixture-private-diagnostic'); error.signal = 'SIGKILL'; error.stdout = 'fixture-private-diagnostic'; error.stderr = 'fixture-private-diagnostic'; throw error; });
   assert.throws(() => signer.flag({ policyVersion: id(9), postId: id(1), reason: '1 - Spam' }), error => /Signer declare-immoral failed/.test(error.message) && !error.message.includes('fixture-private'));
 });

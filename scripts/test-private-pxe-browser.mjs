@@ -4,8 +4,9 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import {withOwnerEnvelopeOracles} from '../shared/owner-envelope.mjs';
 import {provingEnabledForNode} from '../shared/proving-policy.mjs';
+import {beginPXEConstruction,readPXEConstruction,endPXEConstruction} from '../shared/pxe-startup-cache.mjs';
 const source=fs.readFileSync(new URL('../shared/private-pxe.mjs',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replaceAll('export async function ','async function ').replaceAll('export function ','function ');
-function fixture({browser=true,cached,initError}={}){const calls=[],initializations=[],crsCalls=[];let singleton=cached;const ctx=vm.createContext({provingEnabledForNode,withOwnerEnvelopeOracles,Buffer,RoutedKernelProver:class{constructor(simulator,options,{transport,proofsEnabled}){Object.assign(this,{simulator,options,transport,proofsEnabled});}setTransport(transport){this.transport=transport;}},BBLazyPrivateKernelProver:class{constructor(simulator,options){this.simulator=simulator;this.options=options;}},WASMSimulator:class{},ChonkProofWithPublicInputs:{fromBufferArray:fields=>({fields})},proveBrowserChonk:async()=>({proofFields:['verified'],compressedProof:new Uint8Array([1,2])}),...(browser?{window:{}}:{}),BillboardCRS:{initialize:async(bb,options)=>{crsCalls.push({bb,options});}},BILLBOARD_CRS_MANIFEST:{pinned:true},BackendType:{WasmWorker:'WasmWorker',NativeUnixSocket:'NativeUnixSocket'},Barretenberg:{initSingleton:async options=>{initializations.push(options);if(initError)throw initError;singleton??={options};return singleton;}},createSdkPXE:async(...args)=>{calls.push(args);return {created:true,node:{cachedInput:args[0]}};}});vm.runInContext(source,ctx);return {ctx,calls,initializations,crsCalls};}
+function fixture({browser=true,cached,initError}={}){const calls=[],initializations=[],crsCalls=[];let singleton=cached;const ctx=vm.createContext({beginPXEConstruction,readPXEConstruction,endPXEConstruction,provingEnabledForNode,withOwnerEnvelopeOracles,Buffer,RoutedKernelProver:class{constructor(simulator,options,{transport,proofsEnabled}){Object.assign(this,{simulator,options,transport,proofsEnabled});}setTransport(transport){this.transport=transport;}},BBLazyPrivateKernelProver:class{constructor(simulator,options){this.simulator=simulator;this.options=options;}},WASMSimulator:class{},ChonkProofWithPublicInputs:{fromBufferArray:fields=>({fields})},proveBrowserChonk:async()=>({proofFields:['verified'],compressedProof:new Uint8Array([1,2])}),...(browser?{window:{}}:{}),BillboardCRS:{initialize:async(bb,options)=>{crsCalls.push({bb,options});}},BILLBOARD_CRS_MANIFEST:{pinned:true},BackendType:{WasmWorker:'WasmWorker',NativeUnixSocket:'NativeUnixSocket'},Barretenberg:{initSingleton:async options=>{initializations.push(options);if(initError)throw initError;singleton??={options};return singleton;}},createSdkPXE:async(...args)=>{calls.push(args);return {created:true,node:{cachedInput:args[0]}};}});vm.runInContext(source,ctx);return {ctx,calls,initializations,crsCalls};}
 test('browser fixes real SDK prover options and initializes matching singleton before PXE',async()=>{const f=fixture(),store={},provided={threads:32,backend:'NativeUnixSocket',memory:{maximum:100}};const result=await f.ctx.createPXE({getNodeInfo:async()=>({realProofs:true})},{}, {store,proverOrOptions:provided});assert.equal(result.created,true);assert.equal(f.initializations.length,1);assert.equal(f.initializations[0].threads,1);assert.equal(f.initializations[0].skipSrsInit,true);assert.equal(f.crsCalls.length,1);assert.equal(f.crsCalls[0].options.manifest,f.ctx.BILLBOARD_CRS_MANIFEST);assert.equal(f.crsCalls[0].options.bn254NumPoints,524288);assert.equal(f.initializations[0].backend,'WasmWorker');assert.equal(f.calls[0][2].proverOrOptions.options.threads,1);assert.equal(f.calls[0][2].proverOrOptions.options.backend,'WasmWorker');assert.equal(f.calls[0][2].store,store);assert.equal(provided.threads,32);});
 test('incompatible cached singleton blocks PXE without replacement',async()=>{for(const options of [{threads:2,backend:'WasmWorker',skipSrsInit:true},{threads:32,backend:'WasmWorker'},{threads:1,backend:'NativeUnixSocket'},{}]){const cached={options},f=fixture({cached});await assert.rejects(f.ctx.createPXE({getNodeInfo:async()=>({realProofs:true})},{}),e=>e.code==='BB_BROWSER_PROVER_CONFIGURATION');assert.equal(f.calls.length,0);assert.equal(cached.options,options);}});
 test('browser custom prover and invalid options cannot bypass supported bound',async()=>{for(const supplied of [{createChonkProof(){}},null,[],2,'2']){const f=fixture();await assert.rejects(f.ctx.createPXE({getNodeInfo:async()=>({realProofs:true})},{}, {proverOrOptions:supplied}));assert.equal(f.initializations.length,0);assert.equal(f.calls.length,0);}});
@@ -85,5 +86,22 @@ test('concurrent remote and local PXEs share ordered monotonic singleton capacit
   if(remoteFirst){assert.deepEqual(capacities,[2,524288]);releases.shift()();}
   await Promise.all([first,second]);
   await f.ctx.createPXE(node,{},{remoteProver:{}});assert.deepEqual(capacities,remoteFirst?[2,524288]:[524288]);
+ }
+});
+
+
+test('native construction handle is bound to the node and expires after SDK success or failure',async()=>{
+ for(const fails of [false,true]){
+  const f=fixture({browser:false}),info={realProofs:true},node={getNodeInfo:async()=>info};let handle;
+  f.ctx.createSdkPXE=async(source,config,options)=>{
+   assert.equal(source,node);handle=options.rollingConstruction;
+   assert.equal(readPXEConstruction(handle,node),info);
+   assert.throws(()=>readPXEConstruction(handle,{...node}),/provenance mismatch/);
+   if(fails)throw Error('fixture SDK construction failed');
+   return {node:{cachedInput:source}};
+  };
+  if(fails)await assert.rejects(f.ctx.createPXE(node,{}),/fixture SDK construction failed/);
+  else await f.ctx.createPXE(node,{});
+  assert.throws(()=>readPXEConstruction(handle,node),/provenance mismatch/);
  }
 });

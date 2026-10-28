@@ -82,14 +82,20 @@ test('board and fee calls cannot bypass a private plugin claim binding',async()=
 test('actual fee payloads and plugin calls encode into the accepted account policy',async()=>{
  const {validatePluginPayload,pluginSelectors}=await import('../prover/plugin-policy.mjs');
  const {PrivateFeePaymentMethod,PrivateMintAndPayFeePaymentMethod}=await import('../shared/private-fee-payment.mjs');
+ const {tipSpendingKey}=await import('../shared/private-credit.mjs');
  const {EncodedAppEntrypointCalls}=await import('@aztec-labs/entrypoints/encoding');
  const {AztecAddress}=await import('@aztec-labs/stdlib/aztec-address');const {Fr}=await import('@aztec-labs/foundation/curves/bn254');
  const {FunctionCall,FunctionSelector,FunctionType}=await import('@aztec-labs/stdlib/abi');
  const address=AztecAddress.fromFieldUnsafe(new Fr(3)),fee=AztecAddress.fromFieldUnsafe(new Fr(2)),selectors=await pluginSelectors();
+ // Disposable preimage used only to encode the capsule; no chain credit or proof is fabricated.
+ const credit={owner:address,notes:[{secret:Fr.ONE,key:await tipSpendingKey(Fr.ONE),blinding:Fr.ONE,value:10n,nonce:Fr.ONE}]};
+ await assert.rejects(new PrivateFeePaymentMethod(fee,10n).getExecutionPayload(),/Private credit selection required/);
+ await assert.rejects(new PrivateFeePaymentMethod(fee,11n,credit).getExecutionPayload(),{code:'PRIVATE_FEE_BALANCE_INSUFFICIENT'});
  const plugin=FunctionCall.from({name:'withdraw',to:address,selector:FunctionSelector.fromString('0x'+[...selectors.public][0].toString(16).padStart(8,'0')),type:FunctionType.PUBLIC,hideMsgSender:false,isStatic:false,args:[]});
  for(const mint of [false,true]){
-  const payment=mint?new PrivateMintAndPayFeePaymentMethod(fee,{amount:100n,secret:Fr.ONE,salt:Fr.ONE,leafIndex:Fr.ONE},10n):new PrivateFeePaymentMethod(fee,10n);
-  const payload=await payment.getExecutionPayload(),encoded=await EncodedAppEntrypointCalls.create([...payload.calls,plugin]);
+  const payment=mint?new PrivateMintAndPayFeePaymentMethod(fee,{amount:100n,secret:Fr.ONE,salt:Fr.ONE,leafIndex:Fr.ONE},10n):new PrivateFeePaymentMethod(fee,10n,credit);
+  const payload=await payment.getExecutionPayload();assert.equal(payload.capsules.length,mint?0:1);
+  const encoded=await EncodedAppEntrypointCalls.create([...payload.calls,plugin]);
   const input={inputs:{tx_context:{chain_id:'31337',version:'1'}},app_payload:{function_calls:encoded.function_calls.map(c=>({...c,args_hash:c.args_hash.toString(),target_address:{inner:c.target_address.toString()},function_selector:{inner:c.function_selector.toString()}}))}};
   const options={metadata:{chainId:'31337',rollupVersion:'1'},pluginAddresses:[address.toString()],privateFeeAddress:fee.toString(),selectors,allowFeeOnly:mint};
   assert.equal(validatePluginPayload(input,options),1);
