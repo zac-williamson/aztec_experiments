@@ -50,6 +50,40 @@ export async function createTestWalletBridge({wallet,provider,allowedTargets,cap
   throw failure('RELEASE_WALLET_METHOD');
  };
 }
+// These helpers operate the actual modal, including after account restoration.
+// Direct post/reply/Bok submission has one button; there is no second confirmation.
+export const journeyFailureSteps=Object.freeze(['setup','fund-ETH','fund-USDC','signup-ETH','signup-USDC','close-account','post-compose','post-submit','post-inclusion','reply-compose','reply-submit','reply-inclusion','like','reload','bok-compose','bok-credit','bok-submit','bok-inclusion','bok-reply','final-check']);
+const actionTimeout=remaining=>Math.min(90000,remaining());
+export async function closeJourneyAccountPanel(page,remaining){
+ const dialog=page.locator('dialog.account-dialog');
+ if(await dialog.isVisible()){
+  await dialog.getByRole('button',{name:'Close account panel',exact:true}).click({timeout:actionTimeout(remaining)});
+  await dialog.waitFor({state:'hidden',timeout:actionTimeout(remaining)});
+ }
+}
+export async function openJourneyComposer(page,message,remaining){
+ await closeJourneyAccountPanel(page,remaining);
+ await page.getByRole('button',{name:'Write a post',exact:true}).first().click({timeout:actionTimeout(remaining)});
+ const dialog=page.locator('dialog.account-dialog'),editor=dialog.getByLabel('Message',{exact:true}),connect=dialog.getByRole('button',{name:'Connect CI test wallet',exact:true});
+ await dialog.waitFor({state:'visible',timeout:actionTimeout(remaining)});
+ // A restored account opens the editor immediately; a locked account requires
+ // the explicit wallet click before the same draft becomes available.
+ await editor.or(connect).first().waitFor({state:'visible',timeout:actionTimeout(remaining)});
+ if(await connect.isVisible())await connect.click({timeout:actionTimeout(remaining)});
+ await editor.fill(message,{timeout:actionTimeout(remaining)});
+}
+export async function submitJourneyComposer(page,kind,remaining){
+ if(!['post','reply','bok'].includes(kind))throw failure('RELEASE_JOURNEY_STEP');
+ await page.locator('dialog.account-dialog').getByRole('button',{name:kind==='reply'?'Reply':'Post',exact:true}).click({timeout:actionTimeout(remaining)});
+}
+export async function buyJourneyBokCredit(page,remaining){
+ const dialog=page.locator('dialog.account-dialog');
+ await dialog.getByRole('button',{name:'Add Bok credit',exact:true}).click({timeout:actionTimeout(remaining)});
+ await dialog.getByLabel('Amount (USD)',{exact:true}).fill('1',{timeout:actionTimeout(remaining)});
+ await dialog.getByLabel('Pay with',{exact:true}).selectOption('ETH',{timeout:actionTimeout(remaining)});
+ await dialog.getByRole('button',{name:'Pay',exact:true}).click({timeout:actionTimeout(remaining)});
+ await dialog.getByText(/Bok credit added\./).waitFor({timeout:remaining()});
+}
 export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin,expectedCompatibility,publicFile}={}){
  const cfg=await readJourneyConfig(file);if(expectedOrigin!==undefined&&cfg.stagingOrigin!==expectedOrigin)throw failure('RELEASE_FIXTURE_CONFIG');const {chromium}=await import('playwright'),{JsonRpcProvider,Wallet,Contract,getBytes}=await import('ethers');
  const provider=new JsonRpcProvider(cfg.ethereumRpc);if((await provider.getNetwork()).chainId!==11155111n)throw failure('RELEASE_NETWORK');
@@ -62,7 +96,7 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
  const allowedTargets=new Set(['router','bokToken','feeToken','collateralPortal','feePortal','bokPortal'].map(k=>funding[k]?.toLowerCase()).filter(Boolean));
  const funder=new Wallet(cfg.testFunderKey,provider),token=new Contract(funding.bokToken,['function transfer(address,uint256) returns(bool)'],funder);
  const result={passed:false,proofs:'real',chainId:'11155111',completed:[],proofResponses:0,elapsedMs:0};
- let browser;const started=Date.now();let expired=false;const timer=setTimeout(()=>{expired=true;void browser?.close();},cfg.timeoutMs);timer.unref();
+ let browser,failureStep='setup';const started=Date.now();let expired=false;const timer=setTimeout(()=>{expired=true;void browser?.close();},cfg.timeoutMs);timer.unref();
  const remaining=()=>Math.max(1,cfg.timeoutMs-(Date.now()-started));
  const record=async name=>{result.completed.push(name);await onStage(name);};
  try{
@@ -70,7 +104,7 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
   const evidence=await openChainEvidence(publicFile,expectedCompatibility,remaining);
   browser=await chromium.launch({headless:true});
   for(const asset of ['ETH','USDC']){
-   const wallet=Wallet.createRandom().connect(provider);
+   failureStep='fund-'+asset;const wallet=Wallet.createRandom().connect(provider);
    if(asset==='ETH'){const paid=await funder.sendTransaction({to:wallet.address,value:BigInt(cfg.ethPerAccountWei)});if((await paid.wait(1,remaining()))?.status!==1)throw failure('RELEASE_FIXTURE_FUNDING');}
    else{
     // Gasless signup must work for an address which has never received ETH.
@@ -90,32 +124,28 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
     const hashesSince=async start=>{const values=await Promise.all(submissions.slice(start));if(values.some(v=>v===null))throw failure('RELEASE_SUBMISSION_INVALID');return values.flat();};
     page.on('pageerror',()=>pageErrors++);
     page.on('response',r=>{if(r.request().method()==='POST'&&r.url().startsWith(runtime.remoteProver.url)&&r.ok())proofs++;});
-    await page.goto(cfg.stagingOrigin+'/#/new-account',{waitUntil:'domcontentloaded'});
-    const connect=page.getByRole('button',{name:'Connect wallet',exact:true});if(await connect.count())await connect.first().click();
-    await page.getByRole('button',{name:/CI test wallet/}).click();
-    await page.getByRole('button',{name:'Confirm payment',exact:true}).waitFor({timeout:remaining()});
-    await page.getByLabel('Pay with',{exact:true}).selectOption(asset);
-    await page.getByRole('button',{name:'Confirm payment',exact:true}).click();
-    await page.getByText(/Your posting balance is (ready|set up)/).waitFor({timeout:remaining()});
+    failureStep='signup-'+asset;await page.goto(cfg.stagingOrigin+'/#/new-account',{waitUntil:'domcontentloaded'});
+    // This route opens the account modal itself; the navigation button behind
+    // it is inert. Scope every signup control to that actual dialog.
+    const dialog=page.locator('dialog.account-dialog');await dialog.waitFor({state:'visible',timeout:actionTimeout(remaining)});
+    await dialog.getByRole('button',{name:'Connect CI test wallet',exact:true}).click({timeout:actionTimeout(remaining)});
+    await dialog.getByRole('button',{name:'Confirm payment',exact:true}).waitFor({timeout:remaining()});
+    await dialog.getByLabel('Pay with',{exact:true}).selectOption(asset);
+    await dialog.getByRole('button',{name:'Confirm payment',exact:true}).click({timeout:actionTimeout(remaining)});
+    await dialog.getByText(/Your posting balance is (ready|set up)/).waitFor({timeout:remaining()});
     const signupHashes=await hashesSince(0);if(!signupHashes.length)throw failure('RELEASE_SUBMISSION_MISSING');
     for(const hash of signupHashes)await evidence.require([hash],()=>true,remaining);
     if(asset==='USDC'&&await provider.getBalance(wallet.address)!==0n)throw failure('RELEASE_GASLESS_FIXTURE');
     await record('signup-'+asset);
-    const close=page.getByRole('button',{name:'Close',exact:true});if(await close.count())await close.first().click();
+    failureStep='close-account';await closeJourneyAccountPanel(page,remaining);
     if(asset==='USDC'){result.proofResponses+=proofs;if(!proofs||pageErrors)throw failure('RELEASE_BROWSER_ERRORS');continue;}
     const tag='Release check '+randomUUID();
     async function compose(message,{buyBokCredit=false}={}){
-     const start=submissions.length;
-     await page.getByRole('button',{name:'Write a post',exact:true}).first().click();
-     await page.getByLabel('Message',{exact:true}).fill(message);
-     if(buyBokCredit){
-      await page.getByRole('button',{name:'Add Bok credit',exact:true}).click();
-      await page.getByLabel('Amount (USD)',{exact:true}).fill('1');
-      await page.getByLabel('Pay with',{exact:true}).selectOption('ETH');
-      await page.getByRole('button',{name:'Pay',exact:true}).click({timeout:remaining()});
-      await page.getByText(/Bok credit added\./).waitFor({timeout:remaining()});
-     }
-     await page.locator('[data-action-review]:visible').click();
+     const start=submissions.length,kind=buyBokCredit?'bok':'post';
+     failureStep=kind+'-compose';await openJourneyComposer(page,message,remaining);
+     if(buyBokCredit){failureStep='bok-credit';await buyJourneyBokCredit(page,remaining);}
+     failureStep=kind+'-submit';await submitJourneyComposer(page,kind,remaining);
+     failureStep=kind+'-inclusion';
      const card=page.locator('article.post').filter({hasText:message}).first();await card.waitFor({timeout:remaining()});
      const receipt=await card.evaluate(el=>({hash:el.dataset.txHash,block:el.dataset.blockNumber,blockHash:el.dataset.blockHash,id:el.id}));
      if(!/^0x[0-9a-f]{64}$/.test(receipt.hash??'')||!/^0x[0-9a-f]{64}$/.test(receipt.blockHash??'')||!(Number(receipt.block)>0))throw failure('RELEASE_INCLUSION');
@@ -124,28 +154,27 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
      return {card,receipt,events};
     }
     const {card,receipt}=await compose(tag);await record('post');
-    const replyStart=submissions.length;
-    await card.getByRole('button',{name:'Reply',exact:true}).click();await page.getByLabel('Message',{exact:true}).fill(tag+' reply');await page.locator('[data-action-review]:visible').click();
+    failureStep='reply-compose';const replyStart=submissions.length;
+    await card.getByRole('button',{name:'Reply',exact:true}).click();await dialog.getByLabel('Message',{exact:true}).fill(tag+' reply');failureStep='reply-submit';await submitJourneyComposer(page,'reply',remaining);
+    failureStep='reply-inclusion';
     await page.getByText(tag+' reply',{exact:true}).waitFor({timeout:remaining()});
     await evidence.require(await hashesSince(replyStart),events=>events.some(e=>e.type==='PostPublished'&&e.payload.record.parent===receipt.id.slice(5)&&e.payload.record.root===receipt.id.slice(5)&&evidence.text(e.payload)===tag+' reply'),remaining);await record('reply');
-    const likeStart=submissions.length,like=card.getByRole('button',{name:'Like · 20 credits',exact:true});await like.click();await page.waitForFunction(id=>Number.parseInt(document.querySelector('#'+id+' .likes')?.textContent??'0',10)>0,receipt.id,{timeout:remaining()});
+    failureStep='like';const likeStart=submissions.length,like=card.getByRole('button',{name:'Like · 20 credits',exact:true});await like.click();await page.waitForFunction(id=>Number.parseInt(document.querySelector('#'+id+' .likes')?.textContent??'0',10)>0,receipt.id,{timeout:remaining()});
     await evidence.require(await hashesSince(likeStart),events=>events.some(e=>e.type==='LikeChanged'&&e.payload.post===receipt.id.slice(5)&&e.payload.active===true&&BigInt(e.payload.count)>0n),remaining);await record('like');
-    await page.reload({waitUntil:'domcontentloaded'});await page.getByText(tag,{exact:true}).waitFor({timeout:remaining()});await record('reload');
-    const reconnect=page.getByRole('button',{name:'Connect wallet',exact:true});
-    if(await reconnect.count()){await reconnect.first().click();await page.getByRole('button',{name:/CI test wallet/}).click();await page.getByRole('button',{name:'Your account',exact:true}).waitFor({timeout:remaining()});const dismiss=page.getByRole('button',{name:'Close',exact:true});if(await dismiss.count())await dismiss.first().click();}
+    failureStep='reload';await page.reload({waitUntil:'domcontentloaded'});await page.getByText(tag,{exact:true}).waitFor({timeout:remaining()});await record('reload');
     // Starter intentionally excludes Bok credit. Exercise the actual purchase
     // and require a new bot reply to this unique request before allowing release.
     const bok=await compose(tag+' @bok reply with the word ready only',{buyBokCredit:true});await page.goto(cfg.stagingOrigin+'/#/thread/'+bok.receipt.id.slice(5),{waitUntil:'domcontentloaded'});
     const invocation=bok.events.find(e=>e.type==='PluginInvoked'&&e.payload.post_id===bok.receipt.id.slice(5)&&e.payload.plugin_id===BigInt(config.bok.pluginId).toString());if(!invocation)throw failure('RELEASE_INCLUSION');
-    const bot=page.locator('article.bot-post').first();await bot.waitFor({timeout:remaining()});const botHash=await bot.getAttribute('data-tx-hash');
+    failureStep='bok-reply';const bot=page.locator('article.bot-post').first();await bot.waitFor({timeout:remaining()});const botHash=await bot.getAttribute('data-tx-hash');
     await evidence.require([botHash],events=>events.some(e=>e.type==='PluginReplyPublished'&&e.payload.request_id===invocation.payload.request_id&&e.payload.plugin_id===invocation.payload.plugin_id&&e.payload.parent_id===invocation.payload.post_id&&e.payload.target===invocation.payload.target&&events.some(p=>p.type==='PostPublished'&&p.payload.id===e.payload.post_id&&p.payload.record.kind==='4'&&p.payload.record.parent===invocation.payload.post_id&&p.payload.record.root===invocation.payload.post_id)),remaining);await record('bok');
     result.proofResponses+=proofs;if(!proofs||pageErrors)throw failure('RELEASE_BROWSER_ERRORS');
    }finally{await context.close();}
   }
-  await evidence.recheck();
+  failureStep='final-check';await evidence.recheck();
   const after=await(await fetch(cfg.stagingOrigin+'/wallet/runtime.json',{signal:AbortSignal.timeout(15000)})).json();
   if(runtimeIdentity(after)!==runtimeFingerprint)throw failure('RELEASE_RUNTIME_CHANGED');
   result.passed=!expired;return result;
- }catch(e){throw Object.assign(failure(e.code?.startsWith('RELEASE_')?e.code:expired?'RELEASE_JOURNEY_TIMEOUT':'RELEASE_JOURNEY_FAILED'),{completed:result.completed});}
+ }catch(e){throw Object.assign(failure(e.code?.startsWith('RELEASE_')?e.code:expired?'RELEASE_JOURNEY_TIMEOUT':'RELEASE_JOURNEY_FAILED'),{completed:result.completed,failureStep});}
  finally{clearTimeout(timer);await browser?.close();provider.destroy();result.elapsedMs=Date.now()-started;}
 }

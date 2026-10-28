@@ -417,3 +417,14 @@ This preparation never changes the live unit or Caddy. Adopting the coherent
 backend and enabling the release trigger remain separate operator actions after
 the current release's actual browser acceptance. A successful inventory check
 or materialization is not that acceptance.
+
+The journey operates the current account modal using its exact “Close account
+panel” control. Post, Reply and Bok use the application's direct submission
+buttons once; the harness does not add a second confirmation. The required build
+runs `scripts/test-release-journey-ui.mjs` against the actual panel in Chromium,
+with local session/payment doubles and no RPC or signing. Those checks reproduce
+modal interception and cover restored/locked composers, direct reply, and the
+Bok payment-to-draft transition; real native inclusion remains mandatory in the
+separate testnet journey. Failed journeys retain only completed step names and a
+closed `journeyFailedStep` label (for example `post-compose` or `post-inclusion`),
+never browser text, wallet addresses or request parameters.

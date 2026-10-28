@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {verifyBundle,checkPublicAssets,failure} from './bundle.mjs';
+import {journeyFailureSteps} from './journey.mjs';
 
 export async function replaceLink(link,target){
  if(!path.isAbsolute(link)||!path.isAbsolute(target))throw failure('RELEASE_PATH');
@@ -18,7 +19,7 @@ export async function writeReleaseState(file,state){const tmp=file+'.next';await
 export async function releaseCandidate({candidate,stageLink,liveLink,stageOrigin,liveOrigin,stateFile,restartStage,restartLive,journey,smoke=checkPublicAssets,writeState=writeReleaseState}){
  const lock=stateFile+'.lock';await fs.mkdir(path.dirname(stateFile),{recursive:true,mode:0o750});let handle;
  try{handle=await fs.open(lock,'wx',0o600);}catch{throw failure('RELEASE_BUSY');}
- let state={schemaVersion:1,status:'checking',revision:null,previousRevision:null,startedAt:new Date().toISOString(),updatedAt:null,stages:[],journeyCompleted:[],error:null},previous,switched=false;
+ let state={schemaVersion:1,status:'checking',revision:null,previousRevision:null,startedAt:new Date().toISOString(),updatedAt:null,stages:[],journeyCompleted:[],journeyFailedStep:null,error:null},previous,switched=false;
  const mark=async stage=>{state.stages.push(stage);state.status=stage;state.updatedAt=new Date().toISOString();await writeState(stateFile,state);};
  try{
   const sealed=await verifyBundle(candidate);state.revision=sealed.manifest.revision;
@@ -37,6 +38,7 @@ export async function releaseCandidate({candidate,stageLink,liveLink,stageOrigin
   await mark('live');return state;
  }catch(e){
   state.error=safeError(e);
+  state.journeyFailedStep=journeyFailureSteps.includes(e?.failureStep)?e.failureStep:null;
   if(Array.isArray(e?.completed))state.journeyCompleted=completedSteps(e.completed);
   if(switched){
    try{await mark('rolling-back');if(await fs.realpath(liveLink)!==await fs.realpath(candidate))throw failure('RELEASE_ROLLBACK_CONCURRENT_DEPLOY');await replaceLink(liveLink,previous);await restartLive();await smoke(liveOrigin,(await verifyBundle(previous)).manifest);await mark('rolled-back');}
