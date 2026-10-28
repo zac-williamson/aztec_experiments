@@ -1,0 +1,69 @@
+{
+  "chainId": 11155111,
+  "testOnly": true,
+  "transactions": [
+    {
+      "purpose": "ci-funder",
+      "to": "0xB100C6C628b598e5Fe30b047765C2dD16C8554bf",
+      "valueWei": "30000000000000000",
+      "hash": "0x3270818d533f236688ba7d7f1518a04dc9cc5c1ad0aba49ff81b26aa88b2a7a0",
+      "status": "reverted",
+      "block": "12012483"
+    },
+    {
+      "purpose": "ci-funder",
+      "to": "0xB100C6C628b598e5Fe30b047765C2dD16C8554bf",
+      "valueWei": "30000000000000000",
+      "hash": "0x7c17d9ac8a1952c9679e640758b6ba81825c749f0549145c0a4f8d461c13198c",
+      "status": "success",
+      "block": "12012495"
+    },
+    {
+      "purpose": "stage-relayer",
+      "to": "0xfEf738e7AdC25999E463d4F2Cd750DcF364E43D0",
+      "valueWei": "3000000000000000",
+      "hash": "0x17816364192e7b955b769cdd85e383a9eae10e76d18b562c8aef3e75fa4d3cb8",
+      "status": "success",
+      "block": "12012496"
+    }
+  ],
+  "note": "Free Sepolia-only dedicated CI fixture funding; no shared signer is copied to the host. Initial21k-gas attempt reverted; actual bounded RPC gas estimate used for confirmed transfers.",
+  "testUsdcPurchases": [
+    {
+      "chainId": 11155111,
+      "testOnly": true,
+      "account": "0xB100C6C628b598e5Fe30b047765C2dD16C8554bf",
+      "router": "0x3bfa4769fb09eefc5a80d6e87c3b9c650f7ae48e",
+      "token": "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
+      "amountUsdcBaseUnits": "10000000",
+      "quotedWei": "232477332224675",
+      "maximumWei": "237126878869169",
+      "hash": "0x867237c988ab7d7a640487a42c32192369f68fa3ddb357d4b8eba24e324bdab8",
+      "status": "success",
+      "block": "12012521"
+    },
+    {
+      "chainId": 11155111,
+      "testOnly": true,
+      "account": "0xB100C6C628b598e5Fe30b047765C2dD16C8554bf",
+      "router": "0x3bfa4769fb09eefc5a80d6e87c3b9c650f7ae48e",
+      "token": "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
+      "amountUsdcBaseUnits": "90000000",
+      "quotedWei": "2092410475393684",
+      "maximumWei": "2134258684901558",
+      "hash": "0x5bcdc1029724db083c6df4ab9abac3f9751b39fb142bc3ba0ee55cb0b0d7add3",
+      "status": "success",
+      "block": "12012550"
+    }
+  ],
+  "confirmedBalanceAfterSetup": {
+    "ethWei": "27675112184782535",
+    "usdcBaseUnits": "100000000",
+    "stageRelayEthWei": "3000000000000000"
+  },
+  "fixturePolicy": {
+    "ethPerEthAccountWei": "10000000000000000",
+    "ethPerUsdcAccountWei": "0",
+    "usdcPerAccountBaseUnits": "100000000"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "verifiedAt": "2026-10-28T13:21:36.864681+00:00",
+  "stackId": "arn:aws:cloudformation:us-east-1:052665140763:stack/rolling-chat-release-access/1b801520-d2d2-11f1-9bba-12ffcd982a93",
+  "status": "CREATE_COMPLETE",
+  "outputs": {
+    "ReleaseDocument": "RollingApplicationRelease",
+    "ReleaseRoleArn": "arn:aws:iam::052665140763:role/rolling-github-release"
+  },
+  "environment": "rolling-testnet-release",
+  "sourceTemplate": "scripts/release/oidc-template.json",
+  "hostEnabled": false,
+  "noPersistentGithubRunner": true,
+  "awsActionPin": {
+    "version": "v6.3.0",
+    "sha": "e1253824e5c10ff9df46874f81ed3ec929e19cfd",
+    "verifiedVia": "Official aws-actions/configure-aws-credentials GitHub tag and action.yml",
+    "runtime": "node24"
+  }
+}

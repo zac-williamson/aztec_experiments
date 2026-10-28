@@ -57,7 +57,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Obtain short-lived permission for the fixed release command
-        uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.ROLLING_RELEASE_ROLE_ARN }}
           aws-region: us-east-1
