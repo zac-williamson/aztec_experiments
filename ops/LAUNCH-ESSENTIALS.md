@@ -8,11 +8,11 @@ visitors have no persistent analytics profile. See the
 Slack ALARM and subsequent OK recovery delivery were actually observed on
 28 October using an explicit test alarm and real healthy datapoints, without an
 application outage. Candidate `89dbc88c` passed its full build on 28 October;
-that evidence applies only to the exact revision. Final release-workflow
-acceptance, genuine real-proof journey/promotion, operator rollback and the
-expanded twenty-input core backup/restore are still **pending final receipts**.
-The successful original ten-input core/four-input
-Bok backup drill below does not establish the expanded coverage.
+that evidence applies only to the exact revision. The next repaired candidate's
+full build, genuine real-proof release journey/promotion and operator rollback
+remain **pending final receipts**. Fresh off-host restores now verify twenty
+core inputs and four Bok inputs, with both daily timers active; see
+[`backup-verification.json`](../deploy/launch-ops/backup-verification.json).
 
 The public reader now links to Help and privacy. It explains public posting and
 funding, the trusted prover, aggregate analytics, retention and the existing
@@ -160,10 +160,10 @@ node --test ops/backup.test.mjs ops/backup-job.test.mjs ops/monitor.test.mjs ops
 python3 -m unittest discover -s ops -p 'backup_cloud_test.py'
 ```
 
-## Installed acceptance — 28 October 2026
+## Initial installation — 28 October 2026
 
-The core and Bok hosts now run the separate `rolling-ops-backup-core.timer` and
-`rolling-ops-backup-bok.timer`. The immutable backup source is revision
+The initial installation enabled `rolling-ops-backup-core.timer` and
+`rolling-ops-backup-bok.timer`. Both initially used immutable backup source revision
 `37c2c1ba791d50eda242f0f59c3b89c9eeef959d`, under `/opt/rolling-ops-backup/releases/`;
 the copied existing Node runtime is 24.21.0. See
 [`backup-hosts.json`](../deploy/launch-ops/backup-hosts.json) for the explicit
@@ -195,20 +195,26 @@ The $3 reservation covers the first 31 days within the shared launch budget;
 review by 28 November 2026. It is an allocation, not a billing cap. KMS and SSM
 keys must outlive all retained archives if backups are later retired.
 
-## Prepared core coverage update — 29 October 2026
+## Verified core coverage update — 28 October 2026 UTC
 
 The final read-only coverage review found ten missing inputs: the already
 admitted live wallet/release configs and eight exact live control-file names.
 [`core-backup-update-plan.json`](../deploy/launch-ops/core-backup-update-plan.json)
 records their observed paths and the additive change from ten to twenty inputs.
-This is a prepared update, not evidence that those files have been backed up.
+The update is installed at source `5c13d4d6186ba6300c77f4debd93eeafb4d01c1b`.
+The twenty-input core restore passed at **20:47:50.817 UTC**; a fresh four-input
+Bok restore passed at **20:45:08.473 UTC**. Core essential-file metadata and active
+application references stayed unchanged through verification. Temporary core
+plaintext was removed, the jobs exited successfully, and both daily timers are
+active. Exact hashes, status timestamps and command receipts are in
+[`backup-verification.json`](../deploy/launch-ops/backup-verification.json).
 
-The integrating operator applies it only after the deployment owner confirms
-configuration writes are complete. Do not pause the backup timer during a
-concurrent application cutover. Use the reviewed installer in a coordinated window:
+The installed update followed this guarded sequence. Any later change needs a
+new comparison with current state and a coordinated window after configuration
+writes finish; do not pause the backup timer during an application cutover:
 
 1. Pause only the core backup timer, confirm its job is inactive, and read the
-   current units/config references again. Require all ten paths to be canonical
+   current units/config references again. Require all selected paths to be canonical
    regular files; missing or changed references block the update. Record current
    ownership/modes without reading file contents into logs. Match the effective
    application service command and running process to the backed-up public,

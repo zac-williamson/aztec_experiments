@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "status": "both-fresh-offhost-restores-verified",
+  "recordedAt": "2026-10-28T20:56:35.363241+00:00",
+  "scope": "Backup verification only; does not establish release-workflow or rollback acceptance.",
+  "core": {
+    "sourceRevision": "5c13d4d6186ba6300c77f4debd93eeafb4d01c1b",
+    "fileCount": 20,
+    "configSha256": "bac0d5005f81e9f6187a15cdc5ba4f9470d36a6ffcc8a946bfb0c4ed2b07604a",
+    "serviceSha256": "9ac8f0051158f79d76662552c71024ca002cc7f9a47f15558f7475d23a47b628",
+    "installerSha256": "d11a01a5b576bb00ac035047c4264005813a0e96ea7c6f41bc344eeef51e37c5",
+    "sourceVerified": true,
+    "backup": {
+      "lastAttemptAt": "2026-10-28T20:47:48.887Z",
+      "lastSuccessAt": "2026-10-28T20:47:50.461Z",
+      "lastVerifiedRestoreAt": "2026-10-28T20:47:50.817Z",
+      "lastOutcome": "verified"
+    },
+    "service": {
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "Result": "success",
+      "ExecMainStatus": "0"
+    },
+    "timer": {
+      "ActiveState": "active",
+      "UnitFileState": "enabled"
+    },
+    "temporaryDirectoryAbsent": true,
+    "freshRestoreVerified": true,
+    "essentialFileMetadataAndApplicationReferencesStableDuringDrill": true,
+    "timerRestoredToPriorActivity": true,
+    "commands": {
+      "coreApply": "ca560dd9-f19c-4c37-b263-ce33b4383ecb",
+      "coreStatus": "114d8ef7-0e4b-48e7-887d-0dd100dd55e7",
+      "coreResume": "ea25af5e-cfdc-4783-9f71-e5ef284ed2e5"
+    }
+  },
+  "bok": {
+    "sourceRevision": "37c2c1ba791d50eda242f0f59c3b89c9eeef959d",
+    "fileCount": 4,
+    "activeServiceSourceRevision": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+    "activeInputReferencesVerified": true,
+    "referenceCheckCommand": "10457a46-91eb-4048-87b3-344f9c278969",
+    "backup": {
+      "lastAttemptAt": "2026-10-28T20:45:07.104Z",
+      "lastSuccessAt": "2026-10-28T20:45:08.244Z",
+      "lastVerifiedRestoreAt": "2026-10-28T20:45:08.473Z",
+      "lastOutcome": "verified"
+    },
+    "service": {
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "Result": "success",
+      "ExecMainStatus": "0",
+      "MainPID": "0"
+    },
+    "freshRestoreVerified": true,
+    "timerActive": true,
+    "applicationPidUnchanged": true,
+    "statusCommand": "9dd6ff76-5fce-4802-b882-2c9f7ae2193b"
+  },
+  "constraints": {
+    "backupKeysBucketIamAndCryptoUnchanged": true,
+    "noRecoveredFilesInstalled": true,
+    "noSignersStartedByDrill": true,
+    "releaseAcceptanceComplete": false
+  }
+}
