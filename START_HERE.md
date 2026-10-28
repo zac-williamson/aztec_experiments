@@ -1,18 +1,18 @@
 # Rolling Chat: start here
 
-Current handover: 27 October 2026. The owner's current request takes precedence over historical task records. Credentials and private account material stay outside Git.
+Current handover: 28 October 2026. The owner's current request takes precedence over historical task records. Credentials and private account material stay outside Git.
 
 ## Live work and next action
 
-**Performance work remains paused by the owner.** Current work is the queued composer, name/avatar, funding and Like UX release, followed by real browser acceptance. [Release report](docs/COMPOSER_RELEASE_20261027.md).
+**Performance work remains paused by the owner.** Harry feedback wallet/account/payment UX and Home ranking are published. Images and the moderation-information item were dropped. MetaMask classification still needs a current expanded alert; it is not certified fixed. [Current release report](docs/HARRY_FEEDBACK_20261028.md).
 
-27 October current publication: core/Bok051a530c; prover63e4c1d3; static UI1e83d0dfc1e019e3f1de853b29420e9cda0fca28. The new Board and optional Bok use one consolidated funding router. Atomic Post all, name+avatar, character ring, main posting-credit controls, ETH/USDC top-ups and one-like-per-account UI are published. PR9 branding and nested messaging remain integrated. Private paid tips remain a separate unpublished draft.
+28 October current publication: core application and static UI8e68ac4ae34fb214f9816cec0ffc75a4a3e60727; Bok051a530c; prover63e4c1d3. The new Board and optional Bok use one consolidated funding router. Atomic Post all, name+avatar, character ring, main posting-credit controls, ETH/USDC top-ups and one-like-per-account UI are published. PR9 branding and nested messaging remain integrated. Private paid tips remain a separate unpublished draft.
 
 Portal activation **does not require an epoch proof**. The explicit immutable testnet deployment operator activates after checking the canonical checkpoint binding. Actual activation was observed16seconds after that checkpoint on27October. User withdrawals/refunds retain their ordinary protocol proofs.
 
 Nine services checked active; Bokready/active0. First live acceptance found stale published Aztec L2 fee-price ceilings (2.129e12 below observed9.491e12). The static wallet update set the ceiling to18.9817e12 and regenerated matching registration/manifest. Registration capture now rejects stale fee prices. Published UI updates only those ceilings; unchanged contracts, gas limits, credentials, provider settings and running services. Live signup quote now succeeds (0.00100951ETH / approximately$2.37 testnet reference). Fresh signup, name+avatar, atomic two-post thread, Like/reload and ETH posting-credit topup succeeded. Both posts have actual native inclusion positions in one transaction; nested replies render and collapse. USDC swap inventory was replenished. The first100-credit claim exposed a transient balance refresh being misreported as payment failure; UI1e83d0df fixes that. A second30-credit USDC purchase completed uninterrupted with one signature, automatic claim and balance529.2636→550.7869. MetaMask-extension prompts and new-release Bok requests were not rerun.
 
-Current browser test uses owned test EIP1193 wallet, not the MetaMask extension. One retained build: `/private/tmp/rolling-browser-proof-spans-build`. Reviewed source1e83d0df is pushed to master and both application branches. Prior performance reports are historical and do not establish current release timings. No optimization agent is active.
+Current browser test uses owned test EIP1193 wallet, not the MetaMask extension. One retained build: `/private/tmp/rolling-browser-proof-spans-build`. Reviewed application source8e68ac4a is pushed to master and both application branches. Prior performance reports are historical and do not establish current release timings. No optimization agent is active.
 
 ## Performance targets and evidence
 

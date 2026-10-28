@@ -186,6 +186,15 @@ PUBLIC={'/':'live.html','/archive/':'archive.html','/archive/snapshot.json':'arc
 # Explicit production assets; never export the mock review site.
 PUBLIC.update({('/'+name):name for name in ('fonts/DMSans-latin.woff2','fonts/DMSans-latin-ext.woff2','fonts/OFL.txt','favicon.svg','favicon-32.png','apple-touch-icon.png','icon-192.png','icon-512.png','og.png','site.webmanifest')})
 
+def validate_public_routes():
+ # The pinned deployed Caddyfile uses one explicit @public path line. Fail
+ # before staging if a new exported module would fall through to the old app.
+ lines=[line.split('#',1)[0].split() for line in CADDY.read_text().splitlines()]
+ matches=[tokens for tokens in lines if tokens and tokens[0]=='@public']
+ assert len(matches)==1 and matches[0][1:2]==['path'], 'Expected one explicit Caddy @public path matcher'
+ missing=sorted(set(PUBLIC)-set(matches[0][2:]))
+ assert not missing, 'Caddy public matcher is missing routes: '+', '.join(missing)
+
 def packet_archive_hash():
  archive=P/'payload.tgz'
  if not archive.exists() and not archive.is_symlink():return None
@@ -329,6 +338,7 @@ preserved()
 if mode=='stage':
  retention_helper()
  assert digest(CADDY)==m['caddySha256'];assert not NEXT.exists() and not UI.exists()
+ validate_public_routes()
  for name,entry in m['files'].items():
   old=confined_payload_file(SOURCE,name);payload=confined_payload_file(P/'files',name);assert digest(payload)==entry['sha256']
   assert (not old.exists() and not old.is_symlink()) if entry['previousSha256'] is None else (not old.is_symlink() and digest(old)==entry['previousSha256'])

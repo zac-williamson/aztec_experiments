@@ -20,4 +20,14 @@ Scope: wallet connection, Phantom, payment presentation, posting/Bok credit cont
 
 The screenshot contains an unexpanded alert for retired contracts, so it cannot identify the current classification reason. No hostname match was found in MetaMask's public phishing list; this does not rule out remote signature classification. DepositFor remains narrowly bound to chain, portal, beneficiary, executor, amount, secret hash, nonce and deadline. No warning was disabled or signing domain disguised. A current expanded alert is required before diagnosing or reporting a false classification.
 
-Publication and browser verification are recorded after deployment.
+## Publication and live verification
+
+Application and UI8e68ac4ae34fb214f9816cec0ffc75a4a3e60727 are live. Public asset hashes match the committed sources. All three candidate endpoints return complete pages; /api/status is ready and USDC terms return200. Existing contracts, SDK, signer configuration and prover/Bok services are unchanged.
+
+Actual browser checks verified: signed-out Connect wallet entry; automatic account restoration; visible posting credit550.7869; one Home card for the two-post conversation; full nested conversation still displays both posts; direct names/balances account navigation; and MetaMask/Phantom installation links when no Ethereum provider is present. No new wallet signatures or payments were required. Phantom extension signing and the MetaMask alert were not certified in this run.
+
+Deployment exposed two operator problems. A saved relay record was being mistaken for an active process; native close already drains operations and retains the signer lease/fence across restart. The journal was preserved. Its successful Sepolia transaction subsequently reconciled through the native status endpoint, clearing the fence; no transaction was resent. A new frontend module also lacked a Caddy public route. The previous UI was restored while correcting the exact three routes, then the new UI was enabled with its backend ready. Caddy2.11.7 used its documented SIGUSR1 reload with admin still disabled and the proxy PID unchanged. See [Caddy signal documentation](https://caddyserver.com/docs/command-line#signals).
+
+The publisher now rejects a missing public route before staging; all35 publisher tests pass. Future combined releases must verify backend readiness and public routing before switching the frontend. Do not infer an operation is active solely because a persisted journal entry exists.
+
+Performance goals remain paused. This release does not claim new end-to-end timing results.

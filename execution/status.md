@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 28October Harryfeedback implementation: rootintegrates browserfeed/rankingandpublication; thread_application drafts ranking/localindexedcandidatechanges; thread_composer_review drafts wallet/payment/accountmenuUX; posting_credit_ui investigatesPhantomandMetaMaskalerts. Scopeitems1–7only; imagesandmoderationinformationdropped. Preservebrand/currentcontracts; performancecampaignpaused. Actualaffectedchecksandpublicationrequired.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October: Harry feedback UI and indexed Home ranking published as application/UI8e68ac4a. Images and moderation-information scope dropped. Focused tests and actual browser Home/account/install/nested-thread checks passed; public hashes match, all candidate pools complete, USDC terms200. Native relay reconciliation cleared a successful retained payment without resending. Proxy route omission repaired; pre-stage public-route gate added (35 tests). MetaMask alert and real Phantom extension signing remain unverified. Contracts/SDK/Bok/prover unchanged; performance campaign paused. Report docs/HARRY_FEEDBACK_20261028.md.
 
 ## Ready internal work
 

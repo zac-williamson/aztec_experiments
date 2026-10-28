@@ -114,6 +114,51 @@ class RepeatPublication(unittest.TestCase):
         self.assertEqual(self.pids, {'rolling-application.service': 101, 'rolling-application-proxy.service': 102, 'rolling-query.service': 103})
         self.assertTrue(all(call[1] in ('show', 'daemon-reload') for call in self.calls))
 
+    def public_routes_fixture(self):
+        nodes=[node for node in TREE.body if
+               isinstance(node,ast.Assign) and any(isinstance(target,ast.Name) and target.id=='PUBLIC' for target in node.targets) or
+               isinstance(node,ast.Expr) and isinstance(node.value,ast.Call) and isinstance(node.value.func,ast.Attribute) and isinstance(node.value.func.value,ast.Name) and node.value.func.value.id=='PUBLIC']
+        exec(compile(ast.Module(body=nodes,type_ignores=[]),str(SOURCE_FILE),'exec'),self.ns)
+        return list(self.ns['PUBLIC'])
+
+    def test_public_routes_accept_exact_current_matcher_without_mutation(self):
+        routes=self.public_routes_fixture()
+        self.caddy.write_text(':4319 {\n @public path '+' '.join(routes)+' /wallet/* /crs/*\n}\n')
+        before=self.caddy.read_bytes()
+        self.ns['validate_public_routes']()
+        self.assertEqual(self.caddy.read_bytes(),before)
+        self.assertEqual(self.calls,[])
+
+    def test_public_routes_reject_each_missing_new_module(self):
+        routes=self.public_routes_fixture()
+        for missing in ['/home-reader.mjs','/feed-ranking.mjs','/feed-preferences.mjs']:
+            with self.subTest(route=missing):
+                self.caddy.write_text('@public path '+' '.join(route for route in routes if route!=missing)+'\n')
+                with self.assertRaisesRegex(AssertionError,re.escape(missing)):
+                    self.ns['validate_public_routes']()
+        self.assertEqual(list(self.new_source.iterdir()),[])
+        self.assertEqual(self.calls,[])
+
+    def test_public_routes_ignore_comments_other_matchers_and_prefixes(self):
+        routes=self.public_routes_fixture();missing='/home-reader.mjs'
+        allowed=' '.join(route for route in routes if route!=missing)
+        self.caddy.write_text('@public path '+allowed+' /home-reader.mjs.old # '+missing+'\n@other path '+missing+'\n')
+        with self.assertRaisesRegex(AssertionError,re.escape(missing)):
+            self.ns['validate_public_routes']()
+
+    def test_public_routes_reject_missing_ambiguous_or_changed_matcher_shape(self):
+        self.public_routes_fixture()
+        for content in ['# @public path /\n','@public {\n path /\n}\n','@public path /\n@public path /reader.mjs\n']:
+            self.caddy.write_text(content)
+            with self.assertRaisesRegex(AssertionError,'one explicit'):
+                self.ns['validate_public_routes']()
+
+    def test_public_route_check_precedes_stage_mutations(self):
+        stage=next(node for node in TREE.body if isinstance(node,ast.If) and ast.unparse(node.test)=="mode == 'stage'")
+        calls=[ast.unparse(node.value) for node in stage.body if isinstance(node,ast.Expr) and isinstance(node.value,ast.Call)]
+        self.assertLess(calls.index('validate_public_routes()'),calls.index('capacity_preflight()'))
+        self.assertLess(calls.index('validate_public_routes()'),calls.index('clone_source()'))
+
     def test_repeat_activation_switches_files_and_future_start_without_restarting(self):
         self.ns['activate']()
         self.assertEqual(os.readlink(self.base / 'current'), str(self.new_ui))
