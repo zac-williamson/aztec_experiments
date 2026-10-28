@@ -9402,13 +9402,13 @@
       "evidence": "evidence/G21.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "29 October compact gas candidate: root10\u21922writes and public482531\u2192211720; full29byte ordinary-credit and tip-funded native transactions each1020245billedL2/4064DA, exact inclusion receipt fees verified. Refund40000/512 passes fixed-control-flow audit, adversarial contexts, and actual native payment success/rollback/mixed-spend lifecycle. Regenerated private circuits/VKs+SDK.90 reader checks and818/841 selected checks pass;23 failures isolated to byte-identical baseline projection fixtures missing prior paid-tip events. Fullnative proof flagsfalse; no website deployment. Operations maintenance window remains held; oldlatencygoalpaused.",
-      "execution_lane": "root integration; isolated Board state implementation; isolated client reader implementation; independent refund/context audit",
+      "checkpoint": "29 October owner authorizes publishing d4623b16 compact Board gas optimization and explicitly accepts empty new state. Native source, SDK and full gas qualification complete. Root preparing fresh Board/portal/Bok/router release with canonical existing FPC and 40000/512 refund allowance; operations chat handing over live window. No live mutations yet. Performance campaign remains paused.",
+      "execution_lane": "root coherent testnet deployment and real posting acceptance; independent storage-reader/deployment review",
       "owner": "root",
       "branch": "codex/rolling-chat-draft3",
       "verification_method": "Native claim/cancel exclusion, Solidity custody/refund proofs, client and browser checks, coherent artifact verification, independent review, then fresh testnet signup and publication.",
       "priority": 0,
-      "next_action": "Commit and push coherent compact-state source/artifacts/evidence. Coordinate newBoard/runtime/prover deployment only when operations releases live acceptance window; preserve full release compatibility. Fresh testnet receipts remain outstanding; do not describe native measurements as website publication."
+      "next_action": "Integrate current operations controls, deploy fresh contract scope, publish matching SDK/readers/prover/runtime, verify actual signup/post/tip/post and record receipt gas. Do not mix old ABI with new Board or preserve obsolete state."
     }
   ],
   "specification": {

@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 29 October compact gas candidate: root10→2writes and public482531→211720; full29byte ordinary-credit and tip-funded native transactions each1020245billedL2/4064DA, exact inclusion receipt fees verified. Refund40000/512 passes fixed-control-flow audit, adversarial contexts, and actual native payment success/rollback/mixed-spend lifecycle. Regenerated private circuits/VKs+SDK.90 reader checks and818/841 selected checks pass;23 failures isolated to byte-identical baseline projection fixtures missing prior paid-tip events. Fullnative proof flagsfalse; no website deployment. Operations maintenance window remains held; oldlatencygoalpaused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 29 October owner authorizes publishing d4623b16 compact Board gas optimization and explicitly accepts empty new state. Native source, SDK and full gas qualification complete. Root preparing fresh Board/portal/Bok/router release with canonical existing FPC and 40000/512 refund allowance; operations chat handing over live window. No live mutations yet. Performance campaign remains paused.
 
 ## Ready internal work
 

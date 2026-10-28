@@ -1,3 +1,7 @@
+# Compact gas deployment —29 October2026
+
+Root owns integration, existing testnet signers, host changes and browser acceptance. deployment_review performs read-only review of all new storage consumers and deployment coherence. Operations chat is relinquishing runtime ownership; no concurrent signer or service changes. Old state disposable; latency campaign paused.
+
 # Paid-like release continuation — 28 October 2026
 
 Root owns source integration, static publication and real browser acceptance. thread_composer_review prepared the claim SDK packet and corrected publisher configuration selection; thread_application independently reviewed both and prepared current deployment documentation. posting_credit_ui verified the fresh signup/post/two-tip/post test without running transactions. All agents use temporary drafts; root is the only shared source writer. Performance remains paused. Publication and real-proof acceptance are pending.
