@@ -60,6 +60,27 @@ test('configuration cannot turn explicit backups into cache discovery or key sto
  for(const patch of [{extra:'private'},{prefix:'all'},{keyParameter:'/elsewhere'},{files:[{name:'public-index.sqlite',path:f.source,kind:'sqlite'}]},{files:[{name:'configuration/bok.json',path:f.source,kind:'file'},{name:'credentials/bok-operator.json',path:f.source,kind:'file'}]}])assert.throws(()=>validateBackupJobConfig({...f.c,...patch}),{code:'BACKUP_CONFIG'});
  await fs.mkdir(f.workRoot,{mode:0o700});await fs.writeFile(path.join(f.workRoot,'job.lock'),'');await assert.rejects(runBackupJob(f.c,{aws:f.aws,workRoot:f.workRoot}),{code:'BACKUP_BUSY'});assert.equal(f.calls.length,0);
 });
+test('the reviewed core control-file additions complete the explicit twenty-input inventory',async t=>{
+ const f=await fixture(t);
+ const existing=['configuration/application.json','configuration/funding-relay.json','configuration/prover.json','configuration/query.json','configuration/operations.json','configuration/moderator.json','credentials/moderator.json','credentials/query.env','credentials/funding-relayer.json','analytics.sqlite'];
+ const installed={...f.c,role:'core',prefix:'rolling-ops/core',keyParameter:'/rolling/operations/backup-key/core',workDirectory:'/run/rolling-ops-backup-core',files:existing.map((name,i)=>({name,path:path.join(f.root,'input-'+i),kind:name==='analytics.sqlite'?'sqlite':'file'}))};
+ const plan=JSON.parse(await fs.readFile(new URL('../deploy/launch-ops/core-backup-update-plan.json',import.meta.url),'utf8'));
+ assert.deepEqual(plan.fileAdditions.map(f=>f.name),[
+  'configuration/wallet.json','configuration/application-caddyfile','configuration/application.service','configuration/application-availability.conf','configuration/application-release.conf',
+  'configuration/release.json','configuration/release-public-verifier.json','configuration/release-job.service','configuration/release-sudoers','configuration/staging.service',
+ ]);
+ const updated={...installed,files:[...installed.files,...plan.fileAdditions]};
+ assert.equal(updated.files.length,20);assert.equal(validateBackupJobConfig(updated),updated);
+});
+test('core control-file permission does not admit test credentials, activation markers or additional service discovery',async t=>{
+ const f=await fixture(t),core={...f.c,role:'core',prefix:'rolling-ops/core',keyParameter:'/rolling/operations/backup-key/core',workDirectory:'/run/rolling-ops-backup-core'};
+ const analytics={name:'analytics.sqlite',path:path.join(f.root,'analytics.sqlite'),kind:'sqlite'};
+ for(const name of ['credentials/test-wallet.json','credentials/stage-relay.json','configuration/enabled','configuration/another.service','configuration/application.service.d','journals/funding.sqlite']){
+  assert.throws(()=>validateBackupJobConfig({...core,files:[analytics,{name,path:f.source,kind:'file'}]}),{code:'BACKUP_CONFIG'});
+ }
+ const plan=JSON.parse(await fs.readFile(new URL('../deploy/launch-ops/core-backup-update-plan.json',import.meta.url),'utf8'));
+ for(const file of plan.fileAdditions)assert.throws(()=>validateBackupJobConfig({...f.c,files:[file]}),{code:'BACKUP_CONFIG'});
+});
 test('deployment grants one role only its archive prefix and separate key; timers have no signer or lifecycle permissions',()=>{
  const c=backupCloudConfiguration({bucket:'rolling-backup-example',region:'us-east-1',accountId:'123456789012',role:'core',kmsKeyArn:'arn:aws:kms:us-east-1:123456789012:key/test-key'});
  assert(c.lifecycle.Rules.every(r=>r.Expiration.Days===7));assert.equal(c.rolePolicy.Statement[0].Resource,'arn:aws:s3:::rolling-backup-example/rolling-ops/core/*');assert(!JSON.stringify(c.rolePolicy).includes('PutParameter'));assert(!JSON.stringify(c.rolePolicy).includes('DeleteObject'));
