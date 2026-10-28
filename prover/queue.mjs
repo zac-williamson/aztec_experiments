@@ -4,7 +4,7 @@ import {randomBytes} from 'node:crypto';
 /** Queue owns persistence/lifecycle; injected worker owns proof computation. */
 export async function createProofQueue({directory,worker,maxJobs=1000,maxBytes=2*1024**3,maxPerClient=4}){
  await fs.mkdir(directory,{recursive:true,mode:0o700});
- const jobs=new Map();let waiters=0;let bytes=0,running=false,closed=false;const pending=[];let submitted=0,completed=0,failed=0,lastWorkerMs=null,lastQueueWaitMs=null;
+ const jobs=new Map();let waiters=0;let bytes=0,running=false,closed=false;const pending=[];let submitted=0,completed=0,failed=0;
  const snapshot=job=>job?{state:job.state,...(job.code?{code:job.code}:{}),...(['complete','failed'].includes(job.state)?{timings:{...job.timings,resultReadyToSnapshotMs:Math.max(0,performance.now()-job.completedAt)}}:{}),...(job.state==='complete'?{result:job.result}:{})}:null;
  const notify=job=>{for(const finish of [...(job.waiters??[])])finish(snapshot(job));};
  const remove=async job=>{if(!jobs.delete(job.id))return;for(const finish of [...(job.waiters??[])])finish(null);bytes-=job.bytes;await fs.rm(job.file,{force:true});};
@@ -12,7 +12,7 @@ export async function createProofQueue({directory,worker,maxJobs=1000,maxBytes=2
   if(running||closed)return;running=true;
   try{while(pending.length&&!closed){
    const job=pending.shift();if(!jobs.has(job.id))continue;
-   const startedAt=performance.now();job.startedAt=startedAt;job.timings.queueWaitMs=startedAt-job.queuedAt;job.state='running';job.draining=true;let state='complete';
+   const startedAt=performance.now();job.timings.queueWaitMs=startedAt-job.queuedAt;job.state='running';job.draining=true;let state='complete';
    const publish=(result,state='complete')=>{
     if(['complete','failed'].includes(job.state))return;
     job.result=result;job.completedOrder=completed+failed;job.state=state;job.completedAt=performance.now();
@@ -26,7 +26,6 @@ export async function createProofQueue({directory,worker,maxJobs=1000,maxBytes=2
    }});}catch(error){if(job.state!=='complete'){state='failed';job.code=['read','catalog','decompress','board-binding','prove','native-init','native-prove','native-srs','native-constraint','native-verification','native-process'].includes(error.code)?error.code:'worker';}}
    finally{
     const cleanupAt=performance.now();job.timings.workerMs=cleanupAt-startedAt;
-    lastWorkerMs=job.timings.workerMs;lastQueueWaitMs=job.timings.queueWaitMs;
     await fs.rm(job.file,{force:true});bytes-=job.bytes;job.bytes=0;job.timings.cleanupMs=performance.now()-cleanupAt;job.draining=false;
    }
    if(job.state!=='complete')publish(job.result,state);
@@ -61,10 +60,5 @@ export async function createProofQueue({directory,worker,maxJobs=1000,maxBytes=2
    const abort=()=>{if(clear())reject(signal.reason);};
    job.waiters.add(finish);signal?.addEventListener('abort',abort,{once:true});
   });
- },async close(){closed=true;await worker.close();while(running)await new Promise(r=>setTimeout(r,10));for(const job of [...jobs.values()])await remove(job);},stats(){
-  const now=performance.now(),queued=[...jobs.values()].filter(job=>job.state==='queued'),active=[...jobs.values()].filter(job=>job.draining);
-  const age=(rows,key)=>rows.reduce((maximum,job)=>Number.isFinite(job[key])?Math.max(maximum,now-job[key]):maximum,0)/1000;
-  return {jobs:jobs.size,bytes,running,submitted,completed,failed,queued:queued.length,active:active.length,
-   oldestJobAgeSeconds:age(queued,'queuedAt'),oldestActiveAgeSeconds:age(active,'startedAt'),lastWorkerMs,lastQueueWaitMs};
- }};
+ },async close(){closed=true;await worker.close();while(running)await new Promise(r=>setTimeout(r,10));for(const job of [...jobs.values()])await remove(job);},stats(){return {jobs:jobs.size,bytes,running,submitted,completed,failed};}};
 }
