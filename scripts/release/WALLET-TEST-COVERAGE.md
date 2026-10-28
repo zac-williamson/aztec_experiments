@@ -27,3 +27,30 @@ Local verification: Node **24.21.0**, `NODE_BACKEND=js`, all three entrypoints:
 **89 passed, zero skipped**. These are local cryptographic/storage and UI-unit
 checks. SDK transaction fixtures contain random proofs; no browser or native
 chain journey, live service change, or real-proof acceptance is inferred.
+
+## Built browser component
+
+`test-w02-browser.mjs` now uses the same current custody path in actual Chromium:
+an in-memory disposable Ethereum signer answers the explicit EIP-1193 signature
+request; the built application performs real signature verification, SDK address
+derivation and encrypted IndexedDB storage. A reload restores the same account
+without another signature. Rejected signing creates no remembered session;
+ciphertext tampering is rejected; the stored AES key is nonextractable; sign-out
+clears the session and requires a new signature. Private account fields remain
+inside the browser, including on failed assertions.
+
+The former password/file/passkey ceremony is replaced, while the existing real
+Web Locks exclusion, unchanged L2 transaction hash recovery, unchanged Ethereum
+nonce recovery and pending-deployment UI checks remain. Claim load/save survives
+reload and stays local to its browser profile. `createJournalBackup()` transfers
+only authenticated ciphertext between fresh profiles after each separately signs
+in; another Ethereum owner cannot import it. There is no claim bulk-export or
+identity-file API in the current application.
+
+Local verification: exact Node24.21.0, five fresh Chromium profiles, **passed in
+9.84 seconds**, peak process-tree RSS1,454,304KiB. The existing60second/4GiB
+supervisor limits and process-tree cleanup remain; W02 fingerprints now reference
+current session/journal sources instead of the deleted password/passkey modules.
+All retained manifest tracked inputs and committed app outputs matched before the
+run. This is a local browser component check with synthetic chain observations,
+not a real-proof testnet journey or permission to promote a release.
