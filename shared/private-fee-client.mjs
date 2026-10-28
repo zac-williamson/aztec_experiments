@@ -7,9 +7,10 @@ import { getContractInstanceFromInstantiationParams, computeContractAddressFromI
 import { Gas, GasFees, GasSettings } from '@aztec-labs/stdlib/gas';
 import { computeSecretHash } from '@aztec-labs/stdlib/hash';
 import { SimulationError } from '@aztec-labs/stdlib/errors';
-import { PrivateFeePaymentMethod, PrivateMintAndPayFeePaymentMethod, PrivateClaimAndPayFeePaymentMethod } from './private-fee-payment.mjs';
+import { PrivateFeePaymentMethod, PrivateMintAndPayFeePaymentMethod, PrivateClaimAndPayFeePaymentMethod, PrivatePaidLikePaymentMethod } from './private-fee-payment.mjs';
 export { PrivateFeePaymentMethod, PrivateMintAndPayFeePaymentMethod, PrivateClaimAndPayFeePaymentMethod } from './private-fee-payment.mjs';
 
+import {privateCreditReader,PAID_LIKE_VALUE} from './private-credit.mjs';
 export class PrivateFeePreparationError extends Error {
   constructor(code) { super(code);this.name='PrivateFeePreparationError';this.code=code; }
 }
@@ -36,11 +37,13 @@ function artifactOf(value) {
   const artifact=loadContractArtifact(value);
   const functions=getAllFunctionAbis(artifact);
   const publicFunctions=functions.filter(f=>f.functionType==='public'&&f.name!=='public_dispatch');
-  check(artifact.name==='PrivateFPC'&&!functions.some(f=>f.isInitializer)&&publicFunctions.length===1&&
-    publicFunctions[0].name==='_complete_refund'&&publicFunctions[0].isOnlySelf&&publicFunctions[0].parameters.length===2,'PRIVATE_FEE_ARTIFACT_INVALID');
-  for(const [name,count] of [['pay_fee',1],['mint_and_pay_fee',4],['mint',3]]) {
+  check(artifact.name==='PrivateFPC'&&!functions.some(f=>f.isInitializer)&&publicFunctions.length===2&&
+    publicFunctions.every(f=>f.isOnlySelf)&&publicFunctions.some(f=>f.name==='_complete_refund'&&f.parameters.length===4)&&
+    publicFunctions.some(f=>f.name==='_record_paid_like'),'PRIVATE_FEE_ARTIFACT_INVALID');
+  for(const [name,count] of [['pay_fee',1],['pay_like_and_fee',5],['mint_and_pay_fee',4],['mint',3]]) {
     check(artifact.functions.some(f=>f.name===name&&f.functionType==='private'&&f.parameters.length===count),'PRIVATE_FEE_ARTIFACT_INVALID');
   }
+  check(artifact.functions.some(f=>f.name==='credit_root'&&f.functionType==='utility'&&f.parameters.length===1),'PRIVATE_FEE_ARTIFACT_INVALID');
   return artifact;
 }
 export async function derivePrivateFeeInstance(privateFeeArtifact) {
@@ -99,8 +102,8 @@ export function normalizePrivateFeeGasSettings(value) {
 export async function preparePrivateFeePayment(input) {
   try{return await prepare(input);}catch(error){if(error instanceof PrivateFeePreparationError)throw error;throw new PrivateFeePreparationError('PRIVATE_FEE_PREPARATION_FAILED');}
 }
-async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,expectedChainId,expectedVersion,gasSettings,claim,creditCheck='read-balance',measure=(_stage,operation)=>operation()}={}) {
-  check(['read-balance','ordinary-post-proof','qualified-like-proof','deferred-balance'].includes(creditCheck)&&!(creditCheck!=='read-balance'&&claim!==undefined),'PRIVATE_FEE_CONFIGURATION_REQUIRED');
+async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,expectedChainId,expectedVersion,gasSettings,claim,creditScope,paidLike,creditCheck='read-balance',measure=(_stage,operation)=>operation()}={}) {
+  check(['read-balance','deferred-balance'].includes(creditCheck)&&!(claim&&paidLike)&&!(creditCheck==='deferred-balance'&&(claim||paidLike)),'PRIVATE_FEE_CONFIGURATION_REQUIRED');
   check(wallet?.getChainInfo&&wallet?.registerContract&&node?.getNodeInfo&&node?.getContract,'PRIVATE_FEE_PROVIDER_REQUIRED');
   check(privateFeeAddress&&privateFeeArtifact,'PRIVATE_FEE_CONFIGURATION_REQUIRED');
   const paymentPXE=wallet.pxe;
@@ -122,10 +125,15 @@ async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,e
   const bindingFailure=binding.find(value=>value.status==='rejected');if(bindingFailure)throw bindingFailure.reason;
   const registered=binding[1].value;
   let paymentMethod,availableCredit,smallClaim;
+  let selectedCredit;
   const privateBalance=async()=>{
-    check(wallet.executeUtility,'PRIVATE_FEE_PROVIDER_REQUIRED');
-    const {result}=await measure('action.fee-balance',()=>Contract.at(payer,artifact,wallet).methods.balance_of(author).simulate({from:author}),{nativeUtility:true});
-    return uint(result,128);
+    check(creditScope?.board&&creditScope?.artifact,'PRIVATE_FEE_CONFIGURATION_REQUIRED');
+    check(wallet.pxe===paymentPXE,'PRIVATE_FEE_CONTEXT_CHANGED');
+    const observed=await measure('action.fee-balance',()=>privateCreditReader({wallet,node,owner:author,fpc:payer,fpcArtifact:artifact,
+      board:creditScope.board,boardArtifact:creditScope.artifact,chainId,version,cache:creditScope.cache}).read());
+    check(wallet.pxe===paymentPXE,'PRIVATE_FEE_CONTEXT_CHANGED');
+    selectedCredit={owner:author,notes:observed.notes};
+    return observed.availableCredit;
   };
   if(claim!==undefined) {
     check(claim&&typeof claim==='object'&&!Array.isArray(claim),'PRIVATE_FEE_INVALID_CLAIM');
@@ -142,31 +150,27 @@ async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,e
     const existing=await privateBalance();
     if(existing>=fixed.maximumFee){
       availableCredit=existing;
-      paymentMethod=new PrivateClaimAndPayFeePaymentMethod(payer,smallClaim,1n);
+      paymentMethod=new PrivateClaimAndPayFeePaymentMethod(payer,smallClaim,1n,selectedCredit);
     }
   }
-  if(!paymentMethod) {
-    if(creditCheck==='read-balance'){availableCredit=await privateBalance();check(availableCredit>0n,'PRIVATE_FEE_BALANCE_INSUFFICIENT');}
-    paymentMethod=new PrivateFeePaymentMethod(payer,1n);
-  }
+  const selectPayment=async like=>{
+    const total=await privateBalance(),tipCost=like?PAID_LIKE_VALUE:0n;
+    check(total>tipCost,'PRIVATE_FEE_BALANCE_INSUFFICIENT');
+    return {availableCredit:total-tipCost,paymentMethod:like?new PrivatePaidLikePaymentMethod(payer,like,1n,selectedCredit):new PrivateFeePaymentMethod(payer,1n,selectedCredit)};
+  };
+  if(!paymentMethod&&creditCheck==='read-balance')({availableCredit,paymentMethod}=await selectPayment(paidLike));
   const refund=getAllFunctionAbis(artifact).find(f=>f.name==='_complete_refund');
   const refundSelector=(await FunctionSelector.fromNameAndParameters(refund.name,refund.parameters)).toString();
-  // Qualified against this exact public bytecode using the pinned native AVM.
-  // Both refund branches and extreme field/u128 values are exercised by the profile test.
-  check(canonical.currentContractClassId.toString()===PRIVATE_FEE_REFUND_PROFILE.classId,'PRIVATE_FEE_ARTIFACT_INVALID');
-  const refundGasLimits=new Gas(PRIVATE_FEE_REFUND_PROFILE.daGas,PRIVATE_FEE_REFUND_PROFILE.l2Gas);
-  const prepared={creditCheck,...(creditCheck!=='read-balance'?{}:{availableCredit}),networkGasLimits:{daGas:nodeInfo.txsLimits.gas.daGas,l2Gas:nodeInfo.txsLimits.gas.l2Gas},refundGasLimits,refundReservationError:PRIVATE_FEE_REFUND_PROFILE.reservationError,paymentMethod,refundSelector,gasSettings:fixed.gasSettings,metadata:{classId:canonical.currentContractClassId.toString(),maximumFee:fixed.maximumFee.toString(),feePayer:payer.toString(),mode:claim===undefined?'private-balance':'bridge-claim',refundUnusedGas:true}};
-  if(!['qualified-like-proof','deferred-balance'].includes(creditCheck))return prepared;
-  // Metadata can overlap chain synchronization. Read credit only later, under
-  // the caller's held synchronized account operation; never retain a balance.
-  return {...prepared,withAvailableCredit:async()=>{
-    try{
-      check(wallet.pxe===paymentPXE,'PRIVATE_FEE_CONTEXT_CHANGED');
-      const availableCredit=await privateBalance();
-      if(creditCheck==='deferred-balance')check(availableCredit>0n,'PRIVATE_FEE_BALANCE_INSUFFICIENT');
-      check(wallet.pxe===paymentPXE,'PRIVATE_FEE_CONTEXT_CHANGED');
-      return {...prepared,creditCheck:'read-balance',availableCredit};
-    }catch(error){if(error instanceof PrivateFeePreparationError)throw error;throw new PrivateFeePreparationError('PRIVATE_FEE_PREPARATION_FAILED');}
+  // New class: use the configured maximum teardown allowance and the native
+  // simulator. No old class-qualified gas estimate applies to mixed inputs.
+  const refundGasLimits=fixed.gasSettings.teardownGasLimits;
+  const prepared={creditCheck,...(creditCheck==='read-balance'?{availableCredit,paymentMethod}:{}),networkGasLimits:{daGas:nodeInfo.txsLimits.gas.daGas,l2Gas:nodeInfo.txsLimits.gas.l2Gas},refundGasLimits,refundReservationError:PRIVATE_FEE_REFUND_PROFILE.reservationError,refundSelector,gasSettings:fixed.gasSettings,metadata:{classId:canonical.currentContractClassId.toString(),maximumFee:fixed.maximumFee.toString(),feePayer:payer.toString(),mode:claim===undefined?'private-balance':'bridge-claim',refundUnusedGas:true}};
+  if(creditCheck==='read-balance')return prepared;
+  // Only public metadata overlaps synchronization. Select native note witnesses
+  // at the caller's held account anchor, after private discovery has completed.
+  return {...prepared,withAvailableCredit:async like=>{
+    try{return {...prepared,...await selectPayment(like),creditCheck:'read-balance'};}
+    catch(error){if(error instanceof PrivateFeePreparationError)throw error;throw new PrivateFeePreparationError(error?.code==='PRIVATE_FEE_BALANCE_INSUFFICIENT'?error.code:'PRIVATE_FEE_PREPARATION_FAILED');}
   }};
 }
 

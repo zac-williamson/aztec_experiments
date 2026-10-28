@@ -9,7 +9,7 @@ import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
 import {TxHash, TxStatus, TxExecutionResult} from '@aztec-labs/stdlib/tx';
 import {nameRegistration, NAME_DOMAIN} from './name-policy.mjs';
 export const ROLLING_EVENTS = Object.freeze(['ModeratorTransferred','NameRegistered','MainPolicyPublished','SubboardCreated','SubboardRejected',
-  'PostPublished','PostRemoved','PluginConfigured','PluginInvoked','PluginReplyPublished','LikeChanged','BioPublished','AvatarPublished','AvatarRemoved']);
+  'PostTipKey','PostPublished','PostRemoved','PluginConfigured','PluginInvoked','PluginReplyPublished','LikeChanged','BioPublished','AvatarPublished','AvatarRemoved']);
 const verified = new WeakSet();
 export const isRollingEvent = event => verified.has(event);
 export const rollingError = () => Object.assign(Error('Rolling public history is invalid or unavailable.'), {code:'ROLLING_PUBLIC_INVALID'});
@@ -39,6 +39,7 @@ export function unpackRollingAvatar(fields,length) {
 const shapes={ModeratorTransferred:['schema','previous','successor'],NameRegistered:['schema','name_id','first_length','first','last_length','last'],MainPolicyPublished:['schema','version','digest','length','rules'],
  SubboardCreated:['schema','subboard_id','slug_length','slug','name_length','name','description_length','description','local_policy_version','rules_length','rules','rules_digest','main_policy_version','metadata_digest'],
  SubboardRejected:['schema','subboard_id','main_policy_version','local_policy_version','reason_length','reason','reason_digest'],
+ PostTipKey:['schema','post','key'],
  PostPublished:['schema','id','record','timestamp','main_policy_version','local_policy_version','length','message'],
  PostRemoved:['schema','id','policy_version','penalized','reason_length','reason'],PluginConfigured:['schema','plugin_id','adapter','enabled'],
  PluginInvoked:['schema','plugin_id','post_id','request_id','target'],PluginReplyPublished:['schema','plugin_id','request_id','post_id','parent_id','target'],
@@ -113,7 +114,11 @@ export async function validateRollingEvent(input,expectedScope) {
   } else if(input.type==='PostRemoved') {
    nonzero(p.id);integer(p.policy_version,64);check(typeof p.penalized==='boolean');await text(p.reason,p.reason_length,7);
   } else if(input.type==='PluginConfigured') {nonzero(p.plugin_id);nonzero(p.adapter);check(typeof p.enabled==='boolean');}
-  else if(input.type==='LikeChanged') {nonzero(p.post);nonzero(p.tag);integer(p.count,64);check(typeof p.active==='boolean');}
+  else if(input.type==='PostTipKey') {
+   nonzero(p.post);exact(p.key,['x','y']);const x=scalar(p.key.x),y=scalar(p.key.y);
+   check((x!==0n||y!==0n)&&(y*y-x*x*x+17n)%Fr.MODULUS===0n);
+  }
+  else if(input.type==='LikeChanged') {nonzero(p.post);nonzero(p.tag);integer(p.count,64);check(p.active===true);}
   else {for(const k of Object.keys(p).filter(k=>k!=='schema'))nonzero(p[k]);}
   const result=freeze({...structuredClone(input),scope});verified.add(result);return result;
  } catch {throw rollingError();}

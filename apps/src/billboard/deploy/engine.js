@@ -251,7 +251,7 @@
 
   // Pre-activation Rolling reads use one canonical checkpoint. The final wallet
   // verifier requires an active portal, so it cannot authorize this setup phase.
-  async function readRollingDeploymentState({a,node,address,artifact,manifest,policyDigest}) {
+  async function readRollingDeploymentState({a,node,address,artifact,manifest,policyDigest,privateFee}) {
     const fail=()=>{throw new Error('Rolling deployment state differs from manifest');};
     const read=fn=>a.boundedTransactionRead(fn,20000);
     const num=v=>BigInt(v.toString());
@@ -266,11 +266,11 @@
     const slot=name=>num(artifact.storageLayout[name].slot);
     const base=slot('config'),portalSlot=slot('portal_address');
     if(artifact.name!=='RollingBoard'||portalSlot!==1n||base!==3n||slot('deposits')!==base+11n)fail();
-    const slots=[portalSlot,...Array.from({length:10},(_,i)=>base+BigInt(i)),slot('moderator'),slot('main_version'),slot('main_rules')];
+    const slots=[portalSlot,...Array.from({length:10},(_,i)=>base+BigInt(i)),slot('moderator'),slot('main_version'),slot('main_rules'),slot('private_fee')];
     const values=(await read(()=>Promise.all(slots.map(s=>node.getPublicStorageAt(reference,address,new a.Fr(s)))))).map(num);
     const b=manifest.board,n=manifest.network;
     const expected=[n.chainId,n.rollup,n.rollupVersion,b.minDeposit,b.maxDeposit,b.baseCooldown,b.kMultiplier,b.censorWindow,b.maxSaveUp,manifest.actors.aztecDeployer,manifest.actors.aztecDeployer].map(BigInt);
-    if(values.length!==14||values[0]<0n||values[0]>=1n<<160n||values.slice(1,12).some((v,i)=>v!==expected[i]))fail();
+    if(values.length!==15||values[14]!==num(privateFee)||values[14]===0n||values[0]<0n||values[0]>=1n<<160n||values.slice(1,12).some((v,i)=>v!==expected[i]))fail();
     // The predicted address already binds the original initializer, including
     // its policy. Before binding, require that initial policy. A bound board's
     // moderator may advance it through set_main_policy; normal restart must not
@@ -301,7 +301,7 @@
     if (config?.deploymentManifest?.schemaVersion !== 2 || config.deploymentManifest.board?.kind !== 'rolling') {
       throw Object.assign(new Error('This release deploys RollingBoard only.'), { code: 'BB_DEPLOYMENT_UNSUPPORTED' });
     }
-    const { aztec: a, ethers, log, pause, initCRS, createStore, portalBytecode, artifact } = env;
+    const { aztec: a, ethers, log, pause, initCRS, createStore, portalBytecode, artifact, privateFeeArtifact } = env;
     const verified=a.verifyDeploymentInputs(config.deploymentManifest,{artifact,portalBytecode,runtimeMetadata:a.portalRuntimeMetadata,config,ethers});
     const manifest=verified.manifest,rolling=manifest.schemaVersion===2;
     const rawNode=a.createAztecNodeClient(config.aztecNodeUrl);
@@ -317,6 +317,8 @@
     if(typeof proxyCode!=='string'||proxyCode.toLowerCase()!=='0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3')throw new Error('Required CREATE2 proxy runtime is missing or unsupported');
     const expectedClass=await a.getContractClassFromArtifact(a.loadContractArtifact(artifact));
     if(expectedClass.id.toString().toLowerCase()!==manifest.artifacts.boardClassId)throw new Error('Deployment board class mismatch');
+    // Fixed release artifact, not operator-supplied address: bind the same canonical FPC as the wallet.
+    const canonicalPrivateFee=await a.derivePrivateFeeInstance(privateFeeArtifact);
 
 
     // ============================================================
@@ -480,8 +482,7 @@
     // ============================================================
     log('Step 7: Deploying L2 contract...', 'info');
     const contractArtifact = a.loadContractArtifact(artifact);
-    // Constructor args for init(min_deposit, base_cooldown, censor, k,
-    //                          censor_window, max_save_up, policy, policy_len)
+    // Rolling initializer includes the release-derived canonical private FPC.
     const minDepositWei = config.minDepositWei;
     if (config.maxDepositWei == null) throw new Error('Maximum deposit must be configured for this fresh deployment');
     const maxDepositWei = BigInt(config.maxDepositWei);
@@ -505,7 +506,7 @@
     log('  Censor window:  ' + censorWindow + 's', 'info');
     log('  Max save up:    ' + maxSaveUp, 'info');
     log('  Policy:         ' + policyLen + ' bytes', 'info');
-    const initArgs = rolling ? [policyFields.map(f=>new a.Fr(f)),new a.Fr(BigInt(policyLen)),BigInt(nodeInfo.l1ChainId),a.EthAddress.fromString(rollupAddr),BigInt(version),BigInt(minDepositWei),maxDepositWei,BigInt(baseCooldown),BigInt(kMultiplier),BigInt(censorWindow),BigInt(maxSaveUp)] : [
+    const initArgs = rolling ? [policyFields.map(f=>new a.Fr(f)),new a.Fr(BigInt(policyLen)),BigInt(nodeInfo.l1ChainId),a.EthAddress.fromString(rollupAddr),BigInt(version),BigInt(minDepositWei),maxDepositWei,BigInt(baseCooldown),BigInt(kMultiplier),BigInt(censorWindow),BigInt(maxSaveUp),canonicalPrivateFee.address] : [
       BigInt(nodeInfo.l1ChainId), a.EthAddress.fromString(rollupAddr), BigInt(version),
       new a.Fr(BigInt(minDepositWei)), new a.Fr(maxDepositWei),
       new a.Fr(BigInt(baseCooldown)),
@@ -586,7 +587,7 @@
     log('  Contract registered with PXE.', 'success');
 
     const scalar = result => { const value = result?.result ?? result?.value ?? result; return BigInt((value?.inner ?? value).toString()); };
-    const readPortal = async () => rolling?ethers.getAddress((await readRollingDeploymentState({a,node:rawNode,address:l2Addr,artifact:contractArtifact,manifest,policyDigest:expectedPolicyVersion})).portal):ethers.getAddress('0x' + scalar(await a.boundedTransactionRead(()=>l2Contract.methods.get_portal().simulate({ from: address }),20000)).toString(16).padStart(40, '0'));
+    const readPortal = async () => rolling?ethers.getAddress((await readRollingDeploymentState({a,node:rawNode,address:l2Addr,artifact:contractArtifact,manifest,policyDigest:expectedPolicyVersion,privateFee:canonicalPrivateFee.address})).portal):ethers.getAddress('0x' + scalar(await a.boundedTransactionRead(()=>l2Contract.methods.get_portal().simulate({ from: address }),20000)).toString(16).padStart(40, '0'));
     const expectedPolicyVersion=rolling?(await a.poseidon2HashWithSeparator([BigInt(policyLen),...policyFields.map(BigInt)],0x52435431)).toString():await a.deploymentPolicyVersion(l2Addr.toString().toLowerCase(),policyText);
     const portalState = rolling?BigInt(await readPortal())!==0n:await a.boundedTransactionRead(()=>l2Contract.methods.is_portal_set().simulate({ from: address }),20000);
     const portalAlreadySet = portalState?.result ?? portalState?.value ?? portalState;
@@ -601,7 +602,7 @@
       BigInt(l2Addr.toString()), BigInt(version), BigInt(minDepositWei), maxDepositWei,
       BigInt(baseCooldown), BigInt(kMultiplier), BigInt(censorWindow), BigInt(maxSaveUp)]);
     const verifyBoardPolicy=async()=>{
-      if(rolling){await readRollingDeploymentState({a,node:rawNode,address:l2Addr,artifact:contractArtifact,manifest,policyDigest:expectedPolicyVersion});return;}
+      if(rolling){await readRollingDeploymentState({a,node:rawNode,address:l2Addr,artifact:contractArtifact,manifest,policyDigest:expectedPolicyVersion,privateFee:canonicalPrivateFee.address});return;}
       const [censor,policy]=await a.boundedTransactionRead(()=>Promise.all([l2Contract.methods.get_censor().simulate({from:address}),l2Contract.methods.get_policy_version().simulate({from:address})]),20000);
       if(scalar(censor)!==BigInt(manifest.board.censor)||scalar(policy)!==BigInt(expectedPolicyVersion))throw new Error('Board censor or policy differs from manifest');
     };
@@ -688,7 +689,7 @@
       if (!readyTxHash) throw new Error('Portal awaits checkpointed binding: provide the original readyTxHash to resume activation');
       const hash = a.TxHash.fromString(readyTxHash);
       const activation = await activateReady({ node: rawNode, portal, hash, operator:manifest.actors.ethereumDeployer, expectedPortal:predicted, log,
-        verifyBinding:()=>readRollingDeploymentState({a,node:rawNode,address:l2Addr,artifact:contractArtifact,manifest,policyDigest:expectedPolicyVersion}),
+        verifyBinding:()=>readRollingDeploymentState({a,node:rawNode,address:l2Addr,artifact:contractArtifact,manifest,policyDigest:expectedPolicyVersion,privateFee:canonicalPrivateFee.address}),
         activate: async args => (await ethereumActivation.send({ data: new ethers.Interface(PORTAL_ABI).encodeFunctionData('activate', args),
           value: '0', expected: { kind: 'activate-portal', portal: predicted.toLowerCase(), configHash: configHash.toLowerCase() } })).receipt });
       if(rolling&&boardDeployment)boardDeployment=await readBoardDeploymentAnchor({node:rawNode,receipt:{txHash:a.TxHash.fromString(boardDeployment.txHash)},read:fn=>a.boundedTransactionRead(fn,20000),contextGuard:config.contextGuard});

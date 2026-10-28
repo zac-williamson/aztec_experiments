@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October: Harry feedback UI and indexed Home ranking published as application/UI8e68ac4a. Images and moderation-information scope dropped. Focused tests and actual browser Home/account/install/nested-thread checks passed; public hashes match, all candidate pools complete, USDC terms200. Native relay reconciliation cleared a successful retained payment without resending. Proxy route omission repaired; pre-stage public-route gate added (35 tests). MetaMask alert and real Phantom extension signing remain unverified. Contracts/SDK/Bok/prover unchanged; performance campaign paused. Report docs/HARRY_FEEDBACK_20261028.md.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October: integrated20-FEE private paid likes; canonical contract/VK and SDK builds passed,203 client/composer tests,16 policy and91 deployment tests passed, repeated-like browser test passed. Native tips acceptance passed with proofs disabled:20 transfers, author spending tip, mixed inputs, application revert principal refund, double-spend rejection, fresh discovery. Native atomic Bok invocation/rollback passed. Real-proof testnet acceptance next, then publication. MetaMaskhostnameBLOCK confirmed; reportpushed1b6159d1. Liveapp8e68 unchanged; performancepaused.
 
 ## Ready internal work
 

@@ -328,6 +328,7 @@ async function main() {
   const portalBytecode = fs.readFileSync(path.join(__dirname, 'portal_bytecode.txt'), 'utf8').trim();
   const artifactPath=manifestConfig.boardProfile==='rolling'?path.join(PROJECT_ROOT,'billboard/target/rolling_contract-RollingBoard.json'):path.join(__dirname,'billboard_artifact.json');
   const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+  const privateFeeArtifact=JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT,'apps/src/billboard/private_fee_artifact.json'),'utf8'));
 
   const env = {
     aztec: a, ethers, log,
@@ -338,7 +339,7 @@ async function main() {
     createStore: createStoreNode(a),
     getBrowserSigner: null,
     portalBytecode: portalBytecode.startsWith('0x') ? portalBytecode : '0x' + portalBytecode,
-    artifact,
+    artifact, privateFeeArtifact,
   };
 
   const config = {...manifestConfig,aztecApiKey:AZTEC_API_KEY,aztecWallet,ethWallet,

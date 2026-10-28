@@ -1,0 +1,24 @@
+import test,{after} from 'node:test';
+import assert from 'node:assert/strict';
+import {Grumpkin} from '@aztec-labs/foundation/crypto/grumpkin';
+import {poseidon2HashWithSeparator} from '@aztec-labs/foundation/crypto/poseidon';
+import {BarretenbergSync} from '@aztec-foundation/bb.js';
+import {validateRollingEvent,isRollingEvent} from './public-events.mjs';
+import {createRollingProjection} from './public-projection.mjs';
+after(()=>BarretenbergSync.destroySingleton());
+const scope={chainId:'31337',rollupVersion:'1',rollupAddress:'0x'+'11'.repeat(20),boardAddress:'0x'+'0'.repeat(62)+'42',classId:'0x'+'0'.repeat(63)+'1'},key={x:String(Grumpkin.generator.x.toBigInt()),y:String(Grumpkin.generator.y.toBigInt())};
+const words=Array(32).fill('0');words[0]=(BigInt('0x78')<<240n).toString();
+const digest=async()=>(await poseidon2HashWithSeparator(['1',...words].map(BigInt),0x52435431)).toBigInt().toString();
+const event=(type,payload,index,tx='1')=>validateRollingEvent({schemaVersion:1,scope,type,position:{blockNumber:'1',blockHash:'0x'+'12'.repeat(32),txHash:'0x'+tx.padStart(64,'0'),txIndexWithinBlock:tx,logIndexWithinTx:String(index)},payload:{schema:'1',...payload}},scope);
+test('each thread post retains authenticated P and repeated paid likes increment without unlike',async()=>{
+ const d=await digest(),policy=await event('MainPolicyPublished',{version:'1',digest:d,length:'1',rules:words},0);
+ const post=(id,parent,index)=>event('PostPublished',{id,record:{subboard:'0',parent,root:'10',kind:'1',name_id:'0',reference:'0',content_digest:d},timestamp:'1',main_policy_version:'1',local_policy_version:'0',length:'1',message:words},index);
+ const tip=await event('PostTipKey',{post:'10',key},1),first=await post('10','0',2),tip2=await event('PostTipKey',{post:'11',key},3),second=await post('11','10',4);
+ const projection=createRollingProjection({isValidatedEvent:isRollingEvent});projection.stage([policy,tip,first,tip2,second]).apply();
+ assert(projection.thread('10').posts.every(post=>JSON.stringify(post.tipKey)===JSON.stringify(key)));
+ const like=count=>event('LikeChanged',{post:'10',tag:'99',active:true,count:String(count)},0,String(count+1));
+ projection.stage([await like(1),await like(2)]).apply();assert.equal(projection.thread('10').posts[0].likes,'2');
+ await assert.rejects(event('LikeChanged',{post:'10',tag:'99',active:false,count:'1'},0,'4'),{code:'ROLLING_PUBLIC_INVALID'});
+ assert.throws(()=>createRollingProjection({isValidatedEvent:isRollingEvent}).stage([policy,first]));
+ const cross=await event('PostTipKey',{post:'10',key},1,'2');assert.throws(()=>createRollingProjection({isValidatedEvent:isRollingEvent}).stage([policy,cross,first]));
+});

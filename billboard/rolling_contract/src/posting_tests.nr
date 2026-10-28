@@ -2,6 +2,18 @@ use crate::{RollingBoard, posting::{PostDraft, invocation_preimage, invocation_t
 use private_bok::{PrivateBok, words, recipient_commitment};
 use aztec::{test::helpers::test_environment::TestEnvironment, protocol::{address::{AztecAddress, EthAddress}, hash::sha256_to_field, traits::{FromField, ToField}}};
 
+// Derive from native wallet keys in the Board utility scope. Production readers
+// obtain only the paired public event point, never this author-only test helper.
+unconstrained fn author_tip_key(env: TestEnvironment, board: AztecAddress,
+    owner: AztecAddress, post: Field) -> crate::RollingBoard::TipKey {
+    let point = env.utility_context_at(board, |context| {
+        let root = get_nhk_app(get_public_keys(owner).npk_m_hash);
+        private_credit::spending_key(private_credit::post_secret(root, context.chain_id(),
+            context.version(), board, post))
+    });
+    crate::RollingBoard::TipKey { x: point.x, y: point.y }
+}
+
 fn text<let N: u32, let F: u32>(value: str<N>) -> [Field; F] { pack_bytes(value.as_bytes()) }
 fn fixed<let N: u32>(value: str<N>) -> [u8; 32] {
     let mut result = [0; 32]; for i in 0..N { result[i] = value.as_bytes()[i]; } result
@@ -18,7 +30,7 @@ unconstrained fn setup_saved(saved: u16) -> (TestEnvironment, AztecAddress, Azte
     let mut env = TestEnvironment::new();
     let moderator = env.create_light_account(); let alice = env.create_light_account(); let bob = env.create_light_account();
     let board = env.deploy("@rolling_contract/RollingBoard").with_public_initializer(moderator,
-        RollingBoard::interface().init(text("No threats"), 10, 1, EthAddress::from_field(0x1111), 1, 10, 1000, 10, 3, 100, saved));
+        RollingBoard::interface().init(text("No threats"), 10, 1, EthAddress::from_field(0x1111), 1, 10, 1000, 10, 3, 100, saved, moderator));
     env.call_private(moderator, RollingBoard::at(board).update_portal(EthAddress::from_field(0x1234)));
     (env, board, moderator, alice, bob)
 }
@@ -204,7 +216,7 @@ unconstrained fn removed_quote_target_rejected() {
 }
 #[test(should_fail_with="Function _publish can only be called by the same contract")]
 unconstrained fn public_publish_cannot_bypass_private_admission() {
-    let (env, board, _, alice, _) = setup(); env.call_public(alice, RollingBoard::at(board)._publish(201, draft(), 0, 0));
+    let (env, board, _, alice, _) = setup(); env.call_public(alice, RollingBoard::at(board)._publish(201, draft(), 0, 0, crate::RollingBoard::TipKey { x: 1, y: 17631683881184975370165255887551781615748388533673675138860 }));
 }
 #[test(should_fail_with="Post already exists")]
 unconstrained fn different_funded_account_cannot_replay_post_nonce() {
@@ -288,49 +300,39 @@ fn like_tag_is_account_secret_and_post_scope_bound() {
     assert(tag != like_tag(1, 2, board, 10, 100));
     assert(tag != like_tag(1, 1, AztecAddress::from_field(4), 10, 100));
 }
+// Callback boundary only: moderator stands in for configured FPC in this
+// fixture. Actual value conservation belongs to the native FPC transaction.
 #[test]
-unconstrained fn private_likes_are_idempotent_across_names_and_need_no_collateral() {
-    let (env, board, _, alice, bob) = setup(); let chain = fund(env, board, alice, 101);
+unconstrained fn paid_like_callback_counts_every_transfer() {
+    let (env, board, fpc, alice, _) = setup(); let chain = fund(env, board, alice, 101);
     let id = publish(env, board, alice, chain, 201, draft());
-    env.call_private(bob, RollingBoard::at(board).set_like(id, true));
-    env.call_private(bob, RollingBoard::at(board).set_like(id, true));
-    assert_eq(env.view_public(RollingBoard::at(board).get_like_count(id)), 1);
-    env.call_private(bob, RollingBoard::at(board).register_name(fixed("John"), 4, fixed("Doe"), 3));
-    env.call_private(bob, RollingBoard::at(board).register_name(fixed("Jane"), 4, fixed("Doe"), 3));
-    env.call_private(bob, RollingBoard::at(board).authenticate_name(name_id(fixed("John"), 4, fixed("Doe"), 3)));
-    env.call_private(bob, RollingBoard::at(board).set_like(id, true));
-    env.call_private(bob, RollingBoard::at(board).authenticate_name(name_id(fixed("Jane"), 4, fixed("Doe"), 3)));
-    env.call_private(bob, RollingBoard::at(board).set_like(id, true));
-    assert_eq(env.view_public(RollingBoard::at(board).get_like_count(id)), 1);
-    env.call_private(alice, RollingBoard::at(board).set_like(id, true));
-    assert_eq(env.view_public(RollingBoard::at(board).get_like_count(id)), 2);
-    env.call_private(bob, RollingBoard::at(board).set_like(id, false));
-    env.call_private(bob, RollingBoard::at(board).set_like(id, false));
-    assert_eq(env.view_public(RollingBoard::at(board).get_like_count(id)), 1);
-    env.call_private(bob, RollingBoard::at(board).set_like(id, true));
+    let key = author_tip_key(env, board, alice, id);
+    env.call_public(fpc, RollingBoard::at(board).record_paid_like(id, key, 123));
+    env.call_public(fpc, RollingBoard::at(board).record_paid_like(id, key, 123));
     assert_eq(env.view_public(RollingBoard::at(board).get_like_count(id)), 2);
 }
-#[test]
-unconstrained fn unlike_after_removal_is_allowed() {
-    let (env, board, moderator, alice, bob) = setup(); let chain = fund(env, board, alice, 101);
+#[test(should_fail_with="Wrong post tip key")]
+unconstrained fn paid_like_cannot_redirect_tip_to_another_author() {
+    let (env, board, fpc, alice, bob) = setup(); let chain = fund(env, board, alice, 101);
     let id = publish(env, board, alice, chain, 201, draft());
-    env.call_private(bob, RollingBoard::at(board).set_like(id, true));
-    env.call_public(moderator, RollingBoard::at(board).remove_post(id, 1, 0, text("Threat"), 6));
-    env.call_private(bob, RollingBoard::at(board).set_like(id, false));
-    assert_eq(env.view_public(RollingBoard::at(board).get_like_count(id)), 0);
+    let wrong = author_tip_key(env, board, bob, id);
+    env.call_public(fpc, RollingBoard::at(board).record_paid_like(id, wrong, 123));
 }
+
 #[test(should_fail_with="Post removed")]
-unconstrained fn new_like_after_removal_is_rejected() {
-    let (env, board, moderator, alice, bob) = setup(); let chain = fund(env, board, alice, 101);
+unconstrained fn new_paid_like_after_removal_is_rejected() {
+    let (env, board, moderator, alice, _) = setup(); let chain = fund(env, board, alice, 101);
     let id = publish(env, board, alice, chain, 201, draft());
+    let key = author_tip_key(env, board, alice, id);
     env.call_public(moderator, RollingBoard::at(board).remove_post(id, 1, 0, text("Threat"), 6));
-    env.call_private(bob, RollingBoard::at(board).set_like(id, true));
+    env.call_public(moderator, RollingBoard::at(board).record_paid_like(id, key, 123));
 }
-#[test(should_fail_with="Function _set_like can only be called by the same contract")]
-unconstrained fn caller_cannot_choose_tag_or_impersonate_another_liker() {
+#[test(should_fail_with="Only private fee contract")]
+unconstrained fn unbacked_caller_cannot_record_a_like() {
     let (env, board, _, alice, bob) = setup(); let chain = fund(env, board, alice, 101);
     let id = publish(env, board, alice, chain, 201, draft());
-    env.call_public(bob, RollingBoard::at(board)._set_like(id, 123, true));
+    let key = author_tip_key(env, board, alice, id);
+    env.call_public(bob, RollingBoard::at(board).record_paid_like(id, key, 123));
 }
 #[test]
 unconstrained fn late_removal_under_unchanged_policy_has_no_penalty() {
@@ -447,17 +449,16 @@ fn like_storage_namespaces_separate_count_post_and_actor() {
     assert(active != crate::posting::like_storage_key(2, 11, 13));
 }
 #[test]
-unconstrained fn like_counts_are_independent_across_posts_and_accounts() {
-    let (env, board, _, alice, bob) = setup(); let chain = fund(env, board, alice, 101);
+unconstrained fn paid_like_counts_are_independent_across_posts() {
+    let (env, board, fpc, alice, _) = setup(); let chain = fund(env, board, alice, 101);
     let first = publish(env, board, alice, chain, 201, draft());
     let second = publish(env, board, alice, chain, 202, draft());
-    env.call_private(bob, RollingBoard::at(board).set_like(first, true));
-    env.call_private(bob, RollingBoard::at(board).set_like(second, true));
-    env.call_private(alice, RollingBoard::at(board).set_like(first, true));
+    let first_key = author_tip_key(env, board, alice, first);
+    let second_key = author_tip_key(env, board, alice, second);
+    env.call_public(fpc, RollingBoard::at(board).record_paid_like(first, first_key, 123));
+    env.call_public(fpc, RollingBoard::at(board).record_paid_like(second, second_key, 123));
+    env.call_public(fpc, RollingBoard::at(board).record_paid_like(first, first_key, 456));
     assert_eq(env.view_public(RollingBoard::at(board).get_like_count(first)), 2);
-    assert_eq(env.view_public(RollingBoard::at(board).get_like_count(second)), 1);
-    env.call_private(bob, RollingBoard::at(board).set_like(first, false));
-    assert_eq(env.view_public(RollingBoard::at(board).get_like_count(first)), 1);
     assert_eq(env.view_public(RollingBoard::at(board).get_like_count(second)), 1);
 }
 
@@ -489,7 +490,7 @@ unconstrained fn authenticated_bok_reply_preserves_thread_moderation_and_account
     // Activation already reserves the authorized budget; settle that reservation.
     env.call_public(op, PrivateBok::at(bok).settle(401, 0, 40, 999));
     let before = env.view_public(PrivateBok::at(bok).request(401));
-    env.call_public(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 1));
+    env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 1));
     let id = crate::posting::bot_reply_id(board, bok, 401);
     let (exists, record, flag, _, _) = env.view_public(RollingBoard::at(board).get_post(id));
     assert(exists); assert_eq(flag, 0); assert_eq(record.kind, 4); assert_eq(record.name_id, 0);
@@ -509,7 +510,7 @@ unconstrained fn authenticated_bok_reply_preserves_thread_moderation_and_account
 unconstrained fn bot_reply_uses_current_policy_after_parent_policy_changes() {
     let (env, board, op, _, bok, _) = reply_setup(false);
     env.call_public(op, RollingBoard::at(board).set_main_policy(text("Updated"), 7));
-    env.call_public(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 2, 0));
+    env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 2, 0));
     let (exists, _, _, _, _) = env.view_public(RollingBoard::at(board).get_post(crate::posting::bot_reply_id(board, bok, 401)));
     assert(exists);
 }
@@ -517,74 +518,74 @@ unconstrained fn bot_reply_uses_current_policy_after_parent_policy_changes() {
 #[test(should_fail_with="Only enabled plugin adapter")]
 unconstrained fn direct_human_reply_rejected() {
     let (env, board, op, user, bok, _) = reply_setup(false);
-    env.call_public(user, RollingBoard::at(board).publish_plugin_reply(401, 77, text("Done"), 4, 1, 0));
+    env.call_public(user, RollingBoard::at(board).publish_plugin_reply(401, 77, text("Done"), 4, 1, 0, 1, 17631683881184975370165255887551781615748388533673675138860));
 }
 
 #[test(should_fail_with="Only operator")]
 unconstrained fn wrong_operator_reply_rejected() {
     let (env, board, op, user, bok, _) = reply_setup(false);
-    env.call_public(user, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
+    env.call_private(user, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
 }
 
 #[test(should_fail_with="Already replied")]
 unconstrained fn reply_replay_rejected() {
     let (env, board, op, user, bok, _) = reply_setup(false);
-    env.call_public(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
-    env.call_public(op, PrivateBok::at(bok).publish_reply(401, 77, text("Again"), 5, 1, 0));
+    env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
+    env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Again"), 5, 1, 0));
 }
 
 #[test(should_fail_with="Unknown activated invocation")]
 unconstrained fn wrong_request_has_no_activation() {
     let (env, board, op, user, bok, _) = reply_setup(false);
-    env.call_public(bok, RollingBoard::at(board).publish_plugin_reply(402, 77, text("Done"), 4, 1, 0));
+    env.call_public(bok, RollingBoard::at(board).publish_plugin_reply(402, 77, text("Done"), 4, 1, 0, 1, 17631683881184975370165255887551781615748388533673675138860));
 }
 
 #[test(should_fail_with="Unknown activated invocation")]
 unconstrained fn same_adapter_wrong_plugin_has_no_activation() {
     let (env, board, op, user, bok, _) = reply_setup(false);
     env.call_public(op, RollingBoard::at(board).configure_plugin(78, bok, true));
-    env.call_public(op, PrivateBok::at(bok).publish_reply(401, 78, text("Done"), 4, 1, 0));
+    env.call_private(op, PrivateBok::at(bok).publish_reply(401, 78, text("Done"), 4, 1, 0));
 }
 
 #[test(should_fail_with="Unknown activated invocation")]
 unconstrained fn wrong_adapter_has_no_activation() {
     let (env, board, op, user, bok, _) = reply_setup(false);
     env.call_public(op, RollingBoard::at(board).configure_plugin(78, user, true));
-    env.call_public(user, RollingBoard::at(board).publish_plugin_reply(401, 78, text("Done"), 4, 1, 0));
+    env.call_public(user, RollingBoard::at(board).publish_plugin_reply(401, 78, text("Done"), 4, 1, 0, 1, 17631683881184975370165255887551781615748388533673675138860));
 }
 
 #[test(should_fail_with="Only enabled plugin adapter")]
 unconstrained fn disabled_plugin_cannot_reply() {
     let (env, board, op, user, bok, _) = reply_setup(false);
     env.call_public(op, RollingBoard::at(board).configure_plugin(77, bok, false));
-    env.call_public(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
+    env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
 }
 
 #[test(should_fail_with="Policy changed")]
 unconstrained fn stale_reply_policy_rejected() {
     let (env, board, op, user, bok, _) = reply_setup(false);
     env.call_public(op, RollingBoard::at(board).set_main_policy(text("Updated"), 7));
-    env.call_public(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
+    env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
 }
 
 #[test(should_fail_with="Parent removed")]
 unconstrained fn removed_invocation_parent_blocks_reply() {
     let (env, board, op, user, bok, _) = reply_setup(false);
     env.call_public(op, RollingBoard::at(board).remove_post(post_id(board, 201), 1, 0, text("Unsafe"), 6));
-    env.call_public(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
+    env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
 }
 
 #[test(should_fail_with="Text padding")]
 unconstrained fn reply_text_padding_rejected() {
     let (env, board, op, user, bok, _) = reply_setup(false);
-    env.call_public(op, PrivateBok::at(bok).publish_reply(401, 77, text("DoneX"), 4, 1, 0));
+    env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("DoneX"), 4, 1, 0));
 }
 
 #[test(should_fail_with="Subboard rejected")]
 unconstrained fn rejected_subboard_blocks_bot_reply() {
     let (env, board, op, _, bok, subboard) = reply_setup(true);
     env.call_public(op, RollingBoard::at(board).reject_subboard(subboard, text("Invalid rules"), 13));
-    env.call_public(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 1));
+    env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 1));
 }
 
 #[test]
@@ -599,17 +600,17 @@ unconstrained fn bot_reply_to_nested_invocation_keeps_original_thread_root() {
     env.mine_block_at(env.last_block_timestamp() + 11);
     env.call_private(bob, RollingBoard::at(board).post_with_bok(bob_chain, 201, d, Option::none(), Option::none(), 77, 401));
     env.call_public(op, PrivateBok::at(bok).settle(401, 0, 0, 999));
-    env.call_public(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
+    env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
     let (exists, record, _, _, _) = env.view_public(RollingBoard::at(board).get_post(crate::posting::bot_reply_id(board, bok, 401)));
     assert(exists); assert_eq(record.parent, post_id(board, 201)); assert_eq(record.root, root);
     assert(record.parent != record.root); assert_eq(record.kind, 4);
 }
 #[test]
-fn reply_callback_serialization_has_exact_37_fields() {
+fn reply_callback_has_39_fields_and_private_entrypoint_has_37() {
     let board = AztecAddress::from_field(42); let message: [Field; 32] = text("Done");
-    let expected = [401, 77].concat(message).concat([4, 1, 0]);
-    assert_eq(RollingBoard::at(board).publish_plugin_reply(401, 77, message, 4, 1, 0).args, expected);
-    assert_eq(PrivateBok::at(board).publish_reply(401, 77, message, 4, 1, 0).args, expected);
+    let expected = [401, 77].concat(message).concat([4, 1, 0, 1, 17631683881184975370165255887551781615748388533673675138860]);
+    assert_eq(RollingBoard::at(board).publish_plugin_reply(401, 77, message, 4, 1, 0, 1, 17631683881184975370165255887551781615748388533673675138860).args, expected);
+    assert_eq(PrivateBok::at(board).publish_reply(401, 77, message, 4, 1, 0).args, [401, 77].concat(message).concat([4, 1, 0]));
 }
 
 use aztec::keys::getters::{get_nhk_app, get_public_keys};
@@ -770,6 +771,9 @@ unconstrained fn atomic_thread_from_fresh_deposit_preserves_every_history_link()
     for i in 0..4 {
         let (exists, record, _, _, _) = env.view_public(RollingBoard::at(board).get_post(post_id(board, nonces[i])));
         assert(exists); assert_eq(record.parent, drafts[i].parent); assert_eq(record.root, post_id(board, 201));
+        let key = author_tip_key(env, board, owner, post_id(board, nonces[i]));
+        assert_eq(env.view_public(RollingBoard::at(board).get_tip_key_hash(post_id(board, nonces[i]))),
+            private_credit::tip_key_hash(aztec::protocol::point::EmbeddedCurvePoint { x: key.x, y: key.y }));
     }
     env.mine_block_at(env.last_block_timestamp() + 201);
     let _ = publish(env, board, owner, chain, 205, draft());

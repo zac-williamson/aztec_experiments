@@ -3,15 +3,15 @@ import {ProtocolContractAddress} from '@aztec-labs/protocol-contracts';
 import {pluginSelectors} from './plugin-policy.mjs';
 import feeArtifact from '../apps/src/billboard/private_fee_artifact.json' with {type:'json'};
 
-const boardPrivate = ['register_name', 'authenticate_name', 'create_subboard', 'claim_deposit', 'cancel_deposit', 'withdraw', 'post', 'post_thread', 'post_with_bok', 'screen', 'set_like', 'set_bio', 'set_avatar'];
+const boardPrivate = ['register_name', 'authenticate_name', 'create_subboard', 'claim_deposit', 'cancel_deposit', 'withdraw', 'post', 'post_thread', 'post_with_bok', 'screen', 'set_bio', 'set_avatar'];
 const boardPublic = ['set_main_policy', 'reject_subboard', 'configure_plugin', 'remove_post', 'remove_avatar'];
-const bokBoard = new Set(['post_with_bok', 'configure_plugin']);
-const bokPrivate = ['claim', 'authorize_request', 'cancel', 'expire', 'withdraw'];
-const bokPublic = ['publish_reply', 'reserve', 'settle', 'finish', 'close_uncertain', 'reconcile', 'withdraw_earnings'];
+const bokBoard = new Set(['post_with_bok', 'configure_plugin', 'derive_plugin_tip_key']);
+const bokPrivate = ['publish_reply', 'claim', 'authorize_request', 'cancel', 'expire', 'withdraw'];
+const bokPublic = [ 'reserve', 'settle', 'finish', 'close_uncertain', 'reconcile', 'withdraw_earnings'];
 export async function rollingSelectors(rawArtifacts) {
   const result = {fee: await pluginSelectors(), bokRequired: new Set()};
   const fee=loadContractArtifact(feeArtifact);
-  for(const [key,name] of [['feeMint','mint'],['feePay','pay_fee']]){
+  for(const [key,name] of [['feeMint','mint'],['feePay','pay_fee'],['feeLike','pay_like_and_fee']]){
     const fn=fee.functions.find(fn=>fn.name===name);
     if(!fn||fn.functionType!==FunctionType.PRIVATE)throw Error('Missing private fee selector');
     result[key]=BigInt((await FunctionSelector.fromNameAndParameters(fn)).toString());
@@ -55,10 +55,11 @@ export function bindRollingCircuit(functionName, decoded, {metadata, privateBokA
     network(input, metadata);
     const address = contract === 'RollingBoard' ? metadata.board : contract === 'PrivateBok' ? privateBokAddress : privateFeeAddress;
     if (!equal(input.call_context.contract_address.inner, address)) throw Error('Wrong rolling contract');
-    const allowed = contract === 'RollingBoard' ? boardPrivate : contract === 'PrivateBok' ? [...bokPrivate, 'subtract_more'] : ['pay_fee', 'mint_and_pay_fee', 'recurse_subtract_balance_internal', ...(allowFundedFeeClaim?['mint']:[])];
+    const allowed = contract === 'RollingBoard' ? [...boardPrivate,'derive_plugin_tip_key'] : contract === 'PrivateBok' ? [...bokPrivate, 'subtract_more'] : ['pay_fee', 'pay_like_and_fee', 'mint_and_pay_fee', ...(allowFundedFeeClaim?['mint']:[])];
     if (!allowed.includes(name)) throw Error('Unapproved rolling private function');
     if (contract === 'PrivateBok' && name === 'subtract_more' && !equal(input.call_context.msg_sender.inner, privateBokAddress)) throw Error('Bok continuation must be self-called');
-    if (contract === 'PrivateFPC' && name === 'recurse_subtract_balance_internal' && !equal(input.call_context.msg_sender.inner, privateFeeAddress)) throw Error('Fee continuation must be self-called');
+    if (contract === 'PrivateFPC' && name === 'pay_like_and_fee' && !equal(decoded.board?.inner,metadata.board)) throw Error('Wrong paid-like board');
+    if (contract === 'RollingBoard' && name === 'derive_plugin_tip_key' && !equal(input.call_context.msg_sender.inner,privateBokAddress)) throw Error('Tip key must be requested by configured Bok');
     return;
   }
   if (contract === 'Billboard' || contract === 'PluginAdapter' || contract === 'MultiCallEntrypoint') throw Error('Foreign application circuit');
@@ -66,7 +67,7 @@ export function bindRollingCircuit(functionName, decoded, {metadata, privateBokA
 export function validateRollingPayload(decoded, {metadata, privateBokAddress, privateFeeAddress, selectors, allowFeeClaim = false, allowFundedFeeClaim = false}) {
   network(decoded.inputs, metadata);
   if(privateBokAddress===undefined&&!(selectors.bokRequired instanceof Set))throw Error('Missing restricted rolling selectors');
-  let applications = 0, fees = 0;
+  let applications = 0, fees = 0, paidLikes = 0;
   const fundedSequence=[];let fundedPay=0;
   for (const call of decoded.app_payload.function_calls) {
     const target = BigInt(call.target_address.inner), selector = BigInt(call.function_selector.inner);
@@ -75,12 +76,14 @@ export function validateRollingPayload(decoded, {metadata, privateBokAddress, pr
     if(privateBokAddress===undefined&&equal(target,metadata.board)&&selectors.bokRequired.has(selector))throw Error('Bok capability disabled');
     const role = equal(target, metadata.board) ? 'RollingBoard' : equal(target, privateBokAddress) ? 'PrivateBok' : undefined;
     if (role && selectors[role][call.is_public ? 'public' : 'private'].has(selector)) { applications++; continue; }
+    if (equal(target, privateFeeAddress) && !call.is_public && selector===selectors.feeLike) { fees++; applications++; paidLikes++; continue; }
     if (equal(target, privateFeeAddress) && !call.is_public && selectors.fee.fee.has(selector)) { fees++;if(allowFundedFeeClaim&&selector===selectors.feePay){fundedPay++;fundedSequence.push('pay');}continue; }
     if (allowFundedFeeClaim && equal(target, privateFeeAddress) && !call.is_public && selector===selectors.feeMint) {fundedSequence.push('mint');continue;}
     if (allowFeeClaim && equal(target, ProtocolContractAddress.FeeJuice.toString()) && !call.is_public && selector === selectors.fee.feeClaim) {if(allowFundedFeeClaim)fundedSequence.push('claim');continue;}
     throw Error('Unapproved rolling payload call');
   }
   if (!fees) throw Error('Private fee payment required');
+  if(paidLikes&&(paidLikes!==1||fees!==1||applications!==1||allowFeeClaim))throw Error('Paid like requires its single payment call');
   if(allowFundedFeeClaim&&(fees!==1||fundedPay!==1||fundedSequence.join(',')!=='claim,mint,pay'))throw Error('Funded fee claim requires one ordered claim, mint and payment');
   if (!applications && !allowFeeClaim) throw Error('Rolling application operation required');
   return {applications, fees};
@@ -92,7 +95,7 @@ export function validateRollingJob(circuits, decoded, options) {
   const allowFundedFeeClaim=has('PrivateFPC:mint')&&has('PrivateFPC:pay_fee')&&!bootstrap;
   for (let i=0;i<circuits.length;i++) bindRollingCircuit(circuits[i].functionName, decoded[i], {...options,allowFundedFeeClaim});
   const allowFeeClaim=bootstrap||allowFundedFeeClaim;
-  if (!circuits.some(c=>['PrivateFPC:pay_fee','PrivateFPC:mint_and_pay_fee'].includes(c.functionName))) throw Error('Private fee circuit required');
+  if (!circuits.some(c=>['PrivateFPC:pay_fee','PrivateFPC:pay_like_and_fee','PrivateFPC:mint_and_pay_fee'].includes(c.functionName))) throw Error('Private fee circuit required');
   let accounts=0;
   for (let i=0;i<circuits.length;i++) if(circuits[i].functionName==='SchnorrInitializerlessAccount:entrypoint') {
     validateRollingPayload(decoded[i], {...options,allowFeeClaim,allowFundedFeeClaim}); accounts++;

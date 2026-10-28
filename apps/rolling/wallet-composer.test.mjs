@@ -1304,74 +1304,25 @@ test('pending Ethereum refund keeps balances usable without offering another wit
  await new Promise(resolve=>setImmediate(resolve));
 });
 
-test('one account Like becomes Liked and a repeated click does not submit again',{timeout:3000},async t=>{
- const f=await fixture(t,{defaults:{},posting:{status:'confirmed'}});f.balance.resolve({available:false});await f.started.promise;await new Promise(setImmediate);
- assert.equal((await f.panel.act({type:'like',post:'9'})).status,'confirmed');assert.equal(f.panel.likeState('9'),true);
- assert.deepEqual(await f.panel.act({type:'like',post:'9'}),{status:'confirmed',alreadyLiked:true});assert.equal(f.submissions.length,1);
- assert.equal((await f.panel.act({type:'unlike',post:'9'})).status,'failed');assert.equal(f.submissions.length,1);
+for(const completion of ['included','confirmed'])test(`paid likes repeat after ${completion}; unlikes stay unavailable`,{timeout:3000},async t=>{
+ const txHash='0x'+'7'.repeat(64),blockHash='0x'+'8'.repeat(64),f=await fixture(t,{defaults:{},posting:{status:completion,txHash,inclusion:{blockNumber:3,blockHash}}});
+ f.balance.resolve({available:false});await f.started.promise;await new Promise(setImmediate);
+ const tipKey={x:'1',y:'2'},action={type:'like',post:'9',tipKey};
+ assert.equal((await f.panel.act(action)).status,completion);
+ assert.equal((await f.panel.act(action)).status,completion);
+ assert.equal(f.submissions.length,2);
+ assert.deepEqual(f.prepared().tipKey,tipKey);
+ assert.equal((await f.panel.act({type:'unlike',post:'9'})).status,'failed');assert.equal(f.submissions.length,2);
 });
-test('reload hydration uses public tag state and no send',{timeout:3000},async t=>{
- const f=await fixture(t,{defaults:{},posting:{}});f.balance.resolve({available:false});await new Promise(setImmediate);
- const snapshot={checkpoint:{number:3,hash:'0x'+'8'.repeat(64)},revision:'1'};let calls=0;f.session.application.readLikes=async posts=>{calls++;return {posts:posts.map(post=>({post,liked:post==='9'})),anchor:snapshot.checkpoint,revision:'1'};};
- f.panel.loadLikes(['9','10'],snapshot);await new Promise(setImmediate);
- assert.equal(f.panel.likeState('9'),true);assert.equal(f.panel.likeState('10'),false);assert.equal(calls,1);assert.equal(f.submissions.length,0);
- f.panel.loadLikes(['9','10']);await new Promise(setImmediate);assert.equal(calls,1,'Feed rerenders reuse the account-scoped result');
-});
-test('included feedback immediately observes an already rendered checkpoint',{timeout:3000},async t=>{
+test('tip confirmation observes an already rendered checkpoint without blocking another tip',{timeout:3000},async t=>{
  const txHash='0x'+'7'.repeat(64),blockHash='0x'+'8'.repeat(64),f=await fixture(t,{defaults:{},posting:{status:'included',txHash,inclusion:{blockNumber:3,blockHash}}});
  const identity=f.document.createElement('section');f.document.body.append(identity);f.panel.attachIdentityControls(identity);
  f.balance.resolve({available:false});await new Promise(setImmediate);let observations=0;
- f.session.observeIncluded=async input=>{observations++;assert.equal(input.txHash,txHash);return {status:'confirmed',txHash};};
+ f.session.observeIncluded=async input=>{observations++;return {status:'confirmed',txHash:input.txHash};};
  f.panel.observePublicPosts([],{checkpoint:{number:3,hash:blockHash},confirmationCheckpoint:{number:3,hash:blockHash}});
- await f.panel.act({type:'like',post:'9'});await new Promise(setImmediate);
- assert.equal(observations,1);assert.equal(f.panel.likeState('9'),true);assert(f.document.body.textContent.includes('Like post: confirmed.'));
+ await f.panel.act({type:'like',post:'9',tipKey:{x:'1',y:'2'}});await new Promise(setImmediate);
+ assert.equal(observations,1);assert(f.document.body.textContent.includes('Send 20-credit tip: confirmed.'));
 });
-test('native duplicate detection marks Liked without starting a payment',{timeout:3000},async t=>{
- const f=await fixture(t,{defaults:{},posting:{}});f.balance.resolve({available:false});await new Promise(setImmediate);
- f.session.application.executeAction=async()=>{throw Object.assign(Error('already liked'),{code:'ROLLING_ALREADY_LIKED'});};
- assert.equal((await f.panel.act({type:'like',post:'9'})).status,'confirmed');assert.equal(f.panel.likeState('9'),true);assert.equal(f.submissions.length,0);
-});
-
-const likeFeed=(revision='1',hash='8')=>({checkpoint:{number:3,hash:'0x'+hash.repeat(64)},revision});
-const likeRows=(posts,snapshot,liked)=>({posts:posts.map(post=>({post,liked})),anchor:snapshot.checkpoint,revision:snapshot.revision});
-test('held public like hydration does not own wallet work or delay a post',{timeout:3000},async t=>{
- const f=await fixture(t,{posting:{}});f.balance.resolve({available:false});await new Promise(setImmediate);
- const held=Promise.withResolvers();let reads=0;f.session.application.readLikes=()=>{reads++;return held.promise;};f.panel.loadLikes(['9'],likeFeed());await new Promise(setImmediate);assert.equal(reads,1);
- const editor=f.document.querySelector('textarea');editor.value='Keep posting while likes load';editor.fire('input');f.document.querySelector('[data-action-review]').fire('click');
- await f.document.until(()=>f.submissions.length===1);assert.equal(f.session.busy,false);held.resolve(likeRows(['9'],likeFeed(),true));await new Promise(setImmediate);assert.equal(f.panel.likeState('9'),true);
-});
-test('public like failure waits for the next feed revision and never spins',{timeout:3000},async t=>{
- const f=await fixture(t,{defaults:{},posting:{}});f.balance.resolve({available:false});await new Promise(setImmediate);let reads=0;
- f.session.application.readLikes=async posts=>{reads++;if(reads===1)throw Error('Public index unavailable');return likeRows(posts,likeFeed('2'),true);};
- f.panel.loadLikes(['9'],likeFeed());await new Promise(setImmediate);f.panel.loadLikes(['9'],likeFeed());await new Promise(setImmediate);assert.equal(reads,1);assert.equal(f.panel.likeState('9'),null);
- f.panel.loadLikes(['9'],likeFeed('2'));await new Promise(setImmediate);assert.equal(reads,2);assert.equal(f.panel.likeState('9'),true);
-});
-test('public like cache invalidates on a same-height reorg and discards the old read',{timeout:3000},async t=>{
- const f=await fixture(t,{defaults:{},posting:{}});f.balance.resolve({available:false});await new Promise(setImmediate);const old=Promise.withResolvers();let reads=0;
- f.session.application.readLikes=async posts=>++reads===1?old.promise:likeRows(posts,likeFeed('1','9'),false);
- f.panel.loadLikes(['9'],likeFeed());await new Promise(setImmediate);f.panel.loadLikes(['9'],likeFeed('1','9'));old.resolve(likeRows(['9'],likeFeed(),true));await new Promise(setImmediate);
- assert.equal(reads,2);assert.equal(f.panel.likeState('9'),false);
-});
-test('a later action cannot strand an included like when its independent observation reverts',{timeout:3000},async t=>{
- const txHash='0x'+'7'.repeat(64),blockHash='0x'+'8'.repeat(64),posting={status:'included',txHash,inclusion:{blockNumber:3,blockHash}},f=await fixture(t,{defaults:{},posting});
- f.balance.resolve({available:false});await new Promise(setImmediate);const observation=Promise.withResolvers();let reads=0;f.session.observeIncluded=async()=>{reads++;return observation.promise;};
- await f.panel.act({type:'like',post:'9'});assert.equal(f.panel.likeState('9'),true);assert.equal(reads,1);
- posting.status='confirmed';await f.panel.act({type:'like',post:'10'});assert.equal(f.panel.likeState('10'),true);
- observation.resolve({status:'reverted',txHash});await new Promise(setImmediate);assert.equal(f.panel.likeState('9'),false);assert.equal(f.panel.likeState('10'),true);assert.equal(f.submissions.length,2);
-});
-
-for(const completion of ['confirmed','receipt-promoted'])test(`older public hydration cannot overwrite ${completion} Like`,{timeout:3000},async t=>{
- const txHash='0x'+'7'.repeat(64),blockHash='0x'+'8'.repeat(64),posting={status:completion==='confirmed'?'confirmed':'included',txHash,inclusion:{blockNumber:3,blockHash}},f=await fixture(t,{defaults:{},posting});
- f.balance.resolve({available:false});await new Promise(setImmediate);
- const hydration=Promise.withResolvers(),observation=Promise.withResolvers();let reads=0;
- f.session.application.readLikes=()=>{reads++;return hydration.promise;};f.session.observeIncluded=()=>observation.promise;
- f.panel.loadLikes(['9'],likeFeed());await new Promise(setImmediate);assert.equal(reads,1);
- await f.panel.act({type:'like',post:'9'});assert.equal(f.panel.likeState('9'),true);
- if(completion==='receipt-promoted'){observation.resolve({status:'confirmed',txHash});await new Promise(setImmediate);}
- hydration.resolve(likeRows(['9'],likeFeed(),false));await new Promise(setImmediate);
- assert.equal(f.panel.likeState('9'),true);assert.deepEqual(await f.panel.act({type:'like',post:'9'}),{status:'confirmed',alreadyLiked:true});assert.equal(f.submissions.length,1);
-});
-
 
 test('successful posting-credit claim survives unavailable display read and refreshes once without another payment',{timeout:3000},async t=>{
  let payments=0,claims=0,reads=0;const refreshed=Promise.withResolvers(),entered=Promise.withResolvers();
@@ -1420,4 +1371,11 @@ for(const asset of ['ETH','USDC'])test('signup shows total before a collapsed co
  assert.match(total.textContent,/≈ \$3.10 USD/);assert.match(total.textContent,/Includes your deposit, posting credit and payment fees/);
  assert.equal(!!details.open,false);assert.equal(details.querySelector('summary').textContent,'Cost breakdown');assert.match(details.textContent,/Posting credit/);
  assert(total.parentNode.childNodes.indexOf(total)<details.parentNode.childNodes.indexOf(details));assert.equal(payments,0);
+});
+
+test('opening a tip dialog retains its captured recipient key through form submission',{timeout:3000},async t=>{
+ const f=await fixture(t,{defaults:{},posting:{status:'confirmed'}});f.balance.resolve({available:false});await f.started.promise;await new Promise(setImmediate);
+ const tipKey={x:'1',y:'2'};f.panel.close();f.panel.open({type:'like',post:'9',tipKey});tipKey.x='99';
+ const send=await f.document.until(()=>f.document.querySelector('[data-action-review]'));send.fire('click');
+ await f.document.until(()=>f.submissions.length===1);assert.deepEqual(f.prepared().tipKey,{x:'1',y:'2'});
 });

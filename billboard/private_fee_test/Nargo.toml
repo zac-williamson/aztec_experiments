@@ -7,3 +7,4 @@ compiler_version = ">=1.0.0"
 [dependencies]
 aztec = { path = "../../.build/owner-delivery/aztec-nr/aztec" }
 private_fee_contract = { path = "../private_fee_contract" }
+private_credit = { path = "../private_credit" }

@@ -199,16 +199,29 @@ pub contract PrivateBok {
 
     /// Publishing is separate from settlement and finish. A failed publication
     /// cannot authorize another model call or erase uncertain reserved liability.
-    #[external("public")]
+    #[external("private")]
     fn publish_reply(request_id: Field, plugin_id: Field, message: [Field; 32], length: u16,
         expected_main_version: u32, expected_local_version: u32) {
-        assert(self.msg_sender() == self.storage.operator.read(), "Only operator");
+        let operator = self.msg_sender();
+        assert(operator == self.storage.operator.read(), "Only operator");
+        let selector = comptime { aztec::protocol::abis::function_selector::FunctionSelector::from_signature(
+            "derive_plugin_tip_key((Field),Field)") };
+        let key: [Field; 2] = self.context.call_private_function(self.storage.board.read(), selector,
+            [operator.to_field(), request_id]).get_preimage();
+        self.enqueue_self._publish_reply(request_id, plugin_id, message, length,
+            expected_main_version, expected_local_version, key[0], key[1]);
+    }
+
+    #[external("public")]
+    #[only_self]
+    fn _publish_reply(request_id: Field, plugin_id: Field, message: [Field; 32], length: u16,
+        expected_main_version: u32, expected_local_version: u32, tip_x: Field, tip_y: Field) {
         let request = self.storage.requests.at(request_id).read();
         assert(request.state == ACTIVE, "Request not active");
         assert(self.context.timestamp() < request.deadline, "Request expired");
         assert(request.reserved == 0, "Reservation unresolved");
-        let selector = comptime { aztec::protocol::abis::function_selector::FunctionSelector::from_signature("publish_plugin_reply(Field,Field,[Field;32],u16,u32,u32)") };
-        let args = [request_id, plugin_id].concat(message).concat([length as Field, expected_main_version as Field, expected_local_version as Field]);
+        let selector = comptime { aztec::protocol::abis::function_selector::FunctionSelector::from_signature("publish_plugin_reply(Field,Field,[Field;32],u16,u32,u32,Field,Field)") };
+        let args = [request_id, plugin_id].concat(message).concat([length as Field, expected_main_version as Field, expected_local_version as Field, tip_x, tip_y]);
         let _ = self.context.call_public_function(self.storage.board.read(), selector, args, aztec::context::gas::GasOpts::default());
     }
 

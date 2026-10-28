@@ -39,7 +39,7 @@ export function stageRollingPublicReduction(events,{isValidatedEvent,read,scalar
    else changes.get(id).value=value;
   }};
  }
-  const awaiting=new Set();
+  const awaiting=new Set(),tipKeys=new Map();
   const sameTx=(a,b)=>a.position.txHash===b.position.txHash&&a.position.blockHash===b.position.blockHash;
   const putPost=(id,patch)=>{check(next.posts.has(id));next.posts.set(id,{...next.posts.get(id),...patch});};
   for(const e of events){
@@ -71,14 +71,18 @@ export function stageRollingPublicReduction(events,{isValidatedEvent,read,scalar
    else if(e.type==='SubboardCreated'){check(!next.boards.has(p.subboard_id)&&p.main_policy_version===next.version);next.boards.set(p.subboard_id,{id:p.subboard_id,slug:text(p,'slug','slug_length'),name:text(p,'name','name_length'),description:text(p,'description','description_length'),rules:text(p,'rules','rules_length'),creationVersion:p.main_policy_version,rejected:false,rejection:null});}
    else if(e.type==='SubboardRejected'){const board=next.boards.get(p.subboard_id);check(board&&!board.rejected&&p.main_policy_version===next.version);next.boards.set(p.subboard_id,{...board,rejected:true,rejection:{reason:text(p,'reason','reason_length'),mainVersion:p.main_policy_version,position:e.position}});}
    else if(e.type==='PluginConfigured'){const old=next.plugins.get(p.plugin_id);check(!old||old.adapter===p.adapter);next.plugins.set(p.plugin_id,{...p});}
+   else if(e.type==='PostTipKey'){
+    check(!next.posts.has(p.post)&&!tipKeys.has(p.post));tipKeys.set(p.post,e);
+   }
    else if(e.type==='PostPublished'){
+    const tipKey=tipKeys.get(p.id);check(tipKey&&sameTx(tipKey,e));tipKeys.delete(p.id);
     const r=p.record,parent=next.posts.get(r.parent),reference=next.posts.get(r.reference),board=next.boards.get(r.subboard);
     check(!next.posts.has(p.id)&&p.main_policy_version===next.version&&next.policies.has(next.version));
     check(r.subboard==='0'||board&&!board.rejected);check(p.local_policy_version===(r.subboard==='0'?'0':'1'));
     check(r.name_id==='0'||next.names.has(r.name_id));
     if(r.parent!=='0')check(parent&&!parent.removal&&parent.record.root===r.root&&parent.record.subboard===r.subboard);
     if(r.reference!=='0')check(reference&&!reference.removal);
-    next.posts.set(p.id,{id:p.id,record:copy(r),text:text(p,'message','length'),timestamp:p.timestamp,mainVersion:p.main_policy_version,localVersion:p.local_policy_version,position:e.position,order:next.postCount,likes:'0',removal:null,invocation:null,bot:null});next.postCount=String(BigInt(next.postCount)+1n);
+    next.posts.set(p.id,{id:p.id,tipKey:copy(tipKey.payload.key),record:copy(r),text:text(p,'message','length'),timestamp:p.timestamp,mainVersion:p.main_policy_version,localVersion:p.local_policy_version,position:e.position,order:next.postCount,likes:'0',removal:null,invocation:null,bot:null});next.postCount=String(BigInt(next.postCount)+1n);
     if(r.kind==='4')awaiting.add(p.id);
    } else if(e.type==='PostRemoved'){
     const post=next.posts.get(p.id);check(post&&!post.removal);const local=post.record.subboard==='0'?0n:1n;
@@ -95,13 +99,15 @@ export function stageRollingPublicReduction(events,{isValidatedEvent,read,scalar
     check(request&&request.pluginId===p.plugin_id&&request.parent===p.parent_id&&request.target===p.target&&!request.reply&&parent&&!parent.removal&&post.record.parent===p.parent_id&&post.record.root===parent.record.root&&post.record.subboard===parent.record.subboard);
     const updated={...request,reply:p.post_id};next.requests.set(key,updated);putPost(p.parent_id,{invocation:updated});putPost(p.post_id,{bot:{pluginId:p.plugin_id,requestId:p.request_id,target:p.target,parent:p.parent_id}});awaiting.delete(p.post_id);
    } else if(e.type==='LikeChanged'){
-    const post=next.posts.get(p.post);check(post);const key=p.post+':'+p.tag,was=next.likes.get(key)??false;check(was!==p.active&&(!p.active||!post.removal));
-    check(BigInt(p.count)===BigInt(post.likes)+(p.active?1n:-1n));next.likes.set(key,p.active);putPost(p.post,{likes:p.count});
+    const post=next.posts.get(p.post);check(post&&!post.removal&&p.active===true);
+    // Each authenticated FPC transfer adds one paid like, including another
+    // payment by the same pseudonymous liker. Paid tips cannot be undone.
+    check(BigInt(p.count)===BigInt(post.likes)+1n);putPost(p.post,{likes:p.count});
    } else throw rollingError();
   }
   // Cache ranges must include whole transactions; never display an unauthenticated
   // kind-4 post while waiting for a later fragment with its linkage event.
-  check(awaiting.size===0);
+  check(awaiting.size===0&&tipKeys.size===0);
  return {scalars:Object.fromEntries(['version','last','scope','eventCount','postCount'].map(key=>[key,next[key]])),changes:[...changes.values()]};
 }
 // stage changes nothing; apply and reverse-order undo are single-use and reject

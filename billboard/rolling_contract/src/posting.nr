@@ -88,8 +88,10 @@ pub fn bot_reply_id(board: AztecAddress, adapter: AztecAddress, request: Field) 
 
 /// Bounded thread shape. A single owned name and board are shared by every row;
 /// the first row may reply/quote/repost, and each later row replies to its predecessor.
-/// Four ordinary posts fit the protocol public-write budget. Bok adds escrow and
-/// invocation records, so its supported atomic mix is one invocation in 2–3 posts.
+/// Each post writes13 slots: record7, order/exists/time/deadline/policy/key6.
+/// Post count is shared. Bok adds at most19 escrow/invocation slots; with two
+/// protocol fee slots, 4 plain posts use55 and 3 with one invocation use61.
+/// Keep the bounded mix below63 without counting repeated writes to the same slot.
 pub fn validate_thread(board: AztecAddress, nonces: [Field; 4], drafts: [PostDraft; 4],
     count: u32, plugin_ids: [Field; 4], request_ids: [Field; 4]) -> [Field; 4] {
     assert((count >= 2) & (count <= 4), "Thread must contain 2 to 4 posts");

@@ -91,3 +91,5 @@ export {ordinaryPostFeeBudget,ordinaryPostFeeLimit} from './ordinary-post-fees.m
 export {isPrivateFeeCreditFailure} from './private-fee-client.mjs';
 
 export {likeFeeBudget,likeFeeLimit} from './like-fees.mjs';
+
+export {readPrivateFeeCredit,privateCreditReader,PAID_LIKE_VALUE} from './private-credit.mjs';

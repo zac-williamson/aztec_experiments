@@ -206,6 +206,9 @@ pub contract RollingBoard {
         names: Owned<PrivateSet<UsernameNote, Context>, Context>,
         subboards: Map<Field, PublicMutable<SubboardRecord, Context>, Context>,
         like_state: LikeStorageRoot,
+        private_fee: PublicImmutable<AztecAddress, Context>,
+        // Only post creation writes this slot, guarded by !post_exists. Full P is in its paired event.
+        tip_key_hashes: Map<Field, PublicMutable<Field, Context>, Context>,
         invocation_state: InvocationStorageRoot,
         profile_state: ProfileStorageRoot,
         avatar_moderation_state: AvatarModerationStorageRoot,
@@ -264,11 +267,13 @@ pub contract RollingBoard {
     #[initializer]
     fn init(rules: [Field; 32], length: u16, l1_chain_id: u64, rollup_address: EthAddress,
         rollup_version: u32, min_deposit: u128, max_deposit: u128, base_cooldown: u32,
-        k: u16, censor_window: u32, max_save_up: u16) {
+        k: u16, censor_window: u32, max_save_up: u16, private_fee: AztecAddress) {
         let config = Config { l1_chain_id, rollup_address, rollup_version, min_deposit, max_deposit,
             base_cooldown, k_multiplier: k, censor_window, max_save_up, deployer: self.msg_sender() };
         config.validate(self.context.chain_id(), self.context.version());
         self.storage.config.initialize(config);
+        assert(private_fee.to_field() != 0, "Private fee contract required");
+        self.storage.private_fee.initialize(private_fee);
         validate_text(rules, length, true);
         let moderator = self.msg_sender();
         assert(moderator.to_field() != 0, "Moderator required");
@@ -1004,6 +1009,37 @@ pub contract RollingBoard {
     }
 
 
+    #[derive(Deserialize, Serialize, Eq, Packable)]
+    pub struct TipKey { pub x: Field, pub y: Field }
+    #[event]
+    struct PostTipKey { schema: u32, post: Field, key: TipKey }
+
+    #[internal("private")]
+    fn _post_tip_key(id: Field) -> TipKey {
+        let root = self.context.request_nhk_app(get_public_keys(self.msg_sender()).npk_m_hash);
+        let secret = private_credit::post_secret(root, self.context.chain_id(), self.context.version(), self.address, id);
+        let key = private_credit::spending_key(secret);
+        TipKey { x: key.x, y: key.y }
+    }
+    /// The plugin's authenticated private entrypoint calls this in the same
+    /// transaction. Kernel key validation proves the operator's Board-scoped
+    /// NHK; no public operator key or spending secret is returned.
+    #[external("private")]
+    fn derive_plugin_tip_key(operator: AztecAddress, request: Field) -> [Field; 2] {
+        let id = bot_reply_id(self.address, self.msg_sender(), request);
+        let root = self.context.request_nhk_app(get_public_keys(operator).npk_m_hash);
+        let secret = private_credit::post_secret(root, self.context.chain_id(), self.context.version(), self.address, id);
+        let key = private_credit::spending_key(secret);
+        [key.x, key.y]
+    }
+    #[external("utility")]
+    unconstrained fn tip_root(owner: AztecAddress) -> pub Field {
+        get_nhk_app(get_public_keys(owner).npk_m_hash)
+    }
+    #[external("public")]
+    #[view]
+    fn get_tip_key_hash(post: Field) -> pub Field { self.storage.tip_key_hashes.at(post).read() }
+
     #[event]
     struct PostPublished {
         schema: u32, id: Field, record: PostRecord, timestamp: u64,
@@ -1027,7 +1063,8 @@ pub contract RollingBoard {
         if draft.name_id != 0 { self.internal._assert_name_owner(draft.name_id); }
         let id = post_id(self.address, nonce);
         Admission::consume(self.context, self.storage, deposit_chain_id, id, false, child, grandchild);
-        self.enqueue_self._publish(nonce, draft, 0, 0);
+        let key = self.internal._post_tip_key(id);
+        self.enqueue_self._publish(nonce, draft, 0, 0, key);
     }
 
     /// One fee, one deposit spend, and one atomic ordered publication. The
@@ -1056,7 +1093,8 @@ pub contract RollingBoard {
                 }
                 deposit = Admission::advance(self.context, self.storage, deposit,
                     original.sequences.head_sequence, original.head_link, ids[i], false, child, grandchild);
-                self.enqueue_self._publish(nonces[i], drafts[i], plugin_ids[i], request_ids[i]);
+                let key = self.internal._post_tip_key(ids[i]);
+                self.enqueue_self._publish(nonces[i], drafts[i], plugin_ids[i], request_ids[i], key);
             }
         }
         Admission::save(self.context, self.storage, deposit);
@@ -1071,7 +1109,8 @@ pub contract RollingBoard {
         if draft.name_id != 0 { self.internal._assert_name_owner(draft.name_id); }
         let id = post_id(self.address, nonce);
         Admission::consume(self.context, self.storage, deposit_chain_id, id, false, child, grandchild);
-        self.enqueue_self._publish(nonce, draft, plugin_id, request_id);
+        let key = self.internal._post_tip_key(id);
+        self.enqueue_self._publish(nonce, draft, plugin_id, request_id, key);
     }
 
     /// Recovery advances the same authenticated history without public content.
@@ -1083,7 +1122,7 @@ pub contract RollingBoard {
 
     #[external("public")]
     #[only_self]
-    fn _publish(nonce: Field, draft: PostDraft, plugin_id: Field, request_id: Field) {
+    fn _publish(nonce: Field, draft: PostDraft, plugin_id: Field, request_id: Field, key: TipKey) {
         validate_draft(draft, nonce);
         assert((plugin_id == 0) == (request_id == 0), "Invalid invocation identity");
         let id = post_id(self.address, nonce);
@@ -1122,6 +1161,9 @@ pub contract RollingBoard {
         self.storage.post_id_by_order.at(count).write(id);
         self.storage.post_records.at(id).write(record);
         self.storage.post_exists.at(id).write(true);
+        self.storage.tip_key_hashes.at(id).write(private_credit::tip_key_hash(
+            aztec::protocol::point::EmbeddedCurvePoint { x: key.x, y: key.y }));
+        self.emit(PostTipKey { schema: 1, post: id, key });
         self.storage.post_time.at(id).write(now);
         self.storage.post_flag_deadline.at(id).write(checked_time_add(now, config.censor_window as u64));
         self.storage.post_policy_version.at(id).write(crate::posting::policy_identity(main_version, local_version));
@@ -1168,7 +1210,9 @@ pub contract RollingBoard {
     /// no human name ownership or collateral history is exposed by this path.
     #[external("public")]
     fn publish_plugin_reply(request_id: Field, plugin_id: Field, message: [Field; 32], length: u16,
-        expected_main_version: u32, expected_local_version: u32) {
+        expected_main_version: u32, expected_local_version: u32, tip_x: Field, tip_y: Field) {
+        private_credit::validate_key(aztec::protocol::point::EmbeddedCurvePoint { x: tip_x, y: tip_y });
+        let key = TipKey { x: tip_x, y: tip_y };
         let adapter = self.msg_sender();
         let plugin = self.storage.plugins.at(plugin_id).read();
         assert(plugin.enabled & (plugin.adapter == adapter), "Only enabled plugin adapter");
@@ -1202,6 +1246,9 @@ pub contract RollingBoard {
         self.storage.post_id_by_order.at(count).write(id);
         self.storage.post_records.at(id).write(record);
         self.storage.post_exists.at(id).write(true);
+        self.storage.tip_key_hashes.at(id).write(private_credit::tip_key_hash(
+            aztec::protocol::point::EmbeddedCurvePoint { x: key.x, y: key.y }));
+        self.emit(PostTipKey { schema: 1, post: id, key });
         self.storage.post_time.at(id).write(now);
         self.storage.post_flag_deadline.at(id).write(checked_time_add(now, config.censor_window as u64));
         self.storage.post_policy_version.at(id).write(crate::posting::policy_identity(main_version, local_version));
@@ -1284,37 +1331,22 @@ pub contract RollingBoard {
     #[event]
     struct LikeChanged { schema: u32, post: Field, tag: Field, active: bool, count: u64 }
 
-    /// Fee-paid social action; posting collateral and names are not inputs. The
-    /// kernel authenticates the owner's app-siloed nullifier hiding key.
-    #[external("private")]
-    fn set_like(post: Field, active: bool) {
-        let owner_key_hash = get_public_keys(self.msg_sender()).npk_m_hash;
-        let nhk = self.context.request_nhk_app(owner_key_hash);
-        let tag = crate::posting::like_tag(self.context.chain_id(), self.context.version(), self.address, post, nhk);
-        assert(tag != 0, "Zero like tag");
-        self.enqueue_self._set_like(post, tag, active);
-    }
-
+    /// Only the configured backed FPC can record the transfer. The callback
+    /// checks the key committed by the author's private post creation.
     #[external("public")]
-    #[only_self]
-    fn _set_like(post: Field, tag: Field, active: bool) {
+    fn record_paid_like(post: Field, key: TipKey, tag: Field) {
+        assert(self.msg_sender() == self.storage.private_fee.read(), "Only private fee contract");
         assert(self.storage.post_exists.at(post).read(), "Unknown post");
+        assert(self.storage.post_flagged.at(post).read() == 0, "Post removed");
+        assert(self.storage.tip_key_hashes.at(post).read() == private_credit::tip_key_hash(
+            aztec::protocol::point::EmbeddedCurvePoint { x: key.x, y: key.y }), "Wrong post tip key");
         assert(tag != 0, "Zero like tag");
-        let previous = LikeState::active(self.context, self.storage.like_state.slot, post, tag).read();
-        if active != previous {
-            let old_count = LikeState::count(self.context, self.storage.like_state.slot, post).read();
-            let count = if active {
-                assert(self.storage.post_flagged.at(post).read() == 0, "Post removed");
-                assert(old_count < 0xffffffffffffffff, "Like count overflow");
-                old_count + 1
-            } else {
-                assert(old_count > 0, "Invalid like count");
-                old_count - 1
-            };
-            LikeState::active(self.context, self.storage.like_state.slot, post, tag).write(active);
-            LikeState::count(self.context, self.storage.like_state.slot, post).write(count);
-            self.emit(LikeChanged { schema: 1, post, tag, active, count });
-        }
+        let old_count = LikeState::count(self.context, self.storage.like_state.slot, post).read();
+        assert(old_count < 0xffffffffffffffff, "Like count overflow");
+        let count = old_count + 1;
+        LikeState::active(self.context, self.storage.like_state.slot, post, tag).write(true);
+        LikeState::count(self.context, self.storage.like_state.slot, post).write(count);
+        self.emit(LikeChanged { schema: 1, post, tag, active: true, count });
     }
     #[external("public")]
     #[view]

@@ -4,9 +4,9 @@ Current handover: 28 October 2026. The owner's current request takes precedence 
 
 ## Live work and next action
 
-**Performance work remains paused by the owner.** Harry feedback wallet/account/payment UX and Home ranking are published. Images and the moderation-information item were dropped. MetaMask classification still needs a current expanded alert; it is not certified fixed. [Current release report](docs/HARRY_FEEDBACK_20261028.md).
+**Performance work remains paused by the owner.** Harry feedback wallet/account/payment UX and Home ranking are published. Images and the moderation-information item were dropped. MetaMask’s official hostname scanner returns BLOCK for the current CloudFront hostname; manual classification review is needed. See docs/METAMASK_ALERT_20261028.md. No external report has been sent. [Current release report](docs/HARRY_FEEDBACK_20261028.md).
 
-28 October current publication: core application and static UI8e68ac4ae34fb214f9816cec0ffc75a4a3e60727; Bok051a530c; prover63e4c1d3. The new Board and optional Bok use one consolidated funding router. Atomic Post all, name+avatar, character ring, main posting-credit controls, ETH/USDC top-ups and one-like-per-account UI are published. PR9 branding and nested messaging remain integrated. Private paid tips remain a separate unpublished draft.
+28 October current publication: core application and static UI8e68ac4ae34fb214f9816cec0ffc75a4a3e60727; Bok051a530c; prover63e4c1d3. The new Board and optional Bok use one consolidated funding router. Atomic Post all, name+avatar, character ring, main posting-credit controls, ETH/USDC top-ups and one-like-per-account UI are published. PR9 branding and nested messaging remain integrated. Private paid tips are integrated as an unpublished20-FEE release candidate. Canonical contract/SDK builds, focused integration checks, repeated-like browser behavior, native tip transfers/spending and atomic Bok invocation checks passed. Real-proof acceptance and publication remain pending; see docs/PRIVATE_PAID_LIKES.md.
 
 Portal activation **does not require an epoch proof**. The explicit immutable testnet deployment operator activates after checking the canonical checkpoint binding. Actual activation was observed16seconds after that checkpoint on27October. User withdrawals/refunds retain their ordinary protocol proofs.
 
@@ -31,7 +31,7 @@ All old test application data is disposable. No migration, old-account recovery 
 
 Follows, bookmarks and read state are off-chain; obsolete contract paths are removed. The public server has a persistent SQLite index, but ordinary reads still gate on fresh synchronization. The owner requested diagnosis only: do not change that request-gating architecture without a later instruction.
 
-Signup funding, posting-credit top-ups and Bok top-ups now share one router; standalone BokCreditRouter paths are removed. Private paid tips remain a separate unpublished draft. Do not redeploy contracts for UI changes.
+Signup funding, posting-credit top-ups and Bok top-ups now share one router; standalone BokCreditRouter paths are removed. Private paid tips are integrated as an unpublished20-FEE release candidate. Canonical contract/SDK builds, focused integration checks, repeated-like browser behavior, native tip transfers/spending and atomic Bok invocation checks passed. Real-proof acceptance and publication remain pending; see docs/PRIVATE_PAID_LIKES.md. Do not redeploy contracts for UI changes.
 
 ## Hosting and ownership
 

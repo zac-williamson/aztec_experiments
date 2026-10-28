@@ -5,28 +5,29 @@
     {
       "name": "RollingBoard",
       "path": "billboard/target/rolling_contract-RollingBoard.json",
-      "sha256": "d98b93ad15664319951dbb46d691737910b3a53b0ce37e1e1b1a795554c07b4f"
+      "sha256": "96aba61059de1feed48b85d90447272010e824c9528492bad5a9f6fb02eecd7d"
     },
     {
       "name": "PrivateBok",
       "path": "experiments/private-bok/target/private_bok-PrivateBok.json",
-      "sha256": "223822236881279c5da6ee23c35a3a245d6cc5475697cda706d981f48097fdb3"
+      "sha256": "afe8481bd110ac5995d0c9d4ea7e0e780ad535e90ca74ffcdc2b6edd8b57e650"
     }
   ],
   "inputs": {
-    "apps/src/billboard/private_fee_artifact.json": "ae8468c4e7c8a656629471fbc0c11e698f8b96cbf6ec6face4250498148810f1",
-    "noir-dependencies.json": "ee3b4e7d9679679cf50d9885199d69128de8f2865791ad7328e7e1d0ca0b715d",
+    "apps/src/billboard/private_fee_artifact.json": "3e7e809dc8634444519616f66925ab271e65e12808e80b89bec3ac12ed87d74a",
+    "noir-dependencies.json": "8190024419beab13baab25d0e02c96605de0a1d8354afcac046d82af66122c54",
     "toolchain.json": "54a5bf67f67ceab2f8894b834a88ecac221bfeef5021cb7cd399ea10901598e4",
     "package-lock.json": "bfe89933145d2a6de03603c1726df9c235d19717779eeb04ac70e7a0c862ef7b",
-    "scripts/build-contracts.mjs": "4046fa1a1cefd355b0548c4066feb006cb10f72cfa8ab5757ede4e50b15b82d6",
+    "scripts/build-contracts.mjs": "d57edcc3fac542a18b731e694296369246cff216999d3b4b11842996fae894ea",
     "scripts/check-noir-dependencies.mjs": "7d9d47085dacc9adbfea6a7dbfb32a95d32d81269ddb17300033116619585cf4",
     "scripts/normalize-noir.mjs": "d1dc22ad5e50d016e9e1fce6d8c5d3cadc21db431b4eb94717a347f5c0c69a5d",
     "billboard/Nargo.toml": "1809b81572fc1b280063c550c63d00448ea1842a4c2fa22e22b25ef53e0a07ba",
-    "billboard/rolling_contract/Nargo.toml": "9129c199c77b652af6ce4b9fef3161af1c1fbc8f3750808cb0248c5cbf849872",
+    "billboard/rolling_contract/Nargo.toml": "8657762edb16165bf1d65ebbd3117bd83f943c3fd2233767cb2d8720c8dc4f85",
     "billboard/rolling_contract/build.mjs": "15d1e661f625f9acc5fc11f36024d5bc83e960f9f75d334fb99c292ca24222ea",
     "experiments/private-bok/Nargo.toml": "fdfdce9b51ea0d14e2b84bb4b9be0f173a1bef1a01713889ec103b291b9d7f59",
     "experiments/private-bok/escrow/Nargo.toml": "f0d20032eb00f594e914f6eb2324076fd03b21075de38b8867ee401f30f21e6c",
     "experiments/private-bok/build.mjs": "06a8da4edf3049c7ab3bb2516e7e8105a9ee6230f55e25da210795dc2e50d376",
+    "billboard/private_credit/Nargo.toml": "54ea4afa7d91ae97a62bfc56170a891d95499f92dd52b5e96782e9a7e7bc05d7",
     "billboard/owner_delivery/Nargo.toml": "1f4e03126b3fc41b8b089504e124b1687d943473f17bc2424d437f6bfbf71712",
     "scripts/prepare-owner-noir.mjs": "7caf3a8293538ae3f89935705d7ea11eb82812c85648fb8a4ae6362edb12486d",
     "scripts/owner-delivery-noir-sources.json": "e1cdbbc98f254799fd63db119fffa491813943db1ffd64ca099a9b3ea34e5dad",
@@ -111,12 +112,13 @@
     ".build/owner-delivery/aztec-nr/uint-note/src/uint_note.nr": "d49059160d8919a9cabb22527d3d5fae30eed1bde325e8838d72a50c22dfa5b7",
     "billboard/owner_delivery/src/delivery.nr": "5e903fdd5a8e112d90483db7ec43a656bb65dc63f6a7aa2fe50ababd12d31991",
     "billboard/owner_delivery/src/envelope.nr": "ec947f9a7c93fa5d99ff06ed31f81e117938161b2b5fd9158d3186d07f952728",
-    "billboard/rolling_contract/src/admission.nr": "266a21b6305e8d10f5fdad8084d19d53197e4c7814a1ca1ae8a42037bc0f1786",
+    "billboard/private_credit/src/lib.nr": "6b7e01fbeffc7fd562c38d95c030785fe76d6ea560bd91a59441a22b8d0398ff",
+    "billboard/rolling_contract/src/admission.nr": "5b4cb9af637f8bf0b213a396f36b93096f94ca4022e692176f08650927848eb4",
     "billboard/rolling_contract/src/encoding.nr": "32d1ddbca7c6cdf607a24ad1ecdf7ab4be6667877cf7c34b3cf370a02efcfd07",
-    "billboard/rolling_contract/src/main.nr": "1fafead5fff0153d9980cf80109e743149ddbbd5e4a7114c6de9e14b82383650",
-    "billboard/rolling_contract/src/posting.nr": "1bac8187638522892d6389a6d4b34185c4bd46297dddcba6102b2a3b81098bda",
+    "billboard/rolling_contract/src/main.nr": "08640d90bf12b092735932e343d49eec4874e3aae91da59e0ed8c556668c2b05",
+    "billboard/rolling_contract/src/posting.nr": "a611f42a5b1de2e2353a923f072eef20e5a20188c35be8a26a183c62abdfb27b",
     "billboard/rolling_contract/src/profiles.nr": "b12124ca50d181f9798c24e3373f9ba358697fdb433cc7d696c3a69ac9d53efd",
-    "experiments/private-bok/escrow/src/main.nr": "0b66a4c912a55a2c011b99295dc83dc7115ea7820b3ba2fe9ccae485cceaa4a9",
+    "experiments/private-bok/escrow/src/main.nr": "1073f0874c8f7197df5c4d0a5d667484ba3f050f67f5894d3df48b62fcfcb5ad",
     ".build/owner-delivery/aztec-nr/aztec/src/context/returns_hash.nr": "b37560f27c929c2643e6c0616f00f82d015577f57f15727126fc70d2c3b972ce",
     ".build/owner-delivery/aztec-nr/aztec/src/oracle/call_private_function.nr": "21cf8450b2017a6d065f729de2a37d5ddf7aec63dcd7e8839768c6bee8be2853",
     ".build/owner-delivery/aztec-nr/balance-set/src/balance_set.nr": "ac4c521ea582f8276c905483090fec6052088a6934e5212825702c2d3c6ccbd0"

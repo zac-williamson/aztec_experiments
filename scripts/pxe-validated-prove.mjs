@@ -132,6 +132,21 @@ export function validatedPxeProve(source){
     }
     // Preparation and proof share only the native anchor-scoped contract cache.
     // A discarded operation or anchor change invalidates that cache normally.
+    async #registeredSyncTarget(address,name,method) {
+        const instance=await this.contractStore.getContractInstance(address);
+        if(!instance || !(await computeContractAddressFromInstance(instance)).equals(address))throw new Error('Invalid registered sync preimage');
+        const classId=instance.originalContractClassId.toString();
+        if(name==='SchnorrInitializerlessAccount'&&classId!=='${ORDINARY_POST_GAS_PROFILE.accountClassId}')throw new Error('Invalid sync account class');
+        const artifact=await this.contractStore.getContractArtifact(instance.originalContractClassId);
+        if(artifact?.name!==name)throw new Error('Invalid registered sync artifact');
+        let selector;
+        if(method!==undefined){
+            const matches=syncFunctionAbis(artifact).filter(fn=>fn.name===method);
+            if(matches.length!==1||matches[0].functionType!=='private')throw new Error('Invalid registered sync ABI');
+            selector=await SyncSelector.fromNameAndParameters(matches[0].name,matches[0].parameters);
+        }
+        return {address,classId,instance,artifact,selector};
+    }
     async #syncOrdinaryPostTargets(targets, simulator, ctx, scopes) {
         const check=value=>{if(!value)throw new Error('Invalid ordinary sync class');};
         await allToCompletion(targets.map(async target=>check((await this.contractClassService.getCurrentClassId(target.address,ctx.anchorBlockHeader))?.toString()===target.classId)));
@@ -143,27 +158,11 @@ export function validatedPxeProve(source){
     }
     // Public API\n`);
  source=replace(source,'    // Public API\n',`    prepareOrdinaryPostState({owner,board,privateFee}) {
-        // Detach the session's known deployed addresses before entering the queue.
-        const profile=${JSON.stringify(ORDINARY_POST_GAS_PROFILE)};
-        const targets=[{address:SyncAddress.fromStringUnsafe(owner.toString()),classId:profile.accountClassId},
-            {address:SyncAddress.fromStringUnsafe(privateFee.toString()),classId:profile.privateFeeClassId,selector:SyncSelector.fromString('0xc8772dde')},
-            {address:SyncAddress.fromStringUnsafe(board.toString()),classId:profile.boardClassId,selector:SyncSelector.fromString(profile.postSelector)}];
-        if(new Set(targets.map(target=>target.address.toString())).size!==3)throw new Error('Invalid ordinary sync targets');
-        const scopes=[targets[0].address];
-        return this.operationQueue.runSynced(async ctx=>{
-            // The kernel needs these same immutable registry witnesses. Start
-            // their native reads alongside class checks/discovery, then retain
-            // only the existing node cache; the real kernel checks them normally.
-            const oracle=new PrivateKernelOracle(this.contractStore,this.contractClassService,this.keyStore,this.node,ctx.anchorBlockHeader);
-            await allToCompletion([
-                this.#syncOrdinaryPostTargets(targets,this.#getSimulatorForTx(),ctx,scopes),
-                allToCompletion(targets.map(target=>oracle.getUpdatedClassIdHints(target.address))),
-            ]);
-        });
+        return this.prepareBoardActionState({owner,board,privateFee,method:'post'});
     }
     // Public API\n`);
  source=replace(source,'    // Public API\n',`    prefetchBoardClaimWitnesses(board) {
-        return this.#prefetchClaimImmutables(SyncAddress.fromStringUnsafe(board.toString()),'${ORDINARY_POST_GAS_PROFILE.boardClassId}','RollingBoard',
+        return this.#prefetchClaimImmutables(SyncAddress.fromStringUnsafe(board.toString()),undefined,'RollingBoard',
             [{slot:1n,length:1},{slot:3n,length:10}],{portal_address:1,config:3,deposits:14});
     }
     prefetchBokClaimWitnesses(bok, classId, owner) {
@@ -174,6 +173,7 @@ export function validatedPxeProve(source){
     }
     #prefetchClaimImmutables(address, expected, name, slots, layout, owner) {
         return this.operationQueue.runSynced(async ctx=>{
+            expected ??= (await this.#registeredSyncTarget(address,name)).classId;
             const qualified=await allToCompletion([
                 ()=>this.contractClassService.getCurrentClassId(address,ctx.anchorBlockHeader),
                 ()=>this.contractStore.getContractArtifact(SyncFr.fromString(expected)),
@@ -213,15 +213,13 @@ export function validatedPxeProve(source){
  source=replace(source,'    // Public API\n',`    syncForAccountStatus(board, privateFee) {
         const address=SyncAddress.fromStringUnsafe(board.toString());
         return this.operationQueue.run(async()=>{
-            const instance=await this.contractStore.getContractInstance(address);
-            if(!instance || instance.originalContractClassId.toString()!=='${ORDINARY_POST_GAS_PROFILE.boardClassId}' ||
-                !(await computeContractAddressFromInstance(instance)).equals(address))throw new Error('Invalid account status Board');
+            const target=await this.#registeredSyncTarget(address,'RollingBoard');
+            const instance=target.instance;
             let feeAddress;
             if(privateFee!==undefined){
                 feeAddress=SyncAddress.fromStringUnsafe(privateFee.toString());
-                const fee=await this.contractStore.getContractInstance(feeAddress);
-                if(feeAddress.equals(address)||!fee||fee.originalContractClassId.toString()!=='${ORDINARY_POST_GAS_PROFILE.privateFeeClassId}'||
-                    !(await computeContractAddressFromInstance(fee)).equals(feeAddress))throw new Error('Invalid account status FPC');
+                if(feeAddress.equals(address))throw new Error('Invalid account status FPC');
+                await this.#registeredSyncTarget(feeAddress,'PrivateFPC');
             }
             const nullifier=await syncInitializationNullifier(address,instance.initializationHash);
             // Public hash-pinned reads only. Native rollback/anchor selection
@@ -239,18 +237,11 @@ export function validatedPxeProve(source){
     }
     // Public API\n`);
  source=replace(source,'    // Public API\n',`    syncForOrdinaryPost({owner,board,privateFee},readPolicy) {
-        const profile=${JSON.stringify(ORDINARY_POST_GAS_PROFILE)};
-        const targets=[{address:SyncAddress.fromStringUnsafe(owner.toString()),classId:profile.accountClassId},
-            {address:SyncAddress.fromStringUnsafe(privateFee.toString()),classId:profile.privateFeeClassId},
-            {address:SyncAddress.fromStringUnsafe(board.toString()),classId:profile.boardClassId}];
-        if(typeof readPolicy!=='function'||new Set(targets.map(target=>target.address.toString())).size!==3)throw new Error('Invalid ordinary sync targets');
+        const addresses=[owner,privateFee,board].map(value=>SyncAddress.fromStringUnsafe(value.toString()));
+        if(typeof readPolicy!=='function'||new Set(addresses.map(value=>value.toString())).size!==3)throw new Error('Invalid ordinary sync targets');
         return this.operationQueue.run(async()=>{
-            const instances=await allToCompletion(targets.map(async target=>{
-                const instance=await this.contractStore.getContractInstance(target.address);
-                if(!instance||instance.originalContractClassId.toString()!==target.classId||
-                    !(await computeContractAddressFromInstance(instance)).equals(target.address))throw new Error('Invalid ordinary sync preimage');
-                return instance;
-            }));
+            const targets=await allToCompletion(addresses.map((address,index)=>this.#registeredSyncTarget(address,['SchnorrInitializerlessAccount','PrivateFPC','RollingBoard'][index])));
+            const instances=targets.map(target=>target.instance);
             const nullifier=await syncInitializationNullifier(targets[2].address,instances[2].initializationHash);
             return this.blockStateSynchronizer.syncWithAnchorRead(async selected=>{
                 const anchor={number:selected.number,hash:SyncBlockHash.fromString(selected.hash)};
@@ -267,16 +258,14 @@ export function validatedPxeProve(source){
  source=replace(source,'    // Public API\n',`    prepareBoardActionState({owner,board,privateFee,method,collateralOnly=false}) {
         // No posting gas/history assumptions. Resolve the actual named ABI from
         // the registered, class-pinned Board; these are state preparation only.
-        const allowed=['post_thread','get_deposit_ids','set_like','register_name','set_bio','set_avatar','create_subboard','remove_post','remove_avatar','reject_subboard','set_main_policy','transfer_moderator','screen','withdraw'];
+        const allowed=['post','post_thread','get_deposit_ids','register_name','set_bio','set_avatar','create_subboard','remove_post','remove_avatar','reject_subboard','set_main_policy','transfer_moderator','screen','withdraw'];
         if(!allowed.includes(method)||typeof collateralOnly!=='boolean'||collateralOnly&&method!=='get_deposit_ids')throw new Error('Invalid Board state method');
-        const profile=${JSON.stringify(ORDINARY_POST_GAS_PROFILE)};
-        const targets=[{address:SyncAddress.fromStringUnsafe(owner.toString()),classId:profile.accountClassId},
-            {address:SyncAddress.fromStringUnsafe(privateFee.toString()),classId:profile.privateFeeClassId,selector:SyncSelector.fromString('0xc8772dde')},
-            {address:SyncAddress.fromStringUnsafe(board.toString()),classId:profile.boardClassId}];
-        if(new Set(targets.map(target=>target.address.toString())).size!==3)throw new Error('Invalid Board state targets');
-        const scopes=[targets[0].address];
+        const addresses=[owner,privateFee,board].map(value=>SyncAddress.fromStringUnsafe(value.toString()));
+        if(new Set(addresses.map(value=>value.toString())).size!==3)throw new Error('Invalid Board state targets');
+        const scopes=[addresses[0]];
         return this.operationQueue.runSynced(async ctx=>{
-            const artifact=await this.contractStore.getContractArtifact(SyncFr.fromString(profile.boardClassId));
+            const targets=await allToCompletion(addresses.map((address,index)=>this.#registeredSyncTarget(address,['SchnorrInitializerlessAccount','PrivateFPC','RollingBoard'][index],index===1?'pay_fee':undefined)));
+            const artifact=targets[2].artifact;
             const matches=artifact&&syncFunctionAbis(artifact).filter(fn=>fn.name===method);
             if(matches?.length!==1 || !(method==='get_deposit_ids'?matches[0].functionType==='utility':['private','public'].includes(matches[0].functionType)))throw new Error('Invalid Board state ABI');
             const fn=matches[0];

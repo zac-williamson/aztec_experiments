@@ -13,7 +13,7 @@ async function answer(promise,value){const call=await next(m=>m.type==='call');p
 await answer(client.initialize({}),{privateFeeCap:'10',ordinaryPostingFeeLimit:'5',bokConfigured:true,fundingEthAvailable:true,usdcAvailable:true});
 await answer(client.openAccount({}),{});
 assert.equal(client.session,client);assert.equal(client.topup.bok.ethAvailable,true);assert.equal(client.topup.bok.defaultPrivateFeeCap,'10');assert.equal(typeof client.funding.pauseClaim,'function');
-const likeRead=client.application.readLikes(['9']);const likeCall=await next(m=>m.type==='call');assert.equal(likeCall.method,'application.readLikes');assert.equal(client.busy,false);port2.postMessage({type:'result',id:likeCall.id,value:{posts:[{post:'9',liked:true}]}});assert.equal((await likeRead).posts[0].liked,true);
+assert.equal(client.application.readLikes,undefined);
 let release;const held=new Promise(resolve=>{release=resolve;});
 const action=client.application.executeAction({type:'name'},{onPrepared:async()=>{await held;throw new ReferenceError('SECRET');}});action.catch(()=>{});
 const call=await next(m=>m.type==='call');assert.notEqual(call.id,callbackId);

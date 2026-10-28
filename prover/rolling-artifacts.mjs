@@ -12,10 +12,10 @@ export const COMMON_INPUTS = ['apps/src/billboard/private_fee_artifact.json', 'n
   'scripts/build-contracts.mjs', 'scripts/check-noir-dependencies.mjs', 'scripts/normalize-noir.mjs',
   'billboard/Nargo.toml', 'billboard/rolling_contract/Nargo.toml', 'billboard/rolling_contract/build.mjs',
   'experiments/private-bok/Nargo.toml', 'experiments/private-bok/escrow/Nargo.toml', 'experiments/private-bok/build.mjs',
-  'billboard/owner_delivery/Nargo.toml', 'scripts/prepare-owner-noir.mjs', 'scripts/owner-delivery-noir-sources.json'];
+  'billboard/private_credit/Nargo.toml', 'billboard/owner_delivery/Nargo.toml', 'scripts/prepare-owner-noir.mjs', 'scripts/owner-delivery-noir-sources.json'];
 export const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 export function permittedInput(relative) {
-  return COMMON_INPUTS.includes(relative) || /^(billboard\/(rolling_contract|owner_delivery)|experiments\/private-bok\/escrow|\.build\/owner-delivery\/aztec-nr\/(aztec|uint-note|balance-set))\/src\/[a-zA-Z0-9_/-]+\.nr$/.test(relative) && !relative.split('/').includes('..');
+  return COMMON_INPUTS.includes(relative) || /^(billboard\/(rolling_contract|owner_delivery|private_credit)|experiments\/private-bok\/escrow|\.build\/owner-delivery\/aztec-nr\/(aztec|uint-note|balance-set))\/src\/[a-zA-Z0-9_/-]+\.nr$/.test(relative) && !relative.split('/').includes('..');
 }
 export function readRegular(root, relative) {
   if (typeof relative !== 'string' || path.isAbsolute(relative) || relative.includes('\\') || relative.split('/').includes('..')) throw Error('Invalid trusted artifact path');

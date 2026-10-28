@@ -1,0 +1,102 @@
+{
+  "passed": true,
+  "proofs": false,
+  "fixturePortal": "disposable EOA canonical Inbox messages; token custody not tested",
+  "transactions": [
+    {
+      "label": "deploy-fpc",
+      "txHash": "0x2e85c8cb0ea4f129883d8062357f5e72288a52a279c07531a17d27bc5fc7f879",
+      "executionResult": "success",
+      "blockNumber": 1
+    },
+    {
+      "label": "deploy-board",
+      "txHash": "0x0738cf47ab302a98301f9851d19388eb305d3d97410eb133fc4afaa066b2bbbc",
+      "executionResult": "success",
+      "blockNumber": 2
+    },
+    {
+      "label": "private-credit-bootstrap",
+      "txHash": "0x176c3f7c2f171e340112dbd5804856b1a634e9a541efe6a6e46ced30aec53e13",
+      "executionResult": "success",
+      "transactionFee": "472855824851400000",
+      "maximumFee": "7060823030328000000",
+      "blockNumber": 5
+    },
+    {
+      "label": "paid-like-configure-board",
+      "txHash": "0x24f11cb5fa4df95a69694d967df74f823d42dd726490eeaf895d2adfff17a90a",
+      "executionResult": "success",
+      "blockNumber": 6
+    },
+    {
+      "label": "tip-author-collateral",
+      "txHash": "0x0b85540e3b2b6cd8bd5a75b3e4022299dfa0f7081153da1e7d6815184c4a6a7e",
+      "executionResult": "success",
+      "blockNumber": 9
+    },
+    {
+      "label": "tip-recipient-post",
+      "txHash": "0x301dd90a15b9aaa433d8a7c545cd2101d3477afe86b3d5ba90d6f61a93fe9b34",
+      "executionResult": "success",
+      "blockNumber": 11
+    },
+    {
+      "label": "paid-like-first",
+      "txHash": "0x0cf02cd3b879b26e4ab18d00287ee8db4a2458354591c1536a286da1e026dce7",
+      "executionResult": "success",
+      "transactionFee": "34592594995200000",
+      "maximumFee": "467992727304000000",
+      "blockNumber": 12
+    },
+    {
+      "label": "author-spends-tip-on-post",
+      "txHash": "0x242acb05049280e47104fb23a5f5fcca415461fba00a1ffca57098fec14cb7ca",
+      "executionResult": "success",
+      "transactionFee": "73889959862400000",
+      "maximumFee": "467992727304000000",
+      "blockNumber": 13
+    },
+    {
+      "label": "paid-like-repeat",
+      "txHash": "0x0828e7de1f3aa99c0aa9f228cdf0140c672955d359ae973b9316b44b8c2c573a",
+      "executionResult": "success",
+      "transactionFee": "34592594995200000",
+      "maximumFee": "412156800000000000",
+      "blockNumber": 14
+    },
+    {
+      "label": "mixed-ordinary-and-tip-inputs",
+      "txHash": "0x21661a98098c30d280c36a03cc05a20da8b2edc43291982a27d90794b6aed9b9",
+      "executionResult": "success",
+      "transactionFee": "7798141477500000",
+      "maximumFee": "124277575776000000",
+      "blockNumber": 15
+    },
+    {
+      "label": "paid-like-public-revert-restores-principal",
+      "txHash": "0x26076edcdda67ac099285faa017736c8704ad1074baaa9ab80ab61b2d8f03bdf",
+      "executionResult": "reverted",
+      "transactionFee": "8189920616100000",
+      "maximumFee": "124277575776000000",
+      "blockNumber": 16
+    },
+    {
+      "label": "first-competing-spend",
+      "txHash": "0x1f924daccae0ac9aa221a225e6e8963d14c5a1ab5b481403c2de7b478febdffc",
+      "executionResult": "success",
+      "transactionFee": "7517217757500000",
+      "maximumFee": "124277575776000000",
+      "blockNumber": 17
+    }
+  ],
+  "checks": [
+    "each repeated like transfers20 FEE plus actual gas",
+    "author spends received tip directly on a post",
+    "ordinary and tip inputs consumed together",
+    "application revert restores20 principal while charging actual gas",
+    "native admission rejects competing note spend",
+    "fresh tag reader reconstructs remaining balance"
+  ],
+  "stage": "first-competing-spend"
+}

@@ -101,16 +101,12 @@ const inlineActions=createInlineActionRegistry({perform:async(captured,onInclude
 },onState(key,snapshot){
  for(const node of app.querySelectorAll('[data-inline-action]'))if(node.dataset.inlineAction===key)node.renderInlineAction(snapshot,true);
 }});
-let currentLikeSnapshot=null;
 function updateLikeControls(){
- const posts=[];
  for(const node of app.querySelectorAll('[data-like-post]')){
-  posts.push(node.dataset.likePost);
-  const retained=inlineActions.snapshot(node.dataset.inlineAction);if(retained){node.renderInlineAction(retained);continue;}
-  const liked=privatePanel?.likeState?.(node.dataset.likePost)===true;
-  node.disabled=liked;labelled(node,liked?'Liked':'Like');node.setAttribute('aria-pressed',String(liked));
+  const retained=inlineActions.snapshot(node.dataset.inlineAction);
+  if(retained)node.renderInlineAction(retained);
+  else{node.disabled=false;labelled(node,'Like · 20 credits');}
  }
- privatePanel?.loadLikes?.([...new Set(posts)],currentLikeSnapshot);
 }
 function socialButton(label,action,attrs={}){
  let feedback;
@@ -121,14 +117,11 @@ function socialButton(label,action,attrs={}){
  if(attrs['data-icon'])labelled(node,label);
  node.renderInlineAction=({state,captured,result},notify=false)=>{
   feedback?.remove();feedback=null;
-  const knownLike=privatePanel?.likeState?.(captured.post);
-  const liked=captured.type==='like'&&(knownLike===true||knownLike!==false&&['included','confirmed'].includes(state));
-  node.disabled=liked||['pending','unknown'].includes(state)||state==='included'&&!result;
-  if(state==='pending'){node.setAttribute('aria-busy','true');labelled(node,({like:'Liking…',unlike:'Removing like…'})[captured.type]??'Saving…');return;}
+  node.disabled=['pending','unknown'].includes(state)||state==='included'&&!result;
+  if(state==='pending'){node.setAttribute('aria-busy','true');labelled(node,({like:'Sending 20 credits…'})[captured.type]??'Saving…');return;}
   if(state==='included'&&!result){node.setAttribute('aria-busy','true');labelled(node,'Confirmation pending');if(notify)announce('Change included. Confirmation pending.');return;}
   node.removeAttribute('aria-busy');
-  if(attrs['data-private-setting'])updatePreferenceControl(node,node.disabled);else labelled(node,liked?'Liked':label);
-  if(captured.type==='like')node.setAttribute('aria-pressed',String(liked));
+  if(attrs['data-private-setting'])updatePreferenceControl(node,node.disabled);else labelled(node,label);
   const message=state==='included'?'Saved. Confirmation pending.':state==='confirmed'?'Saved.':state==='unknown'?'Still waiting for confirmation.':state==='reverted'?'This change did not go through.':state==='failed'?(result.message||'This change could not be saved. Try again.'):state==='blocked'&&result.reason==='busy'?'Another action is still finishing.':'';
   if(message&&notify)announce(message);
   if(['unknown','reverted','failed'].includes(state)&&node.isConnected){
@@ -137,7 +130,7 @@ function socialButton(label,action,attrs={}){
    node.after(feedback);
   }
  };
- if(target.type==='like'){node.dataset.likePost=target.post;if(privatePanel?.likeState?.(target.post)===true){node.disabled=true;labelled(node,'Liked');node.setAttribute('aria-pressed','true');}}
+ if(target.type==='like')node.dataset.likePost=target.post;
  const retained=inlineActions.snapshot(key);if(retained)node.renderInlineAction(retained);
  return node;
 }
@@ -181,7 +174,7 @@ function postCard(post,data){
  }
  article.append(richText(post.text),el('div',{class:'post-actions'},
   button([createIcon('reply'),'Reply'],()=>openWallet({type:'reply',parent:post.id,root:r.root,subboard:r.subboard},{context:{author,excerpt:text(post.text).slice(0,200)}})),
-  socialButton('Like',()=>({type:'like',post:post.id}),{'data-icon':'heart'}),el('span',{class:'action likes'},`${text(post.likes)} ${post.likes==='1'?'like':'likes'}`),preferenceButton('Bookmark',1,post.id,undefined,'bookmark'),
+  socialButton('Like · 20 credits',()=>({type:'like',post:post.id,tipKey:post.tipKey}),{'data-icon':'heart',title:'Send 20 posting credits to the author, plus the network fee. You can send another tip after this one completes.'}),el('span',{class:'action likes'},`${text(post.likes)} ${post.likes==='1'?'like':'likes'}`),preferenceButton('Bookmark',1,post.id,undefined,'bookmark'),
   more(button([createIcon('quote'),'Quote'],()=>openWallet({type:'quote',reference:post.id,subboard:r.subboard})),
    button([createIcon('repeat'),'Repost'],()=>openWallet({type:'repost',reference:post.id,subboard:r.subboard})),provenance),
   link([createIcon('message'),'View conversation'],'/thread/'+r.root,{class:'post-link'})));
@@ -315,7 +308,7 @@ async function render({live=false,publicationRevision}={}){
  function notifyRenderedPosts(){
   if(!container.isConnected||!pendingPublicPages.length)return;
   for(const node of container.querySelectorAll('.post'))if(!viewed.has(node.id.slice(5)))viewObserver?.observe(node);
-  const pages=pendingPublicPages.splice(0);currentLikeSnapshot=pages.at(-1).snapshot;
+  const pages=pendingPublicPages.splice(0);
   void walletPanel?.then(panel=>{if(current===sequence&&!signal.aborted&&container.isConnected){updateLikeControls();for(const page of pages)panel.observePublicPosts?.(page.items,page.snapshot);}}).catch(()=>{});
  }
  const position=p=>['blockNumber','txIndexWithinBlock','logIndexWithinTx'].map(key=>{const v=p?.position?.[key];if(typeof v!=='string'||!/^(0|[1-9][0-9]*)$/.test(v))throw Error('Invalid position');return BigInt(v);});

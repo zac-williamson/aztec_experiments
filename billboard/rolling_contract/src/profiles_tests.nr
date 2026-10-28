@@ -114,7 +114,7 @@ unconstrained fn setup() -> (TestEnvironment, AztecAddress, AztecAddress, AztecA
     let mut env = TestEnvironment::new();
     let moderator = env.create_light_account(); let alice = env.create_light_account(); let bob = env.create_light_account();
     let board = env.deploy("@rolling_contract/RollingBoard").with_public_initializer(moderator,
-        RollingBoard::interface().init(text("No threats"), 10, 1, EthAddress::from_field(0x1111), 1, 10, 1000, 10, 3, 100, 10));
+        RollingBoard::interface().init(text("No threats"), 10, 1, EthAddress::from_field(0x1111), 1, 10, 1000, 10, 3, 100, 10, moderator));
     env.call_private(alice, RollingBoard::at(board).register_name(fixed("JoHN"), 4, fixed("Doe"), 3));
     (env, board, alice, bob)
 }
@@ -226,7 +226,7 @@ unconstrained fn moderation_setup() -> (TestEnvironment, AztecAddress, AztecAddr
     let mut env = TestEnvironment::new();
     let moderator = env.create_light_account(); let alice = env.create_light_account(); let bob = env.create_light_account();
     let board = env.deploy("@rolling_contract/RollingBoard").with_public_initializer(moderator,
-        RollingBoard::interface().init(text("No threats"), 10, 1, EthAddress::from_field(0x1111), 1, 10, 1000, 10, 3, 100, 10));
+        RollingBoard::interface().init(text("No threats"), 10, 1, EthAddress::from_field(0x1111), 1, 10, 1000, 10, 3, 100, 10, moderator));
     env.call_private(alice, RollingBoard::at(board).register_name(fixed("JoHN"), 4, fixed("Doe"), 3));
     env.call_private(alice, RollingBoard::at(board).set_avatar(john(), 0, 100, 100, 4, avatar()));
     (env, board, moderator, alice, bob)

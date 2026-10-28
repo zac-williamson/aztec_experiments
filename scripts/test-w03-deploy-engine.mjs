@@ -35,7 +35,8 @@ const rollingRaw=JSON.parse(await readFile(new URL('../billboard/target/rolling_
 const rollingArtifact=loadContractArtifact(rollingRaw);
 function packPolicy(text){const bytes=Buffer.alloc(48*31);Buffer.from(text).copy(bytes);return {fields:Array.from({length:48},(_,i)=>BigInt('0x'+bytes.subarray(i*31,(i+1)*31).toString('hex'))),len:Buffer.byteLength(text)};}
 function fixture({rolling=true,lostBinding=false,lostDeploy=false,existing=true,staleDeploy=false,staleBinding=false}={}) {
- const actor=AztecAddress.fromFieldUnsafe(new Fr(1)),board=AztecAddress.fromFieldUnsafe(new Fr(2));
+ const actor=AztecAddress.fromFieldUnsafe(new Fr(1)),board=AztecAddress.fromFieldUnsafe(new Fr(2)),privateFee=AztecAddress.fromFieldUnsafe(new Fr(13));
+ const privateFeeArtifact={fixture:'trusted release FPC'};
  const inbox='0x'+'6'.repeat(40),outbox='0x'+'7'.repeat(40);
  const rollup='0x'+'3'.repeat(40),sender='0x'+'4'.repeat(40),blockHash=field(5);
  const instance={address:actor,currentContractClassId:field(12),originalContractClassId:field(12)};
@@ -65,6 +66,7 @@ function fixture({rolling=true,lostBinding=false,lostDeploy=false,existing=true,
  // by test-c01-deploy-activation.mjs.
  const a={provingEnabledForNode,verifyDeploymentInputs,preflightDeploymentNetwork,deploymentPolicyVersion,verifyPortalRuntime,portalRuntimeMetadata:runtimeMetadata,boundedTransactionRead,Fr,AztecAddress,EthAddress,Tx:FixtureTx,TxHash:{fromString:x=>x},BaseWallet:class{async getContractClassMetadata(){return {isContractClassPubliclyRegistered:true};}},
   poseidon2HashWithSeparator,computeContractAddressFromInstance:async()=>board,
+  derivePrivateFeeInstance:async artifact=>{assert.equal(artifact,privateFeeArtifact);return {address:privateFee};},
   deriveSigningKey:()=>({}),deriveKeys:async()=>({publicKeys:{}}),computePartialAddress:async()=>new Fr(1),
   getContractClassFromArtifact:async()=>({id:field(12)}),getContractInstanceFromInstantiationParams:async()=>instance,deriveStorageSlotInMap:async()=>new Fr(1),
   SchnorrInitializerlessAccountContract:class{getContractArtifact=async()=>({functions:[]});getImmutablesHash=async()=>field(0);getSigningPublicKey=async()=>({});},
@@ -89,7 +91,7 @@ function fixture({rolling=true,lostBinding=false,lostDeploy=false,existing=true,
   ethereumReceipts.set(hash,{hash,from:sender,to:request.to,status:1,blockNumber:2+activations,blockHash,logs:[{address:request.to,topics:event.topics,data:event.data}]});
   activations++;enabled=true;return {hash};
  }};
- const env={aztec:a,ethers:{...ethers,JsonRpcProvider:class{constructor(){return provider;}},Contract:class{constructor(){return portal;}}},log(){},pause(){throw new Error('unexpected pause');},initCRS:async()=>{},createStore:async()=>({}),artifact:rolling?rollingRaw:{},portalBytecode:'0x6000',
+ const env={aztec:a,ethers:{...ethers,JsonRpcProvider:class{constructor(){return provider;}},Contract:class{constructor(){return portal;}}},log(){},pause(){throw new Error('unexpected pause');},initCRS:async()=>{},createStore:async()=>({}),artifact:rolling?rollingRaw:{},privateFeeArtifact,portalBytecode:'0x6000',
   getBrowserSigner:async()=>signer,createJournalStorage:()=>storage,
   createTransactionJournal:options=>createL2Journal({...options,storage,waitOptions:{timeoutMs:20,intervalMs:1}})};
  const hash=o=>ethers.sha256(ethers.toUtf8Bytes(JSON.stringify(o)));
@@ -102,6 +104,7 @@ function fixture({rolling=true,lostBinding=false,lostDeploy=false,existing=true,
    if(n>=base&&n<base+10n)return new Fr(cfg[Number(n-base)]);
    if(n===BigInt(layout.moderator.slot))return new Fr(BigInt(actor.toString()));
    if(n===BigInt(layout.main_version.slot))return new Fr(1);
+   if(n===BigInt(layout.private_fee.slot))return privateFee.toField();
    if(n===BigInt(layout.main_rules.slot))return await policyDigest;throw Error('Unexpected storage read');};
   const previous=a.Contract.at;a.Contract.at=async(...args)=>{const c=await previous(...args);for(const key of Object.keys(c.methods))if(key!=='update_portal')delete c.methods[key];return c;};
  }
@@ -200,11 +203,11 @@ for(const loss of ['none','binding','deployment'])test('Rolling actual ABI profi
  const f=fixture({rolling:true,existing:loss!=='deployment',lostBinding:loss==='binding',lostDeploy:loss==='deployment'});
  if(loss!=='none'){await assert.rejects(f.run(),/synthetic lost/);f.clearLoss();}
  const r=await f.run();assert.equal(r.status,'active');assert.equal(f.activations,1);assert.equal(f.bindings,1);assert.equal(f.deploys,loss==='deployment'?1:0);
- const call=f.deploymentCalls[0];assert.equal(call.initializer,'init');assert.equal(call.args.length,11);assert.equal(call.args[0].length,32);assert.equal(call.options.deployer.toString(),f.manifest.actors.aztecDeployer);assert.equal(call.options.universalDeploy,undefined);
- const abi=getInitializer(rollingArtifact,'init');assert.equal(encodeArguments(abi,call.args).length,42);
+ const call=f.deploymentCalls[0];assert.equal(call.initializer,'init');assert.equal(call.args.length,12);assert.equal(call.args[11].toString(),field(13));assert.equal(call.args[0].length,32);assert.equal(call.options.deployer.toString(),f.manifest.actors.aztecDeployer);assert.equal(call.options.universalDeploy,undefined);
+ const abi=getInitializer(rollingArtifact,'init');assert.equal(encodeArguments(abi,call.args).length,43);
  const again=await f.run();assert.equal(again.readyTxHash,r.readyTxHash);assert.equal(f.bindings,1);
 });
-for(const fieldName of ['moderator','main_rules','main_version','config','portal_address'])test('Rolling canonical '+fieldName+' mismatch blocks portal binding',async()=>{
+for(const fieldName of ['moderator','main_rules','main_version','config','portal_address','private_fee'])test('Rolling canonical '+fieldName+' mismatch blocks portal binding',async()=>{
  const f=fixture({rolling:true}),before=f.node.getPublicStorageAt,target=BigInt(rollingArtifact.storageLayout[fieldName].slot);
  f.node.getPublicStorageAt=async(reference,board,slot)=>reference!=='latest'&&BigInt(slot.toString())===target?new Fr(fieldName==='portal_address'?1n<<160n:99n):before(reference,board,slot);
  await assert.rejects(f.run(),/Rolling deployment state differs/);assert.equal(f.bindings,0);
@@ -302,4 +305,10 @@ test('saved canonical binding cannot authorize recreation of a missing portal',a
  let creationAttempts=0;const open=f.env.aztec.createEthereumJournal;
  f.env.aztec.createEthereumJournal=async options=>{const journal=await open(options);return {...journal,send(){creationAttempts++;assert.fail('Saved canonical binding cannot authorize a second portal creation');}};};
  await assert.rejects(f.run(),{code:'BB_RECOVERY_REQUIRED'});assert.equal(creationAttempts,0);assert.equal(f.bindings,1);assert.equal(f.deploys,0);
+});
+
+test('canonical FPC derivation failure stops before wallet registration or deployment',async()=>{
+ const f=fixture();f.env.aztec.derivePrivateFeeInstance=async()=>{throw Error('Invalid release FPC');};
+ f.env.aztec.createPXE=async()=>assert.fail('No PXE for rejected FPC');
+ await assert.rejects(f.run(),/Invalid release FPC/);assert.equal(f.deploymentCalls.length,0);assert.equal(f.bindings,0);assert.equal(f.activations,0);
 });

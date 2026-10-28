@@ -55,7 +55,7 @@ export function createRollingWorkerClient({worker,contextGuard=()=>{},captureFun
   });
   // Structured clone now, before a guard can yield to a mutable caller.
   const payload=structuredClone(captured),id=++next;
-  const ownsBusy=!['initialize','deriveAccount','openAccount','ensureSession','ensureRefundSession','observeIncluded','application.readLikes','withdrawal.observe','withdrawal.waitUntilReady'].includes(method);
+  const ownsBusy=!['initialize','deriveAccount','openAccount','ensureSession','ensureRefundSession','observeIncluded','withdrawal.observe','withdrawal.waitUntilReady'].includes(method);
   return new Promise((resolve,reject)=>{
    const abort=()=>{if(!closed)worker.postMessage({type:'abort',id});};
    const cleanup=()=>signals.forEach(signal=>signal.removeEventListener('abort',abort));
