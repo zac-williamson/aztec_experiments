@@ -9,5 +9,18 @@
   "IamRoleArn": "arn:aws:iam::052665140763:role/RollingOpsSlackNotificationsOnly",
   "State": "ENABLED",
   "commands": "denied",
-  "logging": "NONE"
+  "logging": "NONE",
+  "status": "verified",
+  "channelAppAdded": true,
+  "deliveryVerification": {
+    "verifiedAt": "2026-10-28T12:59:31.514295+00:00",
+    "transport": "AWS SNS and CloudWatch via Amazon Q Developer",
+    "customNotificationMessageId": "6f7372fb-d1b0-588b-a2af-11a022a0dce2",
+    "customNotificationSlackTimestamp": "1793192145.598019",
+    "alarmName": "rolling-chat-launch-monitor-WebsiteAlarm-Mtme81BKJCKs",
+    "alarmSlackTimestamp": "1793192187.904519",
+    "recoverySlackTimestamp": "1793192255.176439",
+    "testMethod": "Temporary CloudWatch alarm state set explicitly to ALARM with TEST reason; real healthy datapoints restored OK automatically. No application outage or restart.",
+    "slackThreadUrl": "https://aztecfoundation.slack.com/archives/C0CCXR3MF0U/p1793192187904519"
+  }
 }
