@@ -36,6 +36,13 @@ test('failed real-testnet journey never switches live or restarts it',async t=>{
 test('mock proof label cannot qualify a release',async t=>{
  const f=await setup(t);f.options.journey=async()=>({...successful,proofs:'disabled'});await assert.rejects(releaseCandidate(f.options),{code:'RELEASE_JOURNEY_FAILED'});assert.equal(await fs.realpath(f.options.liveLink),f.old);
 });
+test('failed journey keeps only bounded known completion names without private diagnostics',async t=>{
+ const f=await setup(t);f.options.journey=async()=>{throw Object.assign(Error('private response'),{code:'RELEASE_INCLUSION',completed:['signup-ETH','private-wallet','post','post'],params:'secret'});};
+ await assert.rejects(releaseCandidate(f.options),{code:'RELEASE_INCLUSION'});
+ const text=await fs.readFile(f.options.stateFile,'utf8'),state=JSON.parse(text);
+ assert.deepEqual(state.journeyCompleted,['signup-ETH','post']);assert.equal(state.status,'blocked');assert(!text.includes('private'));assert(!text.includes('secret'));
+ assert.equal(await fs.realpath(f.options.liveLink),f.old);assert(!f.calls.includes('restart-live'));
+});
 test('successful journey promotes exactly the candidate tested',async t=>{
  const f=await setup(t);const state=await releaseCandidate(f.options);assert.equal(state.status,'live');assert.equal(await fs.realpath(f.options.liveLink),f.candidate);assert.equal(f.calls.indexOf('journey')<f.calls.indexOf('restart-live'),true);
 });

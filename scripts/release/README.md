@@ -267,6 +267,13 @@ absent until final contract acceptance and fixtures are ready. A one-shot run
 then executes the actual stage journey; failed full builds remain blocked.
 GitHub logs show only invocation status, never host output or private fixtures.
 Inspect the private dashboard and host journal for sanitized failure enums.
+The observer decodes declared gzip submissions with an 8 MiB limit on both wire
+and expanded bytes, then derives the hash through the native transaction schema.
+`RELEASE_SUBMISSION_INVALID` identifies malformed observed traffic;
+`RELEASE_SUBMISSION_MISSING` means signup displayed ready without a captured
+submission. Native receipt/block/effect checks still determine inclusion. Failed
+release state retains only fixed `journeyCompleted` step names, never request
+bodies, wallet addresses, transaction hashes or raw failure messages.
 
 The current journey targets the paid-like release: a post must emit `PostTipKey`,
 the UI must offer `Like · 20 credits`, and the independently decoded transaction

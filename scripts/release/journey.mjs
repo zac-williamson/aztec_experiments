@@ -97,7 +97,7 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
     await page.getByLabel('Pay with',{exact:true}).selectOption(asset);
     await page.getByRole('button',{name:'Confirm payment',exact:true}).click();
     await page.getByText(/Your posting balance is (ready|set up)/).waitFor({timeout:remaining()});
-    const signupHashes=await hashesSince(0);if(!signupHashes.length)throw failure('RELEASE_INCLUSION');
+    const signupHashes=await hashesSince(0);if(!signupHashes.length)throw failure('RELEASE_SUBMISSION_MISSING');
     for(const hash of signupHashes)await evidence.require([hash],()=>true,remaining);
     if(asset==='USDC'&&await provider.getBalance(wallet.address)!==0n)throw failure('RELEASE_GASLESS_FIXTURE');
     await record('signup-'+asset);
