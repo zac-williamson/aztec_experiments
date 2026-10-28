@@ -7,15 +7,17 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright';
-import {closeJourneyAccountPanel,openJourneyMainBoard,journeyPostCard,openJourneyComposer,submitJourneyComposer,buyJourneyBokCredit} from './release/journey.mjs';
+import {closeJourneyAccountPanel,openJourneyMainBoard,journeyPostCard,openJourneyComposer,submitJourneyComposer,buyJourneyBokCredit,openJourneyReply,clickJourneyLike,reloadJourneyPage} from './release/journey.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const fixture=`<!doctype html><html><head><meta charset="utf-8"></head><body><nav aria-label="Community"><a href="#/home">Home</a><a href="#/board/0">Main board</a></nav><section id="feed"></section><button id="write">Write a post</button><button id="reply">Reply</button>
+const fixture=`<!doctype html><html><head><meta charset="utf-8"></head><body><nav aria-label="Community"><a href="#/home">Home</a><a href="#/board/0">Main board</a></nav><section id="feed"></section><button id="write">Write a post</button><article id="action-card"><button id="reply">Reply</button><button id="like">Like · 20 credits</button></article>
 <script type="module">
 import {mountRollingWalletPanel} from '/apps/rolling/wallet-panel.mjs';
 import {executeRollingAction} from '/apps/rolling/wallet-action.mjs';
 import {createFeedRanking} from '/apps/rolling/feed-ranking.mjs';
-window.calls={prepared:[],submitted:[],payments:[],claims:0,signins:0,fundingConnections:0};
+window.calls={prepared:[],submitted:[],payments:[],claims:0,signins:0,fundingConnections:0,replyClicks:0,likeClicks:0};
+window.documentId=crypto.randomUUID();
 const params=new URL(location.href).searchParams;
+let progress;
 let account=params.has('locked')?null:{},fundingConnected=!params.has('funding-disconnected'),fundingInput,prepared,credit='0';
 const cap={defaultPrivateFeeCap:'1000000000000000',ethAvailable:true,usdcAvailable:true,
  prepare:async input=>{if(!fundingConnected)throw Error('Funding wallet disconnected');fundingInput=structuredClone(input);return {phase:'deposit',...input,maximumSwapWei:'1000000000000000'};},
@@ -28,11 +30,20 @@ const application={
  ownedIdentities:async()=>({identities:[],records:[],nextCursor:null}),readModeratorStatus:async()=>({authorized:false}),
  readBokStatus:async()=>({available:true,availableCredit:credit}),
  prepare:async action=>{prepared=structuredClone(action);calls.prepared.push(prepared);return {intentId:'ui-'+calls.prepared.length,action:prepared,status:'prepared',maximumFee:'100'};},
- submitPrepared:async id=>{calls.submitted.push(id);return {intentId:id,action:prepared,status:'confirmed'};}
+ submitPrepared:async id=>{
+  calls.submitted.push(id);const action=structuredClone(prepared),txHash='0x'+String(calls.submitted.length).repeat(64);
+  if(params.has('deferred-actions')){
+   window.pendingKind=action.type;
+   progress({stage:'included',intentId:id,txHash,blockHash:'0x'+'a'.repeat(64),blockNumber:1});
+   await new Promise(resolve=>window.completeAction=resolve);
+   window.pendingKind=null;
+  }
+  return {intentId:id,action,status:'confirmed',txHash};
+ }
 };
 application.executeAction=(action,options)=>executeRollingAction(application,structuredClone(action),options);
 const session={application,busy:false,ordinaryPostingFeeLimit:'1000000000000000',postingFeeLimit:'1000000000000000',bokConfigured:true,topup:{bok:cap}};
-const runtime={getAccount:()=>account,account:{configure(){}},createSession:async()=>session,
+const runtime={getAccount:()=>account,account:{configure(){}},createSession:async options=>{progress=options.onProgress;return session;},
  fundingWalletStatus:()=>({connected:fundingConnected,name:fundingConnected?'CI test wallet':null,address:fundingConnected?'0x'+'1'.repeat(40):null}),
  connectFundingWallet:async id=>{if(id!=='test')throw Error('Unexpected wallet');calls.fundingConnections++;fundingConnected=true;},
  fundingWallets:()=>[{id:'test',name:'CI test wallet'}],signInWallet:async()=>{calls.signins++;account={};fundingConnected=true;}};
@@ -46,10 +57,11 @@ window.showPublicPosts=(posts=publicPosts,priorities=priorityTxs)=>{
 addEventListener('hashchange',()=>showPublicPosts());
 window.panel=mountRollingWalletPanel({loadRuntime:async()=>runtime});
 document.querySelector('#write').onclick=()=>panel.open({type:'post',subboard:'0'});
-document.querySelector('#reply').onclick=()=>panel.open({type:'reply',parent:'10',root:'10',subboard:'0'});
+document.querySelector('#reply').onclick=()=>{calls.replyClicks++;panel.open({type:'reply',parent:'10',root:'10',subboard:'0'});};
+document.querySelector('#like').onclick=()=>{calls.likeClicks++;void panel.act({type:'like',post:'10'});};
 panel.open({});
 </script></body></html>`;
-async function setup(t,{locked=false,fundingConnected=true}={}){
+async function setup(t,{locked=false,fundingConnected=true,deferredActions=false}={}){
  const requests=[];
  const server=http.createServer(async(req,res)=>{
   requests.push(req.method);const url=new URL(req.url,'http://localhost');
@@ -66,7 +78,7 @@ async function setup(t,{locked=false,fundingConnected=true}={}){
  const page=await browser.newPage(),origin='http://127.0.0.1:'+server.address().port,errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
- page.setDefaultTimeout(5000);const query=new URLSearchParams();if(locked)query.set('locked','');if(!fundingConnected)query.set('funding-disconnected','');await page.goto(origin+(query.size?'/?'+query:'/'));
+ page.setDefaultTimeout(5000);const query=new URLSearchParams();if(locked)query.set('locked','');if(!fundingConnected)query.set('funding-disconnected','');if(deferredActions)query.set('deferred-actions','');await page.goto(origin+(query.size?'/?'+query:'/'));
  await page.locator('dialog.account-dialog[aria-busy="false"]').waitFor();
  t.after(()=>{assert.deepEqual(errors,[]);assert(requests.every(method=>method==='GET'));});
  return {page,remaining:()=>5000,dialog:page.locator('dialog.account-dialog')};
@@ -113,4 +125,38 @@ test('release uses chronological Main board and pins Like to the original receip
  await journeyPostCard(page,'post-1').getByRole('button',{name:'Like · 20 credits',exact:true}).click();
  assert.equal(await page.evaluate(()=>calls.liked),'1');
  assert.throws(()=>journeyPostCard(page,'post-1, article'),{code:'RELEASE_INCLUSION'});
+});
+
+
+test('release waits for local completion after included post reply and Like before the next action',{timeout:15000},async t=>{
+ const {page,dialog,remaining}=await setup(t,{deferredActions:true}),card=page.locator('#action-card');
+ await openJourneyComposer(page,'root before reply',remaining);
+ await submitJourneyComposer(page,'post',remaining);await dialog.waitFor({state:'hidden'});
+ assert.equal(await dialog.getAttribute('aria-busy'),'true');
+ // The real panel has revealed inclusion, while its normal sender is still pending.
+ // Readiness must block the next click rather than reopen the stale Post form.
+ await assert.rejects(openJourneyReply(page,card,'reply after root',()=>250),{name:'TimeoutError'});
+ assert.equal(await dialog.isVisible(),false);assert.equal(await page.evaluate(()=>calls.replyClicks),0);
+ await page.evaluate(()=>completeAction());
+ await openJourneyReply(page,card,'reply after root',remaining);
+ assert.equal(await dialog.getByLabel('Message',{exact:true}).inputValue(),'reply after root');
+ await submitJourneyComposer(page,'reply',remaining);await dialog.waitFor({state:'hidden'});
+ assert.equal(await dialog.getAttribute('aria-busy'),'true');
+ await assert.rejects(clickJourneyLike(page,card,()=>250),{name:'TimeoutError'});
+ assert.equal(await page.evaluate(()=>calls.likeClicks),0);
+ await page.evaluate(()=>completeAction());await clickJourneyLike(page,card,remaining);
+ await page.waitForFunction(()=>window.pendingKind==='like');
+ const documentId=await page.evaluate(()=>window.documentId);
+ await assert.rejects(reloadJourneyPage(page,()=>250),{name:'TimeoutError'});
+ assert.equal(await page.evaluate(()=>window.documentId),documentId,'pending Like must not be abandoned by reload');
+ await assert.rejects(openJourneyComposer(page,'next composer',()=>250),{name:'TimeoutError'});
+ assert.equal(await dialog.isVisible(),false,'pending Like must not reopen stale account controls');
+ assert.deepEqual(await page.evaluate(()=>calls.prepared.map(x=>x.type)),['post','reply','like']);
+ assert.equal(await page.evaluate(()=>calls.submitted.length),3);
+ await page.evaluate(()=>completeAction());await reloadJourneyPage(page,remaining);
+ assert.notEqual(await page.evaluate(()=>window.documentId),documentId);
+ await openJourneyComposer(page,'composer after reload',remaining);
+ assert.equal(await dialog.getByLabel('Message',{exact:true}).inputValue(),'composer after reload');
+ assert.equal(await dialog.getAttribute('aria-busy'),'false');
+ assert.deepEqual(await page.evaluate(()=>calls.submitted),[],'reload and opening a draft do not submit anything');
 });

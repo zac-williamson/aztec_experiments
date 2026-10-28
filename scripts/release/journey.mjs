@@ -54,7 +54,13 @@ export async function createTestWalletBridge({wallet,provider,allowedTargets,cap
 // Direct post/reply/Bok submission has one button; there is no second confirmation.
 export const journeyFailureSteps=Object.freeze(['setup','fund-ETH','fund-USDC','signup-ETH','signup-USDC','close-account','post-compose','post-submit','post-inclusion','reply-compose','reply-submit','reply-inclusion','like','reload','bok-compose','bok-credit','bok-submit','bok-inclusion','bok-reply','final-check']);
 const actionTimeout=remaining=>Math.min(90000,remaining());
+// Inclusion can reveal a post before the panel finishes its local operation.
+// Its existing busy signal, even while hidden, owns readiness for the next action.
+export async function waitForJourneyAccountIdle(page,remaining){
+ await page.locator('dialog.account-dialog[aria-busy="false"]').waitFor({state:'attached',timeout:actionTimeout(remaining)});
+}
 export async function closeJourneyAccountPanel(page,remaining){
+ await waitForJourneyAccountIdle(page,remaining);
  const dialog=page.locator('dialog.account-dialog');
  if(await dialog.isVisible()){
   await dialog.getByRole('button',{name:'Close account panel',exact:true}).click({timeout:actionTimeout(remaining)});
@@ -80,6 +86,21 @@ export async function openJourneyComposer(page,message,remaining){
  await editor.or(connect).first().waitFor({state:'visible',timeout:actionTimeout(remaining)});
  if(await connect.isVisible())await connect.click({timeout:actionTimeout(remaining)});
  await editor.fill(message,{timeout:actionTimeout(remaining)});
+}
+export async function openJourneyReply(page,card,message,remaining){
+ await waitForJourneyAccountIdle(page,remaining);
+ await card.getByRole('button',{name:'Reply',exact:true}).click({timeout:actionTimeout(remaining)});
+ const dialog=page.locator('dialog.account-dialog');
+ await dialog.getByRole('button',{name:'Reply',exact:true}).waitFor({state:'visible',timeout:actionTimeout(remaining)});
+ await dialog.getByLabel('Message',{exact:true}).fill(message,{timeout:actionTimeout(remaining)});
+}
+export async function clickJourneyLike(page,card,remaining){
+ await waitForJourneyAccountIdle(page,remaining);
+ await card.getByRole('button',{name:'Like · 20 credits',exact:true}).click({timeout:actionTimeout(remaining)});
+}
+export async function reloadJourneyPage(page,remaining){
+ await waitForJourneyAccountIdle(page,remaining);
+ await page.reload({waitUntil:'domcontentloaded'});
 }
 export async function submitJourneyComposer(page,kind,remaining){
  if(!['post','reply','bok'].includes(kind))throw failure('RELEASE_JOURNEY_STEP');
@@ -171,16 +192,16 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
     }
     const {card,receipt}=await compose(tag);await record('post');
     failureStep='reply-compose';const replyStart=submissions.length;
-    await card.getByRole('button',{name:'Reply',exact:true}).click();await dialog.getByLabel('Message',{exact:true}).fill(tag+' reply');failureStep='reply-submit';await submitJourneyComposer(page,'reply',remaining);
+    await openJourneyReply(page,card,tag+' reply',remaining);failureStep='reply-submit';await submitJourneyComposer(page,'reply',remaining);
     failureStep='reply-inclusion';
     await page.getByText(tag+' reply',{exact:true}).waitFor({timeout:remaining()});
     await evidence.require(await hashesSince(replyStart),events=>events.some(e=>e.type==='PostPublished'&&e.payload.record.parent===receipt.id.slice(5)&&e.payload.record.root===receipt.id.slice(5)&&evidence.text(e.payload)===tag+' reply'),remaining);await record('reply');
-    failureStep='like';const likeStart=submissions.length,like=card.getByRole('button',{name:'Like · 20 credits',exact:true});await like.click();await page.waitForFunction(id=>Number.parseInt(document.querySelector('#'+id+' .likes')?.textContent??'0',10)>0,receipt.id,{timeout:remaining()});
+    failureStep='like';const likeStart=submissions.length;await clickJourneyLike(page,card,remaining);await page.waitForFunction(id=>Number.parseInt(document.querySelector('#'+id+' .likes')?.textContent??'0',10)>0,receipt.id,{timeout:remaining()});
     await evidence.require(await hashesSince(likeStart),events=>events.some(e=>e.type==='LikeChanged'&&e.payload.post===receipt.id.slice(5)&&e.payload.active===true&&BigInt(e.payload.count)>0n),remaining);await record('like');
-    failureStep='reload';await page.reload({waitUntil:'domcontentloaded'});await page.getByText(tag,{exact:true}).waitFor({timeout:remaining()});await record('reload');
+    failureStep='reload';await reloadJourneyPage(page,remaining);await page.getByText(tag,{exact:true}).waitFor({timeout:remaining()});await record('reload');
     // Starter intentionally excludes Bok credit. Exercise the actual purchase
     // and require a new bot reply to this unique request before allowing release.
-    const bok=await compose(tag+' @bok reply with the word ready only',{buyBokCredit:true});await page.goto(cfg.stagingOrigin+'/#/thread/'+bok.receipt.id.slice(5),{waitUntil:'domcontentloaded'});
+    const bok=await compose(tag+' @bok reply with the word ready only',{buyBokCredit:true});await waitForJourneyAccountIdle(page,remaining);await page.goto(cfg.stagingOrigin+'/#/thread/'+bok.receipt.id.slice(5),{waitUntil:'domcontentloaded'});
     const invocation=bok.events.find(e=>e.type==='PluginInvoked'&&e.payload.post_id===bok.receipt.id.slice(5)&&e.payload.plugin_id===BigInt(config.bok.pluginId).toString());if(!invocation)throw failure('RELEASE_INCLUSION');
     failureStep='bok-reply';const bot=page.locator('article.bot-post').first();await bot.waitFor({timeout:remaining()});const botHash=await bot.getAttribute('data-tx-hash');
     await evidence.require([botHash],events=>events.some(e=>e.type==='PluginReplyPublished'&&e.payload.request_id===invocation.payload.request_id&&e.payload.plugin_id===invocation.payload.plugin_id&&e.payload.parent_id===invocation.payload.post_id&&e.payload.target===invocation.payload.target&&events.some(p=>p.type==='PostPublished'&&p.payload.id===e.payload.post_id&&p.payload.record.kind==='4'&&p.payload.record.parent===invocation.payload.post_id&&p.payload.record.root===invocation.payload.post_id)),remaining);await record('bok');
