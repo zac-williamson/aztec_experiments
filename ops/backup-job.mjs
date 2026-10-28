@@ -9,7 +9,7 @@ import {createBackup,restoreBackup} from './backup.mjs';
 import {pruneAnalytics} from './prune-analytics.mjs';
 const hash=data=>createHash('sha256').update(data).digest('hex');
 export const BACKUP_NAMES=Object.freeze({
- core:['configuration/application.json','configuration/wallet.json','configuration/funding-relay.json','configuration/prover.json','configuration/moderator.json','configuration/operations.json','configuration/release.json','credentials/moderator.json','credentials/funding-relayer.json','analytics.sqlite'],
+ core:['configuration/application.json','configuration/wallet.json','configuration/funding-relay.json','configuration/prover.json','configuration/query.json','configuration/moderator.json','configuration/operations.json','configuration/release.json','credentials/moderator.json','credentials/funding-relayer.json','credentials/query.env','analytics.sqlite'],
  bok:['configuration/bok.json','credentials/bok-operator.json','credentials/github-app.pem','credentials/model-provider.env'],
 });
 const exact=(v,keys)=>v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).sort().join()===keys.slice().sort().join();
