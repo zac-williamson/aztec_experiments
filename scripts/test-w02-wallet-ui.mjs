@@ -1,58 +1,61 @@
-// Wallet UI logic with DOM/SDK/backup doubles; cryptographic backup tested separately.
+// Account/UI behavior uses provider, SDK and session-store doubles. Actual signing,
+// encryption and remembered custody are covered by ethereum-account-session tests.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const source=['account.js','wallet-buttons.js'].map(p=>fs.readFileSync(new URL('../shared/'+p,import.meta.url),'utf8')).join('\n');
-const key='0x'+'1'.padStart(64,'0'),salt='0x'+((1n<<200n)+13n).toString(16).padStart(64,'0');
-function fixture({fail=false}={}) {
- const elements=new Map(),logs=[],derived=[],listeners={};
+const field=n=>'0x'+BigInt(n).toString(16).padStart(64,'0');
+const key=field(1),salt=field((1n<<200n)+13n),owner='0x'+'12'.repeat(20);
+async function fixture({fail=false}={}) {
+ const elements=new Map(),logs=[],warnings=[],derived=[],listeners={},calls={sign:0,save:[],clear:0};
+ let saved=null;
  function element(id){if(!elements.has(id))elements.set(id,{value:'prior',disabled:false,append(){},prepend(){},appendChild(){},setAttribute(){},addEventListener(name,fn){this[name]=fn;},click(){},remove(){}});return elements.get(id);}
  class Fr {constructor(value){this.value=BigInt(value);} static fromHexString(value){return new Fr(value);}}
- const context=vm.createContext({console,BigInt,Uint8Array,setTimeout:()=>{},log:message=>logs.push(message),publicOperationFailure:e=>({message:'Safe wallet error '+(e.code||'unknown')}),
+ const session={load:async()=>saved,clear:async()=>{calls.clear++;saved=null;},selectedTestAccount:async()=> '0',createMessage:()=> 'private-signature-request',derive:async()=>({secretKey:key,salt}),save:async(scope,wallet,metadata)=>{calls.save.push({scope,wallet,metadata});saved={wallet,metadata};}};
+ const context=vm.createContext({console:{warn:(...args)=>warnings.push(args.join(' '))},BigInt,Uint8Array,setTimeout:()=>{},log:message=>logs.push(message),publicOperationFailure:e=>({message:'Safe wallet error '+(e.code||'unknown')}),
+  location:{origin:'https://rolling.example',reload(){}},navigator:{locks:{request:async(_name,options,run)=>typeof options==='function'?options():run({})}},_getPublicConfig:()=>({network:{chainId:'31337'}}),
   document:{querySelector:()=>null,getElementById:element,createElement:()=>element('download'),body:{appendChild(){}}},
-  window:{ethereum:{request:async({method})=>method==='eth_accounts'?new context.ethers.BrowserProvider().send('eth_accounts'):'0x7a69',on(name,fn){listeners[name]=fn;}},BillboardWalletBackup:{validateWallet:raw=>({...raw})},__aztec:{Fr,deriveSigningKey:()=>0,deriveKeys:async()=>({publicKeys:[]}),SchnorrInitializerlessAccountContract:class {async getContractArtifact(){return{};}async getImmutablesHash(){return 0;}},getContractInstanceFromInstantiationParams:async(_artifact,args)=>{derived.push(args.salt.value);if(fail)throw new Error('secret-fixture-diagnostic');return{address:{toString:()=>key}};},computePartialAddress:async()=>0}},
+  window:{BillboardEthereumSession:session,ethereum:{request:async({method})=>method==='eth_accounts'?new context.ethers.BrowserProvider().send('eth_accounts'):'0x7a69',on(name,fn){listeners[name]=fn;}},__aztec:{Fr,deriveSigningKey:()=>0,deriveKeys:async()=>({publicKeys:[]}),SchnorrInitializerlessAccountContract:class {async getContractArtifact(){return{};}async getImmutablesHash(){return 0;}},getContractInstanceFromInstantiationParams:async(_artifact,args)=>{derived.push(args.salt.value);if(fail)throw Error('secret-fixture-diagnostic');return{address:{toString:()=>key}};},computePartialAddress:async()=>({toString:()=>field(2)})}},
  });
- vm.runInContext(source,context);context.initWalletButtons('container',{requireEth:false});
- return{context,element,logs,derived,listeners};
+ vm.runInContext(source,context);await context.initWalletButtons('container',{requireEth:false});
+ return{context,element,logs,warnings,derived,listeners,calls,session,setSaved:value=>{saved=value;},getSaved:()=>saved};
 }
-const file=raw=>({size:100,text:async()=>JSON.stringify(raw)});
-test('full Field salt reaches derivation without placing keys in DOM',async()=>{
- const f=fixture();await f.context._loadAztecWallet(file({secretKey:key,salt}));
+async function accountFixture(options={}) {
+ const f=await fixture(options);browserConnection(f);
+ const BrowserProvider=f.context.ethers.BrowserProvider;
+ f.context.ethers.BrowserProvider=class extends BrowserProvider {async getSigner(){return {getAddress:async()=>owner,signMessage:async()=>{f.calls.sign++;if(options.cancel)throw Object.assign(Error('private-signature-sentinel'),{code:4001});if(options.change)f.listeners.accountsChanged(['0x'+'34'.repeat(20)]);return 'private-signature-sentinel';}};}};
+ return f;
+}
+const open=f=>f.context.window.BillboardAccount.connect(f.context.window.ethereum,'Test wallet',{deriveAccount:true,providerId:'test-wallet'});
+test('full Field salt reaches current derivation without placing keys in DOM or public state',async()=>{
+ const f=await accountFixture();await open(f);
  assert.equal(f.derived[0],BigInt(salt));assert.equal(f.element('salt').value,'prior');assert.equal(f.context.window.walletState.aztec.salt,salt);
- await assert.rejects(f.context._loadAztecWallet(file({secretKey:key,salt:'0x00'})),error=>error.code==='BB_ACCOUNT_REPLACEMENT');
- assert.equal(f.context.window.walletState.aztec.salt,salt);
+ const publicState=JSON.stringify(f.context.window.BillboardAccount.snapshot());assert(!publicState.includes(salt));assert(!publicState.includes('secretKey'));
+ assert.equal(f.calls.sign,1);assert.equal(f.calls.save.length,1);assert.equal(f.calls.save[0].wallet.salt,salt);
 });
-test('failed derivation does not activate or overwrite secret fields',async()=>{
- const f=fixture({fail:true});await assert.rejects(f.context._loadAztecWallet(file({secretKey:key,salt})));
- assert.equal(f.context.window.walletState.aztec,null);assert.equal(f.element('secretKey').value,'prior');
- assert(!f.logs.join('').includes('secret-fixture-diagnostic'));
+test('failed derivation does not activate or persist the account or expose diagnostics',async()=>{
+ const f=await accountFixture({fail:true});await assert.rejects(open(f));
+ assert.equal(f.context.window.walletState.aztec,null);assert.equal(f.calls.save.length,0);assert.equal(f.element('secretKey').value,'prior');
+ assert(![...f.logs,...f.warnings].join('').includes('secret-fixture-diagnostic'));
 });
-test('malformed import event emits bounded diagnostics and clears selection',async()=>{
- const f=fixture(),target={files:[{size:100,text:async()=>'{private-secret-fixture'}],value:'file'};
- await f.element('wbAztecFile').change({target});
- assert.equal(target.value,'');assert.equal(f.context.window.walletState.aztec,null);assert(!f.logs.join('').includes('private-secret-fixture'));
-});
-test('signature generation and silent wallet replacement are unavailable',()=>{
- const f=fixture();assert.equal(f.context._generateAztecFromEth,undefined);assert(!f.element('container').innerHTML.includes('signMessage'));
+test('retired file, random-account and passkey operations are absent from the public UI and API',async()=>{
+ const f=await fixture();for(const name of ['createPasskey','importPasskey','exportBackup','importBackup'])assert.equal(f.context.window.BillboardAccount[name],undefined);
+ for(const name of ['_loadAztecWallet','_generateAztecFromEth','_importPasskeyAccount'])assert.equal(f.context[name],undefined);
+ assert.doesNotMatch(f.element('container').innerHTML,/type="file"|password|passkey|backup/i);
  f.context.resetWalletState();assert.equal(f.context.window.walletState.invalidated,true);
 });
-
 test('final network mismatch prevents activating a signer',async()=>{
- const f=fixture();browserConnection(f);f.context._getPublicConfig=()=>({network:{chainId:'31337'}});
- const request=f.context.window.ethereum.request;let chainReads=0;
- f.context.window.ethereum.request=async arg=>arg.method==='eth_chainId'?(++chainReads===1?'0x7a69':'0x1'):request(arg);
- await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum),e=>e.code==='BB_WALLET_NETWORK');
- assert.equal(f.context.window.walletState.ethSigner,null);
+ const f=await fixture();browserConnection(f);const request=f.context.window.ethereum.request;let reads=0;
+ f.context.window.ethereum.request=async arg=>arg.method==='eth_chainId'?(++reads===1?'0x7a69':'0x1'):request(arg);
+ await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum),{code:'BB_WALLET_NETWORK'});assert.equal(f.context.window.walletState.ethSigner,null);
 });
 test('callback failure invalidates activated session without logging callback diagnostics',async()=>{
- const f=fixture();f.context.initWalletButtons('container',{requireEth:false,onAztecLoad(){throw new Error('private-callback-fixture');}});
- await f.context._loadAztecWallet(file({secretKey:key,salt}));
+ const f=await accountFixture();await f.context.initWalletButtons('container',{requireEth:false,onAztecLoad(){throw Error('private-callback-fixture');}});await open(f);
  assert.equal(f.context.window.walletState.invalidated,true);assert(!f.logs.join('').includes('private-callback-fixture'));
 });
-
 test('initial account authorization event permits the matching browser signer',async()=>{
- const f=fixture(),account='0x'+'12'.repeat(20);
+ const f=await fixture(),account='0x'+'12'.repeat(20);
  f.context.ethers={BrowserProvider:class {
   async send(method){if(method==='eth_requestAccounts')f.listeners.accountsChanged([account]);assert(['eth_requestAccounts','eth_accounts'].includes(method));return[account];}
   async getSigner(){return{getAddress:async()=>account};}
@@ -72,71 +75,37 @@ function browserConnection(f,{requested='0x'+'12'.repeat(20),current=requested,e
  return requested;
 }
 for(const [name,event] of [['different account',['0x'+'34'.repeat(20)]],['empty authorization',[]],['malformed authorization',['not-an-address']]])test('preactivation notification does not override final account: '+name,async()=>{
- const f=fixture(),account=browserConnection(f,{event});await f.context.window.BillboardAccount.connect(f.context.window.ethereum);assert.equal(f.context.window.walletState.ethAccount,account);assert.equal(f.context.window.walletState.invalidated,false);
+ const f=await fixture(),account=browserConnection(f,{event});await f.context.window.BillboardAccount.connect(f.context.window.ethereum);assert.equal(f.context.window.walletState.ethAccount,account);assert.equal(f.context.window.walletState.invalidated,false);
 });
 test('final account read rejects a replacement even without an event',async()=>{
- const f=fixture();browserConnection(f,{current:'0x'+'34'.repeat(20)});await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum));assert.equal(f.context.window.walletState.ethSigner,null);assert.equal(f.context.window.walletState.invalidated,true);
+ const f=await fixture();browserConnection(f,{current:'0x'+'34'.repeat(20)});await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum));assert.equal(f.context.window.walletState.ethSigner,null);assert.equal(f.context.window.walletState.invalidated,true);
 });
 test('same-account notification after connection is not a replacement',async()=>{
- const f=fixture(),account=browserConnection(f);await f.context.window.BillboardAccount.connect(f.context.window.ethereum);f.listeners.accountsChanged([account.toUpperCase().replace('0X','0x')]);assert.equal(f.context.window.walletState.invalidated,false);
+ const f=await fixture(),account=browserConnection(f);await f.context.window.BillboardAccount.connect(f.context.window.ethereum);f.listeners.accountsChanged([account.toUpperCase().replace('0X','0x')]);assert.equal(f.context.window.walletState.invalidated,false);
  f.listeners.accountsChanged(['0x'+'34'.repeat(20)]);assert.equal(f.context.window.walletState.invalidated,true);
 });
 test('disconnect during authorization prevents activating a signer',async()=>{
- const f=fixture();browserConnection(f,{afterNetwork:()=>f.listeners.disconnect()});await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum),e=>e.code==='BB_WALLET_DISCONNECTED');assert.equal(f.context.window.walletState.ethSigner,null);
+ const f=await fixture();browserConnection(f,{afterNetwork:()=>f.listeners.disconnect()});await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum),e=>e.code==='BB_WALLET_DISCONNECTED');assert.equal(f.context.window.walletState.ethSigner,null);
 });
 test('transient selection events before activation are reconciled with final provider reads',async()=>{
- const f=fixture(),account='0x'+'12'.repeat(20);
+ const f=await fixture(),account='0x'+'12'.repeat(20);
  browserConnection(f,{event:[account],afterNetwork:()=>{f.listeners.accountsChanged(['0x'+'34'.repeat(20)]);f.listeners.chainChanged('0x1');f.listeners.accountsChanged([account]);}});
  await f.context.window.BillboardAccount.connect(f.context.window.ethereum);assert.equal(f.context.window.walletState.ethAccount,account);assert.equal(f.context.window.walletState.invalidated,false);
 });
 test('repeated matching authorization notifications permit connection',async()=>{
- const f=fixture(),account='0x'+'12'.repeat(20);
+ const f=await fixture(),account='0x'+'12'.repeat(20);
  browserConnection(f,{event:[account],afterNetwork:()=>f.listeners.accountsChanged([account])});
  await f.context.window.BillboardAccount.connect(f.context.window.ethereum);assert.equal(f.context.window.walletState.ethAccount,account);assert.equal(f.context.window.walletState.invalidated,false);
 });
 
-function passkeyFixture({saved,fail=false,change=false}={}) {
- const f=fixture(),records=new Map(),calls=[];const account=browserConnection(f);
- const storageKey='billboard-passkey-v1:'+account;
- if(saved!==undefined)records.set(storageKey,saved);
- f.context.localStorage={getItem:k=>records.get(k)??null,setItem:(k,v)=>records.set(k,v)};
- f.context.navigator={locks:{request:async(_name,fn)=>fn()}};
- f.context.BillboardPasskey={ceremony:async(_account,options)=>{calls.push(options);if(change)f.listeners.chainChanged();if(fail)throw Error('cancelled');return {wallet:{secretKey:key,salt},credentialId:'AQID'};}};
- f.context.initWalletButtons('container',{autoPasskey:true});
- return {...f,records,calls,storageKey};
-}
-test('new account requires explicit passkey creation and saves no secret',async()=>{
- const f=passkeyFixture();await f.context.window.BillboardAccount.connect(f.context.window.ethereum);
- assert.equal(f.calls.length,0);assert.equal(f.context.window.walletState.aztec,null);await f.context.window.BillboardAccount.createPasskey();assert.equal(f.calls[0].create,true);assert(f.context.window.walletState.aztec);
- const saved=JSON.parse(f.records.get(f.storageKey));assert.deepEqual(Object.keys(saved).sort(),['address','credentialId','version']);
- assert(!f.element('container').innerHTML.includes('Create wallet'));
-});
-test('saved metadata unlocks the exact passkey instead of creating',async()=>{
- const f=passkeyFixture({saved:JSON.stringify({version:1,address:key,credentialId:'AQID'})});await f.context.window.BillboardAccount.connect(f.context.window.ethereum);
- assert.equal(f.calls[0].create,false);assert.equal(f.calls[0].credentialId,'AQID');
-});
-test('cancelled passkey or changed Ethereum context never activates an account',async()=>{
- for(const options of [{fail:true},{change:true}]){const f=passkeyFixture(options);await f.context.window.BillboardAccount.connect(f.context.window.ethereum);await assert.rejects(f.context.window.BillboardAccount.createPasskey());assert.equal(f.context.window.walletState.aztec,null);assert.equal(f.records.size,0);}
-});
-for(const saved of ['null','false','0','""','[]','{}'])test(`invalid saved account ${saved} cannot create a replacement`,async()=>{
- const f=passkeyFixture({saved});
- await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum),{code:'BB_ACCOUNT_RECORD_INVALID'});
- assert.equal(f.calls.length,0);assert.equal(f.records.get(f.storageKey),saved);
- assert.equal(f.context.window.walletState.aztec,null);
-});
-test('corrupt metadata fails closed, explicit import repairs it',async()=>{
- const f=passkeyFixture({saved:'invalid json'});await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum));assert.equal(f.calls.length,0);
- await f.context._importPasskeyAccount();assert.equal(f.calls[0].create,false);assert.equal(JSON.parse(f.records.get(f.storageKey)).credentialId,'AQID');
-});
-
 test('absent browser wallet returns an actionable code without opening an account',async()=>{
- const f=fixture();delete f.context.window.ethereum;
+ const f=await fixture();delete f.context.window.ethereum;
  await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum),error=>error.code==='BB_BROWSER_WALLET_MISSING');
  assert.equal(f.context.window.walletState.ethSigner,null);assert.equal(f.context.window.walletState.aztec,null);
 });
 
 test('the selected provider owns signing and event invalidation, not the global',async()=>{
- const f=fixture(),old=f.context.window.ethereum;browserConnection(f);
+ const f=await fixture(),old=f.context.window.ethereum;browserConnection(f);
  await assert.rejects(f.context.window.BillboardAccount.connect(undefined));
  const selected={request:old.request,on(name,fn){f.listeners[name]=fn;}};
  Object.defineProperty(f.context.window,'ethereum',{get(){throw Error('Conflicting extension');}});
@@ -145,19 +114,19 @@ test('the selected provider owns signing and event invalidation, not the global'
  f.listeners.disconnect();assert.equal(f.context.window.walletState.invalidated,true);
 });
 test('requested network switch is accepted but unexpected network changes still invalidate',async()=>{
- const f=fixture();browserConnection(f);f.context._getPublicConfig=()=>({network:{chainId:'31337'}});let chain='0x1';const calls=[];
+ const f=await fixture();browserConnection(f);f.context._getPublicConfig=()=>({network:{chainId:'31337'}});let chain='0x1';const calls=[];
  f.context.window.ethereum.request=async request=>{calls.push(request.method);if(request.method==='eth_accounts')return['0x'+'12'.repeat(20)];if(request.method==='wallet_switchEthereumChain'){assert.equal(request.params[0].chainId,'0x7a69');chain='0x7a69';f.listeners.chainChanged(chain);return null;}return chain;};
  await f.context.window.BillboardAccount.connect(f.context.window.ethereum);assert.equal(f.context.window.walletState.invalidated,false);
  assert.deepEqual(calls,['eth_chainId','wallet_switchEthereumChain','eth_chainId','eth_chainId','eth_accounts']);f.listeners.chainChanged('0x1');assert.equal(f.context.window.walletState.invalidated,true);
 });
 test('rejecting a network switch leaves the session disconnected',async()=>{
- const f=fixture();browserConnection(f);f.context._getPublicConfig=()=>({network:{chainId:'31337'}});
+ const f=await fixture();browserConnection(f);f.context._getPublicConfig=()=>({network:{chainId:'31337'}});
  f.context.window.ethereum.request=async({method})=>{if(method==='eth_chainId')return '0x1';throw Object.assign(Error('private diagnostic'),{code:4001});};
  await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum),error=>error.code==='BB_WALLET_REJECTED');assert.equal(f.context.window.walletState.ethSigner,null);assert.equal(f.context.window.walletState.invalidated,false);
 });
 
 test('events from a previously rejected wallet cannot invalidate the newly selected wallet',async()=>{
- const f=fixture(),oldListeners={};
+ const f=await fixture(),oldListeners={};
  const first={request:async()=>{},on(name,fn){oldListeners[name]=fn;},removeListener(){}};
  f.context.ethers={BrowserProvider:class {async send(){throw Object.assign(Error('Rejected'),{code:4001});}}};
  await assert.rejects(f.context.window.BillboardAccount.connect(first));
@@ -168,7 +137,7 @@ test('events from a previously rejected wallet cannot invalidate the newly selec
 
 
 test('selected wallet identity is shown with its exact authorized account',async()=>{
- const f=fixture(),account=browserConnection(f);
+ const f=await fixture(),account=browserConnection(f);
  await f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask');
  const state=f.context.window.BillboardAccount.snapshot();
  assert.equal(state.ethereumWalletName,'MetaMask');assert.equal(state.ethereumAddress,account);
@@ -176,16 +145,16 @@ test('selected wallet identity is shown with its exact authorized account',async
  assert(f.logs.some(message=>message==='MetaMask connected: '+account));
 });
 for(const event of ['disconnect','accountsChanged','chainChanged'])test(event+' immediately clears connected status and shows reconnect guidance',async()=>{
- const f=fixture();browserConnection(f);let latest;
+ const f=await fixture();browserConnection(f);let latest;
  f.context.initWalletButtons('container',{onChange:state=>{latest=state;}});
  await f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask');
  f.listeners[event](event==='accountsChanged'?[]:'0x2');
  assert.equal(latest.ethereumConnected,false);assert.equal(latest.invalidated,true);
- assert.match(f.element('wbConnectionStatus').textContent,/Switch wallet to reconnect/);
+ assert.match(f.element('wbConnectionStatus').textContent,/Sign out before connecting again/);
  assert.equal(f.element('wbEthBrowserBtn').disabled,true);
 });
 test('explicit invalidation notifies consumers, including outside wallet events',async()=>{
- const f=fixture();browserConnection(f);let notifications=0;
+ const f=await fixture();browserConnection(f);let notifications=0;
  f.context.initWalletButtons('container',{onChange:()=>{notifications++;}});
  await f.context.window.BillboardAccount.connect(f.context.window.ethereum,'Other wallet');
  const before=notifications;f.context.window.BillboardAccount.invalidate();
@@ -195,28 +164,21 @@ test('explicit invalidation notifies consumers, including outside wallet events'
 
 
 test('explicit account selection requests fresh permission before activating a signer',async()=>{
- const f=fixture(),calls=[];browserConnection(f);
+ const f=await fixture(),calls=[];browserConnection(f);
  const request=f.context.window.ethereum.request;f.context.window.ethereum.request=async arg=>{if(arg.method!=='wallet_requestPermissions')return request(arg);calls.push(arg);assert.equal(f.context.window.walletState.ethSigner,null);return[];};
  await f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask',{selectAccount:true});
  assert.equal(calls.length,1);assert.equal(calls[0].method,'wallet_requestPermissions');
  assert.equal(JSON.stringify(calls[0].params),'[{"eth_accounts":{}}]');
 });
 test('rejected account selection cannot silently reuse a previously authorized account',async()=>{
- const f=fixture();browserConnection(f);f.context.window.ethereum.request=async()=>{throw Object.assign(Error('Rejected'),{code:4001});};
+ const f=await fixture();browserConnection(f);f.context.window.ethereum.request=async()=>{throw Object.assign(Error('Rejected'),{code:4001});};
  await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask',{selectAccount:true}));
  assert.equal(f.context.window.BillboardAccount.snapshot().ethereumConnected,false);assert.equal(f.context.window.walletState.ethSigner,null);
 });
 
 
-test('after passkey cancellation a new connection still requests account selection',async()=>{
- const f=passkeyFixture({fail:true});let selections=0;
- const request=f.context.window.ethereum.request;f.context.window.ethereum.request=async arg=>{if(arg.method!=='wallet_requestPermissions')return request(arg);selections++;return[];};
- for(let i=0;i<2;i++){await f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask',{selectAccount:true});await assert.rejects(f.context.window.BillboardAccount.createPasskey());}
- assert.equal(selections,2);assert.equal(f.context.window.walletState.aztec,null);
-});
-
 test('permission selection can replace an older origin grant before signer activation',async()=>{
- const f=fixture(),old='0x'+'12'.repeat(20),selected='0x'+'34'.repeat(20);let authorized=old;
+ const f=await fixture(),old='0x'+'12'.repeat(20),selected='0x'+'34'.repeat(20);let authorized=old;
  f.context.window.ethereum.request=async({method})=>{if(method==='eth_accounts')return[authorized];if(method==='eth_chainId')return '0x7a69';assert.equal(method,'wallet_requestPermissions');authorized=selected;f.listeners.accountsChanged([selected]);return[];};
  f.context.ethers={BrowserProvider:class {
   async send(method){assert(['eth_requestAccounts','eth_accounts'].includes(method));return[authorized];}
@@ -230,76 +192,85 @@ test('permission selection can replace an older origin grant before signer activ
 
 
 test('permission dialog may clear and replace accounts and announce its network before activation',async()=>{
- const f=fixture(),selected=browserConnection(f,{requested:'0x'+'34'.repeat(20)});
+ const f=await fixture(),selected=browserConnection(f,{requested:'0x'+'34'.repeat(20)});
  const request=f.context.window.ethereum.request;f.context.window.ethereum.request=async arg=>{if(arg.method!=='wallet_requestPermissions')return request(arg);f.listeners.accountsChanged([]);f.listeners.accountsChanged(['0x'+'12'.repeat(20)]);f.listeners.chainChanged('0x1');f.listeners.accountsChanged([selected]);return[];};
  await f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask',{selectAccount:true});
  assert.equal(f.context.window.BillboardAccount.snapshot().ethereumAddress,selected);assert.equal(f.context.window.walletState.invalidated,false);
  f.listeners.accountsChanged([]);assert.equal(f.context.window.BillboardAccount.snapshot().ethereumConnected,false);
 });
 test('disconnect while choosing an account still prevents activating a signer',async()=>{
- const f=fixture();browserConnection(f);const request=f.context.window.ethereum.request;f.context.window.ethereum.request=async arg=>{if(arg.method!=='wallet_requestPermissions')return request(arg);f.listeners.disconnect();return[];};
+ const f=await fixture();browserConnection(f);const request=f.context.window.ethereum.request;f.context.window.ethereum.request=async arg=>{if(arg.method!=='wallet_requestPermissions')return request(arg);f.listeners.disconnect();return[];};
  await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum,'MetaMask',{selectAccount:true}));
  assert.equal(f.context.window.walletState.ethSigner,null);
 });
 
 test('final account validation reads the transport rather than a cached provider result',async()=>{
- const f=fixture();browserConnection(f);const request=f.context.window.ethereum.request;
+ const f=await fixture();browserConnection(f);const request=f.context.window.ethereum.request;
  f.context.window.ethereum.request=async arg=>arg.method==='eth_accounts'?['0x'+'34'.repeat(20)]:request(arg);
  await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum));assert.equal(f.context.window.walletState.ethSigner,null);
 });
 test('preactivation disconnect followed by reconnect permits a validated session',async()=>{
- const f=fixture();browserConnection(f,{afterNetwork:()=>{f.listeners.disconnect();f.listeners.connect({chainId:'0x7a69'});}});
+ const f=await fixture();browserConnection(f,{afterNetwork:()=>{f.listeners.disconnect();f.listeners.connect({chainId:'0x7a69'});}});
  await f.context.window.BillboardAccount.connect(f.context.window.ethereum);assert.equal(f.context.window.BillboardAccount.snapshot().ethereumConnected,true);
 });
 test('same-chain announcements after activation preserve the session; a changed chain invalidates it',async()=>{
- const f=fixture();browserConnection(f);await f.context.window.BillboardAccount.connect(f.context.window.ethereum);
+ const f=await fixture();browserConnection(f);await f.context.window.BillboardAccount.connect(f.context.window.ethereum);
  f.listeners.chainChanged('0x07A69');assert.equal(f.context.window.BillboardAccount.snapshot().ethereumConnected,true);
  f.listeners.chainChanged('0x1');assert.equal(f.context.window.BillboardAccount.snapshot().ethereumConnected,false);
 });
 
-test('existing account choice authenticates instead of creating when browser metadata is missing',async()=>{
- const f=passkeyFixture();await f.context.window.BillboardAccount.connect(f.context.window.ethereum);
- assert.equal(f.calls.length,0);await f.context.window.BillboardAccount.importPasskey();assert.equal(f.calls[0].create,false);
+
+test('opening a remembered account is silent and preserves its full key and salt',async()=>{
+ const f=await accountFixture();await f.context.window.BillboardAccount.connect(f.context.window.ethereum);assert.equal(f.calls.sign,0);assert.equal(f.context.window.walletState.aztec,null);
+ f.setSaved({wallet:{secretKey:key,salt,address:key},metadata:{ethereumAddress:owner,providerId:'test-wallet'}});
+ assert.equal(await f.context.window.BillboardAccount.restoreRemembered(),true);assert.equal(f.calls.sign,0);assert.equal(f.calls.save.length,0);assert.equal(f.context.window.walletState.aztec.salt,salt);
 });
-test('active application work prevents lock and passkey replacement',async()=>{
- const f=passkeyFixture();f.context.window.BillboardAccount.configure({autoPasskey:true,canEndSession:()=>false});
- await f.context.window.BillboardAccount.connect(f.context.window.ethereum);
- await assert.rejects(f.context.window.BillboardAccount.endSession(),{code:'BB_OPERATION_BUSY'});
- await assert.rejects(f.context.window.BillboardAccount.importPasskey(),{code:'BB_OPERATION_BUSY'});
- assert.equal(f.context.window.walletState.invalidated,false);assert.equal(f.calls.length,0);
+test('cancelled signatures and changed context never activate or persist an account',async()=>{
+ for(const options of [{cancel:true},{change:true}]){const f=await accountFixture(options);await assert.rejects(open(f));assert.equal(f.context.window.walletState.aztec,null);assert.equal(f.calls.save.length,0);assert(![...f.logs,...f.warnings].join('').includes('private-signature-sentinel'));}
+});
+test('after signature cancellation a retry requests account selection again',async()=>{
+ const f=await accountFixture({cancel:true});let selections=0;const request=f.context.window.ethereum.request;
+ f.context.window.ethereum.request=async arg=>{if(arg.method!=='wallet_requestPermissions')return request(arg);selections++;return[];};
+ for(let i=0;i<2;i++)await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum,'Test wallet',{selectAccount:true,deriveAccount:true}));
+ assert.equal(selections,2);assert.equal(f.calls.sign,2);assert.equal(f.context.window.walletState.aztec,null);
+});
+for(const wallet of [{secretKey:key,salt:'0x1'},{secretKey:field(0),salt},{secretKey:key,salt:field(1n<<255n)},{secretKey:key,salt,address:field(3)}])test('obsolete remembered wallet is discarded before any account activation: '+JSON.stringify(wallet),async()=>{
+ const f=await accountFixture();f.setSaved({wallet,metadata:{ethereumAddress:owner}});
+ assert.equal(await f.context.window.BillboardAccount.restoreRemembered(),false);assert.equal(f.calls.clear,1);assert.equal(f.context.window.walletState.aztec,null);assert.equal(f.calls.sign,0);
+ await open(f);assert.equal(f.calls.sign,1);assert.equal(f.calls.save.length,1);assert(f.context.window.walletState.aztec);
+});
+test('authentication failure in remembered custody fails closed without replacement signing',async()=>{
+ const f=await accountFixture();f.session.load=async()=>{throw Object.assign(Error('private-ciphertext-sentinel'),{code:'BB_ETHEREUM_SESSION_INVALID'});};
+ await assert.rejects(f.context.window.BillboardAccount.restoreRemembered(),{code:'BB_ETHEREUM_SESSION_INVALID'});
+ await assert.rejects(open(f),{code:'BB_ETHEREUM_SESSION_INVALID'});assert.equal(f.calls.sign,0);assert.equal(f.calls.save.length,0);assert.equal(f.calls.clear,0);assert.equal(f.context.window.walletState.aztec,null);
+ assert(![...f.logs,...f.warnings].join('').includes('private-ciphertext-sentinel'));
+});
+test('freshly derived invalid fields and mismatched addresses cannot enter custody',async()=>{
+ for(const raw of [{secretKey:key,salt:'0x1'},{secretKey:field(0),salt},{secretKey:key,salt,address:field(3)}]){
+  const f=await accountFixture();f.session.derive=async()=>raw;await assert.rejects(open(f),{code:'BB_ACCOUNT_RECORD_INVALID'});assert.equal(f.context.window.walletState.aztec,null);assert.equal(f.calls.save.length,0);
+ }
+});
+test('an active wallet and its remembered record cannot be silently replaced',async()=>{
+ const f=await accountFixture();await open(f);const active=f.context.window.walletState.aztec,saved=f.getSaved();
+ await assert.rejects(open(f));assert.equal(f.context.window.walletState.aztec,active);assert.equal(f.getSaved(),saved);assert.equal(f.calls.sign,1);assert.equal(f.calls.save.length,1);
+});
+test('active application work and another tab prevent sign-out',async()=>{
+ const f=await accountFixture();await open(f);f.context.window.BillboardAccount.configure({canEndSession:()=>false});
+ await assert.rejects(f.context.window.BillboardAccount.endSession(),{code:'BB_OPERATION_BUSY'});assert.equal(f.calls.clear,0);assert.equal(f.context.window.walletState.invalidated,false);
+ f.context.window.BillboardAccount.configure({});f.context.navigator.locks.request=async(_name,options,run)=>typeof options==='function'?options():run(null);
+ await assert.rejects(f.context.window.BillboardAccount.endSession(),{code:'BB_OPERATION_BUSY'});assert.equal(f.calls.clear,0);assert.equal(f.context.window.BillboardAccount.snapshot().busy,false);
+});
+test('sign-out clears remembered custody and invalidates the current session',async()=>{
+ const f=await accountFixture();await open(f);assert.equal((await f.context.window.BillboardAccount.endSession()).reload,true);
+ assert.equal(f.calls.clear,1);assert.equal(f.getSaved(),null);assert.equal(f.context.window.BillboardAccount.snapshot().invalidated,true);assert.equal(f.context.window.BillboardAccount.snapshot().busy,false);
 });
 test('a throwing rendering listener cannot leave custody busy',async()=>{
- const f=fixture();f.context.window.BillboardAccount.configure({onChange:()=>{throw Error('render');},requireEth:false});
- await f.context._loadAztecWallet(file({secretKey:key,salt}));assert.equal(f.context.window.BillboardAccount.snapshot().busy,false);
+ const f=await accountFixture();f.context.window.BillboardAccount.configure({onChange:()=>{throw Error('private-render-sentinel');},requireEth:false});await open(f);
+ assert.equal(f.context.window.BillboardAccount.snapshot().busy,false);assert(f.context.window.walletState.aztec);assert(!f.warnings.join('').includes('private-render-sentinel'));
 });
-
-test('damaged metadata is typed and the public formatter gives an explicit recovery action',async()=>{
- const f=passkeyFixture({saved:'null'});await assert.rejects(f.context.window.BillboardAccount.connect(f.context.window.ethereum),{code:'BB_ACCOUNT_RECORD_INVALID'});
+for(const code of ['BB_OPERATION_BUSY','BB_ETHEREUM_SESSION_INVALID','UNRECOGNIZED'])test('current wallet action safely reports '+code,async()=>{
+ const f=await accountFixture();await open(f);
  const env=fs.readFileSync(new URL('../shared/app-env.js',import.meta.url),'utf8');vm.runInContext(env.slice(env.indexOf('function publicOperationFailure('),env.indexOf('function makeCallEngine(')),f.context);
- assert.match(f.context.publicOperationFailure({code:'BB_ACCOUNT_RECORD_INVALID'}).message,/existing passkey|encrypted backup/);
- assert.equal(f.calls.length,0);assert.equal(f.records.get(f.storageKey),'null');
-});
-
-test('invalid raw wallet fields and mismatched address have actionable import errors',async()=>{
- const invalid=fixture();invalid.context.window.BillboardWalletBackup.validateWallet=()=>{throw Error('Invalid salt');};await assert.rejects(invalid.context._loadAztecWallet(file({secretKey:key,salt})),{code:'BB_BACKUP_FORMAT',field:'recoveryFile'});assert.equal(invalid.context.window.walletState.aztec,null);
- const mismatch=fixture();await assert.rejects(mismatch.context._loadAztecWallet(file({secretKey:key,salt,address:'0x'+'2'.repeat(64)})),{code:'BB_BACKUP_FORMAT',field:'recoveryFile'});assert.equal(mismatch.context.window.walletState.aztec,null);
-});
-
-// Preserve the main-branch account replacement invariant through the public API.
-test('explicit passkey import cannot replace an active wallet or its saved metadata',async()=>{
- const f=passkeyFixture();await f.context.window.BillboardAccount.connect(f.context.window.ethereum);
- await f.context.window.BillboardAccount.createPasskey();
- const active=f.context.window.walletState.aztec,saved=f.records.get(f.storageKey),calls=f.calls.length;
- await assert.rejects(f.context.window.BillboardAccount.importPasskey(),{code:'BB_ACCOUNT_REPLACEMENT'});
- assert.equal(f.context.window.walletState.aztec,active);assert.equal(f.records.get(f.storageKey),saved);assert.equal(f.calls.length,calls);
-});
-for(const code of ['BB_PASSKEY_UNSUPPORTED','BB_PASSKEY_PRF_UNSUPPORTED','UNRECOGNIZED'])test(`passkey UI safely reports ${code}`,async()=>{
- const f=passkeyFixture();
- const env=fs.readFileSync(new URL('../shared/app-env.js',import.meta.url),'utf8');vm.runInContext(env.slice(env.indexOf('function publicOperationFailure('),env.indexOf('function makeCallEngine(')),f.context);
- await f.context.window.BillboardAccount.connect(f.context.window.ethereum);
- f.context.BillboardPasskey.ceremony=async()=>{throw Object.assign(Error('PRIVATE_ERROR_DETAIL'),{code});};
- await f.element('wbNewPasskeyBtn').click();
- assert(!f.logs.some(message=>message.includes('PRIVATE_ERROR_DETAIL')));
- assert(f.logs.some(message=>message.includes(code==='UNRECOGNIZED'?'could not finish':'PRF')));
- assert.equal(f.context.window.walletState.aztec,null);assert.equal(f.records.size,0);
+ f.session.clear=async()=>{throw Object.assign(Error('PRIVATE_ERROR_DETAIL'),{code});};await f.element('wbLockBtn').click();
+ assert(!f.logs.some(message=>message.includes('PRIVATE_ERROR_DETAIL')));assert(f.logs.some(message=>message===f.context.publicOperationFailure({code}).message));assert.equal(f.context.window.BillboardAccount.snapshot().busy,false);
 });

@@ -11,7 +11,6 @@ import {createL2Journal} from '../shared/l2-journal.mjs';
 import {createJournalBackup} from '../shared/journal-backup.mjs';
 import {createBrowserJournalStorage} from '../shared/journal-indexeddb.mjs';
 import {createFileJournalStorage} from '../apps/src/billboard/user/transaction-journal-store.mjs';
-import '../shared/wallet-backup.js';
 const field=()=> '0x'+randomBytes(31).toString('hex').padStart(64,'0');
 async function fixture(fn){
  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'bb-portable-'));
@@ -20,15 +19,17 @@ async function fixture(fn){
   const options={walletSecret:field(),walletSalt:field(),scope:{account:field(),board:field(),portal:'0x'+'11'.repeat(20),rollup:'0x'+'22'.repeat(20),chainId:'31337',version:'5'}};
   const tx=Tx.random({randomProof:true}),node={getTxReceipt:async()=>MinedTxReceipt.from({txHash:tx.getTxHash(),status:'checkpointed',executionResult:'success',transactionFee:0n,blockNumber:2,blockHash:BlockHash.ZERO,slotNumber:2,txIndexInBlock:0,epochNumber:0}),getBlock:async()=>({hash:BlockHash.ZERO})};
   const journal=await createL2Journal({...options,storage:browser,Tx,node});await journal.prepare(tx,await journal.assertCanStart());
-  await fn({browser,file,options,tx,node,backup:storage=>createJournalBackup({...options,storage})});
+  await fn({directory,browser,file,options,tx,node,backup:storage=>createJournalBackup({...options,storage})});
  }finally{fs.rmSync(directory,{recursive:true,force:true});}
 }
-test('password recovery file transfers actual SDK transaction browser to CLI and back without changing identity',()=>fixture(async f=>{
+test('authenticated journal transport transfers an actual SDK transaction across browser and file storage',()=>fixture(async f=>{
  const exported=await (await f.backup(f.browser)).exportRecords();assert.equal(exported.length,1);
- const password=randomBytes(24).toString('hex');
- const encrypted=await BillboardWalletBackup.encrypt({schemaVersion:2,wallet:{secretKey:f.options.walletSecret,salt:f.options.walletSalt},claims:[],journals:exported},password);
- const decoded=await BillboardWalletBackup.decrypt(encrypted,password);
- await (await f.backup(f.file)).restoreRecords(decoded.journals);
+ // The journal already authenticates/encrypts each record; no account key or
+ // retired password/file identity envelope is part of the transport.
+ const serialized=JSON.stringify(exported);
+ for(const privateValue of [f.options.walletSecret,f.options.walletSalt,f.tx.toBuffer().toString('hex')])assert(!serialized.includes(privateValue));
+ const decoded=JSON.parse(serialized);
+ await (await f.backup(f.file)).restoreRecords(decoded);
  const restored=await createL2Journal({...f.options,storage:f.file,Tx,node:f.node});
  await assert.rejects(restored.assertCanStart(),{code:'BB_RECOVERY_REQUIRED'});
  assert.equal((await restored.recover()).txHash.toString(),f.tx.getTxHash().toString());
@@ -60,34 +61,11 @@ test('export filters other wallets but refuses legacy records lacking ownership 
  await assert.rejects((await f.backup(f.browser)).exportRecords(),{code:'BB_JOURNAL_INVALID'});
 }));
 
-import {createClaimSecretStore} from '../apps/src/billboard/user/claim-secret-store.mjs';
-import {createRecoveryFile} from '../apps/src/billboard/user/recovery-file.mjs';
-import {Fr} from '@aztec-labs/foundation/curves/bn254';
-import {computeSecretHash} from '@aztec-labs/stdlib/hash';
-import {spawnSync} from 'node:child_process';
-import {fileURLToPath} from 'node:url';
-test('actual offline CLI restores fresh wallet plus claims/journals, exports portable file, rejects overwrite and wrong password',()=>fixture(async f=>{
- const directory=fs.mkdtempSync(path.join(os.tmpdir(),'bb-recovery-cli-'));
- try {
-  const sourceClaims=createClaimSecretStore(path.join(directory,'source-claims'),f.options.walletSecret,f.options.walletSalt);
-  const secret=Fr.random(),secretHash=(await computeSecretHash(secret)).toString();
-  const scope={l1ChainId:'31337',rollupAddress:f.options.scope.rollup,rollupVersion:'5',boardAddress:f.options.scope.board,portalAddress:f.options.scope.portal,depositor:'0x'+'33'.repeat(20)};
-  await sourceClaims.save(scope,{schemaVersion:1,secret:secret.toString(),secretHash});
-  const wallet={secretKey:f.options.walletSecret,salt:f.options.walletSalt},password=randomBytes(24).toString('hex');
-  const envelope=await createRecoveryFile({wallet,storage:f.browser,claimStore:sourceClaims,password});
-  const backup=path.join(directory,'backup.json'),target=path.join(directory,'fresh','wallet.json'),output=path.join(directory,'export.json');
-  fs.writeFileSync(backup,JSON.stringify(envelope),{mode:0o600});
-  const cli=fileURLToPath(new URL('../apps/src/billboard/user/recovery-cli.mjs',import.meta.url));
-  function run(action,file,pass=password){const result=spawnSync(process.execPath,[cli,action,'--wallet',target,'--file',file],{input:pass+'\n',encoding:'utf8',timeout:10000,env:{...process.env,NODE_BACKEND:'js'}});assert(!((result.stdout||'')+(result.stderr||'')).includes(wallet.secretKey));return result;}
-  assert.equal(run('restore',backup,'wrong-password-value').status,1);assert.equal(fs.existsSync(target),false);
-  assert.equal(run('restore',backup).status,0);assert.equal(fs.statSync(target).mode&0o777,0o600);
-  assert.deepEqual(JSON.parse(fs.readFileSync(target,'utf8')),wallet);
-  const restoredClaims=createClaimSecretStore(path.join(directory,'fresh','claim-secrets-v2'),wallet.secretKey,wallet.salt);
-  assert.equal((await restoredClaims.load(scope,secretHash)).secret,secret.toString());
-  assert.equal(run('export',output).status,0);assert.equal(run('export',output).status,1);
-  const portable=await BillboardWalletBackup.decrypt(JSON.parse(fs.readFileSync(output,'utf8')),password);
-  assert.equal(portable.claims.length,1);assert.equal(portable.journals.length,1);
-  assert.deepEqual(portable.journals,await (await f.backup(f.browser)).exportRecords());
-  assert.equal(run('restore',backup).status,0);
- }finally{fs.rmSync(directory,{recursive:true,force:true});}
+test('restored file journal retains private file permissions and rejects exposed ciphertext custody',()=>fixture(async f=>{
+ const records=await (await f.backup(f.browser)).exportRecords();await (await f.backup(f.file)).restoreRecords(records);
+ const filename=path.join(f.directory,records[0].key+'.json');assert.equal(fs.statSync(filename).mode&0o777,0o600);
+ const reopened=await createL2Journal({...f.options,storage:createFileJournalStorage(f.directory),Tx,node:f.node});
+ const inspection=await reopened.inspectOutcome();assert.equal(inspection.receipt.status,'checkpointed');assert.equal(inspection.outcome,'success');
+ assert.equal(inspection.txHash,f.tx.getTxHash().toString());
+ fs.chmodSync(filename,0o644);await assert.rejects((await f.backup(f.file)).exportRecords(),/Invalid journal record/);
 }));
