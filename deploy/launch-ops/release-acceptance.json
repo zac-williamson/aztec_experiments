@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "baseline-adopted-awaiting-corrected-journey-acceptance",
+  "status": "baseline-adopted-awaiting-deterministic-ci-fixture-and-genuine-acceptance",
   "recordedAt": "2026-10-28T19:32:58.820904+00:00",
   "sourceRevision": "e1bd8abe0d24b4b18a3c7c105695835b3ed9b8a3",
   "fullBuild": {
@@ -69,12 +69,12 @@
     "newBaselineFullBuildRun": 40753383089
   },
   "remaining": [
-    "independently reviewed current-control journey repair and exact-candidate full build",
+    "independently reviewed native receipt test-clock repair and exact-candidate full build",
     "real staged ETH/USDC signup, posting, reply, like, reload and Bok journey",
     "automatic promotion with live byte verification",
     "same-class operator rollback and return"
   ],
-  "updatedAt": "2026-10-28T20:58:21.172268+00:00",
+  "updatedAt": "2026-10-28T21:39:53.571365+00:00",
   "acceptedBaseline": {
     "revision": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
     "fullBuildRun": 40753383089,
@@ -107,6 +107,22 @@
     "freeTestFundsReceived": true,
     "coreAndBokBackupRestore": "deploy/launch-ops/backup-verification.json",
     "stalePublicCandidateCleanupSsm": "a5f46e7d-0ffc-4dc8-89ff-3689b6f86e4c",
-    "cleanupApplicationServicesUnchanged": true
+    "cleanupApplicationServicesUnchanged": true,
+    "usdcFeeLiquidity": "deploy/launch-ops/test-fixture-liquidity.json"
+  },
+  "subsequentFullBuild": {
+    "revision": "d1b58a3ddd15cb40e20d9b5cbcf16530dd716f4c",
+    "runId": 40768613647,
+    "conclusion": "failure",
+    "passed": [
+      "both clean builds",
+      "generated consumer drift check",
+      "byte reproducibility",
+      "four actual-panel/ranking journey browser regressions"
+    ],
+    "failedCheck": "scripts/test-receipt-baseline.mjs: shared proposed success waits for canonical checkpoint",
+    "observed": "838 of839 cases in the failing test command passed; the receipt test expired its30ms real native-waiter deadline after222ms underCIload.",
+    "scope": "An existing test fixture controls only its VM clock. Deterministic test-clock repair is in progress; no production timeout or native receipt predicate is waived.",
+    "releaseAttempted": false
   }
 }

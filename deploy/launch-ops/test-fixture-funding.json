@@ -62,7 +62,7 @@
     "stageRelayEthWei": "3000000000000000"
   },
   "fixturePolicy": {
-    "ethPerEthAccountWei": "50000000000000000",
+    "ethPerEthAccountWei": "120000000000000000",
     "ethPerUsdcAccountWei": "0",
     "usdcPerAccountBaseUnits": "75000000"
   },
@@ -188,7 +188,19 @@
     "location": "isolated release host fixture",
     "verificationSource": "integrating operator report",
     "temporarySsmParametersDeleted": 2,
-    "temporaryReadGrantRemoved": true
+    "temporaryReadGrantRemoved": true,
+    "updatedSsm": "bf64ed0d-adc9-432a-bdbd-3bd03173f10d"
   },
-  "recordUpdatedAt": "2026-10-28T16:15:10.141009+00:00"
+  "recordUpdatedAt": "2026-10-28T21:39:53.571365+00:00",
+  "additionalFreeFaucet": {
+    "provider": "Sepolia PoW faucet",
+    "url": "https://sepolia-faucet.pk910.de",
+    "hash": "0x0a7157aac865c96afddd7a837ca707c0a597b54fc4c34bdb260eb4fe147b1478",
+    "status": "confirmed",
+    "block": 12014548,
+    "valueEth": "0.365",
+    "recipient": "0xB100C6C628b598e5Fe30b047765C2dD16C8554bf",
+    "browserAccess": "Native Chrome used successfully; no private key disclosed"
+  },
+  "currentUsdcFeeLiquidity": "test-fixture-liquidity.json"
 }

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-28T21:39:11.973484+00:00",
+  "status": "free-testnet-fixture-liquidity-verified",
+  "chainId": "11155111",
+  "sourceHash": "532b2fd9511267353f6ff7207330cc73047d8bb2ffc1c8058d736e604b1638b0",
+  "pool": "0xe7505a537cff2742059c0e6c06cd3939d3e73c85",
+  "mintedFee": "1000",
+  "rebalanceFee": "200",
+  "refillFee": "800",
+  "transactions": [
+    {
+      "phase": "mint",
+      "hash": "0x68f5c2cff98a009a77361bbcc867ad93ca13396f35927e4e36f745c285123773",
+      "nonce": 9,
+      "blockNumber": 12014960,
+      "status": 1
+    },
+    {
+      "phase": "approve-router",
+      "hash": "0xd7da0d46908897f6c62a7e8afc5314e9265906b47170ca9dfa2cf5e2be2d3aa3",
+      "nonce": 10,
+      "blockNumber": 12014962,
+      "status": 1
+    },
+    {
+      "phase": "rebalance",
+      "hash": "0xb6bd4b734c38c6d966f6c5c75d3975ebf60e31387b9ef360b6d3c61023855195",
+      "nonce": 11,
+      "blockNumber": 12015009,
+      "status": 1
+    },
+    {
+      "phase": "approve-manager",
+      "hash": "0xa0aa239e8566f961436a114231d411e407ffb0aabd2aaa8802ca149aef2a80c2",
+      "nonce": 12,
+      "blockNumber": 12015016,
+      "status": 1
+    },
+    {
+      "phase": "refill",
+      "hash": "0xa0475e8e4592cc42a722f0cbcda9e2fbd6200f615d63b376628e0b94a7a5f594",
+      "nonce": 13,
+      "blockNumber": 12015058,
+      "status": 1
+    },
+    {
+      "phase": "clear-manager",
+      "hash": "0xdb2105dd3ba9ea2f165697e1152ded61ab6b25f77d301259eb9c0823dba1f7e4",
+      "nonce": 14,
+      "blockNumber": 12015060,
+      "status": 1
+    }
+  ],
+  "quote": {
+    "feeExactUsdc": "21647723",
+    "collateralExactUsdc": "41740877",
+    "totalMaximumUsdc": "67022487",
+    "gasPaidWei": "48189679"
+  },
+  "signingPerformedBy": "root",
+  "fixedUsdBudgetImpact": "Free Sepolia tokens only; no real ETH or additional infrastructure",
+  "scope": "Fixture repair only; not release journey or deployment acceptance. Quote observed at completion, not reserved for future runs."
+}

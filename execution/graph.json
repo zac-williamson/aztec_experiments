@@ -9846,14 +9846,14 @@
     "request": "28 October owner: implement first-party anonymous analytics, private Growth/Reliability/Releases dashboard, operational monitoring and alerts, gated testnet CI/deployment, and minimal operating safeguards. No persistent user profiles. Incremental budget USD50 total.",
     "status": "active",
     "execution_lane": "root integration/dashboard/deployment; isolated analytics, monitoring and CI owners",
-    "checkpoint": "28 October: private aggregate dashboard, monitoring and Slack alarm/recovery verified. Both fresh encrypted backups restored successfully: core twenty inputs at20:47:50UTC, Bok four inputs at20:45:08UTC; daily timers active, service PIDs unchanged. Accepted B48 baseline remains live; C89 automatic release stopped before promotion after ETH signup because the harness used an obsolete account-modal close label. The exact modal-interception failure is reproduced and repaired; all34 focused checks pass, native seven-step acceptance unchanged. Unused570 public release removed under reviewed exact reference guards, freeing780MB; live/stage/services unchanged. Candidate D integration and full build remain pending.",
-    "next_action": "Integrate independently reviewed journey controls and final operations records, require exact-candidate full CI, then install reviewed operator controls and run one corrected genuine testnet journey. Require promotion, retained-baseline operator rollback and return, then record final operational acceptance without marking broader R04 complete.",
+    "checkpoint": "28 October21:35UTC: candidateD d1b58a3d full build40768613647 completed both clean builds/reproducibility/generated drift and all new UI regressions, then failed one existing receipt baseline case (838/839passed). Actual native SDK waiter uses real30ms timeout outside the fixture VM clock; proposed-to-checkpoint success took222ms underCIload and expired. CI owner is repairing test clock control, with independent review; no production or seven-step assertion change. AcceptedB48 stays live, C89staged, auto-release disabled. Current reviewed journey operator installed. Both expanded core/Bok restore drills anddaily timers verified. Free-testnet USDC/FEEfixture mint/rebalance confirmed; rootfinishing800FEEliquidity with measuredgaslimits inside unchanged0.003SepETHcap.",
+    "next_action": "Integrate independently reviewed deterministic receipt fixture as candidateE and require its exact full CI. Finish and native-quoteverify USDC/FEEfixture. Rebind held activation/prune/rollback helpers to exactE, then run seven-step actualtestnetjourney, promotion, prune and E-to-B48-to-E rollback. Record final operational acceptance only after actual receipts.",
     "investigation": {
-      "hypothesis": "The old exact Close selector left the actual account modal intercepting first-post controls.",
+      "hypothesis": "Existing receipt baseline fixture controls only the VM clock; imported native SDK waiter and bounded reads still use real30ms timers, so CI scheduling can expire a successful proposed-to-checkpoint sequence.",
       "attempts": 1,
       "max_attempts": 1,
-      "evidence": "Exact real-panel Chromium reproduction and34 focused checks in /private/tmp/rolling-integrated-journey-2059.log; independent source review9711b8b3+6801d928.",
-      "next_action": "Run exact-candidate full build and one corrected seven-step real testnet acceptance after integration; no blind retry."
+      "evidence": "GitHub40768613647 and /private/tmp/rolling-d1b-ci-failure.log, shared proposed success test222ms.",
+      "next_action": "Reproduce and fix actual test-clock control; preserve native SDK/receipt checks and production timeouts, independently review then new exactfullCI."
     }
   },
   "completed_operating_requests": [
