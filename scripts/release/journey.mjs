@@ -86,9 +86,13 @@ export async function submitJourneyComposer(page,kind,remaining){
  await page.locator('dialog.account-dialog').getByRole('button',{name:kind==='reply'?'Reply':'Post',exact:true}).click({timeout:actionTimeout(remaining)});
 }
 export async function buyJourneyBokCredit(page,remaining){
- const dialog=page.locator('dialog.account-dialog');
+ const dialog=page.locator('dialog.account-dialog'),amount=dialog.getByLabel('Amount (USD)',{exact:true}),connect=dialog.getByRole('button',{name:'Connect CI test wallet',exact:true});
  await dialog.getByRole('button',{name:'Add Bok credit',exact:true}).click({timeout:actionTimeout(remaining)});
- await dialog.getByLabel('Amount (USD)',{exact:true}).fill('1',{timeout:actionTimeout(remaining)});
+ // Reload can restore the posting account without reconnecting its Ethereum
+ // payment wallet. Follow the actual top-up prompt before editing the purchase.
+ await amount.or(connect).first().waitFor({state:'visible',timeout:actionTimeout(remaining)});
+ if(await connect.isVisible())await connect.click({timeout:actionTimeout(remaining)});
+ await amount.fill('1',{timeout:actionTimeout(remaining)});
  await dialog.getByLabel('Pay with',{exact:true}).selectOption('ETH',{timeout:actionTimeout(remaining)});
  await dialog.getByRole('button',{name:'Pay',exact:true}).click({timeout:actionTimeout(remaining)});
  await dialog.getByText(/Bok credit added\./).waitFor({timeout:remaining()});

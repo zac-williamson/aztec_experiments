@@ -14,11 +14,12 @@ const fixture=`<!doctype html><html><head><meta charset="utf-8"></head><body><na
 import {mountRollingWalletPanel} from '/apps/rolling/wallet-panel.mjs';
 import {executeRollingAction} from '/apps/rolling/wallet-action.mjs';
 import {createFeedRanking} from '/apps/rolling/feed-ranking.mjs';
-window.calls={prepared:[],submitted:[],payments:[],claims:0,signins:0};
-let account=new URL(location.href).searchParams.has('locked')?null:{},prepared,credit='0';
+window.calls={prepared:[],submitted:[],payments:[],claims:0,signins:0,fundingConnections:0};
+const params=new URL(location.href).searchParams;
+let account=params.has('locked')?null:{},fundingConnected=!params.has('funding-disconnected'),fundingInput,prepared,credit='0';
 const cap={defaultPrivateFeeCap:'1000000000000000',ethAvailable:true,usdcAvailable:true,
- prepare:async input=>({phase:'deposit',...input,maximumSwapWei:'1000000000000000'}),
- confirm:async()=>{calls.payments.push({asset:'ETH',amount:'1000000'});return {pending:false};},
+ prepare:async input=>{if(!fundingConnected)throw Error('Funding wallet disconnected');fundingInput=structuredClone(input);return {phase:'deposit',...input,maximumSwapWei:'1000000000000000'};},
+ confirm:async()=>{if(!fundingConnected)throw Error('Funding wallet disconnected');calls.payments.push({asset:fundingInput.asset,amount:fundingInput.amount});return {pending:false};},
  inspect:async()=>({paymentSaved:false}),pauseClaim(){},
  advanceClaim:async()=>{calls.claims++;credit='1000000';return {state:'complete'};}};
 const application={
@@ -32,7 +33,9 @@ const application={
 application.executeAction=(action,options)=>executeRollingAction(application,structuredClone(action),options);
 const session={application,busy:false,ordinaryPostingFeeLimit:'1000000000000000',postingFeeLimit:'1000000000000000',bokConfigured:true,topup:{bok:cap}};
 const runtime={getAccount:()=>account,account:{configure(){}},createSession:async()=>session,
- fundingWallets:()=>[{id:'test',name:'CI test wallet'}],signInWallet:async()=>{calls.signins++;account={};}};
+ fundingWalletStatus:()=>({connected:fundingConnected,name:fundingConnected?'CI test wallet':null,address:fundingConnected?'0x'+'1'.repeat(40):null}),
+ connectFundingWallet:async id=>{if(id!=='test')throw Error('Unexpected wallet');calls.fundingConnections++;fundingConnected=true;},
+ fundingWallets:()=>[{id:'test',name:'CI test wallet'}],signInWallet:async()=>{calls.signins++;account={};fundingConnected=true;}};
 let publicPosts=[],priorityTxs=[];
 window.showPublicPosts=(posts=publicPosts,priorities=priorityTxs)=>{
  publicPosts=posts;priorityTxs=priorities;
@@ -46,7 +49,7 @@ document.querySelector('#write').onclick=()=>panel.open({type:'post',subboard:'0
 document.querySelector('#reply').onclick=()=>panel.open({type:'reply',parent:'10',root:'10',subboard:'0'});
 panel.open({});
 </script></body></html>`;
-async function setup(t,{locked=false}={}){
+async function setup(t,{locked=false,fundingConnected=true}={}){
  const requests=[];
  const server=http.createServer(async(req,res)=>{
   requests.push(req.method);const url=new URL(req.url,'http://localhost');
@@ -63,7 +66,7 @@ async function setup(t,{locked=false}={}){
  const page=await browser.newPage(),origin='http://127.0.0.1:'+server.address().port,errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
- page.setDefaultTimeout(5000);await page.goto(origin+(locked?'/?locked':''));
+ page.setDefaultTimeout(5000);const query=new URLSearchParams();if(locked)query.set('locked','');if(!fundingConnected)query.set('funding-disconnected','');await page.goto(origin+(query.size?'/?'+query:'/'));
  await page.locator('dialog.account-dialog[aria-busy="false"]').waitFor();
  t.after(()=>{assert.deepEqual(errors,[]);assert(requests.every(method=>method==='GET'));});
  return {page,remaining:()=>5000,dialog:page.locator('dialog.account-dialog')};
@@ -87,13 +90,14 @@ test('release unlocks the same composer and submits a direct reply once',{timeou
  await submitJourneyComposer(page,'reply',remaining);await dialog.waitFor({state:'hidden'});
  const calls=await page.evaluate(()=>window.calls);assert.equal(calls.signins,1);assert.deepEqual(calls.prepared.map(a=>a.type),['post','reply']);assert.equal(calls.prepared[1].parent,'10');assert.equal(calls.submitted.length,2);
 });
-test('release buys one Bok credit then posts the retained mention draft once',{timeout:15000},async t=>{
- const {page,dialog,remaining}=await setup(t);
+for(const fundingConnected of [true,false])test(`release buys one Bok credit and retains the draft with payment wallet ${fundingConnected?'connected':'disconnected after account restore'}`,{timeout:15000},async t=>{
+ const {page,dialog,remaining}=await setup(t,{fundingConnected});
  await openJourneyComposer(page,'@bok UI regression request',remaining);
  await buyJourneyBokCredit(page,remaining);
  assert.equal(await dialog.getByLabel('Message',{exact:true}).inputValue(),'@bok UI regression request');
  await submitJourneyComposer(page,'bok',remaining);await dialog.waitFor({state:'hidden'});
  const calls=await page.evaluate(()=>window.calls);assert.deepEqual(calls.payments,[{asset:'ETH',amount:'1000000'}]);assert.equal(calls.claims,1);assert.equal(calls.prepared[0].type,'bok');assert.equal(calls.submitted.length,1);
+ assert.equal(calls.signins,0,'restored posting account does not sign in again');assert.equal(calls.fundingConnections,fundingConnected?0:1);
 });
 
 test('release uses chronological Main board and pins Like to the original receipt ID',{timeout:15000},async t=>{
