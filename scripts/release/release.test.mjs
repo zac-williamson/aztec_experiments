@@ -10,6 +10,7 @@ import {validateJourneyConfig,createTestWalletBridge} from './journey.mjs';
 import {reuseCandidate} from './prepare.mjs';
 import {runtimeIdentity} from './compatibility.mjs';
 import {checkRuntime} from './smoke.mjs';
+import {runnerDropin} from './harden-runner.mjs';
 
 const oldRevision='1'.repeat(40),revision='2'.repeat(40);
 const successful={passed:true,proofs:'real',chainId:'11155111',completed:['signup-ETH','signup-USDC','post','reply','like','reload','bok']};
@@ -103,4 +104,9 @@ test('GitHub baseline gate binds trusted workflow success to exact source and re
  assert.equal(acceptBaseline([run],revision),1);
  for(const patch of [{head_sha:oldRevision},{event:'pull_request'},{conclusion:'failure'},{status:'in_progress'},{head_repository:{full_name:'someone/fork'}}])assert.throws(()=>acceptBaseline([{...run,...patch}],revision),{code:'RELEASE_BASELINE_CHECK'});
  assert.throws(()=>acceptBaseline([run,{...run,id:2,conclusion:'failure'}],revision));
+});
+test('runner sandbox blocks metadata and confines writes; injected unit paths are rejected',()=>{
+ const cfg={releaseDirectory:'/opt/rolling-releases',stagingLink:'/opt/rolling-stage/current',liveLink:'/opt/rolling-app/current',stateFile:'/var/lib/rolling-ops/release-state.json',nodeBinary:'/opt/node/bin/node'};
+ const unit=runnerDropin(cfg,'/var/lib/rolling-runner');assert.match(unit,/User=rolling-release/);assert.match(unit,/IPAddressDeny=169\.254\.169\.254\/32/);assert.match(unit,/IPAddressDeny=fd00:ec2::254\/128/);assert.match(unit,/ProtectSystem=strict/);assert.match(unit,/AWS_SHARED_CREDENTIALS_FILE=\/dev\/null/);assert.match(unit,/runner-preflight\.mjs/);assert(!unit.includes('ReadWritePaths=\/etc'));
+ assert.throws(()=>runnerDropin({...cfg,nodeBinary:'/bin/node\nUser=root'},'/var/lib/rolling-runner'),{code:'RELEASE_CONFIG'});
 });

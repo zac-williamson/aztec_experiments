@@ -45,6 +45,11 @@ host, node and prover to stay within the launch budget.
   repository's trusted release workflow; never dispatch PRs onto it. The runner
   needs no AWS key. Protect `master` and the `rolling-testnet-release` GitHub
   environment; restrict that environment to `master`.
+  Use `/var/lib/rolling-runner` as the user's home and runner directory. Give it
+  no membership in `sudo`, `wheel`, `admin`, `docker` or `lxd` groups. Register
+  with GitHub's short-lived registration token, which must not go in release
+  config or environment. Run `sudo ./svc.sh install rolling-release`, leaving
+  the runner stopped.
 - Install the pinned Node version in `toolchain.json`. The shared `node_modules`
   tree must be root-owned, unwritable by group/others, and installed from the
   same lockfile with the repository's pinned patch/build process. It must include
@@ -133,6 +138,38 @@ an explicit reviewed operator update; deploying application source never replace
 the privileged gate. Set the state directory's group so the private monitoring
 service can read `release-state.json` (mode `0640`). The dashboard should display
 only status, source revisions, timestamps, stage names and the error enum.
+
+Apply runner hardening as root after `svc.sh install`:
+
+    node scripts/release/harden-runner.mjs /etc/rolling-release/config.json
+
+It installs a systemd drop-in and the two exact sudo restart permissions, without
+starting/enabling the runner. The runner stays unprivileged; its filesystem is
+read-only except its own runner, release/link and sanitized-state directories.
+It cannot read home directories/cloud-init state. Both IPv4 and IPv6 EC2 metadata
+addresses are denied at the service cgroup, AWS credential environment variables
+are removed, and SDK credential files point to `/dev/null`. The startup preflight
+checks that no AWS credentials are present and metadata TCP access fails; it
+never requests credential contents. Ineffective network filtering fails startup
+when metadata is reachable. `sudo` is limited to two fixed unit restarts, so
+`NoNewPrivileges` is deliberately not enabled. The application units themselves
+must run as an unprivileged application user.
+
+Only after the final contract baseline is ready, run `systemctl daemon-reload`,
+enable/start the installed runner service, and verify its preflight and an actual
+stage journey. Follow GitHub's official
+[service setup](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/configure-the-application):
+the service invokes `runsvc.sh`; the hardener keeps that entry point. Never copy
+the shared deployment/funder key onto this runner. Create and fund a separate
+capped Sepolia CI funder locally, coordinated with other signers of the shared
+account, then install only that dedicated fixture.
+
+The current journey targets the paid-like release: a post must emit `PostTipKey`,
+the UI must offer `Like · 20 credits`, and the independently decoded transaction
+must contain its successful `LikeChanged` event. The pinned Board/FPC classes
+enforce the payment. Install the verifier from the same final tipping source
+baseline; the older pre-tipping decoder is incompatible. Do not bootstrap the
+old 635a33b3 release after the tipping contract deployment.
 
 ## Operating it
 

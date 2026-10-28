@@ -115,7 +115,7 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
      const receipt=await card.evaluate(el=>({hash:el.dataset.txHash,block:el.dataset.blockNumber,blockHash:el.dataset.blockHash,id:el.id}));
      if(!/^0x[0-9a-f]{64}$/.test(receipt.hash??'')||!/^0x[0-9a-f]{64}$/.test(receipt.blockHash??'')||!(Number(receipt.block)>0))throw failure('RELEASE_INCLUSION');
      const hashes=await hashesSince(start);if(!hashes.includes(receipt.hash))throw failure('RELEASE_INCLUSION');
-     const events=await evidence.require([receipt.hash],events=>events.some(e=>e.type==='PostPublished'&&e.payload.id===receipt.id.slice(5)&&e.payload.record.parent==='0'&&e.payload.record.root===e.payload.id&&evidence.text(e.payload)===message),remaining);
+     const events=await evidence.require([receipt.hash],events=>events.some(e=>e.type==='PostPublished'&&e.payload.id===receipt.id.slice(5)&&e.payload.record.parent==='0'&&e.payload.record.root===e.payload.id&&evidence.text(e.payload)===message)&&events.some(e=>e.type==='PostTipKey'&&e.payload.post===receipt.id.slice(5)),remaining);
      return {card,receipt,events};
     }
     const {card,receipt}=await compose(tag);await record('post');
@@ -123,7 +123,7 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
     await card.getByRole('button',{name:'Reply',exact:true}).click();await page.getByLabel('Message',{exact:true}).fill(tag+' reply');await page.locator('[data-action-review]:visible').click();
     await page.getByText(tag+' reply',{exact:true}).waitFor({timeout:remaining()});
     await evidence.require(await hashesSince(replyStart),events=>events.some(e=>e.type==='PostPublished'&&e.payload.record.parent===receipt.id.slice(5)&&e.payload.record.root===receipt.id.slice(5)&&evidence.text(e.payload)===tag+' reply'),remaining);await record('reply');
-    const likeStart=submissions.length,like=card.locator('[data-like-post]');await like.click();await page.waitForFunction(id=>document.querySelector('#'+id+' [data-like-post]')?.getAttribute('aria-pressed')==='true',receipt.id,{timeout:remaining()});
+    const likeStart=submissions.length,like=card.getByRole('button',{name:'Like · 20 credits',exact:true});await like.click();await page.waitForFunction(id=>Number.parseInt(document.querySelector('#'+id+' .likes')?.textContent??'0',10)>0,receipt.id,{timeout:remaining()});
     await evidence.require(await hashesSince(likeStart),events=>events.some(e=>e.type==='LikeChanged'&&e.payload.post===receipt.id.slice(5)&&e.payload.active===true&&BigInt(e.payload.count)>0n),remaining);await record('like');
     await page.reload({waitUntil:'domcontentloaded'});await page.getByText(tag,{exact:true}).waitFor({timeout:remaining()});await record('reload');
     const reconnect=page.getByRole('button',{name:'Connect wallet',exact:true});
